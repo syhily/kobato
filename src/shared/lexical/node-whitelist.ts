@@ -21,13 +21,16 @@
 export const ROOT_NODE_TYPE = 'root'
 
 /**
- * kobato host cards (plan M3, landing in R10 via `defineCard`): the type
- * strings are pinned HERE and R10's defineCard calls must use them verbatim;
- * the R11 contract test then pins composer ↔ whitelist. Named separately
- * because the save-time projections (`projection-state.ts`) special-case
- * them — no node class exists for them until R10.
+ * kobato host cards (plan M3, landed in R10 via `defineCard`): the type
+ * strings are pinned HERE and the card spec modules under
+ * `@/shared/lexical/cards/` consume these named constants verbatim; the R11
+ * contract test then pins composer ↔ whitelist. Named separately because the
+ * save-time projections (`projection-state.ts`) special-case them.
  */
-export const KOBATO_HOST_CARD_NODE_TYPES = ['solution', 'two-column', 'music-player'] as const
+export const SOLUTION_NODE_TYPE = 'solution'
+export const TWO_COLUMN_NODE_TYPE = 'two-column'
+export const MUSIC_PLAYER_NODE_TYPE = 'music-player'
+export const KOBATO_HOST_CARD_NODE_TYPES = [SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE, MUSIC_PLAYER_NODE_TYPE] as const
 
 /**
  * Article/page editing state — kobato's full target node set.

@@ -14,22 +14,23 @@
 //    (`math-renderer.ts`), `math-inline` `<code>escaped tex</code>`
 //    (`MathInlineNode.exportDOM`), and `codeblock` a plain
 //    `<pre><code class="language-*">` without the Shiki embed
-//    (`codeblock-renderer.ts`). `two-column` flattening falls out of the
-//    host-card substitution below until R10's real card class ships a
-//    feed-aware exportDOM.
+//    (`codeblock-renderer.ts`). The host-card feed shapes (solution unwrap,
+//    two-column flatten, music-player figure) are NOT state transforms —
+//    the R10 card renderers produce them from the `FEED_VARIANT_META_KIND`
+//    render-meta flag the projection passes on the feed pass.
 //
-// 2. **Host-card survival**. `solution` / `two-column` / `music-player` have
-//    no node class until R10's `defineCard` lands, and an unregistered type
-//    aborts `parseEditorState` at first encounter — every block AFTER the
-//    card would vanish from the projection (Lexical error #17). Substitute
-//    the still-unregistered cards with serialized stand-ins so the rest of
-//    the document always projects: `music-player` becomes a text paragraph
-//    carrying its save-time meta snapshot (or the PT feed placeholder when
-//    the snapshot is absent), `solution` / `two-column` are dropped (their
-//    nested datasets are undefined until R10 — nothing honest to project).
-//    R10 registers the real classes through the projection module's node
-//    list; a registered type leaves this substitution path automatically via
-//    `renderableHostCardTypes`.
+// 2. **Host-card survival** (defensive — the R10 card classes exist now).
+//    `solution` / `two-column` / `music-player` parse through the real node
+//    classes registered by the projection module, so the production caller
+//    passes all three in `renderableHostCardTypes` and the substitution below
+//    never fires. It stays armed for any host-card type the projection does
+//    NOT register: an unregistered type aborts `parseEditorState` at first
+//    encounter — every block AFTER the card would vanish from the projection
+//    (Lexical error #17). Substituting unregistered cards with serialized
+//    stand-ins keeps the rest of the document projecting: `music-player`
+//    becomes a text paragraph carrying its save-time meta snapshot (or the PT
+//    feed placeholder when the snapshot is absent), `solution` / `two-column`
+//    are dropped.
 
 import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schema'
 
@@ -44,8 +45,8 @@ export interface ProjectionStateOptions {
   feed: boolean
   /**
    * Host card types the renderer has real node classes for — those pass
-   * through untouched. Empty until R10 wires the `defineCard` classes into
-   * the projection module.
+   * through untouched. The projection passes every registered type, so the
+   * substitution below only fires for cards the projection does not know.
    */
   renderableHostCardTypes?: ReadonlySet<string>
 }
@@ -111,7 +112,8 @@ function substituteHostCard(node: MutableNode, options: ProjectionStateOptions):
       ],
     }
   }
-  // solution / two-column: nested datasets undefined until R10 — drop.
+  // solution / two-column carry their content as nested-editor HTML strings
+  // with no PT-parity text fallback — an unregistered one is dropped.
   return null
 }
 

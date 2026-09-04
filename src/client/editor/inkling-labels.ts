@@ -204,22 +204,7 @@ export const inklingLabels: Partial<InklingLabels> = {
 }
 
 /**
- * 宿主卡 slash 菜单中文 `matches` 别名约定（R10 写 defineCard / 节点替换时
- * 消费）。别名取自现有 tiptap slash 命令（
- * `src/ui/admin/editor/tiptap/slash-commands.ts` 的 `aliases` 数组），
- * 迁移期保持两边一致。
- *
- * inkling 的匹配语义（`card-menu-build.ts`）：查询串先转小写，再对每个
- * `matches` 条目做 `startsWith` 前缀匹配——条目本身不会转小写，因此
- * **英文别名必须全小写**；中文别名无大小写问题，按前缀原样匹配。
- *
- * 内置卡（含 stock 图片卡）的菜单条目不读宿主 `matches`，其中文搜索
- * 不可本地化（计划风险 15，已接受）；这里的 `image` 条目仅供
- * KobatoImageNode 同类型替换后由宿主追加菜单条目时使用。
+ * 宿主卡 slash 菜单中文 `matches` 别名约定已随 R10 的卡片规格迁往
+ * `@/shared/lexical/cards/menu-matches`（卡片菜单数据是 React-free 的，
+ * 与卡片规格同住 shared；client→shared 单向消费，此处不再持有副本）。
  */
-export const inklingHostCardMatches = {
-  solution: ['solution', 'hint', 'answer', '解答', '题解', '提示'],
-  twoColumn: ['columns', 'column', 'split', 'two', '分栏', '双栏', '两栏'],
-  musicPlayer: ['music', 'audio', 'song', '音乐', '播放器'],
-  image: ['image', 'img', 'picture', '图片', '图'],
-} as const satisfies Record<string, readonly string[]>

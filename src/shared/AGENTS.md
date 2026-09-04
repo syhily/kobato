@@ -43,8 +43,15 @@ server or client boundary catch and log it.
   node-dataset slot registry), and `equivalence` (artifact-blind semantic
   fingerprint for the save no-op short-circuit). R9b added
   `projection-state` — deep-copy shaping for the headless projection render
-  (feed artifact stripping + host-card substitution until R10's card
-  classes exist).
+  (feed artifact stripping + defensive host-card substitution for types the
+  projection does not register). R10 added `cards/` — the React-free host-card
+  spec modules (`solution`, `two-column`, `music-player`, plus the `card-html`
+  render helpers and the `menu-matches` constants): each card's dataset
+  properties, nested-editor facts, class/copy constants, and exportDOM
+  renderer live here as the single source consumed by BOTH the server
+  projection (headless `generateDecoratorNode`) and the client card assembly
+  (`.` entry + `defineCard`) — two class objects, one spec, because the dist
+  entries ship separate Lexical copies.
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
   footnote-merge, the footnote anchor DOM contract (`footnote-anchors`),
   editor↔storage footnote sync (`footnote-sync`), the heading

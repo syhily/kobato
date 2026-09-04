@@ -14,9 +14,7 @@ import { isSafeUrl } from '@/shared/sanitize-url'
 // variant enumerates its serialized fields explicitly with plain `z.object`
 // (unknown keys are stripped, not rejected), required fields are the ones
 // the 0.46 exporters always write, optional fields are the conditional
-// ones. The three kobato host cards are the ONE exception — their datasets
-// are defined by R10's `defineCard` calls, so they stay `z.looseObject`
-// until then.
+// ones.
 //
 // The node union covers the FULL whitelist and validates shape only; the
 // per-surface policy (which subset is allowed, how deep lists may nest) is
@@ -236,11 +234,29 @@ function buildNodeUnion(treeDepth: number): z.ZodType<LexicalNodeJson> {
       ...elementFields,
     }),
     // kobato host cards: type strings pinned in node-whitelist.ts, datasets
-    // defined by R10's defineCard calls — loose until then (the one
-    // passthrough exception to the strict-enumeration rule).
-    z.looseObject({ type: z.literal('solution'), version: NODE_VERSION }),
-    z.looseObject({ type: z.literal('two-column'), version: NODE_VERSION }),
-    z.looseObject({ type: z.literal('music-player'), version: NODE_VERSION }),
+    // owned by the R10 spec modules in `@/shared/lexical/cards/`. solution /
+    // two-column carry nested-editor HTML strings (opaque payload — the inner
+    // surface is cleaned at save, not re-validated here). music-player's meta
+    // snapshot keys are OPTIONAL: the canonicalize strip deletes them and a
+    // failed resolve persists the meta-less shape by design
+    // (`@/server/domains/pt/lexical-music-snapshot`).
+    z.object({ type: z.literal('solution'), version: NODE_VERSION, content: z.string() }),
+    z.object({
+      type: z.literal('two-column'),
+      version: NODE_VERSION,
+      left: z.string(),
+      right: z.string(),
+    }),
+    z.object({
+      type: z.literal('music-player'),
+      version: NODE_VERSION,
+      playerId: z.string(),
+      name: z.string().optional(),
+      artist: z.string().optional(),
+      cover: z.string().optional(),
+      audioUrl: z.string().optional(),
+      lyric: z.string().optional(),
+    }),
   ])
 }
 

@@ -32,6 +32,20 @@ export type {
 /* The DOM injection port type named by the HTML options (`options.dom`). */
 export type { ExportDOMDom } from '@/nodes/base'
 
+/* Host-card projection seam (kobato R10): a host's React-free card base
+ * classes — built with the same `generateDecoratorNode` factory the built-in
+ * cards use — register straight into the render/plain-text node lists, so the
+ * server-side projection produces real card HTML without the `.` entry's
+ * React tree. Every module these names re-export is already inside the
+ * headless graph (the built-in cards' base nodes are built the same way), so
+ * the additions are surface-only. Only the FACTORY and the property-spec type
+ * are exported: the RenderContext/ExportDOMOutput types stay entry-internal
+ * because each entry's bundled d.ts inlines its own copy of the DOMPurify /
+ * Lexical declarations — nominally incompatible across entries — so hosts
+ * declare their own structural slices instead (kobato's CardRenderContext). */
+export { generateDecoratorNode } from '@/nodes/base/generate-decorator-node'
+export type { DecoratorNodeProperty } from '@/nodes/base/card-specs'
+
 /* Markdown ⇄ state (the constrained round-trip dialect — no decorator-card
  * round-trip beyond the ```inkling:<card>``` fences), plus the host-card
  * shape the options compose. */

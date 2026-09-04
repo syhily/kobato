@@ -16,14 +16,17 @@ Three files, two bundles:
   the shared partial and `cursors.css`, and scopes `@source` to public-rendered
   dirs (`routes/public`, `ui/public`, `ui/pt`, `ui/components`, `ui/icons`,
   `ui/lib`, `root.tsx`, plus `ui/admin/editor/tiptap` which the public comment
-  editor reuses). Public-only rules live here: cursors, the medium-zoom
+  editor reuses, and `shared/lexical/cards` whose class constants render into
+  the R10 card markup). Public-only rules live here: cursors, the medium-zoom
   z-1080 stacking, the comment hash-focus flash.
 - `admin.css` — **admin entry**, imported by `routes/{admin,auth,editor}/layout.tsx`.
   Same tailwindcss import + shared partial, but its `@source` scope covers
   admin-rendered dirs (`routes/{admin,auth,editor}`, `ui/admin`, the shared
   `ui/*` dirs, and the `ui/public` subdirs admin reuses — aplayer, chrome,
-  comment editor, widgets, Search). Admin-only rules live here: medium-zoom
-  z-45 stacking, `scrollbar-thin`, the music-library view transitions.
+  comment editor, widgets, Search — plus `client/editor` for the inkling host
+  cards and `shared/lexical/cards` for their chrome constants). Admin-only
+  rules live here: medium-zoom z-45 stacking, `scrollbar-thin`, the
+  music-library view transitions.
 
 New rule placement: used by both sides → `tailwind.css`; one side only →
 that side's entry. A component dir that crosses sides (e.g. a new admin page

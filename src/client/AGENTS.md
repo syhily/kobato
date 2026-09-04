@@ -5,6 +5,7 @@
 ## Structure
 
 - `hooks/` — browser hooks. Admin file uploads go through `useFileUpload` (`@/client/hooks/use-file-upload`): it owns the CSRF read, accept/size guards, FormData POST, error unwrap, and toast choreography. Never hand-roll a fetch upload in a view.
+- `editor/` — inkling editor host glue. `editor/cards/` holds the R10 host-card assemblies (solution / two-column / music-player): each module builds its base node class from the shared spec (`@/shared/lexical/cards/`) through the `.` entry's `generateDecoratorNode` — a DISTINCT class object from the server projection's, since each dist entry ships its own Lexical copy — then registers it via top-level `defineCard`. The decorate chrome components and the exportDOM markup share the spec's class/copy constants; `tests/unit/client/editor/cards/` pins that parity (the WYSIWYG gate).
 - `api/` — oRPC client. All RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@/client/api/client`; server errors arrive as `ORPCError` rejections. TanStack Query wrappers live in `@/client/api/orpc-query`. Every public-site read flows through oRPC end to end: browser-side interactions use this `/rpc` client, and SSR data (public routes + root loader) goes through the read-only `content.*` group via the in-process caller (`@/server/http/ssr-caller`) — no route talks to domain services directly.
 
 ## Patterns
