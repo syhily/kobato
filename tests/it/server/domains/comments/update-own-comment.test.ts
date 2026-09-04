@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
-
+import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
@@ -56,25 +55,9 @@ async function seedPost(slug: string): Promise<number> {
   return rows[0]!.id
 }
 
-const OLD_BODY: CommentBody = [
-  {
-    _type: 'block',
-    _key: 'b1',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's1', text: 'old', marks: [] }],
-    markDefs: [],
-  },
-]
+const OLD_BODY = makeCommentBody('old')
 
-const NEW_BODY: CommentBody = [
-  {
-    _type: 'block',
-    _key: 'b2',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's2', text: 'edited', marks: [] }],
-    markDefs: [],
-  },
-]
+const NEW_BODY = makeCommentBody('edited')
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
   const rows = await db
@@ -83,7 +66,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       type: 'post',
       ownerId: 1,
       userId: 1,
-      content: 'old markdown',
+      content: '<p>old</p>',
       body: OLD_BODY,
       rid: 0,
       rootId: 0,
@@ -148,15 +131,7 @@ describe('updateOwnComment — persistence edges', () => {
     const id = await seedComment({ userId: uid, ownerId: pid, createdAt: tenMinutesAgo })
 
     // Both reads see the same updated_at, so one write wins and the other rejects CONFLICT.
-    const OTHER_BODY: CommentBody = [
-      {
-        _type: 'block',
-        _key: 'b3',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's3', text: 'edited concurrently', marks: [] }],
-        markDefs: [],
-      },
-    ]
+    const OTHER_BODY = makeCommentBody('edited concurrently')
     const results = await Promise.allSettled([
       updateOwnComment(db, String(id), NEW_BODY),
       updateOwnComment(db, String(id), OTHER_BODY),
@@ -170,8 +145,8 @@ describe('updateOwnComment — persistence edges', () => {
     expect(fulfilled).toHaveLength(1)
 
     const stored = await readRow(id)
-    const body = stored?.body as Array<{ children: Array<{ text: string }> }>
-    expect(['edited', 'edited concurrently']).toContain(body[0]?.children[0]?.text)
+    const firstParagraph = stored?.body.root.children[0] as unknown as { children: Array<{ text: string }> } | undefined
+    expect(['edited', 'edited concurrently']).toContain(firstParagraph?.children[0]?.text)
     expect(emails.sendNewComment).not.toHaveBeenCalled()
   })
 

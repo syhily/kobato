@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 import { honeypotField } from '@/shared/utils/schema'
 
@@ -14,7 +14,7 @@ export const commentReplySchema = z
     name: z.string().max(100),
     email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
-    body: commentBodySchema,
+    body: commentEditorStateSchema,
     /** Retained for schema compatibility; no longer used. */
     rid: z.number().optional(),
     /** Leave blank — used for bot filtering only; stripped before `createComment`. */
@@ -28,7 +28,7 @@ export const commentRidSchema = z.object({
 })
 export type CommentRidInput = z.infer<typeof commentRidSchema>
 
-export const commentEditSchema = z.object({ rid: z.string(), body: commentBodySchema })
+export const commentEditSchema = z.object({ rid: z.string(), body: commentEditorStateSchema })
 export type CommentEditInput = z.infer<typeof commentEditSchema>
 
 export const loadCommentsSchema = z.object({

@@ -83,6 +83,8 @@ exports[`labels > pins the full key list 1`] = `
   "menu.button.label",
   "menu.callout.desc",
   "menu.callout.label",
+  "menu.codeblock.desc",
+  "menu.codeblock.label",
   "menu.divider.desc",
   "menu.divider.label",
   "menu.file.desc",

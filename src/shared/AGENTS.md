@@ -31,9 +31,11 @@ server or client boundary catch and log it.
   (plan `docs/plans/inkling-editor-replacement.md`, R7): the node-type
   whitelist single source (`node-whitelist`), the full article/page state
   schema (`schema` — also owns `EMPTY_LEXICAL_EDITOR_STATE`), the restricted
-  comment state schema (`comment-schema`), and the composer-mounted node-set
-  manifests (`composer-nodes` — ARTICLE is the R11 truth, pinned three-way
-  schema ⇐ whitelist ⇐ composer by contract test; COMMENT awaits R12). Pure
+  comment state schema (`comment-schema` — also owns
+  `EMPTY_COMMENT_EDITOR_STATE` and the shared `isCommentEditorStateBlank`
+  submit gate), and the composer-mounted node-set
+  manifests (`composer-nodes` — ARTICLE (R11) and COMMENT (R12) are both
+  live, pinned three-way schema ⇐ whitelist ⇐ composer by contract test). Pure
   zod — no lexical runtime dependency; the `SerializedEditorState` type is an
   erased `import type` from `@inkling/editor/headless`. R9a added the
   save-pipeline modules on top:
@@ -60,11 +62,15 @@ server or client boundary catch and log it.
   projection (headless `generateDecoratorNode`) and the client card assembly
   (`.` entry + `defineCard`) — two class objects, one spec, because the dist
   entries ship separate Lexical copies.
-- `pt/` — PortableText schema, bridge, semantics, comment markdown,
-  footnote-merge, the footnote anchor DOM contract (`footnote-anchors`),
-  editor↔storage footnote sync (`footnote-sync`), the heading
-  style↔level table (`heading-levels`), and the request-scoped
-  enriched-body overlay (`enriched`).
+- `pt/` — PortableText schema, semantics, footnote-merge, the footnote anchor
+  DOM contract (`footnote-anchors`), editor↔storage footnote sync
+  (`footnote-sync`), the heading style↔level table (`heading-levels`), and
+  the request-scoped enriched-body overlay (`enriched`). The legacy comment
+  dialect (`comment-schema`) still types pre-R12 comment rows — the readers
+  render them through the interregnum PT path until R13 and the mail
+  templates via `comment-to-html` until R14. (The PT ↔ ProseMirror bridge
+  and `comment-markdown` were retired in R12 with the tiptap comment
+  editor.)
 - `route-warmup/` — warmup manifest file contract (parse, validate,
   chunk collection) shared by the build plugin and the SSR reader.
 - `sea/` — SEA embedded-asset key contract (single owner for the writer

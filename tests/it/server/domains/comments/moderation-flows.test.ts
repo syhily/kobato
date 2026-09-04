@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
@@ -68,7 +69,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: opts.ownerId ?? 1,
       userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
-      body: opts.body ?? [],
+      body: opts.body ?? makeCommentBody('hello'),
       rid: opts.rid ?? 0,
       rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,
@@ -96,14 +97,7 @@ function adminCtxFor(adminId: number) {
   return makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
 }
 
-const EDITED_BODY = [
-  {
-    _type: 'block' as const,
-    _key: 'b1',
-    style: 'normal' as const,
-    children: [{ _type: 'span' as const, _key: 's1', text: 'edited body' }],
-  },
-]
+const EDITED_BODY = makeCommentBody('edited body')
 
 async function auditRowsFor(action: string) {
   await flushAuditLog()

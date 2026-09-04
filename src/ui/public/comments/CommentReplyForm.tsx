@@ -3,18 +3,18 @@ import { PencilIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type { FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
-import { bodyToPlainText } from '@/shared/pt/utils'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
-import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { commentBodyPlainText } from '@/ui/public/comments/comment-body-helpers'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface CommentReplyFormProps {
@@ -39,7 +39,7 @@ export function CommentReplyForm({
   const { profile: guestProfile, saveProfile: saveGuestProfile, clearProfile: clearGuestProfile } = useCommentGuest()
   const isGuestMode = !user && guestProfile !== null
 
-  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
@@ -78,7 +78,7 @@ export function CommentReplyForm({
           avatar: avatarSrc,
         })
       }
-      setBody(EMPTY_COMMENT_BODY)
+      setBody(EMPTY_COMMENT_EDITOR_STATE)
       setBodyKey((k) => k + 1)
       formRef.current?.reset()
     },
@@ -110,7 +110,7 @@ export function CommentReplyForm({
 
   const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (isCommentBodyBlank(body)) {
+    if (isCommentEditorStateBlank(body)) {
       setSubmitError('请输入评论内容。')
       return
     }
@@ -160,7 +160,7 @@ export function CommentReplyForm({
         <div className="flex-1">
           <div className="relative mb-4">
             <LazyCommentBodyEditor
-              initialBody={EMPTY_COMMENT_BODY}
+              initialBody={EMPTY_COMMENT_EDITOR_STATE}
               bodyKey={`reply-${bodyKey}`}
               onBodyChange={setBody}
               disabled={isPending}
@@ -169,7 +169,7 @@ export function CommentReplyForm({
             {isReplying && (
               <ReplyOverlay
                 authorName={replyTarget.name}
-                originalContent={bodyToPlainText(replyTarget.body).slice(0, 200).trim()}
+                originalContent={commentBodyPlainText(replyTarget.body).slice(0, 200).trim()}
               />
             )}
           </div>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { COMMENT_EDITOR_NODES } from '@/client/editor/comment-editor-nodes'
 import { PAGE_EDITOR_NODES } from '@/client/editor/page-editor-nodes'
 import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from '@/shared/lexical/composer-nodes'
@@ -9,11 +10,10 @@ import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 // Contract (plan docs/plans/inkling-editor-replacement.md, R7): the two zod
 // schemas, the node-whitelist constants, and the composer-mounted node sets
 // must stay three-way identical — the editor must never produce a node the
-// server rejects, nor accept one it cannot produce. R11 landed the article
-// composer: the manifest assertion below re-derives the mounted set from
-// `@/client/editor/page-editor-nodes` itself, so a composer edit that drifts
-// from the whitelist fails here. The comment manifest mirrors the whitelist
-// until the R12 comment composer lands.
+// server rejects, nor accept one it cannot produce. The manifest assertions
+// below re-derive the mounted sets from `@/client/editor/page-editor-nodes`
+// (R11) and `@/client/editor/comment-editor-nodes` (R12) themselves, so a
+// composer edit that drifts from the whitelist fails here.
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }
@@ -153,6 +153,33 @@ describe('contract: lexical node whitelist', () => {
     mounted.add('paragraph')
     mounted.add('linebreak')
     expect(sorted([...mounted])).toEqual(sorted(ARTICLE_COMPOSER_NODE_TYPES))
+  })
+
+  it('derives the comment manifest from the actually-mounted composer nodes (R12)', () => {
+    // Same derivation as the article manifest above, on the trimmed comment
+    // composer. The comment set additionally filters out the heading family
+    // (HeadingNode + its extended replacement pair) and the table element
+    // family — assert all three exclusions still hold.
+    type NodeEntry = (() => unknown) | { getType?: () => string; replace?: { getType?: () => string } }
+    const shadowed = new Set<string>()
+    const classTypes = new Set<string>()
+    for (const entry of COMMENT_EDITOR_NODES as readonly NodeEntry[]) {
+      if (typeof entry === 'object' && entry !== null && typeof entry.replace?.getType === 'function') {
+        shadowed.add(entry.replace.getType())
+        continue
+      }
+      const klass = entry as { getType?: () => string }
+      if (typeof klass.getType === 'function') {
+        classTypes.add(klass.getType())
+      }
+    }
+    const mounted = new Set([...classTypes].filter((type) => !shadowed.has(type)))
+    for (const excluded of ['aside', 'heading', 'extended-heading', 'table', 'tablerow', 'tablecell']) {
+      expect(mounted.has(excluded), excluded).toBe(false)
+    }
+    mounted.add('paragraph')
+    mounted.add('linebreak')
+    expect(sorted([...mounted])).toEqual(sorted(COMMENT_COMPOSER_NODE_TYPES))
   })
 
   it('keeps the comment whitelist a strict subset of the full whitelist', () => {

@@ -1,6 +1,6 @@
 import { data, useOutletContext } from 'react-router'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -15,7 +15,7 @@ export const meta = titleMeta('我的评论')
 
 export interface MyCommentItem {
   id: string
-  body: CommentBody
+  body: CommentEditorState
   createdAtIso: string
   deletedAtIso: string | null
   deleteRequestedAtIso: string | null

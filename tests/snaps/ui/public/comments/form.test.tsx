@@ -4,6 +4,7 @@ import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comm
 import type { CommentFormUser } from '@/shared/types/catalog'
 
 import { renderInRouter } from '#/_helpers/render'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import { Comments } from '@/ui/public/comments/Comments'
 
@@ -63,7 +64,8 @@ describe('snapshot: Comments form variants', () => {
       createAt: '2024-04-18T13:06:00.000Z',
       updatedAt: '2024-04-18T13:06:00.000Z',
       deleteAt: null,
-      body: [
+      // R12 interregnum fixture: PT body via deliberate cast (see comments.test.tsx).
+      body: unsafeCast<CommentItemType['body']>([
         {
           _type: 'block',
           _key: 'b1',
@@ -76,7 +78,7 @@ describe('snapshot: Comments form variants', () => {
             },
           ],
         },
-      ],
+      ]),
       type: 'post' as const,
       ownerId: '1',
       userId: '1',

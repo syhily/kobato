@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { CommentItemWire } from '@/shared/contracts/comments'
 
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 import { commentFlags, type CommentIdentity } from '@/ui/public/comments/comment-item/comment-flags'
 
 function makeComment(overrides: Partial<CommentItemWire> = {}): CommentItemWire {
@@ -10,7 +11,7 @@ function makeComment(overrides: Partial<CommentItemWire> = {}): CommentItemWire 
     createAt: '2024-01-15T08:30:00.000Z',
     updatedAt: '2024-01-15T08:30:00.000Z',
     deleteAt: null,
-    body: [],
+    body: EMPTY_COMMENT_EDITOR_STATE,
     type: 'post',
     ownerId: '1',
     userId: '42',

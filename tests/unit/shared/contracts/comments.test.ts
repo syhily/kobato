@@ -1,23 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentsData, StatusCounts } from '@/ui/admin/comments/useCommentsController'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import {
   approveCommentInPages,
   removeCommentFromPages,
   updateCommentBodyInPages,
 } from '@/ui/admin/comments/useCommentsController'
 
-// Minimal Portable Text block — type-safe without constructing every span field.
-const mockBody = [
-  {
-    _type: 'block' as const,
-    _key: 'a',
-    children: [{ _type: 'span' as const, _key: 'b', text: 'hello', marks: [] as never[] }],
-  },
-] satisfies CommentBody
+const mockBody = makeCommentBody('hello')
 
 // Minimal mock — the patches only touch a handful of fields so we
 // don't need a full wire object. Cast through `as` avoids listing every
@@ -111,13 +104,7 @@ describe('removeCommentFromPages', () => {
 
 describe('updateCommentBodyInPages', () => {
   it('updates the body of the matching comment', () => {
-    const newBody = [
-      {
-        _type: 'block' as const,
-        _key: 'x',
-        children: [{ _type: 'span' as const, _key: 'y', text: 'updated', marks: [] as never[] }],
-      },
-    ] satisfies CommentBody
+    const newBody = makeCommentBody('updated')
     const comments = [mockComment({ id: '1' }), mockComment({ id: '2' })]
     const data = makeData(comments)
 

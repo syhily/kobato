@@ -1,6 +1,7 @@
 import { call } from '@orpc/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
@@ -10,6 +11,7 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 const db = getTestDb()
 
@@ -58,7 +60,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: opts.ownerId ?? 1,
       userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
-      body: opts.body ?? [],
+      body: opts.body ?? EMPTY_COMMENT_EDITOR_STATE,
       rid: opts.rid ?? 0,
       rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,
@@ -170,14 +172,7 @@ describe('commentsAuthedRouter.updateOwn', () => {
     const pid = await seedPost('Own Edit Post', 'own-edit-post')
     const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
 
-    const body = [
-      {
-        _type: 'block' as const,
-        _key: 'b1',
-        style: 'normal' as const,
-        children: [{ _type: 'span' as const, _key: 's1', text: 'edited body' }],
-      },
-    ]
+    const body = makeCommentBody('edited body')
     const res = await call(commentsAuthedRouter.updateOwn, { commentId: String(cid), body }, { context: ctxFor(u) })
 
     expect(res.comment.id).toBe(String(cid))

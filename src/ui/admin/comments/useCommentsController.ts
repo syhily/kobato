@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react'
 import { useSearchParams } from 'react-router'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 import { orpc } from '@/client/api/client'
@@ -80,7 +80,11 @@ export function approveCommentInPages(data: AdminCommentsData, id: string): Admi
   }
 }
 
-export function updateCommentBodyInPages(data: AdminCommentsData, id: string, body: CommentBody): AdminCommentsData {
+export function updateCommentBodyInPages(
+  data: AdminCommentsData,
+  id: string,
+  body: CommentEditorState,
+): AdminCommentsData {
   return {
     ...data,
     pages: data.pages.map((page) => ({
@@ -309,7 +313,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     [patchPages],
   )
   const updateCommentBody = useCallback(
-    (id: string, body: CommentBody) => patchPages((data) => updateCommentBodyInPages(data, id, body)),
+    (id: string, body: CommentEditorState) => patchPages((data) => updateCommentBodyInPages(data, id, body)),
     [patchPages],
   )
   const clearCommentDeleteRequest = useCallback(

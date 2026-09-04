@@ -6,6 +6,7 @@ import { loadSidebarData } from '@/server/http/loaders/sidebar'
 import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 // Real latestComments digest incl. the kv cache bucket — cleared with
 // every other table in `beforeEach`.
@@ -27,7 +28,7 @@ beforeEach(async () => {
     ownerId: p.id,
     userId: commenter.id,
     content: 'hello',
-    body: [],
+    body: EMPTY_COMMENT_EDITOR_STATE,
     rid: 0,
     rootId: 0,
     isPending: false,

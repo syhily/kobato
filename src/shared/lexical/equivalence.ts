@@ -6,9 +6,9 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Semantic equality for Lexical editor states (plan
 // docs/plans/inkling-editor-replacement.md, round R9a) — the Lexical
-// counterpart of `arePortableTextBodiesEquivalent`
-// (`@/shared/pt/bridge/canonicalize`), used by the save pipeline's no-op
-// short-circuit (`content/repos/mutate`) and, from R11, the editor shell's
+// successor of the retired PT bridge's `arePortableTextBodiesEquivalent`
+// (removed in R12 with `@/shared/pt/bridge`), used by the save pipeline's
+// no-op short-circuit (`content/repos/mutate`) and the editor shell's
 // dirty check.
 //
 // Semantics: serialize the normalized structure and compare. "Normalized"

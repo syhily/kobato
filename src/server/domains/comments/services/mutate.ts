@@ -43,7 +43,7 @@ interface ValidatedSubmission {
   target: MetricTarget
   user: NonNullable<Awaited<ReturnType<typeof insertCommentUser>>>
   canonicalBody: NewComment['body']
-  markdownSnapshot: string
+  contentSnapshot: string
   contentHash: string
   rootId: number
 }
@@ -78,8 +78,8 @@ async function validateSubmission(
     throw new DomainError(commenterFailure.code, commenterFailure.message)
   }
 
-  const { body: canonicalBody, content: markdownSnapshot } = await canonicalizeCommentBody(commentReq.body)
-  const contentHash = hashContent(markdownSnapshot)
+  const { body: canonicalBody, content: contentSnapshot } = await canonicalizeCommentBody(commentReq.body)
+  const contentHash = hashContent(contentSnapshot)
 
   // Admins skip dedupe; drop null hashes (they never equal a submitted hash).
   const recentRows =
@@ -89,7 +89,7 @@ async function validateSubmission(
   const recentContentHashes = recentRows.map((c) => c.contentHash).filter((h): h is string => h !== null)
   const contentFailure = decideContentGate({
     role: u.role,
-    contentLength: markdownSnapshot.length,
+    contentLength: contentSnapshot.length,
     contentHash,
     recentContentHashes,
   })
@@ -106,7 +106,7 @@ async function validateSubmission(
     rootId = parentRoot !== null && parentRoot !== 0 ? parentRoot : ridBig
   }
 
-  return { target, user: u, canonicalBody, markdownSnapshot, contentHash, rootId }
+  return { target, user: u, canonicalBody, contentSnapshot, contentHash, rootId }
 }
 
 async function persistComment(
@@ -123,7 +123,7 @@ async function persistComment(
     const isPending = approvedCount === 0
 
     const newComment: NewComment = {
-      content: sub.markdownSnapshot,
+      content: sub.contentSnapshot,
       body: sub.canonicalBody,
       type: sub.target.type,
       ownerId: sub.target.ownerId,

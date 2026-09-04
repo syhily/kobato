@@ -4,10 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
-import { makeAdminComment } from '#/_helpers/catalog'
+import { makeAdminComment, makeCommentBody } from '#/_helpers/catalog'
 import { renderHook } from '#/_helpers/hook'
 import { orpcQuery } from '@/client/api/orpc-query'
 import {
@@ -129,13 +128,7 @@ describe('ui/admin/comments/useCommentsController page patches', () => {
 
   it('updates comment content', () => {
     const comment = makeAdminComment()
-    const newBody: CommentBody = [
-      {
-        _type: 'block',
-        _key: 'new',
-        children: [{ _type: 'span', _key: 'new-s', text: 'Updated body' }],
-      },
-    ]
+    const newBody = makeCommentBody('Updated body')
     const data = makeData(makePage([comment]))
     const next = updateCommentBodyInPages(data, comment.id, newBody)
     expect(next.pages[0]!.comments[0]!.body).toEqual(newBody)

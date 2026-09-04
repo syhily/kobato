@@ -50,8 +50,8 @@ export interface MenuItem extends MenuItemBase {
 export type CardMenu = MenuItem | MenuItem[]
 
 /** What buildCardMenu reads from each registered card: its menu entries.
- * Menu-less cards (CodeBlock is the only one) carry no `cardMenu` and
- * contribute no items. */
+ * Menu-less cards (the footnote definition is the only one) carry no
+ * `cardMenu` and contribute no items. */
 export interface CardMenuSource {
   cardMenu?: CardMenu
 }

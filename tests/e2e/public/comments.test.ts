@@ -5,15 +5,60 @@ import { callE2eRpc } from '#/_helpers/e2e-rpc'
 
 const env = e2eEnv()
 
-const COMMENT_BODY = [
-  {
-    _type: 'block',
-    _key: 'b1',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's1', text: 'e2e 评论旅程标记', marks: [] }],
-    markDefs: [],
+// R12: comment bodies are Lexical editor states (the comment editor switched
+// to the trimmed inkling surface); article bodies have been Lexical since R9a.
+const COMMENT_BODY = {
+  root: {
+    type: 'root',
+    version: 1,
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    children: [
+      {
+        type: 'paragraph',
+        version: 1,
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        children: [
+          {
+            type: 'extended-text',
+            version: 1,
+            detail: 0,
+            format: 0,
+            mode: 'normal',
+            style: '',
+            text: 'e2e 评论旅程标记',
+          },
+        ],
+      },
+    ],
   },
-]
+}
+
+/** Minimal one-paragraph article body (lexicalEditorStateSchema-valid). */
+function makePostBody(text: string) {
+  return {
+    root: {
+      type: 'root',
+      version: 1,
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      children: [
+        {
+          type: 'paragraph',
+          version: 1,
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          children: [{ type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text }],
+        },
+      ],
+    },
+  }
+}
 
 interface CommentListJson {
   comments: Array<{ id: string; name: string; isPending: boolean | null }>
@@ -53,15 +98,7 @@ describe('public comments flow (HTTP e2e)', () => {
       '/admin/posts/publishLatest',
       {
         id: postId,
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'e2e 评论宿主正文', marks: [] }],
-            markDefs: [],
-          },
-        ],
+        body: makePostBody('e2e 评论宿主正文'),
       },
       csrfToken,
     )

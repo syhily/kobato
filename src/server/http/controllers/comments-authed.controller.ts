@@ -20,13 +20,13 @@ import {
   commentsResolveEntityOutputSchema,
 } from '@/shared/contracts/admin'
 import { ownCommentMutationDto } from '@/shared/contracts/comments'
-import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
 import { idFromString } from '@/shared/utils/id'
 
 const updateOwn = authedProc
   .route({ method: 'POST', path: '/comments/update-own' })
-  .input(z.object({ commentId: z.string(), body: commentBodySchema }))
+  .input(z.object({ commentId: z.string(), body: commentEditorStateSchema }))
   .output(ownCommentMutationDto)
   .handler(async ({ input, context }) => {
     const commentId = input.commentId ? idFromString(input.commentId) : 0
@@ -77,7 +77,7 @@ const loadMine = authedProc
       items: z.array(
         z.object({
           id: z.string(),
-          body: commentBodySchema,
+          body: commentEditorStateSchema,
           createdAtIso: z.string(),
           deletedAtIso: z.string().nullable(),
           deleteRequestedAtIso: z.string().nullable(),

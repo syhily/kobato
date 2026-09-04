@@ -2,8 +2,7 @@
 // docs/plans/inkling-editor-replacement.md，R6 交付、R10 迁移到 shared：
 // 卡片菜单数据随卡片规格落在 `@/shared/lexical/cards/`，别名随之迁移；
 // `src/client/editor/inkling-labels.ts` 的 labels 表不含别名）。别名取自
-// 现有 tiptap slash 命令（`src/ui/admin/editor/tiptap/slash-commands.ts`
-// 的 `aliases` 数组），迁移期保持两边一致。
+// 已退役的 tiptap slash 命令的 `aliases` 数组。
 //
 // inkling 的匹配语义（`card-menu-build.ts`）：查询串先转小写，再对每个
 // `matches` 条目做 `startsWith` 前缀匹配——条目本身不会转小写，因此

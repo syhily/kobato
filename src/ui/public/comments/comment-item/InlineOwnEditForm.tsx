@@ -2,11 +2,11 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { Button } from '@/ui/components/button'
-import { isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
 import { useCommentsActions } from '@/ui/public/comments/comments-context'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
@@ -26,13 +26,13 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
       onSaved()
     },
   })
-  const seed = comment.body as CommentBody
-  const [body, setBody] = useState<CommentBody>(seed)
+  const seed = comment.body
+  const [body, setBody] = useState<CommentEditorState>(seed)
 
   const submitting = updateOwn.isPending
 
   const handleSave = () => {
-    if (isCommentBodyBlank(body)) {
+    if (isCommentEditorStateBlank(body)) {
       return
     }
     updateOwn.mutate({ commentId: comment.id, body })

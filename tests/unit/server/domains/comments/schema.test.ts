@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import {
   commentEditSchema,
   commentReplySchema,
@@ -9,14 +10,20 @@ import {
   loadCommentsSchema,
 } from '@/server/domains/comments/schema'
 
-const HELLO_BODY = [
-  {
-    _type: 'block' as const,
-    _key: 'b1',
-    style: 'normal' as const,
-    children: [{ _type: 'span' as const, _key: 's1', text: 'Thoughtful comment.' }],
+const HELLO_BODY = makeCommentBody('Thoughtful comment.')
+
+// A Lexical state whose root holds a node outside the comment whitelist
+// (headings are article-only; the comment node set excludes them).
+const HEADING_BODY = {
+  root: {
+    type: 'root',
+    version: 1,
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    children: [{ type: 'heading', version: 1 }],
   },
-]
+}
 
 describe('commentReplySchema anti-spam', () => {
   const base = {
@@ -40,20 +47,8 @@ describe('commentReplySchema anti-spam', () => {
     })
   })
 
-  it('rejects a body that violates the PT comment dialect', async () => {
-    // Headings are rejected because the comment dialect only allows
-    // `normal` and `blockquote` text-block styles. Validation
-    // surfaces the field path under `body[*]`, so we just assert the
-    // schema throws — the precise issue path varies by Zod version.
-    const badBody = [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'h2',
-        children: [{ _type: 'span', _key: 's1', text: 'Heading' }],
-      },
-    ]
-    await expect(commentReplySchema.parseAsync({ ...base, body: badBody })).rejects.toBeTruthy()
+  it('rejects a body with nodes outside the comment whitelist', async () => {
+    await expect(commentReplySchema.parseAsync({ ...base, body: HEADING_BODY })).rejects.toBeTruthy()
   })
 
   it('treats missing subtitle like empty for form submissions', async () => {
@@ -86,7 +81,10 @@ describe('commentEditSchema', () => {
   })
 
   it('rejects an invalid body', async () => {
-    await expect(commentEditSchema.parseAsync({ rid: '42', body: [{ _type: 'heading' }] })).rejects.toBeTruthy()
+    // A legacy PT array is not a Lexical editor state — old clients are rejected.
+    await expect(
+      commentEditSchema.parseAsync({ rid: '42', body: [{ _type: 'block', _key: 'b1' }] }),
+    ).rejects.toBeTruthy()
   })
 })
 

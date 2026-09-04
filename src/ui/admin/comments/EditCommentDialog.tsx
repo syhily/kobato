@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError } from '@/client/lib/toast-api-error'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { idStr } from '@/shared/utils/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -19,18 +20,17 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
-import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface EditCommentDialogProps {
   comment: AdminComment | null
   onClose: () => void
-  onSaved: (next: { body: CommentBody }) => void
+  onSaved: (next: { body: CommentEditorState }) => void
 }
 
 export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDialogProps) {
-  const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
-  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [initialBody, setInitialBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
+  const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
@@ -54,14 +54,14 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   if (comment?.id !== lastCommentId) {
     setLastCommentId(comment?.id)
     setLoaded(false)
-    setInitialBody(EMPTY_COMMENT_BODY)
-    setBody(EMPTY_COMMENT_BODY)
+    setInitialBody(EMPTY_COMMENT_EDITOR_STATE)
+    setBody(EMPTY_COMMENT_EDITOR_STATE)
   }
   // Apply raw body once it arrives (or differs from what we last applied).
   if (rawData !== lastRawData) {
     setLastRawData(rawData)
     if (comment && rawData) {
-      const loadedBody = (rawData.body ?? []) as CommentBody
+      const loadedBody = rawData.body ?? EMPTY_COMMENT_EDITOR_STATE
       setInitialBody(loadedBody)
       setBody(loadedBody)
       setBodyKey((k) => k + 1)
@@ -86,7 +86,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
             if (!comment) {
               return
             }
-            if (isCommentBodyBlank(body)) {
+            if (isCommentEditorStateBlank(body)) {
               toast.error('评论内容不能为空')
               return
             }
@@ -104,7 +104,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
                 </Button>
               </div>
             ) : (
-              <CommentBodyEditor
+              <LazyCommentBodyEditor
                 initialBody={initialBody}
                 bodyKey={`admin-edit-${dialogKey}-${bodyKey}`}
                 onBodyChange={setBody}

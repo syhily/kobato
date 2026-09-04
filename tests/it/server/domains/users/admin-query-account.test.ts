@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
@@ -54,7 +55,7 @@ async function seedComment(userId: number, overrides: Partial<typeof comment.$in
       type: 'post',
       ownerId: 1,
       userId,
-      body: [],
+      body: EMPTY_COMMENT_EDITOR_STATE,
       isPending: overrides.isPending ?? false,
       ...overrides,
     })

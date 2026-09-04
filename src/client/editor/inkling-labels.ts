@@ -9,9 +9,8 @@
  *   `pnpm run type` 即 key 合法性门禁。
  * - 插值 token（`{max}` / `{cardType}` / `{name}` / `{progress}`）是
  *   inkling 消费端 `string.replace` 的契约，必须原样保留。
- * - kobato 无 i18n 框架，admin 文案一律中文硬编码（与
- *   `src/ui/admin/editor/tiptap/slash-commands.ts` 等现状一致），
- *   故本表直接中文硬编码；术语与现有 tiptap 编辑器文案对齐。
+ * - kobato 无 i18n 框架，admin 文案一律中文硬编码（与已退役的 tiptap
+ *   slash 命令文案一致），故本表直接中文硬编码。
  *
  * 未覆盖分组（kobato 不接这些功能，缺 key 回退英文默认值，可接受）：
  * - `gif.*` / `menu.gif.*` —— GIF 选择器（Tenor/KLIPY）不接入。
@@ -79,6 +78,8 @@ export const inklingLabels: Partial<InklingLabels> = {
   'menu.callout.desc': '醒目的信息框',
   'menu.math.label': '公式',
   'menu.math.desc': '块级公式（KaTeX）',
+  'menu.codeblock.label': '代码块',
+  'menu.codeblock.desc': '插入代码块',
   'menu.table.label': '表格',
   'menu.table.desc': '插入表格',
   'menu.imageLibrary.label': '图片库',

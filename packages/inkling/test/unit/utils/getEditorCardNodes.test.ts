@@ -100,10 +100,12 @@ describe('getRegisteredCardNodes', () => {
     expect(cards.get('image')?.cardMenu?.[0]?.insertCommand).toBe(INSERT_IMAGE_COMMAND)
   })
 
-  it('includes menu-less cards with an undefined cardMenu (CodeBlock)', () => {
+  it('carries the codeblock menu entry added for trimmed comment surfaces', () => {
     const cards = new Map(getRegisteredCardNodes(new Set(['codeblock'])))
 
-    expect(cards.get('codeblock')?.cardMenu).toBeUndefined()
+    // the code block was historically menu-less (markdown fence only); the
+    // slash entry exists so trimmed comment surfaces can insert it
+    expect(cards.get('codeblock')?.cardMenu?.[0]?.label).toBe('Code')
     expect(cards.get('codeblock')?.uploadType).toBeUndefined()
   })
 })

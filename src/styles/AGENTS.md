@@ -15,10 +15,12 @@ Three files, two bundles:
   Owns `@import 'tailwindcss' source(none)` + the typography plugin, imports
   the shared partial and `cursors.css`, and scopes `@source` to public-rendered
   dirs (`routes/public`, `ui/public`, `ui/pt`, `ui/components`, `ui/icons`,
-  `ui/lib`, `root.tsx`, plus `ui/admin/editor/tiptap` which the public comment
-  editor reuses, and `shared/lexical/cards` whose class constants render into
-  the R10 card markup). Public-only rules live here: cursors, the medium-zoom
-  z-1080 stacking, the comment hash-focus flash.
+  `ui/lib`, `root.tsx`, and `shared/lexical/cards` whose class constants render into
+  the R10 card markup). A bare `@layer inkling, theme, base, components, utilities;`
+  ordering statement at the top pins the inkling cascade layer below
+  `utilities` (same trick as `admin.css`) so the comment editor's host rules
+  win over inkling's scoped preflight. Public-only rules live here: cursors,
+  the medium-zoom z-1080 stacking, the comment hash-focus flash.
 - `admin.css` — **admin entry**, imported by `routes/{admin,auth,editor}/layout.tsx`.
   Same tailwindcss import + shared partial, but its `@source` scope covers
   admin-rendered dirs (`routes/{admin,auth,editor}`, `ui/admin`, the shared
@@ -39,9 +41,18 @@ Three files, two bundles:
   (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`,
   `--font-serif: inherit` — inkling declares its own Inter/Georgia stacks on
   `.inkling-lexical` in its layer), and the writing-focus dimming.
+- `inkling-comment-editor.css` — **comment-canvas partial** (R12), imported
+  ONLY by `@/ui/public/comments/CommentBodyEditor` so it rides the lazy
+  comment-editor chunk on BOTH bundles (the admin dialogs consume the same
+  lazy boundary). Same `inkling` layer import (pinned by `public.css`'s /
+  `admin.css`'s bare ordering statements) plus the `.kobato-comment-editor`
+  host rules: a tighter `zoom: 0.55` (≈15px body text, matching the retired
+  tiptap editor's prose-sm scale), the compact min-height/padding, and the
+  same design-token bridge.
 
 New rule placement: used by both sides → `tailwind.css`; one side only →
-that side's entry; page-editor canvas chrome → `inkling-editor.css`. A component dir that crosses sides (e.g. a new admin page
+that side's entry; page-editor canvas chrome → `inkling-editor.css`;
+comment-editor canvas chrome → `inkling-comment-editor.css`. A component dir that crosses sides (e.g. a new admin page
 rendering a `ui/public` widget) needs its dir added to the other entry's
 `@source` list, or its utilities silently drop out of that bundle.
 

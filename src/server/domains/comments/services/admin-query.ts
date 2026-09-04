@@ -24,7 +24,11 @@ function makeDashboardExcerpt(raw: string | null): string {
   if (!raw) {
     return ''
   }
-  const trimmed = raw.trim()
+  // R12: `content` is now degraded HTML, not markdown — strip tags first.
+  const trimmed = raw
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
   if (trimmed === '') {
     return ''
   }

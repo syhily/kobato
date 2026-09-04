@@ -1,8 +1,12 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
+import { canonicalizeCommentBody } from '@/server/domains/comments/services/canonicalize'
+import { comment } from '@/server/infra/db/schema/comment'
 
 const db = getTestDb()
 
@@ -39,14 +43,7 @@ describe('integration / comment threading', () => {
         page_key: page.commentPublicId,
         name: 'Alice',
         email: 'alice@example.com',
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'hello', marks: [] }],
-          },
-        ],
+        body: makeCommentBody('hello'),
       },
       publicCtx,
     )
@@ -67,5 +64,35 @@ describe('integration / comment threading', () => {
     }>(loadRes)
     expect(comments.comments.length).toBeGreaterThanOrEqual(1)
     expect(comments.comments.some((c) => c.name === 'Alice')).toBe(true)
+  })
+
+  it('persists body and content as same-source projections of the Lexical state', async () => {
+    const adminCtx = makeAuthedCtx({ role: 'admin', db })
+    const publicCtx = makePublicCtx({ db })
+
+    await callRpc('/admin/pages/upsertMeta', { title: 'Projection Page', summary: '', slug: 'projection' }, adminCtx)
+    const listRes = await callRpc('/admin/pages/list', { offset: 0, limit: 1 }, adminCtx)
+    const list = await parseRpcJson<{ pages: { commentPublicId: string }[] }>(listRes)
+    const page = list.pages[0]!
+
+    const input = makeCommentBody('dual column')
+    const commentRes = await callRpc(
+      '/comments/replyComment',
+      { page_key: page.commentPublicId, name: 'Bob', email: 'bob@example.com', body: input },
+      publicCtx,
+    )
+    expect(commentRes.status).toBe(200)
+    const created = await parseRpcJson<{ comment: { id: string } }>(commentRes)
+
+    // Both stored columns derive from one canonicalize pass — the body is the
+    // canonical Lexical state, content its degraded-feed HTML projection.
+    const expected = await canonicalizeCommentBody(input)
+    const rows = await db
+      .select()
+      .from(comment)
+      .where(eq(comment.id, Number(created.comment.id)))
+    expect(rows[0]?.body).toEqual(expected.body)
+    expect(rows[0]?.content).toBe(expected.content)
+    expect(rows[0]?.content).toBe('<p>dual column</p>')
   })
 })

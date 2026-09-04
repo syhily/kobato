@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
+import { makeCommentBody } from '#/_helpers/catalog'
+
 // `parseComments` turns the roots+children union into the render tree:
 // soft-deleted rows vanish and replies re-attach to the nearest live
 // ancestor, or become roots.
@@ -15,14 +17,7 @@ function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: number }): C
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deleteAt: null,
     content: null,
-    body: [
-      {
-        _type: 'block' as const,
-        _key: `b-${String(id)}`,
-        style: 'normal' as const,
-        children: [{ _type: 'span' as const, _key: `s-${String(id)}`, text: 'x' }],
-      },
-    ],
+    body: makeCommentBody(`x${String(id)}`),
     type: 'post' as const,
     ownerId: 1,
     userId: 7,

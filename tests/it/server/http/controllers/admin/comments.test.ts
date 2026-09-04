@@ -13,6 +13,7 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { metric } from '@/server/infra/db/schema/metric'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 // De-mocked controller coverage: projection/admin-query/moderate services run real
 // against seeded rows; moderation pinned by DB state + audit rows.
@@ -78,7 +79,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: opts.ownerId ?? 1,
       userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
-      body: opts.body ?? [],
+      body: opts.body ?? EMPTY_COMMENT_EDITOR_STATE,
       rid: opts.rid ?? 0,
       rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,

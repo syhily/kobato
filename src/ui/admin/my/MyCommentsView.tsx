@@ -4,15 +4,17 @@ import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
+import type { PortableTextBody as PortableTextBodyData } from '@/shared/pt/schema'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError } from '@/client/lib/toast-api-error'
+import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
-import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import {
   DEFAULT_TEXT_OPERATOR,
   parseTextFilter,
@@ -250,7 +252,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
         target={
           editTarget
             ? (() => {
-                const parsed = commentBodySchema.safeParse(editTarget.body)
+                const parsed = commentEditorStateSchema.safeParse(editTarget.body)
                 return parsed.success ? { id: editTarget.id, body: parsed.data } : null
               })()
             : null
@@ -330,7 +332,8 @@ function MyCommentRow({
           )}
 
           <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal">
-            <PortableTextBody body={item.body} />
+            {/* R12 interregnum cast: pre-switch rows are still PT; R13 swaps the renderer. */}
+            <PortableTextBody body={unsafeCast<PortableTextBodyData>(item.body)} />
           </div>
 
           {!isDeleted && (

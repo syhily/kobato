@@ -8,8 +8,10 @@ import type { AdminPageDto } from '@/shared/contracts/pages'
 import type { AdminPostDto } from '@/shared/contracts/posts'
 import type { AdminTagDto } from '@/shared/contracts/tags'
 import type { AdminUserDto } from '@/shared/contracts/users'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 import type { ClientCategory, ClientPage, ClientPost, ClientTag } from '@/shared/types/catalog'
+
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 let counter = 0
 function nextId(prefix: string): string {
@@ -20,6 +22,47 @@ function nextId(prefix: string): string {
 // Comment factories derive body keys, content and author fields from one
 // shared 1-based sequence so a single test's fixtures stay coherent.
 let commentSeq = 0
+
+/** Minimal Lexical comment state — one paragraph with one text node. */
+export function makeCommentBody(text: string): CommentEditorState {
+  return unsafeCast<CommentEditorState>({
+    root: {
+      type: 'root',
+      version: 1,
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      children: [
+        {
+          type: 'paragraph',
+          version: 1,
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          children: [{ type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text }],
+        },
+      ],
+    },
+  })
+}
+
+// R12 interregnum: reader-facing fixtures default to legacy PT bodies (the
+// wire type is crossed with a deliberate cast) because the comment readers
+// still render PT until R13. Write-path tests use makeCommentBody instead.
+/** Legacy PT comment body — one normal block with one span. */
+export function makePtCommentBody(text: string): CommentEditorState {
+  commentSeqBodyKey += 1
+  return unsafeCast<CommentEditorState>([
+    {
+      _type: 'block',
+      _key: `b${commentSeqBodyKey}`,
+      style: 'normal',
+      markDefs: [],
+      children: [{ _type: 'span', _key: `s${commentSeqBodyKey}`, text, marks: [] }],
+    },
+  ])
+}
+let commentSeqBodyKey = 0
 
 // Post/page ids are numeric strings — generated ids MUST be numeric (the detail loader Number()s them).
 let idCounter = 1_000_000
@@ -176,14 +219,7 @@ export function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMus
 
 export function makeAdminComment(overrides: Partial<AdminCommentWire> = {}): AdminCommentWire {
   commentSeq += 1
-  const body: CommentBody = [
-    {
-      _type: 'block',
-      _key: `b${commentSeq}`,
-      style: 'normal',
-      children: [{ _type: 'span', _key: `s${commentSeq}`, text: `Comment body ${commentSeq}` }],
-    },
-  ]
+  const body: CommentEditorState = makePtCommentBody(`Comment body ${commentSeq}`)
   return {
     id: overrides.id ?? String(commentSeq),
     createAt: overrides.createAt ?? '2024-03-12T08:30:00.000Z',
@@ -300,15 +336,7 @@ export function makeComment(overrides: Partial<CommentItemWire> = {}): CommentIt
     updatedAt: overrides.updatedAt ?? '2024-03-12T08:30:00.000Z',
     deleteAt: overrides.deleteAt ?? null,
     deleteRequestedAt: overrides.deleteRequestedAt ?? null,
-    body: overrides.body ?? [
-      {
-        _type: 'block',
-        _key: `b${commentSeq}`,
-        style: 'normal',
-        markDefs: [],
-        children: [{ _type: 'span', _key: `s${commentSeq}`, text: `Body ${commentSeq}` }],
-      },
-    ],
+    body: overrides.body ?? makePtCommentBody(`Body ${commentSeq}`),
     type: overrides.type ?? 'post',
     ownerId: overrides.ownerId ?? '1',
     userId: overrides.userId ?? String(100 + commentSeq),

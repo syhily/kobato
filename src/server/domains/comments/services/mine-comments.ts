@@ -2,7 +2,7 @@ import { and, count, eq, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { EntityType } from '@/server/infra/db/target'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { listMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findParentCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
@@ -22,7 +22,7 @@ import { entityPermalink } from '@/shared/utils/paths'
 
 export interface MineCommentItem {
   id: string
-  body: CommentBody
+  body: CommentEditorState
   createdAtIso: string
   deletedAtIso: string | null
   deleteRequestedAtIso: string | null
@@ -40,7 +40,11 @@ export interface LoadMineCommentsResult {
 const EXCERPT_LIMIT = 80
 
 function makeExcerpt(raw: string): string {
-  const trimmed = raw.trim()
+  // R12: `content` is now degraded HTML, not markdown — strip tags first.
+  const trimmed = raw
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
   if (trimmed === '') {
     return ''
   }
@@ -95,7 +99,7 @@ export async function loadMineCommentsPage(
 
     return {
       id: String(c.id),
-      body: (c.body ?? []) as CommentBody,
+      body: c.body,
       createdAtIso: c.createAt ? new Date(c.createAt).toISOString() : '',
       deletedAtIso: c.deleteAt ? new Date(c.deleteAt).toISOString() : null,
       deleteRequestedAtIso: c.deleteRequestedAt ? new Date(c.deleteRequestedAt).toISOString() : null,

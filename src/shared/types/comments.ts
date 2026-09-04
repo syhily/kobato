@@ -9,7 +9,7 @@ export interface LatestComment {
 export type AdminPendingKind = 'all' | 'approval' | 'deletion'
 
 import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 // Canonical wire-facing comment row shape, in select-map naming (`createAt` /
 // `deleteAt`, not the DB's `createdAt` / `deletedAt`). `shared/` cannot import
@@ -26,9 +26,9 @@ export interface CommentAndUser {
   deleteAt: Date | null
   /** Soft "delete-request" marker: the comment stays visible until the admin acts. */
   deleteRequestedAt?: Date | string | null
-  /** Canonical PortableText body; the DB's markdown projection is server-only. */
-  body: CommentBody
-  /** Plain-text / markdown rollback snapshot (server-side only; null on client DTOs). */
+  /** Canonical Lexical comment state; the DB's degraded-HTML projection is server-only. */
+  body: CommentEditorState
+  /** Feed-variant degraded-HTML rollback snapshot (server-side only; null on client DTOs). */
   content: string | null
   /** Polymorphic `'post' | 'page'` ref (no DB enum); null on not-yet-backfilled orphan rows. */
   type: 'post' | 'page' | null
@@ -93,7 +93,7 @@ export interface CommentReq {
   name: string
   email: string
   link?: string
-  body: CommentBody
+  body: CommentEditorState
   rid?: number
 }
 
@@ -106,7 +106,7 @@ export interface CommentReplyInput {
   name: string
   email: string
   link?: string
-  body: CommentBody
+  body: CommentEditorState
   rid?: number
   subtitle?: string
 }
@@ -118,7 +118,7 @@ export interface CommentRidInput {
 }
 
 export interface CommentEditInput extends CommentRidInput {
-  body: CommentBody
+  body: CommentEditorState
 }
 
 export interface LoadCommentsInput {
@@ -161,7 +161,7 @@ export interface LoadCommentsOutput {
 }
 
 export interface CommentRawOutput {
-  body: CommentBody
+  body: CommentEditorState
 }
 
 export interface MyCommentsOutput {
