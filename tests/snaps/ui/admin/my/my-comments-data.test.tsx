@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 const queryMocks = mockTanstackQuery()
@@ -38,15 +38,18 @@ queryMocks.queryClient = { invalidateQueries: vi.fn() }
 // (the orpcQuery option builder never runs its network path); mirrors the
 // tags/musics-view pattern.
 
-// CommentBodyEditor's lazy markdown boundary is hard to assert under SSR — stub it to a sentinel element.
-vi.mock('@/ui/public/comments/CommentBodyEditor', () => ({
-  CommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
+// LazyCommentBodyEditor's lazy boundary is hard to assert under SSR — stub it to a sentinel element.
+vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
+  LazyCommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))
 
 let seq = 0
-function makeBody(text: string): CommentBody {
+// R12 interregnum fixture: pre-switch rows still hold PT bodies, and the
+// reader renders them through the legacy PT path until R13 — so the fixture
+// stays PT and crosses the wire type with a deliberate cast.
+function makeBody(text: string): MyCommentItem['body'] {
   seq += 1
-  return [
+  return unsafeCast<MyCommentItem['body']>([
     {
       _type: 'block',
       _key: `b${seq}`,
@@ -54,7 +57,7 @@ function makeBody(text: string): CommentBody {
       markDefs: [],
       children: [{ _type: 'span', _key: `s${seq}`, text, marks: [] }],
     },
-  ]
+  ])
 }
 
 function makeMyComment(overrides: Partial<MyCommentItem> = {}): MyCommentItem {

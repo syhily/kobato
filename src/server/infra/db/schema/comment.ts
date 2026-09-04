@@ -1,6 +1,8 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
+
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 export const comment = sqliteTable(
   'comment',
@@ -15,9 +17,9 @@ export const comment = sqliteTable(
     deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
     content: text('content').default(''),
     body: text('body', { mode: 'json' })
-      .$type<CommentBody>()
+      .$type<CommentEditorState>()
       .notNull()
-      .$defaultFn(() => []),
+      .$defaultFn(() => EMPTY_COMMENT_EDITOR_STATE),
     type: text('type').$type<'post' | 'page'>().notNull(),
     ownerId: integer('owner_id').notNull(),
     userId: integer('user_id').notNull(),

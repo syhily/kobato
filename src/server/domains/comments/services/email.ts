@@ -1,9 +1,11 @@
+import { lexicalStateToPlainText } from '@inkling/editor/headless'
 import { createElement } from 'react'
 
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { Comment, User } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
+import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentAndUser } from '@/shared/types/comments'
 
 import { findEntitySlugTitle } from '@/server/domains/content/entities/slug-title'
@@ -15,10 +17,32 @@ import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNoti
 import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
 import { getLogger } from '@/server/infra/logger'
+import { computeCommentContentProjection } from '@/server/infra/pt/lexical-projection'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { entityCommentUrl } from '@/shared/utils/paths'
+import { escapeHtml } from '@/shared/utils/security'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('comments.email')
+
+/**
+ * R12 interregnum shape gate: rows written before the Lexical switch still
+ * hold PortableText bodies (legacy renderer — R14 drops that leg); Lexical
+ * bodies project through the feed-variant degraded HTML (the email-friendly
+ * audience). Render failure degrades to escaped plain text — a notification
+ * email must never crash the comment flow.
+ */
+async function commentBodyEmailHtml(body: unknown): Promise<string> {
+  if (Array.isArray(body)) {
+    return commentBodyToHtml(unsafeCast<CommentBody>(body))
+  }
+  const state = unsafeCast<Parameters<typeof computeCommentContentProjection>[0]>(body)
+  try {
+    return await computeCommentContentProjection(state)
+  } catch {
+    return escapeHtml(lexicalStateToPlainText(state))
+  }
+}
 
 async function resolveEntity(db: Database, target: EntityTarget): Promise<{ title: string; url: string } | null> {
   const entity = await findEntitySlugTitle(db, target)
@@ -34,7 +58,7 @@ export async function sendNewComment(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const commentHtml = commentBodyToHtml(commentInfo.body)
+  const commentHtml = await commentBodyEmailHtml(commentInfo.body)
   if (entity === null) {
     log.warn('Skipping new-comment email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -60,8 +84,8 @@ export async function sendNewReply(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const sourceHtml = commentBodyToHtml(source.body)
-  const replyHtml = commentBodyToHtml(reply.body)
+  const sourceHtml = await commentBodyEmailHtml(source.body)
+  const replyHtml = await commentBodyEmailHtml(reply.body)
   if (entity === null) {
     log.warn('Skipping reply email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -90,7 +114,7 @@ export async function sendApprovedComment(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const commentHtml = commentBodyToHtml(comment.body)
+  const commentHtml = await commentBodyEmailHtml(comment.body)
   if (entity === null) {
     log.warn('Skipping approval email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }

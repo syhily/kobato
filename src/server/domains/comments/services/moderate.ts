@@ -3,7 +3,7 @@ import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 import type { AuditContext } from '@/server/domains/audit/types'
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { Database } from '@/server/infra/db/database'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { isCommentOwner } from '@/server/domains/auth/rbac'
@@ -149,7 +149,7 @@ export async function approveComment(db: Database, rid: string) {
   }
 }
 
-export async function updateComment(db: Database, rid: string, newBody: CommentBody) {
+export async function updateComment(db: Database, rid: string, newBody: CommentEditorState) {
   const id = idFromString(rid)
   const { body, content } = await canonicalizeCommentBody(newBody)
   await updateCommentBodyAndContent(db, id, body, content)
@@ -162,7 +162,7 @@ export async function updateComment(db: Database, rid: string, newBody: CommentB
   return { ...withCommentBadgeTextColor(r), content: null }
 }
 
-export async function updateOwnComment(db: Database, rid: string, newBody: CommentBody) {
+export async function updateOwnComment(db: Database, rid: string, newBody: CommentEditorState) {
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
   if (existing === null) {
@@ -203,7 +203,7 @@ export async function updateOwnComment(db: Database, rid: string, newBody: Comme
 export async function editOwnComment(
   db: Database,
   rid: string,
-  newBody: CommentBody,
+  newBody: CommentEditorState,
   viewer: ViewerIdentity,
   audit: AuditContext,
 ) {

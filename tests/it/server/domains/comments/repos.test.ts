@@ -65,6 +65,7 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 const db = getTestDb()
 
@@ -113,7 +114,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: opts.ownerId ?? 1,
       userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
-      body: opts.body ?? [],
+      body: opts.body ?? EMPTY_COMMENT_EDITOR_STATE,
       rid: opts.rid ?? 0,
       rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,
@@ -282,7 +283,7 @@ describe('comments/repos/mutate — insertComment', () => {
       ownerId: pid,
       userId: u1,
       content: 'hi',
-      body: [],
+      body: EMPTY_COMMENT_EDITOR_STATE,
     })
     expect(row).not.toBeNull()
     expect(row!.content).toBe('hi')
@@ -292,7 +293,7 @@ describe('comments/repos/mutate — insertComment', () => {
 describe('comments/repos/mutate — updateCommentBodyAndContent', () => {
   it('rewrites body + content', async () => {
     const id = await seedComment({ content: 'old' })
-    await updateCommentBodyAndContent(db, id, [], 'rewritten')
+    await updateCommentBodyAndContent(db, id, EMPTY_COMMENT_EDITOR_STATE, 'rewritten')
     const rows = await db.select({ content: comment.content }).from(comment).where(eq(comment.id, id))
     expect(rows[0]?.content).toBe('rewritten')
   })
@@ -301,7 +302,7 @@ describe('comments/repos/mutate — updateCommentBodyAndContent', () => {
 describe('comments/repos/mutate — updateOwnCommentBody', () => {
   it('returns 0 when updated_at has drifted (optimistic lock)', async () => {
     const id = await seedComment({ content: 'old' })
-    const n = await updateOwnCommentBody(db, id, [], 'x', new Date('2000-01-01'))
+    const n = await updateOwnCommentBody(db, id, EMPTY_COMMENT_EDITOR_STATE, 'x', new Date('2000-01-01'))
     expect(n).toBe(0)
   })
   it('returns 1 when the optimistic lock matches', async () => {
@@ -312,12 +313,12 @@ describe('comments/repos/mutate — updateOwnCommentBody', () => {
         ownerId: 1,
         userId: 1,
         content: 'x',
-        body: [],
+        body: EMPTY_COMMENT_EDITOR_STATE,
         updatedAt: new Date('2025-01-01'),
       })
       .returning()
     const id = rows[0]!.id
-    const n = await updateOwnCommentBody(db, id, [], 'y', new Date('2025-01-01'))
+    const n = await updateOwnCommentBody(db, id, EMPTY_COMMENT_EDITOR_STATE, 'y', new Date('2025-01-01'))
     expect(n).toBe(1)
   })
 })
@@ -331,13 +332,13 @@ describe('comments/repos/mutate — updateOwnCommentBodyAndPending', () => {
         ownerId: 1,
         userId: 1,
         content: 'x',
-        body: [],
+        body: EMPTY_COMMENT_EDITOR_STATE,
         updatedAt: new Date('2025-01-01'),
         isPending: false,
       })
       .returning()
     const id = rows[0]!.id
-    const n = await updateOwnCommentBodyAndPending(db, id, [], 'y', new Date('2025-01-01'))
+    const n = await updateOwnCommentBodyAndPending(db, id, EMPTY_COMMENT_EDITOR_STATE, 'y', new Date('2025-01-01'))
     expect(n).toBe(1)
     const after = await db.select({ isPending: comment.isPending }).from(comment).where(eq(comment.id, id))
     expect(after[0]?.isPending).toBe(true)

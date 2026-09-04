@@ -16,6 +16,7 @@ import {
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { comment } from '@/server/infra/db/schema/comment'
 import { like, metric } from '@/server/infra/db/schema/metric'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 // Likes against the real in-memory engine: insert+bump, token lifecycle, purge cutoff.
 const db = getTestDb()
@@ -51,7 +52,7 @@ async function seedComment(ownerId: number, opts: { isPending?: boolean } = {}):
     ownerId,
     userId: 1,
     content: 'hello',
-    body: [],
+    body: EMPTY_COMMENT_EDITOR_STATE,
     rid: 0,
     isPending: opts.isPending ?? false,
   })

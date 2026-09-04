@@ -7,6 +7,7 @@ import { findMetricByTarget } from '@/server/infra/db/operations/metric'
 import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 // Everything runs against the real in-memory engine; only the settings
 // snapshot (sidebar recentComments = 5) comes from the it-project setup.
@@ -52,7 +53,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: opts.ownerId ?? 1,
       userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
-      body: opts.body ?? [],
+      body: opts.body ?? EMPTY_COMMENT_EDITOR_STATE,
       rid: opts.rid ?? 0,
       rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,

@@ -29,8 +29,22 @@ export const codeBlockDeclaration = {
   decorateTarget: {
     wrapperStyle: 'code-card',
   },
-  // No menu entry — the code block is inserted by its markdown code fence —
-  // so the drag-preview icon is named explicitly instead.
+  // The slash menu entry exists so hosts that compose a trimmed comment-level
+  // surface (no markdown fence typing habit) can still insert a code card;
+  // typing a markdown code fence keeps working on the full surface.
+  menu: [
+    {
+      label: 'Code',
+      labelKey: 'codeblock',
+      desc: 'Insert a code block',
+      icon: 'codeblock',
+      command: 'insert',
+      matches: ['code', 'codeblock', 'pre'],
+      priority: 12,
+      shortcut: '/code',
+    },
+  ],
+  insert: { openInEditMode: true },
   dragIcon: 'codeblock',
   // diverges from the node type: the toolbar label is a live e2e selector
   // contract ("code-block"), not a transform of "codeblock"

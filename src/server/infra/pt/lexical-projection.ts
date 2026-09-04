@@ -185,3 +185,19 @@ export async function computeBodyProjections(state: LexicalEditorState): Promise
 
   return { bodyHtml, bodyText, bodyHtmlFeed }
 }
+
+/**
+ * The comment row's `content` snapshot (R12): the feed-variant degraded
+ * HTML of the comment state — artifact slots stripped, math → TeX source,
+ * codeblock → plain pre/code. This is exactly the audience of the retired
+ * email-friendly markdown render (excerpts, LIKE search, legacy emails):
+ * full-fidelity mathml/highlightedHtml would bloat the column past the
+ * comment length cap and pollute substring search. Comment node types are
+ * all covered by inkling's DEFAULT_HTML_NODES (codeblock/math baseNodes,
+ * MathInlineNode via the entity tail), so no extra nodes register here.
+ * Throws on render failure — the caller falls back to plain text.
+ */
+export async function computeCommentContentProjection(state: LexicalEditorState): Promise<string> {
+  const feedState = toProjectionState(state, { feed: true })
+  return lexicalStateToHtml(feedState, { onError: failFast })
+}

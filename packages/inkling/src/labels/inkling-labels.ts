@@ -76,6 +76,8 @@ export interface InklingLabels {
   'menu.callout.desc': string
   'menu.math.label': string
   'menu.math.desc': string
+  'menu.codeblock.label': string
+  'menu.codeblock.desc': string
   'menu.table.label': string
   'menu.table.desc': string
   'menu.imageLibrary.label': string
@@ -282,6 +284,8 @@ export const DEFAULT_LABELS: InklingLabels = {
   'menu.callout.desc': 'Info boxes that stand out',
   'menu.math.label': 'Math',
   'menu.math.desc': 'Block math (KaTeX)',
+  'menu.codeblock.label': 'Code',
+  'menu.codeblock.desc': 'Insert a code block',
   'menu.table.label': 'Table',
   'menu.table.desc': 'Insert a table',
   'menu.imageLibrary.label': 'Image library',

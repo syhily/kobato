@@ -1,0 +1,44 @@
+/*
+ * The inkling comment-editor surface styles (R12, plan
+ * docs/plans/inkling-editor-replacement.md) — imported ONLY by
+ * `@/ui/public/comments/CommentBodyEditor`, which the public comment form
+ * lazy-loads, so the public first screen and the rest of admin stay
+ * inkling-free.
+ *
+ * Same layering contract as `inkling-editor.css`: the package stylesheet is
+ * forced into the `inkling` cascade layer, pinned BELOW Tailwind's
+ * `utilities` by the bare `@layer` ordering statements at the top of BOTH
+ * entries (`public.css` + `admin.css` — the comment editor renders on both
+ * sides). Host rules below are deliberately UNLAYERED.
+ */
+@import '@inkling/editor/style.css' layer(inkling);
+
+/* Comment canvas: a compact bordered input, not an article column.
+   `zoom: 0.55` normalizes inkling's 10px-root rem system down to the old
+   tiptap comment editor's prose-sm scale (body text lands at ≈15px
+   effective vs the page editor's 17px at zoom 0.625) — see the zoom
+   rationale in `inkling-editor.css`. The min-height keeps the empty state
+   clickable; the bottom runway lets the slash menu / floating toolbar open
+   without clipping against the form's edge. */
+.kobato-comment-editor .inkling-lexical {
+  width: 100%;
+  min-height: calc(96px / 0.55);
+  padding: 0.75rem 1rem 2.5rem;
+  zoom: 0.55;
+}
+
+/* Design-token bridge — same contract as the page editor surface:
+   --inkling-accent-color ← --brand (flips to its dark value under `.dark`),
+   --font-sans ← the CJK-capable kobato body chain, punching through the
+   Inter/Georgia stacks inkling declares on `.inkling-lexical` in its layer. */
+.kobato-comment-editor .inkling-lexical {
+  --inkling-accent-color: var(--brand);
+  --font-sans: var(--font-body);
+  --font-serif: inherit;
+}
+
+/* The contentEditable root hardcodes the Inter stack as its base font; real
+   text blocks are re-fonted through the bridged vars above. */
+.kobato-comment-editor .inkling-lexical > * {
+  font-family: var(--font-body);
+}

@@ -13,10 +13,6 @@ export const WARMUP_GLOBAL_EXCLUDED_PATTERNS = [
   '^player-', // lazy audio player (aplayer)
 ]
 
-// Editor-only chunks allowed in the editor idle tier but not in the
-// public/admin/auth critical or idle paths.
-export const WARMUP_EDITOR_ONLY_PATTERN = '^editor-tiptap-'
-
 // Shared shape of the React Router client manifest that the route-warmup
 // plugin writes and the SSR runtime reads back to match request URLs.
 export interface RouteManifestEntry {

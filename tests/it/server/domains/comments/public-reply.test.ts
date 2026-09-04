@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
@@ -19,15 +20,45 @@ describe('integration / public comments', () => {
         page_key: 'posts/nonexistent',
         name: 'Guest',
         email: 'guest@example.com',
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'click', marks: ['m1'] }],
-            markDefs: [{ _type: 'link', _key: 'm1', href: "javascript:alert('xss')" }],
+        body: {
+          root: {
+            type: 'root',
+            version: 1,
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            children: [
+              {
+                type: 'paragraph',
+                version: 1,
+                direction: 'ltr',
+                format: '',
+                indent: 0,
+                children: [
+                  {
+                    type: 'link',
+                    version: 1,
+                    direction: 'ltr',
+                    format: '',
+                    indent: 0,
+                    url: "javascript:alert('xss')",
+                    children: [
+                      {
+                        type: 'extended-text',
+                        version: 1,
+                        detail: 0,
+                        format: 0,
+                        mode: 'normal',
+                        style: '',
+                        text: 'click',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
           },
-        ],
+        },
       },
       ctx,
     )
@@ -58,14 +89,7 @@ describe('integration / public comments', () => {
         page_key: page.commentPublicId,
         name: 'Guest',
         email: 'guest@example.com',
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: longText }],
-          },
-        ],
+        body: makeCommentBody(longText),
       },
       publicCtx,
     )

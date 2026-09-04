@@ -6,7 +6,6 @@ import { build } from 'vite'
 
 import {
   CHUNKS_SENTINEL,
-  WARMUP_EDITOR_ONLY_PATTERN,
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
 } from '../../shared/constants/route-warmup.ts'
@@ -55,8 +54,6 @@ export function deriveTier2RouteIds(manifest: RouteManifest): Record<Tier2Bucket
 
 // Chunks excluded from all tiers except where explicitly allowed
 const EXCLUDED_PATTERNS = WARMUP_GLOBAL_EXCLUDED_PATTERNS.map((p) => new RegExp(p))
-// Excluded from tier 1, public, admin, auth — kept in editor tier
-const EDITOR_ONLY_PATTERN = new RegExp(WARMUP_EDITOR_ONLY_PATTERN)
 
 const IDLE_SIZE_LIMIT = 100 * 1024
 
@@ -217,12 +214,7 @@ export function routeWarmupPlugin(): Plugin {
         const tier1Set = new Set(t1Raw)
 
         // Exclusion patterns match against the chunk basename.
-        const filterTier = (
-          chunks: string[],
-          allowEditor: boolean,
-          isIdle: boolean,
-          excludeAlreadyIn: Set<string>,
-        ): string[] => {
+        const filterTier = (chunks: string[], isIdle: boolean, excludeAlreadyIn: Set<string>): string[] => {
           const result: string[] = []
           for (const c of chunks) {
             if (excludeAlreadyIn.has(c)) {
@@ -230,9 +222,6 @@ export function routeWarmupPlugin(): Plugin {
             }
             const name = c.split('/').pop() ?? c
             if (EXCLUDED_PATTERNS.some((p) => p.test(name))) {
-              continue
-            }
-            if (!allowEditor && EDITOR_ONLY_PATTERN.test(name)) {
               continue
             }
             if (isIdle) {
@@ -246,20 +235,18 @@ export function routeWarmupPlugin(): Plugin {
           return [...new Set(result)]
         }
 
-        const tier1 = filterTier([...tier1Set], false, false, new Set())
+        const tier1 = filterTier([...tier1Set], false, new Set())
         const tier1FilteredSet = new Set(tier1)
 
-        const tier2_public = filterTier(t2PubRaw, false, true, tier1FilteredSet)
-        const tier2_admin = filterTier(t2AdminRaw, false, true, new Set([...tier1FilteredSet, ...tier2_public]))
+        const tier2_public = filterTier(t2PubRaw, true, tier1FilteredSet)
+        const tier2_admin = filterTier(t2AdminRaw, true, new Set([...tier1FilteredSet, ...tier2_public]))
         const tier2_editor = filterTier(
           t2EditorRaw,
-          true,
           true,
           new Set([...tier1FilteredSet, ...tier2_public, ...tier2_admin]),
         )
         const tier2_auth = filterTier(
           t2AuthRaw,
-          false,
           true,
           new Set([...tier1FilteredSet, ...tier2_public, ...tier2_admin, ...tier2_editor]),
         )

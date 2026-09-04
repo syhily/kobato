@@ -6,9 +6,14 @@
 
 - `hooks/` — browser hooks. Admin file uploads go through `useFileUpload` (`@/client/hooks/use-file-upload`): it owns the CSRF read, accept/size guards, FormData POST, error unwrap, and toast choreography. Never hand-roll a fetch upload in a view.
 - `editor/` — inkling editor host glue for the page/article composer (R11; consumed by
-  `@/ui/admin/editor/PageBodyEditor`). `page-editor-nodes` (the composer node set — every mounted
+  `@/ui/admin/editor/PageBodyEditor`) and the comment composer (R12; consumed by
+  `@/ui/public/comments/CommentBodyEditor`). `page-editor-nodes` (the composer node set — every mounted
   type must stay inside `FULL_EDITOR_NODE_TYPES`, contract-tested; AsideNode filtered,
-  KobatoImageNode replaces the stock image card by type), `kobato-image-node` (the stock ImageNode
+  KobatoImageNode replaces the stock image card by type), `comment-editor-nodes` (the trimmed
+  comment node set — EDITOR_BASE_NODES minus headings/aside/tables plus the CodeBlock/Math/
+  MathInline classes, contract-tested against `COMMENT_NODE_TYPES`),
+  `comment-markdown-transformers` (the DEFAULT_TRANSFORMERS subset whose dependencies survive the
+  trim, plus the hand-written `$…$` inline-math text-match rule), `kobato-image-node` (the stock ImageNode
   subclass persisting the four kobato dataset keys), `image-insert-override` (HIGH-priority
   INSERT_IMAGE_COMMAND / OPEN_IMAGE_LIBRARY_COMMAND handlers so inserts build the kobato class and
   open the kobato library picker), `page-editor-upload` (paste/drop/file-dialog uploads through

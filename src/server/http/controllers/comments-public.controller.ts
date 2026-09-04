@@ -18,7 +18,7 @@ import { getLogger } from '@/server/infra/logger'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { commentItemDto } from '@/shared/contracts/comments'
-import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { idFromString } from '@/shared/utils/id'
 
@@ -90,7 +90,7 @@ const list = publicProc
 const getRaw = publicProc
   .route({ method: 'GET', path: '/comments/get-raw' })
   .input(commentRidSchema)
-  .output(z.object({ body: commentBodySchema }))
+  .output(z.object({ body: commentEditorStateSchema }))
   .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
     const sessionUser = context.viewer ?? undefined
@@ -108,7 +108,7 @@ const getRaw = publicProc
 
 const edit = publicProc
   .route({ method: 'POST', path: '/comments/edit' })
-  .input(commentRidSchema.extend({ body: commentBodySchema }))
+  .input(commentRidSchema.extend({ body: commentEditorStateSchema }))
   .output(z.object({ comment: commentItemDto }))
   .use(resourceRateLimit)
   .use(commentTokenCookie)

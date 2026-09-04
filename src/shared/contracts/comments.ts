@@ -4,7 +4,7 @@ import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { CommentAndUser } from '@/shared/types/comments'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
-import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 
 // Welcome-dashboard moderation inbox row. Same shape for both queues —
 // the `kind` discriminator decides which buttons the UI renders.
@@ -40,7 +40,7 @@ export const commentBaseDto = z.object({
   updatedAt: isoDateTime,
   deleteAt: isoDateTime.nullable(),
   deleteRequestedAt: isoDateTime.nullable().optional(),
-  body: commentBodySchema,
+  body: commentEditorStateSchema,
   type: z.enum(['post', 'page']).nullable(),
   ownerId: idString.nullable(),
   userId: idString,

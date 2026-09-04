@@ -12,7 +12,10 @@ import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@/shared/lexical/nod
 // the mounted set from the real composer module and pins the three-way
 // schema ⇐ whitelist ⇐ composer identity.
 //
-// COMMENT stays a placeholder mirror until the R12 comment composer lands.
+// COMMENT is the R12 truth: the comment composer mounts exactly
+// COMMENT_NODE_TYPES (`@/client/editor/comment-editor-nodes`, the
+// EDITOR_BASE_NODES set minus the heading pair / AsideNode / table family,
+// plus the CodeBlock / Math / MathInline card classes).
 
 export const ARTICLE_COMPOSER_NODE_TYPES: readonly string[] = FULL_EDITOR_NODE_TYPES
 

@@ -5,22 +5,26 @@ import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comm
 import { makeComment } from '#/_helpers/catalog'
 import { makeLeafContext } from '#/_helpers/comments-leaf'
 import { renderInRouter } from '#/_helpers/render'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 
 // Divergent defaults preserved from this file's former local factory (the
 // shared catalog factory is seq-based with 2024-03-12 dates).
+// R12 interregnum fixture: pre-switch rows still hold PT bodies, and the
+// reader renders them through the legacy PT path until R13 — so the fixture
+// stays PT and crosses the wire type with a deliberate cast.
 const aliceComment: Partial<CommentItemType> = {
   id: '1',
   createAt: '2024-01-15T08:30:00.000Z',
   updatedAt: '2024-01-15T08:30:00.000Z',
-  body: [
+  body: unsafeCast<CommentItemType['body']>([
     {
       _type: 'block',
       _key: 'b1',
       style: 'normal',
       children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
     },
-  ],
+  ]),
   userId: '42',
   name: 'Alice',
   link: 'https://alice.example.com',
@@ -72,9 +76,9 @@ describe('snapshot: comment HTML', () => {
       rootId: '1',
       name: 'Bob',
       link: null,
-      body: [
+      body: unsafeCast<CommentItemType['body']>([
         { _type: 'block', _key: 'b2', style: 'normal', children: [{ _type: 'span', _key: 's2', text: 'Reply.' }] },
-      ],
+      ]),
     })
     const root = makeComment({ ...aliceComment, children: [child] })
     const Leaf = makeLeafContext({ identity: { admin: true } })

@@ -1,9 +1,8 @@
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
-
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { issueCommentToken } from '@/server/domains/comments/services/token'
@@ -13,6 +12,7 @@ import { metric } from '@/server/infra/db/schema/metric'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 import { serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 
 // Public comment controllers against the real engine; only seams: email (true external)
@@ -84,7 +84,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: opts.ownerId ?? 1,
       userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
-      body: opts.body ?? [],
+      body: opts.body ?? EMPTY_COMMENT_EDITOR_STATE,
       rid: opts.rid ?? 0,
       rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,
@@ -94,15 +94,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
   return rows[0]!.id
 }
 
-const validBody: CommentBody = [
-  {
-    _type: 'block',
-    _key: 'b1',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's1', text: 'hello', marks: [] }],
-    markDefs: [],
-  },
-]
+const validBody = makeCommentBody('hello')
 
 function makeValidReplyInput() {
   return {
@@ -309,7 +301,9 @@ describe('commentsRouter.getRaw', () => {
 describe('commentsRouter.edit', () => {
   it('throws BAD_REQUEST when rid is not numeric', async () => {
     const ctx = makePublicCtx({ db })
-    await expect(call(commentsRouter.edit, { rid: 'not-a-number', body: [] }, { context: ctx })).rejects.toMatchObject({
+    await expect(
+      call(commentsRouter.edit, { rid: 'not-a-number', body: EMPTY_COMMENT_EDITOR_STATE }, { context: ctx }),
+    ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
   })
@@ -318,15 +312,7 @@ describe('commentsRouter.edit', () => {
     const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
     const pid = await seedPost('edit-target')
     const id = await seedComment({ userId: uid, ownerId: pid, body: validBody, content: 'hello' })
-    const newBody: CommentBody = [
-      {
-        _type: 'block',
-        _key: 'b9',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's9', text: 'moderated', marks: [] }],
-        markDefs: [],
-      },
-    ]
+    const newBody = makeCommentBody('moderated')
     const ctx = makeAuthedCtx({ db, role: 'admin' })
 
     const res = await call(commentsRouter.edit, { rid: String(id), body: newBody }, { context: ctx })

@@ -4,6 +4,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
 
 // user-detail.test.tsx + user-cards.test.tsx cover the skeleton, resolved
@@ -84,15 +85,19 @@ function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
     updatedAt: overrides.updatedAt ?? '2024-03-12T08:30:00.000Z',
     deleteAt: overrides.deleteAt ?? null,
     deleteRequestedAt: overrides.deleteRequestedAt ?? null,
-    body: overrides.body ?? [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        markDefs: [],
-        children: [{ _type: 'span', _key: 's1', text: 'A sample comment.' }],
-      },
-    ],
+    // R12 interregnum fixture: pre-switch rows still hold PT bodies, and the
+    // reader renders them through the legacy PT path until R13.
+    body:
+      overrides.body ??
+      unsafeCast<AdminComment['body']>([
+        {
+          _type: 'block',
+          _key: 'b1',
+          style: 'normal',
+          markDefs: [],
+          children: [{ _type: 'span', _key: 's1', text: 'A sample comment.' }],
+        },
+      ]),
     type: overrides.type ?? 'post',
     ownerId: overrides.ownerId ?? null,
     userId: overrides.userId ?? '10',

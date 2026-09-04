@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError } from '@/client/lib/toast-api-error'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { idStr } from '@/shared/utils/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -19,8 +20,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
-import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface ReplyCommentDialogProps {
   comment: AdminComment | null
@@ -38,13 +38,13 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
     },
     onError: onMutationError('回复发送失败'),
   })
-  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
-  // Bump `bodyKey` so a fresh Tiptap instance never leaks the previous reply.
+  // Bump `bodyKey` so a fresh editor never leaks the previous reply.
   if (comment?.id !== lastCommentId) {
     setLastCommentId(comment?.id)
-    setBody(EMPTY_COMMENT_BODY)
+    setBody(EMPTY_COMMENT_EDITOR_STATE)
     setBodyKey((k) => k + 1)
   }
 
@@ -67,7 +67,7 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
             if (!comment) {
               return
             }
-            if (isCommentBodyBlank(body)) {
+            if (isCommentEditorStateBlank(body)) {
               toast.error('回复内容不能为空')
               return
             }
@@ -91,8 +91,8 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
         >
           <div className="flex flex-col gap-2">
             <Label htmlFor="reply-comment-content">回复内容</Label>
-            <CommentBodyEditor
-              initialBody={EMPTY_COMMENT_BODY}
+            <LazyCommentBodyEditor
+              initialBody={EMPTY_COMMENT_EDITOR_STATE}
               bodyKey={`admin-reply-${dialogKey}-${bodyKey}`}
               onBodyChange={setBody}
               disabled={submitting}

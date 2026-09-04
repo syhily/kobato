@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
 import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@/server/domains/comments/projection'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 // Wire helpers bridge `CommentAndUser` (number ids, Date timestamps) onto
 // `CommentItemWire` (string ids, ISO timestamps).
@@ -13,7 +14,7 @@ function makeRow(overrides: Partial<CommentAndUser> = {}): CommentAndUser {
     createAt: new Date('2024-01-15T08:30:00.000Z'),
     updatedAt: new Date('2024-01-16T08:30:00.000Z'),
     deleteAt: null,
-    body: [],
+    body: EMPTY_COMMENT_EDITOR_STATE,
     content: null,
     type: 'post',
     ownerId: 42,

@@ -2,8 +2,7 @@ import { eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
-
+import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { comment } from '@/server/infra/db/schema/comment'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
@@ -24,15 +23,7 @@ const { canonicalizeCommentBody } = await import('@/server/domains/comments/serv
 
 const db = getTestDb()
 
-const NEW_BODY: CommentBody = [
-  {
-    _type: 'block',
-    _key: 'b2',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's2', text: 'edited', marks: [] }],
-    markDefs: [],
-  },
-]
+const NEW_BODY = makeCommentBody('edited')
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -55,7 +46,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: 1,
       userId: 1,
       content: 'hi',
-      body: [],
+      body: makeCommentBody('hi'),
       ...opts,
     })
     .returning({ id: comment.id })
@@ -128,7 +119,7 @@ describe('comments/services/moderate — updateComment', () => {
 describe('comments/services/moderate — updateOwnComment', () => {
   it('returns null when the comment does not exist', async () => {
     const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
-    expect(await updateOwnComment(db, '9999', [])).toBeNull()
+    expect(await updateOwnComment(db, '9999', makeCommentBody('x'))).toBeNull()
   })
   it('edits inside the grace window without re-pending', async () => {
     const u1 = await seedUser()

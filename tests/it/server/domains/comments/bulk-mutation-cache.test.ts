@@ -7,6 +7,7 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 // Stub the email boundary so the module graph never reaches the network.
 vi.mock('@/server/infra/email/sender', () => ({
@@ -71,7 +72,7 @@ async function seedComment(userId: number, ownerId: number, isPending: boolean):
       ownerId,
       userId,
       content: 'hello',
-      body: [],
+      body: EMPTY_COMMENT_EDITOR_STATE,
       rid: 0,
       rootId: 0,
       isPending,

@@ -24,9 +24,7 @@ parent.
     `SortableDragHandle`, `resolveSortableMove`. New sortable lists use it, don't copy row chrome.
   - `editor/` — the page/post body editor: `PageBodyEditor` (the inkling composer wrapper + host
     glue; the only module other admin domains import), `pickers/` (image-library / music dialogs),
-    and `lexical-body-diff.tsx` (revision diff). `editor/tiptap/` now serves ONLY the comment
-    editor (`BlockCardNode`, `InlineMarks`, `SlashMenu` + `slash-commands`, `block-cards/`
-    Math/Music, `use-admin-math-preview`) — the main body editor no longer uses Tiptap.
+    and `lexical-body-diff.tsx` (revision diff).
   - `editor-shell/` — orchestration layer wrapping the inkling body editor into a draft/publish
     workflow: `useEditorShellState` (orchestrator for Post + Page shells — body/meta drafts,
     shortcuts, meta-panel toggle), `useEditorShellPersist` (deep persist module: owns the
@@ -145,12 +143,10 @@ unrelated concerns.
   The friends grid is NOT a body block — it's the `page.show_friends` toggle.
 - Server-only PT helpers in `@/server/domains/pt/*` (prerender, canonicalize) must never reach the
   client bundle.
-- PT ↔ ProseMirror bridge: `@/shared/pt/bridge/` — per-concern modules (`pt-to-pm.ts`,
-  `pm-to-pt.ts`, `node-registry.ts`, `types.ts`, `utils.ts`, `canonicalize.ts`, per-node modules
-  under `nodes/`). Custom blocks ride a generic `blockCard` PM node. Round-trip contract-tested in
-  `tests/unit/shared/pt/bridge/`. Only the comment editor still crosses this bridge.
 - SSR renderer: `@/ui/pt/render` (`PortableTextBody`), composing `@portabletext/react` with
-  `@/ui/pt/blocks/*`. Heading anchor ids align with post anchors.
+  `@/ui/pt/blocks/*`. Heading anchor ids align with post anchors. Comments also render through it
+  until R13 — pre-switch rows still hold PT bodies (the readers cross the wire type with a
+  deliberate interregnum cast).
 - Admin body editor: `@/ui/admin/editor/PageBodyEditor` (shared by pages and posts) wraps the
   inkling composer (`@inkling/editor` — the workspace package in `packages/inkling/`). The
   composer surface (floating format toolbar, slash menu, drag reorder, card chrome) comes from the
@@ -158,18 +154,14 @@ unrelated concerns.
   lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
   through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
   `src/styles/inkling-editor.css`.
-- Comment editor (still Tiptap v3 — R12 scope): `@/ui/public/comments/CommentBodyEditor` on the PT
-  bridge (`bodyToPmDoc` / `pmDocToBody`) with the shared `editor/tiptap/` building blocks. The
-  slash catalogue is `SLASH_COMMANDS` in `tiptap/slash-commands.ts` — which also owns the
-  `editor.storage.editorActions` Storage augmentation pickers fire through — overridden per
-  surface (`COMMENT_SLASH_COMMANDS`).
-- **Tiptap v3 never re-renders on transactions** (comment editor). `useEditor` only re-renders on
-  React-driven updates, so any UI that tracks the document or selection (mark activeness, command
-  availability) MUST subscribe via `useEditorState({ editor, selector })` —
-  `comments/CommentEditorToolbar` is the reference.
-- Floating popups (the comment SlashMenu) anchor with `position: fixed` off the suggestion
-  plugin's `clientRect`. Do **not** add `@floating-ui/*` directly — `@base-ui/react` pulls it in
-  transitively.
+- Comment editor: `@/ui/public/comments/CommentBodyEditor` (reached through the lazy
+  `LazyCommentBodyEditor` boundary — admin dialogs included) wraps the same inkling composer with
+  the trimmed comment node set (`@/client/editor/comment-editor-nodes`: no headings, asides,
+  tables, images, or host cards; code block + math cards stay), the comment markdown transformers
+  (`comment-markdown-transformers.ts`, including the `$…$` inline-math rule), and
+  `isSnippetsEnabled={false}` / `isDragEnabled={false}`. Host styling hooks are scoped under
+  `.kobato-comment-editor` in `src/styles/inkling-comment-editor.css`; the host also captures
+  Ctrl+Q before inkling sees it (AsideNode is unregistered, so the quote→aside cycle would throw).
 
 ## Page draft preview
 

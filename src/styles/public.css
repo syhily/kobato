@@ -3,11 +3,17 @@
  *
  * Owns its own tailwindcss import, typography plugin, and a `@source`
  * scope covering exactly the sources the public site renders: public
- * routes, public/pt/components/icons/lib UI, root.tsx, and the admin
- * tiptap building blocks the public comment editor reuses. Admin-only
+ * routes, public/pt/components/icons/lib UI, root.tsx, and the inkling
+ * host-card class constants the projected markup renders with. Admin-only
  * rules (music view transitions, admin medium-zoom stacking, scrollbar-thin)
  * live in admin.css and never reach this bundle.
  */
+/* Cascade-layer order: the inkling comment-editor stylesheet (imported by
+   CommentBodyEditor's lazy chunk into `layer(inkling)`) must sit BELOW
+   Tailwind's utilities so host utilities beat inkling's scoped preflight.
+   This bare statement pins the order no matter when that chunk's stylesheet
+   loads — admin.css carries the same statement for its side. */
+@layer inkling, theme, base, components, utilities;
 @import 'tailwindcss' source(none);
 @plugin '@tailwindcss/typography';
 @import './tailwind.css';
@@ -20,8 +26,6 @@
 @source '../ui/components';
 @source '../ui/icons';
 @source '../ui/lib';
-/* CommentBodyEditor (public comments) reuses the admin tiptap building blocks */
-@source '../ui/admin/editor/tiptap';
 /* Inkling host-card export markup (R10): the projected bodyHtml classes are
    string literals in the shared card spec modules, not in any rendered dir */
 @source '../shared/lexical/cards';
