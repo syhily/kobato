@@ -27,6 +27,14 @@ server or client boundary catch and log it.
 - `types/` — Standalone shared types and isomorphic helpers with no
   contract twin (catalog projections, domain inputs, image URL helpers,
   the site-owned asset-URL path grammar in `asset-url`).
+- `lexical/` — Lexical storage-format validation for the inkling migration
+  (plan `docs/plans/inkling-editor-replacement.md`, R7): the node-type
+  whitelist single source (`node-whitelist`), the full article/page state
+  schema (`schema`), the restricted comment state schema
+  (`comment-schema`), and the R11 composer-manifest placeholder
+  (`composer-nodes`). Pure zod — no lexical runtime dependency; the
+  `SerializedEditorState` type is an erased `import type` from
+  `@inkling/editor/headless`.
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
   footnote-merge, the footnote anchor DOM contract (`footnote-anchors`),
   editor↔storage footnote sync (`footnote-sync`), the heading
