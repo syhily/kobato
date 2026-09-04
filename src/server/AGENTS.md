@@ -99,6 +99,7 @@ Two embedded engines, zero services:
 - `post` → `/posts/:slug`; `page` → `/:slug`. Both rendered via `<PortableTextBody>`.
 - `visible=false` posts: excluded from home/random-post widgets but stay in archives, tags, search, sitemap, feeds.
 - **Draft gate**: a post is public-invisible when `status=draft` OR `publishedRevisionId=null` — all public queries MUST check both. The full "live" gate is defined once in `domains/content/schemas/live-gate.ts` as `isLive` (in-memory) and `liveContentWhere` (SQL). Never hand-assemble the struct.
+- **Body projections (R9b, inkling migration)**: the save pipeline (`domains/content/lifecycle.ts`) computes the revision row's `bodyHtml` / `bodyText` / `bodyHtmlFeed` columns via `infra/pt/lexical-projection.ts` (inkling `./headless` entry, jsdom-backed) over the canonical Lexical state; the feed variant's downgrade (math→TeX, code→plain pre, host-card substitution) is a state-copy transform in `shared/lexical/projection-state.ts`. Projection failure is best-effort (warn + NULL columns), and the no-op save short-circuit skips the computation — the repo/lifecycle share `repos/mutate::isEquivalentToPublishedLatest`.
 
 ### Slug derivation
 

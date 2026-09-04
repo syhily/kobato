@@ -84,6 +84,31 @@ export function checkTokenConflict(
 }
 
 /**
+ * The draft-save no-op short-circuit, shared between the repo's
+ * in-transaction check (authoritative) and the lifecycle's projection-skip
+ * pre-check (optimization — an equivalent save must not re-pay the jsdom
+ * render). Only a PUBLISHED latest can no-op: a draft latest is always
+ * rewritten in place.
+ */
+export function isEquivalentToPublishedLatest(
+  latest: ContentRow | undefined,
+  input: SaveDraftInput,
+): latest is ContentRow {
+  if (latest?.status !== 'published') {
+    return false
+  }
+  const inputBody = lexicalEditorStateSchema.safeParse(input.body)
+  const latestBody = lexicalEditorStateSchema.safeParse(latest.body)
+  return (
+    inputBody.success &&
+    latestBody.success &&
+    areLexicalEditorStatesEquivalent(inputBody.data, latestBody.data) &&
+    isDeepStrictEqual(input.imageSources, latest.imageSources) &&
+    isDeepStrictEqual(input.headings, latest.headings)
+  )
+}
+
+/**
  * The single revision-write primitive: conflict check, then an in-place
  * rewrite of the latest DRAFT row or an appended revision at `status`.
  * Returns the conflict for the caller, or the written row.
@@ -102,6 +127,16 @@ function writeRevisionRow(
 
   const now = new Date()
   const nextToken = randomUUID()
+  // Projections absent = the caller skipped the computation (no-op pre-check
+  // or degraded render) — keep the existing columns on a rewrite.
+  const projectionColumns =
+    input.projections != null
+      ? {
+          bodyHtml: input.projections.bodyHtml,
+          bodyText: input.projections.bodyText,
+          bodyHtmlFeed: input.projections.bodyHtmlFeed,
+        }
+      : {}
 
   if (latest?.status === 'draft') {
     // Only runs on a draft row — `status` is an identity write or the draft→published flip.
@@ -113,6 +148,7 @@ function writeRevisionRow(
         body: input.body as ContentRow['body'],
         imageSources: input.imageSources as ContentRow['imageSources'],
         headings: input.headings as ContentRow['headings'],
+        ...projectionColumns,
         authorId: input.authorId ?? latest.authorId,
         clientRevisionToken: nextToken,
       })
@@ -130,6 +166,7 @@ function writeRevisionRow(
     body: input.body as NewContent['body'],
     imageSources: input.imageSources as NewContent['imageSources'],
     headings: input.headings as NewContent['headings'],
+    ...projectionColumns,
     authorId: input.authorId,
     clientRevisionToken: nextToken,
   }
@@ -152,16 +189,7 @@ export async function saveDraftRevision(
       return conflict
     }
 
-    const inputBody = lexicalEditorStateSchema.safeParse(input.body)
-    const latestBody = latest !== undefined ? lexicalEditorStateSchema.safeParse(latest.body) : null
-    if (
-      latest?.status === 'published' &&
-      inputBody.success &&
-      latestBody?.success &&
-      areLexicalEditorStatesEquivalent(inputBody.data, latestBody.data) &&
-      isDeepStrictEqual(input.imageSources, latest.imageSources) &&
-      isDeepStrictEqual(input.headings, latest.headings)
-    ) {
+    if (isEquivalentToPublishedLatest(latest, input)) {
       return { status: 'saved' as const, row: latest }
     }
 

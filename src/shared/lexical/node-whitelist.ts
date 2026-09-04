@@ -21,6 +21,15 @@
 export const ROOT_NODE_TYPE = 'root'
 
 /**
+ * kobato host cards (plan M3, landing in R10 via `defineCard`): the type
+ * strings are pinned HERE and R10's defineCard calls must use them verbatim;
+ * the R11 contract test then pins composer ↔ whitelist. Named separately
+ * because the save-time projections (`projection-state.ts`) special-case
+ * them — no node class exists for them until R10.
+ */
+export const KOBATO_HOST_CARD_NODE_TYPES = ['solution', 'two-column', 'music-player'] as const
+
+/**
  * Article/page editing state — kobato's full target node set.
  */
 export const FULL_EDITOR_NODE_TYPES = [
@@ -74,12 +83,8 @@ export const FULL_EDITOR_NODE_TYPES = [
   'table',
   'tablerow',
   'tablecell',
-  // kobato host cards (plan M3, landing in R10 via `defineCard`): the
-  // type strings are pinned HERE and R10's defineCard calls must use them
-  // verbatim; the R11 contract test then pins composer ↔ whitelist.
-  'solution',
-  'two-column',
-  'music-player',
+  // See the pinned comment on the constant itself.
+  ...KOBATO_HOST_CARD_NODE_TYPES,
 ] as const
 
 export type FullEditorNodeType = (typeof FULL_EDITOR_NODE_TYPES)[number]
