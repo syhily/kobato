@@ -56,9 +56,26 @@ Two composition defaults differ from the root entry:
 
 The entry exports only the card-free surface: `InklingComposer`, `InklingSurface`, `InklingComposableEditor`, `RestrictContentPlugin`, the `MINIMAL`/`BASIC` node and transformer sets, and the host-config and Lexical types those props name. `DEFAULT_NODES`, the card shims, the feature plugins, and the markdown/HTML conversion APIs stay on the root entry. `core.css` carries the same stylesheet as `style.css` today (CSS is not layered yet). Collaboration (`enableMultiplayer`) still works from either entry — the `yjs`/`y-websocket` runtime loads as a lazy chunk at runtime.
 
+## The `./headless` entry
+
+`@inkling/editor/headless` is the react-free, server-side conversion surface — no components, no composer, no plugins, no CSS. It carries only the state-conversion APIs:
+
+```ts
+import {
+  htmlToLexicalState,
+  lexicalStateToHtml,
+  lexicalStateToPlainText,
+  markdownToLexicalState,
+  lexicalStateToMarkdown,
+  DEFAULT_HTML_NODES,
+} from '@inkling/editor/headless'
+```
+
+The HTML pair resolves its DOM through the headless port: pass `options.dom`, run where a global `window.document` exists, or install the optional `jsdom` peer (`>=24`). Without any DOM both HTML directions reject with a named error; the markdown pair and `lexicalStateToPlainText` are DOM-free and work anywhere. The entry is ESM-only.
+
 ## TypeScript
 
-The package publishes a bundled declaration file per entry — `dist/editor.d.ts` for the root and `dist/core.d.ts` for `./core` — wired through each entry's `types` export condition (and the top-level `types` field for the root), so both resolve under `moduleResolution: "Bundler"` and `"NodeNext"` alike.
+The package publishes a bundled declaration file per entry — `dist/editor.d.ts` for the root, `dist/core.d.ts` for `./core`, and `dist/headless.d.ts` for `./headless` — wired through each entry's `types` export condition (and the top-level `types` field for the root), so all resolve under `moduleResolution: "Bundler"` and `"NodeNext"` alike.
 
 Types for every bundled runtime (Lexical, markdown-it, CodeMirror, emoji-mart, etc.) are **inlined** into the declaration, so consumers only need their own React types — no second Lexical or card-runtime install for the type checker:
 
@@ -206,60 +223,18 @@ All imported files are processed/optimised via SVGO (see `svgo.config.js` for op
 
 ## Testing
 
-We use [Vitest](https://vitest.dev) for unit tests and [Playwright](https://playwright.dev) for e2e testing.
+We use [Vitest](https://vitest.dev) for the test suite (jsdom environment, globals enabled).
 
-- `pnpm test` runs unit tests and exits
-- `pnpm test:e2e` runs end-to-end tests and exits
-- `pnpm test:unit` runs unit tests
-- `pnpm typecheck` runs strict semantic TypeScript checks for production/demo/scripts, Vitest unit/utils suites, and Playwright e2e suites
+- `pnpm test` runs the suite and exits
+- `pnpm test:unit` is an alias for the same run
+- `pnpm test:unit:watch` starts a test watcher that re-runs tests on file changes
+- `pnpm test:unit:watch --ui` opens a browser UI for exploring and re-running tests
+- `pnpm typecheck` runs strict semantic TypeScript checks for production/demo/scripts plus the unit/utils suites
 - `pnpm typecheck:unit` runs the dedicated strict check for `test/unit/**` and `test/utils/**`
-- `pnpm typecheck:e2e` runs the dedicated strict semantic check for `test/e2e/**` and `test/utils/e2e.ts`
-- `pnpm test:unit:watch` runs unit tests and starts a test watcher that re-runs tests on file changes
-- `pnpm test:unit:watch --ui` runs unit tests and opens a browser UI for exploring and re-running tests
-- `pnpm test:e2e` runs e2e tests
-- `pnpm test:e2e --headed` runs tests in browser so you can watch the tests execute
-- `pnpm test:slowmo` same as `pnpm test:e2e --headed` but adds 100ms delay between instructions to make it easier to see what's happening (note that some tests may fail or timeout due to the added delays)
-- `pnpm test:e2e --ui` opens a [browser UI](https://playwright.dev/docs/test-ui-mode) in watch mode for exploring and re-running tests
-- `pnpm test:e2e --ui --headed` same as `pnpm test:e2e --ui` but also runs tests in browser so you can watch the tests execute
 
-Playwright specs under `test/e2e/**` and their Playwright-only `test/utils/e2e.ts` helper have two separate gates.
-`pnpm typecheck:e2e` uses `tsc` for strict semantic checking and is composed into the canonical `pnpm typecheck` command.
-`pnpm test:e2e` separately transforms and executes the browser suite with Playwright; transformation and execution are not
-a substitute for TypeScript semantic analysis. The dedicated config keeps Playwright ambient types and browser scaffolding
-out of the production and Vitest TypeScript programs, while the unchanged CI static and e2e jobs reach both guarantees.
-
-Before tests are started we build a version of the demo app that is used for the unit tests.
-
-When developing it can be useful to limit unit tests to specific keywords (taken from `describe` or `it/test` names). That's possible using the `-t` param and works with any of the above test commands, e.g.:
+When developing it can be useful to limit tests to specific keywords (taken from `describe` or `it/test` names). That's possible using the `-t` param, e.g.:
 
 - `pnpm test:unit:watch -t "buildCardMenu"`
-
-### How to debug e2e tests on CI
-
-You can download the report in case of tests were failed. It can be found in the actions `Summary` in the `Artifacts` section.
-To check traces, run command `npx playwright show-trace trace.zip`.
-More information about traces can be found here https://playwright.dev/docs/trace-viewer
-
-### ESM in e2e tests
-
-Node enables ECMAScript modules if `type: 'module'` in package.json file. It leads to some restrictions:
-
-- [No require, exports, module.exports, **filename, **dirname](https://github.com/GrosSacASac/node/blob/master/doc/api/esm.md#no-require-exports-moduleexports-__filename-__dirname)
-- [Mandatory file extensions](https://github.com/GrosSacASac/node/blob/master/doc/api/esm.md#mandatory-file-extensions)
-- [No require.extensions](https://github.com/GrosSacASac/node/blob/master/doc/api/esm.md#no-requireextensions). It means we don't have control over the extensions list. Further will be a description of why this is important.
-
-We can make file extension optional with [--experimental-specifier-resolution](https://nodejs.org/api/cli.html#--experimental-specifier-resolutionmode)
-flag, which we use. But node is not recognized `jsx` extension.
-It can be solved with [node loaders](https://github.com/nodejs/loaders-test/tree/main/commonjs-extension-resolution-loader), whereas
-as they're still in [experimental mode](https://nodejs.org/api/esm.html#esm_experimental_loaders), there is no appropriate
-implementation for this use case.
-The same issue was raised in the babel repo, but the loader won't be added while node loaders are
-in [experimental mode](https://github.com/babel/babel/issues/11934).
-
-We can add our loader implementation to solve the issue. Still, in reality, we shouldn't need real
-JSX components in e2e tests. It can be a situation when some constants locate in the `jsx` file. In this case,
-we can move them to js file. If it is a problem in the future, we can add our implementation of the loader or
-add an extension to all imports in the project.
 
 ### Editor integration
 
@@ -268,4 +243,4 @@ lets you run and debug individual unit tests/groups directly inside vscode.
 
 ## Deployment
 
-The `@inkling/editor` package is built from this repository. Run `pnpm build` to produce the distributable files (`dist/editor.js` for ESM, `dist/editor.umd.cjs` for CommonJS, plus the legacy `dist/editor.umd.js` copy) and `pnpm pack` to preview the package contents. `pnpm verify:package` packs the tarball and loads both entry conditions in clean consumers with only `react`/`react-dom` installed — it is the release gate for the install contract documented above.
+The `@inkling/editor` package is built from this repository. Run `pnpm build` to produce the distributable files (`dist/editor.js` for ESM, `dist/editor.umd.cjs` for CommonJS, plus the legacy `dist/editor.umd.js` copy, and the ESM-only `dist/core.js` / `dist/headless.js` subpath entries) and `pnpm pack` to preview the package contents. `pnpm verify:package` packs the tarball and loads every published entry condition in clean consumers with only `react`/`react-dom` installed — it is the release gate for the install contract documented above. `pnpm verify:types` type-checks clean consumers against the packed declarations, and `pnpm verify:sizes` enforces the per-entry gzip budgets.

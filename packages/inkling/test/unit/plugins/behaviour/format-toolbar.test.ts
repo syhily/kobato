@@ -5,6 +5,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   createEditor,
   type LexicalEditor,
@@ -17,6 +18,7 @@ import {
   $cycleQuoteBlock,
   $formatBlocksToHeading,
   $formatBlocksToParagraph,
+  $setBlocksAlignment,
   FORMAT_BLOCK_TYPES,
   registerFormatToolbarState,
   resolveFormatToolbarVisibility,
@@ -51,7 +53,7 @@ describe('registerFormatToolbarState', () => {
 
   it('publishes the default snapshot at registration', () => {
     registerFormatToolbarState(editor, (state) => published.push(state))
-    expect(published).toEqual([{ isBold: false, isItalic: false, blockType: 'paragraph' }])
+    expect(published).toEqual([{ isBold: false, isItalic: false, blockType: 'paragraph', elementFormat: '' }])
   })
 
   it('publishes text formats and the block type per update', async () => {
@@ -93,6 +95,17 @@ describe('registerFormatToolbarState', () => {
     registerFormatToolbarState(editor, (state) => published.push(state))
 
     expect(published[published.length - 1].blockType).toBe('bullet')
+  })
+
+  it('publishes the anchor block alignment, defaulting to no explicit format', async () => {
+    await buildParagraphWithSelection(editor)
+    registerFormatToolbarState(editor, (state) => published.push(state))
+    expect(published[published.length - 1].elementFormat).toBe('')
+
+    $setBlocksAlignment(editor, 'center')
+    await tick()
+
+    expect(published[published.length - 1].elementFormat).toBe('center')
   })
 })
 
@@ -141,6 +154,64 @@ describe('block-format surgeries', () => {
   })
 })
 
+describe('$setBlocksAlignment', () => {
+  let editor: LexicalEditor
+
+  beforeEach(() => {
+    editor = createTestEditor()
+  })
+
+  function topLevelFormats(): (string | undefined)[] {
+    return editor.getEditorState().read(() =>
+      $getRoot()
+        .getChildren()
+        .map((node) => ($isElementNode(node) ? node.getFormatType() : undefined)),
+    )
+  }
+
+  it('sets the three states on paragraphs, headings and quotes', async () => {
+    for (const [build, alignment] of [
+      [() => $createParagraphNode(), 'left'],
+      [() => new HeadingNode('h2'), 'center'],
+      [() => new QuoteNode(), 'right'],
+    ] as const) {
+      await updateEditor(editor, () => {
+        const block = build()
+        block.append($createTextNode('text'))
+        $getRoot().clear().append(block)
+        block.selectStart()
+      })
+      $setBlocksAlignment(editor, alignment)
+      await tick()
+      expect(topLevelFormats()).toEqual([alignment])
+    }
+  })
+
+  it('aligns every selected block and leaves lists untouched', async () => {
+    await updateEditor(editor, () => {
+      const first = $createParagraphNode()
+      first.append($createTextNode('one'))
+      const second = $createParagraphNode()
+      second.append($createTextNode('two'))
+      const list = new ListNode('bullet', 1)
+      const item = new ListItemNode()
+      item.append($createTextNode('three'))
+      list.append(item)
+      $getRoot().append(first, second, list)
+      $getRoot().selectStart()
+      const selection = $getSelection()
+      if ($isRangeSelection(selection)) {
+        selection.focus.set(item.getFirstChildOrThrow().getKey(), 5, 'text')
+      }
+    })
+
+    $setBlocksAlignment(editor, 'right')
+    await tick()
+
+    expect(topLevelFormats()).toEqual(['right', 'right', ''])
+  })
+})
+
 describe('resolveFormatToolbarVisibility', () => {
   it('shows everything when the surface composes the nodes and the host can create snippets', () => {
     const editor = createTestEditor()
@@ -149,7 +220,16 @@ describe('resolveFormatToolbarVisibility', () => {
       hideQuotes: false,
       hideSnippets: false,
       hideBold: false,
+      hideAlignment: true,
     })
+  })
+
+  it('shows the alignment group only on surfaces that keep alignment', () => {
+    const editor = createTestEditor()
+    expect(resolveFormatToolbarVisibility(editor, { canCreateSnippet: true }).hideAlignment).toBe(true)
+    expect(
+      resolveFormatToolbarVisibility(editor, { canCreateSnippet: true, isAlignmentEnabled: true }).hideAlignment,
+    ).toBe(false)
   })
 
   it('hides headings and quotes when their nodes are not composed', () => {

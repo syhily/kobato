@@ -121,6 +121,9 @@ export interface InklingLabels {
   'toolbar.heading3': string
   'toolbar.quote': string
   'toolbar.link': string
+  'toolbar.alignLeft': string
+  'toolbar.alignCenter': string
+  'toolbar.alignRight': string
   'toolbar.saveAsSnippet': string
   'toolbar.edit': string
 
@@ -318,6 +321,9 @@ export const DEFAULT_LABELS: InklingLabels = {
   'toolbar.heading3': 'Heading 3',
   'toolbar.quote': 'Quote',
   'toolbar.link': 'Link',
+  'toolbar.alignLeft': 'Align left',
+  'toolbar.alignCenter': 'Align center',
+  'toolbar.alignRight': 'Align right',
   'toolbar.saveAsSnippet': 'Save as snippet',
   'toolbar.edit': 'Edit',
 

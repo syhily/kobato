@@ -1,4 +1,7 @@
 import AddIcon from '@/assets/icons/inkling-add.svg?react'
+import AlignCenterIcon from '@/assets/icons/inkling-align-center.svg?react'
+import AlignLeftIcon from '@/assets/icons/inkling-align-left.svg?react'
+import AlignRightIcon from '@/assets/icons/inkling-align-right.svg?react'
 import BoldIcon from '@/assets/icons/inkling-bold.svg?react'
 import EditIcon from '@/assets/icons/inkling-edit.svg?react'
 import HeadingTwoIcon from '@/assets/icons/inkling-heading-2.svg?react'
@@ -23,6 +26,9 @@ export const TOOLBAR_ICONS = {
   quoteOne: QuoteOneIcon,
   quoteTwo: QuoteTwoIcon,
   link: LinkIcon,
+  alignLeft: AlignLeftIcon,
+  alignCenter: AlignCenterIcon,
+  alignRight: AlignRightIcon,
   imgRegular: ImgRegularIcon,
   imgWide: ImgWideIcon,
   imgFull: ImgFullIcon,

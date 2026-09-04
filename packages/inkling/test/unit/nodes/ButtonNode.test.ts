@@ -7,6 +7,11 @@ import { getCardMenu } from '#/utils/card-menu'
 import { updateEditor } from '#/utils/test-editor'
 import { ButtonNode, $createButtonNode, $isButtonNode, INSERT_BUTTON_COMMAND } from '@/nodes/ButtonNode'
 import { getCardDragIcon } from '@/nodes/cards/card-menus'
+import { registerCardDecorateAdapter } from '@/nodes/decorate-card'
+
+// The decorate() assertions below need the wrapper layer's adapter registered
+// into the injection port — production gets it from the `.` barrel.
+registerCardDecorateAdapter()
 
 const editorNodes = [ButtonNode]
 

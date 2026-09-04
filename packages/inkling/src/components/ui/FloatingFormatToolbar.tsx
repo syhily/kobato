@@ -28,6 +28,7 @@ export function FloatingFormatToolbar({
   onOpenLink,
   onOpenSnippet,
   hiddenFormats = [],
+  isAlignmentEnabled = false,
 }: {
   editor: LexicalEditor
   anchorElem: HTMLElement
@@ -40,6 +41,7 @@ export function FloatingFormatToolbar({
   onOpenLink: () => void
   onOpenSnippet: () => void
   hiddenFormats?: HiddenFormat[]
+  isAlignmentEnabled?: boolean
 }) {
   const { searchLinks } = useInklingLinkingSettings()
   const isLinkSearchEnabled = typeof searchLinks === 'function'
@@ -92,6 +94,7 @@ export function FloatingFormatToolbar({
           <FormatToolbar
             editor={editor}
             hiddenFormats={hiddenFormats}
+            isAlignmentEnabled={isAlignmentEnabled}
             isLinkSelected={!!href || (isLinkSearchEnabled && isLinkToolbar)}
             isSnippetsEnabled={isSnippetsEnabled}
             onLinkClick={onOpenLink}

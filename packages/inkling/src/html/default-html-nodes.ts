@@ -1,6 +1,6 @@
 import type { CreateEditorArgs } from 'lexical'
 
-import { LinkNode } from '@lexical/link'
+import { AutoLinkNode, LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 
@@ -21,6 +21,9 @@ export const DEFAULT_HTML_NODES = [
   // basic HTML nodes
   HeadingNode,
   LinkNode,
+  // typed-URL autolinks serialize as type 'autolink'; parse needs the class
+  // registered (imported `<a>` markup still converts to plain LinkNode)
+  AutoLinkNode,
   ListItemNode,
   ListNode,
   QuoteNode,

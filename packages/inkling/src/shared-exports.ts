@@ -59,6 +59,10 @@ export { default as InklingSurface } from '@/components/InklingSurface'
 export { CORE_PLUGINS, default as CorePlugins } from '@/plugins/CorePlugins'
 export type { CorePluginEntry, CorePluginScope } from '@/plugins/CorePlugins'
 export { default as RestrictContentPlugin } from '@/plugins/RestrictContentPlugin'
+/* Writing-focus mode: the plugin the `focusMode` surface prop mounts and the
+ * class/attribute contract host CSS keys on. */
+export { default as FocusModePlugin } from '@/plugins/FocusModePlugin'
+export { FOCUS_ACTIVE_ATTRIBUTE, FOCUS_MODE_CLASS } from '@/plugins/behaviour/focus-mode'
 export { default as BASIC_NODES } from '@/nodes/BasicNodes'
 export { default as MINIMAL_NODES } from '@/nodes/MinimalNodes'
 export { BASIC_TRANSFORMERS, MINIMAL_TRANSFORMERS } from '@/markdown/transformers-core'

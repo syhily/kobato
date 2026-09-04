@@ -43,7 +43,7 @@ vi.mock('@/utils/analytics', () => ({
 //
 // Harness note: the Portal's children never commit to document.body under
 // jsdom + renderHook — true at HEAD too, not a regression — so popup DOM
-// behavior stays with e2e (test/e2e/linking.test.ts). The wiring pins read
+// behavior is not pinned here — the wiring pins read
 // the rendered element tree instead: the Portal's AtLinkResultsPopup element
 // carries query/listOptions in and delegates onSelect back to the component.
 

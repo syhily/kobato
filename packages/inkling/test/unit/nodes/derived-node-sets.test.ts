@@ -69,6 +69,7 @@ describe('derived node sets match the pinned literals', () => {
       'listitem',
       'aside',
       'link',
+      'autolink',
       'table',
       'tablerow',
       'tablecell',
@@ -134,6 +135,7 @@ describe('derived node sets match the pinned literals', () => {
     expect(nodeSetSnapshot(DEFAULT_HTML_NODES)).toEqual([
       'heading',
       'link',
+      'autolink',
       'listitem',
       'list',
       'quote',

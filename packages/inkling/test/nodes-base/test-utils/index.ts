@@ -1,8 +1,7 @@
 import Prettier from '@prettier/sync'
 
-// The html tag here PRETTIFIES (parser 'html') — deliberately unlike the raw
-// concatenation tag in test/utils/e2e.ts: the two normalizers are different
-// policies, keep them separate.
+// The html tag here PRETTIFIES (parser 'html') — a deliberate policy for
+// these renderer snapshots.
 import { createTestDom } from '#/utils/render-live'
 
 export function html(partials: TemplateStringsArray, ...params: unknown[]) {

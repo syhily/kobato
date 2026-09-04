@@ -1,6 +1,18 @@
 import { createHeadlessEditor } from '@lexical/headless'
 import { createEditor, type LexicalEditor } from 'lexical'
 
+import { registerCardDecorateAdapter } from '@/nodes/decorate-card'
+
+// Rendered-editor specs reconcile card nodes, and Lexical reconciliation
+// calls decorate() — which resolves through the injection port the `.`
+// barrel fills in production. Register the adapter here (the suite's shared
+// editor harness) so those specs get the production wiring without
+// importing the barrel. This lives in a per-test-file import — NOT in
+// test/setup.ts — because setup files evaluate before a spec's hoisted
+// vi.mock registrations, and pre-evaluating the component tree there
+// defeats those mocks.
+registerCardDecorateAdapter()
+
 // The unit suite's editor harness — the one home of the test-editor
 // factory and the update awaiters that used to be copied per spec:
 //

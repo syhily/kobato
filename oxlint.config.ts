@@ -7,7 +7,7 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*'],
+  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'packages/**'],
   settings: {
     react: {
       // Keep aligned with the installed `react` version in package.json —

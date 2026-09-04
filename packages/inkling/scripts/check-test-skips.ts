@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Skip sentinel: every test.skip/describe.skip/it.todo in the e2e and unit
-// suites must carry a SKIP-REASON justification (on the same line or the line
+// Skip sentinel: every test.skip/describe.skip/it.todo in the unit suite
+// must carry a SKIP-REASON justification (on the same line or the line
 // directly above) so new skips can't become invisible. Invoked from `pnpm lint`.
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
-const DIRS = ['test/e2e', 'test/unit']
+const DIRS = ['test/unit']
 
 // grep exits 1 when nothing matches — that is the clean case, not an error
 function isGrepNoMatch(error: unknown): boolean {

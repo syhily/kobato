@@ -3,7 +3,7 @@
 // Packed-package verifier: packs @inkling/editor into a temp dir, installs the
 // tarball with ONLY the react/react-dom peers, and exercises the published
 // entry conditions (ESM `import` and CJS `require` for `.`, ESM for the
-// `./core` subpath) from throwaway consumers.
+// `./core` and `./headless` subpaths) from throwaway consumers.
 // This is the release gate for the documented install contract: no consumer
 // installation of card/collaboration feature packages may be required to load
 // the package root. The headless HTML surface is gated alongside: without the
@@ -102,6 +102,9 @@ function assertCoreExports(mod) {
   if (mod.HtmlOutputPlugin) unexpected.push('HtmlOutputPlugin')
   if (mod.markdownToLexicalState) unexpected.push('markdownToLexicalState')
   if (mod.lexicalStateToMarkdown) unexpected.push('lexicalStateToMarkdown')
+  if (mod.htmlToLexicalState) unexpected.push('htmlToLexicalState')
+  if (mod.lexicalStateToHtml) unexpected.push('lexicalStateToHtml')
+  if (mod.lexicalStateToPlainText) unexpected.push('lexicalStateToPlainText')
   if (unexpected.length > 0) {
     throw new Error('core entry leaks full-entry exports: ' + unexpected.join(', '))
   }
@@ -181,6 +184,34 @@ async function assertHeadlessWithJsdom(mod) {
 }
 `
 
+// `./headless` subpath assertions: the react-free conversion surface and
+// nothing beyond it. The negative assertions keep the headless entry free of
+// the React component tree — that separation is its entire reason to exist.
+const HEADLESS_EXPORT_ASSERTIONS = `
+function assertHeadlessExports(mod) {
+  const missing = []
+  if (typeof mod.htmlToLexicalState !== 'function') missing.push('htmlToLexicalState')
+  if (typeof mod.lexicalStateToHtml !== 'function') missing.push('lexicalStateToHtml')
+  if (typeof mod.lexicalStateToPlainText !== 'function') missing.push('lexicalStateToPlainText')
+  if (typeof mod.markdownToLexicalState !== 'function') missing.push('markdownToLexicalState')
+  if (typeof mod.lexicalStateToMarkdown !== 'function') missing.push('lexicalStateToMarkdown')
+  if (!Array.isArray(mod.DEFAULT_HTML_NODES) || mod.DEFAULT_HTML_NODES.length === 0)
+    missing.push('DEFAULT_HTML_NODES')
+  if (missing.length > 0) {
+    throw new Error('missing or invalid headless exports: ' + missing.join(', '))
+  }
+  const unexpected = []
+  if (mod.InklingEditor) unexpected.push('InklingEditor')
+  if (mod.InklingComposer) unexpected.push('InklingComposer')
+  if (mod.InklingSurface) unexpected.push('InklingSurface')
+  if (mod.DEFAULT_NODES) unexpected.push('DEFAULT_NODES')
+  if (unexpected.length > 0) {
+    throw new Error('headless entry leaks editor exports: ' + unexpected.join(', '))
+  }
+  console.log('headless exports OK: ' + Object.keys(mod).length + ' exports')
+}
+`
+
 const tempRoot = makeTempRoot('inkling-pack-verify-')
 
 try {
@@ -202,6 +233,8 @@ try {
     'dist/core.js',
     'dist/core.css',
     'dist/core.d.ts',
+    'dist/headless.js',
+    'dist/headless.d.ts',
   ]
   const missingFiles = mustInclude.filter((path) => !files.includes(path))
   if (missingFiles.length > 0) {
@@ -306,6 +339,21 @@ await assertCollabChunkLoads()
 `,
   })
 
+  consumerPhase('headless esm consumer', {
+    module: true,
+    check: `const resolved = import.meta.resolve('@inkling/editor/headless')
+if (!resolved.endsWith('headless.js')) {
+  throw new Error('headless ESM entry resolved to ' + resolved + ', expected .../headless.js')
+}
+console.log('resolved: ' + resolved)
+const headless = await import('@inkling/editor/headless')
+${HEADLESS_EXPORT_ASSERTIONS}
+assertHeadlessExports(headless)
+${HEADLESS_ASSERTIONS_NO_JSDOM}
+await assertHeadlessWithoutJsdom(headless)
+`,
+  })
+
   consumerPhase('cjs consumer', {
     module: false,
     check: `${DOM_SHIM}
@@ -339,6 +387,15 @@ await assertHeadlessWithJsdom(inkling)
 `,
   })
 
+  consumerPhase('headless esm consumer with jsdom', {
+    module: true,
+    extraDeps: withJsdomDeps,
+    check: `const headless = await import('@inkling/editor/headless')
+${HEADLESS_ASSERTIONS_WITH_JSDOM}
+await assertHeadlessWithJsdom(headless)
+`,
+  })
+
   consumerPhase('cjs consumer with jsdom', {
     module: false,
     extraDeps: withJsdomDeps,
@@ -357,4 +414,6 @@ assertHeadlessWithJsdom(inkling).catch((error) => {
 
 log.exitIfFailed('verify:package')
 
-console.log('\nverify:package OK — packed ESM, CJS, and core entries load with only react/react-dom installed')
+console.log(
+  '\nverify:package OK — packed ESM, CJS, core, and headless entries load with only react/react-dom installed',
+)

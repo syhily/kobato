@@ -36,7 +36,10 @@
     "fmt:check": "oxfmt -c oxfmt.config.ts --check",
     "lint": "oxlint -c oxlint.config.ts",
     "lint:fix": "oxlint -c oxlint.config.ts --fix",
+    "prebuild": "node scripts/ensure-inkling-dist.ts",
+    "predev": "node scripts/ensure-inkling-dist.ts",
     "prepare": "pnpx husky",
+    "pretype": "node scripts/ensure-inkling-dist.ts",
     "release:bump": "node scripts/release.ts bump",
     "release:prepare-next": "node scripts/release.ts prepare-next",
     "release:tag": "node scripts/release.ts tag",
@@ -68,6 +71,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hono/node-server": "^2.1.1",
     "@hono/vite-dev-server": "^0.26.1",
+    "@inkling/editor": "workspace:*",
     "@maxmind/geoip2-node": "^7.1.0",
     "@number-flow/react": "^0.6.2",
     "@orpc/client": "^1.15.0",
@@ -107,7 +111,7 @@
     "@types/sanitize-html": "^2.16.1",
     "@vitest/coverage-v8": "^5.0.0",
     "bcryptjs": "^3.0.3",
-    "cn": "^0.2.4",
+    "cn": "^0.2.5",
     "date-fns": "^4.4.0",
     "diff-match-patch": "^1.0.5",
     "dompurify": "^3.4.14",
@@ -153,8 +157,12 @@
     "zod": "^4.5.4"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "oxfmt -c oxfmt.config.ts --write",
+    "{src,tests,scripts}/**/*.{ts,tsx}": [
+      "oxfmt -c oxfmt.config.ts --write --no-error-on-unmatched-pattern",
+      "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
+    ],
+    "{drizzle.config.ts,oxfmt.config.ts,oxlint.config.ts,react-router.config.ts,taze.config.ts,vite.config.ts,vite.sea.config.ts,vitest.config.ts}": [
+      "oxfmt -c oxfmt.config.ts --write --no-error-on-unmatched-pattern",
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
     ]
   },

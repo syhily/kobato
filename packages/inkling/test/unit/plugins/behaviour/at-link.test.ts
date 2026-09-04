@@ -47,8 +47,7 @@ import { BookmarkNode } from '@/nodes/BookmarkNode'
 //   transitions pinned here are identical either way.
 // - Paste-into-search-node is not unit-pinned: jsdom has no ClipboardEvent
 //   implementation, so the guard's `instanceof ClipboardEvent` branch cannot
-//   be reached. Coverage stays with e2e (test/e2e/linking.test.ts "can paste
-//   into at-link node").
+//   be reached, so this guard branch is deliberately unpinned.
 import {
   $commitAtLinkSelection,
   registerAtLinkGuards,

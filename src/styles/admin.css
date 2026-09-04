@@ -42,6 +42,26 @@
   }
 }
 
+/* Inkling writing-focus mode skeleton (M3 focus parity item): the mechanism
+   ships in @inkling/editor — the `focusMode` surface prop mounts a plugin
+   that puts `inkling-focus-mode` on the editor root and
+   `data-inkling-focus-active` on the selected top-level block. These rules
+   dim every other top-level block while a block is focused; the on/off
+   toggle UI is wired later with the editor integration. */
+.inkling-focus-mode > * {
+  transition: opacity 160ms ease-out;
+}
+
+.inkling-focus-mode:has(> [data-inkling-focus-active]) > :not([data-inkling-focus-active]) {
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inkling-focus-mode > * {
+    transition: none;
+  }
+}
+
 /* Music library shared-element transitions (AlbumCard ↔ MusicDetailView) */
 @supports (view-transition-name: none) {
   ::view-transition-old(music-cover-*),

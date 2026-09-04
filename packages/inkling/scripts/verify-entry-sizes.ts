@@ -27,6 +27,9 @@ const KB = 1024
 //   over that real post-split measurement.
 // - core.js: "first measurement + 5%" — measured 232.4KB gzip on the first
 //   dual build, so the budget is 245KB.
+// - headless.js: "first measurement + 5%" — measured 171.8KB gzip on the
+//   first three-entry build (the HTML path's ~160KB plus ~12KB for the
+//   markdown round-trip), so the budget is 190KB (~10% headroom).
 // - entry diff: the split must really carve the cards/collab/emoji mass out
 //   of core — measured 427.8KB on the first build.
 // - collaboration chunks: the lazy collaboration surface is TWO chunks per
@@ -41,6 +44,7 @@ const KB = 1024
 const BUDGETS = {
   editor: 680 * KB,
   core: 245 * KB,
+  headless: 190 * KB,
   entryDiffMin: 250 * KB,
   collabChunk: 120 * KB,
 } as const
@@ -68,6 +72,7 @@ function expectBudget(label: string, actual: number, budget: number): void {
 
 const editor = measure('editor.js')
 const core = measure('core.js')
+const headless = measure('headless.js')
 const styleCss = measure('style.css')
 const coreCss = measure('core.css')
 
@@ -81,7 +86,7 @@ const collabChunks = existsSync(chunksDir)
       .map((file) => measure(join('chunks', file)))
   : []
 
-const rows = [editor, core, styleCss, coreCss, ...collabChunks]
+const rows = [editor, core, headless, styleCss, coreCss, ...collabChunks]
 console.log('entry sizes (min / gzip):')
 for (const row of rows) {
   console.log(`  ${row.file.padEnd(36)} ${formatKB(row.min).padStart(9)} / ${formatKB(row.gzip).padStart(9)}`)
@@ -89,6 +94,7 @@ for (const row of rows) {
 
 expectBudget('dist/editor.js', editor.gzip, BUDGETS.editor)
 expectBudget('dist/core.js', core.gzip, BUDGETS.core)
+expectBudget('dist/headless.js', headless.gzip, BUDGETS.headless)
 
 const entryDiff = editor.gzip - core.gzip
 if (entryDiff < BUDGETS.entryDiffMin) {
@@ -111,5 +117,5 @@ log.exitIfFailed('verify:sizes')
 
 console.log(
   `verify:sizes OK — editor ${formatKB(editor.gzip)} gzip, core ${formatKB(core.gzip)} gzip, ` +
-    `diff ${formatKB(entryDiff)}, ${collabChunks.length} lazy chunk(s)`,
+    `headless ${formatKB(headless.gzip)} gzip, diff ${formatKB(entryDiff)}, ${collabChunks.length} lazy chunk(s)`,
 )
