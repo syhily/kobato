@@ -23,6 +23,8 @@ import { entityPermalink } from '@/shared/utils/paths'
 export interface MineCommentItem {
   id: string
   body: CommentEditorState
+  /** Saved feed-variant HTML projection — what the row renders. */
+  content: string | null
   createdAtIso: string
   deletedAtIso: string | null
   deleteRequestedAtIso: string | null
@@ -100,6 +102,7 @@ export async function loadMineCommentsPage(
     return {
       id: String(c.id),
       body: c.body,
+      content: c.content ?? null,
       createdAtIso: c.createAt ? new Date(c.createAt).toISOString() : '',
       deletedAtIso: c.deleteAt ? new Date(c.deleteAt).toISOString() : null,
       deleteRequestedAtIso: c.deleteRequestedAt ? new Date(c.deleteRequestedAt).toISOString() : null,

@@ -6,8 +6,9 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import { commentTextBlockSchema, isCommentBodyEmpty, safeValidateCommentBody } from '@/shared/pt/comment-schema'
 import { textBlockSchema } from '@/shared/pt/schema'
 
-// The legacy PT comment schema still types pre-R12 rows (rendered through the
-// interregnum PT path until R13 and emailed via comment-to-html until R14).
+// The legacy PT comment schema still types pre-R12 rows (emailed via
+// comment-to-html until R14; the plain-text snippet helper dual-reads them
+// until the body backfill lands).
 
 const validBody: CommentBody = [
   { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hello' }] },

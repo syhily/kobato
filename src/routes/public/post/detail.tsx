@@ -6,7 +6,6 @@ import type { RouteHandle } from '@/root'
 import { detailHeaders } from '@/server/http/loaders/route-exports'
 import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@/server/http/ssr-caller'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/shared/seo/meta'
-import { PortableTextBody } from '@/ui/pt/render'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
 import { WebmentionList } from '@/ui/public/webmentions/WebmentionList'
 
@@ -33,12 +32,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   return data(
     {
       post: result.payload.post,
-      body: result.payload.body,
+      bodyHtml: result.payload.bodyHtml,
       visibleTags: result.payload.visibleTags,
       sidebarPosts: result.payload.sidebarPosts,
       tags: result.payload.tags,
       detail: { ...result.payload.critical, comments, webmentions },
-      imageMeta: result.payload.imageMeta,
       draftMarker: result.payload.draftMarker,
     },
     { headers: { ETag: result.etag } },
@@ -54,8 +52,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
-  const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta, draftMarker } = loaderData
-  const headingSlugs = useMemo(() => post.headings.map((h) => h.slug), [post.headings])
+  const { post, bodyHtml, visibleTags, sidebarPosts, tags, detail, draftMarker } = loaderData
   const sidebar = useMemo(
     () => ({
       posts: sidebarPosts,
@@ -65,26 +62,23 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
     [sidebarPosts, tags, detail.recentComments],
   )
   return (
-    <>
-      <PostDetailBody
-        post={post}
-        headings={post.headings}
-        visibleTags={visibleTags}
-        mode={detail.admin ? 'admin' : 'public'}
-        likes={detail.likes}
-        commentKey={detail.commentKey}
-        commentsPromise={detail.comments}
-        webmentions={
-          <Suspense fallback={null}>
-            <Await resolve={detail.webmentions}>{(mentions) => <WebmentionList mentions={mentions} />}</Await>
-          </Suspense>
-        }
-        currentUser={detail.currentUser}
-        draftMarker={draftMarker}
-        sidebar={sidebar}
-      >
-        <PortableTextBody body={body} headingSlugs={headingSlugs} imageMeta={imageMeta} />
-      </PostDetailBody>
-    </>
+    <PostDetailBody
+      post={post}
+      headings={post.headings}
+      bodyHtml={bodyHtml}
+      visibleTags={visibleTags}
+      mode={detail.admin ? 'admin' : 'public'}
+      likes={detail.likes}
+      commentKey={detail.commentKey}
+      commentsPromise={detail.comments}
+      webmentions={
+        <Suspense fallback={null}>
+          <Await resolve={detail.webmentions}>{(mentions) => <WebmentionList mentions={mentions} />}</Await>
+        </Suspense>
+      }
+      currentUser={detail.currentUser}
+      draftMarker={draftMarker}
+      sidebar={sidebar}
+    />
   )
 }

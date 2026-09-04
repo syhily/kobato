@@ -5,14 +5,12 @@ import { ArrowLeftIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { PortableTextBody as PortableTextBodyData } from '@/shared/pt/schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { idStr } from '@/shared/utils/tools'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { UserEditForm } from '@/ui/admin/users/UserEditForm'
 import { UserOperationsCard } from '@/ui/admin/users/UserOperationsCard'
@@ -23,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
-import { PortableTextBody } from '@/ui/pt/render'
+import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -218,10 +216,10 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
                         </span>
                         {c.isPending && <Badge variant="destructive">待审核</Badge>}
                       </div>
-                      <div className="comment-content prose-blog prose prose-sm mt-1 line-clamp-3 max-w-none text-sm leading-snug wrap-break-word whitespace-normal [&>*]:!my-0">
-                        {/* R12 interregnum cast: pre-switch rows are still PT; R13 swaps the renderer. */}
-                        <PortableTextBody body={unsafeCast<PortableTextBodyData>(c.body)} />
-                      </div>
+                      <CommentContentHtml
+                        content={c.content}
+                        className="comment-content prose-blog prose prose-sm mt-1 line-clamp-3 max-w-none text-sm leading-snug wrap-break-word whitespace-normal [&>*]:!my-0"
+                      />
                     </li>
                   ))}
                 </ul>

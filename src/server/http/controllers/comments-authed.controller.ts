@@ -78,6 +78,7 @@ const loadMine = authedProc
         z.object({
           id: z.string(),
           body: commentEditorStateSchema,
+          content: z.string().nullable(),
           createdAtIso: z.string(),
           deletedAtIso: z.string().nullable(),
           deleteRequestedAtIso: z.string().nullable(),

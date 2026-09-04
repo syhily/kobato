@@ -1044,6 +1044,29 @@ body {
 
     font-family: var(--font-serif);
 
+    /* inkling exportDOM bare tags — the retired PT_INLINE tokens as CSS.
+       Shared by post-content AND comment-content. */
+    :where(u) {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    :where(s) {
+      text-decoration: line-through;
+      color: var(--ink-3);
+    }
+
+    :where(mark) {
+      background-color: var(--surface-soft);
+      border-radius: var(--radius-sm);
+      padding-inline: 0.125em;
+    }
+
+    :where(a) {
+      text-decoration-color: color-mix(in oklab, var(--brand) 40%, transparent);
+      text-underline-offset: 2px;
+    }
+
     :where(blockquote) {
       font-style: normal;
       font-weight: 400;
@@ -1073,11 +1096,13 @@ body {
       content: none;
     }
 
-    :where(.math) :where(math) {
+    /* KaTeX MathML cards — PT-era `.math`/`.math-display` (legacy rows) and
+       the inkling exportDOM `.inkling-math-card` wrapper share one look. */
+    :where(.math, .inkling-math-card) :where(math) {
       max-width: none;
     }
 
-    :where(.math-display) {
+    :where(.math-display, .inkling-math-card) {
       max-width: 100%;
       overflow-x: auto;
       overflow-y: hidden;
@@ -1086,7 +1111,11 @@ body {
       text-align: center;
     }
 
-    :where(.math-display) :where(math[display='block']) {
+    :where(.inkling-math-card) {
+      margin-block: 1.5rem;
+    }
+
+    :where(.math-display, .inkling-math-card) :where(math[display='block']) {
       margin-inline: auto;
     }
   }
@@ -1103,6 +1132,11 @@ body {
     --prose-blog-table-border: color-mix(in oklab, var(--line-muted) 78%, var(--ink-4) 22%);
     --prose-blog-table-header-bg: var(--surface);
     --prose-blog-table-stripe: color-mix(in oklab, var(--surface-soft) 55%, var(--canvas) 45%);
+
+    /* Heading anchors land below the fixed header on in-page jumps. */
+    :where(h1, h2, h3, h4, h5, h6)[id] {
+      scroll-margin-top: 5rem;
+    }
 
     /* Article headings scaled down from prose-lg defaults */
     &.prose-lg :where(h1, h2, h3, h4, h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
@@ -1175,7 +1209,7 @@ body {
       -webkit-box-decoration-break: clone;
     }
 
-    :where(span[data-math-inline]) {
+    :where(span[data-math-inline], .inkling-math-inline) {
       background-color: var(--code-bg);
       color: var(--code-inline-fg);
       border: 1px solid var(--code-inline-border);
@@ -1200,7 +1234,9 @@ body {
       padding: 1rem 1.25rem;
       margin-top: 0 !important;
       margin-bottom: 1rem !important;
-      border-radius: 0 0 0.375rem 0.375rem;
+      /* All-corner radius: SSR serves the bare exportDOM <pre>; the hydrated
+         copy chrome (below) squares the top again once wrapped. */
+      border-radius: 0.375rem;
       overflow-x: auto;
       word-break: normal;
       overflow-wrap: normal;
@@ -1301,20 +1337,21 @@ body {
 }
 
 @layer utilities {
-  /* Portable Text tables grid overrides typography prose table borders */
-  .post-content.prose-blog.prose table.pt-table {
+  /* inkling exportDOM tables are BARE (<table><tr><th>…) — these rules used to
+     target the PT grid's table.pt-table; now they model every post-body table. */
+  .post-content.prose-blog.prose table {
     border-collapse: collapse;
     border-width: 1px;
     border-style: solid;
     border-color: var(--prose-blog-table-border, var(--line-muted));
   }
 
-  .post-content.prose-blog.prose table.pt-table :is(thead, tfoot, tbody tr) {
+  .post-content.prose-blog.prose table :is(thead, tfoot, tbody tr) {
     border-width: 0;
     border-style: none;
   }
 
-  .post-content.prose-blog.prose table.pt-table :is(th, td) {
+  .post-content.prose-blog.prose table :is(th, td) {
     border-width: 1px;
     border-style: solid;
     border-color: var(--prose-blog-table-border, var(--line-muted));
@@ -1322,14 +1359,95 @@ body {
     padding-inline: 0.875em;
   }
 
-  .post-content.prose-blog.prose table.pt-table thead th,
-  .post-content.prose-blog.prose table.pt-table tbody tr:first-child th {
+  .post-content.prose-blog.prose table thead th,
+  .post-content.prose-blog.prose table tbody tr:first-child th {
     background-color: var(--prose-blog-table-header-bg);
   }
 
-  .post-content.prose-blog.prose table.pt-table tbody tr:nth-child(even) td {
+  .post-content.prose-blog.prose table tbody tr:nth-child(even) td {
     background-color: var(--prose-blog-table-stripe);
   }
+
+  /* Code-block chrome injected client-side by useCodeCopyButtons — plain CSS
+     because src/client/** sits outside public.css's Tailwind @source scan. */
+  .post-content .code-block-wrapper {
+    position: relative;
+    margin: 0 0 1rem;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+  }
+
+  .post-content .code-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background-color: var(--surface);
+    padding: 0.5rem 1rem;
+    font-family: var(--font-code);
+    user-select: none;
+  }
+
+  .post-content .code-header .language-label {
+    pointer-events: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-1);
+    user-select: none;
+  }
+
+  .post-content .code-header .copy-code {
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-code);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-1);
+    transition:
+      transform 150ms ease-in-out,
+      color 150ms ease-in-out;
+    user-select: none;
+  }
+
+  .post-content .code-header .copy-code:hover {
+    transform: scale(1.05);
+    color: var(--brand);
+  }
+
+  .post-content .code-block-wrapper > pre {
+    margin-bottom: 0 !important;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
+
+/* Footnote hover/focus preview popover (useFootnotePreviews) — unlayered so
+   it beats the prose stack; visuals mirror the shared Tooltip. */
+.footnote-preview {
+  position: fixed;
+  z-index: var(--z-tooltip);
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 1rem));
+  border-radius: var(--radius-xs);
+  background-color: var(--canvas);
+  padding: 0.375rem 0.625rem;
+  box-shadow: var(--shadow-tooltip);
+  color: var(--ink-1);
+  font-size: var(--text-admin-sm);
+  line-height: 1.6;
+  pointer-events: none;
+}
+
+.footnote-preview[hidden] {
+  display: none;
+}
+
+.footnote-preview :where(p) {
+  margin: 0;
 }
 
 /* ─── View Transition styles ───────────────────────────── */

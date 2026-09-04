@@ -50,8 +50,7 @@ async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'pu
       revisionNo: 1,
       status,
       // Rows seeded here are read through the admin revision projection
-      // (Lexical since R9a); the draft-preview tests override with a PT body
-      // because `projectPreview` still reads the PT path until R13/R14.
+      // (Lexical since R9a).
       body: body ?? emptyLexicalBody(),
       imageSources: [],
       headings: [],
@@ -401,8 +400,7 @@ describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
   })
 
   it('returns the page with hasNewerDraft=false when only a published revision exists', async () => {
-    // projectPreview still reads the PT body path until R13/R14.
-    const rev = await seedRevision(0, 'published', [])
+    const rev = await seedRevision(0, 'published')
     await seedPage({ slug: 'pub', published: true, publishedRevisionId: rev.id })
     const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'pub')
     expect(r).not.toBeNull()
@@ -411,7 +409,7 @@ describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
 
   it('returns the page with hasNewerDraft=true when a draft revision exists', async () => {
     const p = await seedPage({ slug: 'drafty' })
-    await seedRevision(p.id, 'draft', [])
+    await seedRevision(p.id, 'draft')
     const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'drafty')
     expect(r).not.toBeNull()
     expect(r!.hasNewerDraft).toBe(true)

@@ -64,11 +64,12 @@ server or client boundary catch and log it.
   entries ship separate Lexical copies.
 - `pt/` — PortableText schema, semantics, footnote-merge, the footnote anchor
   DOM contract (`footnote-anchors`), editor↔storage footnote sync
-  (`footnote-sync`), the heading style↔level table (`heading-levels`), and
-  the request-scoped enriched-body overlay (`enriched`). The legacy comment
-  dialect (`comment-schema`) still types pre-R12 comment rows — the readers
-  render them through the interregnum PT path until R13 and the mail
-  templates via `comment-to-html` until R14. (The PT ↔ ProseMirror bridge
+  (`footnote-sync`), and the heading style↔level table (`heading-levels`). The legacy comment
+  dialect (`comment-schema`) still types pre-R12 comment rows — the mail
+  templates render them via `comment-to-html` until R14 and
+  `commentBodyPlainText` dual-reads them until the body backfill lands. (The
+  request-scoped enriched-body overlay and the PT SSR renderer were retired
+  in R13 with the switch to the saved `bodyHtml` projection; the PT ↔ ProseMirror bridge
   and `comment-markdown` were retired in R12 with the tiptap comment
   editor.)
 - `route-warmup/` — warmup manifest file contract (parse, validate,

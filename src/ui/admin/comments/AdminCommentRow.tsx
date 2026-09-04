@@ -1,7 +1,6 @@
 import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon, XIcon } from 'lucide-react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { PortableTextBody as PortableTextBodyData } from '@/shared/pt/schema'
 import type { CommentActions } from '@/ui/admin/comments/useCommentsController'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
@@ -9,12 +8,11 @@ import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { safeHref } from '@/shared/utils/safe-url'
 import { idStr } from '@/shared/utils/tools'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
-import { PortableTextBody } from '@/ui/pt/render'
 import { commentBodyPlainText } from '@/ui/public/comments/comment-body-helpers'
+import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 import { Image } from '@/ui/public/widgets/Image'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -116,11 +114,11 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
             </p>
           )}
 
-          {/* Body */}
-          <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal">
-            {/* R12 interregnum cast: pre-switch rows are still PT; R13 swaps the renderer. */}
-            <PortableTextBody body={unsafeCast<PortableTextBodyData>(comment.body)} />
-          </div>
+          {/* Body — the saved feed-variant HTML projection, sanitized at render. */}
+          <CommentContentHtml
+            content={comment.content}
+            className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal"
+          />
 
           {/* Action row — flat, no overflow menu. Text label hides on narrow screens. */}
           <div className="mt-4 flex flex-row flex-wrap items-center gap-2">

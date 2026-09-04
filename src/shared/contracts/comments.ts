@@ -41,6 +41,8 @@ export const commentBaseDto = z.object({
   deleteAt: isoDateTime.nullable(),
   deleteRequestedAt: isoDateTime.nullable().optional(),
   body: commentEditorStateSchema,
+  /** Saved feed-variant HTML projection (R13) — sanitized at the render boundary. */
+  content: z.string().nullable(),
   type: z.enum(['post', 'page']).nullable(),
   ownerId: idString.nullable(),
   userId: idString,
@@ -66,7 +68,7 @@ export const commentBaseDto = z.object({
 // consciously appended to this omission list — the split can never leak by
 // drift. (Value shapes intentionally differ: string ids, ISO timestamps.)
 type _publicWireKeyParity = Assert<
-  Equals<keyof z.infer<typeof commentBaseDto>, keyof Omit<CommentAndUser, 'content' | 'ua' | 'ip' | 'email'>>
+  Equals<keyof z.infer<typeof commentBaseDto>, keyof Omit<CommentAndUser, 'ua' | 'ip' | 'email'>>
 >
 
 // The recursive `children` branch uses a getter so zod resolves the schema
@@ -87,9 +89,8 @@ export type CommentItemWire = z.infer<typeof commentItemDto>
 export const ownCommentMutationDto = z.object({ comment: commentItemDto })
 export type OwnCommentMutationOutput = z.infer<typeof ownCommentMutationDto>
 
-// admin comment wire (includes PII fields + content)
+// admin comment wire (includes the PII fields; content rides the base DTO since R13)
 export const adminCommentBaseDto = commentBaseDto.extend({
-  content: z.string().nullable(),
   ua: z.string().nullable(),
   ip: z.string().nullable(),
   email: z.string(),

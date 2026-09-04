@@ -341,7 +341,7 @@ describe('content.posts.bySlug', () => {
 })
 
 describe('content.pages.bySlug', () => {
-  it('returns the ok payload (footnotes title from settings inside the procedure)', async () => {
+  it('returns the ok payload (bodyHtml resolved inside the procedure)', async () => {
     await seedPage({ slug: 'about', title: 'About', publishedAt: new Date('2024-01-01') })
 
     const res = await callRpc('/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
@@ -349,14 +349,16 @@ describe('content.pages.bySlug', () => {
     const json = await parseRpcJson<{
       kind: string
       etag: string | null
-      payload: { page: { permalink: string }; showFriends: boolean; footnotesSectionTitle: string }
+      payload: { page: { permalink: string }; showFriends: boolean; bodyHtml: string }
     }>(res)
 
     expect(json.kind).toBe('ok')
     expect(typeof json.etag).toBe('string')
     expect(json.payload.page.permalink).toBe('/about')
     expect(json.payload.showFriends).toBe(false)
-    expect(json.payload.footnotesSectionTitle).toBe('尾声礼记')
+    // PT-seeded legacy rows carry no projection columns and no Lexical state,
+    // so the bodyHtml fallback resolves to the empty string.
+    expect(json.payload.bodyHtml).toBe('')
   })
 
   it('answers not-modified when the carried If-None-Match matches', async () => {

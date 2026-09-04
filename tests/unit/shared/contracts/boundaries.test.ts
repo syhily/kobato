@@ -1321,7 +1321,7 @@ describe('contract: module and bundle boundaries', () => {
 
     expect(publicCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
     expect(tailwindCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
-    expect(tailwindCss).toContain(':where(.math-display)')
+    expect(tailwindCss).toContain(':where(.math-display, .inkling-math-card)')
     expect(tailwindCss).toContain('overflow-x: auto')
   })
 
@@ -1410,11 +1410,9 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the public UI free of dead exports and one-use comment pass-throughs', () => {
-    const musicPlayer = readFileSync('src/ui/pt/blocks/MusicPlayer.tsx', 'utf8')
-    expect(musicPlayer).not.toMatch(/MusicPlayerInitHost|scheduleMusicPlayerInit/)
-
-    const footnotes = readFileSync('src/ui/pt/Footnotes.tsx', 'utf8')
-    expect(footnotes).not.toMatch(/FootnoteDefinition|stripBackrefs|isBackref/)
+    // The PT renderer was retired in R13 — the body_html projection renders
+    // through dSHI; hydration hooks own the interactive chrome.
+    expect(existsSync('src/ui/pt/render.tsx')).toBe(false)
 
     const comments = readFileSync('src/ui/public/comments/Comments.tsx', 'utf8')
     expect(comments).not.toMatch(/export\s+function\s+createCommentTreeState/)

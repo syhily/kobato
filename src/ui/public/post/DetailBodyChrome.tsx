@@ -1,5 +1,5 @@
 import { PencilIcon } from 'lucide-react'
-import { type ReactNode, Suspense } from 'react'
+import { type ReactNode, Suspense, useMemo } from 'react'
 import { Await, Link } from 'react-router'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
@@ -9,6 +9,7 @@ import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { cn } from '@/ui/lib/cn'
+import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 import { Comments } from '@/ui/public/comments/Comments'
 import { CommentsSkeleton } from '@/ui/public/comments/CommentsSkeleton'
 import { LikeButton } from '@/ui/public/LikeActions'
@@ -47,7 +48,10 @@ export interface DetailBodyChromeProps {
   draftMarker?: DraftMarker
   metaExtra?: ReactNode
   afterLikeButton?: ReactNode
-  children: ReactNode
+  /** Saved `body_html` projection — sanitized with the 'body' preset at this render boundary. */
+  bodyHtml: string
+  /** Trailing slot rendered after the body container (page friends grid). */
+  children?: ReactNode
   postContentRef: React.RefObject<HTMLDivElement | null>
   contentWrapperClassName?: string
   metaClassName?: string
@@ -73,6 +77,7 @@ export function DetailBodyChrome({
   draftMarker = null,
   metaExtra,
   afterLikeButton,
+  bodyHtml,
   children,
   postContentRef,
   contentWrapperClassName,
@@ -82,6 +87,10 @@ export function DetailBodyChrome({
   const publishedIso = date.toISOString()
   const updatedAt = updated ?? date
   const updatedIso = updatedAt.toISOString()
+  // Render boundary: storage keeps raw exportDOM HTML, the wire is trusted
+  // only after the 'body' preset strips everything outside the inkling export
+  // contract. SSR runs the node engine; hydration never re-sets innerHTML.
+  const cleanBodyHtml = useMemo(() => sanitizeHtml(bodyHtml, 'body'), [bodyHtml])
 
   return (
     <>
@@ -123,9 +132,12 @@ export function DetailBodyChrome({
       </div>
       <TableOfContents headings={headings} toc={toc ? 'enabled' : 'disabled'} />
       <div className={contentWrapperClassName}>
-        <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
-          {children}
-        </div>
+        <div
+          ref={postContentRef}
+          className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}
+          dangerouslySetInnerHTML={{ __html: cleanBodyHtml }}
+        />
+        {children}
       </div>
       <LikeButton permalink={permalink} commentKey={commentKey} likes={likes} />
       {afterLikeButton}

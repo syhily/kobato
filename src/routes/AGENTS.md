@@ -84,8 +84,9 @@ Adding a route: pick the area directory, choose a role filename, add the manifes
 
 ## Content patterns
 
-- `post` + `content` → `/posts/:slug`; `page` + `content` → `/:slug`. Both rendered via
-  `<PortableTextBody>`; public URLs use `slug`, not internal id. Custom blocks in `@/ui/pt/blocks/`.
+- `post` + `content` → `/posts/:slug`; `page` + `content` → `/:slug`. Both render the saved
+  `bodyHtml` projection through `DetailBodyChrome` (see `src/ui/AGENTS.md` → Content editors);
+  public URLs use `slug`, not internal id.
 - `visible=false` posts are hidden from the public home and random-post widgets but stay in
   archives, tags, search, sitemap, feeds, and category/tag listings. Full gate rules:
   `src/server/AGENTS.md` → Content.

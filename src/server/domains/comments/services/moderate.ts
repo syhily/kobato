@@ -159,7 +159,7 @@ export async function updateComment(db: Database, rid: string, newBody: CommentE
     return null
   }
 
-  return { ...withCommentBadgeTextColor(r), content: null }
+  return withCommentBadgeTextColor(r)
 }
 
 export async function updateOwnComment(db: Database, rid: string, newBody: CommentEditorState) {
@@ -195,7 +195,7 @@ export async function updateOwnComment(db: Database, rid: string, newBody: Comme
     }
   }
 
-  return { ...withCommentBadgeTextColor(r), content: null }
+  return withCommentBadgeTextColor(r)
 }
 
 /** Visitor self-edit: ownership check, delete-request fence, has-replies

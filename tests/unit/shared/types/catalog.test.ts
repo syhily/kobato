@@ -49,10 +49,12 @@ const basePage: ClientPage = {
 }
 
 describe('shared/types/catalog — toClientPost', () => {
-  it('strips body / imageSources / publishedRevisionId from a Post', () => {
+  it('strips body / bodyHtml / bodyState / imageSources / publishedRevisionId from a Post', () => {
     const post: Post = {
       ...basePost,
       body: [],
+      bodyHtml: '<p>hi</p>',
+      bodyState: null,
       imageSources: ['/a.png'],
       publishedRevisionId: 5,
     }
@@ -60,6 +62,8 @@ describe('shared/types/catalog — toClientPost', () => {
     expect(client).toEqual(basePost)
     expectTypeOf(client).toMatchTypeOf<ClientPost>()
     expect('body' in client).toBe(false)
+    expect('bodyHtml' in client).toBe(false)
+    expect('bodyState' in client).toBe(false)
     expect('imageSources' in client).toBe(false)
     expect('publishedRevisionId' in client).toBe(false)
   })

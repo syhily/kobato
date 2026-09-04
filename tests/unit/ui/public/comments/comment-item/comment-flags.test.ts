@@ -12,6 +12,7 @@ function makeComment(overrides: Partial<CommentItemWire> = {}): CommentItemWire 
     updatedAt: '2024-01-15T08:30:00.000Z',
     deleteAt: null,
     body: EMPTY_COMMENT_EDITOR_STATE,
+    content: null,
     type: 'post',
     ownerId: '1',
     userId: '42',

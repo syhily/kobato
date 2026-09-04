@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 const queryMocks = mockTanstackQuery()
@@ -44,27 +44,16 @@ vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
 }))
 
 let seq = 0
-// R12 interregnum fixture: pre-switch rows still hold PT bodies, and the
-// reader renders them through the legacy PT path until R13 — so the fixture
-// stays PT and crosses the wire type with a deliberate cast.
-function makeBody(text: string): MyCommentItem['body'] {
-  seq += 1
-  return unsafeCast<MyCommentItem['body']>([
-    {
-      _type: 'block',
-      _key: `b${seq}`,
-      style: 'normal',
-      markDefs: [],
-      children: [{ _type: 'span', _key: `s${seq}`, text, marks: [] }],
-    },
-  ])
+function makeContent(text: string): string {
+  return `<p>${text}</p>`
 }
 
 function makeMyComment(overrides: Partial<MyCommentItem> = {}): MyCommentItem {
   seq += 1
   return {
     id: overrides.id ?? `c-${seq}`,
-    body: overrides.body ?? makeBody(`Comment ${seq}`),
+    body: overrides.body ?? makeCommentBody(`Comment ${seq}`),
+    content: overrides.content ?? makeContent(`Comment ${seq}`),
     createdAtIso: overrides.createdAtIso ?? '2024-03-12T08:30:00.000Z',
     deletedAtIso: overrides.deletedAtIso ?? null,
     deleteRequestedAtIso: overrides.deleteRequestedAtIso ?? null,
@@ -114,10 +103,10 @@ describe('snapshot: MyCommentsView data-loaded', () => {
         pages: [
           {
             items: [
-              makeMyComment({ id: '1', body: makeBody('First thought') }),
+              makeMyComment({ id: '1', content: makeContent('First thought') }),
               makeMyComment({
                 id: '2',
-                body: makeBody('Second thought'),
+                content: makeContent('Second thought'),
                 isPending: true,
                 entity: { title: 'Draft Post', permalink: '/posts/draft' },
               }),
@@ -171,7 +160,7 @@ describe('snapshot: MyCommentsView data-loaded', () => {
             items: [
               makeMyComment({
                 id: '1',
-                body: makeBody('Please hide this'),
+                content: makeContent('Please hide this'),
                 deleteRequestedAtIso: '2024-03-10T00:00:00.000Z',
               }),
             ],
@@ -199,7 +188,7 @@ describe('snapshot: MyCommentsView data-loaded', () => {
             items: [
               makeMyComment({
                 id: '1',
-                body: makeBody('Gone'),
+                content: makeContent('Gone'),
                 deletedAtIso: '2024-03-09T00:00:00.000Z',
               }),
             ],
@@ -225,7 +214,7 @@ describe('snapshot: MyCommentsView data-loaded', () => {
             items: [
               makeMyComment({
                 id: '1',
-                body: makeBody('A reply'),
+                content: makeContent('A reply'),
                 parent: { name: 'Bob', excerpt: 'Original thought', isDeleted: false },
               }),
             ],

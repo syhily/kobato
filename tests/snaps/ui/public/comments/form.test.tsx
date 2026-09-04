@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import { renderInRouter } from '#/_helpers/render'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import { Comments } from '@/ui/public/comments/Comments'
 
@@ -64,21 +64,8 @@ describe('snapshot: Comments form variants', () => {
       createAt: '2024-04-18T13:06:00.000Z',
       updatedAt: '2024-04-18T13:06:00.000Z',
       deleteAt: null,
-      // R12 interregnum fixture: PT body via deliberate cast (see comments.test.tsx).
-      body: unsafeCast<CommentItemType['body']>([
-        {
-          _type: 'block',
-          _key: 'b1',
-          style: 'normal',
-          children: [
-            {
-              _type: 'span',
-              _key: 's1',
-              text: '谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。',
-            },
-          ],
-        },
-      ]),
+      body: makeCommentBody('谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。'),
+      content: '<p>谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。</p>',
       type: 'post' as const,
       ownerId: '1',
       userId: '1',

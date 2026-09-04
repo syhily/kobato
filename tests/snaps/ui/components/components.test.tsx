@@ -7,7 +7,6 @@ import { makePost } from '#/_helpers/catalog'
 import { renderInRouter } from '#/_helpers/render'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { Input } from '@/ui/components/input'
-import { CodeBlock } from '@/ui/pt/blocks/CodeBlock'
 import { Pagination } from '@/ui/public/post/Pagination'
 import { PostListingBody, PostSquare } from '@/ui/public/post/PostListViews'
 import { SearchBar } from '@/ui/public/Search'
@@ -83,24 +82,6 @@ describe('snapshot: SettingsRow', () => {
     expect(html).toContain('aria-invalid="true"')
     expect(html).toContain('aria-describedby=')
     expect(html).toContain('前缀冲突')
-  })
-})
-
-describe('snapshot: CodeBlock', () => {
-  it('renders a React-owned code header and copy button', () => {
-    const html = renderToStaticMarkup(
-      <CodeBlock className="shiki language-ts" tabIndex={0}>
-        <code className="language-ts">
-          <span className="line">
-            <span>const answer = 42;</span>
-          </span>
-        </code>
-      </CodeBlock>,
-    )
-    expect(html).toContain('code-block-wrapper')
-    expect(html).toContain('TypeScript')
-    expect(html).toContain('Copy')
-    expect(html).toContain('const answer = 42;')
   })
 })
 
