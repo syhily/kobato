@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revision'
 
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import {
   planBodySave,
   planCreatePublishedAt,
@@ -21,7 +22,7 @@ function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionD
     id: 'rev-1',
     revisionNo: 1,
     status: 'draft',
-    body: [],
+    body: emptyLexicalBody(),
     imageSources: [],
     headings: [],
     authorId: null,

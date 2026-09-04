@@ -66,6 +66,7 @@ import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revisi
 import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { useAutosave } from '@/client/hooks/use-autosave'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 
 const useAutosaveMock = vi.mocked(useAutosave)
@@ -84,7 +85,9 @@ function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionD
     id: 'rev-1',
     revisionNo: 1,
     status: 'draft',
-    body: [],
+    // R11 interregnum: the shell still runs on PortableText bodies; the wire
+    // DTO body has been a Lexical state since R9a, so the fixture casts.
+    body: unsafeCast<AdminRevisionDto['body']>([]),
     imageSources: [],
     headings: [],
     authorId: null,

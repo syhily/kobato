@@ -3,6 +3,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 import type { EditorShellStatus, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
 
 // Pure save planners for the editor persist module: every wire-payload and
@@ -23,7 +24,9 @@ export function verdictBodySave(payload: SaveBodyOutput): SaveBodyVerdict {
   if (payload.status === 'conflict') {
     return { kind: 'conflict', expectedToken: payload.expectedToken }
   }
-  return { kind: 'saved', revision: payload.revision, warning: payload.warning }
+  // R11 interregnum: the wire revision body is a Lexical state since R9a; the
+  // shell still treats it as PortableText until the editor swap.
+  return { kind: 'saved', revision: unsafeCast<RevisionLike>(payload.revision), warning: payload.warning }
 }
 
 /** The full state transition for a landed body save (mutation leg or autosave flush). */

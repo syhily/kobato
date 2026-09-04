@@ -9,13 +9,18 @@ import type { RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { MetaSidebarSlotProps } from '@/ui/admin/editor-shell/EditorMetaPanel'
 import type { EditorScreenAdapter, EditorScreenEntity } from '@/ui/admin/editor-shell/EditorScreen'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
 /** Meta-draft shape the shared screen reads (mirrors EditorScreenAdapter). */
 type EditorMetaShape = { title: string; slug: string; published: boolean; publishedAt: string }
 
-/** Both entity detail DTOs carry the same revision pair. */
+/** Both entity detail DTOs carry the same revision pair. The revision bodies
+ *  are `unknown` here because the wire DTO has carried Lexical states since
+ *  R9a while the shell still reads them as PortableText — the accessors below
+ *  cast back to `RevisionLike` (R11 interregnum; removed with the PT shell). */
 interface DetailRevisions {
-  latestRevision: RevisionLike | null
-  publishedRevision: RevisionLike | null
+  latestRevision: unknown
+  publishedRevision: unknown
 }
 
 /** The oRPC namespace surface the editor adapter consumes — `orpc.admin.posts` / `orpc.admin.pages` both satisfy it structurally. */
@@ -77,8 +82,9 @@ export interface EditorAdapterRuntime<TMeta extends EditorMetaShape> {
 }
 
 // Module-level revision accessors — stable identities keep the screen's memoized detail object referentially stable.
-const getLatestRevision = (detail: DetailRevisions) => detail.latestRevision
-const getPublishedRevision = (detail: DetailRevisions) => detail.publishedRevision
+// The casts re-narrow the R9a Lexical wire bodies to the shell's PT `RevisionLike` (R11 interregnum).
+const getLatestRevision = (detail: DetailRevisions) => unsafeCast<RevisionLike | null>(detail.latestRevision)
+const getPublishedRevision = (detail: DetailRevisions) => unsafeCast<RevisionLike | null>(detail.publishedRevision)
 
 /** Assemble the `EditorScreenAdapter` for one entity; the wire wrappers (call → invalidate list → unwrap envelope) live here exactly once. */
 export function makeEditorAdapter<
@@ -122,9 +128,9 @@ export function makeEditorAdapter<
       invalidateList()
       return config.unwrapEntity(result)
     },
-    saveDraftFn: (input) => config.api.saveDraft(input),
+    saveDraftFn: (input) => config.api.saveDraft(unsafeCast<SaveBodyInput>(input)),
     publishFn: async (input) => {
-      const result = await config.api.publishLatest(input)
+      const result = await config.api.publishLatest(unsafeCast<SaveBodyInput>(input))
       invalidateList()
       return result
     },
@@ -134,7 +140,9 @@ export function makeEditorAdapter<
       return config.unwrapEntity(result)
     },
     buildUpsertMetaPayload: config.buildUpsertMetaPayload,
-    directSaveDraft: (input) => config.api.saveDraft(input),
+    // R11 interregnum: the shell hands a PT-shaped body; the wire schema has
+    // carried a Lexical state since R9a — re-narrow at this boundary only.
+    directSaveDraft: (input) => config.api.saveDraft(unsafeCast<SaveBodyInput>(input)),
 
     deleteEntityFn: (id) => config.api.delete({ id }),
     restoreEntityFn: (id) => config.api.restore({ id }),

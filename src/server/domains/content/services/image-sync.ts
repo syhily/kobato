@@ -1,25 +1,39 @@
 import type { Database } from '@/server/infra/db/database'
-import type { ImageBlock, PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schema'
 
 import { findImagesByIds, updateImageNote } from '@/server/infra/db/operations/image'
-import { visitNestedBlocks } from '@/shared/pt/utils'
+import { visitLexicalNodes } from '@/shared/lexical/walk'
 import { idFromString } from '@/shared/utils/id'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Two-step sync for `image` blocks at save time. Library blocks
-// re-resolve from the canonical `image` row and write back `alt`;
-// external blocks are left alone. Failures are swallowed.
-export async function syncLibraryImageBlocks(db: Database, body: PortableTextBody): Promise<void> {
-  const targets: ImageBlock[] = []
-  visitNestedBlocks(body, (block) => {
-    if (block._type === 'image') {
-      targets.push(block)
+// Two-step sync for `image` nodes at save time (Lexical counterpart of the
+// PT block sync, plan round R9a). Library nodes re-resolve from the
+// canonical `image` row and write back `alt`; external nodes are left
+// alone. Failures are swallowed.
+
+interface ImageNodeView extends LexicalNodeJson {
+  src: string
+  alt: string
+  width: number | null
+  height: number | null
+  thumbhash?: string
+  storagePath?: string
+  imageId?: string
+}
+
+export async function syncLibraryImageBlocks(db: Database, state: LexicalEditorState): Promise<void> {
+  const targets: ImageNodeView[] = []
+  visitLexicalNodes(state, (node) => {
+    if (node.type === 'image') {
+      // The schema pins the image dataset shape; the view exposes the fields this pass mutates.
+      targets.push(unsafeCast<ImageNodeView>(node))
     }
   })
   if (targets.length === 0) {
     return
   }
 
-  const idTargets: { id: number; target: ImageBlock }[] = []
+  const idTargets: { id: number; target: ImageNodeView }[] = []
   for (const target of targets) {
     if (target.imageId === undefined || target.imageId === '') {
       continue
@@ -54,7 +68,7 @@ export async function syncLibraryImageBlocks(db: Database, body: PortableTextBod
     // Site-owned form: content stores the origin-relative `/storage/<key>` so a
     // backend/CDN switch never breaks stored bodies; renderers absolutize.
     target.src = `/storage/${row.storagePath}`
-    const nextNote = (target.alt ?? '').trim()
+    const nextNote = target.alt.trim()
     if (nextNote !== (row.note ?? '')) {
       await updateImageNote(db, row.id, nextNote === '' ? null : nextNote).catch(() => undefined)
     }

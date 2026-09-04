@@ -16,8 +16,8 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
-import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { areLexicalEditorStatesEquivalent } from '@/shared/lexical/equivalence'
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
 type RevisionTx = Parameters<Parameters<Database['transaction']>[0]>[0]
 
@@ -152,13 +152,13 @@ export async function saveDraftRevision(
       return conflict
     }
 
-    const inputBody = portableTextBodySchema.safeParse(input.body)
-    const latestBody = latest !== undefined ? portableTextBodySchema.safeParse(latest.body) : null
+    const inputBody = lexicalEditorStateSchema.safeParse(input.body)
+    const latestBody = latest !== undefined ? lexicalEditorStateSchema.safeParse(latest.body) : null
     if (
       latest?.status === 'published' &&
       inputBody.success &&
       latestBody?.success &&
-      arePortableTextBodiesEquivalent(inputBody.data, latestBody.data) &&
+      areLexicalEditorStatesEquivalent(inputBody.data, latestBody.data) &&
       isDeepStrictEqual(input.imageSources, latest.imageSources) &&
       isDeepStrictEqual(input.headings, latest.headings)
     ) {

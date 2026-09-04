@@ -39,6 +39,7 @@
     "prebuild": "node scripts/ensure-inkling-dist.ts",
     "predev": "node scripts/ensure-inkling-dist.ts",
     "prepare": "pnpx husky",
+    "pretest": "node scripts/ensure-inkling-dist.ts",
     "pretype": "node scripts/ensure-inkling-dist.ts",
     "release:bump": "node scripts/release.ts bump",
     "release:prepare-next": "node scripts/release.ts prepare-next",

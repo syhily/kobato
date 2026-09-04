@@ -4,9 +4,14 @@ import { useMemo } from 'react'
 
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
-import type { SaveBodyInput, SaveBodyOutput } from '@/shared/contracts/revision'
+import type { SaveBodyOutput } from '@/shared/contracts/revision'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { EntityLike, RevisionLike, UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
+import type {
+  EntityLike,
+  RevisionLike,
+  ShellSaveBodyInput,
+  UseEditorShellStateOutput,
+} from '@/ui/admin/editor-shell/editor-shell-types'
 import type { MetaSidebarSlotProps } from '@/ui/admin/editor-shell/EditorMetaPanel'
 
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
@@ -58,8 +63,8 @@ export interface EditorScreenAdapter<
   createDraftConfig: CreateDraftConfig<PortableTextBody>
 
   upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
-  saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
-  publishFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
+  saveDraftFn: (input: ShellSaveBodyInput) => Promise<SaveBodyOutput>
+  publishFn: (input: ShellSaveBodyInput) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
   buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
   directSaveDraft: (input: {

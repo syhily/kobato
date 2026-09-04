@@ -7,6 +7,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { toastApiError } from '@/client/lib/toast-api-error'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
@@ -232,7 +233,10 @@ interface RevisionDetailViewProps {
 }
 
 function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: RevisionDetailViewProps) {
-  const diff = useMemo(() => diffBodies(revision.body, currentBody), [revision.body, currentBody])
+  // R11 interregnum: the wire revision body is a Lexical state since R9a; the
+  // drawer diffs against the shell's PortableText body until the editor swap.
+  const revisionBody = unsafeCast<PortableTextBody>(revision.body)
+  const diff = useMemo(() => diffBodies(revisionBody, currentBody), [revisionBody, currentBody])
   const changedCount = diff.filter((entry) => entry.status !== 'unchanged').length
 
   const leftScrollRef = useRef<HTMLDivElement>(null)

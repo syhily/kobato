@@ -3,7 +3,7 @@ import type { ContentType } from '@/server/domains/content/schemas/revision'
 import type { AdminListEngagement } from '@/server/domains/content/services/admin-list'
 import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type { RoleOrNull } from '@/shared/utils/roles'
 
 /**
@@ -116,7 +116,7 @@ export interface MetaEntityDescriptor<
     /** Catalog projection of meta + revision (toCmsPost / toCmsPage). */
     project: (meta: TMeta, revision: ContentRow | null) => TPreview
     /** Post-publish side effects: invalidation for both entities; posts also refresh the search index. */
-    afterPublish: (db: Database, meta: TMeta, body: PortableTextBody, warnings: string[]) => Promise<void>
+    afterPublish: (db: Database, meta: TMeta, body: LexicalEditorState, warnings: string[]) => Promise<void>
   }
 
   adminDto: {

@@ -1,5 +1,5 @@
 import type { AdminPageDetailDto, AdminPageDto } from '@/shared/contracts/pages'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -166,7 +166,7 @@ export interface UnpublishPageOutput {
 }
 
 export interface PreviewPageBodyInput {
-  body: PortableTextBody
+  body: LexicalEditorState
 }
 
 export interface RenderMathInput {

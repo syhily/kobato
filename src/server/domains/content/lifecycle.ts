@@ -1,8 +1,10 @@
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { ContentType, PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schemas/revision'
+import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type { PortableTextBody, PortableTextHeading } from '@/shared/pt/schema'
 import type { RoleOrNull } from '@/shared/utils/roles'
 
@@ -11,10 +13,13 @@ import { publishLatestRevision, saveDraftRevision } from '@/server/domains/conte
 import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/revisions'
 import { rescheduleScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
+import { snapshotMusicPlayerMeta } from '@/server/domains/pt/lexical-music-snapshot'
 import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
+import { canonicalizeLexicalEditorState } from '@/server/domains/pt/services/lexical-canonicalize'
 import { getLogger, type Logger } from '@/server/infra/logger'
 import { deriveSlug } from '@/server/infra/slug/derive'
-import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
+import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@/shared/lexical/collect'
+import { collectHeadings } from '@/shared/pt/utils'
 
 const log = getLogger('content.lifecycle')
 
@@ -36,7 +41,7 @@ export interface ContentEntityAdapter<TMeta, TPreview> {
   getPublishedRevisionId(meta: TMeta): number | null
   projectPreview(meta: TMeta, revision: ContentRow | null): TPreview
   recordForceOverwrite(entry: ForceOverwriteEntry<TMeta>): void
-  afterPublish(db: Database, meta: TMeta, body: PortableTextBody, warnings: string[]): Promise<void>
+  afterPublish(db: Database, meta: TMeta, body: LexicalEditorState, warnings: string[]): Promise<void>
 }
 
 export interface ForceOverwriteEntry<TMeta> {
@@ -72,6 +77,12 @@ export function recordForceOverwriteAudit<TMeta extends { id: number }>(
 export interface SaveBodyInput {
   entityId: number
   body: unknown
+  /**
+   * Music-domain resolver wired by the controller (the pt domain must not
+   * depend on the music domain) — resolves `music-player` node playerIds
+   * into the meta snapshot embedded at save time.
+   */
+  resolveMusicEmbeds: MusicEmbedResolver
   expectedClientRevisionToken?: string | null
   force?: boolean
   authorId: number | null
@@ -106,7 +117,8 @@ export async function saveBody<TMeta, TPreview>(
 ): Promise<SaveBodyResult> {
   const meta = adapter.findMetaById(db, input.entityId)
   adapter.assertAccess(meta, viewer)
-  const body = await canonicalizePortableTextBody(input.body)
+  const body = await canonicalizeLexicalEditorState(input.body)
+  await snapshotMusicPlayerMeta(body, input.resolveMusicEmbeds)
 
   const warnings: string[] = []
 
@@ -121,8 +133,8 @@ export async function saveBody<TMeta, TPreview>(
     warnings.push('图片库同步失败，部分图片可能无法正常显示。')
   }
 
-  const imageSources = collectImageStoragePaths(body)
-  const headings = collectHeadings(body, deriveSlug)
+  const imageSources = collectLexicalImageStoragePaths(body)
+  const headings = collectLexicalHeadings(body)
 
   // Audit context = the latest revision of any status; a read ERROR here
   // propagates and aborts the save (audit P1-25) rather than drop the

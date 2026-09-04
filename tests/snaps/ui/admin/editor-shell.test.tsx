@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
@@ -72,7 +73,7 @@ function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionD
     id: overrides.id ?? 'rev-1',
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
-    body: overrides.body ?? [],
+    body: overrides.body ?? emptyLexicalBody(),
     imageSources: overrides.imageSources ?? [],
     headings: overrides.headings ?? [],
     authorId: overrides.authorId ?? null,

@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '#/_helpers/lexical'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 
 const db = getTestDb()
@@ -62,15 +63,9 @@ describe('taxonomy cache invalidation', () => {
       postLifecycleAdapter,
       {
         entityId: Number(created.id),
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'pub', marks: [] }],
-          },
-        ],
+        body: lexicalBodyWith([lexicalParagraph('pub')]),
         authorId: null,
+        resolveMusicEmbeds: stubMusicResolver(),
       },
       'publish',
     )

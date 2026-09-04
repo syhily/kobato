@@ -34,7 +34,14 @@ server or client boundary catch and log it.
   (`comment-schema`), and the R11 composer-manifest placeholder
   (`composer-nodes`). Pure zod — no lexical runtime dependency; the
   `SerializedEditorState` type is an erased `import type` from
-  `@inkling/editor/headless`.
+  `@inkling/editor/headless`. R9a added the save-pipeline modules on top:
+  `walk` (pre-order traversal + serialized `getTextContent` parity),
+  `heading-slug` (byte-exact port of inkling's slugify + dedup tracker —
+  the `headings` column's slug single source, contract-tested against the
+  real `lexicalStateToHtml` export), `collect` (headings / image storage
+  paths / music player ids derived columns), `artifacts` (server-filled
+  node-dataset slot registry), and `equivalence` (artifact-blind semantic
+  fingerprint for the save no-op short-circuit).
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
   footnote-merge, the footnote anchor DOM contract (`footnote-anchors`),
   editor↔storage footnote sync (`footnote-sync`), the heading

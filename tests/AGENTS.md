@@ -128,6 +128,9 @@ ceremony:
   to the system timezone and breaks `computeNextRun` whenever the system
   zone differs from the settings zone.
   - `#/_helpers/blog-settings` — test settings bundle
+  - `#/_helpers/lexical` — Lexical editor-state fixtures (`emptyLexicalBody`,
+    `lexicalBodyWith`, `lexicalParagraph`, `lexicalHeading`, `lexicalImage`,
+    `lexicalMusicPlayer`) + `stubMusicResolver` for `saveBody` inputs
   - `#/_helpers/deep-freeze` — recursive `Object.freeze` for fixtures that
     must stay mutation-proof across tests
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)

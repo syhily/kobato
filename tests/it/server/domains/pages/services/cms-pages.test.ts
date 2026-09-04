@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { emptyLexicalBody, lexicalBodyWith, lexicalHeading, lexicalImage, stubMusicResolver } from '#/_helpers/lexical'
 import * as lifecycle from '@/server/domains/content/lifecycle'
 import * as adminQuery from '@/server/domains/pages/services/admin-query'
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
@@ -48,7 +49,9 @@ async function seedRevision(ownerId: number, overrides: Partial<typeof contentTa
       ownerId,
       revisionNo: overrides.revisionNo ?? 1,
       status: overrides.status ?? 'draft',
-      body: [],
+      // Seeded revisions are read through the admin revision projection,
+      // Lexical-bodied since R9a.
+      body: emptyLexicalBody(),
       imageSources: [],
       headings: [],
       ...overrides,
@@ -61,14 +64,8 @@ async function contentRows(ownerId: number) {
   return db.select().from(contentTable).where(eq(contentTable.ownerId, ownerId))
 }
 
-const VALID_BODY = [
-  {
-    _type: 'block',
-    _key: 'b1',
-    style: 'h2',
-    children: [{ _type: 'span', _key: 's1', text: 'Hello world' }],
-  },
-]
+const VALID_BODY = lexicalBodyWith([lexicalHeading('h2', 'Hello world')])
+const NO_MUSIC = stubMusicResolver()
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -168,7 +165,12 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
       lifecycle.saveBody(
         db,
         pageLifecycleAdapter,
-        { entityId: meta.id, body: [{ _type: 'unknown', _key: 'k' }], authorId: null },
+        {
+          entityId: meta.id,
+          body: lexicalBodyWith([{ type: 'nope', version: 1, children: [], direction: 'ltr', format: '', indent: 0 }]),
+          authorId: null,
+          resolveMusicEmbeds: NO_MUSIC,
+        },
         'draft',
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
@@ -177,7 +179,12 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
 
   it('rejects when the page row is missing without touching the revisions table', async () => {
     await expect(
-      lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 999, body: VALID_BODY, authorId: null }, 'draft'),
+      lifecycle.saveBody(
+        db,
+        pageLifecycleAdapter,
+        { entityId: 999, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+        'draft',
+      ),
     ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
@@ -187,24 +194,14 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
   it('persists the body with derived imageSources and headings on the revision row', async () => {
     const meta = await seedPage()
 
-    const body = [
-      {
-        _type: 'block',
-        _key: 'h1',
-        style: 'h2',
-        children: [{ _type: 'span', _key: 's1', text: 'Hello' }],
-      },
-      {
-        _type: 'image',
-        _key: 'i1',
-        src: 'https://cdn/example.jpg',
-        storagePath: 'images/2026/05/foo.jpg',
-      },
-    ]
+    const body = lexicalBodyWith([
+      lexicalHeading('h2', 'Hello'),
+      lexicalImage({ src: 'https://cdn/example.jpg', storagePath: 'images/2026/05/foo.jpg' }),
+    ])
     const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
-      { entityId: meta.id, body, authorId: 42 },
+      { entityId: meta.id, body, authorId: 42, resolveMusicEmbeds: NO_MUSIC },
       'draft',
     )
     expect(result.status).toBe('saved')
@@ -230,6 +227,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
       {
         entityId: meta.id,
         body: VALID_BODY,
+        resolveMusicEmbeds: NO_MUSIC,
         authorId: null,
         expectedClientRevisionToken: 'stale-token',
       },
@@ -253,7 +251,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
     const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
-      { entityId: meta.id, body: VALID_BODY, authorId: 5 },
+      { entityId: meta.id, body: VALID_BODY, authorId: 5, resolveMusicEmbeds: NO_MUSIC },
       'publish',
     )
     expect(result.status).toBe('saved')
@@ -284,6 +282,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       {
         entityId: meta.id,
         body: VALID_BODY,
+        resolveMusicEmbeds: NO_MUSIC,
         authorId: null,
         expectedClientRevisionToken: 'expected-token-abc',
       },
@@ -312,6 +311,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       {
         entityId: meta.id,
         body: VALID_BODY,
+        resolveMusicEmbeds: NO_MUSIC,
         authorId: 42,
         expectedClientRevisionToken: 'client-thought-this',
         force: true,
@@ -353,6 +353,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       {
         entityId: meta.id,
         body: VALID_BODY,
+        resolveMusicEmbeds: NO_MUSIC,
         authorId: null,
         expectedClientRevisionToken: 'aligned-token',
         force: true,
@@ -378,6 +379,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       {
         entityId: meta.id,
         body: VALID_BODY,
+        resolveMusicEmbeds: NO_MUSIC,
         authorId: null,
         expectedClientRevisionToken: 'stale-client',
         force: false,
@@ -409,6 +411,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       {
         entityId: meta.id,
         body: VALID_BODY,
+        resolveMusicEmbeds: NO_MUSIC,
         authorId: 99,
         expectedClientRevisionToken: 'cli-token',
         force: true,

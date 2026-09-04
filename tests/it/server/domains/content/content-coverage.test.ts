@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { saveDraftRevision, publishLatestRevision } from '@/server/domains/content/repos/mutate'
 import {
   findContentById,
@@ -21,9 +22,7 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-const body = [
-  { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }] },
-]
+const body = lexicalBodyWith([lexicalParagraph('hi')])
 
 async function seedPostMeta(slug = 'p1', title = 'P1') {
   const [m] = await db.insert(postMetaTable).values({ slug, title }).returning()

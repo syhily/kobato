@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '#/_helpers/lexical'
 import { saveBody } from '@/server/domains/content/lifecycle'
 import { warmContentRenderCaches } from '@/server/domains/content/render-warmup'
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
@@ -35,9 +36,8 @@ import '@/server/render/warmup/content-cache'
 
 const db = getTestDb()
 
-const VALID_BODY = [
-  { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }] },
-]
+const VALID_BODY = lexicalBodyWith([lexicalParagraph('hi')])
+const NO_MUSIC = stubMusicResolver()
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -68,7 +68,7 @@ describe('render cache warmup on content publish/update', () => {
     const result = await saveBody(
       db,
       postLifecycleAdapter,
-      { entityId: postId, body: VALID_BODY, authorId: null },
+      { entityId: postId, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
       'publish',
     )
     expect(result.status).toBe('saved')
@@ -90,7 +90,12 @@ describe('render cache warmup on content publish/update', () => {
   it('re-warms after a meta update on a live post, but not on an unpublished one', async () => {
     await createPost(db, { title: 'Live Post' }, null)
     const liveId = await postIdBySlug('live-post')
-    await saveBody(db, postLifecycleAdapter, { entityId: liveId, body: VALID_BODY, authorId: null }, 'publish')
+    await saveBody(
+      db,
+      postLifecycleAdapter,
+      { entityId: liveId, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+      'publish',
+    )
     await createPost(db, { title: 'Draft Post' }, null)
     const draftId = await postIdBySlug('draft-post')
     warmMock.mockClear()
@@ -114,7 +119,7 @@ describe('render cache warmup on content publish/update', () => {
     const result = await saveBody(
       db,
       pageLifecycleAdapter,
-      { entityId: pageId, body: VALID_BODY, authorId: null },
+      { entityId: pageId, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
       'publish',
     )
     expect(result.status).toBe('saved')
@@ -136,7 +141,7 @@ describe('render cache warmup on content publish/update', () => {
     const result = await saveBody(
       db,
       postLifecycleAdapter,
-      { entityId: postId, body: VALID_BODY, authorId: null },
+      { entityId: postId, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
       'publish',
     )
     expect(result.status).toBe('saved')
