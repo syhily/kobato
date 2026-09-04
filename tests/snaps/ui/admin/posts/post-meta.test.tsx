@@ -3,6 +3,7 @@ import type { NavigateFunction } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import { makeAdminPost } from '#/_helpers/catalog'
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '@/shared/types/posts'
 import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
@@ -264,7 +265,7 @@ const sidebarState = {
   revisionSummary: null,
   saveStatus: { kind: 'unsaved' as const },
   expectedToken: 'token-abc',
-  body: [],
+  body: emptyLexicalBody(),
   adoptRevisionFromHistory: noop,
 }
 
@@ -283,7 +284,6 @@ function renderMetaPanel(entity: { id: string; slug: string; title: string; dele
         entityKind="post"
         entityLabel="文章"
         entity={entity}
-        previewOpen={false}
         metaOpen={true}
         setMetaOpen={noop}
         isLg={true}
@@ -331,10 +331,9 @@ describe('snapshot: EditorMetaPanel (sheet)', () => {
           entityKind="post"
           entityLabel="文章"
           entity={{ id: post.id, slug: post.slug, title: post.title, deletedAt: post.deletedAt }}
-          previewOpen={true}
           metaOpen={false}
           setMetaOpen={noop}
-          isLg={true}
+          isLg={false}
           sidebar={sidebarState}
           renderSidebar={(props) => <PostMetaSidebar {...props} />}
           deleteRestore={deleteRestore}

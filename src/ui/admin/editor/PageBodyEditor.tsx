@@ -1,364 +1,222 @@
-import type { JSONContent } from '@tiptap/core'
+// The page/article body editor (R11, plan
+// docs/plans/inkling-editor-replacement.md M3): the tiptap micro-app is
+// replaced by inkling's full surface (`InklingComposer` + `InklingEditor`)
+// with kobato host glue — no fixed toolbar, no live preview; insertion is
+// slash/plus driven and the canvas is the WYSIWYG render.
+//
+// Host wiring, one module per concern under `@/client/editor/`:
+// - `page-editor-nodes` — the composer node set (AsideNode filtered;
+//   KobatoImageNode replaces the stock image card by type).
+// - `image-insert-override` — HIGH-priority INSERT_IMAGE_COMMAND /
+//   OPEN_IMAGE_LIBRARY_COMMAND handlers (the stock LOW handlers still mount
+//   on the shared `image` type but would build the stock class / open
+//   inkling's internal overlay).
+// - `page-editor-upload` — paste/drop/file-dialog uploads through
+//   `orpc.admin.images.upload` (a tiptap-era non-feature, now wired).
+// - `page-editor-card-config` / `render-math` — image width policy, library
+//   menu visibility, and the debounced server KaTeX preview channel.
+// - `use-focus-mode` — the writing-focus toggle (focus UX is host-owned).
+// - Music picking: slash inserts an empty `music-player` card; clicking its
+//   placeholder opens `MusicPickerDialog` via `MusicPickContext` and the pick
+//   writes `playerId` back onto the node.
+//
+// SSR: the inkling tree mounts only after hydration (`useHydrated`) — the
+// placeholder below is what the server and the first client render agree on
+// (the `immediatelyRender: false` placeholder of the tiptap era).
 
-import Focus from '@tiptap/extension-focus'
-import Link from '@tiptap/extension-link'
-import Placeholder from '@tiptap/extension-placeholder'
-import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
-import TextAlign from '@tiptap/extension-text-align'
-import Typography from '@tiptap/extension-typography'
-import { EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
+import '@/styles/inkling-editor.css'
+import type { ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@inkling/editor'
+
+import { InklingComposer, InklingEditor, INSERT_IMAGE_COMMAND } from '@inkling/editor'
+import { FocusIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { AdminImageDto } from '@/shared/contracts/images'
+import type { AdminMusicDto } from '@/shared/contracts/music'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
-import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
-import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
-import { stripFootnoteDefinitionsForEditor } from '@/shared/pt/footnote-merge'
-import { validatePortableTextBody } from '@/shared/pt/utils'
-import { setEditorAction } from '@/ui/admin/editor/editor-actions-setter'
-import { FootnoteEditorDialog } from '@/ui/admin/editor/FootnoteEditorDialog'
+import { MusicPickContext, type MusicPickTarget } from '@/client/editor/cards/music-pick-context'
+import { registerKobatoImageInsertCommands, toSiteOwnedImageSrc } from '@/client/editor/image-insert-override'
+import { inklingLabels } from '@/client/editor/inkling-labels'
+import { pageEditorCardConfig } from '@/client/editor/page-editor-card-config'
+import { PAGE_EDITOR_NODES } from '@/client/editor/page-editor-nodes'
+import { pageEditorFileUploader } from '@/client/editor/page-editor-upload'
+import { useFocusModePreference } from '@/client/editor/use-focus-mode'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/editor/pickers/MusicPickerDialog'
-import { BlockCardNode } from '@/ui/admin/editor/tiptap/BlockCardNode'
-import { PageBubbleMenu } from '@/ui/admin/editor/tiptap/BubbleMenu'
-import { CodeBlockBubbleMenu } from '@/ui/admin/editor/tiptap/CodeBlockBubbleMenu'
-import { EditorActionsExtension } from '@/ui/admin/editor/tiptap/editor-actions'
-import { FootnoteCaretTriggerExtension } from '@/ui/admin/editor/tiptap/footnote-caret-trigger'
-import { ImageNode } from '@/ui/admin/editor/tiptap/ImageNode'
-import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/editor/tiptap/InlineMarks'
-import { SlashCommandsExtension } from '@/ui/admin/editor/tiptap/SlashMenu'
-import { SolutionNode } from '@/ui/admin/editor/tiptap/SolutionNode'
-import { TableCellGuardExtension } from '@/ui/admin/editor/tiptap/table-cell-guard'
-import { TableBubbleMenu } from '@/ui/admin/editor/tiptap/TableBubbleMenu'
-import { TwoColumnNode, TwoColumnPaneNode } from '@/ui/admin/editor/tiptap/TwoColumnNode'
-import { useEditorFootnotes } from '@/ui/admin/editor/tiptap/use-editor-footnotes'
-import { useToolbarDensityPreference } from '@/ui/admin/editor/toolbar/density'
-import { Toolbar } from '@/ui/admin/editor/toolbar/Toolbar'
-import { useEditorPickers } from '@/ui/admin/editor/use-editor-pickers'
-import {
-  useMathInlineClickEditorRef,
-  useOpenFootnoteEditDialogRef,
-  useTiptapEditorProps,
-} from '@/ui/admin/editor/use-editor-props'
-import { cn } from '@/ui/lib/cn'
+import { Button } from '@/ui/components/button'
+import { useTheme } from '@/ui/lib/ThemeProvider'
+import { useHydrated } from '@/ui/lib/use-hydrated'
 
 export interface PageBodyEditorProps {
-  /** Initial PortableText body. Only read on first mount + when `bodyKey` changes. */
-  initialBody: PortableTextBody
+  /** Initial Lexical body. Only read on first mount + when `bodyKey` changes. */
+  initialBody: LexicalEditorState
   /** Identity of the body source — a change resets the editor content from `initialBody`. */
   bodyKey: string
-  /** Fired on every editor update with the freshly-derived PortableText body. */
-  onBodyChange: (body: PortableTextBody) => void
+  /** Fired on every editor update with the freshly-serialized Lexical state. */
+  onBodyChange: (body: LexicalEditorState) => void
   /** When true, the editor becomes read-only. */
   disabled?: boolean
-  /** Live preview layout: toolbar fixed above a scrollable canvas; when false
-   *  it scrolls inline and a floating duplicate pins on scroll-out. */
-  livePreviewOpen?: boolean
-  /** Scrollable container ref for bidirectional scroll sync with the live preview. */
-  scrollContainerRef?: React.RefObject<HTMLDivElement | null>
-  /** Actions right of the floating toolbar; hidden while the floating toolbar is hidden. */
-  floatingActions?: React.ReactNode
 }
 
-export function PageBodyEditor({
-  initialBody,
-  bodyKey,
-  onBodyChange,
-  disabled,
-  livePreviewOpen = false,
-  scrollContainerRef,
-  floatingActions,
-}: PageBodyEditorProps) {
-  const onBodyChangeRef = useRef(onBodyChange)
-  useEffect(() => {
-    onBodyChangeRef.current = onBodyChange
-  })
-
-  const editorZoomContainerRef = useRef<HTMLDivElement>(null)
-  useMediumZoom(editorZoomContainerRef)
-
-  const mathInlineClickEditorRef = useMathInlineClickEditorRef()
-  const openFootnoteEditDialogRef = useOpenFootnoteEditDialogRef()
-  const tiptapEditorProps = useTiptapEditorProps(mathInlineClickEditorRef, openFootnoteEditDialogRef)
-
-  const editor = useEditor({
-    immediatelyRender: false,
-    editable: disabled !== true,
-    editorProps: tiptapEditorProps,
-    extensions: [
-      StarterKit.configure({
-        link: false,
-        dropcursor: { color: 'var(--brand)', width: 2 },
-      }),
-      Typography,
-      TextAlign.configure({ types: ['heading', 'paragraph', 'blockquote'] }),
-      Focus.configure({ className: 'tiptap-focus-node', mode: 'all' }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: { class: null, target: null, rel: null },
-      }),
-      Placeholder.configure({
-        placeholder: '在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）',
-      }),
-      Table.configure({
-        resizable: false,
-        View: null,
-        HTMLAttributes: { class: 'pt-table' },
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      ImageNode,
-      TwoColumnPaneNode,
-      TwoColumnNode,
-      SolutionNode,
-      BlockCardNode,
-      MathInlineMark,
-      FootnoteRefMark,
-      FootnoteCaretTriggerExtension,
-      SlashCommandsExtension,
-      EditorActionsExtension,
-      TableCellGuardExtension,
-    ],
-    content: bodyToPmDoc(stripFootnoteDefinitionsForEditor(validatePortableTextBody(initialBody))) as JSONContent,
-    onUpdate({ editor: instance }) {
-      const merged = footnotes.handleEditorUpdate(instance)
-      onBodyChangeRef.current(merged)
-    },
-  })
-
-  const footnotes = useEditorFootnotes(editor)
-  useEffect(() => {
-    openFootnoteEditDialogRef.current = footnotes.openEditDialog
-  })
-
-  const confirmFootnoteDialog = useCallback(
-    (plainText: string) => {
-      const merged = footnotes.insertFootnote(plainText)
-      if (merged !== null) {
-        onBodyChangeRef.current(merged)
-      }
-    },
-    [footnotes],
-  )
-
-  const deleteFootnoteFromDialog = useCallback(() => {
-    const targetKey = footnotes.editTargetKey
-    if (targetKey === null) {
-      return
-    }
-    const merged = footnotes.removeFootnote(targetKey)
-    if (merged !== null) {
-      onBodyChangeRef.current(merged)
-    }
-  }, [footnotes])
-
-  useEffect(() => {
-    mathInlineClickEditorRef.current = editor
-    return () => {
-      if (mathInlineClickEditorRef.current === editor) {
-        mathInlineClickEditorRef.current = null
-      }
-    }
-  }, [editor, mathInlineClickEditorRef])
-
-  const lastResetKey = useRef<string | null>(null)
-  useEffect(() => {
-    if (editor === null) {
-      return
-    }
-    if (lastResetKey.current === bodyKey) {
-      return
-    }
-    lastResetKey.current = bodyKey
-    const mergedCanon = footnotes.resetFootnotes(initialBody)
-    onBodyChangeRef.current(mergedCanon)
-  }, [editor, bodyKey, initialBody, footnotes])
-
-  useEffect(() => {
-    if (editor === null) {
-      return
-    }
-    editor.setEditable(disabled !== true)
-  }, [editor, disabled])
-
-  const pickers = useEditorPickers(editor)
-
-  useEffect(() => {
-    if (editor === null) {
-      return
-    }
-    const actions = editor.storage.editorActions
-    if (actions === undefined) {
-      return
-    }
-    const openImagePicker = () => pickers.setImagePickerOpen(true)
-    const openMusicPicker = () => pickers.setMusicPickerOpen(true)
-    const openFootnoteDialog = () => footnotes.openInsertDialog()
-    setEditorAction(actions, 'openImagePicker', openImagePicker)
-    setEditorAction(actions, 'openMusicPicker', openMusicPicker)
-    setEditorAction(actions, 'openFootnoteDialog', openFootnoteDialog)
-    return () => {
-      setEditorAction(actions, 'openImagePicker', undefined)
-      setEditorAction(actions, 'openMusicPicker', undefined)
-      setEditorAction(actions, 'openFootnoteDialog', undefined)
-    }
-  }, [editor, footnotes, pickers])
-
-  const [toolbarDensity, setToolbarDensity] = useToolbarDensityPreference()
-
-  const inlineToolbarRef = useRef<HTMLDivElement>(null)
-  const [showFloatingToolbar, setShowFloatingToolbar] = useState(false)
-
-  const [lastFloatInputs, setLastFloatInputs] = useState({
-    editor,
-    livePreviewOpen,
-    bodyKey,
-  })
-  if (
-    lastFloatInputs.editor !== editor ||
-    lastFloatInputs.livePreviewOpen !== livePreviewOpen ||
-    lastFloatInputs.bodyKey !== bodyKey
-  ) {
-    setLastFloatInputs({ editor, livePreviewOpen, bodyKey })
-    if (editor === null || livePreviewOpen) {
-      setShowFloatingToolbar(false)
-    }
-  }
-  useEffect(() => {
-    if (editor === null || livePreviewOpen) {
-      return
-    }
-    const target = inlineToolbarRef.current
-    if (target === null) {
-      return
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0]
-        if (entry === undefined) {
-          return
-        }
-        setShowFloatingToolbar(!entry.isIntersecting)
-      },
-      { root: null, rootMargin: '0px', threshold: 0 },
-    )
-    observer.observe(target)
-    return () => observer.disconnect()
-    // bodyKey swaps the editor's content, not the observed toolbar node — no re-observe needed.
-  }, [editor, livePreviewOpen])
-
-  if (editor === null) {
+export function PageBodyEditor(props: PageBodyEditorProps) {
+  const hydrated = useHydrated()
+  if (!hydrated) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border bg-card p-4 text-sm text-muted-foreground">
         编辑器正在加载…
       </div>
     )
   }
+  return <PageBodyEditorClient {...props} />
+}
 
-  const toolbarProps = {
-    editor,
-    disabled,
-    density: toolbarDensity,
-    onDensityChange: setToolbarDensity,
-    onOpenImagePicker: () => pickers.setImagePickerOpen(true),
-    onOpenMusicPicker: () => pickers.setMusicPickerOpen(true),
-    onOpenFootnoteInsertDialog: footnotes.openInsertDialog,
-  } as const
+/** inkling's Ctrl+Q cycles paragraph → quote → aside; AsideNode is not
+ *  registered in this composer (the storage whitelist rejects 'aside'), so
+ *  the chord is captured on the wrapper before Lexical's KEY_DOWN dispatch
+ *  (which rides a bubble-phase listener on the contentEditable root). */
+function blockQuoteAsideCycle(event: React.KeyboardEvent) {
+  if (event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.code === 'KeyQ') {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+}
 
-  const editorCanvas = (
-    <div ref={editorZoomContainerRef}>
-      <EditorContent
-        editor={editor}
-        className={cn(
-          'post-content pt-body-editor prose-blog prose prose-lg max-w-none focus:outline-none',
-          'min-h-editor-min [&_.ProseMirror]:min-h-editor-prose-min',
-          '[&_.ProseMirror]:focus:outline-none',
-          '[&_blockquote[data-pt-solution]]:relative [&_blockquote[data-pt-solution]]:my-4 [&_blockquote[data-pt-solution]]:border-l-4 [&_blockquote[data-pt-solution]]:border-brand/40 [&_blockquote[data-pt-solution]]:bg-muted/25 [&_blockquote[data-pt-solution]]:py-3 [&_blockquote[data-pt-solution]]:pl-4',
-          '[&_[data-pt-two-column-pane]]:min-w-0 [&_[data-pt-two-column-pane]]:rounded-xl [&_[data-pt-two-column-pane]]:border [&_[data-pt-two-column-pane]]:border-dashed [&_[data-pt-two-column-pane]]:border-muted-foreground/45 [&_[data-pt-two-column-pane]]:bg-background/85 [&_[data-pt-two-column-pane]]:p-3',
-          '[&_section[data-pt-two-column]]:relative [&_section[data-pt-two-column]]:my-5 [&_section[data-pt-two-column]]:grid [&_section[data-pt-two-column]]:gap-4 [&_section[data-pt-two-column]]:rounded-xl [&_section[data-pt-two-column]]:border-2 [&_section[data-pt-two-column]]:border-dashed [&_section[data-pt-two-column]]:border-border [&_section[data-pt-two-column]]:bg-muted/30 [&_section[data-pt-two-column]]:p-3 [&_section[data-pt-two-column]]:shadow-sm [&_section[data-pt-two-column]]:md:grid-cols-2',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
-        )}
-      />
-    </div>
+function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled }: PageBodyEditorProps) {
+  const onBodyChangeRef = useRef(onBodyChange)
+  useEffect(() => {
+    onBodyChangeRef.current = onBodyChange
+  })
+
+  const { resolvedTheme } = useTheme()
+  const [focusMode, toggleFocusMode] = useFocusModePreference()
+
+  const [editorInstance, setEditorInstance] = useState<LexicalEditor | null>(null)
+  const registerAPI = useCallback((api: ExternalControlAPI | null) => {
+    setEditorInstance(api?.editorInstance ?? null)
+  }, [])
+
+  const [imagePickerOpen, setImagePickerOpen] = useState(false)
+  const [musicPickerOpen, setMusicPickerOpen] = useState(false)
+  const musicPickTargetRef = useRef<MusicPickTarget | null>(null)
+
+  // The stock image handlers mount on the shared 'image' type but would
+  // build the stock class — intercept at HIGH for the editor's lifetime.
+  useEffect(() => {
+    if (editorInstance === null) {
+      return
+    }
+    return registerKobatoImageInsertCommands(editorInstance, () => setImagePickerOpen(true))
+  }, [editorInstance])
+
+  // Lexical consumes the initial state only at editor creation; the lazy
+  // state pins the mount-time snapshot (later initialBody prop changes must
+  // NOT recreate the composer). Re-seeding on a bodyKey change (draft adopt,
+  // conflict resolution) is imperative.
+  const [mountedInitialState] = useState(() => initialBody)
+  const lastResetKeyRef = useRef(bodyKey)
+  useEffect(() => {
+    if (editorInstance === null || lastResetKeyRef.current === bodyKey) {
+      return
+    }
+    lastResetKeyRef.current = bodyKey
+    editorInstance.setEditorState(editorInstance.parseEditorState(initialBody))
+  }, [editorInstance, bodyKey, initialBody])
+
+  const insertLibraryImage = useCallback(
+    (image: AdminImageDto) => {
+      const editor = editorInstance
+      if (editor === null) {
+        return
+      }
+      // Re-enters through the override's HIGH INSERT_IMAGE_COMMAND handler,
+      // so the card is a KobatoImageNode carrying all four kobato keys.
+      editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+        src: toSiteOwnedImageSrc(image.publicUrl),
+        alt: image.note ?? '',
+        width: image.width,
+        height: image.height,
+        thumbhash: image.thumbhash ?? undefined,
+        storagePath: image.storagePath,
+        imageId: image.id,
+      })
+    },
+    [editorInstance],
   )
 
+  const openMusicPicker = useCallback((target: MusicPickTarget) => {
+    musicPickTargetRef.current = target
+    setMusicPickerOpen(true)
+  }, [])
+
+  const pickMusic = useCallback(
+    (music: AdminMusicDto) => {
+      const editor = editorInstance
+      const target = musicPickTargetRef.current
+      musicPickTargetRef.current = null
+      if (editor === null || target === null) {
+        return
+      }
+      try {
+        editor.update(() => {
+          target.playerId = music.playerId
+        })
+      } catch {
+        // The card was deleted while the dialog was open — drop the pick.
+      }
+    },
+    [editorInstance],
+  )
+
+  const handleChange = useCallback((state: SerializedEditorState) => {
+    // The one narrowing boundary: inkling hands the stock
+    // SerializedEditorState; kobato's LexicalEditorState is the same JSON
+    // (schema.ts's WireCheck pins the extension) and the server re-validates
+    // on save, so the per-keystroke path casts instead of zod-parsing.
+    onBodyChangeRef.current(unsafeCast<LexicalEditorState>(state))
+  }, [])
+
   return (
-    <div className="relative flex min-h-0 w-full min-w-0 flex-1 flex-col rounded-xl border bg-card">
-      {livePreviewOpen ? (
-        <>
-          {/* Sticks to the top of the admin `<main>` scrollport; canvas
-              scrolls in the sibling below. */}
-          <div className="sticky top-0 z-20 shrink-0 border-b bg-card">
-            <Toolbar {...toolbarProps} />
-          </div>
-          {/* Bottom padding gives a scroll runway past the end of the
-              document — without it the caret-anchored slash menu gets
-              clipped by the surrounding chrome near the bottom. */}
-          <div
-            ref={scrollContainerRef}
-            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
+    <div
+      className="kobato-page-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col rounded-xl border bg-card"
+      onKeyDownCapture={blockQuoteAsideCycle}
+    >
+      <div data-kobato-editor-scroll="" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+        <MusicPickContext value={openMusicPicker}>
+          <InklingComposer
+            nodes={PAGE_EDITOR_NODES}
+            initialEditorState={mountedInitialState}
+            fileUploader={pageEditorFileUploader}
+            cardConfig={pageEditorCardConfig}
+            labels={inklingLabels}
+            darkMode={resolvedTheme === 'dark'}
+            dragScrollContainerSelector="[data-kobato-editor-scroll]"
           >
-            {editorCanvas}
-          </div>
-        </>
-      ) : (
-        <>
-          <div ref={scrollContainerRef} className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
-            <div
-              ref={inlineToolbarRef}
-              className="shrink-0 border-b bg-card"
-              inert={showFloatingToolbar ? true : undefined}
-            >
-              <Toolbar {...toolbarProps} />
-            </div>
-            <div className="min-h-0 grow px-3 pt-6 pb-editor-pad-bottom md:px-6">{editorCanvas}</div>
-          </div>
-          {showFloatingToolbar ? (
-            // Centered toolbar pill at the same `bottom-*` offset as the publish
-            // FAB column; `right-{n}` reserves room for that column on narrow phones.
-            <div className="pointer-events-none fixed right-20 bottom-6 left-0 z-40 flex touch-manipulation items-center justify-center px-3 sm:right-24 sm:bottom-8 lg:right-28">
-              <div className="pointer-events-auto max-w-full overflow-x-auto rounded-xl border bg-card/95 p-1 shadow-lg ring-1 ring-border/60 backdrop-blur-sm supports-[backdrop-filter]:bg-card/90">
-                <Toolbar {...toolbarProps} className="border-b-0" />
-              </div>
-            </div>
-          ) : null}
-          {showFloatingToolbar && floatingActions ? (
-            // Publish FAB column anchored bottom-right, independent of the pill;
-            // gated on the same `showFloatingToolbar` flag.
-            <div className="pointer-events-auto fixed right-4 bottom-6 z-40 touch-manipulation sm:bottom-8 lg:right-6">
-              {floatingActions}
-            </div>
-          ) : null}
-        </>
-      )}
-      <ImageLibraryPicker
-        open={pickers.imagePickerOpen}
-        onOpenChange={pickers.setImagePickerOpen}
-        onPick={pickers.insertImage}
-      />
-      <MusicPickerDialog
-        open={pickers.musicPickerOpen}
-        onOpenChange={pickers.setMusicPickerOpen}
-        onPick={pickers.insertMusic}
-      />
-      <FootnoteEditorDialog
-        open={footnotes.dialogOpen}
-        onOpenChange={footnotes.setDialogOpen}
-        mode={footnotes.dialogMode}
-        initialPlainText={footnotes.dialogInitialText}
-        onConfirm={confirmFootnoteDialog}
-        onDelete={footnotes.dialogMode === 'edit' ? deleteFootnoteFromDialog : undefined}
-      />
-      <PageBubbleMenu editor={editor} />
-      <TableBubbleMenu editor={editor} />
-      <CodeBlockBubbleMenu editor={editor} />
+            <InklingEditor
+              readOnly={disabled === true}
+              focusMode={focusMode}
+              registerAPI={registerAPI}
+              onChange={handleChange}
+              placeholderText="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
+            />
+          </InklingComposer>
+        </MusicPickContext>
+      </div>
+      <div className="absolute right-3 bottom-3 z-30">
+        <Button
+          type="button"
+          variant={focusMode ? 'secondary' : 'outline'}
+          size="icon"
+          title={focusMode ? '关闭书写聚焦' : '开启书写聚焦'}
+          aria-pressed={focusMode}
+          onClick={toggleFocusMode}
+        >
+          <FocusIcon />
+        </Button>
+      </div>
+      <ImageLibraryPicker open={imagePickerOpen} onOpenChange={setImagePickerOpen} onPick={insertLibraryImage} />
+      <MusicPickerDialog open={musicPickerOpen} onOpenChange={setMusicPickerOpen} onPick={pickMusic} />
     </div>
   )
 }

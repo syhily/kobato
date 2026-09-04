@@ -22,22 +22,23 @@ parent.
     …). `sortable.tsx` is the one dnd-list adapter: `useSortableSensors`, `useSortableRow`
     (destructure its result — member access trips the react-compiler ref heuristic),
     `SortableDragHandle`, `resolveSortableMove`. New sortable lists use it, don't copy row chrome.
-  - `editor/` — the Tiptap micro-app (`PageBodyEditor`, `tiptap/`, `toolbar/`, `pickers/`,
-    `FootnoteEditorDialog`, `portable-text-diff`). Self-contained; only `PageBodyEditor` is
-    imported by other admin domains.
-  - `editor-shell/` — orchestration layer wrapping the Tiptap editor into a draft/publish workflow:
-    `useEditorShellState` (orchestrator for Post + Page shells — body/meta drafts, shortcuts,
-    layout toggles), `useEditorShellPersist` (deep persist module: owns the revision-token race,
-    both autosave freeze legs, the local-draft conflict, and the persisted baseline; wire/status
-    decisions are pure planners in `editor-shell-persist-plan.ts`), `useAutosave` (client-side
-    engine — sole baseline owner behind `setBaseline`, mount seed via `initialBaseline`),
-    `EditorScreen` (single screen driven by an `EditorScreenAdapter`), `makeEditorAdapter`
-    (factory: per-entity config + per-render runtime → adapter), plus `DraftConflictDialog`,
-    `FloatingPublishButton`, `PreviewPanel`, `RevisionsDrawer`, `DateTimePicker`. The
-    `Post/PageEditorShell.tsx` pair (under `posts/` / `pages/`) are thin config-only call sites;
-    `Post/PageEditorRoute.tsx` delegate the query → error → skeleton → shell flow to
-    `editor-shared/EditorRouteLoader`. No new shared state belongs in either Shell — extend
-    `useEditorShellState` instead.
+  - `editor/` — the page/post body editor: `PageBodyEditor` (the inkling composer wrapper + host
+    glue; the only module other admin domains import), `pickers/` (image-library / music dialogs),
+    and `lexical-body-diff.tsx` (revision diff). `editor/tiptap/` now serves ONLY the comment
+    editor (`BlockCardNode`, `InlineMarks`, `SlashMenu` + `slash-commands`, `block-cards/`
+    Math/Music, `use-admin-math-preview`) — the main body editor no longer uses Tiptap.
+  - `editor-shell/` — orchestration layer wrapping the inkling body editor into a draft/publish
+    workflow: `useEditorShellState` (orchestrator for Post + Page shells — body/meta drafts,
+    shortcuts, meta-panel toggle), `useEditorShellPersist` (deep persist module: owns the
+    revision-token race, both autosave freeze legs, the local-draft conflict, and the persisted
+    baseline; wire/status decisions are pure planners in `editor-shell-persist-plan.ts`),
+    `useAutosave` (client-side engine — sole baseline owner behind `setBaseline`, mount seed via
+    `initialBaseline`), `EditorScreen` (single screen driven by an `EditorScreenAdapter`),
+    `makeEditorAdapter` (factory: per-entity config + per-render runtime → adapter), plus
+    `DraftConflictDialog`, `RevisionsDrawer`, `DateTimePicker`. The `Post/PageEditorShell.tsx`
+    pair (under `posts/` / `pages/`) are thin config-only call sites; `Post/PageEditorRoute.tsx`
+    delegate the query → error → skeleton → shell flow to `editor-shared/EditorRouteLoader`. No
+    new shared state belongs in either Shell — extend `useEditorShellState` instead.
 
 ## Cross-cutting UI modules
 
@@ -137,7 +138,7 @@ aim for ≤500 LOC per file. Past that, extract shared state into a hook, sub-co
 siblings, or per-renderer modules — another agent should read the file without scrolling past
 unrelated concerns.
 
-## PortableText editor
+## Content editors
 
 - Zod dialect: `@/shared/pt/schema` (text / list / heading / blockquote + custom blocks `image`,
   `code`, `mathBlock`, `horizontalRule`, `musicPlayer`, `solution`, `footnoteDefinition`, `table`).
@@ -147,27 +148,27 @@ unrelated concerns.
 - PT ↔ ProseMirror bridge: `@/shared/pt/bridge/` — per-concern modules (`pt-to-pm.ts`,
   `pm-to-pt.ts`, `node-registry.ts`, `types.ts`, `utils.ts`, `canonicalize.ts`, per-node modules
   under `nodes/`). Custom blocks ride a generic `blockCard` PM node. Round-trip contract-tested in
-  `tests/unit/shared/pt/bridge/`.
+  `tests/unit/shared/pt/bridge/`. Only the comment editor still crosses this bridge.
 - SSR renderer: `@/ui/pt/render` (`PortableTextBody`), composing `@portabletext/react` with
   `@/ui/pt/blocks/*`. Heading anchor ids align with post anchors.
-- Admin editor: `@/ui/admin/editor/PageBodyEditor` (shared by pages and posts). UX: toolbar (image
-  library / music picker / link / table / hr / undo-redo) → `tiptap/BubbleMenu` (text selection:
-  B/I/U + code + link + `mathInline`/`footnoteRef`) and `tiptap/TableBubbleMenu` (table selection),
-  mutually exclusive → `tiptap/SlashMenu` (catalogue in `tiptap/slash-commands.ts`; pickers invoked
-  through `editor.storage.editorActions` — `tiptap/editor-actions.ts`, populated from React via
-  `editor-actions-setter.ts`).
-- Image block uses a React NodeView (`tiptap/ImageNodeView`) for inline alt + caption edits.
-- **Tiptap v3 never re-renders on transactions.** `useEditor` and `BubbleMenu` children only
-  re-render on React-driven updates, so any UI that tracks the document or selection (mark
-  activeness, command availability, panel visibility) MUST subscribe via
-  `useEditorState({ editor, selector })` — `tiptap/BubbleMenu` and `tiptap/TableBubbleMenu` are the
-  reference. Panels that seed local state on mount (e.g. `MathInlinePanel`) additionally need a
-  `key` derived from the current mark's `_key` attr, so moving the caret between two marks of the
-  same type remounts the panel instead of leaking the first mark's state onto the second.
-- **Table dialect**: cells are inline-only — no nested blocks, lists, code blocks, math blocks, or
-  footnote refs. Only `link` mark-defs. Slash-menu / toolbar inserts a 3×3 table with a header row.
-- Floating popups anchor with `position: fixed` off the suggestion plugin's `clientRect` or Tiptap's
-  `BubbleMenu` positioner. Do **not** add `@floating-ui/*` directly — `@base-ui/react` pulls it in
+- Admin body editor: `@/ui/admin/editor/PageBodyEditor` (shared by pages and posts) wraps the
+  inkling composer (`@inkling/editor` — the workspace package in `packages/inkling/`). The
+  composer surface (floating format toolbar, slash menu, drag reorder, card chrome) comes from the
+  package; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring, zh-CN labels)
+  lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
+  through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
+  `src/styles/inkling-editor.css`.
+- Comment editor (still Tiptap v3 — R12 scope): `@/ui/public/comments/CommentBodyEditor` on the PT
+  bridge (`bodyToPmDoc` / `pmDocToBody`) with the shared `editor/tiptap/` building blocks. The
+  slash catalogue is `SLASH_COMMANDS` in `tiptap/slash-commands.ts` — which also owns the
+  `editor.storage.editorActions` Storage augmentation pickers fire through — overridden per
+  surface (`COMMENT_SLASH_COMMANDS`).
+- **Tiptap v3 never re-renders on transactions** (comment editor). `useEditor` only re-renders on
+  React-driven updates, so any UI that tracks the document or selection (mark activeness, command
+  availability) MUST subscribe via `useEditorState({ editor, selector })` —
+  `comments/CommentEditorToolbar` is the reference.
+- Floating popups (the comment SlashMenu) anchor with `position: fixed` off the suggestion
+  plugin's `clientRect`. Do **not** add `@floating-ui/*` directly — `@base-ui/react` pulls it in
   transitively.
 
 ## Page draft preview

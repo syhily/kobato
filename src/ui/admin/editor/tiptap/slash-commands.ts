@@ -15,7 +15,6 @@ import {
   QuoteIcon,
   SigmaIcon,
   SuperscriptIcon,
-  TableIcon,
   Type as TypeIcon,
   Columns2Icon,
 } from 'lucide-react'
@@ -26,6 +25,20 @@ import type { LucideIcon } from '@/ui/icons/types'
 import { generateBlockKey } from '@/shared/pt/utils'
 
 const DEFAULT_MATH_BLOCK_TEX = ['\\begin{align*}', '    a &= b\\\\', '    c &= d', '\\end{align*}'].join('\n')
+
+/** Optional picker hooks the host editor exposes through tiptap storage;
+ *  absent on surfaces that never populate them (e.g. the comment editor). */
+export interface EditorActions {
+  openImagePicker?: () => void
+  openMusicPicker?: () => void
+  openFootnoteDialog?: () => void
+}
+
+declare module '@tiptap/core' {
+  interface Storage {
+    editorActions: EditorActions
+  }
+}
 
 export interface SlashCommand {
   /** Stable identifier (used for React keys + tests). */
@@ -165,16 +178,6 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run()
       editor.storage.editorActions?.openMusicPicker?.()
-    },
-  },
-  {
-    id: 'table',
-    title: '表格',
-    description: '插入 3 × 3 含表头',
-    icon: TableIcon,
-    aliases: ['table', 'grid', '表格', '表'],
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
     },
   },
   {

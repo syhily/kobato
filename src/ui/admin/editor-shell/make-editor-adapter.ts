@@ -3,24 +3,19 @@ import type { ReactNode } from 'react'
 
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
-import type { SaveBodyInput, SaveBodyOutput } from '@/shared/contracts/revision'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { AdminRevisionDto, SaveBodyInput, SaveBodyOutput } from '@/shared/contracts/revision'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type { RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { MetaSidebarSlotProps } from '@/ui/admin/editor-shell/EditorMetaPanel'
 import type { EditorScreenAdapter, EditorScreenEntity } from '@/ui/admin/editor-shell/EditorScreen'
 
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
-
 /** Meta-draft shape the shared screen reads (mirrors EditorScreenAdapter). */
 type EditorMetaShape = { title: string; slug: string; published: boolean; publishedAt: string }
 
-/** Both entity detail DTOs carry the same revision pair. The revision bodies
- *  are `unknown` here because the wire DTO has carried Lexical states since
- *  R9a while the shell still reads them as PortableText — the accessors below
- *  cast back to `RevisionLike` (R11 interregnum; removed with the PT shell). */
+/** Both entity detail DTOs carry the same revision pair. */
 interface DetailRevisions {
-  latestRevision: unknown
-  publishedRevision: unknown
+  latestRevision: AdminRevisionDto | null
+  publishedRevision: AdminRevisionDto | null
 }
 
 /** The oRPC namespace surface the editor adapter consumes — `orpc.admin.posts` / `orpc.admin.pages` both satisfy it structurally. */
@@ -63,8 +58,8 @@ export interface EditorAdapterConfig<
   emptyMeta: TMeta
   metaDraftFromEntity: (entity: TEntity) => TMeta
   metaDraftsEqual: (a: TMeta, b: TMeta) => boolean
-  localDraftConfig: LocalDraftConfig<PortableTextBody>
-  createDraftConfig: CreateDraftConfig<PortableTextBody>
+  localDraftConfig: LocalDraftConfig<LexicalEditorState>
+  createDraftConfig: CreateDraftConfig<LexicalEditorState>
   buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
 
   /** oRPC namespace (`orpc.admin.posts` / `orpc.admin.pages`). */
@@ -82,9 +77,8 @@ export interface EditorAdapterRuntime<TMeta extends EditorMetaShape> {
 }
 
 // Module-level revision accessors — stable identities keep the screen's memoized detail object referentially stable.
-// The casts re-narrow the R9a Lexical wire bodies to the shell's PT `RevisionLike` (R11 interregnum).
-const getLatestRevision = (detail: DetailRevisions) => unsafeCast<RevisionLike | null>(detail.latestRevision)
-const getPublishedRevision = (detail: DetailRevisions) => unsafeCast<RevisionLike | null>(detail.publishedRevision)
+const getLatestRevision = (detail: DetailRevisions): RevisionLike | null => detail.latestRevision
+const getPublishedRevision = (detail: DetailRevisions): RevisionLike | null => detail.publishedRevision
 
 /** Assemble the `EditorScreenAdapter` for one entity; the wire wrappers (call → invalidate list → unwrap envelope) live here exactly once. */
 export function makeEditorAdapter<
@@ -128,9 +122,9 @@ export function makeEditorAdapter<
       invalidateList()
       return config.unwrapEntity(result)
     },
-    saveDraftFn: (input) => config.api.saveDraft(unsafeCast<SaveBodyInput>(input)),
+    saveDraftFn: (input) => config.api.saveDraft(input),
     publishFn: async (input) => {
-      const result = await config.api.publishLatest(unsafeCast<SaveBodyInput>(input))
+      const result = await config.api.publishLatest(input)
       invalidateList()
       return result
     },
@@ -140,9 +134,7 @@ export function makeEditorAdapter<
       return config.unwrapEntity(result)
     },
     buildUpsertMetaPayload: config.buildUpsertMetaPayload,
-    // R11 interregnum: the shell hands a PT-shaped body; the wire schema has
-    // carried a Lexical state since R9a — re-narrow at this boundary only.
-    directSaveDraft: (input) => config.api.saveDraft(unsafeCast<SaveBodyInput>(input)),
+    directSaveDraft: (input) => config.api.saveDraft(input),
 
     deleteEntityFn: (id) => config.api.delete({ id }),
     restoreEntityFn: (id) => config.api.restore({ id }),

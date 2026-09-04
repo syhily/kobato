@@ -91,7 +91,7 @@ const unpublish = adminProc
 
 // Shared revision factory; pages pass no `viewer` — editing is already
 // admin-only, so there is no ownership rule (see `revision-router.ts`).
-const { saveDraft, publishLatest, preview } = makeRevisionRouter({
+const { saveDraft, publishLatest } = makeRevisionRouter({
   proc: adminProc,
   adapter: pageLifecycleAdapter,
   basePath: '/admin/pages',
@@ -153,7 +153,6 @@ export const adminPagesRouter = {
   unpublish,
   saveDraft,
   publishLatest,
-  preview,
   upsertMeta,
   listRevisions,
 }

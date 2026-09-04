@@ -2,7 +2,6 @@ import { z } from 'zod'
 
 import { idString, isoDateTime, markdownHeadingDto } from '@/shared/contracts/primitives'
 import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
-import { portableTextBodySchema } from '@/shared/pt/schema'
 import { safeBoolean } from '@/shared/utils/schema'
 
 export const adminRevisionDto = z.object({
@@ -20,8 +19,8 @@ export const adminRevisionDto = z.object({
 })
 export type AdminRevisionDto = z.infer<typeof adminRevisionDto>
 
-// Single statement of the post/page body-save + preview input shapes; the
-// admin posts and pages controllers both consume these.
+// Single statement of the post/page body-save input shape; the admin posts
+// and pages controllers both consume it.
 export const saveBodyInput = z.object({
   id: z.string().min(1),
   body: lexicalEditorStateSchema,
@@ -30,12 +29,6 @@ export const saveBodyInput = z.object({
   publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
 export type SaveBodyInput = z.infer<typeof saveBodyInput>
-
-// The preview path still speaks PortableText — it is dead code scheduled
-// for deletion in R11, deliberately NOT migrated in R9a.
-export const previewBodyInput = z.object({
-  body: portableTextBodySchema,
-})
 
 // The server emits `warning` when a non-fatal side effect (image-library
 // sync) failed — the editor surfaces it instead of swallowing it.
@@ -49,8 +42,3 @@ export const saveResultOutput = z.discriminatedUnion('status', [
   }),
 ])
 export type SaveBodyOutput = z.infer<typeof saveResultOutput>
-
-export const previewOutputDto = z.object({
-  html: z.string(),
-  headings: z.array(markdownHeadingDto),
-})

@@ -29,6 +29,14 @@ import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { FEED_VARIANT_META_KIND } from '@/shared/lexical/cards/card-html'
+import {
+  IMAGE_RENDER_ENV_META_KIND,
+  type KobatoImageRenderEnv,
+  KOBATO_IMAGE_PROPERTIES,
+  kobatoImageImportSpec,
+  kobatoImageTextContent,
+  renderKobatoImageNode,
+} from '@/shared/lexical/cards/kobato-image'
 import { MUSIC_PLAYER_CARD_PROPERTIES, renderMusicPlayerCard } from '@/shared/lexical/cards/music-player'
 import { renderSolutionCard, SOLUTION_CARD_PROPERTIES, solutionCardTextContent } from '@/shared/lexical/cards/solution'
 import {
@@ -80,6 +88,41 @@ class MusicPlayerProjectionNode extends generateDecoratorNode({
   defaultRenderFn: renderMusicPlayerCard,
 }) {}
 
+/**
+ * KobatoImageNode's projection twin (R11): replaces DEFAULT_HTML_NODES'
+ * stock image baseNode by same-type registration (a later entry wins), so
+ * `body_html`/`body_html_feed` carry the kobato figure markup (layout
+ * classes, data-thumbhash, srcset) instead of the stock inkling card. The
+ * client editing class is a subclass of the assembled stock ImageNode; this
+ * headless class declares the full twelve-property spec directly (no nested
+ * caption editor server-side — the serialized caption HTML is an opaque
+ * property here, matching the solution/two-column precedent).
+ */
+class KobatoImageProjectionNode extends generateDecoratorNode({
+  nodeType: 'image',
+  properties: KOBATO_IMAGE_PROPERTIES,
+  defaultRenderFn: renderKobatoImageNode,
+  importSpec: kobatoImageImportSpec,
+  hasEditMode: false,
+}) {
+  override getTextContent() {
+    return kobatoImageTextContent(this)
+  }
+}
+
+/**
+ * The srcset facts of the full-fidelity pass — the same triple BlockImage
+ * reads from the settings contexts, resolved from the server-side snapshot.
+ */
+function imageRenderEnv(): KobatoImageRenderEnv {
+  const assets = requireBlogSettingsSection('assets')
+  return {
+    assetHost: assets.asset.host,
+    urlTemplate: assets.storage.urlTemplate,
+    siteOrigin: requireBlogSettingsSection('siteIdentity').website,
+  }
+}
+
 // The three host cards are registered for every projection pass, so
 // `toProjectionState` never substitutes them (the substitution path stays as
 // defense for types this module does not register). Both lists move together
@@ -89,6 +132,7 @@ const PROJECTION_EXTRA_NODES: NonNullable<LexicalStateToHtmlOptions['nodes']> = 
   SolutionProjectionNode,
   TwoColumnProjectionNode,
   MusicPlayerProjectionNode,
+  KobatoImageProjectionNode,
 ]
 const RENDERABLE_HOST_CARD_TYPES: ReadonlySet<string> = new Set(KOBATO_HOST_CARD_NODE_TYPES)
 
@@ -104,8 +148,18 @@ function renderOptions(feed: boolean): LexicalStateToHtmlOptions {
     onError: failFast,
     // The feed pass tells the card renderers through the open render-meta
     // seam (the export-policy key set is closed); the full-fidelity pass
-    // leaves the kind unanswered.
-    resolveRenderMeta: feed ? (kind) => (kind === FEED_VARIANT_META_KIND ? true : undefined) : undefined,
+    // leaves the kind unanswered. The image render env (srcset facts) rides
+    // the same seam — answered for BOTH passes: the full variant consumes
+    // the whole triple, the feed variant only its siteOrigin.
+    resolveRenderMeta: (kind) => {
+      if (kind === FEED_VARIANT_META_KIND) {
+        return feed ? true : undefined
+      }
+      if (kind === IMAGE_RENDER_ENV_META_KIND) {
+        return imageRenderEnv()
+      }
+      return undefined
+    },
     resolveExportPolicy: (key) => {
       // Footnotes section heading — the same source `pt-html.ts` reads.
       if (key === 'footnotes-section-title') {

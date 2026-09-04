@@ -45,13 +45,9 @@ vi.mock('@/client/hooks/use-create-draft', () => ({
 
 vi.mock('@/ui/admin/editor-shell/use-editor-shell-layout', () => ({
   useEditorShellLayout: vi.fn(() => ({
-    previewOpen: false,
-    setPreviewOpen: vi.fn(),
     metaOpen: true,
     setMetaOpen: vi.fn(),
     isLg: true,
-    editorScrollRef: { current: null },
-    previewScrollRef: { current: null },
   })),
 }))
 
@@ -61,6 +57,7 @@ vi.mock('@/ui/admin/editor-shell/use-editor-keyboard-shortcuts', () => ({
 
 import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 
 interface Meta {
@@ -129,7 +126,7 @@ describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () =
 
   it('edit mode with zero revisions survives re-renders with a referentially stable initialBody', () => {
     // Regression: zero revisions (a failed persistCreate still navigates to
-    // edit) must not yield a fresh `[]` — it looped into "Too many re-renders".
+    // edit) must not yield a fresh empty state — it looped into "Too many re-renders".
     const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeEditArgs()))
     const firstBody = result.current.initialBody
     rerender()
@@ -148,7 +145,7 @@ describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)'
 
   it('advances the autosave baseline after adopting a local draft so the next tick does not re-send it', async () => {
     // The stored local draft diverges from the (empty) server body.
-    const localBody = [{ _type: 'block', _key: 'lb', children: [{ _type: 'span', _key: 'lb-s', text: 'local draft' }] }]
+    const localBody = lexicalBodyWith([lexicalParagraph('local draft')])
     const directSaveDraft = vi.fn().mockResolvedValue({
       status: 'saved',
       revision: {

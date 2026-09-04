@@ -8,8 +8,8 @@ import type { EditorAdapterConfig } from '@/ui/admin/editor-shell/make-editor-ad
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 import { useContentSettings } from '@/shared/lib/blog-config-context'
-import { portableTextBodySchema } from '@/shared/pt/schema'
 import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual } from '@/shared/types/posts'
 import { EditorScreen } from '@/ui/admin/editor-shell/EditorScreen'
 import { makeEditorAdapter } from '@/ui/admin/editor-shell/make-editor-adapter'
@@ -51,7 +51,7 @@ const POST_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
     keyPrefix: 'cms-post-draft:',
     broadcastName: 'cms-post-draft',
     editType: 'post-edit',
-    bodySchema: portableTextBodySchema,
+    bodySchema: lexicalEditorStateSchema,
   },
   createDraftConfig: {
     keyPrefix: 'cms-post-draft:new:',
@@ -60,7 +60,7 @@ const POST_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
     createType: 'post-create',
     editType: 'post-edit',
     editKeyPrefix: 'cms-post-draft:',
-    bodySchema: portableTextBodySchema,
+    bodySchema: lexicalEditorStateSchema,
   },
   buildUpsertMetaPayload: buildPostUpsertPayload,
 

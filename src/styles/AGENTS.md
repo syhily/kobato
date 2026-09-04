@@ -27,9 +27,21 @@ Three files, two bundles:
   cards and `shared/lexical/cards` for their chrome constants). Admin-only
   rules live here: medium-zoom z-45 stacking, `scrollbar-thin`, the
   music-library view transitions.
+- `inkling-editor.css` — **editor-canvas partial**, imported ONLY by
+  `@/ui/admin/editor/PageBodyEditor` so it rides the editor route chunk (the
+  rest of admin stays inkling-free). Pulls `@inkling/editor/style.css` into
+  the `inkling` cascade layer (pinned below `utilities` by `admin.css`'s bare
+  `@layer` ordering statement, so host-card Tailwind utilities beat inkling's
+  scoped preflight) and carries the deliberately UNLAYERED host rules: the
+  canvas column (`zoom: 0.625` normalizes inkling's 10px-root rem system to
+  kobato's 16px root; `max-width` is divided by the zoom factor to keep the
+  740px effective article width), the design-token bridge
+  (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`,
+  `--font-serif: inherit` — inkling declares its own Inter/Georgia stacks on
+  `.inkling-lexical` in its layer), and the writing-focus dimming.
 
 New rule placement: used by both sides → `tailwind.css`; one side only →
-that side's entry. A component dir that crosses sides (e.g. a new admin page
+that side's entry; page-editor canvas chrome → `inkling-editor.css`. A component dir that crosses sides (e.g. a new admin page
 rendering a `ui/public` widget) needs its dir added to the other entry's
 `@source` list, or its utilities silently drop out of that bundle.
 

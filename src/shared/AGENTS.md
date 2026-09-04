@@ -30,23 +30,31 @@ server or client boundary catch and log it.
 - `lexical/` — Lexical storage-format validation for the inkling migration
   (plan `docs/plans/inkling-editor-replacement.md`, R7): the node-type
   whitelist single source (`node-whitelist`), the full article/page state
-  schema (`schema`), the restricted comment state schema
-  (`comment-schema`), and the R11 composer-manifest placeholder
-  (`composer-nodes`). Pure zod — no lexical runtime dependency; the
-  `SerializedEditorState` type is an erased `import type` from
-  `@inkling/editor/headless`. R9a added the save-pipeline modules on top:
+  schema (`schema` — also owns `EMPTY_LEXICAL_EDITOR_STATE`), the restricted
+  comment state schema (`comment-schema`), and the composer-mounted node-set
+  manifests (`composer-nodes` — ARTICLE is the R11 truth, pinned three-way
+  schema ⇐ whitelist ⇐ composer by contract test; COMMENT awaits R12). Pure
+  zod — no lexical runtime dependency; the `SerializedEditorState` type is an
+  erased `import type` from `@inkling/editor/headless`. R9a added the
+  save-pipeline modules on top:
   `walk` (pre-order traversal + serialized `getTextContent` parity),
   `heading-slug` (byte-exact port of inkling's slugify + dedup tracker —
   the `headings` column's slug single source, contract-tested against the
   real `lexicalStateToHtml` export), `collect` (headings / image storage
   paths / music player ids derived columns), `artifacts` (server-filled
   node-dataset slot registry), and `equivalence` (artifact-blind semantic
-  fingerprint for the save no-op short-circuit). R9b added
+  fingerprint for the save no-op short-circuit — its exported
+  `lexicalNodeFingerprint` is also the revision diff's pairing anchor).
+  R9b added
   `projection-state` — deep-copy shaping for the headless projection render
   (feed artifact stripping + defensive host-card substitution for types the
   projection does not register). R10 added `cards/` — the React-free host-card
   spec modules (`solution`, `two-column`, `music-player`, plus the `card-html`
-  render helpers and the `menu-matches` constants): each card's dataset
+  render helpers and the `menu-matches` constants); R11 added
+  `cards/kobato-image` (the KobatoImageNode spec: the stock eight properties
+  verbatim plus the four kobato keys `thumbhash`/`storagePath`/`imageId`/
+  `layout`, the full-fidelity + feed exportDOM renderers, and the import
+  spec). Each card's dataset
   properties, nested-editor facts, class/copy constants, and exportDOM
   renderer live here as the single source consumed by BOTH the server
   projection (headless `generateDecoratorNode`) and the client card assembly

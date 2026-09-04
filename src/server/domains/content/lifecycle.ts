@@ -5,7 +5,6 @@ import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
-import type { PortableTextBody, PortableTextHeading } from '@/shared/pt/schema'
 import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
@@ -18,13 +17,10 @@ import { findContentById, findLatestDraft, findLatestRevision } from '@/server/d
 import { rescheduleScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
 import { snapshotMusicPlayerMeta } from '@/server/domains/pt/lexical-music-snapshot'
-import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
 import { canonicalizeLexicalEditorState } from '@/server/domains/pt/services/lexical-canonicalize'
 import { getLogger, type Logger } from '@/server/infra/logger'
 import { computeBodyProjections, type BodyProjections } from '@/server/infra/pt/lexical-projection'
-import { deriveSlug } from '@/server/infra/slug/derive'
 import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@/shared/lexical/collect'
-import { collectHeadings } from '@/shared/pt/utils'
 
 const log = getLogger('content.lifecycle')
 
@@ -238,17 +234,6 @@ export async function loadDraftPreviewBySlug<TMeta, TPreview>(
     revision = findContentById(db, publishedRevisionId)
   }
   return { preview: adapter.projectPreview(meta, revision), hasNewerDraft: draft !== null }
-}
-
-export async function previewBody(
-  rawBody: unknown,
-  render: (body: PortableTextBody) => Promise<string>,
-): Promise<{ html: string; headings: PortableTextHeading[] }> {
-  // Preview through the same canonicalize + prerender pipeline as save, so it matches what publishes.
-  const body = await canonicalizePortableTextBody(rawBody)
-  const html = await render(body)
-  const headings = collectHeadings(body, deriveSlug)
-  return { html, headings }
 }
 
 function projectSaveResult(result: SaveDraftResult | PublishLatestResult, warning?: string): SaveBodyResult {

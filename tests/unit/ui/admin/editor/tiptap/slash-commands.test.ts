@@ -14,10 +14,6 @@ describe('slash-commands', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('includes the table command (B7-2 contract)', () => {
-    expect(SLASH_COMMANDS.some((cmd) => cmd.id === 'table')).toBe(true)
-  })
-
   it('includes media + custom-block pickers', () => {
     const ids = SLASH_COMMANDS.map((cmd) => cmd.id)
     for (const expected of ['image', 'music', 'math-block', 'solution', 'two-columns', 'footnote']) {
@@ -31,8 +27,8 @@ describe('slash-commands', () => {
   })
 
   it('matches by title prefix (case-insensitive)', () => {
-    const out = filterSlashCommands('表格')
-    expect(out.some((cmd) => cmd.id === 'table')).toBe(true)
+    const out = filterSlashCommands('公式')
+    expect(out.some((cmd) => cmd.id === 'math-block')).toBe(true)
   })
 
   it('matches by alias', () => {

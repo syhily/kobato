@@ -86,19 +86,19 @@ describe('draft-store', () => {
     localStorageData.set(
       'cms-post-draft:legacy-post:token',
       JSON.stringify({
-        version: 1,
+        version: 2,
         postId: 'legacy-post',
         clientRevisionToken: 'token',
-        body: [{ type: 'paragraph', children: [{ text: 'migrated' }] }],
+        body: { root: { type: 'root', children: [{ type: 'paragraph', children: [{ text: 'migrated' }] }] } },
         savedAt: 1_700_000_000_000,
       }),
     )
     localStorageData.set(
       'cms-page-draft:new:session-abc',
       JSON.stringify({
-        version: 1,
+        version: 2,
         sessionId: 'session-abc',
-        body: [{ type: 'paragraph', children: [{ text: 'page create' }] }],
+        body: { root: { type: 'root', children: [] } },
         meta: { title: 'T' },
         savedAt: 1_700_000_000_001,
       }),
@@ -112,7 +112,9 @@ describe('draft-store', () => {
     const post = await getDraft('cms-post-draft:legacy-post:token')
     expect(post).not.toBeNull()
     expect(post!.type).toBe('post-edit')
-    expect(post!.body).toEqual([{ type: 'paragraph', children: [{ text: 'migrated' }] }])
+    expect(post!.body).toEqual({
+      root: { type: 'root', children: [{ type: 'paragraph', children: [{ text: 'migrated' }] }] },
+    })
 
     const page = await getDraft('cms-page-draft:new:session-abc')
     expect(page).not.toBeNull()
@@ -124,10 +126,26 @@ describe('draft-store', () => {
     expect(localStorageData.get('other-key')).toBe('should-stay')
   })
 
+  it('drops v1 PortableText-era localStorage drafts instead of migrating them (R11)', async () => {
+    // A v1 draft's body is a PT block array — unloadable into the Lexical
+    // composer, so the migration skips it (and leaves the key in place).
+    localStorageData.set(
+      'cms-post-draft:legacy-post:token',
+      JSON.stringify({
+        version: 1,
+        body: [{ type: 'paragraph', children: [{ text: 'pt era' }] }],
+        savedAt: 1_700_000_000_000,
+      }),
+    )
+
+    expect(await getDraft('cms-post-draft:legacy-post:token')).toBeNull()
+    expect(localStorageData.has('cms-post-draft:legacy-post:token')).toBe(true)
+  })
+
   it('skips corrupt localStorage entries during migration', async () => {
     localStorageData.set('cms-post-draft:bad', 'not-json')
-    localStorageData.set('cms-post-draft:wrong-version', JSON.stringify({ version: 2, body: [] }))
-    localStorageData.set('cms-post-draft:missing-body', JSON.stringify({ version: 1 }))
+    localStorageData.set('cms-post-draft:wrong-version', JSON.stringify({ version: 3, body: { root: {} } }))
+    localStorageData.set('cms-post-draft:missing-body', JSON.stringify({ version: 2 }))
 
     expect(await getDraft('cms-post-draft:bad')).toBeNull()
     expect(await getDraft('cms-post-draft:wrong-version')).toBeNull()

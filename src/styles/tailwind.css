@@ -985,8 +985,9 @@ body {
 }
 
 /* Brand typography utility prose-blog — SHARED: used by the public post
-   body, the admin editor canvas (`.pt-body-editor`), the admin preview
-   panel, and admin comment views, so both entries rely on it. */
+   body, the comment editor canvas, and admin comment views, so both entries
+   rely on it. (The admin body editor's canvas typography moved to
+   `inkling-editor.css` with the R11 inkling replacement.) */
 @utility prose-blog {
   /* &.prose lifts specificity above the plugin defaults so brand vars win */
   &.prose {
@@ -1235,30 +1236,6 @@ body {
       display: block;
       max-width: 100%;
       height: auto;
-    }
-
-    /* Editor canvas tweaks */
-    &.pt-body-editor :where(span[data-math-inline]) {
-      background-color: color-mix(in oklab, var(--editor-accent) 16%, var(--canvas));
-      color: var(--ink-2);
-      border: 1px solid color-mix(in oklab, var(--editor-accent) 8%, var(--canvas));
-    }
-
-    &.pt-body-editor :where(.react-renderer.node-image) :where(input[data-slot='input']) {
-      background-color: var(--background);
-      color: var(--ink-2);
-      caret-color: var(--ink-2);
-      -webkit-text-fill-color: var(--ink-2);
-    }
-
-    &.pt-body-editor :where(.react-renderer.node-image) :where(input[data-slot='input'])::placeholder {
-      color: var(--muted-foreground);
-      opacity: 1;
-      -webkit-text-fill-color: var(--muted-foreground);
-    }
-
-    &.pt-body-editor :where(.react-renderer.node-image) :where(label[data-slot='label']) {
-      color: var(--ink-2);
     }
   }
 

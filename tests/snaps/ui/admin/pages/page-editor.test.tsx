@@ -97,7 +97,6 @@ describe('snapshot: PageEditorShell', () => {
   it('renders create mode', () => {
     const html = stableHtml(renderInRouter(<PageEditorShell mode="create" navigate={vi.fn()} />))
     expect(html).toContain('创建页面')
-    expect(html).toContain('实时预览')
     expect(html).toContain('PageBodyEditor')
   })
 

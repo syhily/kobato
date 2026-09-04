@@ -38,6 +38,7 @@ vi.mock('@/client/hooks/use-create-draft', () => ({
 
 import type { EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 
 interface Meta {
@@ -78,13 +79,11 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
 
     expect(result.meta).toEqual(emptyMeta)
-    expect(result.body).toEqual([])
+    expect(result.body).toEqual(emptyLexicalBody())
     expect(result.bodyKey).toBe('create:initial')
-    expect(result.initialBody).toEqual([])
+    expect(result.initialBody).toEqual(emptyLexicalBody())
     expect(result.isEditing).toBe(false)
 
-    expect(result.previewOpen).toBe(false)
-    expect(typeof result.setPreviewOpen).toBe('function')
     expect(result.metaOpen).toBe(true) // isLg defaults to true in SSR
     expect(result.isLg).toBe(true)
 
@@ -125,7 +124,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(sidebar.revisionSummary).toBeNull() // not editing
     expect(sidebar.saveStatus).toEqual({ kind: 'unsaved' })
     expect(sidebar.expectedToken).toBeNull()
-    expect(sidebar.body).toEqual([])
+    expect(sidebar.body).toEqual(emptyLexicalBody())
     expect(sidebar.adoptRevisionFromHistory).toBeInstanceOf(Function)
   })
 
@@ -134,7 +133,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     const { dialog } = result
 
     expect(dialog.conflict).toBeNull()
-    expect(dialog.serverBody).toEqual([])
+    expect(dialog.serverBody).toEqual(emptyLexicalBody())
     expect(dialog.baselineUpdatedAtMs).toBeNull()
     expect(dialog.adoptLocalDraft).toBeInstanceOf(Function)
     expect(dialog.adoptServerVersion).toBeInstanceOf(Function)
@@ -167,7 +166,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     // In create mode the adoption helpers no-op, leaving body/meta untouched.
     await expect(result.dialog.adoptLocalDraft()).resolves.toBeUndefined()
     expect(() => result.dialog.adoptServerVersion()).not.toThrow()
-    expect(() => result.sidebar.adoptRevisionFromHistory({ body: [], revisionNo: 1 })).not.toThrow()
+    expect(() => result.sidebar.adoptRevisionFromHistory({ body: emptyLexicalBody(), revisionNo: 1 })).not.toThrow()
     expect(args.directSaveDraft).not.toHaveBeenCalled()
   })
 })

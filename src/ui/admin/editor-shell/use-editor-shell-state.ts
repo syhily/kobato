@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type {
   EntityLike,
   PublishState,
@@ -10,6 +10,7 @@ import type {
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { useCreateDraft } from '@/client/hooks/use-create-draft'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@/shared/lexical/schema'
 import {
   deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,
@@ -21,9 +22,6 @@ import {
 import { useEditorKeyboardShortcuts } from '@/ui/admin/editor-shell/use-editor-keyboard-shortcuts'
 import { useEditorShellLayout } from '@/ui/admin/editor-shell/use-editor-shell-layout'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
-
-// Single shared reference — a fresh `[]` triggers infinite setState-during-render.
-const EMPTY_BODY: PortableTextBody = []
 
 export function useEditorShellState<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
@@ -52,14 +50,14 @@ export function useEditorShellState<
 
   // Create mode has no `detail` — once the async IndexedDB load resolves,
   // the restored draft body is what PageBodyEditor must mount with instead.
-  const [restoredCreateBody, setRestoredCreateBody] = useState<PortableTextBody | null>(null)
+  const [restoredCreateBody, setRestoredCreateBody] = useState<LexicalEditorState | null>(null)
 
   // `detail` is the loader-stable reference the screen memoizes.
-  const initialBody = useMemo<PortableTextBody>(() => {
-    return deriveBaselineRevision(detail)?.body ?? restoredCreateBody ?? EMPTY_BODY
+  const initialBody = useMemo<LexicalEditorState>(() => {
+    return deriveBaselineRevision(detail)?.body ?? restoredCreateBody ?? EMPTY_LEXICAL_EDITOR_STATE
   }, [detail, restoredCreateBody])
 
-  const [body, setBody] = useState<PortableTextBody>(initialBody)
+  const [body, setBody] = useState<LexicalEditorState>(initialBody)
 
   const initialBodyKey = useMemo(() => {
     if (detail === undefined) {
@@ -71,7 +69,7 @@ export function useEditorShellState<
 
   const [bodyKey, setBodyKey] = useState(initialBodyKey)
 
-  const replaceBody = useCallback((newBody: PortableTextBody, key: string) => {
+  const replaceBody = useCallback((newBody: LexicalEditorState, key: string) => {
     setBody(newBody)
     setBodyKey(key)
   }, [])
@@ -86,8 +84,7 @@ export function useEditorShellState<
     setLastPersistedMeta(freshMeta)
   }, [])
 
-  const { previewOpen, setPreviewOpen, metaOpen, setMetaOpen, isLg, editorScrollRef, previewScrollRef } =
-    useEditorShellLayout()
+  const { metaOpen, setMetaOpen, isLg } = useEditorShellLayout()
 
   const createDraft = useCreateDraft(createDraftConfig, { body, meta })
 
@@ -200,22 +197,15 @@ export function useEditorShellState<
     initialBody,
     isEditing,
 
-    previewOpen,
-    setPreviewOpen,
     metaOpen,
     setMetaOpen,
     isLg,
-
-    editorScrollRef,
-    previewScrollRef,
 
     previewBanner,
     dismissPreviewBanner,
     createDraftSavedAt: createDraft.loadedDraft?.savedAt ?? null,
 
     toolbar: {
-      previewOpen,
-      setPreviewOpen,
       metaOpen,
       setMetaOpen,
       published: meta.published,

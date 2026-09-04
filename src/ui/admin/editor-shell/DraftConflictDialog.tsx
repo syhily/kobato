@@ -1,17 +1,17 @@
 import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
-import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
+import { diffBodies, DiffPanel } from '@/ui/admin/editor/lexical-body-diff'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 
 export interface DraftConflictDialogProps {
   open: boolean
-  /** PT body that was just loaded from Local Storage. */
-  localBody: PortableTextBody
-  /** PT body of the server's latest revision. */
-  serverBody: PortableTextBody
+  /** Body that was just loaded from the IndexedDB local draft. */
+  localBody: LexicalEditorState
+  /** Body of the server's latest revision. */
+  serverBody: LexicalEditorState
   /** ms-since-epoch when the local copy was last saved. */
   localSavedAt: number | null
   /** ms-since-epoch when the server copy was last updated. */

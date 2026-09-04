@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revision'
 
-import { emptyLexicalBody } from '#/_helpers/lexical'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import {
   planBodySave,
   planCreatePublishedAt,
@@ -13,8 +13,8 @@ import {
   verdictBodySave,
 } from '@/ui/admin/editor-shell/editor-shell-persist-plan'
 
-function block(key: string, text: string) {
-  return { _type: 'block' as const, _key: key, children: [{ _type: 'span' as const, _key: `${key}-s`, text }] }
+function paraBody(text: string) {
+  return lexicalBodyWith([lexicalParagraph(text)])
 }
 
 function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionDto {
@@ -57,13 +57,13 @@ describe('ui/admin/editor-shell/editor-shell-persist-plan — verdictBodySave', 
 
 describe('ui/admin/editor-shell/editor-shell-persist-plan — planBodySave', () => {
   it('conflict: carries the token, never consumes the pending snapshot', () => {
-    const plan = planBodySave(conflictPayload('tok-7'), [block('b1', 'x')], NOW)
+    const plan = planBodySave(conflictPayload('tok-7'), paraBody('x'), NOW)
     expect(plan).toEqual({ kind: 'conflict', expectedToken: 'tok-7' })
   })
 
   it('clean save: saved status, revision race payload, consumes a pending manual snapshot', () => {
     const revision = makeRevision()
-    const plan = planBodySave(savedPayload(), [block('b1', 'x')], NOW)
+    const plan = planBodySave(savedPayload(), paraBody('x'), NOW)
     expect(plan).toEqual({
       kind: 'saved',
       status: { kind: 'saved', at: NOW },
@@ -89,8 +89,8 @@ describe('ui/admin/editor-shell/editor-shell-persist-plan — planDraftSave', ()
     pickerPublishedAt: '',
     serverPublishedAtIso: null,
     now: Date.parse('2026-07-10T12:00:00.000Z'),
-    body: [block('b1', 'same')],
-    lastSavedBody: [block('b1', 'same')],
+    body: paraBody('same'),
+    lastSavedBody: paraBody('same'),
   }
 
   it('passes the picker ISO through when the picker holds a value', () => {
@@ -117,7 +117,7 @@ describe('ui/admin/editor-shell/editor-shell-persist-plan — planDraftSave', ()
     expect(clean.bodyDiverged).toBe(false)
     expect(clean.bannerLegs).toBe(1)
 
-    const diverged = planDraftSave({ ...base, body: [block('b2', 'new text')] })
+    const diverged = planDraftSave({ ...base, body: paraBody('new text') })
     expect(diverged.bodyDiverged).toBe(true)
     expect(diverged.bannerLegs).toBe(2)
   })

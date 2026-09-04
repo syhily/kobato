@@ -91,9 +91,40 @@ describe('infra/pt/lexical-projection — full-fidelity HTML', () => {
     expect(bodyHtml).toContain('<div class="inkling-card inkling-math-card"><math><mi>E</mi></math></div>')
     expect(bodyHtml).toContain('<span class="inkling-math-inline"><math><mi>x</mi></math></span>')
     expect(bodyHtml).toContain('<span class="line">const a = 1</span>')
-    // Stock ImageNode export until KobatoImageNode lands (R10/R13).
+    // KobatoImageNode (R11) exports the PT figure markup: layout classes on
+    // the figure, the dim class + sizes on the img.
+    expect(bodyHtml).toContain('<figure class="block max-w-full mx-auto w-fit">')
     expect(bodyHtml).toContain('<img src="/storage/posts/cover.png"')
+    expect(bodyHtml).toContain('sizes="100vw"')
     expect(bodyHtml).toContain('<p>after cards</p>')
+  })
+
+  it('renders the kobato image extras (thumbhash, layout, caption)', async () => {
+    const state = parse(
+      lexicalBodyWith([
+        lexicalImage({
+          thumbhash: 'th-abcd',
+          storagePath: 'objects/abcdef.png',
+          imageId: 'img_1',
+          layout: 'left',
+          // The stored caption is the nested editor's first-child-inner HTML.
+          caption: '题注 <strong>粗体</strong>',
+        }),
+      ]),
+    )
+    const { bodyHtml, bodyHtmlFeed } = await computeBodyProjections(state)
+
+    expect(bodyHtml).toContain('<figure class="block max-w-full mr-auto ml-0 w-fit" data-layout="left">')
+    expect(bodyHtml).toContain('data-thumbhash="th-abcd"')
+    // storagePath/imageId never reach the public markup.
+    expect(bodyHtml).not.toContain('objects/abcdef')
+    expect(bodyHtml).not.toContain('img_1')
+    // The caption keeps its (sanitized) inline markup, unlike the PT plain-text figcaption.
+    expect(bodyHtml).toContain('<figcaption>题注 <strong>粗体</strong></figcaption>')
+    // Feed variant: bare figure, absolutized src, plain-text caption (PT rssMode parity).
+    expect(bodyHtmlFeed).toContain(
+      '<figure><img src="https://example.com/storage/posts/cover.png" alt="cover" width="800" height="600"><figcaption>题注 粗体</figcaption></figure>',
+    )
   })
 
   it('renders the R10 host cards as real HTML (no substitution)', async () => {
@@ -177,7 +208,9 @@ describe('infra/pt/lexical-projection — plain text', () => {
   it('extracts the search corpus without a DOM, host-card content included', async () => {
     const { bodyText } = await computeBodyProjections(RICH_STATE)
     expect(bodyText).toBe(
-      '你好 世界\n\nHello <world> & 你好\n\nE=mc^2\n\ninline \n\nconst a = 1 < 2\n\nSong\nArtist\n\n左栏\n右栏\n\n答案 42\n\nafter cards',
+      // The image contributes its alt text (PT pushBlockText parity), the
+      // music-player its snapshot name/artist.
+      '你好 世界\n\nHello <world> & 你好\n\nE=mc^2\n\ninline \n\nconst a = 1 < 2\n\ncover\n\nSong\nArtist\n\n左栏\n右栏\n\n答案 42\n\nafter cards',
     )
   })
 })
