@@ -5,7 +5,13 @@ import type { ContentEntityAdapter, ForceOverwriteEntry } from '@/server/domains
 import type { ContentRow } from '@/server/infra/db/types'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '#/_helpers/lexical'
+import {
+  emptyLexicalBody,
+  lexicalBodyWith,
+  lexicalMusicPlayer,
+  lexicalParagraph,
+  stubMusicResolver,
+} from '#/_helpers/lexical'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
@@ -470,6 +476,62 @@ describe('content/lifecycle — body projections (R9b)', () => {
     expect(rows[0]!.bodyHtml).toBeNull()
     expect(rows[0]!.bodyText).toBeNull()
     expect(rows[0]!.bodyHtmlFeed).toBeNull()
+  })
+})
+
+describe('content/lifecycle — host card projections (R10)', () => {
+  it('renders the three host cards into all projection columns on save', async () => {
+    const meta = await seedPost()
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+    const body = lexicalBodyWith([
+      lexicalParagraph('before'),
+      { type: 'solution', version: 1, content: '<p>答案 42</p>' },
+      { type: 'two-column', version: 1, left: '<p>左栏</p>', right: '<p>右栏</p>' },
+      lexicalMusicPlayer('p1'),
+      lexicalParagraph('after'),
+    ])
+    // The save-time snapshot fills the meta keys from the resolver, so the
+    // projection renders a resolved player without a request-time lookup.
+    const music = stubMusicResolver({
+      p1: {
+        id: 'p1',
+        name: 'Song',
+        artist: 'Artist',
+        album: '',
+        url: '/storage/music/song.mp3',
+        pic: '/storage/music/cover.png',
+        lyric: 'la-la',
+      },
+    })
+
+    const result = await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body, authorId: null, resolveMusicEmbeds: music },
+      'draft',
+    )
+
+    expect(result.status).toBe('saved')
+    const rows = await revisionsOf(meta.id)
+    // Full fidelity: real card markup (the projection registers the card
+    // classes — the R9b substitution path never fires).
+    expect(rows[0]!.bodyHtml).toContain('solution-begin')
+    expect(rows[0]!.bodyHtml).toContain('<p>答案 42</p>')
+    expect(rows[0]!.bodyHtml).toContain('data-pt-two-column=""')
+    expect(rows[0]!.bodyHtml).toContain('data-side="right"')
+    expect(rows[0]!.bodyHtml).toContain('class="aplayer"')
+    expect(rows[0]!.bodyHtml).toContain('data-name="Song"')
+    expect(rows[0]!.bodyHtml).toContain('data-url="/storage/music/song.mp3"')
+    // Feed: solution unwraps, two-column flattens, music renders the PT
+    // rssMode figure.
+    expect(rows[0]!.bodyHtmlFeed).toContain('<p>答案 42</p>')
+    expect(rows[0]!.bodyHtmlFeed).not.toContain('solution-begin')
+    expect(rows[0]!.bodyHtmlFeed).toContain('<p>左栏</p><p>右栏</p>')
+    expect(rows[0]!.bodyHtmlFeed).toContain('<figcaption>🎵 Song — Artist</figcaption>')
+    // Plain text: card content joins the search corpus.
+    expect(rows[0]!.bodyText).toContain('答案 42')
+    expect(rows[0]!.bodyText).toContain('左栏\n右栏')
+    expect(rows[0]!.bodyText).toContain('Song\nArtist')
   })
 })
 

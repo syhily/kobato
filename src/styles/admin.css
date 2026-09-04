@@ -28,6 +28,10 @@
 @source '../ui/public/comments/*.{ts,tsx}';
 @source '../ui/public/widgets';
 @source '../ui/public/Search.tsx';
+/* Inkling editor surface (R10 host cards): the card assembly modules and the
+   shared spec class constants they render with */
+@source '../client/editor';
+@source '../shared/lexical/cards';
 
 @layer utilities {
   /* medium-zoom stacks admin chrome under overlay popovers above */

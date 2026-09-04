@@ -7,7 +7,9 @@ import { lexicalEditorStateSchema, type LexicalEditorState } from '@/shared/lexi
 // The projections consume the canonicalized state (artifacts already filled
 // by the prerender pass); fixtures here carry hand-filled sentinel artifacts
 // so the render forms are pinned without a KaTeX/Shiki bootstrap. jsdom runs
-// for real — the assertions pin inkling's actual exportDOM output.
+// for real — the assertions pin inkling's actual exportDOM output, including
+// the R10 host cards' real HTML (they register as projection node classes, so
+// the R9b substitution path no longer fires for them).
 
 function parse(state: unknown): LexicalEditorState {
   return lexicalEditorStateSchema.parse(state)
@@ -16,6 +18,19 @@ function parse(state: unknown): LexicalEditorState {
 function textNode(text: string) {
   return { type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text }
 }
+
+const MUSIC_PLAYER = {
+  type: 'music-player',
+  version: 1,
+  playerId: 'p1',
+  name: 'Song',
+  artist: 'Artist',
+  cover: '/storage/music/cover.png',
+  audioUrl: '/storage/music/song.mp3',
+  lyric: 'la-la',
+}
+const TWO_COLUMN = { type: 'two-column', version: 1, left: '<p>左栏</p>', right: '<p>右栏</p>' }
+const SOLUTION = { type: 'solution', version: 1, content: '<p>答案 <strong>42</strong></p>' }
 
 const RICH_STATE = parse(
   lexicalBodyWith([
@@ -42,9 +57,9 @@ const RICH_STATE = parse(
       highlightedHtml: '<span class="line">const a = 1</span>',
     },
     lexicalImage(),
-    { type: 'music-player', version: 1, playerId: 'p1', name: 'Song', artist: 'Artist' },
-    { type: 'two-column', version: 1 },
-    { type: 'solution', version: 1 },
+    MUSIC_PLAYER,
+    TWO_COLUMN,
+    SOLUTION,
     lexicalParagraph('after cards'),
   ]),
 )
@@ -64,7 +79,7 @@ const FOOTNOTE_STATE = parse(
 )
 
 describe('infra/pt/lexical-projection — full-fidelity HTML', () => {
-  it('renders headings with ids, math/code artifacts, images, and host-card fallbacks', async () => {
+  it('renders headings with ids, math/code artifacts, and images', async () => {
     const { bodyHtml } = await computeBodyProjections(RICH_STATE)
 
     // Heading ids come from inkling's export (slug parity contract-tested in
@@ -78,11 +93,29 @@ describe('infra/pt/lexical-projection — full-fidelity HTML', () => {
     expect(bodyHtml).toContain('<span class="line">const a = 1</span>')
     // Stock ImageNode export until KobatoImageNode lands (R10/R13).
     expect(bodyHtml).toContain('<img src="/storage/posts/cover.png"')
-    // Host cards degrade instead of truncating: the music fallback paragraph
-    // renders AND the content after the unregistered cards survives.
-    expect(bodyHtml).toContain('<p>🎵 Song — Artist</p>')
-    expect(bodyHtml).not.toContain('two-column')
     expect(bodyHtml).toContain('<p>after cards</p>')
+  })
+
+  it('renders the R10 host cards as real HTML (no substitution)', async () => {
+    const { bodyHtml } = await computeBodyProjections(RICH_STATE)
+
+    // solution: the styled blockquote mirroring the public renderer.
+    expect(bodyHtml).toContain('solution-begin')
+    expect(bodyHtml).toContain('解：')
+    expect(bodyHtml).toContain('<p>答案 <strong>42</strong></p>')
+    expect(bodyHtml).toContain('solution-qed')
+    // two-column: the responsive grid with both panes.
+    expect(bodyHtml).toContain('data-pt-two-column=""')
+    expect(bodyHtml).toContain('data-side="left"')
+    expect(bodyHtml).toContain('<p>左栏</p>')
+    expect(bodyHtml).toContain('<p>右栏</p>')
+    // music-player: the aplayer mount point carries the meta snapshot for
+    // hydration, plus the static fallback card.
+    expect(bodyHtml).toContain('class="aplayer"')
+    expect(bodyHtml).toContain('data-id="p1"')
+    expect(bodyHtml).toContain('data-name="Song"')
+    expect(bodyHtml).toContain('data-url="/storage/music/song.mp3"')
+    expect(bodyHtml).toContain('data-music-player-fallback=""')
   })
 
   it('renders the footnotes section with the settings-owned title and PT anchor contract', async () => {
@@ -107,9 +140,31 @@ describe('infra/pt/lexical-projection — feed variant (rssMode parity)', () => 
     expect(bodyHtmlFeed).toContain('<pre><code class="language-typescript">const a = 1 &lt; 2</code></pre>')
     expect(bodyHtmlFeed).not.toContain('data-code')
     expect(bodyHtmlFeed).not.toContain('<span class="line">')
-    // Non-degraded content carries over unchanged.
-    expect(bodyHtmlFeed).toContain('<p>🎵 Song — Artist</p>')
     expect(bodyHtmlFeed).toContain('<p>after cards</p>')
+  })
+
+  it('renders the host-card feed shapes (solution unwrap, two-column flatten, music figure)', async () => {
+    const { bodyHtmlFeed } = await computeBodyProjections(RICH_STATE)
+
+    // solution unwraps to its bare content (pt-html.ts solution renderer).
+    expect(bodyHtmlFeed).toContain('<p>答案 <strong>42</strong></p>')
+    expect(bodyHtmlFeed).not.toContain('solution-begin')
+    // two-column flattens to left + right content without the grid.
+    expect(bodyHtmlFeed).toContain('<p>左栏</p><p>右栏</p>')
+    expect(bodyHtmlFeed).not.toContain('data-pt-two-column')
+    // music-player renders the PT feed figure from the meta snapshot
+    // (jsdom serializes void tags without ` />` and boolean attrs as `=""`).
+    expect(bodyHtmlFeed).toContain(
+      '<figure><img src="/storage/music/cover.png" alt="Song"><audio controls="" preload="none" src="/storage/music/song.mp3"></audio><figcaption>🎵 Song — Artist</figcaption></figure>',
+    )
+  })
+
+  it('renders the music-player placeholder paragraph when the meta snapshot is absent', async () => {
+    const state = parse(lexicalBodyWith([{ type: 'music-player', version: 1, playerId: 'p1' }]))
+    const { bodyHtml, bodyHtmlFeed } = await computeBodyProjections(state)
+    expect(bodyHtmlFeed).toContain('<p>🎵 此文章包含音乐播放器，请访问原文收听。</p>')
+    // Full fidelity keeps the unresolved-player mount point (today's SSR shape).
+    expect(bodyHtml).toContain('<div class="aplayer" data-id="p1"></div>')
   })
 
   it('keeps the footnotes section intact in the feed variant', async () => {
@@ -119,10 +174,10 @@ describe('infra/pt/lexical-projection — feed variant (rssMode parity)', () => 
 })
 
 describe('infra/pt/lexical-projection — plain text', () => {
-  it('extracts the search corpus without a DOM', async () => {
+  it('extracts the search corpus without a DOM, host-card content included', async () => {
     const { bodyText } = await computeBodyProjections(RICH_STATE)
     expect(bodyText).toBe(
-      '你好 世界\n\nHello <world> & 你好\n\nE=mc^2\n\ninline \n\nconst a = 1 < 2\n\n🎵 Song — Artist\n\nafter cards',
+      '你好 世界\n\nHello <world> & 你好\n\nE=mc^2\n\ninline \n\nconst a = 1 < 2\n\nSong\nArtist\n\n左栏\n右栏\n\n答案 42\n\nafter cards',
     )
   })
 })

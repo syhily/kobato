@@ -65,8 +65,8 @@ const MINIMAL_NODE_FIXTURES: Record<string, () => Record<string, unknown>> = {
   table: () => element('table'),
   tablerow: () => element('tablerow'),
   tablecell: () => element('tablecell', [], { headerState: 0 }),
-  solution: () => ({ type: 'solution', version: 1 }),
-  'two-column': () => ({ type: 'two-column', version: 1 }),
+  solution: () => ({ type: 'solution', version: 1, content: '' }),
+  'two-column': () => ({ type: 'two-column', version: 1, left: '', right: '' }),
   'music-player': () => ({ type: 'music-player', version: 1, playerId: 'p1' }),
 }
 

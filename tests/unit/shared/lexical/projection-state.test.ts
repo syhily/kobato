@@ -47,6 +47,11 @@ describe('shared/lexical/projection-state — artifact stripping', () => {
   })
 })
 
+// R10 renders all three host cards through their own node classes (the
+// server passes them via `renderableHostCardTypes`), so the substitution
+// below is a DEFENSIVE path: it fires only for a card type the projection
+// was not told to render (a surface that omits the option, or a future
+// card type).
 describe('shared/lexical/projection-state — host card substitution', () => {
   it('replaces a meta-carrying music-player with a labeled paragraph', () => {
     const state = parse(
@@ -65,12 +70,12 @@ describe('shared/lexical/projection-state — host card substitution', () => {
     expect(paragraphText(result.root.children[0])).toBe(MUSIC_PLAYER_PROJECTION_PLACEHOLDER)
   })
 
-  it('drops solution and two-column cards (nested datasets undefined until R10)', () => {
+  it('drops solution and two-column cards when they are not registered as renderable', () => {
     const state = parse(
       lexicalBodyWith([
         lexicalParagraph('before'),
-        { type: 'solution', version: 1 },
-        { type: 'two-column', version: 1 },
+        { type: 'solution', version: 1, content: '<p>answer</p>' },
+        { type: 'two-column', version: 1, left: '<p>L</p>', right: '<p>R</p>' },
         lexicalParagraph('after'),
       ]),
     )
@@ -78,7 +83,7 @@ describe('shared/lexical/projection-state — host card substitution', () => {
     expect(result.root.children.map((node) => node.type)).toEqual(['paragraph', 'paragraph'])
   })
 
-  it('passes registered host card types through untouched (the R10 evolution path)', () => {
+  it('passes registered host card types through untouched (the R10 render path)', () => {
     const state = parse(lexicalBodyWith([{ type: 'music-player', version: 1, playerId: 'p1', name: 'Song' }]))
     const result = toProjectionState(state, {
       feed: false,

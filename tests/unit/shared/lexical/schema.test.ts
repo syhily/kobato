@@ -78,13 +78,47 @@ describe('lexicalEditorStateSchema', () => {
         ]),
       ]),
       { type: 'footnotedefinition', version: 1, content: '<p>note</p>', targetKey: 'fn-1', index: 1 },
-      // Host cards stay loose until R10 defines their datasets.
-      { type: 'solution', version: 1, answer: [{ text: 'x' }] },
-      { type: 'two-column', version: 1, leftHtml: '<p/>', rightHtml: '<p/>' },
-      { type: 'music-player', version: 1, playerId: 'p1', name: 'song' },
+      // R10 host cards carry their full datasets (spec modules in
+      // `@/shared/lexical/cards/`).
+      { type: 'solution', version: 1, content: '<p>answer</p>' },
+      { type: 'two-column', version: 1, left: '<p>L</p>', right: '<p>R</p>' },
+      {
+        type: 'music-player',
+        version: 1,
+        playerId: 'p1',
+        name: 'song',
+        artist: 'artist',
+        cover: '/storage/cover.png',
+        audioUrl: '/storage/song.mp3',
+        lyric: '[00:00] la',
+      },
     ])
     const result = lexicalEditorStateSchema.safeParse(value)
     expect(result.success).toBe(true)
+  })
+
+  it('accepts a meta-less music-player node (canonicalize strip / failed resolve shape)', () => {
+    expect(
+      lexicalEditorStateSchema.safeParse(state([{ type: 'music-player', version: 1, playerId: 'p1' }])).success,
+    ).toBe(true)
+  })
+
+  it('rejects host cards with missing or mistyped dataset keys', () => {
+    // solution requires the nested-editor HTML string.
+    expect(lexicalEditorStateSchema.safeParse(state([{ type: 'solution', version: 1 }])).success).toBe(false)
+    // two-column requires both panes.
+    expect(lexicalEditorStateSchema.safeParse(state([{ type: 'two-column', version: 1, left: '<p/>' }])).success).toBe(
+      false,
+    )
+    expect(
+      lexicalEditorStateSchema.safeParse(state([{ type: 'two-column', version: 1, left: 1, right: '<p/>' }])).success,
+    ).toBe(false)
+    // music-player requires playerId; meta keys must be strings when present.
+    expect(lexicalEditorStateSchema.safeParse(state([{ type: 'music-player', version: 1 }])).success).toBe(false)
+    expect(
+      lexicalEditorStateSchema.safeParse(state([{ type: 'music-player', version: 1, playerId: 'p1', name: 42 }]))
+        .success,
+    ).toBe(false)
   })
 
   it('rejects node types outside the whitelist', () => {
