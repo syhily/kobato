@@ -16,13 +16,22 @@ import {
   $createHeadingNode,
   $createQuoteNode,
   $isHeadingNode,
+  $isQuoteNode,
   HeadingNode,
   QuoteNode,
   type HeadingTagType,
 } from '@lexical/rich-text'
 import { $setBlocksType } from '@lexical/selection'
 import { $getNearestNodeOfType } from '@lexical/utils'
-import { $createParagraphNode, $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'
+import {
+  $createParagraphNode,
+  $getSelection,
+  $isElementNode,
+  $isParagraphNode,
+  $isRangeSelection,
+  type ElementFormatType,
+  type LexicalEditor,
+} from 'lexical'
 
 import { $createAsideNode } from '@/nodes/AsideNode'
 import { getSelectedNode } from '@/utils/getSelectedNode'
@@ -50,6 +59,8 @@ export interface FormatToolbarState {
   isBold: boolean
   isItalic: boolean
   blockType: string
+  /** The anchor block's element format (text-align); '' means no explicit alignment. */
+  elementFormat: ElementFormatType | ''
 }
 
 /**
@@ -64,7 +75,7 @@ export function registerFormatToolbarState(
   editor: LexicalEditor,
   publish: (state: FormatToolbarState) => void,
 ): () => void {
-  let state: FormatToolbarState = { isBold: false, isItalic: false, blockType: 'paragraph' }
+  let state: FormatToolbarState = { isBold: false, isItalic: false, blockType: 'paragraph', elementFormat: '' }
 
   const update = () => {
     editor.getEditorState().read(() => {
@@ -88,6 +99,9 @@ export function registerFormatToolbarState(
       const element = anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow()
 
       if (editor.getElementByKey(element.getKey()) !== null) {
+        // getTopLevelElementOrThrow's return type includes TextNode; the
+        // element format only exists on ElementNode
+        next.elementFormat = $isElementNode(element) ? element.getFormatType() : ''
         if ($isListNode(element)) {
           const parentList = $getNearestNodeOfType(anchorNode, ListNode)
           next.blockType = parentList ? parentList.getListType() : element.getListType()
@@ -151,18 +165,51 @@ export function $cycleQuoteBlock(editor: LexicalEditor, blockType: string): void
   })
 }
 
+/**
+ * The alignment surgery (tiptap `TextAlign.configure({ types: ['heading',
+ * 'paragraph', 'blockquote'] })` parity): sets element `format` on every
+ * selected top-level paragraph/heading/quote — the extended replacements are
+ * subclasses, so the three upstream guards cover them — and leaves every
+ * other block (lists, code, …) untouched. 'left' is an explicit format, not
+ * a reset; the default stays '' (no alignment).
+ */
+export type BlockAlignment = 'left' | 'center' | 'right'
+
+export function $setBlocksAlignment(editor: LexicalEditor, alignment: BlockAlignment): void {
+  editor.update(() => {
+    const selection = $getSelection()
+    if (!$isRangeSelection(selection)) {
+      return
+    }
+    const seen = new Set<string>()
+    for (const node of selection.getNodes()) {
+      const element = node.getTopLevelElement()
+      if (element === null || seen.has(element.getKey())) {
+        continue
+      }
+      seen.add(element.getKey())
+      if ($isParagraphNode(element) || $isHeadingNode(element) || $isQuoteNode(element)) {
+        element.setFormat(alignment)
+      }
+    }
+  })
+}
+
 export interface FormatToolbarVisibility {
   hideHeading: boolean
   hideQuotes: boolean
   hideSnippets: boolean
   hideBold: boolean
+  hideAlignment: boolean
 }
 
 /**
  * The visibility gates: headings/quotes hide when the surface didn't
  * compose their nodes; snippets hide when disabled, when the host can't
  * create them, or inside a nested editor; bold hides when the surface
- * declares it in `hiddenFormats`.
+ * declares it in `hiddenFormats`; the alignment group hides unless the
+ * surface opted into keeping element `format` (its `alignment` prop — the
+ * same flag that keeps the default transforms from stripping it).
  */
 /** The formats a surface can hide from the toolbar — 'bold' is the only honored value today; any other string was a silent no-op. */
 export type HiddenFormat = 'bold'
@@ -173,12 +220,19 @@ export function resolveFormatToolbarVisibility(
     isSnippetsEnabled,
     canCreateSnippet,
     hiddenFormats = [],
-  }: { isSnippetsEnabled?: boolean; canCreateSnippet: boolean; hiddenFormats?: HiddenFormat[] },
+    isAlignmentEnabled = false,
+  }: {
+    isSnippetsEnabled?: boolean
+    canCreateSnippet: boolean
+    hiddenFormats?: HiddenFormat[]
+    isAlignmentEnabled?: boolean
+  },
 ): FormatToolbarVisibility {
   return {
     hideHeading: !editor.hasNodes([HeadingNode]),
     hideQuotes: !editor.hasNodes([QuoteNode]),
     hideSnippets: !isSnippetsEnabled || !canCreateSnippet || isNestedEditor(editor),
     hideBold: hiddenFormats.includes('bold'),
+    hideAlignment: !isAlignmentEnabled,
   }
 }

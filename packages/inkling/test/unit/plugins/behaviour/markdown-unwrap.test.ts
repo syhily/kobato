@@ -19,8 +19,7 @@ import { $unwrapSpecialMarkupFormat } from '@/plugins/behaviour/markdown-unwrap'
 // string special case, and the caret offset compensation, pinned by calling
 // the unwrap body directly on a headless editor. The keyboard plumbing
 // (at-end-of-element gate, preventDefault) stays in
-// test/unit/plugins/behaviour/registerKeyboardNavigation.test.ts and the
-// typing round trip in test/e2e/text-transforms/markdown.test.ts.
+// test/unit/plugins/behaviour/registerKeyboardNavigation.test.ts.
 
 function createTestEditor(): LexicalEditor {
   return createHeadlessEditor({

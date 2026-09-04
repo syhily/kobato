@@ -10,6 +10,7 @@ import {
   $cycleQuoteBlock,
   $formatBlocksToHeading,
   $formatBlocksToParagraph,
+  $setBlocksAlignment,
   registerFormatToolbarState,
   resolveFormatToolbarVisibility,
   type FormatToolbarState,
@@ -34,6 +35,8 @@ interface FormatToolbarProps {
   onLinkClick?: () => void
   onSnippetClick?: () => void
   hiddenFormats?: HiddenFormat[]
+  /** Surfaces that keep element `format` (InklingComposableEditor's `alignment` prop) expose the alignment group. */
+  isAlignmentEnabled?: boolean
 }
 
 // the selection classifier, the block-format surgeries, and the visibility
@@ -46,24 +49,27 @@ export default function FormatToolbar({
   onLinkClick,
   onSnippetClick,
   hiddenFormats = [],
+  isAlignmentEnabled = false,
 }: FormatToolbarProps) {
   const [state, setState] = React.useState<FormatToolbarState>({
     isBold: false,
     isItalic: false,
     blockType: 'paragraph',
+    elementFormat: '',
   })
   const { createSnippet } = useInklingSnippetSettings()
   const labels = useInklingLabels()
 
-  const { hideHeading, hideQuotes, hideSnippets, hideBold } = resolveFormatToolbarVisibility(editor, {
+  const { hideHeading, hideQuotes, hideSnippets, hideBold, hideAlignment } = resolveFormatToolbarVisibility(editor, {
     isSnippetsEnabled,
     canCreateSnippet: !!createSnippet,
     hiddenFormats,
+    isAlignmentEnabled,
   })
 
   React.useEffect(() => registerFormatToolbarState(editor, setState), [editor])
 
-  const { isBold, isItalic, blockType } = state
+  const { isBold, isItalic, blockType, elementFormat } = state
 
   const formatHeading = (headingSize: HeadingTagType) => {
     if (blockType !== headingSize) {
@@ -117,6 +123,32 @@ export default function FormatToolbar({
         label={labels['toolbar.quote']}
         shortcutKeys={[ctrlOrSymbol(), 'Q']}
         onClick={() => $cycleQuoteBlock(editor, blockType)}
+      />
+
+      <ToolbarMenuSeparator hide={hideAlignment} />
+      <ToolbarMenuItem
+        data-inkling-toolbar-button="align-left"
+        hide={hideAlignment}
+        icon="alignLeft"
+        isActive={elementFormat === '' || elementFormat === 'left'}
+        label={labels['toolbar.alignLeft']}
+        onClick={() => $setBlocksAlignment(editor, 'left')}
+      />
+      <ToolbarMenuItem
+        data-inkling-toolbar-button="align-center"
+        hide={hideAlignment}
+        icon="alignCenter"
+        isActive={elementFormat === 'center'}
+        label={labels['toolbar.alignCenter']}
+        onClick={() => $setBlocksAlignment(editor, 'center')}
+      />
+      <ToolbarMenuItem
+        data-inkling-toolbar-button="align-right"
+        hide={hideAlignment}
+        icon="alignRight"
+        isActive={elementFormat === 'right'}
+        label={labels['toolbar.alignRight']}
+        onClick={() => $setBlocksAlignment(editor, 'right')}
       />
 
       <ToolbarMenuItem

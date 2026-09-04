@@ -2,8 +2,8 @@
 /* oxlint-disable no-console -- CLI script: stdout is its output channel */
 // Packed-type verifier: installs the packed @inkling/editor tarball into an
 // isolated temp project with only documented peers and type packages, then
-// type-checks clean consumers — one fixture per published entry (`.` and
-// `./core`, plan C5) — under both "Bundler" and "NodeNext" module
+// type-checks clean consumers — one fixture per published entry (`.`,
+// `./core`, and `./headless`) — under both "Bundler" and "NodeNext" module
 // resolution. Feature runtimes (Lexical, CodeMirror, emoji-mart, markdown-it,
 // Yjs, etc.) are deliberately NOT installed — the published declaration must
 // own its own type graph.
@@ -30,9 +30,9 @@ interface ConsumerFixture {
   declaration: string
 }
 
-// One fixture per published entry (plan C5): the root declaration and the
-// `./core` subpath declaration each get the Bundler + NodeNext pair and the
-// broken-declaration negative check.
+// One fixture per published entry: the root declaration, the `./core`
+// subpath declaration, and the `./headless` subpath declaration each get the
+// Bundler + NodeNext pair and the broken-declaration negative check.
 const CONSUMER_FIXTURES: ConsumerFixture[] = [
   {
     name: 'root',
@@ -45,6 +45,12 @@ const CONSUMER_FIXTURES: ConsumerFixture[] = [
     source: join(REPO_ROOT, 'test', 'typecheck-consumer', 'consumer-core.tsx'),
     localName: 'consumer-core.tsx',
     declaration: 'core.d.ts',
+  },
+  {
+    name: 'headless',
+    source: join(REPO_ROOT, 'test', 'typecheck-consumer', 'consumer-headless.ts'),
+    localName: 'consumer-headless.ts',
+    declaration: 'headless.d.ts',
   },
 ]
 

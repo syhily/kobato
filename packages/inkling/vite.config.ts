@@ -17,13 +17,16 @@ import { INKLING_ALIASES, INKLING_BUNDLE_WORKAROUND_ALIASES } from './vite-alias
 
 const outputFileName = pkg.name[0] === '@' ? pkg.name.slice(pkg.name.indexOf('/') + 1) : pkg.name
 
-// Dual-entry build (plan C5): INKLING_ENTRY selects the published entry.
-// The default `editor` pass emits the full `.` bundle (ES + UMD, style.css);
-// the `core` pass emits the card-free `./core` subpath (ES only, core.css).
-// Both passes emit the lazy collaboration chunk, so chunk names carry the
-// entry prefix to keep the two passes from overwriting each other.
-const inklingEntry = process.env.INKLING_ENTRY === 'core' ? 'core' : 'editor'
-const isCoreEntry = inklingEntry === 'core'
+// Triple-entry build (plan C5 + the `./headless` subpath): INKLING_ENTRY
+// selects the published entry. The default `editor` pass emits the full `.`
+// bundle (ES + UMD, style.css); the `core` pass emits the card-free `./core`
+// subpath (ES only, core.css); the `headless` pass emits the server-side
+// conversion surface (ES only, no stylesheet — the graph imports no CSS).
+// Every pass may emit entry-scoped lazy chunks, so chunk names carry the
+// entry prefix to keep the passes from overwriting each other.
+const inklingEntryEnv = process.env.INKLING_ENTRY
+const inklingEntry = inklingEntryEnv === 'core' || inklingEntryEnv === 'headless' ? inklingEntryEnv : 'editor'
+const isEditorEntry = inklingEntry === 'editor'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -65,18 +68,18 @@ export default defineConfig(({ mode }) => {
       minify: true,
       sourcemap: true,
       cssCodeSplit: true,
-      // the first (editor) pass owns the dist cleanup; the core pass must not
-      // wipe the artifacts the editor pass just emitted
-      emptyOutDir: !isCoreEntry,
+      // the first (editor) pass owns the dist cleanup; the core/headless
+      // passes must not wipe the artifacts the earlier passes just emitted
+      emptyOutDir: isEditorEntry,
       lib: {
-        entry: resolve(import.meta.dirname, isCoreEntry ? 'src/core.ts' : 'src/index.ts'),
+        entry: resolve(import.meta.dirname, isEditorEntry ? 'src/index.ts' : `src/${inklingEntry}.ts`),
         name: pkg.name,
-        // the `./core` subpath is ESM-only (plan C5) — CJS consumers keep the
-        // root UMD
-        ...(isCoreEntry ? { formats: ['es' as const] } : {}),
+        // the `./core` and `./headless` subpaths are ESM-only (plan C5) — CJS
+        // consumers keep the root UMD
+        ...(isEditorEntry ? {} : { formats: ['es' as const] }),
         fileName(format: string) {
-          if (isCoreEntry) {
-            return 'core.js'
+          if (!isEditorEntry) {
+            return `${inklingEntry}.js`
           }
           if (format === 'umd') {
             return `${outputFileName}.umd.cjs`
@@ -106,8 +109,8 @@ export default defineConfig(({ mode }) => {
         // phases in scripts/verify-packed-package.ts gate the pairing.
         external: [/^react($|\/)/, /^react-dom($|\/)/, /^jsdom($|\/)/],
         output: {
-          // both passes emit the lazy collaboration chunk; prefix chunk names
-          // with the entry so the two passes don't overwrite each other
+          // the editor/core passes emit the lazy collaboration chunk; prefix
+          // chunk names with the entry so no two passes overwrite each other
           chunkFileNames: `chunks/${inklingEntry}-[name].js`,
           globals: function (id: string) {
             // Global names for the externalized React peer dependencies in
@@ -130,9 +133,10 @@ export default defineConfig(({ mode }) => {
             // 'style.css' to deriving from the entry filename.
             // Preserve 'style.css' for backwards compatibility ('core.css'
             // for the core pass — same source sheet, not yet layered; C6
-            // owns CSS layering).
+            // owns CSS layering). The headless pass imports no CSS; if that
+            // ever changes the sheet is named after the entry.
             if (assetInfo.names?.[0]?.endsWith('.css')) {
-              return isCoreEntry ? 'core.css' : 'style.css'
+              return isEditorEntry ? 'style.css' : `${inklingEntry}.css`
             }
             return assetInfo.names?.[0] ?? '[name][extname]'
           },

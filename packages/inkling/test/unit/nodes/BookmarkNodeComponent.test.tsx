@@ -19,7 +19,13 @@ import { createHostIntegrationValue } from '#/utils/host-integration-context'
 import { InklingHostIntegrationProvider, type CardConfig } from '@/context/InklingHostIntegrationContext'
 import { BookmarkNode, $createBookmarkNode, $isBookmarkNode } from '@/nodes/BookmarkNode'
 import { BookmarkNodeComponent } from '@/nodes/BookmarkNodeComponent'
+import { registerCardDecorateAdapter } from '@/nodes/decorate-card'
 import trackEvent from '@/utils/analytics'
+
+// These specs attach a root element, so reconciliation calls decorate() —
+// the injection port is filled here (vi.mock hoisting keeps the mocks below
+// ahead of this import; see test/utils/test-editor.ts for the rationale).
+registerCardDecorateAdapter()
 
 vi.mock('@/utils/analytics', () => ({
   default: vi.fn(),

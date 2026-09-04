@@ -42,6 +42,8 @@ export interface InklingComposableEditorProps {
   dataTestId?: string
   /** Keep text alignment (`format`) instead of stripping it; set on surfaces that expose alignment controls. */
   alignment?: boolean
+  /** Writing-focus mode: the focused top-level block gets `data-inkling-focus-active`, the root gets the `inkling-focus-mode` class; host CSS dims the rest. */
+  focusMode?: boolean
 }
 
 const InklingComposableEditor = ({
@@ -65,6 +67,7 @@ const InklingComposableEditor = ({
   useDefaultClasses = true,
   dataTestId,
   alignment,
+  focusMode,
 }: InklingComposableEditorProps) => {
   const { historyState, onChange: sharedOnChange } = useSharedEditorStateContext()
   const [editor] = useLexicalComposerContext()
@@ -136,6 +139,7 @@ const InklingComposableEditor = ({
     cursorDidExitAtTop,
     isNested,
     alignment,
+    focusMode,
     markdownTransformers,
     floatingAnchorElem,
     hiddenFormats,

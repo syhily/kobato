@@ -14,9 +14,15 @@ import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { $isCodeBlockNode, CodeBlockNode } from '@/nodes/CodeBlockNode'
+import { registerCardDecorateAdapter } from '@/nodes/decorate-card'
 import { $isHorizontalRuleNode, HorizontalRuleNode } from '@/nodes/HorizontalRuleNode'
 import { PASTE_MARKDOWN_COMMAND } from '@/plugins/behaviour/clipboard-protocol'
 import { MarkdownPastePlugin } from '@/plugins/MarkdownPastePlugin'
+
+// This spec creates its own editor (not test/utils/test-editor.ts), so it
+// must register the decorate adapter itself — the card nodes registered below
+// reach decorate() during the paste round trips.
+registerCardDecorateAdapter()
 
 // jsdom does not implement DataTransfer (verified on jsdom 29); the plugin
 // builds one inside its command handler, so shim the minimal setData/getData

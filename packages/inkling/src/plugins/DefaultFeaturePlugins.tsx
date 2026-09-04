@@ -12,6 +12,7 @@ import InklingSelectorPlugin from '@/plugins/InklingSelectorPlugin'
 import { InklingSnippetPlugin } from '@/plugins/InklingSnippetPlugin'
 import { InklingTablePlugin } from '@/plugins/InklingTablePlugin'
 import MathInlinePlugin from '@/plugins/MathInlinePlugin'
+import TypographyPlugin from '@/plugins/TypographyPlugin'
 
 // A feature plugin entry, as data. The explicit key keeps rendering stable
 // without leaning on component names (which minification can collapse).
@@ -35,6 +36,7 @@ export const DEFAULT_FEATURE_PLUGINS: readonly FeaturePluginEntry[] = [
   { key: 'emoji-picker', Component: EmojiPickerPlugin },
   { key: 'at-link', Component: AtLinkPlugin },
   { key: 'em-en-dash', Component: EmEnDashPlugin },
+  { key: 'typography', Component: TypographyPlugin },
   // Cards
   { key: 'card-insert', Component: CardInsertPlugin },
   { key: 'horizontal-rule', Component: HorizontalRulePlugin },

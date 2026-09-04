@@ -20,13 +20,15 @@ export default function FloatingToolbarPlugin({
   anchorElem = document.body,
   isSnippetsEnabled,
   hiddenFormats = [],
+  isAlignmentEnabled = false,
 }: {
   anchorElem?: HTMLElement
   isSnippetsEnabled?: boolean
   hiddenFormats?: HiddenFormat[]
+  isAlignmentEnabled?: boolean
 }) {
   const [editor] = useLexicalComposerContext()
-  return useFloatingFormatToolbar(editor, anchorElem, isSnippetsEnabled, hiddenFormats)
+  return useFloatingFormatToolbar(editor, anchorElem, isSnippetsEnabled, hiddenFormats, isAlignmentEnabled)
 }
 
 function useFloatingFormatToolbar(
@@ -34,6 +36,7 @@ function useFloatingFormatToolbar(
   anchorElem: HTMLElement,
   isSnippetsEnabled?: boolean,
   hiddenFormats: HiddenFormat[] = [],
+  isAlignmentEnabled: boolean = false,
 ) {
   // the toolbar session (hidden | text | link | snippet, plus the hovered-link
   // slot) lives in the headless link-editing module; this hook only feeds it
@@ -135,6 +138,7 @@ function useFloatingFormatToolbar(
         editor={editor}
         hiddenFormats={hiddenFormats}
         href={href}
+        isAlignmentEnabled={isAlignmentEnabled}
         isSnippetsEnabled={isSnippetsEnabled}
         toolbarItemType={type === 'hidden' ? null : type}
         toolbarRef={formatToolbarRef}

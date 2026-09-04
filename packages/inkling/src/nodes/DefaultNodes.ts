@@ -1,4 +1,4 @@
-import { LinkNode } from '@lexical/link'
+import { AutoLinkNode, LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 
@@ -29,6 +29,10 @@ export const EDITOR_BASE_NODES = [
   ListItemNode,
   AsideNode,
   LinkNode,
+  // AutoLinkNode powers the default autolink plugin (typed URLs become
+  // links); it extends LinkNode without replacing it — imported `<a>` markup
+  // still lands as plain LinkNode.
+  AutoLinkNode,
   ...INKLING_TABLE_NODES,
 ]
 

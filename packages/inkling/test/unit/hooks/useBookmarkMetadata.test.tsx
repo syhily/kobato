@@ -15,6 +15,12 @@ import type { BookmarkEmbedResponse } from '@/context/InklingHostIntegrationCont
 
 import { useBookmarkMetadata } from '@/hooks/useBookmarkMetadata'
 import { BookmarkNode, $createBookmarkNode, $isBookmarkNode } from '@/nodes/BookmarkNode'
+import { registerCardDecorateAdapter } from '@/nodes/decorate-card'
+
+// This suite keeps its own setRootElement editor (bespoke config), so it
+// registers the decorate adapter itself — reconciliation calls decorate(),
+// which resolves through the injection port (see test/utils/test-editor.ts).
+registerCardDecorateAdapter()
 
 const embedResponse: BookmarkEmbedResponse = {
   url: 'https://example.com/canonical',

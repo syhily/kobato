@@ -27,7 +27,6 @@
     "strictNullChecks": true
   },
   "exclude": [
-    "test/e2e/**/*",
     "test/unit/**/*",
     "test/utils/**/*",
     "test/typecheck-consumer/**/*",

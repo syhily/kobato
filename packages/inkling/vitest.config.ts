@@ -16,6 +16,16 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
+    server: {
+      deps: {
+        // @testing-library/jest-dom's vitest entry imports 'vitest' — if it
+        // is externalized, Node resolves that import from the workspace root
+        // (a different vitest major) instead of this package's, splitting the
+        // snapshot/expect singletons. Inline it so the import resolves through
+        // vitest's own plugin resolver.
+        inline: ['@testing-library/jest-dom'],
+      },
+    },
     include: [
       './test/unit/**/*.test.{js,jsx,ts,tsx}',
       './test/utils/**/*.test.{js,jsx,ts,tsx}',
@@ -27,7 +37,7 @@ export default defineConfig({
       './test/transforms/**/*.test.{js,jsx,ts,tsx}',
       './test/nodes-base/**/*.test.{js,jsx,ts,tsx}',
     ],
-    exclude: ['./test/e2e/**', './test/acceptance/**'],
+    exclude: ['./test/acceptance/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'cobertura'],

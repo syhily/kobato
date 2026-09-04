@@ -5,6 +5,7 @@ exports[`core plugin set > pins the default surface plugin keys 1`] = `
   "core": [
     "rich-text",
     "link",
+    "autolink",
     "on-change",
     "history",
     "behaviour",
@@ -18,6 +19,7 @@ exports[`core plugin set > pins the default surface plugin keys 1`] = `
     "editor-event-focus",
     "markdown-paste",
     "tk",
+    "focus-mode",
   ],
   "features": [
     "list",
@@ -27,6 +29,7 @@ exports[`core plugin set > pins the default surface plugin keys 1`] = `
     "emoji-picker",
     "at-link",
     "em-en-dash",
+    "typography",
     "card-insert",
     "horizontal-rule",
     "math-inline",

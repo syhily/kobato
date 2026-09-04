@@ -18,6 +18,8 @@ import DragDropPastePlugin from '@/plugins/DragDropPastePlugin'
 import DragDropReorderPlugin from '@/plugins/DragDropReorderPlugin'
 import { ExternalControlPlugin } from '@/plugins/ExternalControlPlugin'
 import FloatingToolbarPlugin from '@/plugins/FloatingToolbarPlugin'
+import FocusModePlugin from '@/plugins/FocusModePlugin'
+import InklingAutoLinkPlugin from '@/plugins/InklingAutoLinkPlugin'
 import InklingBehaviourPlugin from '@/plugins/InklingBehaviourPlugin'
 import { InklingEditorEventPlugin } from '@/plugins/InklingEditorEventPlugin'
 import MarkdownPastePlugin from '@/plugins/MarkdownPastePlugin'
@@ -45,6 +47,7 @@ export interface CorePluginScope {
   cursorDidExitAtTop?: () => void
   isNested: boolean
   alignment?: boolean
+  focusMode?: boolean
   markdownTransformers?: readonly Transformer[]
   floatingAnchorElem: HTMLDivElement | null
   hiddenFormats: HiddenFormat[]
@@ -93,6 +96,9 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
     ),
   },
   { key: 'link', render: () => <LinkPlugin /> },
+  // typed-URL autolinking (tiptap `autolink: true` parity); no-ops on
+  // surfaces composed without AutoLinkNode (the card-free core surface)
+  { key: 'autolink', render: () => <InklingAutoLinkPlugin /> },
   {
     key: 'on-change',
     render: (scope) => (
@@ -128,12 +134,15 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
     key: 'floating-toolbar',
     when: (scope) => scope.floatingAnchorElem !== null,
     // render re-narrows locally; the `when` guard above is the data-shaped
-    // mount condition, this branch can only run with a non-null anchor
-    render: ({ floatingAnchorElem, hiddenFormats, isSnippetsEnabled }) =>
+    // mount condition, this branch can only run with a non-null anchor.
+    // `alignment` rides the same surface flag the behaviour plugin reads:
+    // opted-in surfaces keep element `format` AND get the alignment group.
+    render: ({ floatingAnchorElem, hiddenFormats, isSnippetsEnabled, alignment }) =>
       floatingAnchorElem ? (
         <FloatingToolbarPlugin
           anchorElem={floatingAnchorElem}
           hiddenFormats={hiddenFormats}
+          isAlignmentEnabled={alignment === true}
           isSnippetsEnabled={isSnippetsEnabled}
         />
       ) : null,
@@ -169,6 +178,13 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
     key: 'tk',
     when: (scope) => scope.isTKEnabled === true,
     render: () => <TKPlugin />,
+  },
+  {
+    key: 'focus-mode',
+    // writing-focus mode (tiptap extension-focus parity as a real UX): the
+    // plugin marks the selected top-level block for host CSS to dim the rest
+    when: (scope) => scope.focusMode === true,
+    render: () => <FocusModePlugin />,
   },
 ]
 

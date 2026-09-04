@@ -6,7 +6,7 @@ export default defineConfig({
   bracketSpacing: true,
   endOfLine: 'lf',
   insertFinalNewline: true,
-  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*'],
+  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'packages/**'],
   jsxSingleQuote: false,
   objectWrap: 'preserve',
   printWidth: 120,

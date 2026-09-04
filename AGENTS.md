@@ -341,6 +341,11 @@ Examples: `react`, `hono`, `drizzle-orm`, `nodemailer`,
 `sanitize-html`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
 all `devDependencies`, despite being production imports.
 
+`@inkling/editor` (`packages/inkling`, imported via `git subtree`) is the
+repo's first workspace-dependency precedent: the root consumes it as
+`"workspace:*"` from `devDependencies`, resolving to its built `dist/`
+artifacts through the package's `exports` map.
+
 **Version pins to watch.** `drizzle-orm` / `drizzle-kit` are pinned at
 `1.0.0-rc.4` (pre-release). Watch the drizzle 1.0 stable release; when it
 ships, evaluate upgrading the pair together and re-run the migration

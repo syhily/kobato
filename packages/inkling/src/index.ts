@@ -11,6 +11,7 @@ import {
   ELEMENT_TRANSFORMERS,
   HR as HR_TRANSFORMER,
 } from '@/markdown/transformers'
+import { registerCardDecorateAdapter } from '@/nodes/decorate-card'
 /* Nodes */
 import DEFAULT_NODES, { EDITOR_BASE_NODES } from '@/nodes/DefaultNodes'
 /* Plugins */
@@ -35,9 +36,19 @@ import PlusCardMenuPlugin from '@/plugins/PlusCardMenuPlugin'
 import ReplacementStringsPlugin from '@/plugins/ReplacementStringsPlugin'
 import SlashCardMenuPlugin from '@/plugins/SlashCardMenuPlugin'
 import TKCountPlugin from '@/plugins/TKCountPlugin'
+import TypographyPlugin from '@/plugins/TypographyPlugin'
 import WordCountPlugin from '@/plugins/WordCountPlugin'
 
 /* Exports ------------------------------------------------------------------ */
+
+/* Card decorate wiring (plan 039 + the `./headless` split): assembled card
+ * classes resolve decorate() through the injection port in
+ * `@/nodes/card-decorate-slot`; this call fills the slot for every
+ * full-entry consumer. It is an explicit entry-level statement — not a
+ * module side effect — so the bundler can keep dropping the wrapper layer
+ * from the `./core`/`./headless` graphs (the package's sideEffects table
+ * covers CSS only). */
+registerCardDecorateAdapter()
 
 /* The contract shared with the `./core` entry (Lexical runtime types,
  * host-config types, labels, the library browser, the card-free composition
@@ -174,6 +185,7 @@ export {
   ReplacementStringsPlugin,
   SlashCardMenuPlugin,
   TKCountPlugin,
+  TypographyPlugin,
   WordCountPlugin,
   DEFAULT_NODES,
   EDITOR_BASE_NODES,

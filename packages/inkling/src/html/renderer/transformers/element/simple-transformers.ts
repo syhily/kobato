@@ -18,13 +18,21 @@ import { slugify } from '@/utils'
 // The guards are type-exclusive — a node matches exactly one — so their
 // order in the registry carries no meaning.
 
+// Element `format` exports as an inline text-align style (upstream
+// exportDOM parity), so the alignment kept by opted-in surfaces survives
+// the HTML leg; the importer reads it back via $setFormatFromDOM.
+function formatAttribute(node: ElementNode): string {
+  const format = node.getFormatType()
+  return format === '' ? '' : ` style="text-align: ${format}"`
+}
+
 const paragraphTransformer: ElementTransformer = {
   export(node, exportChildren) {
     if (!$isParagraphNode(node)) {
       return null
     }
 
-    return `<p>${exportChildren(node)}</p>`
+    return `<p${formatAttribute(node)}>${exportChildren(node)}</p>`
   },
 }
 
@@ -41,7 +49,7 @@ const headingTransformer: ElementTransformer = {
     // render context, which every render pass builds fresh.
     const id = context.trackIdAttribute(slugify(node.getTextContent()))
 
-    return `<${tag} id="${id}">${exportChildren(node)}</${tag}>`
+    return `<${tag} id="${id}"${formatAttribute(node)}>${exportChildren(node)}</${tag}>`
   },
 }
 
@@ -53,7 +61,7 @@ const blockquoteTransformer: ElementTransformer = {
 
     const children = exportChildren(node)
 
-    return `<blockquote>${children}</blockquote>`
+    return `<blockquote${formatAttribute(node)}>${children}</blockquote>`
   },
 }
 

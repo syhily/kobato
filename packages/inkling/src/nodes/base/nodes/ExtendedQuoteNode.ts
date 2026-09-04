@@ -2,7 +2,7 @@ import type { SerializedQuoteNode } from '@lexical/rich-text'
 import type { LexicalNode } from 'lexical'
 
 import { QuoteNode } from '@lexical/rich-text'
-import { $createLineBreakNode, $isParagraphNode } from 'lexical'
+import { $createLineBreakNode, $isParagraphNode, $setFormatFromDOM } from 'lexical'
 
 // Since the QuoteNode is foundational to Lexical rich-text, only using a
 // custom QuoteNode is undesirable as it means every package would need to
@@ -57,8 +57,12 @@ export class ExtendedQuoteNode extends QuoteNode {
 
 function convertBlockquoteElement() {
   return {
-    conversion: () => {
+    conversion: (element: HTMLElement) => {
       const node = new ExtendedQuoteNode()
+      // upstream's $convertBlockquoteElement reads style.textAlign; the
+      // override shadowed it, so imported quote alignment would drop even
+      // when the importer keeps `format`
+      $setFormatFromDOM(node, element)
       return {
         node,
         after: (childNodes: LexicalNode[]) => {

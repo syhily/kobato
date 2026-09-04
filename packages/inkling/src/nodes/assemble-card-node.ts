@@ -11,7 +11,7 @@ import type { CardImportSpec } from '@/nodes/base/import-spec'
 import type { CardDeclaration } from '@/nodes/cards/card-declaration'
 
 import { ensureLexicalNodeOwnMethods } from '@/nodes/base/ensure-node-own-methods'
-import { decorateCard } from '@/nodes/decorate-card'
+import { decorateCardNode } from '@/nodes/card-decorate-slot'
 
 /**
  * The class type `assembleCardNode` returns: the declaration's base node
@@ -68,7 +68,11 @@ export type CardAssemblyDeclaration = Pick<
  * subclasses the declaration's React-free base node and adopts the spec
  * statics — `nestedEditors` and `transientProps` (read off `this.constructor`
  * by the generated node machinery). Its only method is `decorate()`,
- * delegating to the shared adapter (`@/nodes/decorate-card`).
+ * delegated through the injection port (`@/nodes/card-decorate-slot`) the
+ * wrapper layer (`@/nodes/decorate-card`) registers into — the inversion
+ * keeps this module off the React component tree, so card shims (and the
+ * markdown round-trip built on them) stay importable from the `./headless`
+ * entry.
  *
  * Behaviour the spec language can't express is NOT assembled here: gallery
  * image helpers and the isEmpty()/getCardWidth() overrides live on the base
@@ -102,7 +106,7 @@ export function assembleCardNode<
     }
 
     decorate(): ReactNode {
-      return decorateCard(this)
+      return decorateCardNode(this)
     }
   }
 

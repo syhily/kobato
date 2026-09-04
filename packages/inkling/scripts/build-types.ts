@@ -2,9 +2,9 @@
 import type { Plugin } from 'rolldown'
 
 /* oxlint-disable no-console -- CLI script: stdout is its output channel */
-// Bundled declaration build for @inkling/editor (plan 028), dual-entry since
-// plan C5: one bundle per published entry — dist/editor.d.ts for `.` and
-// dist/core.d.ts for `./core`.
+// Bundled declaration build for @inkling/editor (plan 028), multi-entry since
+// plan C5: one bundle per published entry — dist/editor.d.ts for `.`,
+// dist/core.d.ts for `./core`, dist/headless.d.ts for `./headless`.
 //
 // Tool note: the bundle is produced by rolldown + rolldown-plugin-dts, which
 // parses declarations with oxc and needs no TypeScript JS compiler API — that
@@ -55,6 +55,17 @@ const TARGETS: DeclarationTarget[] = [
     entry: resolve(REPO_ROOT, 'src/dts-entry-core.ts'),
     outFile: resolve(REPO_ROOT, 'dist/core.d.ts'),
     expectedSymbols: ['InklingComposer', 'InklingSurface', 'MINIMAL_NODES', 'RestrictContentPlugin'],
+  },
+  {
+    entry: resolve(REPO_ROOT, 'src/dts-entry-headless.ts'),
+    outFile: resolve(REPO_ROOT, 'dist/headless.d.ts'),
+    expectedSymbols: [
+      'htmlToLexicalState',
+      'lexicalStateToHtml',
+      'lexicalStateToPlainText',
+      'markdownToLexicalState',
+      'lexicalStateToMarkdown',
+    ],
   },
 ]
 
