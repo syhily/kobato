@@ -3,12 +3,11 @@ import { ArrowLeftIcon, CheckIcon, HistoryIcon, RefreshCcwIcon } from 'lucide-re
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { toastApiError } from '@/client/lib/toast-api-error'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
+import { diffBodies, DiffPanel } from '@/ui/admin/editor/lexical-body-diff'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
@@ -19,8 +18,8 @@ export interface RevisionHistoryDrawerProps {
   ownerId: string
   /** Token of the currently displayed revision; used to highlight the row. */
   currentToken: string | null
-  /** PortableText body currently displayed in the editor. */
-  currentBody: PortableTextBody
+  /** Lexical body currently displayed in the editor. */
+  currentBody: LexicalEditorState
   onAdoptRevision: (revision: AdminRevisionDto) => void
 }
 
@@ -227,15 +226,13 @@ function RevisionRow({ revision, isCurrent, onClick }: RevisionRowProps) {
 
 interface RevisionDetailViewProps {
   revision: AdminRevisionDto
-  currentBody: PortableTextBody
+  currentBody: LexicalEditorState
   isCurrent: boolean
   onAdopt: () => void
 }
 
 function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: RevisionDetailViewProps) {
-  // R11 interregnum: the wire revision body is a Lexical state since R9a; the
-  // drawer diffs against the shell's PortableText body until the editor swap.
-  const revisionBody = unsafeCast<PortableTextBody>(revision.body)
+  const revisionBody = revision.body
   const diff = useMemo(() => diffBodies(revisionBody, currentBody), [revisionBody, currentBody])
   const changedCount = diff.filter((entry) => entry.status !== 'unchanged').length
 

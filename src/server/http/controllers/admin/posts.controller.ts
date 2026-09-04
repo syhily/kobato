@@ -107,7 +107,7 @@ const unpublish = authorProc
 
 // Shared revision factory; posts pass `viewer` so the adapter enforces
 // author-owns-post (see `passViewerToSaveBody` in `revision-router.ts`).
-const { saveDraft, publishLatest, preview } = makeRevisionRouter({
+const { saveDraft, publishLatest } = makeRevisionRouter({
   proc: authorProc,
   adapter: postLifecycleAdapter,
   basePath: '/admin/posts',
@@ -237,7 +237,6 @@ export const adminPostsRouter = {
   unpublish,
   saveDraft,
   publishLatest,
-  preview,
   upsertMeta,
   listRevisions,
   mySummary,

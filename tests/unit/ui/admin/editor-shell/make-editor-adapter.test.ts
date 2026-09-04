@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { SaveBodyOutput } from '@/shared/contracts/revision'
 import type { EditorAdapterConfig } from '@/ui/admin/editor-shell/make-editor-adapter'
 
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { emptyLexicalBody } from '#/_helpers/lexical'
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 import { makeEditorAdapter } from '@/ui/admin/editor-shell/make-editor-adapter'
 
 // Pins the factory's wire contract: namespaced procedure call, admin list
@@ -72,7 +73,7 @@ function makeConfig(
       keyPrefix: 'test-draft:',
       broadcastName: 'test-draft',
       editType: 'post-edit',
-      bodySchema: portableTextBodySchema,
+      bodySchema: lexicalEditorStateSchema,
     },
     createDraftConfig: {
       keyPrefix: 'test-draft:new:',
@@ -81,7 +82,7 @@ function makeConfig(
       createType: 'post-create',
       editType: 'post-edit',
       editKeyPrefix: 'test-draft:',
-      bodySchema: portableTextBodySchema,
+      bodySchema: lexicalEditorStateSchema,
     },
     buildUpsertMetaPayload: ({ meta }) => ({ title: meta.title }),
 
@@ -130,7 +131,7 @@ describe('ui/admin/editor-shell/makeEditorAdapter', () => {
     const api = makeApi()
     const { invalidateSpy, runtime } = makeRuntime()
     const adapter = makeEditorAdapter(makeConfig(api), runtime)
-    const input = { id: '1', body: [] }
+    const input = { id: '1', body: emptyLexicalBody() }
 
     const result = await adapter.publishFn(input)
 
@@ -155,7 +156,7 @@ describe('ui/admin/editor-shell/makeEditorAdapter', () => {
     const api = makeApi()
     const { invalidateSpy, runtime } = makeRuntime()
     const adapter = makeEditorAdapter(makeConfig(api), runtime)
-    const input = { id: '1', body: [] }
+    const input = { id: '1', body: emptyLexicalBody() }
 
     await adapter.saveDraftFn(input)
     await adapter.directSaveDraft(input)

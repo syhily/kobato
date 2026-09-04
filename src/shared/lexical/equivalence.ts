@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@/shared/lexical/schema'
+import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schema'
 
 import { SERVER_FILLED_NODE_FIELDS } from '@/shared/lexical/artifacts'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -46,6 +46,13 @@ function semanticJson(value: unknown): Json {
 /** Stable semantics-only fingerprint of a validated editor state. */
 export function lexicalEditorStateFingerprint(state: LexicalEditorState): string {
   return JSON.stringify(semanticJson(state))
+}
+
+/** Per-node variant for the body diff's LCS anchors (R11): two nodes with the
+ * same fingerprint render as 'unchanged' rows. Same normalization rules as
+ * the whole-state fingerprint. */
+export function lexicalNodeFingerprint(node: LexicalNodeJson): string {
+  return JSON.stringify(semanticJson(node))
 }
 
 /** Semantic equality for conflict/dirty checks over validated states. */

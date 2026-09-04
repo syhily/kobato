@@ -8,6 +8,7 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
+  lexicalImage,
   lexicalMusicPlayer,
   lexicalParagraph,
   stubMusicResolver,
@@ -15,6 +16,7 @@ import {
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Real repo layer (repo assertions read table state); the entity adapter
 // stays fake — the SUT's declared seam. image-sync runs in spy mode to
@@ -23,7 +25,7 @@ vi.mock('@/server/domains/content/services/image-sync', { spy: true })
 vi.mock('@/server/domains/content/revisions', { spy: true })
 vi.mock('@/server/infra/pt/lexical-projection', { spy: true })
 
-const { loadDraftPreviewBySlug, previewBody, saveBody } = await import('@/server/domains/content/lifecycle')
+const { loadDraftPreviewBySlug, saveBody } = await import('@/server/domains/content/lifecycle')
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 const { findLatestRevision } = await import('@/server/domains/content/revisions')
 const { computeBodyProjections } = await import('@/server/infra/pt/lexical-projection')
@@ -535,6 +537,75 @@ describe('content/lifecycle — host card projections (R10)', () => {
   })
 })
 
+describe('content/lifecycle — KobatoImage closed loop (R11)', () => {
+  it('persists the four host keys, host cards, and block format through save → DB reread', async () => {
+    const meta = await seedPost()
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+    const body = lexicalBodyWith([
+      lexicalParagraph('before'),
+      { ...lexicalParagraph('Centered line'), format: 'center' },
+      // The image-library insert dataset: the four kobato-owned keys the
+      // stock inkling ImageNode declaration silently drops. imageId '42'
+      // matches no library row, so the save-time relink leaves the node
+      // untouched (the relink path is unit-tested in image-sync).
+      lexicalImage({
+        src: '/storage/posts/cover.png',
+        thumbhash: 'THUMB',
+        storagePath: 'posts/cover.png',
+        imageId: '42',
+        layout: 'right',
+      }),
+      { type: 'solution', version: 1, content: '<p>答案</p>' },
+      { type: 'two-column', version: 1, left: '<p>左</p>', right: '<p>右</p>' },
+      lexicalMusicPlayer('p1'),
+    ])
+    const music = stubMusicResolver({
+      p1: { id: 'p1', name: 'Song', artist: 'Artist', album: '', url: '/storage/music/song.mp3', pic: '', lyric: '' },
+    })
+
+    const result = await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body, authorId: null, resolveMusicEmbeds: music },
+      'draft',
+    )
+
+    expect(result.status).toBe('saved')
+    const rows = await revisionsOf(meta.id)
+    expect(rows).toHaveLength(1)
+
+    // Reread the stored JSON: canonicalize + the JSON column must not strip
+    // the host keys, the card datasets, or the block alignment. The row's
+    // body column is `unknown` at the type level; the zod save gate already
+    // validated the shape on the way in.
+    const savedBody = unsafeCast<{ root: { children: Record<string, unknown>[] } }>(rows[0]!.body)
+    const children = savedBody.root.children
+    const image = children.find((node) => node.type === 'image')
+    expect(image).toMatchObject({
+      src: '/storage/posts/cover.png',
+      thumbhash: 'THUMB',
+      storagePath: 'posts/cover.png',
+      imageId: '42',
+      layout: 'right',
+    })
+    expect(children.find((node) => node.type === 'solution')).toMatchObject({ content: '<p>答案</p>' })
+    expect(children.find((node) => node.type === 'two-column')).toMatchObject({ left: '<p>左</p>', right: '<p>右</p>' })
+    expect(children.find((node) => node.type === 'music-player')).toMatchObject({ playerId: 'p1', name: 'Song' })
+    const centered = children.find((node) => node.type === 'paragraph' && node.format === 'center')
+    expect(centered).toBeDefined()
+
+    // Derived columns: the image's storagePath feeds imageSources; the
+    // projection columns render the host markup (data-thumbhash /
+    // data-layout ride the full-fidelity figure).
+    expect(rows[0]!.imageSources).toEqual(['posts/cover.png'])
+    expect(rows[0]!.bodyHtml).toContain('data-thumbhash="THUMB"')
+    expect(rows[0]!.bodyHtml).toContain('data-layout="right"')
+    expect(rows[0]!.bodyHtml).toContain('solution-begin')
+    expect(rows[0]!.bodyText).toContain('cover')
+    expect(rows[0]!.bodyHtmlFeed).not.toBeNull()
+  })
+})
+
 describe('content/lifecycle — loadDraftPreviewBySlug', () => {
   it('returns null when the slug does not resolve to a meta row', async () => {
     const { adapter } = makeAdapter(null)
@@ -551,25 +622,5 @@ describe('content/lifecycle — loadDraftPreviewBySlug', () => {
     expect(result).not.toBeNull()
     expect(result!.preview.id).toBe(meta.id.toString())
     expect(result!.hasNewerDraft).toBe(true)
-  })
-})
-
-describe('content/lifecycle — previewBody', () => {
-  it('canonicalizes, renders, and collects headings through one pipeline', async () => {
-    const body = [
-      {
-        _type: 'block',
-        _key: 'h1',
-        style: 'h2',
-        children: [{ _type: 'span', _key: 's1', text: 'Hello' }],
-      },
-    ]
-    const render = vi.fn(async () => '<h2>Hello</h2>')
-
-    const result = await previewBody(body, render)
-
-    expect(result.html).toBe('<h2>Hello</h2>')
-    expect(result.headings).toEqual([{ depth: 2, text: 'Hello', slug: 'hello' }])
-    expect(render).toHaveBeenCalledTimes(1)
   })
 })

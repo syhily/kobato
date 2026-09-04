@@ -127,6 +127,33 @@ export type { FootnoteDefinitionNodeDataset } from '@/nodes/FootnoteDefinitionNo
  * picked card classes instead of forking DEFAULT_NODES. */
 export { defineCard } from '@/nodes/cards/host-cards'
 export type { HostCard, HostCardMenuEntrySpec, HostCardSpec } from '@/nodes/cards/host-cards'
+
+/* The shared card-insert dispatch target: a host that intercepts a per-card
+ * INSERT_* command to construct its OWN node class (kobato's KobatoImageNode
+ * — the stock registration in CardInsertPlugin constructs the declaration's
+ * assembled class, silently dropping host-declared dataset keys) hands its
+ * instance to the same selection/scroll choreography the built-in path uses
+ * by re-dispatching INSERT_CARD_COMMAND. The per-card INSERT_* commands ride
+ * the shim exports above. */
+export { INSERT_CARD_COMMAND } from '@/plugins/behaviour/commands'
+export type { OpenCardInEditModePayload } from '@/plugins/behaviour/types'
+
+/* The image-library open command (kobato R11): with a host subclass
+ * registered for node type `image` (KobatoImageNode), InklingSelectorPlugin's
+ * LOW-priority handler still mounts — `hasNodes` gates on the TYPE — but
+ * would open inkling's selector overlay (LibraryPlugin is entry-internal).
+ * The host intercepts this command at HIGH priority to open its own library
+ * dialog instead, then re-enters through INSERT_IMAGE_COMMAND. */
+export { OPEN_IMAGE_LIBRARY_COMMAND } from '@/nodes/cards/card-commands'
+
+/* Editor factory for host-side node tests (kobato R11): Lexical 0.46's
+ * constructor invariants forbid constructing nodes with no active editor,
+ * and this bundle INLINES its own Lexical copy — an external
+ * `@lexical/headless` would carry a second module state (getActiveEditor)
+ * and could never host these classes. Re-exporting the bundled factory is
+ * the only way a host test constructs registered nodes. */
+export { createHeadlessEditor } from '@lexical/headless'
+
 export { generateDecoratorNode } from '@/nodes/base/generate-decorator-node'
 export type {
   CardSpecAccessorMap,

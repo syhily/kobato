@@ -3,7 +3,7 @@ import type { NavigateFunction } from 'react-router'
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
 import type { SaveBodyInput, SaveBodyOutput } from '@/shared/contracts/revision'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 export type EditorShellStatus =
   | { kind: 'idle' }
@@ -43,18 +43,10 @@ export interface RevisionLike {
   id: string
   revisionNo: number
   status: 'draft' | 'published'
-  body: PortableTextBody
+  body: LexicalEditorState
   clientRevisionToken: string
   updatedAt: string
 }
-
-/**
- * R11 interregnum: the wire `SaveBodyInput` carries a Lexical state since R9a,
- * but the shell still speaks PortableText end-to-end until the editor swap.
- * The adapter casts this PT-shaped input back to `SaveBodyInput` at the wire
- * boundary; remove together with the rest of the PT shell in R11.
- */
-export type ShellSaveBodyInput = Omit<SaveBodyInput, 'body'> & { body: PortableTextBody }
 
 export interface EntityLike {
   id: string
@@ -82,12 +74,12 @@ export interface UseEditorShellStateArgs<
   emptyMeta: TMeta
   metaDraftFromEntity: (entity: TEntity) => TMeta
   metaDraftsEqual: (a: TMeta, b: TMeta) => boolean
-  localDraftConfig: LocalDraftConfig<PortableTextBody>
-  createDraftConfig: CreateDraftConfig<PortableTextBody>
+  localDraftConfig: LocalDraftConfig<LexicalEditorState>
+  createDraftConfig: CreateDraftConfig<LexicalEditorState>
 
   upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
-  saveDraftFn: (input: ShellSaveBodyInput) => Promise<SaveBodyOutput>
-  publishFn: (input: ShellSaveBodyInput) => Promise<SaveBodyOutput>
+  saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
+  publishFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
 
   /** Build the upsertMeta payload from the meta draft — common fields are
@@ -97,7 +89,7 @@ export interface UseEditorShellStateArgs<
   /** Direct oRPC `saveDraft` for autosave + force-save — `mutate()` returns no promise, so await-driven flows need a raw caller. */
   directSaveDraft: (input: {
     id: string
-    body: PortableTextBody
+    body: LexicalEditorState
     expectedClientRevisionToken?: string | null
     force?: boolean
   }) => Promise<SaveBodyOutput>
@@ -107,10 +99,8 @@ export interface UseEditorShellStateArgs<
   navigate: NavigateFunction
 }
 
-/** Narrow slice consumed by the toolbar row (and the floating publish button). */
+/** Narrow slice consumed by the toolbar row. */
 export interface EditorToolbarState {
-  previewOpen: boolean
-  setPreviewOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
   metaOpen: boolean
   setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
   /** `meta.published` — drives the unpublish button. */
@@ -138,15 +128,15 @@ export interface EditorSidebarState<TMeta> {
   revisionSummary: SidebarRevisionSummary | null
   saveStatus: SidebarSaveStatus
   expectedToken: string | null
-  body: PortableTextBody
-  adoptRevisionFromHistory: (revision: { body: PortableTextBody; revisionNo: number }) => void
+  body: LexicalEditorState
+  adoptRevisionFromHistory: (revision: { body: LexicalEditorState; revisionNo: number }) => void
 }
 
 /** Narrow slice consumed by the draft-conflict dialog. */
 export interface EditorDialogState {
-  conflict: { localBody: PortableTextBody; localSavedAt: number } | null
+  conflict: { localBody: LexicalEditorState; localSavedAt: number } | null
   /** Baseline body the server holds — the dialog's "server version". */
-  serverBody: PortableTextBody
+  serverBody: LexicalEditorState
   baselineUpdatedAtMs: number | null
   adoptLocalDraft: () => Promise<void>
   adoptServerVersion: () => void
@@ -157,18 +147,14 @@ export interface EditorDialogState {
 export interface UseEditorShellStateOutput<TMeta> {
   meta: TMeta
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>
-  body: PortableTextBody
-  setBody: React.Dispatch<React.SetStateAction<PortableTextBody>>
+  body: LexicalEditorState
+  setBody: React.Dispatch<React.SetStateAction<LexicalEditorState>>
   bodyKey: string
-  initialBody: PortableTextBody
+  initialBody: LexicalEditorState
   isEditing: boolean
-  previewOpen: boolean
-  setPreviewOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
   metaOpen: boolean
   setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
   isLg: boolean
-  editorScrollRef: React.RefObject<HTMLDivElement | null>
-  previewScrollRef: React.RefObject<HTMLDivElement | null>
   previewBanner: { kind: 'draft' | 'published'; slug: string } | null
   dismissPreviewBanner: () => void
   createDraftSavedAt: number | null

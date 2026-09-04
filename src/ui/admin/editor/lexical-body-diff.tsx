@@ -1,17 +1,22 @@
 import { diff_match_patch } from 'diff-match-patch'
 
-import type { Block, PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schema'
 
-import { portableTextBlockSemanticFingerprint as anchorFor } from '@/shared/pt/semantics'
-import { bodyToPlainText } from '@/shared/pt/utils'
+import { lexicalNodeFingerprint } from '@/shared/lexical/equivalence'
+import { lexicalNodeTextContent } from '@/shared/lexical/walk'
 import { Badge } from '@/ui/components/badge'
 import { cn } from '@/ui/lib/cn'
+
+// Lexical counterpart of the PT-era `portable-text-diff`: diffs the top-level
+// children of two editor states. Lexical's serialized nodes carry no stable
+// `_key`, so 'unchanged' anchors are semantic fingerprints and 'changed'
+// pairing falls back on same-type + text similarity.
 
 export interface DiffEntry {
   key: string
   status: 'unchanged' | 'changed' | 'leftOnly' | 'rightOnly'
-  leftBlock: Block | null
-  rightBlock: Block | null
+  leftNode: LexicalNodeJson | null
+  rightNode: LexicalNodeJson | null
 }
 
 const dmp = new diff_match_patch()
@@ -27,27 +32,29 @@ export function inlineCharDiff(left: string, right: string): InlineDiffPart[] {
   return result.map(([op, text]) => ({ op: op === -1 ? -1 : op === 1 ? 1 : 0, text }))
 }
 
-export function diffBodies(leftBody: PortableTextBody, rightBody: PortableTextBody): DiffEntry[] {
-  const leftAnchors = leftBody.map((block) => anchorFor(block))
-  const rightAnchors = rightBody.map((block) => anchorFor(block))
+export function diffBodies(leftBody: LexicalEditorState, rightBody: LexicalEditorState): DiffEntry[] {
+  const leftNodes = leftBody.root.children
+  const rightNodes = rightBody.root.children
+  const leftAnchors = leftNodes.map((node) => lexicalNodeFingerprint(node))
+  const rightAnchors = rightNodes.map((node) => lexicalNodeFingerprint(node))
   const matches = lcsMatches(leftAnchors, rightAnchors)
 
   const entries: DiffEntry[] = []
   let li = 0
   let ri = 0
   for (const [matchedLeft, matchedRight] of matches) {
-    flushGap(leftBody.slice(li, matchedLeft), rightBody.slice(ri, matchedRight), entries)
-    const left = leftBody[matchedLeft]
-    const right = rightBody[matchedRight]
-    entries.push({ key: left._key, status: 'unchanged', leftBlock: left, rightBlock: right })
+    flushGap(leftNodes.slice(li, matchedLeft), rightNodes.slice(ri, matchedRight), entries)
+    const left = leftNodes[matchedLeft]
+    const right = rightNodes[matchedRight]
+    entries.push({ key: leftAnchors[matchedLeft], status: 'unchanged', leftNode: left, rightNode: right })
     li = matchedLeft + 1
     ri = matchedRight + 1
   }
-  flushGap(leftBody.slice(li), rightBody.slice(ri), entries)
+  flushGap(leftNodes.slice(li), rightNodes.slice(ri), entries)
   return entries
 }
 
-function flushGap(leftGap: Block[], rightGap: Block[], entries: DiffEntry[]): void {
+function flushGap(leftGap: LexicalNodeJson[], rightGap: LexicalNodeJson[], entries: DiffEntry[]): void {
   const pairs = Math.min(leftGap.length, rightGap.length)
   let paired = 0
   while (paired < pairs) {
@@ -56,32 +63,26 @@ function flushGap(leftGap: Block[], rightGap: Block[], entries: DiffEntry[]): vo
     if (!shouldPairAsChanged(left, right)) {
       break
     }
-    entries.push({ key: left._key, status: 'changed', leftBlock: left, rightBlock: right })
+    entries.push({ key: lexicalNodeFingerprint(left), status: 'changed', leftNode: left, rightNode: right })
     paired += 1
   }
   for (let i = paired; i < leftGap.length; i++) {
-    const block = leftGap[i]
-    entries.push({ key: block._key, status: 'leftOnly', leftBlock: block, rightBlock: null })
+    const node = leftGap[i]
+    entries.push({ key: lexicalNodeFingerprint(node), status: 'leftOnly', leftNode: node, rightNode: null })
   }
   for (let i = paired; i < rightGap.length; i++) {
-    const block = rightGap[i]
-    entries.push({ key: block._key, status: 'rightOnly', leftBlock: null, rightBlock: block })
+    const node = rightGap[i]
+    entries.push({ key: lexicalNodeFingerprint(node), status: 'rightOnly', leftNode: null, rightNode: node })
   }
 }
 
-function shouldPairAsChanged(left: Block, right: Block): boolean {
-  if (left._type !== right._type) {
+function shouldPairAsChanged(left: LexicalNodeJson, right: LexicalNodeJson): boolean {
+  if (left.type !== right.type) {
     return false
   }
-  if (left._key === right._key) {
-    return true
-  }
-  if (left._type === 'block' && right._type === 'block') {
-    const leftText = bodyToPlainText([left]).trim()
-    const rightText = bodyToPlainText([right]).trim()
-    return textSimilarity(leftText, rightText) >= 0.5
-  }
-  return false
+  const leftText = lexicalNodeTextContent(left).trim()
+  const rightText = lexicalNodeTextContent(right).trim()
+  return textSimilarity(leftText, rightText) >= 0.5
 }
 
 function textSimilarity(a: string, b: string): number {
@@ -138,7 +139,7 @@ function lcsMatches(left: readonly string[], right: readonly string[]): Array<[n
         dp[i * stride + j] = dp[(i - 1) * stride + (j - 1)] + 1
       } else {
         const up = dp[(i - 1) * stride + j]
-        const leftCell = dp[i * stride + (j - 1)]
+        const leftCell = dp[(i - 1) * stride + (j - 1)]
         dp[i * stride + j] = up >= leftCell ? up : leftCell
       }
     }
@@ -171,15 +172,15 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
   return (
     <ol className="flex flex-col gap-2">
       {diff.map((entry, idx) => {
-        const block = side === 'left' ? entry.leftBlock : entry.rightBlock
+        const node = side === 'left' ? entry.leftNode : entry.rightNode
         const onlyOtherSide =
           (side === 'left' && entry.status === 'rightOnly') || (side === 'right' && entry.status === 'leftOnly')
         if (onlyOtherSide) {
           return (
             <li
-              // `idx` disambiguates the same `_key` appearing twice in one diff.
+              // `idx` disambiguates repeat fingerprints (two identical paragraphs).
               // oxlint-disable-next-line react/no-array-index-key
-              key={`${entry.key}-${idx}`}
+              key={`${idx}-${entry.status}`}
               className="rounded border border-dashed border-muted bg-muted/30 px-2 py-2 text-xs text-muted-foreground"
             >
               （无）
@@ -189,7 +190,7 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
         return (
           <li
             // oxlint-disable-next-line react/no-array-index-key
-            key={`${entry.key}-${idx}`}
+            key={`${idx}-${entry.status}`}
             className={cn(
               'rounded border px-2 py-2 text-sm',
               entry.status === 'unchanged' && 'border-muted bg-muted/30',
@@ -199,13 +200,13 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
             )}
           >
             <div className="mb-1 flex items-center gap-2">
-              <BlockTypeBadge block={block} />
+              <NodeTypeBadge node={node} />
               <span className="text-badge tracking-wide text-muted-foreground uppercase">{entry.status}</span>
             </div>
-            {entry.status === 'changed' && entry.leftBlock?._type === 'block' && entry.rightBlock?._type === 'block' ? (
-              <BlockInlineDiff leftBlock={entry.leftBlock} rightBlock={entry.rightBlock} side={side} />
+            {entry.status === 'changed' && entry.leftNode && entry.rightNode ? (
+              <NodeInlineDiff leftNode={entry.leftNode} rightNode={entry.rightNode} side={side} />
             ) : (
-              <BlockPreview block={block} />
+              <NodePreview node={node} />
             )}
           </li>
         )
@@ -214,22 +215,22 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
   )
 }
 
-function BlockTypeBadge({ block }: { block: Block | null }) {
-  if (block === null) {
+function NodeTypeBadge({ node }: { node: LexicalNodeJson | null }) {
+  if (node === null) {
     return null
   }
-  return <Badge variant="outline">{block._type}</Badge>
+  return <Badge variant="outline">{node.type}</Badge>
 }
 
-interface BlockInlineDiffProps {
-  leftBlock: Block
-  rightBlock: Block
+interface NodeInlineDiffProps {
+  leftNode: LexicalNodeJson
+  rightNode: LexicalNodeJson
   side: 'left' | 'right'
 }
 
-function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) {
-  const leftText = bodyToPlainText([leftBlock]).trim()
-  const rightText = bodyToPlainText([rightBlock]).trim()
+function NodeInlineDiff({ leftNode, rightNode, side }: NodeInlineDiffProps) {
+  const leftText = lexicalNodeTextContent(leftNode).trim()
+  const rightText = lexicalNodeTextContent(rightNode).trim()
   const parts = inlineCharDiff(leftText, rightText)
   return (
     <p className="line-clamp-6 leading-relaxed wrap-break-word">
@@ -260,15 +261,15 @@ function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) 
   )
 }
 
-function BlockPreview({ block }: { block: Block | null }) {
-  if (block === null) {
+function NodePreview({ node }: { node: LexicalNodeJson | null }) {
+  if (node === null) {
     return <span className="text-xs text-muted-foreground">（空）</span>
   }
-  if (block._type === 'block') {
-    const text = bodyToPlainText([block]).trim()
-    return <span className="line-clamp-3 wrap-break-word">{text || '（空文本块）'}</span>
+  const text = lexicalNodeTextContent(node).trim()
+  if (text !== '') {
+    return <span className="line-clamp-3 wrap-break-word">{text}</span>
   }
   return (
-    <pre className="line-clamp-3 text-xs break-all text-muted-foreground">{JSON.stringify(block).slice(0, 240)}</pre>
+    <pre className="line-clamp-3 text-xs break-all text-muted-foreground">{JSON.stringify(node).slice(0, 240)}</pre>
   )
 }

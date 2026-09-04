@@ -3,7 +3,6 @@ import type { NavigateFunction } from 'react-router'
 
 import { Trash2Icon, Undo2Icon } from 'lucide-react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
 import type {
   EditorSidebarState,
   SidebarPublishStatus,
@@ -11,7 +10,6 @@ import type {
   SidebarSaveStatus,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { useEditorDeleteRestore } from '@/ui/admin/editor-shell/use-editor-delete-restore'
 import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -44,7 +42,6 @@ export interface EditorMetaPanelProps<TMeta> {
   entityLabel: string
   /** Edit-mode entity; `undefined` in create mode (extras stay unmounted). */
   entity: { id: string; slug: string; title: string; deletedAt: string | null } | undefined
-  previewOpen: boolean
   metaOpen: boolean
   setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
   isLg: boolean
@@ -59,7 +56,6 @@ export function EditorMetaPanel<TMeta>({
   entityKind,
   entityLabel,
   entity,
-  previewOpen,
   metaOpen,
   setMetaOpen,
   isLg,
@@ -86,12 +82,7 @@ export function EditorMetaPanel<TMeta>({
             ownerId={entity.id}
             currentToken={sidebar.expectedToken}
             currentBody={sidebar.body}
-            onAdoptRevision={(revision) =>
-              // R11 interregnum: the drawer's wire revision body is a Lexical
-              // state since R9a; the adoption callback still speaks PortableText
-              // until the editor swap.
-              sidebar.adoptRevisionFromHistory(unsafeCast<{ body: PortableTextBody; revisionNo: number }>(revision))
-            }
+            onAdoptRevision={(revision) => sidebar.adoptRevisionFromHistory(revision)}
           />
         </div>
         <div className="group/delete rounded-xl border border-destructive/30 p-2 transition-colors hover:bg-destructive">
@@ -131,7 +122,7 @@ export function EditorMetaPanel<TMeta>({
     extras,
   })
 
-  const useSheet = previewOpen || !isLg
+  const useSheet = !isLg
 
   return (
     <>

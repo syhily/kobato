@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
 import type { SaveBodyOutput } from '@/shared/contracts/revision'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type {
   ConflictFreezeSource,
   EditorShellDetail,
@@ -17,7 +17,8 @@ import type {
 
 import { useAutosave, type AutosaveFlushOutcome, type AutosaveStatus } from '@/client/hooks/use-autosave'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
-import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
+import { areLexicalEditorStatesEquivalent } from '@/shared/lexical/equivalence'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@/shared/lexical/schema'
 import { deriveBaselineRevision, deriveBaselineUpdatedAtMs } from '@/ui/admin/editor-shell/editor-shell-derived'
 import {
   planBodySave,
@@ -31,9 +32,9 @@ import { useActionBanner } from '@/ui/admin/editor-shell/use-action-banner'
 /** Live draft snapshot the persist flows read (autosave + the four persist handlers). */
 export interface EditorShellPersistDraft<TMeta> {
   meta: TMeta
-  body: PortableTextBody
+  body: LexicalEditorState
   /** Opening body the server holds — the local-conflict baseline and the dialog's server version. */
-  initialBody: PortableTextBody
+  initialBody: LexicalEditorState
 }
 
 /** Entity-specific wire calls, straight from `UseEditorShellStateArgs`. */
@@ -62,7 +63,7 @@ export interface EditorShellPersistNotifications<TMeta> {
   /** Flip the local meta draft's `published` flag after a successful publish. */
   markMetaPublished: () => void
   /** Replace the editor body + remount key (draft/conflict adoption flows). */
-  replaceBody: (body: PortableTextBody, key: string) => void
+  replaceBody: (body: LexicalEditorState, key: string) => void
 }
 
 export interface UseEditorShellPersistArgs<
@@ -73,7 +74,7 @@ export interface UseEditorShellPersistArgs<
   /** Pre-loaded detail; `undefined` means create mode — every edit flow gates on it. */
   detail?: EditorShellDetail<TEntity>
   draft: EditorShellPersistDraft<TMeta>
-  localDraftConfig: LocalDraftConfig<PortableTextBody>
+  localDraftConfig: LocalDraftConfig<LexicalEditorState>
   mutations: EditorShellPersistMutations<TMeta, TEntity, TUpsertMetaInput>
   /** Entity → meta-draft projection, straight from `UseEditorShellStateArgs`. */
   metaDraftFromEntity: (entity: TEntity) => TMeta
@@ -82,7 +83,7 @@ export interface UseEditorShellPersistArgs<
     editPath: (id: string) => string
     navigate: NavigateFunction
   }
-  createDraft: { migrateToEditKey: (id: string, token: string, body: PortableTextBody) => void }
+  createDraft: { migrateToEditKey: (id: string, token: string, body: LexicalEditorState) => void }
 }
 
 export function useEditorShellPersist<
@@ -100,7 +101,9 @@ export function useEditorShellPersist<
   // Owned save-flow state.
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => deriveBaselineUpdatedAtMs(detail))
-  const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(() => deriveBaselineRevision(detail)?.body ?? [])
+  const [lastSavedBody, setLastSavedBody] = useState<LexicalEditorState>(
+    () => deriveBaselineRevision(detail)?.body ?? EMPTY_LEXICAL_EDITOR_STATE,
+  )
   const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(detail?.entity.publishedAt ?? null)
 
   // Owned revision race: the expected token advances only through
@@ -135,7 +138,7 @@ export function useEditorShellPersist<
   // react-compiler-safe): a stored draft diverging from the opening body
   // freezes autosave until the dialog resolves it.
   const [conflict, setConflict] = useState<{
-    localBody: PortableTextBody
+    localBody: LexicalEditorState
     localSavedAt: number
   } | null>(null)
   const [conflictResolved, setConflictResolved] = useState(false)
@@ -153,7 +156,7 @@ export function useEditorShellPersist<
     if (
       !conflictResolved &&
       loadedLocalDraft !== null &&
-      !arePortableTextBodiesEquivalent(loadedLocalDraft.body, initialBody)
+      !areLexicalEditorStatesEquivalent(loadedLocalDraft.body, initialBody)
     ) {
       setConflict({ localBody: loadedLocalDraft.body, localSavedAt: loadedLocalDraft.savedAt })
     }
@@ -165,7 +168,7 @@ export function useEditorShellPersist<
 
   // Body snapshot of the in-flight manual save; on success the autosave
   // baseline advances to it so the next debounce tick short-circuits.
-  const manualSaveBodyRef = useRef<PortableTextBody | null>(null)
+  const manualSaveBodyRef = useRef<LexicalEditorState | null>(null)
 
   // Pre-publish `publishedAt` for rollback on a failed publish — a leftover
   // optimistic future date would make a picker-clear save silently unpublish.
@@ -271,7 +274,7 @@ export function useEditorShellPersist<
   const [isCreating, setIsCreating] = useState(false)
 
   const flushAutosave = useCallback(
-    async (snapshot: PortableTextBody): Promise<AutosaveFlushOutcome> => {
+    async (snapshot: LexicalEditorState): Promise<AutosaveFlushOutcome> => {
       if (!isEditing || !detail) {
         // Unreachable while `enabled` gates on isEditing — no-op keeps the engine's bookkeeping consistent.
         return 'saved'
@@ -295,7 +298,7 @@ export function useEditorShellPersist<
   // first debounce tick with zero edits no-ops instead of firing an
   // unconditional PATCH (which rotates the token and orphans the IndexedDB
   // draft — P1-15). Mount-captured state makes the once-only seed structural.
-  const [openingBaseline] = useState<PortableTextBody | null>(() => (isEditing ? body : null))
+  const [openingBaseline] = useState<LexicalEditorState | null>(() => (isEditing ? body : null))
 
   const { setBaseline } = useAutosave({
     body,
@@ -525,7 +528,7 @@ export function useEditorShellPersist<
   }, [initialBody, detail, clearLocalDraft, replaceBody])
 
   const adoptRevisionFromHistory = useCallback(
-    (revision: { body: PortableTextBody; revisionNo: number }) => {
+    (revision: { body: LexicalEditorState; revisionNo: number }) => {
       if (!isEditing || !detail) {
         return
       }
@@ -539,7 +542,7 @@ export function useEditorShellPersist<
   const isSavingDraft = upsertMetaMutation.isPending || saveDraftMutation.isPending
   const isPublishing = publishMutation.isPending
   const isUnpublishing = unpublishMutation.isPending
-  const isBodyDirty = !arePortableTextBodiesEquivalent(body, lastSavedBody)
+  const isBodyDirty = !areLexicalEditorStatesEquivalent(body, lastSavedBody)
 
   return {
     // Save-flow status and the derived flags the toolbar/sidebar render.

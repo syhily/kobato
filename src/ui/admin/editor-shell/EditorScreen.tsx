@@ -4,14 +4,9 @@ import { useMemo } from 'react'
 
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
-import type { SaveBodyOutput } from '@/shared/contracts/revision'
-import type { PortableTextBody } from '@/shared/pt/schema'
-import type {
-  EntityLike,
-  RevisionLike,
-  ShellSaveBodyInput,
-  UseEditorShellStateOutput,
-} from '@/ui/admin/editor-shell/editor-shell-types'
+import type { SaveBodyInput, SaveBodyOutput } from '@/shared/contracts/revision'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
+import type { EntityLike, RevisionLike, UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { MetaSidebarSlotProps } from '@/ui/admin/editor-shell/EditorMetaPanel'
 
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
@@ -20,8 +15,6 @@ import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
 import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
 import { EditorMetaPanel } from '@/ui/admin/editor-shell/EditorMetaPanel'
 import { EditorToolbar } from '@/ui/admin/editor-shell/EditorToolbar'
-import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
-import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
 import { cn } from '@/ui/lib/cn'
@@ -59,17 +52,17 @@ export interface EditorScreenAdapter<
   emptyMeta: TMeta
   metaDraftFromEntity: (entity: TEntity) => TMeta
   metaDraftsEqual: (a: TMeta, b: TMeta) => boolean
-  localDraftConfig: LocalDraftConfig<PortableTextBody>
-  createDraftConfig: CreateDraftConfig<PortableTextBody>
+  localDraftConfig: LocalDraftConfig<LexicalEditorState>
+  createDraftConfig: CreateDraftConfig<LexicalEditorState>
 
   upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
-  saveDraftFn: (input: ShellSaveBodyInput) => Promise<SaveBodyOutput>
-  publishFn: (input: ShellSaveBodyInput) => Promise<SaveBodyOutput>
+  saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
+  publishFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
   buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
   directSaveDraft: (input: {
     id: string
-    body: PortableTextBody
+    body: LexicalEditorState
     expectedClientRevisionToken?: string | null
     force?: boolean
   }) => Promise<SaveBodyOutput>
@@ -139,12 +132,7 @@ export function EditorScreen<
   })
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-0 p-2 md:gap-4 md:p-4',
-        state.previewOpen ? 'min-h-0 flex-1' : 'min-h-admin-content-min',
-      )}
-    >
+    <div className="flex min-h-admin-content-min flex-col gap-0 p-2 md:gap-4 md:p-4">
       <EditorToolbar
         mode={mode}
         entityLabel={adapter.entityLabel}
@@ -165,74 +153,36 @@ export function EditorScreen<
         />
       ) : null}
 
-      {/* Layout grid. Three states drive the column template:
-       *    - preview off + meta open  → [editor | meta]      (2 col)
-       *    - preview off + meta hidden → [editor]              (1 col)
-       *    - preview on               → [editor | preview]    (2 col)
-       *      meta is moved into a `Sheet` overlay. */}
+      {/* Layout grid: [editor | meta] when the meta panel is open, [editor] otherwise. */}
       <div
         className={cn(
-          'mt-4 grid min-h-0 gap-4 md:mt-0',
-          state.previewOpen ? 'flex-1' : 'grow',
-          !state.previewOpen && state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
-          !state.previewOpen && !state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
-          state.previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
+          'mt-4 grid grow gap-4 md:mt-0',
+          state.metaOpen ? 'lg:grid-cols-[minmax(0,1fr)_360px]' : 'lg:grid-cols-[minmax(0,1fr)]',
         )}
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
           {mode === 'create' ? (
             <CreateModeBanner entityLabel={adapter.entityLabel} draftSavedAt={state.createDraftSavedAt} />
           ) : null}
-          {!state.previewOpen ? (
-            <TitleSlugStrip
-              entityLabel={adapter.entityLabel}
-              title={state.meta.title}
-              slug={state.meta.slug}
-              onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
-              onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
-              disabled={state.toolbar.isPending}
-            />
-          ) : null}
+          <TitleSlugStrip
+            entityLabel={adapter.entityLabel}
+            title={state.meta.title}
+            slug={state.meta.slug}
+            onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
+            onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
+            disabled={state.toolbar.isPending}
+          />
           <PageBodyEditor
             initialBody={state.initialBody}
             bodyKey={state.bodyKey}
             onBodyChange={state.setBody}
             disabled={state.toolbar.isPending}
-            livePreviewOpen={state.previewOpen}
-            scrollContainerRef={state.editorScrollRef}
-            floatingActions={
-              isEditing ? (
-                <FloatingPublishButton
-                  onPublish={state.toolbar.persistPublish}
-                  disabled={state.toolbar.isPending || !state.toolbar.canPublish}
-                  pending={state.toolbar.isPublishing}
-                  title={
-                    state.toolbar.canPublish
-                      ? state.toolbar.publishStatus === 'scheduled'
-                        ? '将最新草稿按计划时间上线 (Cmd/Ctrl+Shift+P)'
-                        : '将最新草稿发布到线上 (Cmd/Ctrl+Shift+P)'
-                      : '当前没有待发布的草稿'
-                  }
-                />
-              ) : null
-            }
           />
         </div>
-        {state.previewOpen ? (
-          <section aria-label="实时预览" className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <PreviewPane
-              body={state.body}
-              title={state.meta.title}
-              slug={state.meta.slug}
-              scrollContainerRef={state.previewScrollRef}
-            />
-          </section>
-        ) : null}
         <EditorMetaPanel
           entityKind={adapter.entityKind}
           entityLabel={adapter.entityLabel}
           entity={entity}
-          previewOpen={state.previewOpen}
           metaOpen={state.metaOpen}
           setMetaOpen={state.setMetaOpen}
           isLg={state.isLg}

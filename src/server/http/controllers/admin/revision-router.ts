@@ -2,10 +2,9 @@ import type { ContentEntityAdapter } from '@/server/domains/content/lifecycle'
 import type { authorProc } from '@/server/http/orpc-base'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { previewBody, saveBody } from '@/server/domains/content/lifecycle'
+import { saveBody } from '@/server/domains/content/lifecycle'
 import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
-import { renderPortableTextToHtml } from '@/server/render/pt-html'
-import { previewBodyInput, previewOutputDto, saveBodyInput, saveResultOutput } from '@/shared/contracts/revision'
+import { saveBodyInput, saveResultOutput } from '@/shared/contracts/revision'
 import { idFromString } from '@/shared/utils/id'
 
 export interface RevisionRouterAudit {
@@ -28,8 +27,8 @@ export interface MakeRevisionRouterOptions<TMeta, TPreview> {
   passViewerToSaveBody: boolean
 }
 
-/** The save-draft / publish-latest / preview trio shared by the posts and
- *  pages controllers. NOT_FOUND surfaces via the adapter's `assertAccess`. */
+/** The save-draft / publish-latest pair shared by the posts and pages
+ *  controllers. NOT_FOUND surfaces via the adapter's `assertAccess`. */
 export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterOptions<TMeta, TPreview>) {
   const { proc, adapter, basePath, audit, passViewerToSaveBody } = options
 
@@ -93,15 +92,5 @@ export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterO
       return result
     })
 
-  const preview = proc
-    .route({ method: 'POST', path: `${basePath}/preview` })
-    .input(previewBodyInput)
-    .output(previewOutputDto)
-    .handler(({ input, context }) => {
-      return previewBody(input.body, (body) =>
-        renderPortableTextToHtml(body, [], (playerIds) => getPublicMusicMetasByIds(context.db, playerIds)),
-      )
-    })
-
-  return { saveDraft, publishLatest, preview }
+  return { saveDraft, publishLatest }
 }

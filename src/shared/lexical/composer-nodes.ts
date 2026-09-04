@@ -1,14 +1,18 @@
 import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@/shared/lexical/node-whitelist'
 
-// R7 placeholder for the composer-mounted node sets (plan
+// Composer-mounted node-set manifests (plan
 // docs/plans/inkling-editor-replacement.md, R7 contract-test requirement).
-// The article/comment composers land in R11/R12 (milestones M3/M4); until
-// then these manifests mirror the whitelist constants so the contract test
-// (tests/unit/shared/contracts/lexical-node-whitelist.test.ts) pins both
-// sides to the single source. R11 MUST replace the values with the node
-// types the composers actually mount — derived from the composer node
-// configs, which must in turn consume the node-whitelist constants — and
-// the contract test then pins schema ⇐ whitelist ⇐ composer three ways.
+//
+// ARTICLE is the R11 truth: the page/article composer mounts exactly
+// FULL_EDITOR_NODE_TYPES (core-registered paragraph/linebreak + the
+// configured classes in `@/client/editor/page-editor-nodes`, with the
+// upstream text/heading/quote classes shadowed by inkling's extended
+// replacement pairs and AsideNode filtered out). The contract test
+// (tests/unit/shared/contracts/lexical-node-whitelist.test.ts) re-derives
+// the mounted set from the real composer module and pins the three-way
+// schema ⇐ whitelist ⇐ composer identity.
+//
+// COMMENT stays a placeholder mirror until the R12 comment composer lands.
 
 export const ARTICLE_COMPOSER_NODE_TYPES: readonly string[] = FULL_EDITOR_NODE_TYPES
 

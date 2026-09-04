@@ -7,7 +7,7 @@ import { emptyLexicalBody } from '#/_helpers/lexical'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
-import { saveBody, previewBody } from '@/server/domains/content/lifecycle'
+import { saveBody } from '@/server/domains/content/lifecycle'
 import { adminPagesRouter } from '@/server/http/controllers/admin/pages.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { auditLog } from '@/server/infra/db/schema/config'
@@ -15,10 +15,9 @@ import { content } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
 
-// saveBody/previewBody stay mocked (covered end-to-end by the
+// saveBody stays mocked (covered end-to-end by the
 // content/lifecycle suites); everything else runs real.
 vi.mock('@/server/domains/content/lifecycle', () => ({
-  previewBody: vi.fn(),
   saveBody: vi.fn(),
 }))
 
@@ -253,19 +252,6 @@ describe('adminPagesRouter.publishLatest', () => {
     const audits = await auditRowsFor('page_published')
     expect(audits).toHaveLength(1)
     expect(audits[0]).toMatchObject({ resourceType: 'page', resourceId: '1', actorId: admin })
-  })
-})
-
-describe('adminPagesRouter.preview', () => {
-  it('returns html and headings', async () => {
-    vi.mocked(previewBody).mockResolvedValueOnce({
-      html: '<p>hello</p>',
-      headings: [{ text: 'Hello', depth: 2, slug: 'hello' }],
-    })
-    const ctx = makeAuthedCtx({ db })
-    const res = await call(adminPagesRouter.preview, { body: [] }, { context: ctx })
-    expect(res.html).toBe('<p>hello</p>')
-    expect(res.headings).toHaveLength(1)
   })
 })
 

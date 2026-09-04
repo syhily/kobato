@@ -92,7 +92,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
           type="post"
           ownerId="post-1"
           currentToken="token-current"
-          currentBody={[]}
+          currentBody={emptyLexicalBody()}
           onAdoptRevision={noop}
         />,
       ),
@@ -108,7 +108,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
           type="page"
           ownerId="page-1"
           currentToken={null}
-          currentBody={[]}
+          currentBody={emptyLexicalBody()}
           onAdoptRevision={noop}
         />,
       ),
@@ -129,7 +129,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
           type="post"
           ownerId="post-1"
           currentToken="tok-3"
-          currentBody={[]}
+          currentBody={emptyLexicalBody()}
           onAdoptRevision={noop}
         />,
       ),
@@ -151,7 +151,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
           type="post"
           ownerId="post-1"
           currentToken={null}
-          currentBody={[]}
+          currentBody={emptyLexicalBody()}
           onAdoptRevision={noop}
         />,
       ),

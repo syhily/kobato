@@ -1,0 +1,80 @@
+/*
+ * The inkling editor surface styles (R11, plan
+ * docs/plans/inkling-editor-replacement.md M3) — imported ONLY by
+ * `@/ui/admin/editor/PageBodyEditor`, so the route chunk carries them and
+ * the rest of admin stays inkling-free.
+ *
+ * The package stylesheet is forced into the `inkling` cascade layer (pinned
+ * BELOW Tailwind's `utilities` by the bare `@layer` ordering statement at the
+ * top of `admin.css`): inkling's scoped preflight (`.inkling-lexical *`
+ * resets border-width etc.) would otherwise beat the layered Tailwind
+ * utilities the host-card chrome renders with.
+ *
+ * Host rules in this file are deliberately UNLAYERED (they own the canvas
+ * chrome; nothing else targets these elements).
+ */
+@import '@inkling/editor/style.css' layer(inkling);
+
+/* Page editor canvas: a centered responsive column at the public article
+   width, padded like the reference inkling layout, with a bottom scroll
+   runway (the tiptap era's 60vh) so caret-anchored menus near the document
+   end are never clipped by the scrollport.
+
+   `zoom: 0.625` normalizes the whole surface to the size the package styles
+   were designed for: inkling (Ghost lineage) sizes everything in rem against
+   a 10px root (body text is `font-size: 1.7rem`), while kobato's root is
+   16px — re-declaring the ~500 rem rules per token is unmaintainable. zoom is
+   Baseline 2024 and is reflected in getBoundingClientRect, so floating
+   toolbar / slash-menu anchoring keeps working. The 740px article column is
+   divided by the zoom factor so the EFFECTIVE width stays at the public
+   article width. */
+.kobato-page-editor .inkling-lexical {
+  margin-inline: auto;
+  width: 100%;
+  max-width: calc(740px / 0.625);
+  padding: 15vmin 1.5rem 60vh;
+  zoom: 0.625;
+}
+
+/* Design-token bridge. inkling declares --font-sans (Inter) and --font-serif
+   (Georgia) on `.inkling-lexical` itself in its layered theme, so the kobato
+   :root tokens never reach the prose rules — these unlayered declarations
+   punch through: --font-sans maps to the CJK-capable kobato body chain
+   (prose headings, card chrome), --font-serif re-inherits the kobato article
+   serif (a same-named `var(--font-serif)` would be a cyclic reference).
+   --inkling-accent-color is the package's accent hook, consumed by
+   --color-accent on `.inkling-lexical`; kobato's --brand flips to its dark
+   value under `.dark` automatically. Header/callout cards deliberately
+   re-scope the hook to #fff and are left untouched. */
+.kobato-page-editor .inkling-lexical {
+  --inkling-accent-color: var(--brand);
+  --font-sans: var(--font-body);
+  --font-serif: inherit;
+}
+
+/* The contentEditable root (the only `.inkling-lexical > *` in the tree)
+   hardcodes the Inter stack as its base font. Real text blocks are re-fonted
+   by inkling's prose rules through the bridged vars above, so this only
+   covers text outside prose coverage (placeholder, strays). */
+.kobato-page-editor .inkling-lexical > * {
+  font-family: var(--font-body);
+}
+
+/* Writing-focus mode (FocusModePlugin puts the class on the contentEditable
+   root and the attribute on the selected top-level block): dim every other
+   top-level block. Editing inside a card's nested editor focuses the whole
+   card — the plugin walks the NATIVE selection up to the root child. The
+   `:has` guard keeps the canvas undimmed until a block is actually selected;
+   the toggle UI is the focus button in `PageBodyEditor`
+   (`@/client/editor/use-focus-mode`). */
+.kobato-page-editor .inkling-focus-mode > * {
+  transition: opacity 150ms ease;
+}
+.kobato-page-editor .inkling-focus-mode:has(> [data-inkling-focus-active]) > *:not([data-inkling-focus-active]) {
+  opacity: 0.35;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kobato-page-editor .inkling-focus-mode > * {
+    transition: none;
+  }
+}

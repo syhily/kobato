@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { PAGE_EDITOR_NODES } from '@/client/editor/page-editor-nodes'
 import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from '@/shared/lexical/composer-nodes'
 import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@/shared/lexical/node-whitelist'
@@ -8,10 +9,11 @@ import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 // Contract (plan docs/plans/inkling-editor-replacement.md, R7): the two zod
 // schemas, the node-whitelist constants, and the composer-mounted node sets
 // must stay three-way identical — the editor must never produce a node the
-// server rejects, nor accept one it cannot produce. Until the composers
-// land (R11/R12), `composer-nodes.ts` is a placeholder manifest mirroring
-// the whitelist; R11 swaps in the real composer node sets (consuming the
-// same constants) and this test then pins the real three-way contract.
+// server rejects, nor accept one it cannot produce. R11 landed the article
+// composer: the manifest assertion below re-derives the mounted set from
+// `@/client/editor/page-editor-nodes` itself, so a composer edit that drifts
+// from the whitelist fails here. The comment manifest mirrors the whitelist
+// until the R12 comment composer lands.
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }
@@ -117,10 +119,40 @@ describe('contract: lexical node whitelist', () => {
   })
 
   it('pins the composer manifests to the whitelist constants', () => {
-    // R7 placeholder equivalence — R11 replaces the manifests with the real
-    // composer node sets; this assertion must keep passing after the swap.
     expect(sorted(ARTICLE_COMPOSER_NODE_TYPES)).toEqual(sorted(FULL_EDITOR_NODE_TYPES))
     expect(sorted(COMMENT_COMPOSER_NODE_TYPES)).toEqual(sorted(COMMENT_NODE_TYPES))
+  })
+
+  it('derives the article manifest from the actually-mounted composer nodes (R11)', () => {
+    // The page editor's composer module is the ground truth. Lexical's
+    // createEditor always registers RootNode/TextNode/LineBreakNode/TabNode/
+    // ParagraphNode — of those only paragraph/linebreak can appear in a
+    // produced state (text is shadowed by the extended-text replacement pair,
+    // tab is unreachable through inkling's indent handling, root/artificial
+    // are containers/internals). Replacement-pair entries contribute their
+    // `replace` type to the shadowed set; the extended class entry in the
+    // same pair is what serializes.
+    type NodeEntry = (() => unknown) | { getType?: () => string; replace?: { getType?: () => string } }
+    const shadowed = new Set<string>()
+    const classTypes = new Set<string>()
+    for (const entry of PAGE_EDITOR_NODES as readonly NodeEntry[]) {
+      if (typeof entry === 'object' && entry !== null && typeof entry.replace?.getType === 'function') {
+        shadowed.add(entry.replace.getType())
+        continue
+      }
+      const klass = entry as { getType?: () => string }
+      if (typeof klass.getType === 'function') {
+        classTypes.add(klass.getType())
+      }
+    }
+    const mounted = new Set([...classTypes].filter((type) => !shadowed.has(type)))
+    // AsideNode is filtered out of the composer (PageBodyEditor captures the
+    // Ctrl+Q chord) — assert the filter still holds, then add the two
+    // core-registered types that serialize into real documents.
+    expect(mounted.has('aside')).toBe(false)
+    mounted.add('paragraph')
+    mounted.add('linebreak')
+    expect(sorted([...mounted])).toEqual(sorted(ARTICLE_COMPOSER_NODE_TYPES))
   })
 
   it('keeps the comment whitelist a strict subset of the full whitelist', () => {

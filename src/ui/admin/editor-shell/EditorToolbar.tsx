@@ -4,8 +4,6 @@ import {
   ExternalLinkIcon,
   EyeOffIcon,
   Loader2Icon,
-  PanelRightCloseIcon,
-  PanelRightOpenIcon,
   SaveIcon,
   SlidersHorizontalIcon,
   UploadIcon,
@@ -70,17 +68,6 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
         ) : null}
       </div>
       <div className="ml-auto flex min-w-0 items-center gap-2">
-        <Button
-          variant={state.previewOpen ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => state.setPreviewOpen((open) => !open)}
-          title={state.previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
-          aria-pressed={state.previewOpen}
-          className={cn('hidden lg:inline-flex', state.previewOpen && 'border border-transparent')}
-        >
-          {state.previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
-          <span className="sr-only sm:not-sr-only">实时预览</span>
-        </Button>
         {mode === 'create' ? (
           <Button
             size="sm"

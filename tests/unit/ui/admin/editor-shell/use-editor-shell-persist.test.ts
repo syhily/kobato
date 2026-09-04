@@ -57,13 +57,13 @@ vi.mock('@/client/hooks/use-local-draft', () => ({
 }))
 
 import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revision'
-import type { PortableTextBody } from '@/shared/pt/schema'
-import type { EditorShellDetail, EntityLike, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
+import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { UseEditorShellPersistArgs } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { useAutosave } from '@/client/hooks/use-autosave'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
 const useAutosaveMock = vi.mocked(useAutosave)
@@ -82,29 +82,24 @@ type Entity = EntityLike
 
 const baseMeta: Meta = { title: 't', slug: 's', published: false, publishedAt: '' }
 
-// Minimal valid PortableText block — every block must carry a `children` array of spans.
-function block(key: string, text: string) {
-  return { _type: 'block' as const, _key: key, children: [{ _type: 'span' as const, _key: `${key}-s`, text }] }
+// Minimal Lexical body — a single paragraph of text.
+function body(text: string): LexicalEditorState {
+  return lexicalBodyWith([lexicalParagraph(text)])
 }
 
-// R11 interregnum: the shell still runs on PortableText bodies, so fixtures
-// keep PT runtime shapes and cast at the wire-DTO boundary (Lexical since R9a).
-function makeRevision(
-  overrides: Partial<Omit<AdminRevisionDto, 'body'>> & { body?: PortableTextBody } = {},
-): AdminRevisionDto {
-  const { body, ...rest } = overrides
+function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionDto {
   return {
     id: 'rev-1',
     revisionNo: 1,
     status: 'draft',
-    body: unsafeCast<AdminRevisionDto['body']>(body ?? []),
+    body: emptyLexicalBody(),
     imageSources: [],
     headings: [],
     authorId: null,
     clientRevisionToken: 'tok-1',
     createdAt: '2026-07-10T00:00:00.000Z',
     updatedAt: '2026-07-10T00:00:00.000Z',
-    ...rest,
+    ...overrides,
   }
 }
 
@@ -121,13 +116,11 @@ function savedEntity(overrides: Partial<Entity> = {}): Entity {
 }
 
 /** Edit-mode detail; `baselineBody` seeds the owned lastSavedBody + expectedToken. */
-function makeDetail(baselineBody?: ReturnType<typeof block>[], token = 'tok-1'): EditorShellDetail<Entity> {
+function makeDetail(baselineBody?: LexicalEditorState, token = 'tok-1'): EditorShellDetail<Entity> {
   return {
     entity: { id: 'e1', slug: 's', updatedAt: '2026-07-01T00:00:00.000Z', publishedAt: null },
     latestRevision:
-      baselineBody !== undefined
-        ? unsafeCast<RevisionLike>(makeRevision({ body: baselineBody, clientRevisionToken: token }))
-        : null,
+      baselineBody !== undefined ? makeRevision({ body: baselineBody, clientRevisionToken: token }) : null,
     publishedRevision: null,
   }
 }
@@ -146,8 +139,8 @@ function makeArgs(
     detail: overrides.detail,
     draft: {
       meta: baseMeta,
-      body: [],
-      initialBody: [],
+      body: emptyLexicalBody(),
+      initialBody: emptyLexicalBody(),
       ...overrides.draft,
     },
     localDraftConfig: {} as never,
@@ -185,7 +178,7 @@ function lastAutosaveOptions() {
   expect(call).toBeDefined()
   return call![0] as {
     enabled: boolean
-    initialBaseline: PortableTextBody | null
+    initialBaseline: LexicalEditorState | null
     flush: (body: never) => Promise<'saved' | 'conflict'>
     onStatusChange: (status: { kind: string; at?: number }) => void
   }
@@ -239,9 +232,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — initial-return surface
   })
 
   it('derives the owned token from the baseline revision when one exists', () => {
-    const { result } = renderHook(() =>
-      useEditorShellPersist(makeArgs({ detail: makeDetail([block('b1', 'x')], 'tok-0') })),
-    )
+    const { result } = renderHook(() => useEditorShellPersist(makeArgs({ detail: makeDetail(body('x'), 'tok-0') })))
     expect(result.current.expectedToken).toBe('tok-0')
     expect(lastLocalDraftOptions().clientRevisionToken).toBe('tok-0')
   })
@@ -287,10 +278,10 @@ describe('ui/admin/editor-shell/useEditorShellPersist — handler gating', () =>
 describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatch', () => {
   it('persistSave fires only the meta leg when the body matches the last save', () => {
     const args = makeArgs({
-      detail: makeDetail([block('b1', 'same')]),
+      detail: makeDetail(body('same')),
       draft: {
         meta: { ...baseMeta, publishedAt: '2025-01-01T00:00' },
-        body: [block('b1', 'same')],
+        body: body('same'),
       },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
@@ -318,13 +309,13 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
   })
 
   it('arms two legs when the body diverged and shows the banner only after both land', () => {
-    const revision = makeRevision({ body: [block('new', 'new text')], clientRevisionToken: 'tok-2' })
+    const revision = makeRevision({ body: body('new text'), clientRevisionToken: 'tok-2' })
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')], 'tok-0'),
+      detail: makeDetail(body('old text'), 'tok-0'),
       draft: {
         meta: { ...baseMeta, publishedAt: '' },
-        body: [block('new', 'new text')],
-        initialBody: [block('old', 'old text')],
+        body: body('new text'),
+        initialBody: body('old text'),
       },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
@@ -334,7 +325,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     // The body leg carries the owned token onto the wire.
     expect(slotFor(args.mutations.saveDraftFn).mutate).toHaveBeenCalledWith({
       id: 'e1',
-      body: [block('new', 'new text')],
+      body: body('new text'),
       expectedClientRevisionToken: 'tok-0',
     })
 
@@ -353,8 +344,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
 
   it('surfaces a save-result warning and does not let the meta leg clobber it', () => {
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
-      draft: { body: [block('new', 'new text')] },
+      detail: makeDetail(body('old text')),
+      draft: { body: body('new text') },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
@@ -368,8 +359,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
 
   it('clears the warning on the next clean save', () => {
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
-      draft: { body: [block('new', 'new text')] },
+      detail: makeDetail(body('old text')),
+      draft: { body: body('new text') },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
@@ -382,8 +373,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
 
   it('drops the armed banner when the body leg conflicts', () => {
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
-      draft: { body: [block('new', 'new text')] },
+      detail: makeDetail(body('old text')),
+      draft: { body: body('new text') },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
@@ -406,9 +397,9 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
 
 describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances the autosave baseline', () => {
   it('marks the submitted body snapshot persisted after a clean manual body save', () => {
-    const divergedBody = [block('new', 'new text')]
+    const divergedBody = body('new text')
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
+      detail: makeDetail(body('old text')),
       draft: { body: divergedBody },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
@@ -422,8 +413,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
 
   it('does not touch the baseline on a meta-only save (body clean)', () => {
     const args = makeArgs({
-      detail: makeDetail([block('b1', 'same')]),
-      draft: { body: [block('b1', 'same')] },
+      detail: makeDetail(body('same')),
+      draft: { body: body('same') },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
@@ -433,8 +424,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
 
   it('does not mark the baseline when the manual body save conflicts', () => {
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
-      draft: { body: [block('new', 'new text')] },
+      detail: makeDetail(body('old text')),
+      draft: { body: body('new text') },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
@@ -451,7 +442,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
 describe('ui/admin/editor-shell/useEditorShellPersist — opening body seeds the autosave baseline', () => {
   // Audit P1-1: seeding the baseline makes the first debounce tick hit the reference check.
   it('seeds the engine baseline with the opening body on mount', () => {
-    const openingBody = [block('b1', 'server state')]
+    const openingBody = body('server state')
     const args = makeArgs({
       detail: makeDetail(openingBody),
       draft: { body: openingBody, initialBody: openingBody },
@@ -466,7 +457,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — opening body seeds the
   })
 
   it('seeds only once — a later body change keeps the mount-time baseline reference', () => {
-    const openingBody = [block('b1', 'server state')]
+    const openingBody = body('server state')
     const args = makeArgs({
       detail: makeDetail(openingBody),
       draft: { body: openingBody, initialBody: openingBody },
@@ -476,7 +467,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — opening body seeds the
     })
     expect(lastAutosaveOptions().initialBaseline).toBe(openingBody)
 
-    rerender({ args: { ...args, draft: { ...args.draft, body: [block('b2', 'user edit')] } } })
+    rerender({ args: { ...args, draft: { ...args.draft, body: body('user edit') } } })
     expect(lastAutosaveOptions().initialBaseline).toBe(openingBody)
   })
 })
@@ -525,8 +516,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — owned conflict freeze'
   })
 
   it('a diverging stored local draft freezes autosave until the dialog resolves', () => {
-    const serverBody = [block('b1', 'server state')]
-    const localBody = [block('lb', 'local draft')]
+    const serverBody = body('server state')
+    const localBody = body('local draft')
     const args = makeArgs({
       detail: makeDetail(serverBody),
       draft: { body: serverBody, initialBody: serverBody },
@@ -584,8 +575,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — cancel schedule on pic
 describe('ui/admin/editor-shell/useEditorShellPersist — success legs never downgrade conflict / warning', () => {
   it('keeps the conflict status when the meta leg resolves after a body-leg conflict', () => {
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
-      draft: { body: [block('new', 'new text')] },
+      detail: makeDetail(body('old text')),
+      draft: { body: body('new text') },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
@@ -599,8 +590,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
 
   it('keeps the conflict status when the unpublish leg resolves after a body-leg conflict', () => {
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
-      draft: { body: [block('new', 'new text')] },
+      detail: makeDetail(body('old text')),
+      draft: { body: body('new text') },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
@@ -615,8 +606,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
 
   it('keeps the warning status when the unpublish leg resolves after a body-leg warning', () => {
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
-      draft: { body: [block('new', 'new text')] },
+      detail: makeDetail(body('old text')),
+      draft: { body: body('new text') },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
@@ -633,10 +624,10 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
 describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', () => {
   it('persistPublish fires the publish leg, marks meta published, and retains the server publishedAt', () => {
     const args = makeArgs({
-      detail: makeDetail([block('b1', 'x')]),
+      detail: makeDetail(body('x')),
       draft: {
         meta: { ...baseMeta, publishedAt: '2099-06-01T12:00' },
-        body: [block('b1', 'x')],
+        body: body('x'),
       },
     })
     const { result, rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
@@ -647,7 +638,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     expect(result.current.status).toEqual({ kind: 'saving' })
     expect(slotFor(args.mutations.publishFn).mutate).toHaveBeenCalledWith({
       id: 'e1',
-      body: [block('b1', 'x')],
+      body: body('x'),
       expectedClientRevisionToken: 'tok-1',
       publishedAt: new Date('2099-06-01T12:00').toISOString(),
     })
@@ -671,13 +662,13 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
 
   it('reverts the optimistic server publishedAt when the publish leg fails (V3-07)', () => {
     // A live entity: its publishedAt is a past fact, not a schedule.
-    const detail = makeDetail([block('b1', 'x')])
+    const detail = makeDetail(body('x'))
     detail.entity = { ...detail.entity, publishedAt: '2026-01-01T00:00:00.000Z' }
     const args = makeArgs({
       detail,
       draft: {
         meta: { ...baseMeta, published: true, publishedAt: '2099-06-01T12:00' },
-        body: [block('b1', 'x')],
+        body: body('x'),
       },
     })
     const { result, rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { EditorShellDetail, EntityLike, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@/shared/lexical/schema'
 import { localInputValueToIso, parseLocalDateTimeInput } from '@/ui/admin/editor-shell/editor-datetime'
 import {
   deriveBaselineRevision,
@@ -17,7 +18,7 @@ function revision(overrides: Partial<RevisionLike> = {}): RevisionLike {
     id: 'rev-1',
     revisionNo: 1,
     status: 'draft',
-    body: [],
+    body: EMPTY_LEXICAL_EDITOR_STATE,
     clientRevisionToken: 'tok-1',
     updatedAt: '2026-07-10T00:00:00.000Z',
     ...overrides,

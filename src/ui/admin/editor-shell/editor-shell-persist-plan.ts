@@ -1,9 +1,8 @@
 import type { SaveBodyOutput } from '@/shared/contracts/revision'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type { EditorShellStatus, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
-import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { areLexicalEditorStatesEquivalent } from '@/shared/lexical/equivalence'
 import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
 
 // Pure save planners for the editor persist module: every wire-payload and
@@ -24,9 +23,7 @@ export function verdictBodySave(payload: SaveBodyOutput): SaveBodyVerdict {
   if (payload.status === 'conflict') {
     return { kind: 'conflict', expectedToken: payload.expectedToken }
   }
-  // R11 interregnum: the wire revision body is a Lexical state since R9a; the
-  // shell still treats it as PortableText until the editor swap.
-  return { kind: 'saved', revision: unsafeCast<RevisionLike>(payload.revision), warning: payload.warning }
+  return { kind: 'saved', revision: payload.revision, warning: payload.warning }
 }
 
 /** The full state transition for a landed body save (mutation leg or autosave flush). */
@@ -43,7 +40,7 @@ export type BodySavePlan =
 
 export function planBodySave(
   payload: SaveBodyOutput,
-  pendingSnapshot: PortableTextBody | null,
+  pendingSnapshot: LexicalEditorState | null,
   now: Date,
 ): BodySavePlan {
   const verdict = verdictBodySave(payload)
@@ -72,8 +69,8 @@ export function planDraftSave(args: {
   pickerPublishedAt: string
   serverPublishedAtIso: string | null
   now: number
-  body: PortableTextBody
-  lastSavedBody: PortableTextBody
+  body: LexicalEditorState
+  lastSavedBody: LexicalEditorState
 }): DraftSavePlan {
   const pickerIso = localInputValueToIso(args.pickerPublishedAt)
   const serverIsScheduled =
@@ -81,7 +78,7 @@ export function planDraftSave(args: {
   // Picker cleared while the server holds a schedule: explicit `null` (the
   // cancel-schedule signal); with no schedule the field is omitted entirely.
   const publishedAt = pickerIso ?? (serverIsScheduled ? null : undefined)
-  const bodyDiverged = !arePortableTextBodiesEquivalent(args.body, args.lastSavedBody)
+  const bodyDiverged = !areLexicalEditorStatesEquivalent(args.body, args.lastSavedBody)
   return { publishedAt, bodyDiverged, bannerLegs: bodyDiverged ? 2 : 1 }
 }
 

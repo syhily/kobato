@@ -6,8 +6,9 @@ const DB_NAME = 'kobato-drafts'
 const DB_VERSION = 1
 const STORE_NAME = 'drafts'
 
-/** Bump when the persisted draft shape changes; stale records are purged on load. */
-export const DRAFT_STORAGE_VERSION = 1
+/** Bump when the persisted draft shape changes; stale records are purged on load.
+ *  v2: the body is a Lexical editor state (was a PortableText block array). */
+export const DRAFT_STORAGE_VERSION = 2
 
 export type DraftType = 'post-edit' | 'page-edit' | 'post-create' | 'page-create'
 
@@ -92,7 +93,8 @@ async function migrateFromLocalStorage(db: IDBPDatabase<DraftsDB>): Promise<void
       if (record.version !== DRAFT_STORAGE_VERSION) {
         continue
       }
-      if (!Array.isArray(record.body)) {
+      // Lexical editor state: `{ root: { type: 'root', children: [...] } }`.
+      if (!isRecord(record.body) || !isRecord(record.body.root)) {
         continue
       }
 

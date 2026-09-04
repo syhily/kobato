@@ -45,6 +45,11 @@ export type { ExportDOMDom } from '@/nodes/base'
  * declare their own structural slices instead (kobato's CardRenderContext). */
 export { generateDecoratorNode } from '@/nodes/base/generate-decorator-node'
 export type { DecoratorNodeProperty } from '@/nodes/base/card-specs'
+// The import-spec vocabulary: kobato's KobatoImageNode declares its own
+// importSpec (the stock image spec's composite reader stays entry-internal),
+// so the type joins the factory seam — surface-only, the module already sits
+// in the headless graph via generate-decorator-node.
+export type { CardImportSpec } from '@/nodes/base/import-spec'
 
 /* Markdown ⇄ state (the constrained round-trip dialect — no decorator-card
  * round-trip beyond the ```inkling:<card>``` fences), plus the host-card

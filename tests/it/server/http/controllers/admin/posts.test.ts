@@ -14,9 +14,8 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// Only saveBody/previewBody stay mocked (covered by content-domain tests); everything else runs real.
+// Only saveBody stays mocked (covered by content-domain tests); everything else runs real.
 vi.mock('@/server/domains/content/lifecycle', () => ({
-  previewBody: vi.fn(),
   saveBody: vi.fn(),
 }))
 

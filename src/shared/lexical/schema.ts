@@ -324,6 +324,13 @@ export const lexicalEditorStateSchema = buildLexicalEditorStateSchema({
 
 export type LexicalEditorState = z.infer<typeof lexicalEditorStateSchema>
 
+/** Canonical empty body (root with zero children). Single shared reference —
+ * a fresh literal per call site would trip identity-based memo/effect guards
+ * in the editor shell. Matches the `#/_helpers/lexical` `emptyLexicalBody`. */
+export const EMPTY_LEXICAL_EDITOR_STATE: LexicalEditorState = {
+  root: { type: 'root', version: 1, children: [], direction: 'ltr', format: '', indent: 0 },
+}
+
 // Compile-time guard: the validated storage shape must remain assignable
 // to Lexical's own wire type.
 export type LexicalEditorStateWireCheck = LexicalEditorState extends SerializedEditorState ? true : never

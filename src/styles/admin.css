@@ -5,8 +5,14 @@
  * only admin-rendered sources, so the emitted bundle drops public-only
  * artifacts (cursors, post/TOC/friends/webmention chrome, the public
  * medium-zoom z-index). The typography plugin stays registered because the
- * editor canvas, preview panel, and comment views use `prose` classes.
+ * comment editor and admin comment views use `prose` classes.
  */
+/* Cascade-layer order: the inkling editor stylesheet (imported by
+   PageBodyEditor's route chunk into `layer(inkling)`) must sit BELOW
+   Tailwind's utilities so kobato's host-card chrome utilities beat inkling's
+   scoped preflight. This bare statement pins the order no matter when the
+   editor chunk's stylesheet loads. */
+@layer inkling, theme, base, components, utilities;
 @import 'tailwindcss' source(none);
 @plugin '@tailwindcss/typography';
 @import './tailwind.css';
@@ -43,26 +49,6 @@
   /* Thin scrollbar for the lyrics panel */
   .scrollbar-thin {
     scrollbar-width: thin;
-  }
-}
-
-/* Inkling writing-focus mode skeleton (M3 focus parity item): the mechanism
-   ships in @inkling/editor — the `focusMode` surface prop mounts a plugin
-   that puts `inkling-focus-mode` on the editor root and
-   `data-inkling-focus-active` on the selected top-level block. These rules
-   dim every other top-level block while a block is focused; the on/off
-   toggle UI is wired later with the editor integration. */
-.inkling-focus-mode > * {
-  transition: opacity 160ms ease-out;
-}
-
-.inkling-focus-mode:has(> [data-inkling-focus-active]) > :not([data-inkling-focus-active]) {
-  opacity: 0.4;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .inkling-focus-mode > * {
-    transition: none;
   }
 }
 

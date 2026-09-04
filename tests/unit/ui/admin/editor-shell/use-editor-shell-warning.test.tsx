@@ -48,13 +48,9 @@ vi.mock('@/client/hooks/use-create-draft', () => ({
 
 vi.mock('@/ui/admin/editor-shell/use-editor-shell-layout', () => ({
   useEditorShellLayout: vi.fn(() => ({
-    previewOpen: false,
-    setPreviewOpen: vi.fn(),
     metaOpen: true,
     setMetaOpen: vi.fn(),
     isLg: true,
-    editorScrollRef: { current: null },
-    previewScrollRef: { current: null },
   })),
 }))
 
@@ -65,7 +61,7 @@ vi.mock('@/ui/admin/editor-shell/use-editor-keyboard-shortcuts', () => ({
 import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revision'
 import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 
 const WARNING = '图片库同步失败，部分图片可能无法正常显示。'
@@ -84,9 +80,7 @@ function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionD
     id: 'rev-1',
     revisionNo: 1,
     status: 'draft',
-    // R11 interregnum: the shell still runs on PortableText bodies; the wire
-    // DTO body has been a Lexical state since R9a, so the fixture casts.
-    body: unsafeCast<AdminRevisionDto['body']>([]),
+    body: emptyLexicalBody(),
     imageSources: [],
     headings: [],
     authorId: null,
