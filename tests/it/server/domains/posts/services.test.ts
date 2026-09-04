@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '#/_helpers/lexical'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -96,7 +97,8 @@ describe('posts/services/admin-query — getPostDetailForAdmin', () => {
     await expect(getPostDetailForAdmin(db, 9999)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
   it('returns the post with revision + tags', async () => {
-    const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
+    // Admin revision DTOs are Lexical-bodied since R9a; seed a Lexical state.
+    const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published', body: emptyLexicalBody() })
     const pid = await seedPost({ slug: 'det', publishedRevisionId: revId })
     const { getPostDetailForAdmin } = await import('@/server/domains/posts/services/admin-query')
     const r = await getPostDetailForAdmin(db, pid)
@@ -107,8 +109,8 @@ describe('posts/services/admin-query — getPostDetailForAdmin', () => {
 describe('posts/services/admin-query — listRevisionsForAdmin', () => {
   it('returns the revisions attached to a post', async () => {
     const pid = await seedPost({ slug: 'rev' })
-    await seedContent({ type: 'post', ownerId: pid, revisionNo: 1, status: 'draft' })
-    await seedContent({ type: 'post', ownerId: pid, revisionNo: 2, status: 'published' })
+    await seedContent({ type: 'post', ownerId: pid, revisionNo: 1, status: 'draft', body: emptyLexicalBody() })
+    await seedContent({ type: 'post', ownerId: pid, revisionNo: 2, status: 'published', body: emptyLexicalBody() })
     const { listRevisionsForAdmin } = await import('@/server/domains/posts/services/admin-query')
     const rows = await listRevisionsForAdmin(db, pid)
     expect(rows).toHaveLength(2)
@@ -258,15 +260,9 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
       postLifecycleAdapter,
       {
         entityId: Number(created.id),
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }],
-          },
-        ],
+        body: lexicalBodyWith([lexicalParagraph('hi')]),
         authorId: null,
+        resolveMusicEmbeds: stubMusicResolver(),
       },
       'draft',
     )
@@ -282,15 +278,9 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
       postLifecycleAdapter,
       {
         entityId: Number(created.id),
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'pub', marks: [] }],
-          },
-        ],
+        body: lexicalBodyWith([lexicalParagraph('pub')]),
         authorId: null,
+        resolveMusicEmbeds: stubMusicResolver(),
       },
       'publish',
     )
@@ -317,17 +307,11 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
         postLifecycleAdapter,
         {
           entityId: pid,
-          body: [
-            {
-              _type: 'block',
-              _key: 'b1',
-              style: 'normal',
-              children: [{ _type: 'span', _key: 's1', text: 'force', marks: [] }],
-            },
-          ],
+          body: lexicalBodyWith([lexicalParagraph('force')]),
           authorId: null,
           expectedClientRevisionToken: 'stale-token',
           force: true,
+          resolveMusicEmbeds: stubMusicResolver(),
         },
         'draft',
       )

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
@@ -63,7 +64,8 @@ async function seedPost(overrides: Partial<typeof postTable.$inferInsert> = {}) 
 async function seedPublishedRevision(postId: number): Promise<number> {
   const [rev] = await db
     .insert(contentTable)
-    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
+    // The admin detail DTO reads the revision body as a Lexical state (R9a).
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: emptyLexicalBody() })
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: rev.id }).where(eq(postTable.id, postId))
   return rev.id
@@ -135,7 +137,7 @@ describe('adminPostsRouter.saveDraft', () => {
       id: '1',
       revisionNo: 1,
       status: 'draft' as const,
-      body: [],
+      body: emptyLexicalBody(),
       imageSources: [],
       headings: [],
       authorId: '1',
@@ -150,7 +152,7 @@ describe('adminPostsRouter.saveDraft', () => {
 
     const res = (await call(
       adminPostsRouter.saveDraft,
-      { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: '1', body: emptyLexicalBody(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
       { context: adminCtx(admin) },
     )) as { status: string }
     expect(res.status).toBe('saved')

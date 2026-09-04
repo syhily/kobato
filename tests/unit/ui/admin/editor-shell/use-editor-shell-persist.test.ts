@@ -58,11 +58,12 @@ vi.mock('@/client/hooks/use-local-draft', () => ({
 
 import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revision'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { EditorShellDetail, EntityLike, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { UseEditorShellPersistArgs } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
 import { useAutosave } from '@/client/hooks/use-autosave'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
 const useAutosaveMock = vi.mocked(useAutosave)
@@ -86,23 +87,28 @@ function block(key: string, text: string) {
   return { _type: 'block' as const, _key: key, children: [{ _type: 'span' as const, _key: `${key}-s`, text }] }
 }
 
-function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionDto {
+// R11 interregnum: the shell still runs on PortableText bodies, so fixtures
+// keep PT runtime shapes and cast at the wire-DTO boundary (Lexical since R9a).
+function makeRevision(
+  overrides: Partial<Omit<AdminRevisionDto, 'body'>> & { body?: PortableTextBody } = {},
+): AdminRevisionDto {
+  const { body, ...rest } = overrides
   return {
     id: 'rev-1',
     revisionNo: 1,
     status: 'draft',
-    body: [],
+    body: unsafeCast<AdminRevisionDto['body']>(body ?? []),
     imageSources: [],
     headings: [],
     authorId: null,
     clientRevisionToken: 'tok-1',
     createdAt: '2026-07-10T00:00:00.000Z',
     updatedAt: '2026-07-10T00:00:00.000Z',
-    ...overrides,
+    ...rest,
   }
 }
 
-function savedPayload(overrides: Partial<AdminRevisionDto> = {}, warning?: string): SaveBodyOutput {
+function savedPayload(overrides: Parameters<typeof makeRevision>[0] = {}, warning?: string): SaveBodyOutput {
   return { status: 'saved', revision: makeRevision(overrides), ...(warning !== undefined ? { warning } : {}) }
 }
 
@@ -119,7 +125,9 @@ function makeDetail(baselineBody?: ReturnType<typeof block>[], token = 'tok-1'):
   return {
     entity: { id: 'e1', slug: 's', updatedAt: '2026-07-01T00:00:00.000Z', publishedAt: null },
     latestRevision:
-      baselineBody !== undefined ? makeRevision({ body: baselineBody, clientRevisionToken: token }) : null,
+      baselineBody !== undefined
+        ? unsafeCast<RevisionLike>(makeRevision({ body: baselineBody, clientRevisionToken: token }))
+        : null,
     publishedRevision: null,
   }
 }

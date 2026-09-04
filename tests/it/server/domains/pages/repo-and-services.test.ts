@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { emptyLexicalBody, stubMusicResolver } from '#/_helpers/lexical'
 import { content } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
@@ -40,7 +41,7 @@ async function seedPage(overrides: Partial<typeof pageMetaTable.$inferInsert> = 
   return rows[0]
 }
 
-async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'published') {
+async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'published', body?: unknown) {
   const rows = await db
     .insert(content)
     .values({
@@ -48,7 +49,10 @@ async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'pu
       ownerId,
       revisionNo: 1,
       status,
-      body: [],
+      // Rows seeded here are read through the admin revision projection
+      // (Lexical since R9a); the draft-preview tests override with a PT body
+      // because `projectPreview` still reads the PT path until R13/R14.
+      body: body ?? emptyLexicalBody(),
       imageSources: [],
       headings: [],
     })
@@ -397,7 +401,8 @@ describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
   })
 
   it('returns the page with hasNewerDraft=false when only a published revision exists', async () => {
-    const rev = await seedRevision(0)
+    // projectPreview still reads the PT body path until R13/R14.
+    const rev = await seedRevision(0, 'published', [])
     await seedPage({ slug: 'pub', published: true, publishedRevisionId: rev.id })
     const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'pub')
     expect(r).not.toBeNull()
@@ -406,7 +411,7 @@ describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
 
   it('returns the page with hasNewerDraft=true when a draft revision exists', async () => {
     const p = await seedPage({ slug: 'drafty' })
-    await seedRevision(p.id, 'draft')
+    await seedRevision(p.id, 'draft', [])
     const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'drafty')
     expect(r).not.toBeNull()
     expect(r!.hasNewerDraft).toBe(true)
@@ -419,7 +424,7 @@ describe('content/lifecycle (page adapter) — save result projection', () => {
     const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
-      { entityId: p.id, body: [], authorId: null },
+      { entityId: p.id, body: emptyLexicalBody(), authorId: null, resolveMusicEmbeds: stubMusicResolver() },
       'draft',
     )
     expect(result.status).toBe('saved')

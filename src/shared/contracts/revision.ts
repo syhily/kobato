@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { idString, isoDateTime, markdownHeadingDto } from '@/shared/contracts/primitives'
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 import { safeBoolean } from '@/shared/utils/schema'
 
@@ -8,7 +9,8 @@ export const adminRevisionDto = z.object({
   id: idString,
   revisionNo: z.number().int().nonnegative(),
   status: z.enum(['draft', 'published']),
-  body: portableTextBodySchema,
+  // Lexical editing state (plan round R9a) — the storage format flip.
+  body: lexicalEditorStateSchema,
   imageSources: z.array(z.string()),
   headings: z.array(markdownHeadingDto),
   authorId: idString.nullable(),
@@ -22,13 +24,15 @@ export type AdminRevisionDto = z.infer<typeof adminRevisionDto>
 // admin posts and pages controllers both consume these.
 export const saveBodyInput = z.object({
   id: z.string().min(1),
-  body: portableTextBodySchema,
+  body: lexicalEditorStateSchema,
   expectedClientRevisionToken: z.uuid().nullable().optional(),
   force: safeBoolean().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
 export type SaveBodyInput = z.infer<typeof saveBodyInput>
 
+// The preview path still speaks PortableText — it is dead code scheduled
+// for deletion in R11, deliberately NOT migrated in R9a.
 export const previewBodyInput = z.object({
   body: portableTextBodySchema,
 })

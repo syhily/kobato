@@ -48,6 +48,14 @@ export interface RevisionLike {
   updatedAt: string
 }
 
+/**
+ * R11 interregnum: the wire `SaveBodyInput` carries a Lexical state since R9a,
+ * but the shell still speaks PortableText end-to-end until the editor swap.
+ * The adapter casts this PT-shaped input back to `SaveBodyInput` at the wire
+ * boundary; remove together with the rest of the PT shell in R11.
+ */
+export type ShellSaveBodyInput = Omit<SaveBodyInput, 'body'> & { body: PortableTextBody }
+
 export interface EntityLike {
   id: string
   slug: string
@@ -78,8 +86,8 @@ export interface UseEditorShellStateArgs<
   createDraftConfig: CreateDraftConfig<PortableTextBody>
 
   upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
-  saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
-  publishFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
+  saveDraftFn: (input: ShellSaveBodyInput) => Promise<SaveBodyOutput>
+  publishFn: (input: ShellSaveBodyInput) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
 
   /** Build the upsertMeta payload from the meta draft — common fields are

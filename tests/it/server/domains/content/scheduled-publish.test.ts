@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 vi.useFakeTimers()
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 import { livePostWhere } from '@/server/domains/posts/live-gate'
@@ -177,14 +178,7 @@ describe('scheduled-publish job', () => {
       '/admin/posts/publishLatest',
       {
         id: created.id,
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'scheduled', marks: [] }],
-          },
-        ],
+        body: lexicalBodyWith([lexicalParagraph('scheduled')]),
         publishedAt: new Date(Date.now() + HOUR_MS).toISOString(),
       },
       ctx,

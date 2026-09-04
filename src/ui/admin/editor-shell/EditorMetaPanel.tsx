@@ -3,6 +3,7 @@ import type { NavigateFunction } from 'react-router'
 
 import { Trash2Icon, Undo2Icon } from 'lucide-react'
 
+import type { PortableTextBody } from '@/shared/pt/schema'
 import type {
   EditorSidebarState,
   SidebarPublishStatus,
@@ -10,6 +11,7 @@ import type {
   SidebarSaveStatus,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { useEditorDeleteRestore } from '@/ui/admin/editor-shell/use-editor-delete-restore'
 import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -84,7 +86,12 @@ export function EditorMetaPanel<TMeta>({
             ownerId={entity.id}
             currentToken={sidebar.expectedToken}
             currentBody={sidebar.body}
-            onAdoptRevision={sidebar.adoptRevisionFromHistory}
+            onAdoptRevision={(revision) =>
+              // R11 interregnum: the drawer's wire revision body is a Lexical
+              // state since R9a; the adoption callback still speaks PortableText
+              // until the editor swap.
+              sidebar.adoptRevisionFromHistory(unsafeCast<{ body: PortableTextBody; revisionNo: number }>(revision))
+            }
           />
         </div>
         <div className="group/delete rounded-xl border border-destructive/30 p-2 transition-colors hover:bg-destructive">

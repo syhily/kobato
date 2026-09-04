@@ -44,6 +44,7 @@ export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterO
         {
           entityId: idFromString(input.id),
           body: input.body,
+          resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(context.db, playerIds),
           expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
           force: input.force,
           authorId: idFromString(context.viewer.id),
@@ -72,6 +73,7 @@ export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterO
         {
           entityId: idFromString(input.id),
           body: input.body,
+          resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(context.db, playerIds),
           expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
           force: input.force,
           authorId: idFromString(context.viewer.id),

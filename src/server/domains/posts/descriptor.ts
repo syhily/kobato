@@ -30,9 +30,10 @@ import { findTagsByNames, seedTagsIfMissing } from '@/server/infra/db/operations
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { resolveSlug } from '@/server/infra/slug/resolve'
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { portableTextBodySchema, type PortableTextBody } from '@/shared/pt/schema'
 import { idFromString } from '@/shared/utils/id'
 import { hasAtLeast } from '@/shared/utils/roles'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('posts.service')
 
@@ -125,15 +126,22 @@ export const postDescriptor: MetaEntityDescriptor<
         summary: meta.summary,
         cover: meta.cover,
       })
+      // R9a interregnum: `body` is a Lexical editor state, but the PT-typed
+      // consumers (search-index plain text, webmention link extraction) are
+      // only switched in R14. Until then they throw on the foreign shape,
+      // which both call sites catch and degrade to a publish warning — the
+      // R15 backfill re-derives the index. The cast marks the seam, not a
+      // real conversion.
+      const legacyBody = unsafeCast<PortableTextBody>(body)
       // Index the in-scope `body` — freshly canonicalized; a re-read would cost a round-trip and reintroduce a validation gap.
       try {
-        await indexPost(db, meta.id, meta.title, meta.summary, body)
+        await indexPost(db, meta.id, meta.title, meta.summary, legacyBody)
       } catch (err: unknown) {
         log.warn('index post failed', { postId: meta.id, error: err })
         warnings.push(INDEX_FAILURE_WARNING)
       }
       // Cross-domain extensions run through the seam — see `posts/publish-hooks.ts`.
-      await runPostPublishHooks(db, meta, body, warnings)
+      await runPostPublishHooks(db, meta, legacyBody, warnings)
     },
   },
   adminDto: {

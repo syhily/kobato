@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
@@ -56,7 +57,9 @@ async function seedRevision(ownerId: number, revisionNo: number, status: 'draft'
       ownerId,
       revisionNo,
       status,
-      body: [],
+      // listRevisions/get project rows through the admin revision DTO,
+      // Lexical-bodied since R9a.
+      body: emptyLexicalBody(),
       imageSources: [],
       headings: [],
     })
@@ -86,7 +89,7 @@ const revisionStub = {
   id: '1',
   revisionNo: 1,
   status: 'draft' as const,
-  body: [],
+  body: emptyLexicalBody(),
   imageSources: [],
   headings: [],
   authorId: '1',
@@ -205,7 +208,7 @@ describe('adminPagesRouter.saveDraft', () => {
     })
     const res = await call(
       adminPagesRouter.saveDraft,
-      { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: '1', body: emptyLexicalBody(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
       { context: adminCtx(admin) },
     )
     expect(res.status).toBe('saved')
@@ -224,7 +227,7 @@ describe('adminPagesRouter.saveDraft', () => {
     })
     const res = await call(
       adminPagesRouter.saveDraft,
-      { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: '1', body: emptyLexicalBody(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
       { context: adminCtx(admin) },
     )
     expect(res.status).toBe('conflict')
@@ -242,7 +245,7 @@ describe('adminPagesRouter.publishLatest', () => {
     })
     const res = await call(
       adminPagesRouter.publishLatest,
-      { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: '1', body: emptyLexicalBody(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
       { context: adminCtx(admin) },
     )
     expect(res.status).toBe('saved')

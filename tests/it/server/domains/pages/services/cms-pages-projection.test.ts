@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
+
 // Projection-layer tests, mock-free (pure data shaping): malformed-body
 // rejection via validatePortableTextBody and a stable DTO shape (id
 // stringification, ISO dates).
@@ -134,14 +136,7 @@ describe('content/projection — toAdminRevisionDto', () => {
         id: 12345,
         revisionNo: 7,
         status: 'published',
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
-          },
-        ],
+        body: lexicalBodyWith([lexicalParagraph('Hi')]),
         authorId: 99,
       }),
     )
@@ -155,12 +150,14 @@ describe('content/projection — toAdminRevisionDto', () => {
 
   it('throws on malformed body so the editor never hydrates with garbage', () => {
     expect(() =>
-      toAdminRevisionDto(contentRow({ body: [{ _type: 'block' }] as unknown as ContentRow['body'] })),
+      toAdminRevisionDto(contentRow({ body: { root: { type: 'root' } } as unknown as ContentRow['body'] })),
     ).toThrow()
   })
 
   it('coalesces unknown statuses to draft (defensive)', () => {
-    const dto = toAdminRevisionDto(contentRow({ status: 'somethingElse' as unknown as ContentRow['status'], body: [] }))
+    const dto = toAdminRevisionDto(
+      contentRow({ status: 'somethingElse' as unknown as ContentRow['status'], body: emptyLexicalBody() }),
+    )
     expect(dto.status).toBe('draft')
   })
 })

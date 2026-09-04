@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 
@@ -22,14 +23,7 @@ describe('integration / draft publish flow', () => {
       '/admin/posts/saveDraft',
       {
         id: post.id,
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'hello', marks: [] }],
-          },
-        ],
+        body: lexicalBodyWith([lexicalParagraph('hello')]),
       },
       ctx,
     )
@@ -40,14 +34,7 @@ describe('integration / draft publish flow', () => {
       '/admin/posts/publishLatest',
       {
         id: post.id,
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'published', marks: [] }],
-          },
-        ],
+        body: lexicalBodyWith([lexicalParagraph('published')]),
       },
       ctx,
     )

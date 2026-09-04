@@ -1,7 +1,7 @@
 import type { ContentRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 
-import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
+import { readHeadings, readLexicalBody } from '@/server/domains/content/projection-helpers'
 import { readStringArray } from '@/shared/utils/tools'
 
 export function toAdminRevisionDto(row: ContentRow): AdminRevisionDto {
@@ -9,7 +9,7 @@ export function toAdminRevisionDto(row: ContentRow): AdminRevisionDto {
     id: String(row.id),
     revisionNo: row.revisionNo,
     status: row.status === 'published' ? 'published' : 'draft',
-    body: readBody(row.body),
+    body: readLexicalBody(row.body),
     imageSources: readStringArray(row.imageSources),
     headings: readHeadings(row.headings),
     authorId: row.authorId === null ? null : String(row.authorId),

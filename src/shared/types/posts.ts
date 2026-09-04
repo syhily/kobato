@@ -1,5 +1,5 @@
 import type { AdminPostDetailDto, AdminPostDto } from '@/shared/contracts/posts'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -136,7 +136,7 @@ export interface UnpublishPostOutput {
 }
 
 export interface PreviewPostBodyInput {
-  body: PortableTextBody
+  body: LexicalEditorState
 }
 
 export type PostMetaToggleKey =
