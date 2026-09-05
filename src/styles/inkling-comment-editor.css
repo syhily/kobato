@@ -45,23 +45,38 @@
   --font-serif: inherit;
 }
 
-/* The contentEditable root hardcodes the Inter stack and a 1.7rem base
-   font; real text blocks are re-fonted through the bridged vars and the
-   prose rules below. */
+/* The contentEditable root hardcodes the Inter stack, a 1.7rem base font,
+   and `letter-spacing: 0.1px`; real text blocks are re-fonted through the
+   bridged vars and the prose rules below. letter-spacing is zeroed — the
+   rendered comment has none, and letter-spacing on a contenteditable is a
+   known Chromium IME composition-caret drift factor. */
 .kobato-comment-editor .inkling-lexical > * {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 0.875rem;
+  letter-spacing: normal;
 }
 
-/* Text matches the RENDERED comment (`.comment-content` = prose-sm: 14px
-   body, `leading-copy` 1.85, site body font). The `:not` guard mirrors
-   inkling's prose rule so card interiors keep their own scale. */
+/* Text matches the RENDERED comment (`.comment-content` = prose-sm:
+   0.875rem body, `leading-copy` 1.85, the site SERIF chain — measured live:
+   13.125px/24.28px at the public 15px root, 14px/25.9px at the admin 16px
+   root, so rem keeps both bundles in lockstep with their rendered side).
+   The `:not` guard mirrors inkling's prose rule so card interiors keep
+   their own scale. */
 .kobato-comment-editor
   .inkling-lexical
   :is(p, blockquote, ul, ol):not(:where(.not-inkling-prose, .not-inkling-prose *)) {
   margin-top: 14px;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.85;
+}
+
+/* The generic margin above beats inkling's layered `:first-child` reset —
+   re-assert it unlayered or the first block (and with it the caret) drops
+   14px below the placeholder's origin. */
+.kobato-comment-editor
+  .inkling-lexical
+  :is(p, blockquote, ul, ol):first-child:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
+  margin-top: 0;
 }
 
 /* Block rhythm — inkling's margin-top-only pair scale, de-zoomed
@@ -89,12 +104,20 @@
   margin-top: 24.5px;
 }
 
-/* Cards render as div wrappers: their spacing is padding-top on the
-   FOLLOWING block, not margin on the card. */
+/* Cards render as div wrappers INSIDE the contentEditable (.inkling-prose):
+   their spacing is padding-top on the FOLLOWING block, not margin on the
+   card. The scope MUST stay under .inkling-prose — the EditorPlaceholder
+   div is also a `.inkling-lexical > div + div`, and padding it pushes the
+   placeholder text a full line below the caret origin. */
 .kobato-comment-editor
   .inkling-lexical
+  .inkling-prose
   :is(p + div, blockquote + div, ul + div, ol + div):not(:where(.not-inkling-prose, .not-inkling-prose *)),
-.kobato-comment-editor .inkling-lexical > div + div:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
+.kobato-comment-editor
+  .inkling-lexical
+  .inkling-prose
+  > div
+  + div:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
   padding-top: 28px;
 }
 
@@ -135,12 +158,14 @@
 /* inkling's EditorPlaceholder is `absolute top-0 left-0` against the
    position:relative `.inkling-lexical` box, ignoring the host padding above —
    re-anchor it to the typed text's origin and give it the same font metrics
-   (the package default is `font-serif text-xl text-grey-500`). */
+   as the prose (the serif chain, 0.875rem, 1.85 — NOT the package default
+   `font-serif text-xl text-grey-500`, and NOT --font-body: rendered
+   comments are serif). */
 .kobato-comment-editor .kobato-comment-placeholder {
   top: 6.6px;
   left: 8.8px;
-  font-family: var(--font-body);
-  font-size: 14px;
+  font-family: var(--font-serif);
+  font-size: 0.875rem;
   line-height: 1.85;
   color: var(--ink-4);
 }
