@@ -14,17 +14,40 @@
 @import '@inkling/editor/style.css' layer(inkling);
 
 /* Comment canvas: a compact bordered input, not an article column.
-   `zoom: 0.55` normalizes inkling's 10px-root rem system down to the old
-   tiptap comment editor's prose-sm scale (body text lands at ≈15px
-   effective vs the page editor's 17px at zoom 0.625) — see the zoom
-   rationale in `inkling-editor.css`. The min-height keeps the empty state
-   clickable; the bottom runway lets the slash menu / floating toolbar open
-   without clipping against the form's edge. */
+   `zoom: 0.55` normalizes inkling's 10px-root rem system down toward the
+   comment scale (see the zoom rationale in `inkling-editor.css`); the prose
+   text itself is re-sized explicitly below. The min-height keeps the empty
+   state clickable; the bottom runway lets the slash menu / floating toolbar
+   open without clipping against the form's edge. */
 .kobato-comment-editor .inkling-lexical {
   width: 100%;
   min-height: calc(96px / 0.55);
   padding: 0.75rem 1rem 2.5rem;
   zoom: 0.55;
+}
+
+/* Text + placeholder match the RENDERED comment (`.comment-content` =
+   prose-sm: 14px body, `leading-copy` 1.85, site body font). Sizes are
+   pre-zoom: 14px / 0.55 lands at exactly 14px effective. The `:not` guard
+   mirrors inkling's prose rule so card interiors keep their own scale. */
+.kobato-comment-editor
+  .inkling-lexical
+  :is(p, blockquote, ul, ol):not(:where(.not-inkling-prose, .not-inkling-prose *)) {
+  font-size: calc(14px / 0.55);
+  line-height: 1.85;
+}
+
+/* inkling's EditorPlaceholder is `absolute top-0 left-0` against the
+   position:relative `.inkling-lexical` box, ignoring the host padding above —
+   re-anchor it to the typed text's origin and give it the same font metrics
+   (the package default is `font-serif text-xl text-grey-500`). */
+.kobato-comment-editor .kobato-comment-placeholder {
+  top: 0.75rem;
+  left: 1rem;
+  font-family: var(--font-body);
+  font-size: calc(14px / 0.55);
+  line-height: 1.85;
+  color: var(--ink-4);
 }
 
 /* Design-token bridge — same contract as the page editor surface:
