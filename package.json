@@ -124,6 +124,7 @@
     "oxfmt": "^0.66.0",
     "oxlint": "^1.81.0",
     "oxlint-tsgolint": "^7.0.2001",
+    "parse5": "8.0.1",
     "pino": "^10.3.1",
     "pinyin-pro": "^3.29.3",
     "qrcode.react": "^4.2.0",
