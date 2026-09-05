@@ -47,10 +47,12 @@ _Avoid_: future-dated, timed
 **PT**:
 The legacy PortableText subset that typed rich content before the inkling
 migration, defined in `src/shared/pt/schema.ts`. Lexical editor states are
-the live storage format (`src/shared/lexical/`); PT survives in pre-switch
-comment rows (mail templates, plain-text snippets) and the schema/semantics
-helpers. The PT SSR renderer and enriched-body overlay were retired in R13 —
-public bodies render the saved `bodyHtml` projection.
+the live storage format (`src/shared/lexical/`); the R15 boot backfill
+converts every pre-switch row on upgrade, so PT survives only as the legacy
+schema/utils feeding the converter and the dual-path legacy fallbacks
+(comment email/plain-text helpers, the asset-URL backfill). The PT SSR
+renderer and enriched-body overlay were retired in R13 — public bodies
+render the saved `bodyHtml` projection.
 _Avoid_: MDX (retired render target), InklingDocument (editor-vendor
 experiment, not the shipping store)
 
@@ -181,7 +183,7 @@ _Avoid_: treating every folder in `domains/` as equally "core"
 A business feature built on the core concepts — `auth`, `users`,
 `comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`,
 `friends`, `newsletter`, `webmentions`. Features compose core concepts
-(a comment has a PT body; a taxonomy groups posts) but add no terms to
+(a comment has a Lexical body; a taxonomy groups posts) but add no terms to
 the content language.
 _Avoid_: "service" (that's the platform stratum or a file name, never
 a feature)

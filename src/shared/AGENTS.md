@@ -64,13 +64,14 @@ server or client boundary catch and log it.
   entries ship separate Lexical copies.
 - `pt/` — LEGACY: the PortableText schema (`schema`, `comment-schema`), the
   heading style↔level table (`heading-levels`), and the tree walkers/validators
-  in `utils` survive ONLY for pre-Lexical `content.body` / comment rows — the
-  R15 backfill (`server/domains/pt/services/pt-to-lexical`, executor
+  in `utils` survive ONLY to read pre-Lexical `content.body` / comment rows —
+  the R15 backfill (`server/domains/pt/services/pt-to-lexical`, executor
   `server/domains/content/services/pt-lexical-backfill`) converts them
-  row-by-row (validating against these schemas) and then retires the whole
-  directory. The legacy comment dialect still types
-  pre-R12 comment rows: the mail path degrades them to escaped plain text and
-  `commentBodyPlainText` dual-reads them until that backfill lands. No new
+  row-by-row at boot (apply mode since R15b), after which the whole directory
+  can retire. The legacy comment dialect still types
+  pre-conversion comment rows: the mail path degrades them to escaped plain
+  text, and `commentBodyPlainText` / the asset-URL backfill dual-read both
+  formats until every database has converted. No new
   consumer may import from `pt/`. (The PT SSR renderer, footnote machinery,
   and `semantics` were retired in R14; the request-scoped enriched-body overlay
   went in R13; the PT ↔ ProseMirror bridge and `comment-markdown` in R12.)
