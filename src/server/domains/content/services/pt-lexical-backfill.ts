@@ -76,11 +76,12 @@ const log = getLogger('content.pt-lexical-backfill')
 const BOOT_FLAG_SCOPE = 'system.pt-lexical-backfill'
 
 /**
- * Boot behaviour while R15a is under audit: count and warn only. R15b flips
- * this to 'apply' after the dry-run report is signed off and the database
- * backup is confirmed (「升级即转换」).
+ * Boot behaviour: 'apply' — the R15 dry-run report was audited and signed off
+ * (289 content rows + 8802 comments, zero failures, reproduced independently)
+ * and the file-level backup is in place (「升级即转换」; a rollback to a
+ * pre-Lexical binary requires restoring that backup).
  */
-const BOOT_MODE: PtLexicalBackfillMode = 'dry-run'
+const BOOT_MODE: PtLexicalBackfillMode = 'apply'
 
 export type PtLexicalBackfillMode = 'dry-run' | 'apply'
 
