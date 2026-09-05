@@ -338,7 +338,7 @@ their JS into the server/worker bundles and embeds the platform `.node` /
 libvips library files (`scripts/sea/assets.ts`).
 
 Examples: `react`, `hono`, `drizzle-orm`, `nodemailer`,
-`sanitize-html`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
+`feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
 all `devDependencies`, despite being production imports.
 
 `@inkling/editor` (`packages/inkling`, imported via `git subtree`) is the

@@ -128,7 +128,7 @@ state.
   Shiki's Oniguruma `.wasm` violates the strict `script-src` CSP in the browser.
 - A UI component needing highlighted code gets pre-rendered HTML from the server procedure or loader
   in the DTO (e.g. `detailsHtml` on audit-log items). Render it with `dangerouslySetInnerHTML`
-  through `sanitizeHtml(html, 'shiki')` from `@/ui/lib/sanitize-html` so inline `style` attributes
+  through `sanitizeHtml(html, 'shiki')` from `@/shared/sanitize/sanitize-html` so inline `style` attributes
   and shiki CSS classes survive while everything else is stripped.
 
 ## LOC ceiling

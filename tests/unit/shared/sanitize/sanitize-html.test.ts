@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import type { SafeHtmlStrategy } from '@/ui/lib/sanitize-html-config'
+import type { SafeHtmlStrategy } from '@/shared/sanitize/config'
 
-import { sanitizeHtmlString } from '@/ui/lib/sanitize-html'
+import { sanitizeHtmlString } from '@/shared/sanitize/sanitize-html'
 
-const strategies: SafeHtmlStrategy[] = ['shiki', 'math', 'email', 'audit', 'preview', 'body']
+const strategies: SafeHtmlStrategy[] = ['shiki', 'math', 'email', 'audit', 'preview', 'body', 'feed', 'comment-email']
 
-describe('ui/lib/sanitize-html', () => {
+describe('shared/sanitize/sanitize-html', () => {
   it('strips script tags for every strategy', () => {
     const dirty = '<script>alert(1)</script><p>safe</p>'
     for (const strategy of strategies) {
@@ -238,5 +238,53 @@ describe('ui/lib/sanitize-html', () => {
     const clean = sanitizeHtmlString(html, 'audit')
     expect(clean).toContain('href="https://example.com"')
     expect(clean).not.toContain('javascript')
+  })
+
+  describe('feed strategy', () => {
+    it('allows per-tag attributes only on their own tag', () => {
+      const html = '<img src="https://example.com/a.png" alt="a"><p src="https://example.com/x">t</p>'
+      const clean = sanitizeHtmlString(html, 'feed')
+      expect(clean).toContain('<img src="https://example.com/a.png" alt="a"')
+      expect(clean).not.toContain('<p src=')
+    })
+
+    it('rejects protocol-relative URLs', () => {
+      const html = '<a href="//evil.example/x">click</a><img src="//cdn.example/a.png">'
+      const clean = sanitizeHtmlString(html, 'feed')
+      expect(clean).not.toContain('//evil.example')
+      expect(clean).not.toContain('//cdn.example')
+    })
+
+    it('overwrites rel on target=_blank links', () => {
+      const html = '<a href="https://example.com" target="_blank" rel="friend">x</a>'
+      const clean = sanitizeHtmlString(html, 'feed')
+      expect(clean).toContain('rel="noopener noreferrer nofollow"')
+      expect(clean).not.toContain('friend')
+    })
+
+    it('keeps data: image sources', () => {
+      const html = '<img src="data:image/png;base64,iVBORw0KGgo=" alt="a">'
+      const clean = sanitizeHtmlString(html, 'feed')
+      expect(clean).toContain('src="data:image/png;base64,iVBORw0KGgo="')
+    })
+  })
+
+  describe('comment-email strategy', () => {
+    it('keeps links and inline marks, drops everything else', () => {
+      const html =
+        '<p class="x">hi <strong>there</strong> <a href="https://example.com" title="t">link</a>' +
+        '<img src="https://example.com/a.png"></p>'
+      const clean = sanitizeHtmlString(html, 'comment-email')
+      expect(clean).toContain('<p class="x">')
+      expect(clean).toContain('<strong>there</strong>')
+      expect(clean).toContain('href="https://example.com"')
+      expect(clean).toContain('title="t"')
+      expect(clean).not.toContain('<img')
+    })
+
+    it('rejects protocol-relative URLs', () => {
+      const clean = sanitizeHtmlString('<a href="//evil.example/x">click</a>', 'comment-email')
+      expect(clean).not.toContain('//evil.example')
+    })
   })
 })

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { sanitizeHtml } from '@/ui/lib/sanitize-html'
+import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 
 // Renders the saved comment `content` column (the inkling feed-variant HTML
 // projection) — the R13 read path. Sanitization happens at this render

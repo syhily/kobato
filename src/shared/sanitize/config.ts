@@ -1,7 +1,7 @@
 // Strategy data shared by the two sanitize engines. Dependency-free so both
 // engines and the facade can import it in either bundle.
 
-export type SafeHtmlStrategy = 'shiki' | 'math' | 'email' | 'audit' | 'preview' | 'body'
+export type SafeHtmlStrategy = 'shiki' | 'math' | 'email' | 'audit' | 'preview' | 'body' | 'feed' | 'comment-email'
 
 export interface SanitizeStrategyConfig {
   tags: readonly string[]
@@ -9,6 +9,25 @@ export interface SanitizeStrategyConfig {
   schemes: readonly string[]
   /** Per-property CSS allowlist (shiki + body); values must match one pattern. */
   styles?: Readonly<Record<string, readonly RegExp[]>>
+  /**
+   * Per-tag attribute allowlist ADDED on top of the global `attributes` list
+   * (sanitize-html's `allowedAttributes` shape): the DOMPurify ALLOWED_ATTR
+   * gets the union, and a hook narrows non-global attributes back down by
+   * tagName so e.g. `src` survives on <img> but not on <p>.
+   */
+  tagAttributes?: Readonly<Record<string, readonly string[]>>
+  /**
+   * Reject protocol-relative URLs (`//host/path`) — swaps in a stricter URI
+   * regexp with a `(?!\/\/)` negative lookahead (sanitize-html's
+   * `allowProtocolRelative: false`).
+   */
+  noProtocolRelative?: boolean
+  /**
+   * Rewrite rel="noopener noreferrer nofollow" on every <a target="_blank">
+   * (sanitize-html's transformTags overwrite semantics: the whole rel value
+   * is replaced, not merged).
+   */
+  noopenerOnBlankTarget?: boolean
 }
 
 // `data-*` attributes drive Tiptap, Base UI, and shiki state on inline nodes.
@@ -230,6 +249,105 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
         attributes: [...BASE_ATTRIBUTES, ...BODY_ATTRIBUTES, ...MATH_ATTRIBUTES],
         schemes: BASE_SCHEMES,
         styles: BODY_ALLOWED_STYLES,
+      }
+
+    // Server-only boundary for feed XML output (`render/feed/generator`).
+    // The tag set mirrors the feed-variant projection's real output
+    // (`infra/pt/lexical-projection` — inkling exportDOM, artifacts stripped):
+    // inline marks strong/em/u/s/code/mark, sup/sub footnote refs, the
+    // footnotes <section>, media figure/figcaption/audio, and the table
+    // family. `id` on `*` covers headings, footnote anchors, and the
+    // footnotes section. img's data: scheme rides DOMPurify's default
+    // DATA_URI_TAGS (sanitize-html's allowedSchemesByTag equivalent).
+    case 'feed':
+      return {
+        tags: [
+          'p',
+          'br',
+          'hr',
+          'strong',
+          'em',
+          'u',
+          's',
+          'mark',
+          'code',
+          'pre',
+          'blockquote',
+          'ul',
+          'ol',
+          'li',
+          'h1',
+          'h2',
+          'h3',
+          'h4',
+          'h5',
+          'h6',
+          'a',
+          'img',
+          'sup',
+          'sub',
+          'figure',
+          'figcaption',
+          'audio',
+          'table',
+          'thead',
+          'tbody',
+          'tr',
+          'th',
+          'td',
+          'section',
+          'div',
+        ],
+        attributes: [
+          'id',
+          'class',
+          'data-language',
+          'data-footnotes',
+          'data-footnote-backref',
+          'aria-labelledby',
+          'aria-label',
+        ],
+        tagAttributes: {
+          a: ['href', 'title', 'name', 'rel', 'target'],
+          img: ['src', 'alt', 'title', 'width', 'height'],
+          audio: ['src', 'controls', 'preload'],
+        },
+        schemes: BASE_SCHEMES,
+        noProtocolRelative: true,
+        noopenerOnBlankTarget: true,
+      }
+
+    // Server-only boundary for the comment `content` column at the email
+    // boundary (`domains/comments/services/email`). Tags mirror the comment
+    // feed-variant projection's real output: paragraphs, inline marks
+    // (inkling exportDOM: strong/em/u/s/mark/code, sup/sub), blockquote,
+    // lists, plain pre/code (artifacts stripped), and links.
+    case 'comment-email':
+      return {
+        tags: [
+          'p',
+          'br',
+          'strong',
+          'em',
+          'u',
+          's',
+          'mark',
+          'code',
+          'pre',
+          'blockquote',
+          'ul',
+          'ol',
+          'li',
+          'a',
+          'sup',
+          'sub',
+        ],
+        attributes: ['class'],
+        tagAttributes: {
+          a: ['href', 'title', 'rel', 'target'],
+        },
+        schemes: BASE_SCHEMES,
+        noProtocolRelative: true,
       }
   }
 }
