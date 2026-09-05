@@ -27,7 +27,6 @@ import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@/sh
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { cn } from '@/ui/lib/cn'
 import { useTheme } from '@/ui/lib/ThemeProvider'
-import { CommentEditorHint } from '@/ui/public/comments/CommentEditorHint'
 
 export interface CommentBodyEditorProps {
   /** Initial comment state. Read on first mount + when `bodyKey` changes. */
@@ -141,6 +140,7 @@ export function CommentBodyEditor({
           onChange={handleChange}
           registerAPI={registerAPI}
           placeholderText={placeholder ?? DEFAULT_PLACEHOLDER}
+          placeholderClassName="kobato-comment-placeholder"
           markdownTransformers={COMMENT_MARKDOWN_TRANSFORMERS}
           isSnippetsEnabled={false}
           isDragEnabled={false}
@@ -150,7 +150,6 @@ export function CommentBodyEditor({
           <SlashCardMenuPlugin />
         </InklingSurface>
       </InklingComposer>
-      <CommentEditorHint />
     </div>
   )
 }
