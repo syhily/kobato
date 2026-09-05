@@ -1,6 +1,7 @@
 import { eq, ne } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { resolveSrcToStoragePath } from '@/server/domains/images/services/cache'
@@ -12,19 +13,30 @@ import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { getLogger } from '@/server/infra/logger'
+import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
 import { getPublicBaseUrl, parseAssetUrl } from '@/server/infra/storage/public-url'
+import { SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE } from '@/shared/lexical/node-whitelist'
+import { visitLexicalNodes } from '@/shared/lexical/walk'
 import { visitNestedBlocks } from '@/shared/pt/utils'
 import { STORAGE_ROUTE_PREFIX } from '@/shared/types/asset-url'
+import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
  * One-time rewrite of legacy baked asset URLs to the site-owned
  * origin-relative form (`/storage/<key>`). Storage backends, buckets and CDN
  * hosts change over a site's lifetime; content must never carry those
- * absolutes. Runs once at boot (flag-gated on a `setting` row) and again —
- * unconditionally but idempotently — after every completed storage migration.
- * Failure-swallowing at both call sites: a failed backfill never blocks boot
- * or a migration, and the boot flag is only written on success (retry next boot).
+ * absolutes. Content bodies dispatch per row on the storage format: legacy
+ * PortableText arrays walk `visitNestedBlocks`; canonical Lexical states walk
+ * `visitLexicalNodes` (image nodes, plus the nested-editor HTML datasets of
+ * the solution / two-column / footnotedefinition host cards whose images are
+ * `<img>` markup, not nodes) and re-derive the three projection columns so
+ * the read path drops the old host too. Runs once at boot (flag-gated on a
+ * `setting` row) and again — unconditionally but idempotently — after every
+ * completed storage migration. Failure-swallowing at both call sites: a
+ * failed backfill never blocks boot or a migration, and the boot flag is
+ * only written when the run finishes with zero skipped rows (a partial run
+ * retries next boot).
  */
 
 const log = getLogger('content.asset-url-backfill')
@@ -38,6 +50,8 @@ export interface AssetUrlBackfillResult {
   pages: number
   friends: number
   categories: number
+  /** Content rows left untouched: body parses as neither PT nor Lexical, or the row threw. */
+  skippedContentRows: number
 }
 
 /**
@@ -89,7 +103,9 @@ function siteOwnedSrc(storagePath: string): string {
  * Rewrite every image block in a PT body in place: blocks carrying a
  * `storagePath` re-stamp unconditionally (the old host is irrelevant);
  * blocks without one rewrite only when `src` provably resolves to our
- * storage. Truly external images are left alone.
+ * storage. Truly external images are left alone. This is the LEGACY path —
+ * the boot PT→Lexical backfill converts the row right after and derives its
+ * projections then, so changed PT rows get no projection work here.
  */
 export function rewriteBodyAssetUrls(
   body: PortableTextBody,
@@ -114,6 +130,149 @@ export function rewriteBodyAssetUrls(
     }
   })
   return { body, changed }
+}
+
+/**
+ * Host-card dataset keys carrying nested-editor HTML: images inside them are
+ * `<img>` markup, not nodes (the R15 conversion rendered PT nested blocks to
+ * HTML through the projection renderer). `footnotedefinition` joins solution
+ * / two-column — its dataset `content` is the same kind of nested HTML.
+ * music-player carries no images and stays absent. The exportDOM markup
+ * deliberately emits no `data-storage-path` (storage internals never enter
+ * HTML), so the HTML datasets rewrite through the src predicate alone.
+ */
+const NESTED_HTML_DATASET_KEYS: Record<string, readonly string[]> = {
+  [SOLUTION_NODE_TYPE]: ['content'],
+  [TWO_COLUMN_NODE_TYPE]: ['left', 'right'],
+  footnotedefinition: ['content'],
+}
+
+const HTML_ATTR_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  '#39': "'",
+}
+
+function unescapeHtmlAttribute(value: string): string {
+  return value.replace(/&([a-zA-Z#0-9]+);/g, (match, entity: string) => HTML_ATTR_ENTITIES[entity] ?? match)
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+}
+
+/**
+ * Rewrite every double-quoted `<img src="…">` in a card-dataset HTML string
+ * through `rewrite` (null = leave untouched). Regex-based like
+ * `htmlToPlainText` — the datasets come from our own exportDOM renderers,
+ * which always emit double-quoted srcs. srcset is deliberately NOT rewritten:
+ * its candidates are render-time transform URLs (regenerated from `src` by
+ * the projection), not stored references.
+ */
+function rewriteHtmlImgSrcs(html: string, rewrite: (src: string) => string | null): { html: string; changed: boolean } {
+  let changed = false
+  const next = html.replace(
+    /(<img\b[^>]*?\bsrc=")([^"]*)(")/gi,
+    (match, prefix: string, rawSrc: string, suffix: string) => {
+      const rewritten = rewrite(unescapeHtmlAttribute(rawSrc))
+      if (rewritten === null) {
+        return match
+      }
+      changed = true
+      return `${prefix}${escapeHtmlAttribute(rewritten)}${suffix}`
+    },
+  )
+  return { html: next, changed }
+}
+
+/**
+ * The Lexical twin of `rewriteBodyAssetUrls` — same semantics on the
+ * canonical format: image nodes carrying a non-empty `storagePath` re-stamp
+ * `src` unconditionally; the rest rewrite only when the src provably resolves
+ * to our storage; truly external images stay untouched. Nested host-card HTML
+ * (solution content, two-column panes, footnotedefinition content) rewrites
+ * its `<img>` srcs through the same predicate. Mutates in place.
+ */
+export function rewriteLexicalBodyAssetUrls(
+  state: LexicalEditorState,
+  publicBaseUrl: string | null,
+): { state: LexicalEditorState; changed: boolean } {
+  let changed = false
+  visitLexicalNodes(state, (node) => {
+    if (node.type === 'image') {
+      const record = unsafeCast<Record<string, unknown>>(node)
+      if (typeof record.src !== 'string') {
+        return
+      }
+      const storagePath =
+        typeof record.storagePath === 'string' && record.storagePath !== ''
+          ? record.storagePath
+          : rewritableStoragePath(record.src, publicBaseUrl)
+      if (storagePath === null) {
+        return
+      }
+      const next = siteOwnedSrc(storagePath)
+      if (record.src !== next) {
+        record.src = next
+        changed = true
+      }
+      return
+    }
+    const datasetKeys = NESTED_HTML_DATASET_KEYS[node.type]
+    if (datasetKeys === undefined) {
+      return
+    }
+    const record = unsafeCast<Record<string, unknown>>(node)
+    for (const key of datasetKeys) {
+      const html = record[key]
+      if (typeof html !== 'string' || html === '') {
+        continue
+      }
+      const rewritten = rewriteHtmlImgSrcs(html, (src) => rewriteAssetReference(src, publicBaseUrl))
+      if (rewritten.changed) {
+        record[key] = rewritten.html
+        changed = true
+      }
+    }
+  })
+  return { state, changed }
+}
+
+/** A canonical Lexical editor state is an object with a `root.children` array. */
+function isLexicalBody(body: unknown): boolean {
+  return isRecord(body) && isRecord(body.root) && Array.isArray(body.root.children)
+}
+
+/**
+ * Writes a rewritten Lexical body and re-derives the three projection
+ * columns through the same machinery the R15 executor uses
+ * (`computeBodyProjections`) — without it `body_html` keeps embedding the old
+ * baked URLs and the backfill is pointless on the read path. The derivation
+ * is best-effort (the save-pipeline convention): a failure writes the body
+ * alone and leaves the stale columns in place with a warning.
+ */
+async function persistRewrittenLexicalRow(db: Database, id: number, state: LexicalEditorState): Promise<void> {
+  let projections: { bodyHtml: string; bodyText: string; bodyHtmlFeed: string } | null = null
+  try {
+    projections = await computeBodyProjections(state)
+  } catch (error) {
+    log.warn('Projection re-derivation failed; writing the rewritten body only', { id, error: String(error) })
+  }
+  await db
+    .update(content)
+    .set(
+      projections === null
+        ? { body: state }
+        : {
+            body: state,
+            bodyHtml: projections.bodyHtml,
+            bodyText: projections.bodyText,
+            bodyHtmlFeed: projections.bodyHtmlFeed,
+          },
+    )
+    .where(eq(content.id, id))
 }
 
 /** Rewrite one stored cover/poster URL; `null` when unchanged or not ours. */
@@ -141,22 +300,44 @@ async function currentPublicBaseUrl(db: Database): Promise<string | null> {
 
 /**
  * The rewrite engine. Idempotent: rewritten values resolve to themselves, so
- * a second run updates zero rows. A malformed row logs and skips — the rest
- * of the corpus still backfills.
+ * a second run updates zero rows. Bodies dispatch per row on the storage
+ * format (PT array / Lexical state); a row that is neither — or that throws —
+ * logs, counts as skipped, and the rest of the corpus still backfills.
  */
 export async function backfillStorageAssetUrls(db: Database): Promise<AssetUrlBackfillResult> {
   const publicBaseUrl = await currentPublicBaseUrl(db)
-  const result: AssetUrlBackfillResult = { contentRows: 0, posts: 0, pages: 0, friends: 0, categories: 0 }
+  const result: AssetUrlBackfillResult = {
+    contentRows: 0,
+    posts: 0,
+    pages: 0,
+    friends: 0,
+    categories: 0,
+    skippedContentRows: 0,
+  }
 
   const contentRows = await db.select({ id: content.id, body: content.body }).from(content)
   for (const row of contentRows) {
     try {
-      const { body, changed } = rewriteBodyAssetUrls(unsafeCast<PortableTextBody>(row.body), publicBaseUrl)
-      if (changed) {
-        await db.update(content).set({ body }).where(eq(content.id, row.id))
-        result.contentRows += 1
+      if (Array.isArray(row.body)) {
+        const { body, changed } = rewriteBodyAssetUrls(unsafeCast<PortableTextBody>(row.body), publicBaseUrl)
+        if (changed) {
+          await db.update(content).set({ body }).where(eq(content.id, row.id))
+          result.contentRows += 1
+        }
+        continue
       }
+      if (isLexicalBody(row.body)) {
+        const { state, changed } = rewriteLexicalBodyAssetUrls(unsafeCast<LexicalEditorState>(row.body), publicBaseUrl)
+        if (changed) {
+          await persistRewrittenLexicalRow(db, row.id, state)
+          result.contentRows += 1
+        }
+        continue
+      }
+      result.skippedContentRows += 1
+      log.warn('Skipping content row with unrecognized body shape', { id: row.id })
     } catch (error) {
+      result.skippedContentRows += 1
       log.warn('Skipping content row with unrewritable body', { id: row.id, error: String(error) })
     }
   }
@@ -221,7 +402,9 @@ async function rewriteCategoryCovers(db: Database, publicBaseUrl: string | null)
 
 /**
  * Flag-gated boot entry point: runs the backfill once per database, persists
- * the flag only on success, and swallows failures (logged; retried next boot).
+ * the flag only when the run finishes with ZERO skipped rows (a partial run
+ * is not a success — the flag stays unwritten and the next boot retries),
+ * and swallows failures (logged; retried next boot).
  */
 export async function runAssetUrlBackfillOnceAtBoot(db: Database): Promise<void> {
   try {
@@ -229,6 +412,10 @@ export async function runAssetUrlBackfillOnceAtBoot(db: Database): Promise<void>
       return
     }
     const result = await backfillStorageAssetUrls(db)
+    if (result.skippedContentRows > 0) {
+      log.warn('Storage asset URL backfill skipped rows; flag withheld, retrying next boot', { ...result })
+      return
+    }
     upsertSetting(db, { completedAt: new Date().toISOString(), ...result }, null, BOOT_FLAG_SCOPE)
     log.info('Storage asset URL backfill completed', { ...result })
   } catch (error) {
