@@ -333,6 +333,37 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       expect(honoPlugin.configureServer).toHaveBeenCalledWith(built.server)
     })
 
+    it('excludes workspace-package module URLs (/packages/*) so vite serves them', async () => {
+      // Regression: pnpm-linked packages resolve to their realpath, so vite
+      // rewrites `@inkling/editor` imports to `/packages/inkling/dist/…` —
+      // without an exclude the app swallows the request and every dynamic
+      // editor import 404s in dev.
+      const plugin = reactRouterHonoServer()
+      const cfg = viteUserConfig(reactRouterContext())
+      const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
+      await config(cfg, {} as never)
+
+      honoDevServerMock.mockReturnValueOnce({ configureServer: vi.fn() })
+      const configureServer = plugin.configureServer as (server: unknown) => Promise<void>
+      await configureServer(fakeServer().server)
+
+      const options = honoDevServerMock.mock.calls[0]![0] as { exclude: Array<RegExp | string> }
+      // String entries are glob-ish patterns targeting the appDirectory
+      // (asserted separately); RegExp entries evaluate directly.
+      const regexes = options.exclude.filter((pattern): pattern is RegExp => pattern instanceof RegExp)
+      const strings = options.exclude.filter((pattern): pattern is string => typeof pattern === 'string')
+      for (const pattern of strings) {
+        expect(pattern.startsWith('^(?=\\/app')).toBe(true)
+      }
+      const excluded = (url: string) => regexes.some((pattern) => pattern.test(url))
+      expect(excluded('/packages/inkling/dist/editor.js')).toBe(true)
+      expect(excluded('/packages/inkling/dist/chunks/collab.js')).toBe(true)
+      expect(excluded('/app/routes/public/home.tsx')).toBe(true)
+      expect(excluded('/node_modules/.vite/deps/react.js')).toBe(true)
+      expect(excluded('/posts/yume')).toBe(false)
+      expect(excluded('/feed')).toBe(false)
+    })
+
     it('coerces undefined remote address/port/family to "unknown"', async () => {
       const plugin = reactRouterHonoServer()
       const cfg = viteUserConfig(reactRouterContext())

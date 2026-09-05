@@ -167,6 +167,12 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
           /\?import(\?.*)?$/,
           /^\/@.+$/,
           /^\/node_modules\/.*/,
+          // Workspace-linked packages resolve through their pnpm symlink to
+          // the realpath, so vite rewrites e.g. `@inkling/editor` imports to
+          // root-relative `/packages/inkling/dist/editor.js` URLs — those
+          // module requests must reach vite, not the app (without this the
+          // app 404s them and every dynamic editor import fails in dev).
+          /^\/packages\/.*/,
           `^(?=\\/${pluginConfig.appDirectory.replace(/^[/\\]+|[/\\]+$/g, '').replace(/[/\\]+/g, '/')}/**/.*/**)`,
           `^(?=\\/${
             pluginConfig.appDirectory
