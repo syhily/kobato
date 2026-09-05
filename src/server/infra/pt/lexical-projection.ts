@@ -171,6 +171,22 @@ function renderOptions(feed: boolean): LexicalStateToHtmlOptions {
 }
 
 /**
+ * Renders a node fragment (not a full state) to full-fidelity HTML — the
+ * R15 backfill builds the solution / two-column / footnotedefinition
+ * nested-editor `content` datasets this way: PT nested blocks convert to a
+ * Lexical fragment first (bespoke direct mapping), and THIS pass is the
+ * target-side render of that fragment (not an HTML round-trip of the
+ * source). Same node registration and render env as the body projection.
+ */
+export async function renderLexicalFragmentHtml(children: LexicalEditorState['root']['children']): Promise<string> {
+  const state: LexicalEditorState = {
+    root: { type: 'root', version: 1, children, direction: 'ltr', format: '', indent: 0 },
+  }
+  const renderable = toProjectionState(state, { feed: false, renderableHostCardTypes: RENDERABLE_HOST_CARD_TYPES })
+  return lexicalStateToHtml(renderable, renderOptions(false))
+}
+
+/**
  * The plain-text leg alone (`body_text`) — the search indexer and any other
  * caller that needs the corpus without paying for the two jsdom HTML passes.
  * Throws on render failure, like {@link computeBodyProjections}.

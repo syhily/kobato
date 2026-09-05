@@ -14,11 +14,15 @@ import { rescheduleBackup } from '@/server/domains/backup/scheduler'
 import { wireBackupSnapshots } from '@/server/domains/backup/services/backup'
 import { sweepStaleRestoreDirs } from '@/server/domains/backup/services/restore'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
+import { hashContent } from '@/server/domains/comments/services/mutate'
 import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,
 } from '@/server/domains/content/services/asset-url-backfill'
+import { runPtLexicalBackfillAtBoot } from '@/server/domains/content/services/pt-lexical-backfill'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
+import { reindexSearchToCompletion } from '@/server/domains/posts/services/search-reindex'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { registerSectionChangeHandler } from '@/server/domains/settings/services/section-changes'
@@ -158,8 +162,15 @@ if (!migrationsRanInHmr()) {
 // One-time rewrite of legacy baked CDN-absolute asset URLs to the site-owned
 // `/storage/<key>` form — flag-gated and failure-swallowing inside; fire-and-
 // forget so boot never waits on (or fails on) the corpus scan.
+// The R15 PT→Lexical backfill rides the same pattern; while its BOOT_MODE is
+// 'dry-run' it only counts legacy rows and warns (R15b flips it to 'apply').
 if (!isVitest()) {
   void runAssetUrlBackfillOnceAtBoot(getDb())
+  void runPtLexicalBackfillAtBoot(getDb(), {
+    resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(getDb(), playerIds),
+    hashCommentContent: hashContent,
+    reindexSearchIndex: () => reindexSearchToCompletion(getDb()),
+  })
 }
 
 // The priority-0 shutdown hook (after the priority-100 batcher flushes) lives in the ManagedEngine.

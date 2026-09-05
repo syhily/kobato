@@ -83,3 +83,28 @@ export async function reindexSearchBatch(db: Database, input: ReindexBatchInput 
 
   return { processed, failed, total, nextOffset }
 }
+
+/**
+ * Drives `reindexSearchBatch` to completion (the bare call processes one
+ * batch only). Idempotent — the R15 backfill runs it after converting the
+ * legacy PT rows the indexer refused.
+ */
+export async function reindexSearchToCompletion(
+  db: Database,
+): Promise<{ processed: number; failed: number; total: number }> {
+  let offset = 0
+  let processed = 0
+  let failed = 0
+  let total = 0
+  for (;;) {
+    const batch = await reindexSearchBatch(db, { offset, batchSize: 50 })
+    processed += batch.processed
+    failed += batch.failed
+    total = batch.total
+    if (batch.nextOffset === null) {
+      break
+    }
+    offset = batch.nextOffset
+  }
+  return { processed, failed, total }
+}
