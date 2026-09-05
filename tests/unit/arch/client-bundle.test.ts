@@ -67,7 +67,12 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   {
     name: 'sanitize-html',
     reason: 'pulls postcss/source-map-js and node builtins',
-    // Swapped client-side to the DOMPurify engine by the `sanitize-html-engine-alias` plugin (vite.config.ts).
+    // Server-only boundaries: feed generator and comment email.
+  },
+  {
+    name: 'jsdom',
+    reason: 'server-side DOM for the sanitize engine and inkling headless projections',
+    // Swapped client-side to the browser engine by the `sanitize-html-engine-alias` plugin (vite.config.ts).
     allowedIn: ['src/ui/lib/sanitize-html-engine.node.ts'],
   },
   // sanitize-html's transitive leak chain — not direct deps, kept pre-armed.
