@@ -71,12 +71,6 @@ importers:
       '@orpc/server':
         specifier: ^1.15.0
         version: 1.15.0(ws@8.21.3)
-      '@portabletext/react':
-        specifier: ^8.0.1
-        version: 8.0.1(react@19.2.8)
-      '@portabletext/to-html':
-        specifier: ^6.0.0
-        version: 6.0.0
       '@react-router/dev':
         specifier: ^8.3.1
         version: 8.3.1(react-router@8.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@7.2.0)(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
@@ -2363,24 +2357,6 @@ packages:
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
-
-  '@portabletext/react@8.0.1':
-    resolution: {integrity: sha512-Fy9UxVhppgEckEvczZytg4bBxiPcZIM49NrJ3sizEoz19aNzJWEYoUj7f3TI94907psEk0yfR145eoOgkedM2A==}
-    engines: {node: '>=22.12'}
-    peerDependencies:
-      react: ^19
-
-  '@portabletext/to-html@6.0.0':
-    resolution: {integrity: sha512-kMqr55pJDBsIyOHLeVccFMFfJxSdozS+A1TeYhiihIinSDhb6ibUxpQIpg0B1n54vZJJW8rDs+QayP3vQqLKUg==}
-    engines: {node: '>=22.12'}
-
-  '@portabletext/toolkit@6.0.0':
-    resolution: {integrity: sha512-+qSqe0KnefuZfNLUhzQRTpbSKxslZof+3pNwxg0DC8dfZ1yLKyyBUw6iR7EpDL+SJlrnpiBfEcfmEuFitK1NSQ==}
-    engines: {node: '>=22.12'}
-
-  '@portabletext/types@4.0.2':
-    resolution: {integrity: sha512-djfIGU9n6DRrunlvj2nIDAp17URo/nA4jSXGvf+Gupx8NLLy9fmJBZ3GL8yhqn9lSVc+cKCharjOa3aOBnWbRw==}
-    engines: {node: '>=20.19 <22 || >=22.12'}
 
   '@preact/signals-core@1.14.4':
     resolution: {integrity: sha512-HNB6HYeYKhQbJ1aKl+YRjrS4+QWHLKX6qKoUsfS/m0vqzsVaEBiZiaKbG/e+NKk2ch5ALQr/ihWaMHxiCuuWHA==}
@@ -7672,23 +7648,6 @@ snapshots:
       tsyringe: 4.10.0
 
   '@pinojs/redact@0.4.0': {}
-
-  '@portabletext/react@8.0.1(react@19.2.8)':
-    dependencies:
-      '@portabletext/toolkit': 6.0.0
-      '@portabletext/types': 4.0.2
-      react: 19.2.8
-
-  '@portabletext/to-html@6.0.0':
-    dependencies:
-      '@portabletext/toolkit': 6.0.0
-      '@portabletext/types': 4.0.2
-
-  '@portabletext/toolkit@6.0.0':
-    dependencies:
-      '@portabletext/types': 4.0.2
-
-  '@portabletext/types@4.0.2': {}
 
   '@preact/signals-core@1.14.4': {}
 

@@ -62,16 +62,16 @@ server or client boundary catch and log it.
   projection (headless `generateDecoratorNode`) and the client card assembly
   (`.` entry + `defineCard`) — two class objects, one spec, because the dist
   entries ship separate Lexical copies.
-- `pt/` — PortableText schema, semantics, footnote-merge, the footnote anchor
-  DOM contract (`footnote-anchors`), editor↔storage footnote sync
-  (`footnote-sync`), and the heading style↔level table (`heading-levels`). The legacy comment
-  dialect (`comment-schema`) still types pre-R12 comment rows — the mail
-  templates render them via `comment-to-html` until R14 and
-  `commentBodyPlainText` dual-reads them until the body backfill lands. (The
-  request-scoped enriched-body overlay and the PT SSR renderer were retired
-  in R13 with the switch to the saved `bodyHtml` projection; the PT ↔ ProseMirror bridge
-  and `comment-markdown` were retired in R12 with the tiptap comment
-  editor.)
+- `pt/` — LEGACY: the PortableText schema (`schema`, `comment-schema`), the
+  heading style↔level table (`heading-levels`), and the tree walkers/validators
+  in `utils` survive ONLY for pre-Lexical `content.body` / comment rows — the
+  R15 backfill converts them row-by-row (validating against these schemas) and
+  then retires the whole directory. The legacy comment dialect still types
+  pre-R12 comment rows: the mail path degrades them to escaped plain text and
+  `commentBodyPlainText` dual-reads them until that backfill lands. No new
+  consumer may import from `pt/`. (The PT SSR renderer, footnote machinery,
+  and `semantics` were retired in R14; the request-scoped enriched-body overlay
+  went in R13; the PT ↔ ProseMirror bridge and `comment-markdown` in R12.)
 - `route-warmup/` — warmup manifest file contract (parse, validate,
   chunk collection) shared by the build plugin and the SSR reader.
 - `sea/` — SEA embedded-asset key contract (single owner for the writer

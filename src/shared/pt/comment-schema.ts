@@ -8,6 +8,9 @@ import {
   textBlockSchema,
 } from '@/shared/pt/schema'
 
+// LEGACY (R14): types pre-R12 comment rows only; the R15 comment backfill
+// converts them to Lexical and retires this module.
+//
 // Strict PortableText subset for comment bodies — the server perimeter validates every
 // incoming body. Allowed: `normal` / `blockquote` styles, lists to level 4, `code` +
 // `mathBlock`, markDefs `link` + `mathInline`, standard decorators.

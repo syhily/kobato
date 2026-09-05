@@ -53,6 +53,21 @@ export function isFeedVariantRender(context: CardRenderContext): boolean {
 }
 
 /**
+ * Feed-variant URL rule (PT rssMode `absolutizeAssetSrc` parity): feed
+ * readers resolve URLs on another origin, so origin-relative media srcs join
+ * the site origin. The site origin reaches the renderers through the image
+ * render env (`resolveKobatoImageRenderEnv` — answered for both projection
+ * passes; the feed variant consumes only its `siteOrigin`).
+ */
+export function absolutizeAssetSrcForFeed(src: string, siteOrigin: string | undefined): string {
+  if (!src.startsWith('/') || src.startsWith('//') || siteOrigin === undefined || siteOrigin === '') {
+    return src
+  }
+  const origin = siteOrigin.endsWith('/') ? siteOrigin.slice(0, -1) : siteOrigin
+  return `${origin}${src}`
+}
+
+/**
  * Builds one element from an HTML template string — the host-side
  * counterpart of inkling's internal `getFirstHtmlElement`. The template
  * must root at exactly one element.

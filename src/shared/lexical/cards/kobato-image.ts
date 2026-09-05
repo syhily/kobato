@@ -14,17 +14,17 @@
 // `generateDecoratorNode` class declared from the full 12-property list
 // below). The two class objects never cross entries.
 //
-// The full-fidelity export markup mirrors the PT public renderer
-// (`src/ui/pt/render-blocks.tsx` ImageBlockComponent + `blocks/BlockImage`):
-// layout-classed figure, lazy/async img with the dark-mode dim class,
-// data-thumbhash, 100vw sizes + the [256,512,768,1024] srcset (when the
-// render env supplies the assets/site facts), and the SSR-visible
-// aspect-ratio fallback for dimensionless images. The feed variant
-// reproduces PT rssMode (`src/server/render/pt-html.ts` renderImageBlock).
+// The full-fidelity export markup mirrors the retired PT public renderer
+// (R13 deleted `src/ui/pt/`): layout-classed figure, lazy/async img with the
+// dark-mode dim class, data-thumbhash, 100vw sizes + the [256,512,768,1024]
+// srcset (when the render env supplies the assets/site facts), and the
+// SSR-visible aspect-ratio fallback for dimensionless images. The feed
+// variant reproduces the retired PT rssMode figure.
 
 import type { CardImportSpec, DecoratorNodeProperty } from '@inkling/editor/headless'
 
 import {
+  absolutizeAssetSrcForFeed,
   type CardRenderContext,
   type CardRenderOutput,
   elementFromHtml,
@@ -141,16 +141,6 @@ export interface KobatoImageDataset {
   layout: string
 }
 
-/** pt-html.ts absolutizeAssetSrc parity: feed readers resolve URLs on
- * another origin, so origin-relative srcs join the site origin. */
-function absolutizeForFeed(src: string, siteOrigin: string | undefined): string {
-  if (!src.startsWith('/') || src.startsWith('//') || siteOrigin === undefined || siteOrigin === '') {
-    return src
-  }
-  const origin = siteOrigin.endsWith('/') ? siteOrigin.slice(0, -1) : siteOrigin
-  return `${origin}${src}`
-}
-
 /**
  * The exportDOM render (both variants). Full fidelity: the PT figure markup.
  * Feed: the bare PT rssMode figure (no classes, no thumbhash/srcset; caption
@@ -178,7 +168,7 @@ export function renderKobatoImageNode(node: KobatoImageDataset, context: CardRen
     const caption = captionText === '' ? '' : `<figcaption>${escape(captionText)}</figcaption>`
     const element = elementFromHtml(
       document,
-      `<figure><img src="${escape(absolutizeForFeed(src, resolveKobatoImageRenderEnv(context)?.siteOrigin))}"${alt}${widthAttr}${heightAttr} />${caption}</figure>`,
+      `<figure><img src="${escape(absolutizeAssetSrcForFeed(src, resolveKobatoImageRenderEnv(context)?.siteOrigin))}"${alt}${widthAttr}${heightAttr} />${caption}</figure>`,
       'image',
     )
     return { element, type: 'outer' }

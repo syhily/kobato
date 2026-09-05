@@ -3,7 +3,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 // Mock the IndexedDB-backed draft store; each test programs the return values.
 const draftStore = vi.hoisted(() => ({
@@ -24,37 +24,45 @@ vi.mock('@/client/lib/draft-store', () => ({
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
 import { FakeBroadcastChannel } from '#/_helpers/fake-broadcast-channel'
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { draftEditKey, useDraftSession, type UseDraftSessionArgs } from '@/client/lib/draft-session'
 import { DRAFT_STORAGE_VERSION, type DraftRecord } from '@/client/lib/draft-store'
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
 // Shared draft-session invariants exercised once at the seam; the hook
 // adapters' suites only cover keying and migration on top of this.
 
 const KEY = 'cms-post-draft:1:rev1'
 
-type Loaded = { body: PortableTextBody; savedAt: number }
+type Loaded = { body: LexicalEditorState; savedAt: number }
 
-function mapLoaded(record: DraftRecord, parsedBody: PortableTextBody): Loaded {
+function mapLoaded(record: DraftRecord, parsedBody: LexicalEditorState): Loaded {
   return { body: parsedBody, savedAt: record.savedAt }
 }
 
 function makeArgs(
-  overrides: Partial<UseDraftSessionArgs<PortableTextBody, Loaded>> = {},
-): UseDraftSessionArgs<PortableTextBody, Loaded> {
+  overrides: Partial<UseDraftSessionArgs<LexicalEditorState, Loaded>> = {},
+): UseDraftSessionArgs<LexicalEditorState, Loaded> {
   return {
     key: KEY,
     broadcastName: 'test-bc',
     draftType: 'post-edit',
-    bodySchema: portableTextBodySchema,
-    body: [],
+    bodySchema: lexicalEditorStateSchema,
+    body: emptyLexicalBody(),
     mapLoaded,
     ...overrides,
   }
 }
 
 function storedRecord(overrides: Record<string, unknown> = {}) {
-  return { key: KEY, type: 'post-edit', body: [], savedAt: 9, version: DRAFT_STORAGE_VERSION, ...overrides }
+  return {
+    key: KEY,
+    type: 'post-edit',
+    body: emptyLexicalBody(),
+    savedAt: 9,
+    version: DRAFT_STORAGE_VERSION,
+    ...overrides,
+  }
 }
 
 // Flush the microtask queue inside act so state updates commit before asserting.
@@ -87,7 +95,7 @@ describe('useDraftSession — load and validate-or-purge', () => {
     const { result } = renderHook(() => useDraftSession(makeArgs()))
     await flushDraftEffects()
     expect(draftStore.get).toHaveBeenCalledWith(KEY)
-    expect(result.current.loadedDraft).toEqual({ body: [], savedAt: 123 })
+    expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 123 })
     expect(draftStore.remove).not.toHaveBeenCalled()
   })
 
@@ -107,7 +115,7 @@ describe('useDraftSession — load and validate-or-purge', () => {
   })
 
   it('purges a record whose body fails the schema', async () => {
-    draftStore.get.mockResolvedValue(storedRecord({ body: 'not-portable-text' }))
+    draftStore.get.mockResolvedValue(storedRecord({ body: 'not-a-lexical-state' }))
     const { result } = renderHook(() => useDraftSession(makeArgs()))
     await flushDraftEffects()
     expect(draftStore.remove).toHaveBeenCalledWith(KEY)
@@ -128,12 +136,12 @@ describe('useDraftSession — load and validate-or-purge', () => {
       initialProps: { key: 'a' as string | null },
     })
     await flushDraftEffects()
-    expect(result.current.loadedDraft).toEqual({ body: [], savedAt: 1 })
+    expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 1 })
 
     rerender({ key: 'b' })
     await flushDraftEffects()
     expect(draftStore.get).toHaveBeenCalledWith('b')
-    expect(result.current.loadedDraft).toEqual({ body: [], savedAt: 2 })
+    expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 2 })
 
     // Re-rendering with the same key must not read again.
     const reads = draftStore.get.mock.calls.length
@@ -145,8 +153,8 @@ describe('useDraftSession — load and validate-or-purge', () => {
 
 describe('useDraftSession — persist gating', () => {
   it('never writes before the initial load completes', async () => {
-    const pendingBody = ['pending'] as unknown as PortableTextBody
-    const settledBody = ['settled'] as unknown as PortableTextBody
+    const pendingBody = { root: 'pending' } as unknown as LexicalEditorState
+    const settledBody = { root: 'settled' } as unknown as LexicalEditorState
     let resolveGet: ((value: unknown) => void) | undefined
     draftStore.get.mockImplementation(
       () =>
@@ -155,7 +163,7 @@ describe('useDraftSession — persist gating', () => {
         }),
     )
     const { rerender } = renderHook(({ body }) => useDraftSession(makeArgs({ body })), {
-      initialProps: { body: [] as PortableTextBody },
+      initialProps: { body: emptyLexicalBody() },
     })
 
     // A body change while the load is still pending must not persist.
@@ -186,9 +194,9 @@ describe('useDraftSession — persist gating', () => {
 
   it('persists meta alongside the body when provided', async () => {
     const meta = { title: 'Hello' }
-    const changedBody = ['changed'] as unknown as PortableTextBody
+    const changedBody = { root: 'changed' } as unknown as LexicalEditorState
     const { rerender } = renderHook(({ body }) => useDraftSession(makeArgs({ body, meta })), {
-      initialProps: { body: [] as PortableTextBody },
+      initialProps: { body: emptyLexicalBody() },
     })
     await flushDraftEffects()
 
@@ -297,6 +305,6 @@ describe('useDraftSession — inactive key', () => {
     rerender({ key: KEY })
     await flushDraftEffects()
     expect(draftStore.get).toHaveBeenCalledWith(KEY)
-    expect(result.current.loadedDraft).toEqual({ body: [], savedAt: 9 })
+    expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 9 })
   })
 })

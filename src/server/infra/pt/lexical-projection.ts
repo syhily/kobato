@@ -161,13 +161,23 @@ function renderOptions(feed: boolean): LexicalStateToHtmlOptions {
       return undefined
     },
     resolveExportPolicy: (key) => {
-      // Footnotes section heading — the same source `pt-html.ts` reads.
+      // Footnotes section heading — the same source the retired PT renderer read.
       if (key === 'footnotes-section-title') {
         return resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
       }
       return undefined
     },
   }
+}
+
+/**
+ * The plain-text leg alone (`body_text`) — the search indexer and any other
+ * caller that needs the corpus without paying for the two jsdom HTML passes.
+ * Throws on render failure, like {@link computeBodyProjections}.
+ */
+export function computeBodyText(state: LexicalEditorState): string {
+  const renderable = toProjectionState(state, { feed: false, renderableHostCardTypes: RENDERABLE_HOST_CARD_TYPES })
+  return lexicalStateToPlainText(renderable, { nodes: PROJECTION_EXTRA_NODES, onError: failFast })
 }
 
 /**

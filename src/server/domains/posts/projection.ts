@@ -19,7 +19,7 @@ export function toCmsPost(
     categoryName?: string
   } = {},
 ): Post {
-  const { body, bodyHtml, bodyState, imageSources, headings } = readRevisionProjection(publishedRevision)
+  const { bodyHtml, bodyHtmlFeed, bodyState, imageSources, headings } = readRevisionProjection(publishedRevision)
 
   // Compose from `toClientPostFromMeta`; only revision-joined fields are
   // stated here — `headings` overrides the projection's empty default.
@@ -27,8 +27,8 @@ export function toCmsPost(
     ...toClientPostFromMeta(meta, options.tags ?? [], options.categoryName ?? ''),
     coverThumbhash: options.coverThumbhash,
     headings,
-    body,
     bodyHtml,
+    bodyHtmlFeed,
     bodyState,
     imageSources,
     publishedRevisionId: meta.publishedRevisionId,

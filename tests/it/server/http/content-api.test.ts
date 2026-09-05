@@ -1,9 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -32,17 +33,10 @@ async function seedTag(name: string, slug: string): Promise<number> {
   return rows[0]!.id
 }
 
-const publishedBody: PortableTextBody = [
-  {
-    _type: 'block',
-    _key: 'p1',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's1', text: 'Published body.' }],
-  },
-]
+const publishedBody: LexicalEditorState = lexicalBodyWith([lexicalParagraph('Published body.')])
 
 async function seedPost(
-  opts: Partial<typeof postTable.$inferInsert> & { body?: PortableTextBody } = {},
+  opts: Partial<typeof postTable.$inferInsert> & { body?: LexicalEditorState } = {},
 ): Promise<number> {
   const { body, ...meta } = opts
   const rows = await db
@@ -61,7 +55,7 @@ async function seedPost(
   const postId = rows[0]!.id
   const revisions = await db
     .insert(contentTable)
-    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: body ?? [] })
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: body ?? lexicalBodyWith([]) })
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
@@ -81,7 +75,7 @@ async function seedDraftPost(slug: string, title: string): Promise<number> {
 }
 
 async function seedPage(
-  opts: Partial<typeof pageTable.$inferInsert> & { body?: PortableTextBody; draftBody?: PortableTextBody } = {},
+  opts: Partial<typeof pageTable.$inferInsert> & { body?: LexicalEditorState; draftBody?: LexicalEditorState } = {},
 ): Promise<number> {
   const { body, draftBody, ...meta } = opts
   const rows = await db
@@ -99,7 +93,7 @@ async function seedPage(
   if (meta.published ?? true) {
     const revisions = await db
       .insert(contentTable)
-      .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: body ?? [] })
+      .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: body ?? lexicalBodyWith([]) })
       .returning({ id: contentTable.id })
     await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   }
@@ -356,8 +350,8 @@ describe('content.pages.bySlug', () => {
     expect(typeof json.etag).toBe('string')
     expect(json.payload.page.permalink).toBe('/about')
     expect(json.payload.showFriends).toBe(false)
-    // PT-seeded legacy rows carry no projection columns and no Lexical state,
-    // so the bodyHtml fallback resolves to the empty string.
+    // Seeded with an empty Lexical body and no projection columns, so the
+    // compute-on-read fallback resolves to the empty string.
     expect(json.payload.bodyHtml).toBe('')
   })
 

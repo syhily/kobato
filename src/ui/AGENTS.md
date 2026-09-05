@@ -142,10 +142,11 @@ unrelated concerns.
 
 - Storage format: Lexical editor states (`@/shared/lexical/schema` for posts/pages,
   `@/shared/lexical/comment-schema` for comments). `@/shared/pt/schema` survives only for
-  legacy rows and the comment mail/plain-text paths. The friends grid is NOT a body block —
+  pre-Lexical legacy rows until the R15 backfill converts them. The friends grid is NOT a body block —
   it's the `page.show_friends` toggle.
-- Server-only PT helpers in `@/server/domains/pt/*` (canonicalize, comment-to-html) must never
-  reach the client bundle.
+- Server-only PT helpers (`@/shared/pt/utils` walkers, the R15 backfill converter) must never
+  reach the client bundle; the dual-read helper in `comment-body-helpers.ts` is the one
+  sanctioned client-side reader of legacy rows.
 - Public SSR: bodies arrive as the saved `bodyHtml` projection (NULL falls back to an on-the-fly
   headless projection server-side — see `src/server/AGENTS.md` → Content) and render through
   `DetailBodyChrome` + the hydration hooks listed under Cross-cutting UI modules. Heading anchor

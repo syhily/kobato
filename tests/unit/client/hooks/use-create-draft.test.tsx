@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 // Mock the draft store: program return values per test, capture every call.
 const draftStore = vi.hoisted(() => ({
@@ -20,20 +20,21 @@ vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
 import { FakeBroadcastChannel } from '#/_helpers/fake-broadcast-channel'
 import { renderHook } from '#/_helpers/hook'
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { useCreateDraft, type CreateDraftConfig } from '@/client/hooks/use-create-draft'
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
-const config: CreateDraftConfig<PortableTextBody> = {
+const config: CreateDraftConfig<LexicalEditorState> = {
   keyPrefix: 'cms-post-draft:new:',
   sessionKey: 'cms-post-draft:new:session',
   broadcastName: 'cms-post-draft',
   createType: 'post-create',
   editType: 'post-edit',
   editKeyPrefix: 'cms-post-draft:',
-  bodySchema: portableTextBodySchema,
+  bodySchema: lexicalEditorStateSchema,
 }
 
-const emptyBody: PortableTextBody = []
+const emptyBody: LexicalEditorState = emptyLexicalBody()
 const meta = { title: 'Hello', summary: '' }
 
 // The hook guards storage with `typeof window === 'undefined'`; the SSR
@@ -205,7 +206,7 @@ describe('useCreateDraft — BroadcastChannel unavailable', () => {
 describe('useCreateDraft — stability', () => {
   it('migrateToEditKey / clearDraft keep referential identity across renders', () => {
     installWindow()
-    const results: ReturnType<typeof useCreateDraft<PortableTextBody, typeof meta>>[] = []
+    const results: ReturnType<typeof useCreateDraft<LexicalEditorState, typeof meta>>[] = []
     renderHook(
       () => {
         const r = useCreateDraft(config, { body: emptyBody, meta })

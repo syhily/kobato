@@ -4,25 +4,25 @@ import type { ContentRow } from '@/server/infra/db/types'
 
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 
-const { readBody, readHeadings, readRevisionProjection } = await import('@/server/domains/content/projection-helpers')
+const { readHeadings, readRevisionProjection } = await import('@/server/domains/content/projection-helpers')
 
 function revisionRow(overrides: Partial<ContentRow>): ContentRow {
   // Only the columns the projection reads matter here.
-  return { body: [], bodyHtml: null, imageSources: [], headings: [], ...overrides } as ContentRow
+  return { body: [], bodyHtml: null, bodyHtmlFeed: null, imageSources: [], headings: [], ...overrides } as ContentRow
 }
 
-describe('content/projection-helpers — readRevisionProjection (R13 body routing)', () => {
+describe('content/projection-helpers — readRevisionProjection (R14 body routing)', () => {
   it('returns every field empty for a null revision', () => {
     expect(readRevisionProjection(null)).toEqual({
-      body: [],
       bodyHtml: null,
+      bodyHtmlFeed: null,
       bodyState: null,
       imageSources: [],
       headings: [],
     })
   })
 
-  it('keeps strict PortableText validation for legacy array bodies', () => {
+  it('no longer surfaces legacy array bodies to any read path', () => {
     const body = [
       {
         _type: 'block',
@@ -33,68 +33,44 @@ describe('content/projection-helpers — readRevisionProjection (R13 body routin
       },
     ]
     const result = readRevisionProjection(revisionRow({ body }))
-    expect(result.body).toEqual(body)
-    // PT-era rows predate the projection columns — no compute-on-read state.
+    // PT-era rows predate the projection columns and are never rendered
+    // anymore (R13/R14 ruling; the R15 backfill converts them).
     expect(result.bodyHtml).toBeNull()
+    expect(result.bodyHtmlFeed).toBeNull()
     expect(result.bodyState).toBeNull()
   })
 
-  it('still throws for a corrupted legacy array body', () => {
-    expect(() => readRevisionProjection(revisionRow({ body: [{ _type: 'nope' }] }))).toThrow()
+  it('no longer validates (or throws on) a corrupted legacy array body', () => {
+    const result = readRevisionProjection(revisionRow({ body: [{ _type: 'nope' }] }))
+    expect(result.bodyHtml).toBeNull()
+    expect(result.bodyHtmlFeed).toBeNull()
+    expect(result.bodyState).toBeNull()
   })
 
-  it('surfaces the saved body_html projection for Lexical rows', () => {
+  it('surfaces the saved body_html / body_html_feed projections for Lexical rows', () => {
     const state = emptyLexicalBody()
-    const result = readRevisionProjection(revisionRow({ body: state, bodyHtml: '<p>hi</p>' }))
+    const result = readRevisionProjection(
+      revisionRow({ body: state, bodyHtml: '<p>hi</p>', bodyHtmlFeed: '<p>hi</p>' }),
+    )
     expect(result.bodyHtml).toBe('<p>hi</p>')
-    // PT consumers (feeds until R14) get an empty body instead of a 500.
-    expect(result.body).toEqual([])
-    // No fallback needed — bodyState stays null when the projection exists.
+    expect(result.bodyHtmlFeed).toBe('<p>hi</p>')
+    // No fallback needed — bodyState stays null when both projections exist.
     expect(result.bodyState).toBeNull()
   })
 
-  it('parses the Lexical state for the compute-on-read fallback when body_html is NULL', () => {
+  it('parses the Lexical state for the compute-on-read fallback when a projection column is NULL', () => {
     const state = lexicalBodyWith([lexicalParagraph('hello')])
-    const result = readRevisionProjection(revisionRow({ body: state, bodyHtml: null }))
-    expect(result.body).toEqual([])
+    const result = readRevisionProjection(revisionRow({ body: state, bodyHtml: null, bodyHtmlFeed: null }))
     expect(result.bodyHtml).toBeNull()
+    expect(result.bodyHtmlFeed).toBeNull()
     expect(result.bodyState).toEqual(state)
   })
 
   it('degrades to empty output for an unparseable blob — never throws', () => {
     const result = readRevisionProjection(revisionRow({ body: { root: 'broken' }, bodyHtml: null }))
-    expect(result.body).toEqual([])
     expect(result.bodyHtml).toBeNull()
+    expect(result.bodyHtmlFeed).toBeNull()
     expect(result.bodyState).toBeNull()
-  })
-})
-
-describe('content/projection-helpers — readBody', () => {
-  it('returns empty array for null', () => {
-    expect(readBody(null)).toEqual([])
-  })
-
-  it('returns empty array for undefined', () => {
-    expect(readBody(undefined)).toEqual([])
-  })
-
-  it('returns validated body for a valid portable text array', () => {
-    const body = [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's1', text: 'Hello' }],
-        markDefs: [],
-      },
-    ]
-    const result = readBody(body)
-    expect(result).toEqual(body)
-  })
-
-  it('throws for an invalid non-array value (defensive read path)', () => {
-    // validatePortableTextBody throws ZodError for non-array input
-    expect(() => readBody('not an array')).toThrow()
   })
 })
 

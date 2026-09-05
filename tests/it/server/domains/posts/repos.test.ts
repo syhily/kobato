@@ -246,7 +246,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
     expect(await hydratePostList(db, [])).toEqual([])
   })
-  it('projects metas with tags and an empty body by default', async () => {
+  it('projects metas with tags and empty body projections by default', async () => {
     const tid = await seedTag('React')
     const pid = await seedPost({ slug: 'h-list', publishedRevisionId: 1 })
     await linkTag(pid, tid)
@@ -255,7 +255,8 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     const posts = await hydratePostList(db, rows)
     expect(posts).toHaveLength(1)
     expect(posts[0]?.tags).toEqual(['React'])
-    expect(posts[0]?.body).toEqual([])
+    expect(posts[0]?.bodyHtml).toBeNull()
+    expect(posts[0]?.bodyHtmlFeed).toBeNull()
   })
   it('joins published revisions when revision: published', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
@@ -287,7 +288,8 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     expect(posts[0]?.coverThumbhash).toBe('t')
     // revision defaults to 'none': no body join even though a published
     // revision exists.
-    expect(posts[0]?.body).toEqual([])
+    expect(posts[0]?.bodyHtml).toBeNull()
+    expect(posts[0]?.bodyHtmlFeed).toBeNull()
     expect(posts[0]?.headings).toEqual([])
     expect(posts[0]?.imageSources).toEqual([])
     expect(posts[0]?.publishedRevisionId).toBe(revId)
@@ -314,16 +316,14 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     expect(bySlug.get('h-cat-null')?.category).toBe('')
     expect(bySlug.get('h-cat-dangling')?.category).toBe('')
   })
-  it('joins bodies/headings/imageSources from the published revision', async () => {
-    const body = [
-      { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hi' }] },
-    ]
+  it('joins body projections/headings/imageSources from the published revision', async () => {
     const headings = [{ depth: 2, text: 'Hi', slug: 'hi' }]
     const revId = await seedContent({
       type: 'post',
       revisionNo: 1,
       status: 'published',
-      body,
+      bodyHtml: '<p>Hi</p>',
+      bodyHtmlFeed: '<p>Hi</p>',
       headings,
       imageSources: ['images/x.jpg'],
     })
@@ -333,11 +333,13 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows, { revision: 'published' })
     const bySlug = new Map(posts.map((p) => [p.slug, p]))
-    expect(bySlug.get('h-rev')?.body).toEqual(body)
+    expect(bySlug.get('h-rev')?.bodyHtml).toBe('<p>Hi</p>')
+    expect(bySlug.get('h-rev')?.bodyHtmlFeed).toBe('<p>Hi</p>')
     expect(bySlug.get('h-rev')?.headings).toEqual(headings)
     expect(bySlug.get('h-rev')?.imageSources).toEqual(['images/x.jpg'])
-    // Meta without a published revision id still projects, with an empty body.
-    expect(bySlug.get('h-rev-none')?.body).toEqual([])
+    // Meta without a published revision id still projects, with null body projections.
+    expect(bySlug.get('h-rev-none')?.bodyHtml).toBeNull()
+    expect(bySlug.get('h-rev-none')?.bodyHtmlFeed).toBeNull()
   })
   it('joins revisions but skips covers with revision: published + images: false', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })

@@ -161,6 +161,20 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
       type: 'post',
       revisionNo: 1,
       status: 'published',
+      body: emptyLexicalBody(),
+      bodyText: 'hi',
+    })
+    await seedPost({ slug: 'idx', publishedRevisionId: revId })
+    const { reindexSearchBatch } = await import('@/server/domains/posts/services/search-reindex')
+    const r = await reindexSearchBatch(db)
+    expect(r.processed).toBe(1)
+    expect(r.failed).toBe(0)
+  })
+  it('counts legacy pre-Lexical array bodies as failed (the R15 backfill re-derives them)', async () => {
+    const revId = await seedContent({
+      type: 'post',
+      revisionNo: 1,
+      status: 'published',
       body: [
         {
           _type: 'block',
@@ -170,18 +184,19 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
         },
       ],
     })
-    await seedPost({ slug: 'idx', publishedRevisionId: revId })
+    await seedPost({ slug: 'idx-legacy', publishedRevisionId: revId })
     const { reindexSearchBatch } = await import('@/server/domains/posts/services/search-reindex')
     const r = await reindexSearchBatch(db)
-    expect(r.processed).toBe(1)
-    expect(r.failed).toBe(0)
+    expect(r.processed).toBe(0)
+    expect(r.failed).toBe(1)
   })
   it('respects batchSize for pagination', async () => {
     const revId = await seedContent({
       type: 'post',
       revisionNo: 1,
       status: 'published',
-      body: [],
+      body: emptyLexicalBody(),
+      bodyText: '',
     })
     await seedPost({ slug: 'a', publishedRevisionId: revId })
     await seedPost({ slug: 'b', publishedRevisionId: revId })
@@ -328,14 +343,7 @@ describe('posts/services/search-index — indexPost', () => {
   it('inserts a search index row with no embedding', async () => {
     const pid = await seedPost({ slug: 'idx-post' })
     const { indexPost } = await import('@/server/domains/posts/services/search-index')
-    await indexPost(db, pid, 'Title', 'Summary', [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's1', text: 'body', marks: [] }],
-      },
-    ])
+    await indexPost(db, pid, 'Title', 'Summary', 'body')
     const { postSearchIndex } = await import('@/server/infra/db/schema/content')
     const rows = await db.select().from(postSearchIndex)
     expect(rows).toHaveLength(1)
@@ -639,7 +647,7 @@ describe('posts/services/taxonomy — listPostTitlesByCategoryId / listPostTitle
 })
 
 describe('posts/services/feed — listPublicPostsWithContent', () => {
-  it('returns posts with hydrated PT body', async () => {
+  it('returns posts with the hydrated published revision', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     await seedPost({ slug: 'feed', publishedRevisionId: revId })
     const { listPublicPostsWithContent } = await import('@/server/domains/posts/services/feed')

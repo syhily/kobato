@@ -4,8 +4,9 @@ import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 
-// Projection-layer tests, mock-free (pure data shaping): malformed-body
-// rejection via validatePortableTextBody and a stable DTO shape (id
+// Projection-layer tests, mock-free (pure data shaping): legacy/malformed
+// bodies degrade without throwing (no read path renders them anymore; the
+// R15 backfill converts them) and the DTO shape stays stable (id
 // stringification, ISO dates).
 
 const { toCmsPage } = await import('@/server/domains/pages/projection')
@@ -58,46 +59,43 @@ function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
 }
 
 describe('cms/pages/projection — toCmsPage', () => {
-  it('returns an empty body when there is no published revision', () => {
+  it('returns null body projections when there is no published revision', () => {
     const dto = toCmsPage(metaRow({ id: 1, publishedRevisionId: null }), null)
-    expect(dto.body).toEqual([])
+    expect(dto.bodyHtml).toBeNull()
+    expect(dto.bodyHtmlFeed).toBeNull()
+    expect(dto.bodyState).toBeNull()
     expect(dto.imageSources).toEqual([])
     expect(dto.headings).toEqual([])
     expect(dto.publishedRevisionId).toBeNull()
     expect(dto.permalink).toBe('/about')
   })
 
-  it('joins the published revision body when present', () => {
-    const body = [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'h2',
-        children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
-      },
-    ]
+  it('joins the published revision projections when present', () => {
     const dto = toCmsPage(
       metaRow({ id: 1, publishedRevisionId: 200 }),
       contentRow({
         id: 200,
-        body,
+        bodyHtml: '<h2>Hi</h2>',
+        bodyHtmlFeed: '<h2>Hi</h2>',
         imageSources: ['images/x.jpg'],
         headings: [{ depth: 2, text: 'Hi', slug: 'hi' }],
       }),
     )
-    expect(dto.body).toEqual(body)
+    expect(dto.bodyHtml).toBe('<h2>Hi</h2>')
+    expect(dto.bodyHtmlFeed).toBe('<h2>Hi</h2>')
     expect(dto.imageSources).toEqual(['images/x.jpg'])
     expect(dto.headings).toEqual([{ depth: 2, text: 'Hi', slug: 'hi' }])
     expect(dto.publishedRevisionId).toBe(200)
   })
 
-  it('throws on a malformed jsonb body that bypassed the API perimeter', () => {
-    expect(() =>
-      toCmsPage(
-        metaRow({ id: 1, publishedRevisionId: 200 }),
-        contentRow({ id: 200, body: [{ _type: 'unknown_block', payload: 'foo' }] }),
-      ),
-    ).toThrow()
+  it('degrades a malformed jsonb body without throwing (no read path renders it)', () => {
+    const dto = toCmsPage(
+      metaRow({ id: 1, publishedRevisionId: 200 }),
+      contentRow({ id: 200, body: [{ _type: 'unknown_block', payload: 'foo' }] }),
+    )
+    expect(dto.bodyHtml).toBeNull()
+    expect(dto.bodyHtmlFeed).toBeNull()
+    expect(dto.bodyState).toBeNull()
   })
 
   it('treats malformed imageSources as []', () => {

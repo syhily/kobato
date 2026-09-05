@@ -67,7 +67,7 @@ The shared `loaders/*` helpers are the orchestration layer the content controlle
 
 ## render/
 
-SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `pt-html.ts`, `analytics/`, `warmup/`. Never persists — produces strings, Buffers, or Responses. Caching is the caller's responsibility.
+SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `analytics/`, `warmup/`. Never persists — produces strings, Buffers, or Responses. Caching is the caller's responsibility. The feed generator renders each entry's saved `bodyHtmlFeed` projection (`domains/content/services/body-html.ts::resolveBodyHtmlFeed`, NULL → on-the-fly headless projection) through the `sanitizeFeedHtml` allowlist.
 
 ## Sessions & Request Context
 
@@ -102,6 +102,7 @@ Two embedded engines, zero services:
 - `visible=false` posts: excluded from home/random-post widgets but stay in archives, tags, search, sitemap, feeds.
 - **Draft gate**: a post is public-invisible when `status=draft` OR `publishedRevisionId=null` — all public queries MUST check both. The full "live" gate is defined once in `domains/content/schemas/live-gate.ts` as `isLive` (in-memory) and `liveContentWhere` (SQL). Never hand-assemble the struct.
 - **Body projections (R9b, inkling migration)**: the save pipeline (`domains/content/lifecycle.ts`) computes the revision row's `bodyHtml` / `bodyText` / `bodyHtmlFeed` columns via `infra/pt/lexical-projection.ts` (inkling `./headless` entry, jsdom-backed) over the canonical Lexical state; the feed variant's downgrade (math→TeX, code→plain pre, host-card substitution) is a state-copy transform in `shared/lexical/projection-state.ts`. Projection failure is best-effort (warn + NULL columns), and the no-op save short-circuit skips the computation — the repo/lifecycle share `repos/mutate::isEquivalentToPublishedLatest`.
+- **Projection consumers (R14)**: feeds render the saved `bodyHtmlFeed` (see render/ above); the search index stores the saved `bodyText` plain text (`indexPostFromRevision` re-derives on the fly only when the column is NULL, and refuses legacy pre-Lexical array bodies until the R15 backfill); outbound webmention link extraction walks the Lexical state directly (`domains/webmentions/enqueue.ts::extractExternalLinks`), never the HTML; comment notification emails render the comment's saved degraded-HTML `content` snapshot, sanitized at the email boundary (`domains/comments/services/email.ts::sanitizeCommentEmailHtml`).
 
 ### Slug derivation
 

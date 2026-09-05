@@ -8,8 +8,9 @@ import { sendNewComment } from '@/server/domains/comments/services/email'
 import { post } from '@/server/infra/db/schema/post'
 import { sendTestMail } from '@/server/infra/email/sender'
 
-// `sendNewComment` against the real engine: the slug/title lookup and
-// `commentBodyToHtml` are real; only `fetch` (Zeabur ZSend) is stubbed.
+// `sendNewComment` against the real engine: the slug/title lookup and the
+// saved `content`-projection email body are real; only `fetch` (Zeabur ZSend)
+// is stubbed.
 
 const db = getTestDb()
 
@@ -51,10 +52,32 @@ afterEach(() => {
 })
 
 describe('email/sender — internalSend (via sendNewComment)', () => {
-  // Fixture row used below; the PT body is rendered by the real `commentBodyToHtml`.
+  // Fixture row used below; the email body comes from the saved `content`
+  // degraded-HTML projection column.
   const commentInfo = {
     id: 7,
-    body: [{ _type: 'block', children: [{ _type: 'span', text: 'hello' }] }],
+    body: {
+      root: {
+        type: 'root',
+        version: 1,
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        children: [
+          {
+            type: 'paragraph',
+            version: 1,
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            children: [
+              { type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text: 'hello' },
+            ],
+          },
+        ],
+      },
+    },
+    content: '<p>hello</p>',
     isPending: false,
     user: { id: 1, name: 'visitor', email: 'visitor@example.com' },
   } as unknown as CommentAndUser
@@ -161,7 +184,28 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
 describe('comments email — sendNewComment maps onto the admin-notification seam', () => {
   const commentInfo = {
     id: 7,
-    body: [{ _type: 'block', children: [{ _type: 'span', text: 'hello' }] }],
+    body: {
+      root: {
+        type: 'root',
+        version: 1,
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        children: [
+          {
+            type: 'paragraph',
+            version: 1,
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            children: [
+              { type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text: 'hello' },
+            ],
+          },
+        ],
+      },
+    },
+    content: '<p>hello</p>',
     isPending: false,
     user: { id: 1, name: 'visitor', email: 'visitor@example.com' },
   } as unknown as CommentAndUser
@@ -195,11 +239,50 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
     // Resolved from the seeded post row: slug `hi`, title `Hi`.
     expect(html).toContain('>Hi</a>')
     expect(html).toContain('href="https://example.com/posts/hi/"')
-    // The real `commentBodyToHtml` renders the fixture's PT body inline.
+    // The saved `content` projection lands inline, sanitized.
     expect(html).toContain('<p>hello</p>')
     expect(html).toContain('href="https://example.com/posts/hi/#user-comment-7"')
     // Not pending → no approval note.
     expect(html).not.toContain('该留言需要审核')
+  })
+
+  it('sanitizes the saved projection before injecting it into the email', async () => {
+    const ownerId = await seedTargetPost()
+
+    await sendNewComment(
+      db,
+      { ...commentInfo, content: '<p>hi</p><script>alert(1)</script><a href="javascript:alert(2)">x</a>' },
+      { type: 'post', ownerId },
+    )
+
+    const html = sentBody().html as string
+    expect(html).not.toContain('<script')
+    expect(html).not.toContain('javascript:')
+    expect(html).toContain('<p>hi</p>')
+  })
+
+  it('degrades legacy pre-Lexical array bodies to escaped plain text', async () => {
+    const ownerId = await seedTargetPost()
+    // A pre-R12 row: PT array body, markdown (not HTML) content snapshot.
+    const legacy = {
+      ...commentInfo,
+      body: [
+        {
+          _type: 'block',
+          _key: 'b1',
+          style: 'normal',
+          children: [{ _type: 'span', _key: 's1', text: 'legacy <b>raw</b> text', marks: [] }],
+        },
+      ],
+      content: 'legacy <b>raw</b> text',
+    } as unknown as CommentAndUser
+
+    await sendNewComment(db, legacy, { type: 'post', ownerId })
+
+    const html = sentBody().html as string
+    // Plain text, escaped — the markdown snapshot is NOT injected as HTML.
+    expect(html).toContain('legacy &lt;b&gt;raw&lt;/b&gt; text')
+    expect(html).not.toContain('<b>raw</b>')
   })
 
   it('adds the approval note for pending comments', async () => {

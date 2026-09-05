@@ -9,11 +9,10 @@
 // objects, one spec — the dist entries ship separate Lexical copies, so a
 // shared class object would fail the entries' `instanceof` gates.
 //
-// The exported markup mirrors the existing public renderer
-// (`src/ui/pt/blocks/Solution.tsx`) class-for-class: R13 renders the
-// projection's `bodyHtml` directly, so exportDOM IS the future public
-// render. The feed variant unwraps to the bare content HTML, matching the
-// PT rssMode behavior (`src/server/render/pt-html.ts`).
+// The exported markup mirrors the retired PT public renderer (R13 deleted
+// `src/ui/pt/`) class-for-class: R13 renders the projection's `bodyHtml`
+// directly, so exportDOM IS the public render. The feed variant unwraps to
+// the bare content HTML, matching the retired PT rssMode behavior.
 
 import type { DecoratorNodeProperty } from '@inkling/editor/headless'
 

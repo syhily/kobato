@@ -29,3 +29,28 @@ export async function resolveBodyHtml(source: {
     return ''
   }
 }
+
+/**
+ * The feed twin of {@link resolveBodyHtml}: serves the saved `body_html_feed`
+ * (rssMode-degraded) projection, computing it on read when the column is
+ * NULL. Never throws — a feed entry degrades to an empty body rather than
+ * 500ing the whole feed.
+ */
+export async function resolveBodyHtmlFeed(source: {
+  bodyHtmlFeed: string | null
+  bodyState: LexicalEditorState | null
+}): Promise<string> {
+  if (source.bodyHtmlFeed !== null) {
+    return source.bodyHtmlFeed
+  }
+  if (source.bodyState === null) {
+    return ''
+  }
+  try {
+    const projections = await computeBodyProjections(source.bodyState)
+    return projections.bodyHtmlFeed
+  } catch (error) {
+    log.warn('body_html_feed projection fallback failed; rendering empty body', { error })
+    return ''
+  }
+}

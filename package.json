@@ -78,8 +78,6 @@
     "@orpc/client": "^1.15.0",
     "@orpc/react-query": "^1.15.0",
     "@orpc/server": "^1.15.0",
-    "@portabletext/react": "^8.0.1",
-    "@portabletext/to-html": "^6.0.0",
     "@react-router/dev": "^8.3.1",
     "@react-router/node": "^8.3.1",
     "@shikijs/transformers": "^4.4.3",

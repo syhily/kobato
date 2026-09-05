@@ -1,48 +1,51 @@
 import type { Database } from '@/server/infra/db/database'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { wirePostPublishHook } from '@/server/domains/posts/publish-hooks'
 import { rescheduleWebmentionOutbox } from '@/server/domains/webmentions/outbox-scheduler'
 import { normalizeForMatch } from '@/server/domains/webmentions/verify'
 import { upsertWebmentionOutbox } from '@/server/infra/db/operations/webmention-outbox'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { visitLexicalNodes } from '@/shared/lexical/walk'
 import { entityCommentUrl } from '@/shared/utils/paths'
 import { tryParseUrl } from '@/shared/utils/safe-url'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Backstop against pathological bodies (admin-written), nothing more.
 export const MAX_OUTBOUND_LINKS_PER_POST = 50
 
 /**
- * External http(s) `link` markDef hrefs, deduped, normalized like the
- * receive side, excluding links back to this site.
+ * External http(s) link/autolink node URLs, deduped, normalized like the
+ * receive side, excluding links back to this site. Both node types count:
+ * an autolink is a real outbound `<a>` in the rendered page (the webmention
+ * source document), so it deserves the same discovery as an explicit link.
  */
-export function extractExternalLinks(body: PortableTextBody, siteHost: string): string[] {
+export function extractExternalLinks(body: LexicalEditorState, siteHost: string): string[] {
   const seen = new Set<string>()
-  for (const block of body) {
-    // The block union carries markDefs on text-bearing variants only.
-    const markDefs = 'markDefs' in block ? block.markDefs : undefined
-    if (markDefs === undefined) {
-      continue
+  visitLexicalNodes(body, (node) => {
+    if (node.type !== 'link' && node.type !== 'autolink') {
+      return
     }
-    for (const def of markDefs) {
-      if (def._type !== 'link') {
-        continue
-      }
-      // normalizeForMatch returns null for non-http(s) hrefs (mailto:, relative…).
-      const normalized = normalizeForMatch(def.href)
-      if (normalized === null) {
-        continue
-      }
-      const host = tryParseUrl(normalized)?.host
-      if (host === undefined || host === siteHost) {
-        continue
-      }
-      seen.add(normalized)
-      if (seen.size >= MAX_OUTBOUND_LINKS_PER_POST) {
-        return [...seen]
-      }
+    if (seen.size >= MAX_OUTBOUND_LINKS_PER_POST) {
+      return
     }
-  }
+    // `url` is a per-variant field the shared node type does not model; the
+    // schema pins it as a string on link/autolink nodes.
+    const url = unsafeCast<{ url?: unknown }>(node).url
+    if (typeof url !== 'string') {
+      return
+    }
+    // normalizeForMatch returns null for non-http(s) hrefs (mailto:, relative…).
+    const normalized = normalizeForMatch(url)
+    if (normalized === null) {
+      return
+    }
+    const host = tryParseUrl(normalized)?.host
+    if (host === undefined || host === siteHost) {
+      return
+    }
+    seen.add(normalized)
+  })
   return [...seen]
 }
 
@@ -53,7 +56,7 @@ export function extractExternalLinks(body: PortableTextBody, siteHost: string): 
 export async function enqueuePostWebmentionOutbox(
   db: Database,
   slug: string,
-  body: PortableTextBody,
+  body: LexicalEditorState,
   publishedAt?: Date | null,
 ): Promise<number> {
   const siteHost = tryParseUrl(requireBlogSettingsSection('siteIdentity').website)?.host

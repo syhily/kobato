@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
-
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
+import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
 import { sanitizeFeedHtml } from '@/server/render/feed/generator'
-import { renderPortableTextToHtml } from '@/server/render/pt-html'
-
-// No music players here, so a no-op embed-seam stub suffices.
-const resolveMusicEmbeds: MusicEmbedResolver = async () => new Map()
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
 describe('feed-safety', () => {
   describe('sanitizeFeedHtml', () => {
@@ -113,124 +110,59 @@ describe('feed-safety', () => {
       expect(out).toContain('width="100"')
       expect(out).toContain('<figcaption>cap</figcaption>')
     })
+
+    it('keeps the inkling highlight <mark> (feed-variant projection emits it)', () => {
+      const input = '<p>some <mark>highlighted</mark> text</p>'
+      expect(sanitizeFeedHtml(input)).toBe(input)
+    })
   })
 
-  describe('renderPortableTextToHtml rssMode code → sanitizeFeedHtml pipeline', () => {
-    // RN-1: rssMode must emit escaped plain code, not CDATA — sanitize-html
-    // drops CDATA sections wholesale.
+  describe('feed-variant projection → sanitizeFeedHtml pipeline', () => {
+    // RN-1 parity: the feed variant must emit escaped plain code, not CDATA —
+    // sanitize-html drops CDATA sections wholesale.
     it('keeps the code text after sanitization when highlightedHtml is present', async () => {
-      const html = await renderPortableTextToHtml(
-        [
+      const state = lexicalEditorStateSchema.parse(
+        lexicalBodyWith([
           {
-            _type: 'code',
-            _key: 'c1',
+            type: 'codeblock',
+            version: 1,
             code: 'const answer = 42;',
             language: 'ts',
+            caption: '',
             highlightedHtml: '<pre class="shiki"><code><span>const answer = 42;</span></code></pre>',
           },
-        ],
-        [],
-        resolveMusicEmbeds,
-        { rssMode: true },
+        ]),
       )
+      const { bodyHtmlFeed } = await computeBodyProjections(state)
 
-      const out = sanitizeFeedHtml(html)
+      const out = sanitizeFeedHtml(bodyHtmlFeed)
       expect(out).toContain('const answer = 42;')
       expect(out).not.toContain('<![CDATA[')
       expect(out).not.toContain('shiki')
     })
-  })
 
-  describe('renderPortableTextToHtml rssMode math', () => {
-    it('renders inline math as TeX fallback in RSS mode, not MathML/SVG', async () => {
-      const html = await renderPortableTextToHtml(
-        [
+    it('renders math as escaped TeX in the feed variant, not MathML/SVG', async () => {
+      const state = lexicalEditorStateSchema.parse(
+        lexicalBodyWith([
+          { type: 'math', version: 1, tex: '\\int_0^1 x dx', mathml: '<math><mi>x</mi></math>', svg: '' },
           {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [
-              {
-                _type: 'span',
-                _key: 's1',
-                text: 'E=mc^2',
-                marks: ['m1'],
-              },
-            ],
-            markDefs: [
-              {
-                _type: 'mathInline',
-                _key: 'm1',
-                tex: 'E=mc^2',
-                mathml: '<math><mi>E</mi></math>',
-                svg: '<svg><text>E</text></svg>',
-              },
-            ],
+            type: 'paragraph',
+            version: 1,
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            children: [{ type: 'math-inline', version: 1, tex: 'E=mc^2', mathml: '<math><mi>E</mi></math>', svg: '' }],
           },
-        ],
-        [],
-        resolveMusicEmbeds,
-        { rssMode: true },
+          lexicalParagraph('plain'),
+        ]),
       )
+      const { bodyHtmlFeed } = await computeBodyProjections(state)
 
-      expect(html).toContain('<code>E=mc^2</code>')
-      expect(html).not.toContain('<math>')
-      expect(html).not.toContain('<svg>')
-    })
-
-    it('renders math blocks as TeX fallback in RSS mode, not MathML/SVG', async () => {
-      const html = await renderPortableTextToHtml(
-        [
-          {
-            _type: 'mathBlock',
-            _key: 'mb1',
-            tex: '\\int_0^1 x dx',
-            mathml: '<math><mi>x</mi></math>',
-            svg: '<svg><text>x</text></svg>',
-          },
-        ],
-        [],
-        resolveMusicEmbeds,
-        { rssMode: true },
-      )
-
-      expect(html).toContain('<pre><code>\\int_0^1 x dx</code></pre>')
-      expect(html).not.toContain('<math>')
-      expect(html).not.toContain('<svg>')
-    })
-
-    it('still emits SVG for inline math when not in RSS mode', async () => {
-      const html = await renderPortableTextToHtml(
-        [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [
-              {
-                _type: 'span',
-                _key: 's1',
-                text: 'E=mc^2',
-                marks: ['m1'],
-              },
-            ],
-            markDefs: [
-              {
-                _type: 'mathInline',
-                _key: 'm1',
-                tex: 'E=mc^2',
-                svg: '<svg><text>E</text></svg>',
-              },
-            ],
-          },
-        ],
-        [],
-        resolveMusicEmbeds,
-        { rssMode: false },
-      )
-
-      expect(html).toContain('<svg>')
-      expect(html).not.toContain('<code>E=mc^2</code>')
+      const out = sanitizeFeedHtml(bodyHtmlFeed)
+      expect(out).toContain('<pre><code>\\int_0^1 x dx</code></pre>')
+      expect(out).toContain('<code class="inkling-math-inline">E=mc^2</code>')
+      expect(out).not.toContain('<math>')
+      expect(out).not.toContain('<svg>')
     })
   })
 })
