@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  "include": ["*.ts", "src/**/*", "test/**/*", "demo/**/*", "scripts/**/*"],
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "target": "ES2022",
+    "forceConsistentCasingInFileNames": true,
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "paths": {
+      "@/": ["./src/index.ts"],
+      "@/*": ["./src/*"],
+      "#/*": ["./test/*"]
+    },
+    "types": ["vitest/globals", "node"],
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "allowJs": false,
+    "checkJs": false,
+    "strict": true,
+    "strictNullChecks": true
+  },
+  "exclude": [
+    "test/e2e/**/*",
+    "test/unit/**/*",
+    "test/utils/**/*",
+    "test/typecheck-consumer/**/*",
+    "dist",
+    "coverage",
+    "storybook-static"
+  ]
+}

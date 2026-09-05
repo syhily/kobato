@@ -1,0 +1,7 @@
+{
+  // Nearest-tsconfig shim for oxlint-tsgolint type discovery: tsgolint walks
+  // up from each linted file, and the root tsconfig excludes this directory.
+  // Shared test utils use the unit-test environment (vitest globals, jest-dom);
+  // `include`/`exclude` stay inherited (resolved relative to the root config).
+  "extends": "../../tsconfig.unit.json"
+}

@@ -1,0 +1,6 @@
+{
+  // Nearest-tsconfig shim for oxlint-tsgolint type discovery: tsgolint walks
+  // up from each linted file, and the root tsconfig excludes this directory.
+  // `include`/`exclude` stay inherited (resolved relative to the root config).
+  "extends": "../../tsconfig.unit.json"
+}
