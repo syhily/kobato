@@ -2,7 +2,7 @@
 # postject .gnu.hash corruption bug on the official musl node binary;
 # postject is gone (`--build-sea` is the only injector now), but musl
 # remains unverified for SEA injection — stay on the known-good glibc base.
-FROM node:26-bookworm-slim AS build
+FROM node:26.8.1-bookworm-slim AS build
 WORKDIR /app
 
 # pnpm, matching the packageManager field (12.3.4). Node 25+ images no

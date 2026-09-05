@@ -44,6 +44,7 @@ import {
 } from '@/server/infra/db/database'
 import { sweepOrphanedJobRuns, wireJobRunRecorder } from '@/server/infra/db/job-run-recorder'
 import { migrateDatabase } from '@/server/infra/db/migrate'
+import { startQueryDiagnostics } from '@/server/infra/db/query-diagnostics'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
 import { setJobHandleGetter } from '@/server/infra/job-registry'
 import { closeHttpServer, setRestartGetDb, setRestartRefreshSettings, setServerPhase } from '@/server/infra/lifecycle'
@@ -122,6 +123,10 @@ async function initDatabase(): Promise<void> {
 }
 
 await initDatabase()
+
+// 'sqlite.db.query' channel → debug-level statement timings. Process-level
+// and idempotent; a no-op above the debug log level and under vitest.
+startQueryDiagnostics()
 
 // Fire-and-forget dead-letter replay: batch files from a crashed flush
 // are re-ingested once per boot (each replay logs its own failures).
