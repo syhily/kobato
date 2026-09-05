@@ -89,10 +89,19 @@ function TrendSparkline({ points }: { points: { visits: number }[] }) {
 
   const areaPath =
     pathPoints.length > 0
-      ? `M${pathPoints[0]} L${pathPoints.slice(1).join(' L')} L${padding + chartW},${padding + chartH} L${padding},${padding + chartH} Z`
+      ? `M${pathPoints[0]}${pathPoints
+          .slice(1)
+          .map((p) => ` L${p}`)
+          .join('')} L${padding + chartW},${padding + chartH} L${padding},${padding + chartH} Z`
       : ''
 
-  const linePath = pathPoints.length > 0 ? `M${pathPoints.join(' L')}` : ''
+  const linePath =
+    pathPoints.length > 0
+      ? `M${pathPoints[0]}${pathPoints
+          .slice(1)
+          .map((p) => ` L${p}`)
+          .join('')}`
+      : ''
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full max-w-xs" preserveAspectRatio="none">

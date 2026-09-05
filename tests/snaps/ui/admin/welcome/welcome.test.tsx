@@ -144,4 +144,22 @@ describe('snapshot: VisitSummaryCard', () => {
     expect(html).toContain('30')
     expect(html).toContain('<svg')
   })
+
+  it('emits a valid sparkline path when the trend aggregates to a single day', () => {
+    const html = stableHtml(
+      renderInRouter(
+        <VisitSummaryCard
+          summary={{ visits: 0, visitors: 0, referers: 0 }}
+          weeklyTrend={[
+            { time: '2024-01-10T02:00:00.000Z', visits: 10, visitors: 5 },
+            { time: '2024-01-10T08:00:00.000Z', visits: 20, visitors: 8 },
+          ]}
+        />,
+      ),
+    )
+    for (const d of html.match(/<path d="([^"]*)"/g) ?? []) {
+      expect(d).not.toMatch(/\bL\s*L\b/)
+      expect(d).not.toMatch(/\bL\s*"/)
+    }
+  })
 })
