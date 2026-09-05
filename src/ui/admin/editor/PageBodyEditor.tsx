@@ -199,6 +199,7 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled }: 
               registerAPI={registerAPI}
               onChange={handleChange}
               placeholderText="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
+              placeholderClassName="kobato-page-placeholder"
             />
           </InklingComposer>
         </MusicPickContext>

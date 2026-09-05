@@ -55,9 +55,22 @@
 /* The contentEditable root (the only `.inkling-lexical > *` in the tree)
    hardcodes the Inter stack as its base font. Real text blocks are re-fonted
    by inkling's prose rules through the bridged vars above, so this only
-   covers text outside prose coverage (placeholder, strays). */
+   covers text outside prose coverage (placeholder, strays). letter-spacing
+   is zeroed — the rendered article body has none, and letter-spacing on a
+   contenteditable is a known Chromium IME composition-caret drift factor. */
 .kobato-page-editor .inkling-lexical > * {
   font-family: var(--font-body);
+  letter-spacing: normal;
+}
+
+/* inkling's EditorPlaceholder is `absolute top-0 left-0` against the
+   position:relative `.inkling-lexical` box, ignoring the canvas padding
+   (15vmin / 1.5rem) — re-anchor it to the first paragraph's text origin
+   (the class arrives via `placeholderClassName` in `PageBodyEditor`).
+   Inside the zoomed container it scales in lockstep with the prose. */
+.kobato-page-editor .kobato-page-placeholder {
+  top: 15vmin;
+  left: 1.5rem;
 }
 
 /* Writing-focus mode (FocusModePlugin puts the class on the contentEditable
