@@ -48,7 +48,12 @@ export interface CspInput {
 }
 
 /**
- * Dynamic CSP: per-request nonce (prod), dev-only `unsafe-inline` + blob workers, asset CDN host.
+ * Dynamic CSP: per-request nonce (prod), dev-only `unsafe-inline` + blob workers.
+ * Trusted origins: the asset CDN host on style/font/img/media, plus the
+ * configured site origin on img/media only — content references absolute
+ * asset URLs built against `siteIdentity.website` (`resolveAssetUrl`), so a
+ * page served from any other origin (dev server, alternate domain) would
+ * otherwise block its own first-party images/media.
  */
 export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   const origins = new Set<string>()
@@ -56,18 +61,26 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
     origins.add(`https://${bundle.assets.asset.host}`)
   }
   const extra = origins.size > 0 ? ' ' + [...origins].join(' ') : ''
+  const website = bundle?.siteIdentity?.website
+  const siteOrigin = website ? URL.parse(website)?.origin : undefined
+  const mediaExtra = siteOrigin && !origins.has(siteOrigin) ? `${extra} ${siteOrigin}` : extra
   // Dev: Vite's injected scripts lack the request nonce — allow `unsafe-inline`.
   const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline'" : `script-src 'self' 'nonce-${nonce}'`
   // Dev: Vite's client may create blob workers — `worker-src` needs blob:.
   const workerSrc = isDev ? "worker-src 'self' blob:" : "worker-src 'self'"
+  // Dev: a dev server routinely renders a prod-shaped database copy whose
+  // saved content carries asset URLs baked under ANOTHER environment's site
+  // origin (e.g. pre-R16d music meta snapshots) — allow any https image/media
+  // source in dev. Production stays on the explicit origin list above.
+  const devMediaExtra = isDev ? `${mediaExtra} https:` : mediaExtra
   return [
     "default-src 'self'",
     scriptSrc,
     workerSrc,
     `style-src 'self' 'unsafe-inline' ${extra}`,
     `font-src 'self' ${extra}`,
-    `img-src 'self' data: blob: ${extra}`,
-    `media-src 'self' ${extra}`,
+    `img-src 'self' data: blob: ${devMediaExtra}`,
+    `media-src 'self' ${devMediaExtra}`,
     "connect-src 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",

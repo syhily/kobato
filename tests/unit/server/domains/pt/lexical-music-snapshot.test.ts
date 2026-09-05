@@ -57,6 +57,22 @@ describe('pt/lexical-music-snapshot — snapshotMusicPlayerMeta', () => {
     }
   })
 
+  it('stores site-owned media URLs origin-relative, whatever origin they were baked under', async () => {
+    const state = parse(lexicalBodyWith([lexicalMusicPlayer('p1')]))
+
+    await snapshotMusicPlayerMeta(
+      state,
+      stubMusicResolver({
+        p1: { ...META, url: 'https://old-env.example.com/storage/musics/a.mp3?v=1', pic: '/storage/musics/a.jpg' },
+      }),
+    )
+
+    expect(at(state, 0)).toMatchObject({
+      cover: '/storage/musics/a.jpg',
+      audioUrl: '/storage/musics/a.mp3',
+    })
+  })
+
   it('leaves unresolved playerIds meta-less', async () => {
     const state = parse(lexicalBodyWith([lexicalMusicPlayer('missing')]))
 
