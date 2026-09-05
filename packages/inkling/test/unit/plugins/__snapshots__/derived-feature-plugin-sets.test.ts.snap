@@ -1,0 +1,37 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`core plugin set > pins the default surface plugin keys 1`] = `
+{
+  "core": [
+    "rich-text",
+    "link",
+    "on-change",
+    "history",
+    "behaviour",
+    "markdown-shortcut",
+    "floating-toolbar",
+    "drag-drop-paste",
+    "external-control",
+    "drag-drop-reorder",
+    "restrict-content",
+    "editor-event-blur",
+    "editor-event-focus",
+    "markdown-paste",
+    "tk",
+  ],
+  "features": [
+    "list",
+    "card-menu",
+    "snippet",
+    "selector",
+    "emoji-picker",
+    "at-link",
+    "em-en-dash",
+    "card-insert",
+    "horizontal-rule",
+    "math-inline",
+    "table",
+    "footnote",
+  ],
+}
+`;

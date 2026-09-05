@@ -1,0 +1,743 @@
+{
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "Every feature, one document",
+            "type": "extended-text",
+            "version": 1
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "extended-heading",
+        "version": 1,
+        "tag": "h1"
+      },
+      {
+        "children": [
+          {
+            "detail": 0,
+            "format": 1,
+            "mode": "normal",
+            "style": "",
+            "text": "This document exercises the full surface: ",
+            "type": "extended-text",
+            "version": 1
+          },
+          {
+            "detail": 0,
+            "format": 2,
+            "mode": "normal",
+            "style": "",
+            "text": "every card, ",
+            "type": "extended-text",
+            "version": 1
+          },
+          {
+            "detail": 0,
+            "format": 16,
+            "mode": "normal",
+            "style": "",
+            "text": "every plugin, ",
+            "type": "extended-text",
+            "version": 1
+          },
+          {
+            "detail": 0,
+            "format": 128,
+            "mode": "normal",
+            "style": "",
+            "text": "every shortcut",
+            "type": "extended-text",
+            "version": 1
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": ".",
+            "type": "extended-text",
+            "version": 1
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "paragraph",
+        "version": 1,
+        "textFormat": 1,
+        "textStyle": ""
+      },
+      {
+        "children": [
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "Inline link: ",
+            "type": "extended-text",
+            "version": 1
+          },
+          {
+            "children": [
+              {
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "text": "the Inkling platform",
+                "type": "extended-text",
+                "version": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "link",
+            "version": 1,
+            "rel": null,
+            "target": null,
+            "title": null,
+            "url": "https://inkling.local/"
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": ", a footnote ref",
+            "type": "extended-text",
+            "version": 1
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "1",
+            "type": "footnote-ref",
+            "version": 1,
+            "targetKey": "demo-footnote-1"
+          },
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": ", and more below.",
+            "type": "extended-text",
+            "version": 1
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "paragraph",
+        "version": 1,
+        "textFormat": 0,
+        "textStyle": ""
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "text": "Slash menu (/)",
+                "type": "extended-text",
+                "version": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "listitem",
+            "version": 1,
+            "value": 1
+          },
+          {
+            "children": [
+              {
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "text": "Plus button (hover the left gutter)",
+                "type": "extended-text",
+                "version": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "listitem",
+            "version": 1,
+            "value": 2
+          },
+          {
+            "children": [
+              {
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "text": "Markdown shortcuts (##, ```, ---)",
+                "type": "extended-text",
+                "version": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "listitem",
+            "version": 1,
+            "value": 3
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "list",
+        "version": 1,
+        "listType": "bullet",
+        "start": 1,
+        "tag": "ul"
+      },
+      {
+        "children": [
+          {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "Quote blocks cycle quote → aside → paragraph with the toolbar button.",
+            "type": "extended-text",
+            "version": 1
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "extended-quote",
+        "version": 1
+      },
+      {
+        "type": "toggle",
+        "version": 1,
+        "heading": "<span style=\"white-space: pre-wrap;\">Toggle title — click to expand</span>",
+        "content": "<p><span style=\"white-space: pre-wrap;\">Hidden toggle content with its own nested editor.</span></p>"
+      },
+      {
+        "type": "callout",
+        "version": 1,
+        "calloutText": "<p><span style=\"white-space: pre-wrap;\">Callouts carry an emoji and rich text.</span></p>",
+        "calloutEmoji": "💡",
+        "backgroundColor": "blue"
+      },
+      {
+        "type": "header",
+        "version": 2,
+        "size": "small",
+        "style": "dark",
+        "buttonEnabled": true,
+        "buttonUrl": "https://inkling.local/",
+        "buttonText": "Read more",
+        "header": "<span style=\"white-space: pre-wrap;\">Header card</span>",
+        "subheader": "<span style=\"white-space: pre-wrap;\">With a subheader, alignment and button options in settings.</span>",
+        "backgroundImageSrc": "",
+        "accentColor": "#FF1A75",
+        "alignment": "center",
+        "backgroundColor": "#000000",
+        "backgroundImageWidth": null,
+        "backgroundImageHeight": null,
+        "backgroundSize": "cover",
+        "textColor": "#FFFFFF",
+        "buttonColor": "#ffffff",
+        "buttonTextColor": "#000000",
+        "layout": "full",
+        "swapped": false
+      },
+      {
+        "type": "image",
+        "version": 1,
+        "src": "/inkling-editor-1.png",
+        "width": 1480,
+        "height": 486,
+        "title": "",
+        "alt": "Inkling editor, light theme",
+        "caption": "<span style=\"white-space: pre-wrap;\">Image card with a caption editor.</span>",
+        "cardWidth": "regular",
+        "href": ""
+      },
+      {
+        "type": "gallery",
+        "version": 1,
+        "images": [
+          {
+            "src": "/inkling-editor-1.png",
+            "width": 1480,
+            "height": 486
+          },
+          {
+            "src": "/inkling-editor-2.png",
+            "width": 1480,
+            "height": 486
+          }
+        ],
+        "caption": "<p><span style=\"white-space: pre-wrap;\">Gallery card — drag images to reorder, drop more in.</span></p>"
+      },
+      {
+        "type": "video",
+        "version": 1,
+        "src": "",
+        "caption": "",
+        "fileName": "",
+        "mimeType": "",
+        "width": null,
+        "height": null,
+        "duration": 0,
+        "thumbnailSrc": "",
+        "customThumbnailSrc": "",
+        "thumbnailWidth": null,
+        "thumbnailHeight": null,
+        "cardWidth": "regular",
+        "loop": false
+      },
+      {
+        "type": "audio",
+        "version": 1,
+        "duration": 0,
+        "mimeType": "",
+        "src": "",
+        "title": "",
+        "thumbnailSrc": ""
+      },
+      {
+        "type": "file",
+        "version": 1,
+        "src": "",
+        "fileTitle": "",
+        "fileCaption": "",
+        "fileName": "",
+        "fileSize": 0
+      },
+      {
+        "type": "bookmark",
+        "version": 1,
+        "url": "https://inkling.local/",
+        "metadata": {
+          "icon": "",
+          "title": "",
+          "description": "",
+          "author": "",
+          "publisher": "",
+          "thumbnail": ""
+        },
+        "caption": ""
+      },
+      {
+        "type": "button",
+        "version": 1,
+        "buttonText": "Button card",
+        "alignment": "center",
+        "buttonUrl": "https://inkling.local/"
+      },
+      {
+        "type": "codeblock",
+        "version": 1,
+        "code": "import { createEditor } from 'lexical'\n\n// code blocks keep language + optional caption\nconst editor = createEditor()",
+        "language": "ts",
+        "caption": "<p><span style=\"white-space: pre-wrap;\">main.ts</span></p>",
+        "highlightedHtml": ""
+      },
+      {
+        "type": "html",
+        "version": 1,
+        "html": "<div style=\"padding: 12px; border: 1px solid currentColor;\">HTML card renders raw markup in an editable sandbox.</div>"
+      },
+      {
+        "type": "math",
+        "version": 1,
+        "tex": "e^{i\\pi} + 1 = 0",
+        "mathml": "",
+        "svg": ""
+      },
+      {
+        "type": "horizontalrule",
+        "version": 1
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "Feature",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 1,
+                "rowSpan": 1
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "Where",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 1,
+                "rowSpan": 1
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "How to trigger",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 1,
+                "rowSpan": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "tablerow",
+            "version": 1
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "Slash menu",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 0,
+                "rowSpan": 1
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "cards",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 0,
+                "rowSpan": 1
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "Type /",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 0,
+                "rowSpan": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "tablerow",
+            "version": 1
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "Table",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 0,
+                "rowSpan": 1
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "element family",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 0,
+                "rowSpan": 1
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "detail": 0,
+                        "format": 0,
+                        "mode": "normal",
+                        "style": "",
+                        "text": "Slash menu → Table",
+                        "type": "extended-text",
+                        "version": 1
+                      }
+                    ],
+                    "direction": null,
+                    "format": "",
+                    "indent": 0,
+                    "type": "paragraph",
+                    "version": 1,
+                    "textFormat": 0,
+                    "textStyle": ""
+                  }
+                ],
+                "direction": null,
+                "format": "",
+                "indent": 0,
+                "type": "tablecell",
+                "version": 1,
+                "backgroundColor": null,
+                "colSpan": 1,
+                "headerState": 0,
+                "rowSpan": 1
+              }
+            ],
+            "direction": null,
+            "format": "",
+            "indent": 0,
+            "type": "tablerow",
+            "version": 1
+          }
+        ],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "table",
+        "version": 1
+      },
+      {
+        "type": "musicPlayer",
+        "version": 1,
+        "src": ""
+      },
+      {
+        "type": "footnotedefinition",
+        "version": 1,
+        "content": "<p><span style=\"white-space: pre-wrap;\">The demo footnote: refs renumber in citation order.</span></p>",
+        "targetKey": "demo-footnote-1",
+        "index": 1
+      },
+      {
+        "children": [],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "paragraph",
+        "version": 1,
+        "textFormat": 0,
+        "textStyle": ""
+      }
+    ],
+    "direction": null,
+    "format": "",
+    "indent": 0,
+    "type": "root",
+    "version": 1
+  }
+}

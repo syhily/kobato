@@ -1,0 +1,6 @@
+{
+  // Nearest-tsconfig shim for oxlint-tsgolint type discovery, mirroring the
+  // test/*/tsconfig.json shims: the root tsconfig does not include .storybook.
+  "extends": "../tsconfig.json",
+  "include": ["../src/**/*", "./**/*"]
+}

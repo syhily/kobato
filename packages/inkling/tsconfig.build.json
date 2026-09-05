@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // declaration bundling is driven by scripts/build-types.ts after
+    // `vite build`; this config only narrows the graph the generator reads
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules", "coverage", "storybook-static", "src/**/*.stories.tsx"]
+}
