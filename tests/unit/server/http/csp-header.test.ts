@@ -57,7 +57,24 @@ describe('buildCspHeader', () => {
     expect(csp).toContain('https://cdn.example.com')
     expect(csp).toContain("style-src 'self' 'unsafe-inline'  https://cdn.example.com")
     expect(csp).toContain("font-src 'self'  https://cdn.example.com")
-    expect(csp).toContain("img-src 'self' data: blob:  https://cdn.example.com")
+    expect(csp).toContain("img-src 'self' data: blob:  https://cdn.example.com https://example.com")
+    expect(csp).toContain("media-src 'self'  https://cdn.example.com https://example.com")
+  })
+
+  it('allows any https image/media source in dev only (prod-shaped database copies carry baked absolute URLs)', () => {
+    const devCsp = buildCspHeader({ bundle: null, nonce: NONCE, isDev: true })
+    expect(devCsp).toContain("img-src 'self' data: blob:  https:")
+    expect(devCsp).toContain("media-src 'self'  https:")
+
+    const prodCsp = buildCspHeader({ bundle: null, nonce: NONCE, isDev: false })
+    expect(prodCsp).not.toContain('https:')
+  })
+
+  it('adds the configured website origin (first-party absolute asset URLs survive off-origin serving)', () => {
+    const csp = buildCspHeader({ bundle: bundleWith({ host: null }), nonce: NONCE, isDev: false })
+    expect(csp).toContain("img-src 'self' data: blob:  https://example.com")
+    expect(csp).toContain("media-src 'self'  https://example.com")
+    expect(csp).toContain("connect-src 'self'")
   })
 
   it('handles a null bundle without throwing', () => {

@@ -2,6 +2,7 @@ import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { getLogger } from '@/server/infra/logger'
+import { parseAssetUrl } from '@/server/infra/storage/public-url'
 import { collectLexicalMusicPlayerIds } from '@/shared/lexical/collect'
 import { visitLexicalNodes } from '@/shared/lexical/walk'
 
@@ -15,6 +16,24 @@ const log = getLogger('pt.lexical-music-snapshot')
 // that is the accepted trade-off. Field names live in
 // `@/shared/lexical/artifacts` (`MUSIC_PLAYER_META_KEYS`) — R10's
 // `defineCard` reads exactly those keys.
+//
+// The media URLs (`cover` / `audioUrl`) are stored ORIGIN-RELATIVE
+// (`/storage/<key>`), never the resolver's absolute form: an absolute URL
+// bakes the save-time `siteIdentity.website` into stored content, and a copy
+// of the database served from any other origin (dev server, domain move)
+// then points media at the old origin — PT's request-time enrichment never
+// had that failure mode. The render-time safe-URL seam passes relative URLs,
+// and the feed variant re-absolutizes against the CURRENT site origin
+// (`absolutizeAssetSrcForFeed`).
+
+/** Site-owned asset URL (absolute or already relative) → origin-relative form; anything else passes through. */
+function toOriginRelativeAssetUrl(url: string): string {
+  if (url === '') {
+    return url
+  }
+  const parsed = parseAssetUrl(url, { anyOrigin: true })
+  return parsed === null ? url : `${parsed.route}${parsed.key}`
+}
 
 /**
  * Resolves every `music-player` node's `playerId` through the injected
@@ -56,8 +75,8 @@ export async function snapshotMusicPlayerMeta(
     }
     record.name = meta.name
     record.artist = meta.artist
-    record.cover = meta.pic
-    record.audioUrl = meta.url
+    record.cover = toOriginRelativeAssetUrl(meta.pic)
+    record.audioUrl = toOriginRelativeAssetUrl(meta.url)
     record.lyric = meta.lyric
   })
 }
