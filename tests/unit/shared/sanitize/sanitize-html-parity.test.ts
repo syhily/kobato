@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 
-import { strategyToConfig, type SafeHtmlStrategy } from '@/ui/lib/sanitize-html-config'
-import { sanitizeHtmlEngine as browserEngine } from '@/ui/lib/sanitize-html-engine.browser'
-import { sanitizeHtmlEngine as nodeEngine } from '@/ui/lib/sanitize-html-engine.node'
+import { strategyToConfig, type SafeHtmlStrategy } from '@/shared/sanitize/config'
+import { sanitizeHtmlEngine as browserEngine } from '@/shared/sanitize/engine.browser'
+import { sanitizeHtmlEngine as nodeEngine } from '@/shared/sanitize/engine.node'
 
 // Byte-parity pin for the two sanitize engine entry points. SSR ships the
 // node engine's output and hydration compares it against the client render's
@@ -20,7 +20,7 @@ function expectParity(html: string, strategy: SafeHtmlStrategy): void {
   expect(nodeEngine(html, config), `strategy=${strategy} html=${html.slice(0, 60)}`).toBe(browserEngine(html, config))
 }
 
-describe('ui/lib/sanitize-html engine byte parity', () => {
+describe('shared/sanitize engine byte parity', () => {
   it('void elements serialize without the XHTML slash', () => {
     expectParity('<p>a</p><hr><br><img src="/storage/x.png" alt="x">', 'body')
   })

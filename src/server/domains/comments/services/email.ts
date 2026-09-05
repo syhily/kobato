@@ -1,6 +1,5 @@
 import { lexicalStateToPlainText } from '@inkling/editor/headless'
 import { createElement } from 'react'
-import sanitizeHtml from 'sanitize-html'
 
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
@@ -20,6 +19,7 @@ import NewReply from '@/server/infra/email/templates/NewReply'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { bodyToPlainText } from '@/shared/pt/utils'
+import { sanitizeHtmlString } from '@/shared/sanitize/sanitize-html'
 import { entityCommentUrl } from '@/shared/utils/paths'
 import { escapeHtml } from '@/shared/utils/security'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -29,39 +29,13 @@ const log = getLogger('comments.email')
 /**
  * Allowlist sanitizer for the comment `content` column at the email boundary
  * (RawEmailHtml injects without sanitizing; the retired hand-rolled renderer
- * was safe by construction, the saved projection is not). Tags mirror the
- * comment feed-variant projection's real output: paragraphs, inline marks
- * (inkling exportDOM: strong/em/u/s/mark/code, sup/sub), blockquote, lists,
- * plain pre/code (artifacts stripped), and links.
+ * was safe by construction, the saved projection is not) — a thin wrapper
+ * over the shared DOMPurify stack's 'comment-email' strategy
+ * (src/shared/sanitize/config.ts owns the tag/attribute allowlist, which
+ * mirrors the comment feed-variant projection's real output).
  */
 function sanitizeCommentEmailHtml(html: string): string {
-  return sanitizeHtml(html, {
-    allowedTags: [
-      'p',
-      'br',
-      'strong',
-      'em',
-      'u',
-      's',
-      'mark',
-      'code',
-      'pre',
-      'blockquote',
-      'ul',
-      'ol',
-      'li',
-      'a',
-      'sup',
-      'sub',
-    ],
-    allowedAttributes: {
-      a: ['href', 'title', 'rel', 'target'],
-      '*': ['class'],
-    },
-    allowedSchemes: ['http', 'https', 'mailto'],
-    disallowedTagsMode: 'discard',
-    allowProtocolRelative: false,
-  })
+  return sanitizeHtmlString(html, 'comment-email')
 }
 
 /**

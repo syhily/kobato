@@ -1,6 +1,6 @@
 import { type RefObject, useEffect } from 'react'
 
-import { sanitizeHtml } from '@/ui/lib/sanitize-html'
+import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 
 // The dSHI twin of the PT renderer's FootnoteProvider/Tooltip pair: hovering
 // or focusing an exported footnote reference (`sup > a[href="#user-content-fn-N"]`)

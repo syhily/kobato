@@ -1,20 +1,20 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 
-import { strategyToConfig, type SafeHtmlStrategy } from '@/ui/lib/sanitize-html-config'
-import { sanitizeHtmlEngine } from '@/ui/lib/sanitize-html-engine.browser'
+import { strategyToConfig, type SafeHtmlStrategy } from '@/shared/sanitize/config'
+import { sanitizeHtmlEngine } from '@/shared/sanitize/engine.browser'
 
 // Parity suite for the DOMPurify browser engine (vite aliases the facade's
-// engine import here); mirrors tests/unit/ui/lib/sanitize-html.test.ts.
+// engine import here); mirrors tests/unit/shared/sanitize/sanitize-html.test.ts.
 
-const strategies: SafeHtmlStrategy[] = ['shiki', 'math', 'email', 'audit', 'preview', 'body']
+const strategies: SafeHtmlStrategy[] = ['shiki', 'math', 'email', 'audit', 'preview', 'body', 'feed', 'comment-email']
 
 function clean(html: string, strategy: SafeHtmlStrategy): string {
   // Leading ZWSP shields the first element from a happy-dom-only DOMPurify quirk.
   return sanitizeHtmlEngine('​' + html, strategyToConfig(strategy))
 }
 
-describe('ui/lib/sanitize-html-engine.browser', () => {
+describe('shared/sanitize/engine.browser', () => {
   it('strips script tags for every strategy', () => {
     const dirty = '<script>alert(1)</script><p>safe</p>'
     for (const strategy of strategies) {

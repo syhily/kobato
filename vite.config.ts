@@ -26,19 +26,19 @@ const pkg = pkgSchema.parse(JSON.parse(readFileSync('./package.json', 'utf-8')))
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 
-// The sanitize facade (src/ui/lib/sanitize-html.ts) imports the node engine
-// (DOMPurify over a process-cached JSDOM). For the browser bundle this plugin
-// swaps that specifier to the browser engine, keeping jsdom's Node-only
-// dependency chain out of the client — per-environment `resolve.alias` is
-// not a thing in vite, so it takes a plugin.
+// The sanitize facade (src/shared/sanitize/sanitize-html.ts) imports the node
+// engine (DOMPurify over a process-cached JSDOM). For the browser bundle this
+// plugin swaps that specifier to the browser engine, keeping jsdom's
+// Node-only dependency chain out of the client — per-environment
+// `resolve.alias` is not a thing in vite, so it takes a plugin.
 const sanitizeEngineAliasPlugin = (): Plugin => ({
   name: 'sanitize-html-engine-alias',
   enforce: 'pre',
   resolveId: {
-    filter: { id: /sanitize-html-engine\.node$/ },
+    filter: { id: /shared\/sanitize\/engine\.node$/ },
     handler() {
       if (this.environment.name === 'client') {
-        return resolve(projectRoot, 'src/ui/lib/sanitize-html-engine.browser.ts')
+        return resolve(projectRoot, 'src/shared/sanitize/engine.browser.ts')
       }
       return null
     },

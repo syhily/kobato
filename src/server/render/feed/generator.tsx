@@ -1,5 +1,4 @@
 import { Feed } from 'feed'
-import sanitizeHtml from 'sanitize-html'
 
 import type { Database } from '@/server/infra/db/database'
 import type { Page, Post } from '@/shared/types/catalog'
@@ -11,6 +10,7 @@ import { getTagsByNames, resolveTagBySlugOrName } from '@/server/domains/taxonom
 import { findCategoriesByNames } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { sanitizeHtmlString } from '@/shared/sanitize/sanitize-html'
 import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { joinUrl } from '@/shared/utils/urls'
 
@@ -19,68 +19,13 @@ export interface FeedOptions {
   tag?: string
 }
 
-// Allowlist HTML sanitizer for feed output; pure-JS parser, no jsdom.
-// The tag set mirrors the feed-variant projection's real output
-// (`infra/pt/lexical-projection` — inkling exportDOM, artifacts stripped):
-// inline marks strong/em/u/s/code/mark, sup/sub footnote refs, the footnotes
-// <section>, media figure/figcaption/audio, and the table family.
+// Allowlist HTML sanitizer for feed output — a thin wrapper over the shared
+// DOMPurify stack's 'feed' strategy (src/shared/sanitize/config.ts owns the
+// tag/attribute allowlist, which mirrors the feed-variant projection's real
+// output: `infra/pt/lexical-projection` — inkling exportDOM, artifacts
+// stripped).
 export function sanitizeFeedHtml(html: string): string {
-  return sanitizeHtml(html, {
-    allowedTags: [
-      'p',
-      'br',
-      'hr',
-      'strong',
-      'em',
-      'u',
-      's',
-      'mark',
-      'code',
-      'pre',
-      'blockquote',
-      'ul',
-      'ol',
-      'li',
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'h5',
-      'h6',
-      'a',
-      'img',
-      'sup',
-      'sub',
-      'figure',
-      'figcaption',
-      'audio',
-      'table',
-      'thead',
-      'tbody',
-      'tr',
-      'th',
-      'td',
-      'section',
-      'div',
-    ],
-    allowedAttributes: {
-      a: ['href', 'title', 'name', 'rel', 'target'],
-      img: ['src', 'alt', 'title', 'width', 'height'],
-      audio: ['src', 'controls', 'preload'],
-      // `id` is emitted by headings, footnote anchors, and the footnotes section.
-      '*': ['id', 'class', 'data-language', 'data-footnotes', 'data-footnote-backref', 'aria-labelledby', 'aria-label'],
-    },
-    allowedSchemes: ['http', 'https', 'mailto'],
-    allowedSchemesByTag: { img: ['http', 'https', 'data'] },
-    disallowedTagsMode: 'discard',
-    allowProtocolRelative: false,
-    transformTags: {
-      a: (_tagName, attribs) =>
-        attribs.target === '_blank'
-          ? { tagName: 'a', attribs: { ...attribs, rel: 'noopener noreferrer nofollow' } }
-          : { tagName: 'a', attribs },
-    },
-  })
+  return sanitizeHtmlString(html, 'feed')
 }
 
 async function renderEntryContent(entry: Post | Page): Promise<string> {

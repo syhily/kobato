@@ -65,19 +65,11 @@ interface NodeOnlyPackage {
 
 const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   {
-    name: 'sanitize-html',
-    reason: 'pulls postcss/source-map-js and node builtins',
-    // Server-only boundaries: feed generator and comment email.
-  },
-  {
     name: 'jsdom',
     reason: 'server-side DOM for the sanitize engine and inkling headless projections',
     // Swapped client-side to the browser engine by the `sanitize-html-engine-alias` plugin (vite.config.ts).
-    allowedIn: ['src/ui/lib/sanitize-html-engine.node.ts'],
+    allowedIn: ['src/shared/sanitize/engine.node.ts'],
   },
-  // sanitize-html's transitive leak chain — not direct deps, kept pre-armed.
-  { name: 'postcss', reason: 'sanitize-html transitive chain, node-only' },
-  { name: 'source-map-js', reason: 'postcss transitive chain, node-only' },
   { name: 'shiki', reason: 'server-side syntax highlighting' },
   { name: 'katex', reason: 'server-side math rendering' },
   { name: 'pinyin-pro', reason: '~150KB CJK tables, server-side slug romanisation' },
@@ -187,15 +179,15 @@ describe('client bundle guard', () => {
         join(fixtureRoot, 'leak.ts'),
         [
           "import { readFileSync } from 'node:fs'",
-          "import sanitizeHtml from 'sanitize-html'",
-          "import 'postcss'",
+          "import nodemailer from 'nodemailer'",
+          "import 'drizzle-orm'",
           "export const load = () => import('shiki')",
-          'export const x = () => readFileSync(String(sanitizeHtml))',
+          'export const x = () => readFileSync(String(nodemailer))',
         ].join('\n'),
       )
       const violations = collectViolations(fixtureRoot)
       expect(violations).toHaveLength(4)
-      for (const specifier of ['node:fs', 'sanitize-html', 'postcss', 'shiki']) {
+      for (const specifier of ['node:fs', 'nodemailer', 'drizzle-orm', 'shiki']) {
         expect(
           violations.some((v) => v.includes('leak.ts') && v.includes(`'${specifier}'`)),
           `expected a violation naming leak.ts and '${specifier}'`,
@@ -211,7 +203,7 @@ describe('client bundle guard', () => {
     try {
       writeFileSync(
         join(fixtureRoot, 'types-only.ts'),
-        ["import type { Options } from 'sanitize-html'", 'export type { Options }'].join('\n'),
+        ["import type { Options } from 'nodemailer'", 'export type { Options }'].join('\n'),
       )
       expect(collectViolations(fixtureRoot)).toEqual([])
     } finally {

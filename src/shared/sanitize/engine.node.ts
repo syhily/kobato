@@ -3,9 +3,9 @@ import type { WindowLike } from 'dompurify'
 import createDOMPurify from 'dompurify'
 import { JSDOM } from 'jsdom'
 
-import type { SanitizeStrategyConfig } from '@/ui/lib/sanitize-html-config'
+import type { SanitizeStrategyConfig } from '@/shared/sanitize/config'
 
-import { createPurifySanitizer } from '@/ui/lib/sanitize-html-purify'
+import { createPurifySanitizer } from '@/shared/sanitize/purify-core'
 
 // Server/SSR engine for `sanitizeHtmlString`; the `sanitize-html-engine-alias`
 // vite plugin swaps this module for the browser engine in the client bundle,

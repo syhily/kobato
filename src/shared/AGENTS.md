@@ -79,6 +79,17 @@ server or client boundary catch and log it.
   chunk collection) shared by the build plugin and the SSR reader.
 - `sea/` — SEA embedded-asset key contract (single owner for the writer
   in `scripts/sea/` and the runtime readers under `src/server/`).
+- `sanitize/` — the isomorphic DOMPurify sanitize stack: `config`
+  (per-strategy allowlists, including the server-only `feed` /
+  `comment-email` strategies consumed by `server/render/feed` and
+  `server/domains/comments`), `purify-core` (every behavioral rule, shared
+  so SSR and hydration bytes cannot drift), `sanitize-html` (facade:
+  `sanitizeHtmlString` / `sanitizeHtml`), and the two engine bindings.
+  `engine.node.ts` is the one sanctioned exception to this layer's
+  no-node-dependency rule: it imports jsdom, and the
+  `sanitize-html-engine-alias` vite plugin swaps the specifier to
+  `engine.browser.ts` in the client bundle (pinned by
+  `tests/unit/arch/client-bundle.test.ts`'s jsdom `allowedIn` entry).
 - `seo/` — isomorphic meta-tag builders (`meta`, `title-meta`,
   `og-image`) shared by routes, loaders, and the feed/OG renderers.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
