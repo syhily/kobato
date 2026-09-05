@@ -47,8 +47,9 @@ describe('AuditLogRow details sanitisation', () => {
 
     const panel = document.querySelector('[class*="[&>pre]"]')
     expect(panel).not.toBeNull()
-    // Legitimate shiki output (inline styles) survives…
-    expect(panel!.innerHTML).toContain('<span style="color:#f00">const x = 1</span>')
+    // Legitimate shiki output (inline styles) survives — spelled the way the
+    // browser engine serializes it (byte parity, see sanitize-html-parity).
+    expect(panel!.innerHTML).toContain('<span style="color: #f00">const x = 1</span>')
     // …while active content is gone — neither tag nor attribute survives.
     expect(panel!.innerHTML).not.toContain('<script')
     expect(panel!.innerHTML).not.toContain('onerror')

@@ -40,7 +40,7 @@ describe('ui/lib/sanitize-html', () => {
       const html = '<pre data-language="ts"><code><span style="color:#ff0000">hi</span></code></pre>'
       const clean = sanitizeHtmlString(html, 'shiki')
       expect(clean).toContain('data-language="ts"')
-      expect(clean).toContain('style="color:#ff0000"')
+      expect(clean).toContain('style="color: #ff0000"')
       expect(clean).toContain('<span')
     })
 
@@ -155,9 +155,12 @@ describe('ui/lib/sanitize-html', () => {
         '<span class="line"><span style="color:#111">const</span></span></code></pre>'
       const clean = sanitizeHtmlString(html, 'body')
       expect(clean).toContain('data-language="typescript"')
-      expect(clean).toContain('data-code="const a = &lt;b&gt;"')
+      // Browser-serialized bytes: the HTML spec does not escape `<` in
+      // attribute values, and style declarations are respaced (byte parity
+      // with the DOMPurify browser engine, see sanitize-html-parity.test.ts).
+      expect(clean).toContain('data-code="const a = <b>"')
       expect(clean).toContain('class="language-typescript"')
-      expect(clean).toContain('color:#111')
+      expect(clean).toContain('color: #111')
     })
 
     it('preserves the footnotes anchor contract', () => {
@@ -208,7 +211,7 @@ describe('ui/lib/sanitize-html', () => {
       expect(clean).toContain('class="aplayer"')
       expect(clean).toContain('data-url="https://cdn/x.mp3"')
       expect(clean).toContain('data-music-player-fallback')
-      expect(clean).toContain('<audio controls preload="none" src="https://cdn/x.mp3">')
+      expect(clean).toContain('<audio controls="" preload="none" src="https://cdn/x.mp3">')
     })
 
     it('keeps extended inline marks (u/s/sup/sub/mark)', () => {
