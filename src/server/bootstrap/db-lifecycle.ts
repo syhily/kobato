@@ -162,15 +162,20 @@ if (!migrationsRanInHmr()) {
 // One-time rewrite of legacy baked CDN-absolute asset URLs to the site-owned
 // `/storage/<key>` form — flag-gated and failure-swallowing inside; fire-and-
 // forget so boot never waits on (or fails on) the corpus scan.
-// The R15 PT→Lexical backfill rides the same pattern; while its BOOT_MODE is
-// 'dry-run' it only counts legacy rows and warns (R15b flips it to 'apply').
+// The R15 PT→Lexical backfill (apply mode) rides the same pattern, and the
+// two MUST stay serialized — asset backfill first, then the conversion: run
+// concurrently, the asset backfill could write a stale PT body back over a
+// row the conversion just rewrote. Each step swallows its own errors, so a
+// failure in the first never blocks the second.
 if (!isVitest()) {
-  void runAssetUrlBackfillOnceAtBoot(getDb())
-  void runPtLexicalBackfillAtBoot(getDb(), {
-    resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(getDb(), playerIds),
-    hashCommentContent: hashContent,
-    reindexSearchIndex: () => reindexSearchToCompletion(getDb()),
-  })
+  void (async () => {
+    await runAssetUrlBackfillOnceAtBoot(getDb())
+    await runPtLexicalBackfillAtBoot(getDb(), {
+      resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(getDb(), playerIds),
+      hashCommentContent: hashContent,
+      reindexSearchIndex: () => reindexSearchToCompletion(getDb()),
+    })
+  })()
 }
 
 // The priority-0 shutdown hook (after the priority-100 batcher flushes) lives in the ManagedEngine.
