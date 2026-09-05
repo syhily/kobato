@@ -1,9 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { selectFeedPosts } from '@/server/domains/posts/services/feed'
 import { resolveCategoryBySlugOrName } from '@/server/domains/taxonomies/categories/services/query'
 import { resolveTagBySlugOrName } from '@/server/domains/taxonomies/tags/service'
@@ -22,16 +23,8 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-function paragraphBody(text: string): PortableTextBody {
-  return [
-    {
-      _type: 'block',
-      _key: 'b1',
-      style: 'normal',
-      markDefs: [],
-      children: [{ _type: 'span', _key: 's1', text, marks: [] }],
-    },
-  ]
+function paragraphBody(text: string): LexicalEditorState {
+  return lexicalBodyWith([lexicalParagraph(text)])
 }
 
 async function seedPost(opts: {
@@ -40,7 +33,7 @@ async function seedPost(opts: {
   visible?: boolean
   scheduled?: boolean
   categoryId?: number
-  body?: PortableTextBody
+  body?: LexicalEditorState
 }): Promise<number> {
   const rows = await db
     .insert(postTable)
@@ -56,6 +49,7 @@ async function seedPost(opts: {
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
+  const bodyText = `body of ${opts.slug}`
   const revisions = await db
     .insert(contentTable)
     .values({
@@ -63,7 +57,12 @@ async function seedPost(opts: {
       ownerId: postId,
       revisionNo: 1,
       status: 'published',
-      body: opts.body ?? paragraphBody(`body of ${opts.slug}`),
+      body: opts.body ?? paragraphBody(bodyText),
+      // Saved projections stand in for the save-pipeline output; the feed
+      // reads `body_html_feed` verbatim.
+      bodyHtml: `<p>${bodyText}</p>`,
+      bodyText,
+      bodyHtmlFeed: `<p>${bodyText}</p>`,
     })
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
@@ -82,9 +81,9 @@ describe('selectFeedPosts — feed-channel visibility policy', () => {
     expect(slugs).toContain('visible-post')
     expect(slugs).toContain('hidden-post')
     expect(slugs).not.toContain('scheduled-post')
-    // Feed items carry hydrated bodies from the published revision.
+    // Feed items carry the saved feed-variant projection of the published revision.
     const visible = posts.find((p) => p.slug === 'visible-post')
-    expect(JSON.stringify(visible?.body)).toContain('body of visible-post')
+    expect(visible?.bodyHtmlFeed).toContain('body of visible-post')
   })
 
   it('respects the configured limit', async () => {

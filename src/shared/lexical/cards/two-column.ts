@@ -4,10 +4,9 @@
 // dual-entry sharing contract as `./solution`: one React-free spec consumed
 // by the headless projection class and the `.`-entry editing class.
 //
-// The full-fidelity markup mirrors the existing public renderer
-// (`src/ui/pt/render.tsx` TwoColumnBlockComponent) attribute-for-attribute;
-// the feed variant flattens to left + right content concatenated (PT rssMode
-// parity, `src/server/render/pt-html.ts`).
+// The full-fidelity markup mirrors the retired PT public renderer (R13
+// deleted `src/ui/pt/`) attribute-for-attribute; the feed variant flattens
+// to left + right content concatenated (retired PT rssMode parity).
 
 import type { DecoratorNodeProperty } from '@inkling/editor/headless'
 

@@ -11,25 +11,12 @@ import type {
 
 import { headingLevelFromStyle } from '@/shared/pt/heading-levels'
 import { Slugger } from '@/shared/slug'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Unique within the body only (not stable across saves); falls back to
-// `Math.random` when `crypto.getRandomValues` is missing.
-export function generateBlockKey(): string {
-  const bytes = new Uint8Array(8)
-  if (typeof globalThis !== 'undefined' && typeof globalThis.crypto?.getRandomValues === 'function') {
-    globalThis.crypto.getRandomValues(bytes)
-  } else {
-    for (let i = 0; i < bytes.length; i += 1) {
-      bytes[i] = Math.floor(Math.random() * 256)
-    }
-  }
-  let out = ''
-  for (let i = 0; i < bytes.length; i += 1) {
-    out += bytes[i].toString(36).padStart(2, '0')
-  }
-  return out.slice(0, 12)
-}
+// LEGACY (R14): PortableText survives only for pre-Lexical rows until the
+// R15 backfill converts them. Live consumers: `visitNestedBlocks`
+// (asset-url-backfill), `bodyToPlainText` (comment email plain-text leg +
+// comment dual-read), and the validate/safeValidate pair + collectors the
+// R15 converter will use for row-by-row validation.
 
 function tryPushHeadingSlot(block: TextBlock, out: PortableTextHeadingSlot[]): void {
   const depth = headingLevelFromStyle(block.style)
@@ -55,8 +42,8 @@ function visitNonRecursiveForHeadings(blocks: readonly NonRecursiveBlock[], out:
 }
 
 /**
- * Heading blocks in exact render order for `PortableTextBody` — must
- * match `@portabletext/react` so `_key` → anchor maps stay stable across SSR/hydration.
+ * Heading blocks in exact render order for `PortableTextBody` — matched the
+ * (retired) `@portabletext/react` order so `_key` → anchor maps stayed stable.
  */
 export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextBody): PortableTextHeadingSlot[] {
   const out: PortableTextHeadingSlot[] = []
@@ -103,26 +90,6 @@ export function collectHeadings(
 }
 
 /**
- * Single owner of the slots→slug zip shared by BOTH render adapters,
- * so id assignment can't drift. Slot `i` takes `headingSlugs[i]` or `fallbackSlug`.
- */
-export function buildHeadingIdByBlockKey(
-  body: PortableTextBody,
-  headingSlugs: readonly string[] | undefined,
-  fallbackSlug: (plainText: string) => string,
-): Map<string, string> {
-  const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
-  const map = new Map<string, string>()
-  for (let i = 0; i < slots.length; i += 1) {
-    const slot = slots[i]
-    const pre = headingSlugs?.[i]
-    const id = typeof pre === 'string' && pre.length > 0 ? pre : fallbackSlug(slot.plainText)
-    map.set(slot.blockKey, id)
-  }
-  return map
-}
-
-/**
  * Depth-first pre-order walk over a body in render order (container first, then descendants).
  * Nesting is one level deep by schema — the walk never recurses further.
  */
@@ -144,24 +111,6 @@ export function visitNestedBlocks(body: PortableTextBody, visit: (block: Block) 
       }
     }
   }
-}
-
-/**
- * Mapping counterpart of `visitNestedBlocks`. The callback MUST map a
- * nested block to `NonRecursiveBlock`; untouched leaves keep their identity.
- */
-export function mapNestedBlocks(body: PortableTextBody, map: (block: Block) => Block): PortableTextBody {
-  const mapChild = (child: NonRecursiveBlock): NonRecursiveBlock => unsafeCast<NonRecursiveBlock>(map(child))
-  return body.map((block) => {
-    const mapped = map(block)
-    if (mapped._type === 'solution' || mapped._type === 'footnoteDefinition') {
-      return { ...mapped, children: mapped.children.map(mapChild) }
-    }
-    if (mapped._type === 'twoColumn') {
-      return { ...mapped, left: mapped.left.map(mapChild), right: mapped.right.map(mapChild) }
-    }
-    return mapped
-  })
 }
 
 export function collectImageStoragePaths(body: PortableTextBody): string[] {

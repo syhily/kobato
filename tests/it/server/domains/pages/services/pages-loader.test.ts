@@ -2,9 +2,10 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { SessionUser } from '@/server/domains/auth/session-storage'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { adminUser } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
@@ -16,14 +17,7 @@ import { post as postTable } from '@/server/infra/db/schema/post'
 
 const db = getTestDb()
 
-const pageBody: PortableTextBody = [
-  {
-    _type: 'block',
-    _key: 'p1',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 'p1s', text: 'Hello' }],
-  },
-]
+const pageBody: LexicalEditorState = lexicalBodyWith([lexicalParagraph('Hello')])
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -64,8 +58,8 @@ async function seedPage(opts: {
   slug: string
   title: string
   published?: boolean
-  body?: PortableTextBody
-  draftBody?: PortableTextBody
+  body?: LexicalEditorState
+  draftBody?: LexicalEditorState
 }): Promise<number> {
   const rows = await db
     .insert(pageTable)
@@ -81,7 +75,13 @@ async function seedPage(opts: {
   if (opts.published ?? true) {
     const revisions = await db
       .insert(contentTable)
-      .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: opts.body ?? [] })
+      .values({
+        type: 'page',
+        ownerId: pageId,
+        revisionNo: 1,
+        status: 'published',
+        body: opts.body ?? lexicalBodyWith([]),
+      })
       .returning({ id: contentTable.id })
     await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   }
@@ -149,7 +149,8 @@ describe('loadPagePreview — slug redirect logic', () => {
 
     expect(result.page.title).toBe('About')
     expect(result.page.slug).toBe('about')
-    expect(result.sourcePage.body).toEqual(pageBody)
+    // No projection columns seeded → the compute-on-read state surfaces.
+    expect(result.sourcePage.bodyState).toEqual(pageBody)
     expect(result.draftMarker).toBeNull()
   })
 
@@ -172,7 +173,7 @@ describe('loadPagePreview — slug redirect logic', () => {
 
     expect(result.draftMarker).toBe('draft')
     expect(result.page.title).toBe('New Page Draft')
-    expect(result.sourcePage.body).toEqual(pageBody)
+    expect(result.sourcePage.bodyState).toEqual(pageBody)
   })
 
   it('returns 404 when slug matches nothing and no admin session', async () => {

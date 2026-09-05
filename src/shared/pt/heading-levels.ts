@@ -1,8 +1,10 @@
 import type { StandardBlockStyle } from '@/shared/pt/schema'
 
+// LEGACY (R14): retained for `@/shared/pt/utils` and the R15 backfill's
+// per-row conversion only.
+//
 // Single owner of the heading style ↔ level mapping, schema-adjacent so
-// both the bridge (`pt-to-pm` heading emission) and the heading-slot
-// collector (`@/shared/pt/utils`) read the same table.
+// the heading-slot collector (`@/shared/pt/utils`) reads the same table.
 
 export function headingLevelFromStyle(style: StandardBlockStyle | undefined): number | null {
   switch (style) {

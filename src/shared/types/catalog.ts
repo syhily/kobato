@@ -45,7 +45,7 @@ export interface ClientPage {
   toc: boolean
   /** When true the public detail route renders the 「修改于 XXXX」 timestamp next to the first-publish date; flipped from the editor without re-publishing. */
   showUpdated: boolean
-  /** When true the public detail route appends the global friends grid below the body (the PT dialect has no friends block). */
+  /** When true the public detail route appends the global friends grid below the body (the body format has no friends block). */
   showFriends: boolean
   slug: string
   permalink: string
@@ -181,25 +181,26 @@ export interface CommentFormUser {
   admin: boolean
 }
 
-// Types that need PortableTextBody / LexicalEditorState (isomorphic)
+// Types that need the Lexical projection columns (isomorphic)
 import type { LexicalEditorState } from '@/shared/lexical/schema'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 export interface Post extends ClientPost {
-  body: PortableTextBody
-  /** Saved projection column; NULL for pre-R9b rows until the R15 backfill. */
+  /** Saved full-fidelity projection column; NULL for pre-R9b rows until the R15 backfill. */
   bodyHtml: string | null
-  /** Parsed Lexical state, populated only when `bodyHtml` is NULL (compute-on-read fallback). */
+  /** Saved feed-variant projection column (rssMode parity); NULL alongside `bodyHtml`. */
+  bodyHtmlFeed: string | null
+  /** Parsed Lexical state, populated only when a projection column is NULL (compute-on-read fallback). */
   bodyState: LexicalEditorState | null
   imageSources: string[]
   publishedRevisionId: number | null
 }
 
 export interface Page extends ClientPage {
-  body: PortableTextBody
-  /** Saved projection column; NULL for pre-R9b rows until the R15 backfill. */
+  /** Saved full-fidelity projection column; NULL for pre-R9b rows until the R15 backfill. */
   bodyHtml: string | null
-  /** Parsed Lexical state, populated only when `bodyHtml` is NULL (compute-on-read fallback). */
+  /** Saved feed-variant projection column (rssMode parity); NULL alongside `bodyHtml`. */
+  bodyHtmlFeed: string | null
+  /** Parsed Lexical state, populated only when a projection column is NULL (compute-on-read fallback). */
   bodyState: LexicalEditorState | null
   imageSources: string[]
   publishedRevisionId: number | null
@@ -207,8 +208,8 @@ export interface Page extends ClientPage {
 
 export function toClientPost(post: Post): ClientPost {
   const {
-    body: _body,
     bodyHtml: _bodyHtml,
+    bodyHtmlFeed: _bodyHtmlFeed,
     bodyState: _bodyState,
     imageSources: _imageSources,
     publishedRevisionId: _rev,

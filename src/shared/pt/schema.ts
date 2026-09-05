@@ -2,8 +2,12 @@ import { z } from 'zod'
 
 import { isSafeUrl } from '@/shared/sanitize-url'
 
-// Strict PortableText subset for this repository. PT is stored in
-// `content.body` (`jsonb`) and maps 1:1 to the SSR renderer's React
+// LEGACY (R14): PortableText survives only for pre-Lexical `content.body` /
+// comment rows until the R15 backfill converts them. No new consumer may
+// import this schema; R15's row-by-row converter validates against it.
+//
+// Strict PortableText subset for this repository. PT was stored in
+// `content.body` (`jsonb`) and mapped 1:1 to the (retired) SSR renderer's React
 // components; Zod rejects unknown payloads at the API perimeter.
 
 const NON_EMPTY_KEY = z.string().min(1)

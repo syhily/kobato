@@ -3,11 +3,10 @@ import { count, inArray } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 
 import { livePostWhere } from '@/server/domains/posts/live-gate'
-import { indexPost } from '@/server/domains/posts/services/search-index'
+import { indexPostFromRevision } from '@/server/domains/posts/services/search-index'
 import { content } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
-import { portableTextBodySchema } from '@/shared/pt/schema'
 
 const log = getLogger('search.reindex')
 
@@ -63,11 +62,11 @@ export async function reindexSearchBatch(db: Database, input: ReindexBatchInput 
     const rev = contentMap.get(row.publishedRevisionId!)
     if (rev) {
       try {
-        const body = portableTextBodySchema.safeParse(rev.body)
-        if (!body.success) {
-          throw new Error('Invalid body format')
+        const indexed = await indexPostFromRevision(db, row.id, row.title, row.summary, rev)
+        if (!indexed) {
+          // Legacy PortableText row (pre-R9a) — the R15 backfill re-derives it.
+          throw new Error('legacy pre-Lexical body (R15 backfill re-derives)')
         }
-        await indexPost(db, row.id, row.title, row.summary, body.data)
         processed++
       } catch (err) {
         log.error('Index post failed', {

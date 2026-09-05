@@ -4,13 +4,12 @@ import sanitizeHtml from 'sanitize-html'
 import type { Database } from '@/server/infra/db/database'
 import type { Page, Post } from '@/shared/types/catalog'
 
-import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
+import { resolveBodyHtmlFeed } from '@/server/domains/content/services/body-html'
 import { selectFeedPosts } from '@/server/domains/posts/services/feed'
 import { listAllCategories, resolveCategoryBySlugOrName } from '@/server/domains/taxonomies/categories/services/query'
 import { getTagsByNames, resolveTagBySlugOrName } from '@/server/domains/taxonomies/tags/service'
 import { findCategoriesByNames } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
-import { renderPortableTextToHtml } from '@/server/render/pt-html'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { joinUrl } from '@/shared/utils/urls'
@@ -21,6 +20,10 @@ export interface FeedOptions {
 }
 
 // Allowlist HTML sanitizer for feed output; pure-JS parser, no jsdom.
+// The tag set mirrors the feed-variant projection's real output
+// (`infra/pt/lexical-projection` — inkling exportDOM, artifacts stripped):
+// inline marks strong/em/u/s/code/mark, sup/sub footnote refs, the footnotes
+// <section>, media figure/figcaption/audio, and the table family.
 export function sanitizeFeedHtml(html: string): string {
   return sanitizeHtml(html, {
     allowedTags: [
@@ -31,6 +34,7 @@ export function sanitizeFeedHtml(html: string): string {
       'em',
       'u',
       's',
+      'mark',
       'code',
       'pre',
       'blockquote',
@@ -79,14 +83,12 @@ export function sanitizeFeedHtml(html: string): string {
   })
 }
 
-async function renderEntryContent(db: Database, entry: Post | Page): Promise<string> {
-  // Feeds ship as HTML; `rssMode` degrades interactive blocks to static HTML for feed readers.
-  const html = await renderPortableTextToHtml(
-    entry.body,
-    entry.headings.map((h) => h.slug),
-    (playerIds) => getPublicMusicMetasByIds(db, playerIds),
-    { rssMode: true },
-  )
+async function renderEntryContent(entry: Post | Page): Promise<string> {
+  // The saved `body_html_feed` projection already carries the rssMode
+  // degradations (math→TeX, code→plain pre, host cards flattened) and
+  // origin-absolutized media srcs; the sanitize allowlist below is the last
+  // boundary before the XML.
+  const html = await resolveBodyHtmlFeed(entry)
   return sanitizeFeedHtml(html)
 }
 
@@ -133,7 +135,7 @@ export async function generateFeeds(db: Database, options: FeedOptions = {}) {
   const [allTags, allCategories, contents] = await Promise.all([
     getTagsByNames(db, allTagNames),
     findCategoriesByNames(db, allCategoryNames),
-    Promise.all(feedPosts.map((post) => renderEntryContent(db, post))),
+    Promise.all(feedPosts.map((post) => renderEntryContent(post))),
   ])
 
   const tagMap = new Map(allTags.map((t) => [t.name, t]))

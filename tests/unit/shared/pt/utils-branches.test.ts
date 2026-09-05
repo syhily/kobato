@@ -4,13 +4,10 @@ import type { Block, NonRecursiveBlock, PortableTextBody, TextBlock } from '@/sh
 
 import {
   bodyToPlainText,
-  buildHeadingIdByBlockKey,
   collectHeadings,
   collectHeadingSlotsInPortableTextRenderOrder,
   collectImageStoragePaths,
   collectMusicPlayerIds,
-  generateBlockKey,
-  mapNestedBlocks,
   safeValidatePortableTextBody,
   validatePortableTextBody,
   visitNestedBlocks,
@@ -40,21 +37,6 @@ function imageBlock(storagePath?: string, alt?: string): NonRecursiveBlock {
     storagePath,
   } as NonRecursiveBlock
 }
-
-describe('shared/pt/utils — generateBlockKey', () => {
-  it('returns a 12-char [a-z0-9] string', () => {
-    const k = generateBlockKey()
-    expect(k).toMatch(/^[a-z0-9]{12}$/)
-  })
-
-  it('returns distinct values across calls', () => {
-    const seen = new Set<string>()
-    for (let i = 0; i < 50; i += 1) {
-      seen.add(generateBlockKey())
-    }
-    expect(seen.size).toBe(50)
-  })
-})
 
 describe('shared/pt/utils — collectHeadingSlotsInPortableTextRenderOrder', () => {
   it('skips footnoteDefinition at the top level during the main pass', () => {
@@ -345,135 +327,6 @@ describe('shared/pt/utils — bodyToPlainText', () => {
       },
     ]
     expect(bodyToPlainText(body)).toBe('left\nright')
-  })
-})
-
-describe('shared/pt/utils — mapNestedBlocks', () => {
-  it('maps every block exactly once in pre-order: container first, then children, left before right', () => {
-    const body: PortableTextBody = [
-      { _type: 'block', _key: 'b1', children: [{ _type: 'span', _key: 's1', text: 'lead' }] },
-      {
-        _type: 'solution',
-        _key: 'sol1',
-        children: [
-          { _type: 'block', _key: 'b2', children: [{ _type: 'span', _key: 's2', text: 'sol' }] },
-          { _type: 'image', _key: 'i1', src: 'x' },
-        ],
-      },
-      {
-        _type: 'twoColumn',
-        _key: 'tc1',
-        left: [{ _type: 'code', _key: 'c1', code: 'left' }],
-        right: [{ _type: 'mathBlock', _key: 'm1', tex: 'right' }],
-      },
-      {
-        _type: 'footnoteDefinition',
-        _key: 'fn1',
-        index: 1,
-        children: [{ _type: 'musicPlayer', _key: 'mp1', playerId: 'p1' }],
-      },
-    ]
-    const seen: string[] = []
-    const result = mapNestedBlocks(body, (block) => {
-      seen.push(`${block._type}:${block._key}`)
-      return block
-    })
-    expect(seen).toEqual([
-      'block:b1',
-      'solution:sol1',
-      'block:b2',
-      'image:i1',
-      'twoColumn:tc1',
-      'code:c1',
-      'mathBlock:m1',
-      'footnoteDefinition:fn1',
-      'musicPlayer:mp1',
-    ])
-    // Identity-preserving callback returns an equal-but-new body.
-    expect(result).toEqual(body)
-  })
-
-  it('rewrites nested blocks through the same callback', () => {
-    const body: PortableTextBody = [
-      {
-        _type: 'twoColumn',
-        _key: 'tc1',
-        left: [{ _type: 'image', _key: 'i1', src: 'a' }],
-        right: [],
-      },
-      {
-        _type: 'footnoteDefinition',
-        _key: 'fn1',
-        index: 1,
-        children: [{ _type: 'image', _key: 'i2', src: 'b' }],
-      },
-    ]
-    const result = mapNestedBlocks(body, (block) =>
-      block._type === 'image' ? { ...block, src: `${block.src}-mapped` } : block,
-    )
-    const tc = result[0] as Extract<Block, { _type: 'twoColumn' }>
-    expect((tc.left[0] as { src: string }).src).toBe('a-mapped')
-    const fn = result[1] as Extract<Block, { _type: 'footnoteDefinition' }>
-    expect((fn.children[0] as { src: string }).src).toBe('b-mapped')
-    // The original body is untouched.
-    expect((body[0] as Extract<Block, { _type: 'twoColumn' }>).left[0]).toMatchObject({ src: 'a' })
-  })
-
-  it('keeps leaf identity while containers always get fresh objects', () => {
-    const leaf = textBlock('leaf')
-    const container = { _type: 'solution', _key: 'sol', children: [leaf] } as Extract<Block, { _type: 'solution' }>
-    const body: PortableTextBody = [container]
-    const result = mapNestedBlocks(body, (block) => block)
-    expect(result[0]).not.toBe(container)
-    expect((result[0] as Extract<Block, { _type: 'solution' }>).children[0]).toBe(leaf)
-  })
-})
-
-describe('shared/pt/utils — buildHeadingIdByBlockKey', () => {
-  it('zips slots with the precomputed slugs by render order', () => {
-    const body: PortableTextBody = [textBlock('Alpha', 'h2'), textBlock('Beta', 'h3')]
-    const map = buildHeadingIdByBlockKey(body, ['custom-a', 'custom-b'], (text) => `fb-${text}`)
-    expect(map.size).toBe(2)
-    const [a, b] = collectHeadingSlotsInPortableTextRenderOrder(body)
-    expect(map.get(a!.blockKey)).toBe('custom-a')
-    expect(map.get(b!.blockKey)).toBe('custom-b')
-  })
-
-  it('falls back to the derived slug when the precomputed slot is missing or empty', () => {
-    const body: PortableTextBody = [textBlock('Alpha', 'h2'), textBlock('Beta', 'h2')]
-    const seen: string[] = []
-    // Revision preview passes `[]`; empty strings fall back too.
-    const map = buildHeadingIdByBlockKey(body, ['', 'kept'], (text) => {
-      seen.push(text)
-      return `fb-${text}`
-    })
-    const [a, b] = collectHeadingSlotsInPortableTextRenderOrder(body)
-    expect(map.get(a!.blockKey)).toBe('fb-Alpha')
-    expect(map.get(b!.blockKey)).toBe('kept')
-    expect(seen).toEqual(['Alpha'])
-  })
-
-  it('uses the fallback for every slot when headingSlugs is undefined', () => {
-    const body: PortableTextBody = [textBlock('Only', 'h1')]
-    const map = buildHeadingIdByBlockKey(body, undefined, () => 'derived')
-    const [slot] = collectHeadingSlotsInPortableTextRenderOrder(body)
-    expect(map.get(slot!.blockKey)).toBe('derived')
-  })
-
-  it('covers footnote-definition headings after the main column', () => {
-    const body: PortableTextBody = [
-      textBlock('Main', 'h2'),
-      {
-        _type: 'footnoteDefinition',
-        _key: 'fn1',
-        index: 1,
-        children: [textBlock('InNote', 'h3')],
-      },
-    ]
-    const map = buildHeadingIdByBlockKey(body, ['main-slug', 'note-slug'], () => 'fb')
-    const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
-    expect(map.get(slots[0]!.blockKey)).toBe('main-slug')
-    expect(map.get(slots[1]!.blockKey)).toBe('note-slug')
   })
 })
 

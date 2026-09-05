@@ -1,6 +1,6 @@
 import type { MetaEntityDescriptor } from '@/server/domains/content/entities/descriptor'
 import type { Database } from '@/server/infra/db/database'
-import type { NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
+import type { ContentRow, NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
 import type { AdminPostDto } from '@/shared/contracts/posts'
 import type { Post } from '@/shared/types/catalog'
 
@@ -16,7 +16,7 @@ import {
   softDeletePostMeta,
   updatePostMetaById,
 } from '@/server/domains/posts/repos/write'
-import { indexPost, removePostIndex } from '@/server/domains/posts/services/search-index'
+import { indexPost, indexPostFromRevision, removePostIndex } from '@/server/domains/posts/services/search-index'
 import { assertOwnPostOr404, type PostMetaWriteInput } from '@/server/domains/posts/services/shared'
 import {
   findPostMetaById,
@@ -29,11 +29,10 @@ import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@/serv
 import { findTagsByNames, seedTagsIfMissing } from '@/server/infra/db/operations/tag'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { computeBodyText } from '@/server/infra/pt/lexical-projection'
 import { resolveSlug } from '@/server/infra/slug/resolve'
-import { portableTextBodySchema, type PortableTextBody } from '@/shared/pt/schema'
 import { idFromString } from '@/shared/utils/id'
 import { hasAtLeast } from '@/shared/utils/roles'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('posts.service')
 
@@ -47,7 +46,7 @@ interface IndexablePostData {
   id: number
   title: string
   summary: string
-  body: unknown
+  revision: ContentRow
 }
 
 // Sync (node:sqlite): called inside the upsert transaction.
@@ -126,22 +125,17 @@ export const postDescriptor: MetaEntityDescriptor<
         summary: meta.summary,
         cover: meta.cover,
       })
-      // R9a interregnum: `body` is a Lexical editor state, but the PT-typed
-      // consumers (search-index plain text, webmention link extraction) are
-      // only switched in R14. Until then they throw on the foreign shape,
-      // which both call sites catch and degrade to a publish warning — the
-      // R15 backfill re-derives the index. The cast marks the seam, not a
-      // real conversion.
-      const legacyBody = unsafeCast<PortableTextBody>(body)
-      // Index the in-scope `body` — freshly canonicalized; a re-read would cost a round-trip and reintroduce a validation gap.
+      // Index the in-scope `body` — freshly canonicalized; the plain-text
+      // corpus is its `body_text` projection leg (recomputed here so the
+      // indexer never depends on the column write having landed).
       try {
-        await indexPost(db, meta.id, meta.title, meta.summary, legacyBody)
+        await indexPost(db, meta.id, meta.title, meta.summary, computeBodyText(body))
       } catch (err: unknown) {
         log.warn('index post failed', { postId: meta.id, error: err })
         warnings.push(INDEX_FAILURE_WARNING)
       }
       // Cross-domain extensions run through the seam — see `posts/publish-hooks.ts`.
-      await runPostPublishHooks(db, meta, legacyBody, warnings)
+      await runPostPublishHooks(db, meta, body, warnings)
     },
   },
   adminDto: {
@@ -248,16 +242,14 @@ export const postDescriptor: MetaEntityDescriptor<
         if (revision === null) {
           return
         }
-        const bodyResult = portableTextBodySchema.safeParse(revision.body)
-        if (!bodyResult.success) {
-          log.warn('update post: published revision body validation failed, skipping search re-index', {
-            postId: meta.id.toString(),
-            error: bodyResult.error.message,
-          })
-          return
-        }
         try {
-          await indexPost(db, meta.id, meta.title, meta.summary, bodyResult.data)
+          const indexed = await indexPostFromRevision(db, meta.id, meta.title, meta.summary, revision)
+          if (!indexed) {
+            // Legacy PortableText row (pre-R9a) — the R15 backfill re-derives the index.
+            log.warn('update post: published revision is a legacy PT row, skipping search re-index', {
+              postId: meta.id.toString(),
+            })
+          }
         } catch (err: unknown) {
           log.warn('index post failed', { postId: meta.id, error: err })
         }
@@ -271,24 +263,27 @@ export const postDescriptor: MetaEntityDescriptor<
       if (revision === null) {
         return null
       }
-      return { id: meta.id, title: meta.title, summary: meta.summary, body: revision.body }
+      return { id: meta.id, title: meta.title, summary: meta.summary, revision }
     },
     async afterRestore(db, indexable) {
       invalidateContent(db, { entity: 'post' })
       if (indexable === null) {
         return undefined
       }
-      const bodyResult = portableTextBodySchema.safeParse(indexable.body)
-      if (!bodyResult.success) {
-        // Corrupt JSONB (e.g. direct INSERT) — restored but never indexed without this log.
-        log.warn('restore post: body validation failed, skipping search index', {
-          postId: indexable.id.toString(),
-          error: bodyResult.error.message,
-        })
-        return undefined
-      }
       try {
-        await indexPost(db, indexable.id, indexable.title, indexable.summary, bodyResult.data)
+        const indexed = await indexPostFromRevision(
+          db,
+          indexable.id,
+          indexable.title,
+          indexable.summary,
+          indexable.revision,
+        )
+        if (!indexed) {
+          // Legacy PortableText row (pre-R9a) — restored but indexed only after the R15 backfill.
+          log.warn('restore post: published revision is a legacy PT row, skipping search index', {
+            postId: indexable.id.toString(),
+          })
+        }
       } catch (err: unknown) {
         log.warn('index post failed', { postId: indexable.id, error: err })
         return INDEX_FAILURE_WARNING

@@ -6,24 +6,25 @@
 // `@/server/domains/pt/lexical-music-snapshot`); unlike PT, nothing resolves
 // at request time. Same dual-entry sharing contract as `./solution`.
 //
-// Full-fidelity markup mirrors the existing public renderer
-// (`src/ui/pt/blocks/MusicPlayer.tsx`): the wrapper div plus the `.aplayer`
+// Full-fidelity markup mirrors the retired PT public renderer (R13 deleted
+// `src/ui/pt/`): the wrapper div plus the `.aplayer`
 // mount point — carried as data attributes (`data-id` + the meta snapshot)
 // so R13's hydration-enhancement script builds the APlayer without a
 // server round-trip — plus a static fallback card inside the mount point so
 // the no-JS render shows the song instead of an empty box. The feed variant
-// reproduces the PT rssMode figure (`src/server/render/pt-html.ts`
-// renderMusicPlayer), or the placeholder paragraph when the snapshot is
-// absent.
+// reproduces the retired PT rssMode figure (cover/audio absolutized against
+// the site origin), or the placeholder paragraph when the snapshot is absent.
 
 import type { DecoratorNodeProperty } from '@inkling/editor/headless'
 
 import {
+  absolutizeAssetSrcForFeed,
   type CardRenderContext,
   type CardRenderOutput,
   elementFromHtml,
   isFeedVariantRender,
 } from '@/shared/lexical/cards/card-html'
+import { resolveKobatoImageRenderEnv } from '@/shared/lexical/cards/kobato-image'
 import { MUSIC_PLAYER_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@/shared/lexical/projection-state'
 
@@ -109,11 +110,16 @@ export function renderMusicPlayerCard(node: MusicPlayerCardMeta, context: CardRe
         type: 'outer',
       }
     }
-    // PT rssMode parity (pt-html.ts renderMusicPlayer).
+    // PT rssMode parity (the retired pt-html renderMusicPlayer): cover and
+    // audio join the site origin — feed readers resolve URLs off-origin. The
+    // origin arrives through the image render env (answered for both passes).
+    const siteOrigin = resolveKobatoImageRenderEnv(context)?.siteOrigin
     const name = escape(meta.name)
+    const cover = escape(absolutizeAssetSrcForFeed(meta.cover, siteOrigin))
+    const audioUrl = escape(absolutizeAssetSrcForFeed(meta.audioUrl, siteOrigin))
     const element = elementFromHtml(
       document,
-      `<figure><img src="${escape(meta.cover)}" alt="${name}" /><audio controls preload="none" src="${escape(meta.audioUrl)}"></audio><figcaption>🎵 ${name} — ${escape(meta.artist)}</figcaption></figure>`,
+      `<figure><img src="${cover}" alt="${name}" /><audio controls preload="none" src="${audioUrl}"></audio><figcaption>🎵 ${name} — ${escape(meta.artist)}</figcaption></figure>`,
       MUSIC_PLAYER_NODE_TYPE,
     )
     return { element, type: 'outer' }

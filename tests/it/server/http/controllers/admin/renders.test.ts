@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
@@ -44,7 +45,9 @@ async function seedPublishedPost(plainText: string): Promise<number> {
       ownerId: meta.id,
       revisionNo: 1,
       status: 'published',
-      body: [{ _type: 'block', _key: `b${key}`, children: [{ _type: 'span', _key: `s${key}`, text: plainText }] }],
+      body: lexicalBodyWith([lexicalParagraph(plainText)]),
+      // The indexer prefers the saved `body_text` projection column.
+      bodyText: plainText,
     })
     .returning({ id: content.id })
   await db.update(post).set({ publishedRevisionId: rev.id }).where(eq(post.id, meta.id))

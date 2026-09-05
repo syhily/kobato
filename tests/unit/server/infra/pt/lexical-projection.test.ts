@@ -162,10 +162,10 @@ describe('infra/pt/lexical-projection — feed variant (rssMode parity)', () => 
   it('degrades math to escaped TeX and code to a plain pre/code', async () => {
     const { bodyHtmlFeed } = await computeBodyProjections(RICH_STATE)
 
-    // Block math: <pre><code>escaped tex</code></pre> (pt-html.ts:266-268).
+    // Block math: <pre><code>escaped tex</code></pre> (PT rssMode parity).
     expect(bodyHtmlFeed).toContain('<pre><code>E=mc^2</code></pre>')
     expect(bodyHtmlFeed).not.toContain('inkling-math-card')
-    // Inline math: escaped TeX code (pt-html.ts:151-155).
+    // Inline math: escaped TeX code (PT rssMode parity).
     expect(bodyHtmlFeed).toContain('<code class="inkling-math-inline">x^2</code>')
     // Code: plain pre/code without the Shiki embed or copy-button hooks.
     expect(bodyHtmlFeed).toContain('<pre><code class="language-typescript">const a = 1 &lt; 2</code></pre>')
@@ -177,16 +177,18 @@ describe('infra/pt/lexical-projection — feed variant (rssMode parity)', () => 
   it('renders the host-card feed shapes (solution unwrap, two-column flatten, music figure)', async () => {
     const { bodyHtmlFeed } = await computeBodyProjections(RICH_STATE)
 
-    // solution unwraps to its bare content (pt-html.ts solution renderer).
+    // solution unwraps to its bare content (PT feed-renderer parity).
     expect(bodyHtmlFeed).toContain('<p>答案 <strong>42</strong></p>')
     expect(bodyHtmlFeed).not.toContain('solution-begin')
     // two-column flattens to left + right content without the grid.
     expect(bodyHtmlFeed).toContain('<p>左栏</p><p>右栏</p>')
     expect(bodyHtmlFeed).not.toContain('data-pt-two-column')
-    // music-player renders the PT feed figure from the meta snapshot
-    // (jsdom serializes void tags without ` />` and boolean attrs as `=""`).
+    // music-player renders the PT feed figure from the meta snapshot, with
+    // cover/audioUrl absolutized against the site origin (R14 parity fix —
+    // the retired PT renderer absolutized at request time; jsdom serializes
+    // void tags without ` />` and boolean attrs as `=""`).
     expect(bodyHtmlFeed).toContain(
-      '<figure><img src="/storage/music/cover.png" alt="Song"><audio controls="" preload="none" src="/storage/music/song.mp3"></audio><figcaption>🎵 Song — Artist</figcaption></figure>',
+      '<figure><img src="https://example.com/storage/music/cover.png" alt="Song"><audio controls="" preload="none" src="https://example.com/storage/music/song.mp3"></audio><figcaption>🎵 Song — Artist</figcaption></figure>',
     )
   })
 

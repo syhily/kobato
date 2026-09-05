@@ -1,9 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import {
   findLivePageBySlug,
   findPageBySlug,
@@ -28,7 +29,9 @@ async function seedPage(opts: {
   published?: boolean
   publishedAt?: Date
   deletedAt?: Date | null
-  body?: PortableTextBody
+  body?: LexicalEditorState
+  bodyHtml?: string
+  bodyHtmlFeed?: string
   withRevision?: boolean
 }): Promise<number> {
   const rows = await db
@@ -46,7 +49,15 @@ async function seedPage(opts: {
   if (opts.withRevision ?? true) {
     const revisions = await db
       .insert(contentTable)
-      .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: opts.body ?? [] })
+      .values({
+        type: 'page',
+        ownerId: pageId,
+        revisionNo: 1,
+        status: 'published',
+        body: opts.body ?? lexicalBodyWith([]),
+        bodyHtml: opts.bodyHtml ?? null,
+        bodyHtmlFeed: opts.bodyHtmlFeed ?? null,
+      })
       .returning({ id: contentTable.id })
     await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   }
@@ -83,22 +94,20 @@ describe('pages services/public-query', () => {
     expect(rows[0]?.publishedAt).toEqual(new Date('2024-01-01'))
   })
 
-  it('finds a page by slug with the published revision body joined', async () => {
-    const body: PortableTextBody = [
-      {
-        _type: 'block',
-        _key: 'p1',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's1', text: 'Hello page' }],
-      },
-    ]
-    await seedPage({ slug: 'hello', body })
+  it('finds a page by slug with the published revision projections joined', async () => {
+    await seedPage({
+      slug: 'hello',
+      body: lexicalBodyWith([lexicalParagraph('Hello page')]),
+      bodyHtml: '<p>Hello page</p>',
+      bodyHtmlFeed: '<p>Hello page</p>',
+    })
 
     const page = await findPageBySlug(db, 'hello')
     expect(page).not.toBeNull()
     expect(page?.slug).toBe('hello')
     expect(page?.permalink).toBe('/hello')
-    expect(page?.body).toEqual(body)
+    expect(page?.bodyHtml).toBe('<p>Hello page</p>')
+    expect(page?.bodyHtmlFeed).toBe('<p>Hello page</p>')
     expect(page?.publishedRevisionId).toEqual(expect.any(Number))
   })
 

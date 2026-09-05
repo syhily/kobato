@@ -1,6 +1,6 @@
 import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { getLogger } from '@/server/infra/logger'
 
@@ -15,7 +15,7 @@ export const POST_PUBLISH_HOOK_WARNING = '发布后的扩展处理（如 Webment
 export type PostPublishHook = (
   db: Database,
   meta: PostMetaRow,
-  body: PortableTextBody,
+  body: LexicalEditorState,
   warnings: string[],
 ) => Promise<void>
 
@@ -30,7 +30,7 @@ export function wirePostPublishHook(hook: PostPublishHook): void {
 export async function runPostPublishHooks(
   db: Database,
   meta: PostMetaRow,
-  body: PortableTextBody,
+  body: LexicalEditorState,
   warnings: string[],
 ): Promise<void> {
   if (impl === null) {

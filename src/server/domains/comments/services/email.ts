@@ -1,15 +1,16 @@
 import { lexicalStateToPlainText } from '@inkling/editor/headless'
 import { createElement } from 'react'
+import sanitizeHtml from 'sanitize-html'
 
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { Comment, User } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
+import type { PortableTextBody } from '@/shared/pt/schema'
 import type { CommentAndUser } from '@/shared/types/comments'
 
 import { findEntitySlugTitle } from '@/server/domains/content/entities/slug-title'
-import { commentBodyToHtml } from '@/server/domains/pt/services/comment-to-html'
 import { sendAdminNotification } from '@/server/infra/email/admin-notification'
 import { render } from '@/server/infra/email/render'
 import { sendEmail } from '@/server/infra/email/sender'
@@ -17,8 +18,8 @@ import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNoti
 import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
 import { getLogger } from '@/server/infra/logger'
-import { computeCommentContentProjection } from '@/server/infra/pt/lexical-projection'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { bodyToPlainText } from '@/shared/pt/utils'
 import { entityCommentUrl } from '@/shared/utils/paths'
 import { escapeHtml } from '@/shared/utils/security'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -26,22 +27,62 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 const log = getLogger('comments.email')
 
 /**
- * R12 interregnum shape gate: rows written before the Lexical switch still
- * hold PortableText bodies (legacy renderer — R14 drops that leg); Lexical
- * bodies project through the feed-variant degraded HTML (the email-friendly
- * audience). Render failure degrades to escaped plain text — a notification
- * email must never crash the comment flow.
+ * Allowlist sanitizer for the comment `content` column at the email boundary
+ * (RawEmailHtml injects without sanitizing; the retired hand-rolled renderer
+ * was safe by construction, the saved projection is not). Tags mirror the
+ * comment feed-variant projection's real output: paragraphs, inline marks
+ * (inkling exportDOM: strong/em/u/s/mark/code, sup/sub), blockquote, lists,
+ * plain pre/code (artifacts stripped), and links.
  */
-async function commentBodyEmailHtml(body: unknown): Promise<string> {
-  if (Array.isArray(body)) {
-    return commentBodyToHtml(unsafeCast<CommentBody>(body))
+function sanitizeCommentEmailHtml(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: [
+      'p',
+      'br',
+      'strong',
+      'em',
+      'u',
+      's',
+      'mark',
+      'code',
+      'pre',
+      'blockquote',
+      'ul',
+      'ol',
+      'li',
+      'a',
+      'sup',
+      'sub',
+    ],
+    allowedAttributes: {
+      a: ['href', 'title', 'rel', 'target'],
+      '*': ['class'],
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    disallowedTagsMode: 'discard',
+    allowProtocolRelative: false,
+  })
+}
+
+/**
+ * Email HTML for a comment row (R14): the saved `content` column IS the
+ * feed-variant degraded-HTML projection computed at save time (R12), so the
+ * mail path reads it directly — sanitized at this boundary. Legacy pre-R12
+ * rows still carry a PortableText array body with a markdown `content`
+ * snapshot; markdown is not email HTML, so those degrade to escaped plain
+ * text until the R15 backfill converts them. A Lexical body with an empty
+ * snapshot (should not happen — canonicalize falls back to plain text)
+ * degrades to escaped plain text too. Never throws: a notification email
+ * must never crash the comment flow.
+ */
+function commentBodyEmailHtml(comment: { body: unknown; content: string | null }): string {
+  if (Array.isArray(comment.body)) {
+    return escapeHtml(bodyToPlainText(unsafeCast<PortableTextBody>(comment.body)))
   }
-  const state = unsafeCast<Parameters<typeof computeCommentContentProjection>[0]>(body)
-  try {
-    return await computeCommentContentProjection(state)
-  } catch {
-    return escapeHtml(lexicalStateToPlainText(state))
+  if (comment.content !== null && comment.content !== '') {
+    return sanitizeCommentEmailHtml(comment.content)
   }
+  return escapeHtml(lexicalStateToPlainText(unsafeCast<LexicalEditorState>(comment.body)))
 }
 
 async function resolveEntity(db: Database, target: EntityTarget): Promise<{ title: string; url: string } | null> {
@@ -58,7 +99,7 @@ export async function sendNewComment(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const commentHtml = await commentBodyEmailHtml(commentInfo.body)
+  const commentHtml = commentBodyEmailHtml(commentInfo)
   if (entity === null) {
     log.warn('Skipping new-comment email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -84,8 +125,8 @@ export async function sendNewReply(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const sourceHtml = await commentBodyEmailHtml(source.body)
-  const replyHtml = await commentBodyEmailHtml(reply.body)
+  const sourceHtml = commentBodyEmailHtml(source)
+  const replyHtml = commentBodyEmailHtml(reply)
   if (entity === null) {
     log.warn('Skipping reply email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -114,7 +155,7 @@ export async function sendApprovedComment(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const commentHtml = await commentBodyEmailHtml(comment.body)
+  const commentHtml = commentBodyEmailHtml(comment)
   if (entity === null) {
     log.warn('Skipping approval email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }

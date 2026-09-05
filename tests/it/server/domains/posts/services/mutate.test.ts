@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { isLive } from '@/server/domains/content/schemas/live-gate'
 import { slugRegistry } from '@/server/infra/db/schema/config'
 import { content as contentTable, postSearchIndex } from '@/server/infra/db/schema/content'
@@ -13,6 +14,7 @@ vi.mock('@/server/domains/posts/services/search-index', async (importOriginal) =
   const actual = await importOriginal<typeof import('@/server/domains/posts/services/search-index')>()
   return {
     indexPost: vi.fn(actual.indexPost),
+    indexPostFromRevision: vi.fn(actual.indexPostFromRevision),
     removePostIndex: vi.fn(actual.removePostIndex),
   }
 })
@@ -25,9 +27,11 @@ vi.mock('@/server/domains/content/invalidate', async (importOriginal) => {
 
 const { createPost, deletePost, restorePost, unpublishPost, updatePostMeta } =
   await import('@/server/domains/posts/services/mutate')
-const { indexPost, removePostIndex } = await import('@/server/domains/posts/services/search-index')
+const { indexPost, indexPostFromRevision, removePostIndex } =
+  await import('@/server/domains/posts/services/search-index')
 const { invalidateContent } = await import('@/server/domains/content/invalidate')
 const indexPostMock = vi.mocked(indexPost)
+const indexPostFromRevisionMock = vi.mocked(indexPostFromRevision)
 const removePostIndexMock = vi.mocked(removePostIndex)
 const invalidateContentMock = vi.mocked(invalidateContent)
 
@@ -38,14 +42,12 @@ beforeEach(async () => {
   vi.clearAllMocks()
 })
 
-const VALID_BODY = [
-  { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }] },
-]
+const VALID_BODY = lexicalBodyWith([lexicalParagraph('hi')])
 
 async function seedPublishedPost(slug: string): Promise<{ postId: number; revisionId: number }> {
   const contentRows = await db
     .insert(contentTable)
-    .values({ type: 'post', ownerId: 0, revisionNo: 1, status: 'published', body: VALID_BODY })
+    .values({ type: 'post', ownerId: 0, revisionNo: 1, status: 'published', body: VALID_BODY, bodyText: 'hi' })
     .returning({ id: contentTable.id })
   const revisionId = contentRows[0]!.id
   const postRows = await db
@@ -193,8 +195,8 @@ describe('posts/services/mutate — updatePostMeta', () => {
 
     // Published meta edits invalidate and re-index from the published revision.
     expect(invalidateContentMock).toHaveBeenCalledWith(db, { entity: 'post' })
-    expect(indexPostMock).toHaveBeenCalledTimes(1)
-    expect(indexPostMock.mock.calls[0]?.[2]).toBe('Renamed')
+    expect(indexPostFromRevisionMock).toHaveBeenCalledTimes(1)
+    expect(indexPostFromRevisionMock.mock.calls[0]?.[2]).toBe('Renamed')
     const rows = await indexRows()
     expect(rows).toHaveLength(1)
     expect(rows[0]?.plainText).toBe('hi')
@@ -207,7 +209,7 @@ describe('posts/services/mutate — updatePostMeta', () => {
     await updatePostMeta(db, { id: Number(created.id), slug: 'draft', title: 'Draft v2' })
 
     expect(invalidateContentMock).not.toHaveBeenCalled()
-    expect(indexPostMock).not.toHaveBeenCalled()
+    expect(indexPostFromRevisionMock).not.toHaveBeenCalled()
   })
 
   it('publishedAt: null cancels a pending schedule — stays unpublished, drops the future timestamp', async () => {
@@ -260,6 +262,7 @@ describe('posts/services/mutate — deletePost', () => {
     expect(await indexRows()).toHaveLength(0)
     expect(removePostIndexMock).toHaveBeenCalledTimes(1)
     expect(indexPostMock).not.toHaveBeenCalled()
+    expect(indexPostFromRevisionMock).not.toHaveBeenCalled()
   })
 })
 
@@ -274,6 +277,7 @@ describe('posts/services/mutate — unpublishPost', () => {
     expect(await indexRows()).toHaveLength(0)
     expect(removePostIndexMock).toHaveBeenCalledTimes(1)
     expect(indexPostMock).not.toHaveBeenCalled()
+    expect(indexPostFromRevisionMock).not.toHaveBeenCalled()
   })
 
   it('swallows an index-removal failure', async () => {
@@ -300,8 +304,8 @@ describe('posts/services/mutate — restorePost', () => {
     expect(meta[0]?.deletedAt).toBeNull()
     const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
     expect(registry[0]?.entityId).toBe(postId)
-    // Re-indexed from the published revision body.
-    expect(indexPostMock).toHaveBeenCalledTimes(1)
+    // Re-indexed from the published revision's saved `body_text` projection.
+    expect(indexPostFromRevisionMock).toHaveBeenCalledTimes(1)
     const rows = await indexRows()
     expect(rows).toHaveLength(1)
     expect(rows[0]?.plainText).toBe('hi')
@@ -310,7 +314,7 @@ describe('posts/services/mutate — restorePost', () => {
   it('returns the exact index-failure warning when re-indexing fails', async () => {
     const { postId } = await seedPublishedPost('hello')
     await deletePost(db, postId)
-    indexPostMock.mockRejectedValueOnce(new Error('embedding down'))
+    indexPostFromRevisionMock.mockRejectedValueOnce(new Error('embedding down'))
 
     const result = await restorePost(db, postId)
 
@@ -339,7 +343,7 @@ describe('posts/services/mutate — restorePost', () => {
     await deletePost(db, postId)
     const pageRows = await db.insert(pageTable).values({ slug: 'hello', title: 'Page hello' }).returning()
     await db.insert(slugRegistry).values({ slug: 'hello', entityType: 'page', entityId: pageRows[0]!.id })
-    indexPostMock.mockRejectedValueOnce(new Error('embedding down'))
+    indexPostFromRevisionMock.mockRejectedValueOnce(new Error('embedding down'))
 
     const result = await restorePost(db, postId)
 

@@ -15,7 +15,7 @@ export function toCmsPage(
     coverHeight?: number
   } = {},
 ): Page {
-  const { body, bodyHtml, bodyState, imageSources, headings } = readRevisionProjection(publishedRevision)
+  const { bodyHtml, bodyHtmlFeed, bodyState, imageSources, headings } = readRevisionProjection(publishedRevision)
 
   return {
     id: String(meta.id),
@@ -37,8 +37,8 @@ export function toCmsPage(
     slug: meta.slug,
     permalink: `/${meta.slug}`,
     headings,
-    body,
     bodyHtml,
+    bodyHtmlFeed,
     bodyState,
     imageSources,
     publishedRevisionId: meta.publishedRevisionId,

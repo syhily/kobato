@@ -1,35 +1,28 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
+import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
 import { generateFeeds } from '@/server/render/feed/generator'
 
 // `generateFeeds` perimeter against the real engine: the RSS/Atom envelope
-// plus `selectFeedPosts` wiring (scope, size, miss → empty-feed policy).
+// plus `selectFeedPosts` wiring (scope, size, miss → empty-feed policy), and
+// the end-to-end state → save-time projections → columns → feed XML path.
 const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
+  // The projections absolutize media srcs against siteIdentity.website.
+  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
-
-function paragraphBody(text: string): PortableTextBody {
-  return [
-    {
-      _type: 'block',
-      _key: 'b1',
-      style: 'normal',
-      markDefs: [],
-      children: [{ _type: 'span', _key: 's1', text, marks: [] }],
-    },
-  ]
-}
 
 async function seedCategory(name: string, slug: string): Promise<number> {
   const rows = await db.insert(categoryTable).values({ name, slug, cover: '' }).returning({ id: categoryTable.id })
@@ -46,8 +39,10 @@ async function seedPost(opts: {
   title: string
   summary?: string
   categoryId?: number
-  body?: PortableTextBody
+  body?: LexicalEditorState
 }): Promise<number> {
+  const body = opts.body ?? lexicalBodyWith([lexicalParagraph('')])
+  const projections = await computeBodyProjections(body)
   const rows = await db
     .insert(postTable)
     .values({
@@ -68,7 +63,10 @@ async function seedPost(opts: {
       ownerId: postId,
       revisionNo: 1,
       status: 'published',
-      body: opts.body ?? [],
+      body,
+      bodyHtml: projections.bodyHtml,
+      bodyText: projections.bodyText,
+      bodyHtmlFeed: projections.bodyHtmlFeed,
     })
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
@@ -99,7 +97,7 @@ describe('render/feed/generator — generateFeeds', () => {
       title: 'Hello',
       summary: 'A summary',
       categoryId,
-      body: paragraphBody('body text'),
+      body: lexicalBodyWith([lexicalParagraph('body text')]),
     })
     await linkTag(postId, tagId)
 
@@ -114,21 +112,58 @@ describe('render/feed/generator — generateFeeds', () => {
     await seedPost({
       slug: 'with-code',
       title: 'With Code',
-      body: [
+      body: lexicalBodyWith([
         {
-          _type: 'code',
-          _key: 'c1',
+          type: 'codeblock',
+          version: 1,
           code: 'const answer = 42;',
           language: 'ts',
+          caption: '',
           highlightedHtml: '<pre class="shiki"><code><span>const answer = 42;</span></code></pre>',
         },
-      ],
+      ]),
     })
 
     const result = await generateFeeds(db)
     expect(itemCount(result.rss)).toBe(1)
     expect(result.rss).toContain('const answer = 42;')
     expect(result.atom).toContain('const answer = 42;')
+    // The feed variant never carries the Shiki markup.
+    expect(result.rss).not.toContain('shiki')
+  })
+
+  it('degrades math, two-column, and music-player cards end-to-end in the RSS XML', async () => {
+    await seedPost({
+      slug: 'rich',
+      title: 'Rich',
+      body: lexicalBodyWith([
+        { type: 'math', version: 1, tex: 'E=mc^2', mathml: '<math><mi>E</mi></math>', svg: '' },
+        { type: 'two-column', version: 1, left: '<p>左栏</p>', right: '<p>右栏</p>' },
+        {
+          type: 'music-player',
+          version: 1,
+          playerId: 'p1',
+          name: 'Song',
+          artist: 'Artist',
+          cover: '/storage/music/cover.png',
+          audioUrl: '/storage/music/song.mp3',
+          lyric: '',
+        },
+      ]),
+    })
+
+    const result = await generateFeeds(db)
+    expect(itemCount(result.rss)).toBe(1)
+    // Math → escaped TeX pre/code, never MathML/SVG.
+    expect(result.rss).toContain('E=mc^2')
+    expect(result.rss).not.toContain('<math>')
+    // Two-column flattens to left + right panes.
+    expect(result.rss).toContain('左栏')
+    expect(result.rss).toContain('右栏')
+    expect(result.rss).not.toContain('data-pt-two-column')
+    // Music player → static figure with origin-absolutized media srcs.
+    expect(result.rss).toContain('🎵 Song — Artist')
+    expect(result.rss).toContain('https://example.com/storage/music/song.mp3')
   })
 
   it('throws DomainError when both category and tag are provided', async () => {

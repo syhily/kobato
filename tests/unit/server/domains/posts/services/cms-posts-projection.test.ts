@@ -69,9 +69,11 @@ describe('cms/posts/projection — toCmsPost', () => {
     expect(dto.cover).toBe('/images/custom.jpg')
   })
 
-  it('returns an empty body when there is no published revision', () => {
+  it('returns null body projections when there is no published revision', () => {
     const dto = toCmsPost(metaRow({ publishedRevisionId: null }), null)
-    expect(dto.body).toEqual([])
+    expect(dto.bodyHtml).toBeNull()
+    expect(dto.bodyHtmlFeed).toBeNull()
+    expect(dto.bodyState).toBeNull()
     expect(dto.imageSources).toEqual([])
     expect(dto.headings).toEqual([])
     expect(dto.permalink).toBe('/posts/hello')
@@ -82,25 +84,19 @@ describe('cms/posts/projection — toCmsPost', () => {
     expect(toCmsPost(metaRow({ categoryId: null }), null).category).toBe('')
   })
 
-  it('joins the published revision body when present', () => {
-    const body = [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'h2',
-        children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
-      },
-    ]
+  it('joins the published revision projections when present', () => {
     const dto = toCmsPost(
       metaRow({ publishedRevisionId: 200 }),
       contentRow({
         id: 200,
-        body,
+        bodyHtml: '<h2>Hi</h2>',
+        bodyHtmlFeed: '<h2>Hi</h2>',
         imageSources: ['images/x.jpg'],
         headings: [{ depth: 2, text: 'Hi', slug: 'hi' }],
       }),
     )
-    expect(dto.body).toEqual(body)
+    expect(dto.bodyHtml).toBe('<h2>Hi</h2>')
+    expect(dto.bodyHtmlFeed).toBe('<h2>Hi</h2>')
     expect(dto.imageSources).toEqual(['images/x.jpg'])
     expect(dto.headings).toEqual([{ depth: 2, text: 'Hi', slug: 'hi' }])
   })

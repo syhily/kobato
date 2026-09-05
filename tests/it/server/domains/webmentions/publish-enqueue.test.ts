@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
@@ -19,16 +19,31 @@ beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 
-function bodyWithLinks(key: string, hrefs: string[]) {
-  return [
+function linkNode(url: string) {
+  return {
+    type: 'link',
+    version: 1,
+    url,
+    rel: null,
+    target: null,
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    children: [{ type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text: 'x' }],
+  }
+}
+
+function bodyWithLinks(hrefs: string[]): LexicalEditorState {
+  return lexicalBodyWith([
     {
-      _type: 'block',
-      _key: key,
-      style: 'normal',
-      markDefs: hrefs.map((href, i) => ({ _type: 'link', _key: `${key}-l${i}`, href })),
-      children: [{ _type: 'span', _key: `${key}-s`, text: 'published', marks: hrefs.map((_, i) => `${key}-l${i}`) }],
+      type: 'paragraph',
+      version: 1,
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      children: hrefs.map((href) => linkNode(href)),
     },
-  ]
+  ])
 }
 
 describe('integration / webmention outbox enqueue on publish', () => {
@@ -36,11 +51,7 @@ describe('integration / webmention outbox enqueue on publish', () => {
     const enqueued = await enqueuePostWebmentionOutbox(
       db,
       'webmention-enqueue',
-      bodyWithLinks('b1', [
-        'https://external.dev/article#part',
-        'https://external.dev/article/',
-        'https://other.dev/x',
-      ]) as PortableTextBody,
+      bodyWithLinks(['https://external.dev/article#part', 'https://external.dev/article/', 'https://other.dev/x']),
     )
     expect(enqueued).toBe(2)
 
@@ -61,7 +72,7 @@ describe('integration / webmention outbox enqueue on publish', () => {
     await enqueuePostWebmentionOutbox(
       db,
       'self-links',
-      bodyWithLinks('b1', ['https://example.com/posts/other', 'https://ext.dev/y']) as PortableTextBody,
+      bodyWithLinks(['https://example.com/posts/other', 'https://ext.dev/y']),
     )
 
     const rows = await db.select().from(webmentionOutbox)
@@ -70,19 +81,11 @@ describe('integration / webmention outbox enqueue on publish', () => {
   })
 
   it('dedups across republishes: sent rows stay, new links enqueue', async () => {
-    await enqueuePostWebmentionOutbox(
-      db,
-      'republish',
-      bodyWithLinks('b1', ['https://ext.dev/kept']) as PortableTextBody,
-    )
+    await enqueuePostWebmentionOutbox(db, 'republish', bodyWithLinks(['https://ext.dev/kept']))
     // Simulate the worker having delivered the first mention.
     await db.update(webmentionOutbox).set({ status: 'sent', endpoint: 'https://ext.dev/wm', sentAt: new Date() })
 
-    await enqueuePostWebmentionOutbox(
-      db,
-      'republish',
-      bodyWithLinks('b2', ['https://ext.dev/kept', 'https://ext.dev/new']) as PortableTextBody,
-    )
+    await enqueuePostWebmentionOutbox(db, 'republish', bodyWithLinks(['https://ext.dev/kept', 'https://ext.dev/new']))
 
     const rows = await db.select().from(webmentionOutbox)
     expect(rows).toHaveLength(2)
@@ -92,65 +95,76 @@ describe('integration / webmention outbox enqueue on publish', () => {
     expect(added?.status).toBe('pending')
   })
 
-  // R9a interregnum: saveBody now stores a Lexical state and the posts
-  // descriptor casts it for the still-PT publish-hook consumers. PT link
-  // extraction cannot read the foreign shape, so a publish degrades the
-  // hook to a warning instead of enqueueing. R14 switches
-  // `extractExternalLinks` to Lexical traversal and restores the wiring
-  // tests below to real enqueue assertions.
-  it('the RPC publish path degrades the webmention hook to a warning instead of failing', async () => {
+  // R14: the publish hook extracts links from the Lexical state directly, so
+  // the RPC publish path enqueues for real again (the R9a interregnum degraded
+  // it to a warning).
+  it('the RPC publish path enqueues the outbox rows for real', async () => {
     const ctx = makeAuthedCtx({ role: 'admin', db })
-    const createRes = await callRpc('/admin/posts/upsertMeta', { title: 'Hook Degraded', summary: '', tags: [] }, ctx)
+    const createRes = await callRpc('/admin/posts/upsertMeta', { title: 'Hook Real', summary: '', tags: [] }, ctx)
     expect(createRes.status).toBe(200)
     const { post } = await parseRpcJson<{ post: { id: string } }>(createRes)
 
     const publishRes = await callRpc(
       '/admin/posts/publishLatest',
-      {
-        id: post.id,
-        body: lexicalBodyWith([
-          {
-            type: 'paragraph',
-            version: 1,
-            direction: 'ltr',
-            format: '',
-            indent: 0,
-            children: [
-              {
-                type: 'link',
-                version: 1,
-                url: 'https://ext.dev/x',
-                rel: 'noopener',
-                target: '_blank',
-                direction: 'ltr',
-                format: '',
-                indent: 0,
-                children: [
-                  { type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text: 'x' },
-                ],
-              },
-            ],
-          },
-        ]),
-      },
+      { id: post.id, body: bodyWithLinks(['https://ext.dev/x']) },
       ctx,
     )
     expect(publishRes.status).toBe(200)
     const payload = await parseRpcJson<{ status: string; warning?: string }>(publishRes)
     expect(payload.status).toBe('saved')
-    expect(payload.warning).toBeDefined()
+    expect(payload.warning).toBeUndefined()
 
-    // Nothing enqueued in the interregnum.
-    expect(await db.select().from(webmentionOutbox)).toHaveLength(0)
+    const rows = await db.select().from(webmentionOutbox)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.targetUrl).toBe('https://ext.dev/x')
   })
 
-  it.skip('does not enqueue on a meta-only update (no publish) — R14 restores with Lexical link extraction', async () => {
-    // Original wiring assertion: publish enqueues, upsertMeta does not.
+  it('does not enqueue on a meta-only update (no publish)', async () => {
+    const ctx = makeAuthedCtx({ role: 'admin', db })
+    const createRes = await callRpc('/admin/posts/upsertMeta', { title: 'Meta Only', summary: '', tags: [] }, ctx)
+    expect(createRes.status).toBe(200)
+    const { post } = await parseRpcJson<{ post: { id: string } }>(createRes)
+
+    const publishRes = await callRpc(
+      '/admin/posts/publishLatest',
+      { id: post.id, body: bodyWithLinks(['https://ext.dev/meta']) },
+      ctx,
+    )
+    expect(publishRes.status).toBe(200)
+    expect(await db.select().from(webmentionOutbox)).toHaveLength(1)
+
+    // A meta-only upsert touches no body, so no re-enqueue happens.
+    const metaRes = await callRpc(
+      '/admin/posts/upsertMeta',
+      { id: post.id, title: 'Meta Only (renamed)', summary: '', tags: [] },
+      ctx,
+    )
+    expect(metaRes.status).toBe(200)
+    expect(await db.select().from(webmentionOutbox)).toHaveLength(1)
   })
 
-  it.skip('RPC waterline: a future publishedAt pushes the waterline to the publish moment — R14 restores', async () => {
-    // Original assertion: the hook sees the publish transaction's publishedAt,
-    // not the pre-publish NULL.
+  it('RPC waterline: a future publishedAt pushes the waterline to the publish moment', async () => {
+    const ctx = makeAuthedCtx({ role: 'admin', db })
+    const createRes = await callRpc('/admin/posts/upsertMeta', { title: 'Scheduled', summary: '', tags: [] }, ctx)
+    expect(createRes.status).toBe(200)
+    const { post } = await parseRpcJson<{ post: { id: string } }>(createRes)
+
+    const publishedAt = new Date(Date.now() + 3_600_000)
+    const publishRes = await callRpc(
+      '/admin/posts/publishLatest',
+      {
+        id: post.id,
+        body: bodyWithLinks(['https://ext.dev/scheduled-rpc']),
+        publishedAt: publishedAt.toISOString(),
+      },
+      ctx,
+    )
+    expect(publishRes.status).toBe(200)
+
+    const rows = await db.select().from(webmentionOutbox)
+    expect(rows).toHaveLength(1)
+    // The hook saw the publish transaction's publishedAt, not the pre-publish NULL.
+    expect(rows[0]!.nextRetryAt!.getTime()).toBe(publishedAt.getTime())
   })
 })
 
@@ -160,7 +174,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     const enqueued = await enqueuePostWebmentionOutbox(
       db,
       'scheduled-mention',
-      bodyWithLinks('b1', ['https://ext.dev/scheduled']) as PortableTextBody,
+      bodyWithLinks(['https://ext.dev/scheduled']),
       publishedAt,
     )
     expect(enqueued).toBe(1)
@@ -180,7 +194,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     const enqueued = await enqueuePostWebmentionOutbox(
       db,
       'backdated-mention',
-      bodyWithLinks('b1', ['https://ext.dev/backdated']) as PortableTextBody,
+      bodyWithLinks(['https://ext.dev/backdated']),
       new Date(Date.now() - 60_000),
     )
     expect(enqueued).toBe(1)
@@ -192,11 +206,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
   })
 
   it('an omitted publishedAt stays send-now (NULL waterline)', async () => {
-    const enqueued = await enqueuePostWebmentionOutbox(
-      db,
-      'plain-mention',
-      bodyWithLinks('b1', ['https://ext.dev/plain']) as PortableTextBody,
-    )
+    const enqueued = await enqueuePostWebmentionOutbox(db, 'plain-mention', bodyWithLinks(['https://ext.dev/plain']))
     expect(enqueued).toBe(1)
 
     const rows = await db.select().from(webmentionOutbox)
@@ -207,7 +217,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
   it('a republish that moves the publish moment later raises the waterline through the real hook', async () => {
     const sooner = new Date(Date.now() + 3_600_000)
     const later = new Date(Date.now() + 7_200_000)
-    const body = bodyWithLinks('b1', ['https://ext.dev/rescheduled']) as PortableTextBody
+    const body = bodyWithLinks(['https://ext.dev/rescheduled'])
     await enqueuePostWebmentionOutbox(db, 'rescheduled-mention', body, sooner)
     await enqueuePostWebmentionOutbox(db, 'rescheduled-mention', body, later)
 

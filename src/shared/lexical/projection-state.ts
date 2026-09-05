@@ -8,8 +8,8 @@
 //    closed (`inkling-version` / `footnotes-section-title` only) — there is
 //    no knob for the rssMode degradations, so the variant is expressed as a
 //    state transform instead of HTML post-processing. The fallback exporters
-//    then produce exactly the PT `rssMode` shapes (`pt-html.ts:150-155,
-//    223-226, 256-268`): stripping the server-prerendered artifacts makes
+//    then produce exactly the PT `rssMode` shapes (the retired PT feed
+//    renderer): stripping the server-prerendered artifacts makes
 //    `math` export `<pre><code>escaped tex</code></pre>`
 //    (`math-renderer.ts`), `math-inline` `<code>escaped tex</code>`
 //    (`MathInlineNode.exportDOM`), and `codeblock` a plain
@@ -37,7 +37,7 @@ import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schem
 import { KOBATO_HOST_CARD_NODE_TYPES } from '@/shared/lexical/node-whitelist'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-/** PT `rssMode` music-player fallback copy (`pt-html.ts` renderMusicPlayer). */
+/** PT `rssMode` music-player fallback copy (the retired PT feed renderer). */
 export const MUSIC_PLAYER_PROJECTION_PLACEHOLDER = '🎵 此文章包含音乐播放器，请访问原文收听。'
 
 export interface ProjectionStateOptions {

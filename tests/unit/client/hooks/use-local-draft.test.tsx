@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 // Mock the IndexedDB-backed draft store; each test programs the return values.
 const draftStore = vi.hoisted(() => ({
@@ -21,17 +21,18 @@ vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
 import { FakeBroadcastChannel } from '#/_helpers/fake-broadcast-channel'
 import { renderHook } from '#/_helpers/hook'
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
 const config = {
   keyPrefix: 'cms-post-draft:',
   broadcastName: 'cms-post-draft',
   editType: 'post-edit' as const,
-  bodySchema: portableTextBodySchema,
+  bodySchema: lexicalEditorStateSchema,
 }
 
-const emptyBody: PortableTextBody = []
+const emptyBody: LexicalEditorState = emptyLexicalBody()
 
 describe('useLocalDraft — synchronous render branches', () => {
   beforeEach(() => {
