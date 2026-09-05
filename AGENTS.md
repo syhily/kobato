@@ -347,7 +347,9 @@ Examples: `react`, `hono`, `drizzle-orm`, `nodemailer`,
 `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
 all `devDependencies`, despite being production imports.
 
-`@inkling/editor` (`packages/inkling`, imported via `git subtree`) is the
+`@inkling/editor` (`packages/inkling`, a squashed snapshot of the inkling
+repo at `601961b0` — the original subtree merge was flattened to keep the
+mainline linear, so future upstream syncs are manual) is the
 repo's first workspace-dependency precedent: the root consumes it as
 `"workspace:*"` from `devDependencies`, resolving to its built `dist/`
 artifacts through the package's `exports` map.
