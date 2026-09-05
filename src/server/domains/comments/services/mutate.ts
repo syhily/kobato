@@ -35,7 +35,8 @@ import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('comments.loader')
 
-function hashContent(content: string): string {
+/** sha256 hex of the `content` snapshot — exported for the R15 PT→Lexical backfill's re-hash. */
+export function hashContent(content: string): string {
   return createHash('sha256').update(content).digest('hex')
 }
 
