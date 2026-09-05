@@ -47,12 +47,14 @@ Three files, two bundles:
   comment-editor chunk on BOTH bundles (the admin dialogs consume the same
   lazy boundary). Same `inkling` layer import (pinned by `public.css`'s /
   `admin.css`'s bare ordering statements) plus the `.kobato-comment-editor`
-  host rules: a tighter `zoom: 0.55`, the compact min-height/padding, the
-  same design-token bridge, and explicit text/placeholder sizing to the
-  rendered comment's metrics (14px / 1.85, written pre-zoom as
-  `calc(14px / 0.55)`; the placeholder is re-anchored to the padded text
-  origin via the `kobato-comment-placeholder` class the editor passes as
-  `placeholderClassName`).
+  host rules. NO ZOOM here (unlike the page editor): CSS zoom on a
+  contenteditable breaks Chromium/WebKit IME composition painting, so the
+  comment canvas is sized in final px — prose/placeholder at the rendered
+  comment's metrics (14px / `leading-copy` 1.85; the placeholder is
+  re-anchored to the padded text origin via the `kobato-comment-placeholder`
+  class the editor passes as `placeholderClassName`), block rhythm, card
+  interiors, and the inline slash menu at their old zoom-era effective
+  sizes.
 
 New rule placement: used by both sides → `tailwind.css`; one side only →
 that side's entry; page-editor canvas chrome → `inkling-editor.css`;
