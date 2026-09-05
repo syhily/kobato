@@ -50,10 +50,13 @@ describe('ui/lib/sanitize-html', () => {
       expect(clean).not.toContain('javascript')
     })
 
-    it('allows the line tag used by shiki', () => {
+    it('strips a bare line tag with its contents (DOMPurify behavior on both engines)', () => {
+      // DOMPurify drops a bare <line> with its contents regardless of the
+      // allowlist; both engines share the purify core, so this holds on SSR too.
       const html = '<line class="line">code</line>'
       const clean = sanitizeHtmlString(html, 'shiki')
-      expect(clean).toContain('<line')
+      expect(clean).not.toContain('<line')
+      expect(clean).not.toContain('class="line"')
     })
   })
 

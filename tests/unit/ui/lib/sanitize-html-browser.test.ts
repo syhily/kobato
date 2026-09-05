@@ -66,8 +66,8 @@ describe('ui/lib/sanitize-html-engine.browser', () => {
       expect(result).toContain('--shiki-dark: #eeeeee')
     })
 
-    it('strips a bare line tag with its contents (known divergence from the node engine)', () => {
-      // DOMPurify drops a bare <line> with its contents regardless of ALLOWED_TAGS; node engine keeps it.
+    it('strips a bare line tag with its contents', () => {
+      // DOMPurify drops a bare <line> with its contents regardless of ALLOWED_TAGS.
       const result = clean('<line class="line">code</line>', 'shiki')
       expect(result).not.toContain('<line')
       expect(result).not.toContain('class="line"')
