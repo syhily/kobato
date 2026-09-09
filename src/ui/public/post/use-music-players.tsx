@@ -51,9 +51,15 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>): vo
 
     return () => {
       cancelled = true
-      for (const root of roots) {
-        root.unmount()
-      }
+      // root.unmount() tears the tree down synchronously; if React is
+      // mid-render when this cleanup runs (the container re-rendering under
+      // it), that races the in-flight render — React warns and may drop the
+      // unmount. Deferring past the current commit avoids the race.
+      setTimeout(() => {
+        for (const root of roots) {
+          root.unmount()
+        }
+      })
     }
   }, [containerRef])
 }
