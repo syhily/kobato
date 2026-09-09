@@ -325,6 +325,8 @@ React hooks/components under `src/client/` and `src/ui/`.
 
 ## Dependencies
 
+Every version number lives in the root `pnpm-workspace.yaml` `catalog:` table — both the root `package.json` and `packages/inkling/package.json` reference entries as `"catalog:"`. `taze` edits the catalog in place, so sub-packages bump through the same table; never pin a version in a sub-package manifest. Version-exact pins (drizzle rc, the Lexical `0.46.0` family) stay exact inside the catalog.
+
 Only packages that are **required at production runtime AND ship a native
 dynamic library** belong in `package.json`'s `dependencies`:
 
