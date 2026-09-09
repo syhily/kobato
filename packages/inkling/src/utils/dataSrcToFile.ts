@@ -10,7 +10,7 @@ export async function dataSrcToFile(src: string, fileName?: string): Promise<Fil
     let uuid: string
     try {
       uuid = window.crypto.randomUUID()
-    } catch (e) {
+    } catch {
       uuid = Array.from(window.crypto.getRandomValues(new Uint8Array(8)), (byte) =>
         byte.toString(16).padStart(2, '0'),
       ).join('')

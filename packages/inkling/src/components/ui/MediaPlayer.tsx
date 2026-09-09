@@ -20,7 +20,7 @@ export function MediaPlayer({ duration, theme }: MediaPlayerProps) {
         className={`relative mx-2 h-1 grow rounded ${theme === 'light' ? 'bg-white/40' : 'bg-grey/30 dark:bg-white/40'}`}
       >
         <button
-          className="absolute top-[-6px] left-0 size-4 rounded-full border border-grey/50 bg-white shadow"
+          className="border-grey/50 absolute top-[-6px] left-0 size-4 rounded-full border bg-white shadow"
           type="button"
         ></button>
       </div>
@@ -40,7 +40,7 @@ export function MediaPlayer({ duration, theme }: MediaPlayerProps) {
           className={`absolute left-0 h-1 w-[60%] rounded ${theme === 'light' ? 'bg-white' : 'bg-black dark:bg-white'}`}
         ></div>
         <button
-          className="absolute top-[-6px] left-[55%] size-4 rounded-full border border-grey/50 bg-white shadow"
+          className="border-grey/50 absolute top-[-6px] left-[55%] size-4 rounded-full border bg-white shadow"
           type="button"
         ></button>
       </div>

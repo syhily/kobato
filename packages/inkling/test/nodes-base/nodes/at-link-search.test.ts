@@ -17,8 +17,11 @@ describe('AtLinkSearchNode', function () {
     editor = createHeadlessEditor({ nodes: editorNodes })
 
     const { window } = createTestDom('<!doctype html><html><body></body></html>')
-    global.document = window.document as unknown as Document
-    global.window = window as unknown as Window & typeof globalThis
+    // jsdom 30 exposes document/window as getter-only on the test global —
+    // the swap has to go through defineProperty (configurable, so the
+    // afterEach delete still restores the ambient jsdom globals)
+    Object.defineProperty(globalThis, 'document', { value: window.document, configurable: true, writable: true })
+    Object.defineProperty(globalThis, 'window', { value: window, configurable: true, writable: true })
   })
 
   afterEach(function () {

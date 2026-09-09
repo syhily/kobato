@@ -13,10 +13,6 @@ export class TKNode extends TextNode {
     return new TKNode(node.__text, node.__key)
   }
 
-  constructor(text: string, key?: string) {
-    super(text, key)
-  }
-
   createDOM(config: EditorConfig) {
     const element = super.createDOM(config)
     const classes = themeClassList(config.theme, 'tk')

@@ -17,10 +17,6 @@ export class AsideNode extends ElementNode {
     return {}
   }
 
-  constructor(key?: string) {
-    super(key)
-  }
-
   static importJSON(serializedNode: SerializedElementNode) {
     return new this().updateFromJSON(serializedNode)
   }

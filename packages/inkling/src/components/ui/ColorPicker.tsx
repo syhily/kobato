@@ -137,10 +137,10 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
       <div className="mt-3 flex gap-2">
         <div
           ref={inputWrapperRef}
-          className={`relative flex w-full items-center rounded-lg border border-grey-100 bg-grey-100 px-3 py-1.5 font-sans text-sm font-normal text-grey-900 transition-colors placeholder:text-grey-500 focus-within:border-green focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(48,207,67,.25)] focus-within:outline-none dark:border-transparent dark:bg-grey-900 dark:text-white dark:selection:bg-grey-800 dark:placeholder:text-grey-700 dark:focus-within:border-green dark:hover:bg-grey-925 dark:focus:bg-grey-925`}
+          className={`border-grey-100 bg-grey-100 text-grey-900 placeholder:text-grey-500 focus-within:border-green dark:bg-grey-900 dark:selection:bg-grey-800 dark:placeholder:text-grey-700 dark:focus-within:border-green dark:hover:bg-grey-925 dark:focus:bg-grey-925 relative flex w-full items-center rounded-lg border px-3 py-1.5 font-sans text-sm font-normal transition-colors focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(48,207,67,.25)] focus-within:outline-none dark:border-transparent dark:text-white`}
           onClick={focusHexInputOnClick}
         >
-          <span className="mr-2 ml-1 text-grey-700">#</span>
+          <span className="text-grey-700 mr-2 ml-1">#</span>
           <HexColorInput
             aria-label={labels['aria.colorValue']}
             className="z-50 w-full bg-transparent"
@@ -194,7 +194,7 @@ function ColorSwatch({ hex, accent, transparent, title, isSelected, onSelect }: 
     <button
       ref={ref}
       className={cx(
-        `group relative flex size-5 shrink-0 items-center rounded-full border border-grey-250 dark:border-grey-800`,
+        `group border-grey-250 dark:border-grey-800 relative flex size-5 shrink-0 items-center rounded-full border`,
         isSelected && 'outline outline-2 outline-green',
       )}
       style={{ backgroundColor }}
@@ -203,7 +203,7 @@ function ColorSwatch({ hex, accent, transparent, title, isSelected, onSelect }: 
       onClick={onSelectHandler}
     >
       {transparent && (
-        <div className="absolute top-0 left-0 z-10 w-[136%] origin-left rotate-45 border-b border-b-red" />
+        <div className="border-b-red absolute top-0 left-0 z-10 w-[136%] origin-left rotate-45 border-b" />
       )}
       <Tooltip label={title} />
     </button>
@@ -272,7 +272,7 @@ export function ColorIndicator({
   return (
     <div className="relative" data-testid="color-selector-button">
       <button
-        className={`relative size-6 cursor-pointer rounded-full ${value ? 'p-[2px]' : 'border border-grey-200 dark:border-grey-800'}`}
+        className={`relative size-6 cursor-pointer rounded-full ${value ? 'p-[2px]' : 'border-grey-200 dark:border-grey-800 border'}`}
         type="button"
         onClick={() => {
           setIsOpen(!isOpen)
@@ -288,7 +288,7 @@ export function ColorIndicator({
         >
           {value === 'image' && <ImgBgIcon className="size-[1.4rem]" />}
           {value === 'transparent' && (
-            <div className="absolute top-[3px] left-[3px] z-10 w-[136%] origin-left rotate-45 border-b border-b-red" />
+            <div className="border-b-red absolute top-[3px] left-[3px] z-10 w-[136%] origin-left rotate-45 border-b" />
           )}
         </span>
       </button>
@@ -333,7 +333,7 @@ export function ColorIndicator({
             </div>
             <button
               aria-label={labels['aria.pickColor']}
-              className={`group relative size-6 rounded-full ${!selectedSwatch ? 'p-[2px]' : 'border border-grey-200 dark:border-grey-800'}`}
+              className={`group relative size-6 rounded-full ${!selectedSwatch ? 'p-[2px]' : 'border-grey-200 dark:border-grey-800 border'}`}
               data-testid="color-picker-toggle"
               type="button"
               onClick={() => {
@@ -344,11 +344,11 @@ export function ColorIndicator({
                 <>
                   <ConicRing />
                   <span
-                    className="block size-full rounded-full border-2 border-white dark:border-grey-950"
+                    className="dark:border-grey-950 block size-full rounded-full border-2 border-white"
                     style={{ backgroundColor: value }}
                   >
                     {value === 'transparent' && (
-                      <div className="absolute top-[3px] left-[3px] z-10 w-[136%] origin-left rotate-45 border-b border-b-red" />
+                      <div className="border-b-red absolute top-[3px] left-[3px] z-10 w-[136%] origin-left rotate-45 border-b" />
                     )}
                   </span>
                 </>

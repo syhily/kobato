@@ -115,10 +115,8 @@ describe('createRenderContext', () => {
     })
 
     it('carries inklingVersion for the markdown card', () => {
-      // oxlint-disable-next-line typescript/no-deprecated -- intentionally pins the deprecated flat key's compatibility forwarding
       const context = createRenderContext({ dom, inklingVersion: '3.9' })
 
-      // oxlint-disable-next-line typescript/no-deprecated -- the deprecated context field must keep resolving for external renderers
       expect(context.inklingVersion).toBe('3.9')
     })
 
@@ -128,7 +126,6 @@ describe('createRenderContext', () => {
       expect(context.imageOptimization).toBeUndefined()
       expect(context.canTransformImage).toBeUndefined()
       expect(context.canTransformImageToFormat).toBeUndefined()
-      // oxlint-disable-next-line typescript/no-deprecated -- pins the deprecated field's absent state
       expect(context.inklingVersion).toBeUndefined()
     })
 
@@ -170,26 +167,22 @@ describe('createRenderContext', () => {
     })
 
     it('forwards the deprecated flat keys as the resolver fallback', () => {
-      // oxlint-disable-next-line typescript/no-deprecated -- intentionally pins both deprecated flat keys' forwarding
       const context = createRenderContext({ dom, inklingVersion: '3.9', footnotesSectionTitle: 'References' })
 
       expect(context.resolveExportPolicy('inkling-version')).toBe('3.9')
       expect(context.resolveExportPolicy('footnotes-section-title')).toBe('References')
       // the deprecated context field is the same resolved value
-      // oxlint-disable-next-line typescript/no-deprecated -- intentionally pins the deprecated field
       expect(context.inklingVersion).toBe('3.9')
     })
 
     it('lets the resolver win over a deprecated flat key', () => {
       const context = createRenderContext({
         dom,
-        // oxlint-disable-next-line typescript/no-deprecated -- intentionally pins the deprecated flat key losing to the resolver
         inklingVersion: '3.9',
         resolveExportPolicy: (key) => (key === 'inkling-version' ? '4.2' : undefined),
       })
 
       expect(context.resolveExportPolicy('inkling-version')).toBe('4.2')
-      // oxlint-disable-next-line typescript/no-deprecated -- intentionally pins the deprecated field
       expect(context.inklingVersion).toBe('4.2')
     })
   })

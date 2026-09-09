@@ -118,11 +118,11 @@ export function UrlInput({
   if (isLoading) {
     return (
       <div
-        className="flex w-full items-center justify-center rounded-md border border-grey-300 p-2 font-sans text-sm leading-snug font-normal text-grey-900 focus-visible:outline-none dark:border-grey-800 dark:bg-grey-900 dark:placeholder:text-grey-800"
+        className="border-grey-300 text-grey-900 dark:border-grey-800 dark:bg-grey-900 dark:placeholder:text-grey-800 flex w-full items-center justify-center rounded-md border p-2 font-sans text-sm leading-snug font-normal focus-visible:outline-none"
         data-testid={`${dataTestId}-loading-container`}
       >
         <div
-          className="mr-3 -ml-1 inline-block size-5 animate-spin rounded-full border-4 border-green/20 text-white after:mt-[11px] after:block after:size-1 after:rounded-full after:bg-green/70 after:content-['']"
+          className="border-green/20 after:bg-green/70 mr-3 -ml-1 inline-block size-5 animate-spin rounded-full border-4 text-white after:mt-[11px] after:block after:size-1 after:rounded-full after:content-['']"
           data-testid={`${dataTestId}-loading-spinner`}
         ></div>
       </div>
@@ -132,7 +132,7 @@ export function UrlInput({
   if (hasError) {
     return (
       <div
-        className="min-width-[500px] flex flex-row items-center justify-between rounded-md border border-grey-300 px-3 py-2 text-sm leading-snug font-normal text-grey-900"
+        className="min-width-[500px] border-grey-300 text-grey-900 flex flex-row items-center justify-between rounded-md border px-3 py-2 text-sm leading-snug font-normal"
         data-testid={`${dataTestId}-error-container`}
       >
         <div>
@@ -163,7 +163,7 @@ export function UrlInput({
             type="button"
             onClick={handleClose}
           >
-            <CloseIcon className="size-4 stroke-2 text-grey-400" />
+            <CloseIcon className="text-grey-400 size-4 stroke-2" />
           </button>
         )}
       </div>
@@ -193,7 +193,7 @@ export function UrlInput({
   }
 
   return (
-    <div className="flex w-full items-center rounded-md border border-grey-300 px-3 py-2 text-sm leading-snug font-normal text-grey-900 focus-within:border-green focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(48,207,67,.25)] focus-visible:outline-none dark:border-grey-800 dark:bg-grey-900 dark:placeholder:text-grey-800">
+    <div className="border-grey-300 text-grey-900 focus-within:border-green dark:border-grey-800 dark:bg-grey-900 dark:placeholder:text-grey-800 flex w-full items-center rounded-md border px-3 py-2 text-sm leading-snug font-normal focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(48,207,67,.25)] focus-visible:outline-none">
       <UrlInputPlugin onEnter={handleUrlSubmit ? () => handleUrlSubmit(value) : undefined} />
       <input
         autoFocus

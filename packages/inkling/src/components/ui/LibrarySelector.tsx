@@ -52,16 +52,16 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
   return (
     <div
       ref={selectorRef}
-      className="flex h-[540px] flex-col rounded border border-grey-200 bg-grey-50 dark:border-none dark:bg-grey-900"
+      className="border-grey-200 bg-grey-50 dark:bg-grey-900 flex h-[540px] flex-col rounded border dark:border-none"
       data-testid="library-selector"
       // prevent click handle in the editor while selector is active
       onClick={(e) => e.stopPropagation()}
     >
       <header className="flex items-center gap-3 p-6">
         <div className="relative w-full">
-          <SearchIcon className="absolute top-1/2 left-4 size-4 -translate-y-2 text-grey-500 dark:text-grey-800" />
+          <SearchIcon className="text-grey-500 dark:text-grey-800 absolute top-1/2 left-4 size-4 -translate-y-2" />
           <input
-            className="h-10 w-full rounded-full border border-grey-300 pr-8 pl-10 font-sans text-md font-normal text-black focus:border-green focus:shadow-insetgreen dark:border-grey-800 dark:bg-grey-950 dark:text-white dark:placeholder:text-grey-800 dark:focus:border-green"
+            className="border-grey-300 focus:border-green focus:shadow-insetgreen dark:border-grey-800 dark:bg-grey-950 dark:placeholder:text-grey-800 dark:focus:border-green h-10 w-full rounded-full border pr-8 pl-10 font-sans text-md font-normal text-black dark:text-white"
             placeholder={labels['library.search.placeholder']}
             autoFocus
             onChange={handleSearch}
@@ -70,7 +70,7 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
         {onUpload && (
           <button
             type="button"
-            className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-grey-300 px-4 font-sans text-md font-normal text-black hover:border-green dark:border-grey-800 dark:text-white dark:hover:border-green"
+            className="border-grey-300 hover:border-green dark:border-grey-800 dark:hover:border-green flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 font-sans text-md font-normal text-black dark:text-white"
             data-testid="library-upload"
             onClick={onUpload}
           >
@@ -88,7 +88,7 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
                 <button
                   key={item.src}
                   type="button"
-                  className="group relative aspect-square overflow-hidden rounded border border-grey-200 bg-grey-100 hover:border-green dark:border-grey-800 dark:bg-grey-950 dark:hover:border-green"
+                  className="group border-grey-200 bg-grey-100 hover:border-green dark:border-grey-800 dark:bg-grey-950 dark:hover:border-green relative aspect-square overflow-hidden rounded border"
                   data-testid="library-item"
                   onClick={() => onPick(item)}
                 >
@@ -105,7 +105,7 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
 
           {!error && !isLoading && items.length === 0 && (
             <p
-              className="p-6 text-center font-sans text-md text-grey-600 dark:text-grey-700"
+              className="text-grey-600 dark:text-grey-700 p-6 text-center font-sans text-md"
               data-testid="library-selector-empty"
             >
               {labels['library.empty']}
@@ -116,7 +116,7 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
 
           {!!error && (
             <div
-              className="p-6 text-center font-sans text-md text-grey-600 dark:text-grey-700"
+              className="text-grey-600 dark:text-grey-700 p-6 text-center font-sans text-md"
               data-testid="library-selector-error"
             >
               <p>{labels['library.error']}</p>

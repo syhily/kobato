@@ -147,6 +147,10 @@
       "oxfmt -c oxfmt.config.ts --write --no-error-on-unmatched-pattern",
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
     ],
+    "packages/inkling/{src,test,scripts,demo}/**/*.{ts,tsx}": [
+      "oxfmt -c oxfmt.config.ts --write --no-error-on-unmatched-pattern",
+      "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
+    ],
     "{drizzle.config.ts,oxfmt.config.ts,oxlint.config.ts,react-router.config.ts,taze.config.ts,vite.config.ts,vite.sea.config.ts,vitest.config.ts}": [
       "oxfmt -c oxfmt.config.ts --write --no-error-on-unmatched-pattern",
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"

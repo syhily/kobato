@@ -100,12 +100,23 @@ export function usePopupRepositionSubscriptions(
   scrollElement: HTMLElement,
   observeRef?: React.RefObject<HTMLElement | null>,
 ) {
+  // The observed element arrives through a ref, which render must not read —
+  // a post-commit effect mirrors the current element into state so a
+  // late-mounted popup (its ref goes null → element on the render that mounts
+  // it) re-runs the subscription effect and re-attaches the MutationObserver.
+  const [observedElement, setObservedElement] = React.useState<HTMLElement | null>(null)
+  React.useEffect(() => {
+    const element = observeRef?.current ?? null
+    if (element !== observedElement) {
+      setObservedElement(element)
+    }
+  })
+
   React.useEffect(() => {
     const onReposition = () => update()
     window.addEventListener('resize', onReposition)
     scrollElement.addEventListener('scroll', onReposition)
 
-    const observedElement = observeRef?.current
     const observer = observeRef ? new MutationObserver(onReposition) : null
     if (observedElement) {
       observer?.observe(observedElement, { childList: true, subtree: true })
@@ -116,10 +127,5 @@ export function usePopupRepositionSubscriptions(
       scrollElement.removeEventListener('scroll', onReposition)
       observer?.disconnect()
     }
-    // observeRef.current joins the deps even though ref values are usually
-    // unstable dep candidates: a late-mounted popup element is always mounted
-    // by a render, and the deps comparison on that re-render is what re-runs
-    // this effect to attach the MutationObserver.
-    // oxlint-disable-next-line react/react-compiler -- deliberate ref-in-deps: the late-mount re-render is the re-attach signal
-  }, [update, scrollElement, observeRef, observeRef?.current])
+  }, [update, scrollElement, observeRef, observedElement])
 }

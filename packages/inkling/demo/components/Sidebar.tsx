@@ -10,7 +10,7 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, view, saveContent }: SidebarProps) => {
   return (
     <div
-      className={`h-full grow overflow-hidden border-grey-100 bg-black pb-16 transition-all ease-in-out ${isOpen ? 'right-0 w-full opacity-100 sm:w-[440px]' : 'right-[-100%] w-0 opacity-0'}`}
+      className={`border-grey-100 h-full grow overflow-hidden bg-black pb-16 transition-all ease-in-out ${isOpen ? 'right-0 w-full opacity-100 sm:w-[440px]' : 'right-[-100%] w-0 opacity-0'}`}
     >
       {view === 'json' && <SerializedStateTextarea isOpen={isOpen} />}
       {view === 'tree' && <TreeView />}

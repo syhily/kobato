@@ -7,7 +7,16 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'packages/**'],
+  ignorePatterns: [
+    '.agents/skills/*',
+    'drizzle/**/*',
+    // Packed-consumer type fixtures: they self-import '@inkling/editor'
+    // (resolves to dist via package exports), so the type-aware gate cannot
+    // see them without a build first — their real gate is
+    // packages/inkling/scripts/verify-packed-types.ts, which type-checks them
+    // against the packed tarball, @ts-expect-error directives included.
+    'packages/inkling/test/typecheck-consumer/**',
+  ],
   settings: {
     react: {
       // Keep aligned with the installed `react` version in package.json —
@@ -358,7 +367,7 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+      files: ['tests/**/*.ts', 'tests/**/*.tsx', 'packages/inkling/test/**/*.ts', 'packages/inkling/test/**/*.tsx'],
       rules: {
         // Test code gets a deliberately lighter rule set: mocks, fixtures,
         // and deliberately-awkward components make the type-aware unsafe
@@ -414,7 +423,7 @@ export default defineConfig({
       },
     },
     {
-      files: ['scripts/**/*.ts'],
+      files: ['scripts/**/*.ts', 'packages/inkling/scripts/**/*.ts'],
       rules: {
         // Plain-node build scripts (executed directly with `node
         // scripts/...`, type-stripped at runtime). Console output is the
@@ -428,6 +437,44 @@ export default defineConfig({
         'typescript/no-unsafe-member-access': 'off',
         'typescript/no-unsafe-return': 'off',
         'typescript/restrict-template-expressions': 'off',
+      },
+    },
+    {
+      files: ['packages/inkling/**'],
+      rules: {
+        // src/index.ts is the package's public barrel (its API surface).
+        'oxc/no-barrel-file': 'off',
+        // Lexical's editor/node module graph is intentionally cyclic; the
+        // layering that matters is pinned by
+        // packages/inkling/test/unit/nodes/card-layering-imports.test.ts.
+        'import/no-cycle': 'off',
+        // Lexical DecoratorNode subclasses intentionally use
+        // class+interface declaration merging — the base no-redeclare
+        // rule flags every merged pair.
+        'typescript/no-unsafe-declaration-merging': 'off',
+        'no-redeclare': 'off',
+        // Inkling ships editor chrome with custom interactions; generic a11y
+        // heuristics are noisy against the card/popup surfaces.
+        'jsx_a11y/no-autofocus': 'off',
+        'jsx_a11y/no-noninteractive-element-interactions': 'off',
+        'jsx_a11y/no-noninteractive-element-to-interactive-role': 'off',
+        'jsx_a11y/control-has-associated-label': 'off',
+        'jsx_a11y/mouse-events-have-key-events': 'off',
+        'jsx_a11y/no-noninteractive-tabindex': 'off',
+        'jsx_a11y/label-has-associated-control': 'off',
+        // Inkling keepers — a stricter bar than the kobato baseline that
+        // the package already satisfies; keep them scoped until the root
+        // codebase is clean under them too.
+        eqeqeq: ['error', 'always'],
+        'no-eval': 'error',
+        'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
+        'no-promise-executor-return': 'error',
+        'array-callback-return': 'error',
+        'typescript/no-explicit-any': 'error',
+        'typescript/dot-notation': 'error',
+        'unicorn/no-empty-file': 'off',
+        'unicorn/no-invalid-remove-event-listener': 'warn',
+        'no-control-regex': 'off',
       },
     },
   ],

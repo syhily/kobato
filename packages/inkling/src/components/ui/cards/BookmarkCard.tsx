@@ -62,7 +62,7 @@ export function BookmarkCard({
     return (
       <div>
         <div
-          className="not-inkling-prose relative flex min-h-[120px] w-full rounded-md border border-grey/40 bg-transparent font-sans dark:border-grey/20"
+          className="not-inkling-prose border-grey/40 dark:border-grey/20 relative flex min-h-[120px] w-full rounded-md border bg-transparent font-sans"
           data-testid="bookmark-container"
         >
           <div
@@ -70,28 +70,28 @@ export function BookmarkCard({
             data-testid="bookmark-text-container"
           >
             <div
-              className="text-[1.5rem] leading-normal font-semibold tracking-normal text-grey-900 dark:text-grey-100"
+              className="text-grey-900 dark:text-grey-100 text-[1.5rem] leading-normal font-semibold tracking-normal"
               data-testid="bookmark-title"
             >
               {title}
             </div>
             <div
-              className="mt-1 line-clamp-2 max-h-[44px] overflow-y-hidden text-sm leading-normal font-normal text-grey-800 dark:text-grey-600"
+              className="text-grey-800 dark:text-grey-600 mt-1 line-clamp-2 max-h-[44px] overflow-y-hidden text-sm leading-normal font-normal"
               data-testid="bookmark-description"
             >
               {description}
             </div>
-            <div className="mt-[20px] flex items-center text-sm leading-9 font-medium text-grey-900">
+            <div className="text-grey-900 mt-[20px] flex items-center text-sm leading-9 font-medium">
               {icon && <BookmarkIcon src={icon} />}
               <span
-                className=" db max-w-[240px] truncate leading-6 text-grey-900 dark:text-grey-100"
+                className=" db text-grey-900 dark:text-grey-100 max-w-[240px] truncate leading-6"
                 data-testid="bookmark-publisher"
               >
                 {publisher}
               </span>
               {author && (
                 <span
-                  className="font-normal text-grey-800 before:mx-1.5 before:text-grey-900 before:content-['•'] dark:text-grey-600 dark:before:text-grey-100"
+                  className="text-grey-800 before:text-grey-900 dark:text-grey-600 dark:before:text-grey-100 font-normal before:mx-1.5 before:content-['•']"
                   data-testid="bookmark-author"
                 >
                   {author}

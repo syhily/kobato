@@ -117,10 +117,12 @@ describe('HorizontalRulePlugin shortcut listener', () => {
   }
 
   async function typeText(text: string) {
-    for (const char of text) {
-      await act(async () => {
+    const typeChar = (char: string) =>
+      act(async () => {
         editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, char)
       })
+    for (const char of text) {
+      await typeChar(char)
       await tick()
     }
   }

@@ -42,7 +42,7 @@ function AltTextInput({ value, placeholder, onChange, readOnly, dataTestId, auto
   return (
     <TextInput
       autoFocus={autoFocus}
-      className="not-inkling-prose w-full bg-transparent px-9 text-center font-sans text-sm leading-[1.625] font-normal tracking-wide text-grey-800 placeholder:text-grey-500 dark:text-grey-500 dark:placeholder:text-grey-800"
+      className="not-inkling-prose text-grey-800 placeholder:text-grey-500 dark:text-grey-500 dark:placeholder:text-grey-800 w-full bg-transparent px-9 text-center font-sans text-sm leading-[1.625] font-normal tracking-wide"
       data-testid={dataTestId}
       placeholder={placeholder}
       readOnly={readOnly}

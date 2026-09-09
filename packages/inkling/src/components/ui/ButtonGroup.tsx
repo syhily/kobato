@@ -22,7 +22,7 @@ export function ButtonGroup({ buttons = [], selectedName, onClick, hasTooltip = 
   return (
     <div className="flex">
       <ul
-        className="flex items-center justify-evenly rounded-lg bg-grey-100 font-sans text-md font-normal text-white dark:bg-grey-900"
+        className="bg-grey-100 dark:bg-grey-900 flex items-center justify-evenly rounded-lg font-sans text-md font-normal text-white"
         role="menubar"
       >
         {buttons.map(({ label, name, Icon, dataTestId, ariaLabel }) => (
@@ -73,7 +73,7 @@ export function ButtonGroupIconButton({
       <button
         aria-checked={isActive}
         aria-label={ariaLabel ?? label}
-        className={`group relative flex h-7 w-8 cursor-pointer items-center justify-center rounded-lg text-black dark:text-white ${isActive ? 'border border-grey-300 bg-white shadow-xs dark:border-grey-800 dark:bg-grey-950' : ''} ${Icon ? '' : 'text-[1.3rem] font-bold'}`}
+        className={`group relative flex h-7 w-8 cursor-pointer items-center justify-center rounded-lg text-black dark:text-white ${isActive ? 'border-grey-300 dark:border-grey-800 dark:bg-grey-950 border bg-white shadow-xs' : ''} ${Icon ? '' : 'text-[1.3rem] font-bold'}`}
         data-testid={dataTestId}
         role="menuitemradio"
         type="button"

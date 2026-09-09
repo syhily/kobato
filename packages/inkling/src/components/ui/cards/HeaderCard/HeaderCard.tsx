@@ -501,7 +501,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                       customContent: (
                         <button
                           className={cx(
-                            `group relative flex size-6 shrink-0 items-center justify-center rounded-full border border-grey-300 bg-grey-100 text-black`,
+                            `group border-grey-300 bg-grey-100 relative flex size-6 shrink-0 items-center justify-center rounded-full border text-black`,
                             showBackgroundImage && 'outline outline-2 outline-green',
                           )}
                           data-testid="header-background-image-toggle"

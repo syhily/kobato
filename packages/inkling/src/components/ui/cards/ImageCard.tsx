@@ -91,14 +91,14 @@ function PopulatedImageCard({
       {imageUploader.isLoading && <UploadingOverlay dataTestId="upload-progress" progress={imageUploader.progress} />}
       {imageCardDragHandler?.isDraggedOver ? (
         <div
-          className={`absolute inset-0 flex items-center justify-center border border-grey/20 bg-black/80 dark:border-grey/10 dark:bg-grey-950`}
+          className={`border-grey/20 dark:border-grey/10 dark:bg-grey-950 absolute inset-0 flex items-center justify-center border bg-black/80`}
         >
           <CardText text={labels['media.dragText.toGallery']} />
         </div>
       ) : null}
       {imageFileDragHandler?.isDraggedOver ? (
         <div
-          className={`absolute inset-0 flex items-center justify-center border border-grey/20 bg-black/80 dark:border-grey/10 dark:bg-grey-950`}
+          className={`border-grey/20 dark:border-grey/10 dark:bg-grey-950 absolute inset-0 flex items-center justify-center border bg-black/80`}
           data-testid="drag-overlay"
         >
           <CardText text={labels['media.dragText.replaceImage']} />

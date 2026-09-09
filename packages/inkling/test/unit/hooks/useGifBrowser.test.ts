@@ -20,7 +20,7 @@ const CONFIG: GifProviderConfig = {
 function createManualScheduler(): GifScheduler & { pendingCount: () => number } {
   const pending: Array<{ cancelled: boolean }> = []
   return {
-    schedule(fn) {
+    schedule(_fn) {
       const entry = { cancelled: false }
       pending.push(entry)
       return () => {

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* oxlint-disable no-console -- CLI script: stdout is its output channel */
 // Packed-package verifier: packs @inkling/editor into a temp dir, installs the
 // tarball with ONLY the react/react-dom peers, and exercises the published
 // entry conditions (ESM `import` and CJS `require` for `.`, ESM for the
@@ -281,10 +280,10 @@ try {
   // One consumer phase: a throwaway project that installs the tarball (plus
   // any extraDeps), then runs its check script under Node. `module` selects
   // the ESM (check.mjs) or CJS (check.cjs) entry condition.
-  function consumerPhase(
+  const consumerPhase = (
     label: string,
     options: { module: boolean; extraDeps?: Record<string, string>; check: string },
-  ) {
+  ) => {
     phase(label)
     const dir = join(tempRoot, label.replaceAll(' ', '-'))
     const checkFile = options.module ? 'check.mjs' : 'check.cjs'

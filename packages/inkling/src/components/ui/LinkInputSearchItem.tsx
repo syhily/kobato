@@ -42,7 +42,7 @@ export function LinkInputSearchItem({
       </span>
       {selected && (item.metaText || item.MetaIcon) && (
         <span
-          className="flex shrink-0 items-center gap-[.6rem] text-[1.3rem] leading-snug tracking-tight text-grey-600 dark:text-grey-500"
+          className="text-grey-600 dark:text-grey-500 flex shrink-0 items-center gap-[.6rem] text-[1.3rem] leading-snug tracking-tight"
           data-testid={`${dataTestId}-listOption-meta`}
         >
           <span title={item.metaIconTitle}>{item.MetaIcon && <item.MetaIcon className="size-[1.4rem]" />}</span>

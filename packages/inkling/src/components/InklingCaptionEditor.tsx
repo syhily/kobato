@@ -20,7 +20,7 @@ import RestrictContentPlugin from '@/plugins/RestrictContentPlugin'
 
 const Placeholder = ({ text = 'Type here' }) => {
   return (
-    <div className="pointer-events-none absolute top-0 left-0 !m-0 min-w-full cursor-text font-sans text-sm leading-[24px] font-normal tracking-wide text-grey-500 dark:text-grey-800">
+    <div className="text-grey-500 dark:text-grey-800 pointer-events-none absolute top-0 left-0 !m-0 min-w-full cursor-text font-sans text-sm leading-[24px] font-normal tracking-wide">
       {text}
     </div>
   )

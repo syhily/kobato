@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* oxlint-disable no-console -- CLI script: stdout is its output channel */
 // Entry-size gate (plan C5 §5): measures the real gzip weight of every
 // published entry with Node's zlib and asserts the split-entry budgets, so
 // the `./core` subpath can't silently regress toward the full bundle (and
@@ -20,13 +19,14 @@ const KB = 1024
 
 // Budgets (gzip bytes), set from the first dual-entry build's real
 // measurements per the C5 plan's rules:
-// - editor.js: the plan's absolute 680KB cap (baseline + ~2.5%). The plan's
-//   664KB baseline was measured before the C4 chapters landed; the real
-//   pre-split baseline was 687.5KB, and the split itself moved yjs out of the
-//   entry, bringing the entry to 660.2KB — the 680KB cap keeps ~3% headroom
-//   over that real post-split measurement.
-// - core.js: "first measurement + 5%" — measured 232.4KB gzip on the first
-//   dual build, so the budget is 245KB.
+// - editor.js: 725KB. The C5 680KB cap kept ~3% headroom over the 660.2KB
+//   post-split measurement; enabling React Compiler (vite.config.ts
+//   `compiler: true`, oxc-transform-react) added the per-component memo
+//   cache machinery, moving the entry to 704.7KB — 725KB restores ~3%
+//   headroom over that.
+// - core.js: 260KB. First measurement + 5% was 245KB over 232.4KB; React
+//   Compiler moved the entry to 248.1KB, so the budget re-baselines with
+//   the same ~5% headroom.
 // - headless.js: "first measurement + 5%" — measured 171.8KB gzip on the
 //   first three-entry build (the HTML path's ~160KB plus ~12KB for the
 //   markdown round-trip), so the budget is 190KB (~10% headroom).
@@ -42,8 +42,8 @@ const KB = 1024
 // @lexical/table runtime (~16KB gzip) is part of the core floor by design —
 // not lazily loaded.
 const BUDGETS = {
-  editor: 680 * KB,
-  core: 245 * KB,
+  editor: 725 * KB,
+  core: 260 * KB,
   headless: 190 * KB,
   entryDiffMin: 250 * KB,
   collabChunk: 120 * KB,

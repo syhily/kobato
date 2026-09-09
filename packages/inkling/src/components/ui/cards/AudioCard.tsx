@@ -85,7 +85,7 @@ function AudioThumbnail({
   if (isDraggedOver) {
     return (
       <div
-        className="group relative flex aspect-square h-20 items-center justify-center rounded-md bg-purple"
+        className="group bg-purple relative flex aspect-square h-20 items-center justify-center rounded-md"
         data-testid="audio-thumbnail-dragover"
       >
         <p className="font-sans text-sm font-semibold text-white">{labels['media.dragText.compact']}</p>
@@ -94,7 +94,7 @@ function AudioThumbnail({
   } else if (errors && errors.length > 0) {
     return (
       <span
-        className="group relative flex aspect-square h-20 items-center justify-center rounded-md bg-grey-200 px-1 text-center font-sans text-2xs leading-snug font-semibold text-red"
+        className="group bg-grey-200 text-2xs text-red relative flex aspect-square h-20 items-center justify-center rounded-md px-1 text-center font-sans leading-snug font-semibold"
         data-testid="thumbnail-errors"
       >
         {errors[0].message}
@@ -102,7 +102,7 @@ function AudioThumbnail({
     )
   } else if (src) {
     return (
-      <div className="group/image relative flex aspect-square h-20 items-center justify-center rounded-md bg-purple">
+      <div className="group/image bg-purple relative flex aspect-square h-20 items-center justify-center rounded-md">
         <img
           alt={labels['alt.audioThumbnail']}
           className="size-full rounded-md object-cover transition ease-in"
@@ -123,13 +123,13 @@ function AudioThumbnail({
     )
   } else if (isUploading) {
     return (
-      <div className="group flex aspect-square h-20 items-center justify-center rounded-md bg-purple">
+      <div className="group bg-purple flex aspect-square h-20 items-center justify-center rounded-md">
         <ProgressBar bgStyle="transparent" style={uploadProgressStyle(progress)} />
       </div>
     )
-  } else {
+  }
     return (
-      <div className="group flex aspect-square h-20 items-center justify-center rounded-md bg-purple">
+      <div className="group bg-purple flex aspect-square h-20 items-center justify-center rounded-md">
         <button
           className="flex size-20 cursor-pointer items-center justify-center"
           data-testid="upload-thumbnail"
@@ -150,7 +150,7 @@ function AudioThumbnail({
         />
       </div>
     )
-  }
+  
 }
 
 function PopulatedAudioCard({
@@ -177,7 +177,7 @@ function PopulatedAudioCard({
     <>
       <div
         ref={thumbnailDragHandler?.setRef}
-        className="flex rounded-md border border-grey/30 p-2"
+        className="border-grey/30 flex rounded-md border p-2"
         data-testid="audio-card-populated"
       >
         <AudioThumbnail
@@ -252,7 +252,7 @@ export function AudioCard({
         />
       </div>
     )
-  } else {
+  }
     return (
       <div className="not-inkling-prose">
         <UploadPlaceholder
@@ -271,5 +271,5 @@ export function AudioCard({
         />
       </div>
     )
-  }
+  
 }

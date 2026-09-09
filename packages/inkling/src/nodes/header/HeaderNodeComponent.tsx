@@ -41,8 +41,6 @@ function HeaderNodeComponent({
   alignment,
   backgroundColor,
   backgroundImageSrc,
-  backgroundImageWidth,
-  backgroundImageHeight,
   backgroundSize,
   buttonColor,
   buttonText,

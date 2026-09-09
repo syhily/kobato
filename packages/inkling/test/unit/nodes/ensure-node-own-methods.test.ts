@@ -9,7 +9,7 @@ describe('ensureLexicalNodeOwnMethods', () => {
     static getType() {
       return 'generated'
     }
-    static clone(node: GeneratedBase) {
+    static clone(_node: GeneratedBase) {
       return new GeneratedBase()
     }
     static importJSON() {

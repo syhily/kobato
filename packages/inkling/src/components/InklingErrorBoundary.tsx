@@ -37,7 +37,7 @@ export default function InklingErrorBoundary({ children }: { children: React.Rea
 
   return (
     <InklingErrorBoundaryInner
-      fallback={<div className="border border-red p-2">{labels['error.boundary']}</div>}
+      fallback={<div className="border-red border p-2">{labels['error.boundary']}</div>}
       onError={onError}
     >
       {children}

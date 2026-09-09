@@ -88,7 +88,7 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
   const inputElement = searchEnabled ? (
     <Input
       autoFocus={true}
-      className="my-1 h-auto w-full rounded-md border border-transparent bg-grey-100 px-4 py-2 text-left text-sm leading-snug font-medium text-black placeholder:text-sm placeholder:leading-snug placeholder:font-medium placeholder:text-grey-500 focus:border-green focus:bg-white focus:shadow-[0_0_0_2px_rgba(48,207,67,.25)] dark:border-grey-800/80 dark:bg-grey-900 dark:text-white dark:selection:bg-grey-600/40 dark:selection:text-grey-100 dark:focus:border-green dark:focus:bg-grey-900"
+      className="bg-grey-100 placeholder:text-grey-500 focus:border-green dark:border-grey-800/80 dark:bg-grey-900 dark:selection:bg-grey-600/40 dark:selection:text-grey-100 dark:focus:border-green dark:focus:bg-grey-900 my-1 h-auto w-full rounded-md border border-transparent px-4 py-2 text-left text-sm leading-snug font-medium text-black placeholder:text-sm placeholder:leading-snug placeholder:font-medium focus:bg-white focus:shadow-[0_0_0_2px_rgba(48,207,67,.25)] dark:text-white"
       dataTestId={testId}
       name="link-input"
       placeholder={labels['link.search.placeholder']}
@@ -113,7 +113,7 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
   ) : (
     <input
       ref={inputRef}
-      className="mb-[1px] h-8 w-full pl-3 leading-loose text-grey-900 selection:bg-grey/40 dark:bg-grey-950 dark:text-grey-300 dark:selection:bg-grey-800/40 dark:selection:text-grey-100"
+      className="text-grey-900 selection:bg-grey/40 dark:bg-grey-950 dark:text-grey-300 dark:selection:bg-grey-800/40 dark:selection:text-grey-100 mb-[1px] h-8 w-full pl-3 leading-loose"
       data-testid={testId}
       name="link-input"
       placeholder={labels['link.input.placeholder']}
@@ -141,8 +141,8 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
       ref={containerRef}
       className={
         searchEnabled
-          ? 'relative m-0 flex w-full flex-col rounded-lg bg-white p-1 px-2 font-sans text-sm font-medium shadow-md dark:bg-grey-950'
-          : 'relative m-0 flex items-center justify-evenly gap-1 rounded-lg bg-white p-1 font-sans text-md font-normal text-black shadow-md dark:bg-grey-950'
+          ? 'dark:bg-grey-950 relative m-0 flex w-full flex-col rounded-lg bg-white p-1 px-2 font-sans text-sm font-medium shadow-md'
+          : 'dark:bg-grey-950 relative m-0 flex items-center justify-evenly gap-1 rounded-lg bg-white p-1 font-sans text-md font-normal text-black shadow-md'
       }
       onKeyDownCapture={searchEnabled ? handleContainerKeyDownCapture : undefined}
     >
@@ -159,7 +159,7 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
             inputRef.current?.focus()
           }}
         >
-          <CloseIcon className="size-4 stroke-2 text-grey" />
+          <CloseIcon className="text-grey size-4 stroke-2" />
         </button>
       )}
 

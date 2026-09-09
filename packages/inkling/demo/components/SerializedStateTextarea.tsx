@@ -19,7 +19,7 @@ const SerializedStateTextarea = ({ isOpen }: SerializedStateTextareaProps) => {
 
   return (
     <>
-      <pre className="size-full resize-none !overflow-auto bg-black !p-4 font-mono text-sm text-grey-300 selection:bg-grey-800">
+      <pre className="text-grey-300 selection:bg-grey-800 size-full resize-none !overflow-auto bg-black !p-4 font-mono text-sm">
         {isOpen && <code>{serializedJson}</code>}
       </pre>
       <OnChangePlugin onChange={onChange} />

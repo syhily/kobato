@@ -196,9 +196,9 @@ export function buildCardMenu(
             return 1
           } else if (b.priority === undefined) {
             return -1
-          } else {
-            return a.priority - b.priority
           }
+            return a.priority - b.priority
+          
         }),
       ]
     }),
@@ -206,12 +206,12 @@ export function buildCardMenu(
 
   // sort primary section to always display first
   menu = new Map(
-    [...menu.entries()].sort((a, b) => {
+    [...menu.entries()].sort((a, _b) => {
       if (a[0] === 'Primary') {
         return -1
-      } else {
-        return 1
       }
+        return 1
+      
     }),
   )
 

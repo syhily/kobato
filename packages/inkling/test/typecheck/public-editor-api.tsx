@@ -101,19 +101,13 @@ void editor
 
 const nestedComposerProps: InklingNestedComposerProps = {
   initialEditor: nestedEditor,
-  // oxlint-disable-next-line typescript/no-deprecated -- this typecheck file intentionally pins the deprecated prop in the public API
   initialNodes: BASIC_NODES,
   skipEditableListener: true,
 }
 void nestedComposerProps
 
 const nestedComposer = (
-  <InklingNestedComposer
-    initialEditor={nestedEditor}
-    // oxlint-disable-next-line typescript/no-deprecated -- this typecheck file intentionally pins the deprecated prop in the public API
-    initialNodes={BASIC_NODES}
-    skipEditableListener={true}
-  >
+  <InklingNestedComposer initialEditor={nestedEditor} initialNodes={BASIC_NODES} skipEditableListener={true}>
     {null}
   </InklingNestedComposer>
 )

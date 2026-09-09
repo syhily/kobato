@@ -117,7 +117,7 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
       />
       <input
         aria-label={labels['aria.codeblockLanguage']}
-        className={`absolute top-1.5 right-1.5 z-999 w-1/5 rounded-md border border-grey-300 px-2 py-1 font-sans text-[1.3rem] leading-4 text-grey-900 transition-opacity focus-visible:outline-none dark:border-grey-900 dark:text-grey-400 ${showLanguage ? 'opacity-100' : 'opacity-0'}`}
+        className={`border-grey-300 text-grey-900 dark:border-grey-900 dark:text-grey-400 absolute top-1.5 right-1.5 z-999 w-1/5 rounded-md border px-2 py-1 font-sans text-[1.3rem] leading-4 transition-opacity focus-visible:outline-none ${showLanguage ? 'opacity-100' : 'opacity-0'}`}
         data-testid="code-card-language"
         placeholder={labels['codeblock.language.placeholder']}
         type="text"
@@ -144,7 +144,7 @@ export function CodeBlock({ code, darkMode, language }: CodeBlockProps) {
         <code className={language && `language-${language}`}>{code}</code>
       </pre>
       <div className="absolute top-2 right-2 flex items-center justify-center px-1">
-        <span className="block font-sans text-sm leading-normal font-medium text-grey">{language}</span>
+        <span className="text-grey block font-sans text-sm leading-normal font-medium">{language}</span>
       </div>
     </div>
   )
@@ -187,7 +187,7 @@ export function CodeBlockCard({
         updateLanguage={updateLanguage}
       />
     )
-  } else {
+  }
     return (
       <>
         <CodeBlock code={code} darkMode={darkMode} language={language} />
@@ -200,5 +200,5 @@ export function CodeBlockCard({
         />
       </>
     )
-  }
+  
 }

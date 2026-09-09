@@ -65,7 +65,7 @@ function MathLivePreview({ tex, renderMath }: MathLivePreviewProps) {
 
   if (renderMath && preview.error) {
     return (
-      <div className="px-2 py-[6px] font-sans text-sm text-red" data-inkling-math-preview="error">
+      <div className="text-red px-2 py-[6px] font-sans text-sm" data-inkling-math-preview="error">
         {preview.error}
       </div>
     )
@@ -83,7 +83,7 @@ function MathLivePreview({ tex, renderMath }: MathLivePreviewProps) {
 
   return (
     <pre
-      className="rounded-md border border-grey-200 bg-grey-100 px-2 py-[6px] font-mono text-[1.6rem] leading-9 whitespace-pre-wrap text-grey-900 dark:border-grey-900 dark:bg-grey-950 dark:text-grey-400"
+      className="border-grey-200 bg-grey-100 text-grey-900 dark:border-grey-900 dark:bg-grey-950 dark:text-grey-400 rounded-md border px-2 py-[6px] font-mono text-[1.6rem] leading-9 whitespace-pre-wrap"
       data-inkling-math-preview="tex"
     >
       <code>{tex}</code>
@@ -116,7 +116,7 @@ function MathDisplay({ tex, mathml, svg }: MathDisplayProps) {
   }
 
   return (
-    <pre className="rounded-md border border-grey-200 bg-grey-100 px-2 py-[6px] font-mono text-[1.6rem] leading-9 whitespace-pre-wrap text-grey-900 dark:border-grey-900 dark:bg-grey-950 dark:text-grey-400">
+    <pre className="border-grey-200 bg-grey-100 text-grey-900 dark:border-grey-900 dark:bg-grey-950 dark:text-grey-400 rounded-md border px-2 py-[6px] font-mono text-[1.6rem] leading-9 whitespace-pre-wrap">
       <code>{tex}</code>
     </pre>
   )
@@ -144,7 +144,7 @@ export function MathCard({ tex, mathml, svg, isEditing, renderMath, updateTex, o
       <textarea
         aria-label={labels['aria.mathTexSource']}
         autoFocus={true}
-        className="min-h-20 w-full rounded-md border border-grey-200 bg-grey-100 px-2 py-[6px] font-mono text-[1.6rem] leading-9 text-grey-900 focus-visible:outline-none dark:border-grey-900 dark:bg-grey-950 dark:text-grey-400"
+        className="border-grey-200 bg-grey-100 text-grey-900 dark:border-grey-900 dark:bg-grey-950 dark:text-grey-400 min-h-20 w-full rounded-md border px-2 py-[6px] font-mono text-[1.6rem] leading-9 focus-visible:outline-none"
         data-testid="math-card-tex"
         placeholder={labels['math.tex.placeholder']}
         rows={3}

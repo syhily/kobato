@@ -170,13 +170,11 @@ describe('$replaceTypography', () => {
     editor = createTestEditor()
   })
 
-  for (const scanCase of cases) {
-    it(scanCase.name, async () => {
-      const result = await runScan(editor, scanCase)
-      expect(result.text).toBe(scanCase.expected)
-      expect(result.caretOffset).toBe(scanCase.expectedCaret)
-    })
-  }
+  it.each(cases)('$name', async (scanCase) => {
+    const result = await runScan(editor, scanCase)
+    expect(result.text).toBe(scanCase.expected)
+    expect(result.caretOffset).toBe(scanCase.expectedCaret)
+  })
 
   it('leaves other dirty leaves untouched', async () => {
     await updateEditor(editor, () => {

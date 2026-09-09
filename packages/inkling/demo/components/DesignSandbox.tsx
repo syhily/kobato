@@ -102,7 +102,7 @@ const DesignSandbox = () => {
   }
 
   function ToolbarSeparator() {
-    return <li className="m-0 mx-1 h-5 w-px bg-grey-900"></li>
+    return <li className="bg-grey-900 m-0 mx-1 h-5 w-px"></li>
   }
 
   /* Plus button
@@ -112,10 +112,10 @@ const DesignSandbox = () => {
     return (
       <button
         aria-label="Add a card"
-        className="group relative flex size-7 cursor-pointer items-center justify-center rounded-full border border-grey bg-white transition-all ease-linear hover:border-grey-900 md:size-9"
+        className="group border-grey hover:border-grey-900 relative flex size-7 cursor-pointer items-center justify-center rounded-full border bg-white transition-all ease-linear md:size-9"
         type="button"
       >
-        <PlusIcon className="size-4 stroke-grey-800 stroke-2 group-hover:stroke-grey-900" />
+        <PlusIcon className="stroke-grey-800 group-hover:stroke-grey-900 size-4 stroke-2" />
       </button>
     )
   }
@@ -152,7 +152,7 @@ const DesignSandbox = () => {
   function CardMenuSection({ label }: { label: string }) {
     return (
       <div
-        className="mb-2 flex shrink-0 flex-col justify-center px-4 pt-3 text-2xs font-medium tracking-[.06rem] text-grey uppercase"
+        className="text-2xs text-grey mb-2 flex shrink-0 flex-col justify-center px-4 pt-3 font-medium tracking-[.06rem] uppercase"
         style={{ minWidth: 'calc(100% - 3.2rem)' }}
       >
         {label}
@@ -170,15 +170,15 @@ const DesignSandbox = () => {
     Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
   }) {
     return (
-      <div className="flex cursor-pointer flex-row items-center border border-transparent px-4 py-2 text-grey-800 hover:bg-grey-100">
+      <div className="text-grey-800 hover:bg-grey-100 flex cursor-pointer flex-row items-center border border-transparent px-4 py-2">
         <div className="flex items-center">
           <Icon className="size-7" />
         </div>
         <div className="flex flex-col">
-          <div className="m-0 ml-4 truncate text-[1.3rem] leading-[1.333em] font-normal tracking-[.02rem] text-grey-900">
+          <div className="text-grey-900 m-0 ml-4 truncate text-[1.3rem] leading-[1.333em] font-normal tracking-[.02rem]">
             {label}
           </div>
-          <div className="m-0 ml-4 truncate text-2xs leading-[1.333em] font-normal tracking-[.02rem] text-grey">
+          <div className="text-2xs text-grey m-0 ml-4 truncate leading-[1.333em] font-normal tracking-[.02rem]">
             {desc}
           </div>
         </div>
@@ -194,12 +194,12 @@ const DesignSandbox = () => {
     Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
   }) {
     return (
-      <div className="flex cursor-pointer flex-row items-center border border-transparent px-4 py-2 text-grey-800 hover:bg-grey-100">
+      <div className="text-grey-800 hover:bg-grey-100 flex cursor-pointer flex-row items-center border border-transparent px-4 py-2">
         <div className="flex items-center">
           <Icon className="size-7" />
         </div>
         <div className="flex flex-col">
-          <div className="m-0 ml-4 truncate text-[1.3rem] leading-[1.333em] font-normal tracking-[.02rem] text-grey-900">
+          <div className="text-grey-900 m-0 ml-4 truncate text-[1.3rem] leading-[1.333em] font-normal tracking-[.02rem]">
             {label}
           </div>
         </div>
@@ -213,7 +213,7 @@ const DesignSandbox = () => {
   function DividerCard() {
     return (
       <div>
-        <hr className="block h-[1px] border-0 border-t border-grey-300" />
+        <hr className="border-grey-300 block h-[1px] border-0 border-t" />
       </div>
     )
   }
@@ -223,9 +223,9 @@ const DesignSandbox = () => {
 
   function CodeBlock() {
     return (
-      <div className="border-2 border-green">
-        <div className="rounded bg-grey-50 px-3 py-2">
-          <textarea className="w-full resize-none bg-grey-50 font-mono text-[1.7rem]" />
+      <div className="border-green border-2">
+        <div className="bg-grey-50 rounded px-3 py-2">
+          <textarea className="bg-grey-50 w-full resize-none font-mono text-[1.7rem]" />
         </div>
         <CaptionEditor placeholder="Type caption for code block (optional)" />
       </div>
@@ -280,10 +280,10 @@ const DesignSandbox = () => {
     return (
       <div className="relative">
         <figure className="cursor-pointer border border-transparent">
-          <div className="relative flex h-100 items-center justify-center border border-grey-100 bg-grey-50 before:pb-[62.5%]">
+          <div className="border-grey-100 bg-grey-50 relative flex h-100 items-center justify-center border before:pb-[62.5%]">
             <button className="group flex flex-col items-center justify-center p-20" type="button">
               <Icon className="size-32 opacity-80 transition-all ease-linear group-hover:scale-105 group-hover:opacity-100" />
-              <p className="mt-4 text-sm font-normal text-grey-700 group-hover:text-grey-800">{desc}</p>
+              <p className="text-grey-700 group-hover:text-grey-800 mt-4 text-sm font-normal">{desc}</p>
             </button>
           </div>
         </figure>
@@ -297,7 +297,7 @@ const DesignSandbox = () => {
   function CaptionEditor({ placeholder }: { placeholder: string }) {
     return (
       <input
-        className="not-inkling-prose w-full p-2 text-center font-sans text-sm font-normal tracking-wide text-grey-900"
+        className="not-inkling-prose text-grey-900 w-full p-2 text-center font-sans text-sm font-normal tracking-wide"
         placeholder={placeholder}
       />
     )
@@ -308,7 +308,7 @@ const DesignSandbox = () => {
 
   function GalleryCard() {
     return (
-      <div className="border-2 border-green">
+      <div className="border-green border-2">
         <MediaPlaceholder desc="Click to select up to 9 images" Icon={GalleryPlaceholderIcon} />
         <CaptionEditor placeholder="Type caption for gallery (optional)" />
       </div>

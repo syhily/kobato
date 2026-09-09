@@ -39,9 +39,9 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
         return '-mx-6'
       } else if (wrapperStyle === 'wide') {
         return 'hover:-mx-3 hover:px-3'
-      } else {
-        return 'border'
       }
+        return 'border'
+      
     }
 
     const className = [
@@ -59,7 +59,7 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
         <div className="sticky top-0 lg:top-8">
           <IndicatorIcon
             aria-label={interpolateLabel(labels['aria.indicator'], { cardType: cardType ?? '' })}
-            className="absolute left-[-6rem] size-5 text-grey"
+            className="text-grey absolute left-[-6rem] size-5"
             style={{ top: '.6rem' }}
           />
         </div>

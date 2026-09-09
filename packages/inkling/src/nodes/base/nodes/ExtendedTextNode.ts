@@ -15,10 +15,6 @@ export const extendedTextNodeReplacement = {
 }
 
 export class ExtendedTextNode extends TextNode {
-  constructor(text: string, key?: string) {
-    super(text, key)
-  }
-
   static getType() {
     return 'extended-text'
   }
