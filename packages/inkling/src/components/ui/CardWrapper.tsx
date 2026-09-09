@@ -40,8 +40,7 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
       } else if (wrapperStyle === 'wide') {
         return 'hover:-mx-3 hover:px-3'
       }
-        return 'border'
-      
+      return 'border'
     }
 
     const className = [

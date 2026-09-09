@@ -197,8 +197,7 @@ export function buildCardMenu(
           } else if (b.priority === undefined) {
             return -1
           }
-            return a.priority - b.priority
-          
+          return a.priority - b.priority
         }),
       ]
     }),
@@ -210,8 +209,7 @@ export function buildCardMenu(
       if (a[0] === 'Primary') {
         return -1
       }
-        return 1
-      
+      return 1
     }),
   )
 

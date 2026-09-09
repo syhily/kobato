@@ -188,17 +188,16 @@ export function CodeBlockCard({
       />
     )
   }
-    return (
-      <>
-        <CodeBlock code={code} darkMode={darkMode} language={language} />
-        <CardCaptionEditor
-          captionEditor={captionEditor ?? null}
-          captionEditorInitialState={captionEditorInitialState}
-          captionPlaceholder={labels['caption.codeblock.placeholder']}
-          dataTestId="codeblock-caption"
-          isSelected={isSelected}
-        />
-      </>
-    )
-  
+  return (
+    <>
+      <CodeBlock code={code} darkMode={darkMode} language={language} />
+      <CardCaptionEditor
+        captionEditor={captionEditor ?? null}
+        captionEditorInitialState={captionEditorInitialState}
+        captionPlaceholder={labels['caption.codeblock.placeholder']}
+        dataTestId="codeblock-caption"
+        isSelected={isSelected}
+      />
+    </>
+  )
 }
