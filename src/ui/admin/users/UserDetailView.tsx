@@ -218,7 +218,7 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
                       </div>
                       <CommentContentHtml
                         content={c.content}
-                        className="comment-content prose-blog prose prose-sm mt-1 line-clamp-3 max-w-none text-sm leading-snug wrap-break-word whitespace-normal [&>*]:!my-0"
+                        className="comment-content typeset typeset-comment mt-1 line-clamp-3 text-sm leading-snug wrap-break-word whitespace-normal [&>*]:!my-0"
                       />
                     </li>
                   ))}

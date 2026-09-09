@@ -117,7 +117,7 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
           {/* Body — the saved feed-variant HTML projection, sanitized at render. */}
           <CommentContentHtml
             content={comment.content}
-            className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal"
+            className="comment-content typeset typeset-comment mt-2 leading-copy wrap-break-word whitespace-normal"
           />
 
           {/* Action row — flat, no overflow menu. Text label hides on narrow screens. */}

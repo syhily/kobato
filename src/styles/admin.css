@@ -4,8 +4,9 @@
  * Shares the token partial (`tailwind.css`) with the public entry but scans
  * only admin-rendered sources, so the emitted bundle drops public-only
  * artifacts (cursors, post/TOC/friends/webmention chrome, the public
- * medium-zoom z-index). The typography plugin stays registered because the
- * comment editor and admin comment views use `prose` classes.
+ * medium-zoom z-index). Content typography comes from the vendored
+ * shadcn/typeset (`typeset.css`) plus kobato's presets (`typeset-kobato.css`) —
+ * the admin bundle needs them for the editor canvases and comment views.
  */
 /* Cascade-layer order: the inkling editor stylesheet (imported by
    PageBodyEditor's route chunk into `layer(inkling)`) must sit BELOW
@@ -14,8 +15,9 @@
    editor chunk's stylesheet loads. */
 @layer inkling, theme, base, components, utilities;
 @import 'tailwindcss' source(none);
-@plugin '@tailwindcss/typography';
 @import './tailwind.css';
+@import './typeset.css';
+@import './typeset-kobato.css';
 
 @source '../routes/admin';
 @source '../routes/auth';

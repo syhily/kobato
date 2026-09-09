@@ -134,7 +134,7 @@ export function DetailBodyChrome({
       <div className={contentWrapperClassName}>
         <div
           ref={postContentRef}
-          className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}
+          className={cn('post-content', 'typeset typeset-post')}
           dangerouslySetInnerHTML={{ __html: cleanBodyHtml }}
         />
         {children}

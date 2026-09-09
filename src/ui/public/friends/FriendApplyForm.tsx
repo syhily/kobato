@@ -61,7 +61,7 @@ export function FriendApplyForm() {
   }, [])
 
   return (
-    <div className="not-prose mt-10 flex justify-center px-4 md:mt-8 md:px-0">
+    <div className="not-typeset mt-10 flex justify-center px-4 md:mt-8 md:px-0">
       <Button variant="dark" size="lg" onClick={handleOpen}>
         申请友链
       </Button>

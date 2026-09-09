@@ -38,10 +38,12 @@
 
 /* Design-token bridge. inkling declares --font-sans (Inter) and --font-serif
    (Georgia) on `.inkling-lexical` itself in its layered theme, so the kobato
-   :root tokens never reach the prose rules — these unlayered declarations
-   punch through: --font-sans maps to the CJK-capable kobato body chain
-   (prose headings, card chrome), --font-serif re-inherits the kobato article
-   serif (a same-named `var(--font-serif)` would be a cyclic reference).
+   :root tokens never reach descendants — these unlayered declarations punch
+   through: --font-sans maps to the CJK-capable kobato body chain (card
+   chrome), --font-serif re-inherits the kobato article serif (a same-named
+   `var(--font-serif)` would be a cyclic reference). The typeset-post preset
+   on the contentEditable consumes --font-serif directly, so this bridge is
+   what keeps editor text on the rendered article's serif stack.
    --inkling-accent-color is the package's accent hook, consumed by
    --color-accent on `.inkling-lexical`; kobato's --brand flips to its dark
    value under `.dark` automatically. Header/callout cards deliberately
@@ -50,6 +52,15 @@
   --inkling-accent-color: var(--brand);
   --font-sans: var(--font-body);
   --font-serif: inherit;
+}
+
+/* shadcn/typeset zoom compensation: the canvas's `zoom: 0.625` scales rem
+   too, so the preset's rem base would land at 18px × 0.625. typeset is
+   otherwise all-em (headings, rhythm, the typeset-kobato identity layer all
+   derive from --typeset-size), so re-inflating this ONE variable makes the
+   editor canvas pixel-identical to the rendered article. */
+.kobato-page-editor .typeset-post {
+  --typeset-size: calc(1.125rem / 0.625);
 }
 
 /* The contentEditable root (the only `.inkling-lexical > *` in the tree)
@@ -67,10 +78,15 @@
    position:relative `.inkling-lexical` box, ignoring the canvas padding
    (15vmin / 1.5rem) — re-anchor it to the first paragraph's text origin
    (the class arrives via `placeholderClassName` in `PageBodyEditor`).
-   Inside the zoomed container it scales in lockstep with the prose. */
+   Font metrics mirror the typeset-post canvas (serif, the zoom-compensated
+   1.125rem base, 1.7778 leading) so the placeholder sits exactly on the
+   first typed glyph. */
 .kobato-page-editor .kobato-page-placeholder {
   top: 15vmin;
   left: 1.5rem;
+  font-family: var(--font-serif);
+  font-size: calc(1.125rem / 0.625);
+  line-height: 1.7778;
 }
 
 /* Writing-focus mode (FocusModePlugin puts the class on the contentEditable

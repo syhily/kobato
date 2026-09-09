@@ -1318,63 +1318,67 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps solution math scrollable instead of clipping long formulas', () => {
     const publicCss = readFileSync('src/styles/public.css', 'utf8')
     const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
+    const typesetKobatoCss = readFileSync('src/styles/typeset-kobato.css', 'utf8')
 
     expect(publicCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
     expect(tailwindCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
-    expect(tailwindCss).toContain(':where(.math-display, .inkling-math-card)')
-    expect(tailwindCss).toContain('overflow-x: auto')
+    expect(typesetKobatoCss).toContain(':where(.math-display, .inkling-math-card)')
+    expect(typesetKobatoCss).toContain('overflow-x: auto')
   })
 
-  it('routes post / comment typography through @tailwindcss/typography', () => {
+  it('routes post / comment typography through vendored shadcn/typeset', () => {
     const publicCss = readFileSync('src/styles/public.css', 'utf8')
     const adminCss = readFileSync('src/styles/admin.css', 'utf8')
     const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
+    const typesetCss = readFileSync('src/styles/typeset.css', 'utf8')
+    const typesetKobatoCss = readFileSync('src/styles/typeset-kobato.css', 'utf8')
     const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
+    const packageJson = readFileSync('package.json', 'utf8')
 
     expect(publicCss).not.toMatch(/^\s*\.post-content\s*\{/m)
     expect(publicCss).not.toMatch(/^\s*\.comment-content\s*\{/m)
-    expect(tailwindCss).toMatch(/@utility\s+prose-blog\s*\{/)
-    expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
-    expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
+    expect(tailwindCss).not.toMatch(/@utility\s+prose-blog\s*\{/)
+    expect(tailwindCss).not.toContain('--tw-prose')
     expect(publicCss).not.toMatch(/@import\s+['"][^'"]*ui\/post\/post\.css['"]/)
     expect(existsSync('src/ui/post/post.css')).toBe(false)
 
-    // Registration lives in both entries; the shared partial is entry-agnostic.
-    expect(publicCss).toContain("@plugin '@tailwindcss/typography'")
-    expect(adminCss).toContain("@plugin '@tailwindcss/typography'")
-    expect(tailwindCss).toMatch(/--code-bg:\s*rgb\(253,\s*246,\s*227\);/)
-
-    // Light and invert ladders read from the same `--prose-blog-*` slot table.
-    for (const slot of [
-      'body',
-      'headings',
-      'lead',
-      'links',
-      'bold',
-      'counters',
-      'bullets',
-      'hr',
-      'quotes',
-      'quote-borders',
-      'captions',
-      'code',
-      'pre-code',
-      'pre-bg',
-      'th-borders',
-      'td-borders',
-    ]) {
-      expect(tailwindCss).toMatch(new RegExp(`--prose-blog-${slot}\\s*:`))
-      expect(tailwindCss).toMatch(new RegExp(`--tw-prose-${slot}\\s*:\\s*var\\(--prose-blog-${slot}\\)`))
-      expect(tailwindCss).toMatch(new RegExp(`--tw-prose-invert-${slot}\\s*:\\s*var\\(--prose-blog-${slot}\\)`))
+    // The typography plugin is gone; typeset is vendored and owned.
+    expect(packageJson).not.toContain('@tailwindcss/typography')
+    for (const entry of [publicCss, adminCss]) {
+      expect(entry).not.toContain("@plugin '@tailwindcss/typography'")
+      // Import order is load-bearing: every typeset rule sits at (0,1,0) in
+      // the components layer, so the identity layer wins its ties by source
+      // order only.
+      expect(entry).toMatch(
+        /@import '\.\/tailwind\.css';\s*\n@import '\.\/typeset\.css';\s*\n@import '\.\/typeset-kobato\.css';/,
+      )
     }
 
-    expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,\s*'prose-blog prose prose-sm max-w-none'/)
+    // The kobato patch (inkling editor gates join the opt-out list) must
+    // survive any future re-sync of the vendored file.
+    expect(typesetCss).toContain('KOBATO PATCH #1')
+    expect(typesetCss).toContain('.not-inkling-prose')
+    expect(typesetCss).toContain('.inkling-blockquote-alt')
+    // The footnotes <section> styling is consumed as-is — inkling's export
+    // carries both hooks (`class="footnotes" data-footnotes`).
+    expect(typesetCss).toContain('.footnotes, [data-footnotes]')
+
+    // Presets exist and declare their font hooks explicitly — kobato has no
+    // --font-heading/--font-mono tokens, so typeset's defaults would
+    // silently fall back to inherit.
+    for (const preset of ['typeset-post', 'typeset-comment']) {
+      expect(typesetKobatoCss).toMatch(new RegExp(`\\.${preset}\\s*\\{`))
+    }
+    expect(typesetKobatoCss).toContain('--typeset-font-heading: var(--font-serif)')
+    expect(typesetKobatoCss).toContain('--typeset-font-mono: var(--font-code)')
+
+    expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,\s*'typeset typeset-comment'/)
   })
 
   it('inlines the post-content / comment-content literals at the only two call-site shapes', () => {
-    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
-    expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
-    expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
+    const typesetKobatoCss = readFileSync('src/styles/typeset-kobato.css', 'utf8')
+    expect(typesetKobatoCss).toMatch(/\.typeset-post\s*\{/)
+    expect(typesetKobatoCss).toMatch(/\.typeset-comment\s*\{/)
 
     const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
     const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
