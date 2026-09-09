@@ -331,7 +331,7 @@ function MyCommentRow({
 
           <CommentContentHtml
             content={item.content}
-            className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal"
+            className="comment-content typeset typeset-comment mt-2 leading-copy wrap-break-word whitespace-normal"
           />
 
           {!isDeleted && (

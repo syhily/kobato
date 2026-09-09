@@ -1,12 +1,15 @@
 /*
  * Public-site Tailwind entry — imported by BaseLayout (public chrome).
  *
- * Owns its own tailwindcss import, typography plugin, and a `@source`
+ * Owns its own tailwindcss import and a `@source`
  * scope covering exactly the sources the public site renders: public
  * routes, public/components/icons/lib UI, root.tsx, and the inkling
  * host-card class constants the projected markup renders with. Admin-only
  * rules (music view transitions, admin medium-zoom stacking, scrollbar-thin)
- * live in admin.css and never reach this bundle.
+ * live in admin.css and never reach this bundle. Content typography comes
+ * from the vendored shadcn/typeset (`typeset.css`) plus kobato's presets
+ * (`typeset-kobato.css`), imported after the shared partial so the identity
+ * layer wins its source-order ties.
  */
 /* Cascade-layer order: the inkling comment-editor stylesheet (imported by
    CommentBodyEditor's lazy chunk into `layer(inkling)`) must sit BELOW
@@ -15,8 +18,9 @@
    loads — admin.css carries the same statement for its side. */
 @layer inkling, theme, base, components, utilities;
 @import 'tailwindcss' source(none);
-@plugin '@tailwindcss/typography';
 @import './tailwind.css';
+@import './typeset.css';
+@import './typeset-kobato.css';
 @import './cursors.css';
 
 @source '../routes/public';

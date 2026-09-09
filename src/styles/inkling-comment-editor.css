@@ -11,24 +11,25 @@
  * entries (`public.css` + `admin.css` — the comment editor renders on both
  * sides). Host rules below are deliberately UNLAYERED.
  *
- * NO ZOOM on this surface. The page editor (`inkling-editor.css`) normalizes
- * inkling's 10px-root rem system with `zoom: 0.625`, but CSS zoom on a
- * contenteditable breaks Chromium/WebKit IME composition painting: while a
- * CJK IME composes, the composition marker/caret is drawn at unzoomed
- * offsets, surfacing as a stray glyph next to the composing text. The
- * comment canvas is small enough (prose, lists, blockquote, code/math cards,
- * the inline slash menu) to size in FINAL px instead — every value below
- * equals the old `zoom: 0.55` effective size (rem × 16 × 0.55 = rem × 8.8).
- * Dropping the zoom also repairs the slash menu's popup offset, which was
- * computed from post-zoom getBoundingClientRect values and then scaled a
- * second time inside the zoomed subtree.
+ * NO ZOOM on this surface (CSS zoom on a contenteditable breaks
+ * Chromium/WebKit IME composition painting). Typography — block metrics,
+ * rhythm, lists, blockquote, inline code — is owned by the shadcn/typeset
+ * layer: the contentEditable carries `typeset typeset-comment`
+ * (CommentBodyEditor's `contentEditableClassName`), the SAME preset the
+ * rendered `.comment-content` uses, so the canvas is the render. Card
+ * interiors opt out via `.not-inkling-prose` (the vendored typeset.css
+ * guard honors it) and keep the hand-sized rules below. What remains here:
+ * the canvas box, the token bridge, and card interiors — sized in final px
+ * (the old `zoom: 0.55` effective sizes). The comment surface mounts no
+ * slash menu, so no card-menu chrome rules live here.
  */
 @import '@inkling/editor/style.css' layer(inkling);
 
 /* Comment canvas: a compact bordered input, not an article column. The
    min-height keeps the empty state clickable; the bottom runway lets the
-   slash menu / floating toolbar open without clipping against the form's
-   edge. */
+   floating toolbar open without clipping against the form's edge. The shell
+   is transparent (`.bg-transparent` on the wrapper) so the canvas sits
+   directly on the surrounding surface. */
 .kobato-comment-editor .inkling-lexical {
   width: 100%;
   min-height: 96px;
@@ -38,77 +39,33 @@
 /* Design-token bridge — same contract as the page editor surface:
    --inkling-accent-color ← --brand (flips to its dark value under `.dark`),
    --font-sans ← the CJK-capable kobato body chain, punching through the
-   Inter/Georgia stacks inkling declares on `.inkling-lexical` in its layer. */
+   Inter/Georgia stacks inkling declares on `.inkling-lexical` in its layer.
+   The typeset-comment preset consumes --font-serif on the contentEditable,
+   so the inherit bridge keeps canvas text on the rendered serif chain. */
 .kobato-comment-editor .inkling-lexical {
   --inkling-accent-color: var(--brand);
   --font-sans: var(--font-body);
   --font-serif: inherit;
 }
 
-/* The contentEditable root hardcodes the Inter stack, a 1.7rem base font,
-   and `letter-spacing: 0.1px`; real text blocks are re-fonted through the
-   bridged vars and the prose rules below. letter-spacing is zeroed — the
-   rendered comment has none, and letter-spacing on a contenteditable is a
-   known Chromium IME composition-caret drift factor. */
+/* letter-spacing is zeroed at the wrapper (inkling sets 0.1px there and the
+   contentEditable inherits it) — the rendered comment has none, and
+   letter-spacing on a contenteditable is a known Chromium IME
+   composition-caret drift factor. Font family/size/leading come from the
+   typeset-comment preset on the contentEditable itself. */
 .kobato-comment-editor .inkling-lexical > * {
-  font-family: var(--font-body);
-  font-size: 0.875rem;
   letter-spacing: normal;
 }
 
-/* Text matches the RENDERED comment (`.comment-content` = prose-sm:
-   0.875rem body, `leading-copy` 1.85, the site SERIF chain — measured live:
-   13.125px/24.28px at the public 15px root, 14px/25.9px at the admin 16px
-   root, so rem keeps both bundles in lockstep with their rendered side).
-   The `:not` guard mirrors inkling's prose rule so card interiors keep
-   their own scale. */
-.kobato-comment-editor
-  .inkling-lexical
-  :is(p, blockquote, ul, ol):not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  margin-top: 14px;
-  font-size: 0.875rem;
-  line-height: 1.85;
-}
-
-/* The generic margin above beats inkling's layered `:first-child` reset —
-   re-assert it unlayered or the first block (and with it the caret) drops
-   14px below the placeholder's origin. */
-.kobato-comment-editor
-  .inkling-lexical
-  :is(p, blockquote, ul, ol):first-child:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  margin-top: 0;
-}
-
-/* Block rhythm — inkling's margin-top-only pair scale, de-zoomed
-   (3.2rem → 28px, 3rem → 26.5px, 2.8rem → 24.5px). First-child rules stay
-   with the package (0 is 0 at any scale). */
-.kobato-comment-editor
-  .inkling-lexical
-  :is(p + p, blockquote + p, ul + p, ol + p, p + blockquote, blockquote + blockquote):not(
-    :where(.not-inkling-prose, .not-inkling-prose *)
-  ) {
-  margin-top: 28px;
-}
-
-.kobato-comment-editor
-  .inkling-lexical
-  :is(p + ul, p + ol, ul + ul, ul + ol, ol + ul, ol + ol, blockquote + ul, blockquote + ol):not(
-    :where(.not-inkling-prose, .not-inkling-prose *)
-  ) {
-  margin-top: 26.5px;
-}
-
-.kobato-comment-editor
-  .inkling-lexical
-  :is(div + p, div + blockquote, div + ul, div + ol):not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  margin-top: 24.5px;
+/* The dominant rendered comment leading is `leading-copy` (1.85, applied at
+   the render call sites); the preset base tracks prose-sm's 1.7143. */
+.kobato-comment-editor .typeset-comment {
+  --typeset-leading: 1.85;
 }
 
 /* Cards render as div wrappers INSIDE the contentEditable (.inkling-prose):
    their spacing is padding-top on the FOLLOWING block, not margin on the
-   card. The scope MUST stay under .inkling-prose — the EditorPlaceholder
-   div is also a `.inkling-lexical > div + div`, and padding it pushes the
-   placeholder text a full line below the caret origin. */
+   card — de-zoomed from the package's 3.2rem. */
 .kobato-comment-editor
   .inkling-lexical
   .inkling-prose
@@ -121,67 +78,14 @@
   padding-top: 28px;
 }
 
-/* Lists. */
-.kobato-comment-editor .inkling-lexical :is(ul, ol) li:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  margin: 9px 0 0 21px;
-  padding-left: 5.5px;
-  line-height: 28px;
-}
-.kobato-comment-editor .inkling-lexical ol li:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  margin-left: 19.5px;
-  padding-left: 7px;
-}
-.kobato-comment-editor
-  .inkling-lexical
-  :is(ul, ol)
-  li:first-child:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  margin-top: 0;
-}
-.kobato-comment-editor
-  .inkling-lexical
-  :is(ul ul, ul ol, ol ul, ol ol):not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  margin: 9px 0 17.5px;
-}
-
-/* Blockquote + rule + inline code chrome. */
-.kobato-comment-editor .inkling-lexical blockquote:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  border-left-width: 2.2px;
-  padding-left: 17.6px;
-}
-.kobato-comment-editor .inkling-lexical hr:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  margin: 14px 0;
-}
-.kobato-comment-editor .inkling-lexical code:not(:where(.not-inkling-prose, .not-inkling-prose *)) {
-  padding: 3.5px 3.5px 2px;
-}
-
-/* inkling's EditorPlaceholder is `absolute top-0 left-0` against the
-   position:relative `.inkling-lexical` box, ignoring the host padding above —
-   re-anchor it to the typed text's origin and give it the same font metrics
-   as the prose (the serif chain, 0.875rem, 1.85 — NOT the package default
-   `font-serif text-xl text-grey-500`, and NOT --font-body: rendered
-   comments are serif). */
-.kobato-comment-editor .kobato-comment-placeholder {
-  top: 6.6px;
-  left: 8.8px;
-  font-family: var(--font-serif);
-  font-size: 0.875rem;
-  line-height: 1.85;
-  color: var(--ink-4);
-}
-
-/* Code + math card bodies (the display <pre>, the math TeX textarea, and
-   CodeMirror's lines — the CM theme is unlayered too, so these need one
-   extra class of specificity to beat `.cm-editor .cm-line`): inkling sizes
-   them at 1.6rem / leading-9 (2.25rem), de-zoomed that is 14px / 20px. */
+/* Code card bodies (the display <pre> and CodeMirror's lines — the CM theme
+   is unlayered too, so these need one extra class of specificity to beat
+   `.cm-editor .cm-line`): inkling sizes them at 1.6rem / leading-9 (2.25rem),
+   de-zoomed that is 14px / 20px. */
 .kobato-comment-editor .inkling-lexical pre,
-.kobato-comment-editor .inkling-lexical textarea[data-testid='math-card-tex'],
 .kobato-comment-editor .inkling-lexical .cm-editor .cm-line {
   font-size: 14px;
   line-height: 20px;
-}
-.kobato-comment-editor .inkling-lexical textarea[data-testid='math-card-tex'] {
-  min-height: 44px;
 }
 .kobato-comment-editor .inkling-lexical input[data-testid='code-card-language'] {
   font-size: 11.5px;
@@ -192,36 +96,4 @@
 .kobato-comment-editor .inkling-lexical-caption p {
   font-size: 12px;
   line-height: 13px;
-}
-
-/* Slash menu — rendered INLINE in the editor tree (no portal), so it used
-   to shrink with the canvas zoom; these restore its effective geometry
-   (312px → 176px, 420px → 232px, 1.35rem items → 12px, 1.1rem sections →
-   10px, size-7 / 1.8rem icons → 16px). */
-.kobato-comment-editor [data-inkling-card-menu] {
-  width: 176px;
-  max-height: 232px;
-}
-@media (min-width: 768px) {
-  .kobato-comment-editor [data-inkling-card-menu] {
-    width: 192px;
-  }
-}
-.kobato-comment-editor [data-inkling-card-menu] li {
-  font-size: 10px;
-}
-.kobato-comment-editor [data-inkling-card-menu] li div {
-  font-size: 12px;
-}
-.kobato-comment-editor [data-inkling-card-menu] li > button {
-  gap: 7px;
-  padding: 5px 4px;
-}
-.kobato-comment-editor [data-inkling-card-menu] .size-7,
-.kobato-comment-editor [data-inkling-card-menu] svg {
-  width: 16px;
-  height: 16px;
-}
-.kobato-comment-editor [data-inkling-card-menu] [data-card-menu-section='label'] {
-  padding: 7px 9px 4.5px;
 }

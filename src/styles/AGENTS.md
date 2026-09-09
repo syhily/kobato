@@ -2,19 +2,37 @@
 
 ## Entry structure
 
-Three files, two bundles:
+Six files, two bundles:
 
 - `tailwind.css` — **shared token partial**, not a standalone entry. Holds
   every raw design token (`:root` / `.dark` / `prefers-color-scheme` / P3),
   the full `@theme inline` bridge, `@custom-variant` blocks, `@layer base`
-  overrides, and rules both sides render (`prose-blog`, body tables, the
-  hydration-injected code-block chrome, APlayer
-  icon sizing, the theme-wipe view transition). It has no
-  `@import 'tailwindcss'`, no `@plugin`, and no `@source` — importing it
-  directly from TSX produces nothing.
+  overrides, and rules both sides render (the hydration-injected code-block
+  chrome, APlayer icon sizing, the theme-wipe view transition). It has no
+  `@import 'tailwindcss'` and no `@source` — importing it directly from TSX
+  produces nothing.
+- `typeset.css` — **vendored shadcn/typeset** (from
+  https://ui.shadcn.com/typeset.css), the `@tailwindcss/typography`
+  replacement: all content typography lives in one owned file under
+  `@layer components` with `:where()` zero-specificity guards. Carries
+  KOBATO PATCH #1 (documented in its header): the opt-out guard also honors
+  `.not-inkling-prose` and `.inkling-blockquote-alt` — carry the patch over
+  on any re-sync. The `<48rem` 1.125× mobile font bump is intentionally
+  kept.
+- `typeset-kobato.css` — **presets + identity layer** over typeset:
+  `.typeset-post` (article body, ex-prose-lg) and `.typeset-comment`
+  (ex-prose-sm) plus the shared inline identity (links, blockquote surface,
+  code pill, KaTeX, tables). Imported AFTER `typeset.css` — every typeset
+  rule sits at exactly (0,1,0), so this layer wins its ties by source
+  order. Text-decorative lengths are authored in EM because the page-editor
+  canvas runs under `zoom: 0.625` (see the ZOOM CONTRACT comment in the
+  file). The same presets ride the editor contentEditables
+  (`contentEditableClassName="typeset typeset-post|typeset-comment"`), which
+  is what makes the editor canvas WYSIWYG with the rendered output.
 - `public.css` — **public entry**, imported by `ui/public/chrome/BaseLayout.tsx`.
-  Owns `@import 'tailwindcss' source(none)` + the typography plugin, imports
-  the shared partial and `cursors.css`, and scopes `@source` to public-rendered
+  Owns `@import 'tailwindcss' source(none)`, imports the shared partial, then
+  `typeset.css` + `typeset-kobato.css` (in that order — source order breaks
+  the (0,1,0) ties), then `cursors.css`, and scopes `@source` to public-rendered
   dirs (`routes/public`, `ui/public`, `ui/components`, `ui/icons`,
   `ui/lib`, `root.tsx`, and `shared/lexical/cards` whose class constants render into
   the R10 card markup). A bare `@layer inkling, theme, base, components, utilities;`
@@ -41,20 +59,25 @@ Three files, two bundles:
   740px effective article width), the design-token bridge
   (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`,
   `--font-serif: inherit` — inkling declares its own Inter/Georgia stacks on
-  `.inkling-lexical` in its layer), and the writing-focus dimming.
+  `.inkling-lexical` in its layer, and the contentEditable's typeset-post
+  preset consumes `--font-serif`), the typeset zoom compensation
+  (`--typeset-size: calc(1.125rem / 0.625)` — the one rem value in an
+  otherwise all-em system), the placeholder font metrics, and the
+  writing-focus dimming.
 - `inkling-comment-editor.css` — **comment-canvas partial** (R12), imported
-  ONLY by `@/ui/public/comments/CommentBodyEditor` so it rides the lazy
-  comment-editor chunk on BOTH bundles (the admin dialogs consume the same
-  lazy boundary). Same `inkling` layer import (pinned by `public.css`'s /
+  ONLY by `@/ui/public/comments/CommentBodyEditor` (statically imported by
+  the public comments island AND the admin dialogs, so it rides the route
+  module graph on both bundles — no lazy boundary). Same `inkling` layer
+  import (pinned by `public.css`'s /
   `admin.css`'s bare ordering statements) plus the `.kobato-comment-editor`
   host rules. NO ZOOM here (unlike the page editor): CSS zoom on a
-  contenteditable breaks Chromium/WebKit IME composition painting, so the
-  comment canvas is sized in final px — prose/placeholder at the rendered
-  comment's metrics (14px / `leading-copy` 1.85; the placeholder is
-  re-anchored to the padded text origin via the `kobato-comment-placeholder`
-  class the editor passes as `placeholderClassName`), block rhythm, card
-  interiors, and the inline slash menu at their old zoom-era effective
-  sizes.
+  contenteditable breaks Chromium/WebKit IME composition painting.
+  Typography is owned by the `typeset-comment` preset on the contentEditable
+  (the canvas overrides only `--typeset-leading` to the rendered `1.85`);
+  what remains here is the (transparent) canvas box, the token bridge, and
+  card interiors. The surface mounts no placeholder (`placeholder={<></>}`
+  on the InklingSurface) and no slash menu, so no placeholder or card-menu
+  rules live here.
 
 New rule placement: used by both sides → `tailwind.css`; one side only →
 that side's entry; page-editor canvas chrome → `inkling-editor.css`;
