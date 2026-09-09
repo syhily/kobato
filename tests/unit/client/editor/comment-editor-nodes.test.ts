@@ -1,19 +1,25 @@
 import { createHeadlessEditor } from '@inkling/editor'
 // @vitest-environment jsdom
-// jsdom: the decorator cards (codeblock/math) serialize through @lexical/html,
+// jsdom: the decorator cards (codeblock) serialize through @lexical/html,
 // which needs a DOM document even for a headless parse → toJSON round-trip.
 import { describe, expect, it } from 'vitest'
 
 import { COMMENT_EDITOR_NODES } from '@/client/editor/comment-editor-nodes'
-import { commentEditorStateSchema, type CommentEditorState } from '@/shared/lexical/comment-schema'
+import { downgradeLegacyCommentMath } from '@/client/editor/comment-legacy-math'
+import {
+  commentEditorStateSchema,
+  EMPTY_COMMENT_EDITOR_STATE,
+  type CommentEditorState,
+} from '@/shared/lexical/comment-schema'
 import { visitLexicalNodes } from '@/shared/lexical/walk'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // A comment using every capability the surface advertises (node whitelist:
-// paragraph, quote, nested list, link, code block, math block, math-inline).
-// Parsed back through the real composer node set below — the round-trip must
-// not drop or rewrite a single node, or pre-existing comments would lose
-// content the moment they are opened in the new editor.
+// paragraph, quote, nested list, link, code block) PLUS the retired R12-era
+// math pair, which legacy bodies may still carry. The math nodes are
+// downgraded to the fence dialect at seed time (`downgradeLegacyCommentMath`)
+// BEFORE the composer parses — the round-trip below runs on the downgraded
+// state, so no content is lost when a legacy comment opens in the editor.
 const RICH_COMMENT = unsafeCast<CommentEditorState>({
   root: {
     type: 'root',
@@ -151,29 +157,44 @@ describe('COMMENT_EDITOR_NODES round-trip', () => {
   })
 
   it('parses a stored comment through the composer node set without dropping a node', () => {
+    const seeded = downgradeLegacyCommentMath(RICH_COMMENT)
+    // The downgrade maps the retired pair onto the fence dialect: the math
+    // block becomes a ```math codeblock, the inline formula `$…$` text.
+    expect(collectTypes(seeded)).not.toContain('math')
+    expect(collectTypes(seeded)).not.toContain('math-inline')
+
     const editor = createHeadlessEditor({
       nodes: COMMENT_EDITOR_NODES,
       onError: (error: Error) => {
         throw error
       },
     })
-    const parsed = editor.parseEditorState(RICH_COMMENT)
+    const parsed = editor.parseEditorState(seeded)
     const roundTripped = unsafeCast<CommentEditorState>(parsed.toJSON())
 
-    expect(collectTypes(roundTripped)).toEqual(collectTypes(RICH_COMMENT))
+    expect(collectTypes(roundTripped)).toEqual(collectTypes(seeded))
 
-    const payloads = { code: [] as string[], tex: [] as string[] }
+    const payloads = { code: [] as string[], languages: [] as string[], text: [] as string[] }
     visitLexicalNodes(roundTripped, (node) => {
-      const dataset = unsafeCast<{ code?: unknown; tex?: unknown }>(node)
+      const dataset = unsafeCast<{ code?: unknown; language?: unknown; text?: unknown }>(node)
       if (typeof dataset.code === 'string' && dataset.code.length > 0) {
         payloads.code.push(dataset.code)
       }
-      if (typeof dataset.tex === 'string' && dataset.tex.length > 0) {
-        payloads.tex.push(dataset.tex)
+      if (node.type === 'codeblock' && typeof dataset.language === 'string') {
+        payloads.languages.push(dataset.language)
+      }
+      if (typeof dataset.text === 'string' && dataset.text.includes('$')) {
+        payloads.text.push(dataset.text)
       }
     })
-    expect(payloads.code).toEqual(["console.log('hi')"])
-    expect(payloads.tex.sort()).toEqual(['E=mc^2', '\\int_0^1 x\\,dx'])
+    expect(payloads.code.sort()).toEqual(['\\int_0^1 x\\,dx', "console.log('hi')"])
+    expect(payloads.languages.sort()).toEqual(['math', 'ts'])
+    expect(payloads.text).toEqual(['$E=mc^2$'])
+  })
+
+  it('downgrade is a no-op for comments without legacy math nodes', () => {
+    const plain = structuredClone(EMPTY_COMMENT_EDITOR_STATE)
+    expect(downgradeLegacyCommentMath(plain)).toBe(plain)
   })
 
   it('rejects article-only nodes at the composer (headings are not comment nodes)', () => {

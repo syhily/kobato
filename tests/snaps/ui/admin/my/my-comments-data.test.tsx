@@ -38,9 +38,9 @@ queryMocks.queryClient = { invalidateQueries: vi.fn() }
 // (the orpcQuery option builder never runs its network path); mirrors the
 // tags/musics-view pattern.
 
-// LazyCommentBodyEditor's lazy boundary is hard to assert under SSR — stub it to a sentinel element.
-vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
-  LazyCommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
+// CommentBodyEditor's inkling tree is hard to assert under SSR — stub it to a sentinel element.
+vi.mock('@/ui/public/comments/CommentBodyEditor', () => ({
+  CommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))
 
 let seq = 0

@@ -42,7 +42,7 @@ parent.
 
 - `ui/public/post/` detail rendering — public post/page bodies render the saved `bodyHtml`
   projection: `DetailBodyChrome` sanitizes it with `sanitizeHtml(html, 'body')` into the
-  `post-content` prose container, then five hydration hooks enhance the static markup on the
+  `post-content` typeset container (`typeset typeset-post`), then five hydration hooks enhance the static markup on the
   client: `useMediumZoom` (`@/client/hooks/use-medium-zoom`) plus `useThumbhashHydration`,
   `useCodeCopyButtons`, `useMusicPlayers`, and `useFootnotePreviews` (the last four live beside
   the chrome). Comment bodies render the stored `content` HTML column through
@@ -158,14 +158,28 @@ unrelated concerns.
   lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
   through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
   `src/styles/inkling-editor.css`.
-- Comment editor: `@/ui/public/comments/CommentBodyEditor` (reached through the lazy
-  `LazyCommentBodyEditor` boundary — admin dialogs included) wraps the same inkling composer with
+- Comment editor: `@/ui/public/comments/CommentBodyEditor` (statically imported
+  by every consumer — the reply form, both inline edit forms, and the admin
+  dialogs — so the editor chunks ride the route module graph and the SSR
+  warmup emits them as critical modulepreloads; no lazy boundary, no second
+  fetch waterfall at click time) wraps the same inkling composer with
   the trimmed comment node set (`@/client/editor/comment-editor-nodes`: no headings, asides,
-  tables, images, or host cards; code block + math cards stay), the comment markdown transformers
-  (`comment-markdown-transformers.ts`, including the `$…$` inline-math rule), and
-  `isSnippetsEnabled={false}` / `isDragEnabled={false}`. Host styling hooks are scoped under
+  tables, images, host cards, or math cards — the code block stays, and a
+  ```math fence is the formula path, rendered to KaTeX MathML by
+  `computeCommentContentProjection` at save time), the comment markdown transformers
+  (`comment-markdown-transformers.ts` — the DEFAULT_TRANSFORMERS subset surviving the trim), and
+  `isSnippetsEnabled={false}` / `isDragEnabled={false}`. No slash menu / card
+  insert on this surface. SSR: the inkling tree renders during
+  SSR/hydration directly (no `useHydrated` gate — the empty-seed markup is
+  deterministic, and a gate would leave a dead skeleton swallowing clicks
+  until the whole page hydrates; rendering in place lets React's selective
+  hydration prioritise the boundary on the first click and replay the focus).
+  The shell is transparent (`bg-transparent`) —
+  no extra background behind the canvas, and no placeholder copy
+  (`placeholder={<></>}` on the InklingSurface). Host styling hooks are scoped under
   `.kobato-comment-editor` in `src/styles/inkling-comment-editor.css`; the host also captures
   Ctrl+Q before inkling sees it (AsideNode is unregistered, so the quote→aside cycle would throw).
+  ```
 
 ## Page draft preview
 

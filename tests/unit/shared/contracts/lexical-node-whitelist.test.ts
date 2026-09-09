@@ -120,7 +120,16 @@ describe('contract: lexical node whitelist', () => {
 
   it('pins the composer manifests to the whitelist constants', () => {
     expect(sorted(ARTICLE_COMPOSER_NODE_TYPES)).toEqual(sorted(FULL_EDITOR_NODE_TYPES))
-    expect(sorted(COMMENT_COMPOSER_NODE_TYPES)).toEqual(sorted(COMMENT_NODE_TYPES))
+    // The comment composer is a strict SUBSET of the storage whitelist:
+    // math / math-inline stay valid in storage so R12-era bodies still
+    // validate, but the composer no longer mounts them (formulas are
+    // authored as ```math fences and rendered by the comment projection).
+    const commentWhitelist = new Set<string>(COMMENT_NODE_TYPES)
+    for (const type of COMMENT_COMPOSER_NODE_TYPES) {
+      expect(commentWhitelist.has(type), type).toBe(true)
+    }
+    expect(COMMENT_COMPOSER_NODE_TYPES).not.toContain('math')
+    expect(COMMENT_COMPOSER_NODE_TYPES).not.toContain('math-inline')
   })
 
   it('derives the article manifest from the actually-mounted composer nodes (R11)', () => {
@@ -174,7 +183,17 @@ describe('contract: lexical node whitelist', () => {
       }
     }
     const mounted = new Set([...classTypes].filter((type) => !shadowed.has(type)))
-    for (const excluded of ['aside', 'heading', 'extended-heading', 'table', 'tablerow', 'tablecell']) {
+    for (const excluded of [
+      'aside',
+      'heading',
+      'extended-heading',
+      'table',
+      'tablerow',
+      'tablecell',
+      // The retired math card pair — storage-valid but never composer-mounted.
+      'math',
+      'math-inline',
+    ]) {
       expect(mounted.has(excluded), excluded).toBe(false)
     }
     mounted.add('paragraph')
