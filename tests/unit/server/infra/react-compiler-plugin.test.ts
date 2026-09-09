@@ -52,6 +52,18 @@ describe('reactCompilerPlugin', () => {
     expect(result).toBeNull()
   })
 
+  it('skips vendored workspace package dist (pre-minified input breaks hook detection)', async () => {
+    const source = [
+      'export function Counter({ start }) {',
+      '  const [n, setN] = useState(start)',
+      '  return <button onClick={() => setN(n + 1)}>{n}</button>',
+      '}',
+    ].join('\n')
+
+    const result = await runTransform(source, '/packages/inkling/dist/editor.js')
+    expect(result).toBeNull()
+  })
+
   it('skips files without component/hook signals', async () => {
     const result = await runTransform('export const value = computeTotal(items)', '/src/shared/utils/x.ts', 'client')
     expect(result).toBeNull()

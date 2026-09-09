@@ -26,6 +26,13 @@ import { transform } from 'oxc-transform-react'
 
 const INCLUDE = /\.[tj]sx?$/
 const EXCLUDE = /\/node_modules\//
+// Vendored workspace packages ship PRE-MINIFIED dist (packages/inkling/dist).
+// Minified custom hooks no longer match the compiler's `use*` hook detection,
+// so the pass memoizes them behind memo-cache guards — a runtime rules-of-hooks
+// violation ("change in the order of Hooks", then a null-inst crash in
+// updateEffectImpl) that takes the whole editor route down. Never run the
+// compiler on pre-built package output.
+const VENDORED_DIST = /\/packages\/[^/]+\/dist\//
 // Cheap pre-parse gate copied from @vitejs/plugin-react: skip files that
 // cannot plausibly contain a component or hook.
 const CODE_GATE = /forwardRef|memo|\b(?:[A-Z]|use[A-Z0-9])/
@@ -45,12 +52,17 @@ export function reactCompilerPlugin(): Plugin {
       filter: {
         id: {
           include: [INCLUDE],
-          exclude: [EXCLUDE],
+          exclude: [EXCLUDE, VENDORED_DIST],
         },
       },
       async handler(code, id) {
         // SSR/server consumers are intentionally left uncompiled (see above).
         if (this.environment?.config.consumer === 'server') {
+          return null
+        }
+        // Handler-level repeat of the filter's vendored-dist exclusion so the
+        // gate holds for direct handler invocations (tests, custom pipelines).
+        if (VENDORED_DIST.test(id)) {
           return null
         }
         if (!CODE_GATE.test(code)) {
