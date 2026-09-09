@@ -17,7 +17,7 @@
 import { defineCard, generateDecoratorNode } from '@inkling/editor'
 import { Music2Icon } from 'lucide-react'
 
-import { useOpenMusicPicker } from '@/client/editor/cards/music-pick-context'
+import { useOpenMusicPicker, type MusicPickTarget } from '@/client/editor/cards/music-pick-context'
 import { inklingHostCardMatches } from '@/shared/lexical/cards/menu-matches'
 import {
   hasMusicPlayerMeta,
@@ -59,16 +59,18 @@ export function MusicPlayerCardView({ meta }: { meta: MusicPlayerCardMeta }) {
   )
 }
 
-function MusicPlayerCardComponent({ node }: { node: MusicPlayerCardNode }) {
+// The component renders from a PLAIN meta snapshot — it never touches the
+// node instance. The generated property getters call getLatest(), which
+// throws when React re-renders outside Lexical's commit (or against a node
+// instance a later edit already replaced): Lexical #195. Reading the dataset
+// inside `render(node)` below is safe because decorate() runs inside the
+// reconciler's active read — the same split inkling's own cards use
+// (renderAudioCard reads the getters, AudioNodeComponent gets plain props).
+// The node reference still crosses as the pick target: the pick write goes
+// through the generated setter inside editor.update(), whose getWritable()
+// resolves the latest instance by key (see music-pick-context.ts).
+function MusicPlayerCardComponent({ meta, pickTarget }: { meta: MusicPlayerCardMeta; pickTarget: MusicPickTarget }) {
   const openMusicPicker = useOpenMusicPicker()
-  const meta: MusicPlayerCardMeta = {
-    playerId: node.playerId,
-    name: node.name,
-    artist: node.artist,
-    cover: node.cover,
-    audioUrl: node.audioUrl,
-    lyric: node.lyric,
-  }
   if (!hasMusicPlayerMeta(meta)) {
     // Unresolved card: inside PageBodyEditor the placeholder is the pick
     // entry (R11 — the picker dialog is host-owned); elsewhere it stays a
@@ -91,7 +93,7 @@ function MusicPlayerCardComponent({ node }: { node: MusicPlayerCardNode }) {
           // Keep the click from double-firing the card wrapper's selection.
           onClick={(event) => {
             event.stopPropagation()
-            openMusicPicker(node)
+            openMusicPicker(pickTarget)
           }}
         >
           {label}
@@ -121,6 +123,16 @@ export const musicPlayerCard = defineCard({
   ],
   toolbarLabel: MUSIC_PLAYER_NODE_TYPE,
   render(node) {
-    return <MusicPlayerCardComponent node={node} />
+    // Reads happen HERE, inside decorate()'s reconciler read — see the
+    // MusicPlayerCardComponent note for why the component gets a snapshot.
+    const meta: MusicPlayerCardMeta = {
+      playerId: node.playerId,
+      name: node.name,
+      artist: node.artist,
+      cover: node.cover,
+      audioUrl: node.audioUrl,
+      lyric: node.lyric,
+    }
+    return <MusicPlayerCardComponent meta={meta} pickTarget={node} />
   },
 })
