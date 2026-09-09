@@ -1,28 +1,38 @@
 // The comment body editor (R12, plan docs/plans/inkling-editor-replacement.md):
 // the tiptap micro-app is replaced by a trimmed inkling surface —
 // `InklingComposer` + `InklingSurface` mounting the COMMENT node set
-// (`@/client/editor/comment-editor-nodes`) with only the list / card-insert /
-// slash-menu feature plugins. kobato glue lives under `@/client/editor/`:
-// the node set, the filtered markdown shortcuts + `$…$` inline-math trigger
-// (`comment-markdown-transformers`), the zh-CN labels, and the shared
-// server-KaTeX preview channel (`renderMath`).
+// (`@/client/editor/comment-editor-nodes`) with only the list feature plugin.
+// kobato glue lives under `@/client/editor/`: the node set, the markdown
+// shortcuts (`comment-markdown-transformers` — bold/italic/quote/list/link
+// and the ``` fence; ```math is the formula path, rendered to KaTeX MathML
+// by the server-side comment projection), the zh-CN labels, and the legacy
+// math-card seed downgrade (`comment-legacy-math`).
+// No cards on this surface: no slash menu, no card insert, no card config.
 //
-// SSR: this module mounts ONLY after hydration — the gate lives in
-// `LazyCommentBodyEditor` (which every consumer imports), so the inkling
-// tree never renders on the server.
+// Statically imported by every consumer (no lazy boundary): the editor code
+// rides the route's module graph, so the SSR warmup emits it as a critical
+// modulepreload and the chunk arrives with the page — clicking into the
+// comment box never waits on a second fetch waterfall.
+//
+// SSR: the inkling tree renders during SSR/hydration directly (no
+// `useHydrated` gate) — the empty-seed markup is deterministic, and gating
+// would leave a dead skeleton that swallows clicks until hydration of the
+// whole page finishes (the comments stream + root hydration take seconds).
+// Rendering in place lets React's selective hydration prioritise this
+// boundary on the first click and replay the focus.
 
 import '@/styles/inkling-comment-editor.css'
-import type { CardConfig, ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@inkling/editor'
+import type { ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@inkling/editor'
 
-import { CardInsertPlugin, InklingComposer, InklingSurface, ListPlugin, SlashCardMenuPlugin } from '@inkling/editor'
+import { InklingComposer, InklingSurface, ListPlugin } from '@inkling/editor'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { COMMENT_EDITOR_NODES } from '@/client/editor/comment-editor-nodes'
+import { downgradeLegacyCommentMath } from '@/client/editor/comment-legacy-math'
 import { COMMENT_MARKDOWN_TRANSFORMERS } from '@/client/editor/comment-markdown-transformers'
 import { inklingLabels } from '@/client/editor/inkling-labels'
-import { renderMath } from '@/client/editor/render-math'
 import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@/shared/lexical/comment-schema'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { cn } from '@/ui/lib/cn'
@@ -38,27 +48,18 @@ export interface CommentBodyEditorProps {
   onBodyChange: (body: CommentEditorState) => void
   /** When true, the editor becomes read-only. */
   disabled?: boolean
-  /** Override the placeholder copy. */
-  placeholder?: string
   /** Extra Tailwind classes applied to the editor shell. */
   className?: string
 }
 
-const DEFAULT_PLACEHOLDER = '写下你的评论…  / 命令，$ 公式'
-
-// The comment surface mounts only the math family of cards, so the card
-// config is exactly the KaTeX preview channel (the math card's edit dialog
-// previews through it; the persisted mathml/svg artifacts are filled by the
-// save pipeline, never written back).
-const COMMENT_CARD_CONFIG: CardConfig = { renderMath }
-
 /** Rows stored before the Lexical switch still read back as PortableText
  *  during the interregnum — an unparseable seed falls back to the empty
  *  state instead of crashing the composer (the tiptap era's safeBodyToPmDoc
- *  behaviour). */
+ *  behaviour). R12-era math cards ride the fence downgrade so they open as
+ *  editable ```math code blocks. */
 function safeInitialState(body: CommentEditorState): CommentEditorState {
   const result = safeValidateCommentEditorState(body)
-  return result.ok ? result.state : EMPTY_COMMENT_EDITOR_STATE
+  return result.ok ? downgradeLegacyCommentMath(result.state) : EMPTY_COMMENT_EDITOR_STATE
 }
 
 /** inkling's Ctrl+Q cycles paragraph → quote → aside; AsideNode is not
@@ -72,14 +73,7 @@ function blockQuoteAsideCycle(event: React.KeyboardEvent) {
   }
 }
 
-export function CommentBodyEditor({
-  initialBody,
-  bodyKey,
-  onBodyChange,
-  disabled,
-  placeholder,
-  className,
-}: CommentBodyEditorProps) {
+export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled, className }: CommentBodyEditorProps) {
   const onBodyChangeRef = useRef(onBodyChange)
   useEffect(() => {
     onBodyChangeRef.current = onBodyChange
@@ -122,7 +116,7 @@ export function CommentBodyEditor({
     <div
       className={cn(
         'kobato-comment-editor group/comment-editor',
-        'rounded-md border border-line bg-background',
+        'rounded-md border border-line bg-transparent',
         'focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/40',
         className,
       )}
@@ -133,21 +127,21 @@ export function CommentBodyEditor({
         initialEditorState={mountedInitialState}
         labels={inklingLabels}
         darkMode={resolvedTheme === 'dark'}
-        cardConfig={COMMENT_CARD_CONFIG}
       >
         <InklingSurface
           readOnly={disabled === true}
           onChange={handleChange}
           registerAPI={registerAPI}
-          placeholderText={placeholder ?? DEFAULT_PLACEHOLDER}
-          placeholderClassName="kobato-comment-placeholder"
+          // No placeholder on this surface — an empty fragment beats
+          // `placeholderText=""` (which still mounts inkling's absolutely
+          // positioned placeholder div).
+          placeholder={<></>}
+          contentEditableClassName="typeset typeset-comment"
           markdownTransformers={COMMENT_MARKDOWN_TRANSFORMERS}
           isSnippetsEnabled={false}
           isDragEnabled={false}
         >
           <ListPlugin />
-          <CardInsertPlugin />
-          <SlashCardMenuPlugin />
         </InklingSurface>
       </InklingComposer>
     </div>

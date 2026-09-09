@@ -25,9 +25,9 @@ vi.mock('@/client/hooks/use-comment-guest', () => ({
   }),
 }))
 
-// Replace the lazy inkling editor with a deterministic textarea so SSR output is stable.
-vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
-  LazyCommentBodyEditor: ({ bodyKey }: { bodyKey: string }) => (
+// Replace the inkling editor with a deterministic textarea so SSR output is stable.
+vi.mock('@/ui/public/comments/CommentBodyEditor', () => ({
+  CommentBodyEditor: ({ bodyKey }: { bodyKey: string }) => (
     <textarea data-test="comment-body-editor" data-body-key={bodyKey} />
   ),
 }))

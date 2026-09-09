@@ -10,10 +10,13 @@
   `@/ui/public/comments/CommentBodyEditor`). `page-editor-nodes` (the composer node set — every mounted
   type must stay inside `FULL_EDITOR_NODE_TYPES`, contract-tested; AsideNode filtered,
   KobatoImageNode replaces the stock image card by type), `comment-editor-nodes` (the trimmed
-  comment node set — EDITOR_BASE_NODES minus headings/aside/tables plus the CodeBlock/Math/
-  MathInline classes, contract-tested against `COMMENT_NODE_TYPES`),
+  comment node set — EDITOR_BASE_NODES minus headings/aside/tables plus the CodeBlock
+  class, contract-tested against `COMMENT_COMPOSER_NODE_TYPES`; NO math classes — formulas
+  are ```math fences rendered to KaTeX MathML by the server-side comment projection),
+  `comment-legacy-math` (seed-time downgrade mapping R12-era math/math-inline nodes onto the
+  fence dialect so legacy comments still open in the trimmed composer),
   `comment-markdown-transformers` (the DEFAULT_TRANSFORMERS subset whose dependencies survive the
-  trim, plus the hand-written `$…$` inline-math text-match rule), `kobato-image-node` (the stock ImageNode
+  trim — quote/list/code-fence/text-format/link shortcuts), `kobato-image-node` (the stock ImageNode
   subclass persisting the four kobato dataset keys), `image-insert-override` (HIGH-priority
   INSERT_IMAGE_COMMAND / OPEN_IMAGE_LIBRARY_COMMAND handlers so inserts build the kobato class and
   open the kobato library picker), `page-editor-upload` (paste/drop/file-dialog uploads through

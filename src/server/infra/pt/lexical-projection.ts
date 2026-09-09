@@ -24,9 +24,12 @@
 import type { LexicalStateToHtmlOptions } from '@inkling/editor/headless'
 
 import { generateDecoratorNode, lexicalStateToHtml, lexicalStateToPlainText } from '@inkling/editor/headless'
+import katex from 'katex'
 
-import type { LexicalEditorState } from '@/shared/lexical/schema'
+import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schema'
 
+import { getLogger } from '@/server/infra/logger'
+import { KATEX_OPTIONS } from '@/server/infra/pt/katex'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { FEED_VARIANT_META_KIND } from '@/shared/lexical/cards/card-html'
 import {
@@ -52,6 +55,7 @@ import {
 } from '@/shared/lexical/node-whitelist'
 import { toProjectionState } from '@/shared/lexical/projection-state'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface BodyProjections {
   /** Full-fidelity HTML — SSR/public rendering (R13 consumes). */
@@ -214,16 +218,56 @@ export async function computeBodyProjections(state: LexicalEditorState): Promise
 
 /**
  * The comment row's `content` snapshot (R12): the feed-variant degraded
- * HTML of the comment state — artifact slots stripped, math → TeX source,
- * codeblock → plain pre/code. This is exactly the audience of the retired
- * email-friendly markdown render (excerpts, LIKE search, legacy emails):
- * full-fidelity mathml/highlightedHtml would bloat the column past the
- * comment length cap and pollute substring search. Comment node types are
- * all covered by inkling's DEFAULT_HTML_NODES (codeblock/math baseNodes,
- * MathInlineNode via the entity tail), so no extra nodes register here.
- * Throws on render failure — the caller falls back to plain text.
+ * HTML of the comment state — artifact slots stripped, codeblock → plain
+ * pre/code. This is exactly the audience of the retired email-friendly
+ * markdown render (excerpts, LIKE search, legacy emails): full-fidelity
+ * mathml/highlightedHtml would bloat the column past the comment length cap
+ * and pollute substring search. Comment node types are all covered by
+ * inkling's DEFAULT_HTML_NODES (codeblock/math baseNodes, MathInlineNode via
+ * the entity tail), so no extra nodes register here.
+ *
+ * One exception: ```math fences. The comment surface has no math card — the
+ * fence IS the formula authoring path — so `renderCommentMathFences`
+ * converts every `codeblock[language=math]` into a math node with a fresh
+ * display-mode KaTeX MathML artifact BEFORE rendering (i.e. after the feed
+ * strip, so the artifact survives). KaTeX cost is paid only when a math
+ * fence exists. Throws on render failure — the caller falls back to plain
+ * text.
  */
 export async function computeCommentContentProjection(state: LexicalEditorState): Promise<string> {
   const feedState = toProjectionState(state, { feed: true })
+  renderCommentMathFences(feedState)
   return lexicalStateToHtml(feedState, { onError: failFast })
+}
+
+type MutableProjectionNode = Record<string, unknown> & { type: string; children?: LexicalNodeJson[] }
+
+// Mutates the (already cloned) projection state. A KaTeX failure keeps the
+// fence as a plain code block — degraded render, never fatal.
+function renderCommentMathFences(state: LexicalEditorState): void {
+  rewriteMathFences(unsafeCast<MutableProjectionNode>(state.root))
+}
+
+function rewriteMathFences(node: MutableProjectionNode): void {
+  if (node.children === undefined) {
+    return
+  }
+  node.children = node.children.map((child) => {
+    const mutable = unsafeCast<MutableProjectionNode>(child)
+    if (
+      mutable.type === 'codeblock' &&
+      mutable.language === 'math' &&
+      typeof mutable.code === 'string' &&
+      mutable.code.trim() !== ''
+    ) {
+      try {
+        const mathml = katex.renderToString(mutable.code, { ...KATEX_OPTIONS, displayMode: true })
+        return unsafeCast<LexicalNodeJson>({ type: 'math', version: 1, tex: mutable.code, mathml, svg: '' })
+      } catch (err) {
+        getLogger('pt.lexical-projection').warn('katex render failed for comment math fence', { error: String(err) })
+      }
+    }
+    rewriteMathFences(mutable)
+    return child
+  })
 }

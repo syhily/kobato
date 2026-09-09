@@ -95,11 +95,13 @@ export type FullEditorNodeType = (typeof FULL_EDITOR_NODE_TYPES)[number]
 /**
  * Comment editing state — the restricted subset mirroring the PT
  * `comment-schema.ts` capability set (multi-paragraph, blockquote, nested
- * lists, code block, math block, link, math-inline; no headings, images,
- * tables, footnotes, horizontal rules, or host cards). `autolink` is
- * included provisionally: typed URLs autolink wherever the plugin is
- * mounted — if the R12 comment composer ships without AutoLinkNode, drop
- * it here; the contract test keeps both sides in sync.
+ * lists, code block, link). `math` / `math-inline` are STORAGE-ONLY legacy
+ * entries: the composer no longer mounts them (formulas are authored as
+ * ```math fences and rendered to KaTeX MathML by the comment projection),
+ * but R12-era bodies still validate here and are downgraded to the fence
+ * dialect at editor seed time (`@/client/editor/comment-legacy-math`).
+ * `autolink` is included because typed URLs autolink wherever the plugin is
+ * mounted; the contract test keeps both sides in sync.
  */
 export const COMMENT_NODE_TYPES = [
   'paragraph',

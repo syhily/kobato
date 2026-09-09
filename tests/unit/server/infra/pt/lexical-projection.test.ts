@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '#/_helpers/lexical'
-import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
+import { computeBodyProjections, computeCommentContentProjection } from '@/server/infra/pt/lexical-projection'
 import { lexicalEditorStateSchema, type LexicalEditorState } from '@/shared/lexical/schema'
 
 // The projections consume the canonicalized state (artifacts already filled
@@ -214,5 +214,35 @@ describe('infra/pt/lexical-projection — plain text', () => {
       // music-player its snapshot name/artist.
       '你好 世界\n\nHello <world> & 你好\n\nE=mc^2\n\ninline \n\nconst a = 1 < 2\n\ncover\n\nSong\nArtist\n\n左栏\n右栏\n\n答案 42\n\nafter cards',
     )
+  })
+})
+
+describe('infra/pt/lexical-projection — comment content ```math fences', () => {
+  it('renders a ```math fence as KaTeX MathML and keeps other code blocks plain', async () => {
+    const state = parse(
+      lexicalBodyWith([
+        lexicalParagraph('before'),
+        { type: 'codeblock', version: 1, code: 'E=mc^2', language: 'math', caption: '', highlightedHtml: '' },
+        { type: 'codeblock', version: 1, code: 'const a = 1', language: 'ts', caption: '', highlightedHtml: '' },
+      ]),
+    )
+    const html = await computeCommentContentProjection(state)
+    // The fence becomes a real KaTeX MathML card (the feed strip ran first,
+    // so this artifact is the fresh one filled by the fence pass).
+    expect(html).toContain('inkling-math-card')
+    expect(html).toContain('<math')
+    // The ordinary code block stays the degraded plain pre/code.
+    expect(html).toContain('<code class="language-ts">const a = 1</code>')
+  })
+
+  it('keeps the fence as a plain code block when KaTeX rejects the TeX', async () => {
+    const state = parse(
+      lexicalBodyWith([
+        { type: 'codeblock', version: 1, code: '\\invalid{', language: 'math', caption: '', highlightedHtml: '' },
+      ]),
+    )
+    const html = await computeCommentContentProjection(state)
+    expect(html).not.toContain('inkling-math-card')
+    expect(html).toContain('language-math')
   })
 })

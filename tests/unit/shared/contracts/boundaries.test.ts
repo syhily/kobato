@@ -1082,11 +1082,6 @@ describe('contract: module and bundle boundaries', () => {
         file: 'src/server/domains/fonts/slice.ts',
         specifier: './vendor/wasm-split',
       },
-      {
-        key: 'LazyCommentBodyEditor.tsx -> ./CommentBodyEditor',
-        file: 'src/ui/public/comments/LazyCommentBodyEditor.tsx',
-        specifier: './CommentBodyEditor',
-      },
     ] as const
     const explicitAllowedHits = new Set<string>()
 

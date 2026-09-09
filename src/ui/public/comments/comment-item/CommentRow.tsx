@@ -74,11 +74,7 @@ export function CommentRow({ comment, depth, pending, children }: CommentRowProp
             <CommentContentHtml content={comment.content} className={commentContentClass(depth)} />
           )}
           {editing === 'admin' && (
-            <InlineEditForm
-              commentId={comment.id}
-              onCancel={() => setEditing(false)}
-              onSaved={() => setEditing(false)}
-            />
+            <InlineEditForm comment={comment} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />
           )}
           {editing === 'own' && (
             <InlineOwnEditForm comment={comment} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />

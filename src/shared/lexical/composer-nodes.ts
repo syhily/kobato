@@ -12,11 +12,14 @@ import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@/shared/lexical/nod
 // the mounted set from the real composer module and pins the three-way
 // schema ⇐ whitelist ⇐ composer identity.
 //
-// COMMENT is the R12 truth: the comment composer mounts exactly
-// COMMENT_NODE_TYPES (`@/client/editor/comment-editor-nodes`, the
-// EDITOR_BASE_NODES set minus the heading pair / AsideNode / table family,
-// plus the CodeBlock / Math / MathInline card classes).
+// COMMENT is the R12 truth with the math-card retirement folded in: the
+// comment composer mounts COMMENT_NODE_TYPES minus the math pair (formulas
+// are ```math fences, rendered server-side). The STORAGE whitelist keeps
+// `math` / `math-inline` so R12-era bodies still validate; the composer
+// downgrades them to the fence dialect at seed time (`comment-legacy-math`).
 
 export const ARTICLE_COMPOSER_NODE_TYPES: readonly string[] = FULL_EDITOR_NODE_TYPES
 
-export const COMMENT_COMPOSER_NODE_TYPES: readonly string[] = COMMENT_NODE_TYPES
+export const COMMENT_COMPOSER_NODE_TYPES: readonly string[] = COMMENT_NODE_TYPES.filter(
+  (type) => type !== 'math' && type !== 'math-inline',
+)
