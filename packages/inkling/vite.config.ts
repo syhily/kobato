@@ -35,7 +35,12 @@ export default defineConfig(({ mode }) => {
 
   const plugins = [
     svgr(),
-    react(),
+    // React Compiler via the plugin's oxc integration (v6.1+: `compiler`
+    // runs oxc-transform-react on the pre-minify source — the same compiler
+    // family the kobato host applies to its own src). The compiled output
+    // imports react/compiler-runtime, which rides the /^react($|\/)/
+    // external below and is why peer react is >=19.2.
+    react({ compiler: true }),
     tailwindcss(),
     mdx(),
     // Convert CJS require("react")/require("react-dom") calls inside

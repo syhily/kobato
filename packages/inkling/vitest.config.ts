@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config'
 import { INKLING_ALIASES } from './vite-aliases'
 
 export default defineConfig({
-  plugins: [svgr(), react()],
+  plugins: [svgr(), react({ compiler: true })],
   define: {
     __APP_VERSION__: JSON.stringify('development'),
   },
