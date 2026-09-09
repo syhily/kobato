@@ -14,6 +14,10 @@ describe('getImageDimensions', () => {
       naturalWidth = 120
       naturalHeight = 90
 
+      get src() {
+        return ''
+      }
+
       set src(_url: string) {
         queueMicrotask(() => this.dispatchEvent(new Event('load')))
       }
@@ -27,6 +31,10 @@ describe('getImageDimensions', () => {
 
   it('rejects when the image fails to load', async () => {
     globalThis.Image = class MockImage extends EventTarget {
+      get src() {
+        return ''
+      }
+
       set src(_url: string) {
         queueMicrotask(() => this.dispatchEvent(new Event('error')))
       }

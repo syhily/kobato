@@ -50,7 +50,7 @@ const EmojiMenuItem = function ({ index, isSelected, onClick, onMouseEnter, emoj
     <li
       ref={attachRef}
       aria-selected={isSelected}
-      className={`mb-0 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 font-sans text-sm leading-[1.65] tracking-wide whitespace-nowrap text-grey-800 dark:text-grey-200 ${isSelected ? 'bg-grey-100 text-grey-900 dark:bg-grey-900 dark:text-white' : ''}`}
+      className={`text-grey-800 dark:text-grey-200 mb-0 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 font-sans text-sm leading-[1.65] tracking-wide whitespace-nowrap ${isSelected ? 'bg-grey-100 text-grey-900 dark:bg-grey-900 dark:text-white' : ''}`}
       data-testid={'emoji-option-' + index}
       id={'emoji-option-' + index}
       role="option"
@@ -164,7 +164,7 @@ export function EmojiPickerPlugin() {
         return (
           <Portal className="w-[240px]" to={anchorElementRef.current}>
             <ul
-              className="relative z-10 max-h-[214px] scroll-p-2 list-none overflow-y-auto rounded-md bg-white p-1 shadow-md  select-none dark:bg-grey-950"
+              className="dark:bg-grey-950 relative z-10 max-h-[214px] scroll-p-2 list-none overflow-y-auto rounded-md bg-white p-1  shadow-md select-none"
               data-testid="emoji-menu"
               style={getPositionStyles()}
             >

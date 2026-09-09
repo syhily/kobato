@@ -13,7 +13,7 @@ export function Tooltip({ label, shortcutKeys, children }: TooltipProps) {
 
   return (
     <span
-      className="pointer-events-none absolute top-full left-1/2 z-50 mt-1 hidden -translate-x-1/2 rounded-md bg-grey-950 px-2 py-1 text-xs font-medium whitespace-nowrap text-white shadow-md group-hover:block dark:bg-grey-100 dark:text-grey-950"
+      className="bg-grey-950 dark:bg-grey-100 dark:text-grey-950 pointer-events-none absolute top-full left-1/2 z-50 mt-1 hidden -translate-x-1/2 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap text-white shadow-md group-hover:block"
       role="tooltip"
     >
       {label}

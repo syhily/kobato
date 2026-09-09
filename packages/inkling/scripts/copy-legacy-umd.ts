@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* oxlint-disable no-console -- CLI script: stdout is its output channel */
 // Post-build step (invoked from `pnpm build`): retain dist/editor.umd.js as a
 // legacy artifact of the canonical dist/editor.umd.cjs (identical runtime
 // body, legacy sourcemap trailer).

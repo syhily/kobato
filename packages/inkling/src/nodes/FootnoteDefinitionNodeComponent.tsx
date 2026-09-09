@@ -61,7 +61,7 @@ export function FootnoteDefinitionNodeComponent({
   return (
     <div className="inkling-footnote-definition flex items-baseline gap-2" data-inkling-footnote-definition="true">
       <span
-        className="inkling-footnote-definition-index shrink-0 text-sm text-grey-500"
+        className="inkling-footnote-definition-index text-grey-500 shrink-0 text-sm"
         data-inkling-footnote-definition-index="true"
       >
         {index}.
@@ -77,7 +77,7 @@ export function FootnoteDefinitionNodeComponent({
       </div>
       <button
         aria-label={labels['aria.deleteFootnote']}
-        className="inkling-footnote-definition-delete flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-grey-400 hover:text-grey-700 dark:hover:text-grey-200"
+        className="inkling-footnote-definition-delete text-grey-400 hover:text-grey-700 dark:hover:text-grey-200 flex size-6 shrink-0 cursor-pointer items-center justify-center rounded"
         data-inkling-allow-clickthrough="true"
         data-inkling-footnote-definition-delete="true"
         onClick={handleDelete}

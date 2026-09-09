@@ -23,7 +23,7 @@ const TabView = ({
   return (
     <>
       <div
-        className={`no-scrollbar flex gap-4 border-b border-grey-300 dark:border-grey-900 ${tabs.length > 1 ? 'w-full px-6' : 'mx-6'}`}
+        className={`no-scrollbar border-grey-300 dark:border-grey-900 flex gap-4 border-b ${tabs.length > 1 ? 'w-full px-6' : 'mx-6'}`}
       >
         {tabs.map((tab: { id: string; label: string }) => (
           <button
@@ -33,7 +33,7 @@ const TabView = ({
             } ${
               currentTab === tab.id
                 ? 'border-black text-black dark:border-white dark:text-white'
-                : 'border-transparent text-grey-600 hover:border-grey-500 dark:text-grey-500 dark:hover:border-grey-500'
+                : 'text-grey-600 hover:border-grey-500 dark:text-grey-500 dark:hover:border-grey-500 border-transparent'
             }`}
             data-testid={`tab-${tab.id}`}
             type="button"

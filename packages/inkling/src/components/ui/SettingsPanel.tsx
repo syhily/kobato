@@ -51,7 +51,7 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
       {tabs ? (
         <div
           ref={ref}
-          className="not-inkling-prose fixed top-0 left-0 z-[9999999] m-0 flex w-[320px] flex-col rounded-lg bg-white bg-clip-padding font-sans shadow-lg will-change-transform dark:bg-grey-950 dark:shadow-xl"
+          className="not-inkling-prose dark:bg-grey-950 fixed top-0 left-0 z-[9999999] m-0 flex w-[320px] flex-col rounded-lg bg-white bg-clip-padding font-sans shadow-lg will-change-transform dark:shadow-xl"
           data-testid="settings-panel"
           data-inkling-settings-panel
         >
@@ -60,7 +60,7 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
       ) : (
         <div
           ref={ref}
-          className="not-inkling-prose fixed top-0 left-0 z-[9999999] m-0 flex w-[320px] flex-col gap-3 rounded-lg bg-white bg-clip-padding p-6 font-sans shadow-lg will-change-transform dark:bg-grey-950 dark:shadow-xl"
+          className="not-inkling-prose dark:bg-grey-950 fixed top-0 left-0 z-[9999999] m-0 flex w-[320px] flex-col gap-3 rounded-lg bg-white bg-clip-padding p-6 font-sans shadow-lg will-change-transform dark:shadow-xl"
           data-testid="settings-panel"
           data-inkling-settings-panel
         >
@@ -267,7 +267,7 @@ export function InputListSetting({
           {item.label}
         </span>
         <span
-          className="block truncate text-xs leading-tight text-grey-700 dark:text-grey-600"
+          className="text-grey-700 dark:text-grey-600 block truncate text-xs leading-tight"
           data-testid={`${dataTestId}-listOption-${item.value}`}
         >
           {item.value}

@@ -38,7 +38,7 @@ export type MediaUploader = ReturnType<FileUploader['useFileUpload']>
  */
 export function useMediaUploader(kind: MediaUploadKind): MediaUploader {
   const { fileUploader } = useInklingHostEssentials()
-  // oxlint-disable-next-line react/react-compiler -- host-provided hook; identity is a composer contract
+  // oxlint-disable-next-line react/hooks -- host-provided hook; identity is a composer contract
   return fileUploader.useFileUpload(kind)
 }
 

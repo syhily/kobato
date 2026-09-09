@@ -34,7 +34,7 @@ export function AtLinkResultsPopup({ atLinkNode, isSearching, listOptions, query
 
   return (
     <div ref={popupRef} className="not-inkling-prose fixed z-[10000]" data-testid="at-link-results">
-      <div className="relative m-0 flex w-full flex-col rounded-lg bg-white p-1 px-2 font-sans text-sm font-medium shadow-md dark:bg-grey-950">
+      <div className="dark:bg-grey-950 relative m-0 flex w-full flex-col rounded-lg bg-white p-1 px-2 font-sans text-sm font-medium shadow-md">
         <LinkSuggestionList
           dataTestId={testId}
           groups={listOptions}

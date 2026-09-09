@@ -45,7 +45,7 @@ export function Gif({
   return (
     <button
       ref={buttonRef}
-      className={`group relative cursor-pointer overflow-hidden rounded-md border-2 bg-transparent p-0 text-left ${isHighlighted ? 'border-green' : 'border-transparent'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green`}
+      className={`group relative cursor-pointer overflow-hidden rounded-md border-2 bg-transparent p-0 text-left ${isHighlighted ? 'border-green' : 'border-transparent'} focus-visible:outline-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
       data-gif-index={data.index}
       data-testid="gif-item"
       tabIndex={isHighlighted ? 0 : -1}

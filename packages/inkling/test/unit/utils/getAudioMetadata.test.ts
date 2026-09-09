@@ -13,6 +13,10 @@ describe('getAudioMetadata', () => {
     globalThis.Audio = class MockAudio extends EventTarget {
       duration = 123.456
 
+      get src() {
+        return ''
+      }
+
       set src(_url: string) {
         queueMicrotask(() => this.dispatchEvent(new Event('loadedmetadata')))
       }
@@ -26,6 +30,10 @@ describe('getAudioMetadata', () => {
   it('rejects when the audio fails to load', async () => {
     globalThis.Audio = class MockAudio extends EventTarget {
       duration = 0
+
+      get src() {
+        return ''
+      }
 
       set src(_url: string) {
         queueMicrotask(() => this.dispatchEvent(new Event('error')))

@@ -20,10 +20,6 @@ export const extendedHeadingNodeReplacement = {
 }
 
 export class ExtendedHeadingNode extends HeadingNode {
-  constructor(tag: HeadingTagType, key?: string) {
-    super(tag, key)
-  }
-
   static getType() {
     return 'extended-heading'
   }

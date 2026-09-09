@@ -15,10 +15,6 @@ import { $createLineBreakNode, $isParagraphNode, $setFormatFromDOM } from 'lexic
 export const extendedQuoteNodeReplacement = { replace: QuoteNode, with: () => new ExtendedQuoteNode() }
 
 export class ExtendedQuoteNode extends QuoteNode {
-  constructor(key?: string) {
-    super(key)
-  }
-
   static getType() {
     return 'extended-quote'
   }

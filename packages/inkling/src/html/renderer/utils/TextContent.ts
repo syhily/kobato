@@ -117,7 +117,7 @@ export default class TextContent {
         })
 
         // open new tags
-        formatsToOpen.forEach((format) => {
+        for (const format of formatsToOpen) {
           const formatTag = document.createElement(FORMAT_TAG_MAP[format])
           if (TEXT_TRANSFORM_FORMATS.has(format)) {
             formatTag.setAttribute('style', `text-transform: ${format};`)
@@ -125,7 +125,7 @@ export default class TextContent {
           currentNode.append(formatTag)
           currentNode = formatTag
           openFormats.push(format)
-        })
+        }
 
         // insert text
         currentNode.append(node.getTextContent())
@@ -133,18 +133,19 @@ export default class TextContent {
         // close tags in correct order if next node doesn't have the format
         // links are their own formatting islands so all formats need to close before a link
         const nextNode = remainingNodes.find((n) => $isTextNode(n) || $isLinkNode(n))
-        ;[...openFormats].forEach((format) => {
+        // iterate a snapshot copy: the body pops the live openFormats array
+        for (const format of openFormats.slice()) {
           if (!nextNode || $isLinkNode(nextNode) || (nextNode instanceof TextNode && !nextNode.hasFormat(format))) {
             // climb only while the parent chain stays elements (the root
             // climb can meet a Document) — nodeType, not instanceof: the
             // rendered tree may be another jsdom realm's
             const parent = currentNode.parentNode
-            if (parent && parent.nodeType === 1) {
+            if (parent?.nodeType === 1) {
               currentNode = parent as HTMLElement
               openFormats.pop()
             }
           }
-        })
+        }
 
         continue
       }

@@ -121,7 +121,7 @@ export function useFileInputRefTunnel(target?: FileInputRef | ((ref: FileInputRe
 export function UploadingPanel({ progress }: { progress?: number }) {
   return (
     <div className="h-full border border-transparent">
-      <div className="relative flex h-full items-center justify-center border border-grey/20 bg-grey-50 before:pb-[12.5%] dark:bg-grey-900">
+      <div className="border-grey/20 bg-grey-50 dark:bg-grey-900 relative flex h-full items-center justify-center border before:pb-[12.5%]">
         <div className="flex w-full items-center justify-center overflow-hidden">
           <ProgressBar style={uploadProgressStyle(progress)} />
         </div>

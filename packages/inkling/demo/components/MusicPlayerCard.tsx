@@ -19,7 +19,7 @@ const BaseMusicPlayerNode = generateDecoratorNode({
 
 function MusicPlayerCard() {
   return (
-    <div className="flex h-24 items-center justify-center rounded-md border border-grey-200 bg-grey-50 font-sans text-sm text-grey-600 dark:border-grey-800 dark:bg-grey-900 dark:text-grey-300">
+    <div className="border-grey-200 bg-grey-50 text-grey-600 dark:border-grey-800 dark:bg-grey-900 dark:text-grey-300 flex h-24 items-center justify-center rounded-md border font-sans text-sm">
       Music player
     </div>
   )

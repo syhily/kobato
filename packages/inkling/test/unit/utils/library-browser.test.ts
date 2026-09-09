@@ -211,6 +211,7 @@ describe('createLibraryBrowser: races and outcomes', () => {
   })
 
   it('maps a non-Error rejection to a generic message', async () => {
+    // oxlint-disable-next-line prefer-promise-reject-errors -- the test exercises the non-Error rejection branch
     const search = vi.fn<(query: string) => Promise<TestItem[] | undefined>>(() => Promise.reject('nope'))
     const { browser, scheduler } = setup({ search })
 

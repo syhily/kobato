@@ -66,7 +66,7 @@ export function VideoNodeComponent({
     let metadata: VideoMetadata
     try {
       metadata = await extractVideoMetadata(file)
-    } catch (error) {
+    } catch {
       setMetadataExtractionErrors([
         {
           name: file.name,

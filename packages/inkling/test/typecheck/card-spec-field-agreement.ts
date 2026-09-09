@@ -15,8 +15,6 @@
  * This file is included by the root tsconfig and is only type-checked — it
  * is never executed and contains no runtime assertions.
  */
-/* oxlint-disable no-unused-vars -- the pin aliases are assertions: their
-   value is being checked by tsc, never being referenced */
 import type { DecoratorNode, EditorState, LexicalEditor } from 'lexical'
 
 import type { CardSpecFieldMap, CardSpecFieldNames, TransientPropSpec } from '@/nodes/base/card-specs'

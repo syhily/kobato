@@ -43,7 +43,7 @@ export default function FeatureChecklist() {
   return (
     <>
       <button
-        className="absolute top-4 right-4 z-20 cursor-pointer rounded bg-white px-2 py-0.5 font-mono text-sm text-black shadow-sm dark:bg-grey-900 dark:text-grey-300"
+        className="dark:bg-grey-900 dark:text-grey-300 absolute top-4 right-4 z-20 cursor-pointer rounded bg-white px-2 py-0.5 font-mono text-sm text-black shadow-sm"
         title="Feature checklist"
         type="button"
         onClick={() => setOpen(!open)}
@@ -51,10 +51,10 @@ export default function FeatureChecklist() {
         ✨ {open ? '×' : 'Features'}
       </button>
       {open && (
-        <div className="absolute top-10 right-4 z-20 max-h-[70vh] w-[380px] overflow-y-auto rounded-lg bg-white p-4 font-sans text-sm text-grey-900 shadow-md dark:bg-grey-950 dark:text-grey-300">
+        <div className="text-grey-900 dark:bg-grey-950 dark:text-grey-300 absolute top-10 right-4 z-20 max-h-[70vh] w-[380px] overflow-y-auto rounded-lg bg-white p-4 font-sans text-sm shadow-md">
           {SECTIONS.map((section) => (
             <div key={section.title} className="mb-3 last:mb-0">
-              <div className="mb-1 font-mono text-xs font-bold tracking-wide text-grey-500 uppercase">
+              <div className="text-grey-500 mb-1 font-mono text-xs font-bold tracking-wide uppercase">
                 {section.title}
               </div>
               <ul className="list-disc space-y-1 pl-4">

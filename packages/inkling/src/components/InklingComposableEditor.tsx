@@ -33,6 +33,8 @@ export interface InklingComposableEditorProps {
   placeholderText?: string
   placeholderClassName?: string
   className?: string
+  /** Extra host-supplied classes appended to the contentEditable (e.g. typeset preset classes), joined with `inkling-prose` when `useDefaultClasses` is on. */
+  contentEditableClassName?: string
   readOnly?: boolean
   isDragEnabled?: boolean
   inheritStyles?: boolean
@@ -59,6 +61,7 @@ const InklingComposableEditor = ({
   placeholderText,
   placeholderClassName = '',
   className = '',
+  contentEditableClassName,
   readOnly = false,
   isDragEnabled = true,
   inheritStyles = false,
@@ -129,7 +132,9 @@ const InklingComposableEditor = ({
   // default surface is enumerable as CORE_PLUGINS + DEFAULT_FEATURE_PLUGINS.
   const corePluginScope: CorePluginScope = {
     contentEditableRef: onContentEditableRef,
-    contentEditableClassName: useDefaultClasses ? 'inkling-prose' : '',
+    contentEditableClassName: useDefaultClasses
+      ? ['inkling-prose', contentEditableClassName].filter(Boolean).join(' ')
+      : (contentEditableClassName ?? ''),
     readOnly,
     placeholder: placeholder || <EditorPlaceholder className={placeholderClassName} text={placeholderText} />,
     onEditorChange: _onChange,

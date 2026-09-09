@@ -5,14 +5,14 @@ export function PlusButton({ onClick }: { onClick?: () => void }) {
   const labels = useInklingLabels()
 
   return (
-    <div className="absolute top-[-2px] left-[-32px] xs:left-[-66px]" data-inkling-plus-button>
+    <div className="xs:left-[-66px] absolute top-[-2px] left-[-32px]" data-inkling-plus-button>
       <button
         aria-label={labels['aria.addCard']}
-        className="group relative flex size-7 cursor-pointer items-center justify-center rounded-full border border-grey transition-all ease-linear hover:border-grey-800 md:size-9 dark:border-grey-800 dark:hover:border-grey-400"
+        className="group border-grey hover:border-grey-800 dark:border-grey-800 dark:hover:border-grey-400 relative flex size-7 cursor-pointer items-center justify-center rounded-full border transition-all ease-linear md:size-9"
         type="button"
         onClick={onClick}
       >
-        <PlusIcon className="size-4 stroke-grey-800 stroke-2 dark:stroke-grey-300" />
+        <PlusIcon className="stroke-grey-800 dark:stroke-grey-300 size-4 stroke-2" />
       </button>
     </div>
   )

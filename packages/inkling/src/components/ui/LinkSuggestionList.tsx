@@ -108,7 +108,7 @@ export function LinkSuggestionList({
   )
 
   return (
-    <ul className="w-full overflow-y-auto bg-white py-1 dark:bg-grey-950" style={{ maxHeight: POPUP_LIST_MAX_HEIGHT }}>
+    <ul className="dark:bg-grey-950 w-full overflow-y-auto bg-white py-1" style={{ maxHeight: POPUP_LIST_MAX_HEIGHT }}>
       {showLoadingItem && isLoading && !groups.length && <InputListLoadingItem dataTestId={dataTestId} />}
       <KeyboardSelectionWithGroups
         getGroup={getGroup}

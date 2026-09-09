@@ -178,7 +178,7 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
   return (
     <div
       ref={selectorRef}
-      className="flex h-[540px] flex-col rounded border border-grey-200 bg-grey-50 dark:border-none dark:bg-grey-900"
+      className="border-grey-200 bg-grey-50 dark:bg-grey-900 flex h-[540px] flex-col rounded border dark:border-none"
       data-testid="gif-selector"
       // prevent click handle in the editor while selector is active
       onClick={(e) => e.stopPropagation()}
@@ -186,10 +186,10 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
     >
       <header className="p-6">
         <div className="relative w-full">
-          <SearchIcon className="absolute top-1/2 left-4 size-4 -translate-y-2 text-grey-500 dark:text-grey-800" />
+          <SearchIcon className="text-grey-500 dark:text-grey-800 absolute top-1/2 left-4 size-4 -translate-y-2" />
           <input
             ref={searchRef}
-            className="h-10 w-full rounded-full border border-grey-300 pr-8 pl-10 font-sans text-md font-normal text-black focus:border-green focus:shadow-insetgreen dark:border-grey-800 dark:bg-grey-950 dark:text-white dark:placeholder:text-grey-800 dark:focus:border-green"
+            className="border-grey-300 focus:border-green focus:shadow-insetgreen dark:border-grey-800 dark:bg-grey-950 dark:placeholder:text-grey-800 dark:focus:border-green h-10 w-full rounded-full border pr-8 pl-10 font-sans text-md font-normal text-black dark:text-white"
             placeholder={
               provider === 'klipy' ? labels['gif.searchPlaceholder.klipy'] : labels['gif.searchPlaceholder.tenor']
             }

@@ -1,4 +1,3 @@
-/* oxlint-disable no-console -- CLI helper: stdout is the output channel */
 // The packed-consumer harness — the one home of the ceremony every packed
 // verifier used to re-type (the failure log, the pack phase with its
 // JSON-salvage parse, the throwaway-consumer scaffold, and the temp-root

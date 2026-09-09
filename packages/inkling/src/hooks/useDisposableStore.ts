@@ -13,7 +13,7 @@ import React from 'react'
  * keep `useState` construction — the guaranteed-stable primitive.
  */
 export function useDisposableStore<T extends { dispose(): void }>(create: () => T, deps: readonly unknown[]): T {
-  // oxlint-disable-next-line react-hooks/exhaustive-deps, react/react-compiler -- deps are the hook's declared inputs
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- deps are the hook's declared inputs
   const instance = React.useMemo(create, deps)
 
   React.useEffect(() => {

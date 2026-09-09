@@ -50,7 +50,7 @@ function parseSnippetNodes(value: string): SerializedLexicalNode[] | null {
   let parsed: unknown
   try {
     parsed = JSON.parse(value)
-  } catch (_e) {
+  } catch {
     return null
   }
   if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as { nodes?: unknown }).nodes)) {
@@ -86,7 +86,7 @@ export function $insertSnippet(editor: LexicalEditor, dataset: unknown): boolean
   let nodes: ReturnType<typeof $generateNodesFromSerializedNodes>
   try {
     nodes = $generateNodesFromSerializedNodes(serializedNodes)
-  } catch (_e) {
+  } catch {
     return false
   }
   const firstNode = nodes.length === 1 ? nodes[0] : null

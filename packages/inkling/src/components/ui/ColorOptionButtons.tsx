@@ -30,21 +30,21 @@ export function ColorOptionButtons({ buttons = [], selectedName, onClick }: Colo
   return (
     <div ref={componentRef} className="relative">
       <button
-        className={`relative size-6 cursor-pointer rounded-full ${selectedName ? 'p-[2px]' : 'border border-grey-200 dark:border-grey-800'}`}
+        className={`relative size-6 cursor-pointer rounded-full ${selectedName ? 'p-[2px]' : 'border-grey-200 dark:border-grey-800 border'}`}
         data-testid="color-options-button"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
       >
         {selectedName && <ConicRing />}
         <span
-          className={`${selectedButton?.color || ''} block size-full rounded-full border-2 border-white dark:border-grey-950`}
+          className={`${selectedButton?.color || ''} dark:border-grey-950 block size-full rounded-full border-2 border-white`}
         ></span>
       </button>
 
       {/* Color options popover */}
       {isOpen && (
         <div
-          className="absolute -right-3 bottom-full z-10 mb-2 rounded-lg bg-white px-3 py-2 shadow dark:bg-grey-900"
+          className="dark:bg-grey-900 absolute -right-3 bottom-full z-10 mb-2 rounded-lg bg-white px-3 py-2 shadow"
           data-testid="color-options-popover"
         >
           <div className="flex">
@@ -72,7 +72,7 @@ export function ColorOptionButtons({ buttons = [], selectedName, onClick }: Colo
                     onClick={() => onClick(name)}
                   >
                     <span className="flex size-6 items-center justify-center rounded-full border border-1 border-black/5">
-                      <PlusIcon className="size-3 stroke-grey-700 stroke-2 dark:stroke-grey-500 dark:group-hover:stroke-grey-100" />
+                      <PlusIcon className="stroke-grey-700 dark:stroke-grey-500 dark:group-hover:stroke-grey-100 size-3 stroke-2" />
                     </span>
                   </li>
                 )

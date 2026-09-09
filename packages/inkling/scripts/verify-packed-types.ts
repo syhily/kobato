@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* oxlint-disable no-console -- CLI script: stdout is its output channel */
 // Packed-type verifier: installs the packed @inkling/editor tarball into an
 // isolated temp project with only documented peers and type packages, then
 // type-checks clean consumers — one fixture per published entry (`.`,

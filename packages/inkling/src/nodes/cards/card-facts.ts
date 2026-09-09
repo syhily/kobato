@@ -47,9 +47,11 @@ export function resolveCardFacts(nodeType: string): CardFacts | undefined {
  */
 export function resolveAllCardFacts(): CardFacts[] {
   return [
-    ...CARD_DECLARATIONS.map(
-      (declaration): CardFacts => ({ source: 'builtin', nodeType: declaration.nodeType, declaration }),
-    ),
+    ...CARD_DECLARATIONS.map((declaration): CardFacts => ({
+      source: 'builtin',
+      nodeType: declaration.nodeType,
+      declaration,
+    })),
     ...getHostCards().map((host): CardFacts => ({ source: 'host', nodeType: host.nodeType, host })),
   ]
 }

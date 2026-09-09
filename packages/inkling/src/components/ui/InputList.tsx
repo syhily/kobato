@@ -32,7 +32,7 @@ export function InputListLoadingItem({ dataTestId }: { dataTestId: string }) {
   return (
     <Delayed>
       <li className={`mb-0 px-4 py-2 text-left`} data-testid={`${dataTestId}-loading`}>
-        <span className="block text-sm leading-tight font-medium text-grey-900 dark:text-white">
+        <span className="text-grey-900 block text-sm leading-tight font-medium dark:text-white">
           {labels['search.loading']}
         </span>
       </li>
@@ -105,7 +105,7 @@ export function InputListGroup({
 }) {
   return (
     <li
-      className="mt-2 mb-0 flex items-center justify-between border-t border-grey-200 px-4 pt-3 pb-2 text-[1.1rem] font-semibold tracking-wide text-grey-600 uppercase first-of-type:mt-0 first-of-type:border-t-0 dark:border-grey-900"
+      className="border-grey-200 text-grey-600 dark:border-grey-900 mt-2 mb-0 flex items-center justify-between border-t px-4 pt-3 pb-2 text-[1.1rem] font-semibold tracking-wide uppercase first-of-type:mt-0 first-of-type:border-t-0"
       data-testid={`${dataTestId}-listGroup`}
     >
       <div className="flex items-center gap-1.5">

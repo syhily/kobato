@@ -27,8 +27,7 @@ export async function fetchEmbed(
       },
     }
     return returnData
-  } catch (e) {
-    // console.log(e);
+  } catch {
     return undefined
   }
 }

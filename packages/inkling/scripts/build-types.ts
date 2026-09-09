@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import type { Plugin } from 'rolldown'
 
-/* oxlint-disable no-console -- CLI script: stdout is its output channel */
 // Bundled declaration build for @inkling/editor (plan 028), multi-entry since
 // plan C5: one bundle per published entry — dist/editor.d.ts for `.`,
 // dist/core.d.ts for `./core`, dist/headless.d.ts for `./headless`.

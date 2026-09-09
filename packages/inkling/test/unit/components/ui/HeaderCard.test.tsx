@@ -19,7 +19,6 @@ vi.mock('../../../../src/components/ui/SettingsPanel', () => ({
   ButtonGroupSetting: ({
     buttons,
     onClick,
-    selectedName,
   }: {
     buttons: { name: string; label: string; dataTestId?: string }[]
     onClick: (name: string) => void

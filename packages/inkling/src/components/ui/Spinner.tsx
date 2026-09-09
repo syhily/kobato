@@ -13,7 +13,7 @@ export function Spinner({ size = 'medium' }: SpinnerProps) {
 
   return (
     <div
-      className={`animate-spin rounded-full border-2 border-grey-200 border-t-green ${sizeClasses[size]}`}
+      className={`border-grey-200 border-t-green animate-spin rounded-full border-2 ${sizeClasses[size]}`}
       data-testid="spinner"
     />
   )

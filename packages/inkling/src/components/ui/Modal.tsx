@@ -42,7 +42,7 @@ export function Modal({
             autoFocus
             onClick={onClose}
           >
-            <CloseIcon className="size-4 stroke-2 text-grey-400" />
+            <CloseIcon className="text-grey-400 size-4 stroke-2" />
           </button>
           {children}
         </div>

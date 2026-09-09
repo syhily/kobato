@@ -23,12 +23,12 @@ export const Dropdown = ({
 
   return (
     <ul
-      className="absolute mt-[-1px] w-full max-w-[240px] rounded-b border border-grey-200 bg-white shadow-md dark:border-grey-900 dark:bg-grey-950"
+      className="border-grey-200 dark:border-grey-900 dark:bg-grey-950 absolute mt-[-1px] w-full max-w-[240px] rounded-b border bg-white shadow-md"
       tabIndex={0}
     >
       <li className="mb-0 block">
         <button
-          className={`flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm font-medium text-green-600 hover:bg-grey-100 dark:hover:bg-black ${isCreateButtonActive ? 'bg-grey-100 dark:bg-black' : ''}`}
+          className={`hover:bg-grey-100 flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm font-medium text-green-600 dark:hover:bg-black ${isCreateButtonActive ? 'bg-grey-100 dark:bg-black' : ''}`}
           type="button"
           onClick={onCreateSnippet}
         >
@@ -57,7 +57,7 @@ const DropdownSection = ({
 
   return (
     <li role="separator">
-      <span className="block border-t border-grey-200 px-3 pt-3 pb-2 text-[1.1rem] font-semibold tracking-wide text-grey-600 uppercase dark:border-grey-900 dark:text-grey-800">
+      <span className="border-grey-200 text-grey-600 dark:border-grey-900 dark:text-grey-800 block border-t px-3 pt-3 pb-2 text-[1.1rem] font-semibold tracking-wide uppercase">
         {labels['snippet.replaceExisting']}
       </span>
       <ul role="menu">
@@ -83,13 +83,13 @@ const DropdownItem = ({
   return (
     <li className="mb-1">
       <button
-        className={`flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm hover:bg-grey-100 ${index === active ? 'bg-grey-100 dark:bg-black' : ''} dark:hover:bg-black`}
+        className={`hover:bg-grey-100 flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm ${index === active ? 'bg-grey-100 dark:bg-black' : ''} dark:hover:bg-black`}
         type="button"
         onClick={() => onClick?.(name)}
       >
         <span>{name}</span>
-        <div className="size-5 fill-grey-900">
-          <ReplaceIcon className="size-4 fill-grey-900 dark:fill-grey-600" />
+        <div className="fill-grey-900 size-5">
+          <ReplaceIcon className="fill-grey-900 dark:fill-grey-600 size-4" />
         </div>
       </button>
     </li>

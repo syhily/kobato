@@ -11,7 +11,7 @@ export function ProgressBar({ style, bgStyle = 'default' }: ProgressBarProps) {
       className={`h-1 w-full ${bgStyle === 'transparent' ? 'bg-transparent' : 'bg-grey-200 dark:bg-grey-800'}`}
       role="progressbar"
     >
-      <div className="h-full bg-green transition-all duration-300" style={style} />
+      <div className="bg-green h-full transition-all duration-300" style={style} />
     </div>
   )
 }

@@ -56,7 +56,7 @@ function useCardMenuItemChrome<T extends HTMLElement>({
 
 function CardMenuItemIcon({ Icon }: { Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }) {
   return (
-    <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-grey-900 dark:bg-transparent dark:text-grey-500">
+    <div className="text-grey-900 dark:text-grey-500 flex size-7 shrink-0 items-center justify-center rounded-md bg-white dark:bg-transparent">
       <Icon className="size-[1.8rem]" />
     </div>
   )
@@ -112,7 +112,7 @@ export const CardMenuItem = ({
     >
       <button
         ref={itemRef}
-        className={`group flex w-full cursor-pointer flex-row items-center gap-3 border border-transparent px-2 py-[.6rem] text-left text-grey-800 hover:bg-grey-100 md:rounded-md dark:hover:bg-grey-900 ${isSelected ? 'bg-grey-100 dark:bg-grey-900' : ''}`}
+        className={`group text-grey-800 hover:bg-grey-100 dark:hover:bg-grey-900 flex w-full cursor-pointer flex-row items-center gap-3 border border-transparent px-2 py-[.6rem] text-left md:rounded-md ${isSelected ? 'bg-grey-100 dark:bg-grey-900' : ''}`}
         data-inkling-card-menu-item={label}
         type="button"
         {...chromeProps}
@@ -120,17 +120,17 @@ export const CardMenuItem = ({
         {Icon && <CardMenuItemIcon Icon={Icon} />}
         <div className="flex w-full justify-between gap-2">
           <div className="flex min-w-0 flex-1 flex-col items-start">
-            <div className="m-0 w-full truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem] text-grey-900 dark:text-grey-200">
+            <div className="text-grey-900 dark:text-grey-200 m-0 w-full truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem]">
               {label}
             </div>
             {desc && (
-              <div className="m-0 text-[1.35rem] leading-snug font-medium tracking-[.02rem] break-words whitespace-normal text-grey-500 dark:text-grey-200">
+              <div className="text-grey-500 dark:text-grey-200 m-0 text-[1.35rem] leading-snug font-medium tracking-[.02rem] break-words whitespace-normal">
                 {desc}
               </div>
             )}
           </div>
           {shortcut && (
-            <div className="invisible m-0 shrink-0 truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem] text-grey-500 group-hover:visible dark:text-grey-200">
+            <div className="text-grey-500 dark:text-grey-200 invisible m-0 shrink-0 truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem] group-hover:visible">
               {shortcut}
             </div>
           )}
@@ -138,7 +138,7 @@ export const CardMenuItem = ({
       </button>
       {onRemove && (
         <button
-          className="ml-auto text-xs text-red"
+          className="text-red ml-auto text-xs"
           type="button"
           onClick={(e) => {
             e.stopPropagation()
@@ -160,7 +160,7 @@ export interface CardMenuSectionProps {
 export const CardMenuSection = ({ label, children }: CardMenuSectionProps) => {
   return (
     <li
-      className="flex shrink-0 flex-col justify-center border-t border-grey-200 text-[1.1rem] font-semibold tracking-wide text-grey-600 first-of-type:border-t-0 dark:border-grey-900 dark:text-grey-600"
+      className="border-grey-200 text-grey-600 dark:border-grey-900 dark:text-grey-600 flex shrink-0 flex-col justify-center border-t text-[1.1rem] font-semibold tracking-wide first-of-type:border-t-0"
       role="separator"
     >
       <span
@@ -218,22 +218,22 @@ export const CardSnippetItem = ({
     <li className="mb-0 min-w-0 md:col-span-2" data-testid={dataTestId} onClick={onClick}>
       <div
         ref={itemRef}
-        className={`inkling-cardmenu-card-hover group flex w-full min-w-0 cursor-pointer flex-row items-center rounded-md border border-transparent px-2 py-1 text-grey-800 hover:bg-grey-100 dark:hover:bg-grey-900 ${isSelected ? 'bg-grey-100 dark:bg-grey-900' : ''}`}
+        className={`inkling-cardmenu-card-hover group text-grey-800 hover:bg-grey-100 dark:hover:bg-grey-900 flex w-full min-w-0 cursor-pointer flex-row items-center rounded-md border border-transparent px-2 py-1 ${isSelected ? 'bg-grey-100 dark:bg-grey-900' : ''}`}
         tabIndex={-1}
         {...chromeProps}
       >
         {Icon && <CardMenuItemIcon Icon={Icon} />}
-        <div className="m-0 ml-4 min-w-0 flex-1 truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem] text-grey-900 dark:text-grey-200">
+        <div className="text-grey-900 dark:text-grey-200 m-0 ml-4 min-w-0 flex-1 truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem]">
           {label}
         </div>
         {onRemove && (
           <button
-            className="ml-auto shrink-0 cursor-pointer rounded-md p-[4px] group-hover:block hover:bg-grey-200 dark:hover:bg-grey-950"
+            className="hover:bg-grey-200 dark:hover:bg-grey-950 ml-auto shrink-0 cursor-pointer rounded-md p-[4px] group-hover:block"
             title={labels['snippet.remove']}
             type="button"
             onClick={handleSnippetRemove}
           >
-            <TrashCardIcon className="size-[1.8rem] stroke-red stroke-[1.5] text-red" />
+            <TrashCardIcon className="stroke-red text-red size-[1.8rem] stroke-[1.5]" />
             <span className="sr-only">{labels['action.remove']}</span>
           </button>
         )}
@@ -274,7 +274,7 @@ export const CardMenu = ({
 
   return (
     <ul
-      className="not-inkling-prose z-[9999999] m-0 mb-3 max-h-[420px] w-[312px] scroll-p-2 flex-col overflow-x-hidden overflow-y-auto rounded-lg bg-white bg-clip-padding p-0 font-sans text-sm shadow-md after:block after:pb-1 md:w-[348px] dark:bg-grey-950"
+      className="not-inkling-prose dark:bg-grey-950 z-[9999999] m-0 mb-3 max-h-[420px] w-[312px] scroll-p-2 flex-col overflow-x-hidden overflow-y-auto rounded-lg bg-white bg-clip-padding p-0 font-sans text-sm shadow-md after:block after:pb-1 md:w-[348px]"
       data-inkling-card-menu
       role="menu"
     >

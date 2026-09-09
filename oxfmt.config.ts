@@ -6,7 +6,7 @@ export default defineConfig({
   bracketSpacing: true,
   endOfLine: 'lf',
   insertFinalNewline: true,
-  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'packages/**'],
+  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*'],
   jsxSingleQuote: false,
   objectWrap: 'preserve',
   printWidth: 120,
@@ -35,4 +35,16 @@ export default defineConfig({
     functions: ['cn'],
     preserveWhitespace: true,
   },
+  overrides: [
+    {
+      // Inkling's canvas classes sort against its own stylesheet, and the
+      // package wraps class strings with `clsx` instead of kobato's `cn`.
+      files: ['packages/inkling/**'],
+      sortTailwindcss: {
+        stylesheet: './packages/inkling/src/styles/index.css',
+        functions: ['clsx'],
+        preserveWhitespace: true,
+      },
+    },
+  ],
 })

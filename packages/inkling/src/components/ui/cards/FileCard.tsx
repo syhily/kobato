@@ -48,7 +48,7 @@ function PopulatedFileCard({
 }: PopulatedFileCardProps) {
   return (
     <div>
-      <div className="flex justify-between rounded-md border border-grey/30 p-2">
+      <div className="border-grey/30 flex justify-between rounded-md border p-2">
         <div
           className={`flex w-full flex-col px-2 font-sans ${title || desc || isEditing ? 'justify-between' : 'justify-center'}`}
         >
@@ -56,7 +56,7 @@ function PopulatedFileCard({
             <div className="flex flex-col">
               {(isEditing || title) && (
                 <TextInput
-                  className="h-[30px] bg-transparent text-lg leading-none font-bold tracking-tight text-black dark:text-grey-200"
+                  className="dark:text-grey-200 h-[30px] bg-transparent text-lg leading-none font-bold tracking-tight text-black"
                   data-inkling-file-card="fileTitle"
                   maxLength="80"
                   placeholder={titlePlaceholder}
@@ -66,7 +66,7 @@ function PopulatedFileCard({
               )}
               {(isEditing || desc) && (
                 <TextInput
-                  className="h-[26px] bg-transparent pb-1 text-[1.6rem] leading-none font-normal text-grey-700 placeholder:text-grey-500 dark:text-grey-300 dark:placeholder:text-grey-800"
+                  className="text-grey-700 placeholder:text-grey-500 dark:text-grey-300 dark:placeholder:text-grey-800 h-[26px] bg-transparent pb-1 text-[1.6rem] leading-none font-normal"
                   data-inkling-file-card="fileDescription"
                   maxLength="100"
                   placeholder={descPlaceholder}
@@ -77,7 +77,7 @@ function PopulatedFileCard({
             </div>
           )}
           <div
-            className="!mt-0 py-1 text-sm font-medium text-grey-900 dark:text-grey-200"
+            className="text-grey-900 dark:text-grey-200 !mt-0 py-1 text-sm font-medium"
             data-inkling-file-card="dataset"
           >
             {name}
@@ -85,7 +85,7 @@ function PopulatedFileCard({
           </div>
         </div>
         <div
-          className={`!mt-0 flex w-full max-w-[96px] items-center justify-center rounded-md bg-grey-200 dark:bg-grey-900 ${(title && desc) || isEditing ? 'h-[96px]' : title || desc ? 'h-[64px]' : 'h-[40px]'}`}
+          className={`bg-grey-200 dark:bg-grey-900 !mt-0 flex w-full max-w-[96px] items-center justify-center rounded-md ${(title && desc) || isEditing ? 'h-[96px]' : title || desc ? 'h-[64px]' : 'h-[40px]'}`}
         >
           <FileUploadIcon
             className={`text-green transition-all duration-75 ease-in ${title || desc || isEditing ? 'size-6' : 'size-5'}`}

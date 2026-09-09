@@ -235,7 +235,7 @@ export function GalleryCard({
 
         {errorMessage && !isDragging ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60" data-testid="gallery-error">
-            <span className="block bg-red px-2 font-bold text-white">
+            <span className="bg-red block px-2 font-bold text-white">
               {errorMessage}.
               <button
                 className="ml-2 cursor-pointer underline"

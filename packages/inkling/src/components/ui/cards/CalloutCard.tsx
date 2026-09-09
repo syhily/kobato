@@ -117,7 +117,6 @@ export function CalloutCard({
   calloutEmoji = '💡',
   textEditor,
   textEditorInitialState,
-  nodeKey,
   toggleEmojiPicker,
   showEmojiPicker,
 }: CalloutCardProps) {
