@@ -128,29 +128,28 @@ function AudioThumbnail({
       </div>
     )
   }
-    return (
-      <div className="group bg-purple flex aspect-square h-20 items-center justify-center rounded-md">
-        <button
-          className="flex size-20 cursor-pointer items-center justify-center"
-          data-testid="upload-thumbnail"
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          {(isEditing && (
-            <FilePlaceholderIcon className="size-6 text-white transition-all duration-75 ease-in group-hover:scale-105" />
-          )) || <AudioFileIcon className="size-6 text-white" />}
-        </button>
-        <UploadFileInput
-          disabled={!isEditing}
-          fileInputRef={onFileInputRef}
-          mimeTypes={mimeTypes ?? ['image/*']}
-          name="image-input"
-          stopClickPropagation={true}
-          onFileChange={onFileChange}
-        />
-      </div>
-    )
-  
+  return (
+    <div className="group bg-purple flex aspect-square h-20 items-center justify-center rounded-md">
+      <button
+        className="flex size-20 cursor-pointer items-center justify-center"
+        data-testid="upload-thumbnail"
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {(isEditing && (
+          <FilePlaceholderIcon className="size-6 text-white transition-all duration-75 ease-in group-hover:scale-105" />
+        )) || <AudioFileIcon className="size-6 text-white" />}
+      </button>
+      <UploadFileInput
+        disabled={!isEditing}
+        fileInputRef={onFileInputRef}
+        mimeTypes={mimeTypes ?? ['image/*']}
+        name="image-input"
+        stopClickPropagation={true}
+        onFileChange={onFileChange}
+      />
+    </div>
+  )
 }
 
 function PopulatedAudioCard({
@@ -253,23 +252,22 @@ export function AudioCard({
       </div>
     )
   }
-    return (
-      <div className="not-inkling-prose">
-        <UploadPlaceholder
-          desc={labels['upload.audio.desc']}
-          dragHandler={audioDragHandler}
-          errorDataTestId="audio-upload-errors"
-          errors={audioUploader.errors}
-          fileInputRef={audioFileInputRef}
-          icon="audio"
-          inputName="audio-input"
-          isUploading={audioUploader.isLoading}
-          mimeTypes={audioMimeTypes ?? ['audio/*']}
-          progress={audioUploader.progress}
-          size="xsmall"
-          onFileChange={onAudioFileChange}
-        />
-      </div>
-    )
-  
+  return (
+    <div className="not-inkling-prose">
+      <UploadPlaceholder
+        desc={labels['upload.audio.desc']}
+        dragHandler={audioDragHandler}
+        errorDataTestId="audio-upload-errors"
+        errors={audioUploader.errors}
+        fileInputRef={audioFileInputRef}
+        icon="audio"
+        inputName="audio-input"
+        isUploading={audioUploader.isLoading}
+        mimeTypes={audioMimeTypes ?? ['audio/*']}
+        progress={audioUploader.progress}
+        size="xsmall"
+        onFileChange={onAudioFileChange}
+      />
+    </div>
+  )
 }
