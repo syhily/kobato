@@ -260,7 +260,7 @@ async function backfillContentRows(
     const context = `${row.type}/${row.ownerId}/r${row.revisionNo}`
     const ptParsed = safeValidatePortableTextBody(row.body)
     if (!ptParsed.ok) {
-      if (lexicalEditorStateSchema.safeParse(row.body).success) {
+      if (lexicalEditorStateSchema.validate(row.body)) {
         table.alreadyLexical += 1
       } else {
         recordFailure(table, {
@@ -349,7 +349,7 @@ async function backfillCommentRows(
   for (const row of rows) {
     const ptParsed = commentBodySchema.safeParse(row.body)
     if (!ptParsed.success) {
-      if (commentEditorStateSchema.safeParse(row.body).success) {
+      if (commentEditorStateSchema.validate(row.body)) {
         table.alreadyLexical += 1
       } else {
         recordFailure(table, {
