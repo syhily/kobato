@@ -212,7 +212,7 @@ embedded `natives-meta/*` metadata assets
   win32-x64 / win32-arm64, built by
   `.github/workflows/sea.yml`. Every matrix job runs the full managed
   smoke (the embedded databases need no service container); the Linux
-  jobs additionally run `sea:e2e`. develop pushes and PRs to main run
+  jobs additionally run `sea:e2e`. develop pushes and PRs run
   only the `build-develop` job instead: a single linux-x64
   `sea:build` + `sea:smoke` (zstd, no packaging) plus `sea:e2e`
   (added by audit D-2/P2-5 — the binary already exists there, so the

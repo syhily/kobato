@@ -11,7 +11,7 @@ on:
     # assets upload, no semver image builds).
     tags: ['*']
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   release:
     # `created` fires only for NON-draft releases (i.e. manual ones made
     # in the UI); the automated flow rides the tag push above.
