@@ -30,6 +30,7 @@ const CASE_FILES: [caseName: string, file: string][] = [
     join(packageRoot('jsdom'), 'lib', 'jsdom', 'living', 'css', 'helpers', 'computed-style.js'),
   ],
   ['css-tree data patch (esm)', join(packageRoot('css-tree'), 'lib', 'data-patch.js')],
+  ['jsdom xhr sync worker path', join(packageRoot('jsdom'), 'lib', 'jsdom', 'living', 'xhr', 'XMLHttpRequest-impl.js')],
   ['css-tree data patch (cjs)', join(packageRoot('css-tree'), 'cjs', 'data-patch.cjs')],
   ['css-tree data (esm)', join(packageRoot('css-tree'), 'lib', 'data.js')],
   ['css-tree data (cjs)', join(packageRoot('css-tree'), 'cjs', 'data.cjs')],

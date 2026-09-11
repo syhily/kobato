@@ -35,11 +35,17 @@ interface InlineDataRead {
   /**
    * File to inline. A relative path resolves against the matching module's
    * directory; a `bare:` prefix resolves with `createRequire(id)`, i.e.
-   * exactly the module's own resolution semantics.
+   * exactly the module's own resolution semantics. Unused for `path-stub`.
    */
-  dataFile: string
-  /** text: embed as a string literal; json: embed the payload verbatim. */
-  kind: 'text' | 'json'
+  dataFile?: string
+  /**
+   * text: embed as a string literal; json: embed the payload verbatim;
+   * path-stub: replace a `require.resolve(...)` with a placeholder absolute
+   * path (the resolved file is only consumed on a code path the server
+   * never takes — e.g. jsdom's sync-XHR worker, unreachable from the
+   * sanitize engine — so the module-scope resolve must merely not throw).
+   */
+  kind: 'text' | 'json' | 'path-stub'
 }
 
 export interface InlineDataCase {
@@ -60,6 +66,19 @@ export const INLINE_DATA_CASES: InlineDataCase[] = [
           /fs\.readFileSync\(\s*path\.resolve\(__dirname,\s*["'][^"']*browser\/default-stylesheet\.css["']\),?\s*\{[^}]*\}\s*\)/,
         dataFile: '../../../browser/default-stylesheet.css',
         kind: 'text',
+      },
+    ],
+  },
+  {
+    name: 'jsdom xhr sync worker path',
+    modulePattern: /[\\/]jsdom[\\/]lib[\\/]jsdom[\\/]living[\\/]xhr[\\/]XMLHttpRequest-impl\.js$/,
+    reads: [
+      {
+        // Module-scope `require.resolve("./xhr-sync-worker.js")`; the Worker
+        // is constructed only for SYNC XHR, which the sanitize engine never
+        // performs — a loud placeholder path is enough.
+        pattern: /require\.resolve\(\s*["']\.\/xhr-sync-worker\.js["']\s*\)/,
+        kind: 'path-stub',
       },
     ],
   },
@@ -140,7 +159,10 @@ function resolveDataFile(id: string, dataFile: string): string {
 
 /** Exported for the contract test. */
 export function expectedInlineLiteral(id: string, read: InlineDataRead): string {
-  const data = readFileSync(resolveDataFile(id, read.dataFile), 'utf-8')
+  if (read.kind === 'path-stub') {
+    return JSON.stringify('/__sea_unavailable__/xhr-sync-worker.js')
+  }
+  const data = readFileSync(resolveDataFile(id, read.dataFile!), 'utf-8')
   return read.kind === 'json' ? data : JSON.stringify(data)
 }
 
