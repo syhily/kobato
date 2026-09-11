@@ -1090,6 +1090,13 @@ describe('contract: module and bundle boundaries', () => {
         specifier: './src/server/infra/image/worker-entry-plugin.ts',
       },
       {
+        // Config-graph file: same alias caveat; the plugin inlines package
+        // data reads the single-file SEA bundle cannot resolve at runtime.
+        key: 'vite.config.ts -> ./scripts/sea/inline-package-data.ts',
+        file: 'vite.config.ts',
+        specifier: './scripts/sea/inline-package-data.ts',
+      },
+      {
         key: 'vite.config.ts -> ./src/server/infra/react-compiler-plugin.ts',
         file: 'vite.config.ts',
         specifier: './src/server/infra/react-compiler-plugin.ts',
