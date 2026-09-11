@@ -23,8 +23,12 @@
 // sharp / sharp-ico / @napi-rs/canvas ARE statically imported and inlined
 // (`ssr.noExternal: true`); the redirect-native-requires plugin rewrites
 // their internal platform loads to `nativeRequire(...)` so only node
-// builtins stay external. Node builtins are external automatically for
-// SSR builds — no externals config is needed.
+// builtins stay external. jsdom (the server sanitize engine) arrives via
+// the prebuilt build/server graph; the inline-jsdom-default-stylesheet
+// plugin (registered in BOTH configs) replaces its module-scope
+// `__dirname` stylesheet read with a string literal — the binary has no
+// `__dirname` and no filesystem to read it from. Node builtins are
+// external automatically for SSR builds — no externals config is needed.
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -32,6 +36,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { z } from 'zod'
 
+import { inlineJsdomDefaultStylesheetPlugin } from './scripts/sea/inline-jsdom-default-stylesheet.ts'
 import { redirectNativeRequiresPlugin } from './scripts/sea/redirect-native-requires.ts'
 
 const pkgSchema = z.object({
@@ -85,7 +90,7 @@ export default defineConfig({
     __APP_HOMEPAGE__: JSON.stringify(pkg.homepage),
     __APP_REPOSITORY__: JSON.stringify(pkg.repository.url),
   },
-  plugins: [redirectNativeRequiresPlugin()],
+  plugins: [redirectNativeRequiresPlugin(), inlineJsdomDefaultStylesheetPlugin()],
   build: {
     outDir: 'dist-sea/intermediates',
     // The three builds run sequentially into the same dir — never wipe it

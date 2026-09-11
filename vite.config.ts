@@ -9,6 +9,7 @@ import { defineConfig } from 'vite'
 import svgr from 'vite-plugin-svgr'
 import { z } from 'zod'
 
+import { inlineJsdomDefaultStylesheetPlugin } from './scripts/sea/inline-jsdom-default-stylesheet.ts'
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
 import { processWorkerEntryPlugin } from './src/server/infra/image/worker-entry-plugin.ts'
 import { reactCompilerPlugin } from './src/server/infra/react-compiler-plugin.ts'
@@ -92,6 +93,7 @@ export default defineConfig(({ command }) => ({
   },
   plugins: [
     sanitizeEngineAliasPlugin(),
+    inlineJsdomDefaultStylesheetPlugin(),
     reactCompilerPlugin(),
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
