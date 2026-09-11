@@ -160,8 +160,10 @@ embedded `natives-meta/*` metadata assets
 engine) and css-tree (jsdom's CSS parser) are inlined the same way, and
 both read static data files at runtime in ways the single-file ESM bundle
 cannot survive — jsdom's `computed-style.js` reads its default stylesheet
-from `__dirname` at module scope; css-tree's `data-patch` loads
-`../data/patch.json` through `createRequire(import.meta.url)` — so
+from `__dirname` at module scope; css-tree's `data-patch` / `data` /
+`version` entry files load `patch.json`, the three `mdn-data/css/*.json`
+dictionaries, and `../package.json` through
+`createRequire(import.meta.url)` — so
 `scripts/sea/inline-package-data.ts` (a Vite plugin, registered in both
 vite configs since these packages reach the SEA bundle via the prebuilt
 build/server graph) swaps each read for an inlined literal. The call-site
