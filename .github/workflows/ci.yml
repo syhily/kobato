@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 # Cancel superseded runs on the same branch so PR pushes don't queue up
 # duplicate jobs. Each run still emits a status check.
