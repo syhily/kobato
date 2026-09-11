@@ -41,6 +41,7 @@ vi.mock('@/server/bootstrap/db-lifecycle', () => ({
 
 const { configureMiddleware, buildLoadContext } = await import('@/server/http/middleware-pipeline')
 const { createApiApp } = await import('@/server/http/app')
+const { trustProxy } = await import('@/server/http/middlewares/trust-proxy')
 const { trailingSlashNormaliser } = await import('@/server/http/middlewares/trailing-slash')
 const { honoWpDecoyMiddleware } = await import('@/server/http/middlewares/wp-decoy')
 const { requestContextMiddleware } = await import('@/server/http/middlewares/request-context')
@@ -48,7 +49,7 @@ const { honoInstallGateMiddleware } = await import('@/server/http/middlewares/in
 const { honoVisitorCookieMiddleware } = await import('@/server/http/middlewares/visitor-cookie')
 
 describe('glue contract / middleware pipeline order', () => {
-  it('registers the 12 perimeter middlewares in their contract order', () => {
+  it('registers the 13 perimeter middlewares in their contract order', () => {
     const uses: unknown[][] = []
     const app = {
       onError: vi.fn(),
@@ -63,13 +64,16 @@ describe('glue contract / middleware pipeline order', () => {
 
     configureMiddleware(app as never)
 
-    // Registration order is semantics: context derives before its consumers, decoys short-circuit first.
-    expect(uses).toHaveLength(12)
-    expect(uses[6][0]).toBe(trailingSlashNormaliser)
-    expect(uses[7][0]).toBe(honoWpDecoyMiddleware)
-    expect(uses[9][0]).toBe(requestContextMiddleware)
-    expect(uses[10][0]).toBe(honoInstallGateMiddleware)
-    expect(uses[11][0]).toBe(honoVisitorCookieMiddleware)
+    // Registration order is semantics: the trust-proxy scheme fix must land
+    // before anything reads the request URL; context derives before its
+    // consumers, decoys short-circuit first.
+    expect(uses).toHaveLength(13)
+    expect(uses[0][0]).toBe(trustProxy)
+    expect(uses[7][0]).toBe(trailingSlashNormaliser)
+    expect(uses[8][0]).toBe(honoWpDecoyMiddleware)
+    expect(uses[10][0]).toBe(requestContextMiddleware)
+    expect(uses[11][0]).toBe(honoInstallGateMiddleware)
+    expect(uses[12][0]).toBe(honoVisitorCookieMiddleware)
   })
 })
 

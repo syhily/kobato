@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
+import {
+  resetBlogSettingsForTests,
+  setBlogSettingsBundleForTests,
+  TEST_BLOG_SETTINGS_BUNDLE,
+} from '#/_helpers/blog-settings'
 import { getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { emptySession } from '#/_helpers/session'
@@ -185,6 +189,39 @@ describe('anonymous session writes (P1-4)', () => {
     const setCookies = res.headers.getSetCookie()
     expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
     expect(setCookies.some((v) => v.startsWith('__csrf='))).toBe(false)
+  })
+})
+
+describe('trustProxy scheme fix (real pipeline)', () => {
+  // The probe path hides under the install-gate-exempt /favicon prefix and
+  // echoes the derived RequestContext URL — post-rewrite if the fix fired.
+  function probeApp() {
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    app.get('/favicon-scheme-probe', (c) => c.text(c.var.requestContext.url.href))
+    return app
+  }
+
+  it('rewrites to the proxy-reported scheme when the site URL is https', async () => {
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE) // website https://example.com
+    const res = await probeApp().request('http://yufan.me/favicon-scheme-probe', {
+      headers: { 'x-forwarded-proto': 'https' },
+    })
+    expect(await res.text()).toBe('https://yufan.me/favicon-scheme-probe')
+  })
+
+  it('assumes https for the canonical host even without a proxy header', async () => {
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    const res = await probeApp().request('http://example.com/favicon-scheme-probe')
+    expect(await res.text()).toBe('https://example.com/favicon-scheme-probe')
+  })
+
+  it('ignores proxy headers when no https site URL is configured', async () => {
+    resetBlogSettingsForTests()
+    const res = await probeApp().request('http://yufan.me/favicon-scheme-probe', {
+      headers: { 'x-forwarded-proto': 'https' },
+    })
+    expect(await res.text()).toBe('http://yufan.me/favicon-scheme-probe')
   })
 })
 
