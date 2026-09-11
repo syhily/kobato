@@ -67,18 +67,18 @@ memory (`src/server/infra/sea.ts`). Only the native dynamic libraries are
 extracted to a flat cache dir on first run
 (`src/server/infra/sea-natives.ts`) — the OS `dlopen` needs real files.
 
-**Node 26 pin.** The toolchain is pinned to 26.8.1: `.nvmrc`, the CI
+**Node 26 pin.** The toolchain is pinned to 26.8.2: `.nvmrc`, the CI
 matrices (`.github/workflows/sea.yml` ×4, `ci.yml` ×2 —
-`node-version: 26.8.1`), and the Dockerfile build stage
-(`node:26.8.1-bookworm-slim` with `npm install -g pnpm@12.3.4` — Node
+`node-version: 26.8.2`), and the Dockerfile build stage
+(`node:26.8.2-bookworm-slim` with `npm install -g pnpm@12.4.1` — Node
 25+ images ship no Corepack, keep the version aligned with the
 `packageManager` field) all carry the exact version, and
-`package.json` engines requires `>=26.8.1`. `scripts/sea/build.ts`
+`package.json` engines requires `>=26.8.2`. `scripts/sea/build.ts`
 gates `REQUIRED_NODE_MAJOR = 26` — a major-only gate by design. Local
 dev/tests still run on the machine's default Node; only `sea:build`
-gates. The pin to 26.8.1 was verified end-to-end: `sea:build` + the
+gates. The pin to 26.8.2 was verified end-to-end: `sea:build` + the
 full managed `sea:smoke` passed on the exact
-`node:26.8.1-bookworm-slim` image (linux x64).
+`node:26.8.2-bookworm-slim` image (linux x64).
 
 **Bootstrap ordering (`mainFormat: "module"`).** There is no CJS prelude
 and no runtime bundle materialization — and filesystem `import()` is
