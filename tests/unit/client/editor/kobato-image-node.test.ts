@@ -16,11 +16,11 @@
 // @lexical/headless would carry a second Lexical module state and could never
 // host these classes.
 
-import { $isImageNode, createHeadlessEditor, ImageNode, type LexicalEditor } from '@inkling/editor'
 import { JSDOM } from 'jsdom'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { KobatoImageNode } from '@/client/editor/kobato-image-node'
+import { $isImageNode, createHeadlessEditor, ImageNode, type LexicalEditor } from '@/inkling'
 import { FEED_VARIANT_META_KIND } from '@/shared/lexical/cards/card-html'
 import {
   IMAGE_RENDER_ENV_META_KIND,

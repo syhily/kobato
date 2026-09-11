@@ -3,8 +3,8 @@
  * docs/plans/inkling-editor-replacement.md R6 交付物，M3/R11 接入时经
  * `<InklingComposer labels={inklingLabels}>` 注入）。
  *
- * - `import type` 是刻意的：R11 之前 kobato 不应对 `@inkling/editor`
- *   产生任何 runtime import，type-only import 会在编译期被擦除、不进 bundle。
+ * - `import type` 是刻意的：本表是 type-only 消费，type import 会在编译期
+ *   被擦除、不进 bundle。
  * - `InklingLabels` 是封闭接口：下表任何拼错的 key 都是编译错误，
  *   `pnpm run type` 即 key 合法性门禁。
  * - 插值 token（`{max}` / `{cardType}` / `{name}` / `{progress}`）是
@@ -18,7 +18,7 @@
  * - `snippet.*` / `menu.section.snippets` / `toolbar.saveAsSnippet` ——
  *   snippets 功能不接入（评论精简组合显式 `isSnippetsEnabled={false}`）。
  */
-import type { InklingLabels } from '@inkling/editor'
+import type { InklingLabels } from '@/inkling'
 
 export const inklingLabels: Partial<InklingLabels> = {
   /* 编辑器与输入占位符 */

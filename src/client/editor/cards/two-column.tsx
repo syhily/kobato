@@ -5,8 +5,11 @@
 // the decorate chrome shares the spec's class constants with the exportDOM
 // markup (the WYSIWYG gate).
 
-import type { EditorState, LexicalEditor } from '@inkling/editor'
 import type { ReactNode } from 'react'
+
+import { Columns2Icon } from 'lucide-react'
+
+import type { EditorState, LexicalEditor } from '@/inkling'
 
 import {
   BASIC_TRANSFORMERS,
@@ -15,9 +18,7 @@ import {
   generateDecoratorNode,
   InklingComposableEditor,
   InklingNestedComposer,
-} from '@inkling/editor'
-import { Columns2Icon } from 'lucide-react'
-
+} from '@/inkling'
 import { inklingHostCardMatches } from '@/shared/lexical/cards/menu-matches'
 import {
   renderTwoColumnCard,

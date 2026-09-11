@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  // Standalone demo playground — typechecked on demand
+  // (`tsc -p demo/tsconfig.json`), deliberately outside the root `pnpm type`
+  // gate. `../src/**/*.d.ts` rides along for the `*.svg?react` module
+  // declarations, ambient markdown-it plugin types, and app globals.
+  "include": ["./**/*", "../src/**/*.d.ts"],
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022", "ES2024.Object"],
+    "target": "ES2022",
+    "forceConsistentCasingInFileNames": true,
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["../src/*"]
+    },
+    "types": ["vite/client", "node"],
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": true
+  }
+}

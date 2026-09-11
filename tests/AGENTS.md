@@ -4,7 +4,7 @@ Conventions for the `tests/` directory.
 
 ## Layout
 
-Tests are split into three Vitest workspace projects. **All three mirror the `src/` layout:**
+Tests are split into four Vitest workspace projects. **The first three mirror the `src/` layout:**
 
 - **`tests/unit/`** — Pure logic, no DB, fastest feedback loop.
   If you test `src/shared/utils/paths.ts`, the test lives at `tests/unit/shared/utils/paths.test.ts`.
@@ -12,6 +12,12 @@ Tests are split into three Vitest workspace projects. **All three mirror the `sr
   If you test `src/server/domains/posts/services/cms-posts.ts`, the test lives at `tests/it/server/domains/posts/services/cms-posts.test.ts`.
 - **`tests/snaps/`** — React SSR snapshot tests (render-to-string, no DB).
   If you test `src/ui/public/post/PostListViews.tsx`, the test lives at `tests/snaps/ui/public/post/post-list-views.test.tsx`.
+- **`tests/inkling/`** — The dissolved inkling editor suite (jsdom + vitest
+  globals), mirroring `src/inkling` internally. It carries its own
+  `vitest.config.ts` and `tsconfig.json`; run it with
+  `npx vitest run --project inkling` (alias `pnpm test:inkling`). Its helpers
+  live in `tests/inkling/utils/` — including the `test-editor.ts` harness that
+  registers the card decorate adapter — NOT in `tests/_helpers/`.
 - **`tests/e2e/`** — True HTTP e2e: tests drive a real kobato instance (the
   SEA binary booted by `scripts/sea/e2e.ts`) over plain `fetch`. No
   in-process shortcuts, no `vi.mock`. **Not part of `pnpm test`** (the
@@ -64,6 +70,7 @@ Or run a single project:
 npx vitest run --project unit
 npx vitest run --project it
 npx vitest run --project snaps
+npx vitest run --project inkling
 ```
 
 ### CI
@@ -102,7 +109,7 @@ ceremony:
 
 ## Imports
 
-- **All test utilities live in `tests/_helpers/`** — there is no `tests/it/_helpers/` or per-project helpers directory.
+- **All test utilities live in `tests/_helpers/`** — there is no `tests/it/_helpers/` or per-project helpers directory. The one exception is `tests/inkling/`, which keeps its own `tests/inkling/utils/` harness (see Layout).
 - Import helpers using the `#/_helpers/<name>` alias:
   - `#/_helpers/catalog` — mock data factories
   - `#/_helpers/render` — SSR render helpers (snapshots)

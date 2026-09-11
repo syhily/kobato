@@ -15,7 +15,7 @@
 // reproduces the retired PT rssMode figure (cover/audio absolutized against
 // the site origin), or the placeholder paragraph when the snapshot is absent.
 
-import type { DecoratorNodeProperty } from '@inkling/editor/headless'
+import type { DecoratorNodeProperty } from '@/inkling/headless'
 
 import {
   absolutizeAssetSrcForFeed,

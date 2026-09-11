@@ -5,7 +5,7 @@
 // trailing-edge debounce keyed by (tex, display) — retyping coalesces, and
 // concurrent callers editing the same formula share one round-trip.
 
-import type { CardConfig } from '@inkling/editor'
+import type { CardConfig } from '@/inkling'
 
 import { orpc } from '@/client/api/client'
 

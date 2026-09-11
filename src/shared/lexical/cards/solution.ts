@@ -14,7 +14,7 @@
 // directly, so exportDOM IS the public render. The feed variant unwraps to
 // the bare content HTML, matching the retired PT rssMode behavior.
 
-import type { DecoratorNodeProperty } from '@inkling/editor/headless'
+import type { DecoratorNodeProperty } from '@/inkling/headless'
 
 import {
   type CardRenderContext,

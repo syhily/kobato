@@ -1,9 +1,9 @@
 // Heading-anchor slug policy for the Lexical storage format (plan
 // docs/plans/inkling-editor-replacement.md, round R9a). Single source of
 // truth on the kobato side: a byte-exact port of inkling's `slugify`
-// (`packages/inkling/src/utils/slugify.ts`, the >=4.0 branch every current
+// (`src/inkling/utils/slugify.ts`, the >=4.0 branch every current
 // document takes) plus its per-render dedup tracker
-// (`packages/inkling/src/utils/heading-id-tracker.ts`). The contract test
+// (`src/inkling/utils/heading-id-tracker.ts`). The contract test
 // `tests/unit/shared/contracts/lexical-heading-slug.test.ts` pins this
 // module against inkling's real `lexicalStateToHtml` export, so the
 // `headings` derived column can never drift from the ids the exported

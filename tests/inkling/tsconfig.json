@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  // The inkling test project uses vitest globals + jest-dom matchers, which
+  // the root tsconfig (globals:false unit suite) does not provide — this
+  // project typechecks under `pnpm run type` via its own `tsc -p` pass and
+  // doubles as oxlint-tsgolint's nearest-config discovery anchor.
+  "extends": "../../tsconfig.json",
+  "include": ["./**/*", "../../src/**/*.d.ts", "../../demo/types/vite-env.d.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "types": ["vitest/globals", "node", "vite/client", "@testing-library/jest-dom/vitest"]
+  }
+}

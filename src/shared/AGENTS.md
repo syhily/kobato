@@ -37,7 +37,7 @@ server or client boundary catch and log it.
   manifests (`composer-nodes` — ARTICLE (R11) and COMMENT (R12) are both
   live, pinned three-way schema ⇐ whitelist ⇐ composer by contract test). Pure
   zod — no lexical runtime dependency; the `SerializedEditorState` type is an
-  erased `import type` from `@inkling/editor/headless`. R9a added the
+  erased `import type` from `@/inkling/headless`. R9a added the
   save-pipeline modules on top:
   `walk` (pre-order traversal + serialized `getTextContent` parity),
   `heading-slug` (byte-exact port of inkling's slugify + dedup tracker —
@@ -60,8 +60,8 @@ server or client boundary catch and log it.
   properties, nested-editor facts, class/copy constants, and exportDOM
   renderer live here as the single source consumed by BOTH the server
   projection (headless `generateDecoratorNode`) and the client card assembly
-  (`.` entry + `defineCard`) — two class objects, one spec, because the dist
-  entries ship separate Lexical copies.
+  (`@/inkling` + `defineCard`) — two class objects, one spec, because client
+  and server each assemble their own class from the shared spec.
 - `pt/` — LEGACY: the PortableText schema (`schema`, `comment-schema`), the
   heading style↔level table (`heading-levels`), and the tree walkers/validators
   in `utils` survive ONLY to read pre-Lexical `content.body` / comment rows —

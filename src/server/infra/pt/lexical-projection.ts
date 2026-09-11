@@ -21,13 +21,12 @@
 // because the generated one would leak raw markup into `body_text` (no live
 // nested editor to prefer headless-side).
 
-import type { LexicalStateToHtmlOptions } from '@inkling/editor/headless'
-
-import { generateDecoratorNode, lexicalStateToHtml, lexicalStateToPlainText } from '@inkling/editor/headless'
 import katex from 'katex'
 
+import type { LexicalStateToHtmlOptions } from '@/inkling/headless'
 import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schema'
 
+import { generateDecoratorNode, lexicalStateToHtml, lexicalStateToPlainText } from '@/inkling/headless'
 import { getLogger } from '@/server/infra/logger'
 import { KATEX_OPTIONS } from '@/server/infra/pt/katex'
 import { requireBlogSettingsSection } from '@/shared/config/getters'

@@ -12,11 +12,10 @@
 // and the LINK text-match transformer (LinkNode registered). HEADING and HR
 // fall out because HeadingNode and HorizontalRuleNode are not mounted.
 
-import type { Transformer } from '@inkling/editor'
-
-import { DEFAULT_TRANSFORMERS } from '@inkling/editor'
+import type { Transformer } from '@/inkling'
 
 import { COMMENT_EDITOR_NODES } from '@/client/editor/comment-editor-nodes'
+import { DEFAULT_TRANSFORMERS } from '@/inkling'
 
 const REGISTERED_NODE_CLASSES = new Set<unknown>(COMMENT_EDITOR_NODES.filter((entry) => typeof entry === 'function'))
 

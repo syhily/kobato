@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
-import { testDefine } from '../vitest.define'
+import { testDefine } from '../vitest.define.ts'
 
 export default defineConfig({
   resolve: {

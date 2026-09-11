@@ -1,9 +1,9 @@
-import type { SerializedEditorState } from '@inkling/editor/headless'
-
-import { lexicalStateToHtml } from '@inkling/editor/headless'
 import { describe, expect, it } from 'vitest'
 
+import type { SerializedEditorState } from '@/inkling/headless'
+
 import { lexicalBodyWith, lexicalHeading } from '#/_helpers/lexical'
+import { lexicalStateToHtml } from '@/inkling/headless'
 import { collectLexicalHeadings } from '@/shared/lexical/collect'
 import { createHeadingSlugTracker, slugifyHeadingText } from '@/shared/lexical/heading-slug'
 

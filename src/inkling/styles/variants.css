@@ -1,0 +1,8 @@
+/* The inkling dark variant, for STANDALONE consumers of index.css only
+   (the demo). It deliberately is NOT imported by index.css: kobato imports
+   the sheet through `@import … layer(inkling)`, and tailwind rejects a
+   `@custom-variant` nested inside a layer — kobato's own richer
+   class-or-media `dark` variant (src/styles/tailwind.css) compiles the
+   editor's `dark:` utilities there. Import this file UNLAYERED alongside
+   index.css when no host variant exists. */
+@custom-variant dark (&:is(.dark *));

@@ -176,6 +176,12 @@ describe('contract: module and bundle boundaries', () => {
     const directRe = /\bexport\s+(?:type\s+)?(?:\*\s+as\s+[\w$]+|\*|\{[^{}]*\})\s*from\s*['"][^'"]+['"]/g
     const plainRe = /\bexport\s+(?:type\s+)?\{([^{}]*)\}(?!\s*from)/g
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
+      // src/inkling keeps its former package conventions: src/inkling/index.ts
+      // IS the editor layer's public barrel, and its internal re-exports are
+      // pinned by the suite's own guard tests (tests/inkling).
+      if (file.startsWith('src/inkling/')) {
+        continue
+      }
       const source = stripComments(readFileSync(file, 'utf8'))
       for (const match of source.matchAll(directRe)) {
         offenders.push(`${file}: ${match[0].replace(/\s+/g, ' ')}`)
@@ -202,6 +208,8 @@ describe('contract: module and bundle boundaries', () => {
     const exportFromRe = /\bexport\s+(?:type\s+)?(?:\*\s+as\s+[\w$]+|\*|\{[^{}]*\})\s*from\s*['"][^'"]+['"]/g
     const offenders = files('src', '-g', '*.ts', '-g', '*.tsx')
       .filter((file) => /(^|\/)index\.tsx?$/.test(file))
+      // src/inkling/index.ts is the editor layer's deliberate public barrel.
+      .filter((file) => !file.startsWith('src/inkling/'))
       .filter((file) => {
         const source = stripComments(readFileSync(file, 'utf8'))
         return /\bexport\b/.test(source) && source.replace(exportFromRe, '').trim() === ''
@@ -227,6 +235,48 @@ describe('contract: module and bundle boundaries', () => {
         const target = resolveSpecifier(file, specifier)
         if (rule.banned.some((banned) => target.startsWith(banned) || target.startsWith(`src/${banned.slice(2)}`))) {
           offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps the inkling editor layer an island with exactly two entry surfaces', () => {
+    // src/inkling is the dissolved @inkling/editor package: it must stay
+    // self-contained (no imports of kobato layers — the editor is
+    // host-agnostic), and the rest of the app reaches it ONLY through the
+    // public barrel (`@/inkling`, React surfaces) or the react-free headless
+    // surface (`@/inkling/headless`, server + shared). Deep imports would
+    // re-couple the app to the editor's internal layout.
+    const KOBATO_LAYERS = ['@/server/', '@/client/', '@/ui/', '@/shared/', '@/routes/']
+    const ENTRY_SURFACES = new Set(['@/inkling', '@/inkling/headless'])
+    const offenders: string[] = []
+
+    for (const file of files('src/inkling', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        if (KOBATO_LAYERS.some((layer) => specifier.startsWith(layer))) {
+          offenders.push(`${file}: ${specifier} (inkling must stay self-contained)`)
+        }
+      }
+    }
+
+    for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
+      if (file.startsWith('src/inkling/')) {
+        continue
+      }
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        if (specifier.startsWith('@/inkling') && !ENTRY_SURFACES.has(specifier)) {
+          offenders.push(`${file}: ${specifier} (only the two entry surfaces are public)`)
+        }
+        // The React barrel must never enter the server or isomorphic graphs —
+        // server/shared stay on the react-free headless surface.
+        if (
+          (file.startsWith('src/server/') || file.startsWith('src/shared/')) &&
+          specifier.startsWith('@/inkling') &&
+          specifier !== '@/inkling/headless'
+        ) {
+          offenders.push(`${file}: ${specifier} (server/shared use @/inkling/headless only)`)
         }
       }
     }
@@ -707,6 +757,12 @@ describe('contract: module and bundle boundaries', () => {
     ]
     const ambiguousClassTokens = ['media', 'overlay', 'text-muted']
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx', '-g', '*.css')) {
+      // src/inkling is the dissolved editor layer with its own scoped
+      // stylesheet — its tokens (e.g. `display: list-item`) are unrelated to
+      // the retired kobato partials this scan hunts.
+      if (file.startsWith('src/inkling/')) {
+        continue
+      }
       const source = readFileSync(file, 'utf8')
       const stripped = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
       const hit = bannedClassTokens.find((token) =>

@@ -7,16 +7,7 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: [
-    '.agents/skills/*',
-    'drizzle/**/*',
-    // Packed-consumer type fixtures: they self-import '@inkling/editor'
-    // (resolves to dist via package exports), so the type-aware gate cannot
-    // see them without a build first — their real gate is
-    // packages/inkling/scripts/verify-packed-types.ts, which type-checks them
-    // against the packed tarball, @ts-expect-error directives included.
-    'packages/inkling/test/typecheck-consumer/**',
-  ],
+  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*'],
   settings: {
     react: {
       // Keep aligned with the installed `react` version in package.json —
@@ -367,7 +358,7 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ['tests/**/*.ts', 'tests/**/*.tsx', 'packages/inkling/test/**/*.ts', 'packages/inkling/test/**/*.tsx'],
+      files: ['tests/**/*.ts', 'tests/**/*.tsx'],
       rules: {
         // Test code gets a deliberately lighter rule set: mocks, fixtures,
         // and deliberately-awkward components make the type-aware unsafe
@@ -423,7 +414,7 @@ export default defineConfig({
       },
     },
     {
-      files: ['scripts/**/*.ts', 'packages/inkling/scripts/**/*.ts'],
+      files: ['scripts/**/*.ts'],
       rules: {
         // Plain-node build scripts (executed directly with `node
         // scripts/...`, type-stripped at runtime). Console output is the
@@ -440,13 +431,19 @@ export default defineConfig({
       },
     },
     {
-      files: ['packages/inkling/**'],
+      // src/inkling keeps its former package conventions (public barrel,
+      // intentional Lexical cycles, declaration merging, editor-chrome a11y
+      // exemptions, and the keeper rules the rest of the repo is not yet
+      // clean under). demo/ renders the same editor chrome, so it shares
+      // the scope.
+      files: ['src/inkling/**', 'tests/inkling/**', 'demo/**'],
       rules: {
-        // src/index.ts is the package's public barrel (its API surface).
+        // src/inkling/index.ts is the editor layer's public barrel (its API
+        // surface for the rest of the app).
         'oxc/no-barrel-file': 'off',
         // Lexical's editor/node module graph is intentionally cyclic; the
         // layering that matters is pinned by
-        // packages/inkling/test/unit/nodes/card-layering-imports.test.ts.
+        // tests/inkling/unit/nodes/card-layering-imports.test.ts.
         'import/no-cycle': 'off',
         // Lexical DecoratorNode subclasses intentionally use
         // class+interface declaration merging — the base no-redeclare

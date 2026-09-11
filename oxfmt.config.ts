@@ -38,10 +38,10 @@ export default defineConfig({
   overrides: [
     {
       // Inkling's canvas classes sort against its own stylesheet, and the
-      // package wraps class strings with `clsx` instead of kobato's `cn`.
-      files: ['packages/inkling/**'],
+      // editor layer wraps class strings with `clsx` instead of kobato's `cn`.
+      files: ['src/inkling/**', 'demo/**'],
       sortTailwindcss: {
-        stylesheet: './packages/inkling/src/styles/index.css',
+        stylesheet: './src/inkling/styles/index.css',
         functions: ['clsx'],
         preserveWhitespace: true,
       },

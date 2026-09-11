@@ -24,8 +24,7 @@
 // Node-replacement pair entries carry no static getType, so the filter reads
 // the pair's `replace` class instead.
 
-import { CodeBlockNode, EDITOR_BASE_NODES } from '@inkling/editor'
-
+import { CodeBlockNode, EDITOR_BASE_NODES } from '@/inkling'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const COMMENT_EXCLUDED_BASE_TYPES = new Set(['heading', 'extended-heading', 'aside', 'table', 'tablerow', 'tablecell'])

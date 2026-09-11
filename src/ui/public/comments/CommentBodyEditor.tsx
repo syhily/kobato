@@ -22,17 +22,16 @@
 // boundary on the first click and replay the focus.
 
 import '@/styles/inkling-comment-editor.css'
-import type { ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@inkling/editor'
-
-import { InklingComposer, InklingSurface, ListPlugin } from '@inkling/editor'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import type { ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@/inkling'
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { COMMENT_EDITOR_NODES } from '@/client/editor/comment-editor-nodes'
 import { downgradeLegacyCommentMath } from '@/client/editor/comment-legacy-math'
 import { COMMENT_MARKDOWN_TRANSFORMERS } from '@/client/editor/comment-markdown-transformers'
 import { inklingLabels } from '@/client/editor/inkling-labels'
+import { InklingComposer, InklingSurface, ListPlugin } from '@/inkling'
 import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@/shared/lexical/comment-schema'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { cn } from '@/ui/lib/cn'

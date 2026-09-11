@@ -1,4 +1,3 @@
-import { createHeadlessEditor } from '@inkling/editor'
 // @vitest-environment jsdom
 // jsdom: the decorator cards (codeblock) serialize through @lexical/html,
 // which needs a DOM document even for a headless parse → toJSON round-trip.
@@ -6,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { COMMENT_EDITOR_NODES } from '@/client/editor/comment-editor-nodes'
 import { downgradeLegacyCommentMath } from '@/client/editor/comment-legacy-math'
+import { createHeadlessEditor } from '@/inkling'
 import {
   commentEditorStateSchema,
   EMPTY_COMMENT_EDITOR_STATE,

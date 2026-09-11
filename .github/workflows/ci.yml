@@ -16,9 +16,9 @@ jobs:
   check:
     name: lint + typecheck + test + coverage
     runs-on: ubuntu-latest
-    # 15 min covered the root project alone; the inkling package gates (vitest
-    # suite + packed-consumer verifies, which pack and install throwaway
-    # consumers) need the headroom.
+    # 15 min covered the root project alone; the inkling editor suite
+    # (tests/inkling, ~350 jsdom files) runs inside `pnpm run test` and
+    # needs the headroom.
     timeout-minutes: 20
     env:
       security__sessionSecret: ci-session-secret-not-a-real-one
@@ -39,14 +39,6 @@ jobs:
           name: coverage-report
           path: coverage/
         if: always()
-      # Inkling workspace package gates. The root `pnpm run type` above already
-      # produced packages/inkling/dist via the pretype hook
-      # (scripts/ensure-inkling-dist.ts), which the verify steps consume.
-      - run: pnpm -F @inkling/editor lint
-      - run: pnpm -F @inkling/editor test
-      - run: pnpm -F @inkling/editor verify:package
-      - run: pnpm -F @inkling/editor verify:types
-      - run: pnpm -F @inkling/editor verify:sizes
 
   build:
     name: production build
