@@ -17,6 +17,7 @@ import { honoInstallGateMiddleware } from '@/server/http/middlewares/install-gat
 import { requestContextMiddleware } from '@/server/http/middlewares/request-context'
 import { requestTimeout } from '@/server/http/middlewares/request-timeout'
 import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slash'
+import { trustProxy } from '@/server/http/middlewares/trust-proxy'
 import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
 import { readyHandler } from '@/server/http/ready'
@@ -92,6 +93,9 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
 
 export function configureMiddleware(app: Hono<Env>): void {
   app.onError(onErrorHandler)
+  // First: the trust-proxy scheme fix must land before anything reads the
+  // request URL (request-context derivation, RR's `.data` action origin check).
+  app.use(trustProxy)
   app.use(requestId())
   app.use(compress())
   // Overwrite `secureHeaders`' static CSP with the nonce value — must stay registered before it.
