@@ -60,8 +60,7 @@ export function registerCardSelection(editor: LexicalEditor, deps: CardSelection
       if (selectedNode && $isInklingCard(selectedNode)) {
         return { isCardSelected: true, cardKey: selectedNode.getKey(), cardNode: selectedNode }
       }
-        return { isCardSelected: false }
-      
+      return { isCardSelected: false }
     })
 
     if (isCardSelected && cardKey) {

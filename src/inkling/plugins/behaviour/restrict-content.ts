@@ -72,8 +72,7 @@ export function $enforceParagraphRestriction(rootNode: RootNode, paragraphs: num
       }
       return $createParagraphNode().append(...node.getChildren())
     }
-      return node
-    
+    return node
   })
 
   // remove all existing nodes from state

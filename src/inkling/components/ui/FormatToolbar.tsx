@@ -29,8 +29,7 @@ function quoteIcon(blockType = ''): ToolbarIconName {
   } else if (blockType.endsWith('aside')) {
     return 'quoteTwo'
   }
-    return 'quote'
-  
+  return 'quote'
 }
 
 interface FormatToolbarProps {

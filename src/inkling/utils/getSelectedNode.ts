@@ -14,6 +14,5 @@ export function getSelectedNode(selection: RangeSelection) {
   if (isBackward) {
     return $isAtNodeEnd(focus) ? anchorNode : focusNode
   }
-    return $isAtNodeEnd(anchor) ? focusNode : anchorNode
-  
+  return $isAtNodeEnd(anchor) ? focusNode : anchorNode
 }

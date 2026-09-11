@@ -65,8 +65,7 @@ const exportList = function (node: ElementNode, exportChildren: ExportChildren):
   if (typeof start === 'number' && Number.isFinite(start) && start !== 1) {
     return `<${tag} start="${start}">${listContent}</${tag}>`
   }
-    return `<${tag}>${listContent}</${tag}>`
-  
+  return `<${tag}>${listContent}</${tag}>`
 }
 
 export const listTransformer: ElementTransformer = { export: exportList }

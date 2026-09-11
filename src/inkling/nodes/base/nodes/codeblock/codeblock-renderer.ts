@@ -50,6 +50,5 @@ export function renderCodeBlockNode(node: CodeBlockNodeData, context: RenderCont
 
     return { element: figure, type: 'outer' as const }
   }
-    return { element: pre, type: 'outer' as const }
-  
+  return { element: pre, type: 'outer' as const }
 }

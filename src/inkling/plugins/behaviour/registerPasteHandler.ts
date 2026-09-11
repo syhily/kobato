@@ -46,8 +46,7 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
         if (shouldIgnoreEvent(clipboardEvent)) {
           return true
         }
-          return false
-        
+        return false
       }
 
       if (!(clipboardEvent instanceof ClipboardEvent)) {
@@ -75,7 +74,7 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
       // https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.ts#L1035
       const files = Array.from(clipboardData.files)
       const imageFiles = files.filter((file): file is File => file instanceof File && file.type.startsWith('image/'))
-      const imgTagMatch = (/<\s*img\b/i.exec(html)) !== null
+      const imgTagMatch = /<\s*img\b/i.exec(html) !== null
 
       if (imageFiles.length === 1 && imgTagMatch) {
         clipboardEvent.preventDefault()

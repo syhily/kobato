@@ -28,27 +28,25 @@ export default function slugify(
       // backwards compatible slugs used in the pre-4.0 markdown format
       return inputString.replace(/[^\w]/g, '').toLowerCase()
     }
-      // backwards compatible slugs used in the pre-4.0 mobiledoc format
-      return inputString
-        .replace(/[<>&"?]/g, '')
-        .trim()
-        .replace(/[^\w]/g, '-')
-        .replace(/-{2,}/g, '-')
-        .toLowerCase()
-    
+    // backwards compatible slugs used in the pre-4.0 mobiledoc format
+    return inputString
+      .replace(/[<>&"?]/g, '')
+      .trim()
+      .replace(/[^\w]/g, '-')
+      .replace(/-{2,}/g, '-')
+      .toLowerCase()
   }
-    // new slugs introduced in 4.0
-    // allows all chars except symbols but will urlEncode everything
-    // produces %-encoded chars in src but browsers show real chars in status bar and url bar
-    return encodeURIComponent(
-      inputString
-        .trim()
-        .toLowerCase()
-        .replace(/[\][!"#$%&'()*+,./:;<=>?@\\^_{|}~]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/^-|-{2,}|-$/g, ''),
-    )
-  
+  // new slugs introduced in 4.0
+  // allows all chars except symbols but will urlEncode everything
+  // produces %-encoded chars in src but browsers show real chars in status bar and url bar
+  return encodeURIComponent(
+    inputString
+      .trim()
+      .toLowerCase()
+      .replace(/[\][!"#$%&'()*+,./:;<=>?@\\^_{|}~]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/^-|-{2,}|-$/g, ''),
+  )
 }
 
 export { slugify }

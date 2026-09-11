@@ -60,24 +60,23 @@ function registerExtendedTextEntity<T extends TextNode = TextNode>(
 
           return
         }
-          const diff = prevMatch.end - previousText.length
+        const diff = prevMatch.end - previousText.length
 
-          if (diff > 0) {
-            const concatText = text.slice(0, diff)
-            const newTextContent = previousText + concatText
-            prevSibling.select()
-            prevSibling.setTextContent(newTextContent)
+        if (diff > 0) {
+          const concatText = text.slice(0, diff)
+          const newTextContent = previousText + concatText
+          prevSibling.select()
+          prevSibling.setTextContent(newTextContent)
 
-            if (diff === text.length) {
-              node.remove()
-            } else {
-              const remainingText = text.slice(diff)
-              node.setTextContent(remainingText)
-            }
-
-            return
+          if (diff === text.length) {
+            node.remove()
+          } else {
+            const remainingText = text.slice(diff)
+            node.setTextContent(remainingText)
           }
-        
+
+          return
+        }
       } else if (prevMatch === null || prevMatch.start < previousText.length) {
         return
       }

@@ -38,7 +38,7 @@ export function $unwrapSpecialMarkupFormat(anchorNode: TextNode, selection: Rang
       const markup = SPECIAL_MARKUPS[tag]
       // for replacement strings e.g. {{variable}} we shouldn't add the markup (assumes use of ReplacementStringsPlugin)
       let newText = textContent
-      if (tag === 'code' && (/{.*?}(?![A-Za-z\s])/.exec(textContent))) {
+      if (tag === 'code' && /{.*?}(?![A-Za-z\s])/.exec(textContent)) {
         newText = newText.slice(0, -1)
       } else {
         newText = markup + newText + markup
