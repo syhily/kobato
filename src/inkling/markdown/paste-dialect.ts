@@ -84,8 +84,7 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
       if (originalHeadingOpen) {
         return originalHeadingOpen.call(this, tokens, idx, options, env, self)
       }
-        return self.renderToken(tokens, idx, options)
-      
+      return self.renderToken(tokens, idx, options)
     }
   }
 }

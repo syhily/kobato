@@ -29,7 +29,7 @@ export function parseCodeBlockNode(BaseCodeBlockNode: new (data: Record<string, 
             const preClass = pre.getAttribute('class') || ''
             const codeClass = code.getAttribute('class') || ''
             const langRegex = /lang(?:uage)?-(.*?)(?:\s|$)/i
-            const languageMatches = (langRegex.exec(preClass)) || (langRegex.exec(codeClass))
+            const languageMatches = langRegex.exec(preClass) || langRegex.exec(codeClass)
             if (languageMatches) {
               payload.language = languageMatches[1].toLowerCase()
             }
@@ -52,7 +52,7 @@ export function parseCodeBlockNode(BaseCodeBlockNode: new (data: Record<string, 
           const preClass = domNode.getAttribute('class') || ''
           const codeClass = codeElement.getAttribute('class') || ''
           const langRegex = /lang(?:uage)?-(.*?)(?:\s|$)/i
-          const languageMatches = (langRegex.exec(preClass)) || (langRegex.exec(codeClass))
+          const languageMatches = langRegex.exec(preClass) || langRegex.exec(codeClass)
           if (languageMatches) {
             payload.language = languageMatches[1].toLowerCase()
           }

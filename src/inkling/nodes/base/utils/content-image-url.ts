@@ -31,7 +31,7 @@ export function parseUrlPathname(src: string): string {
 
 /** The filename tail of a URL or path-shaped src (`''` when there is none). Never throws. */
 export function getImageFilenameFromSrc(src: string): string {
-  return (/\/([^/]*)$/.exec(parseUrlPathname(src)))?.[1] ?? ''
+  return /\/([^/]*)$/.exec(parseUrlPathname(src))?.[1] ?? ''
 }
 
 /**

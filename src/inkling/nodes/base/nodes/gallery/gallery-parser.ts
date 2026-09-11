@@ -91,7 +91,7 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
       // Squarespace SQS galleries
       function isSqsGallery(node: HTMLElement) {
         return (
-          node.tagName === 'DIV' && (/sqs-gallery-container/.exec(node.className)) && !node.className.includes('summary-')
+          node.tagName === 'DIV' && /sqs-gallery-container/.exec(node.className) && !node.className.includes('summary-')
         )
       }
 

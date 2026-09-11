@@ -19,7 +19,7 @@ export function $replacementStringTransform(node: TextNode): void {
     return
   }
   const textContent = node.getTextContent()
-  const replacementString = (REPLACEMENT_STRING_REGEX.exec(textContent))?.[0]
+  const replacementString = REPLACEMENT_STRING_REGEX.exec(textContent)?.[0]
 
   if (!replacementString) {
     return
