@@ -10,7 +10,7 @@
 // - Upstream Lexical 0.46 (`lexical` / `@lexical/*` — the whole lexical
 //   family is pinned at 0.46.0 by inkling; verified against the installed
 //   dist bundles and .d.ts files under node_modules).
-// - inkling node classes (packages/inkling/src/nodes/**). inkling's three
+// - inkling node classes (src/inkling/nodes/**). inkling's three
 //   extended nodes REPLACE their upstream base via Lexical's node
 //   replacement mechanism (src/nodes/base/nodes/extended-node-pairs.ts) and
 //   their exportJSON rewrites `type`, so serialized payloads only ever carry
@@ -39,13 +39,13 @@ export const FULL_EDITOR_NODE_TYPES = [
   // lexical core ParagraphNode / LineBreakNode (dist Lexical.dev.mjs).
   'paragraph',
   'linebreak',
-  // packages/inkling/src/nodes/base/nodes/ExtendedTextNode.ts:23 —
+  // src/inkling/nodes/base/nodes/ExtendedTextNode.ts:23 —
   // replaces TextNode (carries format/mode/detail/style like upstream).
   'extended-text',
-  // packages/inkling/src/nodes/base/nodes/ExtendedHeadingNode.ts:28 —
+  // src/inkling/nodes/base/nodes/ExtendedHeadingNode.ts:28 —
   // replaces HeadingNode (`tag` h1–h6).
   'extended-heading',
-  // packages/inkling/src/nodes/base/nodes/ExtendedQuoteNode.ts:23 —
+  // src/inkling/nodes/base/nodes/ExtendedQuoteNode.ts:23 —
   // replaces QuoteNode.
   'extended-quote',
   // @lexical/list ListNode / ListItemNode (dist LexicalList.dev.js
@@ -58,27 +58,27 @@ export const FULL_EDITOR_NODE_TYPES = [
   // registerAutoLink (R4) — imported `<a>` markup stays plain `link`.
   'link',
   'autolink',
-  // inkling image card: packages/inkling/src/nodes/cards/
+  // inkling image card: src/inkling/nodes/cards/
   // image.declaration.ts:50. The R3 verdict subclasses it as
   // KobatoImageNode via same-type replacement, so the type stays `image`
   // (the kobato pass-through keys ride the dataset — see schema.ts).
   'image',
-  // inkling code card: packages/inkling/src/nodes/cards/
+  // inkling code card: src/inkling/nodes/cards/
   // codeblock.declaration.ts:25.
   'codeblock',
-  // inkling block-math card: packages/inkling/src/nodes/cards/
+  // inkling block-math card: src/inkling/nodes/cards/
   // math.declaration.ts:6.
   'math',
-  // packages/inkling/src/nodes/math/MathInlineNode.ts:42 — inline
+  // src/inkling/nodes/math/MathInlineNode.ts:42 — inline
   // decorator (cards are block-level, so this one is hand-written).
   'math-inline',
-  // Footnote pair: packages/inkling/src/nodes/footnote/
-  // FootnoteRefNode.ts:28 (TextNode entity) and packages/inkling/src/
+  // Footnote pair: src/inkling/nodes/footnote/
+  // FootnoteRefNode.ts:28 (TextNode entity) and src/inkling/
   // nodes/cards/footnotedefinition.declaration.ts:23 (menu-less card at
   // the doc-end definition run).
   'footnote-ref',
   'footnotedefinition',
-  // packages/inkling/src/nodes/cards/horizontalrule.declaration.ts:6.
+  // src/inkling/nodes/cards/horizontalrule.declaration.ts:6.
   'horizontalrule',
   // @lexical/table TableNode / TableRowNode / TableCellNode (dist
   // LexicalTable.dev.mjs `getType` returns), mounted by inkling as

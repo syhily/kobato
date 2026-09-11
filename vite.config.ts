@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+import svgr from 'vite-plugin-svgr'
 import { z } from 'zod'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
@@ -48,7 +49,12 @@ const sanitizeEngineAliasPlugin = (): Plugin => ({
 export default defineConfig(({ command }) => ({
   ssr:
     command === 'serve'
-      ? {}
+      ? {
+          // emoji-mart's CJS `main` defeats cjs-module-lexer's named-export
+          // analysis (parcel $parcel$export helpers) in the dev SSR module
+          // runner. Inlining it lets Vite pick the ESM `module` build.
+          noExternal: ['emoji-mart'],
+        }
       : {
           noExternal: true,
           target: 'node',
@@ -90,6 +96,7 @@ export default defineConfig(({ command }) => ({
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
     tailwindcss(),
+    svgr(),
     processWorkerEntryPlugin(),
     routeWarmupPlugin(),
   ] as PluginOption[],
@@ -154,6 +161,57 @@ export default defineConfig(({ command }) => ({
       'sonner',
       'ua-parser-js',
       'zod',
+      // The inkling editor (src/inkling) joined the client graph as SOURCE
+      // (previously a pre-bundled workspace dist): pin its heavy runtime
+      // families so the first optimize pass covers them.
+      'lexical',
+      '@lexical/clipboard',
+      '@lexical/headless',
+      '@lexical/html',
+      '@lexical/link',
+      '@lexical/list',
+      '@lexical/markdown',
+      // @lexical/react exposes NO root "." export — only subpaths.
+      '@lexical/react/LexicalCollaborationContext',
+      '@lexical/react/LexicalCollaborationPlugin',
+      '@lexical/react/LexicalComposer',
+      '@lexical/react/LexicalComposerContext',
+      '@lexical/react/LexicalContentEditable',
+      '@lexical/react/LexicalHistoryPlugin',
+      '@lexical/react/LexicalLinkPlugin',
+      '@lexical/react/LexicalListPlugin',
+      '@lexical/react/LexicalMarkdownShortcutPlugin',
+      '@lexical/react/LexicalNestedComposer',
+      '@lexical/react/LexicalOnChangePlugin',
+      '@lexical/react/LexicalRichTextPlugin',
+      '@lexical/react/LexicalTypeaheadMenuPlugin',
+      '@lexical/rich-text',
+      '@lexical/selection',
+      '@lexical/table',
+      '@lexical/text',
+      '@lexical/utils',
+      '@uiw/react-codemirror',
+      '@uiw/codemirror-extensions-basic-setup',
+      '@codemirror/autocomplete',
+      '@codemirror/commands',
+      '@codemirror/lang-css',
+      '@codemirror/lang-html',
+      '@codemirror/lang-javascript',
+      '@codemirror/language',
+      '@codemirror/view',
+      '@lezer/highlight',
+      'emoji-mart',
+      '@emoji-mart/data',
+      'react-colorful',
+      'fast-average-color',
+      'markdown-it',
+      'markdown-it-footnote',
+      'markdown-it-lazy-headers',
+      'markdown-it-mark',
+      'markdown-it-sub',
+      'markdown-it-sup',
+      'yjs',
+      'y-websocket',
       // Route modules import server orchestrators directly; React Router
       // strips loaders/actions from client chunks only AFTER dep discovery,
       // so these leak into the client optimizer's crawl. Pinning them keeps

@@ -28,12 +28,10 @@
 // picker, which kobato renders as its own dialog instead of inkling's
 // selector overlay).
 
-import type { LexicalEditor } from '@inkling/editor'
-
-import { generateDecoratorNode, ImageNode } from '@inkling/editor'
-
+import type { LexicalEditor } from '@/inkling'
 import type { CardRenderOutput } from '@/shared/lexical/cards/card-html'
 
+import { generateDecoratorNode, ImageNode } from '@/inkling'
 import {
   KOBATO_IMAGE_PROPERTIES,
   kobatoImageImportSpec,

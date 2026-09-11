@@ -15,9 +15,9 @@
 // `/storage/<key>` form, matching what the save-time sync writes for
 // library-referenced images.
 
-import type { FileUploader } from '@inkling/editor'
-
 import { toast } from 'sonner'
+
+import type { FileUploader } from '@/inkling'
 
 import { orpc } from '@/client/api/client'
 import { STORAGE_ROUTE_PREFIX } from '@/shared/types/asset-url'

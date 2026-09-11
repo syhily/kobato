@@ -20,11 +20,10 @@
 // inkling does not re-export Lexical's command-priority constants:
 // COMMAND_PRIORITY_HIGH = 3.
 
-import type { LexicalEditor } from '@inkling/editor'
-
-import { INSERT_CARD_COMMAND, INSERT_IMAGE_COMMAND, OPEN_IMAGE_LIBRARY_COMMAND } from '@inkling/editor'
+import type { LexicalEditor } from '@/inkling'
 
 import { KobatoImageNode } from '@/client/editor/kobato-image-node'
+import { INSERT_CARD_COMMAND, INSERT_IMAGE_COMMAND, OPEN_IMAGE_LIBRARY_COMMAND } from '@/inkling'
 import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@/shared/types/asset-url'
 
 const COMMAND_PRIORITY_HIGH = 3

@@ -333,11 +333,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       expect(honoPlugin.configureServer).toHaveBeenCalledWith(built.server)
     })
 
-    it('excludes workspace-package module URLs (/packages/*) so vite serves them', async () => {
-      // Regression: pnpm-linked packages resolve to their realpath, so vite
-      // rewrites `@inkling/editor` imports to `/packages/inkling/dist/…` —
-      // without an exclude the app swallows the request and every dynamic
-      // editor import 404s in dev.
+    it('excludes vite-internal module URLs so vite serves them', async () => {
       const plugin = reactRouterHonoServer()
       const cfg = viteUserConfig(reactRouterContext())
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
@@ -356,8 +352,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
         expect(pattern.startsWith('^(?=\\/app')).toBe(true)
       }
       const excluded = (url: string) => regexes.some((pattern) => pattern.test(url))
-      expect(excluded('/packages/inkling/dist/editor.js')).toBe(true)
-      expect(excluded('/packages/inkling/dist/chunks/collab.js')).toBe(true)
+      expect(excluded('/@vite/client')).toBe(true)
       expect(excluded('/app/routes/public/home.tsx')).toBe(true)
       expect(excluded('/node_modules/.vite/deps/react.js')).toBe(true)
       expect(excluded('/posts/yume')).toBe(false)

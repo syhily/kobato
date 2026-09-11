@@ -10,8 +10,11 @@
 // the class/copy constants in the spec module — the WYSIWYG gate
 // (tests/unit/client/editor/cards/ pins the parity).
 
-import type { EditorState, LexicalEditor } from '@inkling/editor'
 import type { ReactNode } from 'react'
+
+import { ListTreeIcon } from 'lucide-react'
+
+import type { EditorState, LexicalEditor } from '@/inkling'
 
 import {
   BASIC_TRANSFORMERS,
@@ -20,9 +23,7 @@ import {
   generateDecoratorNode,
   InklingComposableEditor,
   InklingNestedComposer,
-} from '@inkling/editor'
-import { ListTreeIcon } from 'lucide-react'
-
+} from '@/inkling'
 import { inklingHostCardMatches } from '@/shared/lexical/cards/menu-matches'
 import {
   renderSolutionCard,

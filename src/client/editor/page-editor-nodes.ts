@@ -16,6 +16,10 @@
 // both mount anyway because hasNodes is type-gated) are intercepted by
 // `@/client/editor/image-insert-override` at HIGH priority.
 
+import { musicPlayerCard } from '@/client/editor/cards/music-player'
+import { solutionCard } from '@/client/editor/cards/solution'
+import { twoColumnCard } from '@/client/editor/cards/two-column'
+import { KobatoImageNode } from '@/client/editor/kobato-image-node'
 import {
   CodeBlockNode,
   EDITOR_BASE_NODES,
@@ -24,12 +28,7 @@ import {
   HorizontalRuleNode,
   MathInlineNode,
   MathNode,
-} from '@inkling/editor'
-
-import { musicPlayerCard } from '@/client/editor/cards/music-player'
-import { solutionCard } from '@/client/editor/cards/solution'
-import { twoColumnCard } from '@/client/editor/cards/two-column'
-import { KobatoImageNode } from '@/client/editor/kobato-image-node'
+} from '@/inkling'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // AsideNode is filtered out: 'aside' is not in FULL_EDITOR_NODE_TYPES, and

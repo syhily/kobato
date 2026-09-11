@@ -13,7 +13,7 @@
  * Host rules in this file are deliberately UNLAYERED (they own the canvas
  * chrome; nothing else targets these elements).
  */
-@import '@inkling/editor/style.css' layer(inkling);
+@import '@/inkling/styles/index.css' layer(inkling);
 
 /* Page editor canvas: a centered responsive column at the public article
    width, padded like the reference inkling layout, with a bottom scroll

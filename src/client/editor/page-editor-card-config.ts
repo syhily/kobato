@@ -17,7 +17,7 @@
 // `fetchEmbed` (bookmark) and GIF settings are absent on purpose — those
 // cards are not in the page editor's node set.
 
-import type { CardConfig, LibraryImageItem } from '@inkling/editor'
+import type { CardConfig, LibraryImageItem } from '@/inkling'
 
 import { orpc } from '@/client/api/client'
 import { toSiteOwnedImageSrc } from '@/client/editor/image-insert-override'

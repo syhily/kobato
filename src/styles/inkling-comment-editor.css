@@ -23,7 +23,7 @@
  * (the old `zoom: 0.55` effective sizes). The comment surface mounts no
  * slash menu, so no card-menu chrome rules live here.
  */
-@import '@inkling/editor/style.css' layer(inkling);
+@import '@/inkling/styles/index.css' layer(inkling);
 
 /* Comment canvas: a compact bordered input, not an article column. The
    min-height keeps the empty state clickable; the bottom runway lets the

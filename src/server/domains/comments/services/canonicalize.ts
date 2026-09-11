@@ -1,8 +1,8 @@
-import { lexicalStateToPlainText } from '@inkling/editor/headless'
 import { z } from 'zod'
 
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
+import { lexicalStateToPlainText } from '@/inkling/headless'
 import { DomainError } from '@/server/infra/http/errors'
 import { prerenderLexicalEditorState } from '@/server/infra/pt/lexical-prerender'
 import { computeCommentContentProjection } from '@/server/infra/pt/lexical-projection'

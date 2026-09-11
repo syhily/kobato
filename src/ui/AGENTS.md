@@ -152,9 +152,9 @@ unrelated concerns.
   `DetailBodyChrome` + the hydration hooks listed under Cross-cutting UI modules. Heading anchor
   ids come from the revision's `headings` projection column.
 - Admin body editor: `@/ui/admin/editor/PageBodyEditor` (shared by pages and posts) wraps the
-  inkling composer (`@inkling/editor` — the workspace package in `packages/inkling/`). The
+  inkling composer (the `@/inkling` barrel of the `src/inkling` editor layer). The
   composer surface (floating format toolbar, slash menu, drag reorder, card chrome) comes from the
-  package; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring, zh-CN labels)
+  layer; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring, zh-CN labels)
   lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
   through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
   `src/styles/inkling-editor.css`.

@@ -1,6 +1,6 @@
-import type { SerializedEditorState } from '@inkling/editor/headless'
-
 import { z } from 'zod'
+
+import type { SerializedEditorState } from '@/inkling/headless'
 
 import { FULL_EDITOR_NODE_TYPES, ROOT_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 import { isSafeUrl } from '@/shared/sanitize-url'
@@ -34,10 +34,10 @@ export type LexicalNodeJson = {
 }
 
 /**
- * Recursion bound for the depth-tiered children below. PT was a flat block
- * array; Lexical is a tree, so a hostile body could nest nodes until the
- * recursive descent blows the stack — at the cap, element `children` must
- * be empty and validation fails instead of recursing further. Real
+ * Recursion bound for the tree-depth pre-pass (`boundTreeDepth` below). PT
+ * was a flat block array; Lexical is a tree, so a hostile body could nest
+ * nodes until the recursive descent blows the stack — the iterative guard
+ * rejects over-deep payloads before the schema's recursive parse runs. Real
  * documents stay shallow: table > row > cell > paragraph is 4 levels below
  * root, a maximally nested article list is 12.
  */
@@ -65,24 +65,21 @@ const TEXT_FIELDS = {
 
 const SAFE_URL_MESSAGE = 'url must not use javascript:, data:, or vbscript: protocol'
 
-// Depth-tiered children: the union for the next level is built lazily and
-// memoized per depth, so the schema graph is finite; at MAX_TREE_DEPTH
-// element children must be empty (the depth-bomb guard).
-const tierCache = new Map<number, z.ZodType<LexicalNodeJson>>()
+// The node union recurses through a single `z.lazy` self-reference — a
+// reference cycle the zod compiler (`zod/compile`) refuses by design, so
+// the global auto-compile shim permanently falls back to the runtime parser
+// for these state schemas. That is deliberate: the previous 24-tier
+// memoized DAG interacted pathologically with auto-compile — the lazy tier
+// boundaries cascade per-tier compiles mid-parse, and the non-definite
+// fallback then re-parses every node at every tier (measured on zod 4.6.2:
+// comment-schema compile 4.8ms fresh → 49.5s after the article schema had
+// compiled and parsed a list first; a rejected deep-list parse never
+// returned). Compiled parsing buys nothing for once-per-write body
+// validation, and the runtime parser handles the cycle natively.
+const nodeSchema: z.ZodType<LexicalNodeJson> = z.lazy(() => nodeUnion)
 
-function nodeSchemaAtDepth(treeDepth: number): z.ZodType<LexicalNodeJson> {
-  const cached = tierCache.get(treeDepth)
-  if (cached) {
-    return cached
-  }
-  const result = buildNodeUnion(treeDepth)
-  tierCache.set(treeDepth, result)
-  return result
-}
-
-function buildNodeUnion(treeDepth: number): z.ZodType<LexicalNodeJson> {
-  const atDepthCap = treeDepth >= MAX_TREE_DEPTH
-  const children = atDepthCap ? z.tuple([]) : z.array(z.lazy(() => nodeSchemaAtDepth(treeDepth + 1)))
+function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
+  const children = z.array(nodeSchema)
 
   const elementFields = {
     children,
@@ -260,6 +257,41 @@ function buildNodeUnion(treeDepth: number): z.ZodType<LexicalNodeJson> {
   ])
 }
 
+const nodeUnion = buildNodeUnion()
+
+/** The depth-bomb guard: an iterative pre-parse pass rejecting payloads
+ * nested deeper than MAX_TREE_DEPTH along the parser's recursion path
+ * (root → `children`). A preprocess issue aborts the rest of the parse, so
+ * over-deep input never reaches the recursive descent. Shapes without an
+ * object root pass through — reporting them is the shape schema's job. */
+function boundTreeDepth(value: unknown, ctx: z.RefinementCtx): unknown {
+  const root = value !== null && typeof value === 'object' && 'root' in value ? value.root : undefined
+  if (root === null || typeof root !== 'object') {
+    return value
+  }
+  const stack: Array<{ node: unknown; depth: number }> = [{ node: root, depth: 0 }]
+  while (stack.length > 0) {
+    const frame = stack.pop()
+    if (!frame) {
+      continue
+    }
+    if (frame.depth > MAX_TREE_DEPTH) {
+      ctx.addIssue({ code: 'custom', message: `tree nesting exceeds the maximum depth of ${MAX_TREE_DEPTH}` })
+      return value
+    }
+    const node = frame.node
+    if (node !== null && typeof node === 'object' && 'children' in node) {
+      const children = node.children
+      if (Array.isArray(children)) {
+        for (const child of children) {
+          stack.push({ node: child, depth: frame.depth + 1 })
+        }
+      }
+    }
+  }
+  return value
+}
+
 export interface LexicalEditorStateSchemaOptions {
   /** Node types this surface accepts (node-whitelist.ts constants). */
   allowedTypes: readonly string[]
@@ -269,52 +301,56 @@ export interface LexicalEditorStateSchemaOptions {
   maxListDepth: number
 }
 
-/** Builds a `SerializedEditorState` schema for one surface: shape +
- * depth-bomb guard come from the shared union; the surface's node subset
- * and list-depth cap are enforced by an iterative walk. */
+/** Builds a `SerializedEditorState` schema for one surface: shape comes from
+ * the shared recursive union, the depth-bomb guard from `boundTreeDepth`;
+ * the surface's node subset and list-depth cap are enforced by an iterative
+ * walk. */
 export function buildLexicalEditorStateSchema(options: LexicalEditorStateSchemaOptions) {
   const allowed = new Set(options.allowedTypes)
   const base = z.object({
     root: z.object({
       type: z.literal(ROOT_NODE_TYPE),
       version: NODE_VERSION,
-      children: z.array(nodeSchemaAtDepth(1)),
+      children: z.array(nodeSchema),
       direction: DIRECTION,
       format: ELEMENT_FORMAT,
       indent: INDENT,
     }),
   })
-  return base.superRefine((state, ctx) => {
-    const stack: Array<{ node: LexicalNodeJson; listDepth: number; path: PropertyKey[] }> = state.root.children.map(
-      (node, index) => ({ node, listDepth: 0, path: ['root', 'children', index] }),
-    )
-    while (stack.length > 0) {
-      const frame = stack.pop()
-      if (!frame) {
-        continue
-      }
-      const { node, listDepth, path } = frame
-      if (!allowed.has(node.type)) {
-        ctx.addIssue({ code: 'custom', message: `node type "${node.type}" is not allowed in this state`, path })
-        continue
-      }
-      let childListDepth = listDepth
-      if (node.type === 'list') {
-        if (listDepth >= options.maxListDepth) {
-          ctx.addIssue({
-            code: 'custom',
-            message: `list nesting exceeds the maximum depth of ${options.maxListDepth}`,
-            path,
-          })
+  return z.preprocess(
+    boundTreeDepth,
+    base.superRefine((state, ctx) => {
+      const stack: Array<{ node: LexicalNodeJson; listDepth: number; path: PropertyKey[] }> = state.root.children.map(
+        (node, index) => ({ node, listDepth: 0, path: ['root', 'children', index] }),
+      )
+      while (stack.length > 0) {
+        const frame = stack.pop()
+        if (!frame) {
           continue
         }
-        childListDepth = listDepth + 1
+        const { node, listDepth, path } = frame
+        if (!allowed.has(node.type)) {
+          ctx.addIssue({ code: 'custom', message: `node type "${node.type}" is not allowed in this state`, path })
+          continue
+        }
+        let childListDepth = listDepth
+        if (node.type === 'list') {
+          if (listDepth >= options.maxListDepth) {
+            ctx.addIssue({
+              code: 'custom',
+              message: `list nesting exceeds the maximum depth of ${options.maxListDepth}`,
+              path,
+            })
+            continue
+          }
+          childListDepth = listDepth + 1
+        }
+        node.children?.forEach((child, index) => {
+          stack.push({ node: child, listDepth: childListDepth, path: [...path, 'children', index] })
+        })
       }
-      node.children?.forEach((child, index) => {
-        stack.push({ node: child, listDepth: childListDepth, path: [...path, 'children', index] })
-      })
-    }
-  })
+    }),
+  )
 }
 
 export const lexicalEditorStateSchema = buildLexicalEditorStateSchema({

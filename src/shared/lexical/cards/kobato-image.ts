@@ -21,7 +21,7 @@
 // SSR-visible aspect-ratio fallback for dimensionless images. The feed
 // variant reproduces the retired PT rssMode figure.
 
-import type { CardImportSpec, DecoratorNodeProperty } from '@inkling/editor/headless'
+import type { CardImportSpec, DecoratorNodeProperty } from '@/inkling/headless'
 
 import {
   absolutizeAssetSrcForFeed,
@@ -53,7 +53,7 @@ export const KOBATO_IMAGE_EXTRA_KEYS = ['thumbhash', 'storagePath', 'imageId', '
 
 /**
  * The full 12-property spec: the stock eight VERBATIM (same names, defaults,
- * and flags as `packages/inkling/src/nodes/base/nodes/image/ImageNode.ts`
+ * and flags as `src/inkling/nodes/base/nodes/image/ImageNode.ts`
  * imageProperties — src additionally carries the generated exportJSON's blob
  * guard the stock hand-written exportJSON applies) plus the four kobato keys.
  * Consumed by the server projection class and the client's export delegate.

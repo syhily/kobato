@@ -485,7 +485,7 @@ function imagePairsOf(state: LexicalEditorState): RoundTripImage[] {
  * fragment check's and E1's job. Mismatches are WARNINGS, never row failures.
  */
 export async function htmlRoundTripCrossCheck(converted: LexicalEditorState, bodyHtml: string): Promise<string[]> {
-  const { htmlToLexicalState } = await import('@inkling/editor/headless')
+  const { htmlToLexicalState } = await import('@/inkling/headless')
   const { JSDOM } = await import('jsdom')
 
   const dom = new JSDOM(bodyHtml)

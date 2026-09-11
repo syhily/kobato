@@ -14,10 +14,10 @@
 // dataset to playerId + meta snapshot); if parity demands them back, that
 // is an R11+ schema/card evolution.
 
-import { defineCard, generateDecoratorNode } from '@inkling/editor'
 import { Music2Icon } from 'lucide-react'
 
 import { useOpenMusicPicker, type MusicPickTarget } from '@/client/editor/cards/music-pick-context'
+import { defineCard, generateDecoratorNode } from '@/inkling'
 import { inklingHostCardMatches } from '@/shared/lexical/cards/menu-matches'
 import {
   hasMusicPlayerMeta,

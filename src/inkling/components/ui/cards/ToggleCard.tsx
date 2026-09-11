@@ -1,0 +1,69 @@
+import type { EditorState, LexicalEditor } from 'lexical'
+
+import ArrowDownIcon from '@/inkling/assets/icons/inkling-toggle-arrow.svg?react'
+import InklingNestedEditor from '@/inkling/components/InklingNestedEditor'
+import { ReadOnlyOverlay } from '@/inkling/components/ui/ReadOnlyOverlay'
+import { useInklingLabels } from '@/inkling/hooks/useInklingLabels'
+
+export function ToggleCard({
+  contentEditor,
+  contentEditorInitialState,
+  contentPlaceholder,
+  headingEditor,
+  headingEditorInitialState,
+  headingPlaceholder,
+  isEditing = false,
+}: {
+  contentEditor: LexicalEditor
+  contentEditorInitialState?: EditorState
+  contentPlaceholder?: string
+  headingEditor: LexicalEditor
+  headingEditorInitialState?: EditorState
+  headingPlaceholder?: string
+  isEditing?: boolean
+}) {
+  const labels = useInklingLabels()
+
+  return (
+    <>
+      <div className="border-grey/40 dark:border-grey/30 rounded-md border px-6 py-4">
+        <div className="flex cursor-text items-start justify-between">
+          <div className="mr-2 w-full">
+            <InklingNestedEditor
+              autoFocus={true}
+              focusNext={contentEditor}
+              initialEditor={headingEditor}
+              initialEditorState={headingEditorInitialState}
+              nodes="minimal"
+              placeholderClassName={
+                '!font-sans !text-2xl !leading-[1.1] !font-bold !tracking-tight text-black dark:text-grey-50 opacity-40'
+              }
+              placeholderText={headingPlaceholder ?? labels['toggle.heading.placeholder']}
+              singleParagraph={true}
+              textClassName={
+                'inkling-lexical-heading heading-xsmall whitespace-normal text-black dark:text-grey-50 opacity-100'
+              }
+            />
+          </div>
+          <div className="z-20 !mt-[-1px] ml-auto flex size-8 shrink-0 items-center justify-center">
+            <ArrowDownIcon className={'text-grey-400 dark:text-grey/30 size-4 stroke-2'} />
+          </div>
+        </div>
+        <div className={'!mt-2 w-full'}>
+          <InklingNestedEditor
+            initialEditor={contentEditor}
+            initialEditorState={contentEditorInitialState}
+            placeholderClassName={
+              'font-serif text-xl font-normal !leading-[1.6em] text-grey-900 dark:text-grey-100 opacity-40'
+            }
+            placeholderText={contentPlaceholder ?? labels['toggle.content.placeholder']}
+            textClassName={
+              'whitespace-normal font-serif text-xl font-normal text-grey-900 dark:text-grey-100 opacity-100'
+            }
+          />
+        </div>
+      </div>
+      {!isEditing && <ReadOnlyOverlay />}
+    </>
+  )
+}

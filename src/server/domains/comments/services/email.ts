@@ -1,4 +1,3 @@
-import { lexicalStateToPlainText } from '@inkling/editor/headless'
 import { createElement } from 'react'
 
 import type { Database } from '@/server/infra/db/database'
@@ -9,6 +8,7 @@ import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { CommentAndUser } from '@/shared/types/comments'
 
+import { lexicalStateToPlainText } from '@/inkling/headless'
 import { findEntitySlugTitle } from '@/server/domains/content/entities/slug-title'
 import { sendAdminNotification } from '@/server/infra/email/admin-notification'
 import { render } from '@/server/infra/email/render'

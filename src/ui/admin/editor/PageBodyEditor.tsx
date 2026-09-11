@@ -25,12 +25,10 @@
 // (the `immediatelyRender: false` placeholder of the tiptap era).
 
 import '@/styles/inkling-editor.css'
-import type { ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@inkling/editor'
-
-import { InklingComposer, InklingEditor, INSERT_IMAGE_COMMAND } from '@inkling/editor'
 import { FocusIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import type { ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@/inkling'
 import type { AdminImageDto } from '@/shared/contracts/images'
 import type { AdminMusicDto } from '@/shared/contracts/music'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
@@ -42,6 +40,7 @@ import { pageEditorCardConfig } from '@/client/editor/page-editor-card-config'
 import { PAGE_EDITOR_NODES } from '@/client/editor/page-editor-nodes'
 import { pageEditorFileUploader } from '@/client/editor/page-editor-upload'
 import { useFocusModePreference } from '@/client/editor/use-focus-mode'
+import { InklingComposer, InklingEditor, INSERT_IMAGE_COMMAND } from '@/inkling'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/editor/pickers/MusicPickerDialog'

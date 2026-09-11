@@ -35,5 +35,5 @@
     "strict": true,
     "strictNullChecks": true
   },
-  "exclude": ["build", "dist"]
+  "exclude": ["build", "dist", "tests/inkling", "demo"]
 }

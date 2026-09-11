@@ -6,7 +6,7 @@ Repository conventions for AI agents and contributors.
 
 - React Router 8 Framework Mode with SSR (`appDirectory: 'src'`), React 19 TSX/TS only, SQLite (node:sqlite) + a DuckDB analytics sidecar.
 - Path alias `@/*` → `./src/*`.
-- Five layers under `src/`: `routes/` (orchestration), `server/` (SSR), `client/` (browser), `ui/` (components), `shared/` (isomorphic).
+- Five layers under `src/`: `routes/` (orchestration), `server/` (SSR), `client/` (browser), `ui/` (components), `shared/` (isomorphic) — plus `src/inkling/`, the self-contained Lexical editor layer (the dissolved `@inkling/editor` package).
 
 ## Config file
 
@@ -22,15 +22,16 @@ Infrastructure configuration lives in `kobato.config.json` — auto-created with
 
 Claude loads these additively as it moves through the codebase:
 
-| File                   | Scope                                                              |
-| ---------------------- | ------------------------------------------------------------------ |
-| `src/routes/AGENTS.md` | Route modules, loaders, actions, React Router conventions          |
-| `src/server/AGENTS.md` | Server layers (infra, domains, http, render), API procedures, auth |
-| `src/client/AGENTS.md` | Browser hooks, oRPC client, React.lazy patterns                    |
-| `src/ui/AGENTS.md`     | Pure-props components, shadcn, PT renderer, component architecture |
-| `src/styles/AGENTS.md` | Tailwind tokens, design-system CSS, `@theme` conventions           |
-| `src/shared/AGENTS.md` | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
-| `tests/AGENTS.md`      | Test utilities, naming conventions, coverage rules                 |
+| File                    | Scope                                                              |
+| ----------------------- | ------------------------------------------------------------------ |
+| `src/routes/AGENTS.md`  | Route modules, loaders, actions, React Router conventions          |
+| `src/server/AGENTS.md`  | Server layers (infra, domains, http, render), API procedures, auth |
+| `src/client/AGENTS.md`  | Browser hooks, oRPC client, React.lazy patterns                    |
+| `src/ui/AGENTS.md`      | Pure-props components, shadcn, PT renderer, component architecture |
+| `src/styles/AGENTS.md`  | Tailwind tokens, design-system CSS, `@theme` conventions           |
+| `src/shared/AGENTS.md`  | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
+| `src/inkling/AGENTS.md` | The Lexical editor layer: card pipeline, headless surface, labels  |
+| `tests/AGENTS.md`       | Test utilities, naming conventions, coverage rules                 |
 
 ## Skills
 
@@ -325,7 +326,7 @@ React hooks/components under `src/client/` and `src/ui/`.
 
 ## Dependencies
 
-Every version number lives in the root `pnpm-workspace.yaml` `catalog:` table — both the root `package.json` and `packages/inkling/package.json` reference entries as `"catalog:"`. `taze` edits the catalog in place, so sub-packages bump through the same table; never pin a version in a sub-package manifest. Version-exact pins (drizzle rc, the Lexical `0.46.0` family) stay exact inside the catalog.
+Every version number lives in the root `pnpm-workspace.yaml` `catalog:` table — the root `package.json` references entries as `"catalog:"`. `taze` edits the catalog in place. Version-exact pins (drizzle rc, the Lexical `0.46.0` family) stay exact inside the catalog.
 
 Only packages that are **required at production runtime AND ship a native
 dynamic library** belong in `package.json`'s `dependencies`:
@@ -348,13 +349,6 @@ libvips library files (`scripts/sea/assets.ts`).
 Examples: `react`, `hono`, `drizzle-orm`, `nodemailer`,
 `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
 all `devDependencies`, despite being production imports.
-
-`@inkling/editor` (`packages/inkling`, a squashed snapshot of the inkling
-repo at `601961b0` — the original subtree merge was flattened to keep the
-mainline linear, so future upstream syncs are manual) is the
-repo's first workspace-dependency precedent: the root consumes it as
-`"workspace:*"` from `devDependencies`, resolving to its built `dist/`
-artifacts through the package's `exports` map.
 
 **Version pins to watch.** `drizzle-orm` / `drizzle-kit` are pinned at
 `1.0.0-rc.4` (pre-release). Watch the drizzle 1.0 stable release; when it
@@ -405,7 +399,12 @@ Asset URLs are site-owned: content stores origin-relative `/storage/<key>` refer
 - `server/*` → `shared/*`, `server/*`. Not `client/*` or `ui/*`.
 - `client/*`, `ui/*` → `shared/*`, `ui/*`, `client/*`. Not `server/*`.
 - `shared/*` → `shared/*` only.
+- `inkling/*` → `inkling/*` only (host-agnostic editor island). The rest of
+  the app imports it ONLY through two entry surfaces: `@/inkling` (the React
+  barrel, client/ui/routes) and `@/inkling/headless` (react-free; the ONLY
+  surface `server/*` and `shared/*` may use). Pinned by the boundaries
+  contract test.
 - `routes/*` wire only: extract request context, call orchestrators, render. No DB imports or business logic inline.
 - Cross-domain imports under `server/domains/` must stay acyclic (DAG, pinned by contract test).
-- No barrel `index.ts` files. No `export { X } from 'y'` re-exports — import directly from the source module.
+- No barrel `index.ts` files. No `export { X } from 'y'` re-exports — import directly from the source module. (`src/inkling/` is the deliberate exception: its barrel IS the public surface.)
 - Refactor from architectural correctness, not minimal diff size.

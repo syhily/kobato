@@ -8,7 +8,7 @@
 // deleted `src/ui/pt/`) attribute-for-attribute; the feed variant flattens
 // to left + right content concatenated (retired PT rssMode parity).
 
-import type { DecoratorNodeProperty } from '@inkling/editor/headless'
+import type { DecoratorNodeProperty } from '@/inkling/headless'
 
 import {
   type CardRenderContext,

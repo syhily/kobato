@@ -50,8 +50,10 @@ Six files, two bundles:
   music-library view transitions.
 - `inkling-editor.css` — **editor-canvas partial**, imported ONLY by
   `@/ui/admin/editor/PageBodyEditor` so it rides the editor route chunk (the
-  rest of admin stays inkling-free). Pulls `@inkling/editor/style.css` into
-  the `inkling` cascade layer (pinned below `utilities` by `admin.css`'s bare
+  rest of admin stays inkling-free). Pulls `@/inkling/styles/index.css` (the
+  `src/inkling` layer's source stylesheet — formerly the package's `style.css`
+  dist artifact) into the `inkling` cascade layer (pinned below `utilities` by
+  `admin.css`'s bare
   `@layer` ordering statement, so host-card Tailwind utilities beat inkling's
   scoped preflight) and carries the deliberately UNLAYERED host rules: the
   canvas column (`zoom: 0.625` normalizes inkling's 10px-root rem system to

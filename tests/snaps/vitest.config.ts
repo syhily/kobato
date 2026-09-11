@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config'
 
-import { routeWarmupScriptStubPlugin } from '../_helpers/virtual-modules'
-import { testDefine } from '../vitest.define'
+import { routeWarmupScriptStubPlugin } from '../_helpers/virtual-modules.ts'
+import { testDefine } from '../vitest.define.ts'
 
 export default defineConfig({
   plugins: [routeWarmupScriptStubPlugin()],
