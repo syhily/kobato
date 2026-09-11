@@ -157,14 +157,16 @@ rewrites the packages' own platform-specifier `require(...)` call sites
 to `nativeRequire(...)`, which resolves them against the flat dir plus
 embedded `natives-meta/*` metadata assets
 (`src/server/infra/native-require.ts`). jsdom (the server sanitize
-engine) is inlined the same way; its `computed-style.js` reads the
-default stylesheet from `__dirname` at module scope — a boot crash in the
-single-file ESM binary — so
-`scripts/sea/inline-jsdom-default-stylesheet.ts` (a Vite plugin,
-registered in both vite configs since jsdom reaches the SEA bundle via
-the prebuilt build/server graph) swaps that read for an inlined string
-literal. The call-site shape is pinned by
-`tests/unit/shared/contracts/jsdom-default-stylesheet.test.ts`.
+engine) and css-tree (jsdom's CSS parser) are inlined the same way, and
+both read static data files at runtime in ways the single-file ESM bundle
+cannot survive — jsdom's `computed-style.js` reads its default stylesheet
+from `__dirname` at module scope; css-tree's `data-patch` loads
+`../data/patch.json` through `createRequire(import.meta.url)` — so
+`scripts/sea/inline-package-data.ts` (a Vite plugin, registered in both
+vite configs since these packages reach the SEA bundle via the prebuilt
+build/server graph) swaps each read for an inlined literal. The call-site
+shapes are pinned by
+`tests/unit/shared/contracts/inline-package-data.test.ts`.
 
 - `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). The binary is
   deliberately NOT UPX-compressed — every ordering is a verified dead
