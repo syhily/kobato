@@ -22,7 +22,14 @@
  * the canvas box, the token bridge, and card interiors — sized in final px
  * (the old `zoom: 0.55` effective sizes). The comment surface mounts no
  * slash menu, so no card-menu chrome rules live here.
+ *
+ * The kobato `dark` variant is registered BEFORE the inkling import so the
+ * package's own `dark:` utilities compile with class-or-media semantics
+ * instead of Tailwind's default media-only variant (which fires under a
+ * dark OS even when the site is class-locked to light) — see
+ * ./dark-variant.css.
  */
+@import './dark-variant.css';
 @import '@/inkling/styles/index.css' layer(inkling);
 
 /* Comment canvas: a compact bordered input, not an article column. The

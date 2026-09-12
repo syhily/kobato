@@ -2,13 +2,20 @@
 
 ## Entry structure
 
-Six files, two bundles:
+Seven files, two bundles:
 
+- `dark-variant.css` — **the class-or-media `dark` variant, single-sourced**.
+  Imported (unlayered, before anything that triggers a utility compile) by
+  `tailwind.css` AND by the two inkling partials — the inkling package sheet
+  owns a separate `tailwindcss/utilities` compile that would otherwise fall
+  back to Tailwind's default media-only `dark` variant, whose rules fire
+  under a dark OS even when the site is class-locked to light. Pinned by
+  `tests/unit/contract/dark-variant.test.ts`.
 - `tailwind.css` — **shared token partial**, not a standalone entry. Holds
   every raw design token (`:root` / `.dark` / `prefers-color-scheme` / P3),
-  the full `@theme inline` bridge, `@custom-variant` blocks, `@layer base`
-  overrides, and rules both sides render (the hydration-injected code-block
-  chrome, APlayer icon sizing, the theme-wipe view transition). It has no
+  the full `@theme inline` bridge, the `sidebar` `@custom-variant` block,
+  `@layer base` overrides, and rules both sides render (the hydration-injected
+  code-block chrome, the theme-wipe view transition). It has no
   `@import 'tailwindcss'` and no `@source` — importing it directly from TSX
   produces nothing.
 - `typeset.css` — **vendored shadcn/typeset** (from
@@ -50,7 +57,9 @@ Six files, two bundles:
   music-library view transitions.
 - `inkling-editor.css` — **editor-canvas partial**, imported ONLY by
   `@/ui/admin/editor/PageBodyEditor` so it rides the editor route chunk (the
-  rest of admin stays inkling-free). Pulls `@/inkling/styles/index.css` (the
+  rest of admin stays inkling-free). Imports `dark-variant.css` FIRST (so the
+  package sheet's own utility compile uses the site's class-or-media `dark`
+  variant), then pulls `@/inkling/styles/index.css` (the
   `src/inkling` layer's source stylesheet — formerly the package's `style.css`
   dist artifact) into the `inkling` cascade layer (pinned below `utilities` by
   `admin.css`'s bare
@@ -69,8 +78,8 @@ Six files, two bundles:
 - `inkling-comment-editor.css` — **comment-canvas partial** (R12), imported
   ONLY by `@/ui/public/comments/CommentBodyEditor` (statically imported by
   the public comments island AND the admin dialogs, so it rides the route
-  module graph on both bundles — no lazy boundary). Same `inkling` layer
-  import (pinned by `public.css`'s /
+  module graph on both bundles — no lazy boundary). Same `dark-variant.css`
+  pre-import + `inkling` layer import (pinned by `public.css`'s /
   `admin.css`'s bare ordering statements) plus the `.kobato-comment-editor`
   host rules. NO ZOOM here (unlike the page editor): CSS zoom on a
   contenteditable breaks Chromium/WebKit IME composition painting.

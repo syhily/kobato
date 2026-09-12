@@ -223,7 +223,9 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   host's two partials (`src/styles/inkling-editor.css`, `src/styles/inkling-comment-editor.css`)
   into the `inkling` cascade layer, pinned below `utilities` by the bare `@layer` ordering
   statements in `admin.css` / `public.css` so host-card Tailwind utilities beat inkling's scoped
-  preflight. The theme-token parity lives in those partials' token bridge (`--inkling-accent-color`
+  preflight. Both partials import `src/styles/dark-variant.css` before the package sheet so its
+  `dark:` utilities compile with kobato's class-or-media variant instead of Tailwind's default
+  media-only one. The theme-token parity lives in those partials' token bridge (`--inkling-accent-color`
   ← `--brand`, `--font-sans` ← `--font-body`) — that bridge is what keeps the canvas on kobato's
   design tokens. The old `./core.css` split no longer exists.
 - The public markdown round-trip API (`src/inkling/markdown/round-trip.ts`) intentionally uses a

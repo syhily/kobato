@@ -12,17 +12,9 @@
  * imported after this partial.
  */
 
-/* Dark variant explicit class or system preference when no class is set */
-@custom-variant dark {
-  &:where(.dark, .dark *) {
-    @slot;
-  }
-  @media (prefers-color-scheme: dark) {
-    &:where(:root:not(.light, .dark), :root:not(.light, .dark) *) {
-      @slot;
-    }
-  }
-}
+/* Dark variant explicit class or system preference when no class is set —
+   single-sourced in ./dark-variant.css (shared with the inkling entries). */
+@import './dark-variant.css';
 
 /* Sidebar scoped variant — matches shadcn/ui sidebar data attribute */
 @custom-variant sidebar {
