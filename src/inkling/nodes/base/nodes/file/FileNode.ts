@@ -43,8 +43,6 @@ export type FileData = DecoratorNodeData<typeof fileProperties>
 
 export type SerializedFileNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof fileProperties>>
 
-export interface BaseFileNode extends DecoratorNodeValueMap<typeof fileProperties> {}
-
 export class BaseFileNode extends generateDecoratorNode({
   nodeType: 'file',
   properties: fileProperties,

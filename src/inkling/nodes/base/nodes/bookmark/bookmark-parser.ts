@@ -75,7 +75,7 @@ export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, un
 
             // Image is optional,
             // The element usually still exists with an additional has.mixtapeImage--empty class and has no background image
-            if (imgElement && imgElement.style.backgroundImage) {
+            if (imgElement?.style.backgroundImage) {
               const match = /url\(([^)]*?)\)/.exec(imgElement.style.backgroundImage)
               if (match?.[1]) {
                 thumbnail = match[1].replace(/^['"]|['"]$/g, '')

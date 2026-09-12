@@ -63,8 +63,6 @@ export type SerializedAudioNode = SerializedGeneratedDecoratorNode<DecoratorNode
 // uniform convention also covers the original collision that started it: the
 // DOM's global Web Audio `AudioNode` interface — declaration bundlers merge
 // the global into their collision scope and mis-rename both.
-export interface BaseAudioNode extends DecoratorNodeValueMap<typeof audioProperties> {}
-
 export class BaseAudioNode extends generateDecoratorNode({
   nodeType: 'audio',
   properties: audioProperties,

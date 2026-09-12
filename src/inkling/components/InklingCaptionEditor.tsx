@@ -64,7 +64,7 @@ function CaptionPlugin({ parentEditor }: { parentEditor: LexicalEditor }) {
       // beside the Enter hand-off it mirrors
       registerCaptionArrowHandoff(editor, parentEditor),
     )
-  }, [editor, setCaptionHasFocus, parentEditor, nodeKey])
+  }, [editor, setCaptionHasFocus, parentEditor])
 
   return null
 }

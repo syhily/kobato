@@ -35,8 +35,6 @@ export type ButtonData = DecoratorNodeData<typeof buttonProperties>
 
 export type SerializedButtonNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof buttonProperties>>
 
-export interface BaseButtonNode extends DecoratorNodeValueMap<typeof buttonProperties> {}
-
 export class BaseButtonNode extends generateDecoratorNode({
   nodeType: 'button',
   properties: buttonProperties,

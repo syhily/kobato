@@ -40,6 +40,13 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+// T is a handle-state record by contract; indexing it needs the record view
+// Object.keys can't give us — a guard, not a cast (the condition is
+// statically always true, so the fallback below is unreachable)
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 function isSameRecord(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
   const aKeys = Object.keys(a)
   const bKeys = Object.keys(b)
@@ -50,17 +57,21 @@ export function createComposerHandle<T extends object>(
   initialState: T,
   options?: ComposerHandleOptions<T>,
 ): ComposerHandle<T> {
-  const recordKeys = new Set<keyof T>(options?.recordKeys ?? [])
+  const recordKeys = new Set<PropertyKey>(options?.recordKeys ?? [])
   const store = createSnapshotStore<T>(initialState, {
-    changeGuard: (previous, next) =>
-      (Object.keys(next) as (keyof T)[]).some((key) => {
+    changeGuard: (previous, next) => {
+      if (!isObjectRecord(previous) || !isObjectRecord(next)) {
+        return previous !== next
+      }
+      return Object.keys(next).some((key) => {
         const before = previous[key]
         const after = next[key]
         if (recordKeys.has(key) && isPlainRecord(before) && isPlainRecord(after)) {
           return !isSameRecord(before, after)
         }
         return before !== after
-      }),
+      })
+    },
   })
   return {
     getState: store.getSnapshot,

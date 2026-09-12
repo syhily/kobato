@@ -144,11 +144,10 @@ export function createCardTransformer({
  */
 function $detachNestedEditorsForRoundTrip(node: LexicalNode): void {
   // the spec-declared `__<name>` fields exist on the node at runtime but are
-  // not reachable through the widened LexicalNode signature — the assertion
-  // is the honest bridge to the record view the loop below writes through
-  const target = node as unknown as Record<string, unknown>
+  // not reachable through the widened LexicalNode signature — Reflect.set
+  // writes through the dynamic key without an assertion
   getNestedEditorSpecs(node).forEach((spec) => {
-    target[`__${spec.name}`] = null
+    Reflect.set(node, `__${spec.name}`, null)
   })
 }
 
@@ -206,7 +205,9 @@ function galleryImages(value: unknown, field: string): GalleryImage[] {
   if (!Array.isArray(value)) {
     throw new TypeError(`card markdown transformer: expected '${field}' to be an array, got ${describeValue(value)}`)
   }
-  return value.map((image, index) => {
+  // Array.isArray narrows to any[]; the callback re-anchors each entry at
+  // unknown so the object guard below is a real narrowing, not an any read
+  return value.map((image: unknown, index) => {
     if (typeof image !== 'object' || image === null || Array.isArray(image)) {
       throw new TypeError(
         `card markdown transformer: expected '${field}[${index}]' to be an object, got ${describeValue(image)}`,
@@ -366,5 +367,7 @@ export const CARD_MARKDOWN_DECLARATIONS = CARD_WRAPPER_NODES.map((card) => {
         : card.nodeType === 'image'
           ? IMAGE_CARD_TRANSFORMER
           : undefined
-  return { ...card, markdownTransformer }
+  // Object.assign into a fresh object: the wrapper entries are shared
+  // registry state, so the projection stays copy-on-write without a spread
+  return Object.assign({}, card, { markdownTransformer })
 })

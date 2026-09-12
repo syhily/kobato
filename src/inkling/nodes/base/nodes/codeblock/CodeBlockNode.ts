@@ -27,8 +27,6 @@ export type SerializedCodeBlockNode = SerializedGeneratedDecoratorNode<
   DecoratorNodeValueMap<typeof codeBlockProperties>
 >
 
-export interface BaseCodeBlockNode extends DecoratorNodeValueMap<typeof codeBlockProperties> {}
-
 export class BaseCodeBlockNode extends generateDecoratorNode({
   nodeType: 'codeblock',
   properties: codeBlockProperties,

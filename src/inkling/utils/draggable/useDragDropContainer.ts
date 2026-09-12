@@ -62,7 +62,7 @@ export function useDragDropContainer({
     } else {
       container.disableDrag()
     }
-  }, [enabled, element, container])
+  }, [enabled, container])
 
   React.useEffect(() => {
     if (!element || !handler) {
@@ -71,17 +71,20 @@ export function useDragDropContainer({
 
     // stable wrappers read the latest callbacks through the ref, so the
     // registered container never holds stale render closures and callback
-    // identity never forces a re-registration
+    // identity never forces a re-registration. The selectors are the one
+    // exception: they are registration-time config, so they are read from
+    // the render scope and join the dependency array — a changed selector
+    // re-registers.
     const current = () => callbacksRef.current
     const registered = handler.registerContainer(element, {
       draggable: {
-        draggableSelector: current().draggable.draggableSelector,
+        draggableSelector: draggable.draggableSelector,
         isDragEnabled: current().draggable.isDragEnabled,
         getDraggableInfo: (draggableElement) => current().draggable.getDraggableInfo(draggableElement),
         createDragPreviewElement: (draggableInfo) => current().draggable.createDragPreviewElement?.(draggableInfo),
       },
       droppable: {
-        droppableSelector: current().droppable.droppableSelector,
+        droppableSelector: droppable.droppableSelector,
         getIndicatorPosition: (draggableInfo, droppableElem, position) =>
           current().droppable.getIndicatorPosition(draggableInfo, droppableElem, position),
         onDrop: (draggableInfo, resolution) => current().droppable.onDrop(draggableInfo, resolution),
@@ -108,6 +111,7 @@ export function useDragDropContainer({
       registered.destroy()
       containerRef.current = null
     }
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- reRegisterKey is a deliberate re-registration trigger (DOM re-scan, e.g. the gallery's images array); the effect body reads every callback through callbacksRef, so the rule cannot see a use for it
   }, [element, handler, draggable.draggableSelector, droppable.droppableSelector, reRegisterKey])
 
   return container

@@ -32,7 +32,8 @@ export interface EmojiSkin {
 }
 
 /** The emoji-mart search-result shape consumers rely on (SearchIndex.search
- * returns `any`; this is the boundary annotation). */
+ * returns `any`; the boundary validates against this before handing results
+ * out). */
 export interface EmojiSearchResult {
   id: string
   skins: EmojiSkin[]
@@ -66,10 +67,30 @@ const EMOTICON_SEARCH_ALIASES: Record<string, string> = {
   '-(': 'frown',
 }
 
-// emoji-mart's SearchIndex.search returns any — one annotated cast at the
-// boundary; every call site goes through this
+// emoji-mart's SearchIndex.search returns any — one runtime validation at
+// the boundary; every call site goes through this. Entries missing the shape
+// consumers rely on are dropped rather than breaking at insertion time.
+function isEmojiSearchResult(value: unknown): value is EmojiSearchResult {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    typeof value.id === 'string' &&
+    'skins' in value &&
+    Array.isArray(value.skins) &&
+    value.skins.every(
+      (skin: unknown) =>
+        typeof skin === 'object' && skin !== null && 'native' in skin && typeof skin.native === 'string',
+    )
+  )
+}
+
 async function searchEmojiIndex(query: string): Promise<EmojiSearchResult[]> {
-  return (await SearchIndex.search(query)) as EmojiSearchResult[]
+  const results: unknown = await SearchIndex.search(query)
+  if (!Array.isArray(results)) {
+    return []
+  }
+  return results.filter(isEmojiSearchResult)
 }
 
 // The typeahead menu's query policy.

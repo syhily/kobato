@@ -108,12 +108,16 @@ export function useMediaCardUpload<TNode>({
   useTriggerFileDialog({
     editor,
     nodeKey,
-    // bridge cast: the options boundary already verifies `guard` is a real
-    // predicate, but `TNode` can't be constrained to `TriggerFileDialogCardNode`
-    // — gallery/header guards narrow to node types without `triggerFileDialog`,
-    // and the cards' `triggerFileDialog?: boolean | undefined` property isn't
-    // assignable to the interface's write-only setter under strict mode
-    guard: guard as (node: unknown) => node is TriggerFileDialogCardNode,
+    // composed runtime narrowing instead of a cast: `TNode` can't be
+    // constrained to `TriggerFileDialogCardNode` — gallery/header guards
+    // narrow to node types without `triggerFileDialog`, and the cards'
+    // `triggerFileDialog?: boolean | undefined` property isn't assignable to
+    // the interface's write-only setter under strict mode. The probe matches
+    // the accessor the assembled card classes generate from the spec's
+    // `accessor: true` entry, which every card passing `triggerFileDialog`
+    // (image, audio, video, file, gallery) adopts.
+    guard: (node: unknown): node is TriggerFileDialogCardNode =>
+      typeof node === 'object' && node !== null && 'triggerFileDialog' in node && guard(node),
     fileInputRef,
     triggerFileDialog,
   })

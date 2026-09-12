@@ -23,11 +23,6 @@ import { DropIndicator } from '@/inkling/utils/draggable/drop-indicator'
 import { resolveHoverTransition } from '@/inkling/utils/draggable/hover-transitions'
 import { ScrollHandler, type ScrollHandlerOptions } from '@/inkling/utils/draggable/ScrollHandler'
 
-interface EventHandlerEntry {
-  handler: (e: Event) => void
-  options?: AddEventListenerOptions | boolean
-}
-
 export interface DraggableContainerHandle {
   enableDrag: () => void
   disableDrag: () => void
@@ -58,7 +53,7 @@ export class DragDropHandler {
   dropIndicator: DropIndicator
 
   _activeDrag: ActiveDrag | null = null
-  _eventHandlers: Record<string, EventHandlerEntry> = {}
+  _listenerDetach: Record<string, () => void> = {}
   _dragPreviewContainerElement: HTMLElement | null = null
   _rafUpdateDragPreviewElementPosition: () => void
   _dragStartSession: DragStartSession | null = null
@@ -554,18 +549,22 @@ export class DragDropHandler {
     method: (event: DocumentEventMap[K]) => void,
     options?: AddEventListenerOptions | boolean,
   ) {
-    if (!this._eventHandlers[e]) {
-      const handler = method.bind(this) as EventListener
-      this._eventHandlers[e] = { handler, options }
+    if (!this._listenerDetach[e]) {
+      const handler = method.bind(this)
       document.addEventListener(e, handler, options)
+      // removal matches the historical 2-arg form (no listener uses capture,
+      // so options are not needed to detach)
+      this._listenerDetach[e] = () => {
+        document.removeEventListener(e, handler)
+      }
     }
   }
 
-  _removeEventListener<K extends keyof DocumentEventMap>(e: K) {
-    const entry = this._eventHandlers[e]
-    if (entry) {
-      document.removeEventListener(e, entry.handler)
-      delete this._eventHandlers[e]
+  _removeEventListener(e: keyof DocumentEventMap) {
+    const detach = this._listenerDetach[e]
+    if (detach) {
+      detach()
+      delete this._listenerDetach[e]
     }
   }
 }

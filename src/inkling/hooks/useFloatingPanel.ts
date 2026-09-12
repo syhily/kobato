@@ -67,14 +67,12 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
 
   // transition-memory slots read by the wiring (viewport drift, wide-card
   // origin); cardWidth rides a ref so the wiring stays stable across width
-  // changes — only the transition effect re-fires
+  // changes — only the transition effect re-fires (and syncs the ref there,
+  // so the trigger dep is a real effect dependency)
   const previousViewport = useRef<PanelViewport>({ width: window.innerWidth, height: window.innerHeight })
   const previousCardWidth = useRef<string>(cardWidth)
   const previousCardOrigin = useRef<PanelPosition>({ x: 0, y: 0 })
   const cardWidthRef = useRef(cardWidth)
-  useLayoutEffect(() => {
-    cardWidthRef.current = cardWidth
-  }, [cardWidth])
 
   // the card that renders the panel is the positioning anchor — resolve its
   // element from the node key (CardContext) instead of querying global DOM
@@ -147,8 +145,10 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
   // during render
   const wiringRef = useRef<ReturnType<typeof createPanelDomWiring> | null>(null)
 
-  // mount: mark the panel draggable, then hand the DOM assembly the body
-  // listeners, drag session, and ResizeObservers
+  // mount: mark the panel draggable, hand the DOM assembly the body
+  // listeners, drag session, and ResizeObservers, then position the panel.
+  // Re-fires when the card anchor changes (resolveCardElement dep), which
+  // recreates the wiring and re-places the panel against the new anchor.
   useLayoutEffect(() => {
     const suppression = createPanelSuppression({ getElement: getPanelElement, stylesheetId })
     const wiring = createPanelDomWiring({
@@ -176,6 +176,7 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
     elem.classList.add('inkling-card-movable')
 
     wiring.start()
+    wiring.placeInitial(elem)
     return () => {
       wiring.destroy()
     }
@@ -192,17 +193,13 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
     isInteractiveElement,
   ])
 
-  // position on first render (and re-position if the card anchor changes)
-  useLayoutEffect(() => {
-    wiringRef.current?.placeInitial(ref.current)
-  }, [wiringRef, resolveCardElement])
-
   // account for wide cards using a transform so we need to adjust the origin
   // position. previousCardWidth starts at cardWidth so the first render never
   // shifts the origin. The transition policy (origin re-base + settle clamp)
   // lives in @/utils/floating-panel's resolveCardWidthTransition; this effect
   // only re-fires it when the committed width changes.
   useLayoutEffect(() => {
+    cardWidthRef.current = cardWidth
     wiringRef.current?.applyCardWidthTransition()
   }, [wiringRef, cardWidth])
 

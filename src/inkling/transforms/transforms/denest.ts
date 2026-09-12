@@ -117,20 +117,19 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
     parent = parent.getParentOrThrow()
   }
 
-  // reverse order because we can only insertAfter the parent node
+  // iterate in reverse because we can only insertAfter the parent node
   // meaning first child needs to be inserted last to maintain order.
-  tempParagraph
-    .getChildren()
-    .reverse()
-    .forEach((child) => {
-      // ensure we don't add list items directly into the root node
-      if ($isRootNode(parent.getParent()) && $isListItemNode(child)) {
-        $unwrapListItemForRootInsertion(child, parent)
-        return
-      }
+  const movedChildren = tempParagraph.getChildren()
+  for (let index = movedChildren.length - 1; index >= 0; index -= 1) {
+    const child = movedChildren[index]
+    // ensure we don't add list items directly into the root node
+    if ($isRootNode(parent.getParent()) && $isListItemNode(child)) {
+      $unwrapListItemForRootInsertion(child, parent)
+      continue
+    }
 
-      parent.insertAfter(child)
-    })
+    parent.insertAfter(child)
+  }
 
   // remove the original node - it's now empty
   node.remove()

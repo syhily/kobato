@@ -35,7 +35,7 @@ export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormPro
     if (isCommentEditorStateBlank(body)) {
       return
     }
-    editAction.mutate({ rid: String(comment.id), body })
+    editAction.mutate({ rid: comment.id, body })
   }
 
   return (

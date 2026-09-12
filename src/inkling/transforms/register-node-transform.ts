@@ -19,5 +19,7 @@ export function registerNodeTransformIfPresent<T extends LexicalNode>(
     return editor.registerNodeTransform(klass, transform)
   }
 
-  return () => {}
+  return () => {
+    // node class absent — nothing was registered, so nothing to teardown
+  }
 }

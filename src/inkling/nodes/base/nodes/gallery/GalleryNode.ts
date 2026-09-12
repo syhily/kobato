@@ -28,8 +28,6 @@ export type GalleryData = DecoratorNodeData<typeof galleryProperties>
 
 export type SerializedGalleryNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof galleryProperties>>
 
-export interface BaseGalleryNode extends DecoratorNodeValueMap<typeof galleryProperties> {}
-
 // canonical homes are gallery-rows.ts (the row-layout module); re-exported
 // here so the node shim, parser, and `@/inkling/nodes/base` importers keep working
 export { MAX_IMAGES, MAX_PER_ROW }

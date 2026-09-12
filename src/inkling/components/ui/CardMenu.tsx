@@ -258,7 +258,9 @@ export interface CardMenuProps {
 
 export const CardMenu = ({
   sections = [],
-  insert = () => {},
+  insert = () => {
+    /* noop default — read-only menu renders */
+  },
   selectedItemIndex = 0,
   scrollToSelectedItem = false,
   closeMenu,

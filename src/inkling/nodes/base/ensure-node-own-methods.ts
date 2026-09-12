@@ -33,10 +33,14 @@ export function ensureLexicalNodeOwnMethods(nodeClass: unknown) {
   }
 
   // Ensure required instance methods are own properties on the prototype
-  const proto: { exportJSON?: unknown } = nodeClass.prototype
-  if (typeof proto.exportJSON === 'function' && !Object.hasOwn(proto, 'exportJSON')) {
+  const proto: unknown = Reflect.get(nodeClass, 'prototype')
+  if (typeof proto !== 'object' || proto === null) {
+    return
+  }
+  const exportJSON: unknown = Reflect.get(proto, 'exportJSON')
+  if (typeof exportJSON === 'function' && !Object.hasOwn(proto, 'exportJSON')) {
     Object.defineProperty(proto, 'exportJSON', {
-      value: proto.exportJSON,
+      value: exportJSON,
       writable: true,
       configurable: true,
     })

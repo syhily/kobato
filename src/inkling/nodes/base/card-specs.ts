@@ -98,8 +98,12 @@ export interface NestedEditorValueCarrier<TEditor extends LexicalEditor | null> 
  */
 export function nullableNestedEditor<const TName extends string>(
   spec: Omit<NestedEditorSpec, 'name'> & { name: TName },
-): NestedEditorSpec & { name: TName } & NestedEditorValueCarrier<LexicalEditor | null> {
-  return spec as NestedEditorSpec & { name: TName } & NestedEditorValueCarrier<LexicalEditor | null>
+): NestedEditorSpec & { name: TName } & NestedEditorValueCarrier<LexicalEditor | null>
+// The brand is type-space only (the `declare`d symbol never exists at
+// runtime), so the implementation speaks the unbranded spec and the overload
+// above carries the branded fiction — no assertion in the body
+export function nullableNestedEditor(spec: NestedEditorSpec): NestedEditorSpec {
+  return spec
 }
 
 const NO_NESTED_EDITORS: readonly NestedEditorSpec[] = []
@@ -110,7 +114,11 @@ const NO_NESTED_EDITORS: readonly NestedEditorSpec[] = []
  * class (and spec-less subclasses) run no nested-editor behaviour.
  */
 export function getNestedEditorSpecs(node: LexicalNode): readonly NestedEditorSpec[] {
-  return (node.constructor as { nestedEditors?: readonly NestedEditorSpec[] }).nestedEditors ?? NO_NESTED_EDITORS
+  // node.constructor is typed Function; the optional-member binding (kept off
+  // the weak-type path by the shared `name` member) reads the adopted static
+  // without an assertion
+  const klass: { name: string; nestedEditors?: readonly NestedEditorSpec[] } = node.constructor
+  return klass.nestedEditors ?? NO_NESTED_EDITORS
 }
 
 /**
@@ -177,7 +185,9 @@ const NO_TRANSIENT_PROPS: readonly TransientPropSpec[] = []
  * class (and spec-less subclasses) run no transient-prop behaviour.
  */
 export function getTransientPropSpecs(node: LexicalNode): readonly TransientPropSpec[] {
-  return (node.constructor as { transientProps?: readonly TransientPropSpec[] }).transientProps ?? NO_TRANSIENT_PROPS
+  // same optional-member binding idiom as getNestedEditorSpecs above
+  const klass: { name: string; transientProps?: readonly TransientPropSpec[] } = node.constructor
+  return klass.transientProps ?? NO_TRANSIENT_PROPS
 }
 
 export function getTransientPropPrivateName(spec: TransientPropSpec): string {

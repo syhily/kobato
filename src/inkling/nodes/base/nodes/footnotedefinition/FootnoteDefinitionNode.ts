@@ -3,11 +3,7 @@ import type { LexicalEditor, LexicalNode } from 'lexical'
 import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
 import type { ExportDOMOptions } from '@/inkling/nodes/base/export-dom'
 
-import {
-  generateDecoratorNode,
-  type DecoratorNodeData,
-  type DecoratorNodeValueMap,
-} from '@/inkling/nodes/base/generate-decorator-node'
+import { generateDecoratorNode, type DecoratorNodeData } from '@/inkling/nodes/base/generate-decorator-node'
 import { parseFootnoteDefinitionSection } from '@/inkling/nodes/base/nodes/footnotedefinition/footnotedefinition-parser'
 import { renderFootnoteDefinitionNode } from '@/inkling/nodes/base/nodes/footnotedefinition/footnotedefinition-renderer'
 import { createRenderContext } from '@/inkling/nodes/base/render-context'
@@ -18,8 +14,6 @@ const footnoteDefinitionProperties = [
 ] as const satisfies readonly DecoratorNodeProperty[]
 
 export type FootnoteDefinitionData = DecoratorNodeData<typeof footnoteDefinitionProperties>
-
-export interface BaseFootnoteDefinitionNode extends DecoratorNodeValueMap<typeof footnoteDefinitionProperties> {}
 
 /**
  * The footnote definition (CONTEXT.md: footnote definition) — a menu-less

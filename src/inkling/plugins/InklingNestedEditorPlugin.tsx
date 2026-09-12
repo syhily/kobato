@@ -44,7 +44,7 @@ function InklingNestedEditorPlugin({
   // selectionchange events that interfere with the parent editor's selection.
   React.useLayoutEffect(() => {
     if (parentCardNodeKey !== undefined) {
-      editor.setEditable(!!isParentCardEditing)
+      editor.setEditable(isParentCardEditing)
     }
   }, [editor, isParentCardEditing, parentCardNodeKey])
 

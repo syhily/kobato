@@ -74,7 +74,7 @@ export interface DraggableInfo {
   // open discriminant: inkling's producers write 'card' (DragDropReorderPlugin)
   // or 'image' (gallery reorder/merge) and every consumer compares exactly
   // those literals; any other string is a host drag type consumers ignore
-  type?: 'card' | 'image' | (string & {})
+  type?: 'card' | 'image' | (string & Record<never, never>)
   cardName?: string
   // the card node's key, set by the card drag producer (DragDropReorderPlugin)
   // and read back on drop (image→gallery merge, reorder)
@@ -98,7 +98,9 @@ export interface DropResolution {
   insertIndex: number
 }
 
-const noop = () => {}
+const noop = () => {
+  // default for absent optional callbacks — the handler calls them unconditionally
+}
 
 export class DragDropContainer {
   element: HTMLElement

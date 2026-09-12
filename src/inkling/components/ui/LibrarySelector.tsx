@@ -112,7 +112,7 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
             </p>
           )}
 
-          {!!isLoading && !error && <Loader />}
+          {isLoading && !error && <Loader />}
 
           {!!error && (
             <div

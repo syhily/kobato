@@ -57,7 +57,7 @@ export function Input({
       // Cleanup
       return () => clearTimeout(timeoutId)
     }
-  }, [value])
+  }, [])
 
   return (
     <>

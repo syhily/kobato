@@ -52,10 +52,10 @@ function parseSnippetNodes(value: string): SerializedLexicalNode[] | null {
   } catch {
     return null
   }
-  if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as { nodes?: unknown }).nodes)) {
+  if (typeof parsed !== 'object' || parsed === null || !('nodes' in parsed) || !Array.isArray(parsed.nodes)) {
     return null
   }
-  const nodes: unknown[] = (parsed as { nodes: unknown[] }).nodes
+  const nodes: unknown[] = parsed.nodes
   if (!nodes.every(isSerializedNodeShape)) {
     return null
   }

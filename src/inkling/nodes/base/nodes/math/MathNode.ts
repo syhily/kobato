@@ -1,10 +1,6 @@
 import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
 
-import {
-  generateDecoratorNode,
-  type DecoratorNodeData,
-  type DecoratorNodeValueMap,
-} from '@/inkling/nodes/base/generate-decorator-node'
+import { generateDecoratorNode, type DecoratorNodeData } from '@/inkling/nodes/base/generate-decorator-node'
 import { renderMathNode } from '@/inkling/nodes/base/nodes/math/math-renderer'
 
 const mathProperties = [
@@ -18,8 +14,6 @@ const mathProperties = [
 ] as const satisfies readonly DecoratorNodeProperty[]
 
 export type MathData = DecoratorNodeData<typeof mathProperties>
-
-export interface BaseMathNode extends DecoratorNodeValueMap<typeof mathProperties> {}
 
 export class BaseMathNode extends generateDecoratorNode({
   nodeType: 'math',

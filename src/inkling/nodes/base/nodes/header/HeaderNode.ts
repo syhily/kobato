@@ -4,11 +4,7 @@ import { $canShowPlaceholderCurry } from '@lexical/text'
 
 import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
 
-import {
-  generateDecoratorNode,
-  type DecoratorNodeData,
-  type DecoratorNodeValueMap,
-} from '@/inkling/nodes/base/generate-decorator-node'
+import { generateDecoratorNode, type DecoratorNodeData } from '@/inkling/nodes/base/generate-decorator-node'
 import { parseHeaderNode } from '@/inkling/nodes/base/nodes/header/parsers/header-parser'
 import { renderHeaderNodeV2 } from '@/inkling/nodes/base/nodes/header/renderers/header-renderer'
 import { normalizeCardWidth, type CardWidth } from '@/inkling/nodes/base/utils/card-widths'
@@ -38,8 +34,6 @@ const headerProperties = [
 
 export type HeaderData = DecoratorNodeData<typeof headerProperties>
 
-export interface BaseHeaderNode extends DecoratorNodeValueMap<typeof headerProperties> {}
-
 /**
  * Header's layout→width mapping: a `split` layout renders at `full` width,
  * every other layout is itself the card width (or undefined when the layout
@@ -49,7 +43,7 @@ export interface BaseHeaderNode extends DecoratorNodeValueMap<typeof headerPrope
  * imports its declaration (no import cycle).
  */
 export const headerCardWidth = (node: LexicalNode): CardWidth | undefined => {
-  const layout = (node as BaseHeaderNode).layout
+  const layout = $isHeaderNode(node) ? node.layout : undefined
   return normalizeCardWidth(layout === 'split' ? 'full' : layout)
 }
 

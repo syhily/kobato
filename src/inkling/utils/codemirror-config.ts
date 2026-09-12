@@ -4,7 +4,7 @@ import { EditorView, keymap, lineNumbers } from '@codemirror/view'
 import { tags as t } from '@lezer/highlight'
 import { minimalSetup } from '@uiw/codemirror-extensions-basic-setup'
 
-const disableHistoryGroupingForTests = import.meta.env.VITE_TEST
+const disableHistoryGroupingForTests = Boolean(import.meta.env.VITE_TEST)
 
 // Static theme and highlight objects — hoisted to module scope to avoid
 // recreating them on every render. CodeMirror tracks extensions by reference

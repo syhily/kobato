@@ -88,7 +88,7 @@ function $registeredCardClass(nodeType: string): Klass<LexicalNode> | undefined 
  * both delegate here, so the fence shape can never fork again.
  */
 export function codeBlockFence(language: string, text: string): string {
-  return '```' + language + (text ? '\n' + text : '') + '\n' + '```'
+  return '```' + language + (text ? '\n' + text : '') + '\n```'
 }
 
 /**

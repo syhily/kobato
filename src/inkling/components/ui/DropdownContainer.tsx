@@ -30,7 +30,7 @@ export function DropdownContainer({
 
   const [placement, setPlacement] = React.useState<'top' | 'bottom'>('bottom')
 
-  const updatePlacement = () => {
+  const updatePlacement = React.useCallback(() => {
     const list = divRef.current
     const parent = list?.parentNode
     if (!list || !(parent instanceof HTMLElement)) {
@@ -47,11 +47,11 @@ export function DropdownContainer({
     } else {
       setPlacement('bottom')
     }
-  }
+  }, [])
 
   useLayoutEffect(() => {
     updatePlacement()
-  }, [])
+  }, [updatePlacement])
 
   // Add event listeners
   React.useEffect(() => {
@@ -68,7 +68,7 @@ export function DropdownContainer({
       window.removeEventListener('resize', handler)
       updatePlacementDebounced.cancel()
     }
-  }, [])
+  }, [updatePlacement])
 
   return (
     <ul

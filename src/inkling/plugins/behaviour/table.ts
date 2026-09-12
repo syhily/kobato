@@ -37,6 +37,12 @@ function isPositiveInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0
 }
 
+// the dataset is host-supplied command payload — a record guard is the
+// narrowing, not a cast
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 /**
  * Inserts an N×M empty table at the current selection, header row on unless
  * told otherwise. A $-function: it must run inside editor.update() — the
@@ -50,8 +56,7 @@ export function $insertTable(dataset: unknown): boolean {
     return false
   }
 
-  const payload: Record<string, unknown> =
-    typeof dataset === 'object' && dataset !== null ? (dataset as Record<string, unknown>) : {}
+  const payload: Record<string, unknown> = isUnknownRecord(dataset) ? dataset : {}
   const rows = isPositiveInteger(payload.rows) ? payload.rows : DEFAULT_TABLE_ROWS
   const columns = isPositiveInteger(payload.columns) ? payload.columns : DEFAULT_TABLE_COLUMNS
   const includeHeaderRow = typeof payload.includeHeaderRow === 'boolean' ? payload.includeHeaderRow : true

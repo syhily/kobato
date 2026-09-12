@@ -1,5 +1,5 @@
 import { act, render } from '@testing-library/react'
-import { $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
+import { $getRoot, type LexicalEditor, type LexicalNode, type NodeKey } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { mockComposerContext } from '#/inkling/utils/composer-context'
@@ -14,7 +14,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-function Harness<TNode>({ nodeKey, guard }: { nodeKey: NodeKey; guard: (node: unknown) => node is TNode }) {
+function Harness({ nodeKey, guard }: { nodeKey: NodeKey; guard: (node: unknown) => node is LexicalNode }) {
   const { fileInputRef } = useMediaCardUpload({
     kind: 'image',
     nodeKey,

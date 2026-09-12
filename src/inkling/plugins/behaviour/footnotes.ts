@@ -360,11 +360,15 @@ export function publishFootnoteMaps(editor: LexicalEditor, handle: FootnoteHandl
  */
 export function registerFootnotes(editor: LexicalEditor, handle: FootnoteHandle): () => void {
   if (isNestedEditor(editor)) {
-    return () => {}
+    return () => {
+      /* noop — nested editors never register (insertion is top-level only) */
+    }
   }
   const registeredTypes = new Set([...getRegisteredNodeMap(editor).values()].map(({ klass }) => klass.getType()))
   if (!registeredTypes.has('footnote-ref') || !registeredTypes.has('footnotedefinition')) {
-    return () => {}
+    return () => {
+      /* noop — the footnote node pair is not registered */
+    }
   }
 
   const scanState: FootnoteScanState = { lastSignature: undefined }

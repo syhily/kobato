@@ -46,7 +46,13 @@ export function parseFootnoteDefinitionSection(
             // back-reference anchors (markdown-it's `a.footnote-backref`
             // inside the paragraph, inkling's own trailing
             // `a[data-footnote-backref]`).
-            const content = li.cloneNode(true) as HTMLElement
+            const content = li.cloneNode(true)
+            // Unreachable in practice (the clone of an element is an
+            // element) — lib.dom types cloneNode as Node, so narrow
+            // instead of asserting.
+            if (!isElementNode(content)) {
+              return
+            }
             content
               .querySelectorAll('a[data-footnote-backref], a.footnote-backref')
               .forEach((anchor) => anchor.remove())
@@ -60,4 +66,10 @@ export function parseFootnoteDefinitionSection(
       }
     },
   }
+}
+
+// nodeType, not instanceof: the source document may be another jsdom
+// realm's, where instanceof fails
+function isElementNode(node: Node): node is Element {
+  return node.nodeType === 1
 }

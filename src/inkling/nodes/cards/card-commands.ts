@@ -104,7 +104,7 @@ export const INSERT_GALLERY_COMMAND = createCommand<GalleryNodeDataset>()
 export type HeaderNodeDataset = HeaderData & CardSpecNestedEditorDataset<typeof headerNestedEditors>
 export const INSERT_HEADER_COMMAND = createCommand<HeaderNodeDataset>()
 
-export const INSERT_HORIZONTAL_RULE_COMMAND = createCommand<void>()
+export const INSERT_HORIZONTAL_RULE_COMMAND = createCommand<undefined>()
 
 export type HtmlNodeDataset = HtmlData
 export const INSERT_HTML_COMMAND = createCommand<HtmlNodeDataset>()

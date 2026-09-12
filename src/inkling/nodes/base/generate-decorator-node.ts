@@ -359,6 +359,11 @@ export function generateDecoratorNode<
      * to detect when a property has been changed
      */
     static getPropertyDefaults() {
+      // The reduce writes every declared property's default under its spec
+      // name, so the record IS the mapped value map at runtime; TS cannot
+      // relate dynamically-written keys to DecoratorNodeValueMap<Props>, and
+      // no runtime check can prove the mapped type of a generic.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- spec-derived mapped type; the reduce builds exactly its keys
       return internalProps.reduce((obj: Record<string, unknown>, prop) => {
         obj[prop.name] = prop.default
         return obj
@@ -468,7 +473,9 @@ export function generateDecoratorNode<
       // constructor does guard the nested-editor slots (real LexicalEditor
       // instance, string HTML), where a wrong-typed value would crash setup
       // immediately instead of failing later.
-      return new this(data as Partial<DecoratorNodeValueMap<Props>>)
+      // constructor accepts the plain record directly (the import-conversion
+      // boundary constructs from the same shape), so no assertion is needed
+      return new this(data)
     }
 
     /**
@@ -489,7 +496,9 @@ export function generateDecoratorNode<
       }
       // the body builds the dataset-serialized shape (TSerialized's default);
       // remapping subclasses override exportJSON wholesale — the cast is the
-      // bridge, like the class-to-interface one at the return site
+      // bridge, like the class-to-interface one at the return site. TS cannot
+      // prove a generic TSerialized from the built dataset.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the dataset is TSerialized's default shape; remapping subclasses override wholesale
       return this.serializeNestedEditorHtml(dataset) as unknown as TSerialized
     }
 
@@ -504,8 +513,11 @@ export function generateDecoratorNode<
     serializeNestedEditorHtml<T extends Record<string, unknown>>(json: T): T {
       const target = json as Record<string, unknown>
       getNestedEditorSpecs(this).forEach((spec) => {
-        const editor = this[`__${spec.name}`] as LexicalEditor | null | undefined
-        if (editor) {
+        // the field is unknown through the class's dynamic index signature;
+        // the constructor guarantees a real LexicalEditor (the round-trip
+        // detach nulls it), so narrow instead of asserting
+        const editor: unknown = this[`__${spec.name}`]
+        if (isLexicalEditor(editor)) {
           editor.getEditorState().read(() => {
             const html = $generateHtmlFromNodes(editor, null)
             target[spec.serializedKey] = cleanBasicHtml(html, spec.cleanBasicHtml)
@@ -526,8 +538,10 @@ export function generateDecoratorNode<
       // The class's dynamic-dataset index signature makes `this` unprovable
       // as the instance type (see the return-cast note below), but unlike the
       // old inferred TRenderNode the asserted shape is now TRUE of the
-      // runtime object: the dataset keys at their widened types.
+      // runtime object: the dataset keys at their widened types. No runtime
+      // check can prove a generic instance shape.
       return defaultRenderFn(
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the generated class supplies every instance member at runtime; TS cannot see past the index signature
         this as unknown as GeneratedDecoratorNodeInstance<GeneratedDataset, TOutput, TSerialized>,
         context,
       )
@@ -634,6 +648,12 @@ export function generateDecoratorNode<
     })
   })
 
+  // The class-to-interface bridge documented on GeneratedDecoratorNodeBase:
+  // the function-local class supplies every declared member at runtime, but
+  // its spec-driven index signature and generic dataset members are not
+  // provably the interface shape — no runtime check can prove a generic
+  // class's interface either.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- class-factory boundary; the generated class is the interface at runtime
   return GeneratedDecoratorNode as unknown as GeneratedDecoratorNodeClass<
     DecoratorNodeValueMap<Props>,
     TOutput,

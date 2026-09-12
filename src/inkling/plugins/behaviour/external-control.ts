@@ -22,7 +22,12 @@ export function focusEditorAt(
   editor: LexicalEditor,
   { position = 'bottom' }: { position?: 'top' | 'bottom' } = {},
 ): void {
-  editor.focus(() => {}, { defaultSelection: position === 'top' ? 'rootStart' : undefined })
+  editor.focus(
+    () => {
+      /* focus only — the selection repair below owns the decorator-node dance */
+    },
+    { defaultSelection: position === 'top' ? 'rootStart' : undefined },
+  )
 
   if (position === 'top') {
     editor.update(() => {

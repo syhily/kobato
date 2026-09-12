@@ -18,11 +18,6 @@ interface ActiveDragOptions {
   listeners: ActiveDragListeners
 }
 
-interface ListenerEntry {
-  type: string
-  handler: EventListener
-}
-
 // Everything a single in-flight drag owns, created in
 // DragDropHandler._initiateDrag and disposed in _resetDrag. Per-drag concerns
 // live here as fields with disposal in dispose() — construction/destruction
@@ -42,7 +37,7 @@ export class ActiveDrag {
   // it dies with the ActiveDrag it rides on
   dropResolution: DropResolution | null = null
 
-  private listenerEntries: ListenerEntry[] = []
+  private detachListeners: (() => void)[] = []
 
   constructor({ draggableInfo, listeners }: ActiveDragOptions) {
     this.draggableInfo = draggableInfo
@@ -53,12 +48,10 @@ export class ActiveDrag {
   }
 
   dispose() {
-    // removal matches the handler's historical 2-arg form (no listener uses
-    // capture, so options are not needed to detach)
-    for (const { type, handler } of this.listenerEntries) {
-      document.removeEventListener(type, handler)
+    for (const detach of this.detachListeners) {
+      detach()
     }
-    this.listenerEntries = []
+    this.detachListeners = []
 
     if (this.dragPreviewInfo) {
       this.dragPreviewInfo.dispose?.()
@@ -72,8 +65,11 @@ export class ActiveDrag {
     handler: (event: DocumentEventMap[K]) => void,
     options?: AddEventListenerOptions,
   ) {
-    const bound = handler as EventListener
-    document.addEventListener(type, bound, options)
-    this.listenerEntries.push({ type, handler: bound })
+    document.addEventListener(type, handler, options)
+    // removal matches the handler's historical 2-arg form (no listener uses
+    // capture, so options are not needed to detach)
+    this.detachListeners.push(() => {
+      document.removeEventListener(type, handler)
+    })
   }
 }

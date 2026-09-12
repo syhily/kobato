@@ -67,8 +67,6 @@ export type ImageData = DecoratorNodeData<typeof imageProperties>
 
 export type SerializedImageNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof imageProperties>>
 
-export interface BaseImageNode extends DecoratorNodeValueMap<typeof imageProperties> {}
-
 export class BaseImageNode extends generateDecoratorNode({
   nodeType: 'image',
   properties: imageProperties,

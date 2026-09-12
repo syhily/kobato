@@ -660,11 +660,12 @@ export async function galleryUploadIntent({
 
     previews.release(image.previewSrc)
 
-    return {
-      ...image,
+    // Object.assign, not spread: the overlay images are shared state, so the
+    // merge must stay copy-on-write without allocating through a spread
+    return Object.assign({}, image, {
       src: result.url,
       previewSrc: undefined,
-    }
+    })
   })
 
   // merge the results into the rendered list and write the node

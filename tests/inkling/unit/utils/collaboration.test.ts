@@ -6,7 +6,7 @@ import { Doc } from 'yjs'
 import { adaptWebsocketProvider, createWebsocketProviderFactory } from '@/inkling/utils/services/collaboration'
 
 type FakeProvider = {
-  awareness: { fakeAwareness: true }
+  awareness: { fakeAwareness: true } & Record<string, unknown>
   connect: ReturnType<typeof vi.fn>
   disconnect: ReturnType<typeof vi.fn>
   on: (type: string, callback: (event: unknown) => void) => void
@@ -16,7 +16,17 @@ type FakeProvider = {
 function createFakeWebsocketProvider(): FakeProvider {
   const handlers = new Map<string, Set<(event: unknown) => void>>()
   return {
-    awareness: { fakeAwareness: true },
+    // adaptWebsocketProvider runtime-guards the six ProviderAwareness
+    // members before passing awareness through, so the fake carries them
+    awareness: {
+      fakeAwareness: true,
+      getLocalState: () => null,
+      getStates: () => new Map(),
+      off: () => undefined,
+      on: () => undefined,
+      setLocalState: () => undefined,
+      setLocalStateField: () => undefined,
+    },
     connect: vi.fn(),
     disconnect: vi.fn(),
     on: (type, callback) => {

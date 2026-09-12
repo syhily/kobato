@@ -8,7 +8,13 @@ import { transientInitialFileProp, transientTriggerFileDialogProp } from '@/inkl
 import { BaseImageNode } from '@/inkling/nodes/base/nodes/image/ImageNode'
 import { decorateCardWidth } from '@/inkling/nodes/base/utils/card-widths'
 import { captionEditorSpec } from '@/inkling/nodes/cards/caption-editor-spec'
-import { fnOr, strOr } from '@/inkling/utils/value-guards'
+import { strOr } from '@/inkling/utils/value-guards'
+
+// the selector overlay arrives through the construction dataset as a
+// component value — `typeof === 'function'` is the entire runtime check;
+// the component signature is the producer's contract (InklingSelectorPlugin)
+const isSelectorComponent = (value: unknown): value is ComponentType<{ nodeKey: NodeKey }> =>
+  typeof value === 'function'
 
 // `as const` keeps the literal `name`s and value types on the declaration's
 // type — the `__*` field map derives both from them (CardSpecFieldMap)
@@ -34,8 +40,10 @@ export const transientProps = [
   // the image while it is open — client-side only, never serialized
   {
     name: 'selector',
-    initial: (dataset): ComponentType<{ nodeKey: NodeKey }> | undefined =>
-      fnOr<ComponentType<{ nodeKey: NodeKey }>>(dataset.selector),
+    initial: (dataset): ComponentType<{ nodeKey: NodeKey }> | undefined => {
+      const { selector } = dataset
+      return isSelectorComponent(selector) ? selector : undefined
+    },
   },
   {
     name: 'isImageHidden',

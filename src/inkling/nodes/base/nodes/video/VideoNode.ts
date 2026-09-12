@@ -98,8 +98,6 @@ export type VideoData = DecoratorNodeData<typeof videoProperties>
 
 export type SerializedVideoNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof videoProperties>>
 
-export interface BaseVideoNode extends DecoratorNodeValueMap<typeof videoProperties> {}
-
 export class BaseVideoNode extends generateDecoratorNode({
   nodeType: 'video',
   properties: videoProperties,

@@ -25,10 +25,12 @@ export const TitleTextBox = React.forwardRef<TitleTextBoxRef, TitleTextBoxProps>
     }))
 
     React.useEffect(() => {
-      if (titleEl.current) {
-        titleEl.current.style.height = '58px'
-        titleEl.current.style.height = titleEl.current.scrollHeight + 'px'
+      const el = titleEl.current
+      if (!el || el.value !== title) {
+        return
       }
+      el.style.height = '58px'
+      el.style.height = el.scrollHeight + 'px'
     }, [title])
 
     const handleTitleInput = (e: ChangeEvent<HTMLTextAreaElement>) => {

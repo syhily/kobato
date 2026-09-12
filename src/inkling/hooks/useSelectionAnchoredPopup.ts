@@ -109,6 +109,10 @@ export function usePopupRepositionSubscriptions(
   // late-mounted popup (its ref goes null → element on the render that mounts
   // it) re-runs the subscription effect and re-attaches the MutationObserver.
   const [observedElement, setObservedElement] = React.useState<HTMLElement | null>(null)
+  // Runs after EVERY commit by design: the guarded setState terminates, and
+  // any dependency list would miss the ref's null → element transition on the
+  // render that mounts the popup, leaving the MutationObserver unattached.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     const element = observeRef?.current ?? null
     if (element !== observedElement) {

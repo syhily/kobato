@@ -9,7 +9,7 @@ export function html(partials: TemplateStringsArray, ...params: unknown[]) {
   for (let i = 0; i < partials.length; i++) {
     output += partials[i]
     if (i < partials.length - 1) {
-      output += params[i]
+      output += params[i] as string
     }
   }
 
