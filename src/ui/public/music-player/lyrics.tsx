@@ -67,7 +67,22 @@ export function LyricsPanel({ lrc, currentTime, onSeek }: LyricsPanelProps) {
       return
     }
     const active = container.children[currentIndex]
-    active?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (!active) {
+      return
+    }
+    // Scroll ONLY the lyrics container: scrollIntoView would walk every
+    // scrollable ancestor and yank the page scroll back to the player.
+    const top =
+      active.getBoundingClientRect().top -
+      container.getBoundingClientRect().top +
+      container.scrollTop -
+      container.clientHeight / 2 +
+      active.clientHeight / 2
+    if (typeof container.scrollTo === 'function') {
+      container.scrollTo({ top, behavior: 'smooth' })
+    } else {
+      container.scrollTop = top
+    }
   }, [currentIndex])
 
   if (lines.length === 0) {
