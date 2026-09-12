@@ -11,6 +11,11 @@ import DemoApp from './DemoApp'
 import HtmlOutputDemo from './HtmlOutputDemo'
 import RestrictedContentDemo from './RestrictedContentDemo'
 
+// Lazy so the public design-system stylesheet (`@/styles/public.css`,
+// imported by the demo page) only loads on this route and never disturbs the
+// editor playgrounds.
+const MusicPlayerDemo = React.lazy(() => import('./MusicPlayerDemo'))
+
 const rootElement = document.getElementById('root')
 if (!rootElement) {
   throw new Error('Root element not found')
@@ -24,6 +29,14 @@ ReactDOM.createRoot(rootElement).render(
         <Route element={<DesignSandbox />} path="/designsandbox" />
         <Route element={<RestrictedContentDemo />} path="/contentrestricted" />
         <Route element={<HtmlOutputDemo />} path="/html-output" />
+        <Route
+          element={
+            <React.Suspense fallback={null}>
+              <MusicPlayerDemo />
+            </React.Suspense>
+          }
+          path="/music-player"
+        />
         <Route element={<DemoApp />} path="/" />
         <Route element={<DemoApp editorType="basic" />} path="/basic" />
         <Route element={<DemoApp editorType="minimal" />} path="/minimal" />

@@ -43,7 +43,7 @@ Six files, two bundles:
 - `admin.css` — **admin entry**, imported by `routes/{admin,auth,editor}/layout.tsx`.
   Same tailwindcss import + shared partial, but its `@source` scope covers
   admin-rendered dirs (`routes/{admin,auth,editor}`, `ui/admin`, the shared
-  `ui/*` dirs, and the `ui/public` subdirs admin reuses — aplayer, chrome,
+  `ui/*` dirs, and the `ui/public` subdirs admin reuses — music-player, chrome,
   comment editor, widgets, Search — plus `client/editor` for the inkling host
   cards and `shared/lexical/cards` for their chrome constants). Admin-only
   rules live here: medium-zoom z-45 stacking, `scrollbar-thin`, the

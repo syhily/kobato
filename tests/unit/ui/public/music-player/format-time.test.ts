@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatAudioDuration } from '@/ui/public/aplayer/utils/format-duration'
+import { formatAudioDuration } from '@/ui/public/music-player/format-time'
 
-describe('ui/public/aplayer/utils/format-duration', () => {
+describe('ui/public/music-player/format-time', () => {
   it('returns --:-- for undefined', () => {
     expect(formatAudioDuration(undefined)).toBe('--:--')
   })

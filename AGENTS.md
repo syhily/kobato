@@ -328,10 +328,12 @@ These patterns are banned:
   streamed (resolved) markup and the whole tree mismatches (React error
   #418). Use the hydration-safe `useSyncExternalStore` gate
   (`LazyMotionConfig` in `src/ui/components/lazy-motion.tsx` is the
-  reference), or import eagerly. Same rule for leaf lazy boundaries whose
-  fallback is not byte-identical to the real render (`MusicPlayer`'s APlayer
-  is a known latent instance; fix it the same way before lazy-wrapping more
-  interactive chrome).
+  reference), or import eagerly. The same isomorphism rule applies to the
+  hydration-enhancement mount points in the projected `body_html`: the static
+  fallback inside a mount point must mirror the enhanced component's initial
+  render (the music-player card's `musicPlayerFallbackHtml` ⇔
+  `MusicPlayerCard` paused state is the reference, parity-pinned by
+  `tests/unit/ui/public/music-player/music-player.test.tsx`).
 
 `src/assets/scripts` is intentionally absent. All interactivity lives in
 React hooks/components under `src/client/` and `src/ui/`.

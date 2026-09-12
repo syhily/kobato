@@ -9,7 +9,8 @@
 // Full-fidelity markup mirrors the retired PT public renderer (R13 deleted
 // `src/ui/pt/`): the wrapper div plus the `.aplayer`
 // mount point — carried as data attributes (`data-id` + the meta snapshot)
-// so R13's hydration-enhancement script builds the APlayer without a
+// so the hydration-enhancement hook (`useMusicPlayers`) builds the
+// MusicPlayerCard without a
 // server round-trip — plus a static fallback card inside the mount point so
 // the no-JS render shows the song instead of an empty box. The feed variant
 // reproduces the retired PT rssMode figure (cover/audio absolutized against
@@ -39,15 +40,24 @@ export const MUSIC_PLAYER_CARD_PROPERTIES = [
   { name: 'lyric', default: '' },
 ] as const satisfies readonly DecoratorNodeProperty[]
 
-/** Classes shared by the exportDOM markup and the decorate chrome. */
+/** Classes shared by the exportDOM markup and the decorate chrome. The
+ * `fallback*` set mirrors the `MusicPlayerCard` paused initial render
+ * (`@/ui/public/music-player/music-player`) so the hydration swap does not
+ * shift layout — pinned by the snap/parity tests. */
 export const MUSIC_PLAYER_CARD_CLASSES = {
   wrapper: 'mt-5 mb-[1.375rem] max-w-[21.875rem] max-xl:mx-auto max-md:mx-0 max-md:mt-0 max-md:mb-5 max-md:max-w-full',
-  fallback: 'flex items-center gap-3 rounded-md border border-border p-3',
-  fallbackCover: 'size-11 shrink-0 rounded object-cover',
-  fallbackGlyph: 'flex size-11 shrink-0 items-center justify-center rounded bg-ink-3/10',
-  fallbackMeta: 'min-w-0',
-  fallbackName: 'truncate text-sm font-medium text-ink',
+  fallback: 'overflow-hidden rounded-md border border-line-muted bg-canvas',
+  fallbackBody: 'flex items-center gap-3 p-3',
+  fallbackCover: 'size-12 shrink-0 rounded-md object-cover',
+  fallbackGlyph: 'flex size-12 shrink-0 items-center justify-center rounded-md bg-surface-dim text-lg',
+  fallbackMeta: 'min-w-0 flex-1',
+  fallbackName: 'truncate text-sm font-medium text-ink-1',
   fallbackArtist: 'truncate text-xs text-ink-3',
+  fallbackProgress: 'flex items-center gap-2 px-3 pb-1 text-xs text-ink-4 tabular-nums',
+  fallbackTime: 'w-9 shrink-0',
+  fallbackTimeTotal: 'w-9 shrink-0 text-right',
+  fallbackBar: 'flex flex-1 items-center py-1.5',
+  fallbackBarTrack: 'h-1 w-full rounded-full bg-surface-dim',
 } as const
 
 /** The meta view both render states consume. All fields default to ''. */
@@ -80,17 +90,22 @@ export function hasMusicPlayerMeta(meta: MusicPlayerCardMeta): boolean {
 
 /**
  * The static fallback card markup (inside the `.aplayer` mount point,
- * replaced by the hydrated APlayer; the decorate chrome renders the same
- * structure from these constants). `escape` is the caller's text escaper —
- * the server renderer passes `context.escapeText`, the React side relies on
- * JSX escaping and never calls this.
+ * replaced by the hydrated `MusicPlayerCard`; the decorate chrome renders the
+ * same structure from these constants). It mirrors the player's paused
+ * initial render — cover/glyph + meta + an inert progress row (`0:00` /
+ * `--:--` + empty track) — so the hydration swap does not shift layout.
+ * `escape` is the caller's text escaper — the server renderer passes
+ * `context.escapeText`, the React side relies on JSX escaping and never
+ * calls this.
  */
 export function musicPlayerFallbackHtml(meta: MusicPlayerCardMeta, escape: (value: string) => string): string {
   const cover =
     meta.cover === ''
       ? `<span class="${MUSIC_PLAYER_CARD_CLASSES.fallbackGlyph}" aria-hidden="true">🎵</span>`
       : `<img class="${MUSIC_PLAYER_CARD_CLASSES.fallbackCover}" src="${escape(meta.cover)}" alt="${escape(meta.name)}" />`
-  return `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallback}" data-music-player-fallback="">${cover}<div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackMeta}"><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackName}">${escape(meta.name)}</div><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackArtist}">${escape(meta.artist)}</div></div></div>`
+  const body = `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackBody}">${cover}<div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackMeta}"><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackName}">${escape(meta.name)}</div><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackArtist}">${escape(meta.artist)}</div></div></div>`
+  const progress = `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackProgress}"><span class="${MUSIC_PLAYER_CARD_CLASSES.fallbackTime}">0:00</span><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackBar}"><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackBarTrack}"></div></div><span class="${MUSIC_PLAYER_CARD_CLASSES.fallbackTimeTotal}">--:--</span></div>`
+  return `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallback}" data-music-player-fallback="">${body}${progress}</div>`
 }
 
 /** The exportDOM render (both variants). */

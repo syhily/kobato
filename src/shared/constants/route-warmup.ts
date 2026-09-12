@@ -10,7 +10,7 @@ export const WARMUP_GLOBAL_EXCLUDED_PATTERNS = [
   '^canvas-', // @napi-rs/canvas native library chunks
   '^ImageEditorCanvas-', // lazy image editor dialog
   '^qrcode', // qrcode.react dynamic chunk
-  '^player-', // lazy audio player (aplayer)
+  '^music-player-', // lazy audio player (music-player card)
 ]
 
 // Shared shape of the React Router client manifest that the route-warmup

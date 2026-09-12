@@ -14,7 +14,7 @@ import { JSDOM } from 'jsdom'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { BaseMusicPlayerNode, MusicPlayerCardView, musicPlayerCard } from '@/client/editor/cards/music-player'
+import { BaseMusicPlayerNode, MusicPlayerCardComponent, musicPlayerCard } from '@/client/editor/cards/music-player'
 import { BaseSolutionNode, SolutionCardView, solutionCard } from '@/client/editor/cards/solution'
 import {
   BaseTwoColumnNode,
@@ -165,18 +165,31 @@ describe('host card parity — music-player', () => {
     lyric: 'la-la',
   }
 
-  it('renders the same preview markup on the canvas and in the export fallback', () => {
-    const canvas = renderToStaticMarkup(<MusicPlayerCardView meta={META} />)
-    const exported = `<div class="${MUSIC_PLAYER_CARD_CLASSES.wrapper}">${musicPlayerFallbackHtml(META, escapeText)}</div>`
-    expect(normalized(canvas)).toBe(normalized(exported))
+  it('renders the playable player on the canvas for a resolved card', () => {
+    const canvas = renderToStaticMarkup(<MusicPlayerCardComponent meta={META} pickTarget={null as never} />)
+    expect(canvas).toContain('Song')
+    expect(canvas).toContain('Artist')
+    expect(canvas).toContain('/storage/music/cover.png')
+    expect(canvas).toContain('aria-label="播放"')
+    expect(canvas).toContain('0:00')
+    expect(canvas).toContain('--:--')
   })
 
-  it('renders the glyph placeholder for a missing cover on both states', () => {
-    const meta = { ...META, cover: '' }
-    const canvas = renderToStaticMarkup(<MusicPlayerCardView meta={meta} />)
-    const exported = `<div class="${MUSIC_PLAYER_CARD_CLASSES.wrapper}">${musicPlayerFallbackHtml(meta, escapeText)}</div>`
-    expect(normalized(canvas)).toBe(normalized(exported))
-    expect(canvas).toContain(MUSIC_PLAYER_CARD_CLASSES.fallbackGlyph)
+  it('renders the pick placeholder on the canvas for an unresolved card', () => {
+    const meta: MusicPlayerCardMeta = { playerId: '', name: '', artist: '', cover: '', audioUrl: '', lyric: '' }
+    const canvas = renderToStaticMarkup(<MusicPlayerCardComponent meta={meta} pickTarget={null as never} />)
+    expect(canvas).toContain('音乐播放器')
+    expect(canvas).not.toContain('aria-label="播放"')
+  })
+
+  it('keeps the export fallback aligned with the player paused state', () => {
+    // The byte-level parity lives in tests/unit/ui/public/music-player —
+    // here we only pin that the export fallback still ships the shared
+    // structure the hydration hook replaces.
+    const exported = musicPlayerFallbackHtml(META, escapeText)
+    expect(exported).toContain(MUSIC_PLAYER_CARD_CLASSES.fallbackBody)
+    expect(exported).toContain(MUSIC_PLAYER_CARD_CLASSES.fallbackProgress)
+    expect(exported).toContain('data-music-player-fallback')
   })
 
   it('exports the aplayer mount point with the meta snapshot and degrades for the feed', () => {

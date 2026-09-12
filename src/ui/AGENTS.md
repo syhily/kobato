@@ -11,7 +11,9 @@ parent.
   (`tailwind.css`) covers public + admin.
 - **`ui/public/`** — `chrome/`, `post/`, `comments/` (thread state split across four contexts in
   `comments-context.ts` — Tree / Identity / ReplySlot / Actions — so leaf rows subscribe to slices),
-  `friends/`, `widgets/`, `aplayer/`, plus single-file leaves (`Search`, `Sidebar`, `LikeActions`).
+  `friends/`, `widgets/`, `music-player/` (the MusicPlayerCard: cover + rAF-driven progress/volume
+  scrub bars + synced LRC lyrics panel, hydrated onto `.aplayer[data-*]` mount points by
+  `useMusicPlayers`), plus single-file leaves (`Search`, `Sidebar`, `LikeActions`).
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`, `categories`, `comments`, `editor`,
   `editor-shell`, `editor-shared`, `fonts`, `friends`, `images`, `library`, `musics`, `my`, `pages`,
   `posts`, `sessions`, `settings`, `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).

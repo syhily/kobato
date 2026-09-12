@@ -27,10 +27,11 @@
 @source '../ui/components';
 @source '../ui/icons';
 @source '../ui/lib';
-/* Admin surfaces reuse public building blocks: aplayer (music previews),
-   chrome (root error views), the comment editor (top-level files only —
-   comment-item/ is public-only), popups, and search. */
-@source '../ui/public/aplayer';
+/* Admin surfaces reuse public building blocks: music-player (the editor
+   canvas renders the playable card), chrome (root error views), the comment
+   editor (top-level files only — comment-item/ is public-only), popups, and
+   search. */
+@source '../ui/public/music-player';
 @source '../ui/public/chrome';
 @source '../ui/public/comments/*.{ts,tsx}';
 @source '../ui/public/widgets';

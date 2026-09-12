@@ -924,11 +924,18 @@ describe('contract: module and bundle boundaries', () => {
     // browser bundles alike — reaching into `@/ui/` components would drag
     // the DOM component graph into every consumer. Value and type imports
     // both count, whether `@/`-aliased or relative.
+    //
+    // Allowlist: the editor canvas deliberately renders the public
+    // MusicPlayerCard verbatim (WYSIWYG with the hydration-enhanced public
+    // render). It is a leaf component (its only `@/ui` dependency is
+    // `ui/lib/cn`), and `client/editor/` is browser-only glue consumed by
+    // `ui/admin/editor/PageBodyEditor`, so no server-bundle contamination.
+    const CLIENT_TO_UI_ALLOWLIST = new Set(['@/ui/public/music-player/music-player'])
     const offenders: string[] = []
     for (const file of files('src/client', 'src/shared', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
         const target = resolveSpecifier(file, specifier)
-        if (target.startsWith('@/ui/') || target.startsWith('src/ui/')) {
+        if ((target.startsWith('@/ui/') || target.startsWith('src/ui/')) && !CLIENT_TO_UI_ALLOWLIST.has(target)) {
           offenders.push(`${file}: ${specifier}`)
         }
       }
@@ -1255,8 +1262,7 @@ describe('contract: module and bundle boundaries', () => {
         (file) =>
           !file.startsWith('src/ui/admin/') &&
           !file.startsWith('src/routes/auth/') &&
-          !file.startsWith('src/routes/admin/') &&
-          !file.startsWith('src/ui/public/aplayer/'),
+          !file.startsWith('src/routes/admin/'),
       )
       .filter((file) => /(?:bg|text|border)-\[#/.test(readFileSync(file, 'utf8')))
 
@@ -1495,12 +1501,11 @@ describe('contract: module and bundle boundaries', () => {
     const baseLayout = readFileSync('src/ui/public/chrome/BaseLayout.tsx', 'utf8')
     expect(baseLayout).toMatch(/import ['"]@\/styles\/public\.css['"]/)
 
-    const audioControl = readFileSync('src/ui/public/aplayer/hooks/use-audio-control.ts', 'utf8')
-    expect(audioControl).toMatch(/export\s+type\s+AudioControl\s*=\s*ReturnType<typeof useAudioControl>/)
+    const playbackHook = readFileSync('src/ui/public/music-player/use-music-playback.ts', 'utf8')
+    expect(playbackHook).toMatch(/export\s+type\s+MusicPlayback\s*=\s*ReturnType<typeof useMusicPlayback>/)
 
-    const playbackControls = readFileSync('src/ui/public/aplayer/controller.tsx', 'utf8')
-    expect(playbackControls).toMatch(/control:\s*AudioControl/)
-    expect(playbackControls).not.toMatch(/audioDurationSeconds/)
+    const playerCard = readFileSync('src/ui/public/music-player/music-player.tsx', 'utf8')
+    expect(playerCard).toMatch(/useMusicPlayback/)
 
     const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
     expect(detailChrome).toMatch(/showUpdated\?:\s*boolean/)

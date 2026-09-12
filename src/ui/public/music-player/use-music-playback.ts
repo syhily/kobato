@@ -1,89 +1,76 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export type UseAudioControlOptions = {
+export type UseMusicPlaybackOptions = {
   src: string
-  autoPlay?: boolean
   initialVolume?: number
-  onEnded?: () => void
-  onError?: (e: Event) => void
+  onError?: () => void
 }
 
-export function useAudioControl(options: UseAudioControlOptions) {
+/**
+ * Playback core for the music-player card: owns a detached HTMLAudioElement
+ * and exposes state + actions. `currentTime` is polled with
+ * requestAnimationFrame while playing (the `timeupdate` event fires at ~4Hz,
+ * too coarse for a smooth progress bar and line-synced lyrics).
+ */
+export function useMusicPlayback({ src, initialVolume = 0.7, onError }: UseMusicPlaybackOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
-  const [bufferedSeconds, setBufferedSeconds] = useState(0)
-  const [volume, setVolumeState] = useState(options.initialVolume ?? 0.7)
-  const [muted, setMutedState] = useState(false)
+  const [volume, setVolumeState] = useState(initialVolume)
+  const [muted, setMuted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [loop, setLoop] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
-  const onEndedRef = useRef(options.onEnded)
-  const onErrorRef = useRef(options.onError)
+  const onErrorRef = useRef(onError)
   useEffect(() => {
-    onEndedRef.current = options.onEnded
-    onErrorRef.current = options.onError
+    onErrorRef.current = onError
   })
 
   useEffect(() => {
     const audio = document.createElement('audio')
-    audio.src = options.src
-    audio.volume = options.initialVolume ?? 0.7
-    if (options.autoPlay) {
-      audio.autoplay = true
-    }
+    audio.preload = 'metadata'
+    audio.src = src
+    audio.volume = initialVolume
     audioRef.current = audio
 
     const handlePlay = () => setIsPlaying(true)
-    const handlePause = () => setIsPlaying(false)
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime)
-    const handleDurationChange = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
-    const handleProgress = () => {
-      if (audio.buffered.length > 0) {
-        setBufferedSeconds(audio.buffered.end(audio.buffered.length - 1))
-      }
+    const handlePause = () => {
+      setIsPlaying(false)
+      setCurrentTime(audio.currentTime)
     }
+    const handleDurationChange = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
     const handleVolumeChange = () => {
       setVolumeState(audio.volume)
-      setMutedState(audio.muted)
+      setMuted(audio.muted)
     }
     const handleWaiting = () => setIsLoading(true)
     const handlePlaying = () => setIsLoading(false)
     const handleEnded = () => {
       setIsPlaying(false)
-      onEndedRef.current?.()
+      setCurrentTime(0)
     }
-    const handleError = (e: Event) => {
-      onErrorRef.current?.(e)
+    const handleError = () => {
+      setHasError(true)
+      setIsLoading(false)
+      onErrorRef.current?.()
     }
 
     audio.addEventListener('play', handlePlay)
     audio.addEventListener('pause', handlePause)
-    audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('durationchange', handleDurationChange)
-    audio.addEventListener('progress', handleProgress)
     audio.addEventListener('volumechange', handleVolumeChange)
     audio.addEventListener('waiting', handleWaiting)
     audio.addEventListener('playing', handlePlaying)
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('error', handleError)
 
-    if (options.autoPlay) {
-      void audio.play().catch(() => {
-        // Ignore autoplay policy rejections
-      })
-    }
-
     return () => {
       audio.pause()
-      audio.currentTime = 0
       audio.removeEventListener('play', handlePlay)
       audio.removeEventListener('pause', handlePause)
-      audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('durationchange', handleDurationChange)
-      audio.removeEventListener('progress', handleProgress)
       audio.removeEventListener('volumechange', handleVolumeChange)
       audio.removeEventListener('waiting', handleWaiting)
       audio.removeEventListener('playing', handlePlaying)
@@ -91,19 +78,23 @@ export function useAudioControl(options: UseAudioControlOptions) {
       audio.removeEventListener('error', handleError)
       audioRef.current = null
     }
-  }, [options.src, options.autoPlay, options.initialVolume])
+  }, [src, initialVolume])
 
-  const playAudio = useCallback(async () => {
-    const audio = audioRef.current
-    if (!audio) {
+  useEffect(() => {
+    if (!isPlaying) {
       return
     }
-    try {
-      await audio.play()
-    } catch {
-      // Ignore autoplay policy rejections
+    let frame = 0
+    const tick = () => {
+      const audio = audioRef.current
+      if (audio) {
+        setCurrentTime(audio.currentTime)
+      }
+      frame = requestAnimationFrame(tick)
     }
-  }, [])
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [isPlaying])
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current
@@ -111,16 +102,27 @@ export function useAudioControl(options: UseAudioControlOptions) {
       return
     }
     if (audio.paused) {
-      void playAudio()
+      void audio.play().catch(() => {
+        // Ignore autoplay policy rejections
+      })
     } else {
       audio.pause()
     }
-  }, [playAudio])
+  }, [])
 
   const seek = useCallback((second: number) => {
     const audio = audioRef.current
     if (audio) {
       audio.currentTime = second
+      setCurrentTime(second)
+    }
+  }, [])
+
+  const setVolume = useCallback((value: number) => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.volume = value
+      audio.muted = value === 0
     }
   }, [])
 
@@ -131,37 +133,19 @@ export function useAudioControl(options: UseAudioControlOptions) {
     }
   }, [])
 
-  const setVolume = useCallback((value: number) => {
-    const audio = audioRef.current
-    if (audio) {
-      audio.volume = value
-    }
-  }, [])
-
-  const toggleLoop = useCallback(() => {
-    const audio = audioRef.current
-    if (audio) {
-      audio.loop = !audio.loop
-      setLoop(audio.loop)
-    }
-  }, [])
-
   return {
-    volume,
-    setVolume,
-    muted,
-    toggleMuted,
     isPlaying,
-    duration,
     currentTime,
-    bufferedSeconds,
-    playAudio,
+    duration,
+    volume,
+    muted,
+    isLoading,
+    hasError,
     togglePlay,
     seek,
-    isLoading,
-    loop,
-    toggleLoop,
+    setVolume,
+    toggleMuted,
   }
 }
 
-export type AudioControl = ReturnType<typeof useAudioControl>
+export type MusicPlayback = ReturnType<typeof useMusicPlayback>

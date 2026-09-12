@@ -2,9 +2,9 @@
 // docs/plans/inkling-editor-replacement.md, round R10; picker wired in R11) —
 // same dual-entry contract as `./solution`. The card has no nested editors:
 // the dataset is `playerId` plus the save-time meta snapshot (server-owned
-// keys, see `@/shared/lexical/artifacts`), so the canvas shows a static
-// preview of the resolved song (or the unresolved/empty state) — the same
-// structure the exportDOM fallback markup carries (the WYSIWYG gate).
+// keys, see `@/shared/lexical/artifacts`), so the canvas renders the real
+// playable `MusicPlayerCard` (WYSIWYG with the public hydration-enhanced
+// render; the static no-JS export fallback mirrors its paused initial state).
 //
 // The picker dialog is host-owned (`MusicPickerDialog` in PageBodyEditor):
 // the slash menu inserts an EMPTY card, and clicking the placeholder asks the
@@ -28,6 +28,7 @@ import {
 } from '@/shared/lexical/cards/music-player'
 import { MUSIC_PLAYER_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 import { isSafeUrl } from '@/shared/sanitize-url'
+import { MusicPlayerCard } from '@/ui/public/music-player/music-player'
 
 export const BaseMusicPlayerNode = class extends generateDecoratorNode({
   nodeType: MUSIC_PLAYER_NODE_TYPE,
@@ -36,28 +37,6 @@ export const BaseMusicPlayerNode = class extends generateDecoratorNode({
 }) {}
 
 export type MusicPlayerCardNode = InstanceType<typeof BaseMusicPlayerNode>
-
-/** The static preview the canvas shows for a resolved player — the same
- * structure `musicPlayerFallbackHtml` produces for the export mount point. */
-export function MusicPlayerCardView({ meta }: { meta: MusicPlayerCardMeta }) {
-  return (
-    <div className={MUSIC_PLAYER_CARD_CLASSES.wrapper}>
-      <div className={MUSIC_PLAYER_CARD_CLASSES.fallback} data-music-player-fallback="">
-        {meta.cover === '' || !isSafeUrl(meta.cover) ? (
-          <span className={MUSIC_PLAYER_CARD_CLASSES.fallbackGlyph} aria-hidden="true">
-            🎵
-          </span>
-        ) : (
-          <img className={MUSIC_PLAYER_CARD_CLASSES.fallbackCover} src={meta.cover} alt={meta.name} />
-        )}
-        <div className={MUSIC_PLAYER_CARD_CLASSES.fallbackMeta}>
-          <div className={MUSIC_PLAYER_CARD_CLASSES.fallbackName}>{meta.name}</div>
-          <div className={MUSIC_PLAYER_CARD_CLASSES.fallbackArtist}>{meta.artist}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // The component renders from a PLAIN meta snapshot — it never touches the
 // node instance. The generated property getters call getLatest(), which
@@ -69,7 +48,13 @@ export function MusicPlayerCardView({ meta }: { meta: MusicPlayerCardMeta }) {
 // The node reference still crosses as the pick target: the pick write goes
 // through the generated setter inside editor.update(), whose getWritable()
 // resolves the latest instance by key (see music-pick-context.ts).
-function MusicPlayerCardComponent({ meta, pickTarget }: { meta: MusicPlayerCardMeta; pickTarget: MusicPickTarget }) {
+export function MusicPlayerCardComponent({
+  meta,
+  pickTarget,
+}: {
+  meta: MusicPlayerCardMeta
+  pickTarget: MusicPickTarget
+}) {
   const openMusicPicker = useOpenMusicPicker()
   if (!hasMusicPlayerMeta(meta)) {
     // Unresolved card: inside PageBodyEditor the placeholder is the pick
@@ -101,7 +86,20 @@ function MusicPlayerCardComponent({ meta, pickTarget }: { meta: MusicPlayerCardM
       </div>
     )
   }
-  return <MusicPlayerCardView meta={meta} />
+  // Resolved card: the playable player, same component the public page
+  // hydrates into. Its controls stopPropagation internally so they never
+  // trigger the card chrome's selection/drag.
+  return (
+    <div className={MUSIC_PLAYER_CARD_CLASSES.wrapper}>
+      <MusicPlayerCard
+        artist={meta.artist}
+        cover={isSafeUrl(meta.cover) ? meta.cover : undefined}
+        lrc={meta.lyric || undefined}
+        name={meta.name}
+        url={isSafeUrl(meta.audioUrl) ? meta.audioUrl : ''}
+      />
+    </div>
+  )
 }
 
 export const musicPlayerCard = defineCard({
