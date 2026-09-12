@@ -54,12 +54,18 @@ describe('createPanelSuppression', () => {
     expect(captured).toHaveLength(1)
   })
 
-  it('is null-safe when the panel unmounts mid-drag', () => {
+  it('is null-safe when the panel unmounts mid-drag', async () => {
     const suppression = createPanelSuppression({ getElement: () => null, stylesheetId: 'test-2' })
 
     expect(() => {
       suppression.activate()
       suppression.deactivate()
     }).not.toThrow()
+
+    // deactivate's restores are deferred a few ms — let them fire before the
+    // jsdom environment tears down, otherwise they trip over a dead `window`.
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 10)
+    })
   })
 })
