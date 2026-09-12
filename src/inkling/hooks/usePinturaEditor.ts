@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import { useDisposableStore } from '@/inkling/hooks/useDisposableStore'
 import { useInklingLabels } from '@/inkling/hooks/useInklingLabels'
 import trackEvent from '@/inkling/utils/analytics'
+import { importPinturaModule } from '@/inkling/utils/services/pintura-import'
 import {
   buildPinturaOptions,
   bustImageCache,
@@ -52,7 +53,7 @@ interface PinturaEditor {
 // gate live headless in @/utils/services/pintura-session
 function createDomPorts(): PinturaAssetPorts {
   return {
-    importModule: (url) => import(/* @vite-ignore */ url),
+    importModule: importPinturaModule,
     isScriptPresent: () => typeof window !== 'undefined' && !!window.pintura,
     queryCssLink: (href) => typeof document !== 'undefined' && !!document.querySelector(`link[href="${href}"]`),
     appendCssLink: (href, { onLoad, onError }) => {
