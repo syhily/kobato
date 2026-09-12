@@ -11,10 +11,17 @@ import type { MusicPlayerCardProps } from '@/ui/public/music-player/music-player
 // shared card spec (`@/shared/lexical/cards/music-player`), and the fallback
 // markup mirrors the player's paused initial render so the swap does not
 // shift layout.
-export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>): void {
+//
+// `bodyHtml` is the effect's re-scan key: the container div is REUSED across
+// client-side navigations (only its innerHTML is swapped), so without it the
+// effect would never re-run — the previous article's React roots would keep
+// playing audio on detached nodes and the new article's mount points would
+// stay static fallbacks. The cleanup unmounts those roots, and the playback
+// hook's own teardown pauses the audio element.
+export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (container === null) {
+    if (container === null || !bodyHtml.includes('class="aplayer"')) {
       return
     }
 
@@ -62,5 +69,5 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>): vo
         }
       })
     }
-  }, [containerRef])
+  }, [containerRef, bodyHtml])
 }

@@ -49,7 +49,7 @@ export function PageDetailBody({
   useMediumZoom(postContentRef)
   useThumbhashHydration(postContentRef)
   useCodeCopyButtons(postContentRef)
-  useMusicPlayers(postContentRef)
+  useMusicPlayers(postContentRef, bodyHtml)
   useFootnotePreviews(postContentRef)
 
   return (

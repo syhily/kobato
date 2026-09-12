@@ -83,7 +83,8 @@ function mountPointHtml(sample: Sample): string {
  *  projection would carry) upgraded by the real hydration hook. */
 function HydratedMounts({ samples }: { samples: Sample[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  useMusicPlayers(containerRef)
+  const html = samples.map((sample) => mountPointHtml(sample)).join('')
+  useMusicPlayers(containerRef, html)
   return (
     <div ref={containerRef}>
       {samples.map((sample) => (
