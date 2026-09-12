@@ -47,9 +47,10 @@ parent.
   `post-content` typeset container (`typeset typeset-post`), then five hydration hooks enhance the static markup on the
   client: `useMediumZoom` (`@/client/hooks/use-medium-zoom`) plus `useThumbhashHydration`,
   `useCodeCopyButtons`, `useMusicPlayers`, and `useFootnotePreviews` (the last four live beside
-  the chrome). `useMusicPlayers` takes the rendered `bodyHtml` as its re-scan key — the content
-  div is reused across client-side navigations, so without the key the previous article's roots
-  would keep playing audio detached and the new mount points would never upgrade. Comment bodies render the stored `content` HTML column through
+  the chrome). All five take the rendered `bodyHtml` as their re-scan key — the content div is
+  reused across client-side navigations (only its innerHTML is swapped), so without the key the
+  previous article's enhancements would leak on detached nodes (a music player's audio keeps
+  playing) and the new article's markup would never upgrade. Comment bodies render the stored `content` HTML column through
   `comments/CommentContentHtml` with the same `'body'` sanitize preset.
 - `ui/icons/` — static-export icon library. Named imports only — no `<Icon name="..." />` string
   lookups. Import directly from `lucide-react`; the build tree-shakes unused icons.

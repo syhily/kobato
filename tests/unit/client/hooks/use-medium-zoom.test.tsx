@@ -5,6 +5,6 @@ import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 
 describe('useMediumZoom', () => {
   it('renders without error when container ref is null', () => {
-    expect(() => renderHook(() => useMediumZoom({ current: null }))).not.toThrow()
+    expect(() => renderHook(() => useMediumZoom({ current: null }, ''))).not.toThrow()
   })
 })

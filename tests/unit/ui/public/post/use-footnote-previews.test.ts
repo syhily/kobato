@@ -28,7 +28,7 @@ afterEach(() => {
 describe('useFootnotePreviews', () => {
   it('floats the target note on hover and hides it on leave, without the backref link', () => {
     const { container, ref } = mountContainer(BODY)
-    const { unmount } = renderHook(() => useFootnotePreviews(ref))
+    const { unmount } = renderHook(() => useFootnotePreviews(ref, BODY))
 
     const anchor = container.querySelector<HTMLAnchorElement>('sup a')!
     anchor.dispatchEvent(new Event('mouseenter'))
@@ -47,16 +47,33 @@ describe('useFootnotePreviews', () => {
 
   it('shows on keyboard focus as well', () => {
     const { container, ref } = mountContainer(BODY)
-    renderHook(() => useFootnotePreviews(ref))
+    renderHook(() => useFootnotePreviews(ref, BODY))
 
     const anchor = container.querySelector<HTMLAnchorElement>('sup a')!
     anchor.dispatchEvent(new Event('focus'))
     expect(document.body.querySelector<HTMLDivElement>('.footnote-preview')!.hidden).toBe(false)
   })
 
+  it("binds the new article's footnote refs when bodyHtml changes (client-side navigation)", () => {
+    const htmlA = '<p>no notes</p>'
+    const { container, ref } = mountContainer(htmlA)
+
+    const { rerender } = renderHook(({ html }) => useFootnotePreviews(ref, html), { initialProps: { html: htmlA } })
+    expect(document.body.querySelector('.footnote-preview')).toBeNull()
+
+    container.innerHTML = BODY
+    rerender({ html: BODY })
+
+    const anchor = container.querySelector<HTMLAnchorElement>('sup a')!
+    anchor.dispatchEvent(new Event('mouseenter'))
+    const popover = document.body.querySelector<HTMLDivElement>('.footnote-preview')!
+    expect(popover.hidden).toBe(false)
+    expect(popover.innerHTML).toContain('note body')
+  })
+
   it('does not mount a popover when no footnote refs exist', () => {
     const { ref } = mountContainer('<p>no notes</p>')
-    renderHook(() => useFootnotePreviews(ref))
+    renderHook(() => useFootnotePreviews(ref, '<p>no notes</p>'))
     expect(document.body.querySelector('.footnote-preview')).toBeNull()
   })
 })

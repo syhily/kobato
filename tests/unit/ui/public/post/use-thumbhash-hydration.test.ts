@@ -24,8 +24,9 @@ afterEach(() => {
 
 describe('useThumbhashHydration', () => {
   it('paints the decoded thumbhash background and clears it on load', () => {
-    const { container, ref } = mountContainer(`<img src="/x.png" data-thumbhash="${THUMBHASH}" alt="">`)
-    renderHook(() => useThumbhashHydration(ref))
+    const html = `<img src="/x.png" data-thumbhash="${THUMBHASH}" alt="">`
+    const { container, ref } = mountContainer(html)
+    renderHook(() => useThumbhashHydration(ref, html))
 
     const img = container.querySelector('img')!
     expect(img.style.backgroundImage).toContain('data:image/png')
@@ -36,12 +37,27 @@ describe('useThumbhashHydration', () => {
   })
 
   it('skips images without a thumbhash hook', () => {
-    const { container, ref } = mountContainer('<img src="/x.png" alt="">')
-    renderHook(() => useThumbhashHydration(ref))
+    const html = '<img src="/x.png" alt="">'
+    const { container, ref } = mountContainer(html)
+    renderHook(() => useThumbhashHydration(ref, html))
     expect(container.querySelector('img')!.style.backgroundImage).toBe('')
   })
 
+  it("paints the new article's placeholders when bodyHtml changes (client-side navigation)", () => {
+    const htmlA = '<p>no images</p>'
+    const htmlB = `<img src="/y.png" data-thumbhash="${THUMBHASH}" alt="">`
+    const { container, ref } = mountContainer(htmlA)
+
+    const { rerender } = renderHook(({ html }) => useThumbhashHydration(ref, html), { initialProps: { html: htmlA } })
+    expect(container.querySelector('img')).toBeNull()
+
+    container.innerHTML = htmlB
+    rerender({ html: htmlB })
+
+    expect(container.querySelector('img')!.style.backgroundImage).toContain('data:image/png')
+  })
+
   it('no-ops on a null container', () => {
-    expect(() => renderHook(() => useThumbhashHydration({ current: null }))).not.toThrow()
+    expect(() => renderHook(() => useThumbhashHydration({ current: null }, ''))).not.toThrow()
   })
 })

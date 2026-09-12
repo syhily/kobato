@@ -31,7 +31,7 @@ describe('useCodeCopyButtons', () => {
     const { container, ref } = mountContainer(EXPORTED)
     ;(ref as { current: HTMLDivElement | null }).current = container
 
-    renderHook(() => useCodeCopyButtons(ref))
+    renderHook(() => useCodeCopyButtons(ref, EXPORTED))
 
     const wrapper = container.querySelector('.code-block-wrapper')
     expect(wrapper).not.toBeNull()
@@ -50,7 +50,7 @@ describe('useCodeCopyButtons', () => {
 
     const { container, ref } = mountContainer(EXPORTED)
     ;(ref as { current: HTMLDivElement | null }).current = container
-    renderHook(() => useCodeCopyButtons(ref))
+    renderHook(() => useCodeCopyButtons(ref, EXPORTED))
 
     const button = container.querySelector<HTMLButtonElement>('button.copy-code')
     expect(button).not.toBeNull()
@@ -67,7 +67,7 @@ describe('useCodeCopyButtons', () => {
     const { container, ref } = mountContainer(EXPORTED)
     ;(ref as { current: HTMLDivElement | null }).current = container
 
-    const { rerender } = renderHook(() => useCodeCopyButtons(ref))
+    const { rerender } = renderHook(() => useCodeCopyButtons(ref, EXPORTED))
     rerender()
 
     expect(container.querySelectorAll('.code-block-wrapper')).toHaveLength(1)
@@ -75,15 +75,31 @@ describe('useCodeCopyButtons', () => {
   })
 
   it('leaves code blocks without a data-code hook untouched (feed-variant markup)', () => {
-    const { container, ref } = mountContainer('<pre><code class="language-ts">plain</code></pre>')
+    const html = '<pre><code class="language-ts">plain</code></pre>'
+    const { container, ref } = mountContainer(html)
     ;(ref as { current: HTMLDivElement | null }).current = container
 
-    renderHook(() => useCodeCopyButtons(ref))
+    renderHook(() => useCodeCopyButtons(ref, html))
 
     expect(container.querySelector('.code-block-wrapper')).toBeNull()
   })
 
+  it("wraps the new article's code blocks when bodyHtml changes (client-side navigation)", () => {
+    const htmlA = '<p>no code</p>'
+    const { container, ref } = mountContainer(htmlA)
+    ;(ref as { current: HTMLDivElement | null }).current = container
+
+    const { rerender } = renderHook(({ html }) => useCodeCopyButtons(ref, html), { initialProps: { html: htmlA } })
+    expect(container.querySelector('.code-block-wrapper')).toBeNull()
+
+    container.innerHTML = EXPORTED
+    rerender({ html: EXPORTED })
+
+    expect(container.querySelector('.code-block-wrapper')).not.toBeNull()
+    expect(container.querySelector('button.copy-code')?.textContent).toBe('Copy')
+  })
+
   it('no-ops on a null container', () => {
-    expect(() => renderHook(() => useCodeCopyButtons({ current: null }))).not.toThrow()
+    expect(() => renderHook(() => useCodeCopyButtons({ current: null }, ''))).not.toThrow()
   })
 })

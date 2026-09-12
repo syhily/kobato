@@ -50,11 +50,11 @@ export function PostDetailBody({
 }: PostDetailBodyProps) {
   const config = useSiteIdentity()
   const postContentRef = useRef<HTMLDivElement>(null)
-  useMediumZoom(postContentRef)
-  useThumbhashHydration(postContentRef)
-  useCodeCopyButtons(postContentRef)
+  useMediumZoom(postContentRef, bodyHtml)
+  useThumbhashHydration(postContentRef, bodyHtml)
+  useCodeCopyButtons(postContentRef, bodyHtml)
   useMusicPlayers(postContentRef, bodyHtml)
-  useFootnotePreviews(postContentRef)
+  useFootnotePreviews(postContentRef, bodyHtml)
 
   return (
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">

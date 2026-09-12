@@ -3,8 +3,14 @@ import type { Zoom } from 'medium-zoom'
 import { type RefObject, useEffect } from 'react'
 
 // Lazy-loads medium-zoom for images + SVGs. MutationObserver (not the
-// selector overload) so same-route navigations pick up new images; cleanup
+// selector overload) so in-page async additions pick up new images; cleanup
 // detaches everything on unmount.
+//
+// `bodyHtml` is the effect's re-scan key: the container div is REUSED across
+// client-side navigations (only its innerHTML is swapped), and re-running the
+// effect detaches the previous article's images — without it the zoom
+// instance and the `attached` set would retain every detached `<img>` the
+// reader scrolls past (see useMusicPlayers for the full rationale).
 //
 // The zoom instance is a module-level singleton: every `mediumZoom()` call
 // registers document/window listeners (click, keyup, scroll, resize) that the
@@ -21,10 +27,10 @@ function getSharedZoom(): Promise<Zoom> {
   return zoomPromise
 }
 
-export function useMediumZoom(containerRef: RefObject<HTMLElement | null>): void {
+export function useMediumZoom(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (!container) {
+    if (!container || !bodyHtml.includes('<img')) {
       return
     }
 
@@ -78,5 +84,5 @@ export function useMediumZoom(containerRef: RefObject<HTMLElement | null>): void
       cancelled = true
       cleanup?.()
     }
-  }, [containerRef])
+  }, [containerRef, bodyHtml])
 }

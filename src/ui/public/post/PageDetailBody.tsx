@@ -46,11 +46,11 @@ export function PageDetailBody({
 }: PageDetailBodyProps) {
   const config = useSiteIdentity()
   const postContentRef = useRef<HTMLDivElement>(null)
-  useMediumZoom(postContentRef)
-  useThumbhashHydration(postContentRef)
-  useCodeCopyButtons(postContentRef)
+  useMediumZoom(postContentRef, bodyHtml)
+  useThumbhashHydration(postContentRef, bodyHtml)
+  useCodeCopyButtons(postContentRef, bodyHtml)
   useMusicPlayers(postContentRef, bodyHtml)
-  useFootnotePreviews(postContentRef)
+  useFootnotePreviews(postContentRef, bodyHtml)
 
   return (
     <div className="flex flex-wrap">

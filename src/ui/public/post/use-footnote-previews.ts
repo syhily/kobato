@@ -6,10 +6,15 @@ import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 // or focusing an exported footnote reference (`sup > a[href="#user-content-fn-N"]`)
 // floats the target note's body above it. One shared popover; positioned
 // `fixed` from the trigger's bounding rect.
-export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>): void {
+//
+// `bodyHtml` is the effect's re-scan key: the container div is REUSED across
+// client-side navigations (only its innerHTML is swapped), so without it the
+// new article's footnote refs would never bind their preview listeners (see
+// useMusicPlayers for the full rationale).
+export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (container === null) {
+    if (container === null || !bodyHtml.includes('#user-content-fn-')) {
       return
     }
 
@@ -85,5 +90,5 @@ export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>)
       window.removeEventListener('scroll', hide)
       popover.remove()
     }
-  }, [containerRef])
+  }, [containerRef, bodyHtml])
 }

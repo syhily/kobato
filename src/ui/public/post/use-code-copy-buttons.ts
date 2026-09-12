@@ -89,10 +89,15 @@ function runLegacyCopyCommand(): boolean {
 // header (language label + copy button) the PT-era `CodeBlock` component used
 // to render. Chrome classes are plain CSS in tailwind.css — `src/client/**`
 // is outside public.css's Tailwind `@source` scan.
-export function useCodeCopyButtons(containerRef: RefObject<HTMLElement | null>): void {
+//
+// `bodyHtml` is the effect's re-scan key: the container div is REUSED across
+// client-side navigations (only its innerHTML is swapped), so without it the
+// new article's code blocks would never get their copy chrome (see
+// useMusicPlayers for the full rationale).
+export function useCodeCopyButtons(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (container === null) {
+    if (container === null || !bodyHtml.includes('data-code')) {
       return
     }
 
@@ -160,5 +165,5 @@ export function useCodeCopyButtons(containerRef: RefObject<HTMLElement | null>):
         cleanup()
       }
     }
-  }, [containerRef])
+  }, [containerRef, bodyHtml])
 }
