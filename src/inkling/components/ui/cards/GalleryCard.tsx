@@ -72,7 +72,7 @@ function GalleryImage({ image, deleteImage, position, isDragging }: GalleryImage
       classes = ['pl-2']
       overlayClasses = ['ml-2']
       break
-    default:
+    case 'single':
   }
 
   return (

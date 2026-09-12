@@ -24,7 +24,9 @@ const CardContext = React.createContext<CardContextValue>({
   captionHasFocus: false,
   cardType: undefined,
   nodeKey: undefined,
-  setCaptionHasFocus: () => {},
+  setCaptionHasFocus: () => {
+    /* noop default outside a card wrapper */
+  },
 })
 
 export default CardContext

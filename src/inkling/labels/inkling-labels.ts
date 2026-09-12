@@ -419,13 +419,22 @@ export function resolveLabels(input?: InklingLabelsInput): InklingLabels {
 }
 
 /**
+ * Membership guard narrowing an arbitrary menu `labelKey` string to the
+ * closed table's key union — the runtime check (`in`) is the narrowing, so
+ * the lookup below needs no assertion.
+ */
+function hasLabelKey(labels: InklingLabels, key: string): key is keyof InklingLabels {
+  return key in labels
+}
+
+/**
  * Runtime lookup behind the closed interface: menu entries carry their
  * `labelKey` as a plain string, so the menu-build resolver indexes by an
  * arbitrary key. Unknown keys (e.g. a host card's own labelKey) fall back to
  * the entry's declared English text.
  */
 export function lookupLabel(labels: InklingLabels, key: string, fallback: string): string {
-  return (labels as unknown as Record<string, string | undefined>)[key] ?? fallback
+  return hasLabelKey(labels, key) ? labels[key] : fallback
 }
 
 /** The interpolation tokens the labels table speaks (plain string.replace, never an i18n library). */

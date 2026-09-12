@@ -40,7 +40,7 @@ class InMemoryStorage implements Storage {
     this.store.delete(key)
   }
   setItem(key: string, value: string) {
-    this.store.set(key, String(value))
+    this.store.set(key, value)
   }
 }
 

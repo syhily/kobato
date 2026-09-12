@@ -106,7 +106,6 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
           // are slightly behind the native input value.
           e.preventDefault()
           update(e.currentTarget.value || '')
-          return
         }
       }}
     />
@@ -130,7 +129,6 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
           // are slightly behind the native input value.
           e.preventDefault()
           update(e.currentTarget.value || '')
-          return
         }
       }}
     />

@@ -11,9 +11,15 @@ export function ButtonCard({
   buttonPlaceholder,
   buttonUrl,
   // stories render without handlers; the settings become no-ops
-  handleAlignmentChange = () => {},
-  handleButtonTextChange = () => {},
-  handleButtonUrlChange = () => {},
+  handleAlignmentChange = () => {
+    /* noop for story renders */
+  },
+  handleButtonTextChange = () => {
+    /* noop for story renders */
+  },
+  handleButtonUrlChange = () => {
+    /* noop for story renders */
+  },
   isEditing,
 }: {
   alignment?: string

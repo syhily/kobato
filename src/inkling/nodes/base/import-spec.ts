@@ -282,7 +282,13 @@ function readImportPayload(conversion: ImportConversionSpec, domNode: HTMLElemen
   return payload
 }
 
-function extractValue(read: ImportReadSpec, element: Element): unknown {
+// Callers narrow `read` past the `composite` (early `continue`) and
+// `classMap` (handled at the call site) kinds, so extraction only ever sees
+// the element-value kinds — the parameter type is that narrowed union, which
+// keeps the switch exhaustive by construction
+type ElementValueReadSpec = Exclude<ImportReadSpec, { kind: 'classMap' } | { kind: 'composite' }>
+
+function extractValue(read: ElementValueReadSpec, element: Element): unknown {
   switch (read.kind) {
     case 'attribute':
       return element.getAttribute(read.attribute)
@@ -294,8 +300,6 @@ function extractValue(read: ImportReadSpec, element: Element): unknown {
       return element.innerHTML
     case 'caption':
       return readCaptionFromElement(element)
-    default:
-      return null
   }
 }
 

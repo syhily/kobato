@@ -112,7 +112,9 @@ export function CalloutCard({
   toggleEmoji,
   hasEmoji = true,
   // stories render without a color-change handler; the picker becomes a no-op
-  handleColorChange = () => {},
+  handleColorChange = () => {
+    /* noop for story renders */
+  },
   changeEmoji,
   calloutEmoji = '💡',
   textEditor,
@@ -127,8 +129,9 @@ export function CalloutCard({
   // The picker table keeps its English labels as defaults; the host's label
   // table overrides each entry by its color name.
   const colorButtons = calloutColorPicker.map((entry) => ({
-    ...entry,
     label: lookupLabel(labels, `color.${entry.name}`, entry.label),
+    name: entry.name,
+    color: entry.color,
   }))
 
   React.useEffect(() => {

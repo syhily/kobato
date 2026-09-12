@@ -8,14 +8,30 @@ export interface SanitizeHtmlOptions {
 
 type SanitizeWindow = ExportDOMDom['window']
 
+// The render-context window is only declared as `{ document: Document }`,
+// while the call sites below also rely on its DOMParser (and DOMPurify on
+// the full window surface). The provided window always carries a real DOM
+// (browser or jsdom), so the guard validates that surface at runtime — the
+// structural window-to-WindowLike bridge stays inside this policy module.
+function isWindowLike(window: SanitizeWindow): window is SanitizeWindow & WindowLike {
+  return 'DOMParser' in window && typeof window.DOMParser === 'function'
+}
+
+function requireWindowLike(window: SanitizeWindow): SanitizeWindow & WindowLike {
+  if (!isWindowLike(window)) {
+    throw new TypeError('sanitizeHtml: the provided window does not expose DOMParser')
+  }
+  return window
+}
+
 function parseHtml(html: string, window?: SanitizeWindow): Document {
   if (window) {
     // The provided window's own DOMParser — same full-document parse entry
     // as the browser default, so the pinned parsing behavior (a standalone
     // leading <script> lands in <head>) is preserved while no global is
-    // touched. The structural window-to-WindowLike assertion stays inside
-    // this policy module.
-    return new (window as unknown as WindowLike).DOMParser().parseFromString(html, 'text/html')
+    // touched.
+    const windowLike = requireWindowLike(window)
+    return new windowLike.DOMParser().parseFromString(html, 'text/html')
   }
 
   return new DOMParser().parseFromString(html, 'text/html')
@@ -62,7 +78,7 @@ export function sanitizeHtml(html = '', options: SanitizeHtmlOptions = {}, windo
     result = replaceScriptAndIframePlaceholders(html, window)
   }
 
-  const purify = window ? DOMPurify(window as unknown as WindowLike) : DOMPurify
+  const purify = window ? DOMPurify(requireWindowLike(window)) : DOMPurify
 
   return purify.sanitize(result, {
     ALLOWED_URI_REGEXP: /^(?:https?:|\/|blob:)/,

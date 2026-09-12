@@ -375,9 +375,24 @@ export function ColorPickerSetting({
           showChildren={showChildren}
           swatches={swatches ?? []}
           value={value}
-          onChange={onPickerChange ?? (() => {})}
-          onSwatchChange={onSwatchChange ?? (() => {})}
-          onTogglePicker={onTogglePicker ?? (() => {})}
+          onChange={
+            onPickerChange ??
+            (() => {
+              /* noop default */
+            })
+          }
+          onSwatchChange={
+            onSwatchChange ??
+            (() => {
+              /* noop default */
+            })
+          }
+          onTogglePicker={
+            onTogglePicker ??
+            (() => {
+              /* noop default */
+            })
+          }
         >
           {children}
         </ColorIndicator>

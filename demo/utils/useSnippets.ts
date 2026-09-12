@@ -14,7 +14,8 @@ function getSnippetsFromStorage(): SnippetItem[] {
       return []
     }
 
-    return parsedSnippets.filter(
+    const items: unknown[] = parsedSnippets
+    return items.filter(
       (snippet): snippet is SnippetItem =>
         typeof snippet === 'object' &&
         snippet !== null &&

@@ -5,24 +5,24 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { mergeRegister, $createTextNode, $isTextNode, type LexicalEditor, type LexicalNode, TextNode } from 'lexical'
 import { useEffect } from 'react'
 
-export function useInklingTextEntity<T extends TextNode = TextNode>(
+export function useInklingTextEntity(
   getMatch: (text: string) => { start: number; end: number } | null,
   targetNode: typeof TextNode,
-  createNode: (node: TextNode) => T,
+  createNode: (node: TextNode) => TextNode,
   nodeType: typeof TextNode = TextNode,
 ) {
   const [editor] = useLexicalComposerContext()
 
   useEffect(() => {
-    return mergeRegister(...registerExtendedTextEntity<T>(editor, getMatch, targetNode, createNode, nodeType))
+    return mergeRegister(...registerExtendedTextEntity(editor, getMatch, targetNode, createNode, nodeType))
   }, [createNode, editor, getMatch, targetNode, nodeType])
 }
 
-function registerExtendedTextEntity<T extends TextNode = TextNode>(
+function registerExtendedTextEntity(
   editor: LexicalEditor,
   getMatch: (text: string) => { start: number; end: number } | null,
   targetNode: typeof TextNode,
-  createNode: (node: TextNode) => T,
+  createNode: (node: TextNode) => TextNode,
   nodeType: typeof TextNode,
 ) {
   const isTargetNode = (node: LexicalNode): boolean => {
@@ -144,7 +144,7 @@ function registerExtendedTextEntity<T extends TextNode = TextNode>(
     const text = node.getTextContent()
     const match = getMatch(text)
 
-    if (match === null || match.start !== 0) {
+    if (match?.start !== 0) {
       replaceWithSimpleText(node)
 
       return

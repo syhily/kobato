@@ -23,15 +23,31 @@ export const noopWebsocketProviderFactory: LexicalProviderFactory = () => ({
   awareness: {
     getLocalState: () => null,
     getStates: () => new Map(),
-    off: () => {},
-    on: () => {},
-    setLocalState: () => {},
-    setLocalStateField: () => {},
+    off: () => {
+      /* noop */
+    },
+    on: () => {
+      /* noop */
+    },
+    setLocalState: () => {
+      /* noop */
+    },
+    setLocalStateField: () => {
+      /* noop */
+    },
   },
-  connect: () => {},
-  disconnect: () => {},
-  off: () => {},
-  on: () => {},
+  connect: () => {
+    /* noop */
+  },
+  disconnect: () => {
+    /* noop */
+  },
+  off: () => {
+    /* noop */
+  },
+  on: () => {
+    /* noop */
+  },
 })
 
 const InklingCollaborationContext = React.createContext<InklingCollaborationContextValue>({

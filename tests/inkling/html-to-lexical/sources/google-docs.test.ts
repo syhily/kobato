@@ -24,7 +24,7 @@ export function html(strings: TemplateStringsArray, ...params: unknown[]) {
   for (let i = 0; i < strings.length; i++) {
     output += strings[i]
     if (i < strings.length - 1) {
-      output += params[i]
+      output += params[i] as string
     }
   }
   return output

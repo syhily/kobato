@@ -21,9 +21,7 @@ export default function useBasicTypeaheadTriggerMatch(
   return useCallback(
     (text: string) => {
       const invalidChars = '[^' + trigger + '\\s]' // escaped set - these cannot be present in the matched string
-      const TypeaheadTriggerRegex = new RegExp(
-        '[' + trigger + ']' + '(' + '(?:' + invalidChars + ')' + '{0,' + maxLength + '}' + ')$',
-      )
+      const TypeaheadTriggerRegex = new RegExp('[' + trigger + ']((?:' + invalidChars + '){0,' + maxLength + '})$')
       const match = TypeaheadTriggerRegex.exec(text)
       if (match !== null) {
         const matchingString = match[1]

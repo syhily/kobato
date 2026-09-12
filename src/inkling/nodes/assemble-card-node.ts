@@ -133,6 +133,13 @@ export function assembleCardNode<
 
   ensureLexicalNodeOwnMethods(AssembledCardNode)
 
+  // Every CardNodeClass member is genuinely present on the assembled class
+  // (the Lexical statics through the base, the spec statics and accessors
+  // adopted above), but a class extending an expression-typed base cannot be
+  // proven against the mapped interface — and no runtime check can prove a
+  // generic class shape either. The CardNodeClass doc comment above is the
+  // design note for this bridge.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- class-factory boundary; the assembled class carries every member at runtime
   return AssembledCardNode as unknown as CardNodeClass<TNode, D>
 }
 
@@ -169,6 +176,11 @@ export function assembleCardNodeOnce<
   assembledCardNodeCache ??= new WeakMap()
   const cached = assembledCardNodeCache.get(declaration)
   if (cached) {
+    // The WeakMap is keyed on the declaration object itself, so a hit IS the
+    // CardNodeClass<TNode, D> this call would assemble — the cache value type
+    // is deliberately widened to the shared base, and TS cannot recover the
+    // per-declaration type from the key.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- memoization cache; the key identity carries the type
     return cached as unknown as CardNodeClass<TNode, D>
   }
   const assembled = assembleCardNode(declaration)

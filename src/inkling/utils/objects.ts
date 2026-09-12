@@ -13,7 +13,9 @@ export function pick(obj: unknown, keys: readonly string[]): Record<string, unkn
   if (obj !== null && typeof obj === 'object') {
     for (const key of keys) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        result[key] = (obj as Record<string, unknown>)[key]
+        // Reflect.get keeps the read honest (getters included) without a
+        // narrowing assertion on the object-typed value
+        result[key] = Reflect.get(obj, key)
       }
     }
   }

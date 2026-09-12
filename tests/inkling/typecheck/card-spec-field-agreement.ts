@@ -46,7 +46,7 @@ import { videoDeclaration } from '@/inkling/nodes/cards/video.declaration'
 
 type Expect<T extends true> = T
 type Extends<A, B> = [A] extends [B] ? true : false
-type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
+type Equal<A, B> = (<T>(_: T) => T extends A ? 1 : 2) extends <T>(_: T) => T extends B ? 1 : 2 ? true : false
 
 // the `__*` fields Lexical itself owns on every decorator node
 type LexicalInternalFields = Extract<keyof DecoratorNode<unknown>, `__${string}`>

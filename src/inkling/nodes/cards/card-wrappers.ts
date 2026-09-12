@@ -16,10 +16,11 @@ import { CARD_DECLARATIONS } from '@/inkling/nodes/cards'
  * own node set from the declarations, and importing wrappers there would
  * close an import cycle through the wrapper files.
  */
-export const CARD_WRAPPER_NODES = CARD_DECLARATIONS.map((declaration) => ({
-  ...declaration,
+export const CARD_WRAPPER_NODES = CARD_DECLARATIONS.map((declaration) =>
+  // Object.assign into a fresh object: the declarations are shared registry
+  // state, so the projection stays copy-on-write without a per-item spread.
   // CARD_DECLARATIONS is a heterogeneous union, so the per-card node type can't
   // be inferred here — widen to the shared base; the shim call sites keep the
   // precise per-card class types
-  node: assembleCardNodeOnce<LexicalNode>(declaration),
-}))
+  Object.assign({}, declaration, { node: assembleCardNodeOnce<LexicalNode>(declaration) }),
+)

@@ -30,7 +30,18 @@ export function $isInklingCard(node: unknown): node is InklingCard {
     return false
   }
 
-  const card = node as Partial<InklingCard>
+  // Structural binding, not an assertion: every probed member is optional
+  // unknown, and `decorate` is the shared member that keeps the weak-type
+  // check satisfied (Partial<InklingCard> itself does NOT work —
+  // DecoratorNode's exportDOM returns lexical's ExportDOMOutput, not
+  // inkling's, so the class is not assignable to it).
+  const card: {
+    decorate: InklingDecoratorNode['decorate']
+    isInklingCard?: (() => unknown) | undefined
+    exportDOM?: unknown
+    hasEditMode?: unknown
+    getDataset?: unknown
+  } = node
 
   // hasEditMode/getDataset are part of the asserted InklingCard interface too
   // (registerCardCommands/enter/card-interaction call hasEditMode() directly),

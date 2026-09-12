@@ -181,7 +181,9 @@ const InklingHostEssentialsContext = React.createContext<InklingHostEssentials>(
   fileUploader: {
     useFileUpload: () => ({ upload: () => Promise.resolve(undefined) }),
   },
-  onError: () => {},
+  onError: () => {
+    /* noop default outside a composer */
+  },
 })
 
 /** The editor-level channel: the host's file uploader and error sink. */

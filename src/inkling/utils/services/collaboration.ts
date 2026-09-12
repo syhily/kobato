@@ -18,6 +18,28 @@ type ProviderEventCallbacks = {
   reload: (doc: Doc) => void
 }
 
+type ProviderAwareness = ReturnType<LexicalProviderFactory>['awareness']
+
+const PROVIDER_AWARENESS_MEMBERS = [
+  'getLocalState',
+  'getStates',
+  'off',
+  'on',
+  'setLocalState',
+  'setLocalStateField',
+] as const
+
+function isProviderAwareness(value: unknown): value is ProviderAwareness {
+  return typeof value === 'object' && value !== null && PROVIDER_AWARENESS_MEMBERS.every((member) => member in value)
+}
+
+function requireProviderAwareness(value: unknown): ProviderAwareness {
+  if (!isProviderAwareness(value)) {
+    throw new TypeError('adaptWebsocketProvider: provider.awareness does not implement ProviderAwareness')
+  }
+  return value
+}
+
 export function adaptWebsocketProvider(provider: WebsocketProvider): ReturnType<LexicalProviderFactory> {
   const listeners: { [K in keyof ProviderEventCallbacks]: Set<ProviderEventCallbacks[K]> } = {
     sync: new Set(),
@@ -38,14 +60,15 @@ export function adaptWebsocketProvider(provider: WebsocketProvider): ReturnType<
 
   return {
     // y-protocols' Awareness and Lexical's ProviderAwareness describe the same
-    // runtime object, but TS 6 won't reconcile them: Awareness declares its
-    // state maps with `any`-valued index signatures while UserState has
-    // required named fields (anchorPos/color/...), and index signatures no
-    // longer satisfy required properties, so not even a single-step assertion
-    // is accepted. The plugin populates and reads the state itself through
-    // setLocalState/setLocalStateField; the assertion is confined to this one
-    // member — every other member of the adapter is structural.
-    awareness: provider.awareness as unknown as ReturnType<LexicalProviderFactory>['awareness'],
+    // runtime object, but TS 6 won't reconcile them statically: Awareness
+    // declares its state maps with `any`-valued index signatures while
+    // UserState has required named fields (anchorPos/color/...), and index
+    // signatures no longer satisfy required properties, so not even a
+    // single-step assertion is accepted. The plugin populates and reads the
+    // state itself through setLocalState/setLocalStateField, so a runtime
+    // guard over the six ProviderAwareness members is the bridge — every
+    // other member of the adapter is structural.
+    awareness: requireProviderAwareness(provider.awareness),
     connect: () => provider.connect(),
     disconnect: () => provider.disconnect(),
     on,

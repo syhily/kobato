@@ -287,10 +287,18 @@ export function CardMenuPopup({
     return registerMenuArrowsClose({ isOpen: () => isOpen, close: closeMenu })
   }, [isSlash, isOpen, closeMenu])
 
-  // reset the keyboard selection whenever the menu rebuilds
+  // reset the keyboard selection whenever the menu rebuilds — cardMenu is the
+  // rebuild signal, but the effect body never reads it, so listing it as a
+  // dependency is an every-render fire; compare identities against a ref in
+  // an every-render effect instead (mount counts as a rebuild)
+  const previousCardMenuRef = React.useRef<typeof cardMenu | null>(null)
   React.useEffect(() => {
+    if (previousCardMenuRef.current === cardMenu) {
+      return
+    }
+    previousCardMenuRef.current = cardMenu
     menuNavigator.reset()
-  }, [cardMenu, menuNavigator])
+  })
 
   // the navigator's scroll-request latch releases when the menu closes
   React.useEffect(() => {

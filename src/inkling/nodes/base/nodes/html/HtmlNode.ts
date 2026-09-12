@@ -17,8 +17,6 @@ export type HtmlData = DecoratorNodeData<typeof htmlProperties>
 
 export type SerializedHtmlNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof htmlProperties>>
 
-export interface BaseHtmlNode extends DecoratorNodeValueMap<typeof htmlProperties> {}
-
 export class BaseHtmlNode extends generateDecoratorNode({
   nodeType: 'html',
   properties: htmlProperties,

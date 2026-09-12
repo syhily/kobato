@@ -36,8 +36,6 @@ export type ToggleData = DecoratorNodeData<typeof toggleProperties>
 
 export type SerializedToggleNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof toggleProperties>>
 
-export interface BaseToggleNode extends DecoratorNodeValueMap<typeof toggleProperties> {}
-
 export class BaseToggleNode extends generateDecoratorNode({
   nodeType: 'toggle',
   properties: toggleProperties,

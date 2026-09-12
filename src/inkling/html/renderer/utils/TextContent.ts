@@ -28,9 +28,19 @@ const FORMAT_TAG_MAP: Record<TextFormatType, TextFormatAbbreviation> = {
 // (previously they were emitted as a bare SPAN and the format was lost).
 const TEXT_TRANSFORM_FORMATS: ReadonlySet<TextFormatType> = new Set(['lowercase', 'uppercase', 'capitalize'])
 
-type Entries<T> = {
-  [K in keyof T]: [K, T[K]]
-}[keyof T][]
+// Object.keys widens the key union to string; this guard is the narrow
+// back — FORMAT_TAG_MAP is a full Record<TextFormatType, …>, so key
+// membership IS the format-type check.
+function isTextFormatType(format: string): format is TextFormatType {
+  return format in FORMAT_TAG_MAP
+}
+
+// The parent-chain climb's element test. nodeType, not instanceof: the
+// rendered tree may be another jsdom realm's, where a cross-realm
+// `instanceof HTMLElement` would fail.
+function isDomElement(node: Node | null): node is HTMLElement {
+  return node?.nodeType === 1
+}
 
 // Builds and renders text content, useful to ensure proper format tag opening/closing
 // and html escaping
@@ -85,11 +95,11 @@ export default class TextContent {
         const formatsToOpen: TextFormatType[] = []
 
         // get base list of formats that need to open
-        ;(Object.entries(FORMAT_TAG_MAP) as Entries<typeof FORMAT_TAG_MAP>).forEach(([format]) => {
-          if (node.hasFormat(format) && !openFormats.includes(format)) {
+        for (const format of Object.keys(FORMAT_TAG_MAP)) {
+          if (isTextFormatType(format) && node.hasFormat(format) && !openFormats.includes(format)) {
             formatsToOpen.push(format)
           }
-        })
+        }
 
         // re-order formats to open based on next nodes - we want to make
         // sure tags that will be kept open for later nodes are opened first
@@ -137,11 +147,10 @@ export default class TextContent {
         for (const format of openFormats.slice()) {
           if (!nextNode || $isLinkNode(nextNode) || (nextNode instanceof TextNode && !nextNode.hasFormat(format))) {
             // climb only while the parent chain stays elements (the root
-            // climb can meet a Document) — nodeType, not instanceof: the
-            // rendered tree may be another jsdom realm's
+            // climb can meet a Document)
             const parent = currentNode.parentNode
-            if (parent?.nodeType === 1) {
-              currentNode = parent as HTMLElement
+            if (isDomElement(parent)) {
+              currentNode = parent
               openFormats.pop()
             }
           }

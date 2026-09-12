@@ -34,11 +34,15 @@ export async function resolveHeadlessDom(injected?: ExportDOMDom, load: LoadJsdo
     return injected
   }
 
-  if (typeof window !== 'undefined' && window.document) {
-    // The REAL global window, not a fabricated {document} shell — the render
-    // context binds DOMPurify to options.dom.window downstream, and a
-    // structural fake is not a bindable window.
-    return { window }
+  // The REAL global window, not a fabricated {document} shell — the render
+  // context binds DOMPurify to options.dom.window downstream, and a
+  // structural fake is not a bindable window. The typeof guard goes through
+  // a nullable local (not `window?.document`): optional chaining does not
+  // protect an UNDECLARED global — in a windowless realm `window?.x` is a
+  // ReferenceError, not undefined.
+  const browserWindow = typeof window === 'undefined' ? undefined : window
+  if (browserWindow?.document) {
+    return { window: browserWindow }
   }
 
   if (!cachedDefaultDom) {

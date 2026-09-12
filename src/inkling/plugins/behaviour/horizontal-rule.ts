@@ -78,7 +78,9 @@ export function resolveDividerScanTarget(editor: LexicalEditor): ParagraphNode |
 /** Registers INSERT_HORIZONTAL_RULE_COMMAND. No-ops when the card is not registered. */
 export function registerHorizontalRuleInsert(editor: LexicalEditor): () => void {
   if (!getRegisteredNodeMap(editor).has('horizontalrule')) {
-    return () => {}
+    return () => {
+      /* noop — the card is not registered */
+    }
   }
   return editor.registerCommand(INSERT_HORIZONTAL_RULE_COMMAND, () => $insertHorizontalRule(), COMMAND_PRIORITY_EDITOR)
 }
@@ -92,7 +94,9 @@ export function registerHorizontalRuleInsert(editor: LexicalEditor): () => void 
  */
 export function registerHorizontalRuleScan(editor: LexicalEditor): () => void {
   if (!getRegisteredNodeMap(editor).has('horizontalrule')) {
-    return () => {}
+    return () => {
+      /* noop — the card is not registered */
+    }
   }
   return registerUpdateScan(editor, {
     dirty: 'leaves-or-elements',

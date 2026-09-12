@@ -44,7 +44,12 @@ export function FootnoteDefinitionNodeComponent({
     if (focusRequest?.targetKey !== targetKey) {
       return
     }
-    contentEditor.focus(() => {}, { defaultSelection: 'rootEnd' })
+    contentEditor.focus(
+      () => {
+        /* noop — the placement happens through defaultSelection below */
+      },
+      { defaultSelection: 'rootEnd' },
+    )
     footnoteHandle.setState({ focusRequest: null })
   }, [focusRequest, targetKey, contentEditor, footnoteHandle])
 

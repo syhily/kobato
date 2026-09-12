@@ -30,7 +30,7 @@ export function handlePlainTextPaste(
       // avoid any conversion if we're pasting onto a card shortcut
       const selection = $getSelection()
       const node = $isRangeSelection(selection) ? selection.anchor.getNode() : null
-      if (node && node.getTextContent().startsWith('/')) {
+      if (node?.getTextContent().startsWith('/')) {
         return false
       }
     }

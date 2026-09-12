@@ -12,6 +12,13 @@ import { useInklingLabels } from '@/inkling/hooks/useInklingLabels'
 const TWO_COLUMN_WIDTH = 540
 const THREE_COLUMN_WIDTH = 940
 
+// one narrowing read at the lib boundary: tsc's lib.dom types
+// contentBoxSize as a readonly array, tsgolint's vendored lib leaves it
+// any — the single-size-or-array union is the browser reality
+function isResizeObserverSize(value: unknown): value is ResizeObserverSize {
+  return typeof value === 'object' && value !== null && 'inlineSize' in value && typeof value.inlineSize === 'number'
+}
+
 export interface GifSelectorProps {
   browser: GifBrowser
   onGifInsert: (image: { src: string; width: number; height: number }) => void
@@ -54,14 +61,10 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
       if (!containerEntry) {
         return
       }
-      // one annotated read at the lib boundary: tsc's lib.dom types
-      // contentBoxSize as a readonly array, tsgolint's vendored lib leaves
-      // it any — the single-size-or-array union is the browser reality
-      const contentBoxSize = (
-        Array.isArray(containerEntry.contentBoxSize) ? containerEntry.contentBoxSize[0] : containerEntry.contentBoxSize
-      ) as ResizeObserverSize | undefined
+      const contentBoxSize: unknown = containerEntry.contentBoxSize
+      const size: unknown = Array.isArray(contentBoxSize) ? contentBoxSize[0] : contentBoxSize
 
-      const width = contentBoxSize?.inlineSize ?? 0
+      const width = isResizeObserverSize(size) ? size.inlineSize : 0
 
       let columnsCount = 4
 
@@ -223,7 +226,7 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
             </div>
           )}
 
-          {!!isLoading && !error && <Loader isLazyLoading={isLazyLoading} />}
+          {isLoading && !error && <Loader isLazyLoading={isLazyLoading} />}
 
           {!!error && (
             <div data-testid="gif-selector-error">

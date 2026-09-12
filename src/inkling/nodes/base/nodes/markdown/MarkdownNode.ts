@@ -16,8 +16,6 @@ export type MarkdownData = DecoratorNodeData<typeof markdownProperties>
 
 export type SerializedMarkdownNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof markdownProperties>>
 
-export interface MarkdownNode extends DecoratorNodeValueMap<typeof markdownProperties> {}
-
 export class MarkdownNode extends generateDecoratorNode({
   nodeType: 'markdown',
   properties: markdownProperties,

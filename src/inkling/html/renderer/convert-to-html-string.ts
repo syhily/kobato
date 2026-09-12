@@ -12,6 +12,15 @@ import { $isInklingCard } from '@/inkling/nodes/base'
 import { createRenderContext } from '@/inkling/nodes/base/render-context'
 
 /**
+ * The capability probe half of the guard below: the opt-in method existing
+ * as a function is the runtime narrowing, so the predicate needs no
+ * assertion (a plain entity like TKNode carries no such method).
+ */
+function hasInlineMarkupProbe(node: LexicalNode): node is LexicalNode & InlineMarkupTextEntity {
+  return 'isInlineMarkupEntity' in node && typeof node.isInlineMarkupEntity === 'function'
+}
+
+/**
  * The inline-markup-entity protocol guard (`@/inkling/nodes/base/export-dom`): a
  * TextNode entity that opts in exports element markup spliced into the text
  * flow instead of joining the pending text run. FootnoteRefNode is the
@@ -19,7 +28,7 @@ import { createRenderContext } from '@/inkling/nodes/base/render-context'
  * flowing through TextContent.
  */
 function $isInlineMarkupTextEntity(node: LexicalNode): node is TextNode & InlineMarkupTextEntity {
-  return $isTextNode(node) && (node as Partial<InlineMarkupTextEntity>).isInlineMarkupEntity?.() === true
+  return $isTextNode(node) && hasInlineMarkupProbe(node) && node.isInlineMarkupEntity() === true
 }
 
 export default function $convertToHtmlString(editor: LexicalEditor, options: ExportDOMOptions = {}): string {
@@ -47,18 +56,19 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     element: HTMLElement | DocumentFragment | Text | null
     type?: ExportDOMOutputType
   }): string {
-    switch (output.type) {
-      case 'inner':
-        return getElementInnerHTML(output.element)
-      case 'value':
-        if (output.element && 'value' in output.element && typeof output.element.value === 'string') {
-          return output.element.value
-        }
-
-        return ''
-      default:
-        return getElementOuterHTML(output.element)
+    if (output.type === 'inner') {
+      return getElementInnerHTML(output.element)
     }
+
+    if (output.type === 'value') {
+      if (output.element && 'value' in output.element && typeof output.element.value === 'string') {
+        return output.element.value
+      }
+
+      return ''
+    }
+
+    return getElementOuterHTML(output.element)
   }
 
   // Inline markup (text entities and inline decorators) exports through the

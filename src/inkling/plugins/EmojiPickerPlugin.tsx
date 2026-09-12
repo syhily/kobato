@@ -63,6 +63,62 @@ const EmojiMenuItem = function ({ index, isSelected, onClick, onMouseEnter, emoj
   )
 }
 
+function getPositionStyles() {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) {
+    return {}
+  }
+  const selectedRange = selection.getRangeAt(0)
+  const rangeRect = selectedRange.getBoundingClientRect()
+
+  return {
+    marginTop: `${rangeRect.height}px`,
+  }
+}
+
+// the typeahead menu body, hoisted out of the plugin render so menuRenderFn
+// carries no component definition. A plain render function, NOT a component:
+// the typeahead contract hands over the anchor as a ref to read at call
+// time, which is only permitted outside a component body
+function renderEmojiMenu(
+  anchorElementRef: React.RefObject<HTMLElement | null>,
+  searchResults: EmojiOption[] | null,
+  selectedIndex: number | null,
+  selectOptionAndCleanUp: (option: EmojiOption) => void,
+  setHighlightedIndex: (index: number) => void,
+) {
+  if (anchorElementRef.current === null || !searchResults || searchResults.length === 0) {
+    return null
+  }
+  return (
+    <Portal className="w-[240px]" to={anchorElementRef.current}>
+      <ul
+        className="dark:bg-grey-950 relative z-10 max-h-[214px] scroll-p-2 list-none overflow-y-auto rounded-md bg-white p-1  shadow-md select-none"
+        data-testid="emoji-menu"
+        style={getPositionStyles()}
+      >
+        {searchResults.map((emoji, index) => (
+          <EmojiMenuItem
+            key={emoji.id}
+            emoji={emoji}
+            index={index}
+            isSelected={selectedIndex === index}
+            onClick={(event) => {
+              setHighlightedIndex(index)
+              selectOptionAndCleanUp(emoji)
+              event.stopPropagation()
+              event.preventDefault()
+            }}
+            onMouseEnter={() => {
+              setHighlightedIndex(index)
+            }}
+          />
+        ))}
+      </ul>
+    </Portal>
+  )
+}
+
 // Emoji picker adapter: owns the typeahead menu rendering and the query state,
 // and delegates behaviour to the headless module in
 // ./behaviour/emoji-completion (index lifecycle, query policy, exact-match
@@ -141,53 +197,11 @@ export function EmojiPickerPlugin() {
     [editor],
   )
 
-  function getPositionStyles() {
-    const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0) {
-      return {}
-    }
-    const selectedRange = selection.getRangeAt(0)
-    const rangeRect = selectedRange.getBoundingClientRect()
-
-    return {
-      marginTop: `${rangeRect.height}px`,
-    }
-  }
-
   return (
     <LexicalTypeaheadMenuPlugin
-      menuRenderFn={(anchorElementRef, { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }) => {
-        if (anchorElementRef.current === null || !searchResults || searchResults.length === 0) {
-          return null
-        }
-        return (
-          <Portal className="w-[240px]" to={anchorElementRef.current}>
-            <ul
-              className="dark:bg-grey-950 relative z-10 max-h-[214px] scroll-p-2 list-none overflow-y-auto rounded-md bg-white p-1  shadow-md select-none"
-              data-testid="emoji-menu"
-              style={getPositionStyles()}
-            >
-              {searchResults.map((emoji, index) => (
-                <EmojiMenuItem
-                  key={emoji.id}
-                  emoji={emoji}
-                  index={index}
-                  isSelected={selectedIndex === index}
-                  onClick={(event) => {
-                    setHighlightedIndex(index)
-                    selectOptionAndCleanUp(emoji)
-                    event.stopPropagation()
-                    event.preventDefault()
-                  }}
-                  onMouseEnter={() => {
-                    setHighlightedIndex(index)
-                  }}
-                />
-              ))}
-            </ul>
-          </Portal>
-        )
-      }}
+      menuRenderFn={(anchorElementRef, { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }) =>
+        renderEmojiMenu(anchorElementRef, searchResults, selectedIndex, selectOptionAndCleanUp, setHighlightedIndex)
+      }
       options={searchResults ?? []}
       triggerFn={checkForTriggerMatch}
       onQueryChange={setQueryString}

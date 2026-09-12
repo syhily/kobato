@@ -159,7 +159,8 @@ function isContentImageSizes(value: unknown): value is Record<string, { width: n
     return false
   }
   return Object.values(value).every(
-    (entry) => typeof entry === 'object' && entry !== null && typeof entry.width === 'number',
+    (entry: unknown) =>
+      typeof entry === 'object' && entry !== null && 'width' in entry && typeof entry.width === 'number',
   )
 }
 
@@ -287,7 +288,10 @@ function resolveCreateDocument(options: ExportDOMOptions): () => Document {
     }
   }
 
-  const document = typeof window !== 'undefined' && window.document
+  // globalThis, not a bare `window` read: in a non-browser render the global
+  // binding does not exist, and `globalThis.window` is undefined instead of a
+  // ReferenceError
+  const document = globalThis.window?.document
 
   if (!document) {
     throw new Error('Must be passed a `createDocument` function as an option when used in a non-browser environment')
@@ -300,28 +304,25 @@ function resolveCreateDocument(options: ExportDOMOptions): () => Document {
 
 /**
  * The options copied verbatim onto the context (documented at their
- * interface declarations): the pass-through half of the seam. The key list
- * is the single enumeration the factory copies from — a new pass-through
- * option joins the options type, the interface, and this list, and the
- * factory body never changes.
+ * interface declarations): the pass-through half of the seam. The Pick key
+ * union is the single enumeration the factory copies from — a new
+ * pass-through option joins the options type, the interface, and this list.
  */
-const VERBATIM_OPTION_KEYS = [
-  'canTransformImage',
-  'canTransformImageToFormat',
-  'pictureImageFormats',
-  'resolveRenderMeta',
-] as const satisfies readonly (keyof ExportDOMOptions)[]
-
-type VerbatimOptions = Pick<RenderContext, (typeof VERBATIM_OPTION_KEYS)[number]>
+type VerbatimOptions = Pick<
+  RenderContext,
+  'canTransformImage' | 'canTransformImageToFormat' | 'pictureImageFormats' | 'resolveRenderMeta'
+>
 
 function pickVerbatimOptions(options: ExportDOMOptions): VerbatimOptions {
-  const picked: Record<string, unknown> = {}
-  for (const key of VERBATIM_OPTION_KEYS) {
-    // the key list is satisfies-checked against ExportDOMOptions, so the
-    // untyped write stays inside the seam
-    picked[key] = options[key]
+  // Direct per-key reads: every key is checked against ExportDOMOptions at
+  // the read and against RenderContext at the return, so the two sides can
+  // never drift and no Record bridge/assertion is needed
+  return {
+    canTransformImage: options.canTransformImage,
+    canTransformImageToFormat: options.canTransformImageToFormat,
+    pictureImageFormats: options.pictureImageFormats,
+    resolveRenderMeta: options.resolveRenderMeta,
   }
-  return picked as VerbatimOptions
 }
 
 /**
@@ -367,7 +368,7 @@ export function createRenderContext(options: ExportDOMOptions): RenderContext {
   // use — the same non-browser error resolveCreateDocument throws eagerly.
   // A createHTMLDocument()'s defaultView is always null, so the window can
   // only come from options.dom, a windowed document, or the global.
-  const browserWindow = typeof window !== 'undefined' && window.document ? window : undefined
+  const browserWindow = globalThis.window?.document ? globalThis.window : undefined
   let resolvedWindow: ExportDOMDom['window'] | undefined
   const resolveWindow = (): ExportDOMDom['window'] => {
     if (resolvedWindow) {
@@ -418,8 +419,12 @@ export function createRenderContext(options: ExportDOMOptions): RenderContext {
         cleanDOM(container, config.allowedTags, context)
         return container.innerHTML
       }
-      // The ExportDOMDom window is structural; the WindowLike assertion stays
-      // inside the seam. One bound instance per context.
+      // The ExportDOMDom window is structural ({ document: Document }) while
+      // DOMPurify's WindowLike is its own structural pick of the global
+      // window; neither is assignable to the other, and no runtime check can
+      // prove the bridge — the assertion stays inside the seam. One bound
+      // instance per context.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- structural window types are unrelated by construction; the seam binds a real window
       boundDOMPurify ??= DOMPurify(resolveWindow() as unknown as WindowLike)
       return boundDOMPurify.sanitize(html, config)
     },

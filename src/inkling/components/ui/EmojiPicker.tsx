@@ -8,6 +8,14 @@ interface EmojiMartInstance extends HTMLElement {
   update: (props: EmojiMartPickerOptions) => void
 }
 
+type EmojiMartPickerConstructor = new (options: Record<string, unknown>) => EmojiMartInstance
+
+// emoji-mart's Picker export is typed `any`; narrow constructor candidates at
+// runtime instead of asserting
+function isEmojiMartPickerConstructor(value: unknown): value is EmojiMartPickerConstructor {
+  return typeof value === 'function'
+}
+
 // the options we pass through to emoji-mart's Picker, per
 // https://github.com/missive/emoji-mart#options--props — emoji-mart's own
 // types are `any` throughout, so these are declared here with no index
@@ -61,10 +69,11 @@ export default function EmojiPicker({
     // are loaded (e.g. UMD + ESM in Inkling's dev environment), only the first
     // copy's class gets registered with customElements.define(). Instantiating
     // an unregistered class throws "Illegal constructor".
-    const RegisteredPicker = customElements.get('em-emoji-picker') || Picker
-    setInstance(
-      new (RegisteredPicker as new (options: Record<string, unknown>) => EmojiMartInstance)({ ...props, ref }),
-    )
+    const pickerCandidate: unknown = customElements.get('em-emoji-picker') || Picker
+    if (!isEmojiMartPickerConstructor(pickerCandidate)) {
+      throw new TypeError('emoji-mart picker constructor is not available')
+    }
+    setInstance(new pickerCandidate({ ...props, ref }))
 
     return () => {
       setInstance(null)

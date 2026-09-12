@@ -120,6 +120,9 @@ export function InputListGroup({
   )
 }
 
+// a flat option list is one degenerate group with no header
+const renderEmptyGroup = () => <></>
+
 // The onChange handler receives the input's value directly, not the change event.
 export function InputList<T extends InputListItemData = InputListItemData>({
   autoFocus,
@@ -216,7 +219,7 @@ export function InputList<T extends InputListItemData = InputListItemData>({
             ) : (
               // a flat option list is one degenerate group with no header
               <KeyboardSelectionWithGroups
-                getGroup={() => <></>}
+                getGroup={renderEmptyGroup}
                 getItem={getItem}
                 groups={[{ label: '', items: listOptions ?? [] }]}
                 onSelect={onSelectEvent}

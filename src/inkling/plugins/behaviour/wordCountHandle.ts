@@ -39,7 +39,9 @@ export function publishWordCountCallback(
   { onChange, language }: { onChange: (count: number) => void; language: string },
 ): () => void {
   if (isNestedEditor(editor)) {
-    return () => {}
+    return () => {
+      /* noop — nested editors never publish */
+    }
   }
   handle.setState({ onChange, language })
   return () => {

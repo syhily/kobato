@@ -276,7 +276,9 @@ function $shouldConvertInsertedAt(): boolean {
 function registerNativeAtLinkInsertion(editor: LexicalEditor) {
   const rootElement = editor.getRootElement()
   if (!rootElement) {
-    return () => {}
+    return () => {
+      /* noop — no root element, nothing was registered */
+    }
   }
 
   const handleAtInsert = (event: Event) => {

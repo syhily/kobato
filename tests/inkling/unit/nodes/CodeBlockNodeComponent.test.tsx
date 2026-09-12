@@ -52,10 +52,11 @@ function addCodeBlockNode(editor: LexicalEditor): Promise<NodeKey> {
 
 function renderComponent(nodeKey: NodeKey, darkMode: boolean) {
   const composerValue = createHostIntegrationValue()
+  const uiPrefsValue = createUiPrefsValue(darkMode)
   const { wrapper: CardSelectionStoreProvider } = createSelection(nodeKey)
   return render(
     <InklingHostIntegrationProvider value={composerValue}>
-      <InklingUiPrefsContext.Provider value={createUiPrefsValue(darkMode)}>
+      <InklingUiPrefsContext.Provider value={uiPrefsValue}>
         <CardSelectionStoreProvider>
           <CodeBlockNodeComponent code="const a = 1" language="javascript" nodeKey={nodeKey} />
         </CardSelectionStoreProvider>
@@ -106,10 +107,11 @@ describe('CodeBlockNodeComponent', () => {
       cardConfig: CardConfig = {},
     ) {
       const composerValue = createHostIntegrationValue({ cardConfig })
+      const uiPrefsValue = createUiPrefsValue(false)
       const { wrapper: CardSelectionStoreProvider } = createSelection(nodeKey, selection)
       return render(
         <InklingHostIntegrationProvider value={composerValue}>
-          <InklingUiPrefsContext.Provider value={createUiPrefsValue(false)}>
+          <InklingUiPrefsContext.Provider value={uiPrefsValue}>
             <CardSelectionStoreProvider>
               <CodeBlockNodeComponent code="const a = 1" language="javascript" nodeKey={nodeKey} />
             </CardSelectionStoreProvider>

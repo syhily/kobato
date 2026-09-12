@@ -29,6 +29,13 @@ function cleanAttributes(element: Element, allowedAttributes: Record<string, str
   }
 }
 
+// nodeType, not instanceof: the cleaned document may be another jsdom
+// realm's, where instanceof fails. nodeType 1 (ELEMENT_NODE) is realm-proof
+// and genuinely discriminates — every node with nodeType 1 IS an Element.
+function isElementNode(node: ChildNode): node is Element {
+  return node.nodeType === 1
+}
+
 export function cleanDOM(
   node: Element,
   allowedTags: string[],
@@ -37,20 +44,18 @@ export function cleanDOM(
 ) {
   for (let i = 0; i < node.childNodes.length; i++) {
     const child = node.childNodes[i]
-    // nodeType, not instanceof: the cleaned document may be another jsdom
-    // realm's, where instanceof fails (the casts below are its honest bridge)
-    if (child.nodeType !== 1) {
+    if (!isElementNode(child)) {
       continue
     }
-    if (!allowedTags.includes((child as Element).tagName)) {
+    if (!allowedTags.includes(child.tagName)) {
       while (child.firstChild) {
         node.insertBefore(child.firstChild, child)
       }
       node.removeChild(child)
       i -= 1
     } else {
-      cleanAttributes(child as Element, allowedAttributes, context)
-      cleanDOM(child as Element, allowedTags, context, allowedAttributes)
+      cleanAttributes(child, allowedAttributes, context)
+      cleanDOM(child, allowedTags, context, allowedAttributes)
     }
   }
 }

@@ -22,6 +22,12 @@ export const SPECIAL_MARKUPS = {
 
 export type SpecialMarkupFormat = keyof typeof SPECIAL_MARKUPS
 
+// Object.keys loses the literal key type; narrow each key back through the
+// map itself instead of casting
+function isSpecialMarkupFormat(format: string): format is SpecialMarkupFormat {
+  return format in SPECIAL_MARKUPS
+}
+
 /**
  * Unwrap the first special markup format `anchorNode` carries: clear the
  * format, re-add the markup around the text minus its last character (the
@@ -33,17 +39,18 @@ export type SpecialMarkupFormat = keyof typeof SPECIAL_MARKUPS
 export function $unwrapSpecialMarkupFormat(anchorNode: TextNode, selection: RangeSelection): boolean {
   const textContent = anchorNode.getTextContent()
 
-  for (const tag of Object.keys(SPECIAL_MARKUPS) as Array<SpecialMarkupFormat>) {
-    if (anchorNode.hasFormat(tag)) {
-      const markup = SPECIAL_MARKUPS[tag]
-      // for replacement strings e.g. {{variable}} we shouldn't add the markup (assumes use of ReplacementStringsPlugin)
+  for (const format of Object.keys(SPECIAL_MARKUPS)) {
+    if (!isSpecialMarkupFormat(format)) {
+      continue
+    }
+    if (anchorNode.hasFormat(format)) {
+      const markup = SPECIAL_MARKUPS[format]
       let newText = textContent
-      if (tag === 'code' && /{.*?}(?![A-Za-z\s])/.exec(textContent)) {
-        newText = newText.slice(0, -1)
-      } else {
+      // for replacement strings e.g. {{variable}} we shouldn't add the markup (assumes use of ReplacementStringsPlugin)
+      if (!(format === 'code' && /{.*?}(?![A-Za-z\s])/.exec(textContent))) {
         newText = markup + newText + markup
-        newText = newText.slice(0, -1) // remove last markup character
       }
+      newText = newText.slice(0, -1) // remove the last character (the eaten one or the trailing markup)
 
       // manually clear formatting and push offset to accommodate for the added markup
       anchorNode.setFormat(0)

@@ -62,7 +62,9 @@ export function MediaUploader({
   openImageEditor,
   progress,
   errors,
-  onRemoveMedia = () => {},
+  onRemoveMedia = () => {
+    /* noop default — read-only renders */
+  },
   additionalActions,
   setFileInputRef,
 }: MediaUploaderProps) {

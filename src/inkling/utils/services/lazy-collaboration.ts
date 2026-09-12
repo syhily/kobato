@@ -56,7 +56,9 @@ export function createLazyProviderFactory(
         })
         // A failed chunk import (network/chunk error) leaves the factory
         // inert — never an unhandled rejection.
-        .catch(() => {})
+        .catch(() => {
+          // swallow: the session stays inert (see above)
+        })
     },
     cancel: () => track.dispose(),
   }
