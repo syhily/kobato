@@ -19,7 +19,10 @@
 // would leave a dead skeleton that swallows clicks until hydration of the
 // whole page finishes (the comments stream + root hydration take seconds).
 // Rendering in place lets React's selective hydration prioritise this
-// boundary on the first click and replay the focus.
+// boundary on the first click and replay the click; the shell's onClick then
+// focuses the editor programmatically, because a replayed (untrusted)
+// mousedown never runs the browser's native focus-the-contenteditable
+// default action.
 
 import '@/styles/inkling-comment-editor.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -111,6 +114,24 @@ export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled
     onBodyChangeRef.current(unsafeCast<CommentEditorState>(state))
   }, [])
 
+  // Click-to-focus fallback. The canvas now fills the shell (the host CSS
+  // puts the min-height/padding on the contentEditable), so this only fires
+  // for residual non-editable hits — and, critically, for a click React's
+  // selective hydration captured before this boundary hydrated and replays
+  // afterwards: the replayed untrusted mousedown never focuses the
+  // contenteditable natively, but the replayed click DOES run this handler.
+  // Skipped when the editor already owns focus so an in-editor click's caret
+  // placement is never disturbed.
+  const focusEditor = useCallback(() => {
+    if (disabled === true) {
+      return
+    }
+    const root = editorInstance?.getRootElement()
+    if (root && !root.contains(document.activeElement)) {
+      editorInstance?.focus()
+    }
+  }, [disabled, editorInstance])
+
   return (
     <div
       className={cn(
@@ -119,6 +140,7 @@ export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled
         'focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/40',
         className,
       )}
+      onClick={focusEditor}
       onKeyDownCapture={blockQuoteAsideCycle}
     >
       <InklingComposer

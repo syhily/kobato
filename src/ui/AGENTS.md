@@ -173,7 +173,13 @@ unrelated concerns.
   SSR/hydration directly (no `useHydrated` gate — the empty-seed markup is
   deterministic, and a gate would leave a dead skeleton swallowing clicks
   until the whole page hydrates; rendering in place lets React's selective
-  hydration prioritise the boundary on the first click and replay the focus).
+  hydration prioritise the boundary on the first click, and the shell's
+  `onClick` focuses the editor programmatically — a replayed untrusted
+  mousedown never runs the browser's native focus-the-contenteditable
+  action). The canvas fills the shell: `min-height`/padding live on the
+  contentEditable itself in `src/styles/inkling-comment-editor.css`, so the
+  whole bordered box is clickable — a wrapper-owned box leaves the area
+  below the one-line empty paragraph as dead click zones that never focus.
   The shell is transparent (`bg-transparent`) —
   no extra background behind the canvas, and no placeholder copy
   (`placeholder={<></>}` on the InklingSurface). Host styling hooks are scoped under

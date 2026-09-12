@@ -26,12 +26,19 @@
 @import '@/inkling/styles/index.css' layer(inkling);
 
 /* Comment canvas: a compact bordered input, not an article column. The
-   min-height keeps the empty state clickable; the bottom runway lets the
-   floating toolbar open without clipping against the form's edge. The shell
-   is transparent (`.bg-transparent` on the wrapper) so the canvas sits
-   directly on the surrounding surface. */
+   min-height keeps the empty state tall; the bottom runway lets the floating
+   toolbar open without clipping against the form's edge. The shell is
+   transparent (`.bg-transparent` on the wrapper) so the canvas sits directly
+   on the surrounding surface. The min-height and padding live on the
+   contentEditable (.inkling-prose) itself, NOT the .inkling-lexical wrapper:
+   an empty editor is one paragraph tall, so a wrapper-owned box leaves the
+   rest of the visible area as dead click zones that hit the plain wrapper
+   div and never focus the editor. */
 .kobato-comment-editor .inkling-lexical {
   width: 100%;
+}
+
+.kobato-comment-editor .inkling-prose {
   min-height: 96px;
   padding: 6.6px 8.8px 22px;
 }

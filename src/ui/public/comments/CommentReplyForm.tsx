@@ -285,7 +285,7 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
           </label>
           <Input
             id="comment-name"
-            className="bg-canvas"
+            className="border-line bg-canvas"
             placeholder="昵称"
             name="name"
             type="text"
@@ -303,7 +303,7 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
           </label>
           <Input
             id="comment-email"
-            className="bg-canvas"
+            className="border-line bg-canvas"
             name="email"
             placeholder="邮箱"
             type="email"
@@ -322,7 +322,14 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
           <label htmlFor="comment-url" className="sr-only">
             网址
           </label>
-          <Input id="comment-url" className="bg-canvas" placeholder="网址" name="link" type="url" autoComplete="url" />
+          <Input
+            id="comment-url"
+            className="border-line bg-canvas"
+            placeholder="网址"
+            name="link"
+            type="url"
+            autoComplete="url"
+          />
         </div>
       )}
     </div>
