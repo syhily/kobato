@@ -41,32 +41,26 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
     if (!tabs) {
       return []
     }
-    return Object.keys(tabContent).map((key) => ({ id: key, label: key.charAt(0).toUpperCase() + key.slice(1) }))
+    // the tab id IS the label — TabView capitalizes it in CSS; host tab ids
+    // are arbitrary strings, so no labels-table key can cover them
+    return Object.keys(tabContent).map((key) => ({ id: key, label: key }))
   }, [tabs, tabContent])
 
   return (
     // Ideally we would use Portal to avoid issues with transformed ancestors (https://bugs.chromium.org/p/chromium/issues/detail?id=20574)
     // However, Portal causes problems with drag/drop, focus, etc
     <div className={`!mt-0 touch-none ${darkMode ? 'dark' : ''} ${className ?? ''}`}>
-      {tabs ? (
-        <div
-          ref={ref}
-          className="not-inkling-prose dark:bg-grey-950 fixed top-0 left-0 z-[9999999] m-0 flex w-[320px] flex-col rounded-lg bg-white bg-clip-padding font-sans shadow-lg will-change-transform dark:shadow-xl"
-          data-testid="settings-panel"
-          data-inkling-settings-panel
-        >
-          <TabView defaultTab={defaultTab} tabContent={tabContent} tabs={tabItems} />
-        </div>
-      ) : (
-        <div
-          ref={ref}
-          className="not-inkling-prose dark:bg-grey-950 fixed top-0 left-0 z-[9999999] m-0 flex w-[320px] flex-col gap-3 rounded-lg bg-white bg-clip-padding p-6 font-sans shadow-lg will-change-transform dark:shadow-xl"
-          data-testid="settings-panel"
-          data-inkling-settings-panel
-        >
-          {children}
-        </div>
-      )}
+      <div
+        ref={ref}
+        className={cx(
+          'not-inkling-prose dark:bg-grey-950 fixed top-0 left-0 z-[9999999] m-0 flex w-[320px] flex-col rounded-lg bg-white bg-clip-padding font-sans shadow-lg will-change-transform dark:shadow-xl',
+          !tabs && 'gap-3 p-6',
+        )}
+        data-testid="settings-panel"
+        data-inkling-settings-panel
+      >
+        {tabs ? <TabView defaultTab={defaultTab} tabContent={tabContent} tabs={tabItems} /> : children}
+      </div>
     </div>
   )
 }

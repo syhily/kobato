@@ -28,7 +28,7 @@ const TabView = ({
         {tabs.map((tab: { id: string; label: string }) => (
           <button
             key={tab.id}
-            className={`-mb-px appearance-none pt-4 pb-3 text-sm font-semibold whitespace-nowrap transition-all ${
+            className={`-mb-px appearance-none pt-4 pb-3 text-sm font-semibold whitespace-nowrap capitalize transition-all ${
               tabs.length > 1 ? 'cursor-pointer border-b-2' : 'cursor-default'
             } ${
               currentTab === tab.id

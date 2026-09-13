@@ -74,8 +74,11 @@ describe('SettingsPanel', function () {
       </SettingsPanel>,
     )
 
-    expect(screen.getByTestId('tab-general')).toHaveTextContent('General')
-    expect(screen.getByTestId('tab-advanced')).toHaveTextContent('Advanced')
+    // the tab id renders raw — capitalization is CSS (`capitalize` on the
+    // tab button in TabView), not a JS transform
+    expect(screen.getByTestId('tab-general')).toHaveTextContent('general')
+    expect(screen.getByTestId('tab-general')).toHaveClass('capitalize')
+    expect(screen.getByTestId('tab-advanced')).toHaveTextContent('advanced')
   })
 
   describe('setting helpers', function () {
