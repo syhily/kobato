@@ -2,6 +2,7 @@ import katex from 'katex'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { reprojectBodyHtmlBatch } from '@/server/domains/content/services/reproject-body-html'
 import { reindexSearchBatch } from '@/server/domains/posts/services/search-reindex'
 import { adminProc } from '@/server/http/orpc-base'
 import { KATEX_OPTIONS } from '@/server/infra/pt/katex'
@@ -44,4 +45,25 @@ const reindexSearch = adminProc
     return result
   })
 
-export const adminRendersRouter = { math, reindexSearch }
+const reprojectBodies = adminProc
+  .route({ method: 'POST', path: '/admin/renders/reproject-bodies' })
+  .input(z.object({ offset: z.number().optional(), batchSize: z.number().optional() }))
+  .output(
+    z.object({
+      processed: z.number(),
+      failed: z.number(),
+      rewritten: z.number(),
+      total: z.number(),
+      nextOffset: z.number().nullable(),
+    }),
+  )
+  .handler(async ({ input, context }) => {
+    const result = await reprojectBodyHtmlBatch(context.db, input)
+    recordAuditEventFromContext(context, {
+      action: 'body_projection_rebuilt',
+      resourceType: 'cache',
+    })
+    return result
+  })
+
+export const adminRendersRouter = { math, reindexSearch, reprojectBodies }

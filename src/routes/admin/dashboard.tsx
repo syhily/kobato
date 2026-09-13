@@ -6,6 +6,7 @@ import { computeDateRange } from '@/shared/contracts/analytics'
 import { pickEmptyStateLine } from '@/shared/contracts/dashboard'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { roleLabel } from '@/shared/utils/roles'
+import { BodyProjectionCard } from '@/ui/admin/dashboard/BodyProjectionCard'
 import { QuickActions } from '@/ui/admin/dashboard/QuickActions'
 import { RecentDraftsCard } from '@/ui/admin/dashboard/RecentDraftsCard'
 import { RecentPublishedCard } from '@/ui/admin/dashboard/RecentPublishedCard'
@@ -137,7 +138,12 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
         </div>
       )}
       <StatsGrid stats={stats} />
-      {isAdmin && <SearchReindexCard />}
+      {isAdmin && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <SearchReindexCard />
+          <BodyProjectionCard />
+        </div>
+      )}
       <div className="grid gap-4 lg:grid-cols-2">
         <RecentPublishedCard posts={recentPublished} />
         <RecentDraftsCard drafts={recentDrafts} />

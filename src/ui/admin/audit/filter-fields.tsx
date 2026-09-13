@@ -85,6 +85,7 @@ export const ACTION_OPTIONS = [
   { value: 'audit_archive_run_failed', label: '审计归档执行失败' },
   { value: 'cache_cleared', label: '缓存清除' },
   { value: 'search_reindexed', label: '搜索重建索引' },
+  { value: 'body_projection_rebuilt', label: '正文投影重建' },
   { value: 'test_mail_sent', label: '测试邮件发送' },
   { value: 'search', label: '搜索' },
   { value: 'audit_archive_run', label: '审计归档执行' },

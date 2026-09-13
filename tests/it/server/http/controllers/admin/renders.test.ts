@@ -120,3 +120,57 @@ describe('adminRendersRouter.reindexSearch', () => {
     expect(auditRows).toHaveLength(2)
   })
 })
+
+describe('adminRendersRouter.reprojectBodies', () => {
+  it('rewrites drifted projection columns in real batches and records the audit rows', async () => {
+    const admin = await seedAdmin()
+    await db.insert(content).values({
+      type: 'post',
+      ownerId: 1,
+      revisionNo: 1,
+      status: 'published',
+      body: lexicalBodyWith([lexicalParagraph('Alpha body text')]),
+    })
+    await db.insert(content).values({
+      type: 'post',
+      ownerId: 2,
+      revisionNo: 1,
+      status: 'published',
+      body: lexicalBodyWith([lexicalParagraph('Beta body text')]),
+      bodyHtml: '<p>stale</p>',
+    })
+
+    const page1 = await call(
+      adminRendersRouter.reprojectBodies,
+      { offset: 0, batchSize: 1 },
+      { context: adminCtx(admin) },
+    )
+    expect(page1).toEqual({ processed: 1, failed: 0, rewritten: 1, total: 2, nextOffset: 1 })
+
+    const page2 = await call(
+      adminRendersRouter.reprojectBodies,
+      { offset: 1, batchSize: 1 },
+      { context: adminCtx(admin) },
+    )
+    expect(page2).toEqual({ processed: 1, failed: 0, rewritten: 1, total: 2, nextOffset: null })
+
+    const rows = await db.select().from(content).orderBy(content.id)
+    expect(rows.map((row) => row.bodyText)).toEqual(
+      expect.arrayContaining([expect.stringContaining('Alpha body text'), expect.stringContaining('Beta body text')]),
+    )
+    for (const row of rows) {
+      expect(row.bodyHtml).not.toBe('<p>stale</p>')
+      expect(row.bodyHtmlFeed).not.toBeNull()
+    }
+
+    // A re-run finds no drift and rewrites nothing.
+    const again = await call(adminRendersRouter.reprojectBodies, {}, { context: adminCtx(admin) })
+    expect(again).toEqual({ processed: 2, failed: 0, rewritten: 0, total: 2, nextOffset: null })
+
+    // Each call records a real audit row (flushed from the batcher).
+    await flushAuditLog()
+    const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'body_projection_rebuilt'))
+    expect(auditRows).toHaveLength(3)
+    expect(auditRows[0]!.resourceType).toBe('cache')
+  })
+})
