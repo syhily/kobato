@@ -6,6 +6,31 @@ export type UseMusicPlaybackOptions = {
   onError?: () => void
 }
 
+let cachedVolumeSupport: boolean | null = null
+
+/**
+ * iOS Safari ignores programmatic `audio.volume` — the level is read-only
+ * and owned by the hardware keys, so a software volume slider can never
+ * take effect there. Probe once by writing and reading back. SSR defaults
+ * to true so static markup keeps the control.
+ */
+export function isProgrammaticVolumeSupported(): boolean {
+  if (typeof document === 'undefined') {
+    return true
+  }
+  if (cachedVolumeSupport === null) {
+    const probe = document.createElement('audio')
+    probe.volume = 0.5
+    cachedVolumeSupport = probe.volume === 0.5
+  }
+  return cachedVolumeSupport
+}
+
+/** Test seam: clears the memoized probe (same pattern as `__resetRateLimitsForTests`). */
+export function __resetProgrammaticVolumeSupportForTests(): void {
+  cachedVolumeSupport = null
+}
+
 /**
  * Playback core for the music-player card: owns a detached HTMLAudioElement
  * and exposes state + actions. `currentTime` is polled with
@@ -22,6 +47,7 @@ export function useMusicPlayback({ src, initialVolume = 0.7, onError }: UseMusic
   const [muted, setMuted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [isVolumeSupported] = useState(isProgrammaticVolumeSupported)
 
   const onErrorRef = useRef(onError)
   useEffect(() => {
@@ -141,6 +167,7 @@ export function useMusicPlayback({ src, initialVolume = 0.7, onError }: UseMusic
     muted,
     isLoading,
     hasError,
+    isVolumeSupported,
     togglePlay,
     seek,
     setVolume,

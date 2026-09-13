@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { MUSIC_PLAYER_CARD_CLASSES, musicPlayerFallbackHtml } from '@/shared/lexical/cards/music-player'
 import { MusicPlayerCard } from '@/ui/public/music-player/music-player'
+import { __resetProgrammaticVolumeSupportForTests } from '@/ui/public/music-player/use-music-playback'
 
 const base = {
   name: 'Test Song',
@@ -58,6 +59,53 @@ describe('ui/public/music-player/music-player', () => {
 
     fireEvent.click(getByLabelText('歌词'))
     expect(getByText('First line')).not.toBeNull()
+  })
+
+  it('keeps the volume slider collapsed until hover/focus on fine pointers', () => {
+    const html = renderToStaticMarkup(<MusicPlayerCard {...base} />)
+    expect(html).toContain('aria-label="音量"')
+    expect(html).toContain('group-hover/volume:w-20')
+  })
+
+  it('keeps the volume slider expanded on coarse pointers (touch has no hover)', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(hover: none)',
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }))
+    try {
+      const { getByLabelText } = render(<MusicPlayerCard {...base} />)
+      const container = getByLabelText('音量').parentElement
+      expect(container?.className).toContain('w-20')
+      expect(container?.className).not.toContain('w-0')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('hides the volume slider but keeps mute when the platform ignores programmatic volume (iOS)', () => {
+    const original = Object.getOwnPropertyDescriptor(window.HTMLMediaElement.prototype, 'volume')
+    Object.defineProperty(window.HTMLMediaElement.prototype, 'volume', {
+      configurable: true,
+      get: () => 1,
+      set: () => {},
+    })
+    __resetProgrammaticVolumeSupportForTests()
+    try {
+      const html = renderToStaticMarkup(<MusicPlayerCard {...base} />)
+      expect(html).not.toContain('aria-label="音量"')
+      expect(html).toContain('aria-label="静音"')
+    } finally {
+      if (original) {
+        Object.defineProperty(window.HTMLMediaElement.prototype, 'volume', original)
+      }
+      __resetProgrammaticVolumeSupportForTests()
+    }
   })
 
   it('keeps the paused initial render structurally aligned with the export fallback markup', () => {

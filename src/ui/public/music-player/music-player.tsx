@@ -2,6 +2,7 @@ import { ListMusicIcon, Loader2Icon, PauseIcon, PlayIcon, Volume2Icon, VolumeXIc
 import { useState } from 'react'
 
 import { cn } from '@/ui/lib/cn'
+import { useMediaQuery } from '@/ui/lib/use-media-query'
 import { formatAudioDuration } from '@/ui/public/music-player/format-time'
 import { LyricsPanel } from '@/ui/public/music-player/lyrics'
 import { ScrubBar } from '@/ui/public/music-player/scrub-bar'
@@ -21,6 +22,9 @@ const stopEvent = (event: React.SyntheticEvent) => event.stopPropagation()
 export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: MusicPlayerCardProps) {
   const playback = useMusicPlayback({ src: url })
   const [lyricsOpen, setLyricsOpen] = useState(false)
+  // Touch has no hover (and iOS never focuses buttons on tap), so the
+  // hover/focus-revealed slider would stay unreachable — keep it expanded.
+  const isCoarsePointer = useMediaQuery('(hover: none)')
 
   const hasLrc = Boolean(lrc)
   const progress = playback.duration > 0 ? playback.currentTime / playback.duration : 0
@@ -105,15 +109,22 @@ export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: Mu
               <Volume2Icon className="size-4" />
             )}
           </button>
-          <div className="w-0 overflow-hidden transition-[width] duration-200 group-focus-within/volume:w-20 group-hover/volume:w-20">
-            <ScrubBar
-              ariaLabel="音量"
-              className="w-20 pr-2"
-              value={playback.muted ? 0 : playback.volume}
-              onScrub={playback.setVolume}
-              onSeek={playback.setVolume}
-            />
-          </div>
+          {playback.isVolumeSupported ? (
+            <div
+              className={cn(
+                'overflow-hidden transition-[width] duration-200',
+                isCoarsePointer ? 'w-20' : 'w-0 group-focus-within/volume:w-20 group-hover/volume:w-20',
+              )}
+            >
+              <ScrubBar
+                ariaLabel="音量"
+                className="w-20 pr-2"
+                value={playback.muted ? 0 : playback.volume}
+                onScrub={playback.setVolume}
+                onSeek={playback.setVolume}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 
