@@ -4,13 +4,17 @@ import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 
 // The dSHI twin of the PT renderer's FootnoteProvider/Tooltip pair: hovering
 // or focusing an exported footnote reference (`sup > a[href="#user-content-fn-N"]`)
-// floats the target note's body above it. One shared popover; positioned
-// `fixed` from the trigger's bounding rect.
+// floats the target note's body above it (below when the viewport top is in the
+// way), with an arrow pointing back at the trigger. One shared popover;
+// positioned `fixed` from the trigger's bounding rect.
 //
 // `bodyHtml` is the effect's re-scan key: the container div is REUSED across
 // client-side navigations (only its innerHTML is swapped), so without it the
 // new article's footnote refs would never bind their preview listeners (see
 // useMusicPlayers for the full rationale).
+const GAP = 8
+const ARROW_HALF = 6
+
 export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
@@ -53,9 +57,16 @@ export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>,
       const width = popover.offsetWidth
       const height = popover.offsetHeight
       const left = Math.min(Math.max(rect.left + rect.width / 2 - width / 2, 8), window.innerWidth - width - 8)
-      const top = Math.max(rect.top - height - 8, 8)
+      // Flip below the trigger when floating above would leave the viewport top.
+      const above = rect.top - height - GAP >= GAP
+      popover.dataset.side = above ? 'top' : 'bottom'
+      const top = above ? rect.top - height - GAP : rect.bottom + GAP
       popover.style.left = `${String(left)}px`
       popover.style.top = `${String(top)}px`
+      // Viewport clamping can shift the popover off the trigger's center, so
+      // the arrow tracks the trigger explicitly (clamped inside the corners).
+      const arrowX = Math.min(Math.max(rect.left + rect.width / 2 - left, ARROW_HALF + 4), width - ARROW_HALF - 4)
+      popover.style.setProperty('--footnote-arrow-x', `${String(arrowX)}px`)
     }
 
     const hide = () => {

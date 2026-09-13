@@ -2,7 +2,7 @@
 
 import { renderHook } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useFootnotePreviews } from '@/ui/public/post/use-footnote-previews'
 
@@ -22,6 +22,7 @@ function mountContainer(html: string): { container: HTMLDivElement; ref: RefObje
 }
 
 afterEach(() => {
+  vi.restoreAllMocks()
   document.body.replaceChildren()
 })
 
@@ -85,5 +86,49 @@ describe('useFootnotePreviews', () => {
 
     container.querySelector<HTMLAnchorElement>('sup a')!.dispatchEvent(new Event('mouseenter'))
     expect(document.body.querySelector<HTMLDivElement>('.footnote-preview')!.hidden).toBe(false)
+  })
+
+  it('points an arrow at the trigger, flipping below when there is no room above', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(100)
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(40)
+    const { container, ref } = mountContainer(BODY)
+    renderHook(() => useFootnotePreviews(ref, BODY))
+
+    const anchor = container.querySelector<HTMLAnchorElement>('sup a')!
+    anchor.getBoundingClientRect = () =>
+      ({ top: 200, bottom: 212, left: 400, width: 12, right: 412, height: 12, x: 400, y: 200 }) as DOMRect
+
+    anchor.dispatchEvent(new Event('mouseenter'))
+    const popover = document.body.querySelector<HTMLDivElement>('.footnote-preview')!
+    // left = 406 - 50 = 356; arrow x = 406 - 356 = 50; top = 200 - 40 - 8 = 152.
+    expect(popover.dataset.side).toBe('top')
+    expect(popover.style.getPropertyValue('--footnote-arrow-x')).toBe('50px')
+    expect(popover.style.top).toBe('152px')
+
+    anchor.dispatchEvent(new Event('mouseleave'))
+
+    anchor.getBoundingClientRect = () =>
+      ({ top: 20, bottom: 32, left: 400, width: 12, right: 412, height: 12, x: 400, y: 20 }) as DOMRect
+    anchor.dispatchEvent(new Event('mouseenter'))
+    expect(popover.dataset.side).toBe('bottom')
+    expect(popover.style.top).toBe('40px')
+  })
+
+  it('clamps the arrow inside the popover when the popover is viewport-clamped', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(100)
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(40)
+    const { container, ref } = mountContainer(BODY)
+    renderHook(() => useFootnotePreviews(ref, BODY))
+
+    const anchor = container.querySelector<HTMLAnchorElement>('sup a')!
+    // Trigger center at x=6: the popover left clamps to 8, so the raw arrow
+    // offset (-2px) would fall outside the popover.
+    anchor.getBoundingClientRect = () =>
+      ({ top: 200, bottom: 212, left: 0, width: 12, right: 12, height: 12, x: 0, y: 200 }) as DOMRect
+
+    anchor.dispatchEvent(new Event('mouseenter'))
+    const popover = document.body.querySelector<HTMLDivElement>('.footnote-preview')!
+    expect(popover.style.left).toBe('8px')
+    expect(popover.style.getPropertyValue('--footnote-arrow-x')).toBe('10px')
   })
 })
