@@ -1,4 +1,4 @@
-import type { DOMExportOutput as LexicalDOMExportOutput } from 'lexical'
+import type { DOMExportOutput as LexicalDOMExportOutput, LexicalEditor } from 'lexical'
 
 export type ExportDOMOutputType = 'inner' | 'outer' | 'value'
 export type ExportDOMElement = LexicalDOMExportOutput['element']
@@ -25,6 +25,21 @@ export interface ExportDOMDom {
 export type ExportPolicyKey = 'inkling-version' | 'footnotes-section-title'
 
 /**
+ * The two-parameter `exportDOM` inkling's inline markup exporters declare —
+ * Lexical's base `LexicalNode.exportDOM` takes the editor only, but the
+ * inline exporters (FootnoteRefNode, MathInlineNode) need the options bag so
+ * headless renders resolve their DOM. Declared as an interface so the string
+ * layer's narrowing (`$isInlineMarkupTextEntity` / the inline-decorator
+ * branch) reaches the exporter without an assertion. A Lexical node's
+ * one-parameter base signature still satisfies this structurally (fewer
+ * parameters assign), so inline decorators narrow into it without declaring
+ * the protocol probe.
+ */
+export interface InlineMarkupExporter {
+  exportDOM(editor: LexicalEditor, options?: ExportDOMOptions): LexicalDOMExportOutput | ExportDOMOutput
+}
+
+/**
  * Opt-in protocol for a TextNode entity whose `exportDOM` produces element
  * markup that the string layer splices into the text flow, instead of
  * flowing into the pending text run like ordinary text (the `isTextEntity`
@@ -32,7 +47,7 @@ export type ExportPolicyKey = 'inkling-version' | 'footnotes-section-title'
  * first implementor; a plain entity like TKNode stays text and does not opt
  * in.
  */
-export interface InlineMarkupTextEntity {
+export interface InlineMarkupTextEntity extends InlineMarkupExporter {
   isInlineMarkupEntity(): boolean
 }
 

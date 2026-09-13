@@ -18,10 +18,22 @@ import type { RenderContext } from '@/inkling/nodes/base/render-context'
 import { footnotesSectionPostProcessor } from '@/inkling/nodes/footnote/footnote-html-export'
 
 export interface HtmlPostProcessInput {
-  /** The root children this render exported (indices align with `output` modulo null results). */
+  /** The root children this render exported. */
   children: LexicalNode[]
   /** The assembled top-level HTML fragments — a processor splices/wraps in place. */
   output: string[]
+  /**
+   * Child-index → output-index map, kept current through the
+   * trailing-blank-paragraph suppression: `outputIndexByChild[i]` is the
+   * index in `output` of child i's fragment, or -1 when the child produced
+   * none (a null export, or removal by the suppression). Children and output
+   * indices diverge because a child can export null, so a processor MUST
+   * resolve output positions through this map and never assume one output
+   * entry per child. INVARIANT: a node claimed via `isTrailingRunNode` must
+   * export non-null — then a claimed doc-end run maps to the contiguous tail
+   * of `output` starting at the run's first mapped index.
+   */
+  outputIndexByChild: number[]
   /** The render pass's read-only context (policy resolution, escaping). */
   context: RenderContext
 }

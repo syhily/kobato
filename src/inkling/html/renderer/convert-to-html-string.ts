@@ -1,9 +1,14 @@
-import type { DOMExportOutput, ElementNode, LexicalEditor, LexicalNode, TextNode } from 'lexical'
+import type { ElementNode, LexicalEditor, LexicalNode, TextNode } from 'lexical'
 
 import { $isLinkNode } from '@lexical/link'
 import { $getRoot, $isDecoratorNode, $isElementNode, $isLineBreakNode, $isParagraphNode, $isTextNode } from 'lexical'
 
-import type { ExportDOMOptions, ExportDOMOutputType, InlineMarkupTextEntity } from '@/inkling/nodes/base/export-dom'
+import type {
+  ExportDOMOptions,
+  ExportDOMOutputType,
+  InlineMarkupExporter,
+  InlineMarkupTextEntity,
+} from '@/inkling/nodes/base/export-dom'
 
 import { HTML_POST_PROCESSORS, isTrailingRunNode } from '@/inkling/html/renderer/post-process'
 import elementTransformers from '@/inkling/html/renderer/transformers/index'
@@ -75,14 +80,11 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
   // same per-node exportDOM dispatch the cards get, with the options bag
   // flowing so headless renders resolve their DOM. The base-class exportDOM
   // signature takes no options parameter; inkling's inline exporters
-  // (FootnoteRefNode/MathInlineNode) declare the two-parameter form this
-  // assertion names — it is load-bearing (removing it is a TS2554 on the
-  // call below).
-  function exportInlineMarkup(node: LexicalNode): string {
-    const exporter = node as LexicalNode & {
-      exportDOM(editor: LexicalEditor, options?: ExportDOMOptions): DOMExportOutput & { type?: ExportDOMOutputType }
-    }
-    return renderExportOutput(exporter.exportDOM(editor, options))
+  // (FootnoteRefNode/MathInlineNode) declare the two-parameter form, and the
+  // protocol interface (`@/inkling/nodes/base/export-dom`) carries it, so
+  // both call sites below reach the exporter through plain narrowing.
+  function exportInlineMarkup(node: LexicalNode & InlineMarkupExporter): string {
+    return renderExportOutput(node.exportDOM(editor, options))
   }
 
   function exportTopLevelElementOrDecorator(node: LexicalNode): string | null {
@@ -157,9 +159,10 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
   const children: LexicalNode[] = $getRoot().getChildren()
   // null results (bare inline nodes as root children, :65) never reach
   // output, so children indices and output indices diverge — keep the map
-  // for the trailing-paragraph splice below. Dev Lexical rejects such trees
-  // at RootNode.splice, but prod builds strip that guard, so a malformed
-  // headless import can still produce them there.
+  // for the trailing-paragraph splice below and the post-processors (the
+  // seam's contract, `@/inkling/html/renderer/post-process`). Dev Lexical
+  // rejects such trees at RootNode.splice, but prod builds strip that
+  // guard, so a malformed headless import can still produce them there.
   const outputIndexByChild: number[] = []
 
   for (const child of children) {
@@ -183,14 +186,23 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
   if (lastProse && $isParagraphNode(lastProse) && lastProse.getTextContent().trim() === '') {
     // splice by the output-side index — a paragraph always exports non-null,
     // so its mapped index is the entry to remove
-    output.splice(outputIndexByChild[lastProseIndex], 1)
+    const removedIndex = outputIndexByChild[lastProseIndex]
+    output.splice(removedIndex, 1)
+    // keep the map aligned with the post-splice array so the post-processors
+    // below resolve positions against the `output` they actually receive
+    outputIndexByChild[lastProseIndex] = -1
+    for (let i = lastProseIndex + 1; i < outputIndexByChild.length; i += 1) {
+      if (outputIndexByChild[i] > removedIndex) {
+        outputIndexByChild[i] -= 1
+      }
+    }
   }
 
   // Declarative post-processing: each subsystem's registered post-processor
   // gets one pass over the assembled outputs (the footnotes `<section>` wrap
   // lives in `@/inkling/nodes/footnote/footnote-html-export`).
   for (const processor of HTML_POST_PROCESSORS) {
-    processor.process({ children, output, context })
+    processor.process({ children, output, outputIndexByChild, context })
   }
 
   return output.join('')

@@ -3,8 +3,10 @@
 // `footnotes-section-title` contract) and claims the run so the string
 // layer's trailing-blank-paragraph suppression walks past it. The behaviour
 // module's run transform keeps every definition card one contiguous
-// doc-end run while editing, so the wrap here is a mechanical splice of the
-// run's outputs. Registered in `@/inkling/html/renderer/post-process`.
+// doc-end run while editing, so the wrap here resolves the run's output
+// span through the string layer's own index map (the seam's contract: a
+// claimed trailing-run node exports non-null) instead of re-deriving it by
+// counting. Registered in `@/inkling/html/renderer/post-process`.
 
 import type { HtmlPostProcessor } from '@/inkling/html/renderer/post-process'
 
@@ -16,7 +18,7 @@ const DEFAULT_FOOTNOTES_SECTION_TITLE = 'Footnotes'
 export const footnotesSectionPostProcessor: HtmlPostProcessor = {
   isTrailingRunNode: (node) => $isFootnoteDefinitionNode(node),
 
-  process({ children, output, context }) {
+  process({ children, output, outputIndexByChild, context }) {
     let firstDefinitionIndex = children.length
     while (firstDefinitionIndex > 0 && $isFootnoteDefinitionNode(children[firstDefinitionIndex - 1])) {
       firstDefinitionIndex -= 1
@@ -25,8 +27,15 @@ export const footnotesSectionPostProcessor: HtmlPostProcessor = {
       return
     }
 
-    const definitionCount = children.length - firstDefinitionIndex
-    const items = output.splice(output.length - definitionCount, definitionCount)
+    // The run's outputs are the contiguous tail of `output` from the first
+    // definition's mapped index on (the map already accounts for null
+    // exports and the trailing-paragraph suppression). A -1 here violates
+    // the seam's invariant — bail instead of splicing by assumption.
+    const firstOutputIndex = outputIndexByChild[firstDefinitionIndex]
+    if (firstOutputIndex < 0) {
+      return
+    }
+    const items = output.splice(firstOutputIndex)
     // the heading text resolves through the keyed policy seam (the
     // deprecated `footnotesSectionTitle` flat key forwards there)
     const configuredTitle = context.resolveExportPolicy('footnotes-section-title')?.trim()
