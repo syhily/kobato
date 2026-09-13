@@ -37,15 +37,18 @@ export function createHeadlessHtmlEditor(spec: HeadlessEditorSpec): LexicalEdito
   if (spec.merge === 'additive') {
     return createHeadlessEditor({
       nodes: [...DEFAULT_HTML_NODES, ...(spec.nodes ?? [])],
-      onError: spec.onError,
+      // The default lives inside the factory like the wholesale branch's
+      // below, so every leg gets it; a caller's own onError still wins.
+      onError: spec.onError ?? defaultOnError,
     })
   }
 
   const defaultEditorConfig = {
     nodes: [...DEFAULT_HTML_NODES],
     html: DEFAULT_CONFIG.html,
-    // The importer leg gets the same swallow-by-default onError as the two
-    // render legs; Object.assign below still lets editorConfig.onError win.
+    // The importer leg gets the same swallow-by-default onError as the
+    // additive branch above; Object.assign below still lets
+    // editorConfig.onError win.
     onError: defaultOnError,
   }
   return createHeadlessEditor(Object.assign({}, defaultEditorConfig, spec.editorConfig))

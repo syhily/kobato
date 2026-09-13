@@ -5,7 +5,7 @@ import { $getRoot } from 'lexical'
 import type { ExportDOMDom, ExportDOMOptions } from '@/inkling/nodes/base'
 
 import { resolveHeadlessDom } from '@/inkling/html/headless-dom'
-import { defaultOnError, prepareHeadlessRenderEditor } from '@/inkling/html/headless-editor'
+import { prepareHeadlessRenderEditor } from '@/inkling/html/headless-editor'
 import { htmlToLexical } from '@/inkling/html/html-to-lexical/index'
 import $convertToHtmlString from '@/inkling/html/renderer/convert-to-html-string'
 import { type DefaultTransformsOptions } from '@/inkling/transforms'
@@ -24,7 +24,9 @@ export interface LexicalStateToHtmlOptions extends ExportDOMOptions {
  * export half of the public HTML surface, one stateless function over the
  * internal renderer, mirroring the markdown pair's naming. The DOM resolves
  * through the headless DOM port: `options.dom`, then a global
- * `window.document`, then the optional `jsdom` peer.
+ * `window.document`, then the bundled jsdom (a root devDependency inlined
+ * into the SEA binary — the missing-jsdom failure leg is unreachable in
+ * shipped artifacts; hitting it means the bundle/environment is broken).
  */
 export async function lexicalStateToHtml(
   state: SerializedEditorState | string,
@@ -33,7 +35,7 @@ export async function lexicalStateToHtml(
   const { nodes, onError, ...renderOptions } = options ?? {}
   const dom = await resolveHeadlessDom(renderOptions.dom)
 
-  const editor = prepareHeadlessRenderEditor(state, { nodes, onError: onError ?? defaultOnError })
+  const editor = prepareHeadlessRenderEditor(state, { nodes, onError })
 
   let html = ''
   editor.update(() => {
@@ -85,7 +87,7 @@ export function lexicalStateToPlainText(
 ): string {
   const editor = prepareHeadlessRenderEditor(state, {
     nodes: options?.nodes,
-    onError: options?.onError ?? defaultOnError,
+    onError: options?.onError,
   })
 
   let text = ''
