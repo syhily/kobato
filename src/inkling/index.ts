@@ -41,23 +41,23 @@ import WordCountPlugin from '@/inkling/plugins/WordCountPlugin'
 
 /* Exports ------------------------------------------------------------------ */
 
-/* Card decorate wiring (plan 039 + the `./headless` split): assembled card
- * classes resolve decorate() through the injection port in
- * `@/inkling/nodes/card-decorate-slot`; this call fills the slot for every
- * full-entry consumer. It is an explicit entry-level statement — not a
- * module side effect — so the bundler can keep dropping the wrapper layer
- * from the `./core`/`./headless` graphs (the package's sideEffects table
- * covers CSS only). */
+/* Card decorate wiring: assembled card classes resolve decorate() through
+ * the injection port in `@/inkling/nodes/card-decorate-slot`; this call fills the
+ * slot for every full-entry consumer. It is an explicit entry-level statement
+ * — not a module side effect — so registration is guaranteed regardless of
+ * the bundler's side-effect assumptions, while the `@/inkling/headless` graph
+ * (which never imports this barrel) stays free of the React component tree. */
 registerCardDecorateAdapter()
 
-/* The contract shared with the `./core` entry (Lexical runtime types,
+/* The contract shared across entry surfaces (Lexical runtime types,
  * host-config types, labels, the library browser, the card-free composition
  * pieces, version) is single-sourced in ./shared-exports — add shared names
  * there, never here. */
 export * from '@/inkling/shared-exports'
 
 /* The defaulted composer's props are entry-specific: `nodes` is OPTIONAL
- * here (defaults to DEFAULT_NODES), required on the `./core` variant. */
+ * here (defaults to DEFAULT_NODES); the card-free `InklingComposerBase`
+ * requires it. */
 export type { InklingComposerProps } from '@/inkling/components/InklingComposer'
 export type { InklingEditorProps } from '@/inkling/components/InklingEditor'
 export type { InklingNestedComposerProps } from '@/inkling/components/InklingNestedComposer'
@@ -157,11 +157,10 @@ export type { OpenCardInEditModePayload } from '@/inkling/plugins/behaviour/type
 export { OPEN_IMAGE_LIBRARY_COMMAND } from '@/inkling/nodes/cards/card-commands'
 
 /* Editor factory for host-side node tests (kobato R11): Lexical 0.46's
- * constructor invariants forbid constructing nodes with no active editor,
- * and this bundle INLINES its own Lexical copy — an external
- * `@lexical/headless` would carry a second module state (getActiveEditor)
- * and could never host these classes. Re-exporting the bundled factory is
- * the only way a host test constructs registered nodes. */
+ * constructor invariants forbid constructing nodes with no active editor.
+ * Source consumption resolves a single Lexical instance for host and inkling
+ * alike, so this is a convenience re-export of the host's own
+ * `@lexical/headless` factory — one import for the test's whole node kit. */
 export { createHeadlessEditor } from '@lexical/headless'
 
 export { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-node'

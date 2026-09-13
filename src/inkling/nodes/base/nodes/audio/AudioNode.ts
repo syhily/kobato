@@ -1,6 +1,7 @@
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type { CardSpecFieldMapFor, DecoratorNodeProperty, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 
+import { transientInitialFileProp, transientTriggerFileDialogProp } from '@/inkling/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
@@ -8,6 +9,15 @@ import {
   type SerializedGeneratedDecoratorNode,
 } from '@/inkling/nodes/base/generate-decorator-node'
 import { renderAudioNode } from '@/inkling/nodes/base/nodes/audio/audio-renderer'
+
+// The card's transient-prop spec (CONTEXT.md: "card spec") lives here, beside
+// the class it types — the declaration imports it from this module. `as const`
+// keeps the literal `name`s and `initial` value types on the array's type so
+// the `__*` field maps derive both (CardSpecFieldMap / CardSpecFieldMapFor).
+export const audioTransientProps = [
+  transientTriggerFileDialogProp,
+  transientInitialFileProp,
+] as const satisfies readonly TransientPropSpec[]
 
 const audioProperties = [
   { name: 'duration', default: 0 },
@@ -63,20 +73,19 @@ export type SerializedAudioNode = SerializedGeneratedDecoratorNode<DecoratorNode
 // uniform convention also covers the original collision that started it: the
 // DOM's global Web Audio `AudioNode` interface — declaration bundlers merge
 // the global into their collision scope and mis-rename both.
+//
+// The merged interface self-types the spec-driven fields/accessors the
+// generated class assigns dynamically (the spec arrays above are their single
+// source). The fields are initialized only on spec-adopting assembled classes
+// — a raw `new BaseAudioNode()` leaves them unset.
+// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseAudioNode extends CardSpecFieldMapFor<typeof audioTransientProps> {}
 export class BaseAudioNode extends generateDecoratorNode({
   nodeType: 'audio',
   properties: audioProperties,
   defaultRenderFn: renderAudioNode,
   importSpec: audioImportSpec,
-}) {
-  // The transient-prop spec (audio.declaration.ts) initializes this only on
-  // spec-adopting assembled classes — the accessor is assembly-defined from
-  // the spec (the `declare` leg is type-only, so base-typed write-seam
-  // consumers can name it); a raw `new BaseAudioNode()` leaves the field
-  // unset, so `undefined` is part of the honest type for spec-less instances
-  declare __triggerFileDialog: boolean | undefined
-  declare triggerFileDialog: boolean | undefined
-}
+}) {}
 
 export const $createBaseAudioNode = (dataset: AudioData = {}) => {
   return new BaseAudioNode(dataset)

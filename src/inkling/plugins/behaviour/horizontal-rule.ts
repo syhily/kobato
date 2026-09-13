@@ -11,9 +11,8 @@ import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
 // Horizontal rule behaviour — the insert surgery and the divider scan's
 // guard half, headless so both are synchronous test tables (the
 // HorizontalRulePlugin keeps only registration). The divider's declaration
-// declares no insert (the code-block precedent for menu-less shortcuts), so
-// the command registers here beside the policy rather than through
-// CardInsertPlugin's derived view.
+// declares no insert spec, so the command registers here beside the policy
+// rather than through CardInsertPlugin's derived view.
 
 /**
  * The HR insert surgery: insert the rule before the current paragraph's

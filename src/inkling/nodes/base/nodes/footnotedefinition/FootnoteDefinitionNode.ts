@@ -1,12 +1,28 @@
 import type { LexicalEditor, LexicalNode } from 'lexical'
 
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type { DecoratorNodeProperty, NestedEditorFieldMap, NestedEditorSpec } from '@/inkling/nodes/base/card-specs'
 import type { ExportDOMOptions } from '@/inkling/nodes/base/export-dom'
 
 import { generateDecoratorNode, type DecoratorNodeData } from '@/inkling/nodes/base/generate-decorator-node'
 import { parseFootnoteDefinitionSection } from '@/inkling/nodes/base/nodes/footnotedefinition/footnotedefinition-parser'
 import { renderFootnoteDefinitionNode } from '@/inkling/nodes/base/nodes/footnotedefinition/footnotedefinition-renderer'
 import { createRenderContext } from '@/inkling/nodes/base/render-context'
+import BASIC_NODES from '@/inkling/nodes/BasicNodes'
+
+// The card's nested-editor spec (CONTEXT.md: "card spec") lives here, beside
+// the class it types — the declaration imports it from this module. The
+// editor is `nullable`: the headless round-trip invariant detaches it (same
+// shape as toggle's). The BASIC_NODES import runs against the layer grain but
+// closes no cycle — see the captionEditorSpecBase note.
+export const footnoteDefinitionNestedEditors = [
+  {
+    name: 'contentEditor',
+    serializedKey: 'content',
+    nodes: BASIC_NODES,
+    cleanBasicHtml: { allowBr: true },
+    nullable: true,
+  },
+] as const satisfies readonly NestedEditorSpec[]
 
 const footnoteDefinitionProperties = [
   { name: 'content', default: '', urlType: 'html' },
@@ -24,6 +40,8 @@ export type FootnoteDefinitionData = DecoratorNodeData<typeof footnoteDefinition
  * `content` property is the nested editor's serialized HTML; `targetKey`
  * cross-references the citing refs (kobato's definition `_key`).
  */
+// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseFootnoteDefinitionNode extends NestedEditorFieldMap<typeof footnoteDefinitionNestedEditors> {}
 export class BaseFootnoteDefinitionNode extends generateDecoratorNode({
   nodeType: 'footnotedefinition',
   properties: footnoteDefinitionProperties,
@@ -32,12 +50,6 @@ export class BaseFootnoteDefinitionNode extends generateDecoratorNode({
   // below instead (the generated one would throw without a render fn).
   hasEditMode: false,
 }) {
-  // The generated constructor assigns nested editors only on subclasses that
-  // adopt a `nestedEditors` spec (the assembled card class); a raw
-  // `new BaseFootnoteDefinitionNode()` leaves it unset — same honest-field
-  // idiom as BaseToggleNode's editor declarations.
-  declare __contentEditor: LexicalEditor | null | undefined
-
   static importDOM() {
     return parseFootnoteDefinitionSection(this)
   }

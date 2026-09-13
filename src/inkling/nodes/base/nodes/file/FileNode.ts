@@ -1,6 +1,7 @@
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type { CardSpecFieldMapFor, DecoratorNodeProperty, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 
+import { transientInitialFileProp, transientTriggerFileDialogProp } from '@/inkling/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
@@ -9,6 +10,12 @@ import {
 } from '@/inkling/nodes/base/generate-decorator-node'
 import { renderFileNode } from '@/inkling/nodes/base/nodes/file/file-renderer'
 import { bytesToSize, sizeToBytes } from '@/inkling/nodes/base/utils/size-byte-converter'
+
+// the card's transient-prop spec — see the audioTransientProps note
+export const fileTransientProps = [
+  transientTriggerFileDialogProp,
+  transientInitialFileProp,
+] as const satisfies readonly TransientPropSpec[]
 
 const fileProperties = [
   // the blob guard as spec data: an upload-in-progress data-string src must
@@ -43,20 +50,16 @@ export type FileData = DecoratorNodeData<typeof fileProperties>
 
 export type SerializedFileNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof fileProperties>>
 
+// the merged interface self-types the spec-driven fields/accessors — see the
+// BaseAudioNode note
+// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseFileNode extends CardSpecFieldMapFor<typeof fileTransientProps> {}
 export class BaseFileNode extends generateDecoratorNode({
   nodeType: 'file',
   properties: fileProperties,
   defaultRenderFn: renderFileNode,
   importSpec: fileImportSpec,
 }) {
-  // The transient-prop spec (file.declaration.ts) initializes this only on
-  // spec-adopting assembled classes — the accessor is assembly-defined from
-  // the spec (the `declare` leg is type-only, so base-typed write-seam
-  // consumers can name it); a raw `new BaseFileNode()` leaves the field
-  // unset, so `undefined` is part of the honest type for spec-less instances
-  declare __triggerFileDialog: boolean | undefined
-  declare triggerFileDialog: boolean | undefined
-
   get formattedFileSize() {
     return bytesToSize(this.fileSize)
   }

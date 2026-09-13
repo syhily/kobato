@@ -18,8 +18,8 @@ export type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
 /**
  * The card declarations — the single per-card source of truth (CONTEXT.md:
- * "card declaration"). Every node-set registry is a derived view over this
- * list (`deriveCardNodes`).
+ * "card declaration"). Every node-set registry and per-card registry is a
+ * derived view over this list.
  *
  * The declaration order reproduces the pre-refactor card run of
  * `@/inkling/nodes/DefaultNodes`; the base `DEFAULT_NODES` in `@/inkling/nodes/base` had a

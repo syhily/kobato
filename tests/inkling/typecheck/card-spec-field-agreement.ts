@@ -1,72 +1,39 @@
 /**
- * Compile-time agreement pins for the card spec field vocabulary (CONTEXT.md:
- * "card spec" / "card declaration").
+ * Compile-time pins for the card spec field vocabulary (CONTEXT.md: "card
+ * spec" / "card declaration").
  *
- * The shim node types derive their `__*` maps — names AND value types — from
- * their declarations via `CardSpecFieldMap`, so a spec rename or retype is a
- * compile error at every consumer. A base node class cannot import its
- * declaration (the declaration imports the base), so the base's hand-written
- * `declare __*` fields are pinned HERE instead: every `__*` field a base
- * class declares beyond its dataset properties and the Lexical internals
- * must be named by the card declaration's spec. Rename a transient prop or
- * nested editor in a declaration and the stale base `declare` fails its pin
- * below.
+ * The spec arrays live in the base node modules, const-asserted so the
+ * literal names and value types survive. Two derivations read them:
+ * `CardSpecFieldMap` folds the map into the assembled class's instance type
+ * (what the shims re-export), and `CardSpecFieldMapFor` self-types the base
+ * class by interface merging — one source, both surfaces, so a spec rename
+ * or retype is a compile error at every consumer. The pins below cover the
+ * derivation itself and its arrival on a base class; there is no second
+ * hand-written copy left to agree with.
  *
  * This file is included by the root tsconfig and is only type-checked — it
  * is never executed and contains no runtime assertions.
  */
-import type { DecoratorNode, EditorState, LexicalEditor } from 'lexical'
+import type { EditorState, LexicalEditor } from 'lexical'
 
 import type { CardSpecFieldMap, CardSpecFieldNames, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { HostCardSpec } from '@/inkling/nodes/cards/host-cards'
 
 import { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-node'
 import { BaseAudioNode } from '@/inkling/nodes/base/nodes/audio/AudioNode'
-import { BaseBookmarkNode } from '@/inkling/nodes/base/nodes/bookmark/BookmarkNode'
 import { BaseCalloutNode } from '@/inkling/nodes/base/nodes/callout/CalloutNode'
-import { BaseCodeBlockNode } from '@/inkling/nodes/base/nodes/codeblock/CodeBlockNode'
-import { BaseFileNode } from '@/inkling/nodes/base/nodes/file/FileNode'
-import { BaseFootnoteDefinitionNode } from '@/inkling/nodes/base/nodes/footnotedefinition/FootnoteDefinitionNode'
-import { BaseGalleryNode } from '@/inkling/nodes/base/nodes/gallery/GalleryNode'
-import { BaseHeaderNode } from '@/inkling/nodes/base/nodes/header/HeaderNode'
 import { BaseImageNode } from '@/inkling/nodes/base/nodes/image/ImageNode'
-import { BaseToggleNode } from '@/inkling/nodes/base/nodes/toggle/ToggleNode'
-import { BaseVideoNode } from '@/inkling/nodes/base/nodes/video/VideoNode'
 import { audioDeclaration } from '@/inkling/nodes/cards/audio.declaration'
 import { bookmarkDeclaration } from '@/inkling/nodes/cards/bookmark.declaration'
 import { calloutDeclaration } from '@/inkling/nodes/cards/callout.declaration'
-import { codeBlockDeclaration } from '@/inkling/nodes/cards/codeblock.declaration'
-import { fileDeclaration } from '@/inkling/nodes/cards/file.declaration'
-import { footnoteDefinitionDeclaration } from '@/inkling/nodes/cards/footnotedefinition.declaration'
-import { galleryDeclaration } from '@/inkling/nodes/cards/gallery.declaration'
-import { headerDeclaration } from '@/inkling/nodes/cards/header.declaration'
-import { imageDeclaration } from '@/inkling/nodes/cards/image.declaration'
 import { toggleDeclaration } from '@/inkling/nodes/cards/toggle.declaration'
-import { videoDeclaration } from '@/inkling/nodes/cards/video.declaration'
 
 type Expect<T extends true> = T
 type Extends<A, B> = [A] extends [B] ? true : false
 type Equal<A, B> = (<T>(_: T) => T extends A ? 1 : 2) extends <T>(_: T) => T extends B ? 1 : 2 ? true : false
 
-// the `__*` fields Lexical itself owns on every decorator node
-type LexicalInternalFields = Extract<keyof DecoratorNode<unknown>, `__${string}`>
-
-/**
- * The `__*` fields a base node class declares beyond its dataset properties
- * (`getPropertyDefaults` names them) and the Lexical internals — exactly the
- * vocabulary the card declaration's transient/nested-editor spec must own.
- */
-type BaseSpecFields<TInstance, TDefaults extends Record<string, unknown>> = Exclude<
-  Extract<keyof TInstance, `__${string}`>,
-  `__${Extract<keyof TDefaults, string>}` | LexicalInternalFields
->
-
-type BasePropertyDefaults<TClass extends { getPropertyDefaults(): Record<string, unknown> }> = ReturnType<
-  TClass['getPropertyDefaults']
->
-
-// the derivation itself: the audio declaration's spec yields exactly its two
-// transient field names
+// the derivation itself: the audio spec yields exactly its two transient
+// field names
 type _DerivationSanity = Expect<
   Equal<CardSpecFieldNames<typeof audioDeclaration>, '__triggerFileDialog' | '__initialFile'>
 >
@@ -83,7 +50,7 @@ type _BookmarkKeys = Expect<
   >
 >
 // a plain nested-editor literal derives a non-null editor field; the
-// nullableNestedEditor carrier derives the nullable one
+// `nullable: true` entry derives the nullable one
 type _BookmarkEditorValue = Expect<
   Equal<CardSpecFieldMap<typeof bookmarkDeclaration>['__captionEditor'], LexicalEditor>
 >
@@ -94,81 +61,19 @@ type _ToggleInitialState = Expect<
   Equal<CardSpecFieldMap<typeof toggleDeclaration>['__titleEditorInitialState'], EditorState | undefined>
 >
 
-// --- per-card pins: every base-declared `__*` field is spec-named -----------
+// --- the base classes self-type the same vocabulary (interface merging) -----
 
-type _Audio = Expect<
-  Extends<
-    BaseSpecFields<BaseAudioNode, BasePropertyDefaults<typeof BaseAudioNode>>,
-    CardSpecFieldNames<typeof audioDeclaration>
-  >
->
-type _Bookmark = Expect<
-  Extends<
-    BaseSpecFields<BaseBookmarkNode, BasePropertyDefaults<typeof BaseBookmarkNode>>,
-    CardSpecFieldNames<typeof bookmarkDeclaration>
-  >
->
-type _Callout = Expect<
-  Extends<
-    BaseSpecFields<BaseCalloutNode, BasePropertyDefaults<typeof BaseCalloutNode>>,
-    CardSpecFieldNames<typeof calloutDeclaration>
-  >
->
-type _CodeBlock = Expect<
-  Extends<
-    BaseSpecFields<BaseCodeBlockNode, BasePropertyDefaults<typeof BaseCodeBlockNode>>,
-    CardSpecFieldNames<typeof codeBlockDeclaration>
-  >
->
-type _File = Expect<
-  Extends<
-    BaseSpecFields<BaseFileNode, BasePropertyDefaults<typeof BaseFileNode>>,
-    CardSpecFieldNames<typeof fileDeclaration>
-  >
->
-type _FootnoteDefinition = Expect<
-  Extends<
-    BaseSpecFields<BaseFootnoteDefinitionNode, BasePropertyDefaults<typeof BaseFootnoteDefinitionNode>>,
-    CardSpecFieldNames<typeof footnoteDefinitionDeclaration>
-  >
->
-type _Gallery = Expect<
-  Extends<
-    BaseSpecFields<BaseGalleryNode, BasePropertyDefaults<typeof BaseGalleryNode>>,
-    CardSpecFieldNames<typeof galleryDeclaration>
-  >
->
-type _Header = Expect<
-  Extends<
-    BaseSpecFields<BaseHeaderNode, BasePropertyDefaults<typeof BaseHeaderNode>>,
-    CardSpecFieldNames<typeof headerDeclaration>
-  >
->
-type _Image = Expect<
-  Extends<
-    BaseSpecFields<BaseImageNode, BasePropertyDefaults<typeof BaseImageNode>>,
-    CardSpecFieldNames<typeof imageDeclaration>
-  >
->
-type _Toggle = Expect<
-  Extends<
-    BaseSpecFields<BaseToggleNode, BasePropertyDefaults<typeof BaseToggleNode>>,
-    CardSpecFieldNames<typeof toggleDeclaration>
-  >
->
-type _Video = Expect<
-  Extends<
-    BaseSpecFields<BaseVideoNode, BasePropertyDefaults<typeof BaseVideoNode>>,
-    CardSpecFieldNames<typeof videoDeclaration>
-  >
->
+type _AudioBaseField = Expect<Equal<BaseAudioNode['__triggerFileDialog'], boolean>>
+type _AudioBaseAccessor = Expect<Equal<BaseAudioNode['triggerFileDialog'], boolean>>
+type _ImageBaseAccessor = Expect<Equal<BaseImageNode['previewSrc'], string | null>>
+type _CalloutBaseEditor = Expect<Equal<BaseCalloutNode['__calloutTextEditor'], LexicalEditor | null>>
 
 // --- the pins themselves work ------------------------------------------------
 
 // @ts-expect-error - a `__*` field the spec does not name fails the pin
 type _NegativeBase = Expect<Extends<'__staleField', CardSpecFieldNames<typeof audioDeclaration>>>
 
-// @ts-expect-error - a value type that drifts from the spec's carrier fails the pin
+// @ts-expect-error - a value type that drifts from the spec fails the pin
 type _NegativeValue = Expect<Equal<CardSpecFieldMap<typeof audioDeclaration>['__triggerFileDialog'], string>>
 
 // --- host cards: the same derivation over a `defineCard` spec ----------------

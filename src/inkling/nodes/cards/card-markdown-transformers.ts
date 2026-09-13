@@ -367,7 +367,8 @@ export const CARD_MARKDOWN_DECLARATIONS = CARD_WRAPPER_NODES.map((card) => {
         : card.nodeType === 'image'
           ? IMAGE_CARD_TRANSFORMER
           : undefined
-  // Object.assign into a fresh object: the wrapper entries are shared
-  // registry state, so the projection stays copy-on-write without a spread
+  // Object.assign into a fresh object: a shallow copy of the shared wrapper
+  // entry, so the projection's added `markdownTransformer` key can never
+  // mutate the registry object
   return Object.assign({}, card, { markdownTransformer })
 })

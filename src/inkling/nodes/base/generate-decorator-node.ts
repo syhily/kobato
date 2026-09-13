@@ -197,6 +197,39 @@ export interface GeneratedDecoratorNodeBase<
   hasEditMode(): boolean
 }
 
+// the generated accessors' `this`, typed once: the class keeps a dynamic
+// index signature for its spec-driven fields (see the class-body note)
+interface FieldCarrier {
+  getLatest(): Record<string, unknown>
+  getWritable(): Record<string, unknown>
+}
+
+/**
+ * One get/set accessor pair over a private field — the single definition
+ * helper shared by the generated dataset-property accessors below and the
+ * transient-prop accessors the assembler stamps on the assembled class
+ * (`@/inkling/nodes/assemble-card-node`). `onWrite` runs the edit-time side
+ * effects (the artifact-slot invalidation, CONTEXT.md "artifact slot") before
+ * the write.
+ */
+export function defineFieldAccessor(
+  prototype: object,
+  name: string,
+  privateName: string,
+  onWrite?: (writable: Record<string, unknown>, newVal: unknown) => void,
+): void {
+  Object.defineProperty(prototype, name, {
+    get: function (this: FieldCarrier) {
+      return this.getLatest()[privateName]
+    },
+    set: function (this: FieldCarrier, newVal: unknown) {
+      const writable = this.getWritable()
+      onWrite?.(writable, newVal)
+      writable[privateName] = newVal
+    },
+  })
+}
+
 export function generateDecoratorNode<
   Props extends readonly DecoratorNodeProperty[] = readonly [],
   TSerialized extends SerializedLexicalNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<Props>>,
@@ -619,13 +652,6 @@ export function generateDecoratorNode<
    *
    * They can be used as `node.content` (getter) and `node.content = 'new value'` (setter)
    */
-  // the generated accessors' `this`, typed once: the class keeps a dynamic
-  // index signature for its spec-driven fields (see the class-body note)
-  interface FieldCarrier {
-    getLatest(): Record<string, unknown>
-    getWritable(): Record<string, unknown>
-  }
-
   internalProps.forEach((prop) => {
     // the artifact slots this property's edits clear, resolved to their
     // private names once (CONTEXT.md "artifact slot": edit-invalidates)
@@ -633,19 +659,15 @@ export function generateDecoratorNode<
       (name) => internalProps.find((candidate) => candidate.name === name)?.privateName ?? `__${name}`,
     )
 
-    Object.defineProperty(GeneratedDecoratorNode.prototype, prop.name, {
-      get: function (this: FieldCarrier) {
-        const self = this.getLatest()
-        return self[prop.privateName]
-      },
-      set: function (this: FieldCarrier, newVal: unknown) {
-        const writable = this.getWritable()
-        if (invalidatedSlots) {
-          applyArtifactSlotInvalidation(writable[prop.privateName] !== newVal, writable, invalidatedSlots)
-        }
-        writable[prop.privateName] = newVal
-      },
-    })
+    defineFieldAccessor(
+      GeneratedDecoratorNode.prototype,
+      prop.name,
+      prop.privateName,
+      invalidatedSlots
+        ? (writable, newVal) =>
+            applyArtifactSlotInvalidation(writable[prop.privateName] !== newVal, writable, invalidatedSlots)
+        : undefined,
+    )
   })
 
   // The class-to-interface bridge documented on GeneratedDecoratorNodeBase:

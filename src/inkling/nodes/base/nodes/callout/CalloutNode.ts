@@ -1,6 +1,6 @@
 import type { LexicalEditor } from 'lexical'
 
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type { DecoratorNodeProperty, NestedEditorFieldMap, NestedEditorSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 
 import {
@@ -9,6 +9,22 @@ import {
   type SerializedGeneratedDecoratorNode,
 } from '@/inkling/nodes/base/generate-decorator-node'
 import { renderCalloutNode } from '@/inkling/nodes/base/nodes/callout/callout-renderer'
+import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
+
+// The card's nested-editor spec (CONTEXT.md: "card spec") lives here, beside
+// the class it types — the declaration imports it from this module. The
+// editor is `nullable`: the markdown round-trip detaches it. The
+// MINIMAL_NODES import runs against the layer grain but closes no cycle —
+// see the captionEditorSpecBase note.
+export const calloutNestedEditors = [
+  {
+    name: 'calloutTextEditor',
+    serializedKey: 'calloutText',
+    nodes: MINIMAL_NODES,
+    cleanBasicHtml: { allowBr: true },
+    nullable: true,
+  },
+] as const satisfies readonly NestedEditorSpec[]
 
 export interface CalloutData {
   calloutText?: string
@@ -21,11 +37,8 @@ interface CalloutEditorDataset {
   calloutTextEditor?: LexicalEditor
 }
 
-export interface BaseCalloutNode {
-  calloutText: string
-  calloutEmoji: string
-  backgroundColor: string
-}
+// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseCalloutNode extends NestedEditorFieldMap<typeof calloutNestedEditors> {}
 
 const calloutProperties = [
   { name: 'calloutText', default: '', wordCount: true },

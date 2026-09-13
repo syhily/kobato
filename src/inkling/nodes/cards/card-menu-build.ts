@@ -171,7 +171,7 @@ export function buildCardMenu(
   }
 
   for (const [nodeType, source] of nodes) {
-    // menu-less cards (CodeBlock is the only one) contribute no items
+    // a card whose declaration carries no `menu` contributes no items
     if (!source.cardMenu) {
       continue
     }
@@ -205,11 +205,11 @@ export function buildCardMenu(
 
   // sort primary section to always display first
   menu = new Map(
-    [...menu.entries()].sort((a, _b) => {
+    [...menu.entries()].sort((a, b) => {
       if (a[0] === 'Primary') {
-        return -1
+        return b[0] === 'Primary' ? 0 : -1
       }
-      return 1
+      return b[0] === 'Primary' ? 1 : 0
     }),
   )
 

@@ -1,8 +1,6 @@
-import type { LexicalEditor } from 'lexical'
-
 import { $canShowPlaceholderCurry } from '@lexical/text'
 
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type { DecoratorNodeProperty, NestedEditorFieldMap, NestedEditorSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 
 import {
@@ -12,6 +10,30 @@ import {
   type SerializedGeneratedDecoratorNode,
 } from '@/inkling/nodes/base/generate-decorator-node'
 import { renderToggleNode } from '@/inkling/nodes/base/nodes/toggle/toggle-renderer'
+import BASIC_NODES from '@/inkling/nodes/BasicNodes'
+import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
+
+// The card's nested-editor spec (CONTEXT.md: "card spec") lives here, beside
+// the class it types — the declaration imports it from this module. Both
+// editors are `nullable`: the markdown round-trip detaches them. The
+// MINIMAL/BASIC node-set imports run against the layer grain but close no
+// cycle — see the captionEditorSpecBase note.
+export const toggleNestedEditors = [
+  {
+    name: 'titleEditor',
+    serializedKey: 'heading',
+    nodes: MINIMAL_NODES,
+    cleanBasicHtml: { firstChildInnerContent: true, allowBr: true },
+    nullable: true,
+  },
+  {
+    name: 'contentEditor',
+    serializedKey: 'content',
+    nodes: BASIC_NODES,
+    cleanBasicHtml: { allowBr: true },
+    nullable: true,
+  },
+] as const satisfies readonly NestedEditorSpec[]
 
 const toggleProperties = [
   { name: 'heading', default: '', urlType: 'html', wordCount: true },
@@ -36,21 +58,16 @@ export type ToggleData = DecoratorNodeData<typeof toggleProperties>
 
 export type SerializedToggleNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof toggleProperties>>
 
+// the merged interface self-types the spec-driven nested-editor fields — see
+// the BaseAudioNode note
+// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseToggleNode extends NestedEditorFieldMap<typeof toggleNestedEditors> {}
 export class BaseToggleNode extends generateDecoratorNode({
   nodeType: 'toggle',
   properties: toggleProperties,
   defaultRenderFn: renderToggleNode,
   importSpec: toggleImportSpec,
 }) {
-  // The generated constructor assigns the nested editors only on subclasses
-  // that adopt a `nestedEditors` spec (the assembled card class); a raw
-  // `new BaseToggleNode()` leaves them unset, and the markdown card
-  // transformer nulls them after plain-text import — so `undefined` and
-  // `null` are part of the honest type here (the
-  // CodeBlockNode.__openInEditMode idiom).
-  declare __titleEditor: LexicalEditor | null | undefined
-  declare __contentEditor: LexicalEditor | null | undefined
-
   isEmpty() {
     // Null only inside the headless markdown round-trip editor (the toggle
     // card transformer nulls both nested editors after plain-text import),

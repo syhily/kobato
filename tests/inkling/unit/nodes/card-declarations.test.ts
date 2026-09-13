@@ -89,9 +89,9 @@ describe('card declarations as the single source of truth', () => {
       const resolved = getCardMenu(declaration.nodeType)
 
       if (!menu) {
-        // CodeBlock is inserted by its code fence; the footnote definition is
-        // created/ordered by the footnote behaviour module — neither has a menu
-        expect(['codeblock', 'footnotedefinition']).toContain(declaration.nodeType)
+        // the footnote definition is the one menu-less card — created/ordered
+        // by the footnote behaviour module, never inserted from the menu
+        expect(declaration.nodeType).toBe('footnotedefinition')
         expect(resolved).toBeUndefined()
         continue
       }
@@ -189,47 +189,6 @@ describe('card declarations as the single source of truth', () => {
     } satisfies Record<CardNodeType, unknown>
     for (const card of CARD_WRAPPER_NODES) {
       expect(card.node).toBe(SHIM_CLASSES[card.nodeType])
-    }
-  })
-
-  it('initializes exactly the private fields its declaration spec names', () => {
-    // the spec is the single source of the transient/nested-editor field
-    // vocabulary: a `__*` field the constructor sets that neither the dataset
-    // properties nor the spec names is drift (e.g. a stale field left behind
-    // by a spec rename), and a spec-named field the constructor does not set
-    // is a broken adoption
-    const LEXICAL_INTERNALS = new Set([
-      '__type',
-      '__key',
-      '__parent',
-      '__prev',
-      '__next',
-      '__state',
-      '__slotHost',
-      '__slots',
-    ])
-    // node construction needs an active editor (Lexical $setNodeKey) — collect
-    // inside one update, assert outside for readable failures
-    const fieldsByCard = collectFromConstructedCards((node) =>
-      Object.keys(node)
-        .filter((key) => key.startsWith('__') && !LEXICAL_INTERNALS.has(key))
-        .sort(),
-    )
-    for (const card of CARD_WRAPPER_NODES) {
-      const declaration: CardDeclaration | undefined = CARD_DECLARATIONS.find(
-        (entry) => entry.nodeType === card.nodeType,
-      )
-      // the assembled class's type declares the inherited statics — no cast
-      const defaults = card.node.getPropertyDefaults()
-      const expected = new Set([
-        ...Object.keys(defaults).map((key) => `__${key}`),
-        ...(declaration?.transientProps ?? []).map((spec) => spec.privateName ?? `__${spec.name}`),
-        // the InitialState companions are assigned only when the editor is
-        // populated from serialized HTML, so an empty dataset initializes
-        // just the editor instance field
-        ...(declaration?.nestedEditors ?? []).map((spec) => `__${spec.name}`),
-      ])
-      expect(fieldsByCard.get(card.nodeType), card.nodeType).toEqual([...expected].sort())
     }
   })
 

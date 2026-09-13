@@ -21,7 +21,6 @@ import { DEFAULT_TRANSFORMERS } from '@/inkling/markdown/transformers'
 import { MINIMAL_TRANSFORMERS } from '@/inkling/markdown/transformers-core'
 import { $createMarkdownNode, $isMarkdownNode, MarkdownNode } from '@/inkling/nodes/base/nodes/markdown/MarkdownNode'
 import { CARD_MARKDOWN_DECLARATIONS } from '@/inkling/nodes/cards/card-markdown-transformers'
-import { deriveCardNodes } from '@/inkling/nodes/cards/derive-card-nodes'
 import { $createCodeBlockNode, $isCodeBlockNode, CodeBlockNode } from '@/inkling/nodes/CodeBlockNode'
 import { resolveGfmPipeTableLines } from '@/inkling/nodes/table/table-facts'
 import {
@@ -53,13 +52,14 @@ import {
  */
 
 // The markdown-eligible cards in declaration order — the same order the
-// node sets compose. Transformer order among cards is unobservable (each
+// node sets compose (the declaration's `markdown` eligibility spec is the
+// filter). Transformer order among cards is unobservable (each
 // card transformer's export matches only its own node type; the import
 // regexes are per-card distinct), so no legacy rank is preserved; the
 // pinned literal in test/unit/nodes/derived-node-sets.test.ts guards drift.
 // MarkdownNode is a base-only node, not a card — it and
 // MARKDOWN_CARD_TRANSFORMER stay manual.
-const MARKDOWN_CARDS = deriveCardNodes(CARD_MARKDOWN_DECLARATIONS)
+const MARKDOWN_CARDS = CARD_MARKDOWN_DECLARATIONS.filter((card) => 'markdown' in card && card.markdown !== undefined)
 
 // Exported (not part of the public `@/inkling/markdown` barrel) so the node-set diff
 // test can pin the derived arrays against the pre-refactor literals.

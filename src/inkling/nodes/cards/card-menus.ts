@@ -77,9 +77,9 @@ function projectMenuEntries(
 
 /**
  * Resolves a card's slash/plus menu entries from its merged facts — what the
- * hand-written `CARD_MENUS` map keyed by node type used to hold. CodeBlock
- * declares no menu and resolves none. Consumed by `getCardDragIcon` and
- * `getEditorCardNodes`.
+ * hand-written `CARD_MENUS` map keyed by node type used to hold. A card whose
+ * declaration carries no `menu` resolves none. Consumed by `getCardDragIcon`
+ * and `getEditorCardNodes`.
  */
 export function resolveCardMenuEntries(facts: CardFacts): MenuItem[] | undefined {
   // `in` narrows the built-in union to the declarations carrying the
@@ -95,12 +95,11 @@ export function resolveCardMenuEntries(facts: CardFacts): MenuItem[] | undefined
 
 /**
  * Resolves a card's drag-preview icon from its merged facts — what the
- * thirteen `getIcon()` copies returned. Menu-bearing cards use their first
- * menu entry's icon (Image's two-entry menu keeps the Image icon, not the
- * GIF one); user-draggable menu-less cards name theirs explicitly as the
- * spec's `dragIcon` (CodeBlock). The menu-less footnote definition resolves
- * no icon — it lives in the doc-end run and the run-invariant transform
- * re-parks it anyway.
+ * thirteen `getIcon()` copies returned. An explicit `dragIcon` on the
+ * declaration wins; otherwise menu-bearing cards use their first menu entry's
+ * icon (Image's two-entry menu keeps the Image icon, not the GIF one). The
+ * menu-less footnote definition resolves no icon — it lives in the doc-end
+ * run and the run-invariant transform re-parks it anyway.
  */
 export function resolveCardDragIcon(facts: CardFacts): MenuItem['Icon'] {
   const raw =

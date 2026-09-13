@@ -1,11 +1,17 @@
 import type { SerializedLexicalNode } from 'lexical'
 
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  NestedEditorSpec,
+  TransientPropSpec,
+} from '@/inkling/nodes/base/card-specs'
 import type { CaptionEditorDataset } from '@/inkling/types/card-node-datasets'
 
 import { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-node'
 import { parseBookmarkNode } from '@/inkling/nodes/base/nodes/bookmark/bookmark-parser'
 import { renderBookmarkNode } from '@/inkling/nodes/base/nodes/bookmark/bookmark-renderer'
+import { captionEditorSpecBase } from '@/inkling/nodes/base/nodes/caption-editor-spec'
 
 interface BookmarkMetadata {
   icon?: string
@@ -22,16 +28,17 @@ export interface BookmarkData {
   caption?: string
 }
 
-export interface BaseBookmarkNode {
-  title: string
-  description: string
-  url: string
-  caption: string
-  author: string
-  publisher: string
-  icon: string
-  thumbnail: string
-}
+// the card's spec arrays live here, beside the class they type — see the
+// videoNestedEditors note
+export const bookmarkNestedEditors = [captionEditorSpecBase] as const satisfies readonly NestedEditorSpec[]
+
+export const bookmarkTransientProps = [
+  // true only for a card constructed from a bare url before its metadata was
+  // fetched — the component's metadata-fetch effect keys off it. The initial
+  // value reads the dataset the base constructor forwards to the generated
+  // constructor.
+  { name: 'createdWithUrl', initial: (dataset): boolean => !!dataset.url && !dataset.metadata },
+] as const satisfies readonly TransientPropSpec[]
 
 const BOOKMARK_METADATA_KEYS: ReadonlySet<string> = new Set([
   'icon',
@@ -92,24 +99,18 @@ export interface SerializedBookmarkNode extends SerializedLexicalNode {
   caption: string
 }
 
+// the merged interface self-types the spec-driven fields — see the
+// BaseAudioNode note. The dataset accessors and `__*` dataset fields need no
+// declaration here: the generated instance type already carries them
+// (DecoratorNodeValueMap / PrivateDatasetFields).
+export interface BaseBookmarkNode
+  // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+  extends CardSpecFieldMapFor<typeof bookmarkTransientProps, typeof bookmarkNestedEditors> {}
 export class BaseBookmarkNode extends generateDecoratorNode<typeof bookmarkProperties, SerializedBookmarkNode>({
   nodeType: 'bookmark',
   properties: bookmarkProperties,
   defaultRenderFn: renderBookmarkNode,
 }) {
-  // the generated class exposes the backing fields through its index
-  // signature as unknown; the constructor below initializes all of them to
-  // strings, so declare them (the ImageNode.__previewSrc idiom) and the
-  // getDataset reads need no casts
-  declare __title: string
-  declare __description: string
-  declare __url: string
-  declare __caption: string
-  declare __author: string
-  declare __publisher: string
-  declare __icon: string
-  declare __thumbnail: string
-
   static importDOM() {
     return parseBookmarkNode(this)
   }

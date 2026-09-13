@@ -1,62 +1,13 @@
-import type { NodeKey } from 'lexical'
-import type { ComponentType } from 'react'
-
-import type { NestedEditorSpec, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-import { transientInitialFileProp, transientTriggerFileDialogProp } from '@/inkling/nodes/base/card-specs'
-import { BaseImageNode } from '@/inkling/nodes/base/nodes/image/ImageNode'
+import { BaseImageNode, imageNestedEditors, imageTransientProps } from '@/inkling/nodes/base/nodes/image/ImageNode'
 import { decorateCardWidth } from '@/inkling/nodes/base/utils/card-widths'
-import { captionEditorSpec } from '@/inkling/nodes/cards/caption-editor-spec'
-import { strOr } from '@/inkling/utils/value-guards'
-
-// the selector overlay arrives through the construction dataset as a
-// component value — `typeof === 'function'` is the entire runtime check;
-// the component signature is the producer's contract (InklingSelectorPlugin)
-const isSelectorComponent = (value: unknown): value is ComponentType<{ nodeKey: NodeKey }> =>
-  typeof value === 'function'
-
-// `as const` keeps the literal `name`s and value types on the declaration's
-// type — the `__*` field map derives both from them (CardSpecFieldMap)
-export const nestedEditors = [
-  captionEditorSpec({ cleanBasicHtml: { firstChildInnerContent: true } }),
-] as const satisfies readonly NestedEditorSpec[]
-
-export const transientProps = [
-  {
-    name: 'previewSrc',
-    // the `string | null` annotation is the type source for the `__previewSrc`
-    // field (CardSpecFieldMap) — `strOr` itself returns string, but the field
-    // must stay nullable because the upload lifecycle clears it by writing
-    // `node.previewSrc = null` (src/nodes/upload-intent.ts)
-    initial: (dataset): string | null => strOr(dataset.previewSrc, ''),
-    datasetKey: '__previewSrc',
-    accessor: true,
-  },
-  { ...transientTriggerFileDialogProp, datasetKey: '__triggerFileDialog' },
-  // passed via INSERT_MEDIA_COMMAND on drag+drop or paste
-  transientInitialFileProp,
-  // selector overlay component (e.g. the GIF picker) and the flag that hides
-  // the image while it is open — client-side only, never serialized
-  {
-    name: 'selector',
-    initial: (dataset): ComponentType<{ nodeKey: NodeKey }> | undefined => {
-      const { selector } = dataset
-      return isSelectorComponent(selector) ? selector : undefined
-    },
-  },
-  {
-    name: 'isImageHidden',
-    initial: (dataset): boolean | undefined =>
-      typeof dataset.isImageHidden === 'boolean' ? dataset.isImageHidden : undefined,
-  },
-] as const satisfies readonly TransientPropSpec[]
 
 export const imageDeclaration = {
   nodeType: 'image',
   baseNode: BaseImageNode,
-  nestedEditors,
-  transientProps,
+  nestedEditors: imageNestedEditors,
+  transientProps: imageTransientProps,
   decorateTarget: {
     width: decorateCardWidth,
   },

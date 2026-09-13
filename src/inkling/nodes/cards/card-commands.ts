@@ -3,43 +3,29 @@ import type { LexicalCommand } from 'lexical'
 import { createCommand } from 'lexical'
 
 import type { CardSpecNestedEditorDataset, CardSpecTransientDataset } from '@/inkling/nodes/base/card-specs'
-import type { AudioData } from '@/inkling/nodes/base/nodes/audio/AudioNode'
-import type { BookmarkData } from '@/inkling/nodes/base/nodes/bookmark/BookmarkNode'
+import type { AudioData, audioTransientProps } from '@/inkling/nodes/base/nodes/audio/AudioNode'
+import type {
+  BookmarkData,
+  bookmarkNestedEditors,
+  bookmarkTransientProps,
+} from '@/inkling/nodes/base/nodes/bookmark/BookmarkNode'
 import type { ButtonData } from '@/inkling/nodes/base/nodes/button/ButtonNode'
-import type { CalloutData } from '@/inkling/nodes/base/nodes/callout/CalloutNode'
-import type { CodeBlockData } from '@/inkling/nodes/base/nodes/codeblock/CodeBlockNode'
-import type { FileData } from '@/inkling/nodes/base/nodes/file/FileNode'
-import type { GalleryData } from '@/inkling/nodes/base/nodes/gallery/GalleryNode'
-import type { HeaderData } from '@/inkling/nodes/base/nodes/header/HeaderNode'
+import type { CalloutData, calloutNestedEditors } from '@/inkling/nodes/base/nodes/callout/CalloutNode'
+import type {
+  CodeBlockData,
+  codeBlockNestedEditors,
+  codeBlockTransientProps,
+} from '@/inkling/nodes/base/nodes/codeblock/CodeBlockNode'
+import type { FileData, fileTransientProps } from '@/inkling/nodes/base/nodes/file/FileNode'
+import type { GalleryData, galleryNestedEditors } from '@/inkling/nodes/base/nodes/gallery/GalleryNode'
+import type { HeaderData, headerNestedEditors } from '@/inkling/nodes/base/nodes/header/HeaderNode'
 import type { HtmlData } from '@/inkling/nodes/base/nodes/html/HtmlNode'
-import type { ImageData } from '@/inkling/nodes/base/nodes/image/ImageNode'
+import type { ImageData, imageNestedEditors, imageTransientProps } from '@/inkling/nodes/base/nodes/image/ImageNode'
 import type { MathData } from '@/inkling/nodes/base/nodes/math/MathNode'
-import type { ToggleData } from '@/inkling/nodes/base/nodes/toggle/ToggleNode'
-import type { VideoData } from '@/inkling/nodes/base/nodes/video/VideoNode'
+import type { ToggleData, toggleNestedEditors } from '@/inkling/nodes/base/nodes/toggle/ToggleNode'
+import type { VideoData, videoNestedEditors, videoTransientProps } from '@/inkling/nodes/base/nodes/video/VideoNode'
 import type { CardNodeType } from '@/inkling/nodes/cards'
-import type { transientProps as audioTransientProps } from '@/inkling/nodes/cards/audio.declaration'
-import type {
-  nestedEditors as bookmarkNestedEditors,
-  transientProps as bookmarkTransientProps,
-} from '@/inkling/nodes/cards/bookmark.declaration'
-import type { nestedEditors as calloutNestedEditors } from '@/inkling/nodes/cards/callout.declaration'
 import type { CardMenuCommand } from '@/inkling/nodes/cards/card-declaration'
-import type {
-  nestedEditors as codeBlockNestedEditors,
-  transientProps as codeBlockTransientProps,
-} from '@/inkling/nodes/cards/codeblock.declaration'
-import type { transientProps as fileTransientProps } from '@/inkling/nodes/cards/file.declaration'
-import type { nestedEditors as galleryNestedEditors } from '@/inkling/nodes/cards/gallery.declaration'
-import type { nestedEditors as headerNestedEditors } from '@/inkling/nodes/cards/header.declaration'
-import type {
-  nestedEditors as imageNestedEditors,
-  transientProps as imageTransientProps,
-} from '@/inkling/nodes/cards/image.declaration'
-import type { nestedEditors as toggleNestedEditors } from '@/inkling/nodes/cards/toggle.declaration'
-import type {
-  nestedEditors as videoNestedEditors,
-  transientProps as videoTransientProps,
-} from '@/inkling/nodes/cards/video.declaration'
 import type { SnippetDataset } from '@/inkling/plugins/behaviour/snippet-insertion'
 
 /**
@@ -51,17 +37,14 @@ import type { SnippetDataset } from '@/inkling/plugins/behaviour/snippet-inserti
  * payload is the card's public `*NodeDataset`
  * type, DERIVED here from two registry-layer sources: the base node
  * module's `*Data` (the generated property vocabulary) intersected with the
- * declaration's exported spec arrays through `CardSpecTransientDataset` /
+ * base module's exported spec arrays through `CardSpecTransientDataset` /
  * `CardSpecNestedEditorDataset` (the transient/nested-editor vocabulary).
  * The shims re-export these types — no dataset vocabulary is hand-restated
  * in the wrapper layer, and this module never imports from there. The
  * derivation reads the spec ARRAYS (not `typeof declaration`) on purpose:
  * the spec arrays never reference the commands, and the imports above are
  * type-only, so the runtime module graph is untouched.
- * `INSERT_CODE_BLOCK_COMMAND` lives here
- * even though CodeBlock has no menu entry (it is inserted by its markdown
- * code fence), so all card commands share one home.
- * `OPEN_GIF_SELECTOR_COMMAND` is likewise kept here for the Image card's
+ * `OPEN_GIF_SELECTOR_COMMAND` is kept here for the Image card's
  * GIF menu entry; `@/inkling/plugins/InklingSelectorPlugin` re-exports it.
  * `OPEN_IMAGE_LIBRARY_COMMAND` shares the home for the Image card's media
  * library menu entry.

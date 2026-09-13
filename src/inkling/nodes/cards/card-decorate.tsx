@@ -70,8 +70,9 @@ export const CARD_DECORATE_TARGETS = CARD_DECLARATIONS.map((declaration) => {
   const decorateTarget: DecorateTargetSpec | undefined =
     'decorateTarget' in declaration ? declaration.decorateTarget : undefined
   const module = CARD_DECORATE_MODULES[declaration.nodeType]
-  // Object.assign into a fresh object: the declarations are shared registry
-  // state, so the projection stays copy-on-write without a per-item spread
+  // Object.assign into a fresh object: a shallow copy of the shared
+  // declaration, so the projection's added keys can never mutate the
+  // registry object
   return Object.assign({}, declaration, {
     decorateTarget,
     render: (node: LexicalNode) => module.render(node),

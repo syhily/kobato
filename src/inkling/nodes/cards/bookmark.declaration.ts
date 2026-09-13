@@ -1,26 +1,16 @@
-import type { NestedEditorSpec, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-import { BaseBookmarkNode } from '@/inkling/nodes/base/nodes/bookmark/BookmarkNode'
-import { captionEditorSpec } from '@/inkling/nodes/cards/caption-editor-spec'
-
-// `as const` keeps the literal `name`s and value types on the declaration's
-// type — the `__*` field map derives both from them (CardSpecFieldMap)
-export const nestedEditors = [captionEditorSpec()] as const satisfies readonly NestedEditorSpec[]
-
-export const transientProps = [
-  // true only for a card constructed from a bare url before its metadata was
-  // fetched — the component's metadata-fetch effect keys off it. The initial
-  // value reads the dataset the base constructor forwards to the generated
-  // constructor.
-  { name: 'createdWithUrl', initial: (dataset): boolean => !!dataset.url && !dataset.metadata },
-] as const satisfies readonly TransientPropSpec[]
+import {
+  BaseBookmarkNode,
+  bookmarkNestedEditors,
+  bookmarkTransientProps,
+} from '@/inkling/nodes/base/nodes/bookmark/BookmarkNode'
 
 export const bookmarkDeclaration = {
   nodeType: 'bookmark',
   baseNode: BaseBookmarkNode,
-  nestedEditors,
-  transientProps,
+  nestedEditors: bookmarkNestedEditors,
+  transientProps: bookmarkTransientProps,
   menu: [
     {
       label: 'Bookmark',

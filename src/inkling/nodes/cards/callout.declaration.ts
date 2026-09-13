@@ -1,27 +1,11 @@
-import type { NestedEditorSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-import { nullableNestedEditor } from '@/inkling/nodes/base/card-specs'
-import { BaseCalloutNode } from '@/inkling/nodes/base/nodes/callout/CalloutNode'
-import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
-
-// `as const` keeps the literal `name`s and value types on the declaration's
-// type — the `__*` field map derives both from them (CardSpecFieldMap). The
-// nested editor rides nullableNestedEditor's carrier: the markdown
-// round-trip detaches it
-export const nestedEditors = [
-  nullableNestedEditor({
-    name: 'calloutTextEditor',
-    serializedKey: 'calloutText',
-    nodes: MINIMAL_NODES,
-    cleanBasicHtml: { allowBr: true },
-  }),
-] as const satisfies readonly NestedEditorSpec[]
+import { BaseCalloutNode, calloutNestedEditors } from '@/inkling/nodes/base/nodes/callout/CalloutNode'
 
 export const calloutDeclaration = {
   nodeType: 'callout',
   baseNode: BaseCalloutNode,
-  nestedEditors,
+  nestedEditors: calloutNestedEditors,
   menu: [
     {
       label: 'Callout',

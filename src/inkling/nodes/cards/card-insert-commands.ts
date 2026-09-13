@@ -22,8 +22,8 @@ export interface CardInsertRegistration {
  * `resolveCardInsertCommand` — the declaration's insert spec carries only
  * flags, never a command object. Kept out of the declaration modules so they
  * stay React-free; the registrar (`@/inkling/plugins/CardInsertPlugin`) is the
- * derived view over this list. CodeBlock and HorizontalRule declare no
- * `insert` and drop out here.
+ * derived view over this list. Cards whose declaration carries no `insert`
+ * (HorizontalRule, the footnote definition) drop out here.
  */
 export const CARD_INSERT_COMMANDS: CardInsertRegistration[] = CARD_WRAPPER_NODES.flatMap((declaration) => {
   // `in` narrows the union to the declarations carrying the optional insert entry

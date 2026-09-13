@@ -1,13 +1,37 @@
-import type { LexicalEditor, LexicalNode } from 'lexical'
+import type { LexicalNode } from 'lexical'
 
 import { $canShowPlaceholderCurry } from '@lexical/text'
 
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type { DecoratorNodeProperty, NestedEditorFieldMap, NestedEditorSpec } from '@/inkling/nodes/base/card-specs'
 
 import { generateDecoratorNode, type DecoratorNodeData } from '@/inkling/nodes/base/generate-decorator-node'
 import { parseHeaderNode } from '@/inkling/nodes/base/nodes/header/parsers/header-parser'
 import { renderHeaderNodeV2 } from '@/inkling/nodes/base/nodes/header/renderers/header-renderer'
 import { normalizeCardWidth, type CardWidth } from '@/inkling/nodes/base/utils/card-widths'
+import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
+
+// The card's nested-editor spec (CONTEXT.md: "card spec") lives here, beside
+// the class it types — the declaration imports it from this module. Header's
+// dataset exposes the editors but not their initial states
+// (`exposeInitialStateInDataset: false`). The MINIMAL_NODES import runs
+// against the layer grain but closes no cycle — see the
+// captionEditorSpecBase note.
+export const headerNestedEditors = [
+  {
+    name: 'headerTextEditor',
+    serializedKey: 'header',
+    nodes: MINIMAL_NODES,
+    cleanBasicHtml: { firstChildInnerContent: true, allowBr: true },
+    exposeInitialStateInDataset: false,
+  },
+  {
+    name: 'subheaderTextEditor',
+    serializedKey: 'subheader',
+    nodes: MINIMAL_NODES,
+    cleanBasicHtml: { firstChildInnerContent: true, allowBr: true },
+    exposeInitialStateInDataset: false,
+  },
+] as const satisfies readonly NestedEditorSpec[]
 
 const headerProperties = [
   { name: 'size', default: 'small' },
@@ -47,18 +71,15 @@ export const headerCardWidth = (node: LexicalNode): CardWidth | undefined => {
   return normalizeCardWidth(layout === 'split' ? 'full' : layout)
 }
 
+// the merged interface self-types the spec-driven nested-editor fields — see
+// the BaseAudioNode note
+// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseHeaderNode extends NestedEditorFieldMap<typeof headerNestedEditors> {}
 export class BaseHeaderNode extends generateDecoratorNode({
   nodeType: 'header',
   properties: headerProperties,
   defaultRenderFn: renderHeaderNodeV2,
 }) {
-  // The generated constructor assigns the nested editors only on subclasses
-  // that adopt a `nestedEditors` spec (the assembled card class); a raw
-  // `new BaseHeaderNode()` leaves them unset — `undefined` is part of the
-  // honest type here (the CodeBlockNode.__openInEditMode idiom).
-  declare __headerTextEditor: LexicalEditor | null | undefined
-  declare __subheaderTextEditor: LexicalEditor | null | undefined
-
   static importDOM() {
     return parseHeaderNode(this)
   }

@@ -1,21 +1,11 @@
-import type { TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-import { transientInitialFileProp, transientTriggerFileDialogProp } from '@/inkling/nodes/base/card-specs'
-import { BaseFileNode } from '@/inkling/nodes/base/nodes/file/FileNode'
-
-// `as const` keeps the literal `name`s and `initial` value types on the
-// declaration's type — the `__*` field map derives both from them
-// (CardSpecFieldMap)
-export const transientProps = [
-  transientTriggerFileDialogProp,
-  transientInitialFileProp,
-] as const satisfies readonly TransientPropSpec[]
+import { BaseFileNode, fileTransientProps } from '@/inkling/nodes/base/nodes/file/FileNode'
 
 export const fileDeclaration = {
   nodeType: 'file',
   baseNode: BaseFileNode,
-  transientProps,
+  transientProps: fileTransientProps,
   menu: [
     {
       label: 'File',

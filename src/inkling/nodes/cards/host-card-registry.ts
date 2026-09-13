@@ -77,16 +77,17 @@ export interface HostCardRecord {
 // hosts call `defineCard` at module top level, before their composer mounts.
 // Kept in its own module with a type-only import closure — the derived views
 // (card-menus, card-decorate, …) read it from inside module-init assembly
-// paths, so it must never pull in the wrapper layer at runtime.
+// paths, so it must never pull in the wrapper layer at runtime. The Map IS
+// the ordered store (insertion order is specified), so no parallel array is
+// kept in lockstep.
 const HOST_CARDS_BY_TYPE = new Map<string, HostCardRecord>()
-const HOST_CARDS: HostCardRecord[] = []
 
 export function getHostCard(nodeType: string): HostCardRecord | undefined {
   return HOST_CARDS_BY_TYPE.get(nodeType)
 }
 
 export function getHostCards(): readonly HostCardRecord[] {
-  return HOST_CARDS
+  return [...HOST_CARDS_BY_TYPE.values()]
 }
 
 export function hasHostCard(nodeType: string): boolean {
@@ -100,5 +101,4 @@ export function hasHostCard(nodeType: string): boolean {
  */
 export function registerHostCard(record: HostCardRecord): void {
   HOST_CARDS_BY_TYPE.set(record.nodeType, record)
-  HOST_CARDS.push(record)
 }

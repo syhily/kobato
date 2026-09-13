@@ -1,25 +1,16 @@
-import type { NestedEditorSpec, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-import { transientTriggerFileDialogProp } from '@/inkling/nodes/base/card-specs'
-import { BaseGalleryNode } from '@/inkling/nodes/base/nodes/gallery/GalleryNode'
-import { captionEditorSpec } from '@/inkling/nodes/cards/caption-editor-spec'
-
-// `as const` keeps the literal `name`s and value types on the declaration's
-// type — the `__*` field map derives both from them (CardSpecFieldMap). The
-// nested editor rides captionEditorSpec's nullable carrier: the markdown
-// round-trip detaches it
-export const nestedEditors = [captionEditorSpec({ nullable: true })] as const satisfies readonly NestedEditorSpec[]
-
-// the insert-time "open the file picker" flag — same shared spec entry the
-// four upload cards carry, so the menu entry's insertParams lands on the node
-export const transientProps = [transientTriggerFileDialogProp] as const satisfies readonly TransientPropSpec[]
+import {
+  BaseGalleryNode,
+  galleryNestedEditors,
+  galleryTransientProps,
+} from '@/inkling/nodes/base/nodes/gallery/GalleryNode'
 
 export const galleryDeclaration = {
   nodeType: 'gallery',
   baseNode: BaseGalleryNode,
-  nestedEditors,
-  transientProps,
+  nestedEditors: galleryNestedEditors,
+  transientProps: galleryTransientProps,
   decorateTarget: {
     width: 'wide',
   },

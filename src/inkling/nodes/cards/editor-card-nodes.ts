@@ -12,11 +12,12 @@ import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
  * through the one menu projection in `@/inkling/nodes/cards/card-menus`, shared by
  * built-in declarations and host specs alike) and the upload-claiming key,
  * keyed by node type. Consumers take what they need — `buildCardMenu` skips
- * menu-less entries (CodeBlock), `DragDropPastePlugin` reads `uploadType`.
+ * cards whose declaration carries no `menu`, `DragDropPastePlugin` reads
+ * `uploadType`.
  */
 export interface EditorCardNode extends CardMenuSource {
   /** the declaration's menu entries resolved through `resolveCardMenuEntries` — always
-   * normalized to an array; undefined for menu-less cards (CodeBlock) */
+   * normalized to an array; undefined when the declaration carries no `menu` */
   cardMenu: MenuItem[] | undefined
   uploadType?: CardUploadType
 }

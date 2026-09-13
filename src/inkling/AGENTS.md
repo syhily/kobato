@@ -67,7 +67,7 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   `assembleCardNodeOnce`), the base-canonical `$is*`, and their dataset type. Base node classes are
   named `Base*Node` (e.g. `BaseAudioNode`) with a `$createBase*Node` factory; the public `*Node`
   name / `$create*Node` factory belong to the shim and construct the assembled class. Card-specific
-  behaviour lives on the declaration (e.g. transient props) or the base class (e.g. `isEmpty`);
+  behaviour lives on the declaration (menu/insert/markdown facts) or the base class (e.g. `isEmpty`);
   nested-editor/transient specs are adopted via class statics only — the generator's options bag has
   no `nestedEditors` entry. Each card declaration also carries its card-menu entries (naming
   commands by string via `CardMenuCommand` — never importing the command table), insert-spec flags,
@@ -85,10 +85,13 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   checkable ones are pinned by `tests/inkling/unit/nodes/card-cross-registry-consistency.test.ts`
   and `card-declarations.test.ts`. Every derived view resolves its facts through one merge-policy
   module (`resolveCardFacts` in `src/inkling/nodes/cards/card-facts.ts`: built-in declaration first,
-  host registry fallback), and each spec's transient/nested-editor arrays are
-  `as const satisfies` so `CardSpecFieldMap` (exported from the barrel) derives the shim's `__*`
-  field names AND value types (transient `initial` lambdas carry the value type;
-  `nullableNestedEditor` carries `LexicalEditor | null`) — renaming or retyping a spec entry is a
+  host registry fallback), and each card's transient/nested-editor spec arrays live in its base node
+  module (still `as const satisfies` — the declaration imports them from there), so
+  `CardSpecFieldMap` (exported from the barrel) derives the shim's `__*`
+  field names AND value types from the declaration (transient `initial` lambdas carry the value type;
+  a nested-editor entry's `nullable: true` carries `LexicalEditor | null`) while the base class
+  self-types the same vocabulary by interface-merging `CardSpecFieldMapFor` over the arrays its
+  module owns — renaming or retyping a spec entry is a
   compile error at every consumer. The pipeline's layering rule is pinned by a static import guard
   (`tests/inkling/unit/nodes/card-layering-imports.test.ts`).
 - Card `decorate()` goes through an injection slot, not a direct import:
@@ -135,7 +138,12 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   it without import cycles) — a neutral fact store whose projections every derived view computes
   through the same projectors the built-in declarations use, intersected with each editor's
   registered node types.
-- Each card has a renderer under `src/inkling/nodes/base/nodes/<card>/`.
+- Each card has a renderer under `src/inkling/nodes/base/nodes/<card>/`. The same per-card module
+  houses the card's transient/nested-editor spec arrays (imported by its declaration); the shared
+  caption spec core lives beside them in `base/nodes/caption-editor-spec.ts` — its MINIMAL_NODES
+  import runs against the layer grain but closes no cycle, since the node sets compose only base
+  leaves (the same direction `generate-decorator-node` already depends on through
+  `nodes/nested-editors`).
 - `src/inkling/utils` is the bottom layer : node-coupled modules live with their consumers — the
   upload intents in `src/inkling/nodes/upload-intent.ts`, the card-menu build and the
   registered-cards projection in `src/inkling/nodes/cards/card-menu-build.ts` /

@@ -1,10 +1,10 @@
-/* The shared contract of the two published entries (`.` and `./core`) —
- * single-sourced so the barrels cannot drift (their parity used to be kept
- * by convention, and no gate named most of these). Both barrels
- * `export * from` this module and keep only their entry-specific exports:
- * the `.` entry's cards/feature plugins/node sets and its defaulted
- * `InklingComposer`, the `./core` entry's required-nodes `InklingComposer`.
- * Everything here must stay card-free — `./core` is the card-free entry. */
+/* The shared contract of the public barrel — single-sourced so shared names
+ * have one home (no gate named most of these). The barrel `export * from`s
+ * this module and keeps only its entry-specific exports: the card family,
+ * feature plugins, node sets, and the defaulted `InklingComposer`.
+ * Everything here must stay card-free — the card-free composition pieces
+ * (InklingComposerBase and friends) are the subset a card-free host surface
+ * consumes. */
 
 /* Types re-exported from bundled runtimes so consumers can name the shapes
  * that appear in public prop/command signatures without installing Lexical. */

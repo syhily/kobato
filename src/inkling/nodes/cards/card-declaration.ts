@@ -49,8 +49,8 @@ export interface DecorateTargetSpec {
  * held: whether it dispatches `INSERT_CARD_COMMAND` with
  * `openInEditMode: true`, and whether it claims media inserts. The presence
  * of `insert` is the opt-in; an empty spec (file, gallery) is the common
- * case. CodeBlock and HorizontalRule omit the entry — they have no derived
- * insert registration. The insert command itself is NOT declared here: every
+ * case. HorizontalRule and the footnote definition omit the entry — they have
+ * no derived insert registration. The insert command itself is NOT declared here: every
  * insert-bearing card joins exactly one insert command, derived from its
  * node type by `resolveCardInsertCommand` (`@/inkling/nodes/cards/card-commands`),
  * so the command can never drift from the card. React-free; the registrar
@@ -191,22 +191,23 @@ export interface CardDeclaration<NodeType extends string = string> {
   baseNode: CardBaseNodeClass
   /**
    * The card's nested editors (CONTEXT.md: "card spec"), for cards that keep
-   * rich-text content in nested Lexical editors. The wrapper node class
+   * rich-text content in nested Lexical editors. The spec array lives in the
+   * card's base node module (const-asserted there: the shim's `__*` field map
+   * derives its keys from the literal names — `CardSpecFieldMap`), imported
+   * here. The wrapper node class
    * adopts this as its static `nestedEditors`; the generated node machinery
    * (`@/inkling/nodes/base/generate-decorator-node`) drives constructor setup,
-   * `getDataset` appends, and `exportJSON` re-serialization from it. Keep
-   * the spec array `as const` in the declaration file: the shim's `__*`
-   * field map derives its keys from the literal names (`CardSpecFieldMap`).
+   * `getDataset` appends, and `exportJSON` re-serialization from it.
    */
   nestedEditors?: readonly NestedEditorSpec[]
   /**
    * The card's transient props (CONTEXT.md: "card spec") — client-side-only
    * fields (upload flow state, edit-mode flags) read from the construction
    * dataset, initialized by the generated node machinery, and never
-   * serialized. The wrapper node class adopts this as its static
+   * serialized. Housed in the base node module like `nestedEditors`. The
+   * wrapper node class adopts this as its static
    * `transientProps`; see `TransientPropSpec` in
-   * `@/inkling/nodes/base/generate-decorator-node`. Keep the spec array `as const`
-   * in the declaration file, as for `nestedEditors`.
+   * `@/inkling/nodes/base/card-specs`.
    */
   transientProps?: readonly TransientPropSpec[]
   /**
@@ -220,15 +221,15 @@ export interface CardDeclaration<NodeType extends string = string> {
   insert?: CardInsertSpec
   /**
    * The card's slash/plus menu entries (CONTEXT.md: "card declaration");
-   * see `CardMenuEntrySpec`. Menu-less cards: CodeBlock (inserted by its
-   * markdown code fence) and the footnote definition (created/ordered by the
-   * footnote behaviour module, never inserted by the user).
+   * see `CardMenuEntrySpec`. A card with no menu entry (the footnote
+   * definition — created/ordered by the footnote behaviour module, never
+   * inserted by the user) omits this field.
    */
   menu?: readonly CardMenuEntrySpec[]
   /**
-   * The drag-preview icon for menu-less cards that are still user-draggable
-   * (CodeBlock). Menu-bearing cards use their first entry's icon; the
-   * footnote definition names none (the doc-end-run invariant re-parks it).
+   * The drag-preview icon, when the declaration overrides the default (the
+   * first menu entry's icon — see `resolveCardDragIcon`). The footnote
+   * definition names none (the doc-end-run invariant re-parks it).
    * See `getCardDragIcon` in `@/inkling/nodes/cards/card-menus`.
    */
   dragIcon?: CardIconId

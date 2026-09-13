@@ -1,14 +1,35 @@
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  NestedEditorSpec,
+  TransientPropSpec,
+} from '@/inkling/nodes/base/card-specs'
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 
+import { transientInitialFileProp, transientTriggerFileDialogProp } from '@/inkling/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
 } from '@/inkling/nodes/base/generate-decorator-node'
+import { captionEditorSpecBase } from '@/inkling/nodes/base/nodes/caption-editor-spec'
 import { formatVideoDuration } from '@/inkling/nodes/base/nodes/video/format-video-duration'
 import { renderVideoNode } from '@/inkling/nodes/base/nodes/video/video-renderer'
+
+// The card's spec arrays (CONTEXT.md: "card spec") live here, beside the
+// class they type — the declaration imports them from this module. `as const`
+// keeps the literal `name`s and value types on the arrays' types so the `__*`
+// field maps derive both (CardSpecFieldMap / CardSpecFieldMapFor). The nested
+// editor is `nullable`: the markdown round-trip detaches it.
+export const videoNestedEditors = [
+  { ...captionEditorSpecBase, nullable: true },
+] as const satisfies readonly NestedEditorSpec[]
+
+export const videoTransientProps = [
+  transientTriggerFileDialogProp,
+  transientInitialFileProp,
+] as const satisfies readonly TransientPropSpec[]
 
 const videoProperties = [
   // the blob guard as spec data: an upload-in-progress data-string src must
@@ -98,20 +119,16 @@ export type VideoData = DecoratorNodeData<typeof videoProperties>
 
 export type SerializedVideoNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof videoProperties>>
 
+// the merged interface self-types the spec-driven fields/accessors — see the
+// BaseAudioNode note
+// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseVideoNode extends CardSpecFieldMapFor<typeof videoTransientProps, typeof videoNestedEditors> {}
 export class BaseVideoNode extends generateDecoratorNode({
   nodeType: 'video',
   properties: videoProperties,
   defaultRenderFn: renderVideoNode,
   importSpec: videoImportSpec,
 }) {
-  // The transient-prop spec (video.declaration.ts) initializes this only on
-  // spec-adopting assembled classes — the accessor is assembly-defined from
-  // the spec (the `declare` leg is type-only, so base-typed write-seam
-  // consumers can name it); a raw `new BaseVideoNode()` leaves the field
-  // unset, so `undefined` is part of the honest type for spec-less instances
-  declare __triggerFileDialog: boolean | undefined
-  declare triggerFileDialog: boolean | undefined
-
   get formattedDuration() {
     return formatVideoDuration(this.duration)
   }

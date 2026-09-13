@@ -66,44 +66,14 @@ export interface NestedEditorSpec {
   cleanBasicHtml?: CleanBasicHtmlOptions
   /** Whether `getDataset` exposes the `<name>InitialState` key (default true). */
   exposeInitialStateInDataset?: boolean
-}
-
-// type-level brand key for the nested-editor value carrier below — never
-// assigned at runtime, so a `declare`d unique symbol keeps it off every
-// object shape while staying derivable in type space. Exported so inferred
-// entry types can name it through declaration bundling; the `declare` emits
-// no runtime binding
-export declare const nestedEditorValueType: unique symbol
-
-/**
- * The type-level carrier recording one nested-editor entry's `__<name>`
- * field value type: `LexicalEditor` for an editor that lives for the node's
- * whole lifetime, `LexicalEditor | null` for one the markdown round-trip
- * detaches (`$detachNestedEditorsForRoundTrip` nulls every spec-declared
- * editor on a fence-imported card) or the export path drops. Carried as a
- * branded property because a spec entry's inferred type is the only channel
- * `CardSpecFieldMap` can derive from — a `satisfies` target's type arguments
- * never reach it.
- */
-export interface NestedEditorValueCarrier<TEditor extends LexicalEditor | null> {
-  readonly [nestedEditorValueType]: TEditor
-}
-
-/**
- * Builds a nested-editor spec entry whose editor field is nullable (see
- * NestedEditorValueCarrier): the markdown round-trip / headless export paths
- * detach it. Entries built as plain literals default to a non-null
- * `LexicalEditor` field. Runtime-identical to the literal — the brand is
- * type-space only.
- */
-export function nullableNestedEditor<const TName extends string>(
-  spec: Omit<NestedEditorSpec, 'name'> & { name: TName },
-): NestedEditorSpec & { name: TName } & NestedEditorValueCarrier<LexicalEditor | null>
-// The brand is type-space only (the `declare`d symbol never exists at
-// runtime), so the implementation speaks the unbranded spec and the overload
-// above carries the branded fiction — no assertion in the body
-export function nullableNestedEditor(spec: NestedEditorSpec): NestedEditorSpec {
-  return spec
+  /**
+   * Type-only: marks the editor field nullable (`LexicalEditor | null` in the
+   * derived `__*` field maps) for the cards the markdown round-trip detaches
+   * (`$detachNestedEditorsForRoundTrip` nulls every spec-declared editor on a
+   * fence-imported card). The runtime never reads this flag — the detach path
+   * nulls regardless; it exists so the field TYPE stays honest.
+   */
+  nullable?: boolean
 }
 
 const NO_NESTED_EDITORS: readonly NestedEditorSpec[] = []
@@ -199,7 +169,7 @@ export function getTransientPropPrivateName(spec: TransientPropSpec): string {
  * `privateName` remap when present, else `__${name}`) — the type-level twin
  * of `getTransientPropPrivateName` above. Only literal when the spec array
  * was const-asserted (`as const satisfies readonly TransientPropSpec[]`), as
- * every card declaration does.
+ * every base node module keeps its spec arrays.
  */
 export type TransientPropFieldName<Spec extends TransientPropSpec> = Spec extends {
   privateName: infer Name extends string
@@ -221,9 +191,10 @@ export type NestedEditorFieldNames<Spec extends NestedEditorSpec> =
 /**
  * Every `__*` field name a card declaration's spec (CONTEXT.md: "card spec")
  * drives — transient props and nested editors together. Reads the spec
- * arrays off the declaration's own type, so the declaration files must keep
- * their spec arrays const-asserted (`as const satisfies …`) for the literal
- * names to survive. A spec-less declaration yields `never`.
+ * arrays off the declaration's own type, so the arrays must stay
+ * const-asserted (`as const satisfies …`) for the literal names to survive
+ * (the base node modules own them — see `CardSpecFieldMapFor`). A spec-less
+ * declaration yields `never`.
  */
 export type CardSpecFieldNames<D> =
   | (D extends { transientProps: infer Specs extends readonly TransientPropSpec[] }
@@ -248,46 +219,92 @@ export type TransientPropValue<Spec> = Spec extends {
   : unknown
 
 /**
- * The value type one nested-editor spec entry carries: the carrier's brand
- * (`nestedEditorSpec`) when present, else a non-null `LexicalEditor` — the
- * constructor's nested-editor setup always assigns an editor, and only the
- * round-trip-detached / export-dropped editors ride the carrier.
+ * The value type one nested-editor spec entry carries: `LexicalEditor | null`
+ * when the entry sets `nullable: true` (the markdown round-trip / headless
+ * export paths detach it — see the spec field), else a non-null
+ * `LexicalEditor` — the constructor's nested-editor setup always assigns an
+ * editor.
  */
-export type NestedEditorValue<Spec> = Spec extends NestedEditorValueCarrier<infer Value> ? Value : LexicalEditor
+export type NestedEditorValue<Spec> = Spec extends { nullable: true } ? LexicalEditor | null : LexicalEditor
+
+/**
+ * The transient-prop `__*` field map of ONE spec array: keys from the spec
+ * names, value types from the entries' `initial` lambda return types. This is
+ * the per-array primitive `CardSpecFieldMap` derives from a declaration; the
+ * base node modules consume it directly to self-type their spec-driven fields
+ * by interface merging (the `BaseAudioNode` idiom).
+ */
+export type TransientPropFieldMap<Specs extends readonly TransientPropSpec[]> = {
+  [Spec in Specs[number] as TransientPropFieldName<Spec>]: TransientPropValue<Spec>
+}
+
+/**
+ * The nested-editor `__*` field map of ONE spec array: the editor instance
+ * field `__<name>` at its `NestedEditorValue` type, plus its
+ * `__<name>InitialState` companion. Per-array primitive beside
+ * `TransientPropFieldMap`.
+ */
+export type NestedEditorFieldMap<Specs extends readonly NestedEditorSpec[]> = {
+  [Spec in Specs[number] as `__${Spec['name']}`]: NestedEditorValue<Spec>
+} & {
+  [Spec in Specs[number] as `__${Spec['name']}InitialState`]: EditorState | undefined
+}
+
+/**
+ * The accessor map of ONE transient-prop spec array: one read/write property
+ * per entry marked `accessor: true`, at the entry's value type. The runtime
+ * pair is defined on the assembled class (`assembleCardNode`), so a base node
+ * without its spec has no accessor at runtime — matching the spec-adoption
+ * lifecycle of the fields themselves.
+ */
+export type TransientPropAccessorMap<Specs extends readonly TransientPropSpec[]> = {
+  [Spec in Specs[number] as Spec extends { accessor: true } ? Spec['name'] : never]: TransientPropValue<Spec>
+}
+
+/**
+ * The spec-driven instance vocabulary of a base node class, DERIVED from the
+ * spec arrays the base module owns: the transient/nested-editor `__*` fields
+ * plus the transient accessors (unlike `CardSpecFieldMap`, which leaves
+ * accessors to `CardSpecAccessorMap`, this folds them in — the base class
+ * exposes both so base-typed write-seam consumers can name them). Consumed by
+ * interface merging on the base class:
+ *
+ * ```ts
+ * export interface BaseAudioNode extends CardSpecFieldMapFor<typeof audioTransientProps> {}
+ * ```
+ *
+ * The maps only resolve to statically known members when the spec arrays are
+ * const-asserted (`as const satisfies …`), as every base module keeps them.
+ */
+export type CardSpecFieldMapFor<
+  Transient extends readonly TransientPropSpec[],
+  Nested extends readonly NestedEditorSpec[] = readonly [],
+> = TransientPropFieldMap<Transient> & TransientPropAccessorMap<Transient> & NestedEditorFieldMap<Nested>
 
 /**
  * The `__*` type map of a card node, DERIVED from its declaration's spec
  * (CONTEXT.md: "card declaration"): keys come from the spec names, value
  * types from the entries' own type carriers (the transient `initial`
- * lambda's return type, the nested-editor `nestedEditorSpec` brand) — the
- * spec is the single source of the whole transient/nested-editor field
- * vocabulary, and renaming or retyping a spec entry is a compile error at
- * every consumer. The map rides the assembled class's instance type
- * (`assembleCardNodeOnce` folds it in), so the shims are re-exports only.
- * The base classes keep their hand-written `declare __*` fields (a base
- * cannot import its declaration — the declaration imports the base); that
- * leg is pinned by `test/typecheck/card-spec-field-agreement.ts` and the
- * runtime agreement test in `test/unit/nodes/card-declarations.test.ts`.
+ * lambda's return type, the nested-editor `nullable` flag) — the spec is the
+ * single source of the whole transient/nested-editor field vocabulary, and
+ * renaming or retyping a spec entry is a compile error at every consumer. The
+ * map rides the assembled class's instance type (`assembleCardNodeOnce` folds
+ * it in), so the shims are re-exports only. The base classes self-type the
+ * same vocabulary by merging `CardSpecFieldMapFor` over the spec arrays their
+ * module owns (the base module is where the arrays live; the declaration
+ * imports them from there).
  */
 export type CardSpecFieldMap<D> = (D extends { transientProps: infer Specs extends readonly TransientPropSpec[] }
-  ? { [Spec in Specs[number] as TransientPropFieldName<Spec>]: TransientPropValue<Spec> }
+  ? TransientPropFieldMap<Specs>
   : unknown) &
-  (D extends { nestedEditors: infer Specs extends readonly NestedEditorSpec[] }
-    ? { [Spec in Specs[number] as `__${Spec['name']}`]: NestedEditorValue<Spec> } & {
-        [Spec in Specs[number] as `__${Spec['name']}InitialState`]: EditorState | undefined
-      }
-    : unknown)
+  (D extends { nestedEditors: infer Specs extends readonly NestedEditorSpec[] } ? NestedEditorFieldMap<Specs> : unknown)
 
 /**
  * The accessor map of a card node, DERIVED the same way as
- * `CardSpecFieldMap`: one read/write property per transient spec entry
- * marked `accessor: true`, at the entry's value type. The runtime pair is
- * defined on the assembled class (`assembleCardNode`), so a base node
- * without its declaration's spec has no accessor — matching the
- * spec-adoption lifecycle of the fields themselves.
+ * `CardSpecFieldMap` — see `TransientPropAccessorMap`.
  */
 export type CardSpecAccessorMap<D> = D extends { transientProps: infer Specs extends readonly TransientPropSpec[] }
-  ? { [Spec in Specs[number] as Spec extends { accessor: true } ? Spec['name'] : never]: TransientPropValue<Spec> }
+  ? TransientPropAccessorMap<Specs>
   : unknown
 
 /**

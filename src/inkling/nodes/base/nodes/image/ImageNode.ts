@@ -1,6 +1,15 @@
-import type { DecoratorNodeProperty } from '@/inkling/nodes/base/card-specs'
+import type { NodeKey } from 'lexical'
+import type { ComponentType } from 'react'
+
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  NestedEditorSpec,
+  TransientPropSpec,
+} from '@/inkling/nodes/base/card-specs'
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 
+import { transientInitialFileProp, transientTriggerFileDialogProp } from '@/inkling/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   redactDataUrlValue,
@@ -8,8 +17,54 @@ import {
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
 } from '@/inkling/nodes/base/generate-decorator-node'
+import { captionEditorSpecBase } from '@/inkling/nodes/base/nodes/caption-editor-spec'
 import { renderImageNode } from '@/inkling/nodes/base/nodes/image/image-renderer'
 import { readImageAttributesFromElement } from '@/inkling/nodes/base/utils/read-image-attributes-from-element'
+import { strOr } from '@/inkling/utils/value-guards'
+
+// the selector overlay arrives through the construction dataset as a
+// component value — `typeof === 'function'` is the entire runtime check;
+// the component signature is the producer's contract (InklingSelectorPlugin)
+const isSelectorComponent = (value: unknown): value is ComponentType<{ nodeKey: NodeKey }> =>
+  typeof value === 'function'
+
+// The card's spec arrays (CONTEXT.md: "card spec") live here, beside the
+// class they type — the declaration imports them from this module. `as const`
+// keeps the literal `name`s and value types on the arrays' types so the `__*`
+// field maps derive both (CardSpecFieldMap / CardSpecFieldMapFor).
+export const imageNestedEditors = [
+  { ...captionEditorSpecBase, cleanBasicHtml: { firstChildInnerContent: true } },
+] as const satisfies readonly NestedEditorSpec[]
+
+export const imageTransientProps = [
+  {
+    name: 'previewSrc',
+    // the `string | null` annotation is the type source for the `__previewSrc`
+    // field (CardSpecFieldMap) — `strOr` itself returns string, but the field
+    // must stay nullable because the upload lifecycle clears it by writing
+    // `node.previewSrc = null` (src/nodes/upload-intent.ts)
+    initial: (dataset): string | null => strOr(dataset.previewSrc, ''),
+    datasetKey: '__previewSrc',
+    accessor: true,
+  },
+  { ...transientTriggerFileDialogProp, datasetKey: '__triggerFileDialog' },
+  // passed via INSERT_MEDIA_COMMAND on drag+drop or paste
+  transientInitialFileProp,
+  // selector overlay component (e.g. the GIF picker) and the flag that hides
+  // the image while it is open — client-side only, never serialized
+  {
+    name: 'selector',
+    initial: (dataset): ComponentType<{ nodeKey: NodeKey }> | undefined => {
+      const { selector } = dataset
+      return isSelectorComponent(selector) ? selector : undefined
+    },
+  },
+  {
+    name: 'isImageHidden',
+    initial: (dataset): boolean | undefined =>
+      typeof dataset.isImageHidden === 'boolean' ? dataset.isImageHidden : undefined,
+  },
+] as const satisfies readonly TransientPropSpec[]
 
 const imageProperties = [
   { name: 'src', default: '', urlType: 'url' },
@@ -67,6 +122,10 @@ export type ImageData = DecoratorNodeData<typeof imageProperties>
 
 export type SerializedImageNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof imageProperties>>
 
+// the merged interface self-types the spec-driven fields/accessors — see the
+// BaseAudioNode note
+// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseImageNode extends CardSpecFieldMapFor<typeof imageTransientProps, typeof imageNestedEditors> {}
 export class BaseImageNode extends generateDecoratorNode({
   nodeType: 'image',
   properties: imageProperties,
@@ -98,19 +157,6 @@ export class BaseImageNode extends generateDecoratorNode({
       href,
     })
   }
-
-  // The transient-prop spec (image.declaration.ts) initializes these only on
-  // spec-adopting assembled classes — including the accessors, which assembly
-  // defines from the spec's `accessor: true` entries; a raw `new
-  // BaseImageNode()` leaves the fields unset, so `undefined` is part of the
-  // honest type for spec-less base instances. The `declare` legs are
-  // type-only (the runtime pair is assembly-defined): they exist so
-  // base-typed write-seam consumers can name the accessor.
-  declare __previewSrc: string | null | undefined
-  declare previewSrc: string | null | undefined
-  // see `__previewSrc` — same spec-adoption lifecycle
-  declare __triggerFileDialog: boolean | undefined
-  declare triggerFileDialog: boolean | undefined
 }
 
 export const $createBaseImageNode = (dataset?: ImageData) => {

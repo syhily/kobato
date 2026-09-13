@@ -10,7 +10,9 @@ import type {
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
+import { getTransientPropPrivateName } from '@/inkling/nodes/base/card-specs'
 import { ensureLexicalNodeOwnMethods } from '@/inkling/nodes/base/ensure-node-own-methods'
+import { defineFieldAccessor } from '@/inkling/nodes/base/generate-decorator-node'
 import { decorateCardNode } from '@/inkling/nodes/card-decorate-slot'
 
 /**
@@ -112,23 +114,11 @@ export function assembleCardNode<
 
   // the spec's accessor entries: one get/set pair per `accessor: true`
   // transient prop, reading/writing its private field
-  interface FieldCarrier {
-    getLatest(): Record<string, unknown>
-    getWritable(): Record<string, unknown>
-  }
   for (const spec of declaration.transientProps ?? []) {
     if (!spec.accessor) {
       continue
     }
-    const privateName = spec.privateName ?? `__${spec.name}`
-    Object.defineProperty(AssembledCardNode.prototype, spec.name, {
-      get: function (this: FieldCarrier) {
-        return this.getLatest()[privateName]
-      },
-      set: function (this: FieldCarrier, value: unknown) {
-        this.getWritable()[privateName] = value
-      },
-    })
+    defineFieldAccessor(AssembledCardNode.prototype, spec.name, getTransientPropPrivateName(spec))
   }
 
   ensureLexicalNodeOwnMethods(AssembledCardNode)

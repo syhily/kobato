@@ -22,7 +22,6 @@ import {
   resolveCardMenuCommand,
 } from '@/inkling/nodes/cards/card-commands'
 import { CARD_MARKDOWN_DECLARATIONS } from '@/inkling/nodes/cards/card-markdown-transformers'
-import { deriveCardNodes } from '@/inkling/nodes/cards/derive-card-nodes'
 
 /**
  * Cross-registry consistency guard (CONTEXT.md: "card declaration"). The
@@ -132,8 +131,8 @@ describe('markdown fence wiring agrees with the declaration markdown specs', () 
 
   it('derives the markdown round-trip node set from exactly the markdown-bearing declarations', () => {
     const eligible = CARD_DECLARATIONS.filter((declaration) => 'markdown' in declaration && declaration.markdown)
-    expect(deriveCardNodes(CARD_MARKDOWN_DECLARATIONS).map((card) => card.nodeType)).toEqual(
-      eligible.map((declaration) => declaration.nodeType),
-    )
+    // the same eligibility filter `markdown/round-trip.ts` applies inline
+    const markdownCards = CARD_MARKDOWN_DECLARATIONS.filter((card) => 'markdown' in card && card.markdown)
+    expect(markdownCards.map((card) => card.nodeType)).toEqual(eligible.map((declaration) => declaration.nodeType))
   })
 })

@@ -42,13 +42,15 @@ export function decorateCard(node: LexicalNode): ReactNode {
   )
 }
 
-// Registration into the decorate() injection port is an explicit call, not a
-// module side effect: the package's sideEffects table (CSS only) lets the
-// bundler drop side-effect-only modules, and an unreachable-when-headless
-// side effect is exactly what the `./headless` split depends on dropping.
-// The `.` barrel calls this at module scope, so every full-entry consumer
-// has card decorate() wired before Lexical reconciles a card node; unit
-// tests that exercise decorate() without the barrel call it themselves.
+// Registration into the decorate() injection port is an explicit call the `.`
+// barrel makes at module top level, not a module side effect: consumers
+// import inkling as source, so there is no packaging metadata guaranteeing a
+// side-effect-only module survives bundler tree-shaking — the top-level call
+// is the belt-and-braces guarantee that registration happens regardless of
+// the bundler's side-effect assumptions. The slot itself must stay because
+// `decorate()` is synchronous: a dynamic import cannot fill it lazily, and an
+// unregistered slot throws the first time a card node renders. Unit tests
+// that exercise decorate() without the barrel call it themselves.
 export function registerCardDecorateAdapter(): void {
   registerCardDecorate(decorateCard)
 }
