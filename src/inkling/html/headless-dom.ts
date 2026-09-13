@@ -1,8 +1,10 @@
 import type { ExportDOMDom } from '@/inkling/nodes/base'
 
 export const HEADLESS_DOM_MISSING_MESSAGE =
-  'inkling headless HTML conversion needs a DOM: pass options.dom, run where a global ' +
-  "window.document exists, or have 'jsdom' installed"
+  'inkling headless HTML conversion needs a DOM: pass options.dom or run where a global ' +
+  'window.document exists — the jsdom fallback failed to load, which means this bundle/environment ' +
+  "is broken (jsdom is a plain bundled dependency, inlined into the SEA binary), not that 'jsdom' " +
+  'needs installing'
 
 type LoadJsdom = () => Promise<ExportDOMDom>
 
@@ -14,14 +16,18 @@ const loadJsdom: LoadJsdom = async () => {
 let cachedDefaultDom: Promise<ExportDOMDom> | undefined
 
 /**
- * The headless DOM port — the only module in the package that knows jsdom
- * (an import guard enforces it). Resolves the DOM for one headless
- * conversion: an injected `options.dom` wins, then a global
- * `window.document` (mirroring the render context's createDocument chain),
- * then a lazily imported, process-cached JSDOM — the class-level cache the
- * renderer used to carry, moved here. The jsdom loader hides behind the
- * `load` injection port so the failure leg is a synchronous test table with
- * no module mocking: any loader failure is rethrown as the named error.
+ * The headless DOM port — the only module in the layer that knows jsdom (an
+ * import guard enforces it). Resolves the DOM for one headless conversion: an
+ * injected `options.dom` wins, then a global `window.document` (mirroring the
+ * render context's createDocument chain), then a lazily imported,
+ * process-cached JSDOM — the class-level cache the renderer used to carry,
+ * moved here. The import stays lazy even though jsdom is a plain bundled
+ * dependency now (inlined into the SEA binary with its data files patched):
+ * it defers jsdom/css-tree evaluation off the boot path and preserves the
+ * one-importer discipline the guard pins. That also makes the failure leg
+ * unreachable in every shipped artifact — the `load` injection port exists
+ * solely so tests can exercise that unreachable leg as a synchronous table
+ * with no module mocking: any loader failure is rethrown as the named error.
  *
  * The cache stores the load PROMISE, not the resolved DOM, so concurrent
  * first calls share one JSDOM construction instead of racing into several.

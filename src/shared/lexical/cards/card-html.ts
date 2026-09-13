@@ -4,18 +4,16 @@
 // injected document factory, so the same renderers run under the browser
 // canvas and the server-side jsdom projection.
 //
-// No runtime or type import from the editor package at all: the `.` and
-// `./headless` dist entries each inline their own copy of the Lexical /
-// DOMPurify declarations into their bundled d.ts, so any type imported from
-// one entry is NOMINALLY incompatible with the other entry's expectation.
-// The seams below (`CardRenderContext` / `CardRenderOutput`) are therefore
-// local structural shapes — assignable to/from BOTH entries' RenderFn
-// signatures.
+// No runtime or type import of inkling's internal `RenderContext`: shared/
+// may only consume the `@/inkling/headless` surface, which deliberately does
+// not export it. The seams below (`CardRenderContext` / `CardRenderOutput`)
+// are therefore local structural slices — field-for-field compatible with
+// the real context object both render paths pass in.
 
 /**
  * The structural slice of inkling's `RenderContext` the host-card renderers
- * consume. Every field name/type matches `RenderContext`'s, so each entry's
- * real context object is assignable to it.
+ * consume. Every field name/type matches `RenderContext`'s, so the real
+ * context object is assignable to it.
  */
 export interface CardRenderContext {
   readonly createDocument: () => Document
@@ -28,8 +26,8 @@ export interface CardRenderContext {
 
 /**
  * The structural exportDOM output the renderers return — matches inkling's
- * `ExportDOMOutput<'inner' | 'outer'>` (`element` is lib.dom-typed, the one
- * DOM type both entries share).
+ * `ExportDOMOutput<'inner' | 'outer'>` (`element` is lib.dom-typed, the DOM
+ * type both the browser canvas and the jsdom projection share).
  */
 export interface CardRenderOutput {
   element: HTMLElement

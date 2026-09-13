@@ -258,6 +258,12 @@ export function createPanelDomWiring({
       if (!(target instanceof Node) || !getElement()?.contains(target)) {
         return
       }
+      // shield EVERY press inside the panel — any button, not just the
+      // grab-capable left press: the bubble-phase window/document mousedown
+      // fleet (the card-menu/library/gif click-outside handlers, the
+      // floating toolbar's mousedown, the card drag grab) mostly doesn't
+      // check the button, so a right/middle press leaking past body would
+      // read as an editor-canvas press and tear down open sessions
       e.stopPropagation()
 
       if (e.type !== 'touchstart' && !(e instanceof MouseEvent && e.button === 0)) {

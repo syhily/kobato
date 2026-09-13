@@ -7,16 +7,20 @@ import type { ReactNode } from 'react'
  * statically import the shared decorate adapter (`@/inkling/nodes/decorate-card`),
  * which pulls the entire wrapper layer (InklingCardWrapper + every card
  * component) into ANY graph that touches a card shim — including the
- * markdown round-trip, and through it the `./headless` entry. Inverting the
- * edge (the wrapper layer registers here; assembly reads the slot) keeps the
- * headless conversion surface free of the React component tree.
+ * markdown round-trip, and through it the `@/inkling/headless` surface.
+ * Inverting the edge (the wrapper layer registers here; assembly reads the
+ * slot) keeps the headless conversion surface free of the React component
+ * tree.
  *
- * The wrapper layer (`@/inkling/nodes/decorate-card`) registers its adapter at module
- * scope, and the `.` barrel side-effect-imports that module — so every full
- * entry consumer has the slot filled before Lexical ever reconciles a card
- * node. Headless graphs never call decorate() (no React reconciliation), so
- * the empty-slot throw below is unreachable there; it exists to fail loudly
- * if a custom surface renders cards without the `.` entry's wiring.
+ * The wrapper layer (`@/inkling/nodes/decorate-card`) does NOT register at
+ * module scope — a bare side-effect import would be tree-shaken away, so it
+ * exports `registerCardDecorateAdapter()` and the `@/inkling` barrel
+ * (`src/inkling/index.ts`) named-imports and calls it as an explicit
+ * top-level statement. Every barrel consumer therefore has the slot filled
+ * before Lexical ever reconciles a card node. Headless graphs never call
+ * decorate() (no React reconciliation), so the empty-slot throw below is
+ * unreachable there; it exists to fail loudly if a custom surface renders
+ * cards without the barrel's wiring.
  */
 
 /** The shared decorate adapter's signature — see `@/inkling/nodes/decorate-card`. */
@@ -24,7 +28,7 @@ export type CardDecorateImpl = (node: LexicalNode) => ReactNode
 
 let cardDecorateImpl: CardDecorateImpl | undefined
 
-/** Called once, at module scope, by the wrapper layer (`@/inkling/nodes/decorate-card`). */
+/** Called once by the wrapper layer's `registerCardDecorateAdapter()` (`@/inkling/nodes/decorate-card`). */
 export function registerCardDecorate(impl: CardDecorateImpl): void {
   cardDecorateImpl = impl
 }
@@ -34,7 +38,7 @@ export function decorateCardNode(node: LexicalNode): ReactNode {
   if (!cardDecorateImpl) {
     throw new Error(
       `[decorateCardNode] no decorate adapter registered — card nodes render only through the ` +
-        `'@/inkling' barrel (it side-effect-imports @/inkling/nodes/decorate-card); ` +
+        `'@/inkling' barrel (it calls registerCardDecorateAdapter() at module top level); ` +
         `node type "${node.getType()}" reached decorate() without that wiring`,
     )
   }

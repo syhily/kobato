@@ -1,8 +1,12 @@
 // The card-bearing transformer sets: HR and CODE_BLOCK construct card nodes
 // (their trigger bodies live in `@/inkling/markdown/card-shortcuts`), so this module
-// statically imports the card shims and is excluded from the `./core` entry.
-// The card-free sets (SUBSCRIPT/SUPERSCRIPT/MINIMAL/BASIC) live in
-// `@/inkling/markdown/transformers-core`.
+// statically imports the card shims. The card-free sets
+// (SUBSCRIPT/SUPERSCRIPT/MINIMAL/BASIC) live in
+// `@/inkling/markdown/transformers-core` so card-free compositions take
+// markdown shortcuts without pulling the card shims — `MarkdownShortcutPlugin`
+// defaults to the card-free `MINIMAL_TRANSFORMERS` (what `InklingComposerBase`
+// compositions get), while `InklingEditor` passes this module's
+// `DEFAULT_TRANSFORMERS` explicitly.
 
 import type { ElementNode, LexicalNode } from 'lexical'
 

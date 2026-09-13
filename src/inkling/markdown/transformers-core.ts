@@ -1,8 +1,10 @@
 // The card-free transformer sets (plan C5). Everything here depends only on
-// `@lexical/markdown`, so a card-less surface (the `./core` entry) can take
-// markdown shortcuts without importing the card shims behind
-// `@/inkling/markdown/transformers` (HR / CODE_BLOCK / the DEFAULT set live there —
-// their `dependencies` and trigger bodies construct card nodes).
+// `@lexical/markdown`, so a card-less composition (`InklingComposerBase` —
+// `MarkdownShortcutPlugin`'s default transformer set is this module's
+// MINIMAL_TRANSFORMERS) gets markdown shortcuts without importing the card
+// shims behind `@/inkling/markdown/transformers` (HR / CODE_BLOCK / the DEFAULT
+// set live there — their `dependencies` and trigger bodies construct card
+// nodes).
 
 import {
   ORDERED_LIST,

@@ -1,13 +1,16 @@
 // The `solution` host card (plan docs/plans/inkling-editor-replacement.md,
 // round R10): kobato's 解答块 — a styled blockquote whose body is one nested
 // Lexical editor, serialized as cleaned HTML on the `content` dataset key.
-// This module is the React-free single source shared by both bundle entries:
+// This module is the React-free single source shared by both consumers:
 // the server projection (`@/server/infra/pt/lexical-projection`) builds its
 // base class from these facts through the headless `generateDecoratorNode`,
 // and the client card module (`@/client/editor/cards/solution`) builds the
-// editing class through the `.` entry's factory + `defineCard`. Two class
-// objects, one spec — the dist entries ship separate Lexical copies, so a
-// shared class object would fail the entries' `instanceof` gates.
+// editing class through the `@/inkling` barrel's factory + `defineCard`. Two
+// class objects, one spec — deliberately: the server class stays spec-less
+// so parsing never constructs nested editors (the serializedKey HTML is an
+// opaque property server-side; the client-side assembled class owns the
+// nested-editor trilogy), and shared/ may only import the `@/inkling/headless`
+// surface while the client class assembles through `@/inkling`.
 //
 // The exported markup mirrors the retired PT public renderer (R13 deleted
 // `src/ui/pt/`) class-for-class: R13 renders the projection's `bodyHtml`
@@ -31,8 +34,9 @@ export const SOLUTION_CARD_PROPERTIES = [
   { name: 'content', default: '', urlType: 'html', wordCount: true },
 ] as const satisfies readonly DecoratorNodeProperty[]
 
-/** The nested-editor facts, minus the node set (each bundle entry supplies
- * its own classes — they are per-entry Lexical copies). */
+/** The nested-editor facts, minus the node set (each consumer assembles its
+ * own class — the server's spec-less projection class vs the client's
+ * nested-editor assembly). */
 export const SOLUTION_NESTED_EDITOR = {
   name: 'contentEditor',
   serializedKey: 'content',
