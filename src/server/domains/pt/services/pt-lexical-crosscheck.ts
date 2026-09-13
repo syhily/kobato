@@ -1,8 +1,11 @@
+import { JSDOM } from 'jsdom'
+
 import type { NestedFragment } from '@/server/domains/pt/services/pt-to-lexical'
 import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schema'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { NonRecursiveBlock, PortableTextBody, TextBlock } from '@/shared/pt/schema'
 
+import { htmlToLexicalState } from '@/inkling/headless'
 import { computeBodyText } from '@/server/infra/pt/lexical-projection'
 import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@/shared/lexical/collect'
 import { headingLevelFromStyle } from '@/shared/pt/heading-levels'
@@ -485,9 +488,6 @@ function imagePairsOf(state: LexicalEditorState): RoundTripImage[] {
  * fragment check's and E1's job. Mismatches are WARNINGS, never row failures.
  */
 export async function htmlRoundTripCrossCheck(converted: LexicalEditorState, bodyHtml: string): Promise<string[]> {
-  const { htmlToLexicalState } = await import('@/inkling/headless')
-  const { JSDOM } = await import('jsdom')
-
   const dom = new JSDOM(bodyHtml)
   const document = dom.window.document
   for (const el of document.querySelectorAll('.aplayer')) {
