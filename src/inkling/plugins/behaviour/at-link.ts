@@ -1,4 +1,4 @@
-import type { LexicalEditor, PointType } from 'lexical'
+import type { LexicalEditor, PointType, TextNode } from 'lexical'
 
 import { $createLinkNode } from '@lexical/link'
 import { $insertFirst, mergeRegister } from '@lexical/utils'
@@ -122,6 +122,30 @@ export function $commitAtLinkSelection(
   return { isBookmark: true }
 }
 
+// The text surrounding a collapsed text anchor: the anchor node's own text
+// sliced at the offset, folded with the previous/next sibling's text at the
+// node's edges — sibling content must join the regex match when the caret
+// sits at a node boundary. Shared by the pre-insertion
+// ($shouldConvertAtLink) and native ($shouldConvertInsertedAt) predicates;
+// their DIFFERENCE is only the before-regex (module header, asymmetry 1).
+function $textAroundAnchor(anchorNode: TextNode, anchorOffset: number) {
+  let textBeforeAnchor = anchorNode.getTextContent().slice(0, anchorOffset)
+  let textAfterAnchor = anchorNode.getTextContent().slice(anchorOffset)
+
+  const prevSibling = anchorNode.getPreviousSibling()
+  const nextSibling = anchorNode.getNextSibling()
+
+  if (anchorOffset === 0 && $isTextNode(prevSibling)) {
+    textBeforeAnchor = prevSibling.getTextContent()
+  }
+
+  if (anchorOffset === anchorNode.getTextContent().length && $isTextNode(nextSibling)) {
+    textAfterAnchor = nextSibling.getTextContent()
+  }
+
+  return { textBeforeAnchor, textAfterAnchor }
+}
+
 function $shouldConvertAtLink(): boolean {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -131,6 +155,9 @@ function $shouldConvertAtLink(): boolean {
   const anchor = selection.anchor
 
   if (anchor.type === 'element') {
+    // the same around-the-caret idea as $textAroundAnchor, over child
+    // indices instead of a sliced text node — the empty-paragraph shape
+    // exists only on this pre-insertion path (asymmetry 2), so it stays here
     const anchorNode = anchor.getNode()
     if (!$isElementNode(anchorNode)) {
       return false
@@ -160,22 +187,7 @@ function $shouldConvertAtLink(): boolean {
     return false
   }
 
-  const anchorOffset = anchor.offset
-  let textBeforeAnchor = anchorNode.getTextContent().slice(0, anchorOffset)
-  let textAfterAnchor = anchorNode.getTextContent().slice(anchorOffset)
-
-  // adjust before/after text if we're immediately preceded/followed by a text node
-  // because that content needs to be accounted for in our regex match
-  const prevSibling = anchorNode.getPreviousSibling()
-  const nextSibling = anchorNode.getNextSibling()
-
-  if (anchorOffset === 0 && $isTextNode(prevSibling)) {
-    textBeforeAnchor = prevSibling.getTextContent()
-  }
-
-  if (anchorOffset === anchorNode.getTextContent().length && $isTextNode(nextSibling)) {
-    textAfterAnchor = nextSibling.getTextContent()
-  }
+  const { textBeforeAnchor, textAfterAnchor } = $textAroundAnchor(anchorNode, anchor.offset)
 
   return (textBeforeAnchor === '' || /\s$/.test(textBeforeAnchor)) && /^($|\s|\.)/.test(textAfterAnchor)
 }
@@ -246,22 +258,7 @@ function $shouldConvertInsertedAt(): boolean {
     return false
   }
 
-  const anchorOffset = anchor.offset
-  let textBeforeAnchor = anchorNode.getTextContent().slice(0, anchorOffset)
-  let textAfterAnchor = anchorNode.getTextContent().slice(anchorOffset)
-
-  // adjust before/after text if we're immediately preceded/followed by a text node
-  // because that content needs to be accounted for in our regex match
-  const prevSibling = anchorNode.getPreviousSibling()
-  const nextSibling = anchorNode.getNextSibling()
-
-  if (anchorOffset === 0 && $isTextNode(prevSibling)) {
-    textBeforeAnchor = prevSibling.getTextContent()
-  }
-
-  if (anchorOffset === anchorNode.getTextContent().length && $isTextNode(nextSibling)) {
-    textAfterAnchor = nextSibling.getTextContent()
-  }
+  const { textBeforeAnchor, textAfterAnchor } = $textAroundAnchor(anchorNode, anchor.offset)
 
   const textBeforeRegExp = /(^|\s)@$/
   const textAfterRegExp = /^($|\s|\.)/
