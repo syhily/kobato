@@ -23,14 +23,18 @@ export function isColorKeyword(value: string): value is ColorKeyword {
 
 /**
  * The display color for a value: `'accent'` resolves through
- * getAccentColor, `'image'` paints transparent (the icon carries the
+ * getAccentColor (scoped to the caller's editor root element when given),
+ * `'image'` paints transparent (the icon carries the
  * meaning), `'transparent'` paints as the caller's stand-in (`''` for the
  * picker's HexColorPicker, `'white'` for the indicator button), and a raw
  * hex passes through.
  */
-export function resolveSwatchDisplayColor(value: string, { transparentAs }: { transparentAs: string }): string {
+export function resolveSwatchDisplayColor(
+  value: string,
+  { transparentAs, rootElement }: { transparentAs: string; rootElement?: HTMLElement | null },
+): string {
   if (value === 'accent') {
-    return getAccentColor()
+    return getAccentColor(rootElement)
   }
   if (value === 'image') {
     return 'transparent'

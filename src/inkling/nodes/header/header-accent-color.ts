@@ -12,11 +12,12 @@ import { getAccentColor } from '@/inkling/utils/getAccentColor'
 
 /**
  * Resolves a header color token to a hex value: the 'accent' keyword reads
- * the host accent color; everything else passes through trimmed.
+ * the host accent color (scoped to the calling editor's root element when
+ * given); everything else passes through trimmed.
  */
-export function headerHexColor(color: string): string {
+export function headerHexColor(color: string, rootElement?: HTMLElement | null): string {
   if (color === 'accent') {
-    return getAccentColor().trim()
+    return getAccentColor(rootElement).trim()
   }
   return color.trim()
 }
@@ -26,8 +27,8 @@ export function headerHexColor(color: string): string {
  * nothing (keeps the inherited color); everything else gets a readable
  * counterpart for the resolved hex.
  */
-export function matchingHeaderTextColor(color: string): string {
-  return color === 'transparent' ? '' : textColorForBackgroundColor(headerHexColor(color)).hex()
+export function matchingHeaderTextColor(color: string, rootElement?: HTMLElement | null): string {
+  return color === 'transparent' ? '' : textColorForBackgroundColor(headerHexColor(color, rootElement)).hex()
 }
 
 /**

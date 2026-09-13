@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { useContext, useEffect, useState } from 'react'
 
 import type { HeaderNodeWriter } from '@/inkling/nodes/header/header-field-writer'
 
@@ -55,6 +56,12 @@ export function useHeaderBackgroundImage({
   write,
   openFileDialog,
 }: UseHeaderBackgroundImageOptions): UseHeaderBackgroundImageResult {
+  // null-safe composer read (isolated unit tests mount the hook without one —
+  // useLexicalComposerContext would throw); the accent backfill scopes to
+  // this editor's root so a second editor on the page can't supply the accent
+  const composerContext = useContext(LexicalComposerContext)
+  const editor = composerContext?.[0] ?? null
+
   const [showBackgroundImage, setShowBackgroundImage] = useState<boolean>(Boolean(backgroundImageSrc))
   const [lastBackgroundImage, setLastBackgroundImage] = useState<string>(backgroundImageSrc)
 
@@ -123,14 +130,14 @@ export function useHeaderBackgroundImage({
   }, [layout])
 
   useEffect(() => {
-    const accent = getAccentColor()
+    const accent = getAccentColor(editor?.getRootElement())
 
     if (accent) {
       write((node) => {
         node.accentColor = accent
       })
     }
-  }, [write])
+  }, [write, editor])
 
   return { showBackgroundImage, showImage, hideImage, clearImage, imageApplied }
 }

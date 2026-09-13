@@ -1,7 +1,8 @@
 import type { InitialEditorStateType } from '@lexical/react/LexicalComposer'
 import type { LexicalEditor } from 'lexical'
 
-import React, { useEffect, useState } from 'react'
+import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import React, { useContext, useEffect, useState } from 'react'
 
 import type { DragHandlerLike, FileUploaderLike } from '@/inkling/components/ui/cards/card-ui-types'
 
@@ -141,8 +142,15 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
     editors
 
   const labels = useInklingLabels()
-  const [backgroundColorPickerExpanded, setBackgroundColorPickerExpanded] = useState(false)
-  const [buttonColorPickerExpanded, setButtonColorPickerExpanded] = useState(false)
+  // at most one picker expanded — structural, not a hand-kept pair of
+  // mutually exclusive booleans
+  const [expandedPicker, setExpandedPicker] = useState<'background' | 'button' | null>(null)
+
+  // null-safe composer read (the card renders without one in isolated unit
+  // tests): the 'accent' keyword resolves scoped to THIS editor's root, so a
+  // second editor on the page can't supply the accent
+  const composerContext = useContext(LexicalComposerContext)
+  const editorRoot = composerContext?.[0]?.getRootElement() ?? null
 
   // the background-image text color resolves in @/nodes/header/header-accent-color
   useEffect(() => {
@@ -165,7 +173,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
     if (backgroundColor && layout === 'split') {
       // Make sure the text color matches the background color
       // It might be different if an image was uploaded in a non-split layout
-      handleBackgroundColor(backgroundColor, matchingHeaderTextColor(backgroundColor))
+      handleBackgroundColor(backgroundColor, matchingHeaderTextColor(backgroundColor, editorRoot))
     }
     // This is only needed when the layout is changed
     // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -227,19 +235,19 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
         backgroundSize: 'cover',
         backgroundPosition: 'center center',
         backgroundColor: 'white',
-        color: headerHexColor(textColor || ''),
+        color: headerHexColor(textColor || '', editorRoot),
       }
     } else if (backgroundColor && textColor) {
       return {
-        backgroundColor: headerHexColor(backgroundColor),
-        color: headerHexColor(textColor || ''),
+        backgroundColor: headerHexColor(backgroundColor, editorRoot),
+        color: headerHexColor(textColor || '', editorRoot),
       }
     }
 
     return {
       backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ctitle%3ERectangle%3C/title%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cpath fill='%23F2F6F8' d='M0 0h24v24H0z'/%3E%3Cpath fill='%23E5ECF0' d='M0 0h12v12H0zM12 12h12v12H12z'/%3E%3C/g%3E%3C/svg%3E")`,
       backgroundColor: 'transparent',
-      color: headerHexColor(textColor || ''),
+      color: headerHexColor(textColor || '', editorRoot),
     }
   }
 
@@ -271,23 +279,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
   // left, the element's default)
   const buttonAlignmentClass = alignment === 'center' ? 'text-center' : 'text-left'
 
-  const getButtonSize = (layoutString: string) => {
-    if (layoutString === 'regular') {
-      return 'medium'
-    }
-
-    if (layoutString === 'wide') {
-      return 'medium'
-    }
-
-    if (layoutString === 'full') {
-      return 'large'
-    }
-
-    if (layoutString === 'split') {
-      return 'medium'
-    }
-  }
+  const getButtonSize = (layoutString: string) => (layoutString === 'full' ? 'large' : 'medium')
 
   return (
     <>
@@ -446,8 +438,8 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                   style={
                     buttonColor
                       ? {
-                          backgroundColor: headerHexColor(buttonColor),
-                          color: headerHexColor(buttonTextColor || ''),
+                          backgroundColor: headerHexColor(buttonColor, editorRoot),
+                          color: headerHexColor(buttonTextColor || '', editorRoot),
                         }
                       : { backgroundColor: `#000000`, color: `#ffffff` }
                   }
@@ -491,7 +483,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
             dataTestId="header-background-color"
             eyedropper={layout === 'split'}
             hasTransparentOption={true}
-            isExpanded={backgroundColorPickerExpanded}
+            isExpanded={expandedPicker === 'background'}
             label={labels['settings.background']}
             swatches={[
               ...(layout !== 'split'
@@ -509,8 +501,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                           type="button"
                           onClick={() => {
                             handleShowBackgroundImage()
-                            setBackgroundColorPickerExpanded(false)
-                            setButtonColorPickerExpanded(false)
+                            setExpandedPicker(null)
                           }}
                         >
                           <ImgBgIcon className="size-[1.4rem]" />
@@ -525,10 +516,10 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
               { title: labels['color.brandColor'], accent: true },
             ]}
             value={showBackgroundImage && layout !== 'split' ? 'image' : backgroundColor || ''}
-            onPickerChange={(color) => handleBackgroundColor(color, matchingHeaderTextColor(color))}
+            onPickerChange={(color) => handleBackgroundColor(color, matchingHeaderTextColor(color, editorRoot))}
             onSwatchChange={(color) => {
-              handleBackgroundColor(color, matchingHeaderTextColor(color))
-              setBackgroundColorPickerExpanded(false)
+              handleBackgroundColor(color, matchingHeaderTextColor(color, editorRoot))
+              setExpandedPicker(null)
             }}
             onTogglePicker={(isExpanded) => {
               if (isExpanded) {
@@ -537,14 +528,11 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                 }
 
                 if (backgroundColor) {
-                  handleBackgroundColor(backgroundColor, matchingHeaderTextColor(backgroundColor))
+                  handleBackgroundColor(backgroundColor, matchingHeaderTextColor(backgroundColor, editorRoot))
                 }
               }
 
-              setBackgroundColorPickerExpanded(!!isExpanded)
-              if (isExpanded) {
-                setButtonColorPickerExpanded(!isExpanded)
-              }
+              setExpandedPicker(isExpanded ? 'background' : null)
             }}
           >
             <MediaUploadSetting
@@ -570,7 +558,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
               onFileChange={onFileChange}
               onRemoveMedia={() => {
                 handleClearBackgroundImage()
-                handleTextColor(matchingHeaderTextColor(backgroundColor || ''))
+                handleTextColor(matchingHeaderTextColor(backgroundColor || '', editorRoot))
               }}
             />
           </ColorPickerSetting>
@@ -587,7 +575,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
               <ColorPickerSetting
                 dataTestId="header-button-color"
                 eyedropper={layout === 'split'}
-                isExpanded={buttonColorPickerExpanded}
+                isExpanded={expandedPicker === 'button'}
                 label={labels['settings.buttonColor']}
                 swatches={[
                   { title: labels['color.white'], hex: '#ffffff' },
@@ -595,16 +583,13 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                   { title: labels['color.brandColor'], accent: true },
                 ]}
                 value={buttonColor || ''}
-                onPickerChange={(color) => handleButtonColor(color, matchingHeaderTextColor(color))}
+                onPickerChange={(color) => handleButtonColor(color, matchingHeaderTextColor(color, editorRoot))}
                 onSwatchChange={(color) => {
-                  handleButtonColor(color, matchingHeaderTextColor(color))
-                  setButtonColorPickerExpanded(false)
+                  handleButtonColor(color, matchingHeaderTextColor(color, editorRoot))
+                  setExpandedPicker(null)
                 }}
                 onTogglePicker={(isExpanded) => {
-                  setButtonColorPickerExpanded(!!isExpanded)
-                  if (isExpanded) {
-                    setBackgroundColorPickerExpanded(!isExpanded)
-                  }
+                  setExpandedPicker(isExpanded ? 'button' : null)
                 }}
               />
               <InputSetting

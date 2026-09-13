@@ -1,4 +1,5 @@
-import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { Fragment, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { HexColorInput, HexColorPicker } from 'react-colorful'
 
 import EyedropperIcon from '@/inkling/assets/icons/inkling-eyedropper.svg?react'
@@ -21,6 +22,15 @@ interface ColorPickerProps {
   hasTransparentOption?: boolean
   onChange: (color: string) => void
   children?: ReactNode
+}
+
+// null-safe composer read (the picker can render without one in isolated
+// unit tests — useLexicalComposerContext would throw); the accent probe
+// scopes to this editor's root so two editors on one page each resolve
+// their own accent, falling back to the document-wide lookup when unmounted
+function useEditorRootElement(): HTMLElement | null {
+  const composerContext = useContext(LexicalComposerContext)
+  return composerContext?.[0]?.getRootElement() ?? null
 }
 
 declare global {
@@ -124,7 +134,8 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
 
   // the keyword grammar ('accent'/'transparent' vs raw hex) lives in
   // @/components/ui/color-swatch; the picker's HexColorPicker takes '' for transparent
-  const hexValue = resolveSwatchDisplayColor(value, { transparentAs: '' })
+  const editorRoot = useEditorRootElement()
+  const hexValue = resolveSwatchDisplayColor(value, { transparentAs: '', rootElement: editorRoot })
 
   const focusHexInputOnClick = useCallback(() => {
     inputWrapperRef.current?.querySelector('input')?.focus()
@@ -181,7 +192,8 @@ interface ColorSwatchProps {
 }
 
 function ColorSwatch({ hex, accent, transparent, title, isSelected, onSelect }: ColorSwatchProps) {
-  const backgroundColor = accent ? getAccentColor() : hex
+  const editorRoot = useEditorRootElement()
+  const backgroundColor = accent ? getAccentColor(editorRoot) : hex
 
   const ref = useRef<HTMLButtonElement | null>(null)
 
@@ -261,7 +273,8 @@ export function ColorIndicator({
 
   // the indicator paints 'transparent' as white (the button needs a visible
   // paint); the picker and swatch resolutions share the one grammar module
-  const backgroundColor = resolveSwatchDisplayColor(value, { transparentAs: 'white' })
+  const editorRoot = useEditorRootElement()
+  const backgroundColor = resolveSwatchDisplayColor(value, { transparentAs: 'white', rootElement: editorRoot })
   let selectedSwatch: string | undefined = resolveSelectedSwatchTitle(value, swatches)
 
   if (isExpanded) {
