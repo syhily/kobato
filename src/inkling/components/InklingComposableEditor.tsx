@@ -121,9 +121,9 @@ const InklingComposableEditor = ({
   // any floating elements in plugins will be rendered inside
   const [floatingAnchorElem, setFloatingAnchorElem] = React.useState<HTMLDivElement | null>(null)
   const onContentEditableRef = (_floatingAnchorElem: HTMLDivElement | null) => {
-    if (_floatingAnchorElem !== null) {
-      setFloatingAnchorElem(_floatingAnchorElem)
-    }
+    // the null branch matters: without it a stale anchor survives between
+    // unmount and remount
+    setFloatingAnchorElem(_floatingAnchorElem)
   }
 
   // The core plugin set is data (src/plugins/CorePlugins.tsx): every mount
