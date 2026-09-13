@@ -22,7 +22,12 @@
   open the kobato library picker), `page-editor-upload` (paste/drop/file-dialog uploads through
   `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (card policy + the
   debounced server KaTeX preview channel), `inkling-labels` (the zh-CN labels overlay),
-  `use-focus-mode` (the writing-focus preference toggle). `editor/cards/` holds the R10 host-card
+  `use-focus-mode` (the writing-focus preference toggle),
+  `block-quote-aside-cycle` (the host-side Ctrl+Q capture shared by both surfaces — neither composer
+  registers AsideNode), `use-editor-body-reset` (the shared body-lifecycle glue: mount-snapshot seed,
+  imperative reseed on `bodyKey` change, stable narrowing `handleChange`), and `base-node-filter`
+  (`excludeBaseNodes` — the one EDITOR_BASE_NODES exclusion filter both manifests run; owns the
+  getType/replacement-pair cast). `editor/cards/` holds the R10 host-card
   assemblies (solution / two-column / music-player): each module builds its base node class from
   the shared spec (`@/shared/lexical/cards/`) through the `@/inkling` barrel's
   `generateDecoratorNode` — a DISTINCT class object from the server projection's, since client and

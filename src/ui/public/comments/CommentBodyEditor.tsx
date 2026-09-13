@@ -6,7 +6,8 @@
 // shortcuts (`comment-markdown-transformers` — bold/italic/quote/list/link
 // and the ``` fence; ```math is the formula path, rendered to KaTeX MathML
 // by the server-side comment projection), the zh-CN labels, and the legacy
-// math-card seed downgrade (`comment-legacy-math`).
+// math-card seed downgrade (`comment-legacy-math`), plus the glue shared with
+// the page surface (`block-quote-aside-cycle`, `use-editor-body-reset`).
 // No cards on this surface: no slash menu, no card insert, no card config.
 //
 // Statically imported by every consumer (no lazy boundary): the editor code
@@ -25,18 +26,19 @@
 // default action.
 
 import '@/styles/inkling-comment-editor.css'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 
-import type { ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@/inkling'
+import type { ExternalControlAPI, LexicalEditor } from '@/inkling'
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
+import { blockQuoteAsideCycle } from '@/client/editor/block-quote-aside-cycle'
 import { COMMENT_EDITOR_NODES } from '@/client/editor/comment-editor-nodes'
 import { downgradeLegacyCommentMath } from '@/client/editor/comment-legacy-math'
 import { COMMENT_MARKDOWN_TRANSFORMERS } from '@/client/editor/comment-markdown-transformers'
 import { inklingLabels } from '@/client/editor/inkling-labels'
+import { useEditorBodyReset } from '@/client/editor/use-editor-body-reset'
 import { InklingComposer, InklingSurface, ListPlugin } from '@/inkling'
 import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@/shared/lexical/comment-schema'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { cn } from '@/ui/lib/cn'
 import { useTheme } from '@/ui/lib/ThemeProvider'
 
@@ -64,23 +66,7 @@ function safeInitialState(body: CommentEditorState): CommentEditorState {
   return result.ok ? downgradeLegacyCommentMath(result.state) : EMPTY_COMMENT_EDITOR_STATE
 }
 
-/** inkling's Ctrl+Q cycles paragraph → quote → aside; AsideNode is not
- *  registered in this composer (the comment whitelist rejects 'aside'), so
- *  the chord is captured on the wrapper before Lexical's KEY_DOWN dispatch
- *  (same interception as PageBodyEditor). */
-function blockQuoteAsideCycle(event: React.KeyboardEvent) {
-  if (event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.code === 'KeyQ') {
-    event.preventDefault()
-    event.stopPropagation()
-  }
-}
-
 export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled, className }: CommentBodyEditorProps) {
-  const onBodyChangeRef = useRef(onBodyChange)
-  useEffect(() => {
-    onBodyChangeRef.current = onBodyChange
-  })
-
   const { resolvedTheme } = useTheme()
 
   const [editorInstance, setEditorInstance] = useState<LexicalEditor | null>(null)
@@ -88,31 +74,13 @@ export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled
     setEditorInstance(api?.editorInstance ?? null)
   }, [])
 
-  // Lexical consumes the initial state only at editor creation; the lazy
-  // state pins the mount-time snapshot (later initialBody prop changes must
-  // NOT recreate the composer). Re-seeding on a bodyKey change (reply form
-  // reset, switching the edited comment) is imperative.
-  const [mountedInitialState] = useState(() => safeInitialState(initialBody))
-  const lastResetKeyRef = useRef(bodyKey)
-  const initialBodyRef = useRef(initialBody)
-  useEffect(() => {
-    initialBodyRef.current = initialBody
-  })
-  useEffect(() => {
-    if (editorInstance === null || lastResetKeyRef.current === bodyKey) {
-      return
-    }
-    lastResetKeyRef.current = bodyKey
-    editorInstance.setEditorState(editorInstance.parseEditorState(safeInitialState(initialBodyRef.current)))
-  }, [editorInstance, bodyKey])
-
-  const handleChange = useCallback((state: SerializedEditorState) => {
-    // The one narrowing boundary: inkling hands the stock
-    // SerializedEditorState; kobato's CommentEditorState is the same JSON
-    // restricted to the comment whitelist, and the server re-validates on
-    // save, so the per-keystroke path casts instead of zod-parsing.
-    onBodyChangeRef.current(unsafeCast<CommentEditorState>(state))
-  }, [])
+  const { mountedInitialState, handleChange } = useEditorBodyReset(
+    editorInstance,
+    initialBody,
+    bodyKey,
+    onBodyChange,
+    safeInitialState,
+  )
 
   // Click-to-focus fallback. The canvas now fills the shell (the host CSS
   // puts the min-height/padding on the contentEditable), so this only fires

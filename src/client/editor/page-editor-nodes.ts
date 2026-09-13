@@ -16,6 +16,7 @@
 // both mount anyway because hasNodes is type-gated) are intercepted by
 // `@/client/editor/image-insert-override` at HIGH priority.
 
+import { excludeBaseNodes } from '@/client/editor/base-node-filter'
 import { musicPlayerCard } from '@/client/editor/cards/music-player'
 import { solutionCard } from '@/client/editor/cards/solution'
 import { twoColumnCard } from '@/client/editor/cards/two-column'
@@ -29,17 +30,12 @@ import {
   MathInlineNode,
   MathNode,
 } from '@/inkling'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // AsideNode is filtered out: 'aside' is not in FULL_EDITOR_NODE_TYPES, and
 // inkling's Ctrl+Q quote→aside→paragraph cycle would construct one (the
-// chord is captured host-side before inkling sees it — PageBodyEditor).
-// Node-replacement pair entries carry no static getType, so the filter
-// tolerates non-class members.
-const EDITOR_BASE_WITHOUT_ASIDE = EDITOR_BASE_NODES.filter((entry) => {
-  const klass = unsafeCast<{ getType?: () => string }>(entry)
-  return typeof klass.getType !== 'function' || klass.getType() !== 'aside'
-})
+// chord is captured host-side before inkling sees it —
+// `@/client/editor/block-quote-aside-cycle`).
+const EDITOR_BASE_WITHOUT_ASIDE = excludeBaseNodes(EDITOR_BASE_NODES, new Set(['aside']))
 
 export const PAGE_EDITOR_NODES = [
   ...EDITOR_BASE_WITHOUT_ASIDE,

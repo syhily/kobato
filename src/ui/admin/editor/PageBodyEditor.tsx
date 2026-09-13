@@ -16,6 +16,8 @@
 // - `page-editor-card-config` / `render-math` — image width policy, library
 //   menu visibility, and the debounced server KaTeX preview channel.
 // - `use-focus-mode` — the writing-focus toggle (focus UX is host-owned).
+// - `block-quote-aside-cycle` / `use-editor-body-reset` — the Ctrl+Q capture
+//   and the body mount-snapshot/reseed glue shared with the comment surface.
 // - Music picking: slash inserts an empty `music-player` card; clicking its
 //   placeholder opens `MusicPickerDialog` via `MusicPickContext` and the pick
 //   writes `playerId` back onto the node.
@@ -28,20 +30,21 @@ import '@/styles/inkling-editor.css'
 import { FocusIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { ExternalControlAPI, LexicalEditor, SerializedEditorState } from '@/inkling'
+import type { ExternalControlAPI, LexicalEditor } from '@/inkling'
 import type { AdminImageDto } from '@/shared/contracts/images'
 import type { AdminMusicDto } from '@/shared/contracts/music'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
+import { blockQuoteAsideCycle } from '@/client/editor/block-quote-aside-cycle'
 import { MusicPickContext, type MusicPickTarget } from '@/client/editor/cards/music-pick-context'
 import { registerKobatoImageInsertCommands, toSiteOwnedImageSrc } from '@/client/editor/image-insert-override'
 import { inklingLabels } from '@/client/editor/inkling-labels'
 import { pageEditorCardConfig } from '@/client/editor/page-editor-card-config'
 import { PAGE_EDITOR_NODES } from '@/client/editor/page-editor-nodes'
 import { pageEditorFileUploader } from '@/client/editor/page-editor-upload'
+import { useEditorBodyReset } from '@/client/editor/use-editor-body-reset'
 import { useFocusModePreference } from '@/client/editor/use-focus-mode'
 import { InklingComposer, InklingEditor, INSERT_IMAGE_COMMAND } from '@/inkling'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/editor/pickers/MusicPickerDialog'
 import { Button } from '@/ui/components/button'
@@ -71,23 +74,7 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
   return <PageBodyEditorClient {...props} />
 }
 
-/** inkling's Ctrl+Q cycles paragraph → quote → aside; AsideNode is not
- *  registered in this composer (the storage whitelist rejects 'aside'), so
- *  the chord is captured on the wrapper before Lexical's KEY_DOWN dispatch
- *  (which rides a bubble-phase listener on the contentEditable root). */
-function blockQuoteAsideCycle(event: React.KeyboardEvent) {
-  if (event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.code === 'KeyQ') {
-    event.preventDefault()
-    event.stopPropagation()
-  }
-}
-
 function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled }: PageBodyEditorProps) {
-  const onBodyChangeRef = useRef(onBodyChange)
-  useEffect(() => {
-    onBodyChangeRef.current = onBodyChange
-  })
-
   const { resolvedTheme } = useTheme()
   const [focusMode, toggleFocusMode] = useFocusModePreference()
 
@@ -95,6 +82,8 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled }: 
   const registerAPI = useCallback((api: ExternalControlAPI | null) => {
     setEditorInstance(api?.editorInstance ?? null)
   }, [])
+
+  const { mountedInitialState, handleChange } = useEditorBodyReset(editorInstance, initialBody, bodyKey, onBodyChange)
 
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
   const [musicPickerOpen, setMusicPickerOpen] = useState(false)
@@ -108,20 +97,6 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled }: 
     }
     return registerKobatoImageInsertCommands(editorInstance, () => setImagePickerOpen(true))
   }, [editorInstance])
-
-  // Lexical consumes the initial state only at editor creation; the lazy
-  // state pins the mount-time snapshot (later initialBody prop changes must
-  // NOT recreate the composer). Re-seeding on a bodyKey change (draft adopt,
-  // conflict resolution) is imperative.
-  const [mountedInitialState] = useState(() => initialBody)
-  const lastResetKeyRef = useRef(bodyKey)
-  useEffect(() => {
-    if (editorInstance === null || lastResetKeyRef.current === bodyKey) {
-      return
-    }
-    lastResetKeyRef.current = bodyKey
-    editorInstance.setEditorState(editorInstance.parseEditorState(initialBody))
-  }, [editorInstance, bodyKey, initialBody])
 
   const insertLibraryImage = useCallback(
     (image: AdminImageDto) => {
@@ -167,14 +142,6 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled }: 
     },
     [editorInstance],
   )
-
-  const handleChange = useCallback((state: SerializedEditorState) => {
-    // The one narrowing boundary: inkling hands the stock
-    // SerializedEditorState; kobato's LexicalEditorState is the same JSON
-    // (schema.ts's WireCheck pins the extension) and the server re-validates
-    // on save, so the per-keystroke path casts instead of zod-parsing.
-    onBodyChangeRef.current(unsafeCast<LexicalEditorState>(state))
-  }, [])
 
   return (
     <div
