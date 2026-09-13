@@ -469,7 +469,7 @@ describe('DragDropHandler', () => {
     expect(own.editorRoot.dataset.inklingDragging).toBeUndefined()
   })
 
-  it('scopes cursor suppression to its own editor when another editor exists', () => {
+  it('suppresses the text caret cursor through the drag attribute, never an inline style', () => {
     const first = createEditorWrapper()
     const own = createEditorWrapper()
 
@@ -477,11 +477,16 @@ describe('DragDropHandler', () => {
     handler = new DragDropHandler({ editorContainerElement: own.wrapper })
     dragIn(handler, 'cursor-scope')
 
-    expect(own.lexicalEditor.style.getPropertyValue('cursor')).toBe('default')
+    // cursor suppression is the stylesheet's [data-inkling-dragging] rule —
+    // the handler writes no inline cursor style it would have to restore
+    // (and would clobber card-specific cursor styling with)
+    expect(own.lexicalEditor.style.getPropertyValue('cursor')).toBe('')
     expect(first.lexicalEditor.style.getPropertyValue('cursor')).toBe('')
+    expect(own.editorRoot.dataset.inklingDragging).toBe('true')
 
     document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
 
     expect(own.lexicalEditor.style.getPropertyValue('cursor')).toBe('')
+    expect(own.editorRoot.dataset.inklingDragging).toBeUndefined()
   })
 })

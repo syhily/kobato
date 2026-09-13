@@ -7,6 +7,13 @@
   pointer-events: none !important;
 }
 
+/* Keep the pointer from showing the text caret over text content while
+   dragging cards — !important preserves the old imperative inline style's
+   winning behaviour over card-specific cursor rules */
+[data-inkling='editor'][data-inkling-dragging] [data-lexical-editor] {
+  cursor: default !important;
+}
+
 /* everything is nested here to keep it scoped to our container */
 .inkling-lexical {
   > * {

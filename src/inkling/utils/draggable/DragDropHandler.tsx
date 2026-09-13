@@ -335,27 +335,11 @@ export class DragDropHandler {
     // let the scroll handler select the scrollable element
     this.scrollHandler.dragStart(draggableInfo)
 
-    // prevent the pointer showing the text caret over text content whilst dragging
-    this._setCursorSuppression(true)
-
-    // prevent hover effects showing whilst dragging
+    // hover + text-caret suppression ride the one data-inkling-dragging
+    // attribute (the stylesheet owns both effects)
     this._setHoverSuppression(true)
 
     this._handleDrag()
-  }
-
-  // cursor suppression is scoped to this handler's own editor container —
-  // with several editors on one page a drag in one must not touch the others
-  _setCursorSuppression(suppress: boolean) {
-    this.editorContainerElement
-      ?.querySelectorAll<HTMLElement>('[data-inkling="editor"] [data-lexical-editor]')
-      .forEach((el) => {
-        if (suppress) {
-          el.style.setProperty('cursor', 'default', 'important')
-        } else {
-          el.style.cursor = ''
-        }
-      })
   }
 
   _setHoverSuppression(suppress: boolean) {
@@ -513,7 +497,6 @@ export class DragDropHandler {
     this._setHoverSuppression(false)
 
     applyUserSelect(document.body, '')
-    this._setCursorSuppression(false)
   }
 
   _appendDragPreviewContainerElement() {
