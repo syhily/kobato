@@ -59,9 +59,9 @@
   --font-serif: inherit;
 }
 
-/* shadcn/typeset zoom compensation: the canvas's `zoom: 0.625` scales rem
+/* typeset zoom compensation: the canvas's `zoom: 0.625` scales rem
    too, so the preset's rem base would land at 18px × 0.625. typeset is
-   otherwise all-em (headings, rhythm, the typeset-kobato identity layer all
+   otherwise all-em (headings, rhythm, the identity layer all
    derive from --typeset-size), so re-inflating this ONE variable makes the
    editor canvas pixel-identical to the rendered article. */
 .kobato-page-editor .typeset-post {

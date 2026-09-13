@@ -2,7 +2,7 @@
 
 ## Entry structure
 
-Seven files, two bundles:
+Six files, two bundles:
 
 - `dark-variant.css` — **the class-or-media `dark` variant, single-sourced**.
   Imported (unlayered, before anything that triggers a utility compile) by
@@ -18,28 +18,28 @@ Seven files, two bundles:
   code-block chrome, the theme-wipe view transition). It has no
   `@import 'tailwindcss'` and no `@source` — importing it directly from TSX
   produces nothing.
-- `typeset.css` — **vendored shadcn/typeset** (from
-  https://ui.shadcn.com/typeset.css), the `@tailwindcss/typography`
-  replacement: all content typography lives in one owned file under
-  `@layer components` with `:where()` zero-specificity guards. Carries
+- `typeset.css` — **all content typography in one owned file** (vendored
+  from https://ui.shadcn.com/typeset.css on 2026-09-06, then extended with
+  kobato's presets + identity — the retired `typeset-kobato.css` was merged
+  in): the `@tailwindcss/typography` replacement. `@layer components` holds
+  the `.typeset` base rules first, then the kobato bridge and the
+  `.typeset-post` (article body, ex-prose-lg) / `.typeset-comment`
+  (ex-prose-sm) presets — every rule sits at exactly (0,1,0), so the
+  presets win ties against the base by source order and the base MUST stay
+  first. `@layer utilities` holds the post-body table chrome. Carries
   KOBATO PATCH #1 (documented in its header): the opt-out guard also honors
-  `.not-inkling-prose` and `.inkling-blockquote-alt` — carry the patch over
-  on any re-sync. The `<48rem` 1.125× mobile font bump is intentionally
-  kept.
-- `typeset-kobato.css` — **presets + identity layer** over typeset:
-  `.typeset-post` (article body, ex-prose-lg) and `.typeset-comment`
-  (ex-prose-sm) plus the shared inline identity (links, blockquote surface,
-  code pill, KaTeX, tables). Imported AFTER `typeset.css` — every typeset
-  rule sits at exactly (0,1,0), so this layer wins its ties by source
-  order. Text-decorative lengths are authored in EM because the page-editor
-  canvas runs under `zoom: 0.625` (see the ZOOM CONTRACT comment in the
-  file). The same presets ride the editor contentEditables
-  (`contentEditableClassName="typeset typeset-post|typeset-comment"`), which
-  is what makes the editor canvas WYSIWYG with the rendered output.
+  `.not-inkling-prose` and `.inkling-blockquote-alt`. The `<48rem` mobile
+  font scale is a preset variable (`--typeset-mobile-scale`, default
+  1.125×): `.typeset-post` opts out (sets 1), `.typeset-comment` keeps the
+  bump. Text-decorative lengths in the preset sections are authored in EM
+  because the page-editor canvas runs under `zoom: 0.625` (see the ZOOM
+  CONTRACT comment in the file header). The presets also ride the editor
+  contentEditables via `contentEditableClassName` (the `typeset
+typeset-post|typeset-comment` pair) — that is what makes the editor
+  canvas WYSIWYG with the rendered output.
 - `public.css` — **public entry**, imported by `ui/public/chrome/BaseLayout.tsx`.
   Owns `@import 'tailwindcss' source(none)`, imports the shared partial, then
-  `typeset.css` + `typeset-kobato.css` (in that order — source order breaks
-  the (0,1,0) ties), then `cursors.css`, and scopes `@source` to public-rendered
+  `typeset.css`, then `cursors.css`, and scopes `@source` to public-rendered
   dirs (`routes/public`, `ui/public`, `ui/components`, `ui/icons`,
   `ui/lib`, `root.tsx`, and `shared/lexical/cards` whose class constants render into
   the R10 card markup). A bare `@layer inkling, theme, base, components, utilities;`

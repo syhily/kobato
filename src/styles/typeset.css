@@ -1,9 +1,33 @@
 /*
- * shadcn/typeset — vendored from https://ui.shadcn.com/typeset.css
- * (source: shadcn-ui/ui repo, apps/v4/app/(app)/(typeset)/typeset.css)
- * Vendored 2026-09-06. This file is OWNED by kobato: edit rules directly,
- * there is no upstream package to track. If a future re-sync happens, the
- * kobato patches below MUST be carried over:
+ * Kobato typeset — all content typography in one owned file. Vendored from
+ * shadcn/typeset (https://ui.shadcn.com/typeset.css, source: shadcn-ui/ui
+ * repo, apps/v4/app/(app)/(typeset)/typeset.css) on 2026-09-06 and extended
+ * with kobato's presets + visual identity (the retired typeset-kobato.css,
+ * merged in). This file is OWNED by kobato: edit rules directly, there is
+ * no upstream package to track.
+ *
+ * Layout of this file:
+ *   @layer components  .typeset base rules, then the kobato bridge and the
+ *                      .typeset-post / .typeset-comment presets. Every rule
+ *                      sits at exactly (0,1,0), so the presets win their ties
+ *                      against the base by source order — the base MUST stay
+ *                      first. Utilities on an element still beat everything
+ *                      here (later layer).
+ *   @layer utilities   post-body table chrome.
+ *
+ * Four surfaces share the presets:
+ *   .post-content.typeset-post       rendered post/page body
+ *   .comment-content.typeset-comment rendered comments (public + admin)
+ *   .kobato-page-editor canvas       contentEditable: typeset typeset-post
+ *   .kobato-comment-editor canvas    contentEditable: typeset typeset-comment
+ *
+ * ZOOM CONTRACT: the page-editor canvas runs under `zoom: 0.625` (inkling's
+ * 10px-root rem normalization). Everything text-decorative in the preset
+ * sections is therefore authored in EM (it derives from --typeset-size,
+ * which inkling-editor.css compensates with calc(1.125rem / 0.625)); rem is
+ * only used where the rule is render-only (pre, tables) or viewport-anchored
+ * (scroll-margin). Do not introduce rem/px text metrics in the preset
+ * sections.
  *
  * KOBATO PATCH #1 — opt-out guard also honors inkling's editor gates.
  *   `.not-inkling-prose` / `.not-inkling-prose *` were appended to both
@@ -16,10 +40,11 @@
  *   `components` — without the exclusion, typeset's blockquote rules would
  *   beat them outright (layers trump specificity).
  *
- * The <48rem 1.125x mobile font bump is intentionally KEPT (product
- * decision: better small-screen readability).
+ * The <48rem mobile font scale is preset-configurable via
+ * --typeset-mobile-scale (default 1.125): .typeset-comment keeps the
+ * default; .typeset-post sets it to 1 — the scale-up made the article body
+ * too large on phones.
  */
-
 @layer components {
   .typeset {
     --typeset-font-body: inherit;
@@ -28,13 +53,14 @@
     --typeset-size: 1em;
     --typeset-leading: 1.75;
     --typeset-flow: 1.25em;
+    --typeset-mobile-scale: 1.125;
   }
 }
 
 @layer components {
   .typeset {
     font-family: var(--typeset-font-body);
-    font-size: calc(var(--typeset-size) * 1.125);
+    font-size: calc(var(--typeset-size) * var(--typeset-mobile-scale));
     line-height: var(--typeset-leading);
     color: var(--color-foreground, currentColor);
     overflow-wrap: break-word;
@@ -503,5 +529,525 @@
       )
     ) {
     margin-block-start: 0;
+  }
+}
+
+/* ─── Kobato presets + visual identity (merged from typeset-kobato.css) ── */
+
+@layer components {
+  /* ─── Shared kobato bridge (both presets, editor + render) ─────────── */
+
+  .typeset {
+    --typeset-font-mono: var(--font-code);
+  }
+
+  /* inkling exportDOM bare tags — the retired PT_INLINE tokens as CSS. */
+  .typeset :where(u) {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .typeset :where(del, s) {
+    text-decoration: line-through;
+    color: var(--ink-3);
+  }
+
+  .typeset :where(mark) {
+    background-color: var(--surface-soft);
+    border-radius: var(--radius-sm);
+    padding-inline: 0.125em;
+  }
+
+  .typeset :where(a) {
+    color: var(--brand);
+    text-decoration-color: color-mix(in oklab, var(--brand) 40%, transparent);
+    text-underline-offset: 2px;
+  }
+
+  .typeset :where(strong, b) {
+    color: var(--ink-1);
+  }
+
+  /* typeset's h6 (uppercase, letter-spaced, muted) is a docs convention —
+     kobato's h6 is a plain small heading, matching the pre-typeset render. */
+  .typeset :where(h6) {
+    font-size: 1em;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--ink-1);
+  }
+
+  .typeset :where(dt) {
+    color: var(--ink-1);
+    font-weight: 600;
+  }
+
+  .typeset :where(ul > li)::marker {
+    color: var(--ink-4);
+  }
+
+  .typeset :where(ol > li)::marker {
+    color: var(--ink-3);
+  }
+
+  .typeset :where(hr) {
+    border-block-start-color: var(--line);
+  }
+
+  .typeset :where(figcaption) {
+    color: var(--ink-4);
+  }
+
+  /* Footnotes section — inkling's export already carries both typeset hooks
+     (`<section class="footnotes" data-footnotes>`), so the base
+     `.footnotes` rule (border-top, muted, 0.875em) applies as-is. What needs
+     taming is the section title: it is a real <h3>, which the presets would
+     otherwise dress up as a full brand-barred article heading inside the
+     muted block. */
+  .typeset :where(.footnotes, [data-footnotes]) :where(h3) {
+    padding-left: 0;
+    font-size: 1em;
+    line-height: 1.5;
+    font-weight: 600;
+    color: inherit;
+    margin-block-start: 0;
+  }
+
+  .typeset :where(.footnotes, [data-footnotes]) :where(h3)::before {
+    content: none;
+  }
+
+  .typeset :where(samp) {
+    font-family: var(--font-code);
+  }
+
+  /* Blockquote: surface card with a brand-tinted left border (padding and
+     border width are per-preset em values below). */
+  .typeset :where(blockquote) {
+    font-style: normal;
+    font-weight: 400;
+    background-color: var(--surface);
+    border-radius: var(--radius-sm);
+    display: flow-root;
+  }
+
+  /* Inline-code pill — one look for post and comment bodies. */
+  .typeset :where(code):not(:where(pre *)) {
+    background-color: var(--code-bg);
+    color: var(--code-inline-fg);
+    border: 1px solid var(--code-inline-border);
+    padding: 0.2em 0.4em;
+    margin: 0;
+    border-radius: var(--radius-md);
+    font-size: 0.875em;
+    font-weight: 400;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  /* Inline formulas (MathML in <span class="inkling-math-inline">, legacy
+     span[data-math-inline]) render as plain inline content — no code-pill
+     chrome. The feed-only <code class="inkling-math-inline"> TeX fallback is
+     styled by feed readers, not this sheet. */
+
+  /* KaTeX MathML cards — PT-era `.math`/`.math-display` (legacy rows) and
+     the inkling exportDOM `.inkling-math-card` wrapper share one look. */
+  .typeset :where(.math, .inkling-math-card) :where(math) {
+    max-width: none;
+  }
+
+  .typeset :where(.math-display, .inkling-math-card) {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.125rem;
+    -webkit-overflow-scrolling: touch;
+    text-align: center;
+  }
+
+  .typeset :where(.inkling-math-card) {
+    margin-block: 1.5rem;
+  }
+
+  .typeset :where(.math-display, .inkling-math-card) :where(math[display='block']) {
+    margin-inline: auto;
+  }
+
+  /* ─── typeset-post — article body (ex-prose-lg + .post-content) ────── */
+
+  .typeset-post {
+    --typeset-size: 1.125rem;
+    /* The article body reads at 1.125rem on every viewport — opt out of the
+       small-screen scale (typeset-comment keeps the 1.125× default). */
+    --typeset-mobile-scale: 1;
+    --typeset-leading: 1.7778;
+    --typeset-flow: 1.3333em;
+    --typeset-font-body: var(--font-serif);
+    --typeset-font-heading: var(--font-serif);
+    --typeset-table-border: color-mix(in oklab, var(--line-muted) 78%, var(--ink-4) 22%);
+    --typeset-table-header-bg: var(--surface);
+    --typeset-table-stripe: color-mix(in oklab, var(--surface-soft) 55%, var(--canvas) 45%);
+    color: var(--ink-2);
+  }
+
+  .typeset-post :where(h1, h2, h3, h4, h5) {
+    color: var(--ink-1);
+  }
+
+  /* Heading anchors land below the fixed header on in-page jumps. */
+  .typeset-post :where(h1, h2, h3, h4, h5, h6)[id] {
+    scroll-margin-top: 5rem;
+  }
+
+  /* Article headings — em sizes replicating the old fixed rem scale
+     (h1 1.75rem … h5 1rem against the 1.125rem body) so the zoomed editor
+     canvas stays in lockstep. Margins replicate the prose-lg rhythm. */
+  .typeset-post :where(h1) {
+    font-size: 1.5556em;
+    line-height: 1.3;
+    font-weight: 800;
+    margin-block-start: 0;
+  }
+  .typeset-post :where(h1 + *) {
+    margin-block-start: 0.8333em;
+  }
+
+  .typeset-post :where(h2) {
+    position: relative;
+    padding-left: 1em;
+    font-size: 1.3333em;
+    line-height: 1.32;
+    font-weight: 700;
+    margin-block-start: 1.8667em;
+  }
+  .typeset-post :where(h2)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: calc(0.5lh - 0.4583em);
+    width: 0.25em;
+    height: 0.9167em;
+    background-color: var(--primary);
+  }
+  .typeset-post :where(h2 + *) {
+    margin-block-start: 1.0667em;
+  }
+
+  .typeset-post :where(h3) {
+    position: relative;
+    padding-left: 1.2em;
+    font-size: 1.1111em;
+    line-height: 1.38;
+    margin-block-start: 1.6667em;
+  }
+  .typeset-post :where(h3)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: calc(0.5lh - 0.4em);
+    width: 0.25em;
+    height: 0.8em;
+    background-color: var(--primary);
+  }
+  .typeset-post :where(h3 + *) {
+    margin-block-start: 0.6667em;
+  }
+
+  .typeset-post :where(h4) {
+    position: relative;
+    padding-left: 1.3333em;
+    font-size: 1em;
+    line-height: 1.42;
+    margin-block-start: 1.7778em;
+  }
+  .typeset-post :where(h4)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: calc(0.5lh - 0.1389em);
+    width: 0.2778em;
+    height: 0.2778em;
+    background-color: var(--primary);
+  }
+  .typeset-post :where(h4 + *) {
+    margin-block-start: 0.4444em;
+  }
+
+  .typeset-post :where(h5) {
+    font-size: 0.8889em;
+    line-height: 1.45;
+    font-weight: 600;
+    margin-block-start: 1.6em;
+  }
+
+  .typeset-post :where(blockquote) {
+    margin-block-start: 1.6667em;
+    padding-block: 0.8889em;
+    padding-inline: 1.1111em;
+    border-inline-start: 0.2222em solid color-mix(in oklab, var(--brand) 55%, transparent);
+  }
+
+  .typeset-post :where(ul, ol) {
+    padding-inline-start: 1.5556em;
+  }
+  .typeset-post :where(li) {
+    margin-block-start: 0.6667em;
+  }
+  .typeset-post :where(li > p, li > ul, li > ol) {
+    margin-block-start: 0.8889em;
+  }
+
+  .typeset-post :where(hr) {
+    margin-block: 3.1111em;
+  }
+  .typeset-post :where(hr + *) {
+    margin-block-start: 0;
+  }
+
+  .typeset-post :where(figure) {
+    margin-block-start: 1.7778em;
+  }
+  .typeset-post :where(figure) :where(img) {
+    margin-block-start: 0;
+  }
+  /* The not-typeset/not-inkling-prose guard keeps card interiors out (same
+     contract as the table rules below): hydration-enhanced mount points like
+     the music-player cover size their img with utilities, and a flow margin
+     here pushes the image out of its fixed box (clipped by overflow-hidden). */
+  .typeset-post :where(img, video):not(:where(.not-typeset, .not-typeset *, .not-inkling-prose, .not-inkling-prose *)) {
+    margin-block-start: 1.7778em;
+  }
+  .typeset-post :where(p img) {
+    margin-block-start: 0;
+  }
+  .typeset-post :where(figcaption) {
+    font-size: 0.8889em;
+    line-height: 1.5;
+    margin-block-start: 1em;
+  }
+
+  /* Code blocks — RENDER-ONLY (the editor's code card is a CodeMirror
+     decorator excluded via .not-inkling-prose), so rem is fine here.
+     margin-top: 0 !important survives from the plugin era: the hydrated
+     copy chrome owns the block offset. */
+  .typeset-post :where(pre) {
+    position: relative;
+    color: inherit;
+    background-color: var(--code-bg);
+    padding: 1rem 1.25rem;
+    margin-top: 0 !important;
+    margin-bottom: 1rem !important;
+    /* All-corner radius: SSR serves the bare exportDOM <pre>; the hydrated
+       copy chrome squares the top again once wrapped. */
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .typeset-post :where(pre.shiki) {
+    color: var(--shiki-light);
+  }
+
+  .typeset-post :where(pre.shiki) :where(span) {
+    color: var(--shiki-light);
+  }
+
+  .typeset-post :where(pre) > :where(code) {
+    color: inherit;
+    background: transparent;
+    border: none;
+    padding: 0 !important;
+    margin: 0;
+    border-radius: 0;
+    font-size: inherit;
+    box-decoration-break: unset;
+    -webkit-box-decoration-break: unset;
+    display: block;
+    min-width: 100%;
+    width: max-content;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .typeset-post :where(svg) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* ─── typeset-comment — comment bodies (ex-prose-sm + .comment-content) ─ */
+
+  .typeset-comment {
+    --typeset-size: 0.875rem;
+    --typeset-leading: 1.7143;
+    --typeset-flow: 1.1429em;
+    --typeset-font-body: var(--font-serif);
+    --typeset-font-heading: var(--font-serif);
+    color: var(--ink-2);
+  }
+
+  .typeset-comment :where(h1, h2, h3, h4, h5, h6) {
+    color: var(--ink-1);
+  }
+
+  /* Legacy comment HTML can carry headings (the comment editor emits none);
+     keep the ex-prose-sm scale for them. */
+  .typeset-comment :where(h1) {
+    font-size: 2.1429em;
+    line-height: 1.2;
+    font-weight: 800;
+    margin-block-start: 0;
+  }
+  .typeset-comment :where(h1 + *) {
+    margin-block-start: 0.8em;
+  }
+  .typeset-comment :where(h2) {
+    font-size: 1.4286em;
+    line-height: 1.4;
+    font-weight: 700;
+    margin-block-start: 1.6em;
+  }
+  .typeset-comment :where(h2 + *) {
+    margin-block-start: 0.8em;
+  }
+  .typeset-comment :where(h3) {
+    font-size: 1.2857em;
+    line-height: 1.5556;
+    margin-block-start: 1.5556em;
+  }
+  .typeset-comment :where(h3 + *) {
+    margin-block-start: 0.4444em;
+  }
+  .typeset-comment :where(h4) {
+    font-size: 1em;
+    line-height: 1.4286;
+    margin-block-start: 1.4286em;
+  }
+  .typeset-comment :where(h4 + *) {
+    margin-block-start: 0.5714em;
+  }
+  .typeset-comment :where(h5) {
+    font-size: 1em;
+    font-weight: 600;
+    margin-block-start: 1.6em;
+  }
+
+  .typeset-comment :where(blockquote) {
+    margin-block-start: 1.3333em;
+    padding-block: 1.1429em;
+    padding-inline: 1.4286em;
+    border-inline-start: 0.2857em solid color-mix(in oklab, var(--brand) 55%, transparent);
+  }
+
+  .typeset-comment :where(ul, ol) {
+    padding-inline-start: 1.5714em;
+  }
+  .typeset-comment :where(li) {
+    margin-block-start: 0.2857em;
+  }
+  .typeset-comment :where(li > p, li > ul, li > ol) {
+    margin-block-start: 0.5714em;
+  }
+
+  .typeset-comment :where(hr) {
+    margin-block: 2.8571em;
+  }
+  .typeset-comment :where(hr + *) {
+    margin-block-start: 0;
+  }
+
+  .typeset-comment :where(pre) {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: inherit;
+    background-color: var(--code-bg);
+    padding: 0.875rem 1rem;
+    margin: 0.75rem 0;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    word-break: normal;
+    overflow-wrap: normal;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .typeset-comment :where(pre.shiki) {
+    color: var(--shiki-light);
+  }
+
+  .typeset-comment :where(pre.shiki) :where(span) {
+    color: var(--shiki-light);
+  }
+
+  .typeset-comment :where(pre) > :where(code) {
+    display: block;
+    min-width: 100%;
+    width: max-content;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    box-decoration-break: unset;
+    -webkit-box-decoration-break: unset;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+}
+
+@layer utilities {
+  /* inkling exportDOM tables are BARE (<table><tr><th>…) — these rules model
+     every post-body table. Scoped to the preset (not .post-content) so the
+     editor canvas renders the same table look; the not-typeset/not-inkling-prose
+     guard keeps card interiors out. */
+  .typeset-post :where(table):not(:where(.not-typeset, .not-typeset *, .not-inkling-prose, .not-inkling-prose *)) {
+    border-collapse: collapse;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--typeset-table-border, var(--line-muted));
+    font-size: 0.8889em;
+  }
+
+  .typeset-post
+    :where(table):not(:where(.not-typeset, .not-typeset *, .not-inkling-prose, .not-inkling-prose *))
+    :is(thead, tfoot, tbody tr) {
+    border-width: 0;
+    border-style: none;
+  }
+
+  .typeset-post
+    :where(table):not(:where(.not-typeset, .not-typeset *, .not-inkling-prose, .not-inkling-prose *))
+    :is(th, td) {
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--typeset-table-border, var(--line-muted));
+    padding-block: 0.75em;
+    padding-inline: 0.875em;
+  }
+
+  .typeset-post
+    :where(table):not(:where(.not-typeset, .not-typeset *, .not-inkling-prose, .not-inkling-prose *))
+    thead
+    th,
+  .typeset-post
+    :where(table):not(:where(.not-typeset, .not-typeset *, .not-inkling-prose, .not-inkling-prose *))
+    tbody
+    tr:first-child
+    th {
+    background-color: var(--typeset-table-header-bg);
+  }
+
+  .typeset-post
+    :where(table):not(:where(.not-typeset, .not-typeset *, .not-inkling-prose, .not-inkling-prose *))
+    tbody
+    tr:nth-child(even)
+    td {
+    background-color: var(--typeset-table-stripe);
   }
 }

@@ -213,12 +213,12 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
 ## Documented tradeoffs
 
 - Content typography (headings, paragraphs, lists, quotes, code rhythm) is NOT owned by this layer:
-  kobato replaced `@tailwindcss/typography` with a vendored shadcn/typeset layer
-  (`src/styles/typeset.css` + `typeset-kobato.css` in the host), and the host passes
+  kobato replaced `@tailwindcss/typography` with an owned typeset layer
+  (`src/styles/typeset.css` in the host), and the host passes
   `contentEditableClassName="typeset typeset-post|typeset-comment"` into `InklingComposableEditor`
   so the canvas shares the rendered presets. `src/inkling/styles/components/inkling-prose.css` keeps
   only card rhythm, nested-editor chrome variants, the aside pull-quote, and the accent re-scope.
-  The vendored typeset guard honors `.not-inkling-prose` and `.inkling-blockquote-alt`.
+  The typeset guard honors `.not-inkling-prose` and `.inkling-blockquote-alt`.
 - The editor stylesheet is consumed as source: `src/inkling/styles/index.css` is imported by the
   host's two partials (`src/styles/inkling-editor.css`, `src/styles/inkling-comment-editor.css`)
   into the `inkling` cascade layer, pinned below `utilities` by the bare `@layer` ordering

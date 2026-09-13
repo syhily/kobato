@@ -7,9 +7,8 @@
  * host-card class constants the projected markup renders with. Admin-only
  * rules (music view transitions, admin medium-zoom stacking, scrollbar-thin)
  * live in admin.css and never reach this bundle. Content typography comes
- * from the vendored shadcn/typeset (`typeset.css`) plus kobato's presets
- * (`typeset-kobato.css`), imported after the shared partial so the identity
- * layer wins its source-order ties.
+ * from `typeset.css` (base rules + kobato presets in one owned file),
+ * imported after the shared partial.
  */
 /* Cascade-layer order: the inkling comment-editor stylesheet (imported by
    CommentBodyEditor's lazy chunk into `layer(inkling)`) must sit BELOW
@@ -20,7 +19,6 @@
 @import 'tailwindcss' source(none);
 @import './tailwind.css';
 @import './typeset.css';
-@import './typeset-kobato.css';
 @import './cursors.css';
 
 @source '../routes/public';

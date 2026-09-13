@@ -7,9 +7,8 @@
  * `@theme inline` bridge (the cn.ts parity tests parse this file), custom
  * variants, base-layer overrides, the hydration-injected code-block chrome,
  * and the theme-wipe view transition (ThemeProvider renders on both sides
- * via root.tsx). Content typography lives in `./typeset.css` (vendored
- * shadcn/typeset) + `./typeset-kobato.css` (presets and identity), both
- * imported after this partial.
+ * via root.tsx). Content typography lives in `./typeset.css` (base rules +
+ * kobato presets in one owned file), imported after this partial.
  */
 
 /* Dark variant explicit class or system preference when no class is set —
