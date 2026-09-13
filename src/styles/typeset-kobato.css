@@ -301,7 +301,11 @@
   .typeset-post :where(figure) :where(img) {
     margin-block-start: 0;
   }
-  .typeset-post :where(img, video) {
+  /* The not-typeset/not-inkling-prose guard keeps card interiors out (same
+     contract as the table rules below): hydration-enhanced mount points like
+     the music-player cover size their img with utilities, and a flow margin
+     here pushes the image out of its fixed box (clipped by overflow-hidden). */
+  .typeset-post :where(img, video):not(:where(.not-typeset, .not-typeset *, .not-inkling-prose, .not-inkling-prose *)) {
     margin-block-start: 1.7778em;
   }
   .typeset-post :where(p img) {

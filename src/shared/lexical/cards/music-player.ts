@@ -46,7 +46,7 @@ export const MUSIC_PLAYER_CARD_PROPERTIES = [
  * shift layout — pinned by the snap/parity tests. */
 export const MUSIC_PLAYER_CARD_CLASSES = {
   wrapper: 'mt-5 mb-[1.375rem] max-w-[21.875rem] max-xl:mx-auto max-md:mx-0 max-md:mb-5 max-md:max-w-full',
-  fallback: 'overflow-hidden rounded-md border border-line-muted bg-canvas',
+  fallback: 'not-typeset overflow-hidden rounded-md border border-line-muted bg-canvas',
   fallbackBody: 'flex items-center gap-3 p-3',
   fallbackCover: 'size-12 shrink-0 rounded-md object-cover',
   fallbackGlyph: 'flex size-12 shrink-0 items-center justify-center rounded-md bg-surface-dim text-lg',
