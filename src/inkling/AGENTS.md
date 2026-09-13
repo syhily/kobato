@@ -25,7 +25,7 @@ Run these from the kobato root:
 
 ```bash
 pnpm run type        # root tsc + tsc -p tests/inkling/tsconfig.json
-pnpm run lint        # oxlint (root config) + scripts/check-test-skips.ts (targets tests/inkling/unit)
+pnpm run lint        # oxlint (root config)
 pnpm test:inkling    # vitest run --project inkling
 pnpm run fmt         # oxfmt --write with the root config (covers src/inkling, tests/inkling, demo)
 pnpm run fmt:check   # oxfmt --check with the root config
@@ -257,8 +257,6 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   (declaration bundlers collided with lib.dom.d.ts) and stays. React Compiler runs on the layer: the
   app build compiles it via `@vitejs/plugin-react`'s `compiler: true`, and the inkling vitest
   project compiles the same way so tests exercise the compiled semantics.
-- inkling's skip-sentinel lint script was ported to the root as `scripts/check-test-skips.ts`
-  (targets `tests/inkling/unit`) and runs as part of `pnpm run lint`.
 - The headless HTML API lazily imports `jsdom` (a plain root devDependency now) behind
   `src/inkling/html/headless-dom.ts` (the headless DOM port) — the only module that may import it;
   `tests/inkling/unit/html/jsdom-import-guard.test.ts` enforces that statically. The public

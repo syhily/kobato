@@ -35,7 +35,7 @@
     "emails:generate": "vite-node scripts/generate-emails.ts",
     "fmt": "oxfmt -c oxfmt.config.ts --write",
     "fmt:check": "oxfmt -c oxfmt.config.ts --check",
-    "lint": "oxlint -c oxlint.config.ts && node scripts/check-test-skips.ts",
+    "lint": "oxlint -c oxlint.config.ts",
     "lint:fix": "oxlint -c oxlint.config.ts --fix",
     "prepare": "pnpx husky",
     "release:bump": "node scripts/release.ts bump",

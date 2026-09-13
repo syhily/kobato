@@ -495,8 +495,7 @@ export interface PtLexicalBackfillCollaborators {
 /**
  * Flag-gated boot entry point (the `runAssetUrlBackfillOnceAtBoot` pattern):
  * failure-swallowing, fire-and-forget. While BOOT_MODE is 'dry-run' it only
- * counts and warns — the audited conversion runs through
- * `scripts/pt-lexical-backfill.ts --apply` (R15b flips the constant).
+ * counts and warns (R15b flipped the constant to 'apply').
  */
 export async function runPtLexicalBackfillAtBoot(
   db: Database,
@@ -518,10 +517,7 @@ export async function runPtLexicalBackfillAtBoot(
       return
     }
     if (BOOT_MODE === 'dry-run') {
-      log.warn('Legacy PortableText bodies pending the PT→Lexical backfill', {
-        ...pending,
-        command: 'pnpm vite-node scripts/pt-lexical-backfill.ts --apply',
-      })
+      log.warn('Legacy PortableText bodies pending the PT→Lexical backfill', { ...pending })
       return
     }
     const report = await runPtLexicalBackfill(db, { mode: BOOT_MODE, ...collaborators })
