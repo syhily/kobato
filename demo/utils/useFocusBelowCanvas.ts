@@ -3,7 +3,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react'
 import { $getRoot, $isDecoratorNode } from 'lexical'
 import React from 'react'
 
-import type { ExternalControlAPI } from '@/inkling/'
+import type { ExternalControlAPI } from '@/inkling'
 
 // The focus-below-canvas guard attributes: a gesture that STARTS on any of
 // these must not be followed by a re-focus on mouseup (a mousedown can

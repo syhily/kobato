@@ -17,7 +17,7 @@ import {
   type SearchResult,
   TKCountPlugin,
   WordCountPlugin,
-} from '@/inkling/'
+} from '@/inkling'
 import EarthIcon from '@/inkling/assets/icons/inkling-earth.svg?react'
 
 import DollarIcon from './assets/icons/inkling-dollar.svg?react'

@@ -1,4 +1,4 @@
-import type { BookmarkEmbedOptions, BookmarkEmbedResponse } from '@/inkling/'
+import type { BookmarkEmbedOptions, BookmarkEmbedResponse } from '@/inkling'
 
 // 1x1 transparent GIF data URL used so e2e bookmark image assertions do not
 // depend on network fetches for https://inkling.local assets.

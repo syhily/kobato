@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { HtmlOutputPlugin } from '@/inkling/'
+import { HtmlOutputPlugin } from '@/inkling'
 
 import { DemoEditorShell } from './components/DemoEditorShell'
 

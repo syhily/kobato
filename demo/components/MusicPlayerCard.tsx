@@ -1,4 +1,4 @@
-import { defineCard, type DecoratorNodeProperty, generateDecoratorNode } from '@/inkling/'
+import { defineCard, type DecoratorNodeProperty, generateDecoratorNode } from '@/inkling'
 
 const musicPlayerProperties = [{ name: 'src', default: '' }] as const satisfies readonly DecoratorNodeProperty[]
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import type { SnippetItem } from '@/inkling/'
+import type { SnippetItem } from '@/inkling'
 
 function getSnippetsFromStorage(): SnippetItem[] {
   const snippetsStr = localStorage.getItem('snippets')

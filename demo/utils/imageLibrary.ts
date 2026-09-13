@@ -1,4 +1,4 @@
-import type { ImageLibrarySettings, LibraryImageItem } from '@/inkling/'
+import type { ImageLibrarySettings, LibraryImageItem } from '@/inkling'
 
 // e2e seam (plan C8): `?imageLibrary=fixture` installs a deterministic
 // stand-in for the host's media library — local static images only, never an

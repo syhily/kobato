@@ -2,7 +2,7 @@ import type { ChangeEvent, KeyboardEvent, Ref } from 'react'
 
 import React from 'react'
 
-import type { ExternalControlAPI } from '@/inkling/'
+import type { ExternalControlAPI } from '@/inkling'
 
 interface TitleTextBoxProps {
   title: string
