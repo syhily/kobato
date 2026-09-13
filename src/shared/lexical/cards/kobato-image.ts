@@ -17,9 +17,11 @@
 // The full-fidelity export markup mirrors the retired PT public renderer
 // (R13 deleted `src/ui/pt/`): layout-classed figure, lazy/async img with the
 // dark-mode dim class, data-thumbhash, 100vw sizes + the [256,512,768,1024]
-// srcset (when the render env supplies the assets/site facts), and the
-// SSR-visible aspect-ratio fallback for dimensionless images. The feed
-// variant reproduces the retired PT rssMode figure.
+// srcset (when the render env supplies the assets/site facts) with a
+// data-zoom-src pointing at the untransformed original so medium-zoom does
+// not cap the zoomed view at the largest breakpoint, and the SSR-visible
+// aspect-ratio fallback for dimensionless images. The feed variant
+// reproduces the retired PT rssMode figure.
 
 import type { CardImportSpec, DecoratorNodeProperty } from '@/inkling/headless'
 
@@ -203,6 +205,10 @@ export function renderKobatoImageNode(node: KobatoImageDataset, context: CardRen
     })
     if (srcset !== '') {
       img += ` srcset="${escape(srcset)}"`
+      // medium-zoom's HD hook: a srcset-only zoom clone keeps the breakpoint
+      // candidates, so the browser caps the zoomed view at the largest
+      // breakpoint. Point it at the untransformed original instead.
+      img += ` data-zoom-src="${escape(src)}"`
     }
   }
   img += ' />'

@@ -73,7 +73,7 @@ function withNode<T>(dataset: Record<string, unknown>, fn: (node: KobatoImageNod
   return result
 }
 
-function exportHtmlFor(dataset: Record<string, unknown>, feed: boolean): string {
+function exportHtmlFor(dataset: Record<string, unknown>, feed: boolean, urlTemplate = ''): string {
   return withNode(dataset, (node) => {
     const output = node.exportDOM(editor, {
       createDocument: () => dom.window.document,
@@ -82,7 +82,7 @@ function exportHtmlFor(dataset: Record<string, unknown>, feed: boolean): string 
           return feed ? true : undefined
         }
         if (kind === IMAGE_RENDER_ENV_META_KIND) {
-          return { assetHost: 'assets.example.com', urlTemplate: '', siteOrigin: 'https://example.com' }
+          return { assetHost: 'assets.example.com', urlTemplate, siteOrigin: 'https://example.com' }
         }
         return undefined
       },
@@ -201,6 +201,20 @@ describe('KobatoImageNode — exportDOM markup', () => {
     expect(linked).toContain('<a href="https://example.com/post">')
     const unsafe = exportHtmlFor({ ...FULL_DATASET, href: 'javascript:alert(1)' }, false)
     expect(unsafe).not.toContain('<a')
+  })
+
+  it('points data-zoom-src at the untransformed original when a responsive srcset rides along', () => {
+    const html = exportHtmlFor(FULL_DATASET, false, 'https://cdn.example.com/{src}?w={width}&h={height}')
+    expect(html).toContain('srcset="')
+    // medium-zoom's HD hook: a srcset-only zoom clone would cap the zoomed
+    // view at the largest breakpoint (1024w), never the original.
+    expect(html).toContain('data-zoom-src="/storage/posts/cover.png"')
+
+    // Without a transform template there is no srcset, and the plain src IS
+    // the original — the attribute stays off.
+    const plain = exportHtmlFor(FULL_DATASET, false)
+    expect(plain).not.toContain('srcset=')
+    expect(plain).not.toContain('data-zoom-src')
   })
 
   it('exports the bare PT rssMode figure for the feed variant', () => {
