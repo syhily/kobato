@@ -30,7 +30,9 @@ function getSharedZoom(): Promise<Zoom> {
 export function useMediumZoom(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (!container || !bodyHtml.includes('<img')) {
+    // Gate the dynamic import on a real `<img>` probe (medium-zoom only
+    // supports IMG nodes — `.svg` files ride plain `<img>` tags).
+    if (!container || container.querySelector('img') === null) {
       return
     }
 
@@ -84,5 +86,6 @@ export function useMediumZoom(containerRef: RefObject<HTMLElement | null>, bodyH
       cancelled = true
       cleanup?.()
     }
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
   }, [containerRef, bodyHtml])
 }

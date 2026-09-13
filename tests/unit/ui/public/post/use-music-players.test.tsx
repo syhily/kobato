@@ -64,6 +64,17 @@ describe('useMusicPlayers', () => {
     expect(() => renderHook(() => useMusicPlayers({ current: null }, ''))).not.toThrow()
   })
 
+  it('scans the container for mount points rather than gating on a bodyHtml substring', async () => {
+    const html = '<div class="aplayer" data-name="Song" data-url="https://cdn/x.mp3"></div>'
+    const { container, ref } = mountContainer(html)
+    await act(async () => {
+      // The re-scan key intentionally carries no 'class="aplayer"' marker.
+      renderHook(() => useMusicPlayers(ref, 'rescan-key'))
+      await Promise.resolve()
+    })
+    expect(container.querySelector('[data-stub-player]')?.getAttribute('data-url')).toBe('https://cdn/x.mp3')
+  })
+
   it('unmounts the old player and upgrades the new mount points when bodyHtml changes (client-side navigation)', async () => {
     const htmlA =
       '<div class="aplayer" data-name="Old" data-url="https://cdn/old.mp3">' +

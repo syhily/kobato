@@ -76,4 +76,14 @@ describe('useFootnotePreviews', () => {
     renderHook(() => useFootnotePreviews(ref, '<p>no notes</p>'))
     expect(document.body.querySelector('.footnote-preview')).toBeNull()
   })
+
+  it('scans the container for footnote refs rather than gating on a bodyHtml substring', () => {
+    const { container, ref } = mountContainer(BODY)
+
+    // The re-scan key intentionally carries no '#user-content-fn-' marker.
+    renderHook(() => useFootnotePreviews(ref, 'rescan-key'))
+
+    container.querySelector<HTMLAnchorElement>('sup a')!.dispatchEvent(new Event('mouseenter'))
+    expect(document.body.querySelector<HTMLDivElement>('.footnote-preview')!.hidden).toBe(false)
+  })
 })

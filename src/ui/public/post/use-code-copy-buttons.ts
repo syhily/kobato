@@ -97,7 +97,7 @@ function runLegacyCopyCommand(): boolean {
 export function useCodeCopyButtons(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (container === null || !bodyHtml.includes('data-code')) {
+    if (container === null) {
       return
     }
 
@@ -165,5 +165,6 @@ export function useCodeCopyButtons(containerRef: RefObject<HTMLElement | null>, 
         cleanup()
       }
     }
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
   }, [containerRef, bodyHtml])
 }

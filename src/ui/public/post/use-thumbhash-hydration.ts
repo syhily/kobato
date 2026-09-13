@@ -36,7 +36,7 @@ function decodeThumbhash(hash: string): string | undefined {
 export function useThumbhashHydration(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (container === null || !bodyHtml.includes('data-thumbhash')) {
+    if (container === null) {
       return
     }
 
@@ -76,5 +76,6 @@ export function useThumbhashHydration(containerRef: RefObject<HTMLElement | null
         cleanup()
       }
     }
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
   }, [containerRef, bodyHtml])
 }

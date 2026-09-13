@@ -60,4 +60,14 @@ describe('useThumbhashHydration', () => {
   it('no-ops on a null container', () => {
     expect(() => renderHook(() => useThumbhashHydration({ current: null }, ''))).not.toThrow()
   })
+
+  it('scans the container for thumbhash images rather than gating on a bodyHtml substring', () => {
+    const html = `<img src="/x.png" data-thumbhash="${THUMBHASH}" alt="">`
+    const { container, ref } = mountContainer(html)
+
+    // The re-scan key intentionally carries no 'data-thumbhash' marker.
+    renderHook(() => useThumbhashHydration(ref, 'rescan-key'))
+
+    expect(container.querySelector('img')!.style.backgroundImage).toContain('data:image/png')
+  })
 })

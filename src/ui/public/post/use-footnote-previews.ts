@@ -14,7 +14,7 @@ import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (container === null || !bodyHtml.includes('#user-content-fn-')) {
+    if (container === null) {
       return
     }
 
@@ -90,5 +90,6 @@ export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>,
       window.removeEventListener('scroll', hide)
       popover.remove()
     }
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
   }, [containerRef, bodyHtml])
 }

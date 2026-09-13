@@ -102,4 +102,14 @@ describe('useCodeCopyButtons', () => {
   it('no-ops on a null container', () => {
     expect(() => renderHook(() => useCodeCopyButtons({ current: null }, ''))).not.toThrow()
   })
+
+  it('scans the container for exported code blocks rather than gating on a bodyHtml substring', () => {
+    const { container, ref } = mountContainer(EXPORTED)
+    ;(ref as { current: HTMLDivElement | null }).current = container
+
+    // The re-scan key intentionally carries no 'data-code' marker.
+    renderHook(() => useCodeCopyButtons(ref, 'rescan-key'))
+
+    expect(container.querySelector('.code-block-wrapper')).not.toBeNull()
+  })
 })

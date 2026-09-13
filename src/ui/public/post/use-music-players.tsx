@@ -21,7 +21,7 @@ import type { MusicPlayerCardProps } from '@/ui/public/music-player/music-player
 export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
-    if (container === null || !bodyHtml.includes('class="aplayer"')) {
+    if (container === null) {
       return
     }
 
@@ -69,5 +69,6 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
         }
       })
     }
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
   }, [containerRef, bodyHtml])
 }
