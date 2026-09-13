@@ -13,7 +13,12 @@
  *                      against the base by source order — the base MUST stay
  *                      first. Utilities on an element still beat everything
  *                      here (later layer).
- *   @layer utilities   post-body table chrome.
+ *   @layer utilities   post-body content chrome: the table rules, the
+ *                      client-injected code-block header (scoped to
+ *                      .post-content — the editor canvas renders inkling's
+ *                      own code block), and the footnote hover-preview
+ *                      popover (global-scoped: the popover element mounts on
+ *                      document.body, outside any .typeset container).
  *
  * Four surfaces share the presets:
  *   .post-content.typeset-post       rendered post/page body
@@ -1049,5 +1054,117 @@
     tr:nth-child(even)
     td {
     background-color: var(--typeset-table-stripe);
+  }
+
+  /* Code-block chrome injected client-side by useCodeCopyButtons into the
+     rendered post/page body — plain CSS because src/client/** sits outside
+     the Tailwind @source scan. Scoped to .post-content (NOT .typeset-post):
+     the editor canvas also carries typeset-post, but inkling renders its own
+     code block there and must not pick up this chrome. */
+  .post-content .code-block-wrapper {
+    position: relative;
+    margin: 0 0 1rem;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+  }
+
+  .post-content .code-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background-color: var(--surface);
+    padding: 0.5rem 1rem;
+    font-family: var(--font-code);
+    user-select: none;
+  }
+
+  .post-content .code-header .language-label {
+    pointer-events: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-1);
+    user-select: none;
+  }
+
+  .post-content .code-header .copy-code {
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-code);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-1);
+    transition:
+      transform 150ms ease-in-out,
+      color 150ms ease-in-out;
+    user-select: none;
+  }
+
+  .post-content .code-header .copy-code:hover {
+    transform: scale(1.05);
+    color: var(--brand);
+  }
+
+  .post-content .code-block-wrapper > pre {
+    margin-bottom: 0 !important;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  /* Footnote hover/focus preview popover (useFootnotePreviews) — floats a
+     sanitized clone of the footnote definition body above its in-content ref,
+     so it belongs to the rendered-content surface. The popover element itself
+     is appended to document.body (position: fixed), OUTSIDE any .typeset
+     scope, so these rules stay global; visuals mirror the shared Tooltip. */
+  .footnote-preview {
+    position: fixed;
+    z-index: var(--z-tooltip);
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 1rem));
+    border-radius: var(--radius-xs);
+    background-color: var(--canvas);
+    padding: 0.375rem 0.625rem;
+    box-shadow: var(--shadow-tooltip);
+    color: var(--ink-1);
+    font-size: var(--text-admin-sm);
+    line-height: 1.6;
+    pointer-events: none;
+  }
+
+  .footnote-preview[hidden] {
+    display: none;
+  }
+
+  /* Arrow back at the footnote ref, mirroring the shared Tooltip's ::before.
+     --footnote-arrow-x is set per show because viewport clamping can shift
+     the popover off the trigger's center. */
+  .footnote-preview::after {
+    content: '';
+    position: absolute;
+    left: var(--footnote-arrow-x, 50%);
+    width: 0;
+    height: 0;
+    margin-left: -6px;
+    border-style: solid;
+  }
+
+  .footnote-preview[data-side='top']::after {
+    bottom: -6px;
+    border-width: 6px 6px 0;
+    border-color: var(--canvas) transparent transparent;
+  }
+
+  .footnote-preview[data-side='bottom']::after {
+    top: -6px;
+    border-width: 0 6px 6px;
+    border-color: transparent transparent var(--canvas);
+  }
+
+  .footnote-preview :where(p) {
+    margin: 0;
   }
 }

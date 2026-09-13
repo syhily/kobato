@@ -14,8 +14,8 @@ Six files, two bundles:
 - `tailwind.css` — **shared token partial**, not a standalone entry. Holds
   every raw design token (`:root` / `.dark` / `prefers-color-scheme` / P3),
   the full `@theme inline` bridge, the `sidebar` `@custom-variant` block,
-  `@layer base` overrides, and rules both sides render (the hydration-injected
-  code-block chrome, the theme-wipe view transition). It has no
+  `@layer base` overrides, and rules both sides render (the Shiki token
+  colors for non-typeset surfaces, the theme-wipe view transition). It has no
   `@import 'tailwindcss'` and no `@source` — importing it directly from TSX
   produces nothing.
 - `typeset.css` — **all content typography in one owned file** (vendored
@@ -26,7 +26,10 @@ Six files, two bundles:
   `.typeset-post` (article body, ex-prose-lg) / `.typeset-comment`
   (ex-prose-sm) presets — every rule sits at exactly (0,1,0), so the
   presets win ties against the base by source order and the base MUST stay
-  first. `@layer utilities` holds the post-body table chrome. Carries
+  first. `@layer utilities` holds the post-body content chrome: the table
+  rules, the client-injected code-block header (`.post-content`-scoped), and
+  the footnote hover-preview popover (global-scoped — the popover mounts on
+  `document.body`, outside any `.typeset` container). Carries
   KOBATO PATCH #1 (documented in its header): the opt-out guard also honors
   `.not-inkling-prose` and `.inkling-blockquote-alt`. The `<48rem` mobile
   font scale is a preset variable (`--typeset-mobile-scale`, default
