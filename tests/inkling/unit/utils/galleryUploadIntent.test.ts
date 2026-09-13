@@ -134,4 +134,46 @@ describe('galleryUploadIntent', () => {
     expect(merged[1].src).toBeUndefined()
     expect(merged[1].previewSrc).toBe('blob://preview-b.jpg')
   })
+
+  it('keeps the file order when the parallel dimension reads settle out of order', async () => {
+    vi.mocked(getImageDimensions).mockImplementation(
+      (src: string) =>
+        new Promise((resolve) => {
+          // the first file's decode lands LAST — the overlay order must still
+          // follow the file order (map preserves it)
+          setTimeout(() => resolve({ width: 100, height: 50 }), src === 'blob://preview-a.jpg' ? 20 : 0)
+        }),
+    )
+    const upload = vi.fn().mockResolvedValue([
+      { url: 'https://example.com/a.jpg', fileName: 'a.jpg' },
+      { url: 'https://example.com/b.jpg', fileName: 'b.jpg' },
+    ])
+    const files = [new File(['a'], 'a.jpg', { type: 'image/jpeg' }), new File(['b'], 'b.jpg', { type: 'image/jpeg' })]
+
+    await runIntent({ upload, files })
+
+    const previewBatch = setPreviewImages.mock.calls[0][0] as GalleryImage[]
+    expect(previewBatch.map((image) => image.fileName)).toEqual(['a.jpg', 'b.jpg'])
+  })
+
+  it('releases the batch leases and propagates when a dimension read rejects', async () => {
+    vi.mocked(getImageDimensions).mockImplementation(async (src: string) => {
+      if (src === 'blob://preview-b.jpg') {
+        throw new Error('cannot decode')
+      }
+      return { width: 100, height: 50 }
+    })
+    const upload = vi.fn().mockResolvedValue([])
+    const files = [new File(['a'], 'a.jpg', { type: 'image/jpeg' }), new File(['b'], 'b.jpg', { type: 'image/jpeg' })]
+
+    await expect(runIntent({ upload, files })).rejects.toThrow('cannot decode')
+
+    // both batch previews are revoked — the failed decode's AND its
+    // sibling's — and nothing was published or uploaded
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob://preview-a.jpg')
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob://preview-b.jpg')
+    expect(setPreviewImages).not.toHaveBeenCalled()
+    expect(setImages).not.toHaveBeenCalled()
+    expect(upload).not.toHaveBeenCalled()
+  })
 })

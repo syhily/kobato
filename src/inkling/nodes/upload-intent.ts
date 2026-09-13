@@ -616,17 +616,31 @@ export async function galleryUploadIntent({
 
   const newImages: GalleryImage[] = [...images]
 
-  // create preview images and capture dimensions
-  for (const file of strippedFiles) {
-    const previewSrc = previews.lease(file)
-    const { width, height } = await getImageDimensions(previewSrc)
+  // create preview images and capture dimensions — the per-file decodes are
+  // independent, so they run in parallel (map preserves the push order). A
+  // rejection mid-batch must release exactly the leases this batch took
+  // before propagating, or those previews stay leased-but-unrendered until
+  // unmount
+  const leasedPreviews: string[] = []
+  try {
+    const captured = await Promise.all(
+      strippedFiles.map(async (file) => {
+        const previewSrc = previews.lease(file)
+        leasedPreviews.push(previewSrc)
+        const { width, height } = await getImageDimensions(previewSrc)
 
-    newImages.push({
-      fileName: file.name,
-      previewSrc,
-      width,
-      height,
-    })
+        return {
+          fileName: file.name,
+          previewSrc,
+          width,
+          height,
+        }
+      }),
+    )
+    newImages.push(...captured)
+  } catch (error) {
+    leasedPreviews.forEach((previewSrc) => previews.release(previewSrc))
+    throw error
   }
 
   recalculateImageRows(newImages)
