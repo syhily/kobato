@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from 'react'
+import { Suspense, use } from 'react'
+import { browser } from 'react-dom'
 
 import { requireRole } from '@/server/domains/auth/rbac'
 import { createSsrCaller } from '@/server/http/ssr-caller'
@@ -85,24 +86,9 @@ function greetingForHour(hour: number): string {
   return '晚上好'
 }
 
-function subscribeNoop(): () => void {
-  return () => {
-    // Greeting is read once from the client clock; nothing to unsubscribe.
-  }
-}
-
-function getGreetingSnapshot(): string {
-  return greetingForHour(new Date().getHours())
-}
-
-function getGreetingServerSnapshot(): string | null {
-  return null
-}
-
-function useGreeting(): string | null {
-  // SSR emits no greeting (server snapshot is null) and hydration renders the
-  // same null, so the browser's own clock is the only source.
-  return useSyncExternalStore<string | null>(subscribeNoop, getGreetingSnapshot, getGreetingServerSnapshot)
+function Greeting({ name }: { name: string }) {
+  use(browser())
+  return <>{`${greetingForHour(new Date().getHours())}，${name}`}</>
 }
 
 export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
@@ -119,12 +105,15 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
   } = loaderData
   const isAdmin = role === 'admin'
 
-  const greeting = useGreeting()
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 rounded-lg border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{greeting === null ? name : `${greeting}，${name}`}</h1>
+          <h1 className="text-2xl font-semibold">
+            <Suspense fallback={name}>
+              <Greeting name={name} />
+            </Suspense>
+          </h1>
           <p className="mt-1 text-muted-foreground">当前身份：{roleLabel(role)}</p>
         </div>
         <QuickActions />

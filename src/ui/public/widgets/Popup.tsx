@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
 import { XIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { use, useEffect, useRef, useState } from 'react'
+import { browser, createPortal } from 'react-dom'
 
 import { transitions } from '@/client/lib/motion'
 import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv } from '@/ui/components/lazy-motion'
@@ -74,6 +74,8 @@ export function Popup({
   'aria-labelledby': ariaLabelledBy,
   children,
 }: PopupProps) {
+  use(browser())
+
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const portalRef = useRef<HTMLDivElement | null>(null)
   const previouslyFocusedRef = useRef<HTMLElement | null>(null)
@@ -151,10 +153,6 @@ export function Popup({
       previouslyFocusedRef.current?.focus({ preventScroll: true })
     }
   }, [open, mounted, onClose])
-
-  if (typeof document === 'undefined') {
-    return null
-  }
 
   return createPortal(
     <LazyAnimatePresence>
