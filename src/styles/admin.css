@@ -64,6 +64,27 @@
   ::view-transition-new(music-artist-*) {
     animation: slideUpFade 300ms ease-out;
   }
+
+  /* Player prev/next directional swaps — the class strings come from
+     AdminMusicPlayerBar's <ViewTransition> enter/exit maps, which the browser
+     applies as view-transition-class, so these match the class selector form. */
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(.track-to-left) {
+      animation: trackToLeft 200ms ease both;
+    }
+
+    ::view-transition-new(.track-from-right) {
+      animation: trackFromRight 200ms ease both;
+    }
+
+    ::view-transition-old(.track-to-right) {
+      animation: trackToRight 200ms ease both;
+    }
+
+    ::view-transition-new(.track-from-left) {
+      animation: trackFromLeft 200ms ease both;
+    }
+  }
 }
 
 @keyframes slideUpFade {
@@ -74,5 +95,49 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes trackFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes trackToLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+}
+
+@keyframes trackFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes trackToRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(14px);
   }
 }

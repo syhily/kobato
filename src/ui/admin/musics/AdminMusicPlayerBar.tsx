@@ -1,5 +1,5 @@
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react'
-import { useCallback, useMemo } from 'react'
+import { addTransitionType, startTransition, useCallback, useMemo, ViewTransition } from 'react'
 import { useLocation } from 'react-router'
 
 import { formatTime } from '@/ui/admin/musics/format-time'
@@ -20,13 +20,19 @@ export function AdminMusicPlayerBar() {
 
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
-      playIndex(currentIndex - 1)
+      startTransition(() => {
+        addTransitionType('prev')
+        playIndex(currentIndex - 1)
+      })
     }
   }, [currentIndex, playIndex])
 
   const handleNext = useCallback(() => {
     if (currentIndex < playlist.length - 1) {
-      playIndex(currentIndex + 1)
+      startTransition(() => {
+        addTransitionType('next')
+        playIndex(currentIndex + 1)
+      })
     }
   }, [currentIndex, playlist.length, playIndex])
 
@@ -41,23 +47,30 @@ export function AdminMusicPlayerBar() {
     <div className={cn('relative z-[1100] h-20 shrink-0 border-t border-line', 'bg-canvas/95 backdrop-blur-xl')}>
       <div className="flex h-full items-center px-4">
         {/* Left: Cover + Info */}
-        <div className="flex w-auto min-w-0 items-center gap-3 md:w-[30%]">
-          {currentTrack.coverUrl ? (
-            <Image
-              src={currentTrack.coverUrl}
-              alt=""
-              width={56}
-              height={56}
-              className="size-14 shrink-0 rounded-sm object-cover"
-            />
-          ) : (
-            <div className="size-14 shrink-0 rounded-sm bg-surface-dim" />
-          )}
-          <div className="hidden min-w-0 md:block">
-            <p className="truncate text-sm font-semibold text-ink-1">{currentTrack.name}</p>
-            <p className="truncate text-xs text-ink-3">{currentTrack.artist.join(' / ')}</p>
+        <ViewTransition
+          key={currentTrack.id}
+          default="none"
+          enter={{ default: 'none', next: 'track-from-right', prev: 'track-from-left' }}
+          exit={{ default: 'none', next: 'track-to-left', prev: 'track-to-right' }}
+        >
+          <div className="flex w-auto min-w-0 items-center gap-3 md:w-[30%]">
+            {currentTrack.coverUrl ? (
+              <Image
+                src={currentTrack.coverUrl}
+                alt=""
+                width={56}
+                height={56}
+                className="size-14 shrink-0 rounded-sm object-cover"
+              />
+            ) : (
+              <div className="size-14 shrink-0 rounded-sm bg-surface-dim" />
+            )}
+            <div className="hidden min-w-0 md:block">
+              <p className="truncate text-sm font-semibold text-ink-1">{currentTrack.name}</p>
+              <p className="truncate text-xs text-ink-3">{currentTrack.artist.join(' / ')}</p>
+            </div>
           </div>
-        </div>
+        </ViewTransition>
 
         {/* Center: Controls + Progress */}
         <div className="flex flex-1 flex-col items-center gap-1">
