@@ -1,5 +1,14 @@
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { Fragment, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type FragmentInstance,
+  type ReactNode,
+} from 'react'
 import { HexColorInput, HexColorPicker } from 'react-colorful'
 
 import EyedropperIcon from '@/inkling/assets/icons/inkling-eyedropper.svg?react'
@@ -60,14 +69,12 @@ export function ConicRing() {
 
 export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange, children }: ColorPickerProps) {
   const labels = useInklingLabels()
-  // HexColorInput doesn't support adding a ref on the input itself
-  const inputWrapperRef = useRef<HTMLDivElement | null>(null)
+  const hexInputRef = useRef<FragmentInstance>(null)
 
   const stopPropagation = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation()
 
-    const inputElement = inputWrapperRef.current?.querySelector('input')
-    const isInputField = e.target === inputElement
+    const isInputField = e.target instanceof HTMLInputElement
 
     // Allow text selection for events on the input field
     if (isInputField) {
@@ -75,7 +82,7 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
     }
 
     // Prevent closing the color picker when clicking somewhere inside it
-    inputWrapperRef.current?.querySelector('input')?.focus()
+    hexInputRef.current?.focus()
 
     e.preventDefault()
   }, [])
@@ -87,7 +94,7 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
   const gestureStopRef = useRef<(() => void) | null>(null)
 
   const stopUsingColorPicker = useCallback(() => {
-    inputWrapperRef.current?.querySelector('input')?.focus()
+    hexInputRef.current?.focus()
 
     const stop = gestureStopRef.current
     if (stop) {
@@ -122,14 +129,14 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
         // EyeDropper was cancelled or failed — pointer events are restored in finally
       } finally {
         document.body.style.removeProperty('pointer-events')
-        inputWrapperRef.current?.querySelector('input')?.focus()
+        hexInputRef.current?.focus()
       }
     },
     [onChange],
   )
 
   useEffect(() => {
-    inputWrapperRef.current?.querySelector('input')?.focus()
+    hexInputRef.current?.focus()
   }, [])
 
   // the keyword grammar ('accent'/'transparent' vs raw hex) lives in
@@ -138,7 +145,7 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
   const hexValue = resolveSwatchDisplayColor(value, { transparentAs: '', rootElement: editorRoot })
 
   const focusHexInputOnClick = useCallback(() => {
-    inputWrapperRef.current?.querySelector('input')?.focus()
+    hexInputRef.current?.focus()
   }, [])
 
   return (
@@ -151,17 +158,18 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
       />
       <div className="mt-3 flex gap-2">
         <div
-          ref={inputWrapperRef}
           className={`border-grey-100 bg-grey-100 text-grey-900 placeholder:text-grey-500 focus-within:border-green dark:bg-grey-900 dark:selection:bg-grey-800 dark:placeholder:text-grey-700 dark:focus-within:border-green dark:hover:bg-grey-925 dark:focus:bg-grey-925 relative flex w-full items-center rounded-lg border px-3 py-1.5 font-sans text-sm font-normal transition-colors focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(48,207,67,.25)] focus-within:outline-none dark:border-transparent dark:text-white`}
           onClick={focusHexInputOnClick}
         >
           <span className="text-grey-700 mr-2 ml-1">#</span>
-          <HexColorInput
-            aria-label={labels['aria.colorValue']}
-            className="z-50 w-full bg-transparent"
-            color={hexValue}
-            onChange={onChange}
-          />
+          <Fragment ref={hexInputRef}>
+            <HexColorInput
+              aria-label={labels['aria.colorValue']}
+              className="z-50 w-full bg-transparent"
+              color={hexValue}
+              onChange={onChange}
+            />
+          </Fragment>
           {eyedropper && !!window.EyeDropper && (
             <button
               className="absolute inset-y-0 right-3 z-50 my-auto size-4 p-[1px]"
