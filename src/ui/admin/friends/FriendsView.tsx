@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Fragment, useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminFriendDto } from '@/shared/contracts/friends'
@@ -183,19 +183,25 @@ export function FriendsView() {
             </Empty>
           ) : (
             <div className="divide-y rounded-xl border">
-              {rows.map((row) => (
-                <FriendRow
-                  key={row.id}
-                  friend={row}
-                  disabled={isDialogOpen}
-                  onEdit={() => setEditTarget(row)}
-                  onDelete={() => handleDelete(row)}
-                />
-              ))}
+              {rows.map((row, index) => {
+                const friendRow = (
+                  <FriendRow
+                    friend={row}
+                    disabled={isDialogOpen}
+                    onEdit={() => setEditTarget(row)}
+                    onDelete={() => handleDelete(row)}
+                  />
+                )
+                return index === rows.length - 1 ? (
+                  <Fragment key={row.id} ref={sentinelRef}>
+                    {friendRow}
+                  </Fragment>
+                ) : (
+                  <Fragment key={row.id}>{friendRow}</Fragment>
+                )
+              })}
             </div>
           )}
-
-          {hasNextPage && <div ref={sentinelRef} className="h-1" />}
 
           <AdminInfiniteListFooter
             noun="友链"

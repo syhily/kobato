@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 
 import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@/shared/contracts/jobs'
 
@@ -80,12 +80,17 @@ export function RunHistorySheet({ taskKey, taskLabel }: { taskKey: JobHistoryInp
             </Empty>
           ) : (
             <div className="divide-y">
-              {rows.map((run) => (
-                <RunHistoryRow key={run.id} run={run} />
-              ))}
+              {rows.map((run, index) =>
+                index === rows.length - 1 ? (
+                  <Fragment key={run.id} ref={sentinelRef}>
+                    <RunHistoryRow run={run} />
+                  </Fragment>
+                ) : (
+                  <RunHistoryRow key={run.id} run={run} />
+                ),
+              )}
             </div>
           )}
-          <div ref={sentinelRef} />
           <AdminInfiniteListFooter
             noun="条执行记录"
             rowCount={total}

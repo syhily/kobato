@@ -81,10 +81,8 @@ export function UsersView() {
           </div>
         </header>
 
-        <UsersTable rows={rows} config={config} isLoading={isLoading} />
+        <UsersTable rows={rows} config={config} isLoading={isLoading} sentinelRef={sentinelRef} />
 
-        {/* Sentinel for infinite scroll */}
-        {hasNextPage && <div ref={sentinelRef} className="h-1" />}
         {/* Bottom status */}
         <AdminInfiniteListFooter
           noun="用户"

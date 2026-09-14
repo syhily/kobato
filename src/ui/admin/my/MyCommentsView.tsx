@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { Fragment, useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
@@ -221,21 +221,28 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
               </EmptyHeader>
             </Empty>
           ) : (
-            items.map((item) => (
-              <MyCommentRow
-                key={item.id}
-                item={item}
-                currentUser={currentUser}
-                submitting={submitting}
-                onEdit={() => setEditTarget(item)}
-                onRequestDelete={onRequestDelete}
-                onCancelDelete={onCancelDelete}
-              />
-            ))
+            items.map((item, index) => {
+              const row = (
+                <MyCommentRow
+                  item={item}
+                  currentUser={currentUser}
+                  submitting={submitting}
+                  onEdit={() => setEditTarget(item)}
+                  onRequestDelete={onRequestDelete}
+                  onCancelDelete={onCancelDelete}
+                />
+              )
+              return index === items.length - 1 ? (
+                <Fragment key={item.id} ref={sentinelRef}>
+                  {row}
+                </Fragment>
+              ) : (
+                <Fragment key={item.id}>{row}</Fragment>
+              )
+            })
           )}
         </div>
 
-        {hasNextPage && <div ref={sentinelRef} className="h-1" />}
         {(isFetchingNextPage || (!hasNextPage && items.length > 0)) && (
           <AdminInfiniteListFooter
             noun="评论"

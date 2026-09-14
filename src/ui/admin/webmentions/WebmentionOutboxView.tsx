@@ -1,5 +1,5 @@
 import { GlobeIcon } from 'lucide-react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link } from 'react-router'
 
 import type { AdminWebmentionOutboxWire } from '@/shared/contracts/webmentions'
@@ -116,12 +116,17 @@ export function WebmentionOutboxView() {
           </Empty>
         ) : (
           <div className="divide-y">
-            {rows.map((row) => (
-              <OutboxRow key={row.id} row={row} />
-            ))}
+            {rows.map((row, index) =>
+              index === rows.length - 1 ? (
+                <Fragment key={row.id} ref={sentinelRef}>
+                  <OutboxRow row={row} />
+                </Fragment>
+              ) : (
+                <OutboxRow key={row.id} row={row} />
+              ),
+            )}
           </div>
         )}
-        <div ref={sentinelRef} />
         <AdminInfiniteListFooter
           noun="条发送记录"
           rowCount={total}

@@ -1,4 +1,6 @@
-import { useMemo } from 'react'
+import type { FragmentInstance, RefObject } from 'react'
+
+import { Fragment, useMemo } from 'react'
 
 import type { AdminImageDto } from '@/shared/contracts/images'
 
@@ -20,6 +22,8 @@ export interface JustifiedImageGridProps {
   gap?: number
   onSelect: (image: AdminImageDto) => void
   className?: string
+  /** Fragment ref mounted on the last row — the infinite-scroll sentinel observes it. */
+  sentinelRef?: RefObject<FragmentInstance | null>
 }
 
 interface RowItem {
@@ -148,6 +152,7 @@ export function JustifiedImageGrid({
   gap = 12,
   onSelect,
   className,
+  sentinelRef,
 }: JustifiedImageGridProps) {
   const { ref, width } = useElementWidth()
   const targetHeight = targetRowHeight ?? targetRowHeightForWidth(width)
@@ -160,49 +165,59 @@ export function JustifiedImageGrid({
       {width <= 0 ? (
         <JustifiedImageGridSkeleton targetRowHeight={targetHeight} gap={gap} />
       ) : (
-        rows.map((row, rowIndex) => (
-          <div key={row.items[0]!.image.id} className="flex" style={{ gap, height: row.height }}>
-            {row.items.map((item, itemIndex) => {
-              const thumbUrl = getImageUrl({
-                src: item.image.publicUrl,
-                width: Math.ceil(item.width * dpr),
-                height: Math.ceil(item.height * dpr),
-                quality: 80,
-                assetHost,
-                urlTemplate,
-                siteOrigin,
-              })
+        rows.map((row, rowIndex) => {
+          const rowElement = (
+            <div className="flex" style={{ gap, height: row.height }}>
+              {row.items.map((item, itemIndex) => {
+                const thumbUrl = getImageUrl({
+                  src: item.image.publicUrl,
+                  width: Math.ceil(item.width * dpr),
+                  height: Math.ceil(item.height * dpr),
+                  quality: 80,
+                  assetHost,
+                  urlTemplate,
+                  siteOrigin,
+                })
 
-              return (
-                <LazyMotionButton
-                  key={item.image.id}
-                  type="button"
-                  onClick={() => onSelect(item.image)}
-                  initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
-                  animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                  transition={
-                    prefersReducedMotion
-                      ? undefined
-                      : {
-                          ...transitions.fade,
-                          delay: (rowIndex * 0.02 + itemIndex * 0.01) % 0.2,
-                        }
-                  }
-                  whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
-                  whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
-                  className={cn(
-                    'group relative block overflow-hidden rounded-xl border bg-muted',
-                    'focus-visible:shadow-focus focus-visible:outline-none',
-                  )}
-                  style={{ width: item.width, height: item.height }}
-                  aria-label={`查看图片 ${item.image.storagePath}`}
-                >
-                  <img src={thumbUrl} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
-                </LazyMotionButton>
-              )
-            })}
-          </div>
-        ))
+                return (
+                  <LazyMotionButton
+                    key={item.image.id}
+                    type="button"
+                    onClick={() => onSelect(item.image)}
+                    initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
+                    animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                    transition={
+                      prefersReducedMotion
+                        ? undefined
+                        : {
+                            ...transitions.fade,
+                            delay: (rowIndex * 0.02 + itemIndex * 0.01) % 0.2,
+                          }
+                    }
+                    whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
+                    whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+                    className={cn(
+                      'group relative block overflow-hidden rounded-xl border bg-muted',
+                      'focus-visible:shadow-focus focus-visible:outline-none',
+                    )}
+                    style={{ width: item.width, height: item.height }}
+                    aria-label={`查看图片 ${item.image.storagePath}`}
+                  >
+                    <img src={thumbUrl} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+                  </LazyMotionButton>
+                )
+              })}
+            </div>
+          )
+          const key = row.items[0]!.image.id
+          return rowIndex === rows.length - 1 ? (
+            <Fragment key={key} ref={sentinelRef}>
+              {rowElement}
+            </Fragment>
+          ) : (
+            <Fragment key={key}>{rowElement}</Fragment>
+          )
+        })
       )}
     </div>
   )

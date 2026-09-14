@@ -1,5 +1,7 @@
+import type { FragmentInstance, RefObject } from 'react'
+
 import { SearchIcon } from 'lucide-react'
-import { memo } from 'react'
+import { Fragment, memo } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
@@ -21,9 +23,11 @@ interface UsersTableProps {
   rows: AdminUserDto[]
   config: SiteIdentitySettings
   isLoading: boolean
+  /** Fragment ref mounted on the last row — the infinite-scroll sentinel observes it. */
+  sentinelRef?: RefObject<FragmentInstance | null>
 }
 
-export function UsersTable({ rows, config, isLoading }: UsersTableProps) {
+export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -59,7 +63,15 @@ export function UsersTable({ rows, config, isLoading }: UsersTableProps) {
             </TableCell>
           </TableRow>
         ) : (
-          rows.map((user) => <UserRow key={user.id} user={user} config={config} />)
+          rows.map((user, index) =>
+            index === rows.length - 1 ? (
+              <Fragment key={user.id} ref={sentinelRef}>
+                <UserRow user={user} config={config} />
+              </Fragment>
+            ) : (
+              <UserRow key={user.id} user={user} config={config} />
+            ),
+          )
         )}
       </TableBody>
     </Table>

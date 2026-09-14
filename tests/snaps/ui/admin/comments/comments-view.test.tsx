@@ -192,7 +192,7 @@ describe('snapshot: CommentsView', () => {
     expect(html).not.toContain('已加载全部评论')
   })
 
-  it('renders the loading-more sentinel when hasMore is true', () => {
+  it('renders the row when hasMore is true', () => {
     controllerState.comments = [makeAdminComment({ id: '9', name: 'Solo' })]
     controllerState.total = 20
     controllerState.statusCounts = { all: 20, pending: 0, approved: 20, deleteRequested: 0 }
@@ -204,8 +204,7 @@ describe('snapshot: CommentsView', () => {
       ),
     )
     expect(html).toContain('Solo')
-    // hasMore → sentinel div.
-    expect(html).toContain('class="h-1"')
+    expect(html).not.toContain('已加载全部评论')
   })
 
   it('renders the fetching-next-page copy while the next page is loading', () => {

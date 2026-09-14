@@ -264,14 +264,13 @@ describe('snapshot: MyCommentsView render branches', () => {
     expect(html).not.toContain('href="/posts/')
   })
 
-  it('renders the load-more sentinel and hides the end-of-list copy when hasNextPage is true', () => {
+  it('renders the row without the end-of-list copy when hasNextPage is true', () => {
     queryMocks.infinite.data = {
       pages: [{ items: [makeItem({ id: '9' })], total: 50, hasMore: true }],
     }
     queryMocks.infinite.hasNextPage = true
     const html = renderMy()
-    // IntersectionObserver sentinel div.
-    expect(html).toContain('class="h-1"')
+    expect(html).toContain('data-slot="my-comment-row"')
     expect(html).not.toContain('已加载全部评论')
   })
 

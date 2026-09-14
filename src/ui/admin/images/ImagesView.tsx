@@ -200,8 +200,9 @@ export function ImagesView() {
                 urlTemplate={storage.urlTemplate}
                 siteOrigin={website}
                 onSelect={setSelectedImage}
+                sentinelRef={sentinelRef}
               />
-              <div ref={sentinelRef} className="mt-8 flex items-center justify-center">
+              <div className="mt-8 flex items-center justify-center">
                 {isFetchingNextPage && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="size-4 animate-spin rounded-full border-2 border-muted border-t-primary" />

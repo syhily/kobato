@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 import { Link } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -78,12 +78,16 @@ export function PagesView() {
           ) : (
             <>
               <div className="divide-y">
-                {rows.map((row) => (
-                  <PageRow key={row.id} page={row} />
-                ))}
+                {rows.map((row, index) =>
+                  index === rows.length - 1 ? (
+                    <Fragment key={row.id} ref={sentinelRef}>
+                      <PageRow page={row} />
+                    </Fragment>
+                  ) : (
+                    <PageRow key={row.id} page={row} />
+                  ),
+                )}
               </div>
-              {/* Sentinel for infinite scroll */}
-              {hasNextPage && <div ref={sentinelRef} className="h-1" />}
               {/* Bottom status */}
               <AdminInfiniteListFooter
                 noun="页面"

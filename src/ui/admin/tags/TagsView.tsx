@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Fragment, useCallback, useState } from 'react'
 
 import type { AdminTagDto } from '@/shared/contracts/tags'
 
@@ -140,21 +140,26 @@ export function TagsView() {
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map((row) => (
-                  <TagRow
-                    key={row.id}
-                    tag={row}
-                    disabled={isDialogOpen}
-                    onEdit={() => setEditTarget(row)}
-                    onDelete={() => handleDelete(row)}
-                  />
-                ))
+                rows.map((row, index) => {
+                  const tagRow = (
+                    <TagRow
+                      tag={row}
+                      disabled={isDialogOpen}
+                      onEdit={() => setEditTarget(row)}
+                      onDelete={() => handleDelete(row)}
+                    />
+                  )
+                  return index === rows.length - 1 ? (
+                    <Fragment key={row.id} ref={sentinelRef}>
+                      {tagRow}
+                    </Fragment>
+                  ) : (
+                    <Fragment key={row.id}>{tagRow}</Fragment>
+                  )
+                })
               )}
             </TableBody>
           </Table>
-
-          {/* Sentinel for infinite scroll */}
-          {hasNextPage && <div ref={sentinelRef} className="h-1" />}
 
           {/* Bottom status */}
           <AdminInfiniteListFooter

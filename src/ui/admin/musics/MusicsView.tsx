@@ -9,10 +9,11 @@ import {
   Plus,
   Search,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Fragment, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
@@ -67,7 +68,7 @@ export function MusicsView() {
     isLoading,
     hasNextPage,
     isFetchingNextPage,
-    sentinelRef,
+    fetchNextPage,
   } = useAdminInfiniteList({
     namespace: orpcQuery.admin.music.list,
     pageSize: PAGE_SIZE,
@@ -80,6 +81,13 @@ export function MusicsView() {
     }),
     selectRows: (page) => page.musics,
     noun: '音乐',
+  })
+
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    tailKey: allMusics.at(-1)?.id,
   })
 
   const handlePlayAll = useCallback(() => {
@@ -218,15 +226,24 @@ export function MusicsView() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {allMusics.map((row) => (
-              <div key={row.id} onClick={() => handleNavigateToDetail(row.id)} className="cursor-pointer">
-                <AlbumCard music={row} viewTransitionName={`music-cover-${row.id}`} />
-              </div>
-            ))}
+            {allMusics.map((row, index) => {
+              const card = (
+                <div onClick={() => handleNavigateToDetail(row.id)} className="cursor-pointer">
+                  <AlbumCard music={row} viewTransitionName={`music-cover-${row.id}`} />
+                </div>
+              )
+              return index === allMusics.length - 1 ? (
+                <Fragment key={row.id} ref={sentinelRef}>
+                  {card}
+                </Fragment>
+              ) : (
+                <Fragment key={row.id}>{card}</Fragment>
+              )
+            })}
           </div>
 
-          {/* Infinite scroll sentinel */}
-          <div ref={sentinelRef} className="mt-8 flex items-center justify-center">
+          {/* Infinite scroll status — the observer sentinel rides the last grid item */}
+          <div className="mt-8 flex items-center justify-center">
             {isFetchingNextPage && (
               <div className="flex items-center gap-2 text-sm text-ink-4">
                 <div className="size-4 animate-spin rounded-full border-2 border-line-muted border-t-primary" />

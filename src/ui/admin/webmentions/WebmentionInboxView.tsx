@@ -1,6 +1,6 @@
 import { useMutation, type InfiniteData } from '@tanstack/react-query'
 import { AtSignIcon, CheckIcon, CircleAlertIcon, RefreshCwIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 
 import type { AdminWebmentionWire } from '@/shared/contracts/webmentions'
 
@@ -287,19 +287,26 @@ export function WebmentionInboxView() {
           </Empty>
         ) : (
           <div className="divide-y">
-            {rows.map((mention) => (
-              <InboxRow
-                key={mention.id}
-                mention={mention}
-                onApprove={(m) => approveMutation.mutate({ id: m.id })}
-                onReject={(m) => rejectMutation.mutate({ id: m.id })}
-                onReverify={(m) => reverifyMutation.mutate({ id: m.id })}
-                isBusy={isBusy}
-              />
-            ))}
+            {rows.map((mention, index) => {
+              const row = (
+                <InboxRow
+                  mention={mention}
+                  onApprove={(m) => approveMutation.mutate({ id: m.id })}
+                  onReject={(m) => rejectMutation.mutate({ id: m.id })}
+                  onReverify={(m) => reverifyMutation.mutate({ id: m.id })}
+                  isBusy={isBusy}
+                />
+              )
+              return index === rows.length - 1 ? (
+                <Fragment key={mention.id} ref={sentinelRef}>
+                  {row}
+                </Fragment>
+              ) : (
+                <Fragment key={mention.id}>{row}</Fragment>
+              )
+            })}
           </div>
         )}
-        <div ref={sentinelRef} />
         <AdminInfiniteListFooter
           noun="条 Webmention"
           rowCount={total}

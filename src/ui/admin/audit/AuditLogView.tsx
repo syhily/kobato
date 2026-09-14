@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { DownloadIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { toastApiError } from '@/client/lib/toast-api-error'
@@ -147,11 +147,16 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
         ) : (
           <>
             <div className="divide-y">
-              {rows.map((row) => (
-                <AuditLogRow key={row.id} row={row} />
-              ))}
+              {rows.map((row, index) =>
+                index === rows.length - 1 ? (
+                  <Fragment key={row.id} ref={sentinelRef}>
+                    <AuditLogRow row={row} />
+                  </Fragment>
+                ) : (
+                  <AuditLogRow key={row.id} row={row} />
+                ),
+              )}
             </div>
-            {hasNextPage && <div ref={sentinelRef} className="h-1" />}
             <AdminInfiniteListFooter
               noun="审计日志"
               rowCount={rows.length}

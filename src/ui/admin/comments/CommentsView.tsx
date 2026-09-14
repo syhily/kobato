@@ -1,5 +1,5 @@
 import { SearchIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
@@ -91,18 +91,23 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
                 </EmptyHeader>
               </Empty>
             ) : (
-              comments.map((comment) => (
-                <AdminCommentRow
-                  key={idStr(comment.id)}
-                  comment={comment}
-                  parentLookup={parentLookup}
-                  actions={actions}
-                />
-              ))
+              comments.map((comment, index) =>
+                index === comments.length - 1 ? (
+                  <Fragment key={idStr(comment.id)} ref={sentinelRef}>
+                    <AdminCommentRow comment={comment} parentLookup={parentLookup} actions={actions} />
+                  </Fragment>
+                ) : (
+                  <AdminCommentRow
+                    key={idStr(comment.id)}
+                    comment={comment}
+                    parentLookup={parentLookup}
+                    actions={actions}
+                  />
+                ),
+              )
             )}
           </div>
 
-          {hasMore && <div ref={sentinelRef} className="h-1" />}
           {(isFetchingNextPage || (!hasMore && comments.length > 0)) && (
             <AdminInfiniteListFooter
               noun="评论"

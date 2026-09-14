@@ -193,8 +193,8 @@ describe('snapshot: AuditLogView branches', () => {
     expect(html).toContain('disabled')
   })
 
-  it('renders the load-more sentinel branch when hasNextPage is true', () => {
-    // hasNextPage gates the sentinel div and suppresses the footer.
+  it('renders the load-more branch when hasNextPage is true', () => {
+    // hasNextPage suppresses the end-of-list footer.
     setList([makeRow()], true, 50)
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))

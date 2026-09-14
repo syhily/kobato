@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -153,17 +153,24 @@ export function PostsView() {
           ) : (
             <>
               <div className="divide-y">
-                {rows.map((row) => (
-                  <PostRow
-                    key={row.id}
-                    post={row}
-                    onFilterCategory={(categoryId, categoryName) =>
-                      pills.dispatch({ type: 'addFilter', field: 'category', value: categoryId, label: categoryName })
-                    }
-                  />
-                ))}
+                {rows.map((row, index) => {
+                  const postRow = (
+                    <PostRow
+                      post={row}
+                      onFilterCategory={(categoryId, categoryName) =>
+                        pills.dispatch({ type: 'addFilter', field: 'category', value: categoryId, label: categoryName })
+                      }
+                    />
+                  )
+                  return index === rows.length - 1 ? (
+                    <Fragment key={row.id} ref={sentinelRef}>
+                      {postRow}
+                    </Fragment>
+                  ) : (
+                    <Fragment key={row.id}>{postRow}</Fragment>
+                  )
+                })}
               </div>
-              {hasNextPage && <div ref={sentinelRef} className="h-1" />}
               <AdminInfiniteListFooter
                 noun="文章"
                 rowCount={rows.length}

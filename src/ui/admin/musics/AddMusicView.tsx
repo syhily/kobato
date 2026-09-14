@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Search, X } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { Fragment, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
@@ -114,6 +114,7 @@ export function AddMusicView() {
     hasNextPage: hasMore,
     isFetchingNextPage: isLoadingMore,
     fetchNextPage: loadMore,
+    tailKey: results.length,
   })
 
   return (
@@ -221,11 +222,10 @@ export function AddMusicView() {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {results.map((hit) => {
+              {results.map((hit, index) => {
                 const isCurrent = currentPreviewSourceId === hit.sourceId
-                return (
+                const card = (
                   <SearchAlbumCard
-                    key={`${hit.source}:${hit.sourceId}`}
                     hit={hit}
                     adding={addingSourceId === hit.sourceId}
                     added={addedSourceIds.has(hit.sourceId)}
@@ -235,10 +235,16 @@ export function AddMusicView() {
                     onPreview={onPreview}
                   />
                 )
+                const key = `${hit.source}:${hit.sourceId}`
+                return index === results.length - 1 ? (
+                  <Fragment key={key} ref={sentinelRef}>
+                    {card}
+                  </Fragment>
+                ) : (
+                  <Fragment key={key}>{card}</Fragment>
+                )
               })}
             </div>
-            {/* Sentinel for infinite scroll */}
-            <div ref={sentinelRef} className="h-4" />
             {isLoadingMore ? (
               <div className="flex justify-center py-4">
                 <Loader2 className="size-6 animate-spin text-ink-4" />

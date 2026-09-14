@@ -224,15 +224,13 @@ describe('snapshot: CommentsView render branches', () => {
     expect(html).toContain('清除')
   })
 
-  it('renders the load-more sentinel div when hasMore is true', () => {
+  it('renders the row without the end-of-list copy when hasMore is true', () => {
     controllerState.comments = [makeAdminComment({ id: '5', name: 'Solo' })]
     controllerState.total = 20
     controllerState.statusCounts = { all: 20, pending: 0, approved: 20, deleteRequested: 0 }
     controllerState.hasMore = true
     const html = renderComments()
     expect(html).toContain('Solo')
-    // hasMore → sentinel div.
-    expect(html).toContain('class="h-1"')
     expect(html).not.toContain('已加载全部评论')
   })
 

@@ -150,13 +150,12 @@ describe('snapshot: UsersView branches', () => {
     expect(html).toContain('搜索用户名或邮箱')
   })
 
-  it('renders the load-more sentinel when hasNextPage is true', () => {
+  it('renders the row without the end-of-list copy when hasNextPage is true', () => {
     const a = makeAdminUser({ id: 'user-3', name: 'Carol' })
     setList([a], 50)
     queryMocks.infinite.hasNextPage = true
     const html = renderUsers()
     expect(html).toContain('Carol')
-    expect(html).toContain('class="h-1"')
     expect(html).not.toContain('已加载全部用户')
   })
 

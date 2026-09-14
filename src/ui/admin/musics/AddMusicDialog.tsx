@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@/shared/contracts/music'
@@ -69,6 +69,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     fetchNextPage: loadMore,
     root: scrollRef,
     rootMargin: '0px',
+    tailKey: results.length,
   })
 
   const addMutation = useMutation({
@@ -113,25 +114,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const triggerSearch = useCallback(() => {
     search({ source, keyword })
   }, [search, source, keyword])
-
-  // Auto-load the next page when the sentinel is still inside the container; geometry read post-render.
-  useEffect(() => {
-    if (!hasMore) {
-      return
-    }
-    const id = requestAnimationFrame(() => {
-      if (!sentinelRef.current || !scrollRef.current) {
-        return
-      }
-      const sentinelRect = sentinelRef.current.getBoundingClientRect()
-      const scrollRect = scrollRef.current.getBoundingClientRect()
-      if (sentinelRect.top < scrollRect.bottom) {
-        loadMore()
-      }
-    })
-    return () => cancelAnimationFrame(id)
-    // Stable ref objects listed to satisfy exhaustive-deps (the sentinel ref comes from a hook the lint can't see).
-  }, [hasMore, loadMore, sentinelRef])
 
   const onPreview = useCallback(
     (hit: MetingSearchHit) => {
@@ -242,11 +224,10 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
             ) : results.length === 0 ? (
               <p className="text-sm text-muted-foreground">输入关键词后点击搜索。</p>
             ) : (
-              results.map((hit) => {
+              results.map((hit, index) => {
                 const previewId = `preview:${hit.sourceId}`
-                return (
+                const item = (
                   <SearchResultItem
-                    key={`${hit.source}:${hit.sourceId}`}
                     hit={hit}
                     previewActive={currentTrack?.id === previewId && isPlaying}
                     adding={addingSourceId === hit.sourceId}
@@ -255,9 +236,16 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                     onAdd={onAdd}
                   />
                 )
+                const key = `${hit.source}:${hit.sourceId}`
+                return index === results.length - 1 ? (
+                  <Fragment key={key} ref={sentinelRef}>
+                    {item}
+                  </Fragment>
+                ) : (
+                  <Fragment key={key}>{item}</Fragment>
+                )
               })
             )}
-            <div ref={sentinelRef} className="h-1" />
             {isLoadingMore ? (
               <div className="flex justify-center py-2">
                 <Loader2Icon className="size-5 animate-spin text-muted-foreground" />

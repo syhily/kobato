@@ -73,7 +73,12 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
     }
   }, [listQuery.error, noun])
 
-  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    tailKey: rows.length,
+  })
 
   const queryClient = useQueryClient()
   // The query key rebuilds every render — pin the latest in a ref so `patchPages` stays referentially stable.

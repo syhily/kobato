@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { render, screen } from '@testing-library/react'
-import { useRef } from 'react'
+import { Fragment, useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
@@ -51,19 +51,29 @@ interface HarnessProps {
   isFetchingNextPage: boolean
   fetchNextPage: () => void
   rootMargin?: string
+  tailKey?: unknown
 }
 
-function ViewportHarness(props: HarnessProps) {
-  const sentinelRef = useInfiniteScrollSentinel(props)
-  return <div ref={sentinelRef} data-testid="sentinel" />
+function ViewportHarness({ tailKey = 1, ...props }: HarnessProps) {
+  const sentinelRef = useInfiniteScrollSentinel({ ...props, tailKey })
+  return (
+    <>
+      <div data-testid="item" />
+      <Fragment ref={sentinelRef}>
+        <div data-testid="sentinel" />
+      </Fragment>
+    </>
+  )
 }
 
-function RootedHarness(props: HarnessProps) {
+function RootedHarness({ tailKey = 1, ...props }: HarnessProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useInfiniteScrollSentinel({ ...props, root: scrollRef })
+  const sentinelRef = useInfiniteScrollSentinel({ ...props, root: scrollRef, tailKey })
   return (
     <div ref={scrollRef} data-testid="scroll-root">
-      <div ref={sentinelRef} data-testid="sentinel" />
+      <Fragment ref={sentinelRef}>
+        <div data-testid="sentinel" />
+      </Fragment>
     </div>
   )
 }
@@ -103,6 +113,21 @@ describe('useInfiniteScrollSentinel', () => {
     expect(fetchNextPage).not.toHaveBeenCalled()
     observer.fire(true)
     expect(fetchNextPage).toHaveBeenCalledTimes(1)
+  })
+
+  it('re-arms against the new tail when tailKey changes', () => {
+    const fetchNextPage = vi.fn()
+    const { rerender } = render(
+      <ViewportHarness hasNextPage={true} isFetchingNextPage={false} fetchNextPage={fetchNextPage} tailKey={1} />,
+    )
+    expect(FakeIntersectionObserver.instances).toHaveLength(1)
+
+    rerender(
+      <ViewportHarness hasNextPage={true} isFetchingNextPage={false} fetchNextPage={fetchNextPage} tailKey={2} />,
+    )
+    expect(FakeIntersectionObserver.instances).toHaveLength(2)
+    expect(FakeIntersectionObserver.instances[0]!.disconnected).toBe(true)
+    expect(FakeIntersectionObserver.instances[1]!.observed.has(screen.getByTestId('sentinel'))).toBe(true)
   })
 
   it('observes against the viewport with the default rootMargin when no root is passed', () => {

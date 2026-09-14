@@ -230,7 +230,7 @@ describe('snapshot: MyCommentsView data-loaded', () => {
     expect(html).toContain('Original thought')
   })
 
-  it('renders the load-more sentinel when hasMore is true', () => {
+  it('renders the row without the end-of-list copy when hasMore is true', () => {
     queryMocks.infinite = {
       ...queryMocks.infinite,
       data: {
@@ -240,8 +240,7 @@ describe('snapshot: MyCommentsView data-loaded', () => {
       isFetchingNextPage: false,
     }
     const html = stableHtml(renderInRouter(<MyCommentsView {...defaultProps} />, '/admin/me/comments'))
-    // hasNextPage → sentinel.
-    expect(html).toContain('class="h-1"')
+    expect(html).toContain('data-slot="my-comment-row"')
     expect(html).not.toContain('已加载全部评论')
   })
 })
