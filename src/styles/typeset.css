@@ -49,21 +49,37 @@
  * --typeset-mobile-scale (default 1.125): .typeset-comment keeps the
  * default; .typeset-post sets it to 1 — the scale-up made the article body
  * too large on phones.
+ *
+ * PRUNED (2026-09-14): the vendored blocks for elements that can never reach
+ * a .typeset surface were deleted — task lists, details/summary, kbd, dl/dt/dd,
+ * abbr, samp, `ol[type]` variants, `[data-not-typeset]` branches, the PT-era
+ * `.math`/`.math-display` forks, and the forced-colors code border (the
+ * inline-code pill already carries a border, and the override lost the cascade
+ * anyway). Reachability was checked against the sanitize allowlists
+ * (src/shared/sanitize/config.ts), the inkling node set, and the live content
+ * DB. Shiki token colors are NOT repeated here: the unlayered `pre.shiki`
+ * rules in tailwind.css always beat this layer. `.typeset-scroll` stays
+ * although nothing emits it yet — reserved for the planned vertical-writing
+ * (竖排) article mode.
+ *
+ * Base rules that duplicate a kobato-bridge declaration were trimmed to the
+ * surviving delta: the bridge applies to every element under .typeset
+ * (unguarded), while the base mega-rule is opt-out-guarded, so any base
+ * declaration the bridge re-specifies at equal (0,1,0) specificity is dead —
+ * the bridge wins the tie by source order.
  */
 @layer components {
   .typeset {
+    /* kobato has no --font-heading token: bare .typeset headings inherit the
+       body face; both presets pin --font-serif explicitly. */
     --typeset-font-body: inherit;
-    --typeset-font-heading: var(--font-heading);
-    --typeset-font-mono: var(--font-mono);
+    --typeset-font-heading: inherit;
+    --typeset-font-mono: var(--font-code);
     --typeset-size: 1em;
     --typeset-leading: 1.75;
     --typeset-flow: 1.25em;
     --typeset-mobile-scale: 1.125;
-  }
-}
 
-@layer components {
-  .typeset {
     font-family: var(--typeset-font-body);
     font-size: calc(var(--typeset-size) * var(--typeset-mobile-scale));
     line-height: var(--typeset-leading);
@@ -83,9 +99,7 @@
     *:not(
       :where(
         .not-typeset,
-        [data-not-typeset],
         .not-typeset *,
-        [data-not-typeset] *,
         .not-inkling-prose,
         .not-inkling-prose *,
         .inkling-blockquote-alt,
@@ -132,13 +146,10 @@
       color: var(--typeset-muted);
       margin-block-start: calc(var(--typeset-flow) / 0.875);
     }
+    /* h6: rhythm (line-height, margin) lives here; the look (plain small
+       heading, no uppercase) is the kobato bridge's. */
     &:where(h6) {
-      font-size: 0.8125em;
       line-height: 1.5;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--typeset-muted);
       margin-block-start: calc(var(--typeset-flow) / 0.8125);
     }
     /* Anchors. */
@@ -150,16 +161,12 @@
     &:where(h1 + *, h2 + *, h3 + *, h4 + *, h5 + *, h6 + *) {
       margin-block-start: 1em;
     }
-    &:where(:is(h1, h2, h3, h4) :is(code)) {
-      font-size: 0.9em;
-    }
 
     /* Links. */
     &:where(a) {
-      color: inherit;
+      /* color + decoration-color come from the kobato bridge (brand). */
       font-weight: 500;
       text-decoration-line: underline;
-      text-decoration-color: color-mix(in oklab, currentColor 30%, transparent);
     }
     &:where(a:hover) {
       text-decoration-color: currentColor;
@@ -177,24 +184,10 @@
     &:where(strong, b) {
       font-weight: 600;
     }
-    &:where(:is(h1, h2, h3, h4) :is(strong, b)) {
-      font-weight: 600;
-    }
+    /* Colors/backgrounds for mark, del/s come from the kobato bridge. */
     &:where(mark) {
-      background-color: color-mix(in oklab, oklch(0.86 0.17 95) 40%, transparent);
       color: inherit;
-      padding: 0.05em 0.15em;
-      border-radius: 0.2em;
-    }
-    &:where(abbr[title]) {
-      text-decoration-line: underline;
-      text-decoration-style: dotted;
-      text-underline-offset: 0.2em;
-      cursor: help;
-    }
-    &:where(del, s) {
-      color: var(--typeset-muted);
-      text-decoration-line: line-through;
+      padding-block: 0.05em;
     }
     &:where(sup, sub) {
       font-size: 0.75em;
@@ -210,7 +203,6 @@
     }
     &:where(sup a) {
       text-decoration-line: none;
-      font-weight: 500;
     }
 
     /* Lists. */
@@ -226,18 +218,6 @@
     &:where(ul ul ul) {
       list-style-type: square;
     }
-    &:where(ol[type='a' i]) {
-      list-style-type: lower-alpha;
-    }
-    &:where(ol[type='i' i]) {
-      list-style-type: lower-roman;
-    }
-    &:where(ol[type='A' s]) {
-      list-style-type: upper-alpha;
-    }
-    &:where(ol[type='I' s]) {
-      list-style-type: upper-roman;
-    }
     &:where(ul, ol) {
       margin-block-start: var(--typeset-flow);
       margin-block-end: 0;
@@ -250,74 +230,11 @@
     &:where(li > p, li > ul, li > ol) {
       margin-block-start: 0.5em;
     }
-    &:where(ul > li)::marker {
-      color: var(--typeset-muted);
-    }
-    &:where(ol > li)::marker {
-      color: var(--typeset-muted);
-    }
 
-    /* GFM task lists. */
-    &:where(ul.contains-task-list) {
-      list-style-type: none;
-      padding-inline-start: 0.25em;
-    }
-    &:where(li.task-list-item > input[type='checkbox']) {
-      margin-inline-end: 0.5em;
-      vertical-align: -0.1em;
-      accent-color: var(--color-primary, currentColor);
-    }
-
-    /* Disclosures. */
-    &:where(details) {
-      margin-block-start: var(--typeset-flow);
-      margin-block-end: 0;
-    }
-    &:where(summary) {
-      cursor: pointer;
-      font-weight: 500;
-    }
-    &:where(summary)::marker {
-      color: var(--typeset-muted);
-    }
-
-    /* Keyboard keys. */
-    &:where(kbd) {
-      font-family: inherit;
-      font-size: 0.85em;
-      font-weight: 500;
-      border: 1px solid var(--typeset-rule);
-      border-block-end-width: 2px;
-      border-radius: min(calc(var(--radius, 0.5em) * 0.6), 0.35em);
-      padding: 0.0625em 0.35em;
-    }
-
-    /* Definition lists. */
-    &:where(dl) {
-      margin-block-start: var(--typeset-flow);
-      margin-block-end: 0;
-    }
-    &:where(dt) {
-      font-weight: 500;
-      margin-block-start: 1em;
-    }
-    &:where(dt + dt) {
-      margin-block-start: 0.25em;
-    }
-    &:where(dd) {
-      margin-block-start: 0.25em;
-      margin-inline-start: 0;
-      padding-inline-start: 1em;
-      color: var(--typeset-muted);
-    }
-
-    /* Inline code. */
+    /* Inline code — font-family only; the pill visuals live in the kobato
+       bridge (its `code:not(pre *)` selector also covers card interiors). */
     &:where(:not(pre) > code) {
-      background-color: var(--color-muted, color-mix(in oklab, currentColor 8%, transparent));
       font-family: var(--typeset-font-mono);
-      font-size: 0.85em;
-      border-radius: min(calc(var(--radius, 0.5em) * 0.6), 0.35em);
-      padding: 0.125em 0.3em;
     }
 
     /* Code blocks. */
@@ -334,13 +251,6 @@
       margin-block-start: calc(var(--typeset-flow) / 0.875);
       margin-block-end: 0;
     }
-    &:where(pre code) {
-      background-color: transparent;
-      font-family: inherit;
-      font-size: inherit;
-      padding: 0;
-      border-radius: 0;
-    }
 
     /* Blockquote. */
     &:where(blockquote) {
@@ -351,10 +261,10 @@
       margin-inline: 0;
     }
 
-    /* Dividers. */
+    /* Dividers. The line color comes from the kobato bridge (var(--line)). */
     &:where(hr) {
       border: 0;
-      border-block-start: 1px solid var(--typeset-rule);
+      border-block-start: 1px solid;
       margin-block-start: calc(var(--typeset-flow) * 2.4);
       margin-block-end: 0;
     }
@@ -420,9 +330,11 @@
       margin-block-end: 0;
     }
 
-    /* Horizontal scroll for any wide block. Wrap it and the wrapper owns the
-       flow margin. Tables shrink to fit, so widen the table to make it scroll
-       instead of compress. */
+    /* Horizontal scroll wrapper for wide blocks. Wrap it and the wrapper owns
+       the flow margin. Tables shrink to fit, so widen the table to make it
+       scroll instead of compress. Nothing emits this class yet — kept for the
+       planned vertical-writing (竖排) article mode, whose long-form flow
+       scrolls horizontally. */
     &:where(.typeset-scroll) {
       overflow-x: auto;
       margin-block-start: var(--typeset-flow);
@@ -475,13 +387,6 @@
         break-after: avoid;
       }
     }
-
-    /* Forced colors strips the code background, so give it a border. */
-    @media (forced-colors: active) {
-      &:where(:not(pre) > code) {
-        border: 1px solid;
-      }
-    }
   }
 
   /* First child adds no space above. Last so it wins ties. */
@@ -489,9 +394,7 @@
     > :where(:first-child):not(
       :where(
         .not-typeset,
-        [data-not-typeset],
         .not-typeset *,
-        [data-not-typeset] *,
         .not-inkling-prose,
         .not-inkling-prose *,
         .inkling-blockquote-alt,
@@ -503,9 +406,7 @@
     > :where(:first-child):not(
       :where(
         .not-typeset,
-        [data-not-typeset],
         .not-typeset *,
-        [data-not-typeset] *,
         .not-inkling-prose,
         .not-inkling-prose *,
         .inkling-blockquote-alt,
@@ -518,15 +419,12 @@
       blockquote > :first-child,
       td > :first-child,
       th > :first-child,
-      dd > :first-child,
       figure > :first-child,
       figure > picture > img
     ):not(
       :where(
         .not-typeset,
-        [data-not-typeset],
         .not-typeset *,
-        [data-not-typeset] *,
         .not-inkling-prose,
         .not-inkling-prose *,
         .inkling-blockquote-alt,
@@ -541,10 +439,6 @@
 
 @layer components {
   /* ─── Shared kobato bridge (both presets, editor + render) ─────────── */
-
-  .typeset {
-    --typeset-font-mono: var(--font-code);
-  }
 
   /* inkling exportDOM bare tags — the retired PT_INLINE tokens as CSS. */
   .typeset :where(u) {
@@ -573,19 +467,15 @@
     color: var(--ink-1);
   }
 
-  /* typeset's h6 (uppercase, letter-spaced, muted) is a docs convention —
-     kobato's h6 is a plain small heading, matching the pre-typeset render. */
+  /* h6 keeps the docs-convention rhythm from the base but renders as a plain
+     small heading (no uppercase/letter-spacing), matching the pre-typeset
+     render. */
   .typeset :where(h6) {
     font-size: 1em;
     font-weight: 600;
     letter-spacing: normal;
     text-transform: none;
     color: var(--ink-1);
-  }
-
-  .typeset :where(dt) {
-    color: var(--ink-1);
-    font-weight: 600;
   }
 
   .typeset :where(ul > li)::marker {
@@ -623,8 +513,29 @@
     content: none;
   }
 
-  .typeset :where(samp) {
-    font-family: var(--font-code);
+  /* Code inside a pre resets to a plain block (the inline pill below must not
+     leak in — its :not(pre *) guard already excludes this case, this rule
+     pins the block layout). One shared reset for both presets; the shiki
+     token colors come from the unlayered global `pre.shiki` rules in
+     tailwind.css, which always win over this layer. */
+  .typeset :where(pre) > :where(code) {
+    display: block;
+    min-width: 100%;
+    width: max-content;
+    padding: 0 !important;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
+    box-decoration-break: unset;
+    -webkit-box-decoration-break: unset;
   }
 
   /* Blockquote: surface card with a brand-tinted left border (padding and
@@ -656,26 +567,24 @@
      chrome. The feed-only <code class="inkling-math-inline"> TeX fallback is
      styled by feed readers, not this sheet. */
 
-  /* KaTeX MathML cards — PT-era `.math`/`.math-display` (legacy rows) and
-     the inkling exportDOM `.inkling-math-card` wrapper share one look. */
-  .typeset :where(.math, .inkling-math-card) :where(math) {
+  /* KaTeX MathML cards — the inkling exportDOM `.inkling-math-card` wrapper.
+     (The PT-era `.math`/`.math-display` forks were dropped: the migration
+     regenerated every projection, no live row carries them.) */
+  .typeset :where(.inkling-math-card) :where(math) {
     max-width: none;
   }
 
-  .typeset :where(.math-display, .inkling-math-card) {
+  .typeset :where(.inkling-math-card) {
     max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
     padding-bottom: 0.125rem;
     -webkit-overflow-scrolling: touch;
     text-align: center;
-  }
-
-  .typeset :where(.inkling-math-card) {
     margin-block: 1.5rem;
   }
 
-  .typeset :where(.math-display, .inkling-math-card) :where(math[display='block']) {
+  .typeset :where(.inkling-math-card) :where(math[display='block']) {
     margin-inline: auto;
   }
 
@@ -851,32 +760,6 @@
     overflow-wrap: normal;
   }
 
-  .typeset-post :where(pre.shiki) {
-    color: var(--shiki-light);
-  }
-
-  .typeset-post :where(pre.shiki) :where(span) {
-    color: var(--shiki-light);
-  }
-
-  .typeset-post :where(pre) > :where(code) {
-    color: inherit;
-    background: transparent;
-    border: none;
-    padding: 0 !important;
-    margin: 0;
-    border-radius: 0;
-    font-size: inherit;
-    box-decoration-break: unset;
-    -webkit-box-decoration-break: unset;
-    display: block;
-    min-width: 100%;
-    width: max-content;
-    white-space: pre;
-    word-break: normal;
-    overflow-wrap: normal;
-  }
-
   .typeset-post :where(svg) {
     display: block;
     max-width: 100%;
@@ -976,33 +859,6 @@
     word-break: normal;
     overflow-wrap: normal;
     -webkit-overflow-scrolling: touch;
-  }
-
-  .typeset-comment :where(pre.shiki) {
-    color: var(--shiki-light);
-  }
-
-  .typeset-comment :where(pre.shiki) :where(span) {
-    color: var(--shiki-light);
-  }
-
-  .typeset-comment :where(pre) > :where(code) {
-    display: block;
-    min-width: 100%;
-    width: max-content;
-    font-size: inherit;
-    line-height: inherit;
-    color: inherit;
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-    box-decoration-break: unset;
-    -webkit-box-decoration-break: unset;
-    white-space: pre;
-    word-break: normal;
-    overflow-wrap: normal;
   }
 }
 

@@ -1386,7 +1386,7 @@ describe('contract: module and bundle boundaries', () => {
 
     expect(publicCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
     expect(tailwindCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
-    expect(typesetCss).toContain(':where(.math-display, .inkling-math-card)')
+    expect(typesetCss).toContain(':where(.inkling-math-card)')
     expect(typesetCss).toContain('overflow-x: auto')
   })
 
@@ -1426,8 +1426,8 @@ describe('contract: module and bundle boundaries', () => {
     expect(typesetCss).toContain('.footnotes, [data-footnotes]')
 
     // Presets exist and declare their font hooks explicitly — kobato has no
-    // --font-heading/--font-mono tokens, so typeset's defaults would
-    // silently fall back to inherit.
+    // --font-heading/--font-mono tokens; the base defaults therefore point at
+    // inherit / var(--font-code) and both presets pin --font-serif.
     for (const preset of ['typeset-post', 'typeset-comment']) {
       expect(typesetCss).toMatch(new RegExp(`\\.${preset}\\s*\\{`))
     }
