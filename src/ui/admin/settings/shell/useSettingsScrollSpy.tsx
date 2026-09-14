@@ -1,7 +1,26 @@
-import { type ReactNode, createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type FragmentInstance,
+  type ReactNode,
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+
+type SectionTarget = Element | FragmentInstance
+
+function getSectionRect(target: SectionTarget): DOMRect | null {
+  if ('observeUsing' in target) {
+    return target.getClientRects()[0] ?? null
+  }
+  return target.getBoundingClientRect()
+}
 
 interface ScrollSpyContextData {
-  updateSection: (id: string, element: HTMLDivElement) => void
+  updateSection: (id: string, target: SectionTarget) => void
   updateNav: (id: string, element: HTMLElement) => void
   currentSection: string | null
   scrollToSection: (id: string) => void
@@ -30,13 +49,16 @@ function getNavScroller(): HTMLElement | null {
   return document.getElementById('settings-nav-scroller')
 }
 
-function scrollToSectionElement(element: HTMLDivElement, smooth: boolean) {
+function scrollToSectionElement(target: SectionTarget, smooth: boolean) {
   const root = getContentScroller()
   if (!root) {
     return
   }
   const rootRect = root.getBoundingClientRect()
-  const elementRect = element.getBoundingClientRect()
+  const elementRect = getSectionRect(target)
+  if (!elementRect) {
+    return
+  }
   const top = root.scrollTop + elementRect.top - rootRect.top - SCROLL_MARGIN
   root.scrollTo({
     behavior: smooth ? 'smooth' : 'instant',
@@ -83,12 +105,15 @@ function scrollSidebarNav(navElement: HTMLElement, smooth: boolean) {
   }
 }
 
-function findClosestSection(sectionElements: Record<string, HTMLDivElement>, threshold: number): string | null {
+function findClosestSection(sectionElements: Record<string, SectionTarget>, threshold: number): string | null {
   let closest: string | null = null
   let minDistance = Infinity
 
-  for (const [id, element] of Object.entries(sectionElements)) {
-    const rect = element.getBoundingClientRect()
+  for (const [id, target] of Object.entries(sectionElements)) {
+    const rect = getSectionRect(target)
+    if (!rect) {
+      continue
+    }
     const distance = Math.abs(rect.top - threshold)
     if (distance < minDistance) {
       minDistance = distance
@@ -100,7 +125,7 @@ function findClosestSection(sectionElements: Record<string, HTMLDivElement>, thr
 }
 
 export function ScrollSpyProvider({ children }: { children: ReactNode }) {
-  const sectionElements = useRef<Record<string, HTMLDivElement>>({})
+  const sectionElements = useRef<Record<string, SectionTarget>>({})
   const navElements = useRef<Record<string, HTMLElement>>({})
 
   const [activeNav, setActiveNav] = useState<string | null>(null)
@@ -111,8 +136,8 @@ export function ScrollSpyProvider({ children }: { children: ReactNode }) {
     return activeNav ?? computedSection
   }, [activeNav, computedSection])
 
-  const updateSection = useCallback((id: string, element: HTMLDivElement) => {
-    sectionElements.current[id] = element
+  const updateSection = useCallback((id: string, target: SectionTarget) => {
+    sectionElements.current[id] = target
   }, [])
 
   const updateNav = useCallback((id: string, element: HTMLElement) => {
@@ -193,7 +218,7 @@ export function useScrollSpyContext() {
 
 export function useScrollSpy(id?: string) {
   const { updateSection } = useScrollSpyContext()
-  const ref = useRef<HTMLDivElement>(null)
+  const ref = useRef<FragmentInstance>(null)
 
   useEffect(() => {
     if (id && ref.current) {

@@ -1,4 +1,4 @@
-import { Children, useCallback, useEffect, useRef } from 'react'
+import { Children, Fragment, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
@@ -155,23 +155,32 @@ function SectionWrapper({
 }) {
   const { ref } = useScrollSpy(id)
   const { flushSection } = useSettingsFlushContext()
-  const sectionRef = useRef<HTMLDivElement>(null)
   // Only flush a "left the viewport" event after the section has ever been
   // visible — the initial mount starts off-screen below the fold.
   const hasBeenVisibleRef = useRef(false)
   const Icon = ICON_MAP[icon]
 
   useEffect(() => {
-    const el = sectionRef.current
-    if (!el) {
+    const fragment = ref.current
+    if (!fragment) {
       return
     }
     // Root is the content scroller — the panel is a fixed inset-0 container
     // with its own scroll context.
     const root = document.getElementById('settings-content-scroller')
+    // observeUsing reports per first-level child — the section counts as
+    // visible while ANY child intersects and flushes when none does.
+    const intersecting = new Set<Element>()
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            intersecting.add(entry.target)
+          } else {
+            intersecting.delete(entry.target)
+          }
+        }
+        if (intersecting.size > 0) {
           hasBeenVisibleRef.current = true
         } else if (hasBeenVisibleRef.current) {
           // Was visible, now fully out of view → the user scrolled away.
@@ -180,20 +189,18 @@ function SectionWrapper({
       },
       { root, threshold: 0 },
     )
-    observer.observe(el)
+    fragment.observeUsing(observer)
     return () => observer.disconnect()
-  }, [id, flushSection])
+  }, [id, flushSection, ref])
 
   return (
-    <div ref={sectionRef}>
-      <div ref={ref}>
-        <h3 className="flex items-center gap-2 font-semibold text-foreground">
-          {Icon && <Icon className="size-4" />}
-          {title}
-        </h3>
-        <div className="mt-4 flex flex-col gap-5">{children}</div>
-      </div>
-    </div>
+    <Fragment ref={ref}>
+      <h3 className="flex items-center gap-2 font-semibold text-foreground">
+        {Icon && <Icon className="size-4" />}
+        {title}
+      </h3>
+      <div className="mt-4 flex flex-col gap-5">{children}</div>
+    </Fragment>
   )
 }
 
