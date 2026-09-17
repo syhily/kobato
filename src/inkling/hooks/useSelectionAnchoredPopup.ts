@@ -19,6 +19,8 @@ interface UseSelectionAnchoredPopupOptions {
   aboveGap?: number
   /** 'fixed' (default): viewport coords, container-spanning width. 'absolute': parent-relative offsets at natural width. */
   positioning?: 'fixed' | 'absolute'
+  /** Absolute mode: the positioning parent's viewport-to-local scale (CSS zoom); forwarded to the seam. Defaults to 1. */
+  coordinateScale?: () => number
   /** Absolute mode: the unflipped popup sits below the anchor or at the anchor's top. */
   absoluteEdge?: 'below' | 'at-anchor'
   /** Absolute mode: 'measured' flips when below overflows the viewport and the popup fits above. */
@@ -38,6 +40,7 @@ export function useSelectionAnchoredPopup({
   containerRect,
   aboveGap,
   positioning = 'fixed',
+  coordinateScale,
   absoluteEdge,
   absoluteFlip,
 }: UseSelectionAnchoredPopupOptions) {
@@ -72,6 +75,7 @@ export function useSelectionAnchoredPopup({
         viewportHeight: window.innerHeight,
         aboveGap,
         positioning,
+        coordinateScale: coordinateScale?.(),
         absoluteEdge,
         absoluteFlip,
       })
@@ -83,7 +87,18 @@ export function useSelectionAnchoredPopup({
         popupElement.style.width = `${placement.width}px`
       }
     })
-  }, [editor, popupRef, anchor, containerRect, scrollContainer, aboveGap, positioning, absoluteEdge, absoluteFlip])
+  }, [
+    editor,
+    popupRef,
+    anchor,
+    containerRect,
+    scrollContainer,
+    aboveGap,
+    positioning,
+    coordinateScale,
+    absoluteEdge,
+    absoluteFlip,
+  ])
 
   React.useEffect(() => {
     updatePopupPosition()

@@ -159,4 +159,41 @@ describe('resolveAnchoredPopupPlacement — absolute mode', () => {
 
     expect(placement).toEqual({ top: 700 - 300 + 20, left: 0, flipped: false })
   })
+
+  // the page-editor canvas runs under `zoom: 0.625`: rects arrive zoom-scaled,
+  // the written parent-relative offsets must be un-scaled or the zoom applies twice
+  describe('coordinateScale (zoomed positioning parent)', () => {
+    const zoomed = { coordinateScale: 0.625 }
+
+    it('at-anchor un-scales the anchor offset', () => {
+      const placement = absolute({ absoluteEdge: 'at-anchor', anchorRect: rect(62.5, 0, 100, 20), ...zoomed })
+
+      expect(placement).toEqual({ top: 100, left: 0, flipped: false })
+    })
+
+    it('below un-scales the anchor offset and height', () => {
+      const placement = absolute({ absoluteEdge: 'below', anchorRect: rect(62.5, 0, 100, 12.5), ...zoomed })
+
+      expect(placement).toEqual({ top: 120, left: 0, flipped: false })
+    })
+
+    it('measured flip un-scales the bottom offset while judging overflow in viewport coordinates', () => {
+      // anchor bottom 520 + 300 = 820 > 800 overflows; 500 - 300 = 200 ≥ 0 fits above
+      const placement = absolute({
+        anchorRect: rect(500, 0, 100, 20),
+        viewportHeight: 800,
+        absoluteEdge: 'below',
+        absoluteFlip: 'measured',
+        ...zoomed,
+      })
+
+      expect(placement).toEqual({ bottom: 2000 / 0.625 - 500 / 0.625, left: 0, flipped: true })
+    })
+
+    it('falls back to 1 for a non-positive scale', () => {
+      const placement = absolute({ absoluteEdge: 'at-anchor', anchorRect: rect(100, 0, 100, 20), coordinateScale: 0 })
+
+      expect(placement).toEqual({ top: 100, left: 0, flipped: false })
+    })
+  })
 })

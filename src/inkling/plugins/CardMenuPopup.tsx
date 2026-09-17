@@ -63,22 +63,34 @@ export interface CardMenuPopupProps {
 
 // the button chrome sits at its paragraph's top, parent-relative — the
 // anchored-popup seam's absolute at-anchor policy
-function getTopPosition(elem: Element): number {
-  const parent = elem.parentElement
-  if (!parent) {
-    return 0
-  }
+function getTopPosition(elem: Element, positioningParent: HTMLElement): number {
   const placement = resolveAnchoredPopupPlacement({
     positioning: 'absolute',
     absoluteEdge: 'at-anchor',
     anchorRect: elem.getBoundingClientRect(),
-    containerRect: parent.getBoundingClientRect(),
+    containerRect: positioningParent.getBoundingClientRect(),
+    coordinateScale: resolveCoordinateScale(positioningParent),
     popupHeight: 0,
     scrollTop: 0,
     scrollHeight: 0,
     viewportHeight: 0,
   })
   return placement.top ?? 0
+}
+
+/**
+ * The positioning parent's viewport-to-local scale. getBoundingClientRect
+ * reflects CSS `zoom` (the page-editor canvas runs at 0.625) while offset*
+ * lengths stay in the element's unscaled local space, so their ratio IS the
+ * effective zoom — wherever in the ancestor chain it is declared. 1 when the
+ * parent is unmeasurable (display:none).
+ */
+function resolveCoordinateScale(positioningParent: HTMLElement): number {
+  const localWidth = positioningParent.offsetWidth
+  if (localWidth <= 0) {
+    return 1
+  }
+  return positioningParent.getBoundingClientRect().width / localWidth
 }
 
 function getElementRange(elem: Element): Range {
@@ -117,9 +129,7 @@ export function CardMenuPopup({
   // session only borrows it while the menu is open.
   const [buttonAnchor, setButtonAnchor] = React.useState<{ top: number; range: Range } | null>(null)
 
-  // selection anchor: the trigger paragraph (the selection's closest <p>);
-  // the positioning parent is that paragraph's parent — the seam resolves
-  // the below/above placement from those rects
+  // selection anchor: the trigger paragraph (the selection's closest <p>)
   const getSelectionElement = React.useCallback((): HTMLElement | null => {
     const anchorNode = window.getSelection()?.anchorNode
 
@@ -134,6 +144,27 @@ export function CardMenuPopup({
     return anchorNode instanceof HTMLElement ? anchorNode : null
   }, [])
 
+  // the popup containers position absolutely against the `.inkling-lexical`
+  // wrapper — its `position: relative` is their containing block. Resolve it
+  // from the mounted popup's offsetParent when possible (ground truth); the
+  // editor root's closest() is the pre-mount fallback (the button chrome's
+  // top is computed from a verdict before the popup mounts), and the anchor's
+  // own parent covers wrapper-less compositions (useDefaultClasses: false).
+  const getPositioningParent = React.useCallback(
+    (anchorFallback?: Element | null): HTMLElement | null => {
+      const mountedParent = containerRef.current?.offsetParent
+      if (mountedParent instanceof HTMLElement) {
+        return mountedParent
+      }
+      const wrapper = editor.getRootElement()?.closest('.inkling-lexical')
+      if (wrapper instanceof HTMLElement) {
+        return wrapper
+      }
+      return anchorFallback instanceof HTMLElement ? anchorFallback : null
+    },
+    [editor, containerRef],
+  )
+
   const updatePopupPosition = useSelectionAnchoredPopup({
     editor,
     popupRef: containerRef,
@@ -144,7 +175,13 @@ export function CardMenuPopup({
     // verdict) — the null anchor short-circuits every positioning pass
     anchor: () => (anchorPolicy === 'selection' ? (getSelectionElement()?.getBoundingClientRect() ?? null) : null),
     containerRect: () =>
-      anchorPolicy === 'selection' ? (getSelectionElement()?.parentElement?.getBoundingClientRect() ?? null) : null,
+      anchorPolicy === 'selection'
+        ? (getPositioningParent(getSelectionElement()?.parentElement)?.getBoundingClientRect() ?? null)
+        : null,
+    coordinateScale: () => {
+      const parent = getPositioningParent(getSelectionElement()?.parentElement)
+      return parent ? resolveCoordinateScale(parent) : 1
+    },
   })
 
   // the popup mounts with the menu — request the positioning pass on open
@@ -178,9 +215,16 @@ export function CardMenuPopup({
 
   // --- button anchor chrome (button policy only) -----------------------------
 
-  const showButton = React.useCallback((paragraph: Element) => {
-    setButtonAnchor({ top: getTopPosition(paragraph), range: getElementRange(paragraph) })
-  }, [])
+  const showButton = React.useCallback(
+    (paragraph: Element) => {
+      const positioningParent = getPositioningParent(paragraph.parentElement)
+      if (!positioningParent) {
+        return
+      }
+      setButtonAnchor({ top: getTopPosition(paragraph, positioningParent), range: getElementRange(paragraph) })
+    },
+    [getPositioningParent],
+  )
 
   const hideButton = React.useCallback(() => {
     setButtonAnchor(null)

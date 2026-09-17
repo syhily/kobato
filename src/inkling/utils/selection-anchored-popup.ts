@@ -75,6 +75,14 @@ export interface AnchoredPopupLayoutInput {
    * `absoluteEdge`/`absoluteFlip` policies.
    */
   positioning?: 'fixed' | 'absolute'
+  /**
+   * Absolute mode only: the positioning parent's viewport-to-local scale
+   * (CSS `zoom`). Rects arrive in viewport (scaled) coordinates, but the
+   * written parent-relative offsets live in the parent's unscaled local
+   * coordinate space — under a zoomed canvas they must be un-scaled, or the
+   * zoom applies twice. Defaults to 1.
+   */
+  coordinateScale?: number
   /** Absolute mode: the unflipped popup sits below the anchor (slash menu) or at the anchor's top (plus button). Defaults to 'below'. */
   absoluteEdge?: 'below' | 'at-anchor'
   /**
@@ -103,7 +111,9 @@ export interface AnchoredPopupPlacement {
  * position plus the max-height budget would overflow the scroll container.
  * Absolute mode: the parent-relative offset named by the edge policy, with
  * the measured flip placing the popup above the anchor only when the below
- * position overflows the viewport and the popup fits above.
+ * position overflows the viewport and the popup fits above. Absolute-mode
+ * offsets are un-scaled by `coordinateScale` (the positioning parent's CSS
+ * zoom); the flip decision itself stays in viewport coordinates.
  */
 export function resolveAnchoredPopupPlacement({
   anchorRect,
@@ -115,11 +125,13 @@ export function resolveAnchoredPopupPlacement({
   gap,
   aboveGap,
   positioning = 'fixed',
+  coordinateScale,
   absoluteEdge = 'below',
   absoluteFlip = 'never',
 }: AnchoredPopupLayoutInput): AnchoredPopupPlacement {
   if (positioning === 'absolute') {
-    const anchorTop = anchorRect.top - containerRect.top
+    const scale = coordinateScale && coordinateScale > 0 ? coordinateScale : 1
+    const anchorTop = (anchorRect.top - containerRect.top) / scale
     if (absoluteEdge === 'at-anchor') {
       return { top: anchorTop, left: 0, flipped: false }
     }
@@ -136,10 +148,10 @@ export function resolveAnchoredPopupPlacement({
         requireFitAbove: true,
       })
       if (fitted.flipped) {
-        return { bottom: containerRect.height - anchorTop, left: 0, flipped: true }
+        return { bottom: containerRect.height / scale - anchorTop, left: 0, flipped: true }
       }
     }
-    return { top: anchorTop + anchorRect.height, left: 0, flipped: false }
+    return { top: anchorTop + anchorRect.height / scale, left: 0, flipped: false }
   }
 
   const belowGap = gap ?? POPUP_VERTICAL_GAP
