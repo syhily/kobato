@@ -78,6 +78,13 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
                 <FileTextIcon />
                 <NavMenuItem.Label>页面管理</NavMenuItem.Label>
               </NavMenuItem.Link>
+              <NavMenuItem.Link
+                to="/editor/page/new"
+                aria-label="新建页面"
+                className="absolute top-1/2 right-1 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-xl p-0 text-sidebar-foreground opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100"
+              >
+                <PlusIcon className="size-4" />
+              </NavMenuItem.Link>
             </NavMenuItem>
           )}
 
