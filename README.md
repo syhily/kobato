@@ -78,17 +78,18 @@ and are **written back into the file** — env is the injection mechanism,
 the file converges to the effective configuration. Variable names are the
 nested config path joined with a double underscore:
 
-| Variable                     | Config path                 | Description                                                           |
-| ---------------------------- | --------------------------- | --------------------------------------------------------------------- |
-| `storage__data`              | `storage.data`              | Root data directory for the databases, fonts, uploads, and MaxMind DB |
-| `storage__database`          | `storage.database`          | SQLite content database file, default `<data>/kobato.db`              |
-| `storage__analyticsDatabase` | `storage.analyticsDatabase` | DuckDB analytics sidecar file, default `<data>/analytics.duckdb`      |
-| `security__sessionSecret`    | `security.sessionSecret`    | HMAC secret for cookies. Generate with `openssl rand -hex 32`         |
-| `security__encryptionKey`    | `security.encryptionKey`    | AES-256-GCM key for encrypting secrets in the database                |
-| `server__host`               | `server.host`               | Listen address, default `0.0.0.0`                                     |
-| `server__port`               | `server.port`               | Listen port, default `4321`                                           |
-| `storage__defaultFont`       | `storage.defaultFont`       | Optional fallback font file copied into `<data>/fonts`                |
-| `server__loggingLevel`       | `server.loggingLevel`       | `debug` / `info` / `warn` / `error` / `silent`                        |
+| Variable                     | Config path                 | Description                                                                   |
+| ---------------------------- | --------------------------- | ----------------------------------------------------------------------------- |
+| `storage__data`              | `storage.data`              | Root data directory for the databases, fonts, uploads, and MaxMind DB         |
+| `storage__database`          | `storage.database`          | SQLite content database file, default `<data>/kobato.db`                      |
+| `storage__analyticsDatabase` | `storage.analyticsDatabase` | DuckDB analytics sidecar file, default `<data>/analytics.duckdb`              |
+| `security__sessionSecret`    | `security.sessionSecret`    | HMAC secret for cookies. Generate with `openssl rand -hex 32`                 |
+| `security__encryptionKey`    | `security.encryptionKey`    | AES-256-GCM key for encrypting secrets in the database                        |
+| `security__trustedProxies`   | `security.trustedProxies`   | Comma-separated proxy IPs / IPv4 CIDRs trusted to vouch for forwarded headers |
+| `server__host`               | `server.host`               | Listen address, default `0.0.0.0`                                             |
+| `server__port`               | `server.port`               | Listen port, default `4321`                                                   |
+| `storage__defaultFont`       | `storage.defaultFont`       | Optional fallback font file copied into `<data>/fonts`                        |
+| `server__loggingLevel`       | `server.loggingLevel`       | `debug` / `info` / `warn` / `error` / `silent`                                |
 
 See `kobato.config.example.json` for the file shape.
 

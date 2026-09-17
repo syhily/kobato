@@ -6,7 +6,8 @@
   },
   "security": {
     "sessionSecret": "",
-    "encryptionKey": ""
+    "encryptionKey": "",
+    "trustedProxies": []
   },
   "storage": {
     "data": "./data",

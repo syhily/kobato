@@ -325,6 +325,55 @@ describe('infra/config — loadServerConfig', () => {
     expect(config.security.sessionSecret).toEqual(['a'.repeat(32), 'b'.repeat(40)])
   })
 
+  it('parses comma-separated trustedProxies from the env', () => {
+    stubRequiredEnv()
+    vi.stubEnv('security__trustedProxies', '172.18.0.0/16, 10.0.0.7')
+
+    const config = loadServerConfig()
+
+    expect(config.security.trustedProxies).toEqual(['172.18.0.0/16', '10.0.0.7'])
+  })
+
+  it('defaults trustedProxies to an empty list when unset', () => {
+    stubRequiredEnv()
+
+    expect(loadServerConfig().security.trustedProxies).toEqual([])
+  })
+
+  it('accepts the array form of trustedProxies in the config file', () => {
+    const dir = makeTmpDir()
+    const path = configPathIn(dir)
+    writeConfig(path, {
+      security: {
+        sessionSecret: 'a-secret-that-is-at-least-32-characters-long',
+        encryptionKey: 'an-encryption-key-at-least-32-chars-long',
+        trustedProxies: ['172.18.0.0/16'],
+      },
+      storage: { data: '/tmp/kobato-data', database: '/tmp/kobato.db' },
+    })
+    withConfigArg(path)
+
+    expect(loadServerConfig().security.trustedProxies).toEqual(['172.18.0.0/16'])
+  })
+
+  it('rejects a trustedProxies entry that is neither an IP nor an IPv4 CIDR', () => {
+    stubRequiredEnv()
+    vi.stubEnv('security__trustedProxies', '172.18.0.0/33')
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
+    expect(() => loadServerConfig()).toThrow('process.exit called')
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('security.trustedProxies'))
+  })
+
+  it('rejects an IPv6 CIDR in trustedProxies (v6 proxies match exactly)', () => {
+    stubRequiredEnv()
+    vi.stubEnv('security__trustedProxies', 'fd00::/64')
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
+    expect(() => loadServerConfig()).toThrow('process.exit called')
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('security.trustedProxies'))
+  })
+
   it('treats empty-string optional values as unset (an auto-created file boots)', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)

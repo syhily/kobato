@@ -104,7 +104,7 @@ describe('requestContextMiddleware', () => {
     const env = { incoming: { socket: { remotePort: 43210 } } }
     const res = await app.request('/', { headers: sessionCookie }, env)
     expect(res.status).toBe(200)
-    expect(getClientAddress).toHaveBeenCalledWith(expect.any(Request), 'port:43210')
+    expect(getClientAddress).toHaveBeenCalledWith(expect.any(Request), 'port:43210', expect.any(Array))
   })
 
   it('leaves the direct peer undefined when the socket reports neither address nor port (Unix socket)', async () => {
@@ -112,7 +112,7 @@ describe('requestContextMiddleware', () => {
     app.get('/', (c) => c.json({ ok: true }))
     const res = await app.request('/', { headers: sessionCookie }, { incoming: { socket: {} } })
     expect(res.status).toBe(200)
-    expect(getClientAddress).toHaveBeenCalledWith(expect.any(Request), undefined)
+    expect(getClientAddress).toHaveBeenCalledWith(expect.any(Request), undefined, expect.any(Array))
   })
 
   it('sets Set-Cookie when session resolution is dirty', async () => {

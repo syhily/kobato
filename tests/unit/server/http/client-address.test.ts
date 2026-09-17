@@ -89,4 +89,24 @@ describe('server/http/utils/client-address — getClientAddress', () => {
     const req = buildRequest({ 'x-real-ip': '198.51.100.40' })
     expect(getClientAddress(req, '127.1.2.3')).toBe('198.51.100.40')
   })
+
+  it('trusts proxy headers when the direct peer matches a trusted proxy CIDR', () => {
+    const req = buildRequest({ 'x-forwarded-for': '198.51.100.50' })
+    expect(getClientAddress(req, '172.18.0.2', ['172.18.0.0/16'])).toBe('198.51.100.50')
+  })
+
+  it('trusts proxy headers when the direct peer exactly matches a trusted proxy entry', () => {
+    const req = buildRequest({ 'x-real-ip': '198.51.100.51' })
+    expect(getClientAddress(req, 'fd00::5', ['fd00::5'])).toBe('198.51.100.51')
+  })
+
+  it('ignores forged proxy headers from a peer outside the trusted list', () => {
+    const req = buildRequest({ 'x-forwarded-for': '198.51.100.52' })
+    expect(getClientAddress(req, '172.19.0.2', ['172.18.0.0/16'])).toBe('172.19.0.2')
+  })
+
+  it('keeps loopback trusted with an empty trusted proxy list (the default)', () => {
+    const req = buildRequest({ 'x-real-ip': '198.51.100.53' })
+    expect(getClientAddress(req, '127.0.0.1', [])).toBe('198.51.100.53')
+  })
 })

@@ -1,17 +1,11 @@
 /**
  * Proxy-aware client IP extraction: proxy headers are trusted ONLY from a
- * loopback direct peer, else the direct IP verbatim; no direct IP → 'unknown'
- * (non-loopback, so proxy headers stay untrusted).
+ * loopback direct peer or a configured trusted proxy
+ * (`security.trustedProxies`), else the direct IP verbatim; no direct IP →
+ * 'unknown' (non-loopback, so proxy headers stay untrusted).
  */
 
-const IPV4_RE = /^(?:(?:25[0-5]|2[0-4]\d|1?\d{1,2})\.){3}(?:25[0-5]|2[0-4]\d|1?\d{1,2})$/
-
-const IPV6_RE =
-  /^(?:(?:[\da-fA-F]{1,4}:){7}[\da-fA-F]{1,4}|(?:[\da-fA-F]{1,4}:){1,7}:|(?:[\da-fA-F]{1,4}:){1,6}:[\da-fA-F]{1,4}|(?:[\da-fA-F]{1,4}:){1,5}(?::[\da-fA-F]{1,4}){1,2}|(?:[\da-fA-F]{1,4}:){1,4}(?::[\da-fA-F]{1,4}){1,3}|(?:[\da-fA-F]{1,4}:){1,3}(?::[\da-fA-F]{1,4}){1,4}|(?:[\da-fA-F]{1,4}:){1,2}(?::[\da-fA-F]{1,4}){1,5}|[\da-fA-F]{1,4}:(?::[\da-fA-F]{1,4}){1,6}|:(?:(?::[\da-fA-F]{1,4}){1,7}|:)|fe80:(?::[\da-fA-F]{0,4}){0,4}%[\da-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|2[0-4]\d|1?\d{1,2})\.){3}(?:25[0-5]|2[0-4]\d|1?\d{1,2})|[\da-fA-F]{1,4}:(?::[\da-fA-F]{1,4}){1,4})$/
-
-function isValidIp(ip: string): boolean {
-  return IPV4_RE.test(ip) || IPV6_RE.test(ip)
-}
+import { isValidIp, matchesTrustedProxy } from '@/server/infra/ip-match'
 
 function sanitizeIp(raw: string): string | null {
   const trimmed = raw.trim()
@@ -31,15 +25,16 @@ function isLoopback(ip: string): boolean {
   return false
 }
 
-export function getClientAddress(request: Request, directIp?: string): string {
+export function getClientAddress(request: Request, directIp?: string, trustedProxies: readonly string[] = []): string {
   // Unknown direct peer must NOT become loopback — that would trust spoofed proxy headers (P0-5).
   if (directIp === undefined) {
     return 'unknown'
   }
   const base = directIp
 
-  // Only a localhost direct peer may vouch for proxy headers — any remote client can forge them.
-  if (!isLoopback(base)) {
+  // Only a localhost or configured trusted-proxy peer may vouch for proxy
+  // headers — any other remote client can forge them.
+  if (!isLoopback(base) && !matchesTrustedProxy(base, trustedProxies)) {
     return base
   }
 

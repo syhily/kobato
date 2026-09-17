@@ -10,6 +10,7 @@ import process from 'node:process'
 import { z } from 'zod'
 
 import { parseConfigArg } from '@/server/infra/config-arg'
+import { isValidTrustedProxyEntry } from '@/server/infra/ip-match'
 import { isSea } from '@/server/infra/sea'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -54,6 +55,31 @@ export const CONFIG_TABLE = [
         message: 'encryptionKey is too weak (needs 10+ distinct characters) — generate one with: openssl rand -hex 32',
       }),
     fileDefault: '',
+  },
+  {
+    path: ['security', 'trustedProxies'],
+    // Comma-separated like sessionSecret; each entry is an exact IP or an
+    // IPv4 CIDR (e.g. a Docker/Traefik overlay subnet). Empty → only
+    // loopback peers may vouch for proxy headers (the pre-existing behavior).
+    schema: z
+      .union([
+        z.string().transform((val) =>
+          val
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0),
+        ),
+        z.array(z.string()),
+      ])
+      .pipe(
+        z.array(
+          z.string().refine(isValidTrustedProxyEntry, {
+            message: 'must be an IP address or an IPv4 CIDR (e.g. 172.18.0.0/16)',
+          }),
+        ),
+      )
+      .default([]),
+    fileDefault: [],
   },
   { path: ['storage', 'data'], schema: z.string().min(1), fileDefault: './data' },
   {
@@ -417,6 +443,8 @@ export interface ServerConfig {
     /** Cookie-signing secrets for the session storage (rotatable, comma-separated in the file). */
     sessionSecret: string[]
     encryptionKey: string
+    /** Direct peers allowed to vouch for proxy headers: exact IPs or IPv4 CIDRs (e.g. the overlay subnet). */
+    trustedProxies: string[]
   }
   storage: {
     data: string

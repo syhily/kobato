@@ -18,6 +18,7 @@ import { commitSessionWithMaxAge, SESSION_COOKIE_NAME } from '@/server/domains/a
 import { isExempt as isCookieExemptPath } from '@/server/http/middlewares/visitor-cookie'
 import { getClientAddress } from '@/server/http/utils/client-address'
 import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
+import { serverConfig } from '@/server/infra/config'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
@@ -76,7 +77,7 @@ export async function deriveRequestContext(input: {
   const requestContext: RequestContext = {
     session: sessionCtx.session,
     viewer: sessionCtx.user ?? null,
-    clientAddress: getClientAddress(request, input.directRemoteAddress),
+    clientAddress: getClientAddress(request, input.directRemoteAddress, serverConfig.security.trustedProxies),
     url: normalizeDocumentUrl(rawUrl),
     requestFacts: extractRequestFacts(request),
     db,
