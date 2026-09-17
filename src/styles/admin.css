@@ -11,9 +11,11 @@
 /* Cascade-layer order: the inkling editor stylesheet (imported by
    PageBodyEditor's route chunk into `layer(inkling)`) must sit BELOW
    Tailwind's utilities so kobato's host-card chrome utilities beat inkling's
-   scoped preflight. This bare statement pins the order no matter when the
-   editor chunk's stylesheet loads. */
-@layer inkling, theme, base, components, utilities;
+   scoped preflight — but ABOVE `base`: kobato's preflight zeroes padding/
+   margin globally, and with inkling below it the package's own utilities
+   (py-[.6rem] on card-menu items, …) lost to the reset. This bare statement
+   pins the order no matter when the editor chunk's stylesheet loads. */
+@layer theme, base, inkling, components, utilities;
 @import 'tailwindcss' source(none);
 @import './tailwind.css';
 @import './typeset.css';

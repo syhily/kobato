@@ -7,7 +7,8 @@
  *
  * Same layering contract as `inkling-editor.css`: the package stylesheet is
  * forced into the `inkling` cascade layer, pinned BELOW Tailwind's
- * `utilities` by the bare `@layer` ordering statements at the top of BOTH
+ * `utilities` but ABOVE `base` by the bare `@layer` ordering statements at
+ * the top of BOTH
  * entries (`public.css` + `admin.css` — the comment editor renders on both
  * sides). Host rules below are deliberately UNLAYERED.
  *

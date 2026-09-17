@@ -12,10 +12,12 @@
  */
 /* Cascade-layer order: the inkling comment-editor stylesheet (imported by
    CommentBodyEditor's lazy chunk into `layer(inkling)`) must sit BELOW
-   Tailwind's utilities so host utilities beat inkling's scoped preflight.
+   Tailwind's utilities so host utilities beat inkling's scoped preflight —
+   but ABOVE `base`, or the host preflight's padding/margin reset beats the
+   package's own utilities (same trick as `admin.css`).
    This bare statement pins the order no matter when that chunk's stylesheet
    loads — admin.css carries the same statement for its side. */
-@layer inkling, theme, base, components, utilities;
+@layer theme, base, inkling, components, utilities;
 @import 'tailwindcss' source(none);
 @import './tailwind.css';
 @import './typeset.css';
