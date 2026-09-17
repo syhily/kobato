@@ -113,50 +113,7 @@ pnpm run test:snaps
 
 ## Deployment
 
-### Docker Compose (recommended)
-
-The root `docker-compose.yml` runs the app as a single container — the
-SQLite content database and the DuckDB analytics sidecar are embedded
-files on the `kobato_data` volume, so there is no database service.
-
-Launch with randomly generated secrets:
-
-```bash
-SESSION_SECRET=$(openssl rand -hex 32) \
-ENCRYPTION_KEY=$(openssl rand -hex 32) \
-docker compose up -d
-```
-
-Optional overrides (compose forwards them to the app env; they are written
-into `/etc/kobato/config.json` on first boot and persist in the
-`kobato_config` volume):
-
-- `HOST` — default `0.0.0.0`
-- `PORT` — default `4321`
-- `LOG_LEVEL` — default `info`
-
-Migrations run automatically at boot. Backups copy the content database
-file (`/data/kobato.db`) — the admin console's backup job packs both
-database files (content + the analytics sidecar) into a single
-`.tar.gz` archive. Legacy content-only backups stay restorable.
-
-### Build your own image
-
-Use the included [`Dockerfile`](Dockerfile) to build locally:
-
-```bash
-docker build -t kobato .
-docker run -p 4321:4321 \
-  -e security__sessionSecret=... \
-  -e security__encryptionKey=... \
-  -v kobato_data:/data \
-  -v kobato_config:/etc/kobato \
-  kobato
-```
-
-### SEA binary (bare metal)
-
-Every release also ships a self-contained single executable — no Node.js
+Every release ships a self-contained single executable — no Node.js
 runtime, no `node_modules`, no database server. The server bundle, client
 assets, and database migrations are embedded in the binary; the native
 packages (sharp, canvas, DuckDB) are extracted to a cache directory on
@@ -181,7 +138,9 @@ into the file. `storage.data` defaults to `./data` relative to the working
 directory, so set it explicitly for a system install. The natives cache
 lands in `$XDG_CACHE_HOME/kobato` (override with `KOBATO_CACHE_DIR`).
 Database migrations run automatically at boot; on first boot, open
-`/admin/setup`.
+`/admin/setup`. The admin console's backup job packs both database files
+(content + the analytics sidecar) into a single `.tar.gz` archive; legacy
+content-only backups stay restorable.
 
 A minimal systemd unit:
 
@@ -208,13 +167,7 @@ WantedBy=multi-user.target
 The binary can update itself: in the admin console, open the version
 dialog → 检查更新 → 立即更新. It downloads the release asset for the current
 platform, verifies the sha256, swaps the executable in place (the previous
-one is kept as `kobato.bak` for manual rollback), and restarts. Self-update
-is intentionally unavailable inside Docker — upgrade containers by pulling
-a new image instead.
-
-### Zeabur
-
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/TK7XLK?referralCode=syhily)
+one is kept as `kobato.bak` for manual rollback), and restarts.
 
 ## Scripts
 

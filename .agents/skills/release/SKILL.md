@@ -80,7 +80,7 @@ Now execute the full publish sequence automatically:
 6. `node scripts/release.ts tag --notes-file /tmp/kobato-release-notes.md` — creates git tag and GitHub release
 7. `git checkout develop`
 8. `git merge main --ff-only` — sync main back to develop
-9. `node scripts/release.ts prepare-next $next_version` — sets develop to `$next_version` and docker-compose to `latest`
+9. `node scripts/release.ts prepare-next $next_version` — sets develop to `$next_version`
 10. `git push origin develop`
 
 After all steps complete, report the release URL and the new development version.

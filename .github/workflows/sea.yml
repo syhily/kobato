@@ -8,7 +8,7 @@ on:
     # the tag and then creates the GitHub release as a DRAFT, and GitHub
     # fires NO workflow events for draft releases — a `release:` trigger
     # alone leaves the whole chain dead (the draft never publishes, no
-    # assets upload, no semver image builds).
+    # assets upload).
     tags: ['*']
   pull_request:
     branches: [main, develop]
@@ -17,7 +17,7 @@ on:
     # in the UI); the automated flow rides the tag push above.
     types: [created]
 
-# Mirror docker.yml: never cancel — a release build must run to completion.
+# Never cancel — a release build must run to completion.
 concurrency:
   group: sea-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -229,8 +229,8 @@ jobs:
   # tag, then creates the release as a DRAFT) and non-draft release events
   # (manual) — in a separate job so the elevated contents:write token
   # never reaches the build matrix. The publish step at the end flips the
-  # draft public only after every asset is attached; that `published`
-  # event is what triggers docker.yml's semver build.
+  # draft public only after every asset is attached, so users can never
+  # see a release with missing assets.
   release-upload:
     name: upload release assets
     if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))

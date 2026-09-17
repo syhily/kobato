@@ -1,12 +1,12 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Release-chain acceptance contract (D-1 / P0-1): the flow rides on
-// tag push → draft publish → `published` event; these tests pin each
-// handoff as text so a re-break fails here, not during a release.
+// Release-chain acceptance contract (D-1 / P0-1): the flow is a single
+// chain — tag push → sea.yml build matrix → release-upload — ending with
+// the draft flipping public. These tests pin each handoff as text so a
+// re-break fails here, not during a release.
 
 const sea = readFileSync('.github/workflows/sea.yml', 'utf-8')
-const docker = readFileSync('.github/workflows/docker.yml', 'utf-8')
 const releaseTs = readFileSync('scripts/release.ts', 'utf-8')
 
 describe('release chain: the draft-release flow stays triggerable', () => {
@@ -61,15 +61,17 @@ describe('release chain: the draft-release flow stays triggerable', () => {
     expect(sea).toMatch(/gh release upload "\$\{\{ github\.ref_name \}\}"/)
   })
 
-  it('docker.yml builds the semver image on the `published` event the upload job produces', () => {
-    const onBlock = docker.split('jobs:')[0]
-    expect(onBlock).toMatch(/release:[\s\S]*types: \[[^\]]*\bpublished\b/)
-    // The release commit writes these semver tags into docker-compose.yml — without them the compose pull breaks.
-    expect(docker).toMatch(/type=semver,pattern=\{\{version\}\}/)
-    expect(releaseTs).toMatch(/ghcr\.io\/syhily\/kobato:\$\{version\}/)
-  })
-
-  it('docker.yml keeps the draft guard (a discarded draft must not leave semver tags behind)', () => {
-    expect(docker).toMatch(/if: \$\{\{ !github\.event\.release\.draft \}\}/)
+  it('no workflow consumes the `published` release event — the chain ends at release-upload (M2: the ghcr chain is gone)', () => {
+    // The retired docker.yml rode `release: [published]`; a workflow
+    // re-adding that trigger silently forks the release chain again.
+    for (const file of readdirSync('.github/workflows')) {
+      if (!file.endsWith('.yml') && !file.endsWith('.yaml')) {
+        continue
+      }
+      const workflow = readFileSync(`.github/workflows/${file}`, 'utf-8')
+      expect(workflow, `${file} must not trigger on release published`).not.toMatch(
+        /release:[\s\S]*?types: \[[^\]]*\bpublished\b/,
+      )
+    }
   })
 })

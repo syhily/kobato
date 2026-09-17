@@ -50,9 +50,7 @@
     "test:it": "vitest run --project it",
     "test:snaps": "vitest run --project snaps",
     "test:unit": "vitest run --project unit",
-    "type": "react-router typegen && tsc && tsc -p tests/inkling/tsconfig.json",
-    "zeabur:login": "pnpx zeabur@latest auth login",
-    "zeabur:publish": "pnpx zeabur@latest template update -c TK7XLK -f zeabur-template.yml"
+    "type": "react-router typegen && tsc && tsc -p tests/inkling/tsconfig.json"
   },
   "dependencies": {
     "@duckdb/node-api": "catalog:",

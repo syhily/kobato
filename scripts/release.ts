@@ -66,7 +66,6 @@ function cmdBump(version: string): void {
 
   const pkgPath = 'package.json'
   const lockPath = 'pnpm-lock.yaml'
-  const composePath = 'docker-compose.yml'
 
   const pkg = readJson(pkgPath)
   if (!isRecord(pkg)) {
@@ -76,13 +75,7 @@ function cmdBump(version: string): void {
   pkg.version = version
   writeJson(pkgPath, pkg)
 
-  if (existsSync(resolve(ROOT, composePath))) {
-    let compose = readFileSync(resolve(ROOT, composePath), 'utf-8')
-    compose = compose.replace(/ghcr\.io\/syhily\/kobato:[^\s]+/, `ghcr.io/syhily/kobato:${version}`)
-    writeFileSync(resolve(ROOT, composePath), compose)
-  }
-
-  run(`git add ${pkgPath} ${lockPath} ${composePath}`)
+  run(`git add ${pkgPath} ${lockPath}`)
   run(`git commit -m "build: release ${version}"`)
 
   process.stdout.write(`${oldVersion} -> ${version}`)
@@ -145,7 +138,6 @@ function cmdPrepareNext(version?: string): void {
 
   const pkgPath = 'package.json'
   const lockPath = 'pnpm-lock.yaml'
-  const composePath = 'docker-compose.yml'
 
   const pkg = readJson(pkgPath)
   if (!isRecord(pkg)) {
@@ -165,13 +157,7 @@ function cmdPrepareNext(version?: string): void {
   pkg.version = nextVersion
   writeJson(pkgPath, pkg)
 
-  if (existsSync(resolve(ROOT, composePath))) {
-    let compose = readFileSync(resolve(ROOT, composePath), 'utf-8')
-    compose = compose.replace(/ghcr\.io\/syhily\/kobato:[^\s]+/, 'ghcr.io/syhily/kobato:latest')
-    writeFileSync(resolve(ROOT, composePath), compose)
-  }
-
-  run(`git add ${pkgPath} ${lockPath} ${composePath}`)
+  run(`git add ${pkgPath} ${lockPath}`)
   run(`git commit -m "chore: prepare next development cycle"`)
 
   process.stdout.write(`Prepared ${nextVersion} on develop (from ${oldVersion})`)

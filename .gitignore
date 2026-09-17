@@ -2,7 +2,6 @@
 build/
 dist/
 dist-sea/
-.zeabur/
 
 # generated framework/content artifacts
 .react-router/

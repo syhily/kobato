@@ -70,7 +70,7 @@ async function main() {
 
   const { size } = await stat(seaBinaryPath())
   const binaryMb = (size / 1024 / 1024).toFixed(1)
-  // Fail the build on budget regression — the Docker image build never runs sea:smoke.
+  // Fail the build on budget regression — this gate is the only size check.
   if (size > BINARY_MAX_BYTES) {
     fail(`binary is ${binaryMb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`)
   }

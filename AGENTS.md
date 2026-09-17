@@ -70,10 +70,7 @@ extracted to a flat cache dir on first run
 
 **Node 26 pin.** The toolchain is pinned to 26.9.0: `.nvmrc`, the CI
 matrices (`.github/workflows/sea.yml` ×4, `ci.yml` ×2 —
-`node-version: 26.9.0`), and the Dockerfile build stage
-(`node:26.9.0-bookworm-slim` with `npm install -g pnpm@12.4.1` — Node
-25+ images ship no Corepack, keep the version aligned with the
-`packageManager` field) all carry the exact version, and
+`node-version: 26.9.0`) all carry the exact version, and
 `package.json` engines requires `>=26.9.0`. `scripts/sea/build.ts`
 gates `REQUIRED_NODE_MAJOR = 26` — a major-only gate by design. Local
 dev/tests still run on the machine's default Node; only `sea:build`
@@ -149,8 +146,8 @@ first paragraph build (`SkIcuLoader` → `check(fUnicode)` takes the
 whole process down; darwin/linux skia builds carry ICU internally). The rpath
 patch runs at build time on a staged copy
 (`install_name_tool -change @rpath/X @loader_path/X` on darwin,
-`patchelf --set-rpath '$ORIGIN'` on linux — patchelf is in the Dockerfile
-build stage and guarded in the linux CI job; nothing on win32). sharp /
+`patchelf --set-rpath '$ORIGIN'` on linux — patchelf is guarded in the
+linux CI job; nothing on win32). sharp /
 @napi-rs/canvas / @duckdb/node-api are **statically imported and
 bundled**; `scripts/sea/redirect-native-requires.ts` (a Vite plugin)
 rewrites the packages' own platform-specifier `require(...)` call sites
@@ -279,11 +276,6 @@ native-specifiers.test.ts`). `requireExternal` remains only as
   app graph (see the allowlist comment on the process.env centralization
   rule in the boundaries test).
 
-The production Docker image ships only the SEA binary on a glibc base —
-the historical musl blocker (a postject `.gnu.hash` corruption bug) is
-gone with postject, but musl stays unverified for SEA injection (see the
-comment at the top of `Dockerfile`).
-
 ### SEA self-update
 
 Bare-metal SEA deployments can self-update from the admin shell. The pipeline lives in `src/server/domains/update/`: download the release asset, verify against `.sha256`, swap the binary, restart. The restart (`job.ts::scheduleSelfRestart`) MUST close the listen socket (idempotent `closeHttpServer`) before spawning the detached replacement — spawning first races the child's bind against the parent still holding the port and strands bare-metal deployments on EADDRINUSE (audit P0-7). The gate requires: `isSea()`, linux x64/arm64, not containerized, writable binary directory, non-`-dev` build. Admin procedures: `admin.update.check` / `admin.update.apply` / `admin.update.status`.
@@ -301,7 +293,7 @@ Use `/release <version> <next-version>` (e.g., `/release 6.3.0 6.4.0-dev`):
 
 1. Analyze commits since last tag, draft AI-generated release notes.
 2. Bump to `<version>`, push develop, fast-forward merge to main, push main.
-3. Create git tag + GitHub release (Docker and SEA workflows trigger automatically).
+3. Create git tag + GitHub release (the SEA workflow triggers automatically).
 4. Switch back to develop, prepare `<next-version>`, push.
 
 No PRs — direct fast-forward merge from develop to main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION__`.
@@ -350,13 +342,13 @@ dynamic library** belong in `package.json`'s `dependencies`:
   libduckdb fetched per platform).
 
 Every other dependency belongs in `devDependencies`, even if the server or
-client bundle imports it in production. The production image ships a SEA
-binary: the build stage runs `pnpm install --frozen-lockfile` with the full
-dev dependencies and bundles the server, and the runtime stage contains
+client bundle imports it in production. Distribution ships only a SEA
+binary built on CI: the build runs `pnpm install --frozen-lockfile` with
+the full dev dependencies and bundles the server, and what ships contains
 only that binary — no node runtime, no node_modules, no second
 `pnpm install --prod` (that two-stage install was the pre-SEA rationale,
 see commit `ed83a5a`). Native packages must stay in `dependencies` so the
-build stage installs their platform binaries — the SEA pipeline bundles
+build installs their platform binaries — the SEA pipeline bundles
 their JS into the server/worker bundles and embeds the platform `.node` /
 libvips library files (`scripts/sea/assets.ts`).
 
