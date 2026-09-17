@@ -30,15 +30,24 @@
    runway (the tiptap era's 60vh) so caret-anchored menus near the document
    end are never clipped by the scrollport.
 
+   The selector pins the TOP-LEVEL canvas only (the scroll container's direct
+   child): every nested card editor (captions, asides, toggles) renders its
+   own `.inkling-lexical` wrapper inside the canvas, and a bare descendant
+   selector would hand each of them the canvas padding (a 60vh void under
+   every image caption), the doubled zoom, and the article max-width.
+
    `zoom: 0.625` normalizes the whole surface to the size the package styles
    were designed for: inkling (Ghost lineage) sizes everything in rem against
    a 10px root (body text is `font-size: 1.7rem`), while kobato's root is
    16px — re-declaring the ~500 rem rules per token is unmaintainable. zoom is
-   Baseline 2024 and is reflected in getBoundingClientRect, so floating
-   toolbar / slash-menu anchoring keeps working. The 740px article column is
+   Baseline 2024 and is reflected in getBoundingClientRect, so the fixed-mode
+   floating chrome keeps working; the absolutely positioned card menus un-scale
+   their parent-relative offsets through the anchored-popup seam's
+   `coordinateScale` (src/inkling/utils/selection-anchored-popup.ts) so the
+   zoom never applies twice. The 740px article column is
    divided by the zoom factor so the EFFECTIVE width stays at the public
    article width. */
-.kobato-page-editor .inkling-lexical {
+.kobato-page-editor [data-kobato-editor-scroll] > .inkling-lexical {
   margin-inline: auto;
   width: 100%;
   max-width: calc(740px / 0.625);

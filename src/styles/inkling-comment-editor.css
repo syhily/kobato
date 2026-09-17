@@ -45,12 +45,23 @@
    contentEditable (.inkling-prose) itself, NOT the .inkling-lexical wrapper:
    an empty editor is one paragraph tall, so a wrapper-owned box leaves the
    rest of the visible area as dead click zones that hit the plain wrapper
-   div and never focus the editor. */
+   div and never focus the editor.
+
+   The `.typeset-comment` anchor pins the canvas box to the TOP-LEVEL
+   contentEditable, same contract as the page editor's canvas rule: the one
+   card this surface keeps (the code block) renders a caption nested editor
+   whose contentEditable also carries `.inkling-prose`, and a bare descendant
+   selector would hand it the 96px min-height and the canvas padding. Only
+   the top-level canvas carries the typeset preset class
+   (CommentBodyEditor's `contentEditableClassName`); nested editors always
+   render bare `.inkling-prose`. A child combinator cannot express this pin:
+   the RichTextPlugin mounts an unclassed wrapper between the
+   `.inkling-lexical` wrapper and the contentEditable. */
 .kobato-comment-editor .inkling-lexical {
   width: 100%;
 }
 
-.kobato-comment-editor .inkling-prose {
+.kobato-comment-editor .inkling-prose.typeset-comment {
   min-height: 96px;
   padding: 6.6px 8.8px 22px;
 }
