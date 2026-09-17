@@ -63,6 +63,7 @@
     "@aws-sdk/client-s3": "catalog:",
     "@base-ui/react": "catalog:",
     "@bufbuild/protobuf": "catalog:",
+    "@chenglou/pretext": "catalog:",
     "@codemirror/autocomplete": "catalog:",
     "@codemirror/commands": "catalog:",
     "@codemirror/lang-css": "catalog:",

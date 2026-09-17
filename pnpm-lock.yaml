@@ -173,6 +173,9 @@ catalogs:
     '@bufbuild/protobuf':
       specifier: ^2.15.0
       version: 2.15.0
+    '@chenglou/pretext':
+      specifier: 0.0.9
+      version: 0.0.9
     '@codemirror/autocomplete':
       specifier: 6.20.3
       version: 6.20.3
@@ -559,6 +562,9 @@ importers:
       '@bufbuild/protobuf':
         specifier: 'catalog:'
         version: 2.15.0
+      '@chenglou/pretext':
+        specifier: 'catalog:'
+        version: 0.0.9
       '@codemirror/autocomplete':
         specifier: 'catalog:'
         version: 6.20.3
@@ -1112,6 +1118,9 @@ packages:
 
   '@bufbuild/protobuf@2.15.0':
     resolution: {integrity: sha512-DAheWUkVr/SJTWCc+lg9dhY0eN4SaWlf4+bG1KzHeXbnqt0AfB/NX0Z+VunGlM1ki1B4zVvye27MpKh/svySUA==}
+
+  '@chenglou/pretext@0.0.9':
+    resolution: {integrity: sha512-vInlpC//3vjRfWTs78k2BBIq/0bUdpjIp8TIn9fXe0NvnChhTQZfjioVzERQQbkQvCVpPpw7PDOrTWMHpq27VA==}
 
   '@codemirror/autocomplete@6.20.3':
     resolution: {integrity: sha512-tlosUqb+3BbxCxZdu4tKeRghPFC+QM7q4X5YhKV2eCmPG+1r2F3f4AaSz5sCrFqUtX4Jh20VFTKecl16MgiV9g==}
@@ -4096,8 +4105,8 @@ packages:
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
 
-  node-releases@2.0.55:
-    resolution: {integrity: sha512-mIrE/Cw9y+9Au6dS5vDKDhQza9YvG6w+ZrS6X+ZzA7yFW/soAeaups4Qzn1bL6g5FVy8WtP79+0j82oPIbqRjQ==}
+  node-releases@2.0.56:
+    resolution: {integrity: sha512-x0InOIyzgdk+eyaWaRJFH5snEtiImgBgblZ2CyPrLmqqcuMQkEvcDPHbzqbD8eDsSeJbVOjn+crzyzHaM4D+/A==}
     engines: {node: '>=18'}
 
   nodemailer@10.0.10:
@@ -4578,8 +4587,8 @@ packages:
     resolution: {integrity: sha512-axr3IdNuVIxnaK5XGEUFTu3YmAQ6lllgrvqfEoR16g/HGnYY/6We4oWENtAnzK6/LpJ2ur9PAb80RBt7/U4ugw==}
     engines: {node: '>= 6.0.0'}
 
-  type-fest@5.9.0:
-    resolution: {integrity: sha512-yANm3Jr3GiJ1qgJlxGAVxTOIcEOk1rhQHamlXtnrCK7EHP4HeM9OGxtMg/W7HFdrVzw/ZWJKGVIJusVH85sLtw==}
+  type-fest@5.10.0:
+    resolution: {integrity: sha512-NoSdpq/WEiAg5sjmBkmV/hfxv6HJH4NqPNrqjtSO5CwRmpsDfaf4begxW34KdJykH/l1yHtwBWQkCRdoXO8mPA==}
     engines: {node: '>=20'}
 
   typescript@7.0.2:
@@ -5164,6 +5173,8 @@ snapshots:
       css-tree: 3.2.1
 
   '@bufbuild/protobuf@2.15.0': {}
+
+  '@chenglou/pretext@0.0.9': {}
 
   '@codemirror/autocomplete@6.20.3':
     dependencies:
@@ -5995,7 +6006,7 @@ snapshots:
   '@orpc/shared@1.15.1':
     dependencies:
       radash: 12.1.1
-      type-fest: 5.9.0
+      type-fest: 5.10.0
 
   '@orpc/standard-server-aws-lambda@1.15.1':
     dependencies:
@@ -6996,7 +7007,7 @@ snapshots:
       baseline-browser-mapping: 2.11.24
       caniuse-lite: 1.0.30001810
       electron-to-chromium: 1.5.430
-      node-releases: 2.0.55
+      node-releases: 2.0.56
       update-browserslist-db: 1.3.3(browserslist@4.29.0)
 
   buffer-from@1.1.2: {}
@@ -7618,7 +7629,7 @@ snapshots:
 
   node-fetch-native@1.6.7: {}
 
-  node-releases@2.0.55: {}
+  node-releases@2.0.56: {}
 
   nodemailer@10.0.10: {}
 
@@ -8133,7 +8144,7 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  type-fest@5.9.0:
+  type-fest@5.10.0:
     dependencies:
       tagged-tag: 1.0.0
 

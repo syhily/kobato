@@ -67,7 +67,7 @@ The shared `loaders/*` helpers are the orchestration layer the content controlle
 
 ## render/
 
-SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `analytics/`, `warmup/`. Never persists — produces strings, Buffers, or Responses. Caching is the caller's responsibility. The feed generator renders each entry's saved `bodyHtmlFeed` projection (`domains/content/services/body-html.ts::resolveBodyHtmlFeed`, NULL → on-the-fly headless projection) through the `sanitizeFeedHtml` allowlist.
+SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `pretext-layout.ts` (canvas text line-breaking via `@chenglou/pretext` — kinsoku-aware wrapping + measured ellipsis for `og/` and `calendar/`; its `OffscreenCanvas` global is shimmed onto @napi-rs/canvas), `analytics/`, `warmup/`. Never persists — produces strings, Buffers, or Responses. Caching is the caller's responsibility. The feed generator renders each entry's saved `bodyHtmlFeed` projection (`domains/content/services/body-html.ts::resolveBodyHtmlFeed`, NULL → on-the-fly headless projection) through the `sanitizeFeedHtml` allowlist.
 
 ## Sessions & Request Context
 

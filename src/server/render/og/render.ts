@@ -6,54 +6,10 @@ import { Canvas, loadImage } from '@napi-rs/canvas'
 import { compressImage } from '@/server/infra/image/compress'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
 import { logoDark } from '@/server/render/og/assets'
+import { layoutCanvasLines } from '@/server/render/pretext-layout'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
-
-/**
- * Draw the OpenGraph card. Based on yuaanlin/yual.in's og_image code
- * (no license; reuse approved by the author — https://twitter.com/yuaanlin).
- */
-function getStringWidth(text: string, fontSize: number) {
-  let result = 0
-  for (let idx = 0; idx < text.length; idx++) {
-    if (text.charCodeAt(idx) > 255) {
-      result += fontSize
-    } else {
-      result += fontSize * 0.5
-    }
-  }
-  return result
-}
-
-function printAt(
-  context: SKRSContext2D,
-  text: string,
-  x: number,
-  y: number,
-  lineHeight: number,
-  fitWidth: number,
-  fontSize: number,
-) {
-  const width = fitWidth || 0
-
-  if (width <= 0) {
-    context.fillText(text, x, y)
-    return
-  }
-
-  for (let idx = 1; idx <= text.length; idx++) {
-    const str = text.substring(0, idx)
-    if (getStringWidth(str, fontSize) > width) {
-      // Always advance one char: a lone glyph wider than fitWidth would otherwise recurse forever.
-      const end = Math.max(idx - 1, 1)
-      context.fillText(text.substring(0, end), x, y)
-      printAt(context, text.substring(end), x, y + lineHeight, lineHeight, width, fontSize)
-      return
-    }
-  }
-  context.fillText(text, x, y)
-}
 
 // Modified snippet from https://stackoverflow.com/questions/21961839/simulation-background-size-cover-in-canvas
 function drawImageProp(
@@ -140,10 +96,7 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   const [coverImage, logoBuffer] = await Promise.all([loadImage(cover), logoDark()])
   const logoImage = await loadImage(logoBuffer)
 
-  let description = summary.replace(/<[^>]+>/g, '').trim()
-  if (description.length > 80) {
-    description = `${description.slice(0, 80)} ...`
-  }
+  const description = summary.replace(/<[^>]+>/g, '').trim()
 
   const canvas = new Canvas(seo.og.width, seo.og.height)
   const ctx = canvas.getContext('2d')
@@ -153,20 +106,27 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   ctx.save()
 
   const ogFont = ogFontSlot?.family ?? 'sans-serif'
+  const textWidth = seo.og.width - 192
 
   ctx.fillStyle = '#e0c2bb'
-  ctx.font = `900 70px ${ogFont}`
-  printAt(ctx, siteIdentity.title, 96, 180, 96, seo.og.width, 70)
+  const siteTitleFont = `900 70px ${ogFont}`
+  const siteTitleLines = layoutCanvasLines(ctx, siteIdentity.title, siteTitleFont, textWidth, 2)
+  ctx.font = siteTitleFont
+  siteTitleLines.forEach((line, index) => ctx.fillText(line, 96, 180 + index * 96))
 
   ctx.drawImage(logoImage, 940, 120, 160, 160)
 
   ctx.fillStyle = '#fff'
-  ctx.font = `800 48px ${ogFont}`
-  printAt(ctx, title, 96, seo.og.height / 2 - 64, 96, seo.og.width - 192, 64)
+  const titleFont = `800 48px ${ogFont}`
+  const titleLines = layoutCanvasLines(ctx, title, titleFont, textWidth, 2)
+  ctx.font = titleFont
+  titleLines.forEach((line, index) => ctx.fillText(line, 96, seo.og.height / 2 - 64 + index * 96))
 
-  ctx.font = `600 36px ${ogFont}`
+  const summaryFont = `600 36px ${ogFont}`
+  const summaryLines = layoutCanvasLines(ctx, description, summaryFont, textWidth, 3)
+  ctx.font = summaryFont
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
-  printAt(ctx, description, 96, seo.og.height - 200, 48, seo.og.width - 192, 36)
+  summaryLines.forEach((line, index) => ctx.fillText(line, 96, seo.og.height - 200 + index * 48))
 
   ctx.restore()
 

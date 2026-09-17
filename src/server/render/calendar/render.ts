@@ -1,4 +1,3 @@
-import type { SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
 
 import { createCanvas } from '@napi-rs/canvas'
@@ -8,6 +7,7 @@ import { Solar } from 'lunar-typescript'
 import { compressImage } from '@/server/infra/image/compress'
 import { getDailyQuote } from '@/server/render/calendar/daily-quote'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
+import { layoutCanvasLines } from '@/server/render/pretext-layout'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 
@@ -46,30 +46,6 @@ function getDailyAuspiciousLabel(date: Date) {
     return ''
   }
   return `宜${auspicious[Math.floor(getDate(date) % auspicious.length)]}`
-}
-
-function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number) {
-  const words = text.split('')
-  const lines: string[] = []
-  let line = ''
-  for (const ch of words) {
-    const test = line + ch
-    if (ctx.measureText(test).width > maxWidth && line !== '') {
-      lines.push(line)
-      line = ch
-    } else {
-      line = test
-    }
-  }
-  if (line) {
-    if (line.length > 1) {
-      lines.push(line)
-    } else {
-      lines[lines.length - 1] += line
-    }
-  }
-
-  return lines
 }
 
 export type CalendarTheme = 'light' | 'dark'
@@ -140,19 +116,10 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
-  ctx.font = `36px ${calFont}`
-  const quoteText = quote.content
-  const quoteLines = wrapText(ctx, quoteText, maxTextWidth)
+  const quoteFont = `36px ${calFont}`
+  ctx.font = quoteFont
   // Long entries overflow the card — clamp to three lines, ellipsize the last.
-  const MAX_QUOTE_LINES = 3
-  if (quoteLines.length > MAX_QUOTE_LINES) {
-    quoteLines.length = MAX_QUOTE_LINES
-    let last = quoteLines[MAX_QUOTE_LINES - 1]
-    while (last.length > 1 && ctx.measureText(`${last}…`).width > maxTextWidth) {
-      last = last.slice(0, -1)
-    }
-    quoteLines[MAX_QUOTE_LINES - 1] = `${last}…`
-  }
+  const quoteLines = layoutCanvasLines(ctx, quote.content, quoteFont, maxTextWidth, 3)
   let y = quoteY
   const lineHeight = 56
 
