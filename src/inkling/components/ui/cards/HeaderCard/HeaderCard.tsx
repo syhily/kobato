@@ -294,7 +294,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
             layout === 'split' && isSwapped && 'flex-col-reverse sm:flex-row-reverse',
             // This is needed to align the content with wide breakout width
             (layout === 'full' || (layout === 'split' && correctedBackgroundSize === 'contain')) &&
-              'mx-auto w-[calc(740px+4rem)] xs:w-[calc(740px+8rem)] md:w-[calc(740px+12rem)] lg:w-[calc(740px+22rem)] xl:w-[calc(740px+40rem)]',
+              'mx-auto w-[calc(74rem+4rem)] xs:w-[calc(74rem+8rem)] md:w-[calc(74rem+12rem)] lg:w-[calc(74rem+22rem)] xl:w-[calc(74rem+40rem)]',
             backgroundImageSrc && layout === 'split' && correctedBackgroundSize === 'contain' && 'items-center',
           )}
           data-testid={'header-card-content'}
@@ -322,10 +322,10 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                 correctedBackgroundSize === 'contain' && 'sm:my-10 md:my-14',
                 !isSwapped &&
                   correctedBackgroundSize === 'contain' &&
-                  'mt-10 px-[calc(32px-(4rem/2))] xs:px-[calc(92px-(8rem/2))] sm:pr-0 sm:pl-[calc(92px-(12rem/2))] md:pl-[calc(92px-(12rem/2))] lg:pl-0',
+                  'mt-10 px-[calc(3.2rem-(4rem/2))] xs:px-[calc(9.2rem-(8rem/2))] sm:pr-0 sm:pl-[calc(9.2rem-(12rem/2))] md:pl-[calc(9.2rem-(12rem/2))] lg:pl-0',
                 isSwapped &&
                   correctedBackgroundSize === 'contain' &&
-                  'mb-10 px-[calc(32px-(4rem/2))] xs:px-[calc(92px-(8rem/2))] sm:pr-[calc(92px-(12rem/2))] sm:pl-0 md:pr-[calc(92px-(12rem/2))] lg:pr-0',
+                  'mb-10 px-[calc(3.2rem-(4rem/2))] xs:px-[calc(9.2rem-(8rem/2))] sm:pr-[calc(9.2rem-(12rem/2))] sm:pl-0 md:pr-[calc(9.2rem-(12rem/2))] lg:pr-0',
               )}
               desc={labels['upload.header.desc']}
               dragHandler={imageDragHandler}
@@ -350,18 +350,18 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
               'mx-auto flex w-full flex-1 flex-col justify-center',
               alignment === 'center' && 'items-center',
               layout === 'regular' && 'p-[4rem] sm:py-[6rem] md:px-[6rem] md:py-[10rem] lg:px-[8rem]',
-              layout === 'wide' && 'max-w-[740px] p-[4rem] sm:py-[6rem] md:px-[8rem] md:py-[14rem] lg:px-0',
+              layout === 'wide' && 'max-w-[74rem] p-[4rem] sm:py-[6rem] md:px-[8rem] md:py-[14rem] lg:px-0',
               layout === 'full' &&
-                'px-[calc(32px-(4rem/2))] py-[4rem] xs:px-[calc(92px-(8rem/2))] sm:py-[6rem] md:px-[calc(92px-(12rem/2))] md:py-[12rem] lg:px-0 lg:py-[14rem] xl:py-[18rem]',
+                'px-[calc(3.2rem-(4rem/2))] py-[4rem] xs:px-[calc(9.2rem-(8rem/2))] sm:py-[6rem] md:px-[calc(9.2rem-(12rem/2))] md:py-[12rem] lg:px-0 lg:py-[14rem] xl:py-[18rem]',
               layout === 'split' && 'p-[4rem] sm:py-[6rem] md:px-[6rem] md:py-[12rem] lg:px-[8rem] lg:py-[16rem]',
               !isSwapped &&
                 layout === 'split' &&
                 correctedBackgroundSize === 'contain' &&
-                'px-[calc(32px-(4rem/2))] xs:px-[calc(92px-(8rem/2))] sm:px-[calc(92px-(12rem/2))] md:pr-[calc(92px-(12rem/2))] lg:pr-0',
+                'px-[calc(3.2rem-(4rem/2))] xs:px-[calc(9.2rem-(8rem/2))] sm:px-[calc(9.2rem-(12rem/2))] md:pr-[calc(9.2rem-(12rem/2))] lg:pr-0',
               isSwapped &&
                 layout === 'split' &&
                 correctedBackgroundSize === 'contain' &&
-                'px-[calc(32px-(4rem/2))] xs:px-[calc(92px-(8rem/2))] sm:px-[calc(92px-(12rem/2))] md:pl-[calc(92px-(12rem/2))] lg:pl-0',
+                'px-[calc(3.2rem-(4rem/2))] xs:px-[calc(9.2rem-(8rem/2))] sm:px-[calc(9.2rem-(12rem/2))] md:pl-[calc(9.2rem-(12rem/2))] lg:pl-0',
             )}
           >
             {/* Heading */}
@@ -409,7 +409,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                   alignment === 'center' && 'text-center',
                   layout === 'regular' && 'text-lg sm:text-xl',
                   (layout === 'wide' || layout === 'split') && 'text-lg leading-snug sm:text-xl md:text-[2.2rem]',
-                  layout === 'full' && 'text-lg sm:text-xl md:text-[2.2rem] lg:text-[2.6rem] xl:max-w-[880px]',
+                  layout === 'full' && 'text-lg sm:text-xl md:text-[2.2rem] lg:text-[2.6rem] xl:max-w-[88rem]',
                 )}
                 placeholderText={subheaderPlaceholder}
                 singleParagraph={true}
@@ -419,7 +419,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                   alignment === 'center' && 'text-center [&:has(.placeholder)]:w-fit [&:has(.placeholder)]:text-left',
                   layout === 'regular' && 'subheading-small !mt-2',
                   (layout === 'wide' || layout === 'split') && 'subheading-medium !mt-3',
-                  layout === 'full' && 'subheading-large !mt-3 xl:max-w-[880px]',
+                  layout === 'full' && 'subheading-large !mt-3 xl:max-w-[88rem]',
                 )}
               />
             }
@@ -428,7 +428,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
 
             {buttonEnabled && (
               <div
-                className={`${buttonAlignmentClass} w-full ${layout === 'regular' ? 'peer-[.inkling-lexical]:mt-8' : layout === 'wide' ? 'peer-[.inkling-lexical]:mt-8 md:w-2/3' : layout === 'full' ? 'peer-[.inkling-lexical]:mt-8 md:w-2/3 peer-[.inkling-lexical]:md:mt-8 xl:w-1/2' : 'max-w-[500px] peer-[.inkling-lexical]:mt-8 peer-[.inkling-lexical]:md:mt-8'}`}
+                className={`${buttonAlignmentClass} w-full ${layout === 'regular' ? 'peer-[.inkling-lexical]:mt-8' : layout === 'wide' ? 'peer-[.inkling-lexical]:mt-8 md:w-2/3' : layout === 'full' ? 'peer-[.inkling-lexical]:mt-8 md:w-2/3 peer-[.inkling-lexical]:md:mt-8 xl:w-1/2' : 'max-w-[50rem] peer-[.inkling-lexical]:mt-8 peer-[.inkling-lexical]:md:mt-8'}`}
               >
                 <Button
                   dataTestId="header-card-button"
@@ -538,7 +538,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
             <MediaUploadSetting
               alt={labels['alt.backgroundImage']}
               borderStyle="rounded"
-              className={cx('min-w-[296px]', (!showBackgroundImage || layout === 'split') && 'hidden')}
+              className={cx('min-w-[29.6rem]', (!showBackgroundImage || layout === 'split') && 'hidden')}
               errors={fileUploader?.errors}
               hideLabel={layout !== 'split'}
               icon="file"

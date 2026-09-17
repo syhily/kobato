@@ -32,7 +32,7 @@ export function LinkInputSearchItem({
       onMouseOver={onMouseOver}
     >
       <span className="line-clamp-1 flex items-center gap-[.6rem]">
-        {item.Icon && <item.Icon className="size-[1.4rem] stroke-[1.5px]" />}
+        {item.Icon && <item.Icon className="size-[1.4rem] stroke-[0.15rem]" />}
         <span
           className="block truncate text-sm leading-snug font-medium"
           data-testid={`${dataTestId}-listOption-label`}

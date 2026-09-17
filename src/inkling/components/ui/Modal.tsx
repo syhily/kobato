@@ -34,7 +34,7 @@ export function Modal({
         onKeyDown={controlByKeys}
       >
         <div className="fixed inset-0 z-40 h-[100vh] bg-black opacity-60" onClick={onClose}></div>
-        <div className="relative z-50 my-8 w-full max-w-[550px] rounded-lg bg-white drop-shadow-2xl dark:bg-black">
+        <div className="relative z-50 my-8 w-full max-w-[55rem] rounded-lg bg-white drop-shadow-2xl dark:bg-black">
           <button
             aria-label={labels['aria.closeDialog']}
             className="absolute top-6 right-6 cursor-pointer"

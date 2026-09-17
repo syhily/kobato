@@ -52,7 +52,7 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
   return (
     <div
       ref={selectorRef}
-      className="border-grey-200 bg-grey-50 dark:bg-grey-900 flex h-[540px] flex-col rounded border dark:border-none"
+      className="border-grey-200 bg-grey-50 dark:bg-grey-900 flex h-[54rem] flex-col rounded border dark:border-none"
       data-testid="library-selector"
       // prevent click handle in the editor while selector is active
       onClick={(e) => e.stopPropagation()}

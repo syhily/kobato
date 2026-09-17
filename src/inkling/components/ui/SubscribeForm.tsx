@@ -34,7 +34,7 @@ export function SubscribeForm({
     <div
       className={cx(
         'relative flex rounded-md border border-grey-500/30 bg-white',
-        buttonSize === 'large' ? 'p-[3px]' : 'p-[2px]',
+        buttonSize === 'large' ? 'p-[0.3rem]' : 'p-[0.2rem]',
       )}
     >
       <input

@@ -16,7 +16,7 @@ export function ActionToolbar({
   if (isVisible && !isDragging) {
     return (
       <div
-        className="not-inkling-prose absolute top-[-46px] left-1/2 z-[1000] -translate-x-1/2"
+        className="not-inkling-prose absolute top-[-4.6rem] left-1/2 z-[1000] -translate-x-1/2"
         data-inkling-card-toolbar={dataInklingCardToolbar}
       >
         {children}

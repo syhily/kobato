@@ -44,7 +44,7 @@ export default function HtmlEditor({
   }, [])
 
   return (
-    <div className="not-inkling-prose min-h-[170px]" onKeyDown={handleKeyDown}>
+    <div className="not-inkling-prose min-h-[17rem]" onKeyDown={handleKeyDown}>
       <CodeMirror autoFocus={true} basicSetup={false} extensions={extensions} value={initialHtml} onChange={onChange} />
     </div>
   )

@@ -88,7 +88,7 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
   const inputElement = searchEnabled ? (
     <Input
       autoFocus={true}
-      className="bg-grey-100 placeholder:text-grey-500 focus:border-green dark:border-grey-800/80 dark:bg-grey-900 dark:selection:bg-grey-600/40 dark:selection:text-grey-100 dark:focus:border-green dark:focus:bg-grey-900 my-1 h-auto w-full rounded-md border border-transparent px-4 py-2 text-left text-sm leading-snug font-medium text-black placeholder:text-sm placeholder:leading-snug placeholder:font-medium focus:bg-white focus:shadow-[0_0_0_2px_rgba(48,207,67,.25)] dark:text-white"
+      className="bg-grey-100 placeholder:text-grey-500 focus:border-green dark:border-grey-800/80 dark:bg-grey-900 dark:selection:bg-grey-600/40 dark:selection:text-grey-100 dark:focus:border-green dark:focus:bg-grey-900 my-1 h-auto w-full rounded-md border border-transparent px-4 py-2 text-left text-sm leading-snug font-medium text-black placeholder:text-sm placeholder:leading-snug placeholder:font-medium focus:bg-white focus:shadow-[0_0_0_0.2rem_rgba(48,207,67,.25)] dark:text-white"
       dataTestId={testId}
       name="link-input"
       placeholder={labels['link.search.placeholder']}
@@ -112,7 +112,7 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
   ) : (
     <input
       ref={inputRef}
-      className="text-grey-900 selection:bg-grey/40 dark:bg-grey-950 dark:text-grey-300 dark:selection:bg-grey-800/40 dark:selection:text-grey-100 mb-[1px] h-8 w-full pl-3 leading-loose"
+      className="text-grey-900 selection:bg-grey/40 dark:bg-grey-950 dark:text-grey-300 dark:selection:bg-grey-800/40 dark:selection:text-grey-100 mb-[0.1rem] h-8 w-full pl-3 leading-loose"
       data-testid={testId}
       name="link-input"
       placeholder={labels['link.input.placeholder']}

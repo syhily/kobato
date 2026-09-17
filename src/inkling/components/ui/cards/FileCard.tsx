@@ -56,7 +56,7 @@ function PopulatedFileCard({
             <div className="flex flex-col">
               {(isEditing || title) && (
                 <TextInput
-                  className="dark:text-grey-200 h-[30px] bg-transparent text-lg leading-none font-bold tracking-tight text-black"
+                  className="dark:text-grey-200 h-[3rem] bg-transparent text-lg leading-none font-bold tracking-tight text-black"
                   data-inkling-file-card="fileTitle"
                   maxLength="80"
                   placeholder={titlePlaceholder}
@@ -66,7 +66,7 @@ function PopulatedFileCard({
               )}
               {(isEditing || desc) && (
                 <TextInput
-                  className="text-grey-700 placeholder:text-grey-500 dark:text-grey-300 dark:placeholder:text-grey-800 h-[26px] bg-transparent pb-1 text-[1.6rem] leading-none font-normal"
+                  className="text-grey-700 placeholder:text-grey-500 dark:text-grey-300 dark:placeholder:text-grey-800 h-[2.6rem] bg-transparent pb-1 text-[1.6rem] leading-none font-normal"
                   data-inkling-file-card="fileDescription"
                   maxLength="100"
                   placeholder={descPlaceholder}
@@ -85,7 +85,7 @@ function PopulatedFileCard({
           </div>
         </div>
         <div
-          className={`bg-grey-200 dark:bg-grey-900 !mt-0 flex w-full max-w-[96px] items-center justify-center rounded-md ${(title && desc) || isEditing ? 'h-[96px]' : title || desc ? 'h-[64px]' : 'h-[40px]'}`}
+          className={`bg-grey-200 dark:bg-grey-900 !mt-0 flex w-full max-w-[9.6rem] items-center justify-center rounded-md ${(title && desc) || isEditing ? 'h-[9.6rem]' : title || desc ? 'h-[6.4rem]' : 'h-[4rem]'}`}
         >
           <FileUploadIcon
             className={`text-green transition-all duration-75 ease-in ${title || desc || isEditing ? 'size-6' : 'size-5'}`}

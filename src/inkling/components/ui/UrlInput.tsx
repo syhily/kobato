@@ -122,7 +122,7 @@ export function UrlInput({
         data-testid={`${dataTestId}-loading-container`}
       >
         <div
-          className="border-green/20 after:bg-green/70 mr-3 -ml-1 inline-block size-5 animate-spin rounded-full border-4 text-white after:mt-[11px] after:block after:size-1 after:rounded-full after:content-['']"
+          className="border-green/20 after:bg-green/70 mr-3 -ml-1 inline-block size-5 animate-spin rounded-full border-4 text-white after:mt-[1.1rem] after:block after:size-1 after:rounded-full after:content-['']"
           data-testid={`${dataTestId}-loading-spinner`}
         ></div>
       </div>
@@ -193,7 +193,7 @@ export function UrlInput({
   }
 
   return (
-    <div className="border-grey-300 text-grey-900 focus-within:border-green dark:border-grey-800 dark:bg-grey-900 dark:placeholder:text-grey-800 flex w-full items-center rounded-md border px-3 py-2 text-sm leading-snug font-normal focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(48,207,67,.25)] focus-visible:outline-none">
+    <div className="border-grey-300 text-grey-900 focus-within:border-green dark:border-grey-800 dark:bg-grey-900 dark:placeholder:text-grey-800 flex w-full items-center rounded-md border px-3 py-2 text-sm leading-snug font-normal focus-within:bg-white focus-within:shadow-[0_0_0_0.2rem_rgba(48,207,67,.25)] focus-visible:outline-none">
       <UrlInputPlugin onEnter={handleUrlSubmit ? () => handleUrlSubmit(value) : undefined} />
       <input
         autoFocus

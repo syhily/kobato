@@ -62,7 +62,7 @@ export function BookmarkCard({
     return (
       <div>
         <div
-          className="not-inkling-prose border-grey/40 dark:border-grey/20 relative flex min-h-[120px] w-full rounded-md border bg-transparent font-sans"
+          className="not-inkling-prose border-grey/40 dark:border-grey/20 relative flex min-h-[12rem] w-full rounded-md border bg-transparent font-sans"
           data-testid="bookmark-container"
         >
           <div
@@ -76,15 +76,15 @@ export function BookmarkCard({
               {title}
             </div>
             <div
-              className="text-grey-800 dark:text-grey-600 mt-1 line-clamp-2 max-h-[44px] overflow-y-hidden text-sm leading-normal font-normal"
+              className="text-grey-800 dark:text-grey-600 mt-1 line-clamp-2 max-h-[4.4rem] overflow-y-hidden text-sm leading-normal font-normal"
               data-testid="bookmark-description"
             >
               {description}
             </div>
-            <div className="text-grey-900 mt-[20px] flex items-center text-sm leading-9 font-medium">
+            <div className="text-grey-900 mt-[2rem] flex items-center text-sm leading-9 font-medium">
               {icon && <BookmarkIcon src={icon} />}
               <span
-                className=" db text-grey-900 dark:text-grey-100 max-w-[240px] truncate leading-6"
+                className=" db text-grey-900 dark:text-grey-100 max-w-[24rem] truncate leading-6"
                 data-testid="bookmark-publisher"
               >
                 {publisher}

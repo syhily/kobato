@@ -106,7 +106,7 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
   }, [darkMode, language, onEscape])
 
   return (
-    <div className="not-inkling-prose min-h-[170px]">
+    <div className="not-inkling-prose min-h-[17rem]">
       <CodeMirror
         autoFocus={true}
         basicSetup={false}
@@ -136,8 +136,8 @@ interface CodeBlockProps {
 
 export function CodeBlock({ code, darkMode, language }: CodeBlockProps) {
   const preClass = darkMode
-    ? `rounded-md border border-grey-950 bg-grey-950 px-2 py-[6px] font-mono text-[1.6rem] leading-9 text-grey-400 whitespace-pre-wrap`
-    : `rounded-md border border-grey-200 bg-grey-100 px-2 py-[6px] font-mono text-[1.6rem] leading-9 text-grey-900 whitespace-pre-wrap`
+    ? `rounded-md border border-grey-950 bg-grey-950 px-2 py-[0.6rem] font-mono text-[1.6rem] leading-9 text-grey-400 whitespace-pre-wrap`
+    : `rounded-md border border-grey-200 bg-grey-100 px-2 py-[0.6rem] font-mono text-[1.6rem] leading-9 text-grey-900 whitespace-pre-wrap`
   return (
     <div className="not-inkling-prose">
       <pre className={preClass}>

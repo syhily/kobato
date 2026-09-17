@@ -91,9 +91,9 @@ function renderEmojiMenu(
     return null
   }
   return (
-    <Portal className="w-[240px]" to={anchorElementRef.current}>
+    <Portal className="w-[24rem]" to={anchorElementRef.current}>
       <ul
-        className="dark:bg-grey-950 relative z-10 max-h-[214px] scroll-p-2 list-none overflow-y-auto rounded-md bg-white p-1  shadow-md select-none"
+        className="dark:bg-grey-950 relative z-10 max-h-[21.4rem] scroll-p-2 list-none overflow-y-auto rounded-md bg-white p-1  shadow-md select-none"
         data-testid="emoji-menu"
         style={getPositionStyles()}
       >

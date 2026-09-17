@@ -5,7 +5,7 @@ export function PlusButton({ onClick }: { onClick?: () => void }) {
   const labels = useInklingLabels()
 
   return (
-    <div className="xs:left-[-66px] absolute top-[-2px] left-[-32px]" data-inkling-plus-button>
+    <div className="xs:left-[-6.6rem] absolute top-[-0.2rem] left-[-3.2rem]" data-inkling-plus-button>
       <button
         aria-label={labels['aria.addCard']}
         className="group border-grey hover:border-grey-800 dark:border-grey-800 dark:hover:border-grey-400 relative flex size-7 cursor-pointer items-center justify-center rounded-full border transition-all ease-linear md:size-9"
@@ -20,7 +20,7 @@ export function PlusButton({ onClick }: { onClick?: () => void }) {
 
 export function PlusMenu({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="absolute left-[-16px]" data-inkling-plus-menu>
+    <div className="absolute left-[-1.6rem]" data-inkling-plus-menu>
       {children}
     </div>
   )

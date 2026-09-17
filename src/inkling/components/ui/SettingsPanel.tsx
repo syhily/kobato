@@ -53,7 +53,7 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
       <div
         ref={ref}
         className={cx(
-          'not-inkling-prose dark:bg-grey-950 fixed top-0 left-0 z-[9999999] m-0 flex w-[320px] flex-col rounded-lg bg-white bg-clip-padding font-sans shadow-lg will-change-transform dark:shadow-xl',
+          'not-inkling-prose dark:bg-grey-950 fixed top-0 left-0 z-[9999999] m-0 flex w-[32rem] flex-col rounded-lg bg-white bg-clip-padding font-sans shadow-lg will-change-transform dark:shadow-xl',
           !tabs && 'gap-3 p-6',
         )}
         data-testid="settings-panel"
@@ -245,7 +245,7 @@ export function InputListSetting({
         key={item.value}
         className={cx(
           selected && 'bg-grey-100 dark:bg-grey-925',
-          'm-0 cursor-pointer px-3 py-[7px] text-left hover:bg-grey-100 dark:hover:bg-grey-925',
+          'm-0 cursor-pointer px-3 py-[0.7rem] text-left hover:bg-grey-100 dark:hover:bg-grey-925',
         )}
         dataTestId={dataTestId ?? ''}
         item={item}

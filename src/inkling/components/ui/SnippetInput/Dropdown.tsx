@@ -23,7 +23,7 @@ export const Dropdown = ({
 
   return (
     <ul
-      className="border-grey-200 dark:border-grey-900 dark:bg-grey-950 absolute mt-[-1px] w-full max-w-[240px] rounded-b border bg-white shadow-md"
+      className="border-grey-200 dark:border-grey-900 dark:bg-grey-950 absolute mt-[-0.1rem] w-full max-w-[24rem] rounded-b border bg-white shadow-md"
       tabIndex={0}
     >
       <li className="mb-0 block">
@@ -33,7 +33,7 @@ export const Dropdown = ({
           onClick={onCreateSnippet}
         >
           <span>{interpolateLabel(labels['snippet.create'], { name: value ?? '' })}</span>
-          <PlusIcon className="size-3 stroke-green-600 stroke-[3px]" />
+          <PlusIcon className="size-3 stroke-green-600 stroke-[0.3rem]" />
         </button>
       </li>
 

@@ -123,7 +123,7 @@ export function CardCaptionEditor({
 
   return (
     (isSelected || !isCaptionEmpty) && (
-      <figcaption className="flex min-h-[40px] w-full p-2">
+      <figcaption className="flex min-h-[4rem] w-full p-2">
         {isEditingAlt ? (
           <AltTextInput
             dataTestId={dataTestId}

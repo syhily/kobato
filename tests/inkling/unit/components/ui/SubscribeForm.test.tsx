@@ -22,7 +22,7 @@ describe('SubscribeForm', () => {
 
   it('adjusts padding for large button size', () => {
     const { container } = render(<SubscribeForm buttonSize="large" />)
-    expect(container.firstChild).toHaveClass('p-[3px]')
+    expect(container.firstChild).toHaveClass('p-[0.3rem]')
   })
 
   it('disables the input when disabled is set', () => {

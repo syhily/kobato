@@ -45,7 +45,7 @@ export function ToggleCard({
               }
             />
           </div>
-          <div className="z-20 !mt-[-1px] ml-auto flex size-8 shrink-0 items-center justify-center">
+          <div className="z-20 !mt-[-0.1rem] ml-auto flex size-8 shrink-0 items-center justify-center">
             <ArrowDownIcon className={'text-grey-400 dark:text-grey/30 size-4 stroke-2'} />
           </div>
         </div>

@@ -101,7 +101,7 @@
 .inkling-lexical-caption {
   .inkling-prose {
     :where(p, blockquote, aside, ul, ol):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
-      @apply font-sans text-sm leading-[24px] tracking-wide;
+      @apply font-sans text-sm leading-[2.4rem] tracking-wide;
     }
   }
 }

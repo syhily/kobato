@@ -7,11 +7,11 @@ import { interpolateLabel } from '@/inkling/labels/inkling-labels'
 
 const CARD_WIDTH_CLASSES: Partial<Record<CardWidth, string>> = {
   wide: [
-    'w-[calc(75vw-var(--inkling-breakout-adjustment-with-fallback)+2px)] mx-[calc(50%-(50vw-var(--inkling-breakout-adjustment-with-fallback))-.8rem)] min-w-[calc(100%+3.6rem)] translate-x-[calc(50vw-50%+.8rem-var(--inkling-breakout-adjustment-with-fallback))]',
+    'w-[calc(75vw-var(--inkling-breakout-adjustment-with-fallback)+0.2rem)] mx-[calc(50%-(50vw-var(--inkling-breakout-adjustment-with-fallback))-.8rem)] min-w-[calc(100%+3.6rem)] translate-x-[calc(50vw-50%+.8rem-var(--inkling-breakout-adjustment-with-fallback))]',
     'md:min-w-[calc(100%+10rem)]',
     'lg:min-w-[calc(100%+18rem)]',
   ].join(' '),
-  full: 'inset-x-[-1px] mx-[calc(50%-50vw)] w-[calc(100vw+2px)] lg:mx-[calc(50%-50vw+(var(--inkling-breakout-adjustment-with-fallback)/2))] lg:w-[calc(100vw-var(--inkling-breakout-adjustment-with-fallback)+2px)]',
+  full: 'inset-x-[-0.1rem] mx-[calc(50%-50vw)] w-[calc(100vw+0.2rem)] lg:mx-[calc(50%-50vw+(var(--inkling-breakout-adjustment-with-fallback)/2))] lg:w-[calc(100vw-var(--inkling-breakout-adjustment-with-fallback)+0.2rem)]',
 }
 
 interface CardWrapperProps {
@@ -46,8 +46,8 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
     const className = [
       'relative border-transparent caret-grey-800',
       isSelected ? 'z-20' : 'z-10', // ensure setting panels sit above other cards
-      isSelected && !isDragging ? 'shadow-[0_0_0_2px] shadow-green' : '',
-      !isSelected && !isDragging ? 'hover:shadow-[0_0_0_1px] hover:shadow-green' : '',
+      isSelected && !isDragging ? 'shadow-[0_0_0_0.2rem] shadow-green' : '',
+      !isSelected && !isDragging ? 'hover:shadow-[0_0_0_0.1rem] hover:shadow-green' : '',
       CARD_WIDTH_CLASSES[cardWidth] || '',
       wrapperClass(),
     ].join(' ')

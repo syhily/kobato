@@ -14,7 +14,7 @@ export function LinkToolbar({ href, onEdit, onRemove, dataTestId = 'link-toolbar
   return (
     <div className="flex items-center gap-2" data-testid={dataTestId}>
       <a
-        className="text-green max-w-[200px] truncate text-sm hover:underline"
+        className="text-green max-w-[20rem] truncate text-sm hover:underline"
         data-testid={`${dataTestId}-link`}
         href={href}
         rel="noopener noreferrer"

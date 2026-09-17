@@ -30,7 +30,7 @@ export function ColorOptionButtons({ buttons = [], selectedName, onClick }: Colo
   return (
     <div ref={componentRef} className="relative">
       <button
-        className={`relative size-6 cursor-pointer rounded-full ${selectedName ? 'p-[2px]' : 'border-grey-200 dark:border-grey-800 border'}`}
+        className={`relative size-6 cursor-pointer rounded-full ${selectedName ? 'p-[0.2rem]' : 'border-grey-200 dark:border-grey-800 border'}`}
         data-testid="color-options-button"
         type="button"
         onClick={() => setIsOpen(!isOpen)}

@@ -19,7 +19,7 @@ export const Input = ({
       <input
         autoComplete="off"
         autoFocus={true}
-        className={`text-grey-900 selection:bg-grey/40 dark:bg-grey-950 dark:text-grey-100 dark:placeholder:text-grey-800 mb-[1px] h-auto w-full bg-white py-1 pr-9 pl-3 leading-loose font-normal ${value ? 'rounded-t rounded-b-none' : 'rounded'}`}
+        className={`text-grey-900 selection:bg-grey/40 dark:bg-grey-950 dark:text-grey-100 dark:placeholder:text-grey-800 mb-[0.1rem] h-auto w-full bg-white py-1 pr-9 pl-3 leading-loose font-normal ${value ? 'rounded-t rounded-b-none' : 'rounded'}`}
         data-testid="snippet-name"
         placeholder={labels['snippet.name.placeholder']}
         value={value ?? ''}

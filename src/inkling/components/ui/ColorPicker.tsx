@@ -55,7 +55,7 @@ const CONIC_RING_BACKGROUND =
 export function ConicRing() {
   return (
     <div
-      className="absolute inset-0 rounded-full bg-clip-content p-[3px]"
+      className="absolute inset-0 rounded-full bg-clip-content p-[0.3rem]"
       style={{
         background: CONIC_RING_BACKGROUND,
         WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -158,7 +158,7 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
       />
       <div className="mt-3 flex gap-2">
         <div
-          className={`border-grey-100 bg-grey-100 text-grey-900 placeholder:text-grey-500 focus-within:border-green dark:bg-grey-900 dark:selection:bg-grey-800 dark:placeholder:text-grey-700 dark:focus-within:border-green dark:hover:bg-grey-925 dark:focus:bg-grey-925 relative flex w-full items-center rounded-lg border px-3 py-1.5 font-sans text-sm font-normal transition-colors focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(48,207,67,.25)] focus-within:outline-none dark:border-transparent dark:text-white`}
+          className={`border-grey-100 bg-grey-100 text-grey-900 placeholder:text-grey-500 focus-within:border-green dark:bg-grey-900 dark:selection:bg-grey-800 dark:placeholder:text-grey-700 dark:focus-within:border-green dark:hover:bg-grey-925 dark:focus:bg-grey-925 relative flex w-full items-center rounded-lg border px-3 py-1.5 font-sans text-sm font-normal transition-colors focus-within:bg-white focus-within:shadow-[0_0_0_0.2rem_rgba(48,207,67,.25)] focus-within:outline-none dark:border-transparent dark:text-white`}
           onClick={focusHexInputOnClick}
         >
           <span className="text-grey-700 mr-2 ml-1">#</span>
@@ -172,7 +172,7 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
           </Fragment>
           {eyedropper && !!window.EyeDropper && (
             <button
-              className="absolute inset-y-0 right-3 z-50 my-auto size-4 p-[1px]"
+              className="absolute inset-y-0 right-3 z-50 my-auto size-4 p-[0.1rem]"
               type="button"
               onClick={(e) => void openColorPicker(e)}
             >
@@ -297,7 +297,7 @@ export function ColorIndicator({
   return (
     <div className="relative" data-testid="color-selector-button">
       <button
-        className={`relative size-6 cursor-pointer rounded-full ${value ? 'p-[2px]' : 'border-grey-200 dark:border-grey-800 border'}`}
+        className={`relative size-6 cursor-pointer rounded-full ${value ? 'p-[0.2rem]' : 'border-grey-200 dark:border-grey-800 border'}`}
         type="button"
         onClick={() => {
           setIsOpen(!isOpen)
@@ -313,7 +313,7 @@ export function ColorIndicator({
         >
           {value === 'image' && <ImgBgIcon className="size-[1.4rem]" />}
           {value === 'transparent' && (
-            <div className="border-b-red absolute top-[3px] left-[3px] z-10 w-[136%] origin-left rotate-45 border-b" />
+            <div className="border-b-red absolute top-[0.3rem] left-[0.3rem] z-10 w-[136%] origin-left rotate-45 border-b" />
           )}
         </span>
       </button>
@@ -323,7 +323,7 @@ export function ColorIndicator({
           ref={popoverRef}
           className={cx(
             'absolute -right-3 bottom-full z-10 mb-2 flex flex-col gap-3 rounded-lg bg-white p-3 shadow transition-[width] duration-200 ease-in-out dark:bg-grey-900',
-            (isExpanded || showChildren) && 'min-w-[296px]',
+            (isExpanded || showChildren) && 'min-w-[29.6rem]',
           )}
           onClick={stopPropagation}
           onMouseDown={stopPropagation}
@@ -358,7 +358,7 @@ export function ColorIndicator({
             </div>
             <button
               aria-label={labels['aria.pickColor']}
-              className={`group relative size-6 rounded-full ${!selectedSwatch ? 'p-[2px]' : 'border-grey-200 dark:border-grey-800 border'}`}
+              className={`group relative size-6 rounded-full ${!selectedSwatch ? 'p-[0.2rem]' : 'border-grey-200 dark:border-grey-800 border'}`}
               data-testid="color-picker-toggle"
               type="button"
               onClick={() => {
@@ -373,7 +373,7 @@ export function ColorIndicator({
                     style={{ backgroundColor: value }}
                   >
                     {value === 'transparent' && (
-                      <div className="border-b-red absolute top-[3px] left-[3px] z-10 w-[136%] origin-left rotate-45 border-b" />
+                      <div className="border-b-red absolute top-[0.3rem] left-[0.3rem] z-10 w-[136%] origin-left rotate-45 border-b" />
                     )}
                   </span>
                 </>

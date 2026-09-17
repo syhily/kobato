@@ -229,9 +229,13 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   The typeset guard honors `.not-inkling-prose` and `.inkling-blockquote-alt`.
 - The editor stylesheet is consumed as source: `src/inkling/styles/index.css` is imported by the
   host's two partials (`src/styles/inkling-editor.css`, `src/styles/inkling-comment-editor.css`)
-  into the `inkling` cascade layer, pinned below `utilities` by the bare `@layer` ordering
+  into the `inkling` cascade layer, pinned below `utilities` but above `base` by the bare `@layer`
+  ordering
   statements in `admin.css` / `public.css` so host-card Tailwind utilities beat inkling's scoped
-  preflight. Both partials import `src/styles/dark-variant.css` before the package sheet so its
+  preflight while the host preflight cannot zero the package's own utilities. Chrome arbitrary
+  values are authored in rem (0.1rem/px), never px literals: the kobato page-editor canvas runs
+  under `zoom: 2/3` on a 15px root, so only root-relative lengths render pixel-identical to the
+  10px-root demo. Both partials import `src/styles/dark-variant.css` before the package sheet so its
   `dark:` utilities compile with kobato's class-or-media variant instead of Tailwind's default
   media-only one. The theme-token parity lives in those partials' token bridge (`--inkling-accent-color`
   ← `--brand`, `--font-sans` ← `--font-body`) — that bridge is what keeps the canvas on kobato's

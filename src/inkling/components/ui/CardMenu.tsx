@@ -228,7 +228,7 @@ export const CardSnippetItem = ({
         </div>
         {onRemove && (
           <button
-            className="hover:bg-grey-200 dark:hover:bg-grey-950 ml-auto shrink-0 cursor-pointer rounded-md p-[4px] group-hover:block"
+            className="hover:bg-grey-200 dark:hover:bg-grey-950 ml-auto shrink-0 cursor-pointer rounded-md p-[0.4rem] group-hover:block"
             title={labels['snippet.remove']}
             type="button"
             onClick={handleSnippetRemove}
@@ -276,7 +276,7 @@ export const CardMenu = ({
 
   return (
     <ul
-      className="not-inkling-prose dark:bg-grey-950 z-[9999999] m-0 mb-3 max-h-[420px] w-[312px] scroll-p-2 flex-col overflow-x-hidden overflow-y-auto rounded-lg bg-white bg-clip-padding p-0 font-sans text-sm shadow-md after:block after:pb-1 md:w-[348px]"
+      className="not-inkling-prose dark:bg-grey-950 z-[9999999] m-0 mb-3 max-h-[42rem] w-[31.2rem] scroll-p-2 flex-col overflow-x-hidden overflow-y-auto rounded-lg bg-white bg-clip-padding p-0 font-sans text-sm shadow-md after:block after:pb-1 md:w-[34.8rem]"
       data-inkling-card-menu
       role="menu"
     >
