@@ -26,10 +26,11 @@
  *   .kobato-page-editor canvas       contentEditable: typeset typeset-post
  *   .kobato-comment-editor canvas    contentEditable: typeset typeset-comment
  *
- * ZOOM CONTRACT: the page-editor canvas runs under `zoom: 0.625` (inkling's
- * 10px-root rem normalization). Everything text-decorative in the preset
+ * ZOOM CONTRACT: the page-editor canvas runs under `zoom: 2/3` (inkling's
+ * 10px-root rem normalization against kobato's 15px root). Everything
+ * text-decorative in the preset
  * sections is therefore authored in EM (it derives from --typeset-size,
- * which inkling-editor.css compensates with calc(1.125rem / 0.625)); rem is
+ * which inkling-editor.css compensates with calc(1.125rem / 0.666667)); rem is
  * only used where the rule is render-only (pre, tables) or viewport-anchored
  * (scroll-margin). Do not introduce rem/px text metrics in the preset
  * sections.

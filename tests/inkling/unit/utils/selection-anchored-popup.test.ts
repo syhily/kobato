@@ -160,8 +160,9 @@ describe('resolveAnchoredPopupPlacement — absolute mode', () => {
     expect(placement).toEqual({ top: 700 - 300 + 20, left: 0, flipped: false })
   })
 
-  // the page-editor canvas runs under `zoom: 0.625`: rects arrive zoom-scaled,
+  // the page-editor canvas runs under CSS `zoom`: rects arrive zoom-scaled,
   // the written parent-relative offsets must be un-scaled or the zoom applies twice
+  // (the 0.625 fixture value is arbitrary — any non-1 scale exercises the math)
   describe('coordinateScale (zoomed positioning parent)', () => {
     const zoomed = { coordinateScale: 0.625 }
 

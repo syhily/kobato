@@ -80,7 +80,7 @@ function getTopPosition(elem: Element, positioningParent: HTMLElement): number {
 
 /**
  * The positioning parent's viewport-to-local scale. getBoundingClientRect
- * reflects CSS `zoom` (the page-editor canvas runs at 0.625) while offset*
+ * reflects CSS `zoom` (the page-editor canvas runs at 2/3) while offset*
  * lengths stay in the element's unscaled local space, so their ratio IS the
  * effective zoom — wherever in the ancestor chain it is declared. 1 when the
  * parent is unmeasurable (display:none).

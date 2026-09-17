@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 //
 // - `src/styles/inkling-editor.css`: `padding: 15vmin 1.5rem 60vh` renders as
 //   a 60vh void under every image caption (pushing the Alt toggle a
-//   screen-height away), `zoom: 0.625` double-shrinks nested text, and the
+//   screen-height away), `zoom: 0.666667` double-shrinks nested text, and the
 //   article max-width constrains card interiors.
 // - `src/styles/inkling-comment-editor.css`: `min-height: 96px` + the canvas
 //   padding inflate every code-block caption editor in a comment.

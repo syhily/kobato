@@ -35,7 +35,7 @@ Six files, two bundles:
   font scale is a preset variable (`--typeset-mobile-scale`, default
   1.125×): `.typeset-post` opts out (sets 1), `.typeset-comment` keeps the
   bump. Text-decorative lengths in the preset sections are authored in EM
-  because the page-editor canvas runs under `zoom: 0.625` (see the ZOOM
+  because the page-editor canvas runs under `zoom: 2/3` (see the ZOOM
   CONTRACT comment in the file header). The presets also ride the editor
   contentEditables via `contentEditableClassName` (the `typeset
 typeset-post|typeset-comment` pair) — that is what makes the editor
@@ -45,10 +45,12 @@ typeset-post|typeset-comment` pair) — that is what makes the editor
   `typeset.css`, then `cursors.css`, and scopes `@source` to public-rendered
   dirs (`routes/public`, `ui/public`, `ui/components`, `ui/icons`,
   `ui/lib`, `root.tsx`, and `shared/lexical/cards` whose class constants render into
-  the R10 card markup). A bare `@layer inkling, theme, base, components, utilities;`
+  the R10 card markup). A bare `@layer theme, base, inkling, components, utilities;`
   ordering statement at the top pins the inkling cascade layer below
-  `utilities` (same trick as `admin.css`) so the comment editor's host rules
-  win over inkling's scoped preflight. Public-only rules live here: cursors,
+  `utilities` but above `base` (same trick as `admin.css`) so the comment
+  editor's host rules win over inkling's scoped preflight while the host
+  preflight cannot zero the package's own utilities. Public-only rules live
+  here: cursors,
   the medium-zoom z-1080 stacking, the comment hash-focus flash.
 - `admin.css` — **admin entry**, imported by `routes/{admin,auth,editor}/layout.tsx`.
   Same tailwindcss import + shared partial, but its `@source` scope covers
@@ -64,23 +66,37 @@ typeset-post|typeset-comment` pair) — that is what makes the editor
   package sheet's own utility compile uses the site's class-or-media `dark`
   variant), then pulls `@/inkling/styles/index.css` (the
   `src/inkling` layer's source stylesheet — formerly the package's `style.css`
-  dist artifact) into the `inkling` cascade layer (pinned below `utilities` by
+  dist artifact) into the `inkling` cascade layer (pinned below `utilities`
+  but above `base` by
   `admin.css`'s bare
-  `@layer` ordering statement, so host-card Tailwind utilities beat inkling's
-  scoped preflight) and carries the deliberately UNLAYERED host rules: the
-  canvas column (`zoom: 0.625` normalizes inkling's 10px-root rem system to
-  kobato's 16px root; `max-width` is divided by the zoom factor to keep the
+  `@layer` ordering statement: host-card Tailwind utilities still beat
+  inkling's scoped preflight, while the host preflight can no longer zero the
+  package's own padding/margin utilities) and carries the deliberately
+  UNLAYERED host rules: the
+  canvas column (`zoom: 2/3` normalizes inkling's 10px-root rem system to
+  kobato's 15px root — 15 × 2/3 lands the effective rem base at exactly
+  10px, so rem rules render pixel-identical to the demo; chrome arbitrary
+  values are authored in rem at 0.1rem/px for the same reason;
+  `max-width` is divided by the zoom factor to keep the
   740px effective article width), the design-token bridge
   (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`,
   `--font-serif: inherit` — inkling declares its own Inter/Georgia stacks on
   `.inkling-lexical` in its layer, and the contentEditable's typeset-post
-  preset consumes `--font-serif`), the host-card text-scale restore
-  (re-declares kobato's `--text-*` scale on every `data-inkling-card` chrome
+  preset consumes `--font-serif`), the spacing-scale bridge
+  (`--spacing: 0.4rem` on the canvas — kobato's utility compile emits the
+  same class names inkling uses, and its `calc(var(--spacing) * N)` versions
+  win the cascade, so the base is re-declared to inkling's 0.4rem-per-unit
+  scale; the text/radius/shadow scales need no bridge because inkling's
+  scoped theme wins those by inheritance proximity), the host-card token
+  restore
+  (re-declares kobato's `--text-*` scale, `--spacing`, and flattened radii on
+  every `data-inkling-card` chrome
   in `KOBATO_HOST_CARD_NODE_TYPES` — inkling's scoped theme shadows that
   scale with its 10px-root values, which ballooned the music player's
   `text-xs` time labels until they wrapped; pinned by
   `tests/unit/contract/editor-host-card-tokens.test.ts`), the typeset zoom
-  compensation (`--typeset-size: calc(1.125rem / 0.625)` — the one rem value
+  compensation (`--typeset-size: calc(1.125rem / 0.666667)` — the one rem
+  value
   in an otherwise all-em system), the placeholder font metrics, and the
   writing-focus dimming.
 - `inkling-comment-editor.css` — **comment-canvas partial** (R12), imported

@@ -5,10 +5,13 @@
  * the rest of admin stays inkling-free.
  *
  * The package stylesheet is forced into the `inkling` cascade layer (pinned
- * BELOW Tailwind's `utilities` by the bare `@layer` ordering statement at the
+ * BELOW Tailwind's `utilities` but ABOVE `base` by the bare `@layer`
+ * ordering statement at the
  * top of `admin.css`): inkling's scoped preflight (`.inkling-lexical *`
  * resets border-width etc.) would otherwise beat the layered Tailwind
- * utilities the host-card chrome renders with.
+ * utilities the host-card chrome renders with — and with inkling below
+ * `base`, the host preflight's global padding/margin reset beat the
+ * package's own utilities (py-[.6rem] on card-menu items landed at 0).
  *
  * Host rules in this file are deliberately UNLAYERED (they own the canvas
  * chrome; nothing else targets these elements).
@@ -36,10 +39,15 @@
    selector would hand each of them the canvas padding (a 60vh void under
    every image caption), the doubled zoom, and the article max-width.
 
-   `zoom: 0.625` normalizes the whole surface to the size the package styles
+   `zoom: 2/3` normalizes the whole surface to the size the package styles
    were designed for: inkling (Ghost lineage) sizes everything in rem against
    a 10px root (body text is `font-size: 1.7rem`), while kobato's root is
-   16px — re-declaring the ~500 rem rules per token is unmaintainable. zoom is
+   15px (`html, body { font-size: 0.9375rem }` in tailwind.css) — re-declaring
+   the ~500 rem rules per token is unmaintainable. 15px × 2/3 lands the
+   canvas's effective rem base at exactly 10px, so every rem rule renders
+   pixel-identical to the demo; chrome authored in px literals would NOT
+   follow the root, so the chrome's arbitrary values are authored in rem
+   (0.1rem/px) instead. zoom is
    Baseline 2024 and is reflected in getBoundingClientRect, so the fixed-mode
    floating chrome keeps working; the absolutely positioned card menus un-scale
    their parent-relative offsets through the anchored-popup seam's
@@ -50,9 +58,9 @@
 .kobato-page-editor [data-kobato-editor-scroll] > .inkling-lexical {
   margin-inline: auto;
   width: 100%;
-  max-width: calc(740px / 0.625);
+  max-width: calc(740px / 0.666667);
   padding: 15vmin 1.5rem 60vh;
-  zoom: 0.625;
+  zoom: 0.666667;
 }
 
 /* Design-token bridge. inkling declares --font-sans (Inter) and --font-serif
@@ -73,11 +81,50 @@
   --font-serif: inherit;
 }
 
-/* Host-card text-scale restore. Host cards (KOBATO_HOST_CARD_NODE_TYPES in
+/* Spacing-scale bridge. inkling's spacing utilities consume its namespaced
+   --spacing-N tokens (0.4rem per unit, declared by its scoped theme above),
+   but the kobato utility compile ALSO emits the same class names (px-2,
+   gap-3, size-7…) into the higher `utilities` layer, and those resolve
+   calc(var(--spacing) * N) against Tailwind's single base — 0.25rem. Inside
+   the canvas that made every shared spacing utility ~6% tighter than the
+   demo. Re-declaring the base on the canvas hands kobato's versions inkling's
+   scale, so both compiles land on the same value (0.4rem × N). The text and
+   shadow scales need no such bridge: inkling's scoped theme re-declares them
+   on .inkling-lexical itself, which wins by inheritance proximity. Host cards
+   re-restore the kobato base below. */
+.kobato-page-editor .inkling-lexical {
+  --spacing: 0.4rem;
+}
+
+/* Radius-tier restore. kobato flattens its rounded-sm/md/lg/xl utilities onto
+   the single --radius alias (@theme inline in tailwind.css), so wherever
+   kobato's compile emits the same class (rounded-lg on the card menu,
+   rounded-md on the code/math cards, …) the higher `utilities` layer wins
+   with the collapsed value and every corner lands at --radius (0.4rem inside
+   the canvas) instead of inkling's per-tier 0.2/0.6/0.8/1.2rem. These
+   unlayered rules re-point the tiers at the per-tier vars — which resolve to
+   inkling's scale by inheritance proximity, and back to kobato's flattened
+   0.375rem inside host cards through the restore block below, so host-card
+   chrome keeps the public page's corners. */
+.kobato-page-editor .inkling-lexical .rounded-sm {
+  border-radius: var(--radius-sm);
+}
+.kobato-page-editor .inkling-lexical .rounded-md {
+  border-radius: var(--radius-md);
+}
+.kobato-page-editor .inkling-lexical .rounded-lg {
+  border-radius: var(--radius-lg);
+}
+.kobato-page-editor .inkling-lexical .rounded-xl {
+  border-radius: var(--radius-xl);
+}
+
+/* Host-card token restore. Host cards (KOBATO_HOST_CARD_NODE_TYPES in
    @/shared/lexical/node-whitelist) render kobato-chrome components whose
-   Tailwind utilities resolve var(--text-*) at RUNTIME — and inkling's scoped
-   theme re-declares that whole scale on .inkling-lexical with its 10px-root
-   values, so inside the canvas e.g. the music player's text-xs ballooned
+   Tailwind utilities resolve var(--text-*) / calc(var(--spacing) * N) at
+   RUNTIME — and inkling's scoped theme plus the canvas spacing bridge above
+   re-declare that environment with inkling's 10px-root values, so inside the
+   canvas e.g. the music player's text-xs ballooned
    0.75rem → 1.25rem while its w-9 time columns (spacing, unshadowed) stayed
    36px, and the inherited overflow-wrap:break-word split "00:00" at the
    colon. Re-declaring the kobato scale (Tailwind defaults plus kobato's
@@ -85,11 +132,17 @@
    restores the public page's token environment; a nested .inkling-lexical
    inside a host card re-declares inkling's own scale, so the restore cannot
    leak into card-internal editors. inkling's --text-2xs is deliberately
-   skipped (kobato has no text-2xs utility to consume it). Coverage and
+   skipped (kobato has no text-2xs utility to consume it). The radii mirror
+   tailwind.css's flattening of sm/md/lg onto the base --radius. Coverage and
    values are pinned by tests/unit/contract/editor-host-card-tokens.test.ts. */
 .kobato-page-editor [data-inkling-card='solution'],
 .kobato-page-editor [data-inkling-card='two-column'],
 .kobato-page-editor [data-inkling-card='music-player'] {
+  --spacing: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: calc(0.375rem + 2px);
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 0.9375rem;
@@ -110,13 +163,13 @@
   --text-9xl--line-height: 1;
 }
 
-/* typeset zoom compensation: the canvas's `zoom: 0.625` scales rem
-   too, so the preset's rem base would land at 18px × 0.625. typeset is
+/* typeset zoom compensation: the canvas's `zoom: 2/3` scales rem
+   too, so the preset's rem base would land at 18px × 2/3. typeset is
    otherwise all-em (headings, rhythm, the identity layer all
    derive from --typeset-size), so re-inflating this ONE variable makes the
    editor canvas pixel-identical to the rendered article. */
 .kobato-page-editor .typeset-post {
-  --typeset-size: calc(1.125rem / 0.625);
+  --typeset-size: calc(1.125rem / 0.666667);
 }
 
 /* The contentEditable root (the only `.inkling-lexical > *` in the tree)
@@ -141,7 +194,7 @@
   top: 15vmin;
   left: 1.5rem;
   font-family: var(--font-serif);
-  font-size: calc(1.125rem / 0.625);
+  font-size: calc(1.125rem / 0.666667);
   line-height: 1.7778;
 }
 
