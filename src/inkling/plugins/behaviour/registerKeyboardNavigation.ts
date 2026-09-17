@@ -17,6 +17,7 @@ import { registerEnterCommand } from '@/inkling/plugins/behaviour/keyboard-navig
 import { registerEscapeCommand } from '@/inkling/plugins/behaviour/keyboard-navigation/escape'
 import { registerKeyDownPassthrough } from '@/inkling/plugins/behaviour/keyboard-navigation/key-down'
 import { registerModifierCommand } from '@/inkling/plugins/behaviour/keyboard-navigation/modifier'
+import { registerQuoteEnterCommand } from '@/inkling/plugins/behaviour/keyboard-navigation/quote-enter'
 import { registerTabCommand } from '@/inkling/plugins/behaviour/keyboard-navigation/tab'
 
 // ORDER IS LOAD-BEARING: every handler here registers at
@@ -29,6 +30,9 @@ import { registerTabCommand } from '@/inkling/plugins/behaviour/keyboard-navigat
 const KEYBOARD_HANDLERS = [
   registerKeyDownPassthrough,
   registerEnterCommand,
+  // after enter.ts: it owns the card-selected and cmd/ctrl+enter branches,
+  // quote-enter only sees plain enters that fell through
+  registerQuoteEnterCommand,
   registerArrowUpCommand,
   registerArrowDownCommand,
   registerArrowLeftCommand,
