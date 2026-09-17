@@ -164,19 +164,23 @@ export function EditorScreen<
           {mode === 'create' ? (
             <CreateModeBanner entityLabel={adapter.entityLabel} draftSavedAt={state.createDraftSavedAt} />
           ) : null}
-          <TitleSlugStrip
-            entityLabel={adapter.entityLabel}
-            title={state.meta.title}
-            slug={state.meta.slug}
-            onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
-            onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
-            disabled={state.toolbar.isPending}
-          />
           <PageBodyEditor
             initialBody={state.initialBody}
             bodyKey={state.bodyKey}
             onBodyChange={state.setBody}
             disabled={state.toolbar.isPending}
+            header={
+              <div className="mx-auto w-full max-w-editor-article px-4 pt-8">
+                <TitleSlugStrip
+                  entityLabel={adapter.entityLabel}
+                  title={state.meta.title}
+                  slug={state.meta.slug}
+                  onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
+                  onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
+                  disabled={state.toolbar.isPending}
+                />
+              </div>
+            }
           />
         </div>
         <EditorMetaPanel

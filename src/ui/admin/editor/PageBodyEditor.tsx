@@ -60,21 +60,32 @@ export interface PageBodyEditorProps {
   onBodyChange: (body: LexicalEditorState) => void
   /** When true, the editor becomes read-only. */
   disabled?: boolean
+  /** Chrome rendered inside the scroll container above the canvas (the
+   *  title/slug strip) so it scrolls with the document as one centered
+   *  writing column. */
+  header?: React.ReactNode
 }
 
 export function PageBodyEditor(props: PageBodyEditorProps) {
   const hydrated = useHydrated()
   if (!hydrated) {
+    // SSR/hydration placeholder: same shell + scroll container as the hydrated
+    // tree so the header (title/slug strip) renders identically on the server.
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-        编辑器正在加载…
+      <div className="kobato-page-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col">
+        <div data-kobato-editor-scroll="" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+          {props.header}
+          <div className="flex items-center justify-center p-4 py-24 text-sm text-muted-foreground">
+            编辑器正在加载…
+          </div>
+        </div>
       </div>
     )
   }
   return <PageBodyEditorClient {...props} />
 }
 
-function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled }: PageBodyEditorProps) {
+function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, header }: PageBodyEditorProps) {
   const { resolvedTheme } = useTheme()
   const [focusMode, toggleFocusMode] = useFocusModePreference()
 
@@ -145,10 +156,11 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled }: 
 
   return (
     <div
-      className="kobato-page-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col rounded-xl border bg-card"
+      className="kobato-page-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col"
       onKeyDownCapture={blockQuoteAsideCycle}
     >
       <div data-kobato-editor-scroll="" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+        {header}
         <MusicPickContext value={openMusicPicker}>
           <InklingComposer
             nodes={PAGE_EDITOR_NODES}

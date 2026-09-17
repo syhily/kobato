@@ -109,6 +109,7 @@
   --size-auth-input: 54px;
   --size-auth-btn: 52px;
   --size-editor-min: 480px;
+  --size-editor-article: 740px;
   --mobile-navbar-height: 64px;
   --z-aside-drawer: 1020;
   --z-modal: 1050;
@@ -643,6 +644,7 @@ pre.shiki span {
   --spacing-auth-input: var(--size-auth-input);
   --spacing-auth-btn: var(--size-auth-btn);
   --spacing-editor-min: var(--size-editor-min);
+  --spacing-editor-article: var(--size-editor-article);
 
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);

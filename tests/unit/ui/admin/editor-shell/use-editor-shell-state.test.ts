@@ -84,7 +84,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(result.initialBody).toEqual(emptyLexicalBody())
     expect(result.isEditing).toBe(false)
 
-    expect(result.metaOpen).toBe(true) // isLg defaults to true in SSR
+    expect(result.metaOpen).toBe(false) // the meta panel starts closed at every viewport
     expect(result.isLg).toBe(true)
 
     expect(result.previewBanner).toBeNull()

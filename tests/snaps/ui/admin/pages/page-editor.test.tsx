@@ -9,7 +9,12 @@ import { PageEditorRoute } from '@/ui/admin/pages/PageEditorRoute'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 
 vi.mock('@/ui/admin/editor/PageBodyEditor', () => ({
-  PageBodyEditor: () => <div data-testid="page-body-editor">PageBodyEditor</div>,
+  PageBodyEditor: ({ header }: { header?: React.ReactNode }) => (
+    <div data-testid="page-body-editor">
+      {header}
+      PageBodyEditor
+    </div>
+  ),
 }))
 
 vi.mock('@/ui/admin/shell/AdminShell', () => ({

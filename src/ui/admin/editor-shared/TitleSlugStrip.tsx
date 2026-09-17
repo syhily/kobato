@@ -18,7 +18,7 @@ export function TitleSlugStrip({
   disabled,
 }: TitleSlugStripProps) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-3">
+    <div className="flex flex-col gap-1">
       <Input
         aria-label={`${entityLabel}标题`}
         value={title}

@@ -161,6 +161,7 @@ const SPACING_TOKENS = [
   'badge-overlay-y',
   'btn-icon-md',
   'comment-avatar-gap',
+  'editor-article',
   'editor-min',
   'editor-prose-min',
   'empty-state',

@@ -7,7 +7,10 @@ export function useEditorShellLayout() {
   useAdminScrollTopLift(true)
 
   const isLg = useMediaQuery('(min-width: 1024px)', true)
-  const [metaOpen, setMetaOpen] = useState(isLg)
+  // The meta panel starts closed at every viewport (mx-space parity: the
+  // writing column owns the screen until the author asks for the panel);
+  // dropping below lg still force-closes it into the Sheet.
+  const [metaOpen, setMetaOpen] = useState(false)
   // Render-phase adjustment: when the viewport drops below lg, force the panel closed.
   const [wasLg, setWasLg] = useState(isLg)
   if (isLg !== wasLg) {

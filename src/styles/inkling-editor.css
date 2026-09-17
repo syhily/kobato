@@ -29,9 +29,12 @@
 @source '../inkling';
 
 /* Page editor canvas: a centered responsive column at the public article
-   width, padded like the reference inkling layout, with a bottom scroll
+   width, sharing one centered writing column with the title/slug strip that
+   scrolls above it (PageBodyEditor's `header` slot), with a bottom scroll
    runway (the tiptap era's 60vh) so caret-anchored menus near the document
-   end are never clipped by the scrollport.
+   end are never clipped by the scrollport. The top padding is a modest 4rem
+   (= 40px rendered) — the strip above owns the column's top rhythm, the
+   tiptap-era 15vmin void only made sense when the canvas filled the card.
 
    The selector pins the TOP-LEVEL canvas only (the scroll container's direct
    child): every nested card editor (captions, asides, toggles) renders its
@@ -59,7 +62,7 @@
   margin-inline: auto;
   width: 100%;
   max-width: calc(740px / 0.666667);
-  padding: 15vmin 1.5rem 60vh;
+  padding: 4rem 1.5rem 60vh;
   zoom: 0.666667;
 }
 
@@ -229,13 +232,13 @@
 
 /* inkling's EditorPlaceholder is `absolute top-0 left-0` against the
    position:relative `.inkling-lexical` box, ignoring the canvas padding
-   (15vmin / 1.5rem) — re-anchor it to the first paragraph's text origin
+   (4rem / 1.5rem) — re-anchor it to the first paragraph's text origin
    (the class arrives via `placeholderClassName` in `PageBodyEditor`).
    Font metrics mirror the typeset-post canvas (serif, the zoom-compensated
    1.125rem base, 1.7778 leading) so the placeholder sits exactly on the
    first typed glyph. */
 .kobato-page-editor .kobato-page-placeholder {
-  top: 15vmin;
+  top: 4rem;
   left: 1.5rem;
   font-family: var(--font-serif);
   font-size: calc(1.125rem / 0.666667);
