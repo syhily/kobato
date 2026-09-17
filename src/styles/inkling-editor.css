@@ -119,6 +119,50 @@
   border-radius: var(--radius-xl);
 }
 
+/* Border-width bridge. Tailwind's border utilities are px literals (border =
+   1px, border-2 = 2px, border-4 = 4px) in BOTH compiles, so the zoom scales
+   every canvas border to 2/3 of its demo size — including the transparent
+   1px frame on card-menu items, which made them ~1px shorter than the demo.
+   Re-authoring the tiers inkling chrome uses in rem lands them back at the
+   demo size (0.1rem = 1px at the canvas's 10px effective base). Host cards
+   gain too: the public page's borders are 1px, so this is parity on both
+   axes and needs no restore below. The :not() guards keep these unlayered
+   rules from beating the zeroing variants (border-0, first-of-type:border-t-0
+   on the menu section labels) — but the guards alone are not enough: kobato's
+   utilities-layer `border-t` outranks inkling's layered
+   `first-of-type:border-t-0`, so the zero variant must ALSO be re-asserted
+   unlayered below, or the first card-menu section label renders a stray
+   top border the demo does not have. */
+.kobato-page-editor .inkling-lexical .border:not([class*='border-0']) {
+  border-width: 0.1rem;
+}
+.kobato-page-editor .inkling-lexical .border-t:not([class*='border-t-0']) {
+  border-top-width: 0.1rem;
+}
+.kobato-page-editor .inkling-lexical .border-b:not([class*='border-b-0']) {
+  border-bottom-width: 0.1rem;
+}
+.kobato-page-editor .inkling-lexical .border-2 {
+  border-width: 0.2rem;
+}
+.kobato-page-editor .inkling-lexical .border-4 {
+  border-width: 0.4rem;
+}
+.kobato-page-editor .inkling-lexical .first-of-type\:border-t-0:first-of-type {
+  border-top-width: 0;
+}
+/* Non-first carriers of the zero variant still need their border-t bridged
+   to rem (the :not() guard above skips them because the class substring is
+   present); and the same double-compile demotion hits first-of-type:mt-0 on
+   InputList section headers (kobato's utilities-layer `mt-2` outranks
+   inkling's layered variant). */
+.kobato-page-editor .inkling-lexical .first-of-type\:border-t-0:not(:first-of-type) {
+  border-top-width: 0.1rem;
+}
+.kobato-page-editor .inkling-lexical .first-of-type\:mt-0:first-of-type {
+  margin-top: 0;
+}
+
 /* Host-card token restore. Host cards (KOBATO_HOST_CARD_NODE_TYPES in
    @/shared/lexical/node-whitelist) render kobato-chrome components whose
    Tailwind utilities resolve var(--text-*) / calc(var(--spacing) * N) at
