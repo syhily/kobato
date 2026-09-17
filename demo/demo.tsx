@@ -1,6 +1,6 @@
 import './styles/demo.css'
 import '@/inkling/styles/variants.css'
-import '@/inkling/styles/index.css'
+import './styles/inkling.css'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { Route, HashRouter as Router, Routes } from 'react-router-dom'

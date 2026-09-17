@@ -20,6 +20,11 @@
 @import './dark-variant.css';
 @import '@/inkling/styles/index.css' layer(inkling);
 
+/* Utility scan for the inkling layer's own sources (the card chrome's TSX).
+   Lives on THIS root, not in the package sheet: a layer()-imported `@source`
+   nests inside `@layer`, and tailwind rejects the compile. */
+@source '../inkling';
+
 /* Page editor canvas: a centered responsive column at the public article
    width, padded like the reference inkling layout, with a bottom scroll
    runway (the tiptap era's 60vh) so caret-anchored menus near the document

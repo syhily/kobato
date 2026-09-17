@@ -1,4 +1,4 @@
-import '@/inkling/styles/index.css'
+import '../styles/inkling.css'
 import React, { useState } from 'react'
 
 import AddIcon from '@/inkling/assets/icons/inkling-add.svg?react'

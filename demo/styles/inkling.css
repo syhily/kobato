@@ -1,0 +1,9 @@
+/* Demo root for the inkling package sheet. The `@source` directive must live
+   on the compiling root: the demo's vite root is demo/, so automatic source
+   detection never reaches src/inkling and the card-chrome utilities would
+   silently drop out of the bundle. It cannot live inside the sheet itself
+   because kobato's editor partials import the sheet with `layer(inkling)`,
+   which nests the directive inside `@layer` — tailwind rejects the compile
+   (`@source` cannot be nested). */
+@source '../../src/inkling';
+@import '@/inkling/styles/index.css';

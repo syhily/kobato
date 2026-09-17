@@ -15,6 +15,14 @@
 @import './components/react-colorful' layer(components);
 @import 'tailwindcss/utilities';
 
+/* The utility compile must see the layer's own sources no matter which Vite
+   root the consumer builds from — but the `@source` directive itself lives in
+   each CONSUMER's root stylesheet (kobato's two editor partials, the demo's
+   demo/styles/inkling.css): kobato imports this sheet with `layer(inkling)`,
+   and `@source` is only legal at the top level of the compiling root — a
+   layer()-wrapped copy nests it inside `@layer`, and tailwind rejects the
+   compile (`@source` cannot be nested). */
+
 /* The dark custom-variant lives in ./variants.css (imported unlayered by
    standalone consumers) — see that file for why it cannot live here. */
 

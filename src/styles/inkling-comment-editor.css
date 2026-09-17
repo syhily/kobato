@@ -32,6 +32,11 @@
 @import './dark-variant.css';
 @import '@/inkling/styles/index.css' layer(inkling);
 
+/* Utility scan for the inkling layer's own sources (the card chrome's TSX).
+   Lives on THIS root, not in the package sheet: a layer()-imported `@source`
+   nests inside `@layer`, and tailwind rejects the compile. */
+@source '../inkling';
+
 /* Comment canvas: a compact bordered input, not an article column. The
    min-height keeps the empty state tall; the bottom runway lets the floating
    toolbar open without clipping against the form's edge. The shell is
