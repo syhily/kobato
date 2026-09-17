@@ -73,6 +73,43 @@
   --font-serif: inherit;
 }
 
+/* Host-card text-scale restore. Host cards (KOBATO_HOST_CARD_NODE_TYPES in
+   @/shared/lexical/node-whitelist) render kobato-chrome components whose
+   Tailwind utilities resolve var(--text-*) at RUNTIME — and inkling's scoped
+   theme re-declares that whole scale on .inkling-lexical with its 10px-root
+   values, so inside the canvas e.g. the music player's text-xs ballooned
+   0.75rem → 1.25rem while its w-9 time columns (spacing, unshadowed) stayed
+   36px, and the inherited overflow-wrap:break-word split "00:00" at the
+   colon. Re-declaring the kobato scale (Tailwind defaults plus kobato's
+   --text-md / --text-2xl overrides from tailwind.css) on the card chrome
+   restores the public page's token environment; a nested .inkling-lexical
+   inside a host card re-declares inkling's own scale, so the restore cannot
+   leak into card-internal editors. inkling's --text-2xs is deliberately
+   skipped (kobato has no text-2xs utility to consume it). Coverage and
+   values are pinned by tests/unit/contract/editor-host-card-tokens.test.ts. */
+.kobato-page-editor [data-inkling-card='solution'],
+.kobato-page-editor [data-inkling-card='two-column'],
+.kobato-page-editor [data-inkling-card='music-player'] {
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.625rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1;
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 1;
+  --text-7xl: 4.5rem;
+  --text-7xl--line-height: 1;
+  --text-8xl: 6rem;
+  --text-8xl--line-height: 1;
+  --text-9xl: 8rem;
+  --text-9xl--line-height: 1;
+}
+
 /* typeset zoom compensation: the canvas's `zoom: 0.625` scales rem
    too, so the preset's rem base would land at 18px × 0.625. typeset is
    otherwise all-em (headings, rhythm, the identity layer all

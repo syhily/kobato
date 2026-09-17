@@ -54,8 +54,8 @@ export const MUSIC_PLAYER_CARD_CLASSES = {
   fallbackName: 'truncate text-sm font-medium text-ink-1',
   fallbackArtist: 'truncate text-xs text-ink-3',
   fallbackProgress: 'flex items-center gap-2 px-3 pb-1 text-xs text-ink-4 tabular-nums',
-  fallbackTime: 'w-9 shrink-0',
-  fallbackTimeTotal: 'w-9 shrink-0 text-right',
+  fallbackTime: 'w-9 shrink-0 whitespace-nowrap',
+  fallbackTimeTotal: 'w-9 shrink-0 text-right whitespace-nowrap',
   fallbackBar: 'flex flex-1 items-center py-1.5',
   fallbackBarTrack: 'h-1 w-full rounded-full bg-surface-dim',
 } as const

@@ -74,9 +74,14 @@ typeset-post|typeset-comment` pair) — that is what makes the editor
   (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`,
   `--font-serif: inherit` — inkling declares its own Inter/Georgia stacks on
   `.inkling-lexical` in its layer, and the contentEditable's typeset-post
-  preset consumes `--font-serif`), the typeset zoom compensation
-  (`--typeset-size: calc(1.125rem / 0.625)` — the one rem value in an
-  otherwise all-em system), the placeholder font metrics, and the
+  preset consumes `--font-serif`), the host-card text-scale restore
+  (re-declares kobato's `--text-*` scale on every `data-inkling-card` chrome
+  in `KOBATO_HOST_CARD_NODE_TYPES` — inkling's scoped theme shadows that
+  scale with its 10px-root values, which ballooned the music player's
+  `text-xs` time labels until they wrapped; pinned by
+  `tests/unit/contract/editor-host-card-tokens.test.ts`), the typeset zoom
+  compensation (`--typeset-size: calc(1.125rem / 0.625)` — the one rem value
+  in an otherwise all-em system), the placeholder font metrics, and the
   writing-focus dimming.
 - `inkling-comment-editor.css` — **comment-canvas partial** (R12), imported
   ONLY by `@/ui/public/comments/CommentBodyEditor` (statically imported by

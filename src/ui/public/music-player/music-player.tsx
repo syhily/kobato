@@ -129,14 +129,14 @@ export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: Mu
       </div>
 
       <div className="flex items-center gap-2 px-3 pb-1 text-xs text-ink-4 tabular-nums">
-        <span className="w-9 shrink-0">{formatAudioDuration(playback.currentTime)}</span>
+        <span className="w-9 shrink-0 whitespace-nowrap">{formatAudioDuration(playback.currentTime)}</span>
         <ScrubBar
           ariaLabel="播放进度"
           className="flex-1"
           value={progress}
           onSeek={(value) => playback.seek(value * playback.duration)}
         />
-        <span className="w-9 shrink-0 text-right">
+        <span className="w-9 shrink-0 text-right whitespace-nowrap">
           {playback.duration > 0 ? formatAudioDuration(playback.duration) : '--:--'}
         </span>
       </div>
