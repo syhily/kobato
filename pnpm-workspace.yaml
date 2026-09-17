@@ -2,7 +2,7 @@
 # entries as "catalog:" — taze updates this table (catalogs are first-class
 # taze targets), so version bumps happen in exactly one place.
 catalog:
-  '@aws-sdk/client-s3': ^3.1132.0
+  '@aws-sdk/client-s3': ^3.1133.0
   '@base-ui/react': ^1.8.0
   '@bufbuild/protobuf': ^2.15.0
   '@codemirror/autocomplete': 6.20.3
@@ -38,18 +38,18 @@ catalog:
   '@mdx-js/rollup': 3.1.1
   '@napi-rs/canvas': ^1.0.9
   '@number-flow/react': ^0.6.2
-  '@orpc/client': ^1.15.0
-  '@orpc/react-query': ^1.15.0
-  '@orpc/server': ^1.15.0
+  '@orpc/client': ^1.15.1
+  '@orpc/react-query': ^1.15.1
+  '@orpc/server': ^1.15.1
   '@prettier/sync': 0.6.1
-  '@react-router/dev': ^8.3.1
-  '@react-router/node': ^8.3.1
+  '@react-router/dev': ^8.4.0
+  '@react-router/node': ^8.4.0
   '@shikijs/transformers': ^4.4.3
   '@simplewebauthn/browser': ^14.0.0
   '@simplewebauthn/server': ^14.0.2
   '@smithy/types': ^4.18.0
   '@tailwindcss/vite': ^4.3.3
-  '@tanstack/react-query': ^5.102.8
+  '@tanstack/react-query': ^5.103.0
   '@testing-library/dom': ^10.4.2
   '@testing-library/jest-dom': ^7.0.1
   '@testing-library/react': ^16.3.3
@@ -58,15 +58,15 @@ catalog:
   '@types/html-minifier-terser': 7.0.2
   '@types/jsdom': ^30.0.0
   '@types/markdown-it': ^14.2.0
-  '@types/node': ^26.5.1
-  '@types/nodemailer': ^8.0.1
+  '@types/node': ^26.6.1
+  '@types/nodemailer': ^8.0.2
   '@types/react': ^19.3.0
   '@types/react-dom': ^19.3.0
   '@types/trusted-types': 2.0.7
   '@uiw/codemirror-extensions-basic-setup': 4.25.10
   '@uiw/react-codemirror': 4.25.10
   '@vitejs/plugin-react': ^6.1.1
-  '@vitest/coverage-v8': ^5.0.0
+  '@vitest/coverage-v8': ^5.0.1
   bcryptjs: ^3.0.3
   cn: ^0.3.0
   date-fns: ^4.4.0
@@ -79,7 +79,7 @@ catalog:
   fast-average-color: 9.5.2
   feed: ^6.0.0
   happy-dom: ^20.14.5
-  hono: ^4.13.7
+  hono: ^4.13.8
   hono-pino: ^0.10.3
   html-minifier-terser: 7.2.0
   husky: ^9.1.7
@@ -113,7 +113,7 @@ catalog:
   react-day-picker: ^10.0.1
   react-dom: ^19.3.0
   react-hook-form: ^7.88.0
-  react-router: ^8.3.1
+  react-router: ^8.4.0
   react-router-dom: 7.18.1
   rolldown: 1.2.0
   rolldown-plugin-dts: 0.27.14
@@ -127,7 +127,7 @@ catalog:
   vite: ^8.3.0
   vite-node: ^6.0.0
   vite-plugin-svgr: 5.2.0
-  vitest: ^5.0.0
+  vitest: ^5.0.1
   y-websocket: 3.0.0
   yjs: 13.6.31
   zod: ^4.6.5
