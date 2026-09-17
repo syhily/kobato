@@ -344,22 +344,35 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
 }
 
 /**
+ * The config file path this process resolved — same order as `loadConfig`
+ * (--config/-c > SEA execDir > cwd > ~/.config) — or null in the VITEST
+ * env-only mode, where no file exists. The backup archives this file so the
+ * env-converged configuration travels with the database snapshot.
+ */
+export function resolveConfigFilePath(): string | null {
+  const explicit = argvConfigPath(process.argv.slice(2))
+  // Vitest without --config: env-only, zero filesystem access.
+  if (process.env.VITEST === 'true' && explicit === null) {
+    return null
+  }
+  const candidates = configCandidates(process.argv.slice(2))
+  // An explicit --config is a directive: use it even when the file doesn't exist yet (it is created there).
+  return explicit ?? candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
+}
+
+/**
  * Resolve effective raw values keyed by dotted path, persisting env overrides
  * back into the file; fatal on unreadable/invalid files. Values stay RAW —
  * transforms run exactly once in `loadServerConfig`.
  */
 export function loadConfig(): Record<string, unknown> {
-  const explicit = argvConfigPath(process.argv.slice(2))
+  const filePath = resolveConfigFilePath()
   // Vitest without --config: env-only, zero filesystem access (no config dropped into the repo, no secrets persisted).
-  if (process.env.VITEST === 'true' && explicit === null) {
+  if (filePath === null) {
     return Object.fromEntries(
       CONFIG_TABLE.map((entry) => [entry.path.join('.'), process.env[configEnvName(entry.path)]]),
     )
   }
-  const candidates = configCandidates(process.argv.slice(2))
-
-  // An explicit --config is a directive: use it even when the file doesn't exist yet (it is created there).
-  const filePath = explicit ?? candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
 
   let fileData: Record<string, unknown>
   if (!existsSync(filePath)) {

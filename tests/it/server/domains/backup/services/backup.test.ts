@@ -64,7 +64,7 @@ describe('createBackup — single-flight guard', () => {
 
     releaseUpload()
     const result = await first
-    expect(result.fileName).toMatch(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db\.tar\.gz$/)
+    expect(result.fileName).toMatch(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-[0-9a-f]{16}\.db\.tar\.gz$/)
     expect(mem.store.has(`backup/${result.fileName}`)).toBe(true)
   })
 

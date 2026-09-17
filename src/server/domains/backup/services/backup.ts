@@ -3,7 +3,7 @@ import type { Readable } from 'node:stream'
 import { sql } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
 import { statSync } from 'node:fs'
-import { unlink } from 'node:fs/promises'
+import { copyFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createGzip } from 'node:zlib'
@@ -12,6 +12,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { BackupFileDto } from '@/shared/types/backup'
 
 import { createTarReadStream } from '@/server/domains/backup/services/tar'
+import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@/server/infra/config'
 import { finishJobRun, startJobRun } from '@/server/infra/db/job-run-recorder'
 import {
   deleteBackupRow,
@@ -28,17 +29,20 @@ import { activeBackend, allBackends, backendFor } from '@/server/infra/storage/r
 
 const log = getLogger('backup.service')
 
-const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/
+// New ids append a 64-bit random hex suffix so backup object names stay
+// unguessable even where a bucket listing or referer leaks; the bare
+// timestamp alternative keeps pre-suffix rows downloadable.
+const BACKUP_ID_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(?:-[0-9a-f]{16})?$/
 
 export function isValidBackupKey(key: string): boolean {
-  return TIMESTAMP_RE.test(key)
+  return BACKUP_ID_RE.test(key)
 }
 
-export function buildBackupS3Key(timestamp: string): string {
-  return `backup/backup-${timestamp}.db.tar.gz`
+export function buildBackupS3Key(backupId: string): string {
+  return `backup/backup-${backupId}.db.tar.gz`
 }
 
-function parseTimestampFromKey(key: string): string | null {
+function parseBackupIdFromKey(key: string): string | null {
   // Both archive generations: `.db.tar.gz` and legacy content-only `.db.gz`.
   const match = /^backup\/backup-(.+)\.db(?:\.tar)?\.gz$/.exec(key)
   if (match === null) {
@@ -67,12 +71,12 @@ async function reconcileBackups(db: Database): Promise<void> {
     if (known.has(obj.key)) {
       continue
     }
-    const timestamp = parseTimestampFromKey(obj.key)
-    if (timestamp === null) {
+    const backupId = parseBackupIdFromKey(obj.key)
+    if (backupId === null) {
       continue
     }
     await insertBackupIfMissing(db, {
-      timestamp,
+      timestamp: backupId,
       storagePath: obj.key,
       storageDriver: obj.driver,
       byteSize: obj.size,
@@ -88,7 +92,9 @@ export function wireBackupSnapshots(deps: { snapshotAnalyticsTo: (stagingPath: s
   snapshotAnalytics = deps.snapshotAnalyticsTo
 }
 
-// Single-flight: same-second timestamps would collide on the S3 key and DB row.
+// Single-flight: two concurrent runs would race the same staging/restore
+// window and double-write job history, even though the random id suffix
+// keeps their object keys distinct.
 let backupRunning = false
 
 export function tryBeginBackup(): boolean {
@@ -136,11 +142,14 @@ async function createBackupUnchecked(
   createdBy: number | null,
 ): Promise<{ fileName: string; size: number; timestamp: string }> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  const key = buildBackupS3Key(timestamp)
+  // Random suffix on the public id: backup names must not be guessable.
+  const backupId = `${timestamp}-${randomBytes(8).toString('hex')}`
+  const key = buildBackupS3Key(backupId)
   // Unique per-attempt suffix — a stale file from a crashed attempt must not collide.
   const attemptId = randomBytes(6).toString('hex')
-  const stagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}-${attemptId}.db`)
-  const analyticsStagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}-${attemptId}.duckdb`)
+  const stagingPath = path.join(tmpdir(), `kobato-backup-${backupId}-${attemptId}.db`)
+  const analyticsStagingPath = path.join(tmpdir(), `kobato-backup-${backupId}-${attemptId}.duckdb`)
+  let configStagingPath: string | null = null
 
   log.info('Starting backup', { key })
 
@@ -168,6 +177,25 @@ async function createBackupUnchecked(
 
     // Streaming archive — a full database file is never held in memory.
     entries.unshift({ name: 'kobato.db', path: stagingPath, size: 0 })
+
+    // The env-converged config file rides along so a restored instance can
+    // recover its infrastructure configuration. Best-effort like the sidecar:
+    // null in the VITEST env-only mode, unreadable → warn and archive without it.
+    // Staged via copyFile so a mid-stream rewrite can never tear the tar entry.
+    const configPath = resolveConfigFilePath()
+    if (configPath !== null) {
+      try {
+        configStagingPath = path.join(tmpdir(), `kobato-backup-${backupId}-${attemptId}.config.json`)
+        await copyFile(configPath, configStagingPath)
+        entries.push({ name: CONFIG_FILE_NAME, path: configStagingPath, size: 0 })
+      } catch (error) {
+        configStagingPath = null
+        log.warn('Backup: config file unavailable; archiving without it', {
+          err: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
+
     for (const entry of entries) {
       entry.size = statSync(entry.path).size
     }
@@ -182,7 +210,7 @@ async function createBackupUnchecked(
     })
 
     await insertBackup(db, {
-      timestamp,
+      timestamp: backupId,
       storagePath: key,
       storageDriver: driver,
       byteSize: stored.size,
@@ -190,10 +218,13 @@ async function createBackupUnchecked(
     })
 
     log.info('Backup completed', { key, driver, size: stored.size, entries: entries.length })
-    return { fileName: key.split('/').pop()!, size: stored.size, timestamp }
+    return { fileName: key.split('/').pop()!, size: stored.size, timestamp: backupId }
   } finally {
     await unlink(stagingPath).catch(() => undefined)
     await unlink(analyticsStagingPath).catch(() => undefined)
+    if (configStagingPath !== null) {
+      await unlink(configStagingPath).catch(() => undefined)
+    }
   }
 }
 

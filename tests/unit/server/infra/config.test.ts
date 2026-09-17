@@ -10,6 +10,7 @@ import {
   loadConfig,
   loadServerConfig,
   migrateLegacyKeys,
+  resolveConfigFilePath,
 } from '@/server/infra/config'
 
 // Under VITEST without --config, loadConfig never touches the filesystem;
@@ -585,5 +586,25 @@ describe('infra/config — configCandidates', () => {
       '/home/user/.config/kobato.config.json',
     ])
     expect(configCandidates(['--config', '/tmp/x.json'], seaEnv)[0]).toBe('/tmp/x.json')
+  })
+})
+
+describe('infra/config — resolveConfigFilePath', () => {
+  afterEach(() => {
+    process.argv = realArgv
+    while (tmpDirs.length > 0) {
+      rmSync(tmpDirs.pop()!, { recursive: true, force: true })
+    }
+  })
+
+  it('returns the explicit --config path even when the file does not exist yet', () => {
+    const path = configPathIn(makeTmpDir())
+    withConfigArg(path)
+    expect(resolveConfigFilePath()).toBe(path)
+  })
+
+  it('returns null under VITEST without --config (env-only, no filesystem)', () => {
+    process.argv = [realArgv[0]!, realArgv[1]!]
+    expect(resolveConfigFilePath()).toBeNull()
   })
 })

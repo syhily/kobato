@@ -9,7 +9,7 @@ import { contentTypeForKey } from '@/server/infra/storage/key-policy'
 export const localStorageRouter = new Hono<Env>()
 
 // Positive allowlist of publicly served namespaces — everything else under
-// STORAGE_DIR (notably `backup/backup-<ts>.db.tar.gz`, a full DB dump) stays
+// STORAGE_DIR (notably `backup/backup-<id>.db.tar.gz`, a full DB dump) stays
 // private; new namespaces are NOT served by default.
 const PUBLIC_STORAGE_PREFIXES = ['images/', 'musics/', 'branding/']
 

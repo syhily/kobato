@@ -5,7 +5,8 @@ import { Readable } from 'node:stream'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 /**
- * Minimal USTAR writer/reader for the two-file backup archive, no deps;
+ * Minimal USTAR writer/reader for the backup archive (content DB, optional
+ * analytics sidecar, optional config file), no deps;
  * production paths stream, the buffer-tier pack/unpack lives in
  * tests/_helpers/backup-buffer.ts.
  */

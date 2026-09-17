@@ -129,7 +129,7 @@ describe('adminBackupRouter.create', () => {
   it('creates a real archive in the backend and records a backup_created audit row', async () => {
     const admin = await seedAdmin()
     const res = await call(adminBackupRouter.create, undefined, { context: adminCtx(admin) })
-    expect(res.fileName).toMatch(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db\.tar\.gz$/)
+    expect(res.fileName).toMatch(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-[0-9a-f]{16}\.db\.tar\.gz$/)
     expect(res.size).toBeGreaterThan(0)
     expect(res.timestamp).toBe(res.fileName.replace(/^backup-/, '').replace(/\.db\.tar\.gz$/, ''))
 
