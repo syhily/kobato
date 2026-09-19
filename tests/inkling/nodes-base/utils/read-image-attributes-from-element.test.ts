@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { createTestDom } from '#/inkling/utils/render-live'
 import { readImageAttributesFromElement } from '@/inkling/nodes/base/utils/read-image-attributes-from-element'
 

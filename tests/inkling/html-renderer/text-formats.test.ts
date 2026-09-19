@@ -1,3 +1,5 @@
+import { describe, it } from 'vitest'
+
 import shouldRender from '#/inkling/html-renderer/utils/should-render'
 import { ExtendedTextNode } from '@/inkling/nodes/base'
 

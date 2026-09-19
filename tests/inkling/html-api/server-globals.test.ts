@@ -1,3 +1,5 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
 import { renderHeadless } from '#/inkling/utils/render-live'
 
 // Server-globals suite: headless renders must not touch browser globals. The

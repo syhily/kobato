@@ -50,7 +50,7 @@
     "test:it": "vitest run --project it",
     "test:snaps": "vitest run --project snaps",
     "test:unit": "vitest run --project unit",
-    "type": "react-router typegen && tsc && tsc -p tests/inkling/tsconfig.json"
+    "type": "react-router typegen && tsc"
   },
   "dependencies": {
     "@duckdb/node-api": "catalog:",

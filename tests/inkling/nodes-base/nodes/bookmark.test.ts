@@ -4,6 +4,7 @@ import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
 import Prettier from '@prettier/sync'
 import { $getRoot } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { expectPrettifiedHtml } from '#/inkling/nodes-base/test-utils/assertions'
 import { createDocument, dom, html } from '#/inkling/nodes-base/test-utils/index'

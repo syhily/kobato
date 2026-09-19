@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { htmlToLexicalState, lexicalStateToHtml, lexicalStateToPlainText } from '@/inkling/html/headless-html'
 import { MINIMAL_DOCUMENT } from '@/inkling/utils/initial-document'
 

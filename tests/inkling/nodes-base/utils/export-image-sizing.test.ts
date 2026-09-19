@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { createRenderContext } from '@/inkling/nodes/base/render-context'
 import { getExportImageDimensions } from '@/inkling/nodes/base/utils/export-image-sizing'
 import { getResizedImageDimensions } from '@/inkling/nodes/base/utils/get-resized-image-dimensions'

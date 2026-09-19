@@ -1,3 +1,5 @@
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+
 import { createTestDom } from '#/inkling/utils/render-live'
 import { cleanBasicHtml } from '@/inkling/html/clean-basic-html/clean-basic-html'
 

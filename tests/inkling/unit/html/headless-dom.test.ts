@@ -1,3 +1,5 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
 import { HEADLESS_DOM_MISSING_MESSAGE, resolveHeadlessDom } from '@/inkling/html/headless-dom'
 
 // The port's process-level jsdom cache survives across tests in this file,

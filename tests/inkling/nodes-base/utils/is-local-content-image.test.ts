@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { isLocalContentImage } from '@/inkling/nodes/base/utils/content-image-url'
 
 describe('Utils: isLocalContentImage', function () {

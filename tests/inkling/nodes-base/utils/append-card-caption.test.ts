@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { createRenderContext } from '@/inkling/nodes/base/render-context'
 import { appendCardCaption, CARD_CAPTION_MARKER_CLASS } from '@/inkling/nodes/base/utils/append-card-caption'
 

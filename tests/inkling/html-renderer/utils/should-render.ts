@@ -1,3 +1,5 @@
+import { expect } from 'vitest'
+
 import { createTestDom } from '#/inkling/utils/render-live'
 import { lexicalStateToHtml, type LexicalStateToHtmlOptions } from '@/inkling/html/headless-html'
 

@@ -12,7 +12,11 @@
     "vite.config.ts",
     "**/.server/**/*",
     "**/.client/**/*",
-    ".react-router/types/**/*"
+    ".react-router/types/**/*",
+    // Ambient ImportMetaEnv/CSSProperties augmentations for the demo sources
+    // that tests/inkling imports — the file itself is imported by nobody, so
+    // it must be named here (the rest of demo/ stays out of the program).
+    "demo/types/vite-env.d.ts"
   ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022", "ES2024.Object"],
@@ -35,5 +39,5 @@
     "strict": true,
     "strictNullChecks": true
   },
-  "exclude": ["build", "dist", "tests/inkling", "demo"]
+  "exclude": ["build", "dist"]
 }

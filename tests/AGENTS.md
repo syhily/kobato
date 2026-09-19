@@ -12,9 +12,9 @@ Tests are split into four Vitest workspace projects. **The first three mirror th
   If you test `src/server/domains/posts/services/cms-posts.ts`, the test lives at `tests/it/server/domains/posts/services/cms-posts.test.ts`.
 - **`tests/snaps/`** — React SSR snapshot tests (render-to-string, no DB).
   If you test `src/ui/public/post/PostListViews.tsx`, the test lives at `tests/snaps/ui/public/post/post-list-views.test.tsx`.
-- **`tests/inkling/`** — The dissolved inkling editor suite (jsdom + vitest
-  globals), mirroring `src/inkling` internally. It carries its own
-  `vitest.config.ts` and `tsconfig.json`; run it with
+- **`tests/inkling/`** — The dissolved inkling editor suite (jsdom, globals
+  off like the other projects), mirroring `src/inkling` internally. It
+  carries its own `vitest.config.ts`; run it with
   `npx vitest run --project inkling` (alias `pnpm test:inkling`). Its helpers
   live in `tests/inkling/utils/` — including the `test-editor.ts` harness that
   registers the card decorate adapter — NOT in `tests/_helpers/`.

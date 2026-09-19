@@ -1,4 +1,5 @@
 import Prettier from 'prettier'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createTestDom } from '#/inkling/utils/render-live'
 import { lexicalStateToHtml } from '@/inkling/html/headless-html'

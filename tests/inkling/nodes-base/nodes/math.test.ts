@@ -1,5 +1,6 @@
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot, type LexicalEditor } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { expectPrettifiedHtml } from '#/inkling/nodes-base/test-utils/assertions'
 import { dom, html } from '#/inkling/nodes-base/test-utils/index'

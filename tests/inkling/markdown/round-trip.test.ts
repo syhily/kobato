@@ -1,5 +1,5 @@
 import { IS_HIGHLIGHT, IS_SUBSCRIPT, IS_SUPERSCRIPT, type SerializedEditorState } from 'lexical'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { SerializedCodeBlockNode } from '@/inkling/nodes/CodeBlockNode'
 

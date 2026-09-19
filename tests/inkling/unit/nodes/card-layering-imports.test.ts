@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
+import { describe, expect, it } from 'vitest'
 
 /**
  * The card pipeline's layering rule, pinned statically (CONTEXT.md: "card

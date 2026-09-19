@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { createRenderContext } from '@/inkling/nodes/base/render-context'
 import { getSrcsetAttribute } from '@/inkling/nodes/base/utils/srcset-attribute'
 

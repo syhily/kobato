@@ -1,6 +1,7 @@
 import type { SerializedEditorState, SerializedElementNode } from 'lexical'
 
 import assert from 'node:assert/strict'
+import { describe, it } from 'vitest'
 
 import { htmlToLexical as importWithDom } from '#/inkling/utils/html-to-lexical-with-dom'
 

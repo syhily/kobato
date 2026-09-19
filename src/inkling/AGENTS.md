@@ -24,7 +24,7 @@
 Run these from the kobato root:
 
 ```bash
-pnpm run type        # root tsc + tsc -p tests/inkling/tsconfig.json
+pnpm run type        # root tsc — a single pass that also covers tests/inkling
 pnpm run lint        # oxlint (root config)
 pnpm test:inkling    # vitest run --project inkling
 pnpm run fmt         # oxfmt --write with the root config (covers src/inkling, tests/inkling, demo)
@@ -45,11 +45,11 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
 - Tailwind classes scoped under `.inkling-lexical`.
 - Import sorting is handled by `oxfmt`.
 - `oxlint` runs type-aware (oxlint-tsgolint, TS7-based) with `typeCheck` on. tsgolint discovers each
-  file's nearest `tsconfig.json`; the inkling suite's discovery anchor is
-  `tests/inkling/tsconfig.json` (it extends the root tsconfig and adds the vitest-globals/jest-dom
-  types the suite needs). The root tsconfig's `verbatimModuleSyntax` means type-only imports must
-  use `import type`. Note: tsgolint caches its program state — if a tsconfig edit produces a sudden
-  flood of `TS2339`-style errors across test files, re-run `pnpm run lint` once before believing it.
+  file's nearest `tsconfig.json`; the whole repo — `src/inkling` and `tests/inkling` included —
+  resolves to the single root tsconfig. The root tsconfig's `verbatimModuleSyntax` means type-only
+  imports must use `import type`. Note: tsgolint caches its program state — if a tsconfig edit
+  produces a sudden flood of `TS2339`-style errors across test files, re-run `pnpm run lint` once
+  before believing it.
 
 ## Architecture notes
 
@@ -278,7 +278,8 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
 
 ## Testing
 
-- Vitest, jsdom environment, globals enabled — its own project (`tests/inkling/vitest.config.ts`;
+- Vitest, jsdom environment, globals off (explicit `vitest` imports, same as the other projects) —
+  its own project (`tests/inkling/vitest.config.ts`;
   the include list mirrors the layer: `unit/`, `utils/`, `clean-basic-html/`, `html-api/`,
   `html-to-lexical/`, `html-renderer/`, `markdown/`, `transforms/`, `nodes-base/`). The project is
   part of the root `pnpm run test`; `src/inkling/**` is excluded from the root coverage gate (the

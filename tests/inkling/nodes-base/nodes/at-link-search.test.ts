@@ -1,6 +1,7 @@
 import type { LexicalEditor, EditorConfig } from 'lexical'
 
 import { createHeadlessEditor } from '@lexical/headless'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { createTestDom } from '#/inkling/utils/render-live'
 import { editorTest } from '#/inkling/utils/test-editor'

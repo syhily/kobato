@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Plan 040 import guard: renderer policy — URL validation, template escaping,

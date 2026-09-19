@@ -1,5 +1,6 @@
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot, type EditorState, type LexicalEditor, type LexicalNodeConfig } from 'lexical'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import type { NestedEditorSpec, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { GeneratedDecoratorNodeClass } from '@/inkling/nodes/base/generate-decorator-node'

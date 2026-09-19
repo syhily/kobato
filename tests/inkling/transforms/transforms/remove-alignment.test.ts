@@ -2,6 +2,7 @@ import type { LexicalEditor } from 'lexical'
 
 import { HeadingNode } from '@lexical/rich-text'
 import { ParagraphNode, TextNode } from 'lexical'
+import { describe, it } from 'vitest'
 
 import { assertTransform, createEditor } from '#/inkling/transforms/utils'
 import { registerRemoveAlignmentTransform } from '@/inkling/transforms/index'

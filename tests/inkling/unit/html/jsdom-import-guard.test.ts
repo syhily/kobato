@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Headless-DOM-port import guard: `src/html/headless-dom.ts` is the only

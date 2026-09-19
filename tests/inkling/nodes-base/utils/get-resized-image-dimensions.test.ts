@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { getResizedImageDimensions } from '@/inkling/nodes/base/utils/get-resized-image-dimensions'
 
 describe('Utils: getResizedImageDimensions', function () {

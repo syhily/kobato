@@ -396,7 +396,6 @@ export function generateDecoratorNode<
       // name, so the record IS the mapped value map at runtime; TS cannot
       // relate dynamically-written keys to DecoratorNodeValueMap<Props>, and
       // no runtime check can prove the mapped type of a generic.
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- spec-derived mapped type; the reduce builds exactly its keys
       return internalProps.reduce((obj: Record<string, unknown>, prop) => {
         obj[prop.name] = prop.default
         return obj

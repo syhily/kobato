@@ -4,9 +4,9 @@ import { defineConfig } from 'vitest/config'
 
 import { testDefine } from '../vitest.define.ts'
 
-// The inkling editor suite (src/inkling): jsdom + vitest globals + RTL,
-// compiled through the React Compiler like the app bundle. Kept as its own
-// project because the root unit project is node-env with globals off.
+// The inkling editor suite (src/inkling): jsdom + RTL, compiled through the
+// React Compiler like the app bundle. Kept as its own project because the
+// root unit project is node-env; globals stay off like the other projects.
 export default defineConfig({
   plugins: [svgr(), react({ compiler: true })],
   resolve: {
@@ -14,7 +14,7 @@ export default defineConfig({
   },
   define: testDefine,
   test: {
-    globals: true,
+    globals: false,
     silent: 'passed-only',
     environment: 'jsdom',
     setupFiles: ['./setup.ts'],

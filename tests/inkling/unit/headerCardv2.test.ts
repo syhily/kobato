@@ -1,5 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
+import { beforeEach, describe, expect, it } from 'vitest'
+
 import { createTestEditor, editorTest } from '#/inkling/utils/test-editor'
 import { $createHeaderNode, $isHeaderNode, HeaderNode, type HeaderNodeDataset } from '@/inkling/nodes/HeaderNode'
 

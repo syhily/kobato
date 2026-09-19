@@ -2,6 +2,7 @@ import type { ElementNode, LexicalEditor } from 'lexical'
 
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { editorTest } from '#/inkling/utils/test-editor'
 import { TKNode, $createTKNode, $isTKNode } from '@/inkling/nodes/base/index'

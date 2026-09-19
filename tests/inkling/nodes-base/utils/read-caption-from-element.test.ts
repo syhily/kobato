@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { createTestDom } from '#/inkling/utils/render-live'
 import { readCaptionFromElement } from '@/inkling/nodes/base/utils/read-caption-from-element'
 

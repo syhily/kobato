@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { Color, textColorForBackgroundColor } from '@/inkling/utils/index'
 
 describe('colorUtils', function () {

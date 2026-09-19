@@ -3,6 +3,7 @@ import type { LexicalEditor } from 'lexical'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { $getRoot, $createParagraphNode, $createTextNode } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createDocument, html } from '#/inkling/nodes-base/test-utils/index'
 import { editorTest } from '#/inkling/utils/test-editor'

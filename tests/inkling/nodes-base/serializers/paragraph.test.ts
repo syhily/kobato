@@ -2,6 +2,7 @@ import type { ElementNode, HTMLConfig, LexicalEditor } from 'lexical'
 
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createDocument } from '#/inkling/nodes-base/test-utils/index'
 import { editorTest } from '#/inkling/utils/test-editor'

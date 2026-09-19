@@ -1,6 +1,7 @@
 import { createHeadlessEditor } from '@lexical/headless'
 import { $convertFromMarkdownString } from '@lexical/markdown'
 import { $getRoot, type TextFormatType } from 'lexical'
+import { describe, expect, it } from 'vitest'
 
 import { INLINE_DELIMITERS } from '@/inkling/markdown/grammar'
 import { pasteDialect } from '@/inkling/markdown/paste-dialect'

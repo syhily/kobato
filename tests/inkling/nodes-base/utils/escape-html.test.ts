@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { escapeHtml } from '@/inkling/nodes/base/utils/escape-html'
 
 describe('Utils: escapeHtml', function () {

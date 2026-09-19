@@ -1,6 +1,7 @@
 import type { LexicalNodeConfig } from 'lexical'
 
 import { createHeadlessEditor } from '@lexical/headless'
+import { describe, expect, it } from 'vitest'
 
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 

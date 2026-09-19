@@ -1,15 +1,15 @@
 /// <reference types="node" />
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string
-  readonly REACT_ROUTER_HONO_SERVER_ASSETS_DIR: string
-  readonly REACT_ROUTER_HONO_SERVER_BASENAME: string
-}
-
 import type { ViteDevServer } from 'vite'
 
 declare global {
+  interface ImportMetaEnv {
+    readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string
+    readonly REACT_ROUTER_HONO_SERVER_ASSETS_DIR: string
+    readonly REACT_ROUTER_HONO_SERVER_BASENAME: string
+  }
+
   var __viteDevServer: ViteDevServer | undefined
   const __APP_NAME__: string
   const __APP_VERSION__: string

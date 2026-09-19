@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 
 import { CARD_DECLARATIONS, type CardDeclaration } from '@/inkling/nodes/cards'

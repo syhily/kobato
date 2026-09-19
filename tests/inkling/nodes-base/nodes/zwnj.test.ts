@@ -1,6 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
 import { createHeadlessEditor } from '@lexical/headless'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { editorTest } from '#/inkling/utils/test-editor'
 import { ZWNJNode, $createZWNJNode, $isZWNJNode } from '@/inkling/nodes/base/index'

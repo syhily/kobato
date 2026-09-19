@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { pasteDialect } from '@/inkling/markdown/paste-dialect'
 
 describe('Paste dialect markdown-it engine', function () {

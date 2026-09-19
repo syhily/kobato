@@ -2,6 +2,7 @@ import type { LexicalEditor, SerializedParagraphNode } from 'lexical'
 
 import { HeadingNode } from '@lexical/rich-text'
 import { ParagraphNode } from 'lexical'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { ExportDOMOptions } from '@/inkling/nodes/base'
 
