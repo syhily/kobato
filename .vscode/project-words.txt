@@ -14,6 +14,7 @@ astextplain
 autospace
 backref
 batang
+bcryptjs
 behaviour
 bigserial
 biomejs
@@ -29,6 +30,7 @@ bxaw
 bytea
 captainofphb
 cfilter
+chenglou
 cimage
 ckenh
 cking
@@ -55,12 +57,14 @@ dbname
 dedup
 dichen
 dinesh
+dompurify
 dotum
 duckdb
 duoshuo
 eliostruyf
 embedpdf
 emde
+emnapi
 envsubst
 eparams
 epub
@@ -85,6 +89,7 @@ fsevents
 fumadocs
 geekzu
 genyo
+geoip
 giscus
 godalming
 godruoyi
@@ -130,6 +135,7 @@ jiangcl
 jiasm
 jing
 jmoiron
+jsdom
 jshintignore
 jungshik
 junie
@@ -148,6 +154,7 @@ lantinghei
 laojieli
 lastmod
 lazyload
+lezer
 libravatar
 libvips
 linguaphone
@@ -194,6 +201,7 @@ nian
 nihaha
 nmtid
 nocolor
+nodemailer
 nofollow
 noninteractive
 nopd
@@ -234,6 +242,7 @@ photoswipe
 phpinfo
 picimg
 pilgi
+pino
 pipeable
 pkey
 plaiceholder
@@ -273,6 +282,7 @@ rehype
 requirepass
 rgba
 rivo
+rollup
 samp
 sauvignon
 scalafmt
@@ -298,14 +308,17 @@ skrs
 slugignore
 smembers
 songti
+sonner
 sqlx
 srcset
 srem
 stylesheet
 suus
+svgr
 tabindex
 tablename
 tagcloud
+tanstack
 taza
 taze
 temml
@@ -350,6 +363,7 @@ vercel
 verifyotp
 viewbox
 vite
+vitejs
 vitest
 vkey
 voidzero
