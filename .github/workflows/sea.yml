@@ -223,6 +223,88 @@ jobs:
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato
       - run: pnpm run sea:e2e dist-sea/kobato
+      # deploy-cn reuses THIS binary (push events only; PRs upload nothing).
+      - name: Build deb package (deploy artifact)
+        if: github.event_name == 'push'
+        run: |
+          (cd dist-sea && sha256sum -c kobato.sha256)
+          version="$(node -p "require('./package.json').version" | tr '-' '~')+ci${{ github.run_number }}.g$(git rev-parse --short=7 HEAD)"
+          bash scripts/deploy/build-deb.sh dist-sea/kobato "$version" "dist-sea/kobato_${version}_amd64.deb"
+          (cd dist-sea && sha256sum "kobato_${version}_amd64.deb" > "kobato_${version}_amd64.deb.sha256")
+      - uses: actions/upload-artifact@v7
+        if: github.event_name == 'push'
+        with:
+          name: kobato-deploy-deb
+          retention-days: 1
+          path: dist-sea/kobato_*_amd64.deb*
+
+  # Push the deb to the bare-metal server and dpkg-install it via
+  # scripts/deploy/deploy.sh (the CI SSH identity must be root or NOPASSWD
+  # sudo). Gated on DEPLOY_CN_ENABLED so forks skip cleanly (secrets are
+  # not usable in job-level `if`).
+  deploy-cn:
+    name: deploy (cn server)
+    needs: build-develop
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && vars.DEPLOY_CN_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: cn-production
+    permissions:
+      contents: read # checkout
+      actions: write # artifact deletion after deploy
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: kobato-deploy-deb
+          path: dist-sea
+      - name: Verify deb checksum
+        working-directory: dist-sea
+        run: sha256sum -c kobato_*_amd64.deb.sha256
+      - name: Install SSH key
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+      - name: Upload to server (with retries)
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER || 'root' }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+        run: |
+          SSH_OPTS="-p ${DEPLOY_PORT} -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=8 -o TCPKeepAlive=yes -o BatchMode=yes"
+          for attempt in 1 2 3; do
+            if ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" 'mkdir -p /opt/kobato/incoming' \
+              && scp $SSH_OPTS dist-sea/kobato_*_amd64.deb dist-sea/kobato_*_amd64.deb.sha256 scripts/deploy/deploy.sh "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/kobato/incoming/"; then
+              exit 0
+            fi
+            echo "upload attempt ${attempt} failed"
+            sleep 15
+          done
+          exit 1
+      - name: Deploy and restart service
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER || 'root' }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+          DEPLOY_APP_PORT: ${{ vars.DEPLOY_APP_PORT || '4321' }}
+        run: |
+          ssh -p "${DEPLOY_PORT}" -o BatchMode=yes "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "bash /opt/kobato/incoming/deploy.sh /opt/kobato/incoming ${DEPLOY_APP_PORT}"
+      # retention-days: 1 is the floor upload-artifact accepts — delete as
+      # soon as the deploy settles, on failure too (`always()`).
+      - name: Delete deploy artifact
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          id="$(gh api "repos/${GH_REPO}/actions/artifacts?name=kobato-deploy-deb" --jq '.artifacts[0].id')"
+          if [ -n "$id" ] && [ "$id" != "null" ]; then
+            gh api -X DELETE "repos/${GH_REPO}/actions/artifacts/${id}"
+          fi
 
   # Release assets are uploaded for the events that actually occur in the
   # release flow — the tag push (automated: scripts/release.ts pushes the

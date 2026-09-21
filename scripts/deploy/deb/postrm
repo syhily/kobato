@@ -1,0 +1,12 @@
+#!/bin/sh
+# User data (/var/lib/kobato, /etc/kobato) is kept even on purge — it holds
+# the database and the config with its generated secrets.
+set -e
+
+case "$1" in
+remove | purge)
+  systemctl daemon-reload
+  ;;
+esac
+
+exit 0

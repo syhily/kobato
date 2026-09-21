@@ -1,0 +1,25 @@
+[Unit]
+Description=Kobato (SEA single-executable blog server)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kobato
+Group=kobato
+WorkingDirectory=/var/lib/kobato
+ExecStart=/usr/bin/kobato --config /etc/kobato/kobato.config.json
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+Environment=NODE_ENV=production
+Environment=KOBATO_CACHE_DIR=/var/lib/kobato/cache
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# The process writes its config back under /etc/kobato (same-dir rename).
+ReadWritePaths=/var/lib/kobato /etc/kobato
+
+[Install]
+WantedBy=multi-user.target

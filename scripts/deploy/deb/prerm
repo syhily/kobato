@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+remove | deconfigure)
+  systemctl stop kobato.service || true
+  systemctl disable kobato.service || true
+  ;;
+esac
+
+exit 0

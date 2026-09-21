@@ -1,0 +1,39 @@
+#!/bin/sh
+# configure: fresh install → bootstrap + enable --now; upgrade → try-restart.
+set -e
+
+APP_USER="kobato"
+CONFIG_DIR="/etc/kobato"
+DATA_DIR="/var/lib/kobato"
+
+case "$1" in
+configure)
+  NOLOGIN="/usr/sbin/nologin"
+  [ -x "$NOLOGIN" ] || NOLOGIN="/sbin/nologin"
+  if ! id -u "$APP_USER" >/dev/null 2>&1; then
+    useradd --system --home-dir "$DATA_DIR" --shell "$NOLOGIN" "$APP_USER"
+  fi
+
+  install -d -o "$APP_USER" -g "$APP_USER" -m 0755 \
+    /opt/kobato /opt/kobato/incoming "$CONFIG_DIR" "$DATA_DIR" "$DATA_DIR/data" "$DATA_DIR/cache"
+
+  # The process generates the secrets and writes them back on first boot.
+  if [ ! -f "$CONFIG_DIR/kobato.config.json" ]; then
+    install -o "$APP_USER" -g "$APP_USER" -m 0600 /dev/stdin "$CONFIG_DIR/kobato.config.json" <<'JSON'
+{
+  "server": { "host": "0.0.0.0", "port": 4321 },
+  "storage": { "data": "/var/lib/kobato/data" }
+}
+JSON
+  fi
+
+  systemctl daemon-reload
+  if [ -z "${2:-}" ]; then
+    systemctl enable --now kobato.service
+  else
+    systemctl try-restart kobato.service
+  fi
+  ;;
+esac
+
+exit 0
