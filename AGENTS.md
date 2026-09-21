@@ -61,238 +61,125 @@ Tier-2 buckets derive automatically from route-ID prefixes (`routes/public|admin
 ## SEA packaging
 
 The production server also ships as a Node.js single executable (SEA) on
-**Node 26** with **`"useVfs": true`** (26.9): the blob's assets are
-mounted as a read-only virtual file system and the single-file ESM
-server bundle — the binary's injected `main` (`mainFormat: "module"`) —
-runs from the mount root, so the bundle's `import.meta.dirname` IS the
-asset root and every asset key maps 1:1 to a VFS path. Raw assets
-(client build, drizzle migrations, wasm, worker code, libvips metadata)
-are plain `node:fs` reads via `seaAssetPath` (`src/server/infra/sea.ts`);
-only the zstd-packed natives still ride the `node:sea` getAsset channel
-(`getEmbeddedAsset`) and extract to a flat cache dir on first run
-(`src/server/infra/sea-natives.ts`) — the OS `dlopen` needs real files.
-Empirically pinned constraints (`pnpm run sea:probe`,
-ADR-0004 amendment 2026-09-21): worker threads can neither start from
-nor even see VFS paths (fs under the mount → `ENOTDIR`), so the
-`eval:true` worker dispatch stays; a self-contained `.node` (skia)
-requires from the VFS but addons with companion libraries
-(sharp+libvips, duckdb+libduckdb) fail `ERR_DLOPEN_FAILED` from the
-private temp image, so extraction stays; the userland `node:vfs` module
-is NOT compiled into a SEA (`ERR_UNKNOWN_BUILTIN_MODULE`); the blob
-stores assets uncompressed (1 MB asset → +1 MB binary), which is why the
-natives must stay packed; and async `fs.readv`/`fs.writev` crash the
-process on ANY fd under a mount (`TypeError: h.writev is not a
-function` — the VFS handler table lacks the async hooks `lib/fs.js`
-calls unguarded; unfixed upstream as of 26.9.0), so
-`src/server/infra/sea-vfs-fs-patch.ts` replaces both with sequential
-single-operation fallbacks at bootstrap, ahead of the server graph
-(one replacement on the public `fs` exports covers every later
-`createWriteStream`).
+**Node 26** with **`"useVfs": true`** (26.9): blob assets mount as a
+read-only VFS, the injected ESM `main` (`mainFormat: "module"`) runs from
+the mount root, and every asset key maps 1:1 to a VFS path under
+`import.meta.dirname`. Raw assets (client build, drizzle migrations,
+wasm, worker code, libvips metadata) are plain `node:fs` reads via
+`seaAssetPath` (`src/server/infra/sea.ts`); only the zstd-packed
+`natives/*` ride the `node:sea` getAsset channel (`getEmbeddedAsset`) and
+extract to a flat cache dir on first run
+(`src/server/infra/sea-natives.ts`) — `dlopen` needs real files.
 
-**Node 26 pin.** The toolchain is pinned to 26.9.0: `.nvmrc`, the CI
-matrices (`.github/workflows/sea.yml` ×4, `ci.yml` ×2 —
-`node-version: 26.9.0`) all carry the exact version, and
-`package.json` engines requires `>=26.9.0`. `scripts/sea/build.ts`
-gates `REQUIRED_NODE_MAJOR = 26` — a major-only gate by design. Local
-dev/tests still run on the machine's default Node; only `sea:build`
-gates. The pin was verified end-to-end: `sea:build` + the
-full managed `sea:smoke` passed on the exact
-`node:<pinned>-bookworm-slim` image (linux x64).
+Empirically pinned constraints (`pnpm run sea:probe`; the full rationale
+lives in ADR-0004 amendment 2026-09-21):
 
-**Bootstrap ordering (`mainFormat: "module"`).** There is no CJS prelude
-and no runtime bundle materialization — and filesystem `import()` is
-forbidden in the injected script, so the whole server graph is one static
-import graph evaluated depth-first in import order. The entry shim
-(`scripts/sea/server-entry.ts`) sequences it:
+- Worker threads can neither start from nor even see VFS paths
+  (`ENOTDIR`) — the `eval:true` worker dispatch stays: the main thread
+  `readFileSync`s the worker bundle from the mount and dispatches with
+  `execArgv: ['--input-type=module']` + `argv` forwarded (workers do not
+  inherit argv; the module flag keeps `import.meta.url` a file: URL for
+  the inlined packages' `createRequire`).
+- A self-contained `.node` (skia) requires from the VFS; addons with
+  companion libraries (sharp+libvips, duckdb+libduckdb) fail
+  `ERR_DLOPEN_FAILED` from the private temp image — extraction stays.
+- The userland `node:vfs` module is NOT compiled into a SEA
+  (`ERR_UNKNOWN_BUILTIN_MODULE`).
+- The blob stores assets uncompressed — only `natives/*` is packed
+  (`shouldPackAsset` in `scripts/sea/assets.ts`), zstd level 9
+  multithreaded, the ONLY codec. `manifest.json` rides raw as the
+  codec/integrity registry; `getEmbeddedAsset` decodes lazily per key and
+  is the channel that also works inside workers.
+- Async `fs.readv`/`fs.writev` crash on ANY fd under a mount
+  (`TypeError: h.writev is not a function`; unfixed upstream) —
+  `src/server/infra/sea-vfs-fs-patch.ts` replaces both with sequential
+  fallbacks, installed by `sea-cli` before its flag dispatch AND by
+  `sea-bootstrap` before the server graph (the flag dispatch's top-level
+  await suspends module evaluation ahead of the sea-bootstrap sibling).
 
-0. `zod/compile` — Zod 4.5 global auto-compilation, first so even the
-   config-graph schemas constructed below compile on first parse. The
-   server has no CSP, so `new Function` is available; the browser bundle
-   keeps `jitless` (`src/shared/zod-config.ts`, browser-only), under
-   which compile stands down. `src/entry.server.tsx` carries the same
-   first-line import for the dev/SSR server graph.
-1. `src/server/infra/sea-cli.ts` — argv handling: `--version`/`--help`
-   exit with zero side effects; `--smoke-natives` / `--smoke-worker`
-   bootstrap + run + exit.
-2. `src/server/infra/sea-bootstrap.ts` — `installSeaVfsFsPatch()` (the
-   readv/writev repair, before any WriteStream can be created) then
-   `bootstrapSeaRuntime()` at module scope: natives extraction +
-   `KOBATO_NATIVES_DIR`. It MUST complete before step 3 because sharp's
-   platform detection runs at module-evaluation time. Note step 1's
-   module body carries the top-level `await main(args)` flag dispatch —
-   a TLA suspends that module's evaluation, so sibling imports (this
-   step) have NOT run while a flag path executes; sea-cli therefore
-   installs the fs patch itself before dispatching.
+**Node 26 pin.** Toolchain pinned to 26.9.0 (`.nvmrc`, CI matrices,
+`package.json` engines `>=26.9.0`); `scripts/sea/build.ts` gates
+major-only — local dev/tests run the machine's default Node.
+
+**Bootstrap ordering (`mainFormat: "module"`).** No CJS prelude;
+filesystem `import()` is forbidden in the injected script, so the whole
+server graph is one static import graph evaluated depth-first. The entry
+shim (`scripts/sea/server-entry.ts`):
+
+0. `zod/compile` — Zod 4.5 global auto-compilation, first so the
+   config-graph schemas compile on first parse (the browser bundle keeps
+   `jitless`; `src/entry.server.tsx` carries the same first line).
+1. `src/server/infra/sea-cli.ts` — argv: `--version`/`--help` exit with
+   zero side effects; `--smoke-natives` / `--smoke-worker` /
+   `--smoke-vfs` bootstrap + run + exit.
+2. `src/server/infra/sea-bootstrap.ts` — the fs patch, then natives
+   extraction + `KOBATO_NATIVES_DIR`; MUST complete before step 3
+   (sharp's platform detection runs at module-evaluation time).
 3. the server graph (`build/server/index.js`).
 
-`--smoke-worker` reads `worker/smoke-worker.mjs` from the VFS and
-dispatches it via `new Worker(code, { eval: true, execArgv: ['--input-type=module'], argv: process.argv.slice(2) })` —
-the `--input-type=module` runs the eval'd bundle as ESM explicitly (the
-eval route keeps `import.meta.url` a file: URL, which the inlined
-packages' module-scope `createRequire(import.meta.url)` needs); the
-`argv` forward matters because worker threads do NOT inherit the
-parent's argv, and the worker's env graph resolves the config file from
-`--config`. Workers cannot start from VFS paths (probe-pinned), so eval
-is the only dispatch.
-
-**Vite 8 builds the three bundles** (`vite.sea.config.ts`, driven by the
-`SEA_BUNDLE` loop in `scripts/sea/build.ts`): `server.mjs` (the
-injected main), `process-worker.mjs` and `smoke-worker.mjs` (embedded
-as text assets) — all ESM. tsdown is gone; the bundles are minified,
-single-file (`codeSplitting: false`), `ssr.noExternal: true`.
+**Vite 8 builds three bundles** (`vite.sea.config.ts`, the `SEA_BUNDLE`
+loop in `scripts/sea/build.ts`): `server.mjs` (the injected main),
+`process-worker.mjs` + `smoke-worker.mjs` (embedded text assets) —
+minified, single-file, `ssr.noExternal: true`.
 `scripts/sea/check-bundle.ts` fails the build on leftover external
-specifiers (including rolldown's `__require("bare")` runtime-external
-shim) and on `__APP_*__`/`__SEA_*__` identifiers the bundle's vite
-`define` table does not cover (undefined compile-time globals would be a
-ReferenceError at boot).
+specifiers and on `__APP_*__`/`__SEA_*__` identifiers the `define` table
+does not cover.
 
-**Payload compression.** Only the `natives/*` payloads are packed
-(`shouldPackAsset` in `scripts/sea/assets.ts`) into
-`dist-sea/intermediates/packed/<key>` — with `useVfs` every other asset
-must stay raw, because a packed file would be unreadable zstd bytes in
-the mount, and only the ~170 MB of natives move the binary-size needle.
-zstd is the ONLY pack
-codec (there is no `--codec` flag): level 9, multithreaded
-(`ZSTD_c_nbWorkers`, payloads ≥ 4 MB). Level 19 and brotli-11 were
-measured and rejected — on the ~170 MB of natives they shrink the blob
-by only ~5 MB / ~9 MB over level 9 while costing ~35 s / ~8 min of pack
-time; the binary stays far below the 230 MB budget regardless.
-`manifest.json` rides uncompressed
-as the codec registry (`{key, path, sha256(raw), codec, size}`);
-`getEmbeddedAsset` parses it once and decodes lazily, memoized per key —
-a channel now scoped to the packed natives and the `natives-meta/*`
-JSONs (the one that also works inside worker threads, which cannot see
-the mount). Raw assets never touch it: they are `node:fs` reads via
-`seaAssetPath` (`client/` serving, drizzle migrations, warmup manifests,
-the cnfs wasm, the worker bundles).
-The smoke budgets the binary at 230 MB — `--build-sea` leaves no
-standalone blob, so the compressed payload is sized inside the binary.
-
-**Natives = dynamic libraries + one datafile.** The extraction writes
+**Natives = dynamic libraries + one datafile.** Extraction writes
 exactly 5 files (7 on win32) into the FLAT
-`<cache>/natives-<manifest-hash>/` dir:
-the rpath-patched sharp addon (`sharp.node`), the libvips files (one
-`libvips-cpp.*` on darwin/linux; win32 splits libvips into two DLLs
-inside the sharp platform package), the skia addon (`skia.node`), and
-the rpath-patched DuckDB addon (`duckdb.node`) plus its libduckdb
-library (`libduckdb.dylib`/`.so`; `duckdb.dll` on win32) — and, win32
-only, skia's `icudtl.dat` ICU datafile: the Windows skia builds probe
-for it next to the loaded module and a missing file is FATAL on the
-first paragraph build (`SkIcuLoader` → `check(fUnicode)` takes the
-whole process down; darwin/linux skia builds carry ICU internally). The rpath
-patch runs at build time on a staged copy
-(`install_name_tool -change @rpath/X @loader_path/X` on darwin,
-`patchelf --set-rpath '$ORIGIN'` on linux — patchelf is guarded in the
-linux CI job; nothing on win32). sharp /
-@napi-rs/canvas / @duckdb/node-api are **statically imported and
+`<cache>/natives-<manifest-hash>/`: the rpath-patched `sharp.node` +
+libvips (win32 splits it into two DLLs), `skia.node`, the rpath-patched
+`duckdb.node` + libduckdb, and win32-only `icudtl.dat` (missing = FATAL
+on the first paragraph build). rpath patches run at build time
+(`install_name_tool` on darwin, `patchelf` on linux, nothing on win32).
+sharp / @napi-rs/canvas / @duckdb/node-api are **statically imported and
 bundled**; `scripts/sea/redirect-native-requires.ts` (a Vite plugin)
-rewrites the packages' own platform-specifier `require(...)` call sites
-to `nativeRequire(...)`, which resolves them against the flat dir plus
-embedded `natives-meta/*` metadata assets
-(`src/server/infra/native-require.ts`). jsdom (the server sanitize
-engine) and css-tree (jsdom's CSS parser) are inlined the same way, and
-both read static data files at runtime in ways the single-file ESM bundle
-cannot survive — jsdom's `computed-style.js` reads its default stylesheet
-from `__dirname` at module scope; css-tree's `data-patch` / `data` /
-`version` entry files load `patch.json`, the three `mdn-data/css/*.json`
-dictionaries, and `../package.json` through
-`createRequire(import.meta.url)` — so
-`scripts/sea/inline-package-data.ts` (a Vite plugin, registered in both
-vite configs since these packages reach the SEA bundle via the prebuilt
-build/server graph) swaps each read for an inlined literal. The call-site
-shapes are pinned by
-`tests/unit/shared/contracts/inline-package-data.test.ts`.
+rewrites their platform-specifier `require(...)` sites to
+`nativeRequire(...)` against the flat dir + embedded `natives-meta/*`
+(`src/server/infra/native-require.ts`). jsdom and css-tree read static
+data files at runtime in ways the single-file bundle cannot survive, so
+`scripts/sea/inline-package-data.ts` inlines each read (call-site shapes
+pinned by `tests/unit/shared/contracts/inline-package-data.test.ts`).
 
-- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). The binary is
-  deliberately NOT UPX-compressed — every ordering is a verified dead
-  end, re-verified against `--build-sea` output on Node 26.5.0
-  (UPX 5.2.0, linux x64): inject-then-compress fails with
-  `CantPackException: bad e_phoff` (Node's injector writes phdrs UPX
-  can't parse — the same failure class as
-  [postject#87](https://github.com/nodejs/postject/issues/87));
-  `--force-execve` fails with `UnknownExecutableFormatException`;
-  compress-then-inject destroys the sentinel fuse so `--build-sea`
-  refuses; and Node finds the blob via `dl_iterate_phdr` on the in-memory
-  phdrs, which a packed stub does not present. Do not re-add an UPX step.
-- `pnpm run sea:smoke [binary]` — deep smoke: binary budget, version,
-  `--smoke-vfs` (the mounted asset VFS: layout, `node:fs` reads of raw
-  assets, the EROFS write guarantee), natives, the flat extraction
-  layout, `--smoke-worker` (a real
-  sharp job round-tripping through the `worker_threads` image pool),
-  boot + migrations on per-run temp files (the SQLite content DB and the
-  DuckDB analytics sidecar both live under one mkdtemp root — no
-  external services on any platform), fresh-install gate, SSR, embedded
-  asset, **config-file convergence** (the env-driven boot writes
-  `storage.database` + secrets back into `--config`'s temp file), SQL
-  seed via node:sqlite (one minimal admin row plus the `blog.general` /
-  `blog.assets` roots — hydration backfills the rest), a graceful
-  restart on a **reduced env that proves the converged file alone boots
-  the server** (the settings snapshot only loads at boot; the install
-  gate is evaluated per request), installed `/health` and `/` SSR, the
-  @napi-rs/canvas calendar endpoint over HTTP, browser-UA page views +
-  a **DuckDB analytics round-trip** (rows landed in `access_log`,
-  verified by scanning the sidecar file after shutdown), SIGTERM ×2,
-  natives-cache reuse ×2. `--external <url>` runs only the HTTP checks
-  against an already-running server (e.g. a container), seeds nothing,
-  and reports the calendar check as SKIP on uninstalled instances.
-  `--binary-only [binary]` runs just the service-free checks (budget,
-  version, VFS, natives, layout, worker pool).
+- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`), budgeted at
+  230 MB by the smoke. Deliberately NOT UPX-compressed — every ordering
+  is a verified dead end (phdr/sentinel-fuse failures). Do not re-add.
+- `pnpm run sea:smoke [binary]` — deep managed smoke: budget, version,
+  `--smoke-vfs`, natives + flat layout, worker pool, boot + migrations
+  on per-run temp DBs (no external services), fresh-install gate, SSR,
+  embedded asset, config-file convergence + a reduced-env restart
+  proving the converged file alone boots, calendar endpoint, page views
+  → DuckDB round-trip, SIGTERM ×2, natives-cache reuse ×2.
+  `--external <url>` runs only the HTTP checks against a live server;
+  `--binary-only` runs the service-free checks.
 - `pnpm run sea:probe [node-binary]` — systematic VFS capability
   verification (`scripts/sea/vfs-capabilities.ts`): userland `node:vfs`
-  probes (mount lifecycle, fs-through-mount, CJS/ESM loader integration,
-  provider zoo) plus a tiny purpose-built `useVfs` SEA asserting the
-  full in-binary behavior matrix — including the pinned limitations
-  (workers cannot start from VFS paths, dependent-library addons cannot
-  load from the VFS, `node:vfs` is absent inside a SEA, async
-  `fs.readv`/`fs.writev` crash under a mount — the upstream bug
-  `sea-vfs-fs-patch.ts` repairs at runtime).
-  Defaults to `process.execPath`; local runs need an official Node dist
-  (Homebrew lacks the SEA fuse — the probe preflights it).
+  probes plus a purpose-built `useVfs` mini-SEA asserting the in-binary
+  behavior matrix (the pinned limitations above). Needs an official
+  Node dist — Homebrew lacks the SEA fuse (preflighted).
 - `pnpm run sea:e2e [binary]` — boots the binary like the managed smoke
-  (per-run database files, migrations, seeded admin with a KNOWN random
-  password), then runs `tests/e2e` against the live server over real
-  HTTP: signin flow, public pages/feed/sitemap, and an admin
-  create→render→delete round-trip via oRPC. The instance lifecycle is
-  shared with the smoke via `scripts/sea/instance.ts`. The Linux CI
-  matrix runs this right after `sea:smoke`.
+  (seeded admin, known random password) and runs `tests/e2e` over real
+  HTTP: signin, public pages/feed/sitemap, admin create→render→delete,
+  and the backup/restore round-trip. Linux CI runs it after `sea:smoke`.
 - Binary CLI flags: `--version`, `--help`, `--smoke-vfs`,
-  `--smoke-natives`, `--smoke-worker`. The first four need zero
-  environment; the last one
-  requires the full server configuration because the pool graph pulls in
-  `@/server/infra/config` at import time — it validates but never connects.
+  `--smoke-natives`, `--smoke-worker`. Only `--smoke-worker` needs the
+  full configuration (the pool graph pulls in `@/server/infra/config` —
+  validates, never connects).
 - Injection is single-path (`scripts/sea/inject.ts`): **`--build-sea` is
-  the only injector** — it regenerates the blob itself from the
-  sea-config (whose `output` is the final binary), does NOT codesign on
-  darwin (the build does the remove + ad-hoc re-sign itself), and the
-  produced binary is sanity-checked with `--version` inline. postject was
-  retired together with the darwin-x64 target (the only platform where
-  `--build-sea` segfaulted on 26.5.0, #63466-class).
-- Delivery targets are linux-x64 / linux-arm64 / darwin-arm64 /
-  win32-x64 / win32-arm64, built by
-  `.github/workflows/sea.yml`. Every matrix job runs the full managed
-  smoke (the embedded databases need no service container); the Linux
-  jobs additionally run `sea:e2e`. develop pushes and PRs run
-  only the `build-develop` job instead: a single linux-x64
-  `sea:build` + `sea:smoke` (zstd, no packaging) plus `sea:e2e`
-  (added by audit D-2/P2-5 — the binary already exists there, so the
-  journeys cost minutes and catch CSRF/session/restore regressions
-  before main). The darwin jobs need the
-  `shasum -a 256` spelling (macOS has no `sha256sum`); the win32 jobs
-  run the rename/package steps under Git Bash (`shell: bash`) and ship
-  `kobato.exe`. Local macOS builds need an official Node.js 26
-  distribution — Homebrew's node lacks the SEA sentinel fuse
-  (`scripts/sea/inject.ts` preflights this).
-- Windows runtime notes: the binary is `kobato.exe` (no extension →
-  refuses to execute); the build spawns everything through cmd
-  (`shell: true` in `scripts/sea/exec.ts`) because pnpm's `.bin` entries
-  are `.cmd` shims there. The natives cache
-  defaults to `%LOCALAPPDATA%\kobato` (`resolveCacheDir`). Windows
-  delivers no SIGTERM — graceful shutdown relies on SIGINT (Ctrl+C),
-  SIGHUP (console window closed), and SIGBREAK (Ctrl+Break), all
-  registered in `src/server/infra/lifecycle.ts`; service deployments
-  should wrap the binary with WinSW/NSSM, whose stop action sends
-  Ctrl+C into that same path. `taskkill /F` (TerminateProcess) can
-  never be graceful, on any platform level.
+  the only injector** — no postject, no codesign on darwin (the build
+  re-signs ad-hoc itself), the binary sanity-checked with `--version`
+  inline.
+- Delivery targets linux-x64 / linux-arm64 / darwin-arm64 / win32-x64 /
+  win32-arm64 via `.github/workflows/sea.yml`; every matrix job runs the
+  full managed smoke, the Linux jobs also `sea:e2e`. develop pushes and
+  PRs run only `build-develop` (linux-x64 build + smoke + e2e). Local
+  macOS builds need an official Node.js 26 dist (Homebrew lacks the SEA
+  sentinel fuse — `inject.ts` preflights).
+- Windows: the binary is `kobato.exe`; the build spawns through cmd
+  (`shell: true`); the natives cache defaults to `%LOCALAPPDATA%\kobato`;
+  no SIGTERM — graceful shutdown relies on SIGINT/SIGHUP/SIGBREAK
+  (`src/server/infra/lifecycle.ts`), so service deployments wrap the
+  binary with WinSW/NSSM (stop = Ctrl+C).
 
 Runtime rules:
 
@@ -302,33 +189,23 @@ Runtime rules:
   inverted hazard is the OLD pattern: a `requireExternal('sharp' | ...)`
   call site hides the package from the bundler and crashes under SEA.
   Enforcement: the boundaries contract test bans native
-  `requireExternal(...)` call sites and pins the plugin's existence
-  (`tests/unit/shared/contracts/
-boundaries.test.ts`), and the native-specifiers contract test
-  enumerates every platform `require` in the installed packages so a
-  future sharp/canvas/duckdb release introducing a new specifier fails
-  at upgrade time (`tests/unit/shared/contracts/
-native-specifiers.test.ts`). `requireExternal` remains only as
-  `nativeRequire`'s resolver (absolute `.node` paths under SEA, regular
-  node_modules resolution outside it).
-- Runtime file reads that must work under SEA go through
-  `seaAssetPath` (raw assets — plain `node:fs` against the mounted VFS,
-  main thread only) or `getEmbeddedAsset` (packed `natives/*` and
-  `natives-meta/*` — the `node:sea` channel that also works inside
-  worker threads). Never `seaAssetPath` a `natives/*` key (it throws —
-  those files hold zstd bytes). New resource types must be added to
-  `scripts/sea/assets.ts` AND read via the sea helpers with a non-SEA
-  fallback.
-- Embedded asset keys are owned by `src/shared/sea/assets.ts` — the
-  single owner of the writer/reader key contract. New keys go there;
-  never hardcode a key in `scripts/` or `src/server/`. Enforced by
-  `tests/unit/shared/contracts/sea-assets.test.ts`.
+  `requireExternal(...)` sites and pins the plugin, and the
+  native-specifiers test enumerates every platform `require` in the
+  installed packages so a new specifier fails at upgrade time.
+  `requireExternal` remains only as `nativeRequire`'s resolver.
+- Runtime file reads that must work under SEA go through `seaAssetPath`
+  (raw assets, main thread only) or `getEmbeddedAsset` (packed
+  `natives/*` + `natives-meta/*` — the worker-safe channel). Never
+  `seaAssetPath` a `natives/*` key (it throws — zstd bytes). New
+  resource types must be added to `scripts/sea/assets.ts` AND read via
+  the sea helpers with a non-SEA fallback.
+- Embedded asset keys are owned by `src/shared/sea/assets.ts` — new keys
+  go there; never hardcode one in `scripts/` or `src/server/`
+  (`tests/unit/shared/contracts/sea-assets.test.ts`).
 - `KOBATO_NATIVES_DIR` / `KOBATO_CACHE_DIR` are documented runtime env
-  vars, deliberately read outside `config.ts`: the SEA runtime modules
-  read them before the validated `serverConfig` snapshot exists and must
-  stay dependency-light, since the SEA bundles inline them ahead of the
-  app graph (see the allowlist comment on the process.env centralization
-  rule in the boundaries test).
+  vars read outside `config.ts`: the SEA runtime modules read them
+  before the validated `serverConfig` snapshot exists (allowlisted in
+  the boundaries test).
 
 ### SEA self-update
 
