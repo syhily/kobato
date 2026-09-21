@@ -19,6 +19,9 @@ export async function writeSeaConfig(assets: Map<string, string>, output: string
     disableExperimentalSEAWarning: true,
     useCodeCache: false,
     useSnapshot: false,
+    // Assets are mounted as a read-only VFS and the bundle runs from the
+    // mount root — `import.meta.dirname` inside the bundle addresses them.
+    useVfs: true,
   }
   await writeFile(seaConfigPath(), `${JSON.stringify(config, null, 2)}\n`)
 }

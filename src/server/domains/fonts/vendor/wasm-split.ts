@@ -8,17 +8,18 @@ import { WASI } from 'node:wasi'
 import initWasm from '@/server/domains/fonts/vendor/cnfs.wasm?init'
 import { InputTemplateSchema } from '@/server/domains/fonts/vendor/gen/api_pb'
 import { getLogger } from '@/server/infra/logger'
-import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
+import { isSea, seaAssetPath } from '@/server/infra/sea'
 import { SEA_WASM_CNFS_KEY } from '@/shared/sea/assets'
 
 const log = getLogger('fonts.wasm')
 
-// Under SEA the wasm bytes come from the embedded asset (see `@/shared/sea/assets`); instantiate per call like `?init`.
+// Under SEA the wasm bytes are a file in the mounted VFS (see `@/shared/sea/assets`); instantiate per call like `?init`.
 async function instantiateEmbeddedWasm(imports: WebAssembly.Imports): Promise<WebAssembly.Instance> {
-  const bytes = getEmbeddedAsset(SEA_WASM_CNFS_KEY)
-  if (bytes === null) {
+  const path = seaAssetPath(SEA_WASM_CNFS_KEY)
+  if (path === null) {
     throw new Error(`Embedded wasm asset missing: ${SEA_WASM_CNFS_KEY}`)
   }
+  const bytes = await readFile(path)
   // Fresh Uint8Array copy — `BufferSource` needs an ArrayBuffer-backed view, which `Buffer` isn't.
   const result = await WebAssembly.instantiate(new Uint8Array(bytes), imports)
   return result.instance

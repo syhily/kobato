@@ -1,18 +1,23 @@
-// SEA runtime helpers — embedded assets read from memory, natives extracted
-// to disk. No-op / pass-through outside SEA mode. Import budget: only
-// `@/shared/sea/assets` (bundled into the process worker).
+// SEA runtime helpers. The binary is built with `useVfs`: assets are mounted
+// as a read-only virtual file system and the bundle runs from the mount root,
+// so raw assets (client/, drizzle/, wasm/, worker/) are plain `node:fs` reads
+// via `seaAssetPath`. The zstd-packed natives (and the tiny natives-meta JSONs)
+// stay on the `node:sea` getAsset channel — worker threads cannot see the VFS
+// mount (their fs calls under it fail with ENOTDIR) but CAN read blob assets.
+// No-op / pass-through outside SEA mode. Import budget: node builtins +
+// `@/shared/sea/assets` (this module is bundled into the process worker).
 
 import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { isMainThread } from 'node:worker_threads'
 import { zstdDecompressSync } from 'node:zlib'
 
-import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@/shared/sea/assets'
+import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@/shared/sea/assets'
 
 interface NodeSeaModule {
   isSea(): boolean
   getAsset(key: string): ArrayBuffer
-  getAssetKeys(): string[]
 }
 
 const nodeRequire = createRequire(import.meta.url)
@@ -25,12 +30,7 @@ function isNodeSeaModule(value: unknown): value is NodeSeaModule {
     return false
   }
   return (
-    'isSea' in value &&
-    typeof value.isSea === 'function' &&
-    'getAsset' in value &&
-    typeof value.getAsset === 'function' &&
-    'getAssetKeys' in value &&
-    typeof value.getAssetKeys === 'function'
+    'isSea' in value && typeof value.isSea === 'function' && 'getAsset' in value && typeof value.getAsset === 'function'
   )
 }
 
@@ -54,6 +54,35 @@ export function isSea(): boolean {
   return getSea() !== null
 }
 
+/**
+ * Root of the mounted asset VFS (`useVfs` builds): the injected bundle runs
+ * from the mount root, so this module's `import.meta.dirname` IS the root.
+ * Main-thread only — worker threads have no view of the mount, and the eval'd
+ * worker's `import.meta.dirname` would be a meaningless real-fs path anyway.
+ * Null outside SEA.
+ */
+let vfsRoot: string | null | undefined
+
+export function seaVfsRoot(): string | null {
+  if (vfsRoot === undefined) {
+    vfsRoot = isMainThread && getSea() !== null ? import.meta.dirname : null
+  }
+  return vfsRoot
+}
+
+/**
+ * Absolute VFS path of a raw (unpacked) embedded asset; null outside SEA.
+ * Packed `natives/*` keys are rejected — their VFS file holds zstd bytes only
+ * the `getEmbeddedAsset` decode path understands.
+ */
+export function seaAssetPath(key: string): string | null {
+  if (key.startsWith(SEA_NATIVE_ASSET_PREFIX)) {
+    throw new Error(`seaAssetPath: ${key} is a packed native — read it via getEmbeddedAsset, not the VFS`)
+  }
+  const root = seaVfsRoot()
+  return root === null ? null : join(root, key)
+}
+
 /** Minimal asset source a reader needs — the real `node:sea` module in production, a stub in tests. */
 export interface EmbeddedAssetSource {
   getAsset(key: string): ArrayBuffer
@@ -62,8 +91,11 @@ export interface EmbeddedAssetSource {
 let activeReader: ((key: string) => Buffer | null) | undefined
 
 /**
- * Read an embedded SEA asset by key, decompressing per the manifest codec;
- * null when not a SEA or when the key is missing.
+ * Read an embedded asset through the `node:sea` blob channel, decompressing
+ * per the manifest codec; null when not a SEA or when the key is missing.
+ * Scoped to the packed `natives/*` payloads and the `natives-meta/*` JSONs —
+ * the channel that also works inside worker threads. Raw assets are plain
+ * fs reads via `seaAssetPath`.
  */
 export function getEmbeddedAsset(key: string): Buffer | null {
   const sea = getSea()
@@ -154,15 +186,6 @@ export function createEmbeddedAssetReader(source: EmbeddedAssetSource): (key: st
     decodedByKey.set(key, bytes)
     return bytes
   }
-}
-
-/** List embedded SEA asset keys matching `prefix`; [] when not a SEA. */
-export function listEmbeddedAssetKeys(prefix: string): string[] {
-  const sea = getSea()
-  if (sea === null) {
-    return []
-  }
-  return sea.getAssetKeys().filter((key) => key.startsWith(prefix))
 }
 
 /**

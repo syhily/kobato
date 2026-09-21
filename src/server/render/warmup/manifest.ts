@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { matchRoutes, type RouteObject } from 'react-router'
 
-import { isSea, listEmbeddedAssetKeys } from '@/server/infra/sea'
+import { seaVfsRoot } from '@/server/infra/sea'
 import { readAssetTextOrDisk } from '@/server/infra/sea-asset'
 import {
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
@@ -64,15 +64,15 @@ function readClientManifest(): RouteManifest | null {
   }
 
   try {
-    const __dirname = dirname(fileURLToPath(import.meta.url))
-    const assetsDir = join(__dirname, '..', '..', 'client', 'assets')
+    // Under SEA the client assets live in the mounted VFS — same dir listing.
+    const root = seaVfsRoot()
+    const assetsDir =
+      root === null
+        ? join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'client', 'assets')
+        : join(root, SEA_CLIENT_ASSET_PREFIX, 'assets')
 
-    // Hashed manifest bundle: embedded keys under SEA, dir listing on disk.
     let manifestFile: string | undefined
-    if (isSea()) {
-      const key = listEmbeddedAssetKeys(`${SEA_CLIENT_ASSET_PREFIX}assets/manifest-`).find((k) => k.endsWith('.js'))
-      manifestFile = key?.slice(`${SEA_CLIENT_ASSET_PREFIX}assets/`.length)
-    } else if (existsSync(assetsDir)) {
+    if (existsSync(assetsDir)) {
       manifestFile = readdirSync(assetsDir).find((f) => f.startsWith('manifest-') && f.endsWith('.js'))
     }
     if (!manifestFile) {

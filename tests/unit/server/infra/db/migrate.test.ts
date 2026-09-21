@@ -1,31 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const migrateMock = vi.fn()
-const migrateSyncMock = vi.fn()
 
 vi.mock('drizzle-orm/node-sqlite/migrator', () => ({
   migrate: migrateMock,
 }))
 
-vi.mock('drizzle-orm/sqlite-core/async/session', () => ({
-  migrateSync: migrateSyncMock,
-}))
-
 vi.mock('@/server/infra/sea', () => ({
-  isSea: vi.fn(() => false),
-  getEmbeddedAsset: vi.fn(() => null),
-  listEmbeddedAssetKeys: vi.fn(() => []),
+  seaVfsRoot: vi.fn(() => null),
 }))
 
-const { isSea } = await import('@/server/infra/sea')
+const { seaVfsRoot } = await import('@/server/infra/sea')
 
 describe('migrateDatabase', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isSea).mockReturnValue(false)
+    vi.mocked(seaVfsRoot).mockReturnValue(null)
   })
 
-  it('runs the folder migrator outside SEA', async () => {
+  it('runs the folder migrator against ./drizzle outside SEA', async () => {
     const { migrateDatabase } = await import('@/server/infra/db/migrate')
     const db = {} as never
     await migrateDatabase(db)
@@ -34,17 +27,18 @@ describe('migrateDatabase', () => {
       migrationsFolder: './drizzle',
       migrationsTable: '__drizzle_migrations',
     })
-    expect(migrateSyncMock).not.toHaveBeenCalled()
   })
 
-  it('runs the embedded migrator under SEA', async () => {
-    vi.mocked(isSea).mockReturnValue(true)
+  it('points the same folder migrator at the mounted VFS under SEA', async () => {
+    vi.mocked(seaVfsRoot).mockReturnValue('/dev/null/vfs/0')
     const { migrateDatabase } = await import('@/server/infra/db/migrate')
-    const db = { session: {} } as never
+    const db = {} as never
     await migrateDatabase(db)
 
-    expect(migrateSyncMock).toHaveBeenCalled()
-    expect(migrateMock).not.toHaveBeenCalled()
+    expect(migrateMock).toHaveBeenCalledWith(db, {
+      migrationsFolder: '/dev/null/vfs/0/drizzle',
+      migrationsTable: '__drizzle_migrations',
+    })
   })
 
   it('propagates migration failures', async () => {

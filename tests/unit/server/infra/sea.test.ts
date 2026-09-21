@@ -5,7 +5,7 @@ import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys, requireExternal, resolveCacheDir } from '@/server/infra/sea'
+import { getEmbeddedAsset, isSea, requireExternal, resolveCacheDir, seaAssetPath, seaVfsRoot } from '@/server/infra/sea'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Unit tests for the SEA runtime helpers. Under vitest every SEA-specific
@@ -33,11 +33,19 @@ describe('infra/sea — SEA detection and embedded assets', () => {
   })
 
   it('getEmbeddedAsset returns null when not running as a SEA', () => {
-    expect(getEmbeddedAsset('client/assets/warmup-manifest.json')).toBeNull()
+    expect(getEmbeddedAsset('natives/sharp.node')).toBeNull()
   })
 
-  it('listEmbeddedAssetKeys returns [] when not running as a SEA', () => {
-    expect(listEmbeddedAssetKeys('client/assets/')).toEqual([])
+  it('seaVfsRoot is null when not running as a SEA', () => {
+    expect(seaVfsRoot()).toBeNull()
+  })
+
+  it('seaAssetPath is null when not running as a SEA', () => {
+    expect(seaAssetPath('client/assets/warmup-manifest.json')).toBeNull()
+  })
+
+  it('seaAssetPath rejects packed native keys', () => {
+    expect(() => seaAssetPath('natives/sharp.node')).toThrow('packed native')
   })
 })
 

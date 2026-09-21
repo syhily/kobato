@@ -1,6 +1,6 @@
-# ADR-0004: node:vfs status and future adoption
+# ADR-0004: node:vfs status and adoption
 
-- Status: accepted (watch item)
+- Status: accepted (**adopted for SEA assets as of 2026-09-21** — see the amendment)
 - Date: 2026-07-27
 
 ## Context
@@ -100,3 +100,83 @@ physics.
   call-site conventions).
 - This ADR records status as of 2026-07-27; when any trigger flips, amend
   it rather than adding a new ADR, then schedule the deletion work.
+
+## Amendment 2026-09-21: adopted for SEA assets (Node 26.9.0 `useVfs`)
+
+Trigger 2 flipped: **v26.9.0 shipped SEA `"useVfs": true`**
+([VFS](https://nodejs.org/api/vfs.html) /
+[SEA](https://nodejs.org/api/single-executable-applications.html) docs,
+`vfs.mount()` module-loader integration in the same release). The SEA
+mount needs **no flag** — the `--experimental-vfs` flag gates only the
+userland `node:vfs` module, which the binary never imports (it throws
+`ERR_UNKNOWN_BUILTIN_MODULE` inside a SEA — pinned by the probe).
+Trigger 3 is imminent by construction: the toolchain already pins Node
+26.9.0 (`.nvmrc`, CI matrices), and 26 enters LTS in 2026-10.
+
+Everything below was **verified empirically** on the pinned 26.9.0, not
+read from docs; the probe lives in `scripts/sea/vfs-capabilities.ts`
+(`pnpm run sea:probe`, 20 checks / 63 assertions) and
+`tests/unit/server/infra/node-vfs.test.ts`.
+
+**Adopted (the migration deleted real code):**
+
+- Raw assets (`client/`, `drizzle/`, `wasm/`, `worker/`, `natives-meta/`)
+  are plain files in the mount — every asset key maps 1:1 to a VFS path
+  under `seaVfsRoot()` (= the bundle's `import.meta.dirname`). Reads go
+  through `node:fs` via `seaAssetPath`; `serveEmbeddedStatic`, the
+  embedded migration reader, and `listEmbeddedAssetKeys` are **deleted**
+  (hono's `serveStatic` and drizzle's own folder migrator run against
+  the mount unchanged).
+- Only `natives/*` stays zstd-packed (`shouldPackAsset`) — the blob
+  stores assets uncompressed (verified: 1 MB asset → +1 MB binary), so
+  packing the ~170 MB natives remains a budget requirement, and packed
+  bytes would be unreadable through the VFS anyway.
+
+**Empirically corrected assumptions (the 2026-07 predictions that did
+NOT hold):**
+
+- **Workers still cannot start from VFS paths** — `new Worker(<mount
+path>)` fails with `Cannot find module` under every `execArgv`
+  combination, and worker isolates cannot even _see_ the mount (fs under
+  it → `ENOTDIR`). The `eval:true` dispatch stays; the worker code is
+  now simply `readFileSync`'d from the VFS by the main thread.
+- **The native-require redirect stays.** A _self-contained_ `.node`
+  (skia) does `require()` from the VFS (private temp image), but an
+  addon with companion libraries (sharp+libvips, duckdb+libduckdb)
+  fails with `ERR_DLOPEN_FAILED` — the temp image's location satisfies
+  no rpath. Extraction is physics, as predicted; the "addons load from
+  VFS" line in the vfs docs does not extend to dependent libraries.
+- **The manifest compression registry survives** in narrowed form: it
+  remains the codec dispatch for the packed natives and the integrity
+  source for extraction, read via the `node:sea` getAsset channel (the
+  one that also works inside workers).
+
+**The writev landmine (runtime patch, verified 2026-09-21):** the
+mounted-VFS handler table (`lib/internal/vfs/setup.js`) implements
+`readvSync`/`writevSync` but NOT the async `readv`/`writev`, while the
+callback `fs.readv`/`fs.writev` (`lib/fs.js`) invoke `h.readv`/`h.writev`
+unguarded whenever any VFS layer is mounted. Any buffered
+`fs.createWriteStream` flush (`WriteStream._writev` fires the moment two
+chunks queue) therefore kills the process with
+`TypeError: h.writev is not a function` — on REAL files outside the
+mount, too; it surfaced as a full server crash mid backup/restore in
+`sea:e2e`, reproduced with a 30-line mini SEA, and confirmed unfixed on
+nodejs/node main. The repair
+(`src/server/infra/sea-vfs-fs-patch.ts`, installed from `sea-bootstrap`
+ahead of the server graph — and also from `sea-cli` before its flag
+dispatch, whose top-level await suspends module evaluation ahead of the
+sea-bootstrap sibling) replaces both entry points on the public `fs`
+exports with sequential single-operation fallbacks — WriteStream resolves
+`fs.writev` per call through that same object, so every later stream is
+covered. The promises API bypasses the handler table and needs no repair.
+The probe pins the crash signature (`pnpm run sea:probe`); if a future
+Node flips it to `fixed`, revisit the patch rather than deleting it
+blind (the fallbacks are correct everywhere, just slower than
+`writeBuffers`).
+
+**Still rejected / future work:** unbundling jsdom & co. into a
+`node_modules` asset tree (mount-confined lookups work — verified — but
+the bundling constraint and check-bundle posture make it a separate
+evaluation); multi-chunk builds importing from the mount; skia-without-
+extraction on darwin/linux (forks platform behavior for a 31 MB
+one-time extraction saving).

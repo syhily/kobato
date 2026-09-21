@@ -1,23 +1,33 @@
 // SEA command-line surface — evaluates FIRST in the injected server bundle.
-// Flags: --version|-v, --help|-h, --smoke-natives, --smoke-worker, rollback,
-// doctor [--json], hidden --doctor-config-probe; anything else falls through
-// to the server graph.
+// Flags: --version|-v, --help|-h, --smoke-natives, --smoke-worker, --smoke-vfs,
+// rollback, doctor [--json], hidden --doctor-config-probe; anything else falls
+// through to the server graph.
 // --version/--help exit with ZERO side effects; nothing here may touch the
 // env-validated graph (config loads only behind the probe's dynamic import).
 // --smoke-worker dispatches the embedded bundle via new Worker(code, { eval: true })
-// — never materializes to disk.
+// — worker threads cannot start from VFS paths, so eval is the only way.
 
 import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
+import { createWriteStream, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { Worker } from 'node:worker_threads'
 
 import { rollbackBinary } from '@/server/infra/binary-rollback'
 import { parseConfigArg } from '@/server/infra/config-arg'
 import { collectDoctorReport, doctorOk, formatDoctorText, parseProbeIssues } from '@/server/infra/doctor-report'
-import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
+import { isSea, seaAssetPath, seaVfsRoot } from '@/server/infra/sea'
 import { bootstrapSeaRuntime } from '@/server/infra/sea-natives'
+import { installSeaVfsFsPatch } from '@/server/infra/sea-vfs-fs-patch'
 import { evaluateSelfUpdateGate } from '@/server/infra/self-update-gate'
-import { SEA_SMOKE_WORKER_BUNDLE_KEY } from '@/shared/sea/assets'
+import {
+  SEA_CLIENT_ASSET_PREFIX,
+  SEA_DRIZZLE_ASSET_PREFIX,
+  SEA_MANIFEST_KEY,
+  SEA_NATIVE_ASSET_PREFIX,
+  SEA_SMOKE_WORKER_BUNDLE_KEY,
+} from '@/shared/sea/assets'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Baked at build time by vite define — a single executable has no package.json.
@@ -36,6 +46,11 @@ Usage:
                            worker_threads image pool and exit. Requires
                            the full configuration (validated, never
                            connected to).
+  kobato --smoke-vfs       Verify the mounted asset VFS: layout, fs reads
+                           through node:fs, the read-only guarantee (writes
+                           fail with EROFS), and the writev repair (a
+                           buffered WriteStream flush on the real fs).
+                           Exits 1 on failure.
   kobato rollback          Restore the previous release: swaps the
                            <binary>.bak sibling left by the last
                            self-update back into place. Restart the
@@ -114,7 +129,7 @@ async function smokeNatives(quiet = false): Promise<void> {
 async function smokeWorker(): Promise<void> {
   // Extract natives and set KOBATO_NATIVES_DIR first — the worker evaluates bundled sharp at module scope.
   bootstrapSeaRuntime()
-  const code = getEmbeddedAsset(SEA_SMOKE_WORKER_BUNDLE_KEY)
+  const bundlePath = seaAssetPath(SEA_SMOKE_WORKER_BUNDLE_KEY)
   // Worker threads don't inherit argv — forward it; the '[worker eval]'
   // placeholder keeps process.argv.slice(2) aligned, or --config is dropped.
   const workerOptions = {
@@ -122,9 +137,14 @@ async function smokeWorker(): Promise<void> {
     workerData: { kobatoSmokeWorker: true },
   }
   const worker =
-    code !== null
-      ? // eval: true + --input-type=module runs the ESM bundle as a module.
-        new Worker(code.toString('utf-8'), { ...workerOptions, eval: true, execArgv: ['--input-type=module'] })
+    bundlePath !== null
+      ? // eval: true + --input-type=module runs the ESM bundle as a module;
+        // workers cannot start from VFS paths, so the code is read then eval'd.
+        new Worker(readFileSync(bundlePath, 'utf-8'), {
+          ...workerOptions,
+          eval: true,
+          execArgv: ['--input-type=module'],
+        })
       : // Non-SEA convenience: the sibling bundle from the same vite run.
         new Worker(new URL('./smoke-worker.mjs', import.meta.url), {
           argv: process.argv.slice(2),
@@ -136,6 +156,65 @@ async function smokeWorker(): Promise<void> {
   if (exitCode !== 0) {
     throw new Error(`smoke worker exited with code ${exitCode}`)
   }
+}
+
+/** Prove the useVfs mount: expected top-level layout, node:fs reads of raw
+ * assets, the read-only guarantee (EROFS on write), and the writev repair
+ * (a buffered WriteStream flushing against the real file system). */
+async function smokeVfs(): Promise<void> {
+  const root = seaVfsRoot()
+  if (root === null) {
+    throw new Error('SEA VFS is not mounted (not a useVfs single executable?)')
+  }
+  const topLevel = new Set(readdirSync(root))
+  for (const expected of [
+    SEA_CLIENT_ASSET_PREFIX.replace(/\/$/, ''),
+    SEA_DRIZZLE_ASSET_PREFIX.replace(/\/$/, ''),
+    SEA_NATIVE_ASSET_PREFIX.replace(/\/$/, ''),
+    SEA_MANIFEST_KEY,
+  ]) {
+    if (!topLevel.has(expected)) {
+      throw new Error(`SEA VFS layout is missing ${expected} (mount root has: ${[...topLevel].join(', ')})`)
+    }
+  }
+  // The manifest asset is a raw VFS file — readable through plain node:fs.
+  const manifest: unknown = JSON.parse(readFileSync(join(root, SEA_MANIFEST_KEY), 'utf-8'))
+  if (typeof manifest !== 'object' || manifest === null || !('files' in manifest)) {
+    throw new Error(`SEA manifest read through the VFS is malformed: ${SEA_MANIFEST_KEY}`)
+  }
+  // The mount is read-only: writes must fail with EROFS.
+  try {
+    writeFileSync(join(root, '.smoke-vfs-write'), 'nope')
+    throw new Error('SEA VFS accepted a write — expected EROFS')
+  } catch (error) {
+    if (unsafeCast<{ code?: string }>(error).code !== 'EROFS') {
+      throw error
+    }
+  }
+  // The writev repair (src/server/infra/sea-vfs-fs-patch.ts): enough queued
+  // chunks force WriteStream._writev → fs.writev, which crashes an unpatched
+  // useVfs process (TypeError: h.writev is not a function) even on a REAL
+  // file. Flush 4 MB and verify the byte count.
+  const tmpFile = join(mkdtempSync(join(tmpdir(), 'kobato-smoke-vfs-')), 'writev.bin')
+  try {
+    const chunk = Buffer.alloc(64 * 1024, 'a')
+    const chunks = 64
+    await new Promise<void>((resolve, reject) => {
+      const stream = createWriteStream(tmpFile)
+      stream.once('error', reject)
+      for (let i = 0; i < chunks; i++) {
+        stream.write(chunk)
+      }
+      stream.end(() => resolve())
+    })
+    const size = statSync(tmpFile).size
+    if (size !== chunk.byteLength * chunks) {
+      throw new Error(`writev smoke wrote ${size} bytes, expected ${chunk.byteLength * chunks}`)
+    }
+  } finally {
+    rmSync(dirname(tmpFile), { recursive: true, force: true })
+  }
+  process.stdout.write(`SEA VFS smoke passed: ${root}\n`)
 }
 
 /** Re-exec with --doctor-config-probe (forwarding --config): loading the
@@ -183,6 +262,9 @@ async function main(args: ReadonlySet<string>): Promise<void> {
   if (args.has('--smoke-worker')) {
     await smokeWorker()
   }
+  if (args.has('--smoke-vfs')) {
+    await smokeVfs()
+  }
   if (args.has('rollback')) {
     const { rolledBackTo, previousVersion } = await rollbackBinary()
     process.stdout.write(
@@ -207,9 +289,15 @@ const isFlagInvocation =
   args.has('-h') ||
   args.has('--smoke-natives') ||
   args.has('--smoke-worker') ||
+  args.has('--smoke-vfs') ||
   args.has('rollback') ||
   args.has('doctor') ||
   args.has('--doctor-config-probe')
+
+// The writev/readv repair must land HERE, not only in sea-bootstrap: this
+// module's top-level `await main(args)` suspends its evaluation, so sibling
+// imports (sea-bootstrap) have not run while a flag path executes.
+installSeaVfsFsPatch()
 
 if (isFlagInvocation) {
   try {

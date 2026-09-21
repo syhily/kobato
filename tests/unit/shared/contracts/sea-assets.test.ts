@@ -57,8 +57,8 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
   },
   {
     file: 'src/server/infra/sea.ts',
-    names: ['SEA_MANIFEST_KEY'],
-    forbiddenLiterals: [`'manifest.json'`],
+    names: ['SEA_MANIFEST_KEY', 'SEA_NATIVE_ASSET_PREFIX'],
+    forbiddenLiterals: [`'manifest.json'`, `'natives/'`],
   },
   {
     file: 'src/server/infra/sea-natives.ts',
@@ -67,8 +67,14 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
   },
   {
     file: 'src/server/infra/sea-cli.ts',
-    names: ['SEA_SMOKE_WORKER_BUNDLE_KEY'],
-    forbiddenLiterals: [`'worker/smoke-worker.mjs'`],
+    names: [
+      'SEA_SMOKE_WORKER_BUNDLE_KEY',
+      'SEA_MANIFEST_KEY',
+      'SEA_CLIENT_ASSET_PREFIX',
+      'SEA_DRIZZLE_ASSET_PREFIX',
+      'SEA_NATIVE_ASSET_PREFIX',
+    ],
+    forbiddenLiterals: [`'worker/smoke-worker.mjs'`, `'manifest.json'`, `'client/'`, `'drizzle/'`, `'natives/'`],
   },
   {
     file: 'src/server/infra/native-require.ts',

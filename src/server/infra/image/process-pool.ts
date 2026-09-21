@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
 import { Worker } from 'node:worker_threads'
 
@@ -13,7 +14,7 @@ import type {
 import { domainErrorFromWire } from '@/server/infra/http/errors'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
-import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
+import { isSea, getEmbeddedAsset, seaAssetPath } from '@/server/infra/sea'
 import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@/shared/sea/assets'
 
 const log = getLogger('image:process-pool')
@@ -345,14 +346,24 @@ export function __resetWorkerFactory(): void {
 
 function defaultCreateWorker(): Worker {
   if (isSea()) {
-    // SEA: the embedded worker bundle is eval'd with `--input-type=module`,
-    // which keeps `import.meta.url` a file: URL — required by the inlined
+    // SEA: the worker bundle is eval'd with `--input-type=module` — workers
+    // cannot start from (or even see) VFS paths, so eval dispatch stays. The
+    // eval keeps `import.meta.url` a file: URL — required by the inlined
     // sharp code's module-scope `createRequire(import.meta.url)`.
-    const code = getEmbeddedAsset(SEA_PROCESS_WORKER_BUNDLE_KEY)
-    if (code === null) {
+    //
+    // Reading the bundle: main thread → plain fs from the mounted VFS. A
+    // worker thread (the `--smoke-worker` entry spawns NESTED pool workers)
+    // has no view of the mount, so it falls back to the `node:sea` blob
+    // channel, which works in any isolate.
+    const bundlePath = seaAssetPath(SEA_PROCESS_WORKER_BUNDLE_KEY)
+    const code =
+      bundlePath !== null
+        ? readFileSync(bundlePath, 'utf-8')
+        : getEmbeddedAsset(SEA_PROCESS_WORKER_BUNDLE_KEY)?.toString('utf-8')
+    if (code === undefined) {
       throw new Error(`Embedded worker asset missing: ${SEA_PROCESS_WORKER_BUNDLE_KEY}`)
     }
-    return new Worker(code.toString('utf-8'), { eval: true, execArgv: ['--input-type=module'] })
+    return new Worker(code, { eval: true, execArgv: ['--input-type=module'] })
   }
   // The worker entry is emitted by `processWorkerEntryPlugin` at a stable
   // name; resolve it relative to this module so the path survives bundling.

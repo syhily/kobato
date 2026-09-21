@@ -9,6 +9,7 @@ import {
   isDrizzleSnapshotArtifact,
   packAssetBytes,
   SEA_COMPRESSION_MIN_BYTES,
+  shouldPackAsset,
   sortManifestFiles,
 } from '../../../../scripts/sea/assets.ts'
 
@@ -220,6 +221,29 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
     const { source } = makeSource(assets)
     const read = createEmbeddedAssetReader(source)
     expect(() => read('client/assets/app.js')).toThrow(new RegExp(SEA_MANIFEST_KEY.replace('.', '\\.')))
+  })
+})
+
+describe('scripts/sea/assets — shouldPackAsset packing policy', () => {
+  it('packs only the native dynamic libraries', () => {
+    expect(shouldPackAsset('natives/sharp.node')).toBe(true)
+    expect(shouldPackAsset('natives/skia.node')).toBe(true)
+    expect(shouldPackAsset('natives/libvips-cpp.dylib')).toBe(true)
+  })
+
+  it('keeps every VFS-read asset raw — a packed payload is unreadable through node:fs', () => {
+    const rawKeys = [
+      'client/assets/app.js',
+      'drizzle/0001_init/migration.sql',
+      'wasm/cnfs.wasm',
+      'worker/process-worker.mjs',
+      'worker/smoke-worker.mjs',
+      'natives-meta/libvips-versions.json',
+      'manifest.json',
+    ]
+    for (const key of rawKeys) {
+      expect(shouldPackAsset(key), key).toBe(false)
+    }
   })
 })
 

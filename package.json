@@ -43,6 +43,7 @@
     "release:tag": "node scripts/release.ts tag",
     "sea:build": "node scripts/sea/build.ts",
     "sea:e2e": "node scripts/sea/e2e.ts",
+    "sea:probe": "node scripts/sea/vfs-capabilities.ts",
     "sea:smoke": "node scripts/sea/smoke.ts",
     "start": "node ./build/server/index.js",
     "test": "vitest run",

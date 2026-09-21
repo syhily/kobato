@@ -46,6 +46,20 @@ import {
 const requireFromRepo = createRequire(join(repoRoot, 'package.json'))
 
 /**
+ * Packing policy: ONLY the native dynamic libraries are zstd-packed (~170 MB
+ * raw per platform — the blob stores assets uncompressed, so without packing
+ * they would blow the binary budget). Everything else rides raw: with
+ * `useVfs` each asset key becomes a real file in the mounted VFS, read
+ * through plain `node:fs` — a packed payload would be unreadable zstd bytes
+ * there. The natives themselves never go through the VFS; they extract to
+ * disk via the `node:sea` getAsset + decode channel (dlopen needs real
+ * files, and worker threads cannot see the mount).
+ */
+export function shouldPackAsset(key: string): boolean {
+  return key.startsWith(SEA_NATIVE_ASSET_PREFIX)
+}
+
+/**
  * Assets below this stay uncompressed — framing + decode outweigh the savings.
  */
 export const SEA_COMPRESSION_MIN_BYTES = 1024
@@ -344,7 +358,8 @@ interface PackContext {
 
 /**
  * Add one file to the asset map: hash raw bytes, pack into `<packedDir>/<key>`
- * unless tiny, and record the manifest entry (raw sha256, codec, raw size).
+ * when the packing policy says so, and record the manifest entry (raw sha256,
+ * codec, raw size).
  */
 async function addAsset(
   assets: Map<string, string>,
@@ -357,7 +372,7 @@ async function addAsset(
     fail(`Duplicate SEA asset key ${key} (from ${sourcePath})`)
   }
   const raw = await readFile(sourcePath)
-  const packed = packAssetBytes(raw)
+  const packed = shouldPackAsset(key) ? packAssetBytes(raw) : { codec: 'none' as const, bytes: raw }
   ctx.rawBytes += raw.byteLength
   ctx.packedBytes += packed.bytes.byteLength
   let blobPath = sourcePath

@@ -3,11 +3,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { readAssetTextOrDisk, requireEmbeddedAssetText } from '@/server/infra/sea-asset'
+import { readAssetTextOrDisk } from '@/server/infra/sea-asset'
 
 // Unit tests for the SEA/disk asset text reader. Vitest never runs as a
 // single executable, so `readAssetTextOrDisk` always takes the disk path
-// here; the SEA branch degrades to null via `getEmbeddedAsset`.
+// here (the VFS branch only exists inside the binary's mount).
 
 const tmpDirs: string[] = []
 
@@ -34,17 +34,5 @@ describe('infra/sea-asset — readAssetTextOrDisk', () => {
   it('returns null when the disk file is missing', () => {
     const dir = makeTmpDir()
     expect(readAssetTextOrDisk('client/assets/missing.json', join(dir, 'missing.json'))).toBeNull()
-  })
-})
-
-describe('infra/sea-asset — requireEmbeddedAssetText', () => {
-  it('decodes the asset as UTF-8 text', () => {
-    expect(requireEmbeddedAssetText(Buffer.from('select 1;'), 'unused')).toBe('select 1;')
-  })
-
-  it('throws the caller-supplied message when the asset is missing', () => {
-    expect(() => requireEmbeddedAssetText(null, 'Embedded migration asset missing: drizzle/x/migration.sql')).toThrow(
-      'Embedded migration asset missing: drizzle/x/migration.sql',
-    )
   })
 })
