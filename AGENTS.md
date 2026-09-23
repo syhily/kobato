@@ -96,6 +96,15 @@ lives in ADR-0004 amendment 2026-09-21):
   fallbacks, installed by `sea-cli` before its flag dispatch AND by
   `sea-bootstrap` before the server graph (the flag dispatch's top-level
   await suspends module evaluation ahead of the sea-bootstrap sibling).
+- The VFS addon loader wraps `process.dlopen` and ALWAYS forwards three
+  arguments, so a flags-less `.node` load arrives at the C++ binding as an
+  explicit `undefined` and coerces to mode 0 — the RTLD_LAZY default only
+  applies when the argument is absent. glibc rejects mode 0
+  (`invalid mode for dlopen()`), so EVERY main-thread native load of a
+  linux SEA fails (darwin's dyld tolerates 0, workers mount no VFS — the
+  linux CI smoke is the only detector). The same
+  `sea-vfs-fs-patch.ts` installer re-wraps `process.dlopen` to substitute
+  Node's default flags when missing.
 
 **Node 26 pin.** Toolchain pinned to 26.9.0 (`.nvmrc`, CI matrices,
 `package.json` engines `>=26.9.0`); `scripts/sea/build.ts` gates

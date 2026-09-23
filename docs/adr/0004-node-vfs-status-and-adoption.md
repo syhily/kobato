@@ -174,6 +174,32 @@ Node flips it to `fixed`, revisit the patch rather than deleting it
 blind (the fallbacks are correct everywhere, just slower than
 `writeBuffers`).
 
+**The dlopen flags landmine (runtime patch, verified 2026-09-21):** the
+VFS addon loader (`installAddonLoader` in `lib/internal/vfs/setup.js`)
+wraps `process.dlopen` as `function (module, filename, flags)` and
+unconditionally forwards all three arguments to the captured original.
+The CJS `.node` extension handler calls `process.dlopen(module, path)`
+with no flags, so the original receives an EXPLICIT `undefined` — and
+the C++ `DLOpenImpl` (`src/node_binding.cc`) only applies its
+`DLib::kDefaultFlags` (RTLD_LAZY) when the argument is absent; an
+explicit `undefined` coerces through `Int32Value` to 0. glibc's dlopen
+rejects mode 0 with `invalid mode for dlopen(): Invalid argument`
+(ERR_DLOPEN_FAILED), so EVERY main-thread native addon load of a linux
+SEA died — sharp, skia, and duckdb alike, from real extracted files.
+It surfaced as the `sea:smoke` linux-x64 failures of `--smoke-natives`
+(sharp's load-error reporter then crashed on a codeless
+`native-require` error, masking the root cause) and of server boot
+(duckdb.node). darwin's dyld tolerates mode 0 and worker threads never
+register a VFS layer (their `process.dlopen` stays the raw binding), so
+neither local smoke runs nor the worker smoke could see it — only
+linux CI. The repair lives beside the writev one in
+`src/server/infra/sea-vfs-fs-patch.ts` (same two install sites): a
+`process.dlopen` re-wrap that substitutes Node's own default
+(`DEFAULT_DLOPEN_FLAGS`, mirroring `kDefaultFlags`) whenever flags is
+missing, so the VFS wrapper forwards a valid mode; the VFS-resident
+`dlopenBinary` branch is unaffected since RTLD_LAZY IS its default for
+undefined.
+
 **Still rejected / future work:** unbundling jsdom & co. into a
 `node_modules` asset tree (mount-confined lookups work — verified — but
 the bundling constraint and check-bundle posture make it a separate

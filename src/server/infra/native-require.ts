@@ -70,7 +70,9 @@ function addonFileName(key: string): string {
 function readEmbeddedMetadata(key: string): unknown {
   const raw = getEmbeddedAsset(key)
   if (raw === null) {
-    throw new Error(`native-require: embedded metadata asset missing: ${key}`)
+    throw Object.assign(new Error(`native-require: embedded metadata asset missing: ${key}`), {
+      code: 'ERR_NATIVE_METADATA_MISSING',
+    })
   }
   // The JSON shape is the caller's claim (each probe has its own type).
   const parsed: unknown = JSON.parse(raw.toString('utf-8'))
@@ -106,6 +108,13 @@ export function nativeRequire(specifier: string): unknown {
       // Upstream this is `module.exports = __dirname`; the flat natives dir is exactly that search path.
       return underSea ? nativesDir : requireExternal(specifier)
     default:
-      throw new Error(`native-require: unresolvable specifier: ${specifier}`)
+      // The error MUST carry a `code` — sharp aggregates every failed load
+      // attempt via `err.code.endsWith('MODULE_NOT_FOUND')` and crashes on a
+      // codeless error, masking the real failure behind the reporter's own
+      // TypeError. A distinctive code also keeps the message in sharp's
+      // report (MODULE_NOT_FOUND entries are skipped as expected misses).
+      throw Object.assign(new Error(`native-require: unresolvable specifier: ${specifier}`), {
+        code: 'ERR_NATIVE_SPECIFIER_UNRESOLVABLE',
+      })
   }
 }

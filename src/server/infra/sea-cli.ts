@@ -19,7 +19,7 @@ import { parseConfigArg } from '@/server/infra/config-arg'
 import { collectDoctorReport, doctorOk, formatDoctorText, parseProbeIssues } from '@/server/infra/doctor-report'
 import { isSea, seaAssetPath, seaVfsRoot } from '@/server/infra/sea'
 import { bootstrapSeaRuntime } from '@/server/infra/sea-natives'
-import { installSeaVfsFsPatch } from '@/server/infra/sea-vfs-fs-patch'
+import { installSeaVfsRuntimePatches } from '@/server/infra/sea-vfs-fs-patch'
 import { evaluateSelfUpdateGate } from '@/server/infra/self-update-gate'
 import {
   SEA_CLIENT_ASSET_PREFIX,
@@ -294,10 +294,11 @@ const isFlagInvocation =
   args.has('doctor') ||
   args.has('--doctor-config-probe')
 
-// The writev/readv repair must land HERE, not only in sea-bootstrap: this
-// module's top-level `await main(args)` suspends its evaluation, so sibling
-// imports (sea-bootstrap) have not run while a flag path executes.
-installSeaVfsFsPatch()
+// The writev/readv + dlopen repairs must land HERE, not only in
+// sea-bootstrap: this module's top-level `await main(args)` suspends its
+// evaluation, so sibling imports (sea-bootstrap) have not run while a flag
+// path executes.
+installSeaVfsRuntimePatches()
 
 if (isFlagInvocation) {
   try {

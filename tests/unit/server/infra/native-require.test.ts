@@ -144,6 +144,22 @@ describe('infra/native-require — under SEA (KOBATO_NATIVES_DIR set)', () => {
     const other = SHARP_PLATFORM === 'darwin-x64' ? 'linux-x64' : 'darwin-x64'
     expect(() => nativeRequire(`@img/sharp-${other}/sharp.node`)).toThrow(/unresolvable specifier/)
   })
+
+  it('carries a `code` on every throw (sharp’s reporter dereferences it)', () => {
+    const dir = makeNativesDir()
+    vi.stubEnv('KOBATO_NATIVES_DIR', dir)
+    seaMock.getEmbeddedAsset.mockReturnValue(null)
+
+    const codes: Array<string | undefined> = []
+    for (const call of [() => nativeRequire(SHARP_VERSIONS_SPEC), () => nativeRequire('@img/sharp-wasm32/versions')]) {
+      try {
+        call()
+      } catch (error) {
+        codes.push((error as NodeJS.ErrnoException).code)
+      }
+    }
+    expect(codes).toEqual(['ERR_NATIVE_METADATA_MISSING', 'ERR_NATIVE_SPECIFIER_UNRESOLVABLE'])
+  })
 })
 
 describe('infra/native-require — outside SEA (node_modules fallback)', () => {
