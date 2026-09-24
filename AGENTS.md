@@ -106,8 +106,10 @@ lives in ADR-0004 amendment 2026-09-21):
   `sea-vfs-fs-patch.ts` installer re-wraps `process.dlopen` to substitute
   Node's default flags when missing.
 
-**Node 26 pin.** Toolchain pinned to 26.9.0 (`.nvmrc`, CI matrices,
-`package.json` engines `>=26.9.0`); `scripts/sea/build.ts` gates
+**Node 26 pin.** Toolchain pinned to 26.10.0 (`.nvmrc`, CI matrices);
+`package.json` engines floors at `>=26.9.0` (the first `useVfs`-capable
+release — a patch-behind local dev machine stays usable while a package
+index lags the pin); `scripts/sea/build.ts` gates
 major-only — local dev/tests run the machine's default Node.
 
 **Bootstrap ordering (`mainFormat: "module"`).** No CJS prelude;
