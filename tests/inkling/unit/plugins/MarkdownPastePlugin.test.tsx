@@ -13,6 +13,7 @@ import {
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { loadPasteDialect } from '@/inkling/markdown/lazy-paste-dialect'
 import { $isCodeBlockNode, CodeBlockNode } from '@/inkling/nodes/CodeBlockNode'
 import { registerCardDecorateAdapter } from '@/inkling/nodes/decorate-card'
 import { $isHorizontalRuleNode, HorizontalRuleNode } from '@/inkling/nodes/HorizontalRuleNode'
@@ -75,6 +76,11 @@ describe('MarkdownPastePlugin', () => {
 
   beforeEach(async () => {
     globalThis.DataTransfer = MockDataTransfer as unknown as typeof DataTransfer
+
+    // the spec dispatches PASTE_MARKDOWN_COMMAND directly; the handler reads
+    // the dialect engine from the lazy port's sync cache, so warm it here
+    // rather than relying on the plugin's mount pre-warm having landed
+    await loadPasteDialect()
 
     editor = createTestEditor()
 

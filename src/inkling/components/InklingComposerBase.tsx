@@ -57,6 +57,12 @@ export interface InklingComposerProps {
   darkMode?: boolean
   enableMultiplayer?: boolean
   isTKEnabled?: boolean
+  /** Surface flag forwarded to `InklingUiPrefsContext`: set false to keep the
+   * emoji typeahead out of nested/caption editors (minimal surfaces). */
+  isEmojiEnabled?: boolean
+  /** Surface flag forwarded to `InklingUiPrefsContext`: 'plain' edits code
+   * block cards in a static textarea instead of the lazy CodeMirror editor. */
+  codeEditor?: 'rich' | 'plain'
   /** Host label overrides — a partial table
    * merged over the English defaults; unknown keys are compile errors. */
   labels?: InklingLabelsInput
@@ -81,6 +87,8 @@ const InklingComposerBase = ({
   darkMode = false,
   enableMultiplayer = false,
   isTKEnabled,
+  isEmojiEnabled,
+  codeEditor,
   labels,
   multiplayerEndpoint,
   multiplayerDebug = true,
@@ -156,11 +164,13 @@ const InklingComposerBase = ({
     () => ({
       darkMode,
       isTKEnabled,
+      isEmojiEnabled,
+      codeEditor,
       // the host's override table merges over the English defaults exactly
       // once, here — every label-reading consumer sees a full table
       labels: resolveLabels(labels),
     }),
-    [darkMode, isTKEnabled, labels],
+    [darkMode, isTKEnabled, isEmojiEnabled, codeEditor, labels],
   )
 
   return (

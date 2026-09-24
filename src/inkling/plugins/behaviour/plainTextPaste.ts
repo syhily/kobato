@@ -2,6 +2,7 @@ import type { LexicalEditor } from 'lexical'
 
 import { $getSelection, $isRangeSelection } from 'lexical'
 
+import { getLoadedPasteDialect, loadPasteDialect } from '@/inkling/markdown/lazy-paste-dialect'
 import {
   isPasteableLinkUrl,
   MIME_TEXT_HTML,
@@ -45,7 +46,16 @@ export function handlePlainTextPaste(
   const html = clipboardData.getData(MIME_TEXT_HTML)
   if (text && !html) {
     event.preventDefault()
-    editor.dispatchCommand(PASTE_MARKDOWN_COMMAND, { text, allowBr })
+    if (getLoadedPasteDialect()) {
+      editor.dispatchCommand(PASTE_MARKDOWN_COMMAND, { text, allowBr })
+    } else {
+      // cold first paste (the mount pre-warm hasn't landed): await the engine
+      // chunk, then run the same dispatch — the command handler's conversion
+      // stays synchronous
+      void loadPasteDialect().then(() => {
+        editor.dispatchCommand(PASTE_MARKDOWN_COMMAND, { text, allowBr })
+      })
+    }
 
     return true
   }

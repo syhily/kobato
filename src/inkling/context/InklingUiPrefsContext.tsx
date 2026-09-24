@@ -10,6 +10,13 @@ import { DEFAULT_LABELS, type InklingLabels } from '@/inkling/labels/inkling-lab
 export interface InklingUiPrefsContextValue {
   darkMode: boolean
   isTKEnabled?: boolean
+  /** Surface flag: mount the emoji typeahead in nested/caption editors.
+   * Defaults to true; minimal surfaces (kobato's comment composer) opt out. */
+  isEmojiEnabled?: boolean
+  /** Surface flag: how code block cards edit. 'rich' (default) is the
+   * CodeMirror-backed editor; 'plain' is a static auto-sizing textarea that
+   * never loads the CodeMirror chunk. */
+  codeEditor?: 'rich' | 'plain'
   labels: InklingLabels
 }
 

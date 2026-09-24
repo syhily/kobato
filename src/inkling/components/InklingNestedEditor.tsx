@@ -5,6 +5,7 @@ import React from 'react'
 
 import InklingComposableEditor from '@/inkling/components/InklingComposableEditor'
 import InklingNestedComposer from '@/inkling/components/InklingNestedComposer'
+import InklingUiPrefsContext from '@/inkling/context/InklingUiPrefsContext'
 import { BASIC_TRANSFORMERS, MINIMAL_TRANSFORMERS } from '@/inkling/markdown/transformers-core'
 import BASIC_NODES from '@/inkling/nodes/BasicNodes'
 import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
@@ -61,6 +62,9 @@ const InklingNestedEditor = ({
 }: InklingNestedEditorProps) => {
   const initialNodes = nodes === 'minimal' ? MINIMAL_NODES : BASIC_NODES
   const markdownTransformers = nodes === 'minimal' ? MINIMAL_TRANSFORMERS : BASIC_TRANSFORMERS
+  // minimal surfaces (the host's comment composer) opt out of the emoji
+  // typeahead through the composer's ui-prefs channel
+  const { isEmojiEnabled } = React.useContext(InklingUiPrefsContext)
 
   return (
     <InklingNestedComposer
@@ -91,7 +95,7 @@ const InklingNestedEditor = ({
           hasSettingsPanel={hasSettingsPanel}
         />
 
-        <EmojiPickerPlugin />
+        {isEmojiEnabled !== false && <EmojiPickerPlugin />}
       </InklingComposableEditor>
     </InklingNestedComposer>
   )

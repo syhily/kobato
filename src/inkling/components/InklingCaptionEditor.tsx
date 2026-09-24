@@ -8,6 +8,7 @@ import InklingComposableEditor from '@/inkling/components/InklingComposableEdito
 import InklingNestedComposer from '@/inkling/components/InklingNestedComposer'
 import CardContext from '@/inkling/context/CardContext'
 import { useCardIsSelected } from '@/inkling/context/CardSelectionStoreContext'
+import InklingUiPrefsContext from '@/inkling/context/InklingUiPrefsContext'
 import { MINIMAL_TRANSFORMERS } from '@/inkling/markdown/transformers-core'
 import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
 import {
@@ -85,6 +86,9 @@ const InklingCaptionEditor = ({
   className = 'inkling-lexical-caption',
 }: InklingCaptionEditorProps) => {
   const [parentEditor] = useLexicalComposerContext()
+  // minimal surfaces (the host's comment composer) opt out of the emoji
+  // typeahead through the composer's ui-prefs channel
+  const { isEmojiEnabled } = useContext(InklingUiPrefsContext)
   return (
     <InklingNestedComposer
       initialEditor={captionEditor}
@@ -99,7 +103,7 @@ const InklingCaptionEditor = ({
       >
         <CaptionPlugin parentEditor={parentEditor} />
         <RestrictContentPlugin paragraphs={paragraphs} />
-        <EmojiPickerPlugin />
+        {isEmojiEnabled !== false && <EmojiPickerPlugin />}
       </InklingComposableEditor>
     </InklingNestedComposer>
   )

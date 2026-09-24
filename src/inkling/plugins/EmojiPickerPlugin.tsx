@@ -8,7 +8,6 @@ import Portal from '@/inkling/components/ui/Portal'
 import useTypeaheadTriggerMatch from '@/inkling/hooks/useTypeaheadTriggerMatch'
 import {
   $insertSelectedEmoji,
-  ensureEmojiSearchReady,
   registerEmojiExactMatchCompletion,
   searchEmojis,
   type EmojiSearchResult,
@@ -133,10 +132,6 @@ export function EmojiPickerPlugin() {
   const searchResults = queryString ? fetchedResults : null
 
   const checkForTriggerMatch = useTypeaheadTriggerMatch(':', { minLength: 1 })
-
-  React.useEffect(() => {
-    ensureEmojiSearchReady()
-  }, [])
 
   // the exact-match handler reads the query lazily so its registration is
   // stable per editor instead of re-registering on every keystroke

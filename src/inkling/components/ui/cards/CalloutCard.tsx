@@ -4,12 +4,16 @@ import type { LexicalEditor } from 'lexical'
 import React from 'react'
 
 import InklingNestedEditor from '@/inkling/components/InklingNestedEditor'
-import EmojiPickerPortal from '@/inkling/components/ui/EmojiPickerPortal'
 import { ReadOnlyOverlay } from '@/inkling/components/ui/ReadOnlyOverlay'
 import { ColorOptionSetting, SettingsPanel, ToggleSetting } from '@/inkling/components/ui/SettingsPanel'
 import InklingUiPrefsContext from '@/inkling/context/InklingUiPrefsContext'
 import { useInklingLabels } from '@/inkling/hooks/useInklingLabels'
 import { lookupLabel } from '@/inkling/labels/inkling-labels'
+
+// The picker (emoji-mart's Picker + @emoji-mart/data) loads behind a lazy
+// boundary on the callout icon click — it never appears in SSR markup (the
+// menu opens only from a click), so a null fallback is behavior-identical.
+const EmojiPickerPortal = React.lazy(() => import('@/inkling/components/ui/EmojiPickerPortal'))
 
 export type CalloutColorName = 'white' | 'grey' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple' | 'accent'
 
@@ -156,7 +160,9 @@ export function CalloutCard({
                 {calloutEmoji}
               </button>
               {isEditing && showEmojiPicker && (
-                <EmojiPickerPortal positionRef={emojiButtonRef} onEmojiClick={changeEmoji} />
+                <React.Suspense fallback={null}>
+                  <EmojiPickerPortal positionRef={emojiButtonRef} onEmojiClick={changeEmoji} />
+                </React.Suspense>
               )}
             </>
           )}

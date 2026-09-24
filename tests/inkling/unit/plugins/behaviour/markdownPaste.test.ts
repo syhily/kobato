@@ -1,11 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
+import { loadPasteDialect } from '@/inkling/markdown/lazy-paste-dialect'
 import { markdownToSanitizedHtml } from '@/inkling/plugins/behaviour/markdownPaste'
 
 // The headless leg of the paste markdown dialect: markdown text in, sanitized
 // HTML out — no composer, no DataTransfer. The Lexical HTML import that
 // consumes this output is pinned in test/unit/plugins/MarkdownPastePlugin.test.tsx.
 describe('markdownToSanitizedHtml', () => {
+  // the engine rides the lazy port; the sync API reads the loaded cache
+  beforeAll(() => loadPasteDialect())
   it('renders markdown through the shared markdown-it engine', () => {
     expect(markdownToSanitizedHtml('# Title', { allowBr: false })).toBe('<h1>Title</h1>\n')
   })

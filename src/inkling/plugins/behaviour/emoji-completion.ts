@@ -1,5 +1,3 @@
-import emojiData from '@emoji-mart/data'
-import { SearchIndex, init } from 'emoji-mart'
 import {
   $createTextNode,
   $getSelection,
@@ -11,8 +9,9 @@ import {
   type TextNode,
 } from 'lexical'
 
-// Headless half of the emoji picker: the emoji-mart index lifecycle
-// (ensureEmojiSearchReady), the menu query policy (searchEmojis — including
+// Headless half of the emoji picker: the emoji-mart chunk's import port
+// (ensureEmojiSearchReady — the engine loads on the first typeahead query,
+// not at module import), the menu query policy (searchEmojis — including
 // the emoticon alias table), the exact-match `:shortcode:` completion
 // registration, and the two insertion surgeries. The React half
 // (src/plugins/EmojiPickerPlugin.tsx) is a pure adapter: it owns the
@@ -46,16 +45,30 @@ export interface EmojiCommitResult {
   native: string
 }
 
-// emoji-mart's init is a global side effect; run it once on first use instead
-// of at module import time
-let emojiDataInitialized = false
+// emoji-mart's runtime (@emoji-mart/data's inlined JSON + SearchIndex) stays
+// out of the editor island: it loads through this import port on the first
+// typeahead query, and init() rides the chunk's module eval (ESM caching is
+// the exactly-once guard). The cached promise makes the load itself
+// exactly-once and lets every search path await the same first load.
+export interface EmojiSearchIndexChunk {
+  searchEmojiMartIndex: (query: string) => Promise<unknown>
+}
 
-export function ensureEmojiSearchReady() {
-  if (emojiDataInitialized) {
-    return
-  }
-  emojiDataInitialized = true
-  void init({ data: emojiData })
+/** The dynamic import — tests inject a scripted one. */
+export type LoadEmojiSearchIndex = () => Promise<EmojiSearchIndexChunk>
+
+let indexChunkPromise: Promise<EmojiSearchIndexChunk> | null = null
+
+function loadEmojiSearchIndex(
+  load: LoadEmojiSearchIndex = () => import('@/inkling/plugins/behaviour/emoji-search-index'),
+): Promise<EmojiSearchIndexChunk> {
+  indexChunkPromise ??= load()
+  return indexChunkPromise
+}
+
+/** Kick the index chunk load without searching (test seam / pre-warm). */
+export function ensureEmojiSearchReady(): Promise<void> {
+  return loadEmojiSearchIndex().then(() => undefined)
 }
 
 // Emoticon aliases: typing an emoticon after the ':' trigger searches its
@@ -86,7 +99,8 @@ function isEmojiSearchResult(value: unknown): value is EmojiSearchResult {
 }
 
 async function searchEmojiIndex(query: string): Promise<EmojiSearchResult[]> {
-  const results: unknown = await SearchIndex.search(query)
+  const { searchEmojiMartIndex } = await loadEmojiSearchIndex()
+  const results: unknown = await searchEmojiMartIndex(query)
   if (!Array.isArray(results)) {
     return []
   }
@@ -189,10 +203,14 @@ export interface RegisterEmojiExactMatchCompletionOptions {
 // read lazily via getQuery so the registration is stable per editor instead
 // of re-registering on every keystroke.
 //
-// Timing note: the search runs async, but its continuation is a microtask of
-// the keydown dispatch, so event.preventDefault() still lands before the
-// browser's default insertion — the closing ':' never reaches the text and
-// the splice in $insertEmojiCompletion sees the pre-colon caret shape.
+// Timing note: the search runs async, but with the index chunk warm its
+// continuation is a microtask of the keydown dispatch, so
+// event.preventDefault() still lands before the browser's default insertion —
+// the closing ':' never reaches the text and the splice in
+// $insertEmojiCompletion sees the pre-colon caret shape. A query is active
+// only after the first post-':' keystroke, which already kicked the chunk
+// load, so a cold-load completion requires typing the whole shortcode faster
+// than the chunk arrives.
 export function registerEmojiExactMatchCompletion(
   editor: LexicalEditor,
   { getQuery, onCommit }: RegisterEmojiExactMatchCompletionOptions,

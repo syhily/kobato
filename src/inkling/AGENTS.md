@@ -209,7 +209,13 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
 - User-visible chrome strings come from one closed flat labels table (host reference
   `src/inkling/labels/inkling-labels.ts`): `src/inkling/labels/inkling-labels.ts` owns the dotted
   keys + English defaults, `<InklingComposer labels={...}>` merges a host override subset once into
-  `InklingUiPrefsContext.labels`, and components read via `useInklingLabels()`. Menu labels stay
+  `InklingUiPrefsContext.labels`, and components read via `useInklingLabels()`. The same ui-prefs
+  channel carries two surface flags for minimal hosts: `isEmojiEnabled` (default true — `false`
+  keeps `EmojiPickerPlugin` out of `InklingNestedEditor`/`InklingCaptionEditor`; the page editor's
+  top-level mount in `DEFAULT_FEATURE_PLUGINS` is unaffected) and `codeEditor` (default `'rich'` —
+  `'plain'` swaps the code block card's lazy CodeMirror edit surface for the static
+  `CodeBlockPlainEditor` textarea, which never imports the codemirror chunk; pinned by
+  `tests/inkling/unit/components/ui/cards/plain-code-editor-import-guard.test.ts`). Menu labels stay
   indirect — each card declaration's menu entry (and the table pseudo-source) carries a required
   `labelKey`, and `buildCardMenu` resolves `menu.${labelKey}.label`/`.desc` through the resolver
   `useCardMenu` injects; the declared English is the fallback. `DEFAULT_LABELS` + the two types are
@@ -257,8 +263,34 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   never re-exports the headless conversion modules — `headless-html` reaches jsdom (and its undici
   chain) through `headless-dom`'s lazy import, so a barrel re-export would drag jsdom into the
   client module graph (pinned by `tests/inkling/unit/html/jsdom-import-guard.test.ts`). `version` reads kobato's
-  `__APP_VERSION__` build-time define. Feature runtimes (markdown-it, CodeMirror, emoji-mart,
-  fast-average-color) are ordinary root dependencies; `yjs`/`y-websocket` are the one exception —
+  `__APP_VERSION__` build-time define. Feature runtimes load behind lazy
+  boundaries so the editor island chunk ships without them: emoji-mart
+  (`@emoji-mart/data` + SearchIndex) rides the import port in
+  `src/inkling/plugins/behaviour/emoji-completion.ts` (chunk module
+  `emoji-search-index.ts`, loaded on the first ':' typeahead query) and the
+  callout card's `EmojiPickerPortal` sits behind `React.lazy` (opens only on
+  click — a null Suspense fallback is SSR-safe); markdown-it rides the import
+  port in `src/inkling/markdown/lazy-paste-dialect.ts` (pre-warmed on
+  MarkdownPastePlugin mount and awaited on a cold first paste, because two
+  sync consumers — the paste command handler and the markdown card's
+  exportDOM — cannot await; the headless HTML surface seeds the port
+  statically since the server bundle has no chunk budget); the CodeMirror
+  family loads behind `LazyCardEditor`
+  (`src/inkling/components/ui/cards/LazyCardEditor.tsx` — the hydration-safe
+  gate: static code-box fallback on SSR and first client render, lazy editor
+  after mount) in `CodeBlockCard.tsx` (`CodeBlockEditor.tsx` chunk) and
+  `HtmlCard.tsx` (`HtmlCard/HtmlEditor.tsx` chunk), with
+  `src/inkling/utils/codemirror-config.ts` riding the shared chunk.
+  Minimal surfaces skip two of those runtimes entirely via the ui-prefs
+  surface flags (documented in the architecture notes above): kobato's
+  comment composer sets `isEmojiEnabled={false}` (no emoji typeahead, no
+  emoji-mart chunk) and `codeEditor="plain"` (`CodeBlockPlainEditor`, no
+  codemirror chunk). MarkdownPastePlugin's mount pre-warm of the paste
+  dialect is idle-scheduled (requestIdleCallback, setTimeout fallback) so the
+  fetch never contends with editor mount; the cold-paste await stays the
+  correctness floor.
+  `fast-average-color` stays an ordinary eager dependency (too small to
+  split); `yjs`/`y-websocket` are the older precedent —
   `enableMultiplayer` awaits a lazily imported collaboration chunk at runtime (the load session is
   headless: `src/inkling/utils/services/lazy-collaboration.ts` behind an import port, with
   `useCollaborationProviderFactory` the React adapter), so the barrel stays free of them until

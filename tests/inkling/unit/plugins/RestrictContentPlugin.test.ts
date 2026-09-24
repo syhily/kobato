@@ -7,16 +7,21 @@ import {
   PASTE_COMMAND,
   type LexicalEditor,
 } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { mockComposerContext } from '#/inkling/utils/composer-context'
 import { createTestEditor, updateEditor } from '#/inkling/utils/test-editor'
+import { loadPasteDialect } from '@/inkling/markdown/lazy-paste-dialect'
 import { MIME_TEXT_HTML, MIME_TEXT_PLAIN, PASTE_MARKDOWN_COMMAND } from '@/inkling/plugins/behaviour/clipboard-protocol'
 import { RestrictContentPlugin } from '@/inkling/plugins/RestrictContentPlugin'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
+
+// a warm engine keeps the markdown leg's PASTE_MARKDOWN_COMMAND dispatch
+// synchronous; cold, plainTextPaste awaits the chunk before dispatching
+beforeAll(() => loadPasteDialect())
 
 afterEach(() => {
   vi.unstubAllGlobals()

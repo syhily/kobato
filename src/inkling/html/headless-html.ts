@@ -8,7 +8,15 @@ import { resolveHeadlessDom } from '@/inkling/html/headless-dom'
 import { prepareHeadlessRenderEditor } from '@/inkling/html/headless-editor'
 import { htmlToLexical } from '@/inkling/html/html-to-lexical/index'
 import $convertToHtmlString from '@/inkling/html/renderer/convert-to-html-string'
+import { registerLoadedPasteDialect } from '@/inkling/markdown/lazy-paste-dialect'
+import { pasteDialect } from '@/inkling/markdown/paste-dialect'
 import { type DefaultTransformsOptions } from '@/inkling/transforms'
+
+// The markdown card's exportDOM reads the paste dialect through the lazy
+// port's sync cache (`@/inkling/markdown/lazy-paste-dialect`); this surface is
+// server-only at runtime, so it holds the engine statically and seeds the
+// port at module eval — the headless export path can never await a chunk.
+registerLoadedPasteDialect({ pasteDialect })
 
 export { DEFAULT_HTML_NODES } from '@/inkling/html/default-html-nodes'
 

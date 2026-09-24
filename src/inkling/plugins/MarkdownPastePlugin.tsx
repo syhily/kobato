@@ -7,6 +7,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_LOW } from 'lexical'
 import React from 'react'
 
+import { loadPasteDialect } from '@/inkling/markdown/lazy-paste-dialect'
 import {
   getModifierState,
   MIME_TEXT_HTML,
@@ -20,6 +21,20 @@ export const MarkdownPastePlugin = () => {
   // Reading the modifier state also attaches the protocol's own keydown/keyup
   // listeners (lazily, once per editor) — see clipboard-protocol.ts.
   const modifierState = getModifierState(editor)
+
+  // Pre-warm the paste dialect chunk: the command handler below and the
+  // markdown card's exportDOM (browser copy) consume the engine
+  // synchronously, so it must be loaded before either runs. Idle-scheduled so
+  // the fetch never contends with editor mount; the cold-paste path still
+  // awaits the load before dispatching, so correctness never depends on this.
+  React.useEffect(() => {
+    if (typeof requestIdleCallback === 'function') {
+      const handle = requestIdleCallback(() => void loadPasteDialect())
+      return () => cancelIdleCallback(handle)
+    }
+    const timeout = setTimeout(() => void loadPasteDialect(), 0)
+    return () => clearTimeout(timeout)
+  }, [])
 
   React.useEffect(() => {
     return editor.registerCommand(

@@ -75,12 +75,26 @@ function renderPlugin(editor: ReturnType<typeof createTestEditor>) {
 }
 
 describe('EmojiPickerPlugin', () => {
-  // this test must run before any other mount in this file: the init guard is
-  // module-scoped, so only the first mount initializes emoji-mart
-  it('initializes emoji-mart data once, not per mount', () => {
+  // the index chunk loads lazily on the first typeahead query; its module
+  // eval runs emoji-mart's init side effect, and the port's cached promise
+  // makes that exactly-once per module registry no matter how many editors
+  // mount or queries fire
+  it('initializes emoji-mart data once, not per mount', async () => {
     const editor = createTestEditor()
-    mountPlugin(editor).unmount()
-    mountPlugin(editor).unmount()
+    const first = renderPlugin(editor)
+    await act(async () => {
+      typeaheadCapture.props?.onQueryChange('smi')
+    })
+    await vi.dynamicImportSettled()
+    first.unmount()
+
+    const second = renderPlugin(editor)
+    await act(async () => {
+      typeaheadCapture.props?.onQueryChange('smi')
+    })
+    await vi.dynamicImportSettled()
+    second.unmount()
+
     expect(emojiMartMocks.init).toHaveBeenCalledTimes(1)
   })
 
@@ -109,8 +123,14 @@ describe('EmojiPickerPlugin', () => {
     try {
       const editor = createTestEditor()
       const { unmount } = renderPlugin(editor)
-      act(() => typeaheadCapture.props?.onQueryChange('smi'))
-      act(() => typeaheadCapture.props?.onQueryChange('smile'))
+      // the first query in a test file awaits the emoji-mart chunk import
+      // before the search fires — settle it, then flush the search microtasks
+      await act(async () => typeaheadCapture.props?.onQueryChange('smi'))
+      await act(async () => typeaheadCapture.props?.onQueryChange('smile'))
+      await vi.dynamicImportSettled()
+      await act(async () => {
+        await Promise.resolve()
+      })
       expect(pending.has('smi')).toBe(true)
       expect(pending.has('smile')).toBe(true)
 
@@ -142,6 +162,11 @@ describe('EmojiPickerPlugin', () => {
       const { unmount } = renderPlugin(editor)
       await act(async () => {
         typeaheadCapture.props?.onQueryChange('smi')
+      })
+      // a cold file settles the chunk import before the search resolves
+      await vi.dynamicImportSettled()
+      await act(async () => {
+        await Promise.resolve()
       })
       expect(typeaheadCapture.props?.options.map((option) => option.id)).toEqual(['smile'])
 

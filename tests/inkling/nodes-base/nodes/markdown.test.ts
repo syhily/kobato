@@ -2,14 +2,20 @@ import type { LexicalEditor } from 'lexical'
 
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot } from 'lexical'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { expectPrettifiedHtml } from '#/inkling/nodes-base/test-utils/assertions'
 import { dom, html } from '#/inkling/nodes-base/test-utils/index'
 import { editorTest } from '#/inkling/utils/test-editor'
+import { loadPasteDialect } from '@/inkling/markdown/lazy-paste-dialect'
 import { MarkdownNode, $createMarkdownNode, $isMarkdownNode } from '@/inkling/nodes/base/index'
 
 const editorNodes = [MarkdownNode]
+
+// the card's exportDOM reads the paste dialect through the lazy port's sync
+// cache (the headless HTML surface would seed it; this file bypasses that
+// surface, so it warms the port itself)
+beforeAll(() => loadPasteDialect())
 
 describe('MarkdownNode', function () {
   let editor: LexicalEditor

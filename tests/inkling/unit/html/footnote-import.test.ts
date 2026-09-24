@@ -4,10 +4,11 @@
 // The targetKey policy is import-is-a-new-entity: source anchor slugs only
 // correlate refs with their definitions WITHIN one import pass; the keys
 // themselves are always recast (see src/nodes/footnote/footnote-keys.ts).
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import { htmlToLexical as importWithDom } from '#/inkling/utils/html-to-lexical-with-dom'
 import { renderLive } from '#/inkling/utils/render-live'
+import { loadPasteDialect } from '@/inkling/markdown/lazy-paste-dialect'
 import { markdownToSanitizedHtml } from '@/inkling/plugins/behaviour/markdownPaste'
 
 interface NodeJSON {
@@ -40,6 +41,10 @@ function collect(nodes: NodeJSON[], type: string): NodeJSON[] {
 }
 
 const PASTE_MARKDOWN = 'note.[^1]\n\n[^1]: The **text**.'
+
+// the paste dialect engine rides the lazy port; the sync converter reads the
+// loaded cache — warm it once for every lane in this file
+beforeAll(() => loadPasteDialect())
 
 describe('footnote import — the markdown paste lane', () => {
   it('imports a `[^1]` paste as a ref plus its definition, with a recast targetKey', () => {
