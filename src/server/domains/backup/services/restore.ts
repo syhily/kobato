@@ -1,7 +1,7 @@
 import type { Readable } from 'node:stream'
 
-import { createReadStream, createWriteStream, rmSync } from 'node:fs'
-import { copyFile, mkdtemp, access, open, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { createReadStream, createWriteStream, rmSync, statSync } from 'node:fs'
+import { copyFile, mkdtemp, access, open, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -9,8 +9,10 @@ import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { createGunzip } from 'node:zlib'
 
+import { BackupDecryptionError, createBackupDecipher, isEncryptedBackup } from '@/server/domains/backup/services/crypto'
 import { isTarArchive, listTarEntriesInFile } from '@/server/domains/backup/services/tar'
 import { resolveAnalyticsPath } from '@/server/infra/analytics/duckdb'
+import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@/server/infra/config'
 import { isInMemoryPath, resolveDatabasePath } from '@/server/infra/db/database'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
@@ -66,6 +68,32 @@ export function assertDuckdbBackup(buffer: Buffer): void {
 
 // Production path streams to disk; the in-memory buffer tier lives in tests/_helpers/backup-buffer.ts.
 
+/** The upload is an encrypted archive and no password was supplied — the
+ *  perimeter maps this to a "password required" response, never a 400.
+ *  Carries the staged temp dir + raw upload path so the perimeter can park
+ *  the upload for a follow-up decrypt call (the dir is deliberately NOT
+ *  swept on this throw). */
+export class EncryptedBackupPasswordRequired extends Error {
+  constructor(
+    readonly dir: string,
+    readonly uploadPath: string,
+  ) {
+    super('该备份已加密，需要输入备份密码')
+    this.name = 'EncryptedBackupPasswordRequired'
+  }
+}
+
+/** The supplied password failed the GCM tag check. Distinct from every
+ *  OTHER staging failure (structure, size, tar validation): only this one
+ *  is retryable with a different password, so the decrypt endpoint keeps
+ *  the parked upload for it and releases on the rest. */
+export class BackupPasswordError extends ActionFailure {
+  constructor(message: string) {
+    super(400, message)
+    this.name = 'BackupPasswordError'
+  }
+}
+
 export interface StagedBackup {
   /** Temp dir holding the decompressed payload + extracted entries. */
   dir: string
@@ -73,6 +101,8 @@ export interface StagedBackup {
   content: string | null
   /** Extracted analytics file path, null when the upload carries none. */
   analytics: string | null
+  /** Extracted config file path, null when the archive carries none. */
+  config: string | null
 }
 
 async function readPrefix(path: string, length: number): Promise<Buffer> {
@@ -87,6 +117,12 @@ async function readPrefix(path: string, length: number): Promise<Buffer> {
 }
 
 async function copyRange(sourcePath: string, offset: number, size: number, destPath: string): Promise<void> {
+  // A zero-length tar entry would compute end = start - 1, which
+  // createReadStream rejects synchronously with ERR_OUT_OF_RANGE.
+  if (size === 0) {
+    await writeFile(destPath, '')
+    return
+  }
   await pipeline(createReadStream(sourcePath, { start: offset, end: offset + size - 1 }), createWriteStream(destPath))
 }
 
@@ -105,10 +141,48 @@ export function decompressedSizeGuard(maxBytes: number): Transform {
   })
 }
 
-/** Stage an uploaded backup to a temp dir: stream, decompress, extract
- * payloads (magic-validated). Caller owns `dir` cleanup; `maxBytes` caps
- * the DECOMPRESSED payload. */
-export async function stageBackup(source: Buffer | Readable, maxBytes = MAX_BACKUP_FILE_SIZE): Promise<StagedBackup> {
+/** The staged config must be a JSON object — it overwrites the live
+ *  `kobato.config.json` verbatim, so reject garbage here. */
+async function assertConfigBackup(configPath: string): Promise<void> {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(await readFile(configPath, 'utf8'))
+  } catch {
+    throw new ActionFailure(400, '备份归档中的配置文件不是有效的 JSON')
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new ActionFailure(400, '备份归档中的配置文件格式无效')
+  }
+}
+
+export interface StageBackupOptions {
+  /** Backup encryption password — required when the upload is an encrypted
+   *  archive (`EncryptedBackupPasswordRequired` otherwise). */
+  password?: string
+  /** Cap on the DECOMPRESSED payload (default MAX_BACKUP_FILE_SIZE). */
+  maxBytes?: number
+  /** Byte-progress callback for the decrypt/extract legs (doneBytes so far;
+   *  totalBytes known only for decrypting — the encrypted file size). */
+  onProgress?: (stage: 'decrypting' | 'extracting', doneBytes: number, totalBytes: number | null) => void
+}
+
+/** Counts bytes flowing through, reporting the running total per chunk. */
+function byteCounter(onBytes: (doneBytes: number) => void): Transform {
+  let total = 0
+  return new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      total += chunk.length
+      onBytes(total)
+      callback(null, chunk)
+    },
+  })
+}
+
+/** Stage an uploaded backup to a temp dir: stream, optionally decrypt,
+ * decompress, extract payloads (magic-validated). Caller owns `dir`
+ * cleanup. */
+export async function stageBackup(source: Buffer | Readable, options: StageBackupOptions = {}): Promise<StagedBackup> {
+  const maxBytes = options.maxBytes ?? MAX_BACKUP_FILE_SIZE
   const dir = await mkdtemp(join(tmpdir(), RESTORE_TEMP_PREFIX))
   const uploadPath = join(dir, 'upload.bin')
   const rawPath = join(dir, 'payload')
@@ -118,17 +192,56 @@ export async function stageBackup(source: Buffer | Readable, maxBytes = MAX_BACK
     } else {
       await pipeline(source, createWriteStream(uploadPath))
     }
-    const magic = await readPrefix(uploadPath, 2)
+
+    // Encrypted archives decrypt to a sibling file first; every later step
+    // reads the plaintext. The first GCM tag check IS the password check.
+    let payloadSource = uploadPath
+    if (isEncryptedBackup(await readPrefix(uploadPath, 8))) {
+      if (options.password === undefined || options.password === '') {
+        throw new EncryptedBackupPasswordRequired(dir, uploadPath)
+      }
+      const decryptedPath = join(dir, 'decrypted.bin')
+      try {
+        const totalBytes = statSync(uploadPath).size
+        const decryptCounter = options.onProgress
+          ? byteCounter((done) => options.onProgress?.('decrypting', done, totalBytes))
+          : null
+        await pipeline(
+          createReadStream(uploadPath),
+          ...(decryptCounter !== null ? [decryptCounter] : []),
+          createBackupDecipher(options.password),
+          createWriteStream(decryptedPath),
+        )
+      } catch (error) {
+        if (error instanceof BackupDecryptionError) {
+          // Only an AUTH failure (the GCM tag check) is retryable with a
+          // different password; format failures (header, framing,
+          // truncation) fail identically on every retry.
+          if (error.kind === 'auth') {
+            throw new BackupPasswordError(error.message)
+          }
+          throw new ActionFailure(400, error.message)
+        }
+        throw error
+      }
+      payloadSource = decryptedPath
+    }
+
+    const magic = await readPrefix(payloadSource, 2)
     if (magic.length >= 2 && magic[0] === GZIP_MAGIC_1 && magic[1] === GZIP_MAGIC_2) {
       // Abort in-stream the moment the decompressed cap trips (gzip-bomb guard).
+      const extractCounter = options.onProgress
+        ? byteCounter((done) => options.onProgress?.('extracting', done, null))
+        : null
       await pipeline(
-        createReadStream(uploadPath),
+        createReadStream(payloadSource),
         createGunzip(),
         decompressedSizeGuard(maxBytes),
+        ...(extractCounter !== null ? [extractCounter] : []),
         createWriteStream(rawPath),
       )
     } else {
-      await copyFile(uploadPath, rawPath)
+      await copyFile(payloadSource, rawPath)
     }
     const { size } = await stat(rawPath)
     if (size > maxBytes) {
@@ -152,19 +265,30 @@ export async function stageBackup(source: Buffer | Readable, maxBytes = MAX_BACK
         await copyRange(rawPath, analytics.offset, analytics.size, analyticsPath)
         assertDuckdbBackup(await readPrefix(analyticsPath, 12))
       }
-      return { dir, content: contentPath, analytics: analyticsPath }
+      let configPath: string | null = null
+      const config = entries.find((entry) => entry.name === CONFIG_FILE_NAME)
+      if (config !== undefined) {
+        configPath = join(dir, CONFIG_FILE_NAME)
+        await copyRange(rawPath, config.offset, config.size, configPath)
+        await assertConfigBackup(configPath)
+      }
+      return { dir, content: contentPath, analytics: analyticsPath, config: configPath }
     }
     if (hasDuckdbMagic(head)) {
       const analyticsPath = join(dir, 'analytics.duckdb')
       await copyFile(rawPath, analyticsPath)
-      return { dir, content: null, analytics: analyticsPath }
+      return { dir, content: null, analytics: analyticsPath, config: null }
     }
     assertSqliteBackup(head)
     const contentPath = join(dir, 'kobato.db')
     await copyFile(rawPath, contentPath)
-    return { dir, content: contentPath, analytics: null }
+    return { dir, content: contentPath, analytics: null, config: null }
   } catch (error) {
-    rmSync(dir, { recursive: true, force: true })
+    // The password-required path hands the staged dir to the perimeter's
+    // pending-decrypt table — sweeping it here would orphan the upload.
+    if (!(error instanceof EncryptedBackupPasswordRequired)) {
+      rmSync(dir, { recursive: true, force: true })
+    }
     throw error
   }
 }
@@ -243,6 +367,7 @@ async function swapStagedFile(sourcePath: string, targetPath: string): Promise<v
 }
 
 const PRE_RESTORE_SUFFIX = '.pre-restore'
+const RESTORE_STAGING_SUFFIX = '.restore-staging'
 
 /** Live engine files the swap touches (skipped when in-memory). */
 function swapTargets(): string[] {
@@ -256,6 +381,53 @@ function swapTargets(): string[] {
     targets.push(analyticsPath)
   }
   return targets
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Boot-time crash recovery for the swap window — MUST run before the
+ *  engines open (openDatabase creates an empty file when the target is
+ *  missing, which would masquerade as a healthy target). The two renames
+ *  of a swap are not atomic, so a crash can leave:
+ *    target missing + `.pre-restore` present  → died mid-swap: the
+ *      `.pre-restore` sibling is the LAST GOOD copy — rename it back
+ *      (booting into an empty database would look like data loss);
+ *    target present + `.pre-restore` present  → the swap completed (or
+ *      never started): the sibling is stale and safe to drop;
+ *    `.restore-staging` orphans               → always safe to drop.
+ *  Best-effort per file with loud logs. */
+export async function recoverPreRestoreFiles(): Promise<void> {
+  for (const target of swapTargets()) {
+    const preRestorePath = `${target}${PRE_RESTORE_SUFFIX}`
+    if (await pathExists(preRestorePath)) {
+      if (await pathExists(target)) {
+        await rm(preRestorePath, { force: true }).catch((error: unknown) => {
+          log.warn('Failed to drop stale pre-restore sibling', {
+            target,
+            err: error instanceof Error ? error.message : String(error),
+          })
+        })
+      } else {
+        try {
+          await rename(preRestorePath, target)
+          log.warn('Recovered engine file from a crashed restore swap', { target })
+        } catch (error: unknown) {
+          log.error('Failed to recover engine file from pre-restore sibling', {
+            target,
+            err: error instanceof Error ? error.message : String(error),
+          })
+        }
+      }
+    }
+    await rm(`${target}${RESTORE_STAGING_SUFFIX}`, { force: true }).catch(() => undefined)
+  }
 }
 
 /** Roll the `.pre-restore` originals back — must run before the recovery
@@ -282,10 +454,23 @@ export async function rollbackPreRestoreFiles(): Promise<void> {
   }
 }
 
-/** Delete the `.pre-restore` originals after a successful restore chain. Best-effort. */
+/** Delete the `.pre-restore` originals (and any staging orphan) after a
+ *  successful restore chain. Best-effort. */
 export async function cleanupPreRestoreFiles(): Promise<void> {
   for (const target of swapTargets()) {
     await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true }).catch(() => undefined)
+    await rm(`${target}${RESTORE_STAGING_SUFFIX}`, { force: true }).catch(() => undefined)
+  }
+}
+
+/** Pre-restore sweep of swap leftovers — STRICT: the rollback path keys on
+ *  the mere existence of a `.pre-restore` sibling, so proceeding with a
+ *  leftover a best-effort delete could not remove would roll a later
+ *  failure back to a ghost database. Failure aborts the restore. */
+async function discardSwapLeftovers(): Promise<void> {
+  for (const target of swapTargets()) {
+    await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true })
+    await rm(`${target}${RESTORE_STAGING_SUFFIX}`, { force: true })
   }
 }
 
@@ -297,20 +482,36 @@ export interface RestoreOptions {
   withAnalytics?: boolean
 }
 
-/** Swap the staged engine files into place and clean the temp dir: content
- * when present, sidecar when the upload carries it AND `withAnalytics`. */
+export interface RestoreResult {
+  /** The staged config overwrote the live `kobato.config.json` (takes
+   *  effect on the next process restart — config is a process-level snapshot). */
+  configApplied: boolean
+}
+
+/** Swap the staged payloads into place IN ORDER — content database, then
+ * analytics sidecar, then the config file — and clean the temp dir. The
+ * sidecar applies only when the upload carries it AND `withAnalytics`; the
+ * config applies whenever the archive carried one (write failure is
+ * warn-only and never rolls back the completed engine swaps). */
 export async function restoreFromStagedBackup(
   staged: StagedBackup,
   fileName: string,
   options: RestoreOptions = {},
-): Promise<void> {
+): Promise<RestoreResult> {
   const withAnalytics = options.withAnalytics ?? true
   log.info('Starting restore', {
     fileName,
     hasContent: staged.content !== null,
     hasAnalytics: staged.analytics !== null,
+    hasConfig: staged.config !== null,
     withAnalytics,
   })
+  // Drop any stale swap leftovers BEFORE creating new ones — the rollback
+  // path keys on the mere existence of a `.pre-restore` sibling, so a
+  // leftover from an earlier restore (best-effort cleanup missed it) would
+  // be rolled back to, reverting the live engine files to a ghost. Strict:
+  // a cleanup failure aborts THIS restore rather than risking the ghost.
+  await discardSwapLeftovers()
   try {
     if (staged.content !== null) {
       const dbPath = resolveDatabasePath()
@@ -327,7 +528,26 @@ export async function restoreFromStagedBackup(
         await swapStagedFile(staged.analytics, analyticsPath)
       }
     }
-    log.info('Restore completed successfully', { fileName })
+    let configApplied = false
+    if (staged.config !== null) {
+      const configPath = resolveConfigFilePath()
+      if (configPath === null) {
+        log.warn('Restore: staged config present but this process has no config file (env-only mode); skipping it')
+      } else {
+        try {
+          await copyFile(staged.config, configPath)
+          configApplied = true
+          log.info('Restore: config file replaced; it takes effect on the next process restart', { configPath })
+        } catch (error) {
+          log.warn('Restore: failed to write the restored config file', {
+            configPath,
+            err: error instanceof Error ? error.message : String(error),
+          })
+        }
+      }
+    }
+    log.info('Restore completed successfully', { fileName, configApplied })
+    return { configApplied }
   } finally {
     rmSync(staged.dir, { recursive: true, force: true })
   }

@@ -11,8 +11,8 @@ import { wireSessionStorageDb } from '@/server/domains/auth/session-storage'
 import { createRestoreCompletion } from '@/server/domains/backup/restore-completion'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { rescheduleBackup } from '@/server/domains/backup/scheduler'
-import { wireBackupSnapshots } from '@/server/domains/backup/services/backup'
-import { sweepStaleRestoreDirs } from '@/server/domains/backup/services/restore'
+import { wireBackupEncryption, wireBackupSnapshots } from '@/server/domains/backup/services/backup'
+import { recoverPreRestoreFiles, sweepStaleRestoreDirs } from '@/server/domains/backup/services/restore'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import { hashContent } from '@/server/domains/comments/services/mutate'
 import {
@@ -52,7 +52,7 @@ import { closeHttpServer, setRestartGetDb, setRestartRefreshSettings, setServerP
 import '@/server/domains/analytics/services/batcher'
 import '@/server/domains/analytics/services/pv-batcher'
 import '@/server/domains/audit/services/batcher'
-import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // HMR re-evaluates server.ts per cycle; import.meta.hot.data persists.
@@ -90,6 +90,17 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   // boot start-up.
   setJobHandleGetter({ getDatabaseHandle: () => engine.get() })
   wireBackupSnapshots({ snapshotAnalyticsTo })
+  wireBackupEncryption({
+    // Live read at backup time: toggling the settings card takes effect on
+    // the next backup without a restart. Missing bundle/section (tests) or
+    // an empty password = encryption off.
+    resolveEncryptionPassword: () => {
+      const encryption = getBlogSettingsBundleSync()?.backup?.encryption
+      return encryption?.enabled === true && encryption.password !== undefined && encryption.password !== ''
+        ? encryption.password
+        : null
+    },
+  })
   wireWebmentionPostPublishHook()
   wireS3Migration({
     persistFlippedStorage: async (db, storage) => {
@@ -122,6 +133,14 @@ async function initDatabase(): Promise<void> {
   sweepOrphanedJobRuns(handle.db)
 }
 
+// Crash recovery for the restore swap window, BEFORE any engine opens:
+// a `.pre-restore` sibling whose live target is missing means the process
+// died mid-swap — put the original back before openDatabase would create
+// an empty file masquerading as a healthy target.
+if (!isVitest()) {
+  await recoverPreRestoreFiles()
+}
+
 await initDatabase()
 
 // 'sqlite.db.query' channel → debug-level statement timings. Process-level
@@ -133,8 +152,13 @@ startQueryDiagnostics()
 if (!isVitest()) {
   await initAnalyticsDatabase()
   void replayAllDeadLetters()
-  // Fire-and-forget: drop `kobato-restore-*` dirs orphaned by a crash mid-restore.
-  void sweepStaleRestoreDirs()
+  // Awaited, not fire-and-forget: these sweeps must finish before the
+  // server accepts requests — a late readdir could otherwise sweep a temp
+  // dir a fresh restore just parked, and a stale `.pre-restore` could be
+  // deleted mid-swap by a restore that started milliseconds after boot.
+  await sweepStaleRestoreDirs()
+  // recoverPreRestoreFiles already ran before the engines opened (it owns
+  // the mid-swap crash window); nothing further to do here.
 }
 
 wireRestoreMachine({

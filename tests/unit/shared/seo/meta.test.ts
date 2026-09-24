@@ -137,6 +137,7 @@ const fixture: BlogSettingsBundle = {
   backup: {
     scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
     retention: { enabled: true, days: 30 },
+    encryption: { enabled: false, password: '' },
   },
   limits: {
     maxRequestBodySize: 10 * 1024 * 1024,

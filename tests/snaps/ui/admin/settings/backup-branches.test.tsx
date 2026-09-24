@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { BackupSettings } from '@/shared/config/types'
+import type { BackupLoaderShape } from '@/shared/config/projection'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
@@ -32,14 +32,18 @@ vi.mock('react-router', async () => {
   }
 })
 
-const scheduledBackup: BackupSettings = {
+const scheduledBackup: BackupLoaderShape = {
   scheduled: { enabled: true, frequency: 'weekly', hour: 3, minute: 30, dayOfWeek: 1 },
   retention: { enabled: true, days: 30 },
+  encryption: { enabled: false, password: '' },
+  passwordMask: null,
 }
 
-const disabledBackup: BackupSettings = {
+const disabledBackup: BackupLoaderShape = {
   scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
   retention: { enabled: false, days: 30 },
+  encryption: { enabled: false, password: '' },
+  passwordMask: null,
 }
 
 describe('snapshot: BackupView branches', () => {
@@ -97,7 +101,7 @@ describe('snapshot: BackupView branches', () => {
     )
 
     expect(html).toContain('手动还原')
-    expect(html).toContain('上传备份文件还原：.db.tar.gz 归档（内容 + 访问统计）')
+    expect(html).toContain('上传备份文件还原：.db.tar.gz 归档（内容 + 访问统计 + 配置')
     expect(html).toContain('选择文件')
     expect(html).toContain('未选择文件')
     // Upload button disabled until a file is chosen (!selectedFile).

@@ -1,11 +1,16 @@
-import { rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { createGzip } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
 import { extractBackupFile, unpackBackupPayload, packTar } from '#/_helpers/backup-buffer'
-import { decompressedSizeGuard, stageBackup } from '@/server/domains/backup/services/restore'
+import { createBackupCipher, isEncryptedBackup } from '@/server/domains/backup/services/crypto'
+import {
+  EncryptedBackupPasswordRequired,
+  decompressedSizeGuard,
+  stageBackup,
+} from '@/server/domains/backup/services/restore'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 async function gzipBytes(input: Buffer): Promise<Buffer> {
@@ -119,8 +124,8 @@ describe('services/backup — stageBackup streaming size guard', () => {
 
   it('aborts a gzip stream whose decompressed size exceeds the cap, without staging it in full', async () => {
     const zipped = await gzipBytes(fakeSqliteFile(4096))
-    await expect(stageBackup(Readable.from(zipped), 1024)).rejects.toThrow(ActionFailure)
-    await expect(stageBackup(Readable.from(zipped), 1024)).rejects.toThrow('备份文件过大')
+    await expect(stageBackup(Readable.from(zipped), { maxBytes: 1024 })).rejects.toThrow(ActionFailure)
+    await expect(stageBackup(Readable.from(zipped), { maxBytes: 1024 })).rejects.toThrow('备份文件过大')
   })
 
   it('fails decompressedSizeGuard once the byte count trips the cap', async () => {
@@ -147,5 +152,99 @@ describe('services/backup — stageBackup streaming size guard', () => {
         },
       ),
     ).rejects.toThrow('备份文件过大')
+  })
+})
+
+async function encryptBytes(input: Buffer, password: string): Promise<Buffer> {
+  const chunks: Buffer[] = []
+  await pipeline(Readable.from([input]), createBackupCipher(password), async (source: AsyncIterable<Buffer>) => {
+    for await (const chunk of source) {
+      chunks.push(chunk)
+    }
+  })
+  return Buffer.concat(chunks)
+}
+
+describe('services/backup — stageBackup config entry', () => {
+  it('extracts a kobato.config.json tar entry alongside the engine files', async () => {
+    const configBytes = Buffer.from('{\n  "server": { "port": 4321 }\n}\n')
+    const archive = packTar([
+      { name: 'kobato.db', data: fakeSqliteFile() },
+      { name: 'kobato.config.json', data: configBytes },
+    ])
+    const staged = await stageBackup(archive)
+    try {
+      expect(staged.content).not.toBeNull()
+      expect(staged.analytics).toBeNull()
+      expect(staged.config).not.toBeNull()
+      expect(readFileSync(staged.config!).equals(configBytes)).toBe(true)
+    } finally {
+      rmSync(staged.dir, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects a tar whose config entry is not valid JSON', async () => {
+    const archive = packTar([
+      { name: 'kobato.db', data: fakeSqliteFile() },
+      { name: 'kobato.config.json', data: Buffer.from('not json at all') },
+    ])
+    await expect(stageBackup(archive)).rejects.toThrow(ActionFailure)
+    await expect(stageBackup(archive)).rejects.toThrow('配置文件不是有效的 JSON')
+  })
+
+  it('rejects a tar whose config entry is valid JSON but not an object', async () => {
+    const archive = packTar([
+      { name: 'kobato.db', data: fakeSqliteFile() },
+      { name: 'kobato.config.json', data: Buffer.from('[1, 2, 3]') },
+    ])
+    await expect(stageBackup(archive)).rejects.toThrow('配置文件格式无效')
+  })
+})
+
+describe('services/backup — stageBackup encrypted archives', () => {
+  it('sniffs the encryption magic from the first bytes', async () => {
+    const encrypted = await encryptBytes(fakeSqliteFile(), 'pw')
+    expect(isEncryptedBackup(encrypted.subarray(0, 8))).toBe(true)
+    expect(isEncryptedBackup(fakeSqliteFile().subarray(0, 8))).toBe(false)
+  })
+
+  it('throws EncryptedBackupPasswordRequired without a password and KEEPS the staged dir for parking', async () => {
+    const encrypted = await encryptBytes(await gzipBytes(fakeSqliteFile()), 'right-password')
+    const error: unknown = await stageBackup(encrypted).catch((caught: unknown) => caught)
+    expect(error).toBeInstanceOf(EncryptedBackupPasswordRequired)
+    const dir = (error as EncryptedBackupPasswordRequired).dir
+    // The perimeter parks this dir for the follow-up decrypt call.
+    expect(existsSync(dir)).toBe(true)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('rejects a wrong password as a 400 ActionFailure and sweeps the staged dir', async () => {
+    const encrypted = await encryptBytes(await gzipBytes(fakeSqliteFile()), 'right-password')
+    await expect(stageBackup(encrypted, { password: 'wrong-password' })).rejects.toThrow(ActionFailure)
+    await expect(stageBackup(encrypted, { password: 'wrong-password' })).rejects.toThrow('备份密码错误或文件已损坏')
+  })
+
+  it('decrypts with the right password and reports decrypt + extract byte progress', async () => {
+    const encrypted = await encryptBytes(await gzipBytes(fakeSqliteFile()), 'right-password')
+    const reports: { stage: string; doneBytes: number; totalBytes: number | null }[] = []
+    const staged = await stageBackup(encrypted, {
+      password: 'right-password',
+      onProgress: (stage, doneBytes, totalBytes) => reports.push({ stage, doneBytes, totalBytes }),
+    })
+    try {
+      expect(staged.content).not.toBeNull()
+      expect(readFileSync(staged.content!).subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+      const stages = new Set(reports.map((report) => report.stage))
+      expect(stages.has('decrypting')).toBe(true)
+      expect(stages.has('extracting')).toBe(true)
+      // The decrypt leg knows the total (the encrypted file size); the extract leg does not.
+      const decryptReports = reports.filter((report) => report.stage === 'decrypting')
+      const lastDecrypt = decryptReports[decryptReports.length - 1]!
+      expect(lastDecrypt.totalBytes).toBe(encrypted.length)
+      expect(lastDecrypt.doneBytes).toBe(encrypted.length)
+      expect(reports.find((report) => report.stage === 'extracting')!.totalBytes).toBeNull()
+    } finally {
+      rmSync(staged.dir, { recursive: true, force: true })
+    }
   })
 })

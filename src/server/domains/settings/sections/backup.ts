@@ -16,6 +16,16 @@ export const backupSchema = z
       enabled: coerceBoolean.default(true),
       days: z.coerce.number().int().min(1).max(365).default(30),
     }),
+    encryption: z
+      .object({
+        enabled: coerceBoolean,
+        // Like every settings secret: `undefined` means "keep the stored
+        // value", any string (including empty) is a deliberate overwrite.
+        password: z.string().max(512).optional(),
+      })
+      // Rows written before the encryption field existed carry no key — the
+      // default keeps them valid.
+      .default({ enabled: false, password: '' }),
   })
   .superRefine((value, ctx) => {
     if (!value.scheduled.enabled) {
@@ -32,10 +42,25 @@ export const backupSchema = z
       })
     }
   })
+  .superRefine((value, ctx) => {
+    if (!value.encryption.enabled) {
+      return
+    }
+    // The merged view carries the stored (encrypted) password when the patch
+    // omits it — only an explicitly empty or short password is rejectable here.
+    if (
+      value.encryption.password !== undefined &&
+      value.encryption.password.length > 0 &&
+      value.encryption.password.length < 8
+    ) {
+      ctx.addIssue({ code: 'custom', path: ['encryption', 'password'], message: '备份加密密码至少 8 位' })
+    }
+  })
 
 export const backupDefaults = {
   scheduled: { enabled: false, frequency: 'daily' as const, hour: 3, minute: 0 },
   retention: { enabled: true, days: 30 },
+  encryption: { enabled: false, password: '' },
 } as const
 
 export const backupSection = {

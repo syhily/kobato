@@ -131,7 +131,7 @@ export async function assertBackupContainsAdmin(buffer: Buffer): Promise<void> {
   try {
     const probe = join(dir, 'probe.db')
     await writeFile(probe, content)
-    const staged: StagedBackup = { dir, content: probe, analytics: null }
+    const staged: StagedBackup = { dir, content: probe, analytics: null, config: null }
     await assertStagedBackupContainsAdmin(staged)
   } finally {
     rmSync(dir, { recursive: true, force: true })

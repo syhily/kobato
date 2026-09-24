@@ -18,6 +18,7 @@ function bundleWithSecrets(): BlogSettingsBundle {
   bundle.mail!.mail.mailgunApiKey = 'mg-cc33'
   bundle.assets!.storage.secretAccessKey = 's3-dd44'
   bundle.comments!.comments.githubToken = 'ghp-ee55'
+  bundle.backup!.encryption.password = 'bk-ff66'
   return bundle
 }
 
@@ -46,7 +47,7 @@ describe('derived read/redact accessors', () => {
   it('read returns the configured secret for every entry', () => {
     const bundle = bundleWithSecrets()
     const values = SECRET_FIELDS.map((config) => config.read(bundle))
-    expect(values).toEqual(['key-aa11', 'pass-bb22', 'mg-cc33', 's3-dd44', 'ghp-ee55'])
+    expect(values).toEqual(['key-aa11', 'pass-bb22', 'mg-cc33', 's3-dd44', 'ghp-ee55', 'bk-ff66'])
   })
 
   it('read returns undefined for null sections and the raw value for blank secrets', () => {

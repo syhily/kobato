@@ -13,6 +13,7 @@ export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
     mailMailgunApiKeyMask: null,
     assetsSecretAccessKeyMask: null,
     commentsGithubTokenMask: null,
+    backupEncryptionPasswordMask: null,
   }
   for (const config of SECRET_FIELDS) {
     const value = config.read(bundle)

@@ -81,6 +81,7 @@ export const SECRET_FIELDS = [
   declareSecret({ section: 'mail', path: 'mail', field: 'mailgunApiKey', maskKey: 'mailMailgunApiKeyMask' }),
   declareSecret({ section: 'assets', path: 'storage', field: 'secretAccessKey', maskKey: 'assetsSecretAccessKeyMask' }),
   declareSecret({ section: 'comments', path: 'comments', field: 'githubToken', maskKey: 'commentsGithubTokenMask' }),
+  declareSecret({ section: 'backup', path: 'encryption', field: 'password', maskKey: 'backupEncryptionPasswordMask' }),
 ]
 
 // Post-hoc assert, not `satisfies` — a contextual element type would widen the

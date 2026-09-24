@@ -8,9 +8,11 @@ import { redactSecretsFromBundle } from '@/server/domains/settings/services/mask
 import { DomainError } from '@/server/infra/http/errors'
 import {
   assetsLoaderShapeSchema,
+  backupLoaderShapeSchema,
   commentsLoaderShapeSchema,
   mailLoaderShapeSchema,
   projectAssetsForAdmin,
+  projectBackupForAdmin,
   projectCommentsForAdmin,
   projectMailForAdmin,
 } from '@/shared/config/projection'
@@ -22,6 +24,7 @@ const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
   assets: assetsLoaderShapeSchema,
   mail: mailLoaderShapeSchema,
   comments: commentsLoaderShapeSchema,
+  backup: backupLoaderShapeSchema,
 }
 
 /**
@@ -60,6 +63,8 @@ export function projectSectionForAdmin(
     })
   } else if (section === 'comments') {
     projected = projectCommentsForAdmin(requireBundleSection(redacted, 'comments'), masks.commentsGithubTokenMask)
+  } else if (section === 'backup') {
+    projected = projectBackupForAdmin(requireBundleSection(redacted, 'backup'), masks.backupEncryptionPasswordMask)
   } else {
     projected = redacted[SECTION_TO_BUNDLE_KEY[section]]
   }

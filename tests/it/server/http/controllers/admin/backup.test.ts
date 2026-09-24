@@ -27,13 +27,21 @@ vi.mock('@/server/domains/backup/services/backup', async (importOriginal) => {
   return {
     ...actual,
     getBackupStream: vi.fn(),
+    isBackupEncrypted: vi.fn(async () => false),
   }
 })
 
-vi.mock('@/server/domains/backup/services/restore', () => ({
-  stageBackup: vi.fn(async () => ({ dir: '/tmp/staged', content: '/tmp/staged/kobato.db', analytics: null })),
-  restoreFromStagedBackup: vi.fn(async () => undefined),
-}))
+vi.mock('@/server/domains/backup/services/restore', async (importOriginal) => {
+  // Real classes (the controller keys on EncryptedBackupPasswordRequired's
+  // dir/uploadPath and on the BackupPasswordError type) — only the
+  // file-exchange seams are stubbed.
+  const actual = await importOriginal<typeof import('@/server/domains/backup/services/restore')>()
+  return {
+    ...actual,
+    stageBackup: vi.fn(async () => ({ dir: '/tmp/staged', content: '/tmp/staged/kobato.db', analytics: null })),
+    restoreFromStagedBackup: vi.fn(async () => undefined),
+  }
+})
 
 // The machine is re-wired with test deps in beforeEach; keep the process/restart boundary inert.
 vi.mock('@/server/infra/lifecycle', () => ({
@@ -189,6 +197,16 @@ describe('adminBackupRouter.create', () => {
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'backup_created'))
     expect(rows).toHaveLength(1)
   })
+  it('creates an encrypted .enc archive when a per-backup password override is given', async () => {
+    const admin = await seedAdmin()
+    const res = await call(adminBackupRouter.create, { password: 'one-off-password' }, { context: adminCtx(admin) })
+    expect(res.fileName).toMatch(/\.db\.tar\.gz\.enc$/)
+
+    // The real createBackup piped the archive through the cipher — magic, not gzip.
+    const stored = s3Memory.store.get(`backup/${res.fileName}`)
+    expect(stored).toBeDefined()
+    expect(stored!.body.subarray(0, 8).toString('latin1')).toBe('KOBENC01')
+  })
 })
 
 describe('adminBackupRouter.delete', () => {
@@ -227,6 +245,8 @@ describe('adminBackupRouter.restore', () => {
     vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
       stream: Readable.from(['archive-bytes']),
       byteSize: 13,
+      encrypted: false,
+      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz',
     })
     const admin = await seedAdmin()
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
@@ -262,5 +282,119 @@ describe('adminBackupRouter.restore', () => {
     await expect(
       call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) }),
     ).rejects.toThrow(ORPCError)
+  })
+
+  it('asks for a password when the backup is encrypted and none is available — without claiming the slot', async () => {
+    const backupService = await import('@/server/domains/backup/services/backup')
+    vi.mocked(backupService.isBackupEncrypted).mockResolvedValueOnce(true)
+    const admin = await seedAdmin()
+    const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
+    expect(res).toEqual({ passwordRequired: true })
+    // Declined BEFORE the download: no stream opened, no restore job started.
+    expect(vi.mocked(backupService.getBackupStream)).not.toHaveBeenCalled()
+    expect(restoreDeps.drain).not.toHaveBeenCalled()
+  })
+
+  it('restores an encrypted backup when the caller supplies the password', async () => {
+    const backupService = await import('@/server/domains/backup/services/backup')
+    const restoreService = await import('@/server/domains/backup/services/restore')
+    vi.mocked(backupService.isBackupEncrypted).mockResolvedValueOnce(true)
+    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
+      stream: Readable.from(['archive-bytes']),
+      byteSize: 13,
+      encrypted: true,
+      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
+    })
+    const admin = await seedAdmin()
+    const res = await call(
+      adminBackupRouter.restore,
+      { key: '2026-01-01T00-00-00', password: 'supplied-password' },
+      { context: adminCtx(admin) },
+    )
+    expect(res).toEqual({ accepted: true })
+    expect(vi.mocked(restoreService.stageBackup)).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ password: 'supplied-password' }),
+    )
+    await vi.waitFor(() => expect(restoreDeps.complete).toHaveBeenCalledWith(true, undefined))
+  })
+
+  it('propagates the staging failure when the caller-supplied password is wrong', async () => {
+    const backupService = await import('@/server/domains/backup/services/backup')
+    const restoreService = await import('@/server/domains/backup/services/restore')
+    vi.mocked(backupService.isBackupEncrypted).mockResolvedValueOnce(true)
+    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
+      stream: Readable.from(['archive-bytes']),
+      byteSize: 13,
+      encrypted: true,
+      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
+    })
+    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(
+      new restoreService.BackupPasswordError('备份密码错误或文件已损坏'),
+    )
+    const admin = await seedAdmin()
+    await expect(
+      call(
+        adminBackupRouter.restore,
+        { key: '2026-01-01T00-00-00', password: 'wrong-password' },
+        { context: adminCtx(admin) },
+      ),
+    ).rejects.toThrow(ORPCError)
+  })
+
+  it('falls back to asking for a password when the STORED settings password fails to decrypt', async () => {
+    const backupService = await import('@/server/domains/backup/services/backup')
+    const restoreService = await import('@/server/domains/backup/services/restore')
+    vi.mocked(backupService.isBackupEncrypted).mockResolvedValueOnce(true)
+    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
+      stream: Readable.from(['archive-bytes']),
+      byteSize: 13,
+      encrypted: true,
+      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
+    })
+    // The staged decrypt with the stored password fails the GCM tag check.
+    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(
+      new restoreService.BackupPasswordError('备份密码错误或文件已损坏'),
+    )
+    // The controller resolves the stored password through the composition
+    // root's wired resolver — wire the test double here.
+    const { wireBackupEncryption, resetBackupEncryption } = backupService
+    wireBackupEncryption({ resolveEncryptionPassword: () => 'stored-password' })
+    try {
+      const admin = await seedAdmin()
+      // No explicit password: the stored one was tried and declined — ask the user.
+      const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
+      expect(res).toEqual({ passwordRequired: true })
+      expect(vi.mocked(restoreService.stageBackup)).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ password: 'stored-password' }),
+      )
+    } finally {
+      resetBackupEncryption()
+    }
+  })
+
+  it('asks for a password when the row says plain but the BYTES are encrypted — and sweeps the staged dir', async () => {
+    const backupService = await import('@/server/domains/backup/services/backup')
+    const restoreService = await import('@/server/domains/backup/services/restore')
+    // isBackupEncrypted stays false (the default mock): the key has no .enc
+    // suffix, but the payload carries the encryption magic.
+    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
+      stream: Readable.from(['archive-bytes']),
+      byteSize: 13,
+      encrypted: false,
+      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz',
+    })
+    const stagedDir = '/tmp/kobato-restore-mismatch'
+    const required = new restoreService.EncryptedBackupPasswordRequired(stagedDir, `${stagedDir}/upload.bin`)
+    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(required)
+    const admin = await seedAdmin()
+    const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
+    // Declined into the password prompt — NOT a 500.
+    expect(res).toEqual({ passwordRequired: true })
+    // The prepare declined, so the machine chain never started: no drain, no
+    // swap — the slot was released by the claim wrapper, not by the job.
+    expect(restoreDeps.drain).not.toHaveBeenCalled()
+    expect(restoreDeps.complete).not.toHaveBeenCalled()
   })
 })

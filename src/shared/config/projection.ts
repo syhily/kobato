@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { CommentsSettings, MailSettings } from '@/shared/config/types'
+import type { BackupSettings, CommentsSettings, MailSettings } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AvatarSource } from '@/shared/utils/avatar'
 
@@ -80,6 +80,20 @@ export const commentsLoaderShapeSchema = z.object({
     githubTokenMask: z.string().nullable(),
     tokenTtlSeconds: z.number(),
   }),
+})
+
+export const backupLoaderShapeSchema = z.object({
+  scheduled: z.object({
+    enabled: z.boolean(),
+    frequency: z.enum(['daily', 'weekly', 'monthly']),
+    hour: z.number(),
+    minute: z.union([z.literal(0), z.literal(30)]),
+    dayOfWeek: z.number().optional(),
+    dayOfMonth: z.number().optional(),
+  }),
+  retention: z.object({ enabled: z.boolean(), days: z.number() }),
+  encryption: z.object({ enabled: z.boolean(), password: z.string().optional() }),
+  passwordMask: z.string().nullable(),
 })
 
 export interface AssetsLoaderShape {
@@ -284,8 +298,29 @@ export function projectCommentsForAdmin(
   }
 }
 
+// Mirrors `BackupSettings` plus the password mask slot; the redacted
+// `encryption.password` ('') rides along so card patches keep validating
+// against the section schema.
+export interface BackupLoaderShape {
+  scheduled: BackupSettings['scheduled']
+  retention: BackupSettings['retention']
+  encryption: BackupSettings['encryption']
+  /** Last 4 chars of the stored backup encryption password, or `null` when unset. */
+  passwordMask: string | null
+}
+
+/** Project raw `BackupSettings` into the shape `<BackupView>` expects: encryption password masking. */
+export function projectBackupForAdmin(backup: BackupSettings, passwordMask?: string | null): BackupLoaderShape {
+  const password = typeof backup.encryption.password === 'string' ? backup.encryption.password : ''
+  return {
+    ...backup,
+    passwordMask: passwordMask ?? (password === '' ? null : password.slice(-4)),
+  }
+}
+
 // Compile-time parity: the Zod twins must stay isomorphic to the
 // hand-written interfaces the forms consume.
 type _assetsShapeParity = Assert<Equals<z.infer<typeof assetsLoaderShapeSchema>, AssetsLoaderShape>>
 type _mailShapeParity = Assert<Equals<z.infer<typeof mailLoaderShapeSchema>, MailLoaderShape>>
 type _commentsShapeParity = Assert<Equals<z.infer<typeof commentsLoaderShapeSchema>, CommentsLoaderShape>>
+type _backupShapeParity = Assert<Equals<z.infer<typeof backupLoaderShapeSchema>, BackupLoaderShape>>

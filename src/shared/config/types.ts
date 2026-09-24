@@ -278,6 +278,11 @@ export interface BackupSettings {
     enabled: boolean
     days: number
   }
+  encryption: {
+    enabled: boolean
+    /** Decrypted in the in-memory bundle; redacted (masked) for admin DTOs. */
+    password?: string
+  }
 }
 
 export interface LimitsSettings {
@@ -315,6 +320,7 @@ export interface SecretMasks {
   mailMailgunApiKeyMask: string | null
   assetsSecretAccessKeyMask: string | null
   commentsGithubTokenMask: string | null
+  backupEncryptionPasswordMask: string | null
 }
 
 export interface BlogSettingsBundle {

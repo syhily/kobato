@@ -88,4 +88,45 @@ describe('contract/backup-schema', () => {
     })
     expect(result.success).toBe(false)
   })
+
+  it('defaults encryption for legacy rows without the key', () => {
+    const result = backupSchema.safeParse({
+      scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+      retention: { enabled: true, days: 30 },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.encryption).toEqual({ enabled: false, password: '' })
+    }
+  })
+
+  it('accepts encryption enabled with a long-enough password', () => {
+    const result = backupSchema.safeParse({
+      scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+      retention: { enabled: true, days: 30 },
+      encryption: { enabled: true, password: 'a-very-secret-password' },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects encryption enabled with a password shorter than 8', () => {
+    const result = backupSchema.safeParse({
+      scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+      retention: { enabled: true, days: 30 },
+      encryption: { enabled: true, password: 'short' },
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toContain('password')
+    }
+  })
+
+  it('accepts encryption enabled without a password field (keep-stored semantics)', () => {
+    const result = backupSchema.safeParse({
+      scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+      retention: { enabled: true, days: 30 },
+      encryption: { enabled: true },
+    })
+    expect(result.success).toBe(true)
+  })
 })

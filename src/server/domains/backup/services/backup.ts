@@ -11,6 +11,7 @@ import { createGzip } from 'node:zlib'
 import type { Database } from '@/server/infra/db/database'
 import type { BackupFileDto } from '@/shared/types/backup'
 
+import { createBackupCipher } from '@/server/domains/backup/services/crypto'
 import { createTarReadStream } from '@/server/domains/backup/services/tar'
 import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@/server/infra/config'
 import { finishJobRun, startJobRun } from '@/server/infra/db/job-run-recorder'
@@ -23,7 +24,7 @@ import {
   listBackupRows,
   listBackupStoragePaths,
 } from '@/server/infra/db/operations/backup'
-import { DomainError } from '@/server/infra/http/errors'
+import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend, allBackends, backendFor } from '@/server/infra/storage/registry'
 
@@ -38,13 +39,18 @@ export function isValidBackupKey(key: string): boolean {
   return BACKUP_ID_RE.test(key)
 }
 
-export function buildBackupS3Key(backupId: string): string {
-  return `backup/backup-${backupId}.db.tar.gz`
+export function buildBackupS3Key(backupId: string, encrypted = false): string {
+  return `backup/backup-${backupId}.db.tar.gz${encrypted ? '.enc' : ''}`
+}
+
+/** `.enc`-suffixed keys carry a password-encrypted archive (see services/crypto). */
+export function isEncryptedBackupKey(key: string): boolean {
+  return key.endsWith('.enc')
 }
 
 function parseBackupIdFromKey(key: string): string | null {
-  // Both archive generations: `.db.tar.gz` and legacy content-only `.db.gz`.
-  const match = /^backup\/backup-(.+)\.db(?:\.tar)?\.gz$/.exec(key)
+  // Both archive generations: `.db.tar.gz` and legacy content-only `.db.gz`, each optionally `.enc`.
+  const match = /^backup\/backup-(.+)\.db(?:\.tar)?\.gz(?:\.enc)?$/.exec(key)
   if (match === null) {
     return null
   }
@@ -92,6 +98,34 @@ export function wireBackupSnapshots(deps: { snapshotAnalyticsTo: (stagingPath: s
   snapshotAnalytics = deps.snapshotAnalyticsTo
 }
 
+// Encryption password resolver injected by the composition root (Platform
+// domains must not import the settings domain). Returns null when backup
+// encryption is disabled; unwired means "no encryption".
+let encryptionPasswordResolver: (() => string | null) | null = null
+
+export function wireBackupEncryption(deps: { resolveEncryptionPassword: () => string | null }): void {
+  encryptionPasswordResolver = deps.resolveEncryptionPassword
+}
+
+/** Test seam: drop encryption wiring between cases. */
+export function resetBackupEncryption(): void {
+  encryptionPasswordResolver = null
+}
+
+/** The wired settings encryption password, or null when disabled/unwired.
+ *  Shared by the create pipeline and the restore controller so the
+ *  stored-password semantics live in exactly one place (the composition
+ *  root's resolver). */
+export function resolveStoredEncryptionPassword(): string | null {
+  return encryptionPasswordResolver?.() ?? null
+}
+
+export interface CreateBackupOptions {
+  /** Per-run password override (manual backups); empty/absent falls back to
+   *  the wired settings password. */
+  passwordOverride?: string
+}
+
 // Single-flight: two concurrent runs would race the same staging/restore
 // window and double-write job history, even though the random id suffix
 // keeps their object keys distinct.
@@ -108,12 +142,13 @@ export function tryBeginBackup(): boolean {
 export async function createBackup(
   db: Database,
   createdBy: number | null = null,
+  options: CreateBackupOptions = {},
 ): Promise<{ fileName: string; size: number; timestamp: string }> {
   if (!tryBeginBackup()) {
     throw new DomainError('CONFLICT', '已有备份任务正在进行，请等待完成后再试。')
   }
   try {
-    return await createBackupUnchecked(db, createdBy)
+    return await createBackupUnchecked(db, createdBy, options)
   } finally {
     backupRunning = false
   }
@@ -125,10 +160,10 @@ export async function createBackup(
  * records it), so no double rows. Failures — including the CONFLICT
  * single-flight rejection — finish the row as `failed`: an honest attempt.
  */
-export async function createManualBackup(db: Database) {
+export async function createManualBackup(db: Database, options: CreateBackupOptions = {}) {
   const runId = startJobRun('backup', 'manual')
   try {
-    const result = await createBackup(db, null)
+    const result = await createBackup(db, null, options)
     finishJobRun(runId, 'success')
     return result
   } catch (error) {
@@ -140,11 +175,15 @@ export async function createManualBackup(db: Database) {
 async function createBackupUnchecked(
   db: Database,
   createdBy: number | null,
+  options: CreateBackupOptions,
 ): Promise<{ fileName: string; size: number; timestamp: string }> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   // Random suffix on the public id: backup names must not be guessable.
   const backupId = `${timestamp}-${randomBytes(8).toString('hex')}`
-  const key = buildBackupS3Key(backupId)
+  // Effective password: per-run override wins over the wired settings password.
+  const override = options.passwordOverride?.trim()
+  const password = override !== undefined && override !== '' ? override : (encryptionPasswordResolver?.() ?? null)
+  const key = buildBackupS3Key(backupId, password !== null)
   // Unique per-attempt suffix — a stale file from a crashed attempt must not collide.
   const attemptId = randomBytes(6).toString('hex')
   const stagingPath = path.join(tmpdir(), `kobato-backup-${backupId}-${attemptId}.db`)
@@ -200,12 +239,13 @@ async function createBackupUnchecked(
       entry.size = statSync(entry.path).size
     }
     const gzip = createGzip()
+    const archive = createTarReadStream(entries).pipe(gzip)
     const { backend, driver } = activeBackend()
     // Stored size comes from the backend's return value — never a gzip 'data' listener.
     const stored = await backend.putStream({
       key,
-      body: createTarReadStream(entries).pipe(gzip),
-      contentType: 'application/gzip',
+      body: password !== null ? archive.pipe(createBackupCipher(password)) : archive,
+      contentType: password !== null ? 'application/octet-stream' : 'application/gzip',
       visibility: 'private',
     })
 
@@ -217,7 +257,13 @@ async function createBackupUnchecked(
       createdBy,
     })
 
-    log.info('Backup completed', { key, driver, size: stored.size, entries: entries.length })
+    log.info('Backup completed', {
+      key,
+      driver,
+      size: stored.size,
+      entries: entries.length,
+      encrypted: password !== null,
+    })
     return { fileName: key.split('/').pop()!, size: stored.size, timestamp: backupId }
   } finally {
     await unlink(stagingPath).catch(() => undefined)
@@ -242,6 +288,7 @@ export async function listBackups(
     fileName: row.storagePath.split('/').pop()!,
     size: row.byteSize,
     lastModified: row.createdAt.toISOString(),
+    encrypted: isEncryptedBackupKey(row.storagePath),
   }))
   const nextContinuationToken = limit !== undefined && rows.length === limit ? String((offset ?? 0) + limit) : undefined
   return { files, nextContinuationToken }
@@ -258,7 +305,7 @@ function parseOffset(token: string | undefined): number | null {
 export async function getBackupBuffer(db: Database, timestamp: string): Promise<Buffer> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
-    throw new Error(`Backup row not found for timestamp ${timestamp}`)
+    throw new ActionFailure(404, '备份不存在。')
   }
   return backendFor(row.storageDriver).get(row.storagePath)
 }
@@ -268,13 +315,30 @@ export async function getBackupBuffer(db: Database, timestamp: string): Promise<
 export async function getBackupStream(
   db: Database,
   timestamp: string,
-): Promise<{ stream: Readable; byteSize: number }> {
+): Promise<{ stream: Readable; byteSize: number; encrypted: boolean; fileName: string }> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
-    throw new Error(`Backup row not found for timestamp ${timestamp}`)
+    throw new ActionFailure(404, '备份不存在。')
   }
   const stream = await backendFor(row.storageDriver).getStream(row.storagePath)
-  return { stream, byteSize: row.byteSize }
+  return {
+    stream,
+    byteSize: row.byteSize,
+    encrypted: isEncryptedBackupKey(row.storagePath),
+    // The download route serves THIS name — it carries the real suffix
+    // (`.db.tar.gz`, legacy `.db.gz`, `.enc`), never a hardcoded one.
+    fileName: row.storagePath.split('/').pop()!,
+  }
+}
+
+/** Row-level encrypted check (no stream opened) — the restore procedure
+ *  resolves the password BEFORE claiming the restore slot. */
+export async function isBackupEncrypted(db: Database, timestamp: string): Promise<boolean> {
+  const row = await findBackupByTimestamp(db, timestamp)
+  if (row === null) {
+    throw new ActionFailure(404, '备份不存在。')
+  }
+  return isEncryptedBackupKey(row.storagePath)
 }
 
 export async function deleteBackup(db: Database, timestamp: string): Promise<void> {

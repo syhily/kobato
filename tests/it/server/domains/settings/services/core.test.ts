@@ -167,6 +167,7 @@ describe('computeSecretMasks', () => {
       mail: { mail: { apiKey: 'key-aa11', smtpPass: 'pass-bb22', mailgunApiKey: 'mg-cc33' } },
       assets: { storage: { secretAccessKey: 's3-dd44' } },
       comments: { comments: { githubToken: 'ghp-ee55' } },
+      backup: { encryption: { password: 'bk-ff66' } },
     } as unknown as BlogSettingsBundle
 
     const masks = computeSecretMasks(bundle)
@@ -181,6 +182,7 @@ describe('computeSecretMasks', () => {
       mailMailgunApiKeyMask: 'cc33',
       assetsSecretAccessKeyMask: 'dd44',
       commentsGithubTokenMask: 'ee55',
+      backupEncryptionPasswordMask: 'ff66',
     })
   })
 
@@ -198,6 +200,7 @@ describe('computeSecretMasks', () => {
       mailMailgunApiKeyMask: null,
       assetsSecretAccessKeyMask: null,
       commentsGithubTokenMask: null,
+      backupEncryptionPasswordMask: null,
     })
   })
 })

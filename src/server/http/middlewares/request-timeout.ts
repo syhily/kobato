@@ -10,10 +10,23 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 // disconnect signal; a firing timeout surfaces as a clean 503.
 const DEFAULT_TIMEOUT_MS = 30_000
 
-export function requestTimeout(timeoutMs = DEFAULT_TIMEOUT_MS): MiddlewareHandler<Env> {
+export interface TimeoutOverride {
+  /** Exact path prefix the override applies to (e.g. an upload endpoint). */
+  readonly prefix: string
+  readonly timeoutMs: number
+}
+
+export function requestTimeout(
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  overrides: readonly TimeoutOverride[] = [],
+): MiddlewareHandler<Env> {
   return async function requestTimeoutMiddleware(c, next) {
+    // Long-running endpoints (backup upload/decrypt staging of up to 500 MB)
+    // get their own budget — the 30s default would 503 them on slow links.
+    const override = overrides.find((entry) => c.req.path.startsWith(entry.prefix))
+    const effectiveTimeoutMs = override?.timeoutMs ?? timeoutMs
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    const timer = setTimeout(() => controller.abort(), effectiveTimeoutMs)
     timer.unref()
 
     // Merge the timeout with the client disconnect signal — either cancels in-flight reads.

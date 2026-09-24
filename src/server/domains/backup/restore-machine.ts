@@ -14,6 +14,9 @@ export interface RestoreJobStatus {
   phase: RestorePhase
   startedAt: string
   error?: string
+  /** Set on the terminal report when the restore also replaced the config
+   *  file (effective on the next process restart). */
+  configApplied?: boolean
 }
 
 export interface RestoreMachineDeps {
@@ -73,7 +76,7 @@ export function abortRestoreClaim(): void {
 }
 
 export interface RestoreJobInput {
-  restoreFn: () => Promise<void>
+  restoreFn: () => Promise<RestoreChainResult>
   afterReopenFn?: (db: Database) => Promise<void>
   /**
    * Cleanup for state staged before the chain: invoked only when
@@ -81,6 +84,9 @@ export interface RestoreJobInput {
    */
   onFailureFn?: () => Promise<void> | void
 }
+
+/** The swap chain's terminal payload — older restore paths resolve with nothing. */
+export type RestoreChainResult = { configApplied?: boolean } | undefined
 
 /** Claim the slot before `prepare` runs, release it on throw/decline, then
  * start the job. Outcomes: 'busy' | 'declined' | 'started'. */
@@ -133,7 +139,7 @@ export function consumeRestoreJobReport(): RestoreJobStatus {
 /** Run the claimed restore chain fire-and-forget. The step order is the
  * code above; `afterReopenFn` must stay infallible by contract. */
 export function startRestoreJob(
-  restoreFn: () => Promise<void>,
+  restoreFn: () => Promise<RestoreChainResult>,
   afterReopenFn?: (db: Database) => Promise<void>,
   onFailureFn?: () => Promise<void> | void,
 ): void {
@@ -147,6 +153,7 @@ export function startRestoreJob(
     let success = false
     let error: Error | undefined
     let swapStarted = false
+    let configApplied: boolean | undefined
 
     try {
       await machineDeps.drain()
@@ -154,7 +161,8 @@ export function startRestoreJob(
       await machineDeps.prepareForSwap()
       setPhase('restoring')
       swapStarted = true
-      await restoreFn()
+      const outcome = await restoreFn()
+      configApplied = outcome?.configApplied
 
       const db = await machineDeps.reopenAfterSwap()
       await afterReopenFn?.(db)
@@ -187,6 +195,7 @@ export function startRestoreJob(
       phase: success ? 'completed' : 'failed',
       startedAt: new Date().toISOString(),
       error: error?.message,
+      configApplied,
     }
     current = null
   })()

@@ -168,3 +168,86 @@ describe('backup and restore integration', () => {
     expect(payload.analytics).toBeNull()
   })
 })
+
+describe('encrypted backups', () => {
+  it('creates a .enc archive that round-trips through stageBackup with the password', async () => {
+    const { createBackup, isBackupEncrypted, listBackups } = await import('@/server/domains/backup/services/backup')
+    const { isEncryptedBackup } = await import('@/server/domains/backup/services/crypto')
+    const { EncryptedBackupPasswordRequired, stageBackup } = await import('@/server/domains/backup/services/restore')
+    const { readFileSync, rmSync } = await import('node:fs')
+
+    const { fileName, timestamp } = await createBackup(db, null, { passwordOverride: 'correct horse battery staple' })
+
+    // The key carries the .enc suffix and the payload the encryption magic.
+    expect(fileName).toMatch(/\.db\.tar\.gz\.enc$/)
+    const buffer = mem.store.get(`backup/${fileName}`)?.body
+    expect(buffer).toBeDefined()
+    expect(isEncryptedBackup(buffer!.subarray(0, 8))).toBe(true)
+
+    // Row-level probes the restore controller and the list DTO rely on.
+    expect(await isBackupEncrypted(db, timestamp)).toBe(true)
+    const { files } = await listBackups(db)
+    expect(files.find((file) => file.key === timestamp)?.encrypted).toBe(true)
+
+    // No password: the staging error keeps the temp dir for the parked-upload flow.
+    const noPassword: unknown = await stageBackup(buffer!).catch((caught: unknown) => caught)
+    expect(noPassword).toBeInstanceOf(EncryptedBackupPasswordRequired)
+    rmSync((noPassword as InstanceType<typeof EncryptedBackupPasswordRequired>).dir, {
+      recursive: true,
+      force: true,
+    })
+
+    // A wrong password fails the first GCM tag check — surfaced as a 400.
+    await expect(stageBackup(buffer!, { password: 'wrong-password' })).rejects.toThrow(ActionFailure)
+
+    // The right password stages exactly like the plaintext round-trip.
+    const staged = await stageBackup(buffer!, { password: 'correct horse battery staple' })
+    try {
+      expect(staged.content).not.toBeNull()
+      expect(staged.analytics).not.toBeNull()
+      expect(readFileSync(staged.content!).subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+      expect(readFileSync(staged.analytics!).subarray(8, 12).toString('latin1')).toBe('DUCK')
+    } finally {
+      rmSync(staged.dir, { recursive: true, force: true })
+    }
+  })
+
+  it('encrypts with the wired settings password when no per-run override is given', async () => {
+    const { wireBackupEncryption, resetBackupEncryption } = await import('@/server/domains/backup/services/backup')
+    const { stageBackup } = await import('@/server/domains/backup/services/restore')
+    const { rmSync } = await import('node:fs')
+
+    wireBackupEncryption({ resolveEncryptionPassword: () => 'settings-password' })
+    try {
+      const { fileName } = await createBackup(db)
+      expect(fileName).toMatch(/\.enc$/)
+      const buffer = mem.store.get(`backup/${fileName}`)?.body
+      expect(buffer).toBeDefined()
+      const staged = await stageBackup(buffer!, { password: 'settings-password' })
+      rmSync(staged.dir, { recursive: true, force: true })
+      expect(staged.content).not.toBeNull()
+    } finally {
+      resetBackupEncryption()
+    }
+  })
+
+  it('a per-run override wins over the wired settings password', async () => {
+    const { wireBackupEncryption, resetBackupEncryption } = await import('@/server/domains/backup/services/backup')
+    const { stageBackup } = await import('@/server/domains/backup/services/restore')
+    const { rmSync } = await import('node:fs')
+
+    wireBackupEncryption({ resolveEncryptionPassword: () => 'settings-password' })
+    try {
+      const { fileName } = await createBackup(db, null, { passwordOverride: 'one-off-password' })
+      const buffer = mem.store.get(`backup/${fileName}`)?.body
+      expect(buffer).toBeDefined()
+      // The settings password does NOT fit this archive.
+      await expect(stageBackup(buffer!, { password: 'settings-password' })).rejects.toThrow(ActionFailure)
+      const staged = await stageBackup(buffer!, { password: 'one-off-password' })
+      rmSync(staged.dir, { recursive: true, force: true })
+      expect(staged.content).not.toBeNull()
+    } finally {
+      resetBackupEncryption()
+    }
+  })
+})

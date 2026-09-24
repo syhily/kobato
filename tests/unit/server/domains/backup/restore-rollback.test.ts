@@ -21,7 +21,11 @@ vi.mock('@/server/infra/logger', () => ({
   getLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
 }))
 
-import { cleanupPreRestoreFiles, rollbackPreRestoreFiles } from '@/server/domains/backup/services/restore'
+import {
+  cleanupPreRestoreFiles,
+  recoverPreRestoreFiles,
+  rollbackPreRestoreFiles,
+} from '@/server/domains/backup/services/restore'
 
 let dir: string
 
@@ -93,5 +97,53 @@ describe('services/restore — cleanupPreRestoreFiles', () => {
 
     await expect(cleanupPreRestoreFiles()).resolves.toBeUndefined()
     expect(await readFile(paths.db, 'utf8')).toBe('new-db')
+  })
+})
+
+describe('services/restore — recoverPreRestoreFiles', () => {
+  it('rolls the pre-restore sibling back when the swap target is MISSING (mid-swap crash)', async () => {
+    // Died between the two renames: the `.pre-restore` sibling is the last
+    // good copy — boot must restore it, not boot into an empty database.
+    await writeFile(`${paths.db}.pre-restore`, 'original-db')
+    await writeFile(`${paths.db}.restore-staging`, 'partial-new-db')
+
+    await recoverPreRestoreFiles()
+
+    expect(await readFile(paths.db, 'utf8')).toBe('original-db')
+    expect(await exists(`${paths.db}.pre-restore`)).toBe(false)
+    expect(await exists(`${paths.db}.restore-staging`)).toBe(false)
+  })
+
+  it('drops the sibling when the target EXISTS (swap completed before the crash)', async () => {
+    await writeFile(paths.db, 'new-db')
+    await writeFile(`${paths.db}.pre-restore`, 'original-db')
+    await writeFile(`${paths.db}.restore-staging`, 'orphan-staging')
+
+    await recoverPreRestoreFiles()
+
+    expect(await readFile(paths.db, 'utf8')).toBe('new-db')
+    expect(await exists(`${paths.db}.pre-restore`)).toBe(false)
+    expect(await exists(`${paths.db}.restore-staging`)).toBe(false)
+  })
+
+  it('handles mixed engine states independently', async () => {
+    // Content DB died mid-swap; analytics completed its swap first.
+    await writeFile(`${paths.db}.pre-restore`, 'original-db')
+    await writeFile(paths.analytics, 'new-analytics')
+    await writeFile(`${paths.analytics}.pre-restore`, 'original-analytics')
+
+    await recoverPreRestoreFiles()
+
+    expect(await readFile(paths.db, 'utf8')).toBe('original-db')
+    expect(await readFile(paths.analytics, 'utf8')).toBe('new-analytics')
+    expect(await exists(`${paths.db}.pre-restore`)).toBe(false)
+    expect(await exists(`${paths.analytics}.pre-restore`)).toBe(false)
+  })
+
+  it('is a no-op on a clean boot', async () => {
+    await writeFile(paths.db, 'live-db')
+
+    await expect(recoverPreRestoreFiles()).resolves.toBeUndefined()
+    expect(await readFile(paths.db, 'utf8')).toBe('live-db')
   })
 })

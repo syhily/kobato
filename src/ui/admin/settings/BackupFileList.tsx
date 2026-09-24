@@ -1,22 +1,32 @@
+import { LockIcon } from 'lucide-react'
 import { useState } from 'react'
+
+import type { BackupFileDto } from '@/shared/types/backup'
 
 import { formatBytes } from '@/shared/utils/formatter'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/ui/components/alert-dialog'
 import { Button } from '@/ui/components/button'
-
-interface BackupFile {
-  key: string
-  fileName: string
-  size: number
-  lastModified: string
-}
+import { Input } from '@/ui/components/input'
 
 interface BackupFileListProps {
-  backups: BackupFile[]
+  backups: BackupFileDto[]
   timeZone: string
   isCreating: boolean
-  onCreate: () => void
+  /** Settings-level encryption switch — the create dialog hints accordingly. */
+  encryptionEnabled: boolean
+  /** Called with the optional one-off password (undefined = the settings default). */
+  onCreate: (password?: string) => void
   restorePending: boolean
   onRestore: (key: string) => void
   onDelete: (key: string) => void
@@ -48,6 +58,7 @@ export function BackupFileList({
   backups,
   timeZone,
   isCreating,
+  encryptionEnabled,
   onCreate,
   restorePending,
   onRestore,
@@ -58,12 +69,14 @@ export function BackupFileList({
   hasMore,
 }: BackupFileListProps) {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createPassword, setCreatePassword] = useState('')
   return (
     <SettingGroup
       title="备份文件"
       description="S3 存储中 backup/ 目录下的所有备份文件。"
       actions={
-        <Button type="button" disabled={isCreating} onClick={() => onCreate()}>
+        <Button type="button" disabled={isCreating} onClick={() => setCreateOpen(true)}>
           {isCreating ? '备份中…' : '手动备份'}
         </Button>
       }
@@ -84,7 +97,16 @@ export function BackupFileList({
             <tbody className="divide-y">
               {backups.map((file) => (
                 <tr key={file.key}>
-                  <td className="px-4 py-2 font-mono text-xs">{file.fileName}</td>
+                  <td className="px-4 py-2 font-mono text-xs">
+                    <span className="inline-flex items-center gap-1.5">
+                      {file.encrypted && (
+                        <span title="该备份已加密，还原时需要备份密码">
+                          <LockIcon size={13} className="shrink-0 text-muted-foreground" aria-label="已加密" />
+                        </span>
+                      )}
+                      {file.fileName}
+                    </span>
+                  </td>
                   <td className="px-4 py-2 text-right tabular-nums">{formatBytes(file.size)}</td>
                   <td className="px-4 py-2 text-muted-foreground">{formatDateTime(file.lastModified, timeZone)}</td>
                   <td className="px-4 py-2 text-right" aria-label="操作">
@@ -140,6 +162,53 @@ export function BackupFileList({
         </div>
       )}
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
+
+      <AlertDialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          if (!open && !isCreating) {
+            setCreateOpen(false)
+            setCreatePassword('')
+          }
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>手动备份</AlertDialogTitle>
+            <AlertDialogDescription>
+              {encryptionEnabled
+                ? '将使用设置中的加密密码创建加密备份；也可以为本次备份单独指定密码。'
+                : '创建一个包含内容数据库、访问统计与配置文件的备份归档。'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (!isCreating) {
+                const password = createPassword.trim()
+                onCreate(password === '' ? undefined : password)
+                setCreateOpen(false)
+                setCreatePassword('')
+              }
+            }}
+          >
+            <Input
+              type="password"
+              autoComplete="off"
+              placeholder={encryptionEnabled ? '本次密码（留空使用默认）' : '本次加密密码（留空不加密）'}
+              value={createPassword}
+              disabled={isCreating}
+              onChange={(event) => setCreatePassword(event.target.value)}
+            />
+            <AlertDialogFooter className="mt-4">
+              <AlertDialogCancel disabled={isCreating}>取消</AlertDialogCancel>
+              <AlertDialogAction type="submit" disabled={isCreating}>
+                {isCreating ? '备份中…' : '开始备份'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
     </SettingGroup>
   )
 }

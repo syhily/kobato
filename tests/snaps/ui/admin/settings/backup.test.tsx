@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { BackupSettings } from '@/shared/config/types'
+import type { BackupLoaderShape } from '@/shared/config/projection'
 import type { CacheBucketStats } from '@/shared/contracts/cache'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
@@ -37,14 +37,18 @@ vi.mock('react-router', async () => {
 
 // The inert settings-mutation stub (setup.ts) keeps these forms network-free.
 
-const scheduledBackup: BackupSettings = {
+const scheduledBackup: BackupLoaderShape = {
   scheduled: { enabled: true, frequency: 'weekly', hour: 3, minute: 30, dayOfWeek: 1 },
   retention: { enabled: true, days: 30 },
+  encryption: { enabled: false, password: '' },
+  passwordMask: null,
 }
 
-const dailyBackup: BackupSettings = {
+const dailyBackup: BackupLoaderShape = {
   scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
   retention: { enabled: false, days: 30 },
+  encryption: { enabled: false, password: '' },
+  passwordMask: null,
 }
 
 describe('snapshot: BackupView', () => {
@@ -81,7 +85,7 @@ describe('snapshot: BackupView', () => {
     expect(html).toContain('备份文件')
     expect(html).toContain('暂无备份文件')
     expect(html).toContain('手动还原')
-    expect(html).toContain('上传备份文件还原：.db.tar.gz 归档（内容 + 访问统计）')
+    expect(html).toContain('上传备份文件还原：.db.tar.gz 归档（内容 + 访问统计 + 配置')
     expect(html).toContain('选择文件')
     expect(html).toContain('上传并还原')
   })
@@ -128,12 +132,14 @@ describe('snapshot: BackupFileList', () => {
       fileName: '2024-01-15.sql.gz',
       size: 1024 * 512,
       lastModified: '2024-01-15T03:00:00.000Z',
+      encrypted: false,
     },
     {
-      key: 'backup/2024-01-14.sql.gz',
-      fileName: '2024-01-14.sql.gz',
+      key: 'backup/2024-01-14.sql.gz.enc',
+      fileName: '2024-01-14.sql.gz.enc',
       size: 1024 * 256,
       lastModified: '2024-01-14T03:00:00.000Z',
+      encrypted: true,
     },
   ]
 
@@ -144,6 +150,7 @@ describe('snapshot: BackupFileList', () => {
           backups={files}
           timeZone="Asia/Shanghai"
           isCreating={false}
+          encryptionEnabled={false}
           onCreate={() => {}}
           restorePending={false}
           onRestore={() => {}}
@@ -162,7 +169,9 @@ describe('snapshot: BackupFileList', () => {
     expect(html).toContain('时间')
     expect(html).toContain('操作')
     expect(html).toContain('2024-01-15.sql.gz')
-    expect(html).toContain('2024-01-14.sql.gz')
+    expect(html).toContain('2024-01-14.sql.gz.enc')
+    // The encrypted row carries the lock marker.
+    expect(html).toContain('已加密')
     expect(html).toContain('下载')
     expect(html).toContain('还原')
     expect(html).toContain('删除')
@@ -175,6 +184,7 @@ describe('snapshot: BackupFileList', () => {
           backups={[]}
           timeZone="Asia/Shanghai"
           isCreating={false}
+          encryptionEnabled={false}
           onCreate={() => {}}
           restorePending={false}
           onRestore={() => {}}
@@ -197,6 +207,7 @@ describe('snapshot: BackupFileList', () => {
           backups={files}
           timeZone="Asia/Shanghai"
           isCreating={false}
+          encryptionEnabled={false}
           onCreate={() => {}}
           restorePending={false}
           onRestore={() => {}}

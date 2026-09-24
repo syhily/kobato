@@ -188,7 +188,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
                   render={({ field }) => (
                     <SettingsSelect
                       name={field.name}
-                      value={field.value ? String(field.value) : ''}
+                      value={String(field.value ?? 1)}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
                       items={WEEKDAY_LABELS.map((label, idx) => ({ value: String(idx + 1), label }))}
@@ -217,7 +217,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
                   render={({ field }) => (
                     <SettingsSelect
                       name={field.name}
-                      value={field.value ? String(field.value) : ''}
+                      value={String(field.value ?? 1)}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
                       items={Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} 日` }))}

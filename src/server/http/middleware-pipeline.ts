@@ -151,7 +151,14 @@ export function configureMiddleware(app: Hono<Env>): void {
   )
   app.use(trailingSlashNormaliser)
   app.use(honoWpDecoyMiddleware)
-  app.use(requestTimeout())
+  app.use(
+    requestTimeout(30_000, [
+      // Backup upload/decrypt staging moves up to 500 MB inside the request
+      // — a slow uplink needs far more than the 30s default.
+      { prefix: '/api/admin/backup/upload-restore', timeoutMs: 30 * 60_000 },
+      { prefix: '/api/setup/restore', timeoutMs: 30 * 60_000 },
+    ]),
+  )
   app.use(requestContextMiddleware)
   app.use(honoInstallGateMiddleware)
   app.use(honoVisitorCookieMiddleware)

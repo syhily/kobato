@@ -8,7 +8,12 @@ import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 import { guardOnlyLoader } from '@/server/http/request-context'
 import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
-import { projectAssetsForAdmin, projectCommentsForAdmin, projectMailForAdmin } from '@/shared/config/projection'
+import {
+  projectAssetsForAdmin,
+  projectBackupForAdmin,
+  projectCommentsForAdmin,
+  projectMailForAdmin,
+} from '@/shared/config/projection'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
@@ -131,7 +136,12 @@ const SECTION_CONFIGS = [
   },
   {
     id: 'backup',
-    render: (bundle) => <BackupView backup={bundle.backup} timeZone={bundle.siteIdentity.timeZone} />,
+    render: (bundle, _tz, masks) => (
+      <BackupView
+        backup={projectBackupForAdmin(bundle.backup, masks.backupEncryptionPasswordMask)}
+        timeZone={bundle.siteIdentity.timeZone}
+      />
+    ),
   },
 ] as const satisfies readonly SectionConfig[]
 
