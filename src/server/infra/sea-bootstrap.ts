@@ -5,9 +5,8 @@
 import { bootstrapSeaRuntime } from '@/server/infra/sea-natives'
 import { installSeaVfsRuntimePatches } from '@/server/infra/sea-vfs-fs-patch'
 
-// The writev/readv + dlopen repairs land before anything in the server graph
-// can create a WriteStream or load a native addon — WriteStream resolves
-// fs.writev per call and the CJS `.node` handler resolves process.dlopen per
-// load, so patching this early covers every later user.
+// The writev/readv repair lands before anything in the server graph can
+// create a WriteStream — WriteStream resolves fs.writev per call, so
+// patching this early covers every later user.
 installSeaVfsRuntimePatches()
 bootstrapSeaRuntime()

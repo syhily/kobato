@@ -1,9 +1,7 @@
 import fs from 'node:fs'
-import { constants as osConstants } from 'node:os'
 import { describe, expect, it } from 'vitest'
 
 import {
-  createDlopenFlagsGuard,
   createSequentialReadv,
   createSequentialWritev,
   installSeaVfsRuntimePatches,
@@ -162,52 +160,12 @@ describe('infra/sea-vfs-fs-patch — createSequentialReadv', () => {
   })
 })
 
-describe('infra/sea-vfs-fs-patch — createDlopenFlagsGuard', () => {
-  // Mirrors DLib::kDefaultFlags (src/node_binding.h): RTLD_LAZY on POSIX, 0 on win32.
-  const expectedDefault = process.platform === 'win32' ? 0 : osConstants.dlopen.RTLD_LAZY
-
-  function makeDlopen() {
-    const calls: Array<{ filename: string; flags: number | undefined }> = []
-    const dlopen = (module: object, filename: string, flags?: number): void => {
-      calls.push({ filename, flags })
-    }
-    return { calls, dlopen }
-  }
-
-  it('substitutes Node’s default flags when the caller omits them', () => {
-    const { calls, dlopen } = makeDlopen()
-    const guarded = createDlopenFlagsGuard(dlopen)
-    guarded({}, '/natives/duckdb.node')
-    expect(calls).toEqual([{ filename: '/natives/duckdb.node', flags: expectedDefault }])
-  })
-
-  it('substitutes the default for an explicit undefined (the VFS wrapper’s forwarding shape)', () => {
-    const { calls, dlopen } = makeDlopen()
-    const guarded = createDlopenFlagsGuard(dlopen)
-    guarded({}, '/natives/sharp.node', undefined)
-    expect(calls).toEqual([{ filename: '/natives/sharp.node', flags: expectedDefault }])
-  })
-
-  it('forwards an explicit flags value untouched (0 included)', () => {
-    const { calls, dlopen } = makeDlopen()
-    const guarded = createDlopenFlagsGuard(dlopen)
-    guarded({}, '/x.node', osConstants.dlopen.RTLD_NOW)
-    guarded({}, '/y.node', 0)
-    expect(calls).toEqual([
-      { filename: '/x.node', flags: osConstants.dlopen.RTLD_NOW },
-      { filename: '/y.node', flags: 0 },
-    ])
-  })
-})
-
 describe('infra/sea-vfs-fs-patch — installSeaVfsRuntimePatches', () => {
   it('is a no-op outside a SEA (the originals stay in place)', () => {
     const originalWritev = fs.writev
     const originalReadv = fs.readv
-    const originalDlopen = process.dlopen
     installSeaVfsRuntimePatches()
     expect(fs.writev).toBe(originalWritev)
     expect(fs.readv).toBe(originalReadv)
-    expect(process.dlopen).toBe(originalDlopen)
   })
 })

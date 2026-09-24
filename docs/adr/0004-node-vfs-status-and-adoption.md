@@ -206,3 +206,45 @@ the bundling constraint and check-bundle posture make it a separate
 evaluation); multi-chunk builds importing from the mount; skia-without-
 extraction on darwin/linux (forks platform behavior for a 31 MB
 one-time extraction saving).
+
+## Amendment 2026-09-24: Node 26.10.0 — dlopen guard retired
+
+The toolchain pin moved to 26.10.0 (14 vfs commits; the full matrix was
+re-verified with `pnpm run sea:probe`, 20/20 green). What changed for
+this ADR:
+
+- **The dlopen flags landmine is FIXED upstream**
+  ([nodejs/node#65909](https://github.com/nodejs/node/pull/65909), the
+  same PR stops forwarding a missing flags argument as an explicit
+  `undefined`). The `process.dlopen` re-wrap is deleted from
+  `src/server/infra/sea-vfs-fs-patch.ts`, and `scripts/sea/build.ts`
+  now gates the SEA build on Node >= 26.10 so a 26.9 build machine can
+  never ship a linux binary without the fix. darwin cannot observe the
+  bug (dyld tolerates mode 0), so the detector remains the linux CI
+  `sea:smoke` — first green linux run on 26.10 is the proof.
+- **The writev landmine is NOT fixed** (nothing in the 26.10.0 vfs
+  commits touches async `readv`/`writev`; the probe still pins the
+  crash signature). The sequential fallbacks stay.
+- **Workers still cannot start from / see VFS paths**, `node:vfs` is
+  still absent inside a SEA, and dependent-library addons still fail
+  from the mount — all re-pinned by the probe on 26.10.0. The
+  eval-worker dispatch and natives extraction are untouched.
+
+New capabilities noted, none adopted:
+
+- `--vfs-mount` / `--vfs-load` startup flags
+  ([nodejs/node#65748](https://github.com/nodejs/node/pull/65748),
+  behind `--experimental-vfs`) — userland tooling, irrelevant to the
+  SEA blob mount; `--vfs-mount` was already removed again on main
+  ([nodejs/node#66162](https://github.com/nodejs/node/pull/66162)).
+- `node:ffi` loads libraries from a mounted VFS (#65909) — no ffi use
+  in this project.
+- **Worth watching:** a `vfsArchive` SEA config option
+  ([nodejs/node#65810](https://github.com/nodejs/node/pull/65810))
+  missed the 26.10.0 cut but is merged on main — it embeds ONE zip as a
+  reserved asset and mounts a ZipProvider over a zero-copy view
+  (~32% binary-size win at 128 MB of compressible assets, flat ~10 ms
+  startup penalty, ~2.5x slower reads than the memcpy path), and fixes
+  a per-lookup copy of the whole assets map in
+  `FindSingleExecutableResource`. When it ships, re-evaluate the zstd
+  `natives/*` packing tradeoff against it.

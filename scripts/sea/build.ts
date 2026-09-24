@@ -12,12 +12,22 @@ import { fail, run } from './exec.ts'
 import { runInjectStep } from './inject.ts'
 import { repoRoot, seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
 
-const REQUIRED_NODE_MAJOR = 26
+// 26.10.0 fixed the VFS addon loader's dlopen flags forwarding
+// (nodejs/node#65909); a SEA built on an earlier 26.x ships a binary whose
+// linux native loads die in glibc (`invalid mode for dlopen()`).
+const REQUIRED_NODE_VERSION = '26.10.0'
 
 function ensureNodeVersion() {
-  const major = Number(process.versions.node.split('.')[0])
-  if (major < REQUIRED_NODE_MAJOR) {
-    fail(`SEA build requires Node.js >= ${REQUIRED_NODE_MAJOR}, current ${process.versions.node}.`)
+  const required = REQUIRED_NODE_VERSION.split('.').map(Number)
+  const current = process.versions.node.split('.').map(Number)
+  for (let index = 0; index < required.length; index += 1) {
+    const delta = (current[index] ?? 0) - required[index]
+    if (delta > 0) {
+      return
+    }
+    if (delta < 0) {
+      fail(`SEA build requires Node.js >= ${REQUIRED_NODE_VERSION}, current ${process.versions.node}.`)
+    }
   }
 }
 

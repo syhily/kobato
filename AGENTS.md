@@ -96,21 +96,20 @@ lives in ADR-0004 amendment 2026-09-21):
   fallbacks, installed by `sea-cli` before its flag dispatch AND by
   `sea-bootstrap` before the server graph (the flag dispatch's top-level
   await suspends module evaluation ahead of the sea-bootstrap sibling).
-- The VFS addon loader wraps `process.dlopen` and ALWAYS forwards three
-  arguments, so a flags-less `.node` load arrives at the C++ binding as an
-  explicit `undefined` and coerces to mode 0 — the RTLD_LAZY default only
-  applies when the argument is absent. glibc rejects mode 0
-  (`invalid mode for dlopen()`), so EVERY main-thread native load of a
-  linux SEA fails (darwin's dyld tolerates 0, workers mount no VFS — the
-  linux CI smoke is the only detector). The same
-  `sea-vfs-fs-patch.ts` installer re-wraps `process.dlopen` to substitute
-  Node's default flags when missing.
+- The VFS addon loader's `process.dlopen` wrapper used to forward a
+  missing flags argument as an explicit `undefined`, coercing to dlopen
+  mode 0, which glibc rejects (`invalid mode for dlopen()`) — every
+  main-thread native load of a linux SEA failed. Fixed upstream in Node
+  26.10.0 (nodejs/node#65909); the runtime guard in
+  `sea-vfs-fs-patch.ts` is retired and `scripts/sea/build.ts` gates the
+  SEA build on >= 26.10.0 (darwin's dyld tolerates mode 0 — the linux CI
+  smoke is the only detector).
 
 **Node 26 pin.** Toolchain pinned to 26.10.0 (`.nvmrc`, CI matrices);
 `package.json` engines floors at `>=26.9.0` (the first `useVfs`-capable
 release — a patch-behind local dev machine stays usable while a package
-index lags the pin); `scripts/sea/build.ts` gates
-major-only — local dev/tests run the machine's default Node.
+index lags the pin); `scripts/sea/build.ts` gates on >= 26.10.0 (26.9
+lacks the dlopen fix) — local dev/tests run the machine's default Node.
 
 **Bootstrap ordering (`mainFormat: "module"`).** No CJS prelude;
 filesystem `import()` is forbidden in the injected script, so the whole
