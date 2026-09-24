@@ -13,11 +13,15 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 cd "$INCOMING"
-DEB="$(echo kobato_*_amd64.deb)"
-[ -f "$DEB" ] || {
+# A cancelled or failed earlier upload can leave stale debs behind, so the
+# glob may match several files — take the newest (the one just rsynced) and
+# sweep the rest so they can never shadow a fresh upload again.
+DEB="$(ls -t kobato_*_amd64.deb 2>/dev/null | head -n 1 || true)"
+if [ -z "$DEB" ] || [ ! -f "$DEB" ]; then
   echo "no kobato_*_amd64.deb in $INCOMING" >&2
   exit 1
-}
+fi
+find . -maxdepth 1 -name 'kobato_*_amd64.deb*' ! -name "$DEB" ! -name "$DEB.sha256" -delete
 
 sha256sum -c "$DEB.sha256"
 

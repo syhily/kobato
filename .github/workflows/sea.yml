@@ -277,9 +277,12 @@ jobs:
           # rsync over ssh: `-z` compresses the stream, `--partial` keeps the
           # half-transferred deb so a retry resumes instead of restarting.
           # `-o Port=` (not `-p`) — scp/rsync -e read lowercase -p differently.
+          # Stale debs from cancelled/failed earlier runs are swept first:
+          # leftovers shadow the fresh upload in deploy.sh's version glob.
           SSH_OPTS="-o Port=${DEPLOY_PORT} -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=8 -o TCPKeepAlive=yes -o BatchMode=yes"
           for attempt in 1 2 3; do
-            if ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" 'mkdir -p /opt/kobato/incoming' \
+            if ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" \
+                 'mkdir -p /opt/kobato/incoming && rm -f /opt/kobato/incoming/kobato_*_amd64.deb /opt/kobato/incoming/kobato_*_amd64.deb.sha256' \
               && rsync -az --partial --timeout=60 -e "ssh $SSH_OPTS" \
                    dist-sea/kobato_*_amd64.deb dist-sea/kobato_*_amd64.deb.sha256 scripts/deploy/deploy.sh \
                    "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/kobato/incoming/"; then
