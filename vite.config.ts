@@ -65,6 +65,18 @@ export default defineConfig(({ command }) => ({
           external: ['sharp', '@napi-rs/canvas', '@duckdb/node-api'],
         },
   environments: {
+    client: {
+      build: {
+        // The inkling editor island (~2.2 MB min / 673 kB gzip) is the one
+        // chunk above the 500 kB default. It is only reachable through lazy
+        // boundaries — the editor routes (route-level chunks fetched on
+        // navigation) and the interaction-gated comment composer
+        // (`LazyCommentBodyEditor`) — never through the public pages' static
+        // import graph. Keep the limit just above it so genuine regressions
+        // elsewhere still warn.
+        chunkSizeWarningLimit: 2500,
+      },
+    },
     ssr: {
       // React Router ≥8.2 strips the `node` resolve condition from the ssr
       // environment unless a Node adapter (@react-router/node etc.) appears
