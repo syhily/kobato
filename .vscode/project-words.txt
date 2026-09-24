@@ -59,6 +59,7 @@ dichen
 dinesh
 dompurify
 dotum
+dpkg
 duckdb
 duoshuo
 eliostruyf
@@ -204,6 +205,7 @@ nocolor
 nodemailer
 nofollow
 noninteractive
+nopasswd
 nopd
 notesans
 noto
