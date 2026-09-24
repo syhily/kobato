@@ -105,6 +105,14 @@ export default defineConfig({
     sourcemap: false,
     ssr: bundle.entry,
     rolldownOptions: {
+      checks: {
+        // @lexical/react's published prod dist ships /*#__PURE__*/ in front of
+        // `return` STATEMENTS (LexicalCollaborationContext, LexicalContentEditable,
+        // …) — valid only on call/new expressions, so rolldown flags them when it
+        // re-parses the react-router-built build/server graph. The annotations are
+        // DCE hints with no semantic value, and src/ carries none of its own.
+        invalidAnnotation: false,
+      },
       output: {
         format: bundle.format,
         // Single-file output (the deprecated `inlineDynamicImports: true`).
