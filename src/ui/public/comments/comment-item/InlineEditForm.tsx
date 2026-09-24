@@ -8,8 +8,8 @@ import type { CommentEditOutput } from '@/shared/types/comments'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { Button } from '@/ui/components/button'
-import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 import { useCommentsActions } from '@/ui/public/comments/comments-context'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineEditFormProps {
   comment: CommentItemType
@@ -40,7 +40,8 @@ export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormPro
 
   return (
     <div className="mt-2 block w-full">
-      <CommentBodyEditor
+      <LazyCommentBodyEditor
+        eager
         initialBody={seed}
         // The wire row already carries `body`, so the seed is synchronous and a
         // static key suffices — bumping it on the first editor update would

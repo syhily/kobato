@@ -10,20 +10,23 @@
 // the page surface (`block-quote-aside-cycle`, `use-editor-body-reset`).
 // No cards on this surface: no slash menu, no card insert, no card config.
 //
-// Statically imported by every consumer (no lazy boundary): the editor code
-// rides the route's module graph, so the SSR warmup emits it as a critical
-// modulepreload and the chunk arrives with the page — clicking into the
-// comment box never waits on a second fetch waterfall.
+// The surface is deliberately minimal: `isEmojiEnabled={false}` keeps the
+// emoji typeahead (and its lazy emoji-mart chunk) out of nested/caption
+// editors, and `codeEditor="plain"` edits code blocks in a static textarea —
+// the CodeMirror chunk is never fetched here; rendered comments keep their
+// shiki highlighting from the server-side content projection.
 //
-// SSR: the inkling tree renders during SSR/hydration directly (no
-// `useHydrated` gate) — the empty-seed markup is deterministic, and gating
-// would leave a dead skeleton that swallows clicks until hydration of the
-// whole page finishes (the comments stream + root hydration take seconds).
-// Rendering in place lets React's selective hydration prioritise this
-// boundary on the first click and replay the click; the shell's onClick then
-// focuses the editor programmatically, because a replayed (untrusted)
-// mousedown never runs the browser's native focus-the-contenteditable
-// default action.
+// Loaded ONLY through `./LazyCommentBodyEditor` (all six consumers): this
+// module, the inkling island, and `inkling-comment-editor.css` ride a lazy
+// chunk, keeping the public post page's static import graph editor-free. The
+// always-visible reply form is interaction-gated (placeholder → pointerdown/
+// focus activates, hover prefetches); the edit forms and admin dialogs pass
+// `eager` — the click that opened them was already the interaction.
+//
+// SSR: the server and the client's first render both render the wrapper's
+// placeholder shell, so hydration is byte-stable and the chunk only ships to
+// visitors who actually engage the composer (the R12 static-import tradeoff —
+// "no waterfall on click" — is preserved via hover prefetch + focus handoff).
 
 import '@/styles/inkling-comment-editor.css'
 import { useCallback, useState } from 'react'
@@ -116,6 +119,8 @@ export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled
         initialEditorState={mountedInitialState}
         labels={inklingLabels}
         darkMode={resolvedTheme === 'dark'}
+        isEmojiEnabled={false}
+        codeEditor="plain"
       >
         <InklingSurface
           readOnly={disabled === true}

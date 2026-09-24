@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 // Self-edit dialog for `/admin/me/comments`: posts to `comment.updateOwn`
 // (visitor-allowed), takes the body from the loader item, and the server
@@ -81,7 +81,8 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
         >
           <div className="flex flex-col gap-2">
             <Label htmlFor="my-edit-comment-content">评论内容</Label>
-            <CommentBodyEditor
+            <LazyCommentBodyEditor
+              eager
               initialBody={initialBody}
               bodyKey={`my-edit-${dialogKey}-${bodyKey}`}
               onBodyChange={setBody}

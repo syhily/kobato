@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface ReplyCommentDialogProps {
   comment: AdminComment | null
@@ -91,7 +91,8 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
         >
           <div className="flex flex-col gap-2">
             <Label htmlFor="reply-comment-content">回复内容</Label>
-            <CommentBodyEditor
+            <LazyCommentBodyEditor
+              eager
               initialBody={EMPTY_COMMENT_EDITOR_STATE}
               bodyKey={`admin-reply-${dialogKey}-${bodyKey}`}
               onBodyChange={setBody}

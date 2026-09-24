@@ -7,8 +7,8 @@ import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { Button } from '@/ui/components/button'
-import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 import { useCommentsActions } from '@/ui/public/comments/comments-context'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineOwnEditFormProps {
   comment: CommentItemType
@@ -40,7 +40,8 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
 
   return (
     <div className="mt-2 block w-full">
-      <CommentBodyEditor
+      <LazyCommentBodyEditor
+        eager
         initialBody={seed}
         // The seed is synchronous, so a static key suffices — bumping it on
         // the first editor update would re-run the reset effect and wipe the

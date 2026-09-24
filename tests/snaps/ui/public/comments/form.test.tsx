@@ -100,4 +100,20 @@ describe('snapshot: Comments form variants', () => {
     expect(html).toMatch(/<div class="[^"]*\bpointer-events-none\b[^"]*\babsolute\b[^"]*\btop-\[0\.4rem\]/u)
     expect(html).toContain('回复 @雨帆')
   })
+
+  it('SSR renders the interaction-gated placeholder, not the editor island', () => {
+    // The composer chunk is lazy: the first paint is the placeholder shell
+    // (byte-stable between server and client), and no contenteditable ships.
+    const html = renderInRouter(
+      <CommentReplyForm
+        commentKey="https://example.com/posts/hello/"
+        replyToId={0}
+        onCancel={() => undefined}
+        onReplied={() => undefined}
+      />,
+    )
+    expect(html).toContain('role="textbox"')
+    expect(html).toContain('aria-label="评论内容"')
+    expect(html).not.toContain('contenteditable')
+  })
 })

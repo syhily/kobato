@@ -15,7 +15,7 @@ import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
 import { commentBodyPlainText } from '@/ui/public/comments/comment-body-helpers'
-import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface CommentReplyFormProps {
   commentKey: string
@@ -159,7 +159,7 @@ export function CommentReplyForm({
         </div>
         <div className="flex-1">
           <div className="relative mb-4">
-            <CommentBodyEditor
+            <LazyCommentBodyEditor
               initialBody={EMPTY_COMMENT_EDITOR_STATE}
               bodyKey={`reply-${bodyKey}`}
               onBodyChange={setBody}

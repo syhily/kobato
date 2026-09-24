@@ -4,8 +4,8 @@ import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 
-vi.mock('@/ui/public/comments/CommentBodyEditor', () => ({
-  CommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
+vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
+  LazyCommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))
 
 const currentUser = { id: 'user-1', name: 'Alice', email: 'alice@example.com' }

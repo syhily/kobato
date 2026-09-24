@@ -1335,6 +1335,31 @@ describe('contract: module and bundle boundaries', () => {
     expect(detailChrome).toContain("import { TableOfContents } from '@/ui/public/post/TableOfContents'")
   })
 
+  it('keeps the comment composer behind the LazyCommentBodyEditor boundary', () => {
+    // The composer pulls the whole inkling island (~2.2 MB); a static value
+    // import anywhere outside the boundary module puts it back on the public
+    // post page's critical path.
+    const specifier = '@/ui/public/comments/CommentBodyEditor'
+    const staticValueImport = new RegExp(`^import (?!type\\b).* from '${specifier}'`, 'm')
+    const offenders: string[] = []
+    for (const file of [
+      ...files('src/ui', '-g', '*.tsx'),
+      ...files('src/client', '-g', '*.ts', '-g', '*.tsx'),
+      ...files('src/routes', '-g', '*.tsx'),
+    ]) {
+      if (file === 'src/ui/public/comments/LazyCommentBodyEditor.tsx') {
+        continue
+      }
+      if (staticValueImport.test(readFileSync(file, 'utf8'))) {
+        offenders.push(file)
+      }
+    }
+    expect(offenders).toEqual([])
+
+    const boundary = readFileSync('src/ui/public/comments/LazyCommentBodyEditor.tsx', 'utf8')
+    expect(boundary).toMatch(/lazy\(\(\)\s*=>\s*import\('@\/ui\/public\/comments\/CommentBodyEditor'\)/)
+  })
+
   it('sizes Button icons through data-icon instead of hand-written size classes', () => {
     const button = readFileSync('src/ui/components/button.tsx', 'utf8')
     const offenders: string[] = []

@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface EditCommentDialogProps {
   comment: AdminComment | null
@@ -104,7 +104,8 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
                 </Button>
               </div>
             ) : (
-              <CommentBodyEditor
+              <LazyCommentBodyEditor
+                eager
                 initialBody={initialBody}
                 bodyKey={`admin-edit-${dialogKey}-${bodyKey}`}
                 onBodyChange={setBody}

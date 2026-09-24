@@ -163,25 +163,32 @@ unrelated concerns.
   lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
   through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
   `src/styles/inkling-editor.css`.
-- Comment editor: `@/ui/public/comments/CommentBodyEditor` (statically imported
-  by every consumer — the reply form, both inline edit forms, and the admin
-  dialogs — so the editor chunks ride the route module graph and the SSR
-  warmup emits them as critical modulepreloads; no lazy boundary, no second
-  fetch waterfall at click time) wraps the same inkling composer with
-  the trimmed comment node set (`@/client/editor/comment-editor-nodes`: no headings, asides,
+- Comment editor: `@/ui/public/comments/CommentBodyEditor` wraps the inkling composer with
+  the trimmed comment node set. Every consumer mounts it through
+  `@/ui/public/comments/LazyCommentBodyEditor` — the composer, the inkling island, and
+  `inkling-comment-editor.css` ride a lazy chunk so the public post page's static import
+  graph stays editor-free. The always-visible reply form is interaction-gated
+  (isomorphic placeholder → pointerdown/focus activates, hover prefetches the chunk,
+  focus is handed to the contenteditable after mount); the inline edit forms and admin
+  dialogs pass `eager`, since the click that opened them was already the interaction. The trimmed
+  node set (`@/client/editor/comment-editor-nodes`: no headings, asides,
   tables, images, host cards, or math cards — the code block stays, and a
   ```math fence is the formula path, rendered to KaTeX MathML by
   `computeCommentContentProjection` at save time), the comment markdown transformers
   (`comment-markdown-transformers.ts` — the DEFAULT_TRANSFORMERS subset surviving the trim), and
   `isSnippetsEnabled={false}` / `isDragEnabled={false}`. No slash menu / card
-  insert on this surface. SSR: the inkling tree renders during
-  SSR/hydration directly (no `useHydrated` gate — the empty-seed markup is
-  deterministic, and a gate would leave a dead skeleton swallowing clicks
-  until the whole page hydrates; rendering in place lets React's selective
-  hydration prioritise the boundary on the first click, and the shell's
-  `onClick` focuses the editor programmatically — a replayed untrusted
+  insert on this surface. The composer is a minimal surface: `isEmojiEnabled={false}`
+  keeps the emoji typeahead (and its lazy emoji-mart chunk) out of nested/caption
+  editors, and `codeEditor="plain"` edits code blocks in a static auto-sizing
+  textarea (`CodeBlockPlainEditor`) — the CodeMirror chunk is never fetched on
+  this surface, while rendered comments keep shiki highlighting from the
+  server-side content projection. SSR: the server and the client's first render both
+  render the wrapper's placeholder shell (byte-stable hydration; the chunk
+  only ships to visitors who engage the composer), and the wrapper hands
+  focus to the contenteditable after the editor mounts — the activating
+  pointerdown landed on a node that is gone by then, and a replayed untrusted
   mousedown never runs the browser's native focus-the-contenteditable
-  action). The canvas fills the shell: `min-height`/padding live on the
+  action. The canvas fills the shell: `min-height`/padding live on the
   contentEditable itself in `src/styles/inkling-comment-editor.css`, so the
   whole bordered box is clickable — a wrapper-owned box leaves the area
   below the one-line empty paragraph as dead click zones that never focus.
