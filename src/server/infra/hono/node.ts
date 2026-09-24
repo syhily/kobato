@@ -55,7 +55,7 @@ export type HonoServerOptions<E extends Env = BlankEnv> = HonoNodeServerOptions<
 export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoServerOptions<E>) {
   const startTime = Date.now()
   const build = await importBuild()
-  const basename = String(import.meta.env.REACT_ROUTER_HONO_SERVER_BASENAME ?? '/')
+  const basename = import.meta.env.REACT_ROUTER_HONO_SERVER_BASENAME ?? '/'
   const mergedOptions: HonoServerOptions<E> = {
     ...options,
     listeningListener:
