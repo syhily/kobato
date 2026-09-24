@@ -89,7 +89,7 @@ catalog:
   katex: ^0.18.9
   lexical: 0.46.0
   lint-staged: ^17.5.1
-  lucide-react: ^1.47.0
+  lucide-react: ^1.48.0
   lunar-typescript: ^1.8.6
   markdown-it: 14.3.0
   markdown-it-footnote: 4.0.0
