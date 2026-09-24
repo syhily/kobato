@@ -7,9 +7,10 @@
 // all. No React components, no composer, no plugins — `@/inkling` stays the
 // full editor surface.
 //
-// The export surface mirrors the headless leg of the `@/inkling` barrel
-// exactly (same source modules, so the two surfaces can never drift); unlike
-// the barrel it shares nothing with ./shared-exports, which carries the React
+// This is the ONLY home of the conversion surface: the `@/inkling` barrel
+// deliberately does NOT re-export it, because the HTML leg reaches jsdom
+// through the headless port and the barrel is bundled for the browser.
+// It shares nothing with ./shared-exports, which carries the React
 // composition contract.
 
 /* Types re-exported from the Lexical runtime so consumers can name the state

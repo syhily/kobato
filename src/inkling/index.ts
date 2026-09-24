@@ -181,18 +181,11 @@ export type { RenderContext } from '@/inkling/nodes/base/render-context'
 export * from '@/inkling/utils'
 export { lexicalStateToMarkdown, markdownToLexicalState } from '@/inkling/markdown'
 export type { MarkdownRoundTripOptions } from '@/inkling/markdown/round-trip'
-export {
-  htmlToLexicalState,
-  lexicalStateToHtml,
-  lexicalStateToPlainText,
-  DEFAULT_HTML_NODES,
-} from '@/inkling/html/headless-html'
-export type {
-  HtmlToLexicalStateOptions,
-  LexicalStateToHtmlOptions,
-  LexicalStateToPlainTextOptions,
-} from '@/inkling/html/headless-html'
-export type { ExportDOMDom, ExportPolicyKey } from '@/inkling/nodes/base'
+// The HTML/plain-text converters and their option/DOM types live ONLY on
+// `@/inkling/headless`: headless-html reaches jsdom through headless-dom's
+// lazy import, and re-exporting them here would drag jsdom (+ its undici
+// dependency chain) into the CLIENT module graph (pinned by
+// tests/inkling/unit/html/jsdom-import-guard.test.ts).
 
 export {
   InklingComposer,

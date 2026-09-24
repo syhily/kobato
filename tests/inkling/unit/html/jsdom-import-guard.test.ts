@@ -41,4 +41,19 @@ describe('jsdom import guard', () => {
 
     expect(importers).toEqual(ALLOWED_JSDOM_IMPORTERS)
   })
+
+  it('the React barrel never re-exports the headless conversion modules', () => {
+    // The barrel ships to the browser; headless-html reaches jsdom through
+    // headless-dom, so a value (or even type) re-export here drags jsdom and
+    // its undici chain into the client module graph. The converters live on
+    // `@/inkling/headless` only.
+    const HEADLESS_MODULES = /headless-(html|dom|editor)/
+    for (const barrel of ['src/inkling/index.ts', 'src/inkling/shared-exports.ts']) {
+      const specifiers = importSpecifiers(readFileSync(barrel, 'utf8'))
+      expect(
+        specifiers.filter((specifier) => HEADLESS_MODULES.test(specifier)),
+        `${barrel} must not re-export the headless conversion surface`,
+      ).toEqual([])
+    }
+  })
 })

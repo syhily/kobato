@@ -253,7 +253,10 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   shared contract (Lexical runtime types, host-config types, labels, the library browser, the
   card-free composition pieces, `version`) is single-sourced in `src/inkling/shared-exports.ts` —
   add shared names there, never in the barrel directly. `@/inkling/headless` deliberately does NOT
-  go through `shared-exports` (it would pull the React component tree in). `version` reads kobato's
+  go through `shared-exports` (it would pull the React component tree in), and the barrel in turn
+  never re-exports the headless conversion modules — `headless-html` reaches jsdom (and its undici
+  chain) through `headless-dom`'s lazy import, so a barrel re-export would drag jsdom into the
+  client module graph (pinned by `tests/inkling/unit/html/jsdom-import-guard.test.ts`). `version` reads kobato's
   `__APP_VERSION__` build-time define. Feature runtimes (markdown-it, CodeMirror, emoji-mart,
   fast-average-color) are ordinary root dependencies; `yjs`/`y-websocket` are the one exception —
   `enableMultiplayer` awaits a lazily imported collaboration chunk at runtime (the load session is
