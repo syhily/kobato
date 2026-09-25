@@ -14,7 +14,7 @@ import {
   snapshotAnalyticsTo,
 } from '@/server/bootstrap/analytics-lifecycle'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
-import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log'
+import { ACCESS_EVENTS_DDL } from '@/server/domains/analytics/services/access-log'
 import { flushAccessLog, pushAccessEvent } from '@/server/domains/analytics/services/batcher'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
@@ -30,8 +30,6 @@ function makeEvent(overrides: Partial<EnrichedAccessEvent> = {}): EnrichedAccess
   return {
     ts: new Date('2024-01-01T00:00:00Z'),
     visitorHash: 'v',
-    sessionId: 's',
-    ip: '127.0.0.1',
     path: '/',
     entityType: 'post',
     entityId: 1,
@@ -46,9 +44,8 @@ function makeEvent(overrides: Partial<EnrichedAccessEvent> = {}): EnrichedAccess
     language: '',
     ua: '',
     browser: '',
-    browserVersion: '',
+    browserType: '',
     os: '',
-    osVersion: '',
     device: '',
     deviceType: '',
     isBot: false,
@@ -57,7 +54,7 @@ function makeEvent(overrides: Partial<EnrichedAccessEvent> = {}): EnrichedAccess
 }
 
 async function accessLogPaths(handle: AnalyticsHandle): Promise<unknown[]> {
-  const rows = await handle.reader.runAndReadAll('SELECT path FROM access_log ORDER BY path')
+  const rows = await handle.reader.runAndReadAll('SELECT blob1 AS path FROM access_events ORDER BY blob1')
   const objects = await rows.getRowObjects()
   return objects.map((row) => row.path)
 }
@@ -92,7 +89,7 @@ describe('snapshotAnalyticsTo', () => {
     const stagingPath = join(stagingDir, 'analytics.duckdb')
     expect(await snapshotAnalyticsTo(stagingPath)).toBe(true)
 
-    const copy = await openAnalyticsDatabase(stagingPath, ACCESS_LOG_DDL)
+    const copy = await openAnalyticsDatabase(stagingPath, ACCESS_EVENTS_DDL)
     try {
       expect(await accessLogPaths(copy)).toEqual(['/a', '/b'])
     } finally {

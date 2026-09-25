@@ -1,10 +1,12 @@
 import { copyFile } from 'node:fs/promises'
 
-import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
+import type { AnalyticsReader } from '@/server/domains/analytics/services/analytics-sql'
+import type { Database } from '@/server/infra/db/database'
 
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
-import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log'
+import { ACCESS_EVENTS_DDL } from '@/server/domains/analytics/services/access-log'
 import { wireAccessLogBatcher } from '@/server/domains/analytics/services/batcher'
+import { runAnalyticsBlobMigrationAtBoot } from '@/server/domains/analytics/services/blob-migration'
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import {
   type AnalyticsHandle,
@@ -22,7 +24,7 @@ import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/s
  */
 const engine = new ManagedEngine<AnalyticsHandle>(
   {
-    open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ACCESS_LOG_DDL),
+    open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ACCESS_EVENTS_DDL),
     close: closeAnalyticsDatabase,
   },
   'analyticsHandle',
@@ -71,8 +73,12 @@ export function scheduleNextAnalyticsMaintenance(): void {
   maintenanceJob.reschedule()
 }
 
-export async function initAnalyticsDatabase(): Promise<void> {
+export async function initAnalyticsDatabase(db: Database): Promise<void> {
   await engine.init()
+  // Legacy `access_log` → `access_events` conversion: once per database,
+  // before the maintenance scheduler arms and before requests can push
+  // into the batcher, serialized against the retention/snapshot lock.
+  await withAnalyticsMutationLock(() => runAnalyticsBlobMigrationAtBoot(db, engine.get()))
   scheduleNextAnalyticsMaintenance()
 }
 

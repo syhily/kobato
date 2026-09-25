@@ -1,15 +1,10 @@
+import { sql } from 'kysely'
 import { createHash } from 'node:crypto'
 
-import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
+import type { AnalyticsReader } from '@/server/domains/analytics/services/analytics-sql'
 import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
-import {
-  EPOCH_MS_PARAM,
-  epochMsParam,
-  queryAnalyticsRows,
-  timestampToMs,
-} from '@/server/domains/analytics/services/duckdb-sql'
-import { isRecord } from '@/shared/utils/type-guards'
+import { createAnalyticsQuery, runAnalyticsQuery } from '@/server/domains/analytics/services/analytics-sql'
 
 // Per-session SSE connection bookkeeping + cap policy for
 // `/api/analytics/events`, next to the tail query the stream polls.
@@ -63,34 +58,37 @@ export function __getRealtimeConnectionCountForTests(): number {
   return total
 }
 
+/** Blob slots store '' for "no data" — the wire DTO keeps null semantics. */
+function emptyToNull(value: unknown): string | null {
+  return typeof value === 'string' && value !== '' ? value : null
+}
+
 export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
-  const rows = await queryAnalyticsRows(
+  const rows = await runAnalyticsQuery(
     reader,
-    `SELECT
-      ts,
-      path,
-      country,
-      city,
-      browser,
-      os,
-      device_type AS "deviceType",
-      is_bot AS "isBot"
-    FROM access_log
-    WHERE ts > ${EPOCH_MS_PARAM}
-    ORDER BY ts DESC
-    LIMIT ?`,
-    [epochMsParam(sinceTs), BigInt(limit)],
+    createAnalyticsQuery()
+      .select([
+        sql<number>`epoch_ms(${sql.ref('timestamp')})`.as('ts'),
+        sql.ref('blob1').as('path'),
+        sql.ref('blob7').as('country'),
+        sql.ref('blob9').as('city'),
+        sql.ref('blob12').as('browser'),
+        sql.ref('blob11').as('os'),
+        sql.ref('blob15').as('deviceType'),
+        sql.ref('is_bot').as('isBot'),
+      ])
+      .where(sql<boolean>`${sql.ref('timestamp')} > to_timestamp(${sinceTs.getTime() / 1000})`)
+      .orderBy('timestamp', 'desc')
+      .limit(limit),
   )
-  // Non-record rows are skipped, never manufactured — a placeholder would
-  // surface downstream as Invalid Date / NaN binding on the next poll.
-  return rows.filter(isRecord).map((row) => ({
-    ts: new Date(timestampToMs(row.ts)).toISOString(),
+  return rows.map((row) => ({
+    ts: new Date(Number(row.ts)).toISOString(),
     path: typeof row.path === 'string' ? row.path : '',
-    country: row.country === null || typeof row.country === 'string' ? row.country : null,
-    city: row.city === null || typeof row.city === 'string' ? row.city : null,
-    browser: row.browser === null || typeof row.browser === 'string' ? row.browser : null,
-    os: row.os === null || typeof row.os === 'string' ? row.os : null,
-    deviceType: row.deviceType === null || typeof row.deviceType === 'string' ? row.deviceType : null,
+    country: emptyToNull(row.country),
+    city: emptyToNull(row.city),
+    browser: emptyToNull(row.browser),
+    os: emptyToNull(row.os),
+    deviceType: emptyToNull(row.deviceType),
     isBot: Boolean(row.isBot),
   }))
 }

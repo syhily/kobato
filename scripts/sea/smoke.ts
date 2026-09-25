@@ -18,7 +18,7 @@ import {
   fetchManual,
   makeTempDirs,
   readConvergedConfig,
-  scanAccessLog,
+  scanAccessEvents,
   scrubbedParentEnv,
   seedInstalledInstance,
   sleep,
@@ -517,12 +517,14 @@ async function runManaged(binaryPath: string) {
           await check('SIGTERM clean shutdown (seeded install)', () => checkShutdown(seededServer))
           await Promise.race([seededServer.logClosed, sleep(2_000)])
           await check('natives cache reused after restart', () => checkNativesReuse())
-          await check('DuckDB analytics round-trip (page views → access_log)', async () => {
-            const { rows, paths } = await scanAccessLog(databases.analytics)
+          await check('DuckDB analytics round-trip (page views → access_events)', async () => {
+            const { rows, paths } = await scanAccessEvents(databases.analytics)
             if (rows < PAGE_VIEWS) {
-              throw new Error(`expected ≥ ${PAGE_VIEWS} access_log rows after ${PAGE_VIEWS} page views, found ${rows}`)
+              throw new Error(
+                `expected ≥ ${PAGE_VIEWS} access_events rows after ${PAGE_VIEWS} page views, found ${rows}`,
+              )
             }
-            return `${rows} access_log rows, ${paths} distinct paths`
+            return `${rows} access_events rows, ${paths} distinct paths`
           })
         }
       }

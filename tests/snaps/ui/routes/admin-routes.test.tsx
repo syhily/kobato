@@ -137,8 +137,6 @@ describe('admin routes — Component SSR renders', () => {
           <AnalyticsOverviewRoute
             loaderData={{
               counters: {} as Record<string, unknown>,
-              views: [],
-              heatmap: [],
               initialMetrics: {},
             }}
           />,
@@ -146,7 +144,7 @@ describe('admin routes — Component SSR renders', () => {
         ),
       )
       expect(html).toContain('趋势')
-      expect(html).toContain('热力')
+      expect(html).toContain('每周趋势')
     })
 
     it('analytics/realtime renders the hint card', () => {
@@ -173,8 +171,6 @@ describe('admin routes — Component SSR renders', () => {
             loaderData={{
               post: { id: '7', title: 'Hello Post', slug: 'hello-post' },
               counters: {} as Record<string, unknown>,
-              views: [],
-              heatmap: [],
               initialMetrics: {},
             }}
           />,

@@ -1,38 +1,46 @@
+import type { z } from 'zod'
+
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 
-import type { DateRange, Filters, MetricType, PresetKey } from '@/shared/contracts/analytics'
+import type { DateRange, Filters, MetricType, PresetKey, TimeUnit } from '@/shared/contracts/analytics'
 
-import { PRESET_KEYS, computeDateRange } from '@/shared/contracts/analytics'
+import {
+  METRIC_TYPES,
+  PRESET_KEYS,
+  analyticsQuerySchema,
+  computeDateRange,
+  pickTimeUnit,
+} from '@/shared/contracts/analytics'
 
-function isMetricType(key: string): key is MetricType {
-  return (
-    key === 'country' ||
-    key === 'region' ||
-    key === 'city' ||
-    key === 'referer' ||
-    key === 'language' ||
-    key === 'timezone' ||
-    key === 'os' ||
-    key === 'browser' ||
-    key === 'browserType' ||
-    key === 'device' ||
-    key === 'deviceType' ||
-    key === 'path'
-  )
+// URL-synced dashboard state modeled on Slite's `dashboard-query.ts`:
+// preset/startAt/endAt plus per-dimension filter params, the trend|heatmap
+// view switch, and the heatmap metric. Writes still delete the legacy
+// `filters` JSON param so old links get cleaned up on the first change.
+
+export type AnalyticsViewMode = 'trend' | 'heatmap'
+export type HeatmapMetric = 'visits' | 'visitors'
+
+export interface AnalyticsScope {
+  entityType?: 'post' | 'page'
+  /** Numeric domain id — the wire schema's coerced representation; string
+   *  route/DTO ids convert once at the boundary (`idFromString`). */
+  entityId?: number
 }
-
-// URL-synced dashboard state; setters trigger the loader's revalidation pass.
 
 export interface AnalyticsState {
   preset: PresetKey | null
   range: DateRange
   filters: Filters
+  viewMode: AnalyticsViewMode
+  heatmapMetric: HeatmapMetric
   setPreset: (preset: PresetKey) => void
   setRange: (range: DateRange) => void
   setFilter: (type: MetricType, value: string) => void
   clearFilter: (type: MetricType) => void
   clearAllFilters: () => void
+  setViewMode: (view: AnalyticsViewMode) => void
+  setHeatmapMetric: (metric: HeatmapMetric) => void
 }
 
 export function useAnalyticsState(): AnalyticsState {
@@ -58,26 +66,18 @@ export function useAnalyticsState(): AnalyticsState {
   }, [startAt, endAt, preset])
 
   const filters = useMemo<Filters>(() => {
-    const raw = params.get('filters')
-    if (!raw) {
-      return {}
-    }
-    try {
-      const parsed: unknown = JSON.parse(raw)
-      if (typeof parsed !== 'object' || parsed === null) {
-        return {}
+    const out: Filters = {}
+    for (const type of METRIC_TYPES) {
+      const value = params.get(type)
+      if (value) {
+        out[type] = value
       }
-      const out: Filters = {}
-      for (const [key, value] of Object.entries(parsed)) {
-        if (typeof value === 'string' && value.length > 0 && isMetricType(key)) {
-          out[key] = value
-        }
-      }
-      return out
-    } catch {
-      return {}
     }
+    return out
   }, [params])
+
+  const viewMode: AnalyticsViewMode = params.get('view') === 'heatmap' ? 'heatmap' : 'trend'
+  const heatmapMetric: HeatmapMetric = params.get('metric') === 'visitors' ? 'visitors' : 'visits'
 
   const setPreset = useCallback(
     (p: PresetKey) => {
@@ -113,10 +113,15 @@ export function useAnalyticsState(): AnalyticsState {
     (next: Filters) => {
       setParams(
         (prev) => {
-          if (Object.keys(next).length === 0) {
-            prev.delete('filters')
-          } else {
-            prev.set('filters', JSON.stringify(next))
+          for (const type of METRIC_TYPES) {
+            prev.delete(type)
+          }
+          prev.delete('filters')
+          for (const type of METRIC_TYPES) {
+            const value = next[type]
+            if (value) {
+              prev.set(type, value)
+            }
           }
           return prev
         },
@@ -144,8 +149,102 @@ export function useAnalyticsState(): AnalyticsState {
 
   const clearAllFilters = useCallback(() => writeFilters({}), [writeFilters])
 
-  return useMemo(
-    () => ({ preset, range, filters, setPreset, setRange, setFilter, clearFilter, clearAllFilters }),
-    [preset, range, filters, setPreset, setRange, setFilter, clearFilter, clearAllFilters],
+  const setViewMode = useCallback(
+    (view: AnalyticsViewMode) => {
+      setParams(
+        (prev) => {
+          if (view === 'trend') {
+            prev.delete('view')
+          } else {
+            prev.set('view', view)
+          }
+          return prev
+        },
+        { replace: true },
+      )
+    },
+    [setParams],
   )
+
+  const setHeatmapMetric = useCallback(
+    (metric: HeatmapMetric) => {
+      setParams(
+        (prev) => {
+          if (metric === 'visits') {
+            prev.delete('metric')
+          } else {
+            prev.set('metric', metric)
+          }
+          return prev
+        },
+        { replace: true },
+      )
+    },
+    [setParams],
+  )
+
+  return useMemo(
+    () => ({
+      preset,
+      range,
+      filters,
+      viewMode,
+      heatmapMetric,
+      setPreset,
+      setRange,
+      setFilter,
+      clearFilter,
+      clearAllFilters,
+      setViewMode,
+      setHeatmapMetric,
+    }),
+    [
+      preset,
+      range,
+      filters,
+      viewMode,
+      heatmapMetric,
+      setPreset,
+      setRange,
+      setFilter,
+      clearFilter,
+      clearAllFilters,
+      setViewMode,
+      setHeatmapMetric,
+    ],
+  )
+}
+
+/** IANA zone sent as `clientTimezone`; falls back to Etc/UTC when Intl is unavailable. */
+export function getClientTimezone(): string {
+  if (typeof Intl === 'undefined') {
+    return 'Etc/UTC'
+  }
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC'
+}
+
+/** Wire input shape of every analytics procedure (zod input side — coerced
+ *  numeric fields accept numbers or numeric strings). */
+export type AnalyticsQueryInput = z.input<typeof analyticsQuerySchema>
+
+/**
+ * Flat oRPC input for the analytics procedures: the URL state expanded into
+ * the per-dimension wire fields plus client-side derivations the server
+ * cannot know (`unit` from the resolved range, `clientTimezone` from Intl).
+ */
+export function buildAnalyticsInput(
+  state: Pick<AnalyticsState, 'preset' | 'range' | 'filters'>,
+  options: { scope?: AnalyticsScope; unit?: TimeUnit; limit?: number } = {},
+): AnalyticsQueryInput {
+  return {
+    preset: state.preset ?? undefined,
+    startAt: state.preset ? undefined : state.range.startAt,
+    endAt: state.preset ? undefined : state.range.endAt,
+    ...state.filters,
+    entityType: options.scope?.entityType,
+    entityId: options.scope?.entityId,
+    clientTimezone: getClientTimezone(),
+    unit: options.unit ?? pickTimeUnit(state.range),
+    limit: options.limit,
+  }
 }

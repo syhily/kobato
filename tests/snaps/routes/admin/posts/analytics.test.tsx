@@ -39,8 +39,6 @@ describe('snapshot: routes/admin/posts/analytics', () => {
               commentPublicId: '',
             },
             counters: { visits: 0, visitors: 0, referers: 0 },
-            views: [],
-            heatmap: [],
             initialMetrics: {},
           }}
         />,

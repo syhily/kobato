@@ -1,14 +1,15 @@
 // Shared types for the analytics ingestion pipeline: `RawAccessEvent`
 // (cheap, from the request) → `EnrichedAccessEvent` (after geo/UA/bot
-// enrichment). Both mirror the `accessLog` columns 1:1 — adding a column
-// means updating both plus `appendAccessEvent`'s insert mapping.
+// enrichment). The enriched shape maps onto the `access_events` blob
+// slots through `blobsMap`/`doublesMap` in `services/access-log` —
+// adding a field means assigning it a slot there.
 
 import type { EntityTarget } from '@/server/infra/db/target'
 
 export interface RawAccessEvent {
   /** Defaults to `new Date()` at call site. */
   ts: Date
-  /** Client IP after proxy-header resolution. Empty string falls through to a null `ip` column. */
+  /** Client IP after proxy-header resolution; used for the GeoIP lookup and the salted hash, never persisted. */
   ip: string
   /** Raw `User-Agent` header. Empty string is fine — `enrich()` will null the parsed fields. */
   ua: string
@@ -20,18 +21,17 @@ export interface RawAccessEvent {
   acceptLanguage: string | null
   /** Polymorphic content target. `null` for non-content pages (home / listings / search). */
   target: EntityTarget | null
-  /** Long-lived visitor cookie (`kobato_aid`). `null` on the first request before the cookie is issued. */
-  sessionId: string | null
 }
 
 export interface EnrichedAccessEvent {
   ts: Date
+  /** Daily-salted SHA-256 of the client IP — the ONLY visitor identifier ever stored. */
   visitorHash: string
-  sessionId: string | null
-  ip: string | null
   path: string
+  /** Entity key for `index1`: `post:<ownerId>` / `page:<ownerId>` / null for site-level views. */
   entityType: 'post' | 'page' | null
   entityId: number | null
+  /** Minimized referer (query/hash/userinfo stripped). */
   referer: string | null
   refererHost: string | null
   country: string | null
@@ -43,9 +43,8 @@ export interface EnrichedAccessEvent {
   language: string | null
   ua: string | null
   browser: string | null
-  browserVersion: string | null
+  browserType: string | null
   os: string | null
-  osVersion: string | null
   device: string | null
   deviceType: string | null
   isBot: boolean

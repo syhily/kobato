@@ -7,7 +7,12 @@ import type { Env } from '@/server/http/context'
 import type { RequestContext } from '@/server/http/request-context'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
+import {
+  clearAccessEvents,
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+} from '#/_helpers/analytics-db'
 import { makeRequestContext as makeBaseRequestContext } from '#/_helpers/request-context'
 import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
 import { __getRealtimeConnectionCountForTests } from '@/server/domains/analytics/services/realtime'
@@ -114,7 +119,7 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
-  await clearAccessLog(analyticsHandle)
+  await clearAccessEvents(analyticsHandle)
   __clearLogCaptureForTests()
 })
 

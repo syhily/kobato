@@ -127,39 +127,42 @@ describe('snapshot: VisitSummaryCard', () => {
     expect(html).toContain('查看详情')
   })
 
-  it('renders the 7-day trend block when weeklyTrend is provided', () => {
+  it('renders the 7-day trend skeleton during SSR — the UTC-bucketed loader payload never paints', () => {
     const html = stableHtml(
       renderInRouter(
         <VisitSummaryCard
           summary={{ visits: 0, visitors: 0, referers: 0 }}
-          weeklyTrend={[
-            { time: '2024-01-10T00:00:00.000Z', visits: 10, visitors: 5 },
-            { time: '2024-01-11T00:00:00.000Z', visits: 20, visitors: 8 },
-          ]}
+          weeklyTrend={{
+            unit: 'day',
+            clientTimezone: 'Etc/UTC',
+            points: [
+              // Day-unit bucket labels (clientTimezone), not ISO instants.
+              { time: '2024-01-10', visits: 10, visitors: 5 },
+              { time: '2024-01-11', visits: 20, visitors: 8 },
+            ],
+          }}
         />,
       ),
     )
-    expect(html).toContain('最近 7 天趋势')
-    expect(html).toContain('总访问')
-    expect(html).toContain('30')
-    expect(html).toContain('<svg')
+    // Hydration gate: SSR and the first client render emit the skeleton;
+    // the client-timezone-aware query owns the first trend paint.
+    expect(html).toContain('role="status"')
+    expect(html).toContain('加载中')
+    expect(html).not.toContain('最近 7 天趋势')
+    // No sparkline markup (its gradient id) — only the skeleton paints.
+    expect(html).not.toContain('trendGradient')
   })
 
-  it('emits a valid sparkline path when the trend aggregates to a single day', () => {
+  it('renders no trend block at all when the loader reports an empty week', () => {
     const html = stableHtml(
       renderInRouter(
         <VisitSummaryCard
           summary={{ visits: 0, visitors: 0, referers: 0 }}
-          weeklyTrend={[
-            { time: '2024-01-10T02:00:00.000Z', visits: 10, visitors: 5 },
-            { time: '2024-01-10T08:00:00.000Z', visits: 20, visitors: 8 },
-          ]}
+          weeklyTrend={{ unit: 'day', clientTimezone: 'Etc/UTC', points: [] }}
         />,
       ),
     )
-    for (const d of html.match(/<path d="([^"]*)"/g) ?? []) {
-      expect(d).not.toMatch(/\bL\s*L\b/)
-      expect(d).not.toMatch(/\bL\s*"/)
-    }
+    expect(html).not.toContain('role="status"')
+    expect(html).not.toContain('最近 7 天趋势')
   })
 })

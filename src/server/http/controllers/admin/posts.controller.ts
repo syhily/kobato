@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
 import { loadAnalyticsOverview } from '@/server/domains/analytics/services/overview'
-import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
+import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-filter'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { toAdminPostDto } from '@/server/domains/posts/projection'
 import { listPostsSchema, upsertPostMetaSchema } from '@/server/domains/posts/schema'

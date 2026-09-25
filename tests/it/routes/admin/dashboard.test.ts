@@ -2,7 +2,12 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
+import {
+  clearAccessEvents,
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+} from '#/_helpers/analytics-db'
 import { makeLoaderArgs } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, authorSession } from '#/_helpers/session'
@@ -24,7 +29,7 @@ const { loader } = await import('@/routes/admin/dashboard')
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await clearAccessLog(analyticsHandle)
+  await clearAccessEvents(analyticsHandle)
 })
 
 afterAll(async () => {
@@ -110,8 +115,8 @@ describe('admin dashboard loader (real db + real analytics)', () => {
     // Real counters over the seeded sidecar rows.
     expect(data.visitSummary).toEqual({ visits: 3, visitors: 2, referers: 1 })
     expect(data.weeklyTrend).not.toBeNull()
-    expect(data.weeklyTrend!.length).toBeGreaterThan(0)
-    expect(data.weeklyTrend!.reduce((sum, point) => sum + point.visits, 0)).toBe(3)
+    expect(data.weeklyTrend!.points.length).toBeGreaterThan(0)
+    expect(data.weeklyTrend!.points.reduce((sum, point) => sum + point.visits, 0)).toBe(3)
     expect(EMPTY_STATE_LINES).toContain(data.emptyStateLine)
     expect(data.stats).toEqual({ draftCount: 2, publishedCount: 1, myCommentsTotal: 2, myCommentsPending: 0 })
     // Draft cards sort by updatedAt desc; published cards prefer publishedAt.

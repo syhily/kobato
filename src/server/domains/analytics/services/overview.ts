@@ -1,34 +1,29 @@
-import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
-import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { CountersDto, HeatmapCell, MetricRow, MetricType, ViewsPoint } from '@/shared/contracts/analytics'
+import type { AnalyticsReader } from '@/server/domains/analytics/services/analytics-sql'
+import type { CountersDto, MetricRow, MetricType, ResolvedAnalyticsQuery } from '@/shared/contracts/analytics'
 
 import { queryCounters } from '@/server/domains/analytics/services/counters'
-import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
-import { queryViews } from '@/server/domains/analytics/services/views'
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 
 export interface AnalyticsOverviewData {
   counters: CountersDto
-  views: ViewsPoint[]
-  heatmap: HeatmapCell[]
   initialMetrics: Partial<Record<MetricType, MetricRow[]>>
 }
 
 /**
- * First-paint fan-out behind both analytics pages: counters + views +
- * heatmap plus the first tab of every metric group in one `Promise.all`.
+ * First-paint fan-out behind both analytics pages: counters plus the first
+ * tab of every metric group in one `Promise.all`. The views series and the
+ * heatmap are deliberately absent — SSR buckets would be UTC-bound, so the
+ * client fetches both with its real timezone.
  */
 export async function loadAnalyticsOverview(
   reader: AnalyticsReader,
-  input: AnalyticsQueryInput,
+  input: ResolvedAnalyticsQuery,
 ): Promise<AnalyticsOverviewData> {
   const initialMetricTypes = METRIC_GROUPS.map((g) => METRIC_GROUP_TABS[g][0]!)
 
-  const [counters, views, heatmap, ...metricRows] = await Promise.all([
+  const [counters, ...metricRows] = await Promise.all([
     queryCounters(reader, input),
-    queryViews(reader, input),
-    queryHeatmap(reader, input),
     ...initialMetricTypes.map((t) => queryMetric(reader, input, t, 10)),
   ])
 
@@ -37,5 +32,5 @@ export async function loadAnalyticsOverview(
     initialMetrics[t] = metricRows[idx]!
   })
 
-  return { counters, views, heatmap, initialMetrics }
+  return { counters, initialMetrics }
 }

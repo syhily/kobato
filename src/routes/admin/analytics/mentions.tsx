@@ -26,7 +26,12 @@ export default function MentionsPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       <Card className="px-4 py-3 shadow-none">
-        <DateRangePicker preset={state.preset} onSelect={state.setPreset} />
+        <DateRangePicker
+          preset={state.preset}
+          range={state.range}
+          onSelect={state.setPreset}
+          onSelectRange={state.setRange}
+        />
       </Card>
 
       <Card className="gap-2 shadow-none">

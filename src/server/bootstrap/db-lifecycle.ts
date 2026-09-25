@@ -150,7 +150,7 @@ startQueryDiagnostics()
 // Fire-and-forget dead-letter replay: batch files from a crashed flush
 // are re-ingested once per boot (each replay logs its own failures).
 if (!isVitest()) {
-  await initAnalyticsDatabase()
+  await initAnalyticsDatabase(getDb())
   void replayAllDeadLetters()
   // Awaited, not fire-and-forget: these sweeps must finish before the
   // server accepts requests — a late readdir could otherwise sweep a temp
@@ -226,7 +226,7 @@ export async function reopenDatabase(): Promise<DatabaseHandle> {
     return open
   }
   const handle = wireDatabase(await engine.init())
-  await initAnalyticsDatabase()
+  await initAnalyticsDatabase(handle.db)
   return handle
 }
 

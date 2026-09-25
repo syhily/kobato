@@ -3,7 +3,12 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { AdminPostAnalyticsData } from '@/shared/contracts/admin'
 
-import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
+import {
+  clearAccessEvents,
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+} from '#/_helpers/analytics-db'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { authorSession } from '#/_helpers/session'
@@ -38,7 +43,7 @@ const request = new Request('http://localhost/analytics?startAt=1000&endAt=2000'
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await clearAccessLog(analytics.handle)
+  await clearAccessEvents(analytics.handle)
 })
 
 afterAll(async () => {
@@ -116,13 +121,12 @@ describe('post analytics route parity (real db + real analytics)', () => {
     )
 
     for (const data of [adminData, editorData]) {
-      expect(Object.keys(data).sort()).toEqual(['counters', 'heatmap', 'initialMetrics', 'post', 'views'])
+      expect(Object.keys(data).sort()).toEqual(['counters', 'initialMetrics', 'post'])
       expect(Object.keys(data.initialMetrics).sort()).toEqual(METRIC_GROUPS.map((g) => METRIC_GROUP_TABS[g][0]!).sort())
       expect(data.post.id).toBe(String(postId))
       expect(data.post.tags).toEqual(['typescript'])
       // Real scoped numbers: the other post's view stayed out.
       expect(data.counters).toEqual({ visits: 3, visitors: 2, referers: 1 })
-      expect(data.views.length).toBeGreaterThan(0)
     }
   })
 

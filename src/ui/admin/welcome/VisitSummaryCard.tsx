@@ -1,13 +1,20 @@
+import { useQuery } from '@tanstack/react-query'
 import { ArrowRightIcon, EyeIcon, GlobeIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
+import { useMemo } from 'react'
 import { Link } from 'react-router'
 
-import type { CountersDto, ViewsPoint } from '@/shared/contracts/analytics'
+import type { CountersDto, ViewsDto, ViewsPoint } from '@/shared/contracts/analytics'
 
+import { orpcQuery } from '@/client/api/orpc-query'
+import { dayKeyOfLabel } from '@/ui/admin/analytics/time-labels'
+import { getClientTimezone } from '@/ui/admin/analytics/use-analytics-state'
 import { Button } from '@/ui/components/button'
+import { Skeleton } from '@/ui/components/skeleton'
+import { useHydrated } from '@/ui/lib/use-hydrated'
 
 interface VisitSummaryCardProps {
   summary: CountersDto
-  weeklyTrend?: ViewsPoint[] | null
+  weeklyTrend?: ViewsDto | null
 }
 
 interface KpiEntry {
@@ -22,9 +29,23 @@ const KPI_ENTRIES: KpiEntry[] = [
   { label: '来源域名', value: 0, icon: GlobeIcon },
 ]
 
+// The loader's weeklyTrend buckets are aggregated in Etc/UTC (the request
+// URL carries no timezone), so the trend block never renders them: SSR and
+// the first client render emit the skeleton (byte-identical markup), and the
+// client query — which sends clientTimezone — is the only data source.
 export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps) {
   const values = [summary.visits, summary.visitors, summary.referers]
-  const daily = weeklyTrend ? aggregateToDaily(weeklyTrend) : []
+  const trendQuery = useQuery(
+    orpcQuery.analytics.views.queryOptions({
+      input: { preset: 'last-7d', unit: 'day', clientTimezone: getClientTimezone() },
+    }),
+  )
+  const ready = useHydrated()
+  const points = ready ? (trendQuery.data?.points ?? null) : null
+  const daily = useMemo(() => (points ? aggregateToDaily(points) : []), [points])
+  // The SSR payload only hints whether a trend is worth expecting, so the
+  // skeleton (not an empty gap) occupies the block until client data lands.
+  const expectTrend = (weeklyTrend?.points.length ?? 0) > 0
 
   return (
     <div className="flex h-full flex-col rounded-xl border bg-card p-5">
@@ -53,7 +74,7 @@ export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps
         })}
       </ul>
 
-      {daily.length > 0 && (
+      {daily.length > 0 ? (
         <div className="mt-5 border-t pt-4">
           <div className="flex items-center gap-2">
             <TrendingUpIcon className="size-4 text-muted-foreground" />
@@ -67,7 +88,27 @@ export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps
             </div>
           </div>
         </div>
+      ) : (
+        expectTrend && <TrendSkeleton />
       )}
+    </div>
+  )
+}
+
+function TrendSkeleton() {
+  return (
+    <div className="mt-5 border-t pt-4" role="status" aria-busy="true">
+      <span className="sr-only">加载中</span>
+      <div aria-hidden="true">
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-4 rounded-sm" />
+          <Skeleton className="h-4 w-20 rounded-sm" />
+        </div>
+        <div className="mt-3 flex items-end gap-4">
+          <Skeleton className="h-16 w-full max-w-xs rounded-sm" />
+          <Skeleton className="mb-1 h-8 w-14 rounded-sm" />
+        </div>
+      </div>
     </div>
   )
 }
@@ -129,7 +170,9 @@ function TrendSparkline({ points }: { points: { visits: number }[] }) {
 function aggregateToDaily(points: ViewsPoint[]): { date: string; visits: number; visitors: number }[] {
   const map = new Map<string, { visits: number; visitors: number }>()
   for (const p of points) {
-    const date = p.time.slice(0, 10)
+    // ViewsPoint.time is a bucket label ('%Y-%m-%d' / '%Y-%m-%d %H' /
+    // '%Y-%m-%d %H:%M') — the day key is always its first 10 chars.
+    const date = dayKeyOfLabel(p.time)
     const existing = map.get(date) ?? { visits: 0, visitors: 0 }
     existing.visits += p.visits
     existing.visitors += p.visitors

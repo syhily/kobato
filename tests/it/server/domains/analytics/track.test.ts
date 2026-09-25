@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
-import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
+import { clearAccessEvents, closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
@@ -24,7 +24,7 @@ const db = getTestDb()
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { trackPageView, KOBATO_AID_COOKIE } = await import('@/server/domains/analytics/track')
+const { trackPageView } = await import('@/server/domains/analytics/track')
 
 function makeFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
   return {
@@ -47,7 +47,7 @@ const CHROME_UA =
 beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
-  await clearAccessLog(analyticsHandle)
+  await clearAccessEvents(analyticsHandle)
   __clearLogCaptureForTests()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
@@ -73,7 +73,7 @@ async function pvOfPostTarget(): Promise<number> {
 
 async function accessLogRows(): Promise<Record<string, unknown>[]> {
   await flushAccessLog()
-  const result = await analyticsHandle.reader.runAndReadAll('SELECT * FROM access_log')
+  const result = await analyticsHandle.reader.runAndReadAll('SELECT * FROM access_events')
   return result.getRowObjects()
 }
 
@@ -131,9 +131,8 @@ describe('analytics/track — trackPageView', () => {
     expect(await pvOfPostTarget()).toBe(1)
     const rows = await accessLogRows()
     expect(rows).toHaveLength(1)
-    expect(rows[0]!.path).toBe('/post/1')
-    expect(rows[0]!.entity_type).toBe('post')
-    expect(rows[0]!.entity_id).toBe(1n)
+    expect(rows[0]!.blob1).toBe('/post/1')
+    expect(rows[0]!.index1).toBe('post:1')
   })
 
   it('skips only the counter when the target is null (homepage)', async () => {
@@ -142,12 +141,7 @@ describe('analytics/track — trackPageView', () => {
     expect(await db.select().from(metric)).toHaveLength(0)
     const rows = await accessLogRows()
     expect(rows).toHaveLength(1)
-    expect(rows[0]!.entity_type).toBeNull()
-    expect(rows[0]!.entity_id).toBeNull()
-  })
-
-  it('exports KOBATO_AID_COOKIE constant', () => {
-    expect(KOBATO_AID_COOKIE).toBe('kobato_aid')
+    expect(rows[0]!.index1).toBe('')
   })
 
   it('never throws on internal failure (defensive try/catch)', async () => {

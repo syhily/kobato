@@ -2,7 +2,12 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
+import {
+  clearAccessEvents,
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+} from '#/_helpers/analytics-db'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
@@ -30,7 +35,7 @@ __adoptAnalyticsHandleForTests(analyticsHandle)
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await clearAccessLog(analyticsHandle)
+  await clearAccessEvents(analyticsHandle)
 })
 
 afterAll(async () => {
@@ -399,7 +404,7 @@ describe('admin.posts.analytics', () => {
 })
 
 describe('admin.analytics.overview', () => {
-  it('returns the counters/views/heatmap/initialMetrics fan-out for the default range', async () => {
+  it('returns the counters/initialMetrics fan-out for the default range', async () => {
     const ts = new Date(Date.now() - 10_000)
     await seedAccessEvents(analyticsHandle, [
       { ts, visitorHash: 'a', path: '/', refererHost: 'google.com' },
@@ -411,17 +416,14 @@ describe('admin.analytics.overview', () => {
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{
       counters: { visits: number; visitors: number; referers: number }
-      views: Array<{ time: string; visits: number; visitors: number }>
-      heatmap: Array<{ weekday: number; hour: number; visits: number; visitors: number }>
       initialMetrics: Record<string, Array<{ name: string; visits: number; visitors: number }>>
     }>(res)
 
     expect(json.counters).toEqual({ visits: 3, visitors: 2, referers: 1 })
-    expect(json.views.length).toBeGreaterThan(0)
-    expect(json.views.reduce((sum, point) => sum + point.visits, 0)).toBe(3)
-    expect(json.heatmap.length).toBeGreaterThan(0)
+    // The views series is fetched client-side (real timezone), not in the fan-out.
+    expect('views' in json).toBe(false)
     // First tab of every metric group ships in the initial fan-out.
-    expect(Object.keys(json.initialMetrics).sort()).toEqual(['browser', 'country', 'device', 'language', 'referer'])
+    expect(Object.keys(json.initialMetrics).sort()).toEqual(['country', 'device', 'language', 'os', 'referer'])
   })
 
   it('rejects authors with FORBIDDEN', async () => {
@@ -445,7 +447,7 @@ describe('admin.analytics.mentions', () => {
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ referers: Array<{ name: string; visits: number; visitors: number }> }>(res)
 
-    // Referers group by `referer_host` (the appender stores the host) — see `METRIC_COLUMN` in duckdb-sql.ts.
+    // Referers group by the referer HOST slot (blob3) — see `DIMENSION_COLUMN` in query-filter.ts.
     expect(json.referers.map((r) => r.name).sort()).toEqual(['(unknown)', 'google.com', 'twitter.com'])
     expect(json.referers.find((r) => r.name === 'google.com')).toMatchObject({ visits: 2, visitors: 2 })
   })

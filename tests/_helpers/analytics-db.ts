@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { ACCESS_LOG_DDL, appendAccessEvents } from '@/server/domains/analytics/services/access-log'
+import { ACCESS_EVENTS_DDL, appendAccessEvents } from '@/server/domains/analytics/services/access-log'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 
 const handles: AnalyticsHandle[] = []
@@ -15,7 +15,7 @@ const dirs: string[] = []
 export async function createTestAnalyticsDb(): Promise<AnalyticsHandle> {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-duckdb-it-'))
   dirs.push(dir)
-  const handle = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'), ACCESS_LOG_DDL)
+  const handle = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'), ACCESS_EVENTS_DDL)
   handles.push(handle)
   return handle
 }
@@ -37,13 +37,12 @@ export function closeAllTestAnalyticsDbs(): void {
   }
 }
 
-/** Minimal access-log seed row: ts required, visitorHash/path default to
- *  constants, everything else optional — mirrors `EnrichedAccessEvent`. */
+/** Minimal access-events seed row: ts required, visitorHash/path default to
+ *  constants, everything else optional — mirrors `EnrichedAccessEvent`
+ *  (the helper writes through the same blobsMap mapping as production). */
 export interface SeedAccessEvent {
   ts: Date
   visitorHash?: string
-  sessionId?: string | null
-  ip?: string | null
   path?: string
   entityType?: string | null
   entityId?: number | null
@@ -58,9 +57,8 @@ export interface SeedAccessEvent {
   language?: string | null
   ua?: string | null
   browser?: string | null
-  browserVersion?: string | null
+  browserType?: string | null
   os?: string | null
-  osVersion?: string | null
   device?: string | null
   deviceType?: string | null
   isBot?: boolean
@@ -71,8 +69,6 @@ export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAcce
   const enriched: EnrichedAccessEvent[] = events.map((e) => ({
     ts: e.ts,
     visitorHash: e.visitorHash ?? 'visitor',
-    sessionId: e.sessionId ?? null,
-    ip: e.ip ?? null,
     path: e.path ?? '/',
     entityType: e.entityType === 'post' || e.entityType === 'page' ? e.entityType : null,
     entityId: e.entityId ?? null,
@@ -87,9 +83,8 @@ export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAcce
     language: e.language ?? null,
     ua: e.ua ?? null,
     browser: e.browser ?? null,
-    browserVersion: e.browserVersion ?? null,
+    browserType: e.browserType ?? null,
     os: e.os ?? null,
-    osVersion: e.osVersion ?? null,
     device: e.device ?? null,
     deviceType: e.deviceType ?? null,
     isBot: e.isBot ?? false,
@@ -97,7 +92,7 @@ export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAcce
   await appendAccessEvents(handle.writer, enriched)
 }
 
-/** Wipe the access_log table between cases. */
-export async function clearAccessLog(handle: AnalyticsHandle): Promise<void> {
-  await handle.writer.run('DELETE FROM access_log')
+/** Wipe the access_events table between cases. */
+export async function clearAccessEvents(handle: AnalyticsHandle): Promise<void> {
+  await handle.writer.run('DELETE FROM access_events')
 }

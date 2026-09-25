@@ -1,66 +1,106 @@
-import { DuckDBTimestampMillisecondsValue, type DuckDBAppender, type DuckDBConnection } from '@duckdb/node-api'
+import { DuckDBTimestampTZValue, DuckDBUUIDValue, type DuckDBAppender, type DuckDBConnection } from '@duckdb/node-api'
+import { randomUUID } from 'node:crypto'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
 /**
- * The access_log table shape — owned here (the infra DuckDB wrapper
- * receives this DDL from the caller). No secondary indexes by design.
+ * The access_events table shape — owned here (the infra DuckDB wrapper
+ * receives this DDL from the caller). Generic blob/double slots in the
+ * Cloudflare Analytics Engine style: new dimensions take a free slot
+ * instead of a schema migration. No secondary indexes by design.
  */
-export const ACCESS_LOG_DDL = `
-CREATE TABLE IF NOT EXISTS access_log (
-  ts              TIMESTAMP NOT NULL,
-  visitor_hash    VARCHAR NOT NULL,
-  session_id      VARCHAR,
-  ip              VARCHAR,
-  path            VARCHAR NOT NULL,
-  entity_type     VARCHAR,
-  entity_id       BIGINT,
-  referer         VARCHAR,
-  referer_host    VARCHAR,
-  country         VARCHAR,
-  region          VARCHAR,
-  city            VARCHAR,
-  latitude        DOUBLE,
-  longitude       DOUBLE,
-  timezone        VARCHAR,
-  language        VARCHAR,
-  ua              VARCHAR,
-  browser         VARCHAR,
-  browser_version VARCHAR,
-  os              VARCHAR,
-  os_version      VARCHAR,
-  device          VARCHAR,
-  device_type     VARCHAR,
-  is_bot          BOOLEAN NOT NULL
+export const ACCESS_EVENTS_DDL = `
+CREATE TABLE IF NOT EXISTS access_events (
+  event_id UUID PRIMARY KEY,
+  index1 VARCHAR NOT NULL DEFAULT '',
+  timestamp TIMESTAMPTZ NOT NULL,
+  is_bot BOOLEAN NOT NULL,
+  ${Array.from({ length: 16 }, (_, i) => `blob${i + 1} VARCHAR NOT NULL DEFAULT ''`).join(',\n  ')},
+  double1 DOUBLE,
+  double2 DOUBLE
 )
 `
 
 /** 180-day telemetry retention (plan §1.11) — fixed by design, not a setting. */
-export const ACCESS_LOG_RETENTION_DAYS = 180
+export const ACCESS_EVENTS_RETENTION_DAYS = 180
 
 /**
- * Append one event as an access_log row — the single owner of the column
- * order, which must match ACCESS_LOG_DDL. Callers own the Appender
- * protocol (`endRow`/`flushSync`/`closeSync`).
+ * blob slot semantics — the single source of truth (a contract test pins
+ * uniqueness and coverage). `blob5` holds the daily-salted visitor hash,
+ * NEVER a raw IP. `blob16` is reserved and always written as ''.
+ */
+export const blobsMap = {
+  blob1: 'path',
+  blob2: 'referer',
+  blob3: 'refererHost',
+  blob4: 'ua',
+  blob5: 'visitorHash',
+  blob6: 'language',
+  blob7: 'country',
+  blob8: 'region',
+  blob9: 'city',
+  blob10: 'timezone',
+  blob11: 'os',
+  blob12: 'browser',
+  blob13: 'browserType',
+  blob14: 'device',
+  blob15: 'deviceType',
+  blob16: 'reserved',
+} as const
+
+export const doublesMap = {
+  double1: 'latitude',
+  double2: 'longitude',
+} as const
+
+export type BlobsKey = keyof typeof blobsMap
+export type BlobName = (typeof blobsMap)[BlobsKey]
+
+/** Entity key written to `index1`: `post:<id>` / `page:<id>` / '' for site-level views. */
+export function index1Of(entityType: 'post' | 'page' | null, entityId: number | null): string {
+  if (entityType === null || entityId === null) {
+    return ''
+  }
+  return `${entityType}:${entityId}`
+}
+
+const uuidToUint128 = (uuid: string): bigint => BigInt(`0x${uuid.replaceAll('-', '')}`)
+
+const BLOB_KEYS = unsafeCast<BlobsKey[]>(Object.keys(blobsMap).sort((a, b) => Number(a.slice(4)) - Number(b.slice(4))))
+
+/**
+ * Append one event as an access_events row — the single owner of the
+ * event → blob-slot mapping. Callers own the Appender protocol
+ * (`endRow`/`flushSync`/`closeSync`).
  */
 export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEvent): void {
-  appender.appendTimestampMilliseconds(new DuckDBTimestampMillisecondsValue(BigInt(e.ts.getTime())))
-  const s = (v: string | null) => (v === null ? appender.appendNull() : appender.appendVarchar(v))
-  s(e.visitorHash)
-  s(e.sessionId)
-  s(e.ip)
-  s(e.path)
-  s(e.entityType)
-  if (e.entityId === null) {
-    appender.appendNull()
-  } else {
-    appender.appendBigInt(BigInt(e.entityId))
+  appender.appendUUID(DuckDBUUIDValue.fromUint128(uuidToUint128(randomUUID())))
+  appender.appendVarchar(index1Of(e.entityType, e.entityId))
+  appender.appendTimestampTZ(new DuckDBTimestampTZValue(BigInt(e.ts.getTime()) * 1000n))
+  appender.appendBoolean(e.isBot)
+  const blobs: Record<Exclude<BlobName, 'reserved'>, string | null> = {
+    path: e.path,
+    referer: e.referer,
+    refererHost: e.refererHost,
+    ua: e.ua,
+    visitorHash: e.visitorHash,
+    language: e.language,
+    country: e.country,
+    region: e.region,
+    city: e.city,
+    timezone: e.timezone,
+    os: e.os,
+    browser: e.browser,
+    browserType: e.browserType,
+    device: e.device,
+    deviceType: e.deviceType,
   }
-  s(e.referer)
-  s(e.refererHost)
-  s(e.country)
-  s(e.region)
-  s(e.city)
+  for (const key of BLOB_KEYS) {
+    const name = blobsMap[key]
+    appender.appendVarchar(name === 'reserved' ? '' : (blobs[name] ?? ''))
+  }
   if (e.latitude === null) {
     appender.appendNull()
   } else {
@@ -71,16 +111,6 @@ export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEve
   } else {
     appender.appendDouble(e.longitude)
   }
-  s(e.timezone)
-  s(e.language)
-  s(e.ua)
-  s(e.browser)
-  s(e.browserVersion)
-  s(e.os)
-  s(e.osVersion)
-  s(e.device)
-  s(e.deviceType)
-  appender.appendBoolean(e.isBot)
 }
 
 /**
@@ -89,7 +119,7 @@ export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEve
  * failure leaves flushed rows visible while the batch dead-letters.
  */
 export async function appendAccessEvents(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
-  const appender = await writer.createAppender('access_log')
+  const appender = await writer.createAppender('access_events')
   try {
     let count = 0
     for (const event of events) {

@@ -12,8 +12,6 @@ describe('snapshot: routes/admin/analytics/overview', () => {
         <Route
           loaderData={{
             counters: { visits: 0, visitors: 0, referers: 0 },
-            views: [],
-            heatmap: [],
             initialMetrics: {},
           }}
         />,
@@ -21,6 +19,6 @@ describe('snapshot: routes/admin/analytics/overview', () => {
       ),
     )
     expect(html).toContain('趋势')
-    expect(html).toContain('热力')
+    expect(html).toContain('每周趋势')
   })
 })

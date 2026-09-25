@@ -18,7 +18,6 @@ import { requestContextMiddleware } from '@/server/http/middlewares/request-cont
 import { requestTimeout } from '@/server/http/middlewares/request-timeout'
 import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slash'
 import { trustProxy } from '@/server/http/middlewares/trust-proxy'
-import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
 import { readyHandler } from '@/server/http/ready'
 import { requestContext } from '@/server/http/request-context'
@@ -161,7 +160,6 @@ export function configureMiddleware(app: Hono<Env>): void {
   )
   app.use(requestContextMiddleware)
   app.use(honoInstallGateMiddleware)
-  app.use(honoVisitorCookieMiddleware)
 
   app.get('/health', (c) => c.json({ status: 'ok' }))
   app.get('/ready', readyHandler)

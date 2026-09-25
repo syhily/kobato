@@ -76,7 +76,7 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
 
     await runAccessLogRetention(analyticsHandle)
 
-    const result = await analyticsHandle.reader.runAndReadAll('SELECT path FROM access_log ORDER BY path')
+    const result = await analyticsHandle.reader.runAndReadAll('SELECT blob1 AS path FROM access_events ORDER BY blob1')
     const paths = result.getRowObjects().map((row) => row.path)
     expect(paths).toEqual(['/recent'])
     expect(__logCaptureForTests()).toContainEqual(
@@ -93,6 +93,26 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
         }),
       }),
     )
+
+    await closeTestAnalyticsDb(analyticsHandle)
+  })
+
+  it('applies the same absolute cutoff regardless of the session TimeZone', async () => {
+    // Pin a non-UTC session zone on BOTH connections: the cutoff binds epoch
+    // seconds through to_timestamp(?), so TIMESTAMPTZ compares stay absolute.
+    await analyticsHandle.writer.run(`SET TimeZone='America/Los_Angeles'`)
+    await analyticsHandle.reader.run(`SET TimeZone='Pacific/Auckland'`)
+    const justOld = new Date(Date.now() - 181 * 24 * 60 * 60 * 1000)
+    const justNew = new Date(Date.now() - 179 * 24 * 60 * 60 * 1000)
+    await seedAccessEvents(analyticsHandle, [
+      { ts: justOld, path: '/past-cutoff', visitorHash: 'a' },
+      { ts: justNew, path: '/inside-cutoff', visitorHash: 'b' },
+    ])
+
+    await runAccessLogRetention(analyticsHandle)
+
+    const result = await analyticsHandle.reader.runAndReadAll('SELECT blob1 AS path FROM access_events')
+    expect(result.getRowObjects().map((row) => row.path)).toEqual(['/inside-cutoff'])
 
     await closeTestAnalyticsDb(analyticsHandle)
   })

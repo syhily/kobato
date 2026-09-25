@@ -22,7 +22,9 @@ export default function WpAdminAnalyticsLayout() {
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <header className="flex flex-col gap-3">
         <h1 className="text-2xl font-semibold text-foreground">访问统计</h1>
-        <p className="text-sm text-muted-foreground">基于 access_log 时序表的访问、访客、来源、地理与设备分布。</p>
+        <p className="text-sm text-muted-foreground">
+          基于 access_events 时序事件表的访问、访客、来源、地理与设备分布。
+        </p>
         <nav aria-label="统计子页" className="flex items-center gap-1 border-b">
           {SUBNAV.map((item) => (
             <NavLink

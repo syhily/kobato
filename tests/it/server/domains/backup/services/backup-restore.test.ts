@@ -93,11 +93,11 @@ describe('backup and restore integration', () => {
     }
 
     const { openAnalyticsDatabase, closeAnalyticsDatabase } = await import('@/server/infra/analytics/duckdb')
-    const { ACCESS_LOG_DDL } = await import('@/server/domains/analytics/services/access-log')
+    const { ACCESS_EVENTS_DDL } = await import('@/server/domains/analytics/services/access-log')
     writeFileSync(join(dir, 'restored.duckdb'), payload.analytics!)
-    const restoredAnalytics = await openAnalyticsDatabase(join(dir, 'restored.duckdb'), ACCESS_LOG_DDL)
+    const restoredAnalytics = await openAnalyticsDatabase(join(dir, 'restored.duckdb'), ACCESS_EVENTS_DDL)
     try {
-      const result = await restoredAnalytics.reader.runAndReadAll('SELECT count(*) AS c FROM access_log')
+      const result = await restoredAnalytics.reader.runAndReadAll('SELECT count(*) AS c FROM access_events')
       expect(Number(result.getRowObjects()[0]?.c)).toBe(2)
     } finally {
       await closeAnalyticsDatabase(restoredAnalytics)

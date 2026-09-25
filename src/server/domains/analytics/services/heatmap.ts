@@ -1,23 +1,29 @@
-import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
-import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { HeatmapCell } from '@/shared/contracts/analytics'
+import { sql } from 'kysely'
 
-import { queryAnalyticsRows, whereClause } from '@/server/domains/analytics/services/duckdb-sql'
+import type { AnalyticsReader } from '@/server/domains/analytics/services/analytics-sql'
+import type { HeatmapCell, ResolvedAnalyticsQuery } from '@/shared/contracts/analytics'
 
-export async function queryHeatmap(reader: AnalyticsReader, input: AnalyticsQueryInput): Promise<HeatmapCell[]> {
-  const where = whereClause(input)
-  // EXTRACT on the TIMESTAMP column — UTC semantics (as the old UTC-set Postgres).
-  const rows = await queryAnalyticsRows(
+import { createAnalyticsQuery, runAnalyticsQuery } from '@/server/domains/analytics/services/analytics-sql'
+import { buildAnalyticsFilter, getSafeTimezone } from '@/server/domains/analytics/services/query-filter'
+
+export async function queryHeatmap(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<HeatmapCell[]> {
+  const clientTimezone = getSafeTimezone(input.clientTimezone ?? 'Etc/UTC')
+  const tzTimestamp = sql`timezone(${clientTimezone}, ${sql.ref('timestamp')})`
+
+  // ISO weekday semantics: 1 = Monday … 7 = Sunday, in the client timezone.
+  const rows = await runAnalyticsQuery(
     reader,
-    `SELECT
-      EXTRACT(dow FROM ts) AS weekday,
-      EXTRACT(hour FROM ts) AS hour,
-      COUNT(*) AS visits,
-      COUNT(DISTINCT visitor_hash) AS visitors
-    FROM access_log
-    WHERE ${where.sql}
-    GROUP BY weekday, hour`,
-    where.params,
+    createAnalyticsQuery()
+      .select([
+        sql<number>`isodow(${tzTimestamp})`.as('weekday'),
+        sql<number>`hour(${tzTimestamp})`.as('hour'),
+        sql<number>`COUNT(*)`.as('visits'),
+        sql<number>`COUNT(DISTINCT ${sql.ref('blob5')})`.as('visitors'),
+      ])
+      .where(buildAnalyticsFilter(input))
+      .groupBy(['weekday', 'hour'])
+      .orderBy('weekday')
+      .orderBy('hour'),
   )
   return rows.map((row) => ({
     weekday: Number(row.weekday),

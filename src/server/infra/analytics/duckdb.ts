@@ -7,7 +7,7 @@ import { isInMemoryPath, resolveStoragePath } from '@/server/infra/db/database'
 
 /**
  * The embedded DuckDB analytics sidecar: one file, one instance, one
- * reader + one writer connection, hosting `access_log`. Backups archive
+ * reader + one writer connection, hosting `access_events`. Backups archive
  * it with the content DB, but a missing file is recreated empty — restore is a bonus.
  */
 export interface AnalyticsHandle {

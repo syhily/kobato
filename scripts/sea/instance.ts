@@ -206,14 +206,14 @@ export async function seedInstalledInstance(databasePath: string, admin: SeedAdm
 
 /**
  * Open the analytics sidecar AFTER shutdown (its close checkpoints the WAL)
- * and prove page views landed as access_log rows.
+ * and prove page views landed as access_events rows.
  */
-export async function scanAccessLog(analyticsPath: string): Promise<{ rows: number; paths: number }> {
+export async function scanAccessEvents(analyticsPath: string): Promise<{ rows: number; paths: number }> {
   const instance = await DuckDBInstance.create(analyticsPath)
   try {
     const connection = await instance.connect()
     const result = await connection.runAndReadAll(
-      'SELECT count(*) AS rows, count(DISTINCT path) AS paths FROM access_log',
+      'SELECT count(*) AS rows, count(DISTINCT blob1) AS paths FROM access_events',
     )
     const row: unknown = result.getRowObjects()[0]
     connection.closeSync()

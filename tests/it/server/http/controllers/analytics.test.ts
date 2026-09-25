@@ -3,7 +3,12 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
+import {
+  clearAccessEvents,
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+} from '#/_helpers/analytics-db'
 import { getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
@@ -18,11 +23,11 @@ __adoptAnalyticsHandleForTests(analyticsHandle)
 
 const { analyticsRouter } = await import('@/server/http/controllers/analytics.controller')
 
-// Explicit epoch range keeps parseAnalyticsInput off the clock; events land in [1000, 2000).
-const rangeInput = { startAt: '1000', endAt: '2000' }
+// Explicit epoch range keeps range resolution off the clock; events land in [1000, 2000).
+const rangeInput = { startAt: 1000, endAt: 2000 }
 
 beforeEach(async () => {
-  await clearAccessLog(analyticsHandle)
+  await clearAccessEvents(analyticsHandle)
 })
 
 afterAll(async () => {
@@ -62,7 +67,7 @@ async function seedViews() {
 }
 
 describe('analyticsRouter.counters', () => {
-  it('aggregates real counters from the seeded access log', async () => {
+  it('aggregates real counters from the seeded access events', async () => {
     await seedViews()
     const ctx = makeAuthedCtx({ db })
     const res = (await call(analyticsRouter.counters, rangeInput, { context: ctx })) as {
@@ -70,29 +75,31 @@ describe('analyticsRouter.counters', () => {
       visitors: number
       referers: number
     }
-    // visits = row count; visitors = distinct visitor_hash; referers = distinct non-empty referer_host.
+    // visits = row count; visitors = distinct blob5; referers = distinct non-empty blob3.
     expect(res).toEqual({ visits: 3, visitors: 2, referers: 1 })
   })
 })
 
 describe('analyticsRouter.views', () => {
-  it('returns one real time bucket per seeded minute', async () => {
+  it('returns one real minute bucket per seeded minute', async () => {
     await seedViews()
     const ctx = makeAuthedCtx({ db })
     const res = (await call(analyticsRouter.views, rangeInput, { context: ctx })) as {
-      time: string
-      visits: number
-      visitors: number
-    }[]
+      unit: string
+      clientTimezone: string
+      points: { time: string; visits: number; visitors: number }[]
+    }
     // The three events sit in three distinct 1-minute buckets.
-    expect(res).toHaveLength(3)
-    expect(res.reduce((sum, point) => sum + point.visits, 0)).toBe(3)
-    expect(res.every((point) => point.visitors === 1)).toBe(true)
+    expect(res.unit).toBe('minute')
+    expect(res.clientTimezone).toBe('Etc/UTC')
+    expect(res.points).toHaveLength(3)
+    expect(res.points.reduce((sum, point) => sum + point.visits, 0)).toBe(3)
+    expect(res.points.every((point) => point.visitors === 1)).toBe(true)
   })
 })
 
 describe('analyticsRouter.heatmap', () => {
-  it('extracts weekday/hour from the real timestamps', async () => {
+  it('extracts ISO weekday/hour from the real timestamps', async () => {
     await seedViews()
     const ctx = makeAuthedCtx({ db })
     const res = (await call(analyticsRouter.heatmap, rangeInput, { context: ctx })) as {
@@ -101,7 +108,7 @@ describe('analyticsRouter.heatmap', () => {
       visits: number
       visitors: number
     }[]
-    // All three events are 1970-01-01 00:2x UTC — a Thursday (dow 4).
+    // All three events are 1970-01-01 00:2x UTC — a Thursday (isodow 4).
     expect(res).toEqual([{ weekday: 4, hour: 0, visits: 3, visitors: 2 }])
   })
 })
@@ -129,5 +136,14 @@ describe('analyticsRouter.metrics', () => {
     ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
+  })
+})
+
+describe('analyticsRouter.export', () => {
+  it('returns per-path CSV text', async () => {
+    await seedViews()
+    const ctx = makeAuthedCtx({ db })
+    const res = (await call(analyticsRouter.export, rangeInput, { context: ctx })) as string
+    expect(res).toBe(['path,views,visitors,referers', '/post/hello,3,2,1', ''].join('\r\n'))
   })
 })

@@ -1,20 +1,14 @@
-import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
-import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { CountersDto } from '@/shared/contracts/analytics'
+import type { AnalyticsReader } from '@/server/domains/analytics/services/analytics-sql'
+import type { CountersDto, ResolvedAnalyticsQuery } from '@/shared/contracts/analytics'
 
-import { queryAnalyticsRows, whereClause } from '@/server/domains/analytics/services/duckdb-sql'
+import { visitAggregates } from '@/server/domains/analytics/services/aggregates'
+import { createAnalyticsQuery, runAnalyticsQuery } from '@/server/domains/analytics/services/analytics-sql'
+import { buildAnalyticsFilter } from '@/server/domains/analytics/services/query-filter'
 
-export async function queryCounters(reader: AnalyticsReader, input: AnalyticsQueryInput): Promise<CountersDto> {
-  const where = whereClause(input)
-  const rows = await queryAnalyticsRows(
+export async function queryCounters(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<CountersDto> {
+  const rows = await runAnalyticsQuery(
     reader,
-    `SELECT
-      COUNT(*) AS visits,
-      COUNT(DISTINCT visitor_hash) AS visitors,
-      COUNT(DISTINCT referer_host) FILTER (WHERE referer_host IS NOT NULL AND referer_host <> '') AS referers
-    FROM access_log
-    WHERE ${where.sql}`,
-    where.params,
+    createAnalyticsQuery().select(visitAggregates('visits')).where(buildAnalyticsFilter(input)),
   )
   const row = rows[0]
   return {

@@ -54,8 +54,6 @@ describe('editor routes — Component SSR renders', () => {
           loaderData={{
             post: { id: '7', title: 'Editor Post', slug: 'editor-post' },
             counters: {} as Record<string, unknown>,
-            views: [],
-            heatmap: [],
             initialMetrics: {},
           }}
         />,

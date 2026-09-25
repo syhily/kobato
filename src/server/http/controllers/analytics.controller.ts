@@ -2,10 +2,11 @@ import { z } from 'zod'
 
 import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
+import { queryExportCsv } from '@/server/domains/analytics/services/export'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { loadAnalyticsOverview } from '@/server/domains/analytics/services/overview'
-import { parseAnalyticsInput, parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
+import { parseAnalyticsSearch, resolveAnalyticsRange } from '@/server/domains/analytics/services/query-filter'
 import { queryViews } from '@/server/domains/analytics/services/views'
 import { adminProc } from '@/server/http/orpc-base'
 import {
@@ -13,74 +14,58 @@ import {
   adminAnalyticsOverviewOutputSchema,
   adminAnalyticsSearchInputSchema,
 } from '@/shared/contracts/admin'
-import { METRIC_TYPE_VALUES, PRESET_KEY_VALUES } from '@/shared/contracts/analytics'
+import {
+  METRIC_TYPE_VALUES,
+  analyticsQuerySchema,
+  countersDto,
+  heatmapCellDto,
+  metricRowDto,
+  viewsDto,
+  type AnalyticsQuery,
+  type ResolvedAnalyticsQuery,
+} from '@/shared/contracts/analytics'
 
-const presetKey = z.enum(PRESET_KEY_VALUES)
+function resolve(input: AnalyticsQuery): ResolvedAnalyticsQuery {
+  return { ...input, range: resolveAnalyticsRange(input) }
+}
 
-const analyticsInput = z.object({
-  preset: presetKey.optional(),
-  startAt: z.string().optional(),
-  endAt: z.string().optional(),
-  filters: z.string().optional(),
-  entityType: z.enum(['post', 'page']).optional(),
-  entityId: z.string().optional(),
-})
-
-const metricsInput = analyticsInput.extend({
+const metricsInput = analyticsQuerySchema.extend({
   type: z.enum(METRIC_TYPE_VALUES),
-  limit: z.number().int().min(1).max(100).default(20),
-})
-
-const countersOutput = z.object({
-  visits: z.number().int().nonnegative(),
-  visitors: z.number().int().nonnegative(),
-  referers: z.number().int().nonnegative(),
-})
-
-const viewsPointOutput = z.object({
-  time: z.string(),
-  visits: z.number().int().nonnegative(),
-  visitors: z.number().int().nonnegative(),
-})
-
-const heatmapCellOutput = z.object({
-  weekday: z.number().int().min(0).max(6),
-  hour: z.number().int().min(0).max(23),
-  visits: z.number().int().nonnegative(),
-  visitors: z.number().int().nonnegative(),
-})
-
-const metricRowOutput = z.object({
-  name: z.string(),
-  visits: z.number().int().nonnegative(),
-  visitors: z.number().int().nonnegative(),
+  limit: z.coerce.number().int().min(1).max(500).default(20),
 })
 
 const counters = adminProc
   .route({ method: 'GET', path: '/analytics/counters' })
-  .input(analyticsInput)
-  .output(countersOutput)
-  .handler(({ input }) => queryCounters(getAnalyticsReader(), parseAnalyticsInput(input)))
+  .input(analyticsQuerySchema)
+  .output(countersDto)
+  .handler(({ input }) => queryCounters(getAnalyticsReader(), resolve(input)))
 
 const views = adminProc
   .route({ method: 'GET', path: '/analytics/views' })
-  .input(analyticsInput)
-  .output(z.array(viewsPointOutput))
-  .handler(({ input }) => queryViews(getAnalyticsReader(), parseAnalyticsInput(input)))
+  .input(analyticsQuerySchema)
+  .output(viewsDto)
+  .handler(({ input }) => queryViews(getAnalyticsReader(), resolve(input)))
 
 const heatmap = adminProc
   .route({ method: 'GET', path: '/analytics/heatmap' })
-  .input(analyticsInput)
-  .output(z.array(heatmapCellOutput))
-  .handler(({ input }) => queryHeatmap(getAnalyticsReader(), parseAnalyticsInput(input)))
+  .input(analyticsQuerySchema)
+  .output(z.array(heatmapCellDto))
+  .handler(({ input }) => queryHeatmap(getAnalyticsReader(), resolve(input)))
 
 const metrics = adminProc
   .route({ method: 'GET', path: '/analytics/metrics' })
   .input(metricsInput)
-  .output(z.array(metricRowOutput))
+  .output(z.array(metricRowDto))
   .handler(({ input }) => {
-    return queryMetric(getAnalyticsReader(), parseAnalyticsInput(input), input.type, input.limit)
+    return queryMetric(getAnalyticsReader(), resolve(input), input.type, input.limit)
   })
+
+/** CSV text export grouped by path (views / visitors / referers). */
+const exportCsv = adminProc
+  .route({ method: 'GET', path: '/analytics/export' })
+  .input(analyticsQuerySchema)
+  .output(z.string())
+  .handler(({ input }) => queryExportCsv(getAnalyticsReader(), resolve(input)))
 
 // Site-wide analytics first-paint fan-out behind `/admin/analytics/overview`;
 // `search` carries the raw query string, parsed server-side.
@@ -108,4 +93,4 @@ const mentions = adminProc
     return { referers }
   })
 
-export const analyticsRouter = { counters, views, heatmap, metrics, overview, mentions }
+export const analyticsRouter = { counters, views, heatmap, metrics, export: exportCsv, overview, mentions }

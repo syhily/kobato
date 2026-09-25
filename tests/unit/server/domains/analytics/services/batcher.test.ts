@@ -20,8 +20,6 @@ function makeEvent(
   return {
     ts: new Date('2024-01-01T00:00:00Z'),
     visitorHash: 'v',
-    sessionId: 's',
-    ip: '127.0.0.1',
     path: '/',
     entityType: 'post',
     entityId: 1,
@@ -36,9 +34,8 @@ function makeEvent(
     language: '',
     ua: '',
     browser: '',
-    browserVersion: '',
+    browserType: '',
     os: '',
-    osVersion: '',
     device: '',
     deviceType: '',
     isBot: false,
@@ -57,7 +54,7 @@ describe('analytics batcher (DuckDB appender)', () => {
     analyticsHandle = await createTestAnalyticsDb()
     __resetAnalyticsEngineForTests()
     __adoptAnalyticsHandleForTests(analyticsHandle)
-    await analyticsHandle.writer.run('DELETE FROM access_log')
+    await analyticsHandle.writer.run('DELETE FROM access_events')
     initAllBatchers(handle)
   })
 
@@ -72,16 +69,16 @@ describe('analytics batcher (DuckDB appender)', () => {
     expect(result).toEqual({ committed: 0, deadLettered: 0 })
   })
 
-  it('pushes and flushes events into DuckDB access_log', async () => {
+  it('pushes and flushes events into DuckDB access_events', async () => {
     pushAccessEvent(makeEvent())
     const result = await flushAccessLog()
     expect(result).toEqual({ committed: 1, deadLettered: 0 })
 
-    const rows = await analyticsHandle.reader.runAndReadAll('SELECT path, entity_id, is_bot FROM access_log')
+    const rows = await analyticsHandle.reader.runAndReadAll('SELECT blob1 AS path, index1, is_bot FROM access_events')
     const objects = await rows.getRowObjects()
     expect(objects).toHaveLength(1)
     expect(objects[0]!.path).toBe('/')
-    expect(objects[0]!.entity_id).toBe(1n)
+    expect(objects[0]!.index1).toBe('post:1')
     expect(objects[0]!.is_bot).toBe(false)
   })
 

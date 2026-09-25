@@ -1,37 +1,39 @@
-import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
-import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { ViewsPoint } from '@/shared/contracts/analytics'
+import { sql } from 'kysely'
 
-import {
-  queryAnalyticsRows,
-  timeBucketInterval,
-  timestampToMs,
-  whereClause,
-} from '@/server/domains/analytics/services/duckdb-sql'
-import { pickTimeBucketMs } from '@/shared/contracts/analytics'
+import type { AnalyticsReader } from '@/server/domains/analytics/services/analytics-sql'
+import type { ResolvedAnalyticsQuery, TimeUnit, ViewsDto, ViewsPoint } from '@/shared/contracts/analytics'
 
-export async function queryViews(reader: AnalyticsReader, input: AnalyticsQueryInput): Promise<ViewsPoint[]> {
-  const interval = timeBucketInterval(pickTimeBucketMs(input.range))
-  const where = whereClause(input)
+import { createAnalyticsQuery, runAnalyticsQuery } from '@/server/domains/analytics/services/analytics-sql'
+import { buildAnalyticsFilter, getSafeTimezone } from '@/server/domains/analytics/services/query-filter'
+import { pickTimeUnit } from '@/shared/contracts/analytics'
 
-  // DuckDB-native `time_bucket` on a real TIMESTAMP (Postgres original).
-  const rows = await queryAnalyticsRows(
+/** strftime bucket format per unit — server-side, timezone-aware bucketing. */
+const UNIT_FORMAT: Record<TimeUnit, string> = {
+  minute: '%Y-%m-%d %H:%M',
+  hour: '%Y-%m-%d %H',
+  day: '%Y-%m-%d',
+}
+
+export async function queryViews(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<ViewsDto> {
+  const unit = input.unit ?? pickTimeUnit(input.range)
+  const clientTimezone = getSafeTimezone(input.clientTimezone ?? 'Etc/UTC')
+
+  const rows = await runAnalyticsQuery(
     reader,
-    `SELECT
-      time_bucket(INTERVAL '${interval}', ts) AS time,
-      COUNT(*) AS visits,
-      COUNT(DISTINCT visitor_hash) AS visitors
-    FROM access_log
-    WHERE ${where.sql}
-    GROUP BY time
-    ORDER BY time`,
-    where.params,
+    createAnalyticsQuery()
+      .select([
+        sql<string>`strftime(timezone(${clientTimezone}, ${sql.ref('timestamp')}), ${UNIT_FORMAT[unit]})`.as('time'),
+        sql<number>`COUNT(*)`.as('visits'),
+        sql<number>`COUNT(DISTINCT ${sql.ref('blob5')})`.as('visitors'),
+      ])
+      .where(buildAnalyticsFilter(input))
+      .groupBy('time')
+      .orderBy('time'),
   )
-  return rows.map((row) => {
-    return {
-      time: new Date(timestampToMs(row.time)).toISOString(),
-      visits: Number(row.visits),
-      visitors: Number(row.visitors),
-    }
-  })
+  const points: ViewsPoint[] = rows.map((row) => ({
+    time: typeof row.time === 'string' ? row.time : '',
+    visits: Number(row.visits),
+    visitors: Number(row.visitors),
+  }))
+  return { unit, clientTimezone, points }
 }

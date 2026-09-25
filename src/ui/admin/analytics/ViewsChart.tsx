@@ -1,324 +1,92 @@
-import { format } from 'date-fns'
-import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { lazy, Suspense } from 'react'
 
-import type { ViewsPoint } from '@/shared/contracts/analytics'
+import type { TimeUnit } from '@/shared/contracts/analytics'
 
+import { orpcQuery } from '@/client/api/orpc-query'
+import { pickTimeUnit } from '@/shared/contracts/analytics'
+import { useAnalyticsDashboardState } from '@/ui/admin/analytics/analytics-state-context'
+import { AnalyticsQueryState } from '@/ui/admin/analytics/AnalyticsQueryState'
+import { useAnalyticsQueryData } from '@/ui/admin/analytics/use-analytics-query'
+import { buildAnalyticsInput, type AnalyticsScope } from '@/ui/admin/analytics/use-analytics-state'
+import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { useHydrated } from '@/ui/lib/use-hydrated'
+
+// Views time series behind the hydration-safe chart gate (Slite's
+// `analysis/ChartBody.vue`): the server and the client's first render both
+// emit the static skeleton (the @unovis chunk is client-only); after
+// hydration the lazy inner chart mounts behind an identical fallback.
+// Like Heatmap, no loader payload is threaded through: it would be bucketed
+// in Etc/UTC, so the skeleton stays up until the client-timezone-aware
+// `analytics.views` query resolves — no UTC first-paint flash, and no stale
+// labels to re-parse under a new unit on range change. The query sends the
+// derived `unit` + `clientTimezone`; bucket labels are parsed per that unit,
+// never as ISO instants.
+
+const LazyViewsChartInner = lazy(() =>
+  import('@/ui/admin/analytics/ViewsChartInner').then((module) => ({ default: module.ViewsChartInner })),
+)
 
 export interface ViewsChartProps {
-  data: ViewsPoint[]
   className?: string
-  height?: number
+  scope?: AnalyticsScope
 }
 
-interface ChartGeometry {
-  width: number
-  height: number
-  paddingX: number
-  paddingTop: number
-  paddingBottom: number
-  innerWidth: number
-  innerHeight: number
-}
-
-const DEFAULT_GEOMETRY: ChartGeometry = {
-  width: 800,
-  height: 220,
-  paddingX: 36,
-  paddingTop: 12,
-  paddingBottom: 28,
-  get innerWidth() {
-    return this.width - this.paddingX * 2
-  },
-  get innerHeight() {
-    return this.height - this.paddingTop - this.paddingBottom
-  },
-}
-
-export function ViewsChart({ data, className, height = 220 }: ViewsChartProps) {
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const geometry = useMemo<ChartGeometry>(() => ({ ...DEFAULT_GEOMETRY, height }), [height])
-
-  if (data.length === 0) {
-    return (
-      <div className={cn('flex h-56 items-center justify-center text-sm text-muted-foreground', className)}>
-        当前时间范围内暂无数据
-      </div>
-    )
-  }
-
-  if (data.length === 1) {
-    const only = data[0]!
-    return (
-      <div className={cn('flex h-56 items-end justify-center gap-12', className)}>
-        <SingleBar label="访问量" value={only.visits} color="var(--color-chart-1, #6366f1)" />
-        <SingleBar label="访客数" value={only.visitors} color="var(--color-chart-2, #14b8a6)" />
-      </div>
-    )
-  }
-
-  const xs = data.map((_, i) => geometry.paddingX + (i * geometry.innerWidth) / (data.length - 1))
-  const maxValue = Math.max(...data.map((p) => Math.max(p.visits, p.visitors)), 1)
-  const yScale = (v: number) => geometry.paddingTop + geometry.innerHeight - (v / maxValue) * geometry.innerHeight
-
-  const areaPath = buildAreaPath(
-    xs,
-    data.map((p) => yScale(p.visits)),
-    geometry,
+export function ViewsChart({ className, scope }: ViewsChartProps) {
+  const state = useAnalyticsDashboardState()
+  const unit: TimeUnit = pickTimeUnit(state.range)
+  const query = useQuery(
+    orpcQuery.analytics.views.queryOptions({
+      input: buildAnalyticsInput(state, { scope, unit }),
+    }),
   )
-  const linePath = buildLinePath(
-    xs,
-    data.map((p) => yScale(p.visitors)),
-  )
-  const visitsLinePath = buildLinePath(
-    xs,
-    data.map((p) => yScale(p.visits)),
-  )
+
+  const { data, isError, refetching, retry } = useAnalyticsQueryData(query)
+  const points = data?.points ?? null
+  const ready = useHydrated()
 
   return (
-    <div className={cn('relative', className)}>
-      <svg
-        viewBox={`0 0 ${geometry.width} ${geometry.height}`}
-        width="100%"
-        height={geometry.height}
-        aria-label="访问量与访客数折线图"
-        onMouseLeave={() => setHoverIndex(null)}
-        onMouseMove={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect()
-          const x = ((e.clientX - rect.left) / rect.width) * geometry.width
-          const idx = nearestIndex(xs, x)
-          setHoverIndex(idx)
-        }}
-      >
-        <defs>
-          <linearGradient id="analytics-views-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-chart-1, #6366f1)" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="var(--color-chart-1, #6366f1)" stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
-
-        <Gridlines geometry={geometry} maxValue={maxValue} />
-
-        <path d={areaPath} fill="url(#analytics-views-fill)" />
-        <path
-          d={visitsLinePath}
-          fill="none"
-          stroke="var(--color-chart-1, #6366f1)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d={linePath}
-          fill="none"
-          stroke="var(--color-chart-2, #14b8a6)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {hoverIndex !== null && hoverIndex < data.length && (
-          <Crosshair
-            x={xs[hoverIndex]!}
-            geometry={geometry}
-            visitsY={yScale(data[hoverIndex]!.visits)}
-            visitorsY={yScale(data[hoverIndex]!.visitors)}
-          />
-        )}
-
-        <AxisLabels geometry={geometry} data={data} hoverIndex={hoverIndex} />
-      </svg>
-      {hoverIndex !== null && data[hoverIndex] && (
-        <Tooltip point={data[hoverIndex]!} x={xs[hoverIndex]!} width={geometry.width} />
-      )}
-      <Legend className="mt-2" />
-    </div>
-  )
-}
-
-function Gridlines({ geometry, maxValue }: { geometry: ChartGeometry; maxValue: number }) {
-  const ticks = 4
-  return (
-    <g className="text-muted-foreground/30">
-      {Array.from({ length: ticks + 1 }, (_, i) => {
-        const y = geometry.paddingTop + (i * geometry.innerHeight) / ticks
-        const value = Math.round((maxValue * (ticks - i)) / ticks)
-        return (
-          <g key={i}>
-            <line x1={geometry.paddingX} x2={geometry.width - geometry.paddingX} y1={y} y2={y} stroke="currentColor" />
-            <text
-              x={geometry.paddingX - 8}
-              y={y + 3}
-              textAnchor="end"
-              fontSize="10"
-              fill="currentColor"
-              className="text-muted-foreground"
-            >
-              {value}
-            </text>
-          </g>
-        )
-      })}
-    </g>
-  )
-}
-
-function Crosshair({
-  x,
-  geometry,
-  visitsY,
-  visitorsY,
-}: {
-  x: number
-  geometry: ChartGeometry
-  visitsY: number
-  visitorsY: number
-}) {
-  return (
-    <g>
-      <line
-        x1={x}
-        x2={x}
-        y1={geometry.paddingTop}
-        y2={geometry.height - geometry.paddingBottom}
-        stroke="currentColor"
-        strokeDasharray="3 3"
-        className="text-muted-foreground/60"
-      />
-      <circle cx={x} cy={visitsY} r="3" fill="var(--color-chart-1, #6366f1)" />
-      <circle cx={x} cy={visitorsY} r="3" fill="var(--color-chart-2, #14b8a6)" />
-    </g>
-  )
-}
-
-function AxisLabels({
-  geometry,
-  data,
-  hoverIndex,
-}: {
-  geometry: ChartGeometry
-  data: ViewsPoint[]
-  hoverIndex: number | null
-}) {
-  // ~5 evenly-spaced timestamps keep the X axis uncrowded regardless of bucket count.
-  const labelCount = Math.min(5, data.length)
-  return (
-    <g className="text-muted-foreground">
-      {Array.from({ length: labelCount }, (_, i) => {
-        const idx = Math.round((i * (data.length - 1)) / Math.max(1, labelCount - 1))
-        if (hoverIndex !== null && Math.abs(idx - hoverIndex) <= 1) {
-          return null
-        }
-        const x = geometry.paddingX + (idx * geometry.innerWidth) / Math.max(1, data.length - 1)
-        const point = data[idx]
-        if (!point) {
-          return null
-        }
-        return (
-          <text key={i} x={x} y={geometry.height - 10} textAnchor="middle" fontSize="10" fill="currentColor">
-            {formatAxisLabel(point.time)}
-          </text>
-        )
-      })}
-    </g>
-  )
-}
-
-function Tooltip({ point, x, width }: { point: ViewsPoint; x: number; width: number }) {
-  // Bias the tooltip away from the right edge so it never clips off-screen.
-  const ratio = x / width
-  const align = ratio > 0.75 ? 'right' : ratio < 0.25 ? 'left' : 'center'
-  return (
-    <div
-      className={cn(
-        'pointer-events-none absolute top-3 z-10 min-w-[140px] rounded-xl border bg-popover px-3 py-2 text-xs shadow-md',
-        align === 'left' && 'left-12',
-        align === 'right' && 'right-6',
-        align === 'center' && 'left-1/2 -translate-x-1/2',
-      )}
+    <AnalyticsQueryState
+      isError={isError}
+      onRetry={retry}
+      isLoading={points === null}
+      isEmpty={points !== null && points.length === 0}
+      skeleton={<ViewsChartSkeleton className={className} />}
+      className={cn('aspect-4/1 justify-center', className)}
     >
-      <div className="font-medium">{formatTooltipTime(point.time)}</div>
-      <div className="mt-1 flex items-center gap-2">
-        <span className="inline-block size-2 rounded-full" style={{ background: 'var(--color-chart-1, #6366f1)' }} />
-        <span className="text-muted-foreground">访问量</span>
-        <span className="ml-auto font-semibold">{point.visits}</span>
-      </div>
-      <div className="mt-0.5 flex items-center gap-2">
-        <span className="inline-block size-2 rounded-full" style={{ background: 'var(--color-chart-2, #14b8a6)' }} />
-        <span className="text-muted-foreground">访客数</span>
-        <span className="ml-auto font-semibold">{point.visitors}</span>
-      </div>
-    </div>
+      {points !== null && ready ? (
+        <div className={cn(refetching && 'opacity-60', 'transition-opacity motion-reduce:transition-none')}>
+          <Suspense fallback={<ViewsChartSkeleton className={className} />}>
+            <LazyViewsChartInner points={points} unit={unit} className={className} />
+          </Suspense>
+        </div>
+      ) : (
+        <ViewsChartSkeleton className={className} />
+      )}
+    </AnalyticsQueryState>
   )
 }
 
-function Legend({ className }: { className?: string }) {
+// Static pre-chart placeholder — byte-identical between SSR, the first
+// client render, and the lazy-boundary fallback (React #418 rule).
+function ViewsChartSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('flex items-center gap-4 text-xs text-muted-foreground', className)}>
-      <span className="flex items-center gap-1.5">
-        <span className="inline-block size-2 rounded-full" style={{ background: 'var(--color-chart-1, #6366f1)' }} />
-        访问量
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span className="inline-block size-2 rounded-full" style={{ background: 'var(--color-chart-2, #14b8a6)' }} />
-        访客数
-      </span>
-    </div>
-  )
-}
-
-function SingleBar({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="text-3xl font-bold tabular-nums" style={{ color }}>
-        {value}
+    <div className={cn('relative aspect-4/1 w-full', className)} role="status" aria-busy="true">
+      <span className="sr-only">加载中</span>
+      <div aria-hidden="true" className="absolute inset-0">
+        <div className="absolute inset-y-2 right-2 left-6 overflow-hidden border-b border-l border-border">
+          <div className="absolute top-1/3 w-full border-t border-border/60" />
+          <div className="absolute top-2/3 w-full border-t border-border/60" />
+          <Skeleton className="absolute inset-x-2 bottom-1 h-3/4 rounded-sm opacity-70 [clip-path:polygon(0_82%,18%_62%,36%_72%,54%_24%,72%_48%,88%_10%,100%_34%,100%_100%,0_100%)]" />
+        </div>
+        <div className="absolute right-2 bottom-0 left-6 flex justify-between">
+          <Skeleton className="h-1.5 w-8 rounded-sm" />
+          <Skeleton className="h-1.5 w-8 rounded-sm" />
+          <Skeleton className="h-1.5 w-8 rounded-sm" />
+          <Skeleton className="h-1.5 w-8 rounded-sm" />
+        </div>
       </div>
-      <div className="h-32 w-12 rounded-xl" style={{ background: color, opacity: 0.65 }} />
-      <div className="text-sm text-muted-foreground">{label}</div>
     </div>
   )
-}
-
-function buildLinePath(xs: number[], ys: number[]): string {
-  let d = ''
-  for (let i = 0; i < xs.length; i += 1) {
-    d += i === 0 ? `M ${xs[i]} ${ys[i]}` : ` L ${xs[i]} ${ys[i]}`
-  }
-  return d
-}
-
-function buildAreaPath(xs: number[], ys: number[], geometry: ChartGeometry): string {
-  let d = `M ${xs[0]} ${geometry.height - geometry.paddingBottom}`
-  for (let i = 0; i < xs.length; i += 1) {
-    d += ` L ${xs[i]} ${ys[i]}`
-  }
-  d += ` L ${xs[xs.length - 1]} ${geometry.height - geometry.paddingBottom} Z`
-  return d
-}
-
-function nearestIndex(xs: number[], target: number): number {
-  let bestIdx = 0
-  let bestDist = Infinity
-  for (let i = 0; i < xs.length; i += 1) {
-    const dist = Math.abs(xs[i]! - target)
-    if (dist < bestDist) {
-      bestDist = dist
-      bestIdx = i
-    }
-  }
-  return bestIdx
-}
-
-function formatAxisLabel(iso: string): string {
-  const d = new Date(iso)
-  // If the date is today, show HH:MM; otherwise show MM-DD.
-  const now = new Date()
-  if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()) {
-    return format(d, 'HH:mm')
-  }
-  return format(d, 'MM-dd')
-}
-
-function formatTooltipTime(iso: string): string {
-  return format(new Date(iso), 'yyyy-MM-dd HH:mm')
 }

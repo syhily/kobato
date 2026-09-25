@@ -150,7 +150,7 @@ export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
     <div className="flex flex-col gap-5">
       <SettingGroup title="采集与过滤策略" description="控制管理员访问及爬虫记录的采集行为。" {...settingGroupProps}>
         <SettingGroupContent>
-          <SettingsRow label="记录管理员访问" hint="关闭时，管理员浏览首页和文章不会被写入 access_log。">
+          <SettingsRow label="记录管理员访问" hint="关闭时，管理员浏览首页和文章不会被写入 access_events。">
             <Controller
               control={form.control}
               name="trackAdmin"

@@ -15,17 +15,6 @@ import { isBot } from '@/shared/utils/is-bot'
 
 const log = getLogger('analytics.track')
 
-const KOBATO_AID_COOKIE = 'kobato_aid'
-
-function readVisitorCookie(cookieHeader: string | null): string | null {
-  if (!cookieHeader) {
-    return null
-  }
-  const re = new RegExp(`(?:^|;\\s*)${KOBATO_AID_COOKIE}=([^;]+)`)
-  const m = cookieHeader.match(re)
-  return m ? decodeURIComponent(m[1]!) : null
-}
-
 function isPrefetch(facts: RequestFacts): boolean {
   return facts.purpose?.toLowerCase().includes('prefetch') ?? false
 }
@@ -85,7 +74,6 @@ export async function trackPageView(
       referer: facts.referer,
       acceptLanguage: facts.acceptLanguage,
       target,
-      sessionId: readVisitorCookie(facts.cookie),
     })
 
     pushAccessEvent(event)
@@ -94,5 +82,3 @@ export async function trackPageView(
     log.error('trackPageView failed', { err: err instanceof Error ? err.message : String(err) })
   }
 }
-
-export { KOBATO_AID_COOKIE }

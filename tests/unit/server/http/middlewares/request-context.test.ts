@@ -45,7 +45,7 @@ describe('requestContextMiddleware', () => {
       commitSessionWithMaxAge,
       SESSION_COOKIE_NAME: '__session',
     }))
-    vi.doMock('@/server/http/middlewares/visitor-cookie', () => ({
+    vi.doMock('@/server/http/utils/cookie-exempt', () => ({
       isExempt: (path: string) => path.startsWith('/feed'),
     }))
     const getClientAddress = vi.fn().mockReturnValue('192.168.1.1')

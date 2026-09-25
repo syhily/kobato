@@ -1,98 +1,64 @@
+import type { ReactNode } from 'react'
+
 import { describe, expect, it } from 'vitest'
 
-import type { CountersDto, HeatmapCell, MetricRow, ViewsPoint } from '@/shared/contracts/analytics'
+import type { CountersDto, MetricRow } from '@/shared/contracts/analytics'
 
+import { makeAnalyticsState } from '#/_helpers/analytics-state'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { AnalyticsStateProvider } from '@/ui/admin/analytics/analytics-state-context'
 import { Counters } from '@/ui/admin/analytics/Counters'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
 import { FiltersBar } from '@/ui/admin/analytics/Filters'
 import { Heatmap } from '@/ui/admin/analytics/Heatmap'
 import { MetricList } from '@/ui/admin/analytics/MetricList'
+import { MetricName } from '@/ui/admin/analytics/MetricName'
 import { MetricsGroup } from '@/ui/admin/analytics/MetricsGroup'
 import { ViewsChart } from '@/ui/admin/analytics/ViewsChart'
 
 // Fixtures mirror the wire DTOs exactly so a contract change fails loudly.
+// Panels no longer read the URL themselves — wrap them in the provider with
+// the deterministic stub state, as the route module would.
 
-const VIEWS_DATA: ViewsPoint[] = [
-  { time: '2024-01-15T00:00:00.000Z', visits: 10, visitors: 5 },
-  { time: '2024-01-15T04:00:00.000Z', visits: 25, visitors: 12 },
-  { time: '2024-01-15T08:00:00.000Z', visits: 40, visitors: 18 },
-  { time: '2024-01-15T12:00:00.000Z', visits: 15, visitors: 9 },
-]
-
-const HEATMAP_DATA: HeatmapCell[] = [
-  { weekday: 1, hour: 9, visits: 30, visitors: 10 },
-  { weekday: 1, hour: 10, visits: 50, visitors: 20 },
-  { weekday: 2, hour: 14, visits: 12, visitors: 6 },
-]
+function withAnalyticsState(node: ReactNode): ReactNode {
+  return <AnalyticsStateProvider state={makeAnalyticsState()}>{node}</AnalyticsStateProvider>
+}
 
 const METRIC_ROWS: MetricRow[] = [
-  { name: 'China', visits: 100, visitors: 60 },
-  { name: 'United States', visits: 40, visitors: 25 },
-  { name: 'Japan', visits: 8, visitors: 5 },
+  { name: 'CN', visits: 100, visitors: 60 },
+  { name: 'US', visits: 40, visitors: 25 },
+  { name: 'JP', visits: 8, visitors: 5 },
 ]
 
 describe('snapshot: ViewsChart', () => {
-  it('renders an SVG line chart with axes and legend for multi-point data', () => {
-    const html = stableHtml(renderToHtml(<ViewsChart data={VIEWS_DATA} />))
-    // SVG viewport + accessible label render for the chart surface.
-    expect(html).toContain('<svg')
-    expect(html).toContain('访问量与访客数折线图')
-    // Two line paths (visits + visitors) and one area fill path.
-    expect(html).toMatch(/<path[^>]*d="M/)
-    // Legend below the chart names both series.
-    expect(html).toContain('访问量')
-    expect(html).toContain('访客数')
-  })
-
-  it('renders the single-point branch as two stat bars', () => {
-    // Lone point can't draw a line — two stat bars instead.
-    const html = stableHtml(
-      renderToHtml(<ViewsChart data={[{ time: '2024-01-15T00:00:00.000Z', visits: 7, visitors: 3 }]} />),
-    )
-    expect(html).toContain('访问量')
-    expect(html).toContain('访客数')
-    expect(html).toContain('7')
-    expect(html).toContain('3')
-    expect(html).not.toContain('<svg')
-  })
-
-  it('renders the empty-state branch for an empty data array', () => {
-    const html = stableHtml(renderToHtml(<ViewsChart data={[]} />))
-    expect(html).toContain('当前时间范围内暂无数据')
-    expect(html).not.toContain('<svg')
-  })
-
-  it('honours a custom height prop by adjusting the viewBox', () => {
-    const html = stableHtml(renderToHtml(<ViewsChart data={VIEWS_DATA} height={300} />))
-    // viewBox width fixed at 800; custom height flows into viewBox height.
-    expect(html).toMatch(/viewBox="0 0 800 300"/)
+  it('renders the static chart skeleton during SSR (the @unovis chart is client-only)', () => {
+    const html = stableHtml(renderInRouter(withAnalyticsState(<ViewsChart />), '/admin/analytics'))
+    // Hydration-safe gate: SSR emits the identical pre-mount skeleton; no
+    // loader payload is painted (it would be Etc/UTC-bucketed), the
+    // client-timezone-aware query owns the first chart paint.
+    expect(html).toContain('role="status"')
+    expect(html).toContain('aria-busy="true"')
+    expect(html).toContain('加载中')
+    // No chart markup on the server.
+    expect(html).not.toContain('vis-xy-container')
   })
 })
 
 describe('snapshot: Heatmap', () => {
-  it('renders the 7×24 grid with hour axis labels', () => {
-    const html = stableHtml(renderToHtml(<Heatmap data={HEATMAP_DATA} />))
-    // The heatmap surface is an img-role region with the aria-label.
-    expect(html).toContain('aria-label="7 天 24 小时访问热力图"')
-    expect(html).toContain('0:00')
-    expect(html).toContain('12:00')
-    expect(html).toContain('23:00')
-    // Weekday labels run down the left rail.
-    expect(html).toContain('一')
-  })
-
-  it('renders the empty-state branch when all cells are zero', () => {
-    const html = stableHtml(renderToHtml(<Heatmap data={[]} />))
-    expect(html).toContain('当前时间范围内暂无数据')
-    expect(html).not.toContain('aria-label="7 天 24 小时访问热力图"')
+  it('renders the skeleton during SSR — the UTC-bucketed loader cells never paint', () => {
+    const html = stableHtml(renderInRouter(withAnalyticsState(<Heatmap metric="visits" />), '/admin/analytics'))
+    // The client-timezone-aware query owns the first grid paint.
+    expect(html).toContain('role="status"')
+    expect(html).toContain('aria-busy="true"')
+    expect(html).toContain('加载中')
+    expect(html).not.toContain('role="grid"')
   })
 })
 
 describe('snapshot: Counters', () => {
-  it('renders the three KPI cards with values', () => {
+  it('renders the three KPI cards with icons and values', () => {
     const data: CountersDto = { visits: 1234, visitors: 567, referers: 89 }
-    const html = stableHtml(renderToHtml(<Counters data={data} />))
+    const html = stableHtml(renderInRouter(withAnalyticsState(<Counters initial={data} />), '/admin/analytics'))
     expect(html).toContain('访问量')
     expect(html).toContain('访客数')
     expect(html).toContain('来源域名')
@@ -102,14 +68,10 @@ describe('snapshot: Counters', () => {
     expect(html).toContain('aria-label="89"')
   })
 
-  it('renders skeleton placeholders when data is null', () => {
-    const html = stableHtml(renderToHtml(<Counters data={null} />))
+  it('renders skeleton placeholders when no data is available yet', () => {
+    const html = stableHtml(renderInRouter(withAnalyticsState(<Counters initial={null} />), '/admin/analytics'))
     expect(html).toContain('访问量')
-    expect(html).toContain('访客数')
-    expect(html).toContain('来源域名')
-    // The loading branch emits an aria-hidden pulse placeholder.
-    expect(html).toContain('aria-hidden')
-    expect(html).toContain('animate-pulse')
+    expect(html).toContain('aria-busy')
   })
 })
 
@@ -122,12 +84,11 @@ describe('snapshot: FiltersBar', () => {
   it('renders active filter badges plus the clear-all button', () => {
     const html = stableHtml(
       renderToHtml(
-        <FiltersBar filters={{ country: 'China', browser: 'Chrome' }} onClear={() => {}} onClearAll={() => {}} />,
+        <FiltersBar filters={{ country: 'CN', browser: 'Chrome' }} onClear={() => {}} onClearAll={() => {}} />,
       ),
     )
-    // Filter type labels come from the local TYPE_LABEL map.
     expect(html).toContain('国家')
-    expect(html).toContain('China')
+    expect(html).toContain('CN')
     expect(html).toContain('浏览器')
     expect(html).toContain('Chrome')
     expect(html).toContain('清空筛选')
@@ -136,53 +97,101 @@ describe('snapshot: FiltersBar', () => {
 })
 
 describe('snapshot: DateRangePicker', () => {
-  it('renders the seven preset chips', () => {
-    const html = stableHtml(renderToHtml(<DateRangePicker preset="last-7d" onSelect={() => {}} />))
-    // Active preset exposes aria-pressed to AT users.
+  const RANGE = { startAt: 1705276800, endAt: 1705363200 } // 2024-01-15 → 2024-01-16 UTC
+
+  it('renders the seven preset chips plus the custom-range chip', () => {
+    const html = stableHtml(
+      renderToHtml(<DateRangePicker preset="last-7d" range={RANGE} onSelect={() => {}} onSelectRange={() => {}} />),
+    )
     expect(html).toContain('aria-pressed="true"')
     expect(html).toContain('最近 7 天')
-    // A non-active preset chip is also present.
     expect(html).toContain('今天')
     expect(html).toContain('最近 365 天')
+    expect(html).toContain('自定义')
   })
 
-  it('renders no active chip when preset is null', () => {
-    const html = stableHtml(renderToHtml(<DateRangePicker preset={null} onSelect={() => {}} />))
-    expect(html).not.toContain('aria-pressed="true"')
+  it('shows the formatted range on the active custom chip when preset is null', () => {
+    const html = stableHtml(
+      renderToHtml(<DateRangePicker preset={null} range={RANGE} onSelect={() => {}} onSelectRange={() => {}} />),
+    )
+    // The custom chip is the only pressed one and carries the range label.
+    expect((html.match(/aria-pressed="true"/g) ?? []).length).toBe(1)
+    expect(html).not.toContain('>自定义<')
+  })
+})
+
+describe('snapshot: MetricName', () => {
+  it('renders a country row with the flag emoji and the zh-CN region name', () => {
+    const html = stableHtml(renderToHtml(<MetricName name="CN" type="country" />))
+    expect(html).toContain('🇨🇳')
+    expect(html).toContain('中国')
+  })
+
+  it('renders a referer row with the local letter avatar (no external favicon request)', () => {
+    const html = stableHtml(renderToHtml(<MetricName name="google.com" type="referer" />))
+    expect(html).not.toContain('<img')
+    expect(html).not.toContain('unavatar')
+    expect(html).toContain('google.com')
+    expect(html).toContain('>g</span>')
+  })
+
+  it('renders a path row as monospace text', () => {
+    const html = stableHtml(renderToHtml(<MetricName name="/posts/hello" type="path" />))
+    expect(html).toContain('font-mono')
+    expect(html).toContain('/posts/hello')
+  })
+
+  it('renders an os row with a brand icon', () => {
+    const html = stableHtml(renderToHtml(<MetricName name="macOS" type="os" />))
+    expect(html).toContain('macOS')
+    expect(html).toContain('<svg')
+  })
+
+  it('renders 直接访问 for an empty referer name', () => {
+    const html = stableHtml(renderToHtml(<MetricName name="" type="referer" />))
+    expect(html).toContain('直接访问')
   })
 })
 
 describe('snapshot: MetricList', () => {
   it('renders rows from initial data without waiting on the pending query', () => {
-    // `initial` renders synchronously off the fixture regardless of the
-    // pending fetch; useAnalyticsState needs a router context.
-    const html = stableHtml(renderInRouter(<MetricList type="country" initial={METRIC_ROWS} />, '/admin/analytics'))
-    expect(html).toContain('China')
-    expect(html).toContain('United States')
-    expect(html).toContain('Japan')
-    // Counts are toLocaleString-formatted; the raw value must appear.
+    const html = stableHtml(
+      renderInRouter(
+        withAnalyticsState(<MetricList type="country" title="国家" initial={METRIC_ROWS} />),
+        '/admin/analytics',
+      ),
+    )
+    expect(html).toContain('中国')
+    expect(html).toContain('美国')
+    expect(html).toContain('日本')
+    // Counts are toLocaleString-formatted; percent shares appear next to them.
     expect(html).toContain('100')
-    expect(html).toContain('40')
+    expect(html).toContain('(67%)')
+    // The details-dialog trigger sits in the footer.
+    expect(html).toContain('详情')
   })
 
   it('renders the empty-state branch when initial is an empty array', () => {
-    const html = stableHtml(renderInRouter(<MetricList type="os" initial={[]} />, '/admin/analytics'))
+    const html = stableHtml(
+      renderInRouter(withAnalyticsState(<MetricList type="os" title="操作系统" initial={[]} />), '/admin/analytics'),
+    )
     expect(html).toContain('暂无数据')
   })
 })
 
 describe('snapshot: MetricsGroup', () => {
-  it('renders the group card with metric-type tabs', () => {
+  it('renders the tabbed group card with the first tab active', () => {
     const html = stableHtml(
-      renderInRouter(<MetricsGroup group="location" initial={{ country: METRIC_ROWS }} />, '/admin/analytics'),
+      renderInRouter(
+        withAnalyticsState(<MetricsGroup group="location" initial={{ country: METRIC_ROWS }} />),
+        '/admin/analytics',
+      ),
     )
-    // Group title from GROUP_LABEL.
-    expect(html).toContain('位置')
     // Tabs from METRIC_GROUP_TABS.location.
     expect(html).toContain('国家')
     expect(html).toContain('地区')
     expect(html).toContain('城市')
     // The active tab's MetricList renders the initial rows.
-    expect(html).toContain('China')
+    expect(html).toContain('中国')
   })
 })
