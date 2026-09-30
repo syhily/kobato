@@ -14,15 +14,15 @@ import type { ReactNode } from 'react'
 
 import { ListTreeIcon } from 'lucide-react'
 
-import type { EditorState, LexicalEditor } from '@/inkling'
-
 import {
   BASIC_TRANSFORMERS,
+  type CardSpecFieldMapFor,
   defineCard,
   EDITOR_BASE_NODES,
   generateDecoratorNode,
   InklingComposableEditor,
   InklingNestedComposer,
+  type NestedEditorSpec,
 } from '@/inkling'
 import { inklingHostCardMatches } from '@/shared/lexical/cards/menu-matches'
 import {
@@ -34,17 +34,26 @@ import {
 } from '@/shared/lexical/cards/solution'
 import { SOLUTION_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 
-export const BaseSolutionNode = class extends generateDecoratorNode({
+// The card's nested-editor spec (CONTEXT.md: "card spec"), const-asserted so
+// the literal name survives into the derived field maps — the same array
+// self-types the base class below and feeds the defineCard spec. `nullable`
+// mirrors the built-in cards: the base class is spec-less, so a raw base
+// instance leaves the fields unset and the guard in SolutionCardComponent
+// stays honest.
+const solutionNestedEditors = [
+  { ...SOLUTION_NESTED_EDITOR, nodes: EDITOR_BASE_NODES, nullable: true },
+] as const satisfies readonly NestedEditorSpec[]
+
+// The merged interface self-types the spec-driven nested-editor fields — the
+// inkling BaseToggleNode idiom; the pair needs the declaration-merging
+// exemption inkling's oxlint scope grants (src/client sits outside it).
+// oxlint-disable-next-line no-redeclare, typescript/no-unsafe-declaration-merging, typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseSolutionNode extends CardSpecFieldMapFor<readonly [], typeof solutionNestedEditors> {}
+export class BaseSolutionNode extends generateDecoratorNode({
   nodeType: SOLUTION_NODE_TYPE,
   properties: SOLUTION_CARD_PROPERTIES,
   defaultRenderFn: renderSolutionCard,
-}) {
-  // Assigned by the generated constructor on spec-adopting subclasses (the
-  // assembled card class); a raw base instance leaves them unset — the
-  // BaseToggleNode idiom.
-  declare __contentEditor: LexicalEditor | null | undefined
-  declare __contentEditorInitialState: EditorState | undefined
-}
+}) {}
 
 export type SolutionCardNode = InstanceType<typeof BaseSolutionNode>
 
@@ -96,13 +105,13 @@ function SolutionCardComponent({ node }: { node: SolutionCardNode }) {
 export const solutionCard = defineCard({
   nodeType: SOLUTION_NODE_TYPE,
   baseNode: BaseSolutionNode,
-  nestedEditors: [{ ...SOLUTION_NESTED_EDITOR, nodes: EDITOR_BASE_NODES }],
+  nestedEditors: solutionNestedEditors,
   decorateTarget: { width: 'regular' },
   insert: { openInEditMode: true },
   menu: [
     {
       label: '解答块',
-      labelKey: 'solution',
+      labelKey: 'host.solution',
       desc: '题解 / 提示（内部可排版，与引用块相同）',
       icon: ListTreeIcon,
       command: 'insert',

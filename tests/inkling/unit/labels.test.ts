@@ -43,6 +43,31 @@ describe('labels', () => {
     })
   })
 
+  describe('the host menu-label namespace', () => {
+    it('resolves menu.host.* overrides through the same merge channel', () => {
+      const labels = resolveLabels({
+        'menu.host.music-player.label': '音乐播放器',
+        'menu.host.music-player.desc': '嵌入一首音乐库中的歌曲',
+      })
+
+      expect(lookupLabel(labels, 'menu.host.music-player.label', 'Music player')).toBe('音乐播放器')
+      expect(lookupLabel(labels, 'menu.host.music-player.desc', 'Embed a song')).toBe('嵌入一首音乐库中的歌曲')
+    })
+
+    it('falls back to the entry text when the host namespace carries no override', () => {
+      expect(lookupLabel(resolveLabels(), 'menu.host.music-player.label', 'Music player')).toBe('Music player')
+      expect(lookupLabel(DEFAULT_LABELS, 'menu.host.music-player.label', 'Music player')).toBe('Music player')
+    })
+
+    it('keeps the input type closed outside the host namespace', () => {
+      resolveLabels({
+        'menu.host.music-player.label': '音乐播放器',
+        // @ts-expect-error — a bare host labelKey is not a table key: only the menu.host.* namespace is open
+        'menu.music-player.label': '音乐播放器',
+      })
+    })
+  })
+
   // The table is a public contract the moment it lands in the barrel — this
   // snapshot pins the key list so a rename or removal is a deliberate,
   // review-visible change, never a drive-by edit.

@@ -40,9 +40,10 @@ export type { ListOptionItem, SearchResult } from '@/inkling/hooks/useSearchLink
 
 /* Labels: the closed labels table a host
  * overrides through <InklingComposer labels={...}> — `labels` is a composer
- * prop on both entries. */
+ * prop on both entries. Host card menu labels ride the `menu.host.*`
+ * namespace (`InklingHostMenuLabelKey`), opened on the input side only. */
 export { DEFAULT_LABELS } from '@/inkling/labels/inkling-labels'
-export type { InklingLabels, InklingLabelsInput } from '@/inkling/labels/inkling-labels'
+export type { InklingHostMenuLabelKey, InklingLabels, InklingLabelsInput } from '@/inkling/labels/inkling-labels'
 
 /* Media library: the picker's headless state
  * machine rides both entries — a host building its own library-backed card

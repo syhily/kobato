@@ -138,6 +138,35 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   it without import cycles) — a neutral fact store whose projections every derived view computes
   through the same projectors the built-in declarations use, intersected with each editor's
   registered node types.
+  - **Type preservation**: `defineCard` is generic over the spec itself
+    (`HostCard<NodeType, Spec>`), so const-asserted `nestedEditors`/`transientProps` arrays land
+    their literal `__*` field names and value types on the returned `card.node` via
+    `CardSpecFieldMap`/`CardSpecAccessorMap` — the same typing the built-in declarations get. A
+    non-const inline array widens entry names to `string` under contextual typing and the field map
+    degrades to the loose `__${string}` pattern (never a compile error). Host base classes
+    self-type the same vocabulary by interface-merging `CardSpecFieldMapFor` over the shared
+    spec array (the `BaseToggleNode` idiom; kobato's cards carry the oxlint declaration-merging
+    disables locally because its scope grant covers only `src/inkling/**`) — no hand-written
+    `declare __*` blocks. Compile-time pins: `tests/inkling/unit/nodes/host-cards.test.ts`.
+  - **Self-wiring markdown**: the round-trip pair
+    (`src/inkling/markdown/round-trip.ts`) composes every registered host card by default — the
+    assembled class registers on the conversion editor, and a `markdownFence` spec's transformer
+    is derived from the stored spec through `createCardTransformer` (the registry keeps its
+    raw-spec philosophy; the handle's `markdownTransformer` is a convenience, not the source).
+    The `cards` option AUGMENTS the default (its remaining purpose is handles built without
+    `defineCard`), replacing a registered type's wiring on a nodeType collision; there is no
+    opt-out flag — a card leaves the round-trip by not declaring `markdownFence`.
+  - **Self-wiring node set**: `getHostCardNodes()`
+    (`src/inkling/nodes/cards/host-card-nodes.ts`, exported from the barrel) returns every
+    registered host card's assembled class in registration order, so hosts compose
+    `...getHostCardNodes()` into `<InklingComposer nodes>` instead of hand-spreading handles —
+    the card modules' own imports still carry the `defineCard` side effects (registration order =
+    import order there).
+  - **Host labels namespace**: host menu entries name their `labelKey` `host.<name>` and resolve
+    `menu.host.<name>.label`/`.desc` through the same `<InklingComposer labels={...}>` channel
+    (`InklingLabelsInput` opens exactly that template; the shipped `InklingLabels` table and its
+    snapshot stay closed, and `lookupLabel` reads host keys through its `in` guard). Absent an
+    override, the entry's own spec text remains the fallback.
 - The **pick seam** (CONTEXT.md: "pick seam", "entity-backed card") is the host-card counterpart
   of the decorate slot: a host card whose dataset references a host-owned entity (kobato's music
   library row) declares a `picker` on its `defineCard` spec — `{ render, autoOpenOnInsert? }`; the

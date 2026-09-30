@@ -9,15 +9,17 @@ import type { ReactNode } from 'react'
 
 import { Columns2Icon } from 'lucide-react'
 
-import type { EditorState, LexicalEditor } from '@/inkling'
-
 import {
   BASIC_TRANSFORMERS,
+  type CardSpecFieldMapFor,
   defineCard,
   EDITOR_BASE_NODES,
+  type EditorState,
   generateDecoratorNode,
   InklingComposableEditor,
   InklingNestedComposer,
+  type LexicalEditor,
+  type NestedEditorSpec,
 } from '@/inkling'
 import { inklingHostCardMatches } from '@/shared/lexical/cards/menu-matches'
 import {
@@ -28,16 +30,27 @@ import {
 } from '@/shared/lexical/cards/two-column'
 import { TWO_COLUMN_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 
-export const BaseTwoColumnNode = class extends generateDecoratorNode({
+// The card's nested-editor spec (CONTEXT.md: "card spec"), const-asserted so
+// the literal names survive into the derived field maps — the same array
+// self-types the base class below and feeds the defineCard spec. `nullable`
+// mirrors the built-in cards: the base class is spec-less, so a raw base
+// instance leaves the fields unset and the guard in TwoColumnCardComponent
+// stays honest.
+const twoColumnNestedEditors = [
+  { ...TWO_COLUMN_NESTED_EDITORS[0]!, nodes: EDITOR_BASE_NODES, nullable: true },
+  { ...TWO_COLUMN_NESTED_EDITORS[1]!, nodes: EDITOR_BASE_NODES, nullable: true },
+] as const satisfies readonly NestedEditorSpec[]
+
+// The merged interface self-types the spec-driven nested-editor fields — the
+// inkling BaseToggleNode idiom; the pair needs the declaration-merging
+// exemption inkling's oxlint scope grants (src/client sits outside it).
+// oxlint-disable-next-line no-redeclare, typescript/no-unsafe-declaration-merging, typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+export interface BaseTwoColumnNode extends CardSpecFieldMapFor<readonly [], typeof twoColumnNestedEditors> {}
+export class BaseTwoColumnNode extends generateDecoratorNode({
   nodeType: TWO_COLUMN_NODE_TYPE,
   properties: TWO_COLUMN_CARD_PROPERTIES,
   defaultRenderFn: renderTwoColumnCard,
-}) {
-  declare __leftEditor: LexicalEditor | null | undefined
-  declare __leftEditorInitialState: EditorState | undefined
-  declare __rightEditor: LexicalEditor | null | undefined
-  declare __rightEditorInitialState: EditorState | undefined
-}
+}) {}
 
 export type TwoColumnCardNode = InstanceType<typeof BaseTwoColumnNode>
 
@@ -124,16 +137,13 @@ function TwoColumnCardComponent({ node }: { node: TwoColumnCardNode }) {
 export const twoColumnCard = defineCard({
   nodeType: TWO_COLUMN_NODE_TYPE,
   baseNode: BaseTwoColumnNode,
-  nestedEditors: [
-    { ...TWO_COLUMN_NESTED_EDITORS[0]!, nodes: EDITOR_BASE_NODES },
-    { ...TWO_COLUMN_NESTED_EDITORS[1]!, nodes: EDITOR_BASE_NODES },
-  ],
+  nestedEditors: twoColumnNestedEditors,
   decorateTarget: { width: 'regular' },
   insert: { openInEditMode: true },
   menu: [
     {
       label: '左右分栏',
-      labelKey: 'two-column',
+      labelKey: 'host.two-column',
       desc: '两栏并排，每栏内容独立编辑',
       icon: Columns2Icon,
       command: 'insert',

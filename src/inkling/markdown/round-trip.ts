@@ -1,4 +1,4 @@
-import type { SerializedEditorState } from 'lexical'
+import type { Klass, LexicalNode, SerializedEditorState } from 'lexical'
 
 import { createHeadlessEditor } from '@lexical/headless'
 import { LinkNode } from '@lexical/link'
@@ -19,8 +19,10 @@ import { codeBlockFence, stripFenceLines } from '@/inkling/markdown/card-shortcu
 import { FENCE_END_REGEXP, FENCE_IMPORT_REGEXP } from '@/inkling/markdown/grammar'
 import { DEFAULT_TRANSFORMERS } from '@/inkling/markdown/transformers'
 import { MINIMAL_TRANSFORMERS } from '@/inkling/markdown/transformers-core'
+import { assembleCardNodeOnce } from '@/inkling/nodes/assemble-card-node'
 import { $createMarkdownNode, $isMarkdownNode, MarkdownNode } from '@/inkling/nodes/base/nodes/markdown/MarkdownNode'
-import { CARD_MARKDOWN_DECLARATIONS } from '@/inkling/nodes/cards/card-markdown-transformers'
+import { CARD_MARKDOWN_DECLARATIONS, createCardTransformer } from '@/inkling/nodes/cards/card-markdown-transformers'
+import { getHostCards } from '@/inkling/nodes/cards/host-card-registry'
 import { $createCodeBlockNode, $isCodeBlockNode, CodeBlockNode } from '@/inkling/nodes/CodeBlockNode'
 import { resolveGfmPipeTableLines } from '@/inkling/nodes/table/table-facts'
 import {
@@ -220,34 +222,73 @@ function buildTransformers(hostTransformers: Transformer[] = []): Transformer[] 
 const TRANSFORMERS: Transformer[] = buildTransformers()
 
 /**
- * The options the round-trip pair accepts: `cards` composes host cards
- * (CONTEXT.md: "host card") into the conversion — their assembled node
- * classes join the editor's node set and their fence transformers join the
- * card transformer run, ordered before CODE_FENCE so `inkling:<card>` fences
- * match their card transformer first (the same precedence the built-in cards
- * get).
+ * One host card's round-trip wiring: the assembled node class plus its fence
+ * transformer when the spec declares `markdownFence`.
+ */
+interface HostRoundTripCard {
+  node: Klass<LexicalNode>
+  transformer?: MultilineElementTransformer
+}
+
+/**
+ * The host cards the round-trip composes (CONTEXT.md: "host card") —
+ * registry-default wiring: every `defineCard`-registered card joins by
+ * default (its assembled class registers on the conversion editor; with
+ * `markdownFence`, its fence transformer is derived from the stored spec
+ * through the same `createCardTransformer` the handle used). The `cards`
+ * option AUGMENTS the registry default — its purpose is handles built
+ * WITHOUT `defineCard` — and on a nodeType collision the explicit handle
+ * replaces the registry-derived wiring for that type. There is deliberately
+ * no opt-out flag: a registered card leaves the round-trip by not declaring
+ * `markdownFence`.
+ */
+function resolveRoundTripHostCards(cards: readonly HostCard[]): HostRoundTripCard[] {
+  const byType = new Map<string, HostRoundTripCard>()
+  for (const record of getHostCards()) {
+    const node = assembleCardNodeOnce<LexicalNode>(record.spec)
+    byType.set(record.nodeType, {
+      node,
+      transformer: record.spec.markdownFence
+        ? createCardTransformer({ card: record.nodeType, nodeClass: node, ...record.spec.markdownFence })
+        : undefined,
+    })
+  }
+  for (const card of cards) {
+    byType.set(card.nodeType, { node: card.node, transformer: card.markdownTransformer })
+  }
+  return [...byType.values()]
+}
+
+/**
+ * The options the round-trip pair accepts: `cards` AUGMENTS the
+ * registry-default host wiring (see `resolveRoundTripHostCards`) — compose a
+ * HostCard handle that was built without `defineCard`, or override a
+ * registered type's wiring with an explicit handle. Registered cards need no
+ * `cards` entry; every host fence transformer joins the card run ordered
+ * before CODE_FENCE either way, so `inkling:<card>` fences match their card
+ * transformer first (the same precedence the built-in cards get).
  */
 export interface MarkdownRoundTripOptions {
   cards?: readonly HostCard[]
 }
 
-function createMarkdownEditor(cards: readonly HostCard[]) {
+function createMarkdownEditor(hostCards: readonly HostRoundTripCard[]) {
   return createHeadlessEditor({
-    nodes: [...MARKDOWN_NODES, ...cards.map((card) => card.node)],
+    nodes: [...MARKDOWN_NODES, ...hostCards.map((card) => card.node)],
     onError(error) {
       throw error
     },
   })
 }
 
-// Host card fences join the card run — ahead of CODE_FENCE. With no host
-// cards the shared constant is reused, so the default conversion is
+// Host card fences join the card run — ahead of CODE_FENCE. With no fenced
+// host cards the shared constant is reused, so the default conversion is
 // byte-identical to the pre-options behavior.
-function resolveTransformers(cards: readonly HostCard[]): Transformer[] {
-  if (cards.length === 0) {
+function resolveTransformers(hostCards: readonly HostRoundTripCard[]): Transformer[] {
+  const hostTransformers = hostCards.flatMap((card) => (card.transformer ? [card.transformer] : []))
+  if (hostTransformers.length === 0) {
     return TRANSFORMERS
   }
-  const hostTransformers = cards.flatMap((card) => (card.markdownTransformer ? [card.markdownTransformer] : []))
   return buildTransformers(hostTransformers)
 }
 
@@ -262,12 +303,12 @@ export function markdownToLexicalState(
   markdown: string,
   options: MarkdownRoundTripOptions = {},
 ): SerializedEditorState {
-  const cards = options.cards ?? []
-  const editor = createMarkdownEditor(cards)
+  const hostCards = resolveRoundTripHostCards(options.cards ?? [])
+  const editor = createMarkdownEditor(hostCards)
 
   editor.update(
     () => {
-      $convertFromMarkdownString(markdown, resolveTransformers(cards))
+      $convertFromMarkdownString(markdown, resolveTransformers(hostCards))
     },
     { discrete: true },
   )
@@ -282,12 +323,12 @@ export function markdownToLexicalState(
  * transformer set used by `markdownToLexicalState`.
  */
 export function lexicalStateToMarkdown(state: SerializedEditorState, options: MarkdownRoundTripOptions = {}): string {
-  const cards = options.cards ?? []
-  const editor = createMarkdownEditor(cards)
+  const hostCards = resolveRoundTripHostCards(options.cards ?? [])
+  const editor = createMarkdownEditor(hostCards)
 
   editor.setEditorState(editor.parseEditorState(state))
 
   return editor.getEditorState().read(() => {
-    return $convertToMarkdownString(resolveTransformers(cards))
+    return $convertToMarkdownString(resolveTransformers(hostCards))
   })
 }

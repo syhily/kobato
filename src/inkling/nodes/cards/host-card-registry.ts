@@ -17,10 +17,12 @@ import type { CardFencePayload } from '@/inkling/nodes/cards/card-markdown-trans
  * raw `LexicalCommand` the host created itself (the built-in entries name
  * commands by `CardMenuCommand` string; `'insert'` works for host cards too,
  * resolving to the host card's own derived insert command). The required
- * `labelKey` matches the built-in entries; the labels table is closed, so a
- * host-defined key always falls back to the entry's own English
- * `label`/`desc` (a host localizes its own card by writing the spec text
- * directly).
+ * `labelKey` matches the built-in entries' shape, but the shipped labels
+ * table is closed to host keys: a host entry names its key `host.<name>`
+ * and localizes through the `menu.host.*` namespace in the
+ * `<InklingComposer labels={...}>` override channel
+ * (`InklingHostMenuLabelKey`), with the entry's own `label`/`desc` as the
+ * fallback when the namespace carries no override.
  */
 export type HostCardMenuEntrySpec = Omit<CardMenuEntrySpec, 'icon' | 'command'> & {
   icon: CardIconId | ComponentType<SVGProps<SVGSVGElement>>

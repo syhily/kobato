@@ -6,7 +6,8 @@
  * - `import type` 是刻意的：本表是 type-only 消费，type import 会在编译期
  *   被擦除、不进 bundle。
  * - `InklingLabels` 是封闭接口：下表任何拼错的 key 都是编译错误，
- *   `pnpm run type` 即 key 合法性门禁。
+ *   `pnpm run type` 即 key 合法性门禁。唯一开口是宿主卡菜单命名空间
+ *   `menu.host.*`（见文末宿主卡分组 —— 宿主卡的 `labelKey` 以 `host.` 冠名）。
  * - 插值 token（`{max}` / `{cardType}` / `{name}` / `{progress}`）是
  *   inkling 消费端 `string.replace` 的契约，必须原样保留。
  * - kobato 无 i18n 框架，admin 文案一律中文硬编码（与已退役的 tiptap
@@ -18,9 +19,9 @@
  * - `snippet.*` / `menu.section.snippets` / `toolbar.saveAsSnippet` ——
  *   snippets 功能不接入（评论精简组合显式 `isSnippetsEnabled={false}`）。
  */
-import type { InklingLabels } from '@/inkling'
+import type { InklingLabelsInput } from '@/inkling'
 
-export const inklingLabels: Partial<InklingLabels> = {
+export const inklingLabels: InklingLabelsInput = {
   /* 编辑器与输入占位符 */
   'placeholder.editor': '开始撰写内容…',
   'url.paste.placeholder': '粘贴 URL…',
@@ -106,6 +107,15 @@ export const inklingLabels: Partial<InklingLabels> = {
   'library.upload': '上传',
   'library.empty': '未找到图片',
   'library.error': '媒体库加载失败，请重试',
+
+  /* 宿主卡菜单（`menu.host.*` 命名空间；文案与各卡片 spec 自带的
+   * label/desc 一致 —— spec 文本是缺 key 时的回退，此处经覆盖通道解析） */
+  'menu.host.solution.label': '解答块',
+  'menu.host.solution.desc': '题解 / 提示（内部可排版，与引用块相同）',
+  'menu.host.two-column.label': '左右分栏',
+  'menu.host.two-column.desc': '两栏并排，每栏内容独立编辑',
+  'menu.host.music-player.label': '音乐播放器',
+  'menu.host.music-player.desc': '嵌入一首音乐库中的歌曲',
 
   /* 格式与卡片操作工具栏 */
   'toolbar.bold': '加粗',

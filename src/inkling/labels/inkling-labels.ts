@@ -5,7 +5,10 @@
  * `<InklingComposer labels={...}>`; missing keys fall back to the English
  * default. The interface is closed on purpose — an unknown key in an
  * override table is a compile error (the same closed-bag philosophy as
- * `CardConfig`, CONTEXT.md "Host config").
+ * `CardConfig`, CONTEXT.md "Host config"). The one deliberate opening is the
+ * host menu-label namespace (`menu.host.*`, see `InklingHostMenuLabelKey`
+ * below): host card menu entries resolve their `host.<name>` labelKeys
+ * through it.
  *
  * Flat, not nested: no deep-merge helper, the types stay flat, and the key
  * is its own documentation. Interpolation values use `string.replace` at
@@ -410,31 +413,53 @@ export const DEFAULT_LABELS: InklingLabels = {
   'alt.imageUploadProgress': 'upload in progress, {progress}',
 }
 
-/** The host's override table — any subset; an unknown key is a compile error. */
-export type InklingLabelsInput = Partial<InklingLabels>
+/**
+ * The host menu-label namespace (CONTEXT.md: "host card"): a host card's menu
+ * entries name their `labelKey` `host.<name>` (built-in keys stay bare), so
+ * the menu-build resolver looks up `menu.host.<name>.label` / `.desc`
+ * through the same `<InklingComposer labels={...}>` merge channel. The
+ * namespace opens on the INPUT side only — the shipped `InklingLabels`
+ * table (and its snapshot pin) stays closed, while a host's override keys
+ * are compile-checked by the template-literal pattern. Absent an override,
+ * the entry's own spec text stays the fallback.
+ */
+export type InklingHostMenuLabelKey = `menu.host.${string}.label` | `menu.host.${string}.desc`
 
-/** One merge: override table over the English defaults; a missing key falls back to English. */
+/**
+ * The host's override table — any subset; an unknown key is a compile error.
+ * The union's first member keeps a full `InklingLabels` value assignable
+ * (interfaces carry no implicit index signature, so an intersection with the
+ * host-namespace map would reject them); the second member admits the
+ * `menu.host.*` keys on top of a partial table.
+ */
+export type InklingLabelsInput =
+  | Partial<InklingLabels>
+  | (Partial<InklingLabels> & Partial<Record<InklingHostMenuLabelKey, string>>)
+
+/**
+ * One merge: override table over the English defaults; a missing key falls
+ * back to English. Host-namespace overrides ride the merged object at
+ * runtime — the closed return type can't name them (see the union note on
+ * `InklingLabelsInput`); `lookupLabel` reads them through its `in` guard.
+ */
 export function resolveLabels(input?: InklingLabelsInput): InklingLabels {
   return { ...DEFAULT_LABELS, ...input }
 }
 
 /**
- * Membership guard narrowing an arbitrary menu `labelKey` string to the
- * closed table's key union — the runtime check (`in`) is the narrowing, so
- * the lookup below needs no assertion.
- */
-function hasLabelKey(labels: InklingLabels, key: string): key is keyof InklingLabels {
-  return key in labels
-}
-
-/**
  * Runtime lookup behind the closed interface: menu entries carry their
  * `labelKey` as a plain string, so the menu-build resolver indexes by an
- * arbitrary key. Unknown keys (e.g. a host card's own labelKey) fall back to
- * the entry's declared English text.
+ * arbitrary key. The `in` check is membership (the merged table carries
+ * host-namespace keys at runtime that the closed interface cannot name);
+ * the value read goes through Reflect.get instead of an index assertion.
+ * Unknown keys fall back to the entry's declared text.
  */
 export function lookupLabel(labels: InklingLabels, key: string, fallback: string): string {
-  return hasLabelKey(labels, key) ? labels[key] : fallback
+  if (!(key in labels)) {
+    return fallback
+  }
+  const value: unknown = Reflect.get(labels, key)
+  return typeof value === 'string' ? value : fallback
 }
 
 /** The interpolation tokens the labels table speaks (plain string.replace, never an i18n library). */

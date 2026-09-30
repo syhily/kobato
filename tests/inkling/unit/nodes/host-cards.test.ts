@@ -1,10 +1,19 @@
-import type { LexicalEditor, LexicalNode } from 'lexical'
 import type { ComponentType, SVGProps } from 'react'
 
 import { createHeadlessEditor } from '@lexical/headless'
 import { renderHook } from '@testing-library/react'
-import { $createParagraphNode, $getRoot, createCommand, DecoratorNode } from 'lexical'
+import {
+  $createParagraphNode,
+  $getRoot,
+  createCommand,
+  DecoratorNode,
+  type EditorState,
+  type LexicalEditor,
+  type LexicalNode,
+} from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { NestedEditorSpec, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 
 import { getCardMenu } from '#/inkling/utils/card-menu'
 import { mockComposerContext } from '#/inkling/utils/composer-context'
@@ -20,6 +29,7 @@ import { getCardDragIcon, resolveCardIcon } from '@/inkling/nodes/cards/card-men
 import { getRegisteredCardNodes } from '@/inkling/nodes/cards/editor-card-nodes'
 import { getHostCard, getHostCards } from '@/inkling/nodes/cards/host-card-registry'
 import { defineCard } from '@/inkling/nodes/cards/host-cards'
+import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
 import { createCardSelectionStore } from '@/inkling/plugins/behaviour/cardSelectionStore'
 import { registerCardCommands } from '@/inkling/plugins/behaviour/registerCardCommands'
 import { CardInsertPlugin } from '@/inkling/plugins/CardInsertPlugin'
@@ -87,9 +97,36 @@ const hostWidget = defineCard({
   render: () => null,
 })
 
+// The type-preservation fixture: a host spec with const-asserted spec arrays
+// (the base node module idiom), so the literal field names and value types
+// survive into the returned card.node's `__*` field map.
+const typedWidgetTransientProps = [
+  {
+    name: 'triggerFileDialog',
+    initial: (dataset: Record<string, unknown>): boolean => Boolean(dataset.triggerFileDialog),
+    accessor: true,
+  },
+] as const satisfies readonly TransientPropSpec[]
+
+const typedWidgetNestedEditors = [
+  { name: 'bodyEditor', serializedKey: 'body', nodes: MINIMAL_NODES, nullable: true },
+] as const satisfies readonly NestedEditorSpec[]
+
+const typedWidget = defineCard({
+  nodeType: 'typedWidget',
+  baseNode: generateDecoratorNode({
+    nodeType: 'typedWidget',
+    properties: [{ name: 'body', default: '' }] as const,
+  }),
+  transientProps: typedWidgetTransientProps,
+  nestedEditors: typedWidgetNestedEditors,
+  toolbarLabel: 'typed-widget',
+  render: () => null,
+})
+
 describe('defineCard', () => {
   it('registers the card in the host registry, in registration order, with the raw spec stored verbatim', () => {
-    expect(getHostCards().map((host) => host.nodeType)).toEqual(['musicPlayer', 'hostWidget'])
+    expect(getHostCards().map((host) => host.nodeType)).toEqual(['musicPlayer', 'hostWidget', 'typedWidget'])
     // the registry is a neutral fact store: the raw spec, complete at
     // registration — the views derive every projection (including the
     // assembled class, see the insert-registration test below)
@@ -162,6 +199,38 @@ describe('defineCard', () => {
       const node = new musicPlayer.node({ src: 'https://example.com/song.mp3' })
       expect(node).toBeInstanceOf(InklingDecoratorNode)
       expect($isInklingCard(node)).toBe(true)
+    })
+  })
+
+  it('threads the spec type onto card.node: const-asserted spec arrays resolve typed __* fields and accessors', () => {
+    const editor = createHeadlessEditor({ nodes: [typedWidget.node], onError: () => {} })
+
+    editor.update(() => {
+      const node = new typedWidget.node({ body: '<p>x</p>' })
+
+      // positive pins: the spec-derived field names AND value types — the
+      // nested editor honors its `nullable: true`, the transient accessor
+      // carries its `initial` lambda's return type
+      const bodyEditor: LexicalEditor | null = node.__bodyEditor
+      const initialState: EditorState | undefined = node.__bodyEditorInitialState
+      const flag: boolean = node.__triggerFileDialog
+      expect(bodyEditor).not.toBeNull()
+      expect(initialState).toBeUndefined()
+      expect(flag).toBe(false)
+
+      // the accessor pair is genuinely defined on the assembled prototype
+      node.triggerFileDialog = true
+      expect(node.__triggerFileDialog).toBe(true)
+
+      // negative pins: undeclared fields, widened nullability, and wrong
+      // accessor value types are all compile errors
+      // @ts-expect-error — no spec entry named 'missing'
+      void node.__missing
+      // @ts-expect-error — the entry is nullable: true, so the field is LexicalEditor | null
+      const nonNull: LexicalEditor = node.__bodyEditor
+      void nonNull
+      // @ts-expect-error — the accessor value type is boolean
+      node.triggerFileDialog = 'yes'
     })
   })
 

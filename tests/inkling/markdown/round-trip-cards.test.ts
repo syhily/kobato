@@ -1,5 +1,7 @@
-import type { LexicalNode } from 'lexical'
+import type { LexicalNode, SerializedEditorState } from 'lexical'
 
+import { createHeadlessEditor } from '@lexical/headless'
+import { $getRoot } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
 import type { SerializedAudioNode } from '@/inkling/nodes/AudioNode'
@@ -16,6 +18,7 @@ import type { SerializedVideoNode } from '@/inkling/nodes/VideoNode'
 
 import { lexicalStateToMarkdown, markdownToLexicalState } from '@/inkling/markdown/round-trip'
 import { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-node'
+import { getHostCardNodes } from '@/inkling/nodes/cards/host-card-nodes'
 import { defineCard, type HostCard } from '@/inkling/nodes/cards/host-cards'
 
 function inklingCard(card: string, data: Record<string, unknown>) {
@@ -213,9 +216,12 @@ describe('Markdown round-trip for decorator cards', function () {
 })
 
 describe('Markdown round-trip for host cards', function () {
-  // A host card (CONTEXT.md: "host card") joins the round-trip through the
-  // `cards` option: its node class registers on the conversion editor and its
-  // fence transformer joins the card run.
+  // A host card (CONTEXT.md: "host card") joins the round-trip through
+  // registration alone (registry-default wiring): its assembled node class
+  // registers on the conversion editor and its fence transformer is derived
+  // from the stored spec. The `cards` option augments the default for
+  // handles built without defineCard (and overrides a registered type on
+  // collision) — passing the registered handle back is an idempotent no-op.
   const musicPlayer: HostCard<'musicPlayer'> = defineCard({
     nodeType: 'musicPlayer',
     baseNode: generateDecoratorNode({
@@ -232,7 +238,29 @@ describe('Markdown round-trip for host cards', function () {
     },
   })
 
-  it('round-trips a host card fence through the cards option', function () {
+  // A fence-less registered host card: its node class joins the conversion
+  // editor (a serialized state containing it parses), but no `inkling:` fence
+  // maps to it — the fence stays an opt-in (`markdownFence`).
+  defineCard({
+    nodeType: 'fencelessWidget',
+    baseNode: generateDecoratorNode({ nodeType: 'fencelessWidget' }),
+    toolbarLabel: 'fenceless-widget',
+    render: () => null,
+  })
+
+  it('speaks the registered host fence by default, without the cards option', function () {
+    const markdown = inklingCard('musicPlayer', { src: 'https://example.com/song.mp3' })
+    const state = markdownToLexicalState(markdown)
+
+    const node = state.root.children[0] as unknown as { type: string; src: string }
+    expect(node.type).toBe('musicPlayer')
+    expect(node.src).toBe('https://example.com/song.mp3')
+
+    const exported = lexicalStateToMarkdown(state)
+    expect(exported.trim()).toBe(markdown)
+  })
+
+  it('keeps the cards option working as an augment (idempotent for the registered handle)', function () {
     const markdown = inklingCard('musicPlayer', { src: 'https://example.com/song.mp3' })
     const state = markdownToLexicalState(markdown, { cards: [musicPlayer] })
 
@@ -244,12 +272,28 @@ describe('Markdown round-trip for host cards', function () {
     expect(exported.trim()).toBe(markdown)
   })
 
-  it('does not speak the host fence without the cards option', function () {
-    const markdown = inklingCard('musicPlayer', { src: 'https://example.com/song.mp3' })
-    const state = markdownToLexicalState(markdown)
+  it('parses a state containing a fence-less registered host card, but speaks no fence for it', function () {
+    // the node class joined the conversion editor through the registry
+    // default (the getHostCardNodes projection) — a state holding the node
+    // parses instead of throwing on an unknown type…
+    const fencelessClass = getHostCardNodes().find((node) => node.getType() === 'fencelessWidget')
+    expect(fencelessClass).toBeDefined()
+    const source = createHeadlessEditor({ nodes: getHostCardNodes(), onError: () => {} })
+    let state: SerializedEditorState | undefined
+    source.update(
+      () => {
+        $getRoot().append(new fencelessClass!())
+      },
+      { discrete: true },
+    )
+    state = source.getEditorState().toJSON()
+    expect(() => lexicalStateToMarkdown(state)).not.toThrow()
 
-    const node = state.root.children[0] as unknown as { type: string }
-    expect(node.type).not.toBe('musicPlayer')
+    // …but with no markdownFence the card speaks no fence: its would-be tag
+    // falls through to the code-fence import, never to a card node
+    const imported = markdownToLexicalState(inklingCard('fencelessWidget', {}))
+    const node = imported.root.children[0] as unknown as { type: string }
+    expect(node.type).not.toBe('fencelessWidget')
   })
 })
 

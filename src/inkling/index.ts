@@ -138,6 +138,10 @@ export type { FootnoteDefinitionNodeDataset } from '@/inkling/nodes/FootnoteDefi
  * picked card classes instead of forking DEFAULT_NODES. */
 export { defineCard } from '@/inkling/nodes/cards/host-cards'
 export type { HostCard, HostCardMenuEntrySpec, HostCardSpec } from '@/inkling/nodes/cards/host-cards'
+/* The host-card node-set projection: every registered host card's assembled
+ * class in registration order, so a host composes `...getHostCardNodes()`
+ * into its node set instead of hand-spreading each handle's `node`. */
+export { getHostCardNodes } from '@/inkling/nodes/cards/host-card-nodes'
 
 /* The shared card-insert dispatch target: a host that intercepts a per-card
  * INSERT_* command to construct its OWN node class (kobato's KobatoImageNode
@@ -170,6 +174,7 @@ export { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-n
 export type {
   CardSpecAccessorMap,
   CardSpecFieldMap,
+  CardSpecFieldMapFor,
   CardSpecFieldNames,
   DecoratorNodeProperty,
   NestedEditorSpec,

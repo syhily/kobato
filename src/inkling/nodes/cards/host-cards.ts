@@ -20,11 +20,16 @@ export type { HostCardMenuEntrySpec, HostCardSpec } from '@/inkling/nodes/cards/
  * The handle `defineCard` returns: the assembled node class to compose into
  * `<InklingComposer nodes>`, and the fence transformer to pass to the
  * markdown round-trip's `cards` option when the spec carries `markdownFence`.
+ * The `Spec` parameter carries the declaration's own type through: with
+ * const-asserted `nestedEditors`/`transientProps` arrays, `card.node`'s
+ * instance side resolves the spec-derived `__*` fields and accessors
+ * (`CardSpecFieldMap`/`CardSpecAccessorMap`) — the same typing the built-in
+ * declarations get, no host-side `declare` blocks.
  */
-export interface HostCard<NodeType extends string = string> {
+export interface HostCard<NodeType extends string = string, Spec = unknown> {
   nodeType: NodeType
   /** the assembled card class — the host composes it into `<InklingComposer nodes>` */
-  node: CardNodeClass<LexicalNode>
+  node: CardNodeClass<LexicalNode, Spec>
   /** present only when the spec carries `markdownFence`; passed to the markdown round-trip's `cards` option */
   markdownTransformer?: MultilineElementTransformer
 }
@@ -43,14 +48,30 @@ export interface HostCard<NodeType extends string = string> {
  * icon, decorate target, insert registration, upload type, toolbar label)
  * is derived by the views through the same projectors the built-in
  * declarations flow through.
+ *
+ * Type preservation: the `Spec` parameter captures the spec's own type, so
+ * const-asserted `nestedEditors`/`transientProps` arrays (`as const
+ * satisfies …`, the base node module idiom) land their literal `__*` field
+ * names and value types on the returned `card.node` — a non-const inline
+ * array widens its entry names to `string` under contextual typing and the
+ * field map degrades to the loose `__${string}` pattern, never a compile
+ * error.
  */
-export function defineCard<NodeType extends string, B extends CardBaseNodeClass>(
-  spec: Omit<HostCardSpec<NodeType>, 'baseNode' | 'render'> & {
+export function defineCard<
+  NodeType extends string,
+  B extends CardBaseNodeClass,
+  // the constraint keeps `baseNode` (as the registry's CardBaseNodeClass) so
+  // Spec provably satisfies CardAssemblyDeclaration; the parameter
+  // intersection re-narrows it to the host's own class for InstanceType
+  Spec extends Omit<HostCardSpec<NodeType>, 'render'>,
+>(
+  spec: Spec & {
+    nodeType: NodeType
     baseNode: B
     /** the decorate render — its node is InstanceType of YOUR baseNode class (a generateDecoratorNode product carries the dataset-typed instance) */
     render(node: InstanceType<B>): ReactNode
   },
-): HostCard<NodeType> {
+): HostCard<NodeType, Spec> {
   // $isInklingCard gates on `instanceof InklingDecoratorNode` and the
   // exportDOM contract assumes the generated machinery — the honest boundary
   // is to require the base to extend it (build bases with
@@ -65,10 +86,10 @@ export function defineCard<NodeType extends string, B extends CardBaseNodeClass>
     throw new Error(`[defineCard] '${spec.nodeType}': a card with this nodeType is already declared`)
   }
 
-  const node = assembleCardNodeOnce<LexicalNode>(spec)
+  const node = assembleCardNodeOnce<LexicalNode, Spec>(spec)
   registerHostCard({ nodeType: spec.nodeType, spec })
 
-  const host: HostCard<NodeType> = { nodeType: spec.nodeType, node }
+  const host: HostCard<NodeType, Spec> = { nodeType: spec.nodeType, node }
   if (spec.markdownFence) {
     host.markdownTransformer = createCardTransformer({ card: spec.nodeType, nodeClass: node, ...spec.markdownFence })
   }

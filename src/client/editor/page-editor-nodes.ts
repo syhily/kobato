@@ -1,11 +1,15 @@
 // The page/article editor's composer node set (plan
 // docs/plans/inkling-editor-replacement.md, R11/M3): EDITOR_BASE_NODES minus
 // AsideNode, the whitelisted card classes, the two inline/entity tails, and
-// the three kobato host cards. Every mounted type must stay inside
-// FULL_EDITOR_NODE_TYPES (`@/shared/lexical/node-whitelist`) — the editor
-// must never produce a node the storage schema rejects; the contract test
-// (tests/unit/shared/contracts/lexical-node-whitelist.test.ts) pins this
-// list's types against the whitelist and `ARTICLE_COMPOSER_NODE_TYPES`.
+// the kobato host cards — composed through the registry projection
+// (`getHostCardNodes`) instead of hand-spread handles; the side-effect
+// imports below are what run the cards' top-level `defineCard`
+// registrations (registration order here = projection order). Every mounted
+// type must stay inside FULL_EDITOR_NODE_TYPES (`@/shared/lexical/node-whitelist`)
+// — the editor must never produce a node the storage schema rejects; the
+// contract test (tests/unit/shared/contracts/lexical-node-whitelist.test.ts)
+// pins this list's types against the whitelist and
+// `ARTICLE_COMPOSER_NODE_TYPES`.
 //
 // `image` registers KobatoImageNode — NEVER alongside the stock assembled
 // ImageNode (Lexical keys registrations by type). The stock class is
@@ -16,16 +20,17 @@
 // both mount anyway because hasNodes is type-gated) are intercepted by
 // `@/client/editor/image-insert-override` at HIGH priority.
 
+import '@/client/editor/cards/music-player'
+import '@/client/editor/cards/solution'
+import '@/client/editor/cards/two-column'
 import { excludeBaseNodes } from '@/client/editor/base-node-filter'
-import { musicPlayerCard } from '@/client/editor/cards/music-player'
-import { solutionCard } from '@/client/editor/cards/solution'
-import { twoColumnCard } from '@/client/editor/cards/two-column'
 import { KobatoImageNode } from '@/client/editor/kobato-image-node'
 import {
   CodeBlockNode,
   EDITOR_BASE_NODES,
   FootnoteDefinitionNode,
   FootnoteRefNode,
+  getHostCardNodes,
   HorizontalRuleNode,
   MathInlineNode,
   MathNode,
@@ -46,7 +51,5 @@ export const PAGE_EDITOR_NODES = [
   FootnoteDefinitionNode,
   MathInlineNode,
   FootnoteRefNode,
-  solutionCard.node,
-  twoColumnCard.node,
-  musicPlayerCard.node,
+  ...getHostCardNodes(),
 ]

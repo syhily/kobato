@@ -223,7 +223,7 @@ export const musicPlayerCard = defineCard({
   menu: [
     {
       label: '音乐播放器',
-      labelKey: 'music-player',
+      labelKey: 'host.music-player',
       desc: '嵌入一首音乐库中的歌曲',
       icon: Music2Icon,
       command: 'insert',
