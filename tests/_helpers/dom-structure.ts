@@ -15,6 +15,8 @@ export interface StructureNode {
   classes: string[]
   /** data-* attributes, keyed without the `data-` prefix. */
   data: Record<string, string>
+  /** Non-data attributes named by `attributes` (e.g. `src`, `alt`). */
+  attributes: Record<string, string>
   /** Whitespace-collapsed direct text — present only under `compareText`. */
   text?: string
   children: StructureNode[]
@@ -34,6 +36,10 @@ export interface StructureCompareOptions {
    * the `data-` prefix); defaults to every data-* attribute. Pass `[]` when
    * the compared pair carries no shared data contract. */
   dataAttributes?: readonly string[]
+  /** Also capture and compare these non-data attributes (e.g. `['src',
+   * 'alt']` to pin a cover `<img>`'s payload). Names are matched verbatim;
+   * an attribute absent on one side diffs like a data-* mismatch. */
+  attributes?: readonly string[]
   /** Also compare whitespace-normalized direct text content. */
   compareText?: boolean
 }
@@ -56,6 +62,13 @@ function toStructureNode(element: Element, options: StructureCompareOptions): St
     }
     data[key] = attribute.value
   }
+  const attributes: Record<string, string> = {}
+  for (const name of options.attributes ?? []) {
+    const value = element.getAttribute(name)
+    if (value !== null) {
+      attributes[name] = value
+    }
+  }
   const children: StructureNode[] = []
   for (const child of element.children) {
     const node = toStructureNode(child, options)
@@ -63,7 +76,7 @@ function toStructureNode(element: Element, options: StructureCompareOptions): St
       children.push(node)
     }
   }
-  const node: StructureNode = { tag: element.tagName.toLowerCase(), classes, data, children }
+  const node: StructureNode = { tag: element.tagName.toLowerCase(), classes, data, attributes, children }
   if (options.compareText) {
     let text = ''
     for (const child of element.childNodes) {
@@ -94,18 +107,23 @@ export function structureFromHtml(html: string, options: StructureCompareOptions
   return roots
 }
 
-function diffData(actual: Record<string, string>, expected: Record<string, string>, path: string): string[] {
+function diffRecord(
+  actual: Record<string, string>,
+  expected: Record<string, string>,
+  path: string,
+  label: (key: string) => string,
+): string[] {
   const diffs: string[] = []
   for (const key of Object.keys(expected)) {
     if (!(key in actual)) {
-      diffs.push(`${path}: missing data-${key}="${expected[key]}"`)
+      diffs.push(`${path}: missing ${label(key)}="${expected[key]}"`)
     } else if (actual[key] !== expected[key]) {
-      diffs.push(`${path}: data-${key}="${actual[key]}" vs "${expected[key]}"`)
+      diffs.push(`${path}: ${label(key)}="${actual[key]}" vs "${expected[key]}"`)
     }
   }
   for (const key of Object.keys(actual)) {
     if (!(key in expected)) {
-      diffs.push(`${path}: unexpected data-${key}="${actual[key]}"`)
+      diffs.push(`${path}: unexpected ${label(key)}="${actual[key]}"`)
     }
   }
   return diffs
@@ -119,7 +137,8 @@ function diffNode(actual: StructureNode, expected: StructureNode, path: string):
   if (actual.classes.join(' ') !== expected.classes.join(' ')) {
     diffs.push(`${path}: classes "${actual.classes.join(' ')}" vs "${expected.classes.join(' ')}"`)
   }
-  diffs.push(...diffData(actual.data, expected.data, path))
+  diffs.push(...diffRecord(actual.data, expected.data, path, (key) => `data-${key}`))
+  diffs.push(...diffRecord(actual.attributes, expected.attributes, path, (key) => key))
   if (actual.text !== expected.text) {
     diffs.push(`${path}: text ${JSON.stringify(actual.text)} vs ${JSON.stringify(expected.text)}`)
   }

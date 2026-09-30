@@ -213,7 +213,7 @@ describe('host card parity — music-player', () => {
     expect(canvas).toContain('Artist')
     expect(canvas).toContain('/storage/music/cover.png')
     expect(canvas).toContain('aria-label="播放"')
-    expect(canvas).toContain('0:00')
+    expect(canvas).toContain('00:00')
     expect(canvas).toContain('--:--')
   })
 

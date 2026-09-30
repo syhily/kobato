@@ -68,7 +68,7 @@ describe('ui/public/music-player/music-player', () => {
     expect(html).toContain('Test Song')
     expect(html).toContain('Test Artist')
     expect(html).toContain('https://example.com/cover.jpg')
-    expect(html).toContain('0:00')
+    expect(html).toContain('00:00')
     expect(html).toContain('--:--')
   })
 
@@ -163,6 +163,42 @@ describe('ui/public/music-player/music-player', () => {
       compareText: true,
     })
     expect(diffs).toEqual([])
+  })
+
+  it('pins the fallback cover markup the skeleton comparison prunes away', () => {
+    // The parity pin above prunes `img` on BOTH sides, so the fallback's
+    // cover payload never gets compared — pin it directly: tag, the
+    // fallbackCover classes, and that src/alt carry the meta snapshot.
+    const fallbackHtml = musicPlayerFallbackHtml(baseMeta, escapeText)
+    const [fallback, ...rest] = structureFromHtml(fallbackHtml, { attributes: ['src', 'alt'] })
+    expect(rest).toEqual([])
+    const img = fallback?.children[0]?.children[0]
+    expect(img?.tag).toBe('img')
+    expect(img?.classes).toEqual(MUSIC_PLAYER_CARD_CLASSES.fallbackCover.split(/\s+/).sort())
+    expect(img?.attributes).toEqual({ src: baseMeta.cover, alt: baseMeta.name })
+  })
+
+  it('renders the no-cover glyph fallback with the surviving skeleton still aligned', () => {
+    const noCoverMeta: MusicPlayerCardMeta = { ...baseMeta, cover: '' }
+    const playerHtml = renderToStaticMarkup(<MusicPlayerCard {...base} cover={undefined} />)
+    const fallbackHtml = musicPlayerFallbackHtml(noCoverMeta, escapeText)
+    // The glyph branch is not directly comparable under the chrome prune:
+    // the hydrated glyph lives inside the pruned cover button while the
+    // fallback glyph (the only aria-hidden element here) is a direct body
+    // child — prune it too so the meta/progress skeleton still diffs.
+    const diffs = diffHtmlStructures(playerHtml, fallbackHtml, {
+      prune: ['button', 'svg', 'img', '.absolute', '[class*="group/volume"]', '[aria-hidden]'],
+      classTokens: SKELETON_TOKENS,
+      dataAttributes: [],
+      compareText: true,
+    })
+    expect(diffs).toEqual([])
+    // …and pin the fallback's glyph branch itself.
+    const [fallback] = structureFromHtml(fallbackHtml, { compareText: true })
+    const glyph = fallback?.children[0]?.children[0]
+    expect(glyph?.tag).toBe('span')
+    expect(glyph?.classes).toEqual(MUSIC_PLAYER_CARD_CLASSES.fallbackGlyph.split(/\s+/).sort())
+    expect(glyph?.text).toBe('🎵')
   })
 
   it('exports the mount point with exactly the data attributes the hydrator consumes', () => {

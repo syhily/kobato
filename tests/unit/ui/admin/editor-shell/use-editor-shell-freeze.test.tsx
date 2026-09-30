@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 // Merged autosave freeze end-to-end: both sources merge into the single
 // `draft.freeze` gate. Mock seam — slot order matches useMutation call
-// order in use-editor-shell-persist: 0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
+// order in use-editor-shell-persist-mutations: 0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
 
 interface MutationSlot {
   onSuccess?: (data: never) => void
