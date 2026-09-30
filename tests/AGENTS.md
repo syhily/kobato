@@ -140,6 +140,8 @@ ceremony:
     `lexicalMusicPlayer`) + `stubMusicResolver` for `saveBody` inputs
   - `#/_helpers/deep-freeze` — recursive `Object.freeze` for fixtures that
     must stay mutation-proof across tests
+  - `#/_helpers/dom-structure` — normalized DOM-tree diff for markup parity
+    pins (a rendered React tree vs its hand-written HTML twin)
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/analytics-db` — DuckDB sidecar creation / seeding / teardown
     (analytics integration tests)
