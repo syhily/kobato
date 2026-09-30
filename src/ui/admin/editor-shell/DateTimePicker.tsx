@@ -27,14 +27,21 @@ const CALENDAR_FORMATTERS = {
 
 const CALENDAR_COMPONENTS = { Dropdown: CalendarDropdown }
 
+// Placeholder center for the pre-open year window — the calendar mounts only
+// once the popover opens, and the open handler re-anchors on the real year.
+const PRE_OPEN_YEAR = 2000
+
 export function DateTimePicker({ value, onChange, disabled, id }: DateTimePickerProps) {
   const [open, setOpen] = useState(false)
   const parsed = parseLocalDateTimeInput(value)
   const triggerId = id ?? 'datetime-picker'
 
+  // "Now" is render-impure, so the calendar's year window anchors on the
+  // popover-open event instead of render; before the first open the calendar
+  // is not mounted and the placeholder window is never painted.
+  const [openedYear, setOpenedYear] = useState<number | null>(null)
   const { startMonth, endMonth } = useMemo(() => {
-    const now = new Date()
-    const currentYear = now.getFullYear()
+    const currentYear = openedYear ?? parsed?.getFullYear() ?? PRE_OPEN_YEAR
     const selectedYear = parsed?.getFullYear() ?? currentYear
     const oldestYear = Math.min(currentYear - 30, selectedYear)
     const newestYear = Math.max(currentYear + 2, selectedYear)
@@ -42,7 +49,14 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
       startMonth: new Date(oldestYear, 0, 1),
       endMonth: new Date(newestYear, 11, 31),
     }
-  }, [parsed])
+  }, [parsed, openedYear])
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (nextOpen) {
+      setOpenedYear(new Date().getFullYear())
+    }
+  }
 
   const commit = (next: Date) => {
     onChange(dateToLocalInputValue(next))
@@ -96,7 +110,7 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
   const currentIsPm = parsed === null ? null : parsed.getHours() >= 12
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger
         render={
           <Button

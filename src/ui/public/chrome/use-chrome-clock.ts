@@ -10,6 +10,9 @@ const REFRESH_MS = 60_000
  */
 export function useChromeClock(): Date {
   const nowIso = useRouteLoaderData<{ nowIso?: string }>('root')?.nowIso
+  // Router-less renders (tests) have no loader clock — anchor on a mount-time
+  // reading instead (the lazy initializer keeps render pure).
+  const [fallbackNow] = useState(() => new Date())
   const [mountedNow, setMountedNow] = useState<Date | null>(null)
   useEffect(() => {
     const tick = () => setMountedNow(new Date())
@@ -17,6 +20,5 @@ export function useChromeClock(): Date {
     const id = setInterval(tick, REFRESH_MS)
     return () => clearInterval(id)
   }, [])
-  // The `new Date()` fallback only fires in router-less test renders.
-  return mountedNow ?? (nowIso === undefined ? new Date() : new Date(nowIso))
+  return mountedNow ?? (nowIso === undefined ? fallbackNow : new Date(nowIso))
 }

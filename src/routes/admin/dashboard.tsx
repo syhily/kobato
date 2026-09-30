@@ -1,4 +1,4 @@
-import { Suspense, use } from 'react'
+import { Suspense, use, useState } from 'react'
 import { browser } from 'react-dom'
 
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -88,7 +88,10 @@ function greetingForHour(hour: number): string {
 
 function Greeting({ name }: { name: string }) {
   use(browser())
-  return <>{`${greetingForHour(new Date().getHours())}，${name}`}</>
+  // Client-only once the recoverable boundary above resolves, so the hour
+  // initializes once from the client clock instead of reading it per render.
+  const [hour] = useState(() => new Date().getHours())
+  return <>{`${greetingForHour(hour)}，${name}`}</>
 }
 
 export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
