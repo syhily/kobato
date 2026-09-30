@@ -92,7 +92,7 @@ export function hasMusicPlayerMeta(meta: MusicPlayerCardMeta): boolean {
  * The static fallback card markup (inside the `.aplayer` mount point,
  * replaced by the hydrated `MusicPlayerCard`; the decorate chrome renders the
  * same structure from these constants). It mirrors the player's paused
- * initial render — cover/glyph + meta + an inert progress row (`0:00` /
+ * initial render — cover/glyph + meta + an inert progress row (`00:00` /
  * `--:--` + empty track) — so the hydration swap does not shift layout.
  * `escape` is the caller's text escaper — the server renderer passes
  * `context.escapeText`, the React side relies on JSX escaping and never
@@ -104,7 +104,7 @@ export function musicPlayerFallbackHtml(meta: MusicPlayerCardMeta, escape: (valu
       ? `<span class="${MUSIC_PLAYER_CARD_CLASSES.fallbackGlyph}" aria-hidden="true">🎵</span>`
       : `<img class="${MUSIC_PLAYER_CARD_CLASSES.fallbackCover}" src="${escape(meta.cover)}" alt="${escape(meta.name)}" />`
   const body = `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackBody}">${cover}<div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackMeta}"><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackName}">${escape(meta.name)}</div><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackArtist}">${escape(meta.artist)}</div></div></div>`
-  const progress = `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackProgress}"><span class="${MUSIC_PLAYER_CARD_CLASSES.fallbackTime}">0:00</span><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackBar}"><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackBarTrack}"></div></div><span class="${MUSIC_PLAYER_CARD_CLASSES.fallbackTimeTotal}">--:--</span></div>`
+  const progress = `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackProgress}"><span class="${MUSIC_PLAYER_CARD_CLASSES.fallbackTime}">00:00</span><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackBar}"><div class="${MUSIC_PLAYER_CARD_CLASSES.fallbackBarTrack}"></div></div><span class="${MUSIC_PLAYER_CARD_CLASSES.fallbackTimeTotal}">--:--</span></div>`
   return `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallback}" data-music-player-fallback="">${body}${progress}</div>`
 }
 

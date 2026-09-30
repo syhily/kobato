@@ -160,6 +160,7 @@ describe('ui/public/music-player/music-player', () => {
       // No hydrator-consumed data-* lives on the card itself — the mount
       // point carries those, pinned by the mount-point test below.
       dataAttributes: [],
+      compareText: true,
     })
     expect(diffs).toEqual([])
   })
