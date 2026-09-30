@@ -138,6 +138,23 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   it without import cycles) — a neutral fact store whose projections every derived view computes
   through the same projectors the built-in declarations use, intersected with each editor's
   registered node types.
+- The **pick seam** (CONTEXT.md: "pick seam", "entity-backed card") is the host-card counterpart
+  of the decorate slot: a host card whose dataset references a host-owned entity (kobato's music
+  library row) declares a `picker` on its `defineCard` spec — `{ render, autoOpenOnInsert? }`; the
+  dialog itself lives in host code. Dispatch rides a per-composer composer handle
+  (`src/inkling/plugins/behaviour/cardPickerStore.ts`, created in `ComposerHandlesProvider`,
+  context binding in `src/inkling/context/CardPickerStoreContext.tsx`): the card component calls
+  `useCardPicker().open(nodeKey)` (placeholder click, replace affordance), or the insert registrar
+  writes the request when `autoOpenOnInsert` is set — the insert-COMMAND channel only, so
+  editor-state loads never trigger a picker. `CardPickerHostPlugin` (a `CORE_PLUGINS` entry gated
+  to non-nested, non-read-only surfaces — nested composers share the top-level handle, so a nested
+  mount would render the active picker twice) subscribes to the store, resolves the spec through
+  `resolveCardFacts`, and mounts `picker.render({ editor, nodeKey, close })` for the active
+  request, dropping it when the node leaves the document. Everything crosses the boundary by node
+  KEY, never the node instance (Lexical #195); pick writes resolve the latest instance inside
+  `editor.update()` through the card write seam (`useCardChrome`). The registry field is type-only
+  React, so the headless surface stays free of the seam (pinned in
+  `tests/inkling/unit/plugins/card-picker.test.tsx`).
 - Each card has a renderer under `src/inkling/nodes/base/nodes/<card>/`. The same per-card module
   houses the card's transient/nested-editor spec arrays (imported by its declaration); the shared
   caption spec core lives beside them in `base/nodes/caption-editor-spec.ts` — its MINIMAL_NODES

@@ -14,6 +14,7 @@ import type { HiddenFormat } from '@/inkling/plugins/behaviour/format-toolbar'
 import type { ExternalControlAPI } from '@/inkling/plugins/ExternalControlPlugin'
 
 import InklingErrorBoundary from '@/inkling/components/InklingErrorBoundary'
+import CardPickerHostPlugin from '@/inkling/plugins/CardPickerHostPlugin'
 import DragDropPastePlugin from '@/inkling/plugins/DragDropPastePlugin'
 import DragDropReorderPlugin from '@/inkling/plugins/DragDropReorderPlugin'
 import { ExternalControlPlugin } from '@/inkling/plugins/ExternalControlPlugin'
@@ -148,6 +149,15 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
       ) : null,
   },
   { key: 'drag-drop-paste', render: () => <DragDropPastePlugin /> },
+  {
+    key: 'card-picker-host',
+    // The pick seam's picker host (CONTEXT.md: "pick seam"): top-level
+    // editable surfaces only — nested composers share the top-level pick
+    // store, so a nested mount would render the active picker twice, and a
+    // read-only surface never originates pick requests.
+    when: (scope) => !scope.isNested && !scope.readOnly,
+    render: () => <CardPickerHostPlugin />,
+  },
   {
     key: 'external-control',
     when: (scope) => scope.registerAPI !== undefined,

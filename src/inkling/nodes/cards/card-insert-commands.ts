@@ -12,6 +12,12 @@ export interface CardInsertRegistration {
   node: Klass<LexicalNode>
   command: LexicalCommand<unknown>
   insert: CardInsertSpec
+  /**
+   * Host cards whose picker spec carries `autoOpenOnInsert` (CONTEXT.md:
+   * "pick seam"): the registrar opens the card's picker on the freshly
+   * inserted node. Built-in entries never carry it — pickers are host-only.
+   */
+  pickerAutoOpen?: boolean
 }
 
 /**
@@ -77,6 +83,7 @@ export function getCardInsertRegistrations(): CardInsertRegistration[] {
         node: assembleCardNodeOnce<LexicalNode>(facts.host.spec),
         command: resolveCardInsertCommand(facts.nodeType),
         insert,
+        pickerAutoOpen: facts.host.spec.picker?.autoOpenOnInsert === true,
       },
     ]
   })

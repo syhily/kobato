@@ -17,6 +17,7 @@ import DEFAULT_NODES, { EDITOR_BASE_NODES } from '@/inkling/nodes/DefaultNodes'
 /* Plugins */
 import CardInsertPlugin from '@/inkling/plugins/CardInsertPlugin'
 import CardMenuPlugin from '@/inkling/plugins/CardMenuPlugin'
+import CardPickerHostPlugin from '@/inkling/plugins/CardPickerHostPlugin'
 import DefaultFeaturePlugins, { DEFAULT_FEATURE_PLUGINS } from '@/inkling/plugins/DefaultFeaturePlugins'
 import DragDropPastePlugin from '@/inkling/plugins/DragDropPastePlugin'
 import DragDropReorderPlugin from '@/inkling/plugins/DragDropReorderPlugin'
@@ -144,8 +145,10 @@ export type { HostCard, HostCardMenuEntrySpec, HostCardSpec } from '@/inkling/no
  * assembled class, silently dropping host-declared dataset keys) hands its
  * instance to the same selection/scroll choreography the built-in path uses
  * by re-dispatching INSERT_CARD_COMMAND. The per-card INSERT_* commands ride
- * the shim exports above. */
-export { INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
+ * the shim exports above. DELETE_CARD_COMMAND is the removal half of the same
+ * protocol — a host card's chrome dispatches it so removal gets the built-in
+ * sibling-selection/focus choreography instead of a bare node.remove(). */
+export { DELETE_CARD_COMMAND, INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 export type { OpenCardInEditModePayload } from '@/inkling/plugins/behaviour/types'
 
 /* The image-library open command (kobato R11): with a host subclass
@@ -195,6 +198,7 @@ export {
   DEFAULT_FEATURE_PLUGINS,
   CardInsertPlugin,
   CardMenuPlugin,
+  CardPickerHostPlugin,
   DragDropPastePlugin,
   DragDropReorderPlugin,
   EmEnDashPlugin,

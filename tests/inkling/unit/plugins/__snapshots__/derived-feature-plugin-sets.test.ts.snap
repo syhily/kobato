@@ -12,6 +12,7 @@ exports[`core plugin set > pins the default surface plugin keys 1`] = `
     "markdown-shortcut",
     "floating-toolbar",
     "drag-drop-paste",
+    "card-picker-host",
     "external-control",
     "drag-drop-reorder",
     "restrict-content",

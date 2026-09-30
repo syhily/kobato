@@ -1,4 +1,4 @@
-import type { LexicalCommand, LexicalNode } from 'lexical'
+import type { LexicalCommand, LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 import type { ComponentType, ReactNode, SVGProps } from 'react'
 
 import type {
@@ -28,6 +28,41 @@ export type HostCardMenuEntrySpec = Omit<CardMenuEntrySpec, 'icon' | 'command'> 
 }
 
 /**
+ * The props a host card's picker render receives (CONTEXT.md: "pick seam").
+ * `nodeKey` — not the node instance — crosses the boundary: pick writes
+ * resolve the latest instance by key inside `editor.update()` (the generated
+ * setters' getWritable does the same), so a render that outlives an edit
+ * never touches a detached node (Lexical #195). `close` dismisses the picker
+ * without picking. The render is called by the picker host plugin inside the
+ * composer tree — return an element (hooks live on that element's component),
+ * never call hooks in the render body itself.
+ */
+export interface CardPickerRenderProps {
+  /** the top-level editor the card lives in */
+  editor: LexicalEditor
+  /** the card node the pick targets */
+  nodeKey: NodeKey
+  /** dismiss the picker without picking */
+  close: () => void
+}
+
+/**
+ * An entity-backed host card's picker (CONTEXT.md: "entity-backed card",
+ * "pick seam"): the host-owned dialog that resolves the card's entity (a
+ * library row, an upload, …) onto the node dataset. The card component opens
+ * it through `useCardPicker()`; the picker host plugin
+ * (`@/inkling/plugins/CardPickerHostPlugin`, a core entry) renders
+ * `picker.render(...)` for the active request. With `autoOpenOnInsert`, the
+ * insert registrar opens the picker on the freshly inserted node — the
+ * insert-command channel only, so editor-state loads never trigger it.
+ */
+export interface HostCardPickerSpec {
+  render: (props: CardPickerRenderProps) => ReactNode
+  /** open the picker immediately when an insert command creates the card */
+  autoOpenOnInsert?: boolean
+}
+
+/**
  * The host card declaration (CONTEXT.md: "host card") — every
  * `CardDeclaration` field except `menu`/`dragIcon`/`markdown`, plus the
  * React half the built-in cards attach one layer up (the `render*Card`
@@ -51,6 +86,12 @@ export interface HostCardSpec<NodeType extends string = string, TNode extends Le
    * no narrowing cast); name the second type argument to pin it explicitly.
    */
   render(node: TNode): ReactNode
+  /**
+   * The card's picker (CONTEXT.md: "pick seam") — see `HostCardPickerSpec`.
+   * Only host cards carry one: the built-in cards' editing chrome is
+   * layer-internal, while a host's entity dialog lives in host code.
+   */
+  picker?: HostCardPickerSpec
   IndicatorIcon?: ComponentType<SVGProps<SVGSVGElement>>
   menu?: readonly HostCardMenuEntrySpec[]
   dragIcon?: CardIconId | ComponentType<SVGProps<SVGSVGElement>>
