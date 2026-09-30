@@ -86,9 +86,13 @@ export function musicPickMeta(music: AdminMusicDto): MusicPlayerCardMeta {
  * node. The pick write goes through the card write seam — it resolves the
  * latest node instance by key inside `editor.update()`, so a card deleted
  * while the dialog was open no-ops instead of throwing (the picker host also
- * drops the request on that delete).
+ * drops the request on that delete). On the insert-triggered open
+ * (`fromInsert` — the slash menu's autoOpenOnInsert) the write merges into
+ * the insert's history entry, so one Cmd+Z retracts insert and pick
+ * together; the toolbar replace affordance opens without the marker and its
+ * write stays a discrete undo entry.
  */
-export function MusicCardPicker({ nodeKey, close }: CardPickerRenderProps) {
+export function MusicCardPicker({ nodeKey, close, fromInsert }: CardPickerRenderProps) {
   const { write } = useCardChrome(nodeKey, isMusicPlayerCardNode)
   return (
     <MusicPickerDialog
@@ -100,14 +104,17 @@ export function MusicCardPicker({ nodeKey, close }: CardPickerRenderProps) {
       }}
       onPick={(music) => {
         const meta = musicPickMeta(music)
-        write((node) => {
-          node.playerId = meta.playerId
-          node.name = meta.name
-          node.artist = meta.artist
-          node.cover = meta.cover
-          node.audioUrl = meta.audioUrl
-          node.lyric = meta.lyric
-        })
+        write(
+          (node) => {
+            node.playerId = meta.playerId
+            node.name = meta.name
+            node.artist = meta.artist
+            node.cover = meta.cover
+            node.audioUrl = meta.audioUrl
+            node.lyric = meta.lyric
+          },
+          { mergeHistory: fromInsert === true },
+        )
         close()
       }}
     />

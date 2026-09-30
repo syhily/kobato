@@ -177,17 +177,33 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   the INSERT_CARD_COMMAND payload's `openPicker` flag — set by the insert registrar when
   `autoOpenOnInsert` is projected, or by a host's own intent command (kobato's image-library
   entry) — with `registerCardCommands` as the single write site. The command channel only, so
-  editor-state loads never trigger a picker. `CardPickerHostPlugin` (a `CORE_PLUGINS` entry gated
+  editor-state loads never trigger a picker; `open()` additionally no-ops on a non-editable
+  editor, so a read-only surface never originates a request even before the host's mount gate
+  runs. `CardPickerHostPlugin` (a `CORE_PLUGINS` entry gated
   to non-nested, non-read-only surfaces — nested composers share the top-level handle, so a nested
   mount would render the active picker twice) subscribes to the store, resolves the picker through
   the registry's one channel (`resolveCardPicker` in the host registry: the host spec's `picker`
   fact first, then the **variant override** — `registerCardPicker(nodeType, picker)` carries a
   picker for a card type with no host spec, e.g. a same-type subclass of a built-in card like
   kobato's KobatoImageNode, which `defineCard` hard-rejects; one picker per node type, enforced at
-  registration in both directions), and mounts `picker.render({ editor, nodeKey, close })` for the
-  active request, dropping it when the node leaves the document. Everything crosses the boundary
+  registration in both directions, and the override channel REJECTS `autoOpenOnInsert` — variant
+  inserts ride the built-in insert registration with no auto-open projection, so the host
+  dispatches its insert with `openPicker: true` from its own intent command, the
+  OPEN_IMAGE_LIBRARY_COMMAND idiom), and mounts
+  `picker.render({ editor, nodeKey, close, fromInsert })` for the active request. Lifecycle
+  guarantees, all pinned in
+  `tests/inkling/unit/plugins/card-picker.test.tsx`: the request drops when the node leaves the
+  document (an existence read at listener registration covers a deletion committed before the
+  effect attached, then the forward update listener), when the picker unregisters mid-session, and
+  on host unmount — the page editor flips `readOnly` on every save, and a store write that
+  outlived its host would re-open the picker unprompted on remount. Everything crosses the boundary
   by node KEY, never the node instance (Lexical #195); pick writes resolve the latest instance
-  inside `editor.update()` through the card write seam (`useCardChrome`). The registry field is
+  inside `editor.update()` through the card write seam (`useCardChrome`). An insert-channel
+  request carries `fromInsert` (written only at the `openPicker` write site) and the pick write
+  merges into the insert's history entry through the write seam's `mergeHistory` option
+  (Lexical's `HISTORY_MERGE_TAG`, applied inkling-side) — one Cmd+Z retracts insert and pick
+  together; placeholder/replace opens leave it unset, so those writes stay discrete undo entries.
+  The registry field is
   type-only React, so the headless surface stays free of the seam (pinned in
   `tests/inkling/unit/plugins/card-picker.test.tsx`). The barrel also re-exports Lexical's
   `COMMAND_PRIORITY_*` constants (hosts intercepting stock commands name the level instead of

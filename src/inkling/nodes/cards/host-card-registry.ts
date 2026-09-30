@@ -35,9 +35,15 @@ export type HostCardMenuEntrySpec = Omit<CardMenuEntrySpec, 'icon' | 'command'> 
  * resolve the latest instance by key inside `editor.update()` (the generated
  * setters' getWritable does the same), so a render that outlives an edit
  * never touches a detached node (Lexical #195). `close` dismisses the picker
- * without picking. The render is called by the picker host plugin inside the
- * composer tree — return an element (hooks live on that element's component),
- * never call hooks in the render body itself.
+ * without picking. `fromInsert` is true when the request rode the insert
+ * command (the host spec's `autoOpenOnInsert`, or an `openPicker: true`
+ * payload from the host's own intent command): the pick write should merge
+ * into the insert's undo entry through the write seam's `mergeHistory`
+ * option so one undo retracts insert and pick together — a replace write on
+ * a resolved card (fromInsert unset) stays a discrete undo entry. The render
+ * is called by the picker host plugin inside the composer tree — return an
+ * element (hooks live on that element's component), never call hooks in the
+ * render body itself.
  */
 export interface CardPickerRenderProps {
   /** the top-level editor the card lives in */
@@ -46,6 +52,8 @@ export interface CardPickerRenderProps {
   nodeKey: NodeKey
   /** dismiss the picker without picking */
   close: () => void
+  /** the request rode the insert command — merge the pick write into the insert's undo entry */
+  fromInsert?: boolean
 }
 
 /**
@@ -60,7 +68,14 @@ export interface CardPickerRenderProps {
  */
 export interface HostCardPickerSpec {
   render: (props: CardPickerRenderProps) => ReactNode
-  /** open the picker immediately when an insert command creates the card */
+  /**
+   * open the picker immediately when an insert command creates the card.
+   * Host-spec channel only (defineCard): the variant channel
+   * (`registerCardPicker`) rejects it — a variant card's inserts ride the
+   * built-in insert registration, which has no picker-auto-open projection;
+   * the host dispatches its insert with `openPicker: true` from its own
+   * intent command instead (kobato's OPEN_IMAGE_LIBRARY_COMMAND idiom).
+   */
   autoOpenOnInsert?: boolean
 }
 
@@ -163,9 +178,18 @@ const CARD_PICKER_OVERRIDES = new Map<string, HostCardPickerSpec>()
 /**
  * Registers a picker for a card type without a host card spec (the built-in
  * variant channel — see the map's comment). Throws when the type already has
- * a picker from either channel: one picker per node type.
+ * a picker from either channel: one picker per node type. Also throws on
+ * `autoOpenOnInsert`: a variant's inserts ride the built-in insert
+ * registration (no picker-auto-open projection — the flag would compile,
+ * register, and never fire), so the host dispatches its insert with
+ * `openPicker: true` from its own intent command instead.
  */
 export function registerCardPicker(nodeType: string, picker: HostCardPickerSpec): void {
+  if (picker.autoOpenOnInsert === true) {
+    throw new Error(
+      `[registerCardPicker] '${nodeType}': autoOpenOnInsert is host-spec-only — variant inserts ride the built-in insert registration, which never projects the flag. Dispatch the insert with openPicker: true from the host's own intent command instead (the OPEN_IMAGE_LIBRARY_COMMAND idiom)`,
+    )
+  }
   if (CARD_PICKER_OVERRIDES.has(nodeType) || getHostCard(nodeType)?.spec.picker !== undefined) {
     throw new Error(`[registerCardPicker] '${nodeType}': a picker is already registered for this nodeType`)
   }

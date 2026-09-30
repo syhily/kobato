@@ -7,10 +7,16 @@ import { createComposerHandle, type ComposerHandle } from '@/inkling/plugins/beh
  * host picker dialog is open for. `nodeType` rides along so the picker host
  * resolves the spec without reading the node — which may be deleted while
  * the dialog is open (the host drops the request on that update).
+ * `fromInsert` marks a request the INSERT_CARD_COMMAND choreography wrote
+ * (the `openPicker` payload flag — auto-opened or host-intent inserts): the
+ * pick write merges into the insert's undo entry so one Cmd+Z retracts
+ * insert and pick together. Placeholder/replace opens leave it unset, so
+ * their writes stay discrete undo entries.
  */
 export interface CardPickRequest {
   nodeKey: NodeKey
   nodeType: string
+  fromInsert?: boolean
 }
 
 export interface CardPickerState {

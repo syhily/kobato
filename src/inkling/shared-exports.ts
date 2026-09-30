@@ -78,6 +78,7 @@ export { registerCardPicker } from '@/inkling/nodes/cards/host-card-registry'
 export type { CardPickerRenderProps, HostCardPickerSpec } from '@/inkling/nodes/cards/host-card-registry'
 export { useCardChrome } from '@/inkling/hooks/useCardChrome'
 export type { CardChrome } from '@/inkling/hooks/useCardChrome'
+export type { CardWriteOptions } from '@/inkling/hooks/useCardWriter'
 export { CardActionToolbar } from '@/inkling/components/ui/CardActionToolbar'
 export type { CardActionToolbarProps, CardToolbarItem } from '@/inkling/components/ui/CardActionToolbar'
 

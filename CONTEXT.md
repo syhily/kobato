@@ -115,7 +115,7 @@ from an entity-backed card (q.v.): the card's `defineCard` spec declares
 request store — the card component calls `useCardPicker().open(nodeKey)`
 (placeholder click, replace affordance) or the insert registrar opens the
 picker on a freshly inserted node — while inkling's `CardPickerHostPlugin`
-(a core plugin) mounts `picker.render({ editor, nodeKey, close })` for the
+(a core plugin) mounts `picker.render({ editor, nodeKey, close, fromInsert? })` for the
 active request. Picks write back onto the node by KEY inside
 `editor.update()`, never through a captured node instance.
 _Avoid_: MusicPickContext (the retired bespoke per-card context), picker

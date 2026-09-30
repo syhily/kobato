@@ -61,8 +61,12 @@ export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDep
         // card's registered picker on the fresh node. Rides this command — never
         // a mutation listener — so editor-state loads cannot trigger a picker.
         // The picker host drops requests for types with no registered picker.
+        // fromInsert marks the request so the pick write can merge into this
+        // insert's history entry (the write seam's mergeHistory option).
         if (openPicker) {
-          pickerStore.setState({ request: { nodeKey: cardNode.getKey(), nodeType: cardNode.getType() } })
+          pickerStore.setState({
+            request: { nodeKey: cardNode.getKey(), nodeType: cardNode.getType(), fromInsert: true },
+          })
         }
 
         return true

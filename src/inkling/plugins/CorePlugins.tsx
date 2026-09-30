@@ -153,8 +153,11 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
     key: 'card-picker-host',
     // The pick seam's picker host (CONTEXT.md: "pick seam"): top-level
     // editable surfaces only — nested composers share the top-level pick
-    // store, so a nested mount would render the active picker twice, and a
-    // read-only surface never originates pick requests.
+    // store, so a nested mount would render the active picker twice. The
+    // readOnly gate is enforced end to end: the host's unmount cleanup drops
+    // the active request (the page editor flips readOnly on every save), and
+    // `useCardPicker().open` no-ops on a non-editable editor, so a read-only
+    // surface can neither originate nor inherit a pick request.
     when: (scope) => !scope.isNested && !scope.readOnly,
     render: () => <CardPickerHostPlugin />,
   },

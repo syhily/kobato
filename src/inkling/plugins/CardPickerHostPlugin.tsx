@@ -13,7 +13,10 @@ import { resolveCardPicker } from '@/inkling/nodes/cards/host-card-registry'
  * request store, resolves the node type's picker through the registry's
  * single channel (`resolveCardPicker` — host spec fact or built-in-variant
  * override), and mounts `picker.render(...)` exactly once for the active
- * request. The `close` prop and a node-deleted update both drop the request.
+ * request. The `close` prop, a node-deleted update, and the host's own
+ * unmount (e.g. the surface flipping readOnly mid-save) each drop the
+ * request — a store write that outlived its host would re-open the picker
+ * unprompted on the next mount.
  */
 export function CardPickerHostPlugin() {
   const [editor] = useLexicalComposerContext()
@@ -26,18 +29,35 @@ export function CardPickerHostPlugin() {
   const picker = request === null ? undefined : resolveCardPicker(request.nodeType)
 
   // A card deleted while its picker is open strands the dialog on a dead key
-  // — drop the request on the first update that loses the node.
+  // — drop the request on the first update that loses the node. Read node
+  // existence ONCE at registration too: a deletion committed between the
+  // store write and this effect's attach is invisible to the forward
+  // listener.
   React.useEffect(() => {
     if (request === null) {
       return
     }
+    const nodeExists = editor.getEditorState().read(() => $getNodeByKey(request.nodeKey) !== null)
+    if (!nodeExists) {
+      store.setState({ request: null })
+      return
+    }
     return editor.registerUpdateListener(({ editorState }) => {
-      const nodeExists = editorState.read(() => $getNodeByKey(request.nodeKey) !== null)
-      if (!nodeExists) {
+      const nodeStillExists = editorState.read(() => $getNodeByKey(request.nodeKey) !== null)
+      if (!nodeStillExists) {
         store.setState({ request: null })
       }
     })
   }, [editor, request, store])
+
+  // Unmount clears the active request: the surface flips readOnly on every
+  // save/publish, unmounting this host — without the cleanup the request
+  // survives and the picker pops back unprompted when the save resolves.
+  React.useEffect(() => {
+    return () => {
+      store.setState({ request: null })
+    }
+  }, [store])
 
   React.useEffect(() => {
     if (request !== null && picker === undefined) {
@@ -51,7 +71,12 @@ export function CardPickerHostPlugin() {
   // Keyed on the request's node key so a reopened pick mounts a fresh dialog.
   return (
     <React.Fragment key={request.nodeKey}>
-      {picker.render({ editor, nodeKey: request.nodeKey, close: () => store.setState({ request: null }) })}
+      {picker.render({
+        editor,
+        nodeKey: request.nodeKey,
+        close: () => store.setState({ request: null }),
+        fromInsert: request.fromInsert === true,
+      })}
     </React.Fragment>
   )
 }

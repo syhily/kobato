@@ -2,12 +2,12 @@ import type { LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
-import { useCardWriter } from '@/inkling/hooks/useCardWriter'
+import { useCardWriter, type CardWriteOptions } from '@/inkling/hooks/useCardWriter'
 
 export interface CardChrome<T extends LexicalNode> {
   editor: LexicalEditor
   /** The card write seam's React binding (CONTEXT.md: "card write seam"). */
-  write: (update: (node: T) => void) => void
+  write: (update: (node: T) => void, options?: CardWriteOptions) => void
   /**
    * The field-writer factory: `setField('alt')` returns the
    * `(value) => write(node => { node.alt = value })` setter a card's UI

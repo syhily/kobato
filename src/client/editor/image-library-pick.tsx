@@ -57,9 +57,12 @@ export function imageLibraryPickDataset(image: AdminImageDto): {
  * The picker render registered for node type 'image': mounts the host-owned
  * `ImageLibraryPicker` against the requesting node. The pick write resolves
  * the latest node instance by key (the card write seam), so a card deleted
- * while the dialog was open no-ops instead of throwing.
+ * while the dialog was open no-ops instead of throwing. On the
+ * insert-triggered open (`fromInsert` — the 图片库 entry inserts the empty
+ * card with `openPicker: true`) the write merges into the insert's history
+ * entry, so one Cmd+Z retracts insert and pick together.
  */
-export function ImageLibraryCardPicker({ nodeKey, close }: CardPickerRenderProps) {
+export function ImageLibraryCardPicker({ nodeKey, close, fromInsert }: CardPickerRenderProps) {
   const { write } = useCardChrome(nodeKey, isKobatoImageNode)
   return (
     <ImageLibraryPicker
@@ -71,15 +74,18 @@ export function ImageLibraryCardPicker({ nodeKey, close }: CardPickerRenderProps
       }}
       onPick={(image) => {
         const dataset = imageLibraryPickDataset(image)
-        write((node: KobatoImageNode) => {
-          node.src = dataset.src
-          node.alt = dataset.alt
-          node.width = dataset.width
-          node.height = dataset.height
-          node.thumbhash = dataset.thumbhash
-          node.storagePath = dataset.storagePath
-          node.imageId = dataset.imageId
-        })
+        write(
+          (node: KobatoImageNode) => {
+            node.src = dataset.src
+            node.alt = dataset.alt
+            node.width = dataset.width
+            node.height = dataset.height
+            node.thumbhash = dataset.thumbhash
+            node.storagePath = dataset.storagePath
+            node.imageId = dataset.imageId
+          },
+          { mergeHistory: fromInsert === true },
+        )
         close()
       }}
     />
