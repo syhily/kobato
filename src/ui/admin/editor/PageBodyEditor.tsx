@@ -10,7 +10,11 @@
 // - `image-insert-override` — HIGH-priority INSERT_IMAGE_COMMAND /
 //   OPEN_IMAGE_LIBRARY_COMMAND handlers (the stock LOW handlers still mount
 //   on the shared `image` type but would build the stock class / open
-//   inkling's internal overlay).
+//   inkling's internal overlay). The library pick itself rides the inkling
+//   pick seam (`image-library-pick` registers the 'image' picker): the
+//   override inserts the empty card with the `openPicker` payload flag and
+//   the seam opens `ImageLibraryPicker` on it. No editor-level dialog wiring
+//   remains here.
 // - `page-editor-upload` — paste/drop/file-dialog uploads through
 //   `orpc.admin.images.upload` (a tiptap-era non-feature, now wired).
 // - `page-editor-card-config` / `render-math` — image width policy, library
@@ -32,19 +36,17 @@ import { FocusIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import type { ExternalControlAPI, LexicalEditor } from '@/inkling'
-import type { AdminImageDto } from '@/shared/contracts/images'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { blockQuoteAsideCycle } from '@/client/editor/block-quote-aside-cycle'
-import { registerKobatoImageInsertCommands, toSiteOwnedImageSrc } from '@/client/editor/image-insert-override'
+import { registerKobatoImageInsertCommands } from '@/client/editor/image-insert-override'
 import { inklingLabels } from '@/client/editor/inkling-labels'
 import { pageEditorCardConfig } from '@/client/editor/page-editor-card-config'
 import { PAGE_EDITOR_NODES } from '@/client/editor/page-editor-nodes'
 import { pageEditorFileUploader } from '@/client/editor/page-editor-upload'
 import { useEditorBodyReset } from '@/client/editor/use-editor-body-reset'
 import { useFocusModePreference } from '@/client/editor/use-focus-mode'
-import { InklingComposer, InklingEditor, INSERT_IMAGE_COMMAND } from '@/inkling'
-import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
+import { InklingComposer, InklingEditor } from '@/inkling'
 import { Button } from '@/ui/components/button'
 import { useTheme } from '@/ui/lib/ThemeProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
@@ -94,37 +96,15 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
 
   const { mountedInitialState, handleChange } = useEditorBodyReset(editorInstance, initialBody, bodyKey, onBodyChange)
 
-  const [imagePickerOpen, setImagePickerOpen] = useState(false)
-
   // The stock image handlers mount on the shared 'image' type but would
-  // build the stock class — intercept at HIGH for the editor's lifetime.
+  // build the stock class / mount inkling's selector overlay — intercept at
+  // HIGH for the editor's lifetime.
   useEffect(() => {
     if (editorInstance === null) {
       return
     }
-    return registerKobatoImageInsertCommands(editorInstance, () => setImagePickerOpen(true))
+    return registerKobatoImageInsertCommands(editorInstance)
   }, [editorInstance])
-
-  const insertLibraryImage = useCallback(
-    (image: AdminImageDto) => {
-      const editor = editorInstance
-      if (editor === null) {
-        return
-      }
-      // Re-enters through the override's HIGH INSERT_IMAGE_COMMAND handler,
-      // so the card is a KobatoImageNode carrying all four kobato keys.
-      editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-        src: toSiteOwnedImageSrc(image.publicUrl),
-        alt: image.note ?? '',
-        width: image.width,
-        height: image.height,
-        thumbhash: image.thumbhash ?? undefined,
-        storagePath: image.storagePath,
-        imageId: image.id,
-      })
-    },
-    [editorInstance],
-  )
 
   return (
     <div
@@ -165,7 +145,6 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
           <FocusIcon />
         </Button>
       </div>
-      <ImageLibraryPicker open={imagePickerOpen} onOpenChange={setImagePickerOpen} onPick={insertLibraryImage} />
     </div>
   )
 }

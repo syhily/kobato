@@ -6,11 +6,13 @@
 //   (left/center/right) rides KobatoImageNode's own `layout` property, so the
 //   width buttons stand down and `cardWidth` stays 'regular'.
 // - `imageLibrary.search`: makes the slash menu's 图片库 entry visible
-//   (`isHidden` gates on the config's presence). The picker itself is
-//   kobato's own ImageLibraryPicker dialog — the OPEN_IMAGE_LIBRARY_COMMAND
-//   override in `image-insert-override` intercepts before inkling's selector
-//   overlay can mount, so this search fn is only the visibility token (and
-//   the data source if that ever changes).
+//   (`isHidden` gates on the config's presence). The picker is kobato's own
+//   ImageLibraryPicker dialog, opened through the pick seam
+//   (`registerCardPicker('image', …)` in `@/client/editor/image-library-pick`;
+//   the OPEN_IMAGE_LIBRARY_COMMAND override in `image-insert-override` inserts
+//   the empty card with the `openPicker` flag) — inkling's selector overlay
+//   never mounts, so this search fn is only the visibility token (and the
+//   data source if that ever changes).
 // - `renderMath`: server-side KaTeX preview channel (see `render-math.ts`).
 //   The persisted mathml/svg artifacts are filled by the save pipeline.
 //

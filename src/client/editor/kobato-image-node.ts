@@ -14,8 +14,10 @@
 // ImageNodeComponent wiring — re-declaring those from the spec would fork the
 // upload flow. The four extra keys therefore ride hand-written overrides:
 // constructor/getDataset (clone survives), exportJSON/importJSON
-// (persistence), importSpec (paste), exportDOM (markup — delegated to a
-// spec-built class because `createRenderContext` stays entry-internal).
+// (persistence), importSpec (paste), and exportDOM — a plain method override
+// that renders the kobato markup through the barrel-exported render-context
+// factory (`createRenderContext`; the inherited exportDOM is bound to the
+// stock render fn by the base class's factory closure).
 //
 // The composer registers THIS class for node type `image` (never alongside
 // the stock class — Lexical keys registrations by type). Every stock image
@@ -24,38 +26,19 @@
 // drop surgery — the subclass passes), so only the two CLASS-identity gates
 // stand down: the stock INSERT_IMAGE_COMMAND/INSERT_MEDIA_COMMAND handlers
 // and InklingSelectorPlugin. `@/client/editor/image-insert-override`
-// re-supplies all three against this class (including the image-library
-// picker, which kobato renders as its own dialog instead of inkling's
-// selector overlay).
+// re-supplies all three against this class (the image-library picker rides
+// the inkling pick seam — `registerCardPicker` in
+// `@/client/editor/image-library-pick`).
 
-import type { LexicalEditor } from '@/inkling'
 import type { CardRenderOutput } from '@/shared/lexical/cards/card-html'
 
-import { generateDecoratorNode, ImageNode } from '@/inkling'
+import { createRenderContext, type ExportDOMOptions, ImageNode, type LexicalEditor } from '@/inkling'
 import {
-  KOBATO_IMAGE_PROPERTIES,
-  kobatoImageImportSpec,
   type KobatoImageLayout,
+  kobatoImageImportSpec,
   normalizeKobatoImageLayout,
   renderKobatoImageNode,
 } from '@/shared/lexical/cards/kobato-image'
-
-/**
- * ExportDOM delegate: the inherited exportDOM is bound to the stock render
- * fn (the base class's factory closure), so the kobato markup comes from a
- * spec-built twin class whose prototype exportDOM we borrow — its body is
- * exactly `defaultRenderFn(this, createRenderContext(options))`, and this
- * instance genuinely carries the twelve dataset keys.
- */
-const ExportDelegate = generateDecoratorNode({
-  nodeType: 'image',
-  properties: KOBATO_IMAGE_PROPERTIES,
-  defaultRenderFn: renderKobatoImageNode,
-  importSpec: kobatoImageImportSpec,
-  hasEditMode: false,
-})
-
-type ExportDelegateInstance = InstanceType<typeof ExportDelegate>
 
 export class KobatoImageNode extends ImageNode {
   __thumbhash: string
@@ -150,23 +133,23 @@ export class KobatoImageNode extends ImageNode {
 
   static override importSpec = kobatoImageImportSpec
 
-  // Property-style override: the inherited exportDOM TYPE is an intersection
-  // (the generated two-argument signature × LexicalNode's one-argument one),
-  // which a method shorthand cannot redeclare without collapsing to the last
-  // overload. The delegate call needs one assertion per boundary: the
-  // prototype method is typed on the delegate's own generated instance (this
-  // instance satisfies the same twelve-key dataset structurally), and the
-  // implementation arrow is widened back to the intersection.
-  override exportDOM: ExportDelegateInstance['exportDOM'] = ((
-    editor: LexicalEditor,
-    options?: unknown,
-  ): CardRenderOutput => {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the exportDOM comment above
-    const delegate = ExportDelegate.prototype.exportDOM as unknown as (
-      this: unknown,
-      editor: LexicalEditor,
-      options?: unknown,
-    ) => CardRenderOutput
-    return delegate.call(this, editor, options)
-  }) as ExportDelegateInstance['exportDOM']
+  /**
+   * The kobato figure markup in place of the stock card's: the inherited
+   * exportDOM is bound to the stock render fn by the base class's factory
+   * closure, so the override calls the spec's renderer directly, building the
+   * render context through the barrel-exported factory. `this` satisfies the
+   * renderer's dataset view structurally — the instance genuinely carries the
+   * twelve dataset keys.
+   */
+  override exportDOM(editor: LexicalEditor, options?: ExportDOMOptions): CardRenderOutput {
+    return renderKobatoImageNode(this, createRenderContext(options ?? {}))
+  }
+}
+
+/**
+ * The card write seam's guard (`useCardChrome`) for the image variant — the
+ * pick seam's image-library render writes the picked dataset through it.
+ */
+export function isKobatoImageNode(node: unknown): node is KobatoImageNode {
+  return node instanceof KobatoImageNode
 }

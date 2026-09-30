@@ -18,9 +18,12 @@
   `comment-markdown-transformers` (the DEFAULT_TRANSFORMERS subset whose dependencies survive the
   trim — quote/list/code-fence/text-format/link shortcuts), `kobato-image-node` (the stock ImageNode
   subclass persisting the four kobato dataset keys), `image-insert-override` (HIGH-priority
-  INSERT_IMAGE_COMMAND / OPEN_IMAGE_LIBRARY_COMMAND handlers so inserts build the kobato class and
-  open the kobato library picker), `page-editor-upload` (paste/drop/file-dialog uploads through
-  `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (card policy + the
+  INSERT_IMAGE_COMMAND / OPEN_IMAGE_LIBRARY_COMMAND handlers — the two surviving class-identity
+  gates: inserts build the kobato class, and the library intent inserts an empty card with the
+  `openPicker` payload flag so the inkling pick seam opens the library picker), `image-library-pick`
+  (the 'image' picker registration through the seam's variant channel, `registerCardPicker`, plus
+  the pick→dataset write through the card write seam), `page-editor-upload` (paste/drop/file-dialog
+  uploads through `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (card policy + the
   debounced server KaTeX preview channel), `inkling-labels` (the zh-CN labels overlay),
   `use-focus-mode` (the writing-focus preference toggle),
   `block-quote-aside-cycle` (the host-side Ctrl+Q capture shared by both surfaces — neither composer

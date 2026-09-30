@@ -23,6 +23,10 @@
 import '@/client/editor/cards/music-player'
 import '@/client/editor/cards/solution'
 import '@/client/editor/cards/two-column'
+// Registers the 'image' picker override (the pick seam's variant channel) —
+// KobatoImageNode below is a stock-variant, not a defineCard card, so its
+// library picker registers beside the node-set composition.
+import '@/client/editor/image-library-pick'
 import { excludeBaseNodes } from '@/client/editor/base-node-filter'
 import { KobatoImageNode } from '@/client/editor/kobato-image-node'
 import {

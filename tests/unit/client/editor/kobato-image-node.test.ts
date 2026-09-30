@@ -2,9 +2,11 @@
 // docs/plans/inkling-editor-replacement.md): the subclass of inkling's
 // assembled ImageNode that persists the four kobato-owned keys
 // (thumbhash/storagePath/imageId/layout). Pins the serialization round-trip,
-// clone survival, the exportDOM markup (both variants, through the delegate),
-// the import-spec paste path, and the instanceof gates the stock behaviours
-// rely on ($isImageNode covers upload intent / drop surgery).
+// clone survival, the exportDOM markup (both variants, through the direct
+// method override + the barrel's createRenderContext — the landing-4 de-hack
+// removed the spec-built delegate), the import-spec paste path, and the
+// instanceof gates the stock behaviours rely on ($isImageNode covers upload
+// intent / drop surgery).
 //
 // Lexical 0.46's constructor invariants require an active editor, and every
 // read path (generated accessors, exportJSON, exportDOM) goes through
