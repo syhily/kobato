@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { updateEditor } from '#/inkling/utils/test-editor'
 import { HorizontalRuleNode } from '@/inkling/nodes/HorizontalRuleNode'
 import { $createImageNode, ImageNode } from '@/inkling/nodes/ImageNode'
+import { createCardPickerStore } from '@/inkling/plugins/behaviour/cardPickerStore'
 import { createCardSelectionStore, type CardSelectionStore } from '@/inkling/plugins/behaviour/cardSelectionStore'
 import { DELETE_CARD_COMMAND, INSERT_CARD_COMMAND, SELECT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 import { registerCardCommands } from '@/inkling/plugins/behaviour/registerCardCommands'
@@ -36,6 +37,7 @@ describe('registerCardCommands', () => {
   function register(deps: Partial<Parameters<typeof registerCardCommands>[1]> = {}) {
     return registerCardCommands(editor, {
       store,
+      pickerStore: createCardPickerStore(),
       ...deps,
     })
   }

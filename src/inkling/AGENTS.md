@@ -173,17 +173,28 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   dialog itself lives in host code. Dispatch rides a per-composer composer handle
   (`src/inkling/plugins/behaviour/cardPickerStore.ts`, created in `ComposerHandlesProvider`,
   context binding in `src/inkling/context/CardPickerStoreContext.tsx`): the card component calls
-  `useCardPicker().open(nodeKey)` (placeholder click, replace affordance), or the insert registrar
-  writes the request when `autoOpenOnInsert` is set — the insert-COMMAND channel only, so
+  `useCardPicker().open(nodeKey)` (placeholder click, replace affordance), or the request rides
+  the INSERT_CARD_COMMAND payload's `openPicker` flag — set by the insert registrar when
+  `autoOpenOnInsert` is projected, or by a host's own intent command (kobato's image-library
+  entry) — with `registerCardCommands` as the single write site. The command channel only, so
   editor-state loads never trigger a picker. `CardPickerHostPlugin` (a `CORE_PLUGINS` entry gated
   to non-nested, non-read-only surfaces — nested composers share the top-level handle, so a nested
-  mount would render the active picker twice) subscribes to the store, resolves the spec through
-  `resolveCardFacts`, and mounts `picker.render({ editor, nodeKey, close })` for the active
-  request, dropping it when the node leaves the document. Everything crosses the boundary by node
-  KEY, never the node instance (Lexical #195); pick writes resolve the latest instance inside
-  `editor.update()` through the card write seam (`useCardChrome`). The registry field is type-only
-  React, so the headless surface stays free of the seam (pinned in
-  `tests/inkling/unit/plugins/card-picker.test.tsx`).
+  mount would render the active picker twice) subscribes to the store, resolves the picker through
+  the registry's one channel (`resolveCardPicker` in the host registry: the host spec's `picker`
+  fact first, then the **variant override** — `registerCardPicker(nodeType, picker)` carries a
+  picker for a card type with no host spec, e.g. a same-type subclass of a built-in card like
+  kobato's KobatoImageNode, which `defineCard` hard-rejects; one picker per node type, enforced at
+  registration in both directions), and mounts `picker.render({ editor, nodeKey, close })` for the
+  active request, dropping it when the node leaves the document. Everything crosses the boundary
+  by node KEY, never the node instance (Lexical #195); pick writes resolve the latest instance
+  inside `editor.update()` through the card write seam (`useCardChrome`). The registry field is
+  type-only React, so the headless surface stays free of the seam (pinned in
+  `tests/inkling/unit/plugins/card-picker.test.tsx`). The barrel also re-exports Lexical's
+  `COMMAND_PRIORITY_*` constants (hosts intercepting stock commands name the level instead of
+  hardcoding the number) and `createRenderContext` (a variant subclass overriding exportDOM with
+  its own render fn calls `renderFn(this, createRenderContext(options))` — react-free, but kept
+  off `@/inkling/headless` because the server-side projection classes are spec-built fresh and
+  never delegate).
 - Each card has a renderer under `src/inkling/nodes/base/nodes/<card>/`. The same per-card module
   houses the card's transient/nested-editor spec arrays (imported by its declaration); the shared
   caption spec core lives beside them in `base/nodes/caption-editor-spec.ts` — its MINIMAL_NODES

@@ -153,7 +153,7 @@ export { getHostCardNodes } from '@/inkling/nodes/cards/host-card-nodes'
  * protocol — a host card's chrome dispatches it so removal gets the built-in
  * sibling-selection/focus choreography instead of a bare node.remove(). */
 export { DELETE_CARD_COMMAND, INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
-export type { OpenCardInEditModePayload } from '@/inkling/plugins/behaviour/types'
+export type { InsertCardPayload } from '@/inkling/plugins/behaviour/types'
 
 /* The image-library open command (kobato R11): with a host subclass
  * registered for node type `image` (KobatoImageNode), InklingSelectorPlugin's
@@ -185,6 +185,15 @@ export type { CardNodeClass } from '@/inkling/nodes/assemble-card-node'
 // the render-context seam hosts write card renderers against (defineCard
 // docs name it in prose; ExportDOMOutput flows through `@/inkling/nodes/base`)
 export type { RenderContext } from '@/inkling/nodes/base/render-context'
+// A host VARIANT subclassing an assembled card class (kobato's KobatoImageNode)
+// overrides exportDOM with its own render fn and needs the entry-internal
+// context factory to do it through the seam: `renderFn(this,
+// createRenderContext(options))`. React-free (it already sits in the headless
+// graph via generateDecoratorNode); the headless surface deliberately keeps it
+// unexported — the server-side projection classes are spec-built fresh and
+// never delegate.
+export { createRenderContext } from '@/inkling/nodes/base/render-context'
+export type { ExportDOMOptions } from '@/inkling/nodes/base/export-dom'
 
 export * from '@/inkling/utils'
 export { lexicalStateToMarkdown, markdownToLexicalState } from '@/inkling/markdown'

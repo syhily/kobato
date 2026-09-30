@@ -65,17 +65,32 @@ export { default as RestrictContentPlugin } from '@/inkling/plugins/RestrictCont
 
 /* The pick seam (CONTEXT.md: "pick seam"): a host card declares its picker on
  * the defineCard spec; the card component opens it through `useCardPicker`
- * and the picker host core plugin renders it. `useCardChrome` is the card
+ * and the picker host core plugin renders it. A same-type VARIANT of a
+ * built-in card (no defineCard spec — the nodeType collides) registers its
+ * picker through `registerCardPicker` instead; both channels share one
+ * dispatch. `useCardChrome` is the card
  * chrome prologue (editor + the card write seam) a host card's picker render
  * and editing chrome write through, and `CardActionToolbar` is the layer's
  * selection-driven card chrome the host card mounts its affordances on. */
 export { useCardPicker } from '@/inkling/hooks/useCardPicker'
 export type { CardPickerHandle } from '@/inkling/hooks/useCardPicker'
+export { registerCardPicker } from '@/inkling/nodes/cards/host-card-registry'
 export type { CardPickerRenderProps, HostCardPickerSpec } from '@/inkling/nodes/cards/host-card-registry'
 export { useCardChrome } from '@/inkling/hooks/useCardChrome'
 export type { CardChrome } from '@/inkling/hooks/useCardChrome'
 export { CardActionToolbar } from '@/inkling/components/ui/CardActionToolbar'
 export type { CardActionToolbarProps, CardToolbarItem } from '@/inkling/components/ui/CardActionToolbar'
+
+/* Lexical's command-priority constants — a host intercepting a stock command
+ * (kobato's HIGH-priority insert overrides) names the level instead of
+ * hardcoding the number. */
+export {
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
+  COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_NORMAL,
+} from 'lexical'
 /* Writing-focus mode: the plugin the `focusMode` surface prop mounts and the
  * class/attribute contract host CSS keys on. */
 export { default as FocusModePlugin } from '@/inkling/plugins/FocusModePlugin'

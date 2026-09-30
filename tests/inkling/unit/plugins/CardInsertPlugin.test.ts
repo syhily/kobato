@@ -4,7 +4,7 @@ import { renderHook } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, COMMAND_PRIORITY_CRITICAL } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { OpenCardInEditModePayload } from '@/inkling/plugins/behaviour/types'
+import type { InsertCardPayload } from '@/inkling/plugins/behaviour/types'
 
 import { mockComposerContext } from '#/inkling/utils/composer-context'
 import { createTestEditor, tick, updateEditor } from '#/inkling/utils/test-editor'
@@ -45,7 +45,7 @@ async function mountRegistrar(editor: LexicalEditor) {
 /** Registers an INSERT_CARD_COMMAND capture listener; returns the captured
  * payload ref and the unregister function. */
 function captureInsertCard(editor: LexicalEditor) {
-  const ref: { payload: OpenCardInEditModePayload | undefined } = { payload: undefined }
+  const ref: { payload: InsertCardPayload | undefined } = { payload: undefined }
   const removeListener = editor.registerCommand(
     INSERT_CARD_COMMAND,
     (payload) => {

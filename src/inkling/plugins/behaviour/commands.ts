@@ -2,12 +2,12 @@ import { createCommand } from 'lexical'
 
 import type {
   DeleteCardPayload,
+  InsertCardPayload,
   LinkMatchPayload,
-  OpenCardInEditModePayload,
   SelectCardPayload,
 } from '@/inkling/plugins/behaviour/types'
 
-export const INSERT_CARD_COMMAND = createCommand<OpenCardInEditModePayload>('INSERT_CARD_COMMAND')
+export const INSERT_CARD_COMMAND = createCommand<InsertCardPayload>('INSERT_CARD_COMMAND')
 export const SELECT_CARD_COMMAND = createCommand<SelectCardPayload>('SELECT_CARD_COMMAND')
 export const DESELECT_CARD_COMMAND = createCommand<SelectCardPayload>('DESELECT_CARD_COMMAND')
 export const EDIT_CARD_COMMAND = createCommand<SelectCardPayload>('EDIT_CARD_COMMAND')

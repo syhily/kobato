@@ -4,6 +4,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { mergeRegister } from '@lexical/utils'
 import React from 'react'
 
+import { useCardPickerStore } from '@/inkling/context/CardPickerStoreContext'
 import { useCardSelectionStore } from '@/inkling/context/CardSelectionStoreContext'
 import { getModifierState } from '@/inkling/plugins/behaviour/clipboard-protocol'
 import { registerCardCommands } from '@/inkling/plugins/behaviour/registerCardCommands'
@@ -37,6 +38,7 @@ function useInklingBehaviour({
   alignment?: boolean
 }) {
   const cardSelectionStore = useCardSelectionStore()
+  const cardPickerStore = useCardPickerStore()
 
   const isShiftPressed = getModifierState(editor)
 
@@ -55,6 +57,7 @@ function useInklingBehaviour({
       }),
       registerCardCommands(editor, {
         store: cardSelectionStore,
+        pickerStore: cardPickerStore,
       }),
       registerKeyboardNavigation(editor, {
         store: cardSelectionStore,
@@ -65,7 +68,7 @@ function useInklingBehaviour({
       registerLinkMatching(editor, { isShiftPressed }),
       registerClickAndCut(editor),
     )
-  }, [editor, cardSelectionStore, isNested, cursorDidExitAtTop, isShiftPressed])
+  }, [editor, cardSelectionStore, cardPickerStore, isNested, cursorDidExitAtTop, isShiftPressed])
 
   // remove alignment formats (unless the surface keeps alignment),
   // denest invalid node nesting,

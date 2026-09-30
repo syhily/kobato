@@ -4,9 +4,6 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, mergeRegister } from 'lexical'
 import React from 'react'
 
-import type { CardPickerStore } from '@/inkling/plugins/behaviour/cardPickerStore'
-
-import { useCardPickerStore } from '@/inkling/context/CardPickerStoreContext'
 import { getCardInsertRegistrations, type CardInsertRegistration } from '@/inkling/nodes/cards/card-insert-commands'
 import { INSERT_MEDIA_COMMAND } from '@/inkling/plugins/behaviour/clipboard-protocol'
 import { INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
@@ -20,23 +17,17 @@ function isCardDataset(value: unknown): value is Record<string, unknown> {
 function registerCardInsert(
   editor: LexicalEditor,
   { nodeType, node, command, insert, pickerAutoOpen }: CardInsertRegistration,
-  cardPickerStore: CardPickerStore,
 ) {
   const insertCard = (dataset: Record<string, unknown>) => {
     // key presence is observable in INSERT_CARD_COMMAND listeners: the
-    // openInEditMode key exists only for the five edit-mode cards
-    const cardNode = new node(dataset)
-    const inserted = editor.dispatchCommand(INSERT_CARD_COMMAND, {
-      cardNode,
+    // openInEditMode key exists only for the five edit-mode cards, openPicker
+    // only for picker-carrying cards (CONTEXT.md: "pick seam"). Both ride the
+    // insert-COMMAND channel, so editor-state loads never trigger either.
+    editor.dispatchCommand(INSERT_CARD_COMMAND, {
+      cardNode: new node(dataset),
       ...(insert.openInEditMode ? { openInEditMode: true } : {}),
+      ...(pickerAutoOpen === true ? { openPicker: true } : {}),
     })
-    // picker.autoOpenOnInsert host cards open their picker on the fresh node
-    // (CONTEXT.md: "pick seam"). This rides the insert-COMMAND channel, so
-    // editor-state loads (which never dispatch it) cannot trigger the picker.
-    // The dispatch is synchronous — the node has landed when it returns true.
-    if (inserted && pickerAutoOpen === true) {
-      cardPickerStore.setState({ request: { nodeKey: cardNode.getKey(), nodeType } })
-    }
   }
 
   return mergeRegister(
@@ -94,15 +85,14 @@ function registerCardInsert(
  */
 export const CardInsertPlugin = () => {
   const [editor] = useLexicalComposerContext()
-  const cardPickerStore = useCardPickerStore()
 
   React.useEffect(() => {
     return mergeRegister(
       ...getCardInsertRegistrations()
         .filter(({ node }) => editor.hasNodes([node]))
-        .map((registration) => registerCardInsert(editor, registration, cardPickerStore)),
+        .map((registration) => registerCardInsert(editor, registration)),
     )
-  }, [editor, cardPickerStore])
+  }, [editor])
 
   return null
 }

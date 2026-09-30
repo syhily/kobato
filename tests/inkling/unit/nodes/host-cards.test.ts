@@ -30,6 +30,7 @@ import { getRegisteredCardNodes } from '@/inkling/nodes/cards/editor-card-nodes'
 import { getHostCard, getHostCards } from '@/inkling/nodes/cards/host-card-registry'
 import { defineCard } from '@/inkling/nodes/cards/host-cards'
 import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
+import { createCardPickerStore } from '@/inkling/plugins/behaviour/cardPickerStore'
 import { createCardSelectionStore } from '@/inkling/plugins/behaviour/cardSelectionStore'
 import { registerCardCommands } from '@/inkling/plugins/behaviour/registerCardCommands'
 import { CardInsertPlugin } from '@/inkling/plugins/CardInsertPlugin'
@@ -327,7 +328,7 @@ describe('host card insert integration', () => {
 
   it('dispatches the host insert command and lands the node in the document', async () => {
     editor = createHostEditor([musicPlayer.node])
-    registerCardCommands(editor, { store: createCardSelectionStore() })
+    registerCardCommands(editor, { store: createCardSelectionStore(), pickerStore: createCardPickerStore() })
     await mountRegistrar(editor)
 
     editor.update(() => {

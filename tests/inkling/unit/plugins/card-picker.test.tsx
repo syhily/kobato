@@ -9,12 +9,15 @@ import { createCardPickerStoreWrapper } from '#/inkling/utils/card-picker-store'
 import { mockComposerContext } from '#/inkling/utils/composer-context'
 import { createTestEditor, tick, updateEditor } from '#/inkling/utils/test-editor'
 import { useCardPicker } from '@/inkling/hooks/useCardPicker'
+import { AudioNode } from '@/inkling/nodes/AudioNode'
 import { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-node'
 import { resolveCardInsertCommand } from '@/inkling/nodes/cards/card-commands'
 import { getCardInsertRegistrations } from '@/inkling/nodes/cards/card-insert-commands'
-import { getHostCard } from '@/inkling/nodes/cards/host-card-registry'
+import { getHostCard, registerCardPicker, resolveCardPicker } from '@/inkling/nodes/cards/host-card-registry'
 import { defineCard } from '@/inkling/nodes/cards/host-cards'
+import { createCardPickerStore } from '@/inkling/plugins/behaviour/cardPickerStore'
 import { createCardSelectionStore } from '@/inkling/plugins/behaviour/cardSelectionStore'
+import { INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 import { registerCardCommands } from '@/inkling/plugins/behaviour/registerCardCommands'
 import { CardInsertPlugin } from '@/inkling/plugins/CardInsertPlugin'
 import { CardPickerHostPlugin } from '@/inkling/plugins/CardPickerHostPlugin'
@@ -179,17 +182,22 @@ describe('CardPickerHostPlugin', () => {
 
 describe('autoOpenOnInsert', () => {
   let editor: LexicalEditor
+  // One picker store shared by the command choreography (registerCardCommands
+  // writes the openPicker flag here) and the registrar's context wrapper —
+  // the two halves of the seam must observe the same store.
+  let pickerStore: ReturnType<typeof createCardPickerStore>
 
   beforeEach(() => {
     vi.clearAllMocks()
     editor = createTestEditor({ nodes: FIXTURE_NODES })
+    pickerStore = createCardPickerStore()
     // the INSERT_CARD_COMMAND handler the registrar dispatches through
-    registerCardCommands(editor, { store: createCardSelectionStore() })
+    registerCardCommands(editor, { store: createCardSelectionStore(), pickerStore })
     mockComposerContext(editor)
   })
 
   async function mountRegistrar() {
-    const harness = createCardPickerStoreWrapper()
+    const harness = createCardPickerStoreWrapper({ store: pickerStore })
     renderHook(() => CardInsertPlugin(), { wrapper: harness.wrapper })
     await tick()
     return harness.store
@@ -251,6 +259,112 @@ describe('autoOpenOnInsert', () => {
     editor.getEditorState().read(() => {
       expect($getRoot().getFirstChild()?.getType()).toBe('pickerWidget')
     })
+  })
+})
+
+describe('the variant picker channel (registerCardPicker)', () => {
+  // The picker-override channel: a picker fact for a card type WITHOUT a host
+  // spec — a same-type variant of a built-in card (kobato's KobatoImageNode
+  // for 'image'). Registered at module scope, mirroring the defineCard idiom;
+  // 'audio' stands in as the built-in type here.
+  const audioPickerRender = vi.fn((_props: CardPickerRenderProps) => <div data-testid="audio-picker" />)
+  registerCardPicker('audio', { render: audioPickerRender })
+
+  it('resolves the override for a picker-less built-in type, host spec first', () => {
+    expect(resolveCardPicker('audio')?.render).toBe(audioPickerRender)
+    // the host spec's own picker wins its channel; a picker-less card resolves nothing
+    expect(resolveCardPicker('pickerWidget')?.render).toBe(pickerRender)
+    expect(resolveCardPicker('pickerlessWidget')).toBeUndefined()
+  })
+
+  it('enforces one picker per node type across both channels', () => {
+    expect(() => registerCardPicker('audio', { render: () => null })).toThrow(/already registered/)
+    expect(() => registerCardPicker('pickerWidget', { render: () => null })).toThrow(/already registered/)
+    expect(
+      () =>
+        defineCard({
+          nodeType: 'audio',
+          baseNode: generateDecoratorNode({ nodeType: 'audioClone' }),
+          toolbarLabel: 'audio-clone',
+          picker: { render: () => null },
+          render: () => null,
+        }),
+      // 'audio' collides with the built-in declaration before the picker
+      // check runs — the defineCard collision guard stays the first door
+    ).toThrow(/already declared/)
+    expect(() =>
+      defineCard({
+        nodeType: 'audioVariantWithPicker',
+        baseNode: generateDecoratorNode({ nodeType: 'audioVariantWithPicker' }),
+        toolbarLabel: 'audio-variant',
+        picker: { render: () => null },
+        render: () => null,
+      }),
+    ).not.toThrow()
+    // …but a host card WITH a picker now blocks the override channel for its type
+    expect(() => registerCardPicker('audioVariantWithPicker', { render: () => null })).toThrow(/already registered/)
+  })
+
+  it('opens the override picker from useCardPicker for a built-in card node', async () => {
+    const editor = createTestEditor({ nodes: [AudioNode] })
+    mockComposerContext(editor)
+    let nodeKey: NodeKey = ''
+    await updateEditor(editor, () => {
+      const node = new AudioNode({ src: 'https://example.com/song.mp3' })
+      $getRoot().append(node)
+      nodeKey = node.getKey()
+    })
+
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const { result } = renderHook(() => useCardPicker(), { wrapper })
+    act(() => result.current.open(nodeKey))
+    expect(store.getState().request).toEqual({ nodeKey, nodeType: 'audio' })
+  })
+
+  it('renders the override picker in the host plugin', async () => {
+    const editor = createTestEditor({ nodes: [AudioNode], headless: false })
+    mockComposerContext(editor)
+    let nodeKey: NodeKey = ''
+    await updateEditor(editor, () => {
+      const node = new AudioNode({ src: 'https://example.com/song.mp3' })
+      $getRoot().append(node)
+      nodeKey = node.getKey()
+    })
+
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const view = render(<CardPickerHostPlugin />, { wrapper })
+    act(() => {
+      store.setState({ request: { nodeKey, nodeType: 'audio' } })
+    })
+    expect(view.getAllByTestId('audio-picker')).toHaveLength(1)
+    expect(audioPickerRender).toHaveBeenCalledWith({ editor, nodeKey, close: expect.any(Function) })
+  })
+
+  it('writes the pick request when INSERT_CARD_COMMAND carries openPicker: true', async () => {
+    const editor = createTestEditor({ nodes: FIXTURE_NODES })
+    mockComposerContext(editor)
+    const pickerStore = createCardPickerStore()
+    registerCardCommands(editor, { store: createCardSelectionStore(), pickerStore })
+    await updateEditor(editor, () => {
+      const paragraph = $createParagraphNode()
+      $getRoot().append(paragraph)
+      paragraph.select()
+    })
+
+    // the variant trigger path: a host's own intent command inserts an empty
+    // card and flags the payload (kobato's image-library entry). The node
+    // constructs inside the update — Lexical keys need an active editor.
+    await updateEditor(editor, () => {
+      editor.dispatchCommand(INSERT_CARD_COMMAND, { cardNode: new pickerWidget.node({}), openPicker: true })
+    })
+    expect(pickerStore.getState().request?.nodeType).toBe('pickerWidget')
+
+    // and the plain insert stays inert
+    pickerStore.setState({ request: null })
+    await updateEditor(editor, () => {
+      editor.dispatchCommand(INSERT_CARD_COMMAND, { cardNode: new pickerWidget.node({}) })
+    })
+    expect(pickerStore.getState().request).toBeNull()
   })
 })
 

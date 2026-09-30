@@ -3,6 +3,7 @@ import type { LexicalEditor, LexicalNode } from 'lexical'
 import { mergeRegister } from '@lexical/utils'
 import { $getNodeByKey, $getSelection, $isNodeSelection, $isRangeSelection, COMMAND_PRIORITY_LOW } from 'lexical'
 
+import type { CardPickerStore } from '@/inkling/plugins/behaviour/cardPickerStore'
 import type { CardSelectionStore } from '@/inkling/plugins/behaviour/cardSelectionStore'
 
 import { $isInklingCard } from '@/inkling/nodes/base'
@@ -24,15 +25,17 @@ import { $insertAndSelectNode } from '@/inkling/utils/$insertAndSelectNode'
 
 interface CardCommandDeps {
   store: CardSelectionStore
+  /** The pick seam's request store — the `openPicker` payload flag writes here. */
+  pickerStore: CardPickerStore
 }
 
 export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDeps) {
-  const { store } = deps
+  const { store, pickerStore } = deps
 
   return mergeRegister(
     editor.registerCommand(
       INSERT_CARD_COMMAND,
-      ({ cardNode, openInEditMode }) => {
+      ({ cardNode, openInEditMode, openPicker }) => {
         const selection = $getSelection()
         if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
           return false
@@ -52,6 +55,14 @@ export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDep
 
         if (openInEditMode) {
           store.setState({ isEditingCard: true })
+        }
+
+        // The pick seam's insert channel (CONTEXT.md: "pick seam"): open the
+        // card's registered picker on the fresh node. Rides this command — never
+        // a mutation listener — so editor-state loads cannot trigger a picker.
+        // The picker host drops requests for types with no registered picker.
+        if (openPicker) {
+          pickerStore.setState({ request: { nodeKey: cardNode.getKey(), nodeType: cardNode.getType() } })
         }
 
         return true

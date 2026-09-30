@@ -143,5 +143,41 @@ export function hasHostCard(nodeType: string): boolean {
  * projection, including the assembled node class, from the spec).
  */
 export function registerHostCard(record: HostCardRecord): void {
+  if (record.spec.picker !== undefined && CARD_PICKER_OVERRIDES.has(record.nodeType)) {
+    throw new Error(
+      `[defineCard] '${record.nodeType}': a picker override is already registered for this nodeType (one picker per card type)`,
+    )
+  }
   HOST_CARDS_BY_TYPE.set(record.nodeType, record)
+}
+
+// The picker override map (CONTEXT.md: "pick seam"): picker facts for cards
+// that CANNOT carry a HostCardSpec — a same-type variant of a built-in card
+// (kobato's KobatoImageNode replaces the stock class for node type 'image';
+// defineCard hard-rejects the collision). Same raw-fact philosophy as the
+// host store above: the seam resolves through `resolveCardPicker`, never by
+// reading this map directly. Registration order is unobservable (one picker
+// per nodeType, enforced at registration), so the Map is a plain fact table.
+const CARD_PICKER_OVERRIDES = new Map<string, HostCardPickerSpec>()
+
+/**
+ * Registers a picker for a card type without a host card spec (the built-in
+ * variant channel — see the map's comment). Throws when the type already has
+ * a picker from either channel: one picker per node type.
+ */
+export function registerCardPicker(nodeType: string, picker: HostCardPickerSpec): void {
+  if (CARD_PICKER_OVERRIDES.has(nodeType) || getHostCard(nodeType)?.spec.picker !== undefined) {
+    throw new Error(`[registerCardPicker] '${nodeType}': a picker is already registered for this nodeType`)
+  }
+  CARD_PICKER_OVERRIDES.set(nodeType, picker)
+}
+
+/**
+ * The card type's picker from EITHER channel: the host spec's `picker` fact
+ * first, then the variant override. The pick seam's dispatch (`useCardPicker`,
+ * `CardPickerHostPlugin`) resolves through here, so the two channels share
+ * one dispatch path.
+ */
+export function resolveCardPicker(nodeType: string): HostCardPickerSpec | undefined {
+  return getHostCard(nodeType)?.spec.picker ?? CARD_PICKER_OVERRIDES.get(nodeType)
 }

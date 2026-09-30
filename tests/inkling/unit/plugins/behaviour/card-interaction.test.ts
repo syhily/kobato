@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { tick } from '#/inkling/utils/test-editor'
 import { $createButtonNode, ButtonNode } from '@/inkling/nodes/ButtonNode'
 import { registerCardInteraction } from '@/inkling/plugins/behaviour/card-interaction'
+import { createCardPickerStore } from '@/inkling/plugins/behaviour/cardPickerStore'
 import { createCardSelectionStore, type CardSelectionStore } from '@/inkling/plugins/behaviour/cardSelectionStore'
 import { registerCardCommands } from '@/inkling/plugins/behaviour/registerCardCommands'
 
@@ -31,7 +32,7 @@ describe('card interaction', () => {
     })
     editor.setRootElement(rootElement)
     store = createCardSelectionStore()
-    registerCardCommands(editor, { store })
+    registerCardCommands(editor, { store, pickerStore: createCardPickerStore() })
 
     cardKey = ''
     editor.update(() => {

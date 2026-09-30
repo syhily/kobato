@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { tick } from '#/inkling/utils/test-editor'
 import { $isImageNode } from '@/inkling/nodes/base/nodes/image/ImageNode'
 import { $createImageNode, ImageNode, type ImageNode as ImageNodeInstance } from '@/inkling/nodes/ImageNode'
+import { createCardPickerStore } from '@/inkling/plugins/behaviour/cardPickerStore'
 import { createCardSelectionStore } from '@/inkling/plugins/behaviour/cardSelectionStore'
 import { registerCardCommands } from '@/inkling/plugins/behaviour/registerCardCommands'
 import {
@@ -27,7 +28,7 @@ describe('selector-insertion', () => {
         throw error
       },
     })
-    registerCardCommands(editor, { store: createCardSelectionStore() })
+    registerCardCommands(editor, { store: createCardSelectionStore(), pickerStore: createCardPickerStore() })
     registerSelectorInsertCommands(editor)
   })
 
