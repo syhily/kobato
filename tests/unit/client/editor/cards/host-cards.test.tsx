@@ -9,12 +9,33 @@
 //
 // The card modules' top-level `defineCard` calls run on import — pure
 // registry writes, safe under the node environment.
+//
+// The composer context is mocked with a real headless editor (the barrel's
+// `createHeadlessEditor`) because the music card's component and picker now
+// ride the inkling pick seam (`useCardPicker` / `useCardChrome`), which reads
+// the composer context. The picker dialog itself is stubbed — its props are
+// the pick seam's observable boundary.
 
+// @vitest-environment jsdom
+
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { act, render } from '@testing-library/react'
 import { JSDOM } from 'jsdom'
+import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { BaseMusicPlayerNode, MusicPlayerCardComponent, musicPlayerCard } from '@/client/editor/cards/music-player'
+import type { MusicPickerDialogProps } from '@/ui/admin/editor/pickers/MusicPickerDialog'
+
+import { makeAdminMusic } from '#/_helpers/catalog'
+import {
+  BaseMusicPlayerNode,
+  MusicCardPicker,
+  musicCardToolbarItems,
+  MusicPlayerCardComponent,
+  musicPickMeta,
+  musicPlayerCard,
+} from '@/client/editor/cards/music-player'
 import { BaseSolutionNode, SolutionCardView, solutionCard } from '@/client/editor/cards/solution'
 import {
   BaseTwoColumnNode,
@@ -22,12 +43,14 @@ import {
   TwoColumnPaneView,
   twoColumnCard,
 } from '@/client/editor/cards/two-column'
+import { createHeadlessEditor } from '@/inkling'
 import { MUSIC_PLAYER_META_KEYS } from '@/shared/lexical/artifacts'
 import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@/shared/lexical/cards/card-html'
 import {
   MUSIC_PLAYER_CARD_CLASSES,
   MUSIC_PLAYER_CARD_PROPERTIES,
   type MusicPlayerCardMeta,
+  musicPlayerCardMeta,
   musicPlayerFallbackHtml,
   renderMusicPlayerCard,
 } from '@/shared/lexical/cards/music-player'
@@ -44,6 +67,25 @@ import {
   TWO_COLUMN_NESTED_EDITORS,
 } from '@/shared/lexical/cards/two-column'
 import { MUSIC_PLAYER_NODE_TYPE, SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE } from '@/shared/lexical/node-whitelist'
+
+vi.mock('@lexical/react/LexicalComposerContext', () => ({
+  useLexicalComposerContext: vi.fn(),
+}))
+
+// The dialog is host chrome around an oRPC list — stub it and capture the
+// props the picker render hands it (open/onOpenChange/onPick are the seam).
+const musicPickerDialogProps: { current: MusicPickerDialogProps | null } = { current: null }
+vi.mock('@/ui/admin/editor/pickers/MusicPickerDialog', () => ({
+  MusicPickerDialog: (props: MusicPickerDialogProps) => {
+    musicPickerDialogProps.current = props
+    return null
+  },
+}))
+
+// One shared headless editor stands in for the composer context; the pick
+// tests insert real music-player nodes into it.
+const sharedEditor: LexicalEditor = createHeadlessEditor({ nodes: [musicPlayerCard.node], onError: () => {} })
+vi.mocked(useLexicalComposerContext).mockReturnValue([sharedEditor, { getTheme: () => null }])
 
 const dom = new JSDOM('')
 
@@ -166,7 +208,7 @@ describe('host card parity — music-player', () => {
   }
 
   it('renders the playable player on the canvas for a resolved card', () => {
-    const canvas = renderToStaticMarkup(<MusicPlayerCardComponent meta={META} pickTarget={null as never} />)
+    const canvas = renderToStaticMarkup(<MusicPlayerCardComponent meta={META} nodeKey="test-key" />)
     expect(canvas).toContain('Song')
     expect(canvas).toContain('Artist')
     expect(canvas).toContain('/storage/music/cover.png')
@@ -177,7 +219,7 @@ describe('host card parity — music-player', () => {
 
   it('renders the pick placeholder on the canvas for an unresolved card', () => {
     const meta: MusicPlayerCardMeta = { playerId: '', name: '', artist: '', cover: '', audioUrl: '', lyric: '' }
-    const canvas = renderToStaticMarkup(<MusicPlayerCardComponent meta={meta} pickTarget={null as never} />)
+    const canvas = renderToStaticMarkup(<MusicPlayerCardComponent meta={meta} nodeKey="test-key" />)
     expect(canvas).toContain('音乐播放器')
     expect(canvas).not.toContain('aria-label="播放"')
   })
@@ -218,5 +260,165 @@ describe('host card parity — music-player', () => {
       'playerId',
       ...MUSIC_PLAYER_META_KEYS,
     ])
+  })
+})
+
+describe('music-player pick seam', () => {
+  /** Inserts one empty music-player node into the shared editor; resolves its key after commit. */
+  async function insertMusicNode(): Promise<string> {
+    let key = ''
+    await new Promise<void>((resolve) => {
+      sharedEditor.update(
+        () => {
+          const node = new musicPlayerCard.node({})
+          $getRoot().append(node)
+          key = node.getKey()
+        },
+        { onUpdate: () => resolve() },
+      )
+    })
+    return key
+  }
+
+  /** The node's meta snapshot, read inside an editor-state read. */
+  function readMusicMeta(nodeKey: string): MusicPlayerCardMeta | null {
+    return sharedEditor.getEditorState().read(() => {
+      const node = $getNodeByKey(nodeKey)
+      return node instanceof BaseMusicPlayerNode ? musicPlayerCardMeta(node) : null
+    })
+  }
+
+  beforeEach(() => {
+    musicPickerDialogProps.current = null
+  })
+
+  it('maps the admin DTO onto the meta snapshot', () => {
+    expect(
+      musicPickMeta(
+        makeAdminMusic({
+          playerId: 'p1',
+          name: 'Song',
+          artist: ['周杰伦', '费玉清'],
+          coverUrl: '/storage/music/cover.png',
+          audioUrl: '/storage/music/song.mp3',
+          lyric: null,
+        }),
+      ),
+    ).toEqual({
+      playerId: 'p1',
+      name: 'Song',
+      // the library's packed ' / ' artist form, matching the save-time snapshot
+      artist: '周杰伦 / 费玉清',
+      cover: '/storage/music/cover.png',
+      audioUrl: '/storage/music/song.mp3',
+      lyric: '',
+    })
+  })
+
+  it('writes playerId and the full meta snapshot onto the node at pick time', async () => {
+    const nodeKey = await insertMusicNode()
+    expect(readMusicMeta(nodeKey)?.audioUrl).toBe('')
+
+    const close = vi.fn()
+    render(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
+    const onPick = musicPickerDialogProps.current?.onPick
+    expect(onPick).toBeDefined()
+
+    await act(async () => {
+      onPick?.(
+        makeAdminMusic({
+          playerId: 'p9',
+          name: 'Picked Song',
+          artist: ['Artist A', 'Artist B'],
+          coverUrl: '/storage/music/picked.png',
+          audioUrl: '/storage/music/picked.mp3',
+          lyric: '[00:01.00]hi',
+        }),
+      )
+      // Lexical 0.46 commits the pick write on a microtask — drain it
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    // the freshly picked card renders the playable player immediately
+    expect(readMusicMeta(nodeKey)).toEqual({
+      playerId: 'p9',
+      name: 'Picked Song',
+      artist: 'Artist A / Artist B',
+      cover: '/storage/music/picked.png',
+      audioUrl: '/storage/music/picked.mp3',
+      lyric: '[00:01.00]hi',
+    })
+    expect(close).toHaveBeenCalledTimes(1)
+  })
+
+  it('closes without writing when the dialog is dismissed', async () => {
+    const nodeKey = await insertMusicNode()
+    const close = vi.fn()
+    render(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
+
+    act(() => {
+      musicPickerDialogProps.current?.onOpenChange?.(false)
+    })
+
+    expect(close).toHaveBeenCalledTimes(1)
+    expect(readMusicMeta(nodeKey)?.playerId).toBe('')
+  })
+
+  it('no-ops the pick write when the card was deleted while the dialog was open', async () => {
+    const nodeKey = await insertMusicNode()
+    const close = vi.fn()
+    render(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
+    await new Promise<void>((resolve) => {
+      sharedEditor.update(
+        () => {
+          $getNodeByKey(nodeKey)?.remove()
+        },
+        { onUpdate: () => resolve() },
+      )
+    })
+
+    expect(readMusicMeta(nodeKey)).toBeNull()
+    expect(() =>
+      act(() => {
+        musicPickerDialogProps.current?.onPick(makeAdminMusic())
+      }),
+    ).not.toThrow()
+    expect(close).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('music-player editing chrome', () => {
+  it('declares replace and remove items wired to the pick seam and card deletion', () => {
+    const onReplace = vi.fn()
+    const onRemove = vi.fn()
+    const items = musicCardToolbarItems({ onReplace, onRemove })
+
+    expect(items).toHaveLength(2)
+    const [replace, remove] = items
+    expect(replace).toMatchObject({
+      kind: 'custom',
+      icon: 'replace',
+      label: '更换歌曲',
+      dataTestId: 'replace-music-track',
+    })
+    expect(remove).toMatchObject({
+      kind: 'custom',
+      icon: 'trash',
+      label: '删除播放器',
+      dataTestId: 'remove-music-card',
+    })
+
+    // the click handlers stop propagation (the wrapper's selection would
+    // otherwise fire) and invoke the affordance
+    const event = { stopPropagation: vi.fn() } as unknown as React.MouseEvent
+    if (replace?.kind === 'custom') {
+      replace.onClick(event)
+    }
+    expect(event.stopPropagation).toHaveBeenCalled()
+    expect(onReplace).toHaveBeenCalledTimes(1)
+    if (remove?.kind === 'custom') {
+      remove.onClick(event)
+    }
+    expect(onRemove).toHaveBeenCalledTimes(1)
   })
 })

@@ -930,7 +930,14 @@ describe('contract: module and bundle boundaries', () => {
     // render). It is a leaf component (its only `@/ui` dependency is
     // `ui/lib/cn`), and `client/editor/` is browser-only glue consumed by
     // `ui/admin/editor/PageBodyEditor`, so no server-bundle contamination.
-    const CLIENT_TO_UI_ALLOWLIST = new Set(['@/ui/public/music-player/music-player'])
+    // MusicPickerDialog joins it for the same reason: the music card's
+    // pick-seam render (declared on its defineCard spec in client/editor)
+    // mounts the host-owned dialog — it is admin chrome over the oRPC
+    // client, never reachable from the server bundle.
+    const CLIENT_TO_UI_ALLOWLIST = new Set([
+      '@/ui/admin/editor/pickers/MusicPickerDialog',
+      '@/ui/public/music-player/music-player',
+    ])
     const offenders: string[] = []
     for (const file of files('src/client', 'src/shared', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {

@@ -18,9 +18,10 @@
 // - `use-focus-mode` — the writing-focus toggle (focus UX is host-owned).
 // - `block-quote-aside-cycle` / `use-editor-body-reset` — the Ctrl+Q capture
 //   and the body mount-snapshot/reseed glue shared with the comment surface.
-// - Music picking: slash inserts an empty `music-player` card; clicking its
-//   placeholder opens `MusicPickerDialog` via `MusicPickContext` and the pick
-//   writes `playerId` back onto the node.
+// - Music picking: the `music-player` card declares its picker on its
+//   defineCard spec (inkling's pick seam) — the slash insert auto-opens
+//   `MusicPickerDialog` on the fresh node, and the placeholder/replace
+//   chrome reopens it. No editor-level wiring remains here.
 //
 // SSR: the inkling tree mounts only after hydration (`useHydrated`) — the
 // placeholder below is what the server and the first client render agree on
@@ -28,15 +29,13 @@
 
 import '@/styles/inkling-editor.css'
 import { FocusIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import type { ExternalControlAPI, LexicalEditor } from '@/inkling'
 import type { AdminImageDto } from '@/shared/contracts/images'
-import type { AdminMusicDto } from '@/shared/contracts/music'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { blockQuoteAsideCycle } from '@/client/editor/block-quote-aside-cycle'
-import { MusicPickContext, type MusicPickTarget } from '@/client/editor/cards/music-pick-context'
 import { registerKobatoImageInsertCommands, toSiteOwnedImageSrc } from '@/client/editor/image-insert-override'
 import { inklingLabels } from '@/client/editor/inkling-labels'
 import { pageEditorCardConfig } from '@/client/editor/page-editor-card-config'
@@ -46,7 +45,6 @@ import { useEditorBodyReset } from '@/client/editor/use-editor-body-reset'
 import { useFocusModePreference } from '@/client/editor/use-focus-mode'
 import { InklingComposer, InklingEditor, INSERT_IMAGE_COMMAND } from '@/inkling'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
-import { MusicPickerDialog } from '@/ui/admin/editor/pickers/MusicPickerDialog'
 import { Button } from '@/ui/components/button'
 import { useTheme } from '@/ui/lib/ThemeProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
@@ -97,8 +95,6 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
   const { mountedInitialState, handleChange } = useEditorBodyReset(editorInstance, initialBody, bodyKey, onBodyChange)
 
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
-  const [musicPickerOpen, setMusicPickerOpen] = useState(false)
-  const musicPickTargetRef = useRef<MusicPickTarget | null>(null)
 
   // The stock image handlers mount on the shared 'image' type but would
   // build the stock class — intercept at HIGH for the editor's lifetime.
@@ -130,30 +126,6 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
     [editorInstance],
   )
 
-  const openMusicPicker = useCallback((target: MusicPickTarget) => {
-    musicPickTargetRef.current = target
-    setMusicPickerOpen(true)
-  }, [])
-
-  const pickMusic = useCallback(
-    (music: AdminMusicDto) => {
-      const editor = editorInstance
-      const target = musicPickTargetRef.current
-      musicPickTargetRef.current = null
-      if (editor === null || target === null) {
-        return
-      }
-      try {
-        editor.update(() => {
-          target.playerId = music.playerId
-        })
-      } catch {
-        // The card was deleted while the dialog was open — drop the pick.
-      }
-    },
-    [editorInstance],
-  )
-
   return (
     <div
       className="kobato-page-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col"
@@ -161,27 +133,25 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
     >
       <div data-kobato-editor-scroll="" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
         {header}
-        <MusicPickContext value={openMusicPicker}>
-          <InklingComposer
-            nodes={PAGE_EDITOR_NODES}
-            initialEditorState={mountedInitialState}
-            fileUploader={pageEditorFileUploader}
-            cardConfig={pageEditorCardConfig}
-            labels={inklingLabels}
-            darkMode={resolvedTheme === 'dark'}
-            dragScrollContainerSelector="[data-kobato-editor-scroll]"
-          >
-            <InklingEditor
-              readOnly={disabled === true}
-              focusMode={focusMode}
-              registerAPI={registerAPI}
-              onChange={handleChange}
-              placeholderText="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
-              placeholderClassName="kobato-page-placeholder"
-              contentEditableClassName="typeset typeset-post"
-            />
-          </InklingComposer>
-        </MusicPickContext>
+        <InklingComposer
+          nodes={PAGE_EDITOR_NODES}
+          initialEditorState={mountedInitialState}
+          fileUploader={pageEditorFileUploader}
+          cardConfig={pageEditorCardConfig}
+          labels={inklingLabels}
+          darkMode={resolvedTheme === 'dark'}
+          dragScrollContainerSelector="[data-kobato-editor-scroll]"
+        >
+          <InklingEditor
+            readOnly={disabled === true}
+            focusMode={focusMode}
+            registerAPI={registerAPI}
+            onChange={handleChange}
+            placeholderText="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
+            placeholderClassName="kobato-page-placeholder"
+            contentEditableClassName="typeset typeset-post"
+          />
+        </InklingComposer>
       </div>
       <div className="absolute right-3 bottom-3 z-30">
         <Button
@@ -196,7 +166,6 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
         </Button>
       </div>
       <ImageLibraryPicker open={imagePickerOpen} onOpenChange={setImagePickerOpen} onPick={insertLibraryImage} />
-      <MusicPickerDialog open={musicPickerOpen} onOpenChange={setMusicPickerOpen} onPick={pickMusic} />
     </div>
   )
 }

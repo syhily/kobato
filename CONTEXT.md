@@ -97,6 +97,30 @@ _Avoid_: "assets" unqualified — the `assets` Section (q.v.) is the
 storage-backend configuration (S3 toggle, credentials, upload limits,
 CDN host), a different concept that happens to share the name
 
+**Entity-backed card**:
+A host card whose dataset references a row in a host-owned library (the
+music player's `playerId` points at a music row) instead of carrying all
+of its content inline. The card declares a picker through the pick seam
+(q.v.) so choosing the entity writes the reference AND a display meta
+snapshot onto the node at pick time; the save-time snapshot refresh
+(`lexical-music-snapshot`) stays the authority for the server-owned meta
+keys, so the pick-time write is display-only.
+_Avoid_: linked block, embed card (embeds resolve external URLs, not
+library rows)
+
+**Pick seam**:
+The inkling editor layer's channel for opening a host-owned picker dialog
+from an entity-backed card (q.v.): the card's `defineCard` spec declares
+`picker: { render, autoOpenOnInsert? }`, and dispatch rides a per-composer
+request store — the card component calls `useCardPicker().open(nodeKey)`
+(placeholder click, replace affordance) or the insert registrar opens the
+picker on a freshly inserted node — while inkling's `CardPickerHostPlugin`
+(a core plugin) mounts `picker.render({ editor, nodeKey, close })` for the
+active request. Picks write back onto the node by KEY inside
+`editor.update()`, never through a captured node instance.
+_Avoid_: MusicPickContext (the retired bespoke per-card context), picker
+prop-drilling
+
 ### Settings
 
 **Section**:
