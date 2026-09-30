@@ -1,6 +1,24 @@
+// The persist orchestrator of the editor shell: composes the focused slices
+// (each a sibling module) and owns the wiring between them —
+//
+// - `use-editor-shell-persist-race` — the revision-token race (expected
+//   token + latest/published) and the `server` autosave freeze leg.
+// - `use-editor-shell-persist-conflict` — the IndexedDB local-draft session
+//   and the `local` freeze leg (a diverging stored draft until the dialog
+//   resolves it).
+// - `use-editor-shell-persist-mutations` — the four wire mutations and their
+//   note* interpreters.
+// - `editor-shell-persist-plan` — the pure wire/status planners every flow
+//   applies verbatim (no decisions here).
+//
+// Owned here: the save-flow status + baselines, the action banner, the
+// autosave engine wiring (`useAutosave` is the sole baseline owner behind
+// `setBaseline`), the `handleBodySavedRef` mirror that breaks the
+// declaration cycle between the mutations and the engine's `setBaseline`,
+// the four persist handlers, and the conflict/revision adoption flows.
+
 import type { NavigateFunction } from 'react-router'
 
-import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
@@ -11,12 +29,10 @@ import type {
   EditorShellDetail,
   EditorShellStatus,
   EntityLike,
-  RevisionLike,
   UseEditorShellStateArgs,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { useAutosave, type AutosaveFlushOutcome, type AutosaveStatus } from '@/client/hooks/use-autosave'
-import { useLocalDraft } from '@/client/hooks/use-local-draft'
 import { areLexicalEditorStatesEquivalent } from '@/shared/lexical/equivalence'
 import { EMPTY_LEXICAL_EDITOR_STATE } from '@/shared/lexical/schema'
 import { deriveBaselineRevision, deriveBaselineUpdatedAtMs } from '@/ui/admin/editor-shell/editor-shell-derived'
@@ -28,6 +44,9 @@ import {
   verdictBodySave,
 } from '@/ui/admin/editor-shell/editor-shell-persist-plan'
 import { useActionBanner } from '@/ui/admin/editor-shell/use-action-banner'
+import { useEditorShellPersistConflict } from '@/ui/admin/editor-shell/use-editor-shell-persist-conflict'
+import { useEditorShellPersistMutations } from '@/ui/admin/editor-shell/use-editor-shell-persist-mutations'
+import { useEditorShellPersistRace } from '@/ui/admin/editor-shell/use-editor-shell-persist-race'
 
 /** Live draft snapshot the persist flows read (autosave + the four persist handlers). */
 export interface EditorShellPersistDraft<TMeta> {
@@ -54,9 +73,10 @@ export interface EditorShellPersistMutations<
 /** The few writes persist must report into orchestrator-owned state. The
  *  revision race (expected token + latest/published), both freeze legs, and
  *  the local-draft conflict are owned HERE — the split that once dodged a
- *  hook-ordering cycle is gone: persist calls `useLocalDraft` itself, so the
- *  token it owns feeds the draft key and the conflict it detects feeds the
- *  freeze with no render-input round-trip. */
+ *  hook-ordering cycle is gone: persist drives the local-draft session
+ *  itself (via `use-editor-shell-persist-conflict`), so the token it owns
+ *  feeds the draft key and the conflict it detects feeds the freeze with no
+ *  render-input round-trip. */
 export interface EditorShellPersistNotifications<TMeta> {
   /** Adopt the server-confirmed meta draft after a meta save / unpublish. */
   applyServerMeta: (meta: TMeta) => void
@@ -98,24 +118,14 @@ export function useEditorShellPersist<
   const { editPath, navigate } = routing
   const isEditing = detail !== undefined
 
-  // Owned save-flow state.
+  // Owned save-flow status + baselines; the mutation slice reports through
+  // these setters.
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => deriveBaselineUpdatedAtMs(detail))
   const [lastSavedBody, setLastSavedBody] = useState<LexicalEditorState>(
     () => deriveBaselineRevision(detail)?.body ?? EMPTY_LEXICAL_EDITOR_STATE,
   )
   const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(detail?.entity.publishedAt ?? null)
-
-  // Owned revision race: the expected token advances only through
-  // `updateAfterSave` below, latest/published ride along with it.
-  const [expectedToken, setExpectedToken] = useState<string | null>(
-    deriveBaselineRevision(detail)?.clientRevisionToken ?? null,
-  )
-  const [latestRevision, setLatestRevision] = useState<RevisionLike | null>(detail?.latestRevision ?? null)
-  const [publishedRevision, setPublishedRevision] = useState<RevisionLike | null>(detail?.publishedRevision ?? null)
-  // The `server` leg of the autosave freeze — set on a revision conflict,
-  // cleared by the next clean body save (`updateAfterSave`).
-  const [serverConflicted, setServerConflicted] = useState(false)
 
   const {
     banner: previewBanner,
@@ -125,42 +135,20 @@ export function useEditorShellPersist<
     dismiss: dismissPreviewBanner,
   } = useActionBanner()
 
-  // Owned local-draft session: the draft key embeds the owned token, so the
-  // IndexedDB draft rotates with every clean save (audit P1-15).
-  const { loadedDraft: loadedLocalDraft, clearDraft: clearLocalDraft } = useLocalDraft(localDraftConfig, {
+  // Owned revision race (expected token + latest/published) + the `server`
+  // freeze leg.
+  const { expectedToken, latestRevision, publishedRevision, serverConflicted, updateAfterSave, noteServerConflict } =
+    useEditorShellPersistRace(detail)
+
+  // Owned local-draft session + conflict detection (the `local` freeze leg).
+  const { conflict, clearLocalDraft, resolveConflict } = useEditorShellPersistConflict({
+    localDraftConfig,
     entityId: isEditing ? detail.entity.id : null,
     clientRevisionToken: expectedToken,
     body,
     disabled: !isEditing,
-  })
-
-  // Owned local-conflict detection (render-phase state adjustment,
-  // react-compiler-safe): a stored draft diverging from the opening body
-  // freezes autosave until the dialog resolves it.
-  const [conflict, setConflict] = useState<{
-    localBody: LexicalEditorState
-    localSavedAt: number
-  } | null>(null)
-  const [conflictResolved, setConflictResolved] = useState(false)
-  const [lastConflictCheck, setLastConflictCheck] = useState({
-    loadedLocalDraft,
     initialBody,
-    conflictResolved,
   })
-  if (
-    lastConflictCheck.loadedLocalDraft !== loadedLocalDraft ||
-    lastConflictCheck.initialBody !== initialBody ||
-    lastConflictCheck.conflictResolved !== conflictResolved
-  ) {
-    setLastConflictCheck({ loadedLocalDraft, initialBody, conflictResolved })
-    if (
-      !conflictResolved &&
-      loadedLocalDraft !== null &&
-      !areLexicalEditorStatesEquivalent(loadedLocalDraft.body, initialBody)
-    ) {
-      setConflict({ localBody: loadedLocalDraft.body, localSavedAt: loadedLocalDraft.savedAt })
-    }
-  }
 
   // The merged autosave freeze: one gate, two owned sources; the local leg
   // wins the `source` label when both are set.
@@ -174,102 +162,31 @@ export function useEditorShellPersist<
   // optimistic future date would make a picker-clear save silently unpublish.
   const publishedAtBeforePublishRef = useRef<string | null>(null)
 
-  const noteError = useCallback(
-    (message: string) => {
-      manualSaveBodyRef.current = null
-      setStatus({ kind: 'error', message })
-      cancelActionBanner()
-    },
-    [cancelActionBanner],
-  )
-
-  const noteMetaSaved = useCallback(
-    (saved: TEntity) => {
-      // A concurrent body leg's warning / conflict must not be hidden.
-      setStatus((prev) =>
-        prev.kind === 'warning' || prev.kind === 'conflict' ? prev : { kind: 'saved', at: new Date() },
-      )
-      applyServerMeta(metaDraftFromEntity(saved))
-      setServerPublishedAtIso(saved.publishedAt)
-      const saveMs = Date.parse(saved.updatedAt)
-      if (!Number.isNaN(saveMs)) {
-        setDisplaySaveAtMs(saveMs)
-      }
-      noteActionLegSucceeded(saved.slug)
-    },
-    [applyServerMeta, metaDraftFromEntity, noteActionLegSucceeded],
-  )
-
-  const noteUnpublishSaved = useCallback(
-    (saved: TEntity) => {
-      // Same concurrent-leg rule as noteMetaSaved.
-      setStatus((prev) =>
-        prev.kind === 'warning' || prev.kind === 'conflict' ? prev : { kind: 'saved', at: new Date() },
-      )
-      applyServerMeta(metaDraftFromEntity(saved))
-      setServerPublishedAtIso(saved.publishedAt)
-      const saveMs = Date.parse(saved.updatedAt)
-      if (!Number.isNaN(saveMs)) {
-        setDisplaySaveAtMs(saveMs)
-      }
-      dismissPreviewBanner()
-    },
-    [applyServerMeta, metaDraftFromEntity, dismissPreviewBanner],
-  )
-
-  // The one advance of the owned revision race: token + latest/published,
-  // and a clean body save also clears the `server` freeze leg.
-  const updateAfterSave = useCallback((revision: RevisionLike) => {
-    setServerConflicted(false)
-    setExpectedToken(revision.clientRevisionToken)
-    setLatestRevision(revision)
-    if (revision.status === 'published') {
-      setPublishedRevision(revision)
-    }
-  }, [])
-
   // The single mirror that breaks the declaration cycle: the body mutations
   // and the autosave flush are declared before `noteBodySaved` (which reads
   // the engine's `setBaseline`), so they reach it through this ref. The
   // effect below keeps it pointing at the latest closure.
   const handleBodySavedRef = useRef<(payload: SaveBodyOutput) => void>(() => undefined)
 
-  const upsertMetaMutation = useMutation({
-    mutationFn: upsertMetaFn,
-    onSuccess: (saved) => noteMetaSaved(saved),
-    onError: (error) => noteError(error.message),
-  })
-  const saveDraftMutation = useMutation({
-    mutationFn: saveDraftFn,
-    onSuccess: (payload) => handleBodySavedRef.current(payload),
-    onError: (error) => noteError(error.message),
-  })
-  const publishMutation = useMutation({
-    mutationFn: publishFn,
-    onSuccess: (payload) => {
-      handleBodySavedRef.current(payload)
-      if (payload.status === 'saved') {
-        markMetaPublished()
-      }
-    },
-    onError: (error) => {
-      // Publish never landed: roll back the optimistic server publishedAt to
-      // the pre-publish truth; the user's picker input stays untouched.
-      setServerPublishedAtIso(publishedAtBeforePublishRef.current)
-      noteError(error.message)
-    },
-  })
-  const unpublishMutation = useMutation({
-    mutationFn: unpublishFn,
-    onSuccess: (saved) => noteUnpublishSaved(saved),
-    onError: (error) => noteError(error.message),
-  })
-
-  const isSubmittingAny =
-    upsertMetaMutation.isPending ||
-    saveDraftMutation.isPending ||
-    publishMutation.isPending ||
-    unpublishMutation.isPending
+  const { upsertMetaMutation, saveDraftMutation, publishMutation, unpublishMutation, isSubmittingAny } =
+    useEditorShellPersistMutations({
+      upsertMetaFn,
+      saveDraftFn,
+      publishFn,
+      unpublishFn,
+      metaDraftFromEntity,
+      applyServerMeta,
+      markMetaPublished,
+      setStatus,
+      setDisplaySaveAtMs,
+      setServerPublishedAtIso,
+      noteActionLegSucceeded,
+      cancelActionBanner,
+      dismissPreviewBanner,
+      manualSaveBodyRef,
+      publishedAtBeforePublishRef,
+      handleBodySavedRef,
+    })
 
   const [isCreating, setIsCreating] = useState(false)
 
@@ -332,7 +249,7 @@ export function useEditorShellPersist<
         // rejects it, and the engine must not clobber this status with a
         // generic `saved` tick.
         manualSaveBodyRef.current = null
-        setServerConflicted(true)
+        noteServerConflict()
         setStatus({ kind: 'conflict', expectedToken: plan.expectedToken })
         cancelActionBanner()
         return
@@ -352,7 +269,7 @@ export function useEditorShellPersist<
       updateAfterSave(plan.revision)
       setLastSavedBody(plan.revision.body)
     },
-    [meta.slug, detail, cancelActionBanner, noteActionLegSucceeded, updateAfterSave, setBaseline],
+    [meta.slug, detail, cancelActionBanner, noteActionLegSucceeded, updateAfterSave, noteServerConflict, setBaseline],
   )
 
   useEffect(() => {
@@ -394,7 +311,7 @@ export function useEditorShellPersist<
     }
     const verdict = verdictBodySave(draftResult)
     if (verdict.kind === 'conflict') {
-      setServerConflicted(true)
+      noteServerConflict()
       setStatus({ kind: 'conflict', expectedToken: verdict.expectedToken })
       setIsCreating(false)
       void navigate(editPath(savedEntity.id), { replace: true })
@@ -418,6 +335,7 @@ export function useEditorShellPersist<
     directSaveDraft,
     createDraft,
     buildUpsertMetaPayload,
+    noteServerConflict,
     editPath,
     navigate,
   ])
@@ -499,8 +417,7 @@ export function useEditorShellPersist<
       return
     }
     replaceBody(conflict.localBody, `${detail.entity.id}:adopt-local:${Date.now()}`)
-    setConflict(null)
-    setConflictResolved(true)
+    resolveConflict()
     setStatus({ kind: 'saving' })
     try {
       const result = await directSaveDraft({
@@ -517,15 +434,14 @@ export function useEditorShellPersist<
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof Error ? error.message : '保存失败' })
     }
-  }, [conflict, isEditing, detail, expectedToken, directSaveDraft, setBaseline, replaceBody])
+  }, [conflict, isEditing, detail, expectedToken, directSaveDraft, setBaseline, replaceBody, resolveConflict])
 
   const adoptServerVersion = useCallback(() => {
     replaceBody(initialBody, `${detail?.entity.id ?? 'new'}:adopt-server:${Date.now()}`)
     setLastSavedBody(initialBody)
     clearLocalDraft()
-    setConflict(null)
-    setConflictResolved(true)
-  }, [initialBody, detail, clearLocalDraft, replaceBody])
+    resolveConflict()
+  }, [initialBody, detail, clearLocalDraft, replaceBody, resolveConflict])
 
   const adoptRevisionFromHistory = useCallback(
     (revision: { body: LexicalEditorState; revisionNo: number }) => {

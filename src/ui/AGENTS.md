@@ -29,9 +29,13 @@ parent.
     and `lexical-body-diff.tsx` (revision diff).
   - `editor-shell/` — orchestration layer wrapping the inkling body editor into a draft/publish
     workflow: `useEditorShellState` (orchestrator for Post + Page shells — body/meta drafts,
-    shortcuts, meta-panel toggle), `useEditorShellPersist` (deep persist module: owns the
-    revision-token race, both autosave freeze legs, the local-draft conflict, and the persisted
-    baseline; wire/status decisions are pure planners in `editor-shell-persist-plan.ts`),
+    shortcuts, meta-panel toggle), `useEditorShellPersist` (the persist orchestrator: owns the
+    save-flow status + baselines, the autosave wiring, and the four persist handlers; the owned
+    slices are sibling modules — `use-editor-shell-persist-race` (revision-token race + the
+    `server` freeze leg), `use-editor-shell-persist-conflict` (local-draft session + conflict
+    detection, the `local` freeze leg), `use-editor-shell-persist-mutations` (the four wire
+    mutations — declaration order is test-pinned — and their note* interpreters); wire/status
+    decisions are pure planners in `editor-shell-persist-plan.ts`),
     `useAutosave` (client-side engine — sole baseline owner behind `setBaseline`, mount seed via
     `initialBaseline`), `EditorScreen` (single screen driven by an `EditorScreenAdapter`),
     `makeEditorAdapter` (factory: per-entity config + per-render runtime → adapter), plus
