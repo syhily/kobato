@@ -20,8 +20,12 @@
 // - `page-editor-card-config` / `render-math` — image width policy, library
 //   menu visibility, and the debounced server KaTeX preview channel.
 // - `use-focus-mode` — the writing-focus toggle (focus UX is host-owned).
-// - `block-quote-aside-cycle` / `use-editor-body-reset` — the Ctrl+Q capture
-//   and the body mount-snapshot/reseed glue shared with the comment surface.
+// - `editor-surface` — the composer skeleton shared with the comment surface:
+//   `useEditorSurface` (the registerAPI → editor-instance dance + the body
+//   mount-snapshot/reseed wiring) and `EditorSurfaceComposer` (the
+//   InklingComposer shell with labels/darkMode applied).
+// - `block-quote-aside-cycle` — the Ctrl+Q capture shared with the comment
+//   surface.
 // - Music picking: the `music-player` card declares its picker on its
 //   defineCard spec (inkling's pick seam) — the slash insert auto-opens
 //   `MusicPickerDialog` on the fresh node, and the placeholder/replace
@@ -33,22 +37,19 @@
 
 import '@/styles/inkling-editor.css'
 import { FocusIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
-import type { ExternalControlAPI, LexicalEditor } from '@/inkling'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { blockQuoteAsideCycle } from '@/client/editor/block-quote-aside-cycle'
+import { EditorSurfaceComposer, useEditorSurface } from '@/client/editor/editor-surface'
 import { registerKobatoImageInsertCommands } from '@/client/editor/image-insert-override'
-import { inklingLabels } from '@/client/editor/inkling-labels'
 import { pageEditorCardConfig } from '@/client/editor/page-editor-card-config'
 import { PAGE_EDITOR_NODES } from '@/client/editor/page-editor-nodes'
 import { pageEditorFileUploader } from '@/client/editor/page-editor-upload'
-import { useEditorBodyReset } from '@/client/editor/use-editor-body-reset'
 import { useFocusModePreference } from '@/client/editor/use-focus-mode'
-import { InklingComposer, InklingEditor } from '@/inkling'
+import { InklingEditor } from '@/inkling'
 import { Button } from '@/ui/components/button'
-import { useTheme } from '@/ui/lib/ThemeProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 
 export interface PageBodyEditorProps {
@@ -86,15 +87,12 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
 }
 
 function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, header }: PageBodyEditorProps) {
-  const { resolvedTheme } = useTheme()
   const [focusMode, toggleFocusMode] = useFocusModePreference()
-
-  const [editorInstance, setEditorInstance] = useState<LexicalEditor | null>(null)
-  const registerAPI = useCallback((api: ExternalControlAPI | null) => {
-    setEditorInstance(api?.editorInstance ?? null)
-  }, [])
-
-  const { mountedInitialState, handleChange } = useEditorBodyReset(editorInstance, initialBody, bodyKey, onBodyChange)
+  const { editorInstance, registerAPI, mountedInitialState, handleChange } = useEditorSurface({
+    initialBody,
+    bodyKey,
+    onBodyChange,
+  })
 
   // The stock image handlers mount on the shared 'image' type but would
   // build the stock class / mount inkling's selector overlay — intercept at
@@ -113,13 +111,11 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
     >
       <div data-kobato-editor-scroll="" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
         {header}
-        <InklingComposer
+        <EditorSurfaceComposer
           nodes={PAGE_EDITOR_NODES}
           initialEditorState={mountedInitialState}
           fileUploader={pageEditorFileUploader}
           cardConfig={pageEditorCardConfig}
-          labels={inklingLabels}
-          darkMode={resolvedTheme === 'dark'}
           dragScrollContainerSelector="[data-kobato-editor-scroll]"
         >
           <InklingEditor
@@ -131,7 +127,7 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
             placeholderClassName="kobato-page-placeholder"
             contentEditableClassName="typeset typeset-post"
           />
-        </InklingComposer>
+        </EditorSurfaceComposer>
       </div>
       <div className="absolute right-3 bottom-3 z-30">
         <Button

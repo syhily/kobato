@@ -26,6 +26,11 @@
   uploads through `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (card policy + the
   debounced server KaTeX preview channel), `inkling-labels` (the zh-CN labels overlay),
   `use-focus-mode` (the writing-focus preference toggle),
+  `editor-surface` (the composer skeleton both surfaces share: `useEditorSurface` — the
+  registerAPI → editor-instance dance + body mount-snapshot/reseed wiring — and
+  `EditorSurfaceComposer`, the InklingComposer shell with the zh-CN labels + theme-driven
+  darkMode applied; every delta — node set, fileUploader/cardConfig, ui-prefs flags —
+  passes through, `nodes` stays required),
   `block-quote-aside-cycle` (the host-side Ctrl+Q capture shared by both surfaces — neither composer
   registers AsideNode), `use-editor-body-reset` (the shared body-lifecycle glue: mount-snapshot seed,
   imperative reseed on `bodyKey` change, stable narrowing `handleChange`), and `base-node-filter`

@@ -934,9 +934,13 @@ describe('contract: module and bundle boundaries', () => {
     // pick-seam renders (the music card's defineCard spec, the image
     // variant's `registerCardPicker`) mount the host-owned dialogs — admin
     // chrome over the oRPC client, never reachable from the server bundle.
+    // `ui/lib/ThemeProvider` is the shared composer surface's theme read
+    // (`client/editor/editor-surface`) — a leaf context module already in
+    // every bundle via root.tsx.
     const CLIENT_TO_UI_ALLOWLIST = new Set([
       '@/ui/admin/editor/pickers/ImageLibraryPicker',
       '@/ui/admin/editor/pickers/MusicPickerDialog',
+      '@/ui/lib/ThemeProvider',
       '@/ui/public/music-player/music-player',
     ])
     const offenders: string[] = []

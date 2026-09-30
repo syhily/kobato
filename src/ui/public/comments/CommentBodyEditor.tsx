@@ -6,8 +6,9 @@
 // shortcuts (`comment-markdown-transformers` — bold/italic/quote/list/link
 // and the ``` fence; ```math is the formula path, rendered to KaTeX MathML
 // by the server-side comment projection), the zh-CN labels, and the legacy
-// math-card seed downgrade (`comment-legacy-math`), plus the glue shared with
-// the page surface (`block-quote-aside-cycle`, `use-editor-body-reset`).
+// math-card seed downgrade (`comment-legacy-math`), plus the skeleton shared
+// with the page surface (`editor-surface` — the registerAPI/body-reset
+// wiring + the composer shell; `block-quote-aside-cycle` on the shell div).
 // No cards on this surface: no slash menu, no card insert, no card config.
 //
 // The surface is deliberately minimal: `isEmojiEnabled={false}` keeps the
@@ -29,21 +30,18 @@
 // "no waterfall on click" — is preserved via hover prefetch + focus handoff).
 
 import '@/styles/inkling-comment-editor.css'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 
-import type { ExternalControlAPI, LexicalEditor } from '@/inkling'
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { blockQuoteAsideCycle } from '@/client/editor/block-quote-aside-cycle'
 import { COMMENT_EDITOR_NODES } from '@/client/editor/comment-editor-nodes'
 import { downgradeLegacyCommentMath } from '@/client/editor/comment-legacy-math'
 import { COMMENT_MARKDOWN_TRANSFORMERS } from '@/client/editor/comment-markdown-transformers'
-import { inklingLabels } from '@/client/editor/inkling-labels'
-import { useEditorBodyReset } from '@/client/editor/use-editor-body-reset'
-import { InklingComposer, InklingSurface, ListPlugin } from '@/inkling'
+import { EditorSurfaceComposer, useEditorSurface } from '@/client/editor/editor-surface'
+import { InklingSurface, ListPlugin } from '@/inkling'
 import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@/shared/lexical/comment-schema'
 import { cn } from '@/ui/lib/cn'
-import { useTheme } from '@/ui/lib/ThemeProvider'
 
 export interface CommentBodyEditorProps {
   /** Initial comment state. Read on first mount + when `bodyKey` changes. */
@@ -70,20 +68,12 @@ function safeInitialState(body: CommentEditorState): CommentEditorState {
 }
 
 export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled, className }: CommentBodyEditorProps) {
-  const { resolvedTheme } = useTheme()
-
-  const [editorInstance, setEditorInstance] = useState<LexicalEditor | null>(null)
-  const registerAPI = useCallback((api: ExternalControlAPI | null) => {
-    setEditorInstance(api?.editorInstance ?? null)
-  }, [])
-
-  const { mountedInitialState, handleChange } = useEditorBodyReset(
-    editorInstance,
+  const { editorInstance, registerAPI, mountedInitialState, handleChange } = useEditorSurface({
     initialBody,
     bodyKey,
     onBodyChange,
-    safeInitialState,
-  )
+    prepareSeed: safeInitialState,
+  })
 
   // Click-to-focus fallback. The canvas now fills the shell (the host CSS
   // puts the min-height/padding on the contentEditable), so this only fires
@@ -114,11 +104,9 @@ export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled
       onClick={focusEditor}
       onKeyDownCapture={blockQuoteAsideCycle}
     >
-      <InklingComposer
+      <EditorSurfaceComposer
         nodes={COMMENT_EDITOR_NODES}
         initialEditorState={mountedInitialState}
-        labels={inklingLabels}
-        darkMode={resolvedTheme === 'dark'}
         isEmojiEnabled={false}
         codeEditor="plain"
       >
@@ -137,7 +125,7 @@ export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled
         >
           <ListPlugin />
         </InklingSurface>
-      </InklingComposer>
+      </EditorSurfaceComposer>
     </div>
   )
 }
