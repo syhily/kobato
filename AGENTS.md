@@ -72,7 +72,7 @@ extract to a flat cache dir on first run
 (`src/server/infra/sea-natives.ts`) — `dlopen` needs real files.
 
 Empirically pinned constraints (`pnpm run sea:probe`; the full rationale
-lives in ADR-0004 amendment 2026-09-21):
+lives in ADR-0004 amendments 2026-09-21 and 2026-10-16):
 
 - Worker threads can neither start from nor even see VFS paths
   (`ENOTDIR`) — the `eval:true` worker dispatch stays: the main thread
@@ -105,7 +105,7 @@ lives in ADR-0004 amendment 2026-09-21):
   SEA build on >= 26.10.0 (darwin's dyld tolerates mode 0 — the linux CI
   smoke is the only detector).
 
-**Node 26 pin.** Toolchain pinned to 26.10.0 (`.nvmrc`, CI matrices);
+**Node 26 pin.** Toolchain pinned to 26.12.0 (`.nvmrc`, CI matrices);
 `package.json` engines floors at `>=26.9.0` (the first `useVfs`-capable
 release — a patch-behind local dev machine stays usable while a package
 index lags the pin); `scripts/sea/build.ts` gates on >= 26.10.0 (26.9
