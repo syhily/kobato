@@ -136,7 +136,7 @@ read from docs; the probe lives in `scripts/sea/vfs-capabilities.ts`
 NOT hold):**
 
 - **Workers still cannot start from VFS paths** — `new Worker(<mount
-path>)` fails with `Cannot find module` under every `execArgv`
+  path>)` fails with `Cannot find module` under every `execArgv`
   combination, and worker isolates cannot even _see_ the mount (fs under
   it → `ENOTDIR`). The `eval:true` dispatch stays; the worker code is
   now simply `readFileSync`'d from the VFS by the main thread.
@@ -248,3 +248,72 @@ New capabilities noted, none adopted:
   a per-lookup copy of the whole assets map in
   `FindSingleExecutableResource`. When it ships, re-evaluate the zstd
   `natives/*` packing tradeoff against it.
+
+## Amendment 2026-10-16: Node 26.12.0 — re-pinned, no deletions, `vfsArchive` declined
+
+The toolchain pin moved 26.10.0 → **26.12.0** (`.nvmrc`, CI matrices,
+AGENTS.md). 26.11.0/26.11.1/26.12.0 shipped a wave of VFS work; the full
+probe matrix was re-run on an official 26.12.0 dist (`pnpm run sea:probe`,
+darwin-x64) — **20/20 checks, 63/63 assertions**.
+
+**Changelog review (26.11.0–26.12.0), VFS/SEA-relevant commits:** none
+touch the SEA mount behavior this ADR pins. The notable ones:
+
+- `sea: add vfsArchive to serve the assets from a ZIP archive` (#65810) —
+  shipped in 26.11.0; the item flagged for re-evaluation above.
+- `vfs: add ComposableProvider for layered mounts` (#66235),
+  `vfs: drop --vfs-mount, pin the load mount point` (#66162),
+  `vfs: make the reserved root readable through fs` (#66140),
+  `vfs: support recursive readdir in ZipProvider` (#66127),
+  `vfs: validate ZipProvider parent directories` (#65829) — all userland
+  `node:vfs`/ZipProvider, not the SEA mount.
+- `lib: add --allow-fs-vfs to permission available flags` (#66554) —
+  permission model; `ffi: load libraries from a mounted VFS` (#65909) —
+  no ffi use in this project.
+- The worker commits (postMessage, BroadcastChannel, termination) do not
+  touch VFS mounts.
+
+**Empirical re-pin on 26.12.0** — nothing to delete:
+
+- **The writev landmine is STILL present** — async `fs.writev` on real
+  files still crashes under a `useVfs` mount (probe pins the signature).
+  The sequential fallback in `sea-vfs-fs-patch.ts` stays; its header now
+  records 26.12.0 as the still-unfixed version.
+- **Workers still cannot start from or see VFS paths** — the `eval:true`
+  dispatch stays.
+- **`node:vfs` is still absent inside a SEA**, and dependent-library
+  addons still fail from the mount — natives extraction stays.
+- The 26.10.0 dlopen fix is retained (no regression).
+
+Net: **zero compatibility patches are removable on this upgrade.**
+
+**`vfsArchive` evaluation — NOT adopted.** The 2026-09-24 promise to
+re-evaluate when it ships is discharged as follows:
+
+- Hard constraint: the SEA config cannot combine `vfsArchive` with
+  `assets` — it is all-or-nothing, so adopting it moves EVERYTHING into
+  one zip.
+- Size math (darwin-x64 manifest, 285 files / 176.8 MB raw; the 26.12.0
+  rebuild: 304 assets / 177.7 MB raw → 62.5 MB packed): natives are
+  163.0 MB (92%) of the payload — machine code, where zstd-9 is already
+  the best codec and zip deflate is strictly worse; the client tree is
+  9.4 MB raw (deflate ≈ 3 MB). One deflated zip lands within a few MB of
+  today's 62.5 MB packed payload (≈ 48.7 MB zstd-9 natives + 13.8 MB raw
+  assets) — the ~32% win quoted in the earlier note applies to
+  text/JS-heavy asset sets, not this 92%-natives mix.
+- Costs of adoption: per-read inflate on every client-asset serve (vs
+  today's zero-copy uncompressed mount reads); the worker
+  `getEmbeddedAsset` channel for `natives-meta/*` dies (workers cannot
+  see the mount), forcing bundling-time inlining; the whole packing
+  pipeline (`scripts/sea/assets.ts`, the manifest codec registry,
+  `sea-natives` extraction, check-bundle, the contract tests) reworked;
+  and a three-week-old feature whose ZipProvider is still collecting
+  correctness fixes (recursive readdir, parent-dir validation, open(2)
+  semantics).
+
+The zstd `natives/*` packing stays. Re-open only if the asset mix shifts
+(e.g. client mass grows ~10x) or worker threads gain mount visibility.
+
+**LTS status:** 26.12.0 is still Current (the LTS transition is scheduled
+for 2026-10); trigger 3 ("rides an LTS line") flips by construction when
+the transition lands — no action required.
