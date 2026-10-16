@@ -38,7 +38,7 @@ Six files, two bundles:
   because the page-editor canvas runs under `zoom: 2/3` (see the ZOOM
   CONTRACT comment in the file header). The presets also ride the editor
   contentEditables via `contentEditableClassName` (the `typeset
-typeset-post|typeset-comment` pair) — that is what makes the editor
+  typeset-post|typeset-comment` pair) — that is what makes the editor
   canvas WYSIWYG with the rendered output.
 - `public.css` — **public entry**, imported by `ui/public/chrome/BaseLayout.tsx`.
   Owns `@import 'tailwindcss' source(none)`, imports the shared partial, then
