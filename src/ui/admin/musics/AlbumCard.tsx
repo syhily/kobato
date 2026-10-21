@@ -1,26 +1,16 @@
 import { Play, Pause } from 'lucide-react'
-import { ViewTransition } from 'react'
 
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { Equalizer } from '@/ui/admin/musics/Equalizer'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
+import { NamedTransition } from '@/ui/components/named-transition'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface AlbumCardProps {
   music: AdminMusicDto
   viewTransitionName?: string
-}
-
-// Shared-element transition partner for MusicDetailView: the wrapper only
-// mounts when the caller supplies a name, so cards rendered outside the
-// library grid never become transition boundaries.
-function MaybeNamedTransition({ name, children }: { name?: string; children: React.ReactElement }) {
-  if (!name) {
-    return children
-  }
-  return <ViewTransition name={name}>{children}</ViewTransition>
 }
 
 export function AlbumCard({ music, viewTransitionName }: AlbumCardProps) {
@@ -42,7 +32,7 @@ export function AlbumCard({ music, viewTransitionName }: AlbumCardProps) {
     <div className="group">
       {/* Cover */}
       <div className="relative aspect-square overflow-hidden rounded-lg shadow-md transition-shadow duration-200 group-hover:shadow-xl">
-        <MaybeNamedTransition name={music.coverUrl ? viewTransitionName : undefined}>
+        <NamedTransition name={music.coverUrl ? viewTransitionName : undefined}>
           {music.coverUrl ? (
             <Image
               src={music.coverUrl}
@@ -54,7 +44,7 @@ export function AlbumCard({ music, viewTransitionName }: AlbumCardProps) {
           ) : (
             <div className="h-full w-full bg-surface-dim" />
           )}
-        </MaybeNamedTransition>
+        </NamedTransition>
 
         {/* Hover overlay */}
         <div className="absolute inset-0 flex items-end justify-end bg-black/0 p-3 transition-all duration-200 group-hover:bg-black/40">
@@ -85,12 +75,12 @@ export function AlbumCard({ music, viewTransitionName }: AlbumCardProps) {
 
       {/* Info */}
       <div className="mt-3 min-w-0">
-        <MaybeNamedTransition name={viewTransitionName?.replace('cover', 'title')}>
+        <NamedTransition name={viewTransitionName?.replace('cover', 'title')}>
           <p className="truncate text-sm font-semibold text-ink-1">{music.name}</p>
-        </MaybeNamedTransition>
-        <MaybeNamedTransition name={viewTransitionName?.replace('cover', 'artist')}>
+        </NamedTransition>
+        <NamedTransition name={viewTransitionName?.replace('cover', 'artist')}>
           <p className="truncate text-xs text-ink-3">{music.artist.join(' / ')}</p>
-        </MaybeNamedTransition>
+        </NamedTransition>
       </div>
     </div>
   )

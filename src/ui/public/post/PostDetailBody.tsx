@@ -78,6 +78,7 @@ export function PostDetailBody({
                 currentUser={currentUser}
                 comments={post.comments}
                 mode={mode}
+                titleTransitionName={mode === 'public' ? `post-title-${post.slug}` : undefined}
                 editHref={mode === 'admin' ? `/editor/post/${post.id}` : undefined}
                 draftMarker={draftMarker}
                 postContentRef={postContentRef}

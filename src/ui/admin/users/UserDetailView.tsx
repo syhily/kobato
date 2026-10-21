@@ -1,10 +1,11 @@
 import type { NavigateFunction } from 'react-router'
 
-import { useQuery } from '@tanstack/react-query'
+import { type InfiniteData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
@@ -18,12 +19,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
+import { NamedTransition } from '@/ui/components/named-transition'
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
 import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
+
+// Structural view of an `admin.users.list` page — the controller declares the
+// output schema inline, so there is no exported wire type to import.
+type UsersListPage = { users: AdminUserDto[]; total: number; hasMore: boolean }
 
 export interface UserDetailViewProps {
   userId: string
@@ -35,8 +41,25 @@ export interface UserDetailViewProps {
 
 export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled }: UserDetailViewProps) {
   const config = useSiteIdentity()
+  const queryClient = useQueryClient()
 
-  const userQuery = useQuery(orpcQuery.admin.users.get.queryOptions({ input: { id: userId } }))
+  const userQuery = useQuery({
+    ...orpcQuery.admin.users.get.queryOptions({ input: { id: userId } }),
+    // Seed from any cached users-list page so the hero card (and its
+    // shared-element transition partner in UsersTable) renders inside the
+    // navigation transition instead of after a skeleton round-trip.
+    placeholderData: () => {
+      for (const [, data] of queryClient.getQueriesData<InfiniteData<UsersListPage, number>>({
+        queryKey: orpcQuery.admin.users.list.key(),
+      })) {
+        const row = data?.pages.flatMap((page) => page.users).find((candidate) => idStr(candidate.id) === userId)
+        if (row) {
+          return { user: row }
+        }
+      }
+      return undefined
+    },
+  })
 
   const commentsQuery = useQuery(
     orpcQuery.admin.comments.loadAll.queryOptions({
@@ -91,12 +114,16 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
         <div className="flex flex-col gap-6 lg:col-span-1">
           <Card>
             <CardContent className="flex flex-col items-center gap-4 text-center">
-              <Avatar className="size-20">
-                <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
-                <AvatarFallback className="bg-muted text-lg font-semibold">{initial}</AvatarFallback>
-              </Avatar>
+              <NamedTransition name={`user-avatar-${user.id}`}>
+                <Avatar className="size-20">
+                  <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
+                  <AvatarFallback className="bg-muted text-lg font-semibold">{initial}</AvatarFallback>
+                </Avatar>
+              </NamedTransition>
               <div>
-                <div className="text-lg font-semibold">{user.name}</div>
+                <NamedTransition name={`user-name-${user.id}`}>
+                  <div className="text-lg font-semibold">{user.name}</div>
+                </NamedTransition>
                 <div className="text-sm text-muted-foreground">{user.email}</div>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">

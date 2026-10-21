@@ -1,9 +1,11 @@
 import type { NavigateFunction } from 'react-router'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { type InfiniteData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play, Pause, Trash2, X, Copy, Pencil, Check, RotateCcw } from 'lucide-react'
 import { useCallback, useState, ViewTransition } from 'react'
 import { toast } from 'sonner'
+
+import type { ListMusicOutput } from '@/shared/contracts/music'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -45,12 +47,26 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
     setCopied(false)
   }
 
-  const musicQuery = useQuery(
-    orpcQuery.admin.music.get.queryOptions({
+  const musicQuery = useQuery({
+    ...orpcQuery.admin.music.get.queryOptions({
       input: { id },
       enabled: id !== '',
     }),
-  )
+    // Seed from any cached music-list page so the hero (and its shared-element
+    // transition partner in AlbumCard) renders inside the navigation transition
+    // instead of after a skeleton round-trip.
+    placeholderData: () => {
+      for (const [, data] of queryClient.getQueriesData<InfiniteData<ListMusicOutput, number>>({
+        queryKey: orpcQuery.admin.music.list.key(),
+      })) {
+        const row = data?.pages.flatMap((page) => page.musics).find((candidate) => candidate.id === id)
+        if (row) {
+          return { music: row }
+        }
+      }
+      return undefined
+    },
+  })
 
   const music = musicQuery.data?.music
   const isCurrent = currentTrack?.id === music?.id
