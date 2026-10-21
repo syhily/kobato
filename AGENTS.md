@@ -105,7 +105,7 @@ lives in ADR-0004 amendments 2026-09-21 and 2026-10-16):
   SEA build on >= 26.10.0 (darwin's dyld tolerates mode 0 — the linux CI
   smoke is the only detector).
 
-**Node 26 pin.** Toolchain pinned to 26.12.0 (`.nvmrc`, CI matrices);
+**Node 26 pin.** Toolchain pinned to 26.12.1 (`.nvmrc`, CI matrices);
 `package.json` engines floors at `>=26.9.0` (the first `useVfs`-capable
 release — a patch-behind local dev machine stays usable while a package
 index lags the pin); `scripts/sea/build.ts` gates on >= 26.10.0 (26.9

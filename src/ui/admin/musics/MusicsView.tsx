@@ -98,7 +98,7 @@ export function MusicsView() {
 
   const handleNavigateToDetail = useCallback(
     (id: string) => {
-      void navigate(`/admin/library/music/${id}`, { viewTransition: true })
+      void navigate(`/admin/library/music/${id}`)
     },
     [navigate],
   )

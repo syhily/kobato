@@ -2,7 +2,7 @@ import type { NavigateFunction } from 'react-router'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play, Pause, Trash2, X, Copy, Pencil, Check, RotateCcw } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, ViewTransition } from 'react'
 import { toast } from 'sonner'
 
 import { orpc } from '@/client/api/client'
@@ -215,25 +215,26 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       >
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-end">
           {/* Cover */}
-          <LazyMotionDiv
-            className="shrink-0"
-            style={{ viewTransitionName: `music-cover-${music.id}` }}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ ...transitions.detailFade, delay: 0.05 }}
-          >
-            {music.coverUrl ? (
-              <Image
-                src={music.coverUrl}
-                alt={music.name}
-                width={224}
-                height={224}
-                className="size-56 rounded-lg object-cover shadow-2xl"
-              />
-            ) : (
-              <div className="size-56 rounded-lg bg-surface-dim shadow-2xl" />
-            )}
-          </LazyMotionDiv>
+          <ViewTransition name={`music-cover-${music.id}`}>
+            <LazyMotionDiv
+              className="shrink-0"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ ...transitions.detailFade, delay: 0.05 }}
+            >
+              {music.coverUrl ? (
+                <Image
+                  src={music.coverUrl}
+                  alt={music.name}
+                  width={224}
+                  height={224}
+                  className="size-56 rounded-lg object-cover shadow-2xl"
+                />
+              ) : (
+                <div className="size-56 rounded-lg bg-surface-dim shadow-2xl" />
+              )}
+            </LazyMotionDiv>
+          </ViewTransition>
 
           {/* Info / Edit Form */}
           <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -283,24 +284,26 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
               </LazyMotionDiv>
             ) : (
               <>
-                <LazyMotionH1
-                  className="text-4xl font-bold tracking-tight text-ink-1 sm:text-5xl lg:text-6xl"
-                  style={{ viewTransitionName: `music-title-${music.id}` }}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...transitions.detailFade, delay: 0.15 }}
-                >
-                  {music.name}
-                </LazyMotionH1>
-                <LazyMotionP
-                  className="text-base text-ink-2"
-                  style={{ viewTransitionName: `music-artist-${music.id}` }}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...transitions.detailFade, delay: 0.2 }}
-                >
-                  {music.artist.join(' / ')} · {music.album}
-                </LazyMotionP>
+                <ViewTransition name={`music-title-${music.id}`}>
+                  <LazyMotionH1
+                    className="text-4xl font-bold tracking-tight text-ink-1 sm:text-5xl lg:text-6xl"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...transitions.detailFade, delay: 0.15 }}
+                  >
+                    {music.name}
+                  </LazyMotionH1>
+                </ViewTransition>
+                <ViewTransition name={`music-artist-${music.id}`}>
+                  <LazyMotionP
+                    className="text-base text-ink-2"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...transitions.detailFade, delay: 0.2 }}
+                  >
+                    {music.artist.join(' / ')} · {music.album}
+                  </LazyMotionP>
+                </ViewTransition>
               </>
             )}
             <LazyMotionP

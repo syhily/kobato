@@ -15,7 +15,7 @@ export function makeToken(length: number): string {
   for (const byte of bytes) {
     binary += String.fromCharCode(byte)
   }
-  const encoded = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const encoded = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/[=]+$/, '')
   return encoded.slice(0, length)
 }
 
