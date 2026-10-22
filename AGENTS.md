@@ -298,7 +298,7 @@ Examples: `react`, `hono`, `drizzle-orm`, `nodemailer`,
 all `devDependencies`, despite being production imports.
 
 **Version pins to watch.** `drizzle-orm` / `drizzle-kit` are pinned at
-`1.0.0-rc.4` (pre-release). Watch the drizzle 1.0 stable release; when it
+`1.0.0-rc.5` (pre-release). Watch the drizzle 1.0 stable release; when it
 ships, evaluate upgrading the pair together and re-run the migration
 contract tests before unpinning.
 

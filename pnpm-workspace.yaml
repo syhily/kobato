@@ -76,8 +76,8 @@ catalog:
   date-fns: ^4.4.0
   diff-match-patch: ^1.0.5
   dompurify: ^3.4.17
-  drizzle-kit: 1.0.0-rc.4
-  drizzle-orm: 1.0.0-rc.4
+  drizzle-kit: 1.0.0-rc.5
+  drizzle-orm: 1.0.0-rc.5
   emoji-mart: 5.6.0
   fake-indexeddb: ^6.2.6
   fast-average-color: 9.5.2

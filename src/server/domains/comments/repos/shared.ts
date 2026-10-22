@@ -139,7 +139,10 @@ export function buildAdminListConditions(filters: AdminListFilters) {
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
     if (filters.match === 'does-not-contain') {
-      conditions.push(not(likeEscape(comment.content, q)))
+      const negated = not(likeEscape(comment.content, q))
+      if (negated) {
+        conditions.push(negated)
+      }
     } else {
       conditions.push(likeEscape(comment.content, q))
     }

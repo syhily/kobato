@@ -49,7 +49,10 @@ export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
   if (filters.lifecycle === 'published') {
     extras.push(promotedPostWhere())
   } else if (filters.lifecycle === 'draft') {
-    extras.push(not(promotedPostWhere()))
+    const notPromoted = not(promotedPostWhere())
+    if (notPromoted) {
+      extras.push(notPromoted)
+    }
   }
   return buildMetaListWhere(postMetaTable, filters, extras)
 }
