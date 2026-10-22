@@ -7,7 +7,6 @@ import { targetSlugTitleSubquery, type PendingCommentRow } from '@/server/domain
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 import { idFromString } from '@/shared/utils/id'
-import { isRecord } from '@/shared/utils/type-guards'
 
 export async function pendingComments(db: Database, limit: number): Promise<PendingCommentRow[]> {
   const entity = targetSlugTitleSubquery(db)
@@ -46,11 +45,8 @@ export async function adminUserIds(db: Database): Promise<number[]> {
 }
 
 export async function latestDistinctCommentIds(db: Database, adminIds: number[], limit: number): Promise<number[]> {
-  const rows = db.all(latestDistinctCommentIdsQuery(adminIds, limit))
-  return rows.map((row) => {
-    const id = isRecord(row) ? row.id : undefined
-    return idFromString(String(id))
-  })
+  const rows = db.all<{ id: number }>(latestDistinctCommentIdsQuery(adminIds, limit))
+  return rows.map((row) => idFromString(String(row.id)))
 }
 
 /** Digest access path (audit P1-21): the plan is pinned by
