@@ -1,7 +1,7 @@
 // Runtime repair for an upstream Node.js bug that ships with the SEA VFS
-// (`"useVfs": true`, still unfixed as of Node 26.12.0 — re-pinned by
-// `pnpm run sea:probe` on the 26.12.0 toolchain; ADR-0004 amendment
-// 2026-10-16):
+// (`"useVfs": true`, still unfixed as of Node 26.13.0 — re-pinned by
+// `pnpm run sea:probe` on the 26.13.0 toolchain; ADR-0004 amendment
+// 2026-11-05):
 //
 // Async readv/writev: the mounted-VFS handler table
 // (`lib/internal/vfs/setup.js`) implements `readvSync`/`writevSync` but NOT

@@ -317,3 +317,28 @@ The zstd `natives/*` packing stays. Re-open only if the asset mix shifts
 **LTS status:** 26.12.0 is still Current (the LTS transition is scheduled
 for 2026-10); trigger 3 ("rides an LTS line") flips by construction when
 the transition lands — no action required.
+
+## Amendment 2026-11-05: Node 26.13.0 — re-pinned, no deletions
+
+The toolchain pin moved 26.12.1 → **26.13.0** (`.nvmrc`, CI matrices,
+AGENTS.md). The full probe matrix was re-run on the official 26.13.0 dist
+(`pnpm run sea:probe`, darwin-x64) — **20/20 checks, 63/63 assertions**.
+
+**Empirical re-pin on 26.13.0** — nothing to delete:
+
+- **The writev landmine is STILL present** — async `fs.writev` on real
+  files still crashes under a `useVfs` mount (probe pins the signature).
+  The sequential fallback in `sea-vfs-fs-patch.ts` stays; its header now
+  records 26.13.0 as the still-unfixed version.
+- **Workers still cannot start from or see VFS paths** — the `eval:true`
+  dispatch stays.
+- **`node:vfs` is still absent inside a SEA**, and dependent-library
+  addons still fail from the mount — natives extraction stays.
+- The 26.10.0 dlopen fix is retained (no regression).
+
+Net: **zero compatibility patches are removable on this upgrade.**
+
+Local-probe note: the nodejs.org macOS installer binary is universal
+(x86_64+arm64), so it carries TWO SEA sentinel fuses and `--build-sea`
+rejects it ("more than one occurrence of sentinel"). Run the probe
+against a single-arch slice (`lipo -thin <arch> /usr/local/bin/node`).
