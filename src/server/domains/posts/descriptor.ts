@@ -4,6 +4,7 @@ import type { ContentRow, NewPostMeta, PostMetaRow } from '@/server/infra/db/typ
 import type { AdminPostDto } from '@/shared/contracts/posts'
 import type { Post } from '@/shared/types/catalog'
 
+import { canEditPost } from '@/server/domains/auth/rbac'
 import { invalidateContent } from '@/server/domains/content/invalidate'
 import { warmContentRenderCaches } from '@/server/domains/content/render-warmup'
 import { findContentById } from '@/server/domains/content/revisions'
@@ -109,7 +110,8 @@ export const postDescriptor: MetaEntityDescriptor<
   defaultAdminListLimit: 20,
   access: {
     assertAccess: assertOwnPostOr404,
-    canPreviewDraft: (role) => hasAtLeast(role, 'author'),
+    canPreviewDraft: (viewer, meta) =>
+      viewer !== undefined && hasAtLeast(viewer.role, 'author') && canEditPost(viewer, meta),
     scopeListFilters: (filters, viewer) =>
       viewer.role !== 'admin' ? { ...filters, authorId: idFromString(viewer.id) } : filters,
   },

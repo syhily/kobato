@@ -1,6 +1,6 @@
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { Database } from '@/server/infra/db/database'
 import type { DetailPostShell, DraftMarker, Post } from '@/shared/types/catalog'
-import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
@@ -25,13 +25,13 @@ export interface PostPreviewResult {
 export async function loadPostPreview({
   db,
   slug,
-  role,
+  viewer,
   ifNoneMatch,
 }: {
   db: Database
   slug: string
-  /** Viewer role for the draft-preview gate (`undefined`/`null` = anonymous). */
-  role: RoleOrNull | undefined
+  /** Viewer identity for the draft-preview gate (`undefined`/`null` = anonymous). */
+  viewer: ViewerIdentity | null | undefined
   ifNoneMatch: string | null | undefined
 }): Promise<PostPreviewResult> {
   // Slim ETag probe answers repeat requests before the full load; alias
@@ -47,8 +47,10 @@ export async function loadPostPreview({
   let sourcePost = (await findPostBySlug(db, slug)) ?? undefined
   let draftMarker: DraftMarker = null
 
-  if (sourcePost === undefined && postLifecycleAdapter.canPreviewDraft(role)) {
-    const preview = await loadDraftPreviewBySlug(db, postLifecycleAdapter, slug)
+  if (sourcePost === undefined && viewer) {
+    // Ownership lives in the entity's `canPreviewDraft` rule: authors see
+    // their own drafts, admins anyone's; everyone else falls through to 404.
+    const preview = await loadDraftPreviewBySlug(db, postLifecycleAdapter, slug, viewer)
     if (preview !== null) {
       sourcePost = preview.preview
       draftMarker = 'draft'

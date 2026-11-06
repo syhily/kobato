@@ -35,7 +35,7 @@ const postBySlug = publicProc
       preview = await loadPostPreview({
         db,
         slug: input.slug,
-        role: context.viewer?.role,
+        viewer: context.viewer,
         ifNoneMatch: input.ifNoneMatch,
       })
     } catch (error) {
@@ -82,7 +82,7 @@ const pageBySlug = publicProc
         db,
         slug: input.slug,
         wantsDraftPreview: input.draft === true,
-        role: context.viewer?.role,
+        viewer: context.viewer,
         ifNoneMatch: input.ifNoneMatch,
       })
     } catch (error) {

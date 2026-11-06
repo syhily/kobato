@@ -53,19 +53,32 @@ async function seedPublishedPost(slug: string, title: string): Promise<number> {
 }
 
 /** A draft post: unpublished, hidden, no published revision pointer, one draft revision. */
-async function seedDraftPost(
-  slug: string,
-  title: string,
-  bodyHtml: string | null = '<p>Draft body.</p>',
-): Promise<number> {
+async function seedDraftPost(opts: {
+  slug: string
+  title?: string
+  bodyHtml?: string | null
+  authorId?: number | null
+}): Promise<number> {
   const rows = await db
     .insert(postTable)
-    .values({ slug, title, published: false, visible: false, publishedRevisionId: null })
+    .values({
+      slug: opts.slug,
+      title: opts.title ?? opts.slug,
+      published: false,
+      visible: false,
+      publishedRevisionId: null,
+      authorId: opts.authorId ?? null,
+    })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  await db
-    .insert(contentTable)
-    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: draftBody, bodyHtml })
+  await db.insert(contentTable).values({
+    type: 'post',
+    ownerId: postId,
+    revisionNo: 1,
+    status: 'draft',
+    body: draftBody,
+    bodyHtml: opts.bodyHtml === undefined ? '<p>Draft body.</p>' : opts.bodyHtml,
+  })
   return postId
 }
 
@@ -119,7 +132,7 @@ describe('routes/post.detail draft visibility', () => {
   })
 
   it('404s anonymous visitors on a draft post (status=draft)', async () => {
-    await seedDraftPost('secret', 'Secret')
+    await seedDraftPost({ slug: 'secret', title: 'Secret' })
 
     await expectNotFound('secret', regularSession())
   })
@@ -131,13 +144,14 @@ describe('routes/post.detail draft visibility', () => {
   })
 
   it('404s regular logged-in visitors on a draft post', async () => {
-    await seedDraftPost('secret', 'Secret')
+    await seedDraftPost({ slug: 'secret', title: 'Secret' })
 
     await expectNotFound('secret', regularSession())
   })
 
-  it('shows 【草稿】 for an admin viewing a draft post', async () => {
-    await seedDraftPost('secret', 'Secret')
+  it('shows 【草稿】 for an admin viewing another author’s draft', async () => {
+    // Admin id is 1; the draft belongs to author 99 — admins preview anyone's.
+    await seedDraftPost({ slug: 'secret', title: 'Secret', authorId: 99 })
 
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', adminSession()))
 
@@ -146,8 +160,9 @@ describe('routes/post.detail draft visibility', () => {
     expect(result.draftMarker).toBe('draft')
   })
 
-  it('shows 【草稿】 for an author viewing a draft post', async () => {
-    await seedDraftPost('secret', 'Secret')
+  it('shows 【草稿】 for an author viewing their own draft', async () => {
+    // authorSession() is author id 3.
+    await seedDraftPost({ slug: 'secret', title: 'Secret', authorId: 3 })
 
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', authorSession()))
 
@@ -155,8 +170,20 @@ describe('routes/post.detail draft visibility', () => {
     expect(result.draftMarker).toBe('draft')
   })
 
+  it('404s an author viewing another author’s draft', async () => {
+    await seedDraftPost({ slug: 'secret', title: 'Secret', authorId: 99 })
+
+    await expectNotFound('secret', authorSession())
+  })
+
+  it('404s an author on an orphaned draft (authorId null)', async () => {
+    await seedDraftPost({ slug: 'secret', title: 'Secret' })
+
+    await expectNotFound('secret', authorSession())
+  })
+
   it('computes the projection on read when the draft row carries a NULL body_html (the R9a 500)', async () => {
-    await seedDraftPost('secret', 'Secret', null)
+    await seedDraftPost({ slug: 'secret', title: 'Secret', bodyHtml: null, authorId: 99 })
 
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', adminSession()))
 

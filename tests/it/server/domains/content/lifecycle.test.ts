@@ -609,7 +609,7 @@ describe('content/lifecycle — KobatoImage closed loop (R11)', () => {
 describe('content/lifecycle — loadDraftPreviewBySlug', () => {
   it('returns null when the slug does not resolve to a meta row', async () => {
     const { adapter } = makeAdapter(null)
-    expect(await loadDraftPreviewBySlug(db, adapter, 'nope')).toBeNull()
+    expect(await loadDraftPreviewBySlug(db, adapter, 'nope', undefined)).toBeNull()
   })
 
   it('projects the adapter preview with the draft flag', async () => {
@@ -617,7 +617,7 @@ describe('content/lifecycle — loadDraftPreviewBySlug', () => {
     await seedRevision(meta.id, { status: 'draft' })
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
 
-    const result = await loadDraftPreviewBySlug(db, adapter, 'hello')
+    const result = await loadDraftPreviewBySlug(db, adapter, 'hello', undefined)
 
     expect(result).not.toBeNull()
     expect(result!.preview.id).toBe(meta.id.toString())

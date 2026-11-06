@@ -5,7 +5,6 @@ import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
-import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import {
@@ -34,10 +33,10 @@ export interface ContentEntityAdapter<TMeta, TPreview> {
   findPublicMetaBySlug(db: Database, slug: string): TMeta | null
   assertAccess(meta: TMeta | null, viewer?: ViewerIdentity): asserts meta is TMeta
   /**
-   * Draft-preview gate (posts author+, pages admin only). A predicate —
-   * callers fall through to the published page when rights are missing.
+   * Draft-preview gate (row-level, owned by the entity descriptor). Callers
+   * fall through to the published page when rights are missing.
    */
-  canPreviewDraft(role: RoleOrNull | undefined): boolean
+  canPreviewDraft(viewer: ViewerIdentity | undefined, meta: TMeta): boolean
   getId(meta: TMeta): number
   getPublishedRevisionId(meta: TMeta): number | null
   projectPreview(meta: TMeta, revision: ContentRow | null): TPreview
@@ -215,16 +214,17 @@ export async function saveBody<TMeta, TPreview>(
 
 /**
  * Draft preview by slug: latest draft, else the published revision;
- * soft-deleted rows return `null`. No access gate — callers use
- * `adapter.canPreviewDraft`.
+ * soft-deleted rows and viewers the entity's `canPreviewDraft` rule does
+ * not admit return `null`.
  */
 export async function loadDraftPreviewBySlug<TMeta, TPreview>(
   db: Database,
   adapter: ContentEntityAdapter<TMeta, TPreview>,
   slug: string,
+  viewer: ViewerIdentity | undefined,
 ): Promise<DraftPreviewResult<TPreview> | null> {
   const meta = adapter.findPublicMetaBySlug(db, slug)
-  if (meta === null) {
+  if (meta === null || !adapter.canPreviewDraft(viewer, meta)) {
     return null
   }
   const draft = await findLatestDraft(db, adapter.entityType, adapter.getId(meta))

@@ -22,6 +22,7 @@ import {
   unpublishPost,
   updatePostMeta,
 } from '@/server/domains/posts/services/mutate'
+import { assertOwnPostOr404 } from '@/server/domains/posts/services/shared'
 import { findPostMetaById } from '@/server/domains/posts/services/single'
 import { makeRevisionRouter } from '@/server/http/controllers/admin/revision-router'
 import { authorProc } from '@/server/http/orpc-base'
@@ -216,9 +217,8 @@ const analytics = authorProc
   .output(adminPostAnalyticsOutputSchema)
   .handler(async ({ input, context }) => {
     const meta = findPostMetaById(context.db, input.postId)
-    if (meta === null) {
-      throw new ORPCError('NOT_FOUND', { message: '文章不存在' })
-    }
+    // Authors reach only their own posts' analytics; admins are unrestricted.
+    assertOwnPostOr404(meta, context.viewer)
     const tags = await findTagNamesByPostId(context.db, input.postId)
     const post = toAdminPostDto(meta, { tags })
     const overview = await loadAnalyticsOverview(getAnalyticsReader(), {

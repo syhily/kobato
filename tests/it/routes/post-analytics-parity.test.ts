@@ -57,6 +57,7 @@ async function seedPost(overrides: Record<string, unknown> = {}): Promise<number
     .values({
       slug: `post-${Math.random().toString(36).slice(2)}`,
       title: 'Hello Post',
+      authorId: 3,
       published: true,
       publishedRevisionId: null,
       firstPublishedAt: new Date('2024-01-01'),
@@ -84,11 +85,33 @@ async function seedViews(postId: number): Promise<void> {
       entityType: 'post',
       entityId: postId,
       refererHost: 'google.com',
+      country: 'US',
     },
-    { ts: new Date(1_300_000), visitorHash: 'a', path: '/post/hello', entityType: 'post', entityId: postId },
-    { ts: new Date(1_400_000), visitorHash: 'b', path: '/post/hello', entityType: 'post', entityId: postId },
+    {
+      ts: new Date(1_300_000),
+      visitorHash: 'a',
+      path: '/post/hello',
+      entityType: 'post',
+      entityId: postId,
+      country: 'US',
+    },
+    {
+      ts: new Date(1_400_000),
+      visitorHash: 'b',
+      path: '/post/hello',
+      entityType: 'post',
+      entityId: postId,
+      country: 'US',
+    },
     // A different post's view — must NOT leak into this post's numbers.
-    { ts: new Date(1_500_000), visitorHash: 'c', path: '/post/other', entityType: 'post', entityId: postId + 1000 },
+    {
+      ts: new Date(1_500_000),
+      visitorHash: 'c',
+      path: '/post/other',
+      entityType: 'post',
+      entityId: postId + 1000,
+      country: 'US',
+    },
   ])
 }
 

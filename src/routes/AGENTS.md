@@ -98,10 +98,10 @@ Adding a route: pick the area directory, choose a role filename, add the manifes
 - Catalog miss → anonymous 404, admin sees latest draft (**【草稿】**).
 - Catalog hit + `?draft=true` → anonymous ignores; admin sees **【未发布的草稿】** (newer draft
   exists) or **【已发布的草稿】** (latest revision IS published).
-- Service: `loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)`
+- Service: `loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug, viewer)`
   (`@/server/domains/content/lifecycle`) → `{ preview, hasNewerDraft }`. Access rule lives on the
-  entity adapter (`canPreviewDraft`): pages admin-only, posts author+ (mounted in the post detail
-  route).
+  entity descriptor (`canPreviewDraft(viewer, meta)`): pages admin-only, posts author+ AND the
+  post's `authorId` (admins preview anyone's) — mounted in the post detail route.
 
 ---
 

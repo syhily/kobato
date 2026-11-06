@@ -4,7 +4,6 @@ import type { AdminListEngagement } from '@/server/domains/content/services/admi
 import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
-import type { RoleOrNull } from '@/shared/utils/roles'
 
 /**
  * The 17 columns `post` and `page` meta tables declare identically.
@@ -100,8 +99,12 @@ export interface MetaEntityDescriptor<
   access: {
     /** The entity's access gate (body lifecycle, meta mutations, admin queries); throws NOT_FOUND. */
     assertAccess: (meta: TMeta | null, viewer?: ViewerIdentity) => asserts meta is TMeta
-    /** Draft-preview access rule (CONTEXT.md "Draft preview"): posts author+, pages admin only. */
-    canPreviewDraft: (role: RoleOrNull | undefined) => boolean
+    /**
+     * Draft-preview access rule (CONTEXT.md "Draft preview"): posts require
+     * author+ AND ownership (admins preview anyone's), pages admin only.
+     * Row-aware so the ownership leg can read `authorId`.
+     */
+    canPreviewDraft: (viewer: ViewerIdentity | undefined, meta: TMeta) => boolean
     /** Narrow the admin-list filters for a non-admin viewer. */
     scopeListFilters?: <TFilters>(filters: TFilters, viewer: ViewerIdentity) => TFilters
   }

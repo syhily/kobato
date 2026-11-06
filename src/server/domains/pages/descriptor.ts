@@ -58,7 +58,7 @@ export const pageDescriptor: MetaEntityDescriptor<
   defaultAdminListLimit: 100,
   access: {
     assertAccess: assertPageExists,
-    canPreviewDraft: (role) => role === 'admin',
+    canPreviewDraft: (viewer) => viewer?.role === 'admin',
   },
   audit: { loggerScope: 'audit.cms.pages', metaIdKey: 'pageMetaId' },
   preview: {

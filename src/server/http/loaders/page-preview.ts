@@ -1,6 +1,6 @@
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { Database } from '@/server/infra/db/database'
 import type { DetailPageShell, DraftMarker, Page } from '@/shared/types/catalog'
-import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { isLive } from '@/server/domains/content/schemas/live-gate'
@@ -26,14 +26,14 @@ export async function loadPagePreview({
   db,
   slug,
   wantsDraftPreview,
-  role,
+  viewer,
   ifNoneMatch,
 }: {
   db: Database
   slug: string
   wantsDraftPreview: boolean
-  /** Viewer role for the draft-preview gate (`undefined`/`null` = anonymous). */
-  role: RoleOrNull | undefined
+  /** Viewer identity for the draft-preview gate (`undefined`/`null` = anonymous). */
+  viewer: ViewerIdentity | null | undefined
   ifNoneMatch: string | null | undefined
 }): Promise<PagePreviewResult> {
   // findPublicPostMetaBySlug is sync (node:sqlite); the probe and
@@ -65,21 +65,20 @@ export async function loadPagePreview({
   let draftMarker: DraftMarker = null
 
   const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
-  if (needsDraftLookup) {
-    if (pageLifecycleAdapter.canPreviewDraft(role)) {
-      const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)
-      if (draftPreview !== null) {
-        // `draftPreview.preview` is already the shared `Page` DTO — no promotion.
-        if (sourcePage === undefined) {
+  if (needsDraftLookup && viewer) {
+    // The page descriptor owns the rule (admin only) — load denies anyone else.
+    const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug, viewer)
+    if (draftPreview !== null) {
+      // `draftPreview.preview` is already the shared `Page` DTO — no promotion.
+      if (sourcePage === undefined) {
+        sourcePage = draftPreview.preview
+        draftMarker = 'draft'
+      } else if (wantsDraftPreview) {
+        if (draftPreview.hasNewerDraft) {
           sourcePage = draftPreview.preview
-          draftMarker = 'draft'
-        } else if (wantsDraftPreview) {
-          if (draftPreview.hasNewerDraft) {
-            sourcePage = draftPreview.preview
-            draftMarker = 'unpublished-draft'
-          } else {
-            draftMarker = 'published-draft'
-          }
+          draftMarker = 'unpublished-draft'
+        } else {
+          draftMarker = 'published-draft'
         }
       }
     }

@@ -372,10 +372,11 @@ describe('admin.posts.analytics', () => {
         entityType: 'post',
         entityId: postId,
         refererHost: 'google.com',
+        country: 'US',
       },
-      { ts, visitorHash: 'b', path: '/posts/analytics-post', entityType: 'post', entityId: postId },
+      { ts, visitorHash: 'b', path: '/posts/analytics-post', entityType: 'post', entityId: postId, country: 'US' },
       // Another entity's view must stay out of the per-post counters.
-      { ts, visitorHash: 'c', path: '/other', entityType: 'post', entityId: postId + 100 },
+      { ts, visitorHash: 'c', path: '/other', entityType: 'post', entityId: postId + 100, country: 'US' },
     ])
 
     const res = await callRpc('/admin/posts/analytics', { postId, search: '' }, makeAuthedCtx({ db }))
@@ -396,6 +397,55 @@ describe('admin.posts.analytics', () => {
     expect((await parseRpcJson<RpcError>(res)).code).toBe('NOT_FOUND')
   })
 
+  it('answers NOT_FOUND when an author asks for another author’s post', async () => {
+    const postId = await seedPost({ slug: 'someone-elses', title: 'Theirs', authorId: 1 })
+
+    const res = await callRpc(
+      '/admin/posts/analytics',
+      { postId, search: '' },
+      makeAuthedCtx({ db, userId: '3', role: 'author' }),
+    )
+    expect(res.status).toBe(404)
+    expect((await parseRpcJson<RpcError>(res)).code).toBe('NOT_FOUND')
+  })
+
+  it('lets an author read analytics for their own post', async () => {
+    const postId = await seedPost({ slug: 'mine-analytics', title: 'Mine', authorId: 3 })
+    await seedAccessEvents(analyticsHandle, [
+      {
+        ts: new Date(Date.now() - 10_000),
+        visitorHash: 'a',
+        path: '/posts/mine-analytics',
+        entityType: 'post',
+        entityId: postId,
+        country: 'US',
+      },
+    ])
+
+    const res = await callRpc(
+      '/admin/posts/analytics',
+      { postId, search: '' },
+      makeAuthedCtx({ db, userId: '3', role: 'author' }),
+    )
+    expect(res.status).toBe(200)
+    const json = await parseRpcJson<{ post: { id: string }; counters: { visits: number } }>(res)
+    expect(json.post.id).toBe(String(postId))
+    expect(json.counters.visits).toBe(1)
+  })
+
+  it('keeps admins unrestricted on another author’s post analytics', async () => {
+    const postId = await seedPost({ slug: 'author-owned', title: 'Author Owned', authorId: 3 })
+
+    const res = await callRpc(
+      '/admin/posts/analytics',
+      { postId, search: '' },
+      makeAuthedCtx({ db, userId: '1', role: 'admin' }),
+    )
+    expect(res.status).toBe(200)
+    const json = await parseRpcJson<{ post: { id: string } }>(res)
+    expect(json.post.id).toBe(String(postId))
+  })
+
   it('answers UNAUTHORIZED for anonymous callers', async () => {
     const res = await callRpc('/admin/posts/analytics', { postId: 1, search: '' }, makePublicCtx({ db }))
     expect(res.status).toBe(401)
@@ -407,9 +457,9 @@ describe('admin.analytics.overview', () => {
   it('returns the counters/initialMetrics fan-out for the default range', async () => {
     const ts = new Date(Date.now() - 10_000)
     await seedAccessEvents(analyticsHandle, [
-      { ts, visitorHash: 'a', path: '/', refererHost: 'google.com' },
-      { ts, visitorHash: 'a', path: '/post/hello' },
-      { ts, visitorHash: 'b', path: '/post/world' },
+      { ts, visitorHash: 'a', path: '/', refererHost: 'google.com', country: 'US' },
+      { ts, visitorHash: 'a', path: '/post/hello', country: 'US' },
+      { ts, visitorHash: 'b', path: '/post/world', country: 'US' },
     ])
 
     const res = await callRpc('/analytics/overview', { search: '' }, makeAuthedCtx({ db }))
@@ -437,10 +487,10 @@ describe('admin.analytics.mentions', () => {
   it('returns the top referer hosts for the parsed range, unlabeled rows bucketed as (unknown)', async () => {
     const ts = new Date(Date.now() - 10_000)
     await seedAccessEvents(analyticsHandle, [
-      { ts, visitorHash: 'a', path: '/', refererHost: 'google.com' },
-      { ts, visitorHash: 'b', path: '/', refererHost: 'google.com' },
-      { ts, visitorHash: 'c', path: '/', refererHost: 'twitter.com' },
-      { ts, visitorHash: 'd', path: '/' },
+      { ts, visitorHash: 'a', path: '/', refererHost: 'google.com', country: 'US' },
+      { ts, visitorHash: 'b', path: '/', refererHost: 'google.com', country: 'US' },
+      { ts, visitorHash: 'c', path: '/', refererHost: 'twitter.com', country: 'US' },
+      { ts, visitorHash: 'd', path: '/', country: 'US' },
     ])
 
     const res = await callRpc('/analytics/mentions', { search: '' }, makeAuthedCtx({ db }))

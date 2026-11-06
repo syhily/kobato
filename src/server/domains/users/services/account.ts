@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import type { Database } from '@/server/infra/db/database'
 import type { LoginMethod } from '@/shared/contracts/users'
 
+import { deleteAllCredentials } from '@/server/domains/auth/passkey/service'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { revokeTokensFor } from '@/server/domains/auth/verification-tokens'
 import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
@@ -111,7 +112,15 @@ export async function updateAccountPassword(
     throw new DomainError('FORBIDDEN', '原密码错误。')
   }
   const hashed = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS)
-  await updateUserById(db, dbUser.id, { password: hashed })
+  // A password change returns the account to password signin and evicts
+  // every registered passkey — a passkey planted on a hijacked session
+  // must not survive the owner's password rotation.
+  await updateUserById(db, dbUser.id, { password: hashed, loginMethod: 'password' })
+  try {
+    await deleteAllCredentials(db, dbUser.id)
+  } catch {
+    // Best-effort: don't block the password change if passkey cleanup fails.
+  }
   await revokeAllSessionsOfUser(db, dbUser.id, currentSessionId)
   // A password change also kills any outstanding reset link for the account.
   await revokeTokensFor(db, dbUser.id, 'password-reset')

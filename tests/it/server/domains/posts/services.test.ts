@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '#/_helpers/lexical'
+import { adminUser } from '#/_helpers/session'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -121,14 +122,14 @@ describe('content/lifecycle (post adapter) — loadDraftPreviewBySlug', () => {
   it('returns null when the slug does not exist', async () => {
     const { loadDraftPreviewBySlug } = await import('@/server/domains/content/lifecycle')
     const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
-    expect(await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'nope')).toBeNull()
+    expect(await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'nope', adminUser())).toBeNull()
   })
   it('returns the published revision when no draft exists', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     await seedPost({ slug: 'prev', publishedRevisionId: revId })
     const { loadDraftPreviewBySlug } = await import('@/server/domains/content/lifecycle')
     const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
-    const r = await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'prev')
+    const r = await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'prev', adminUser())
     expect(r?.preview.slug).toBe('prev')
     expect(r?.hasNewerDraft).toBe(false)
   })
@@ -137,7 +138,7 @@ describe('content/lifecycle (post adapter) — loadDraftPreviewBySlug', () => {
     await seedContent({ type: 'post', ownerId: pid, revisionNo: 1, status: 'draft' })
     const { loadDraftPreviewBySlug } = await import('@/server/domains/content/lifecycle')
     const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
-    const r = await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'dr')
+    const r = await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'dr', adminUser())
     expect(r?.hasNewerDraft).toBe(true)
   })
 })

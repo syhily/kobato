@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { comment } from '@/server/infra/db/schema/comment'
+import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
@@ -511,5 +512,37 @@ describe('users/services/account — updateAccountPassword', () => {
     await account.updateAccountPassword(db, u.id, 'correct', 'newpass')
 
     expect(await peekToken(db, token, 'password-reset')).toBeNull()
+  })
+
+  it('evicts registered passkeys and returns the account to password signin', async () => {
+    const bcrypt = await import('bcryptjs')
+    const hashed = await bcrypt.hash('correct', 4)
+    const u = await seedUser({ name: 'P', email: 'pk@example.com', password: hashed, loginMethod: 'passkey' })
+    await db.insert(passkeyCredential).values({
+      userId: u.id,
+      credentialId: 'cred-password-change',
+      publicKey: Buffer.from([1, 2, 3]),
+      counter: 0,
+      transports: [],
+    })
+    // A second account's passkey is untouched by the first account's rotation.
+    const other = await seedUser({ name: 'O', email: 'other-pk@example.com', password: hashed, loginMethod: 'passkey' })
+    await db.insert(passkeyCredential).values({
+      userId: other.id,
+      credentialId: 'cred-other',
+      publicKey: Buffer.from([4, 5, 6]),
+      counter: 0,
+      transports: [],
+    })
+
+    await account.updateAccountPassword(db, u.id, 'correct', 'newpass')
+
+    expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, u.id))).toHaveLength(0)
+    const rows = await db.select({ loginMethod: user.loginMethod }).from(user).where(eq(user.id, u.id))
+    expect(rows[0]!.loginMethod).toBe('password')
+
+    expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, other.id))).toHaveLength(1)
+    const otherRows = await db.select({ loginMethod: user.loginMethod }).from(user).where(eq(user.id, other.id))
+    expect(otherRows[0]!.loginMethod).toBe('passkey')
   })
 })

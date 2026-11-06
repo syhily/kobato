@@ -76,7 +76,8 @@ Promoted gate (q.v.) — route them through its projections instead)
 
 **Draft preview**:
 Viewing non-live content by direct link. Deliberate per-entity policy:
-authors may preview post drafts; only admins may preview page drafts.
+authors may preview their own post drafts (admins any post draft); only
+admins may preview page drafts.
 _Avoid_: "preview" without an entity qualifier (the rule differs per
 entity), admin-only (the stale claim the code never enforced)
 

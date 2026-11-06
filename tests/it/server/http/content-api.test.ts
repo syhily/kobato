@@ -64,10 +64,10 @@ async function seedPost(
 }
 
 /** A draft post: unpublished, hidden, no published revision pointer, one draft revision. */
-async function seedDraftPost(slug: string, title: string): Promise<number> {
+async function seedDraftPost(slug: string, title: string, authorId: number | null = null): Promise<number> {
   const rows = await db
     .insert(postTable)
-    .values({ slug, title, published: false, visible: false, publishedRevisionId: null })
+    .values({ slug, title, published: false, visible: false, publishedRevisionId: null, authorId })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
   await db
@@ -327,8 +327,9 @@ describe('content.posts.bySlug', () => {
     expect(json.code).toBe('NOT_FOUND')
   })
 
-  it('gates the draft preview by role: anonymous 404s, authors see the draft', async () => {
-    await seedDraftPost('secret', 'Secret')
+  it('gates the draft preview by role and ownership: anonymous 404s, the author sees their draft', async () => {
+    // makeAuthedCtx defaults to user id 1 — the draft's author.
+    await seedDraftPost('secret', 'Secret', 1)
 
     const anonymous = await callRpc('/content/posts/bySlug', { slug: 'secret' }, makePublicCtx({ db }))
     expect(anonymous.status).toBe(404)
@@ -341,6 +342,31 @@ describe('content.posts.bySlug', () => {
     expect(json.kind).toBe('ok')
     expect(json.payload.draftMarker).toBe('draft')
     expect(json.payload.post.title).toBe('Secret')
+  })
+
+  it('404s an author previewing another author’s draft', async () => {
+    await seedDraftPost('secret', 'Secret', 1)
+
+    const other = await callRpc(
+      '/content/posts/bySlug',
+      { slug: 'secret' },
+      makeAuthedCtx({ role: 'author', userId: '2', db }),
+    )
+    expect(other.status).toBe(404)
+    expect((await parseRpcJson<RpcError>(other)).code).toBe('NOT_FOUND')
+  })
+
+  it('lets an admin preview any author’s draft', async () => {
+    await seedDraftPost('secret', 'Secret', 2)
+
+    const admin = await callRpc(
+      '/content/posts/bySlug',
+      { slug: 'secret' },
+      makeAuthedCtx({ role: 'admin', userId: '1', db }),
+    )
+    expect(admin.status).toBe(200)
+    const json = await parseRpcJson<{ kind: string; payload: { draftMarker: string | null } }>(admin)
+    expect(json.payload.draftMarker).toBe('draft')
   })
 })
 

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { emptyLexicalBody, stubMusicResolver } from '#/_helpers/lexical'
+import { adminUser } from '#/_helpers/session'
 import { content } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
@@ -396,13 +397,13 @@ describe('pages/services/admin-query — listRevisionsForAdmin', () => {
 
 describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
   it('returns null when the page does not exist', async () => {
-    expect(await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'nope')).toBeNull()
+    expect(await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'nope', adminUser())).toBeNull()
   })
 
   it('returns the page with hasNewerDraft=false when only a published revision exists', async () => {
     const rev = await seedRevision(0, 'published')
     await seedPage({ slug: 'pub', published: true, publishedRevisionId: rev.id })
-    const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'pub')
+    const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'pub', adminUser())
     expect(r).not.toBeNull()
     expect(r!.hasNewerDraft).toBe(false)
   })
@@ -410,7 +411,7 @@ describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
   it('returns the page with hasNewerDraft=true when a draft revision exists', async () => {
     const p = await seedPage({ slug: 'drafty' })
     await seedRevision(p.id, 'draft')
-    const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'drafty')
+    const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'drafty', adminUser())
     expect(r).not.toBeNull()
     expect(r!.hasNewerDraft).toBe(true)
   })
