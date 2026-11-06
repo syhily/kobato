@@ -12,7 +12,13 @@ import { makeSession } from '#/_helpers/session'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/services/password-reset'
-import { issueResetToken, issueSetupToken, peekToken } from '@/server/domains/auth/verification-tokens'
+import {
+  issueOtpToken,
+  issueResetToken,
+  issueSetupToken,
+  issueSignInLinkToken,
+  peekToken,
+} from '@/server/domains/auth/verification-tokens'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
@@ -433,6 +439,50 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     })
     const logins = await auditRowsFor('login')
     expect(logins).toHaveLength(1)
+  })
+
+  it('on success: also kills outstanding magic-link and OTP tokens', async () => {
+    const userId = await seedUser()
+    const { token: magicToken } = issueSignInLinkToken(db, userId)
+    await issueOtpToken(db, userId)
+    const { token } = issueResetToken(db, userId)
+
+    const result = await resetPasswordWithToken(
+      flowCtx(makeSession({})),
+      request(),
+      validForm(token),
+      '/admin',
+      'password-reset',
+    )
+
+    expect(result.type).toBe('redirect')
+    expect(await peekToken(db, magicToken, 'signin-link')).toBeNull()
+    expect(
+      await db
+        .select()
+        .from(verification)
+        .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, userId))),
+    ).toHaveLength(0)
+  })
+
+  it('rejects a password past the 72-byte bcrypt cap before consuming the token', async () => {
+    const userId = await seedUser()
+    const { token } = issueResetToken(db, userId)
+
+    // 73 ASCII bytes with complexity — past the bcrypt truncation point.
+    const result = await resetPasswordWithToken(
+      flowCtx(makeSession({})),
+      request(),
+      formWith({ reset_token: token, password: `${'Aa1'.repeat(24)}x` }),
+      '/admin',
+      'password-reset',
+    )
+
+    expect(result.type).toBe('error')
+    if (result.type === 'error') {
+      expect(result.message).toContain('密码过长')
+    }
+    expect(await peekToken(db, token, 'password-reset')).toEqual({ userId })
   })
 
   it('still succeeds when passkey cleanup fails (best-effort)', async () => {

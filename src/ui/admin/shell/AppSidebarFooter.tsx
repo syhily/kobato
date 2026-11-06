@@ -2,6 +2,7 @@ import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIco
 import { useState } from 'react'
 import { Link } from 'react-router'
 
+import { useLogout } from '@/client/hooks/use-logout'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { VersionDialog } from '@/ui/admin/shell/VersionDialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
@@ -24,6 +25,7 @@ interface AppSidebarFooterProps {
 
 export function AppSidebarFooter({ className, id, name, email }: AppSidebarFooterProps) {
   const [versionOpen, setVersionOpen] = useState(false)
+  const logout = useLogout()
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
 
   return (
@@ -99,15 +101,10 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                 系统版本
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-2" />
-              <DropdownMenuItem
-                className="my-0.5 rounded-xl px-3 py-2 text-sm"
-                render={
-                  <a href="/admin/signin?action=logout&redirect_to=/">
-                    <LogOutIcon className="mr-2 size-4" />
-                    登出
-                  </a>
-                }
-              />
+              <DropdownMenuItem className="my-0.5 rounded-xl px-3 py-2 text-sm" onClick={() => void logout('/')}>
+                <LogOutIcon className="mr-2 size-4" />
+                登出
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <VersionDialog open={versionOpen} onOpenChange={setVersionOpen} />

@@ -142,6 +142,8 @@ describe('admin users-admin controller', () => {
     const rows = await auditRowsFor('user_role_changed')
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceId).toBe(String(id))
+    // The audit `from` is the role BEFORE the write, not the new role.
+    expect(rows[0]!.details).toMatchObject({ from: 'author', to: 'visitor' })
   })
 
   it('invites an author', async () => {

@@ -33,6 +33,27 @@ describe('auth/schema — password complexity', () => {
   it('rejects a common weak password pattern', async () => {
     await expect(signUpAdminSchema.parseAsync({ ...base, password: 'password123' })).rejects.toBeTruthy()
   })
+
+  it('accepts a password of exactly 72 bytes', async () => {
+    const password = 'Aa1'.repeat(24)
+    expect(new TextEncoder().encode(password).byteLength).toBe(72)
+    const result = await signUpAdminSchema.parseAsync({ ...base, password })
+    expect(result.password).toBe(password)
+  })
+
+  it('rejects a password past 72 bytes even under the old 128-char cap', async () => {
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: `${'Aa1'.repeat(24)}x` })).rejects.toBeTruthy()
+  })
+
+  it('counts multi-byte runes fully against the byte cap', async () => {
+    // 3 ASCII + 24 × 3-byte runes = 75 bytes.
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: `Aa1${'密'.repeat(24)}` })).rejects.toBeTruthy()
+  })
+
+  it('signin keeps accepting long passwords (bcrypt truncates both sides of a compare)', async () => {
+    const data = await signInSchema.parseAsync({ email: 'admin@example.com', password: 'x'.repeat(100) })
+    expect(data.password).toHaveLength(100)
+  })
 })
 
 describe('signInSchema', () => {

@@ -194,6 +194,28 @@ describe('account controller', () => {
       expect(row.name).toBe('Alice')
       expect(row.receiveEmail).toBe(true)
     })
+
+    it('accepts an http(s) profile link', async () => {
+      const id = await seedUser({ name: 'Before' })
+
+      const res = await call(
+        accountRouter.updateProfile,
+        { link: 'https://example.com/blog' },
+        { context: ctxFor(id, { role: 'admin' }) },
+      )
+
+      expect(res.user.link).toBe('https://example.com/blog')
+      expect((await userRow(id)).link).toBe('https://example.com/blog')
+    })
+
+    it('rejects a non-http(s) profile link', async () => {
+      const id = await seedUser({ name: 'Before' })
+
+      await expect(
+        call(accountRouter.updateProfile, { link: 'javascript:alert(1)' }, { context: ctxFor(id, { role: 'admin' }) }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+      expect((await userRow(id)).link).not.toBe('javascript:alert(1)')
+    })
   })
 
   describe('updatePassword', () => {

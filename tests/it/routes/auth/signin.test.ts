@@ -295,11 +295,35 @@ async function auditRowsFor(actionName: string) {
 }
 
 describe('routes/signin', () => {
-  it('sanitizes external logout redirect targets', async () => {
-    const response = await callLoader('?action=logout&redirect_to=https://evil.example/phish')
+  it('keeps the session on a GET ?action=logout (logout is POST-only)', async () => {
+    testSession.set('user', adminUser())
+    const response = await callLoader('?action=logout')
+
+    // The already-logged-in branch still redirects…
+    expect(response.status).toBe(302)
+    // …but no session-destroying cookie goes out and the user stays put.
+    expect(getSetCookie(response)).toBeNull()
+    expect(testSession.get('user')).toBeDefined()
+    expect(await auditRowsFor('logout')).toHaveLength(0)
+  })
+
+  it('logs out via POST and sanitizes external redirect targets', async () => {
+    testSession.set('user', adminUser())
+    const response = await callAction('logout', withCsrf(), 'https://evil.example/phish')
 
     expect(response.status).toBe(302)
-    expect(response.headers.get('location')).toBe('/')
+    expect(response.headers.get('location')).toBe('/admin')
+    expect(getSetCookie(response)).toBeTruthy()
+    expect(await auditRowsFor('logout')).toHaveLength(1)
+  })
+
+  it('requires a CSRF token for the POST logout', async () => {
+    testSession.set('user', adminUser())
+    const result = await callAction('logout', new FormData())
+
+    expect(extractData(result).error).toBe('安全校验失败，请刷新页面后重试。')
+    expect(testSession.get('user')).toBeDefined()
+    expect(await auditRowsFor('logout')).toHaveLength(0)
   })
 
   it('sanitizes external already-logged-in redirect targets', async () => {

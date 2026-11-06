@@ -47,10 +47,12 @@ The shared `loaders/*` helpers are the orchestration layer the content controlle
 
 | Base         | Guard                                 | Use for                    |
 | ------------ | ------------------------------------- | -------------------------- |
-| `publicProc` | No auth gate; `csrfGuard` on non-GET  | Anonymous + CSRF mutations |
+| `publicProc` | No auth gate; `csrfGuard`             | Anonymous + CSRF mutations |
 | `authedProc` | `requireAuth` + `csrfGuard`           | Any logged-in user         |
 | `authorProc` | `requireRole('author')` + `csrfGuard` | Authors and admins         |
 | `adminProc`  | `requireRole('admin')` + `csrfGuard`  | Admins only                |
+
+`csrfGuard` runs on EVERY `/rpc/*` request — safe methods included (`app.ts` mounts it on the whole prefix, and the middleware has no method carve-out). The browser client attaches the `x-csrf-token` header to every call; anonymous sessions validate against the stateless `__csrf` double-submit token minted on safe methods.
 
 ### Adding an endpoint
 

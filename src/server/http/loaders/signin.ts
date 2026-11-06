@@ -8,16 +8,38 @@ import { readLivePendingOtp } from '@/server/domains/auth/services/otp'
 import { destroySession } from '@/server/domains/auth/session-storage'
 import { peekToken } from '@/server/domains/auth/verification-tokens'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
-import { getRequestContext } from '@/server/http/request-context'
+import { getRequestContext, type RequestContext } from '@/server/http/request-context'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 
-// Flow routing behind `routes/auth/signin.tsx`: logout, token peek, and
-// OTP-session branching. Redirects are thrown; two `data(...)` payload
-// shapes drive the login/verify-otp/lost-password/reset-password forms.
+// Flow routing behind `routes/auth/signin.tsx`: token peek and OTP-session
+// branching. Redirects are thrown; two `data(...)` payload shapes drive the
+// login/verify-otp/lost-password/reset-password forms.
 
 // Only these URL actions name a GET view; any other action is a POST
 // handler — treating those as views would unmount the login form on revalidation.
 const VIEW_ACTIONS = new Set(['magiclink', 'lostpassword', 'resetpassword', 'accept-invite'])
+
+/**
+ * POST-only logout (the route action's `action=logout` branch, behind the
+ * shared CSRF validation). A GET logout would let any cross-site <img> or
+ * link prefetch silently sign a user out.
+ */
+export async function handleSigninLogout(rc: RequestContext, redirectTo: string): Promise<never> {
+  const { session } = rc
+  const user = session.get('user')
+  await logout(session)
+  if (user) {
+    recordAuditEventFromContext(rc, {
+      action: 'logout',
+      resourceType: 'session',
+      resourceId: session.id,
+    })
+  }
+  throw redirect(redirectTo, {
+    headers: { 'Set-Cookie': await destroySession(session) },
+  })
+}
+
 export async function loadSigninData({ request, context }: Pick<LoaderFunctionArgs, 'request' | 'context'>) {
   const rc = getRequestContext({ request, context })
   const db = rc.db
@@ -27,21 +49,6 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
   const user = rc.viewer
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/', url.origin)
   const action = url.searchParams.get('action')
-
-  if (action === 'logout') {
-    const user = session.get('user')
-    await logout(session)
-    if (user) {
-      recordAuditEventFromContext(rc, {
-        action: 'logout',
-        resourceType: 'session',
-        resourceId: session.id,
-      })
-    }
-    throw redirect(redirectTo, {
-      headers: { 'Set-Cookie': await destroySession(session) },
-    })
-  }
 
   if (user) {
     throw redirect(redirectTo)

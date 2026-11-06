@@ -6,6 +6,22 @@ import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 /** Maximum password length to prevent DoS via oversized payloads. */
 export const MAX_PASSWORD_LENGTH = 128
 
+/**
+ * bcrypt silently truncates at 72 BYTES — a longer "password" is really
+ * just its 72-byte prefix, so two distinct secrets could compare equal.
+ * Creation paths therefore cap by byte length (multi-byte runes count
+ * fully). Signin keeps the plain 128-char DoS cap instead: bcrypt
+ * truncates both sides of a compare identically, so legacy long passwords
+ * keep working there.
+ */
+export const MAX_PASSWORD_BYTES = 72
+
+export const PASSWORD_BYTE_LIMIT_MESSAGE = `密码过长（最多 ${MAX_PASSWORD_BYTES} 字节）`
+
+export function passwordWithinBcryptLimit(value: string): boolean {
+  return new TextEncoder().encode(value).byteLength <= MAX_PASSWORD_BYTES
+}
+
 /** Password complexity regex, applied on top of the minimum length. */
 export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 
@@ -13,7 +29,7 @@ function passwordSchema() {
   return z
     .string()
     .min(MIN_PASSWORD_LENGTH)
-    .max(MAX_PASSWORD_LENGTH, `密码长度不能超过 ${MAX_PASSWORD_LENGTH} 位`)
+    .refine(passwordWithinBcryptLimit, PASSWORD_BYTE_LIMIT_MESSAGE)
     .regex(PASSWORD_COMPLEXITY_RE, '密码必须包含至少一个大写字母、一个小写字母和一个数字')
 }
 

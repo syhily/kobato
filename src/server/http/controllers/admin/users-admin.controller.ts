@@ -44,7 +44,7 @@ const updateRole = adminProc
         action: 'user_role_changed',
         resourceType: 'user',
         resourceId: input.id,
-        details: { from: updated.role, to: input.role },
+        details: { from: updated.previousRole, to: input.role },
       })
     }
     const dto = await fetchAdminUserDto(context.db, targetId)

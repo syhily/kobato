@@ -11,7 +11,7 @@ import { handleOtpCancel, handleOtpResend, handleOtpVerify } from '@/server/doma
 import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/services/password-reset'
 import { hasApprovedComments } from '@/server/domains/comments/services/public-query'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
-import { loadSigninData } from '@/server/http/loaders/signin'
+import { handleSigninLogout, loadSigninData } from '@/server/http/loaders/signin'
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
@@ -77,6 +77,11 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (!validateCsrfForAction(session, request, formData)) {
     return data({ error: '安全校验失败，请刷新页面后重试。' })
+  }
+
+  if (action === 'logout') {
+    // POST + CSRF only — see handleSigninLogout.
+    return handleSigninLogout(rc, redirectTo)
   }
 
   if (action === 'lostpassword') {

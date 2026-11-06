@@ -17,6 +17,7 @@ import { adminBackupRouter } from '@/server/http/controllers/admin/backup.contro
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
 // Backup services run real against the test DB + in-memory storage; only
@@ -71,6 +72,7 @@ let restoreDeps: {
 
 beforeEach(async () => {
   await clearAllTables(db)
+  __resetRateLimitsForTests()
   initAllBatchers(getDatabaseHandle())
   __setStorageBackendForTests('s3', s3Memory.backend)
   __setStorageBackendForTests('local', localMemory.backend)
@@ -340,6 +342,45 @@ describe('adminBackupRouter.restore', () => {
         { context: adminCtx(admin) },
       ),
     ).rejects.toThrow(ORPCError)
+  })
+
+  it('caps explicit-password restore attempts per (admin, backup) — the 11th guess is a 429', async () => {
+    const backupService = await import('@/server/domains/backup/services/backup')
+    const restoreService = await import('@/server/domains/backup/services/restore')
+    vi.mocked(backupService.isBackupEncrypted).mockResolvedValue(true)
+    vi.mocked(backupService.getBackupStream).mockResolvedValue({
+      stream: Readable.from(['archive-bytes']),
+      byteSize: 13,
+      encrypted: true,
+      fileName: 'backup-2026-03-03T00-00-00.db.tar.gz.enc',
+    })
+    // Every guess fails the GCM tag check.
+    vi.mocked(restoreService.stageBackup).mockRejectedValue(
+      new restoreService.BackupPasswordError('备份密码错误或文件已损坏'),
+    )
+    const admin = await seedAdmin()
+
+    // Ten guesses all reach the staging path (and burn the hourly budget).
+    for (let i = 0; i < 10; i++) {
+      await expect(
+        call(
+          adminBackupRouter.restore,
+          { key: '2026-03-03T00-00-00', password: `guess-${i}` },
+          { context: adminCtx(admin) },
+        ),
+      ).rejects.toThrow(ORPCError)
+    }
+    expect(vi.mocked(backupService.getBackupStream)).toHaveBeenCalledTimes(10)
+
+    // The 11th is refused before the download even starts.
+    await expect(
+      call(
+        adminBackupRouter.restore,
+        { key: '2026-03-03T00-00-00', password: 'guess-11' },
+        { context: adminCtx(admin) },
+      ),
+    ).rejects.toMatchObject({ status: 429 })
+    expect(vi.mocked(backupService.getBackupStream)).toHaveBeenCalledTimes(10)
   })
 
   it('falls back to asking for a password when the STORED settings password fails to decrypt', async () => {

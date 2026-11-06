@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { comment } from '@/server/infra/db/schema/comment'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
-import { user } from '@/server/infra/db/schema/user'
+import { user, verification } from '@/server/infra/db/schema/user'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
@@ -292,11 +292,12 @@ describe('users/services/admin — updateUserRoleWithGuard', () => {
     await expect(admin.updateUserRoleWithGuard(db, u.id, 'author', 'other')).rejects.toThrow(/不能降级唯一的管理员/)
   })
 
-  it('updates role when guard passes', async () => {
+  it('updates role when guard passes and reports the previous role', async () => {
     const a = await seedUser({ name: 'A', email: 'a@example.com', role: 'admin' })
     const b = await seedUser({ name: 'B', email: 'b@example.com', role: 'author' })
     const updated = await admin.updateUserRoleWithGuard(db, b.id, 'visitor', String(a.id))
-    expect(updated?.role).toBe('visitor')
+    expect(updated?.user.role).toBe('visitor')
+    expect(updated?.previousRole).toBe('author')
   })
 
   it('leaves exactly one admin when the last two admins are demoted concurrently', async () => {
@@ -501,17 +502,24 @@ describe('users/services/account — updateAccountPassword', () => {
     expect(rows[0].password).not.toBe(hashed)
   })
 
-  it('revokes outstanding password-reset tokens on a successful change', async () => {
+  it('revokes outstanding credential-bypass tokens on a successful change', async () => {
     const bcrypt = await import('bcryptjs')
-    const { issueResetToken, peekToken } = await import('@/server/domains/auth/verification-tokens')
+    const { issueResetToken, issueSignInLinkToken, issueOtpToken, peekToken } =
+      await import('@/server/domains/auth/verification-tokens')
     const hashed = await bcrypt.hash('correct', 4)
     const u = await seedUser({ name: 'P', email: 'p2@example.com', password: hashed })
     const { token } = issueResetToken(db, u.id)
+    const { token: magicToken } = issueSignInLinkToken(db, u.id)
+    await issueOtpToken(db, u.id)
     expect(await peekToken(db, token, 'password-reset')).not.toBeNull()
+    expect(await peekToken(db, magicToken, 'signin-link')).not.toBeNull()
 
     await account.updateAccountPassword(db, u.id, 'correct', 'newpass')
 
     expect(await peekToken(db, token, 'password-reset')).toBeNull()
+    expect(await peekToken(db, magicToken, 'signin-link')).toBeNull()
+    // The OTP row is gone too (it is keyed by purpose+userId, not by value).
+    expect(await db.select().from(verification).where(eq(verification.purpose, 'signin-otp'))).toHaveLength(0)
   })
 
   it('evicts registered passkeys and returns the account to password signin', async () => {

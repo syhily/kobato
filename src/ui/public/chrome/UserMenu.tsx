@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
+import { useLogout } from '@/client/hooks/use-logout'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { roleLabel } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
@@ -18,12 +19,13 @@ import {
 
 interface Props {
   currentUser: HeaderCurrentUser
-  logoutQuery: string
+  logoutRedirectTo: string
 }
 
 // User menu in the public chrome's site-nav; a single avatar-button trigger
 // nests next to the other site-nav links without taking a full row.
-export function UserMenu({ currentUser, logoutQuery }: Props) {
+export function UserMenu({ currentUser, logoutRedirectTo }: Props) {
+  const logout = useLogout()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()
   const canEnterAdmin = currentUser.role === 'admin' || currentUser.role === 'author'
   return (
@@ -75,13 +77,9 @@ export function UserMenu({ currentUser, logoutQuery }: Props) {
           />
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          render={
-            <a href={`/admin/signin?${logoutQuery}`}>
-              <LogOutIcon /> 登出
-            </a>
-          }
-        />
+        <DropdownMenuItem onClick={() => void logout(logoutRedirectTo)}>
+          <LogOutIcon /> 登出
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

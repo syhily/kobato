@@ -26,10 +26,8 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
   const navigationSection = useNavigationSettings()
   const showFooter = footer !== undefined ? footer : true
   const resolvedNavigation = navigation || navigationSection.navigation.sideNav
-  const logoutQuery = new URLSearchParams({
-    action: 'logout',
-    redirect_to: `${pathname}${search}`,
-  }).toString()
+  // Logout returns to the page the user signed out from.
+  const logoutRedirectTo = `${pathname}${search}`
 
   return (
     <div className="flex flex-col lg:flex-row">
@@ -39,11 +37,16 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
       >
         跳转到主要内容
       </a>
-      <Header navigation={resolvedNavigation} currentUser={currentUser} pathname={pathname} logoutQuery={logoutQuery} />
+      <Header
+        navigation={resolvedNavigation}
+        currentUser={currentUser}
+        pathname={pathname}
+        logoutRedirectTo={logoutRedirectTo}
+      />
       {currentUser && (
         // Above the detail-page cover image (z-aside-drawer / 1020) so the avatar and dropdown stay reachable.
         <div className="fixed top-4 right-4 z-modal hidden lg:block">
-          <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
+          <UserMenu currentUser={currentUser} logoutRedirectTo={logoutRedirectTo} />
         </div>
       )}
       <main id="main-content" className="flex min-w-0 flex-1 flex-col">

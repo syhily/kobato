@@ -201,6 +201,19 @@ export const tryNewsletterSubscribeByEmailRateLimit = (email: string): Promise<R
     NEWSLETTER_SUBSCRIBE_EMAIL_BUCKET,
   )
 
+// Stored-backup restore decrypts server-side, so every explicit password
+// guess is an online oracle for the archive key. No settings bucket (same
+// "small surface" rule as newsletter-subscribe): 10 tries/hour per
+// (admin, backup) leaves ample room for typos.
+const BACKUP_RESTORE_PASSWORD_BUCKET: RateLimitBucket = { windowSeconds: 60 * 60, maxAttempts: 10 }
+
+/** Stored-backup restore password attempts by `(adminId, backup key)`. */
+export const tryBackupRestorePasswordRateLimit = (adminId: string, backupKey: string): Promise<RateLimitResult> =>
+  tryKeyedRateLimit(
+    `${RATE_LIMIT_NAMESPACE}backup-restore-password:${adminId}:${backupKey}`,
+    BACKUP_RESTORE_PASSWORD_BUCKET,
+  )
+
 /** `like` increases by client IP; cancellation does NOT bump this counter —
  *  only fresh inserts add rows, keeping table growth bounded. */
 export const tryLikeIncreaseRateLimit = byIp('like', 'like-increase')

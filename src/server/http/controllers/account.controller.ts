@@ -12,7 +12,11 @@ import {
   setLoginMethod,
   verifyRegistrationResponse,
 } from '@/server/domains/auth/passkey/service'
-import { PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
+import {
+  PASSWORD_BYTE_LIMIT_MESSAGE,
+  PASSWORD_COMPLEXITY_RE,
+  passwordWithinBcryptLimit,
+} from '@/server/domains/auth/schema'
 import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
 import { isMailLoginReady } from '@/server/domains/auth/services/shared'
 import { revokeOwnSessionWithGuard } from '@/server/domains/auth/session-guard'
@@ -29,6 +33,7 @@ import {
 import { accountProfileOutputSchema, accountSessionsOutputSchema } from '@/shared/contracts/admin'
 import { loginMethodSchema } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
+import { optionalHttpUrlSchema } from '@/shared/utils/safe-url'
 import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -50,7 +55,9 @@ function isRegistrationResponseJSON(value: unknown): value is RegistrationRespon
 // inferred from the router via `InferRouterInputs`.
 const updateProfileInput = z.object({
   name: z.string().min(1).max(50).optional(),
-  link: z.url().max(255).optional().nullable(),
+  // http(s)-only like the admin user-edit schema — a bare z.url() would
+  // accept javascript:/data: hrefs into the profile link.
+  link: optionalHttpUrlSchema.nullable(),
   badgeName: z.string().max(20).optional().nullable(),
   badgeColor: z.string().max(7).optional().nullable(),
   badgeTextColor: z.string().max(7).optional().nullable(),
@@ -62,7 +69,7 @@ const updatePasswordInput = z.object({
   newPassword: z
     .string()
     .min(MIN_PASSWORD_LENGTH)
-    .max(128)
+    .refine(passwordWithinBcryptLimit, PASSWORD_BYTE_LIMIT_MESSAGE)
     .regex(PASSWORD_COMPLEXITY_RE, '密码必须包含至少一个大写字母、一个小写字母和一个数字'),
 })
 

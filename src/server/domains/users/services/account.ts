@@ -122,6 +122,9 @@ export async function updateAccountPassword(
     // Best-effort: don't block the password change if passkey cleanup fails.
   }
   await revokeAllSessionsOfUser(db, dbUser.id, currentSessionId)
-  // A password change also kills any outstanding reset link for the account.
+  // A password change also kills every outstanding credential-bypass token
+  // for the account: reset links, magic signin links, and pending OTPs.
   await revokeTokensFor(db, dbUser.id, 'password-reset')
+  await revokeTokensFor(db, dbUser.id, 'signin-link')
+  await revokeTokensFor(db, dbUser.id, 'signin-otp')
 }

@@ -26,6 +26,7 @@ import {
 import { adminProc } from '@/server/http/orpc-base'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { tryBackupRestorePasswordRateLimit } from '@/server/infra/rate-limit'
 import { activeBackend } from '@/server/infra/storage/registry'
 
 const log = getLogger('backup.controller')
@@ -106,6 +107,15 @@ const restore = adminProc
     const password = explicitPassword ?? (encrypted ? resolveStoredEncryptionPassword() : null)
     if (encrypted && password === null) {
       return { passwordRequired: true }
+    }
+    // An explicit password guess is an online oracle for the archive key —
+    // cap tries per (admin, backup). The stored-settings password path stays
+    // exempt: it is one fixed candidate, not a guess.
+    if (encrypted && explicitPassword !== null) {
+      const passwordLimit = await tryBackupRestorePasswordRateLimit(context.viewer.id, input.key)
+      if (passwordLimit.exceeded) {
+        throw new ActionFailure(429, '密码尝试次数过多，请稍后再试。')
+      }
     }
 
     // Claim BEFORE the (potentially large) download — check-then-act across an

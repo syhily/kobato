@@ -51,7 +51,16 @@ function readCookieValue(header: string | null, name: string): string | null {
     return null
   }
   const m = new RegExp(`(?:^|;\\s*)${name}=([^;]+)`).exec(header)
-  return m ? decodeURIComponent(m[1]!) : null
+  if (!m) {
+    return null
+  }
+  try {
+    return decodeURIComponent(m[1]!)
+  } catch {
+    // A malformed percent-escape must not 500 the request — the cookie
+    // counts as absent (a session cookie then simply misses).
+    return null
+  }
 }
 
 // Only safe methods mint the anonymous `__csrf` cookie — unsafe anonymous

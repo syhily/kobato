@@ -119,17 +119,23 @@ export async function listUsersForAdmin(
   return { users, total, hasMore: offset + users.length < total }
 }
 
+export interface RoleUpdateResult {
+  user: User
+  /** The role the target held before the write — for the audit `from`. */
+  previousRole: User['role']
+}
+
 export async function updateUserRoleWithGuard(
   db: Database,
   targetId: number,
   newRole: 'admin' | 'author' | 'visitor' | null,
   actorId: string,
-): Promise<User | null> {
+): Promise<RoleUpdateResult | null> {
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', '不能修改自己的角色。')
   }
   // Last-admin check and role write share one sync transaction (node:sqlite).
-  const updated = db.transaction((tx) => {
+  const result = db.transaction((tx) => {
     const target = findUserByIdForUpdate(tx, targetId)
     if (!target) {
       throw new DomainError('NOT_FOUND', '用户不存在。')
@@ -140,12 +146,13 @@ export async function updateUserRoleWithGuard(
         throw new DomainError('CONFLICT', '不能降级唯一的管理员。')
       }
     }
-    return updateUserRole(tx, targetId, newRole)
+    const updated = updateUserRole(tx, targetId, newRole)
+    return updated ? { user: updated, previousRole: target.role } : null
   })
-  if (updated) {
+  if (result) {
     await revokeAllSessionsOfUser(db, targetId)
   }
-  return updated
+  return result
 }
 
 export interface InviteAuthorResult {

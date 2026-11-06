@@ -6,6 +6,7 @@ import { useRevalidator } from 'react-router'
 import type { MySessionItem } from '@/routes/admin/me/sessions'
 
 import { orpc } from '@/client/api/client'
+import { useLogout } from '@/client/hooks/use-logout'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { DEFAULT_MY_SORT, MY_SESSION_SORT_OPTIONS } from '@/shared/utils/sessions-sort'
@@ -24,6 +25,7 @@ export interface MySessionsViewProps {
 
 export function MySessionsView({ items }: MySessionsViewProps) {
   const config = useSiteIdentity()
+  const logout = useLogout()
   const revalidator = useRevalidator()
   const revoke = useMutation({
     mutationFn: (vars: { sid: string }) => orpc.account.revokeSession({ id: vars.sid }),
@@ -52,7 +54,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
       actionIcon: <LogOutIcon data-icon />,
       onConfirm: () => {
         if (isCurrent) {
-          window.location.href = '/admin/signin?action=logout&redirect_to=/admin/signin'
+          void logout('/admin/signin')
           return
         }
         revoke.mutate({ sid })

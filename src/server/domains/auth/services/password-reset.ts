@@ -11,8 +11,12 @@ import type { User } from '@/server/infra/db/types'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { deleteAllCredentials } from '@/server/domains/auth/passkey/service'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
-import { PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
-import { consumeToken, issueResetToken } from '@/server/domains/auth/verification-tokens'
+import {
+  PASSWORD_BYTE_LIMIT_MESSAGE,
+  PASSWORD_COMPLEXITY_RE,
+  passwordWithinBcryptLimit,
+} from '@/server/domains/auth/schema'
+import { consumeToken, issueResetToken, revokeTokensFor } from '@/server/domains/auth/verification-tokens'
 import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
 import { sendPasswordReset } from '@/server/infra/email/sender'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/infra/rate-limit'
@@ -112,6 +116,9 @@ export async function resetPasswordWithToken(
   if (!newPasswordStr || newPasswordStr.length < MIN_PASSWORD_LENGTH) {
     return { type: 'error', message: `密码长度至少 ${MIN_PASSWORD_LENGTH} 位。` }
   }
+  if (!passwordWithinBcryptLimit(newPasswordStr)) {
+    return { type: 'error', message: PASSWORD_BYTE_LIMIT_MESSAGE }
+  }
   if (!PASSWORD_COMPLEXITY_RE.test(newPasswordStr)) {
     return { type: 'error', message: '密码必须包含至少一个大写字母、一个小写字母和一个数字。' }
   }
@@ -124,6 +131,12 @@ export async function resetPasswordWithToken(
   const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
   // Password reset also returns the account to password signin.
   await updateUserById(db, result.userId, { password: hashed, loginMethod: 'password' })
+  // Rotating the password kills every other outstanding credential-bypass
+  // token on the account: remaining reset links, magic signin links, and
+  // pending OTPs.
+  await revokeTokensFor(db, result.userId, 'password-reset')
+  await revokeTokensFor(db, result.userId, 'signin-link')
+  await revokeTokensFor(db, result.userId, 'signin-otp')
   try {
     await deleteAllCredentials(db, result.userId)
   } catch {

@@ -203,6 +203,15 @@ describe('requestContextMiddleware', () => {
     expect(session.get('csrfToken')).toBe(`derived:${MINTED_CSRF_COOKIE}`)
   })
 
+  it('anonymous GET with a malformed percent-escape in a cookie: treated as absent, no 500', async () => {
+    const { app, session } = await buildApp()
+    app.get('/', (c) => c.json({ ok: true }))
+    const res = await app.request('/', { headers: { Cookie: '__csrf=%E4%A' } })
+    expect(res.status).toBe(200)
+    expect(res.headers.getSetCookie()).toEqual([`__csrf=${MINTED_CSRF_COOKIE}; Path=/; HttpOnly; SameSite=Lax`])
+    expect(session.get('csrfToken')).toBe(`derived:${MINTED_CSRF_COOKIE}`)
+  })
+
   it('anonymous GET on a cookie-exempt path (feed/sitemap/assets): mints nothing', async () => {
     const { app, session, commitSessionWithMaxAge } = await buildApp()
     app.get('/feed.xml', (c) => c.json({ ok: true }))
