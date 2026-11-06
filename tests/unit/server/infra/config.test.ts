@@ -5,11 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   CONFIG_TABLE,
+  ConfigFileError,
   configCandidates,
   configEnvName,
   loadConfig,
   loadServerConfig,
   migrateLegacyKeys,
+  parseConfigFileJson,
   resolveConfigFilePath,
 } from '@/server/infra/config'
 
@@ -554,6 +556,42 @@ describe('infra/config — migrateLegacyKeys', () => {
       storage: { data: '/data' },
       server: { loggingLevel: 'info' },
     })
+  })
+})
+
+describe('infra/config — parseConfigFileJson (the boot schema, without exiting)', () => {
+  it('accepts a partial config, stripping empty-string values', () => {
+    const parsed = parseConfigFileJson('{ "server": { "port": 8080 }, "security": { "sessionSecret": "" } }')
+    expect(parsed.data.server).toEqual({ port: 8080 })
+    // '' means unset — stripped before validation, exactly as at boot.
+    expect(parsed.data.security).toEqual({})
+    expect(parsed.migrated).toBe(false)
+  })
+
+  it('runs the legacy-key migration, reporting it for the caller to persist', () => {
+    const parsed = parseConfigFileJson(JSON.stringify({ paths: { data: '/data' }, redis: { url: 'redis://x' } }))
+    expect(parsed.migrated).toBe(true)
+    expect(parsed.notes.length).toBeGreaterThan(0)
+    expect(parsed.data).toEqual({ storage: { data: '/data' } })
+  })
+
+  it('classifies the rejection: json / shape / schema', () => {
+    const kindOf = (raw: string): string => {
+      try {
+        parseConfigFileJson(raw)
+      } catch (error) {
+        if (error instanceof ConfigFileError) {
+          return error.kind
+        }
+      }
+      throw new Error('expected a ConfigFileError')
+    }
+
+    expect(kindOf('not json')).toBe('json')
+    expect(kindOf('[1, 2, 3]')).toBe('shape')
+    // Unknown keys and values the strict schema rejects both land in `schema`.
+    expect(kindOf(JSON.stringify({ nope: true }))).toBe('schema')
+    expect(kindOf(JSON.stringify({ security: { encryptionKey: 'short' } }))).toBe('schema')
   })
 })
 

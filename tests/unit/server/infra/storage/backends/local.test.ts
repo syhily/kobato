@@ -1,4 +1,5 @@
-import { existsSync, readdirSync, rmSync } from 'node:fs'
+import { existsSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { Readable } from 'node:stream'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Point the local backend at a fresh temp directory per test file. The mock
@@ -82,6 +83,47 @@ describe('storage/local — put/get round-trip', () => {
     expect(await localBackend.exists('images/a.jpg')).toBe(false)
     await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('y'), contentType: 'image/jpeg' })
     expect(await localBackend.exists('images/a.jpg')).toBe(true)
+  })
+})
+
+describe('storage/local — private-object permissions', () => {
+  beforeEach(() => {
+    rmSync(tmp.root, { recursive: true, force: true })
+  })
+
+  it('creates a private object 0600 with a 0700 directory', async () => {
+    await localBackend.put({
+      key: 'backup/backup-2026-01-01T00-00-00-0123456789abcdef.db.tar.gz',
+      body: Buffer.from('dump'),
+      contentType: 'application/gzip',
+      visibility: 'private',
+    })
+
+    expect(statSync(`${tmp.root}/backup`).mode & 0o777).toBe(0o700)
+    expect(statSync(`${tmp.root}/backup/backup-2026-01-01T00-00-00-0123456789abcdef.db.tar.gz`).mode & 0o777).toBe(
+      0o600,
+    )
+  })
+
+  it('creates a private STREAMED object 0600', async () => {
+    await localBackend.putStream({
+      key: 'audit-log/2026-01.jsonl.gz',
+      body: Readable.from([Buffer.from('archive')]),
+      contentType: 'application/gzip',
+      visibility: 'private',
+    })
+
+    expect(statSync(`${tmp.root}/audit-log`).mode & 0o777).toBe(0o700)
+    expect(statSync(`${tmp.root}/audit-log/2026-01.jsonl.gz`).mode & 0o777).toBe(0o600)
+  })
+
+  it('leaves public objects on the process defaults (umask-derived, not forced owner-only)', async () => {
+    await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('x'), contentType: 'image/jpeg' })
+
+    // Node's default creation mode is 0666 for files / 0777 for directories,
+    // masked by the umask — unchanged from before the private-mode rule.
+    expect(statSync(`${tmp.root}/images`).mode & 0o777).toBe(0o777 & ~process.umask())
+    expect(statSync(`${tmp.root}/images/a.jpg`).mode & 0o777).toBe(0o666 & ~process.umask())
   })
 })
 
