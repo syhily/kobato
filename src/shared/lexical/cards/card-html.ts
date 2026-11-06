@@ -74,11 +74,14 @@ export function elementFromHtml(document: Document, html: string, cardType: stri
   const container = document.createElement('div')
   container.innerHTML = html.trim()
   const element = container.firstElementChild
-  if (element === null) {
+  // The templates root at exactly one real HTML element. `instanceof` goes
+  // through the owner window: the server side runs this against a jsdom
+  // document, whose constructors are not the Node globals.
+  const win = document.defaultView
+  if (win === null || !(element instanceof win.HTMLElement)) {
     throw new Error(`[${cardType}] render template produced no root element`)
   }
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the templates root at real elements; firstElementChild is typed Element
-  return element as HTMLElement
+  return element
 }
 
 /**

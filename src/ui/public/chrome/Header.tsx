@@ -175,16 +175,7 @@ export function Header({ navigation, currentUser, pathname, logoutQuery }: Heade
               <img src={`/logo-dark.svg${v}`} alt="且听书吟" width={60} height={60} className={navbarBrandImgClass} />
             </Link>
           </h1>
-          {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- <nav> with click/keyboard handler closes mobile menu; role=navigation is implicit */}
-          <nav
-            className={siteMenuClass}
-            onClick={() => setMenuOpen(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setMenuOpen(false)
-              }
-            }}
-          >
+          <nav className={siteMenuClass}>
             <ul className={siteMenuListClass}>
               {navigation.map((menu) => (
                 <li key={`menu-${menu.link}`} className={siteMenuItemClass}>
@@ -194,11 +185,17 @@ export function Header({ navigation, currentUser, pathname, logoutQuery }: Heade
                       target={menu.target}
                       rel={safeRel(menu.target, undefined)}
                       className={siteMenuLinkClass}
+                      onClick={() => setMenuOpen(false)}
                     >
                       {menu.text}
                     </a>
                   ) : (
-                    <Link to={menu.link} prefetch="intent" className={siteMenuLinkClass}>
+                    <Link
+                      to={menu.link}
+                      prefetch="intent"
+                      className={siteMenuLinkClass}
+                      onClick={() => setMenuOpen(false)}
+                    >
                       {menu.text}
                     </Link>
                   )}

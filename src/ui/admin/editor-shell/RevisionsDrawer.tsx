@@ -236,20 +236,34 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
   const diff = useMemo(() => diffBodies(revisionBody, currentBody), [revisionBody, currentBody])
   const changedCount = diff.filter((entry) => entry.status !== 'unchanged').length
 
+  return (
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-hidden px-4 pb-4">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <Badge variant={revision.status === 'published' ? 'default' : 'secondary'}>
+          R{revision.revisionNo} · {revision.status === 'published' ? '已发布' : '草稿'}
+        </Badge>
+        <span>更新于 {new Date(revision.updatedAt).toLocaleString('zh-CN')}</span>
+        <span className="ml-auto">{changedCount === 0 ? '与当前一致' : `${changedCount} 处差异`}</span>
+      </div>
+      <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-xl border bg-card">
+        {/* key-remount: switching revisions rebuilds both panes, which resets their scroll positions */}
+        <RevisionPanes key={revision.id} diff={diff} />
+      </div>
+      <div className="flex items-center justify-between gap-2 rounded-xl border bg-card p-3 text-xs text-muted-foreground">
+        <span>选择此版本会用历史正文替换编辑器内容；更改不会立刻保存到服务器，需要再点一次「保存」或「发布」。</span>
+        <Button onClick={onAdopt} disabled={isCurrent} title={isCurrent ? '当前正在编辑此版本' : '使用此版本'}>
+          <CheckIcon /> {isCurrent ? '当前' : '选择此版本'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/** The two scroll-synced diff panes. Remounted per revision (key) so scroll starts at the top. */
+function RevisionPanes({ diff }: { diff: ReturnType<typeof diffBodies> }) {
   const leftScrollRef = useRef<HTMLDivElement>(null)
   const rightScrollRef = useRef<HTMLDivElement>(null)
   const syncScrollLockRef = useRef(false)
-
-  useEffect(() => {
-    const left = leftScrollRef.current
-    const right = rightScrollRef.current
-    if (!left || !right) {
-      return
-    }
-    left.scrollTop = 0
-    right.scrollTop = 0
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- switching revisions must reset both panes' scroll; the effect touches only refs
-  }, [revision.id])
 
   useEffect(() => {
     const left = leftScrollRef.current
@@ -285,34 +299,19 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
   }, [])
 
   return (
-    <div className="flex min-h-0 grow flex-col gap-3 overflow-hidden px-4 pb-4">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <Badge variant={revision.status === 'published' ? 'default' : 'secondary'}>
-          R{revision.revisionNo} · {revision.status === 'published' ? '已发布' : '草稿'}
-        </Badge>
-        <span>更新于 {new Date(revision.updatedAt).toLocaleString('zh-CN')}</span>
-        <span className="ml-auto">{changedCount === 0 ? '与当前一致' : `${changedCount} 处差异`}</span>
-      </div>
-      <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-xl border bg-card">
-        <div className="flex min-h-0 flex-col border-r">
-          <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">历史版本</div>
-          <div ref={leftScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
-            <DiffPanel diff={diff} side="left" />
-          </div>
-        </div>
-        <div className="flex min-h-0 flex-col">
-          <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">当前正文</div>
-          <div ref={rightScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
-            <DiffPanel diff={diff} side="right" />
-          </div>
+    <>
+      <div className="flex min-h-0 flex-col border-r">
+        <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">历史版本</div>
+        <div ref={leftScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
+          <DiffPanel diff={diff} side="left" />
         </div>
       </div>
-      <div className="flex items-center justify-between gap-2 rounded-xl border bg-card p-3 text-xs text-muted-foreground">
-        <span>选择此版本会用历史正文替换编辑器内容；更改不会立刻保存到服务器，需要再点一次「保存」或「发布」。</span>
-        <Button onClick={onAdopt} disabled={isCurrent} title={isCurrent ? '当前正在编辑此版本' : '使用此版本'}>
-          <CheckIcon /> {isCurrent ? '当前' : '选择此版本'}
-        </Button>
+      <div className="flex min-h-0 flex-col">
+        <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">当前正文</div>
+        <div ref={rightScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
+          <DiffPanel diff={diff} side="right" />
+        </div>
       </div>
-    </div>
+    </>
   )
 }

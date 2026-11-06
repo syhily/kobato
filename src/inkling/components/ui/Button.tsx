@@ -82,7 +82,7 @@ export function Button({
       data-testid={dataTestId}
       disabled={disabled}
       style={style}
-      // oxlint-disable-next-line react/button-has-type
+      // oxlint-disable-next-line react/button-has-type -- `type` is destructured with a 'button' default; the rule cannot trace destructured defaults
       type={type}
       onClick={onClick}
     >
