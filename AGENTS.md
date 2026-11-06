@@ -268,6 +268,18 @@ These patterns are banned:
   render (the music-player card's `musicPlayerFallbackHtml` ⇔
   `MusicPlayerCard` paused state is the reference, parity-pinned by
   `tests/unit/ui/public/music-player/music-player.test.tsx`).
+- Motion Only for JS-driven animation: everything goes through the
+  `@/ui/components/lazy-motion` facade (`LazyMotion*` /
+  `LazyAnimatePresence` / `LazyMotionConfig`) — never a direct runtime
+  `motion/react` import outside that module (one shared lazy chunk, one
+  hydration-safe fallback), and never React `<ViewTransition>` /
+  `addTransitionType` / `document.startViewTransition` for element or
+  navigation animation (named captures paint in the `::view-transition`
+  overlay above every z-index and leak over the navigation splash veil;
+  the theme-switch wipe in `src/ui/lib/ThemeProvider.tsx` is the sole
+  `startViewTransition` consumer). Shared easing/duration constants live
+  in `@/client/lib/motion`; simple hover/state styling stays on CSS
+  `transition-*` utilities.
 
 `src/assets/scripts` is intentionally absent. All interactivity lives in
 React hooks/components under `src/client/` and `src/ui/`.

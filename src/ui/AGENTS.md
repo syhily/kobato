@@ -129,6 +129,10 @@ state.
 - Conditional classNames go through `cn()` from `@/ui/lib/cn`. A new `--<namespace>-<name>` token in
   `tailwind.css` MUST pair with an entry in `cn.ts`'s per-namespace list — enforced by
   `tests/unit/contract/tailwind-tokens.test.ts`.
+- Animation is Motion Only: JS-driven animation uses the `@/ui/components/lazy-motion` facade
+  (`LazyMotion*` / `LazyAnimatePresence`) with shared constants from `@/client/lib/motion` — never
+  React `<ViewTransition>` or `document.startViewTransition` (the root AGENTS.md defensive
+  constraints carry the full rule; the ThemeProvider theme wipe is the one exception).
 - Use `<Image />` from `@/ui/public/widgets/Image` for transformed remote images.
 
 ## Shiki syntax highlighting

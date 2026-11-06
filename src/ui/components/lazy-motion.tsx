@@ -22,6 +22,7 @@ const ANIMATION_ONLY_PROPS = new Set([
   'exit',
   'variants',
   'transition',
+  'custom',
   'whileHover',
   'whileTap',
   'whileFocus',

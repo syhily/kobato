@@ -1,12 +1,22 @@
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 
+import { transitions } from '@/client/lib/motion'
 import { formatTime } from '@/ui/admin/musics/format-time'
 import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
+import { LazyAnimatePresence, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
+
+// Directional track swap: next slides in from the right and out to the left,
+// prev mirrors. `custom` carries the direction into the variant resolvers.
+const trackInfoVariants = {
+  enter: (direction: number) => ({ opacity: 0, x: 14 * direction }),
+  center: { opacity: 1, x: 0 },
+  exit: (direction: number) => ({ opacity: 0, x: -14 * direction }),
+}
 
 export function AdminMusicPlayerBar() {
   const location = useLocation()
@@ -18,14 +28,18 @@ export function AdminMusicPlayerBar() {
 
   const visible = currentTrack !== null && isMusicPage
 
+  const [direction, setDirection] = useState(1)
+
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
+      setDirection(-1)
       playIndex(currentIndex - 1)
     }
   }, [currentIndex, playIndex])
 
   const handleNext = useCallback(() => {
     if (currentIndex < playlist.length - 1) {
+      setDirection(1)
       playIndex(currentIndex + 1)
     }
   }, [currentIndex, playlist.length, playIndex])
@@ -41,23 +55,34 @@ export function AdminMusicPlayerBar() {
     <div className={cn('relative z-[1100] h-20 shrink-0 border-t border-line', 'bg-canvas/95 backdrop-blur-xl')}>
       <div className="flex h-full items-center px-4">
         {/* Left: Cover + Info */}
-        <div key={currentTrack.id} className="flex w-auto min-w-0 items-center gap-3 md:w-[30%]">
-          {currentTrack.coverUrl ? (
-            <Image
-              src={currentTrack.coverUrl}
-              alt=""
-              width={56}
-              height={56}
-              className="size-14 shrink-0 rounded-sm object-cover"
-            />
-          ) : (
-            <div className="size-14 shrink-0 rounded-sm bg-surface-dim" />
-          )}
-          <div className="hidden min-w-0 md:block">
-            <p className="truncate text-sm font-semibold text-ink-1">{currentTrack.name}</p>
-            <p className="truncate text-xs text-ink-3">{currentTrack.artist.join(' / ')}</p>
-          </div>
-        </div>
+        <LazyAnimatePresence mode="wait" initial={false} custom={direction}>
+          <LazyMotionDiv
+            key={currentTrack.id}
+            className="flex w-auto min-w-0 items-center gap-3 md:w-[30%]"
+            custom={direction}
+            variants={trackInfoVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={transitions.trackSwap}
+          >
+            {currentTrack.coverUrl ? (
+              <Image
+                src={currentTrack.coverUrl}
+                alt=""
+                width={56}
+                height={56}
+                className="size-14 shrink-0 rounded-sm object-cover"
+              />
+            ) : (
+              <div className="size-14 shrink-0 rounded-sm bg-surface-dim" />
+            )}
+            <div className="hidden min-w-0 md:block">
+              <p className="truncate text-sm font-semibold text-ink-1">{currentTrack.name}</p>
+              <p className="truncate text-xs text-ink-3">{currentTrack.artist.join(' / ')}</p>
+            </div>
+          </LazyMotionDiv>
+        </LazyAnimatePresence>
 
         {/* Center: Controls + Progress */}
         <div className="flex flex-1 flex-col items-center gap-1">
