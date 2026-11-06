@@ -1,7 +1,6 @@
-import type { UseFormReturn } from 'react-hook-form'
-
 import { ChevronDownIcon, InfoIcon } from 'lucide-react'
 import { Fragment, useState } from 'react'
+import { useWatch, type UseFormReturn } from 'react-hook-form'
 
 import type { RateLimitSettings } from '@/shared/config/types'
 
@@ -29,7 +28,10 @@ function WindowEditCell({
 }) {
   const meta = BUCKET_META[bucketKey]
   const fieldName = `${bucketKey}.windowSeconds` as const
-  const currentValue = form.watch(fieldName)
+  // useWatch, not form.watch: render-time watch() results get memoized by the
+  // React Compiler (stable form + fieldName deps), freezing the value at its
+  // initial state; the hook always re-executes.
+  const currentValue = useWatch({ control: form.control, name: fieldName })
   const matchedOption = meta.quickWindowOptions.find((opt) => opt.seconds === currentValue)
   const [open, setOpen] = useState(false)
 
@@ -101,7 +103,7 @@ function AttemptsEditCell({
   flushOnBlur: () => void
 }) {
   const fieldName = `${bucketKey}.maxAttempts` as const
-  const currentValue = form.watch(fieldName)
+  const currentValue = useWatch({ control: form.control, name: fieldName })
   const error = (form.formState.errors[bucketKey] as { maxAttempts?: { message?: string } } | undefined)?.maxAttempts
     ?.message
 

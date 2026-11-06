@@ -1,3 +1,5 @@
+import { useWatch } from 'react-hook-form'
+
 import type { AssetsLoaderShape } from '@/shared/config/projection'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
@@ -72,6 +74,9 @@ function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
     toState: (source) => ({ robotsTxt: source.branding.robotsTxt }),
     fromState: (state) => ({ branding: { robotsTxt: state.robotsTxt } }),
   })
+  // useWatch, not form.watch: the React Compiler memoizes render-time watch()
+  // results (stable form dep), freezing the textarea at its initial content.
+  const robotsTxt = useWatch({ control: form.control, name: 'robotsTxt' })
 
   return (
     <SettingGroup
@@ -86,7 +91,7 @@ function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
             id="assets-robots-txt"
             aria-label="robots.txt 内容"
             rows={6}
-            value={form.watch('robotsTxt')}
+            value={robotsTxt}
             onChange={(e) => form.setValue('robotsTxt', e.target.value, { shouldDirty: true })}
             placeholder="留空则使用默认规则"
           />

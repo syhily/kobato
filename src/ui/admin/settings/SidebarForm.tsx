@@ -3,7 +3,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { UploadIcon } from 'lucide-react'
 import { useRef } from 'react'
-import { Controller, useFieldArray } from 'react-hook-form'
+import { Controller, useFieldArray, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
@@ -207,8 +207,10 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
   })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const source = form.watch('source')
-  const customQuotes = form.watch('customQuotes')
+  // useWatch, not form.watch: the React Compiler memoizes render-time watch()
+  // results (stable form dep), freezing the values at their initial state.
+  const source = useWatch({ control: form.control, name: 'source' })
+  const customQuotes = useWatch({ control: form.control, name: 'customQuotes' })
 
   async function handleQuotesFile(file: File) {
     let parsed: unknown
