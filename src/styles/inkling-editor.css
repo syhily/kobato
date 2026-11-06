@@ -219,6 +219,19 @@
   --typeset-size: calc(1.125rem / 0.666667);
 }
 
+/* Card figure rhythm. The typeset-post preset on the contentEditable hands
+   EVERY figure a 1.7778em flow margin and every figcaption a 1em offset —
+   correct for the rendered article, but inside a card the wrapper's own
+   transparent border (CardWrapper) stops margin collapse, so the figure
+   margin renders as dead space INSIDE the card frame (the hover ring frames
+   it), and the figcaption offset duplicates the caption chrome's own
+   padding. Spacing between cards is owned by inkling's prose rules (the
+   div + div padding), so both flow margins are zeroed inside card
+   wrappers. */
+.kobato-page-editor [data-inkling-card] :where(figure, figcaption) {
+  margin-block-start: 0;
+}
+
 /* The contentEditable root (the only `.inkling-lexical > *` in the tree)
    hardcodes the Inter stack as its base font. Real text blocks are re-fonted
    by inkling's prose rules through the bridged vars above, so this only
