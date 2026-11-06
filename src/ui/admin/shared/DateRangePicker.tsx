@@ -58,6 +58,10 @@ export function DateRangeCalendarPicker({ from, to, onChange }: DateRangeCalenda
       <PopoverContent align="start" className="w-auto p-0">
         <Calendar
           mode="range"
+          // react-day-picker v10 completes a same-day range on the FIRST
+          // click without this — resetOnSelect restores the two-click flow
+          // (first click = start only, second click = end).
+          resetOnSelect
           selected={parseRange(from, to)}
           onSelect={(range) => {
             onChange(range?.from ? toIsoDate(range.from) : '', range?.to ? toIsoDate(range.to) : '')

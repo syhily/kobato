@@ -1,3 +1,5 @@
+import type { DateRange as DayPickerRange } from 'react-day-picker'
+
 import { useState } from 'react'
 
 import { type DateRange, type PresetKey, PRESET_KEYS } from '@/shared/contracts/analytics'
@@ -45,7 +47,18 @@ export interface DateRangePickerProps {
 
 export function DateRangePicker({ preset, range, onSelect, onSelectRange, className }: DateRangePickerProps) {
   const [customOpen, setCustomOpen] = useState(false)
+  // The calendar is fully controlled, so the first click's start-only
+  // selection must be fed back as `selected` — otherwise the second click
+  // would reset again instead of completing the range.
+  const [pending, setPending] = useState<DayPickerRange | undefined>(undefined)
   const customActive = preset === null
+
+  const handleOpenChange = (open: boolean) => {
+    setCustomOpen(open)
+    if (open) {
+      setPending(undefined)
+    }
+  }
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1', className)} aria-label="时间范围">
@@ -65,7 +78,7 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
           </Button>
         )
       })}
-      <Popover open={customOpen} onOpenChange={setCustomOpen}>
+      <Popover open={customOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger
           render={
             <Button
@@ -82,19 +95,26 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
         <PopoverContent align="start" className="w-auto p-0">
           <Calendar
             mode="range"
+            // react-day-picker v10 completes a same-day range on the FIRST
+            // click without this — resetOnSelect restores the two-click flow
+            // (first click = start only, second click = end).
+            resetOnSelect
             selected={
-              customActive
+              pending ??
+              (customActive
                 ? // `endAt` is the exclusive next-midnight — back off a
                   // millisecond so the last included day highlights.
                   { from: new Date(range.startAt * 1000), to: new Date(range.endAt * 1000 - 1) }
-                : undefined
+                : undefined)
             }
             onSelect={(selected) => {
-              // Day granularity: startAt = local midnight of the first day,
-              // endAt = local midnight of the day after the last (exclusive).
               if (!selected?.from || !selected.to) {
+                setPending(selected)
                 return
               }
+              // Day granularity: startAt = local midnight of the first day,
+              // endAt = local midnight of the day after the last (exclusive).
+              setPending(undefined)
               onSelectRange({ startAt: startOfDaySec(selected.from), endAt: startOfNextDaySec(selected.to) })
               setCustomOpen(false)
             }}
