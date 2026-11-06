@@ -941,9 +941,19 @@ body {
 }
 
 /* ─── View Transition styles ───────────────────────────── */
-/* Shared group timing — applies to the theme wipe below and to the admin
-   music-library transitions declared in admin.css. */
+/* While the navigation splash veil is up, no element may join a view
+   transition: named captures (the post-title flights, music covers) render
+   in the ::view-transition overlay, which paints above every z-index — they
+   would float over the opaque veil. React assigns view-transition-name as
+   an inline style, so the suppression needs !important. The attribute is
+   toggled by NavigationSplash (both bundles import this partial). */
 @supports (view-transition-name: none) {
+  body[data-nav-splash] * {
+    view-transition-name: none !important;
+  }
+
+  /* Shared group timing — applies to the theme wipe below and to the
+     admin music-library transitions declared in admin.css. */
   ::view-transition-group(*) {
     animation-duration: 350ms;
     animation-timing-function: cubic-bezier(0.3, 0, 0, 1);

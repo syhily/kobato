@@ -15,7 +15,9 @@ Six files, two bundles:
   every raw design token (`:root` / `.dark` / `prefers-color-scheme` / P3),
   the full `@theme inline` bridge, the `sidebar` `@custom-variant` block,
   `@layer base` overrides, and rules both sides render (the Shiki token
-  colors for non-typeset surfaces, the theme-wipe view transition). It has no
+  colors for non-typeset surfaces, the theme-wipe view transition, the
+  `body[data-nav-splash]` view-transition-name suppression guard that keeps
+  named captures from painting above the navigation splash veil). It has no
   `@import 'tailwindcss'` and no `@source` — importing it directly from TSX
   produces nothing.
 - `typeset.css` — **all content typography in one owned file** (vendored
