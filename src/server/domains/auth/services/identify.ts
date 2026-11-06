@@ -23,7 +23,6 @@ export async function handleIdentify(
   request: Request,
   formData: FormData,
   redirectTo: string,
-  origin: string,
 ): Promise<IdentifyResult> {
   const { db, clientAddress } = ctx
   const email = formFieldString(formData, 'email')
@@ -50,7 +49,7 @@ export async function handleIdentify(
     existingUser?.loginMethod === 'magic-link' && Boolean(existingUser.role) && !existingUser.deletedAt
 
   if (isMagicLinkUser && isMailLoginReady()) {
-    const failure = await sendMagicLink(ctx, request, existingUser, redirectTo, origin)
+    const failure = await sendMagicLink(ctx, request, existingUser, redirectTo)
     if (failure) {
       return { kind: 'error', message: failure.message }
     }

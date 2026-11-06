@@ -10,6 +10,7 @@ import { findUserById } from '@/server/infra/db/operations/user'
 import { sendSignInLink } from '@/server/infra/email/sender'
 import { getLogger } from '@/server/infra/logger'
 import { tryOtpSendByEmailRateLimit, tryOtpSendRateLimit, tryRateLimit } from '@/server/infra/rate-limit'
+import { resolveSiteOrigin } from '@/shared/config/site-origin'
 
 const log = getLogger('auth.magic-link')
 
@@ -22,7 +23,6 @@ export async function sendMagicLink(
   request: Request,
   dbUser: { id: number; name: string; email: string },
   redirectTo: string,
-  origin: string,
 ): Promise<{ message: string } | null> {
   const { db, clientAddress } = ctx
   const [ipLimit, emailLimit] = await Promise.all([
@@ -34,6 +34,9 @@ export async function sendMagicLink(
   }
 
   const { token } = issueSignInLinkToken(db, dbUser.id)
+  // Resolved here, from the configured site — a request-supplied origin
+  // would let a spoofed Host header point the emailed token at evil.tld.
+  const origin = resolveSiteOrigin(request)
   const link = `${origin}/admin/signin?action=magiclink&token=${encodeURIComponent(token)}&redirect_to=${encodeURIComponent(redirectTo)}`
 
   try {

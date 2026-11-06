@@ -16,7 +16,7 @@ import { consumeToken, issueResetToken } from '@/server/domains/auth/verificatio
 import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
 import { sendPasswordReset } from '@/server/infra/email/sender'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/infra/rate-limit'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { resolveSiteOrigin } from '@/shared/config/site-origin'
 import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 
 const GENERIC_RESET_MESSAGE = '如果该邮箱存在且符合要求，重置邮件已发送。'
@@ -41,7 +41,7 @@ async function issueTokenAndEmail(
   request: Request,
 ): Promise<void> {
   const { token } = issueResetToken(db, user.id)
-  const origin = getBlogSettingsBundleSync()?.siteIdentity?.website ?? new URL(request.url).origin
+  const origin = resolveSiteOrigin(request)
   const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
   await sendPasswordReset(user, link)
   recordAuditEvent({

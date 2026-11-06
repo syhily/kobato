@@ -152,9 +152,10 @@ async function callAction(
   formData: FormData,
   redirectTo = '/admin',
   clientAddress = '127.0.0.1',
+  requestUrl = 'http://localhost/admin/signin',
 ): Promise<Response & { data?: any }> {
   const url = setContext(actionName, redirectTo, clientAddress)
-  const request = new Request('http://localhost/admin/signin', {
+  const request = new Request(requestUrl, {
     method: 'POST',
     body: formData,
   })
@@ -243,7 +244,7 @@ describe('integration: magic-link signin flow (real DB)', () => {
     expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
     const [recipient, link] = mockHandles.sendSignInLink.mock.calls[0]! as [{ email: string }, string]
     expect(recipient.email).toBe('admin@example.com')
-    expect(link).toContain('/admin/signin?action=magiclink')
+    expect(link.startsWith(`${MAGIC_LINK_TEST_BUNDLE.siteIdentity!.website}/admin/signin?action=magiclink`)).toBe(true)
     expect(link).toContain('token=')
     expect(link).toContain('redirect_to=%2Fadmin')
 
@@ -253,6 +254,19 @@ describe('integration: magic-link signin flow (real DB)', () => {
 
     // Sending stages nothing in the session.
     expect(markSessionDirty).not.toHaveBeenCalled()
+  })
+
+  it('builds the emailed link from the configured site origin, never the request Host', async () => {
+    await seedUser('magic-link')
+
+    // Bare-metal deployments do not validate Host: a spoofed header must not
+    // make the server email a valid token link pointing at the attacker.
+    await callAction('identify', emailFormData(), '/admin', '127.0.0.1', 'http://evil.tld/admin/signin')
+
+    expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
+    const link = mockHandles.sendSignInLink.mock.calls[0]![1] as string
+    expect(link.startsWith('https://example.com/admin/signin?action=magiclink')).toBe(true)
+    expect(link).not.toContain('evil.tld')
   })
 
   it('identify answers unknown emails exactly like a magic-link send (no existence oracle)', async () => {

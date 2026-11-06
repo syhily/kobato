@@ -107,7 +107,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'identify') {
-    const result = await handleIdentify(rc, request, formData, redirectTo, url.origin)
+    const result = await handleIdentify(rc, request, formData, redirectTo)
     switch (result.kind) {
       case 'passkey':
         return data({ method: 'passkey' as const })

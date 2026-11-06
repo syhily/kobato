@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { resolveSiteOrigin } from '@/server/http/utils/site-origin'
+import { resolveSiteOrigin } from '@/shared/config/site-origin'
 
-describe('http/utils/site-origin — resolveSiteOrigin', () => {
+describe('config/site-origin — resolveSiteOrigin', () => {
   it('prefers the configured siteIdentity website', () => {
     const request = new Request('http://internal:3000/rpc/admin/users/mute')
+    expect(resolveSiteOrigin(request)).toBe(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.website)
+  })
+
+  it('ignores a spoofed Host header', () => {
+    const request = new Request('http://evil.tld/admin/signin')
     expect(resolveSiteOrigin(request)).toBe(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.website)
   })
 

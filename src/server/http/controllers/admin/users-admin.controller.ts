@@ -11,8 +11,8 @@ import {
   updateUserRoleWithGuard,
 } from '@/server/domains/users/services/admin'
 import { adminProc, passkeyGuard } from '@/server/http/orpc-base'
-import { resolveSiteOrigin } from '@/server/http/utils/site-origin'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/infra/rate-limit'
+import { resolveSiteOrigin } from '@/shared/config/site-origin'
 import { adminUserDto } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 
