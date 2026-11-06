@@ -1,14 +1,17 @@
-import { asc, count, eq, gt, isNull, lte, or } from 'drizzle-orm'
+import { asc, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionInboxRow } from '@/server/infra/db/types'
 
 import { webmentionInbox } from '@/server/infra/db/schema/webmention'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Receive-side verification queue (mirror of webmention-outbox.ts).
 // No status column: success and terminal failure both delete the row.
 
-/** Enqueue for async verification; a repeat POST resets the retry bookkeeping. */
+/** Enqueue for async verification. A repeat POST only refreshes `updatedAt`
+ *  — resetting `attempts`/`nextRetryAt` here would let a hostile source burn
+ *  the retry budget forever by re-posting inside every backoff window. */
 export async function upsertWebmentionInbox(
   db: Database,
   values: { sourceUrl: string; targetUrl: string },
@@ -24,8 +27,24 @@ export async function upsertWebmentionInbox(
     })
     .onConflictDoUpdate({
       target: [webmentionInbox.sourceUrl, webmentionInbox.targetUrl],
-      set: { attempts: 0, nextRetryAt: null, lastError: null, updatedAt: now },
+      set: { updatedAt: now },
     })
+}
+
+/** Queue depth for the bounded-enqueue gate: every row is still pending
+ *  verification (success and terminal failure both delete). */
+export async function countQueuedWebmentionInbox(db: Database): Promise<number> {
+  const rows = await db.select({ value: count() }).from(webmentionInbox)
+  return rows[0]?.value ?? 0
+}
+
+/** Same-origin source depth — the per-host fan-out cap's measure. */
+export async function countQueuedWebmentionInboxBySourceHost(db: Database, origin: string): Promise<number> {
+  const rows = await db
+    .select({ value: count() })
+    .from(webmentionInbox)
+    .where(sql`${webmentionInbox.sourceUrl} LIKE ${`${escapeLikePattern(origin)}/%`} ESCAPE '\\'`)
+  return rows[0]?.value ?? 0
 }
 
 export async function pickDueWebmentionInbox(db: Database, now: Date, limit: number): Promise<WebmentionInboxRow[]> {

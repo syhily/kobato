@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { isIPv6 } from 'node:net'
 
 import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/types'
 
@@ -17,6 +18,31 @@ const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 function hashEmail(email: string): string {
   const normalized = email.trim().toLowerCase()
   return createHash('sha256').update(normalized).digest('hex').slice(0, 32)
+}
+
+/** Counter key for a client IP. IPv6 clients are grouped by their /64
+ *  prefix: a single network typically owns the whole /64, so per-address
+ *  keys would hand it an unbounded pool of "IPs". IPv4 keys stay verbatim;
+ *  IPv4-mapped v6 keys normalize to the embedded v4 address. */
+export function rateLimitIpKey(ip: string): string {
+  if (!isIPv6(ip)) {
+    return ip
+  }
+  const withoutZone = ip.replace(/%.*$/, '')
+  const v4Mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(withoutZone)
+  if (v4Mapped?.[1] !== undefined) {
+    return v4Mapped[1]
+  }
+  // Expand `::` and keep the first four hextets (the /64 network prefix).
+  const [head = '', tail] = withoutZone.split('::')
+  const headParts = head === '' ? [] : head.split(':')
+  const tailParts = tail === undefined || tail === '' ? [] : tail.split(':')
+  const missing = Math.max(8 - headParts.length - tailParts.length, 0)
+  const parts = [...headParts, ...Array.from({ length: missing }, () => '0'), ...tailParts]
+  return `${parts
+    .slice(0, 4)
+    .map((part) => part || '0')
+    .join(':')}::/64`
 }
 
 // Fallbacks used only before the settings snapshot is hydrated; sourced from `rateLimitDefaults`, same payload the install flow seeds.
@@ -111,10 +137,10 @@ export function __rateLimitKeysForTests(): string[] {
 // families (per-IP, per-email, …). The families stay distinct — only the
 // configured (window, maxAttempts) is shared since the twin-bucket merge.
 
-/** Counter keyed by client IP. */
+/** Counter keyed by client IP (IPv6 grouped by /64 — see rateLimitIpKey). */
 function byIp(bucket: keyof RateLimitSettings, ns: string) {
   return (ip: string): Promise<RateLimitResult> =>
-    tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${ip}`, readBucket(bucket))
+    tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${rateLimitIpKey(ip)}`, readBucket(bucket))
 }
 
 /** Counter keyed by hashed email (spam from many IPs, one mailbox). */

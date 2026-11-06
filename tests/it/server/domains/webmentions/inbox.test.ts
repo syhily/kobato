@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
@@ -10,7 +11,7 @@ import {
   upsertWebmentionInbox,
 } from '@/server/infra/db/operations/webmention-inbox'
 import { post } from '@/server/infra/db/schema/post'
-import { webmention } from '@/server/infra/db/schema/webmention'
+import { webmention, webmentionInbox } from '@/server/infra/db/schema/webmention'
 
 // Capture the notification seam: the worker drives receiveWebmention,
 // whose R11 rules decide WHEN to notify.
@@ -50,19 +51,21 @@ beforeEach(async () => {
 })
 
 describe('integration / upsertWebmentionInbox (queue dedup)', () => {
-  it('folds a repeat POST into the queued row and resets its retry bookkeeping', async () => {
+  it('folds a repeat POST into the queued row WITHOUT resetting its retry bookkeeping', async () => {
     await enqueue()
     const [first] = await listWebmentionInbox(db)
-    await markWebmentionInboxRetry(db, first!.id, 2, new Date(Date.now() + 60_000), 'boom')
+    const retryAt = new Date(Date.now() + 60_000)
+    await markWebmentionInboxRetry(db, first!.id, 2, retryAt, 'boom')
 
     await enqueue()
 
     const rows = await listWebmentionInbox(db)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.id).toBe(first!.id)
-    expect(rows[0]!.attempts).toBe(0)
-    expect(rows[0]!.nextRetryAt).toBeNull()
-    expect(rows[0]!.lastError).toBeNull()
+    // A re-POST must not hand a hostile source a fresh attempt budget.
+    expect(rows[0]!.attempts).toBe(2)
+    expect(rows[0]!.nextRetryAt?.getTime()).toBe(retryAt.getTime())
+    expect(rows[0]!.lastError).toBe('boom')
   })
 })
 
@@ -202,8 +205,14 @@ describe('integration / webmention inbox worker', () => {
     await runWebmentionInboxBatch(db)
     expect((await listWebmentionInbox(db))[0]!.attempts).toBe(1)
 
-    // The sender re-POSTs (resetting the backoff), the source is back.
+    // The sender re-POSTs — the backoff waterline is honored (a re-POST no
+    // longer resets it), so the retry runs once the row comes due.
     await enqueue()
+    const [queued] = await listWebmentionInbox(db)
+    await db
+      .update(webmentionInbox)
+      .set({ nextRetryAt: new Date(Date.now() - 1000) })
+      .where(eq(webmentionInbox.id, queued!.id))
     mockFetch.enqueue(SOURCE, htmlResponse(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }))
 
     await runWebmentionInboxBatch(db)

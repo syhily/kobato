@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { rmSync } from 'node:fs'
 
 import { ActionFailure } from '@/server/infra/http/errors'
+import { registerJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
 
 /**
@@ -153,3 +154,14 @@ export function resetPendingEncryptedUploads(): void {
     releaseEncryptedUpload(token)
   }
 }
+
+// The lazy sweep on park() alone leaves an abandoned token's dir on disk
+// until the NEXT park (or process exit) — sweep on a timer so a parked
+// 500 MB upload never outlives its TTL by more than a minute.
+registerJob({
+  name: 'backup.pending-upload-sweep',
+  nextDelayMs: () => 60 * 1000,
+  run: async () => {
+    sweepExpired()
+  },
+})

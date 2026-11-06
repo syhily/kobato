@@ -340,7 +340,9 @@ export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' 
 const EMAIL_HASH_RE = /^([a-f0-9]{32}|[a-f0-9]{64})$/i
 
 /** Serving policy: cached entries serve directly; a miss fetches once and
- *  records the outcome — negatives are written only on miss (audit P1-27). */
+ *  records the outcome — upstream negatives are written only on miss (audit
+ *  P1-27), but a hash resolving to NO user row is never cached: its key
+ *  space is attacker-chosen and the repeat cost is one indexed lookup. */
 export async function serveAvatar(db: Database, hash: string, size: number): Promise<ServedAvatar> {
   if (!isNumeric(hash) && !EMAIL_HASH_RE.test(hash)) {
     // Neither id nor hash — redirect without caching, so garbage can't grow kv_cache.
@@ -348,8 +350,9 @@ export async function serveAvatar(db: Database, hash: string, size: number): Pro
   }
   const { email, hash: canonical } = await resolveAvatarInfo(db, hash)
   if (canonical === null) {
-    // No user row — record the negative under the raw param so repeats short-circuit.
-    await set(db, 'avatar', { size, email: hash }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+    // No user row — do NOT negative-cache under the raw param: the hash is
+    // attacker-chosen, so each write would be unbounded kv_cache churn.
+    // The repeat cost is one cheap indexed user lookup.
     return { kind: 'redirect' }
   }
 

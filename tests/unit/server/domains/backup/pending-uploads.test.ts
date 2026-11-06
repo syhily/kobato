@@ -9,6 +9,8 @@ import {
   resetPendingEncryptedUploads,
 } from '@/server/domains/backup/pending-uploads'
 import { ActionFailure } from '@/server/infra/http/errors'
+import { scheduleRegisteredJob } from '@/server/infra/job-registry'
+import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
 // Fake dir paths are fine: every sweep goes through rmSync force:true, which
 // ignores a missing path — and resetPendingEncryptedUploads() releases (and
@@ -28,6 +30,7 @@ describe('pending encrypted uploads', () => {
   })
 
   afterEach(() => {
+    stopAllScheduledJobs()
     resetPendingEncryptedUploads()
     vi.useRealTimers()
   })
@@ -113,5 +116,27 @@ describe('pending encrypted uploads', () => {
     expect(error).toBeInstanceOf(ActionFailure)
     expect((error as ActionFailure).status).toBe(429)
     expect((error as ActionFailure).message).toBe('待解密的备份过多，请稍后再试。')
+  })
+})
+
+describe('pending encrypted uploads — registered sweep timer', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    stopAllScheduledJobs()
+    resetPendingEncryptedUploads()
+    vi.useRealTimers()
+  })
+
+  it('sweeps expired entries on the timer, not only on the next park', async () => {
+    const token = parkEncryptedUpload(makeEntry())
+    vi.advanceTimersByTime(TTL_MS + 1)
+
+    scheduleRegisteredJob('backup.pending-upload-sweep')
+    await vi.advanceTimersByTimeAsync(60_000 + 1)
+
+    expect(claimEncryptedUploadForDecrypt(token)).toEqual({ ok: false, reason: 'missing' })
   })
 })

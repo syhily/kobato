@@ -609,15 +609,15 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
 })
 
 describe('domains/comments/services/avatar — serveAvatar', () => {
-  it('writes a negative entry and redirects when the hash resolves to no user', async () => {
+  it('redirects WITHOUT writing a negative entry when the hash resolves to no user', async () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
-    // No user row: the raw numeric param keys the negative entry.
+    // No user row: the attacker-chosen param must not grow kv_cache.
     const result = await serveAvatar(db, '42', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
-    expect(await cachedAvatar(120, '42')).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
+    expect(await cachedAvatar(120, '42')).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 

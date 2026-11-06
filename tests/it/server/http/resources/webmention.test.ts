@@ -7,8 +7,10 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
+import { INBOX_MAX_QUEUED, INBOX_MAX_QUEUED_PER_SOURCE_HOST } from '@/server/domains/webmentions/inbox-enqueue'
 import { onErrorHandler } from '@/server/http/errors'
 import { webmentionRouter } from '@/server/http/resources/webmention'
+import { upsertWebmentionInbox } from '@/server/infra/db/operations/webmention-inbox'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { webmention, webmentionInbox } from '@/server/infra/db/schema/webmention'
@@ -203,5 +205,39 @@ describe('integration / POST /webmention — receive switch (G5)', () => {
     expect(res.status).toBe(410)
     expect(mockFetch.calls).toHaveLength(0)
     expect((await db.select().from(webmentionInbox)).length).toBe(0)
+  })
+})
+
+describe('integration / POST /webmention (bounded queue)', () => {
+  it('backpressures with 429 once the global depth cap is reached', async () => {
+    await seedLivePost('wm-target')
+    for (let i = 0; i < INBOX_MAX_QUEUED; i++) {
+      await upsertWebmentionInbox(db, {
+        sourceUrl: `https://host-${i}.example/x`,
+        targetUrl: 'https://example.com/posts/wm-target/',
+      })
+    }
+
+    const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
+
+    expect(res.status).toBe(429)
+    expect(await db.select().from(webmentionInbox)).toHaveLength(INBOX_MAX_QUEUED)
+  })
+
+  it('backpressures a flooded source host while other hosts still enqueue', async () => {
+    await seedLivePost('wm-target')
+    for (let i = 0; i < INBOX_MAX_QUEUED_PER_SOURCE_HOST; i++) {
+      await upsertWebmentionInbox(db, {
+        sourceUrl: `https://spam.example/p${i}`,
+        targetUrl: 'https://example.com/posts/wm-target/',
+      })
+    }
+    const app = buildApp()
+
+    expect(
+      (await formPost(app, { source: 'https://spam.example/new', target: 'https://example.com/posts/wm-target' }))
+        .status,
+    ).toBe(429)
+    expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
   })
 })

@@ -27,6 +27,7 @@ import {
   readBucket,
   tryKeyedRateLimit,
   rateLimitEntryCount,
+  rateLimitIpKey,
   __resetRateLimitsForTests,
   type RateLimitResult,
 } from '@/server/infra/rate-limit'
@@ -157,5 +158,32 @@ describe('rate-limit', () => {
       const res = await callable()
       expect(res.exceeded).toBe(false)
     }
+  })
+})
+
+describe('rate-limit — rateLimitIpKey (IPv6 /64 grouping)', () => {
+  it('keeps IPv4 keys verbatim', () => {
+    expect(rateLimitIpKey('203.0.113.10')).toBe('203.0.113.10')
+  })
+
+  it('groups addresses inside one /64 into a single key', () => {
+    expect(rateLimitIpKey('2001:db8:abcd:1234::1')).toBe('2001:db8:abcd:1234::/64')
+    expect(rateLimitIpKey('2001:db8:abcd:1234:ffff:ffff:ffff:ffff')).toBe('2001:db8:abcd:1234::/64')
+    // A different /64 is a different key.
+    expect(rateLimitIpKey('2001:db8:abcd:1235::1')).not.toBe('2001:db8:abcd:1234::/64')
+  })
+
+  it('expands :: and zero-pads missing hextets before grouping', () => {
+    expect(rateLimitIpKey('2001:db8::1')).toBe('2001:db8:0:0::/64')
+    expect(rateLimitIpKey('::1')).toBe('0:0:0:0::/64')
+  })
+
+  it('normalizes IPv4-mapped v6 addresses to the embedded v4 key', () => {
+    expect(rateLimitIpKey('::ffff:203.0.113.10')).toBe('203.0.113.10')
+  })
+
+  it('shares one counter across a whole /64 (the grouped key trips, not the address)', async () => {
+    expect(await tryResourceRateLimit('2001:db8:dead:beef::1')).toEqual(expect.objectContaining({ count: 1 }))
+    expect(await tryResourceRateLimit('2001:db8:dead:beef::2')).toEqual(expect.objectContaining({ count: 2 }))
   })
 })
