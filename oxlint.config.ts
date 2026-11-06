@@ -302,6 +302,16 @@ export default defineConfig({
     'typescript/prefer-literal-enum-member': 'error',
     'typescript/related-getter-setter-pairs': 'error',
 
+    // ── oxlint 1.79–1.92 rule audit ────────────────────────────────────────
+    // The only new rules since the 1.78 audit (the react/react-compiler
+    // split landed separately above); both fired zero times — error guards.
+    // Assigning a plain number/literal into an enum-typed slot rides TS's
+    // enum looseness (the assignment twin of no-unsafe-enum-comparison).
+    'typescript/no-unsafe-enum-assignment': 'error',
+    // Type operations (Omit/Pick/NonNullable/…) that RESOLVE to `{}` — the
+    // result silently accepts every non-nullish value.
+    'typescript/no-generated-empty-object-type': 'error',
+
     // Tier 1 — unicorn.
     'unicorn/consistent-assert': 'error',
     'unicorn/consistent-empty-array-spread': 'error',
