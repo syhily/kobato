@@ -107,6 +107,48 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, re
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
+  it('serves an unexpected upstream content type as an opaque download', async () => {
+    // A hostile upstream answering text/html must never render as
+    // first-party markup in the admin browser.
+    const resolveUrl = vi.fn(async () => `https://up.example.com/${route}`)
+    vi.doMock('@/server/domains/music/providers/registry', () => ({
+      getProvider: () => ({
+        source: 'netease',
+        getTrack: vi.fn(async () => ({
+          source: 'netease',
+          sourceId: '123',
+          name: 'Song',
+          artist: ['Artist'],
+          album: 'Album',
+          picId: 'pic123',
+          urlId: 'url123',
+          lyricId: 'lyric123',
+        })),
+        resolveCoverUrl: resolver === 'resolveCoverUrl' ? resolveUrl : vi.fn(),
+        resolveAudioUrl: resolver === 'resolveAudioUrl' ? resolveUrl : vi.fn(),
+      }),
+    }))
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/html; charset=utf-8' }),
+        body: new ReadableStream(),
+      })),
+    )
+
+    const { musicProxyRouter: router } = await import('@/server/http/resources/music-proxy')
+    const app = createTestApp(adminSession())
+    app.route('/', router)
+
+    const res = await app.request(`/admin/music/proxy/${route}?source=netease&sourceId=123`)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('application/octet-stream')
+    expect(res.headers.get('content-disposition')).toBe('attachment')
+  })
+
   it('rejects anonymous callers with a 401 JSON error', async () => {
     const getProvider = vi.fn()
     vi.doMock('@/server/domains/music/providers/registry', () => ({ getProvider }))

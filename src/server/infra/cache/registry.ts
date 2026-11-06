@@ -51,6 +51,9 @@ interface CacheBehavior<P> {
   decode?: (raw: Buffer) => unknown
   /** Skip caching the loader result when this returns false. */
   cacheWhen?: (value: unknown) => boolean
+  /** Per-value TTL override (seconds); `undefined` falls back to the slot TTL.
+   *  Lets one bucket cache failures briefly while successes ride the full TTL. */
+  ttlFor?: (value: unknown) => number | undefined
   /** Dev mode re-runs the loader but still writes. */
   devBypass?: boolean
   /** Declares the `${prefix}generation` counter row. */
@@ -156,11 +159,13 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
     kind: 'json',
     key: ({ owner, repo, endpoint }) => `${owner}/${repo}/${endpoint}`,
   },
-  // One fixed key; the loader resolves '' on failure, so only real payloads are stored.
+  // One fixed key; the loader resolves '' on failure. Failures are cached
+  // too — a GitHub outage would otherwise turn every call into a 30s-timeout
+  // upstream fetch — but ride a 5-minute TTL so recovery shows quickly.
   githubAvatar: {
     kind: 'json',
     key: () => '',
-    cacheWhen: (value) => typeof value === 'string' && value !== '',
+    ttlFor: (value) => (value === '' ? 300 : undefined),
   },
 }
 
@@ -230,15 +235,16 @@ async function readEntry(db: Database, id: CacheBucketId, key: string): Promise<
 
 async function writeEntry(db: Database, id: CacheBucketId, key: string, slot: ResolvedSlot, value: unknown) {
   const behavior = BEHAVIORS[id]
+  const ttlSeconds = behavior.ttlFor?.(value) ?? slot.ttlSeconds
   try {
     if (behavior.kind === 'binary') {
       // A binary declaration without a codec stores raw Buffers.
       const encode = behavior.encode ?? ((blob: unknown) => unsafeCast<Buffer>(blob))
-      await setItemRaw(db, key, encode(value), { ttlSeconds: slot.ttlSeconds, bucket: id })
+      await setItemRaw(db, key, encode(value), { ttlSeconds, bucket: id })
       return
     }
     // Payloads are JSON-native by declaration contract — the cast documents the boundary.
-    await setItem(db, key, unsafeCast<JsonValue>(value), { ttlSeconds: slot.ttlSeconds, bucket: id })
+    await setItem(db, key, unsafeCast<JsonValue>(value), { ttlSeconds, bucket: id })
   } catch (error) {
     log.warn('cache write failed; continuing without warmth', { bucket: id, error })
   }

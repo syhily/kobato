@@ -20,6 +20,7 @@ Pure primitives; imports nothing from `domains/`, `http/`, or `render/`.
 - `cache/` — `registry` behavior plane; `through`/`get`/`set`/`remove`/`clear`/`throughMany` verbs, generation counters, `kv-maintenance` hourly expiry sweep, `inflight` request coalescing.
 - `http/` — `etag`, `headers`, `status`, `errors` with `DomainError` / `ActionFailure`.
 - `email/`, `search/` (LIKE-only dispatcher), `image/` (worker_threads pool), `crypto/`, `config.ts` (+ `config-arg.ts` — side-effect-free `--config` argv parsing shared with `sea-cli.ts`), `logger.ts`, `rate-limit.ts`, `slug/`.
+- `safe-fetch.ts` — THE outbound-fetch surface for user-influenced URLs (SSRF guard: http(s) only, 80/443 port allowlist with a fixed-endpoint opt-out, per-hop DNS-rebinding-validating dial, host revalidation per redirect, credential headers stripped on cross-origin redirects, byte caps). Raw `fetch(` sites in `src/server/` are pinned to an audited allowlist by the boundaries contract test; log lines must use `redactUrlForLog` (shared/utils/safe-url) so signed query strings never reach a log.
 
 ## domains/
 

@@ -32,6 +32,13 @@ export interface SectionMeta<
 > {
   scope: string
   schema: S
+  /**
+   * Stricter schema for the admin WRITE path only; defaults to `schema`.
+   * Keep write-only rules out of `schema` itself: hydration shares it, and
+   * a stored row the stricter rules reject (e.g. a legacy `http://` storage
+   * endpoint) would silently fall back to section defaults on boot.
+   */
+  writeSchema?: z.ZodType
   key: K
   defaults: Record<string, unknown> | null
 }

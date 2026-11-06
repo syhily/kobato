@@ -377,6 +377,10 @@ export async function serveAvatar(db: Database, hash: string, size: number): Pro
 
 const GITHUB_AVATAR_URL = 'https://avatars.githubusercontent.com/u/1761698?s=32'
 
+/** A 32px avatar never justifies more — an upstream gone rogue must not
+ *  buffer unbounded bytes into a base64 string. */
+const GITHUB_AVATAR_MAX_BYTES = 512 * 1024
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer)
   let binary = ''
@@ -387,15 +391,28 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /** Owner's GitHub avatar as an inline base64 data URL (no cross-origin
- *  request); any failure → `''`. Cached via the `githubAvatar` bucket. */
+ *  request); any failure → `''`. Cached via the `githubAvatar` bucket —
+ *  failures ride a short TTL so a GitHub outage cannot turn every call
+ *  into a 30s-timeout upstream fetch. */
 export async function fetchGithubAvatarDataUrl(db: Database): Promise<string> {
   return through(db, 'githubAvatar', {}, async () => {
-    const res = await fetch(GITHUB_AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
-    if (!res.ok) {
+    try {
+      const res = await fetch(GITHUB_AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
+      if (!res.ok) {
+        return ''
+      }
+      const declared = Number.parseInt(res.headers.get('content-length') ?? '', 10)
+      if (Number.isFinite(declared) && declared > GITHUB_AVATAR_MAX_BYTES) {
+        return ''
+      }
+      const buffer = await res.arrayBuffer()
+      if (buffer.byteLength > GITHUB_AVATAR_MAX_BYTES) {
+        return ''
+      }
+      const contentType = res.headers.get('content-type') ?? 'image/png'
+      return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`
+    } catch {
       return ''
     }
-    const buffer = await res.arrayBuffer()
-    const contentType = res.headers.get('content-type') ?? 'image/png'
-    return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`
   })
 }

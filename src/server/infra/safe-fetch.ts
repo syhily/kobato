@@ -37,11 +37,17 @@ export interface SafeFetchOptions {
   body?: string
   /** Return the final response with its body still streaming (cap-guarded when `maxBytes` is given) instead of buffering it into `body`. */
   stream?: boolean
+  /** Opt out of the 80/443 port allowlist. Reserved for compile-time-fixed
+   *  provider endpoints on non-standard ports (e.g. the ONE daily-quote API
+   *  on :8000) — never set it for a user-influenced URL. Applies to the
+   *  redirect hops too. */
+  allowNonStandardPort?: boolean
 }
 
 export type SafeFetchFailureReason =
   | 'invalid-url'
   | 'bad-protocol'
+  | 'bad-port'
   | 'blocked-host'
   | 'dns-failure'
   | 'too-many-redirects'
@@ -143,8 +149,10 @@ async function resolveForDial(host: string, family: number, hints: number): Prom
 
 /** The single resolution a dial is allowed to use: every address is
  *  validated at connect time and only validated addresses are handed to
- *  the socket. Failures abort the connection (fail closed). */
-function createDialLookup(): LookupFunction {
+ *  the socket. Failures abort the connection (fail closed). Exported so
+ *  the dial-time rebinding invariant can be tested directly — safeFetch's
+ *  own port allowlist rejects the ephemeral ports a test server binds. */
+export function createDialLookup(): LookupFunction {
   return (hostname, options, callback) => {
     const bare = bareHostname(hostname)
     const literal = isIP(bare)
@@ -176,12 +184,19 @@ function createDialLookup(): LookupFunction {
   }
 }
 
-/** Validate one target against the protocol allowlist, SSRF guard, and DNS:
- *  a lookup failure (or a host that resolves to nothing) is a failure, and
- *  every resolved address must pass the blocklist. */
-async function guardTarget(parsed: URL, url: string): Promise<SafeFetchFailure | null> {
+/** Validate one target against the protocol/port allowlist, SSRF guard,
+ *  and DNS: a lookup failure (or a host that resolves to nothing) is a
+ *  failure, and every resolved address must pass the blocklist. */
+async function guardTarget(parsed: URL, url: string, allowNonStandardPort: boolean): Promise<SafeFetchFailure | null> {
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     return failure('bad-protocol', url)
+  }
+  // Only the standard web ports: a URL parser normalizes the default port
+  // away (`:443` on https reads as ''), so any explicit remainder is
+  // non-standard — an outbound fetch must never dial an arbitrary
+  // high-port service on a public host.
+  if (!allowNonStandardPort && parsed.port !== '' && parsed.port !== '80' && parsed.port !== '443') {
+    return failure('bad-port', url)
   }
   if (isBlockedFetchHost(parsed.hostname)) {
     return failure('blocked-host', url)
@@ -311,13 +326,14 @@ export async function safeFetch(
     stream = false,
     method = 'GET',
     body,
+    allowNonStandardPort = false,
   } = options
 
   const initial = tryParseUrl(url)
   if (initial === null) {
     return failure('invalid-url', url)
   }
-  const initialRejection = await guardTarget(initial, url)
+  const initialRejection = await guardTarget(initial, url, allowNonStandardPort)
   if (initialRejection !== null) {
     return initialRejection
   }
@@ -367,7 +383,7 @@ export async function safeFetch(
         return failure('invalid-url', location)
       }
       // Re-validate every hop: a remote server can 302 toward an internal address.
-      const hopRejection = await guardTarget(nextUrl, nextUrl.toString())
+      const hopRejection = await guardTarget(nextUrl, nextUrl.toString(), allowNonStandardPort)
       if (hopRejection !== null) {
         return hopRejection
       }
@@ -375,18 +391,30 @@ export async function safeFetch(
         return failure('redirect-vetoed', nextUrl.toString())
       }
       // Fetch spec: 303 (and 301/302 for POST) become a bodiless GET; 307/308 carry forward.
-      if (response.status === 303 || ((response.status === 301 || response.status === 302) && hopMethod === 'POST')) {
+      const becomesGet =
+        response.status === 303 || ((response.status === 301 || response.status === 302) && hopMethod === 'POST')
+      if (becomesGet) {
         hopMethod = 'GET'
         hopBody = undefined
-        if (hopHeaders !== undefined) {
-          // Header names are case-insensitive — match the caller's casing.
-          hopHeaders = Object.fromEntries(
-            Object.entries(hopHeaders).filter(([name]) => {
-              const lower = name.toLowerCase()
-              return lower !== 'content-type' && lower !== 'content-length'
-            }),
-          )
-        }
+      }
+      // Credentials never cross an origin boundary: a 302 from a trusted
+      // host to an attacker host must not leak the caller's Referer (music
+      // providers require one) or any Authorization/Cookie header.
+      const crossOrigin = nextUrl.origin !== new URL(currentUrl).origin
+      if ((becomesGet || crossOrigin) && hopHeaders !== undefined) {
+        // Header names are case-insensitive — match the caller's casing.
+        hopHeaders = Object.fromEntries(
+          Object.entries(hopHeaders).filter(([name]) => {
+            const lower = name.toLowerCase()
+            if (becomesGet && (lower === 'content-type' || lower === 'content-length')) {
+              return false
+            }
+            if (crossOrigin && (lower === 'authorization' || lower === 'cookie' || lower === 'referer')) {
+              return false
+            }
+            return true
+          }),
+        )
       }
       currentUrl = nextUrl.toString()
     }

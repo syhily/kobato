@@ -242,6 +242,37 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
+  it('routes every server-side outbound fetch through safeFetch (allowlisted raw-fetch sites only)', () => {
+    // safeFetch owns the SSRF guard, byte caps, redirect policy, and port
+    // allowlist; a raw `fetch(` in server code bypasses all of it. The
+    // allowlist pins the audited exceptions — fixed-target fetches whose URL
+    // is a compile-time constant or derived from release/provider config,
+    // never request/user input. Adding a site means justifying it here.
+    const allowlistedFiles = new Set([
+      'src/server/infra/safe-fetch.ts', // the guard itself
+      'src/server/domains/analytics/geoip-update.ts', // fixed MaxMind URLs
+      'src/server/domains/comments/services/avatar.ts', // fixed GitHub avatar URL
+      'src/server/domains/update/release.ts', // fixed api.github.com release metadata
+      'src/server/domains/update/pipeline.ts', // release-asset URLs from the update metadata
+    ])
+    const allowlistedPrefixes = [
+      'src/server/domains/music/providers/', // provider API endpoints with their own signing
+      'src/server/infra/email/transports/', // fixed transactional-email API endpoints
+    ]
+    const bareFetchRe = /(^|[^a-zA-Z0-9_.$])fetch\s*\(/
+    const offenders: string[] = []
+    for (const file of files('src/server', '-g', '*.ts', '-g', '*.tsx')) {
+      if (allowlistedFiles.has(file) || allowlistedPrefixes.some((prefix) => file.startsWith(prefix))) {
+        continue
+      }
+      if (bareFetchRe.test(stripComments(readFileSync(file, 'utf8')))) {
+        offenders.push(file)
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
   it('keeps the inkling editor layer an island with exactly two entry surfaces', () => {
     // src/inkling is the dissolved @inkling/editor package: it must stay
     // self-contained (no imports of kobato layers — the editor is

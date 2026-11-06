@@ -117,9 +117,49 @@ export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
   upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
 } as const
 
+// Write-path-only storage URL rules, shared with the migration-target input
+// (`http/controllers/admin/storage.controller.ts`). They deliberately live
+// OUTSIDE `assetsSchema`: hydrate shares that schema, and a stored `http://`
+// endpoint from an existing install must keep hydrating — a failing row
+// would silently fall back to section defaults and disable storage. New
+// writes, however, must not persist a plaintext endpoint (credentials ride
+// every request to it) or an open-redirect-capable CDN template.
+export const STORAGE_ENDPOINT_HTTPS_MESSAGE = 'Endpoint 必须使用 HTTPS（http:// 会在网络上明文传输访问密钥）'
+export const STORAGE_URL_TEMPLATE_MESSAGE =
+  '资源域名模板必须是以 https:// 开头且包含 {src} 的完整 URL，或不含协议的相对后缀'
+
+export function isSafeStorageEndpoint(endpoint: string): boolean {
+  return endpoint === '' || endpoint.toLowerCase().startsWith('https://')
+}
+
+/** The redirect boundary (`http/resources/storage-redirect.ts`) treats a
+ *  template containing `{src}` as the FULL 302 target (must be an https
+ *  URL) and anything else as a suffix appended to the object URL (must not
+ *  carry a scheme or a protocol-relative `//` prefix — either would let the
+ *  template bounce visitors to an arbitrary origin). */
+export function isSafeStorageUrlTemplate(template: string): boolean {
+  if (template === '') {
+    return true
+  }
+  if (template.includes('{src}')) {
+    return template.toLowerCase().startsWith('https://')
+  }
+  return !/^[a-z][a-z0-9+.-]*:|^\/\//i.test(template)
+}
+
+export const assetsWriteSchema = assetsSchema.superRefine((value, ctx) => {
+  if (!isSafeStorageEndpoint(value.storage.endpoint)) {
+    ctx.addIssue({ code: 'custom', path: ['storage', 'endpoint'], message: STORAGE_ENDPOINT_HTTPS_MESSAGE })
+  }
+  if (!isSafeStorageUrlTemplate(value.storage.urlTemplate)) {
+    ctx.addIssue({ code: 'custom', path: ['storage', 'urlTemplate'], message: STORAGE_URL_TEMPLATE_MESSAGE })
+  }
+})
+
 export const assetsSection = {
   scope: 'blog.assets',
   key: 'assets',
   schema: assetsSchema,
+  writeSchema: assetsWriteSchema,
   defaults: null,
 } as const

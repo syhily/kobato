@@ -69,7 +69,12 @@ function isOnePayload(
 }
 
 async function fetchOne(): Promise<DailyQuote> {
-  const res = await safeFetch('http://v3.wufazhuce.com:8000/api/channel/one/0/0', FETCH_OPTIONS)
+  // Fixed provider endpoint on a non-standard port — the port allowlist's
+  // documented opt-out (the URL is a compile-time constant).
+  const res = await safeFetch('http://v3.wufazhuce.com:8000/api/channel/one/0/0', {
+    ...FETCH_OPTIONS,
+    allowNonStandardPort: true,
+  })
   if (!res.ok) {
     throw new Error(res.reason)
   }

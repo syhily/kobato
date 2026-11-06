@@ -82,6 +82,17 @@ export function tryParseUrl(raw: string): URL | null {
   }
 }
 
+/** URL shape safe for logs: origin + pathname only. Userinfo, query, and
+ *  fragment are dropped — signed CDN URLs carry credentials in the query
+ *  string that must never reach a log line. */
+export function redactUrlForLog(raw: string): string {
+  const parsed = tryParseUrl(raw)
+  if (parsed === null) {
+    return '<unparsable>'
+  }
+  return `${parsed.origin}${parsed.pathname}`
+}
+
 const IPV4_PRIVATE = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|0\.|22[4-9]\.|2[3-5][0-9]\.)/
 
 /** One dotted-quad segment per the WHATWG IPv4 rules: decimal by
@@ -226,13 +237,18 @@ function parseIpv6(host: string): number[] | null {
 }
 
 /** Private/reserved check on parsed IPv6 hextets: loopback `::1`,
- *  unspecified `::`, ULA fc00::/7, link-local fe80::/10, the IPv4-mapped
- *  `::ffff:a.b.c.d` range (inner IPv4 goes through the same private
- *  check), and the two IPv4-embedding transition prefixes — NAT64
- *  `64:ff9b::/96` (`64:ff9b::a9fe:a9fe` is 169.254.169.254) and 6to4
- *  `2002::/16` (`2002:7f00:1::` is 127.0.0.1). */
+ *  unspecified `::`, ULA fc00::/7, link-local fe80::/10, multicast
+ *  ff00::/8 (an outbound fetch must never target a multicast group),
+ *  the IPv4-mapped `::ffff:a.b.c.d` range (inner IPv4 goes through the
+ *  same private check), and the two IPv4-embedding transition
+ *  prefixes — NAT64 `64:ff9b::/96` (`64:ff9b::a9fe:a9fe` is
+ *  169.254.169.254) and 6to4 `2002::/16` (`2002:7f00:1::` is
+ *  127.0.0.1). */
 function isPrivateIpv6(hextets: number[]): boolean {
   const first = hextets[0]
+  if ((first & 0xff00) === 0xff00) {
+    return true
+  }
   if ((first & 0xfe00) === 0xfc00) {
     return true
   }

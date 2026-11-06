@@ -8,6 +8,7 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { computeSecretMasks } from '@/server/domains/settings/services/masks'
 // Only seams: section-change handlers (real registry, no schedulers) and
 // the logger capture ring; everything else runs on the real engine.
@@ -158,6 +159,83 @@ describe('server/domains/settings/services/core', () => {
         ctx: { section: 'limits', error: String(error) },
       }),
     )
+  })
+})
+
+describe('server/domains/settings/services/core — assets write-path URL rules', () => {
+  async function patchError(payload: unknown): Promise<DomainError> {
+    const error = await updateBlogSettingsSection(db, 'assets', payload, null).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(DomainError)
+    return error as DomainError
+  }
+
+  it('rejects an http:// storage endpoint on write', async () => {
+    const error = await patchError({ storage: { endpoint: 'http://minio.internal:9000' } })
+
+    expect(error.code).toBe('BAD_REQUEST')
+    expect(error.issues).toContainEqual(
+      expect.objectContaining({ path: ['storage', 'endpoint'], message: expect.stringContaining('HTTPS') }),
+    )
+  })
+
+  it('rejects a CDN template that is not an https URL carrying {src}', async () => {
+    const error = await patchError({ storage: { urlTemplate: 'http://cdn.example.com/{src}?w={width}' } })
+
+    expect(error.issues).toContainEqual(expect.objectContaining({ path: ['storage', 'urlTemplate'] }))
+  })
+
+  it('rejects a scheme-carrying or protocol-relative suffix template', async () => {
+    for (const urlTemplate of ['//evil.example.com/x?w={width}', 'javascript:alert(1)']) {
+      const error = await patchError({ storage: { urlTemplate } })
+      expect(error.issues).toContainEqual(expect.objectContaining({ path: ['storage', 'urlTemplate'] }))
+    }
+  })
+
+  it('accepts an https full-URL template and a scheme-less suffix template', async () => {
+    const full = await updateBlogSettingsSection(
+      db,
+      'assets',
+      { storage: { urlTemplate: 'https://cdn.example.com/fit?url={src}&w={width}' } },
+      null,
+    )
+    expect(full.bundle?.assets?.storage.urlTemplate).toBe('https://cdn.example.com/fit?url={src}&w={width}')
+
+    const suffix = await updateBlogSettingsSection(
+      db,
+      'assets',
+      { storage: { urlTemplate: '?x-oss-process=image/resize,w_{width}' } },
+      null,
+    )
+    expect(suffix.bundle?.assets?.storage.urlTemplate).toBe('?x-oss-process=image/resize,w_{width}')
+  })
+
+  it('keeps hydrating a stored http:// endpoint (the rule is write-only)', async () => {
+    // A legacy install's row must not fall back to section defaults on
+    // boot — hydration deliberately skips the write schema.
+    await db
+      .update(setting)
+      .set({
+        data: {
+          asset: { host: 'cdn.example.com', scheme: 'https' },
+          storage: {
+            enabled: true,
+            endpoint: 'http://minio.internal:9000',
+            region: 'us-east-1',
+            bucket: 'assets',
+            accessKeyId: 'AKIA',
+            secretAccessKey: 'secret',
+            forcePathStyle: true,
+            urlTemplate: '',
+          },
+          upload: { maxBytes: 5 * 1024 * 1024, jpegQuality: 85 },
+        },
+      })
+      .where(eq(setting.scope, 'blog.assets'))
+
+    const bundle = await refreshBlogSettings(db)
+
+    expect(bundle?.assets?.storage.enabled).toBe(true)
+    expect(bundle?.assets?.storage.endpoint).toBe('http://minio.internal:9000')
   })
 })
 

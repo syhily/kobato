@@ -22,6 +22,7 @@ import {
   serveAvatar,
 } from '@/server/domains/comments/services/avatar'
 import { type AvatarEntry, AvatarStatus, get, set } from '@/server/infra/cache/registry'
+import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { user } from '@/server/infra/db/schema/user'
 import { imageWidth } from '@/server/infra/image/compress'
 // Only fetch is stubbed; the engine, kv cache registry, and sharp are real.
@@ -478,18 +479,62 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
     expect(fetchFn).toHaveBeenCalledTimes(1)
   })
 
-  it('never caches a failure — the next call retries the upstream', async () => {
-    const fetchFn = mockFetch([
-      new Response('not found', { status: 404 }),
+  it('caches a failure briefly — a repeat call is served from the cache without refetching', async () => {
+    // A GitHub outage must not turn every call into a 30s-timeout upstream
+    // fetch; the failure rides a short TTL instead of the bucket default.
+    const fetchFn = mockFetch([new Response('not found', { status: 404 })])
+
+    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+
+    const failureRow = (await db.select().from(kvCache)).find((row) => row.bucket === 'githubAvatar')
+    expect(failureRow?.expiresAt).not.toBeNull()
+    const failureTtlMs = failureRow!.expiresAt!.getTime() - Date.now()
+    expect(failureTtlMs).toBeGreaterThan(0)
+    expect(failureTtlMs).toBeLessThanOrEqual(5 * 60 * 1000)
+  })
+
+  it('caches a successful fetch on the full bucket TTL', async () => {
+    mockFetch([
       new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer, {
         status: 200,
         headers: { 'Content-Type': 'image/png' },
       }),
     ])
 
-    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
     expect(await fetchGithubAvatarDataUrl(db)).toBe('data:image/png;base64,iVBORw==')
-    expect(fetchFn).toHaveBeenCalledTimes(2)
+
+    const row = (await db.select().from(kvCache)).find((entry) => entry.bucket === 'githubAvatar')
+    const ttlMs = row!.expiresAt!.getTime() - Date.now()
+    expect(ttlMs).toBeGreaterThan(5 * 60 * 1000)
+  })
+
+  it('resolves to an empty string when the advertised body exceeds the byte cap', async () => {
+    mockFetch([
+      new Response(new Uint8Array([1]).buffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png', 'Content-Length': String(1024 * 1024) },
+      }),
+    ])
+
+    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+  })
+
+  it('resolves to an empty string when the fetched body exceeds the byte cap', async () => {
+    mockFetch([new Response(new Uint8Array(600 * 1024).buffer, { status: 200 })])
+
+    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+  })
+
+  it('resolves to an empty string when the fetch rejects (timeout / network)', async () => {
+    mockFetch([
+      () => {
+        throw new DOMException('The operation timed out.', 'TimeoutError')
+      },
+    ])
+
+    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
   })
 })
 

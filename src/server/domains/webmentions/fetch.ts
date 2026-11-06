@@ -21,6 +21,8 @@ function sourceFetchError(result: SafeFetchFailure): DomainError {
     case 'invalid-url':
     case 'bad-protocol':
       return new DomainError('BAD_REQUEST', 'source URL is not a valid http(s) URL')
+    case 'bad-port':
+      return new DomainError('BAD_REQUEST', 'source URL targets a non-standard port')
     case 'blocked-host':
       return new DomainError('BAD_REQUEST', 'source URL points at a blocked host')
     case 'too-many-redirects':

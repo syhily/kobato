@@ -7,6 +7,7 @@ import { findMusicByPlayerId } from '@/server/infra/db/operations/music'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { safeFetch } from '@/server/infra/safe-fetch'
+import { redactUrlForLog } from '@/shared/utils/safe-url'
 
 const log = getLogger('music.service')
 
@@ -52,6 +53,8 @@ function downloadError(result: SafeFetchFailure, originalUrl: string, what: 'aud
       return new DomainError('BAD_REQUEST', `${asset}地址无效`)
     case 'bad-protocol':
       return new DomainError('BAD_REQUEST', `${asset}地址协议不被支持`)
+    case 'bad-port':
+      return new DomainError('BAD_REQUEST', `${asset}地址端口不被支持`)
     case 'blocked-host':
       return new DomainError('BAD_REQUEST', `${asset}地址指向了内网或本机`)
     case 'too-many-redirects':
@@ -59,14 +62,18 @@ function downloadError(result: SafeFetchFailure, originalUrl: string, what: 'aud
     case 'too-large':
       return new DomainError('BAD_REQUEST', `${asset}体积超过上限`)
     case 'http-error':
-      log.error('Music asset fetch returned non-2xx', { url: originalUrl, what, status: result.status })
+      log.error('Music asset fetch returned non-2xx', {
+        url: redactUrlForLog(originalUrl),
+        what,
+        status: result.status,
+      })
       return new DomainError('INTERNAL', `${action}失败：${result.status}`)
     case 'dns-failure':
-      log.error('Music asset DNS resolution failed', { url: result.url, what, error: result.error })
+      log.error('Music asset DNS resolution failed', { url: redactUrlForLog(result.url), what, error: result.error })
       return new DomainError('INTERNAL', `${action}失败，请稍后再试`)
     case 'timeout':
     case 'fetch-failed':
-      log.error('Music asset fetch failed', { url: result.url, what, error: result.error })
+      log.error('Music asset fetch failed', { url: redactUrlForLog(result.url), what, error: result.error })
       return new DomainError('INTERNAL', `${action}失败，请稍后再试`)
     case 'missing-redirect-location':
     case 'redirect-vetoed':

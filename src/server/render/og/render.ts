@@ -10,7 +10,7 @@ import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
 import { logoDark } from '@/server/render/og/assets'
 import { layoutCanvasLines } from '@/server/render/pretext-layout'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-import { isHttpUrl } from '@/shared/utils/safe-url'
+import { isHttpUrl, redactUrlForLog } from '@/shared/utils/safe-url'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 
@@ -44,7 +44,8 @@ async function loadCover(cover: string): Promise<Image> {
   }
   const result = await safeFetch(url, { timeoutMs: COVER_TIMEOUT_MS, maxBytes: COVER_MAX_BYTES })
   if (!result.ok) {
-    throw new Error(`OG cover fetch failed (${result.reason}): ${url}`)
+    // A cover URL may carry a signed query string — log the redacted shape.
+    throw new Error(`OG cover fetch failed (${result.reason}): ${redactUrlForLog(url)}`)
   }
   return loadImage(Buffer.from(result.body))
 }

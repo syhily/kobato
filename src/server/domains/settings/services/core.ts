@@ -52,7 +52,9 @@ export async function updateBlogSettingsSection(
   updatedBy: number | null,
   options?: SectionUpdateOptions,
 ): Promise<SectionUpdateResult> {
-  const meta = SECTION_REGISTRY[section]
+  // Widened to the interface: the registry's concrete entry types only
+  // carry `writeSchema` on the assets entry, and this path is generic.
+  const meta: SectionMeta = SECTION_REGISTRY[section]
   // Strict key check before any DB work — unknown keys are a client bug; the
   // assertion signature types the passing payload for the merge below.
   assertSectionPatchKeys(section, payload)
@@ -69,7 +71,9 @@ export async function updateBlogSettingsSection(
     const storedRow = findSettingByScope(tx, meta.scope) ?? null
     const base = resolveMergeBase(meta, storedRow)
     const merged = mergeSectionPatch(base, payload)
-    const parsed = meta.schema.safeParse(merged)
+    // The write path validates against the (optionally stricter) write
+    // schema; hydration and the merge base keep the lenient read schema.
+    const parsed = (meta.writeSchema ?? meta.schema).safeParse(merged)
     if (!parsed.success) {
       throw new DomainError(
         'BAD_REQUEST',

@@ -4,6 +4,12 @@ import type { StorageMigrationStatus } from '@/shared/contracts/storage'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import {
+  STORAGE_ENDPOINT_HTTPS_MESSAGE,
+  STORAGE_URL_TEMPLATE_MESSAGE,
+  isSafeStorageEndpoint,
+  isSafeStorageUrlTemplate,
+} from '@/server/domains/settings/sections/assets'
+import {
   cancelStorageMigration,
   getStorageMigrationStatus,
   resumeStorageMigration,
@@ -37,15 +43,26 @@ const migrationStatus = adminProc
     return getStorageMigrationStatus(context.db)
   })
 
-const s3TargetConfigInput = z.object({
-  endpoint: z.url(),
-  region: z.string().trim().min(1).max(60),
-  bucket: z.string().trim().min(1).max(120),
-  accessKeyId: z.string().trim().min(1).max(255),
-  secretAccessKey: z.string().trim().min(1).max(512),
-  forcePathStyle: z.boolean(),
-  urlTemplate: z.string().trim().max(500),
-})
+const s3TargetConfigInput = z
+  .object({
+    endpoint: z.url(),
+    region: z.string().trim().min(1).max(60),
+    bucket: z.string().trim().min(1).max(120),
+    accessKeyId: z.string().trim().min(1).max(255),
+    secretAccessKey: z.string().trim().min(1).max(512),
+    forcePathStyle: z.boolean(),
+    urlTemplate: z.string().trim().max(500),
+  })
+  // The same write-path URL rules as the settings section — a migration
+  // target must not persist a plaintext endpoint or an open-redirect template.
+  .superRefine((value, ctx) => {
+    if (!isSafeStorageEndpoint(value.endpoint)) {
+      ctx.addIssue({ code: 'custom', path: ['endpoint'], message: STORAGE_ENDPOINT_HTTPS_MESSAGE })
+    }
+    if (!isSafeStorageUrlTemplate(value.urlTemplate)) {
+      ctx.addIssue({ code: 'custom', path: ['urlTemplate'], message: STORAGE_URL_TEMPLATE_MESSAGE })
+    }
+  })
 
 const startMigrationInput = z.discriminatedUnion('target', [
   z.object({ target: z.literal('local') }),

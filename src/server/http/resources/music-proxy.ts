@@ -45,9 +45,15 @@ async function proxyUpstream(targetUrl: string, referer: string): Promise<Respon
   }
 
   const headers = new Headers()
+  // The payload renders in the admin browser — forward only image/audio
+  // types. Anything else (a hostile upstream answering text/html would run
+  // as first-party script) becomes an opaque download.
   const contentType = result.response.headers.get('content-type')
-  if (contentType) {
+  if (contentType !== null && (contentType.startsWith('image/') || contentType.startsWith('audio/'))) {
     headers.set('Content-Type', contentType)
+  } else {
+    headers.set('Content-Type', 'application/octet-stream')
+    headers.set('Content-Disposition', 'attachment')
   }
   headers.set('Cache-Control', 'private, max-age=300')
 

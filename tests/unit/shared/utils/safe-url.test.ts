@@ -7,6 +7,7 @@ import {
   isBlockedFetchHost,
   isValidPasskeyDomain,
   optionalHttpUrlSchema,
+  redactUrlForLog,
   safeHref,
   safeRedirectPath,
   tryParseUrl,
@@ -184,6 +185,13 @@ describe('client: safe-url utilities', () => {
       expect(isBlockedFetchHost('fc00::1%1')).toBe(true)
     })
 
+    it('blocks IPv6 multicast (ff00::/8)', () => {
+      expect(isBlockedFetchHost('ff02::1')).toBe(true) // all-nodes link-local multicast
+      expect(isBlockedFetchHost('[ff02::1]')).toBe(true)
+      expect(isBlockedFetchHost('ff05::2')).toBe(true) // site-local multicast
+      expect(isBlockedFetchHost('ff0e::1')).toBe(true) // global multicast
+    })
+
     it('blocks non-canonical IPv4 spellings of private addresses', () => {
       expect(isBlockedFetchHost('0x7f000001')).toBe(true) // hex 127.0.0.1
       expect(isBlockedFetchHost('2130706433')).toBe(true) // decimal 127.0.0.1
@@ -234,6 +242,19 @@ describe('client: safe-url utilities', () => {
     it('returns null for invalid URLs', () => {
       expect(tryParseUrl('not-a-url')).toBeNull()
       expect(tryParseUrl('')).toBeNull()
+    })
+  })
+
+  describe('redactUrlForLog', () => {
+    it('keeps only origin and pathname, dropping credentials, query, and fragment', () => {
+      expect(redactUrlForLog('https://user:secret@cdn.example.com/a/b.jpg?sign=abc123&e=999#frag')).toBe(
+        'https://cdn.example.com/a/b.jpg',
+      )
+    })
+
+    it('returns a placeholder for an unparsable URL', () => {
+      expect(redactUrlForLog('not-a-url')).toBe('<unparsable>')
+      expect(redactUrlForLog('')).toBe('<unparsable>')
     })
   })
 

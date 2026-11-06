@@ -521,7 +521,10 @@ export function classifyS3ValidationError(error: unknown): string {
   ) {
     return '无法连接到 Endpoint，请检查网络与 Endpoint 地址'
   }
-  return `S3 连通性验证失败：${error instanceof Error ? error.message : String(error)}`
+  // The raw SDK error can echo the endpoint and internal request details —
+  // keep it in the server log, answer the admin with a fixed string.
+  log.warn('S3 connectivity probe failed', { error })
+  return 'S3 连通性验证失败，请查看服务器日志'
 }
 
 // URL resolution lives in `public-url.ts` so URL-only SSR paths never load the AWS SDK.

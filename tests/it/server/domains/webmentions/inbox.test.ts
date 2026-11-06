@@ -124,7 +124,7 @@ describe('integration / webmention inbox worker', () => {
 
   it('records the blocked-host failure without fetching it', async () => {
     await seedLivePost('wm-target')
-    await enqueue('http://127.0.0.1:8080/x')
+    await enqueue('http://127.0.0.1/x')
 
     await runWebmentionInboxBatch(db)
 

@@ -3,9 +3,10 @@ import type { Mock } from 'vitest'
 
 import { lookup } from 'node:dns/promises'
 import { createServer } from 'node:http'
+import { Agent, fetch as undiciFetch } from 'undici'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { safeFetch } from '@/server/infra/safe-fetch'
+import { createDialLookup, safeFetch } from '@/server/infra/safe-fetch'
 
 // Unit surface for the SSRF invariant (plan 042): allowlist, per-hop
 // host revalidation, redirect budget, timeout, size cap.
@@ -56,9 +57,41 @@ describe('infra/safe-fetch — initial URL guard', () => {
 
   it('rejects a blocked private IP on the first request without fetching', async () => {
     const fn = mockFetch(() => new Response(null, { status: 200 }))
-    const result = await safeFetch('http://127.0.0.1:8080/x')
+    const result = await safeFetch('http://127.0.0.1/x')
     expect(result).toMatchObject({ ok: false, reason: 'blocked-host' })
     expect(fn).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-standard port without fetching', async () => {
+    const fn = mockFetch(() => new Response(null, { status: 200 }))
+    await expect(safeFetch('http://example.com:8080/x')).resolves.toMatchObject({ ok: false, reason: 'bad-port' })
+    await expect(safeFetch('https://example.com:8443/x')).resolves.toMatchObject({ ok: false, reason: 'bad-port' })
+    expect(fn).not.toHaveBeenCalled()
+  })
+
+  it('rejects a redirect target on a non-standard port before dialing it', async () => {
+    const fn = mockFetch(
+      () => new Response(null, { status: 302, headers: { location: 'https://cdn.example.com:9090/internal' } }),
+    )
+    const result = await safeFetch('https://cdn.example.com/start')
+    expect(result).toMatchObject({ ok: false, reason: 'bad-port', url: 'https://cdn.example.com:9090/internal' })
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+
+  it('allows explicit standard ports and the protocol default', async () => {
+    const fn = mockFetch(() => new Response(new Uint8Array([1]), { status: 200 }))
+    await expect(safeFetch('http://example.com:80/x')).resolves.toMatchObject({ ok: true })
+    await expect(safeFetch('https://example.com:443/x')).resolves.toMatchObject({ ok: true })
+    await expect(safeFetch('https://example.com/x')).resolves.toMatchObject({ ok: true })
+    expect(fn).toHaveBeenCalledTimes(3)
+  })
+
+  it('allows a non-standard port only with the explicit opt-in', async () => {
+    const fn = mockFetch(() => new Response(new Uint8Array([1]), { status: 200 }))
+    await expect(safeFetch('http://v3.example.com:8000/api', { allowNonStandardPort: true })).resolves.toMatchObject({
+      ok: true,
+    })
+    expect(fn).toHaveBeenCalledTimes(1)
   })
 
   it('rejects localhost names and link-local addresses without fetching', async () => {
@@ -150,8 +183,11 @@ describe('infra/safe-fetch — DNS guard', () => {
 })
 
 describe('infra/safe-fetch — dial-time DNS binding', () => {
-  it('blocks a host whose DNS flips to loopback between the pre-check and the dial', async () => {
+  it('aborts the connection when the dial-time lookup resolves a blocked address', async () => {
     // Real socket, real undici Agent — only `node:dns/promises` is mocked.
+    // The validating lookup is exercised directly: safeFetch's own port
+    // allowlist would reject the test server's ephemeral port at the
+    // pre-check, before any dial could happen.
     let hits = 0
     const server = createServer((_req, res) => {
       hits += 1
@@ -161,17 +197,26 @@ describe('infra/safe-fetch — dial-time DNS binding', () => {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const port = (server.address() as AddressInfo).port
     try {
-      // 1st resolution: the pre-check sees a public address (passes).
-      // 2nd resolution: the dial sees loopback (must abort the connection).
-      lookupMock.mockResolvedValueOnce(publicDns).mockResolvedValueOnce([{ address: '127.0.0.1', family: 4 }])
-      const result = await safeFetch(`http://rebind.example.com:${port}/latest/meta-data`)
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.reason).toBe('fetch-failed')
-        // The dial itself must have rejected the blocked address — not a
-        // generic "unresolvable host" failure.
-        expect(String((result.error as Error).cause)).toContain('blocked address')
+      // DNS answers loopback at connect time — the dial must refuse even
+      // though the host:port combination is perfectly reachable.
+      lookupMock.mockResolvedValue([{ address: '127.0.0.1', family: 4 }])
+      const agent = new Agent({ connect: { lookup: createDialLookup() } })
+      let thrown: unknown
+      try {
+        thrown = await undiciFetch(`http://rebind.example.com:${port}/latest/meta-data`, {
+          dispatcher: agent,
+        }).catch((error: unknown) => error)
+      } finally {
+        await agent.destroy().catch(() => undefined)
       }
+      // The dial itself must have rejected the blocked address — not a
+      // generic "unresolvable host" failure (undici wraps the connect error
+      // in a cause chain, so walk it).
+      let chain = ''
+      for (let cur = thrown; cur instanceof Error; cur = cur.cause) {
+        chain += `${cur.message}|`
+      }
+      expect(chain).toContain('blocked address')
       expect(hits).toBe(0)
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()))
@@ -242,6 +287,42 @@ describe('infra/safe-fetch — redirect loop', () => {
     })
     expect(result).toMatchObject({ ok: false, reason: 'redirect-vetoed', url: 'https://cdn.example.com/sentinel' })
     expect(fn).toHaveBeenCalledTimes(1)
+  })
+
+  it('strips credential headers when a redirect crosses origins', async () => {
+    const fn = mockFetch((url) => {
+      if (url === 'https://cdn.example.com/start') {
+        return new Response(null, { status: 302, headers: { location: 'https://other.example.com/final' } })
+      }
+      return new Response(new Uint8Array([1]), { status: 200 })
+    })
+    const result = await safeFetch('https://cdn.example.com/start', {
+      headers: {
+        Referer: 'https://music.163.com/',
+        Authorization: 'Bearer token',
+        Cookie: 'sid=1',
+        'User-Agent': 'ua',
+      },
+    })
+    expect(result).toMatchObject({ ok: true, url: 'https://other.example.com/final' })
+    expect(fn).toHaveBeenLastCalledWith(
+      'https://other.example.com/final',
+      expect.objectContaining({ headers: { 'User-Agent': 'ua' } }),
+    )
+  })
+
+  it('keeps credential headers on a same-origin redirect', async () => {
+    const fn = mockFetch((url) => {
+      if (url === 'https://cdn.example.com/start') {
+        return new Response(null, { status: 302, headers: { location: '/final' } })
+      }
+      return new Response(new Uint8Array([1]), { status: 200 })
+    })
+    await safeFetch('https://cdn.example.com/start', { headers: { Referer: 'https://music.163.com/' } })
+    expect(fn).toHaveBeenLastCalledWith(
+      'https://cdn.example.com/final',
+      expect.objectContaining({ headers: { Referer: 'https://music.163.com/' } }),
+    )
   })
 })
 
