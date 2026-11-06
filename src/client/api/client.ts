@@ -5,6 +5,8 @@ import { RPCLink } from '@orpc/client/fetch'
 
 import type { ApiRouter } from '@/server/http/api-router'
 
+import { enrichApiErrorMessage } from '@/shared/utils/api-error'
+
 const csrfStore = { token: null as string | null }
 
 export function setCsrfToken(token: string) {
@@ -26,6 +28,19 @@ const link = new RPCLink({
     }
     return h
   },
+  // Validation rejections carry their zod-issue list (`[{ message, path }]`)
+  // in ORPCError.data — fold it into the message here, once, so every
+  // consumer (toasts, error views, logs) names the failing field.
+  interceptors: [
+    async (options) => {
+      try {
+        return await options.next()
+      } catch (error) {
+        enrichApiErrorMessage(error)
+        throw error
+      }
+    },
+  ],
 })
 
 export const orpc: RouterClient<ApiRouter> = createORPCClient(link)

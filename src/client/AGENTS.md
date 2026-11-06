@@ -43,7 +43,7 @@
   `defineCard`. The decorate chrome components and the
   exportDOM markup share the spec's class/copy constants; `tests/unit/client/editor/cards/` pins
   that parity (the WYSIWYG gate).
-- `api/` — oRPC client. All RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@/client/api/client`; server errors arrive as `ORPCError` rejections. TanStack Query wrappers live in `@/client/api/orpc-query`. Every public-site read flows through oRPC end to end: browser-side interactions use this `/rpc` client, and SSR data (public routes + root loader) goes through the read-only `content.*` group via the in-process caller (`@/server/http/ssr-caller`) — no route talks to domain services directly.
+- `api/` — oRPC client. All RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@/client/api/client`; server errors arrive as `ORPCError` rejections with the zod-issue detail (`[{ message, path }]` in `data`) already folded into `error.message` by the link interceptor — consumers never inspect `data` themselves. TanStack Query wrappers live in `@/client/api/orpc-query`. Every public-site read flows through oRPC end to end: browser-side interactions use this `/rpc` client, and SSR data (public routes + root loader) goes through the read-only `content.*` group via the in-process caller (`@/server/http/ssr-caller`) — no route talks to domain services directly.
 
 ## Patterns
 

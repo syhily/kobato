@@ -73,27 +73,17 @@ describe('toastApiError', () => {
     expect(title).toBe('删除失败')
   })
 
-  it('appends an ORPCError zod-issue list so the failing field is named', () => {
-    // The settings save path: DomainError('BAD_REQUEST', '设置数据无效', issues)
-    // rides the ORPCError data channel as [{ message, path }].
+  it('toasts an ORPCError message verbatim — issue folding happens at the link layer', () => {
+    // Real rejections reach the toast with the zod-issue detail already
+    // folded into the message by the link interceptor in
+    // `@/client/api/client`; the toast never inspects `data` itself.
     const err = new ORPCError('BAD_REQUEST', {
-      message: '设置数据无效',
+      message: '设置数据无效：resourceIp.maxAttempts：最大尝试次数不能超过 1000',
       data: [{ message: '最大尝试次数不能超过 1000', path: ['resourceIp', 'maxAttempts'] }],
     })
     toastApiError(err, '保存失败')
     expect(toastMock.error).toHaveBeenCalledWith('保存失败', {
       description: '设置数据无效：resourceIp.maxAttempts：最大尝试次数不能超过 1000',
-    })
-  })
-
-  it('joins multiple issues and tolerates a missing path', () => {
-    const err = new ORPCError('BAD_REQUEST', {
-      message: '设置数据无效',
-      data: [{ message: '时间窗口不能小于 60 秒', path: ['signInIp', 'windowSeconds'] }, { message: '格式错误' }],
-    })
-    toastApiError(err, '保存失败')
-    expect(toastMock.error).toHaveBeenCalledWith('保存失败', {
-      description: '设置数据无效：signInIp.windowSeconds：时间窗口不能小于 60 秒；格式错误',
     })
   })
 

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractApiErrorMessage, isApiAccepted } from '@/shared/utils/api-error'
+import {
+  enrichApiErrorMessage,
+  extractApiErrorMessage,
+  formatApiErrorIssues,
+  isApiAccepted,
+} from '@/shared/utils/api-error'
 
 describe('extractApiErrorMessage', () => {
   it('returns undefined for non-object inputs', () => {
@@ -45,5 +50,56 @@ describe('isApiAccepted', () => {
 
   it('returns true when accepted is exactly true', () => {
     expect(isApiAccepted({ accepted: true })).toBe(true)
+  })
+})
+
+describe('formatApiErrorIssues', () => {
+  it('returns undefined for non-object inputs and missing data', () => {
+    expect(formatApiErrorIssues('error')).toBeUndefined()
+    expect(formatApiErrorIssues(null)).toBeUndefined()
+    expect(formatApiErrorIssues(new Error('boom'))).toBeUndefined()
+  })
+
+  it('returns undefined when data is not an array or holds no issues', () => {
+    expect(formatApiErrorIssues({ data: { retry: true } })).toBeUndefined()
+    expect(formatApiErrorIssues({ data: [] })).toBeUndefined()
+    expect(formatApiErrorIssues({ data: [{ code: 'E123' }, { message: '' }] })).toBeUndefined()
+  })
+
+  it('formats a single issue with its dotted path', () => {
+    // The settings save path: DomainError('BAD_REQUEST', '设置数据无效', issues)
+    // rides the ORPCError data channel as [{ message, path }].
+    const err = Object.assign(new Error('设置数据无效'), {
+      data: [{ message: '最大尝试次数不能超过 1000', path: ['resourceIp', 'maxAttempts'] }],
+    })
+    expect(formatApiErrorIssues(err)).toBe('resourceIp.maxAttempts：最大尝试次数不能超过 1000')
+  })
+
+  it('joins multiple issues, tolerates a missing path, and drops malformed entries', () => {
+    const err = Object.assign(new Error('设置数据无效'), {
+      data: [
+        { message: '时间窗口不能小于 60 秒', path: ['signInIp', 'windowSeconds'] },
+        { message: '格式错误' },
+        { message: '路径被忽略', path: 'not-an-array' },
+      ],
+    })
+    expect(formatApiErrorIssues(err)).toBe('signInIp.windowSeconds：时间窗口不能小于 60 秒；格式错误')
+  })
+})
+
+describe('enrichApiErrorMessage', () => {
+  it('appends the issue detail to the message of an Error carrying issues', () => {
+    const err = Object.assign(new Error('设置数据无效'), {
+      data: [{ message: '最大尝试次数不能超过 1000', path: ['resourceIp', 'maxAttempts'] }],
+    })
+    enrichApiErrorMessage(err)
+    expect(err.message).toBe('设置数据无效：resourceIp.maxAttempts：最大尝试次数不能超过 1000')
+  })
+
+  it('leaves non-Error inputs and issue-less errors untouched', () => {
+    expect(() => enrichApiErrorMessage('boom')).not.toThrow()
+    const plain = new Error('存储迁移进行中')
+    enrichApiErrorMessage(plain)
+    expect(plain.message).toBe('存储迁移进行中')
   })
 })
