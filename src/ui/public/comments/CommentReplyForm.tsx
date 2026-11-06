@@ -9,7 +9,9 @@ import type { FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
+import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -38,6 +40,8 @@ export function CommentReplyForm({
 }: CommentReplyFormProps) {
   const { profile: guestProfile, saveProfile: saveGuestProfile, clearProfile: clearGuestProfile } = useCommentGuest()
   const isGuestMode = !user && guestProfile !== null
+  const assets = useAssetsSettingsOptional()
+  const defaultAvatar = `/images/default-avatar.png${brandingVersionSuffix(assets?.branding?.defaultAvatar)}`
 
   const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
@@ -50,7 +54,7 @@ export function CommentReplyForm({
     if (guestProfile?.avatar) {
       return guestProfile.avatar
     }
-    return '/images/default-avatar.png'
+    return defaultAvatar
   })
 
   const [lastAvatarInputs, setLastAvatarInputs] = useState({ guestProfile, user })
@@ -60,7 +64,7 @@ export function CommentReplyForm({
       if (guestProfile?.avatar) {
         setAvatarSrc(guestProfile.avatar)
       } else {
-        setAvatarSrc('/images/default-avatar.png')
+        setAvatarSrc(defaultAvatar)
       }
     }
   }
@@ -104,7 +108,7 @@ export function CommentReplyForm({
     if (email?.includes('@')) {
       avatar.mutate({ email })
     } else {
-      setAvatarSrc('/images/default-avatar.png')
+      setAvatarSrc(defaultAvatar)
     }
   }
 

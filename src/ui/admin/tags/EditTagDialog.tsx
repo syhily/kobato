@@ -7,6 +7,8 @@ import type { AdminTagDto } from '@/shared/contracts/tags'
 import type { UpsertTagInput } from '@/shared/types/tags'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { brandingVersionSuffix } from '@/shared/config/utils'
+import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'
 import {
@@ -37,6 +39,8 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [lastTag, setLastTag] = useState<typeof tag>(tag)
+  const assets = useAssetsSettingsOptional()
+  const defaultOgImage = `/images/open-graph.png${brandingVersionSuffix(assets?.branding?.openGraph)}`
 
   const upsertMutation = useMutation({
     ...orpcQuery.admin.tags.upsert.mutationOptions(),
@@ -135,7 +139,7 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
               value={draft.ogImage}
               onChange={(value) => setDraft((prev) => ({ ...prev, ogImage: value }))}
               uploadKind={{ kind: 'generic' }}
-              fallbackSrc="/images/open-graph.png"
+              fallbackSrc={defaultOgImage}
               thumbnailClassName="aspect-[1200/630] w-full"
             />
           </div>

@@ -9,7 +9,8 @@ import { listAllCategories, resolveCategoryBySlugOrName } from '@/server/domains
 import { getTagsByNames, resolveTagBySlugOrName } from '@/server/domains/taxonomies/tags/service'
 import { findCategoriesByNames } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
-import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@/shared/config/getters'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 import { sanitizeHtmlString } from '@/shared/sanitize/sanitize-html'
 import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { joinUrl } from '@/shared/utils/urls'
@@ -40,6 +41,7 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
 export async function generateFeeds(db: Database, options: FeedOptions = {}) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const content = requireBlogSettingsSection('content')
+  const branding = getBlogSettingsBundleSync()?.assets?.branding
   const { category, tag } = options
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
@@ -57,8 +59,8 @@ export async function generateFeeds(db: Database, options: FeedOptions = {}) {
     id: siteIdentity.website,
     link: siteIdentity.website,
     language: 'zh-CN',
-    image: joinUrl(siteIdentity.website, '/logo.svg'),
-    favicon: joinUrl(siteIdentity.website, '/favicon.svg'),
+    image: joinUrl(siteIdentity.website, `/logo.svg${brandingVersionSuffix(branding?.logoSvg)}`),
+    favicon: joinUrl(siteIdentity.website, `/favicon.svg${brandingVersionSuffix(branding?.faviconSvg)}`),
     copyright: `All rights reserved ${siteIdentity.initialYear}, ${siteIdentity.author.name}`,
     updated: new Date(),
     feedLinks: {

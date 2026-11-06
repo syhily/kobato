@@ -1,7 +1,5 @@
 import type { SocialNetwork } from '@/shared/config/socials'
-import type { SidebarSettings, SidebarWidgetType, SiteAssetBranding } from '@/shared/config/types'
-
-import { isRecord } from '@/shared/utils/type-guards'
+import type { BrandingObjectRef, SidebarSettings, SidebarWidgetType } from '@/shared/config/types'
 
 export function getSidebarWidgetCount(
   settings: SidebarSettings,
@@ -35,27 +33,12 @@ export function extractXHandle(socials: Array<{ network: SocialNetwork; link: st
   }
 }
 
-// Short version string from every configured branding ref's etag;
-// templates append it as `?v=<version>` to bust the browser cache.
-// Stable for a given configuration so duplicate renders agree.
-export function brandingVersion(branding: SiteAssetBranding | undefined | null): string {
-  if (!branding) {
-    return ''
-  }
-  const etags: string[] = []
-  for (const ref of Object.values(branding)) {
-    if (isRecord(ref) && 'etag' in ref && typeof ref.etag === 'string') {
-      etags.push(ref.etag)
-    }
-  }
-  if (etags.length === 0) {
-    return ''
-  }
-  let h = 5381
-  for (const etag of etags) {
-    for (let i = 0; i < etag.length; i++) {
-      h = ((h << 5) + h + etag.charCodeAt(i)) | 0
-    }
-  }
-  return (h >>> 0).toString(36)
+// Per-slot cache-buster suffix from the branding ref's `updatedAt`, appended
+// to the fixed branding asset paths (`/favicon.svg`, `/logo.svg`, …) so a
+// re-upload changes the URL and browsers skip the stale cached copy.
+// No ref (bundled default asset) → '' — the bare path serves. Matches the
+// `?v=<updatedAtMs>` convention of `resolveAssetUrl` for /storage/ URLs.
+export function brandingVersionSuffix(ref: BrandingObjectRef | undefined | null): string {
+  const ms = ref?.updatedAt ? Date.parse(ref.updatedAt) : Number.NaN
+  return Number.isFinite(ms) ? `?v=${ms}` : ''
 }

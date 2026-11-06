@@ -16,7 +16,8 @@ import { drawOpenGraph } from '@/server/render/og/render'
 // Side-effect: wires render-layer warmup into the content domain's slot
 // (this module owns the OG/calendar request path it mirrors).
 import '@/server/render/warmup/content-cache'
-import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@/shared/config/getters'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 import { joinUrl } from '@/shared/utils/urls'
 
 // Slug-keyed OG URLs outlive the image content — `immutable` would pin stale cards; short max-age revalidates.
@@ -31,7 +32,8 @@ function respondPng(c: Context<Env>, buffer: Uint8Array, headers: Readonly<Recor
 }
 
 function ogFallback(c: Context<Env>) {
-  return c.redirect(joinUrl(requireBlogSettingsSection('siteIdentity').website, '/images/open-graph.png'))
+  const suffix = brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.openGraph)
+  return c.redirect(joinUrl(requireBlogSettingsSection('siteIdentity').website, `/images/open-graph.png${suffix}`))
 }
 
 interface OgEntity {

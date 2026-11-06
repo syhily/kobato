@@ -4,6 +4,7 @@ import type { Env } from '@/server/http/context'
 
 import { ASSET_ROUTES, resolveSiteAsset } from '@/server/domains/assets/services/routes'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 
 export const assetsRouter = new Hono<Env>()
 
@@ -36,15 +37,25 @@ for (const path of Object.keys(ASSET_ROUTES)) {
 const DEFAULT_MANIFEST_NAME = 'Site'
 
 assetsRouter.get('/manifest.webmanifest', async (c) => {
-  const siteIdentity = getBlogSettingsBundleSync()?.siteIdentity
+  const bundle = getBlogSettingsBundleSync()
+  const siteIdentity = bundle?.siteIdentity
   const name = siteIdentity?.title || DEFAULT_MANIFEST_NAME
+  const branding = bundle?.assets?.branding
   c.header('Cache-Control', ASSET_CACHE_CONTROL)
   return c.json({
     name,
     short_name: name,
     icons: [
-      { src: '/images/icon-192.png', type: 'image/png', sizes: '192x192' },
-      { src: '/images/icon-512.png', type: 'image/png', sizes: '512x512' },
+      {
+        src: `/images/icon-192.png${brandingVersionSuffix(branding?.icon192)}`,
+        type: 'image/png',
+        sizes: '192x192',
+      },
+      {
+        src: `/images/icon-512.png${brandingVersionSuffix(branding?.icon512)}`,
+        type: 'image/png',
+        sizes: '512x512',
+      },
     ],
     display: 'standalone',
     theme_color: '#ffffff',

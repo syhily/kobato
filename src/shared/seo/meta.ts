@@ -1,11 +1,11 @@
 import type { MetaDescriptor } from 'react-router'
 
-import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { BlogSettingsBundle, SiteAssetBranding } from '@/shared/config/types'
 
 // Isomorphic by construction: route `meta()` exports pull this module
 // into the browser bundle, so it may only import `@/shared/*`.
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-import { brandingVersion, extractXHandle } from '@/shared/config/utils'
+import { brandingVersionSuffix, extractXHandle } from '@/shared/config/utils'
 import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { isRecord } from '@/shared/utils/type-guards'
 import { joinUrl } from '@/shared/utils/urls'
@@ -48,9 +48,13 @@ function absoluteUrl(url: string | undefined, website: string): string | undefin
   return url.startsWith('http') ? url : website + url
 }
 
-function resolveOgImage(website: string, ogImageUrl?: string): string {
+function resolveOgImage(
+  website: string,
+  ogImageUrl: string | undefined,
+  branding: SiteAssetBranding | null | undefined,
+): string {
   if (ogImageUrl === undefined) {
-    return joinUrl(website, 'images/open-graph.png')
+    return joinUrl(website, 'images/open-graph.png') + brandingVersionSuffix(branding?.openGraph)
   }
   return ogImageUrl.startsWith('http') ? ogImageUrl : joinUrl(website, ogImageUrl)
 }
@@ -82,9 +86,8 @@ function baseTags(
     keywords: string[]
     website: string
   },
-  v?: string,
+  branding?: SiteAssetBranding | null,
 ): MetaDescriptor[] {
-  const qs = v ? `?v=${v}` : ''
   return [
     { title },
     { name: 'title', content: title },
@@ -107,9 +110,23 @@ function baseTags(
       href: `${config.website}/feed/atom/`,
     },
     { tagName: 'link', rel: 'sitemap', href: `${config.website}/sitemap.xml` },
-    { tagName: 'link', rel: 'icon', href: `/favicon.ico${qs}`, sizes: '32x32' },
-    { tagName: 'link', rel: 'icon', href: `/favicon.svg${qs}`, type: 'image/svg+xml' },
-    { tagName: 'link', rel: 'apple-touch-icon', href: `/apple-touch-icon.png${qs}` },
+    {
+      tagName: 'link',
+      rel: 'icon',
+      href: `/favicon.ico${brandingVersionSuffix(branding?.faviconIco)}`,
+      sizes: '32x32',
+    },
+    {
+      tagName: 'link',
+      rel: 'icon',
+      href: `/favicon.svg${brandingVersionSuffix(branding?.faviconSvg)}`,
+      type: 'image/svg+xml',
+    },
+    {
+      tagName: 'link',
+      rel: 'apple-touch-icon',
+      href: `/apple-touch-icon.png${brandingVersionSuffix(branding?.appleTouchIcon)}`,
+    },
     { tagName: 'link', rel: 'manifest', href: '/manifest.webmanifest' },
   ]
 }
@@ -301,11 +318,11 @@ export function routeMeta(
   const resolvedTitle = pageTitle(title, resolved)
   const resolvedDescription = description || siteIdentity.description
   const resolvedPageUrl = absoluteUrl(pageUrl, siteIdentity.website) || siteIdentity.website
-  const imageUrl = resolveOgImage(siteIdentity.website, ogImageUrl)
+  const imageUrl = resolveOgImage(siteIdentity.website, ogImageUrl, resolved?.assets?.branding)
   const imageAlt = ogImageAltText || resolvedTitle
 
   const meta: MetaDescriptor[] = [
-    ...baseTags(resolvedTitle, resolvedDescription, siteIdentity, brandingVersion(resolved?.assets?.branding)),
+    ...baseTags(resolvedTitle, resolvedDescription, siteIdentity, resolved?.assets?.branding),
     ...robotsTags(noindex),
     ...ogTags(
       {

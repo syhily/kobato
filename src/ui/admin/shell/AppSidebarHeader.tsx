@@ -2,7 +2,7 @@ import { SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 
-import { brandingVersion } from '@/shared/config/utils'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
 import { SearchShortcutHint } from '@/ui/admin/shared/SearchShortcutHint'
 import { AdminSearchDialog } from '@/ui/admin/shell/AdminSearchDialog'
@@ -18,8 +18,8 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
   const location = useLocation()
   const isSettingsPage = location.pathname.startsWith('/admin/settings')
   const assets = useAssetsSettingsOptional()
-  const qs = brandingVersion(assets?.branding)
-  const v = qs ? `?v=${qs}` : ''
+  const light = brandingVersionSuffix(assets?.branding?.logoSvg)
+  const dark = brandingVersionSuffix(assets?.branding?.logoDarkSvg)
 
   // Global ⌘K / Ctrl+K shortcut
   useEffect(() => {
@@ -51,9 +51,13 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="size-8 shrink-0 rounded-xl">
-              <img src={`/logo.svg${v}`} alt="站点图标" className="h-full w-full rounded-xl object-cover dark:hidden" />
               <img
-                src={`/logo-dark.svg${v}`}
+                src={`/logo.svg${light}`}
+                alt="站点图标"
+                className="h-full w-full rounded-xl object-cover dark:hidden"
+              />
+              <img
+                src={`/logo-dark.svg${dark}`}
                 alt="站点图标"
                 className="hidden h-full w-full rounded-xl object-cover dark:block"
               />

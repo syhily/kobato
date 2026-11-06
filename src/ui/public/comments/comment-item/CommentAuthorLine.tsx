@@ -1,16 +1,20 @@
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
+import { brandingVersionSuffix } from '@/shared/config/utils'
+import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { safeHref } from '@/shared/utils/safe-url'
 import { cn } from '@/ui/lib/cn'
 import { commentAuthorClass, commentAvatarClass } from '@/ui/public/comments/comment-item/helpers'
 
 export function CommentAvatar({ comment, depth }: { comment: CommentItemType; depth: number }) {
+  const assets = useAssetsSettingsOptional()
+  const defaultAvatar = `/images/default-avatar.png${brandingVersionSuffix(assets?.branding?.defaultAvatar)}`
   return (
     <div
       className={commentAvatarClass(depth)}
       style={{
-        backgroundImage: "url('/images/default-avatar.png')",
+        backgroundImage: `url('${defaultAvatar}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

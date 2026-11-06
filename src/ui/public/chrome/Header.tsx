@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import type { SocialNetwork } from '@/shared/config/socials'
 import type { NavigationItem } from '@/shared/config/types'
 
-import { brandingVersion } from '@/shared/config/utils'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 import { useAssetsSettingsOptional, useSiteIdentity, useSocialsSettings } from '@/shared/lib/blog-config-context'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
@@ -119,8 +119,7 @@ export function Header({ navigation, currentUser, pathname, logoutQuery }: Heade
   const { title } = useSiteIdentity()
   const { socials } = useSocialsSettings()
   const assets = useAssetsSettingsOptional()
-  const qs = brandingVersion(assets?.branding)
-  const v = qs ? `?v=${qs}` : ''
+  const v = brandingVersionSuffix(assets?.branding?.logoDarkSvg)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 1024px)', true)

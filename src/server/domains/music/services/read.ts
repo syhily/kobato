@@ -13,6 +13,8 @@ import {
   listAdminMusicRows,
 } from '@/server/infra/db/operations/music'
 import { safeResolveAssetUrl } from '@/server/infra/storage/public-url'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 
 export async function listMusicForAdmin(db: Database, input: ListMusicInput = {}): Promise<ListMusicOutput> {
   const offset = clampOffset(input.offset)
@@ -49,6 +51,11 @@ export async function findMusicDtoById(db: Database, id: number): Promise<AdminM
  */
 export const DEFAULT_MUSIC_COVER_URL = '/images/default-music-cover.png'
 
+/** The default-cover URL with the slot's `?v=` cache-buster when customized. */
+function defaultMusicCoverUrl(): string {
+  return `${DEFAULT_MUSIC_COVER_URL}${brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.defaultMusicCover)}`
+}
+
 /**
  * Row → public projection, the single owner of music URL building. Returns
  * `null` when the audio URL can't be built; a missing cover falls back to the default.
@@ -64,7 +71,7 @@ function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
     artist: row.artist,
     album: row.album,
     url: audioUrl,
-    pic: safeResolveAssetUrl(row.coverStoragePath) ?? DEFAULT_MUSIC_COVER_URL,
+    pic: safeResolveAssetUrl(row.coverStoragePath) ?? defaultMusicCoverUrl(),
     lyric: row.lyric ?? '',
   }
 }

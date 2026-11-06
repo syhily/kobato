@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { SiteAssetBranding, SidebarSettings } from '@/shared/config/types'
+import type { BrandingObjectRef, SidebarSettings } from '@/shared/config/types'
 
-import { brandingVersion, extractXHandle, isSidebarWidgetEnabled } from '@/shared/config/utils'
+import { brandingVersionSuffix, extractXHandle, isSidebarWidgetEnabled } from '@/shared/config/utils'
 
 // getSidebarWidgetCount is covered in utils.test.ts
 
@@ -56,47 +56,25 @@ describe('shared/config/utils — extractXHandle', () => {
   })
 })
 
-describe('shared/config/utils — brandingVersion', () => {
-  it('returns empty string when branding is null / undefined', () => {
-    expect(brandingVersion(null)).toBe('')
-    expect(brandingVersion(undefined)).toBe('')
+describe('shared/config/utils — brandingVersionSuffix', () => {
+  it('returns empty string when the ref is null / undefined', () => {
+    expect(brandingVersionSuffix(null)).toBe('')
+    expect(brandingVersionSuffix(undefined)).toBe('')
   })
 
-  it('returns empty string when branding has no etag refs', () => {
-    const branding = {} as SiteAssetBranding
-    expect(brandingVersion(branding)).toBe('')
+  it('returns empty string when updatedAt is missing or unparseable', () => {
+    expect(brandingVersionSuffix({ updatedAt: '' } as BrandingObjectRef)).toBe('')
+    expect(brandingVersionSuffix({ updatedAt: 'not-a-date' } as BrandingObjectRef)).toBe('')
   })
 
-  it('ignores entries that are not etag records', () => {
-    const branding = {
-      faviconSvg: { etag: 'a' },
-      logoSvg: 'not a record' as never,
-      logoDarkSvg: { nope: 1 } as never,
-    } as unknown as SiteAssetBranding
-    // Single etag 'a' — non-empty, returns a deterministic hash.
-    const v = brandingVersion(branding)
-    expect(v).not.toBe('')
-    expect(v).toBe(brandingVersion(branding))
+  it('appends the updatedAt ms timestamp as ?v=', () => {
+    const ref = { updatedAt: '2026-07-15T11:14:00.817Z' } as BrandingObjectRef
+    expect(brandingVersionSuffix(ref)).toBe(`?v=${Date.parse('2026-07-15T11:14:00.817Z')}`)
   })
 
-  it('produces a stable deterministic hash for a given etag set', () => {
-    const a: SiteAssetBranding = {
-      faviconSvg: { etag: 'abc', contentType: '', size: 0, updatedAt: '' },
-    } as unknown as SiteAssetBranding
-    const b: SiteAssetBranding = {
-      logoSvg: { etag: 'abc', contentType: 'x', size: 1, updatedAt: 'y' },
-    } as unknown as SiteAssetBranding
-    // Same single etag → same version regardless of other fields / keys.
-    expect(brandingVersion(a)).toBe(brandingVersion(b))
-  })
-
-  it('produces different hashes for different etag sets', () => {
-    const a: SiteAssetBranding = {
-      faviconSvg: { etag: 'abc' },
-    } as unknown as SiteAssetBranding
-    const b: SiteAssetBranding = {
-      faviconSvg: { etag: 'xyz' },
-    } as unknown as SiteAssetBranding
-    expect(brandingVersion(a)).not.toBe(brandingVersion(b))
+  it('changes when the ref is re-uploaded (new updatedAt)', () => {
+    const before = { updatedAt: '2026-07-15T11:14:00.817Z' } as BrandingObjectRef
+    const after = { updatedAt: '2026-11-07T01:00:00.000Z' } as BrandingObjectRef
+    expect(brandingVersionSuffix(before)).not.toBe(brandingVersionSuffix(after))
   })
 })

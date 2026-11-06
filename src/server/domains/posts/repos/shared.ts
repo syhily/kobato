@@ -8,6 +8,8 @@ import { livePostWhere, promotedPostWhere } from '@/server/domains/posts/live-ga
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag } from '@/server/infra/db/schema/taxonomy'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 import { readStringArray } from '@/shared/utils/tools'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
@@ -73,6 +75,11 @@ export interface ListPublicPostsFilters {
 }
 
 /** Public `date` is first publication time; falls back to `published_at` before the first publish. */
+function defaultOpenGraphSuffix(): string {
+  return brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.openGraph)
+}
+
+/** Public `date` is first publication time; falls back to `published_at` before the first publish. */
 export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = [], categoryName = ''): ClientPost {
   const date = meta.firstPublishedAt ?? meta.publishedAt
   return {
@@ -85,7 +92,7 @@ export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = [], cat
     tags,
     category: categoryName,
     summary: meta.summary,
-    cover: meta.cover || '/images/open-graph.png',
+    cover: meta.cover || `/images/open-graph.png${defaultOpenGraphSuffix()}`,
     og: meta.og ?? undefined,
     published: meta.published,
     visible: meta.visible,

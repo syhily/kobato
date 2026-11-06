@@ -8,7 +8,8 @@ import { findEmailById } from '@/server/infra/db/operations/user'
 import { compressImage, imageWidth } from '@/server/infra/image/compress'
 import { getLogger } from '@/server/infra/logger'
 import { safeFetch } from '@/server/infra/safe-fetch'
-import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@/shared/config/getters'
+import { brandingVersionSuffix } from '@/shared/config/utils'
 import { DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { idFromString } from '@/shared/utils/id'
 import { GRAVATAR_MIRROR_PRESETS, isAllowedMirrorUrl } from '@/shared/utils/safe-url'
@@ -55,9 +56,11 @@ export function resolveAvatarSize(raw: string | undefined): number {
 }
 
 /** Default-avatar URL on this site, used both as the loader fallback and
- *  as the gravatar `d=` sentinel. */
+ *  as the gravatar `d=` sentinel. Carries the slot's `?v=` cache-buster so a
+ *  replaced default avatar busts browser caches. */
 export function defaultAvatarUrl(): string {
-  return joinUrl(requireBlogSettingsSection('siteIdentity').website, '/images/default-avatar.png')
+  const suffix = brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.defaultAvatar)
+  return joinUrl(requireBlogSettingsSection('siteIdentity').website, `/images/default-avatar.png${suffix}`)
 }
 
 function fetchErrorMessage(err: unknown): string {
