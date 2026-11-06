@@ -221,7 +221,7 @@ export function MusicsView() {
             {allMusics.map((row, index) => {
               const card = (
                 <div onClick={() => handleNavigateToDetail(row.id)} className="cursor-pointer">
-                  <AlbumCard music={row} viewTransitionName={`music-cover-${row.id}`} />
+                  <AlbumCard music={row} />
                 </div>
               )
               return index === allMusics.length - 1 ? (

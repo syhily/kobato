@@ -4,16 +4,14 @@ import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { Equalizer } from '@/ui/admin/musics/Equalizer'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
-import { NamedTransition } from '@/ui/components/named-transition'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface AlbumCardProps {
   music: AdminMusicDto
-  viewTransitionName?: string
 }
 
-export function AlbumCard({ music, viewTransitionName }: AlbumCardProps) {
+export function AlbumCard({ music }: AlbumCardProps) {
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { load, toggle } = useMusicPlayerActions()
   const isCurrent = currentTrack?.id === music.id
@@ -32,19 +30,17 @@ export function AlbumCard({ music, viewTransitionName }: AlbumCardProps) {
     <div className="group">
       {/* Cover */}
       <div className="relative aspect-square overflow-hidden rounded-lg shadow-md transition-shadow duration-200 group-hover:shadow-xl">
-        <NamedTransition name={music.coverUrl ? viewTransitionName : undefined}>
-          {music.coverUrl ? (
-            <Image
-              src={music.coverUrl}
-              alt={music.name}
-              width={300}
-              height={300}
-              className={cn('h-full w-full object-cover transition-transform duration-300', 'group-hover:scale-105')}
-            />
-          ) : (
-            <div className="h-full w-full bg-surface-dim" />
-          )}
-        </NamedTransition>
+        {music.coverUrl ? (
+          <Image
+            src={music.coverUrl}
+            alt={music.name}
+            width={300}
+            height={300}
+            className={cn('h-full w-full object-cover transition-transform duration-300', 'group-hover:scale-105')}
+          />
+        ) : (
+          <div className="h-full w-full bg-surface-dim" />
+        )}
 
         {/* Hover overlay */}
         <div className="absolute inset-0 flex items-end justify-end bg-black/0 p-3 transition-all duration-200 group-hover:bg-black/40">
@@ -75,12 +71,8 @@ export function AlbumCard({ music, viewTransitionName }: AlbumCardProps) {
 
       {/* Info */}
       <div className="mt-3 min-w-0">
-        <NamedTransition name={viewTransitionName?.replace('cover', 'title')}>
-          <p className="truncate text-sm font-semibold text-ink-1">{music.name}</p>
-        </NamedTransition>
-        <NamedTransition name={viewTransitionName?.replace('cover', 'artist')}>
-          <p className="truncate text-xs text-ink-3">{music.artist.join(' / ')}</p>
-        </NamedTransition>
+        <p className="truncate text-sm font-semibold text-ink-1">{music.name}</p>
+        <p className="truncate text-xs text-ink-3">{music.artist.join(' / ')}</p>
       </div>
     </div>
   )

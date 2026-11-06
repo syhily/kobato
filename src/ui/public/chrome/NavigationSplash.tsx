@@ -99,19 +99,6 @@ export function NavigationSplash() {
     [],
   )
 
-  // While the veil is up, flag the document: named view-transition captures
-  // (the post-title flights) paint in the ::view-transition overlay ABOVE
-  // every z-index, so without the guard they float over the opaque veil.
-  // The suppression rule lives in tailwind.css (`body[data-nav-splash]`).
-  useEffect(() => {
-    if (visible) {
-      document.body.setAttribute('data-nav-splash', '')
-    } else {
-      document.body.removeAttribute('data-nav-splash')
-    }
-    return () => document.body.removeAttribute('data-nav-splash')
-  }, [visible])
-
   if (!visible) {
     return null
   }

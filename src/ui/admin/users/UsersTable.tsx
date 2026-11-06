@@ -12,7 +12,6 @@ import { formatLocalDate, formatShowDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { NamedTransition } from '@/ui/components/named-transition'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
@@ -106,23 +105,19 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
     >
       <TableCell className="px-4 py-4">
         <div className="flex items-center gap-3">
-          <NamedTransition name={`user-avatar-${user.id}`}>
-            <Avatar className="size-10 shrink-0">
-              <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
-              <AvatarFallback className="bg-muted text-xs font-semibold">{initial}</AvatarFallback>
-            </Avatar>
-          </NamedTransition>
+          <Avatar className="size-10 shrink-0">
+            <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
+            <AvatarFallback className="bg-muted text-xs font-semibold">{initial}</AvatarFallback>
+          </Avatar>
           <div className="min-w-0">
-            <NamedTransition name={`user-name-${user.id}`}>
-              <Link
-                to={detailPath}
-                prefetch="intent"
-                onClick={(e) => e.stopPropagation()}
-                className="block truncate font-medium hover:underline"
-              >
-                {user.name || '匿名'}
-              </Link>
-            </NamedTransition>
+            <Link
+              to={detailPath}
+              prefetch="intent"
+              onClick={(e) => e.stopPropagation()}
+              className="block truncate font-medium hover:underline"
+            >
+              {user.name || '匿名'}
+            </Link>
             <div className="truncate text-sm text-muted-foreground">{user.email}</div>
           </div>
         </div>

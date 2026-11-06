@@ -9,7 +9,6 @@ import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { NamedTransition } from '@/ui/components/named-transition'
 import { cn } from '@/ui/lib/cn'
 import { Comments } from '@/ui/public/comments/Comments'
 import { CommentsSkeleton } from '@/ui/public/comments/CommentsSkeleton'
@@ -51,8 +50,6 @@ export interface DetailBodyChromeProps {
   afterLikeButton?: ReactNode
   /** Saved `body_html` projection — sanitized with the 'body' preset at this render boundary. */
   bodyHtml: string
-  /** Shared-element transition partner for listing pages (`post-title-<slug>`); public mode only. */
-  titleTransitionName?: string
   /** Trailing slot rendered after the body container (page friends grid). */
   children?: ReactNode
   postContentRef: React.RefObject<HTMLDivElement | null>
@@ -81,7 +78,6 @@ export function DetailBodyChrome({
   metaExtra,
   afterLikeButton,
   bodyHtml,
-  titleTransitionName,
   children,
   postContentRef,
   contentWrapperClassName,
@@ -109,17 +105,15 @@ export function DetailBodyChrome({
           <PencilIcon className="size-4" />
         </Link>
       )}
-      <NamedTransition name={titleTransitionName}>
-        <h1 className={cn(postTitleClass, 'font-bold text-balance', mode === 'admin' && editHref && 'pr-10')}>
-          {markerLabel !== null && (
-            <span className="text-alert">
-              <span className="sr-only">{markerLabel.sr}</span>
-              {markerLabel.visible}
-            </span>
-          )}
-          {title}
-        </h1>
-      </NamedTransition>
+      <h1 className={cn(postTitleClass, 'font-bold text-balance', mode === 'admin' && editHref && 'pr-10')}>
+        {markerLabel !== null && (
+          <span className="text-alert">
+            <span className="sr-only">{markerLabel.sr}</span>
+            {markerLabel.visible}
+          </span>
+        )}
+        {title}
+      </h1>
       <div className={cn(postMetaClass, 'text-sm text-ink-4', metaClassName)}>
         <div className={cn(postMetaDateClass, 'flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1')}>
           <time dateTime={publishedIso} className="tabular-nums">

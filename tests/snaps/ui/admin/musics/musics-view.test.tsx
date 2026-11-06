@@ -326,7 +326,7 @@ describe('snapshot: AlbumCard', () => {
     const html = stableHtml(
       renderInRouter(
         <MusicPlayerProvider>
-          <AlbumCard music={music} viewTransitionName="music-cover-music-1" />
+          <AlbumCard music={music} />
         </MusicPlayerProvider>,
       ),
     )

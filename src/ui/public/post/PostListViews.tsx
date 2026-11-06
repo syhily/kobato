@@ -8,7 +8,6 @@ import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/type
 import { useSidebarSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatShowDate } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'
-import { NamedTransition } from '@/ui/components/named-transition'
 import { cn } from '@/ui/lib/cn'
 import { Pagination } from '@/ui/public/post/Pagination'
 import { postTitleClass } from '@/ui/public/post/postChrome'
@@ -184,9 +183,6 @@ function FeaturePosts({ posts }: FeaturePostsProps) {
 }
 
 function FeaturePost({ post, first = false }: { post: ListingPostCard; first?: boolean }) {
-  // No post-title transition name here: a pinned feature also renders in
-  // PostCards on page 1, and duplicate <ViewTransition> names in one tree are
-  // dropped by React — the card keeps the name, the overlay title opts out.
   return (
     <div className="relative mb-0 flex min-w-0 flex-1 flex-col wrap-break-word">
       <div className="relative block aspect-3/2 flex-1 shrink-0 overflow-hidden">
@@ -281,23 +277,21 @@ export function PostCards({
             </div>
             <div className="flex flex-1 flex-col justify-center bg-canvas p-3 md:px-5 md:pt-5 md:pb-4 lg:p-6">
               <div className="flex-1">
-                <NamedTransition name={`post-title-${post.slug}`}>
-                  <Link
-                    to={post.permalink}
-                    className="m-0 block text-base leading-body font-semibold text-inherit hover:text-brand md:text-xl"
-                    prefetch="intent"
-                  >
-                    <div className="line-clamp-2">
-                      {!post.published && (
-                        <span className="text-alert">
-                          <span className="sr-only">未发布草稿：</span>
-                          【草稿】
-                        </span>
-                      )}
-                      {post.title}
-                    </div>
-                  </Link>
-                </NamedTransition>
+                <Link
+                  to={post.permalink}
+                  className="m-0 block text-base leading-body font-semibold text-inherit hover:text-brand md:text-xl"
+                  prefetch="intent"
+                >
+                  <div className="line-clamp-2">
+                    {!post.published && (
+                      <span className="text-alert">
+                        <span className="sr-only">未发布草稿：</span>
+                        【草稿】
+                      </span>
+                    )}
+                    {post.title}
+                  </div>
+                </Link>
                 <div className="mt-4 hidden text-md text-ink-3 md:block">
                   <div className="line-clamp-3">{post.summary ?? ''}</div>
                 </div>
@@ -378,11 +372,9 @@ export function PostSquare({ post, first, listingNowIso }: PostSquareProps) {
         </div>
         <div className="absolute inset-x-0 bottom-0 z-1 flex flex-none flex-col p-2 md:px-4 md:py-3">
           <Link to={post.permalink} className="flex flex-none flex-col" prefetch="intent">
-            <NamedTransition name={`post-title-${post.slug}`}>
-              <div className="m-0 mb-2 line-clamp-2 block leading-body font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px]">
-                {post.title}
-              </div>
-            </NamedTransition>
+            <div className="m-0 mb-2 line-clamp-2 block leading-body font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px]">
+              {post.title}
+            </div>
             <div className="font-number flex flex-1 text-sm text-ink-on-dark">
               <span className="inline-block">{formatShowDate(post.date, config, listingNowIso)}</span>
               <div className="flex-1" />

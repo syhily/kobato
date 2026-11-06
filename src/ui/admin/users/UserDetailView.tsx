@@ -19,7 +19,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
-import { NamedTransition } from '@/ui/components/named-transition'
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
@@ -114,16 +113,12 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
         <div className="flex flex-col gap-6 lg:col-span-1">
           <Card>
             <CardContent className="flex flex-col items-center gap-4 text-center">
-              <NamedTransition name={`user-avatar-${user.id}`}>
-                <Avatar className="size-20">
-                  <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
-                  <AvatarFallback className="bg-muted text-lg font-semibold">{initial}</AvatarFallback>
-                </Avatar>
-              </NamedTransition>
+              <Avatar className="size-20">
+                <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
+                <AvatarFallback className="bg-muted text-lg font-semibold">{initial}</AvatarFallback>
+              </Avatar>
               <div>
-                <NamedTransition name={`user-name-${user.id}`}>
-                  <div className="text-lg font-semibold">{user.name}</div>
-                </NamedTransition>
+                <div className="text-lg font-semibold">{user.name}</div>
                 <div className="text-sm text-muted-foreground">{user.email}</div>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">

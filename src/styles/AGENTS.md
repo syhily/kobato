@@ -15,9 +15,7 @@ Six files, two bundles:
   every raw design token (`:root` / `.dark` / `prefers-color-scheme` / P3),
   the full `@theme inline` bridge, the `sidebar` `@custom-variant` block,
   `@layer base` overrides, and rules both sides render (the Shiki token
-  colors for non-typeset surfaces, the theme-wipe view transition, the
-  `body[data-nav-splash]` view-transition-name suppression guard that keeps
-  named captures from painting above the navigation splash veil). It has no
+  colors for non-typeset surfaces, the theme-wipe view transition). It has no
   `@import 'tailwindcss'` and no `@source` — importing it directly from TSX
   produces nothing.
 - `typeset.css` — **all content typography in one owned file** (vendored
@@ -60,8 +58,7 @@ Six files, two bundles:
   `ui/*` dirs, and the `ui/public` subdirs admin reuses — music-player, chrome,
   comment editor, widgets, Search — plus `client/editor` for the inkling host
   cards and `shared/lexical/cards` for their chrome constants). Admin-only
-  rules live here: medium-zoom z-45 stacking, `scrollbar-thin`, the
-  music-library view transitions.
+  rules live here: medium-zoom z-45 stacking, `scrollbar-thin`.
 - `inkling-editor.css` — **editor-canvas partial**, imported ONLY by
   `@/ui/admin/editor/PageBodyEditor` so it rides the editor route chunk (the
   rest of admin stays inkling-free). Imports `dark-variant.css` FIRST (so the
