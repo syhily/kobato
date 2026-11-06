@@ -121,12 +121,27 @@ describe('contract/backup-schema', () => {
     }
   })
 
-  it('accepts encryption enabled without a password field (keep-stored semantics)', () => {
+  it('rejects encryption enabled without a password (fail closed — never a silent plaintext archive)', () => {
     const result = backupSchema.safeParse({
       scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
       retention: { enabled: true, days: 30 },
       encryption: { enabled: true },
     })
-    expect(result.success).toBe(true)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toContain('password')
+    }
+  })
+
+  it('rejects encryption enabled with an explicitly empty password', () => {
+    const result = backupSchema.safeParse({
+      scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+      retention: { enabled: true, days: 30 },
+      encryption: { enabled: true, password: '' },
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toContain('password')
+    }
   })
 })

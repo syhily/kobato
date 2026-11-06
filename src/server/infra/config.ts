@@ -73,9 +73,16 @@ export const CONFIG_TABLE = [
       ])
       .pipe(
         z.array(
-          z.string().refine(isValidTrustedProxyEntry, {
-            message: 'must be an IP address or an IPv4 CIDR (e.g. 172.18.0.0/16)',
-          }),
+          z
+            .string()
+            .refine(isValidTrustedProxyEntry, {
+              message: 'must be an IP address or an IPv4 CIDR (e.g. 172.18.0.0/16)',
+            })
+            // /0 trusts proxy headers from ANY peer — every per-IP control
+            // (rate limits, audit attribution) silently stops applying.
+            .refine((entry) => entry !== '0.0.0.0/0', {
+              message: '0.0.0.0/0 would trust proxy headers from any peer, disabling every per-IP rate limit',
+            }),
         ),
       )
       .default([]),
@@ -209,15 +216,22 @@ function setPath(obj: Record<string, unknown>, path: readonly string[], value: u
   node[path[path.length - 1]] = value
 }
 
-/** Ghost's `parseValues`: env strings land in the file as native JSON types. */
-function parseEnvValue(raw: string): unknown {
+/** Ghost's `parseValues`: env strings land in the file as native JSON types.
+ *  A coercion the entry's own schema would reject on the next boot — a
+ *  numeric-looking SECRET landing as a Number in a z.string() slot (32+
+ *  digits also lose precision), or a boolean into a string slot — corrupts
+ *  the file being written, so the raw string is kept instead. */
+function parseEnvValue(entry: ConfigEntry, raw: string): unknown {
+  let value: unknown = raw
   if (/^-?\d+(\.\d+)?$/.test(raw)) {
-    return Number(raw)
+    value = Number(raw)
+  } else if (raw === 'true' || raw === 'false') {
+    value = raw === 'true'
   }
-  if (raw === 'true' || raw === 'false') {
-    return raw === 'true'
+  if (typeof value !== 'string' && !entry.schema.safeParse(value).success) {
+    return raw
   }
-  return raw
+  return value
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -401,6 +415,34 @@ export function parseConfigFileJson(raw: string): ParsedConfigFile {
 }
 
 /**
+ * Restore-time extension of `parseConfigFileJson`: additionally replays the
+ * env-over-file merge + per-entry parse `loadServerConfig` applies at boot.
+ * The file schema alone is all-optional (secrets may arrive via env), so a
+ * config missing a REQUIRED value passes it — then the next boot exits
+ * (`process.exit(1)`) AFTER the restore's engine swap. Rejecting here keeps
+ * "the next boot accepts this file" an honest invariant.
+ */
+export function parseRestorableConfigJson(raw: string): ParsedConfigFile {
+  const parsed = parseConfigFileJson(raw)
+  const issues: string[] = []
+  for (const entry of CONFIG_TABLE) {
+    const key = entry.path.join('.')
+    const value = process.env[configEnvName(entry.path)] ?? getPath(parsed.data, entry.path)
+    // '' = unset, mirroring loadServerConfig.
+    const result = entry.schema.safeParse(value === '' ? undefined : value)
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        issues.push(`  - ${key}: ${issue.message}`)
+      }
+    }
+  }
+  if (issues.length > 0) {
+    throw new ConfigFileError('schema', `无法通过启动等价校验:\n${issues.join('\n')}`)
+  }
+  return parsed
+}
+
+/**
  * The config file path this process resolved — same order as `loadConfig`
  * (--config/-c > SEA execDir > cwd > ~/.config) — or null in the VITEST
  * env-only mode, where no file exists. The backup archives this file so the
@@ -474,7 +516,7 @@ export function loadConfig(): Record<string, unknown> {
     const fileValue = getPath(fileData, entry.path)
     runtimeEnv[entry.path.join('.')] = envRaw ?? fileValue
     if (envRaw !== undefined && envRaw !== fileValue) {
-      overrides.push({ path: entry.path, value: parseEnvValue(envRaw) })
+      overrides.push({ path: entry.path, value: parseEnvValue(entry, envRaw) })
     }
   }
 

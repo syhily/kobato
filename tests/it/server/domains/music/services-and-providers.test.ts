@@ -372,6 +372,9 @@ describe('music/services/write/add — addMusic', () => {
       sourceId: 'restore-race',
       deletedAt: new Date(),
       storageDriver: 's3',
+      // Storage keys are always re-derived from the row's playerId — the
+      // seeded paths below must match that derivation to stay "claimed".
+      playerId: 'restore-race',
       audioStoragePath: 'musics/restore-race.mp3',
       coverStoragePath: 'musics/restore-race.jpg',
     })

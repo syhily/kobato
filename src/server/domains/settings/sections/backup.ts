@@ -47,12 +47,15 @@ export const backupSchema = z
       return
     }
     // The merged view carries the stored (encrypted) password when the patch
-    // omits it — only an explicitly empty or short password is rejectable here.
-    if (
-      value.encryption.password !== undefined &&
-      value.encryption.password.length > 0 &&
-      value.encryption.password.length < 8
-    ) {
+    // omits it. Enabled with NO password (never set, or explicitly cleared)
+    // would silently write PLAINTEXT archives while the UI claims encryption
+    // — fail closed instead of degrading.
+    const password = value.encryption.password
+    if (password === undefined || password.trim() === '') {
+      ctx.addIssue({ code: 'custom', path: ['encryption', 'password'], message: '启用备份加密需要设置密码' })
+      return
+    }
+    if (password.length > 0 && password.length < 8) {
       ctx.addIssue({ code: 'custom', path: ['encryption', 'password'], message: '备份加密密码至少 8 位' })
     }
   })

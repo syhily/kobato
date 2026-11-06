@@ -24,7 +24,12 @@ import { createGunzip } from 'node:zlib'
 import { BackupDecryptionError, createBackupDecipher, isEncryptedBackup } from '@/server/domains/backup/services/crypto'
 import { isTarArchive, listTarEntriesInFile } from '@/server/domains/backup/services/tar'
 import { resolveAnalyticsPath } from '@/server/infra/analytics/duckdb'
-import { ConfigFileError, CONFIG_FILE_NAME, parseConfigFileJson, resolveConfigFilePath } from '@/server/infra/config'
+import {
+  ConfigFileError,
+  CONFIG_FILE_NAME,
+  parseRestorableConfigJson,
+  resolveConfigFilePath,
+} from '@/server/infra/config'
 import { isInMemoryPath, resolveDatabasePath } from '@/server/infra/db/database'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
@@ -153,14 +158,15 @@ export function decompressedSizeGuard(maxBytes: number): Transform {
   })
 }
 
-/** The staged config must pass the SAME schema the next boot applies — it
+/** The staged config must pass the SAME checks the next boot applies — it
  *  overwrites the live `kobato.config.json` verbatim, and a config the boot
  *  parse rejects exits the process AFTER the databases were swapped. Reuses
- *  `parseConfigFileJson` (migration + strict file schema) so there is one
- *  definition of "loadable config", never a second copy here. */
+ *  `parseRestorableConfigJson` (migration + strict file schema + the
+ *  env-over-file merged per-entry parse `loadServerConfig` runs) so there is
+ *  one definition of "bootable config", never a second copy here. */
 async function assertConfigBackup(configPath: string): Promise<void> {
   try {
-    parseConfigFileJson(await readFile(configPath, 'utf8'))
+    parseRestorableConfigJson(await readFile(configPath, 'utf8'))
   } catch (error) {
     if (!(error instanceof ConfigFileError)) {
       throw error
@@ -400,13 +406,11 @@ async function swapStagedConfig(sourcePath: string, targetPath: string): Promise
   const preRestorePath = `${targetPath}${PRE_RESTORE_SUFFIX}`
   try {
     await copyFile(sourcePath, stagingPath)
-    // The config carries `security.*` secrets — never let the restored copy be
-    // more permissive than the 0600 `writeConfigFile` produces at boot.
-    await chmod(stagingPath, 0o600).catch((error: unknown) => {
-      log.warn('Restore: failed to restrict the restored config file permissions', {
-        err: error instanceof Error ? error.message : String(error),
-      })
-    })
+    // The config carries `security.*` secrets — never let the restored copy
+    // be more permissive than the 0600 `writeConfigFile` produces at boot.
+    // A chmod failure aborts the config leg BEFORE the rename: the live file
+    // stays untouched (the caller keeps config-leg failures warn-only).
+    await chmod(stagingPath, 0o600)
     await copyFile(targetPath, preRestorePath).catch((error: unknown) => {
       // Nothing to park (a first install, or a target whose parent dir is
       // missing) — the replace below still applies the archive's config.

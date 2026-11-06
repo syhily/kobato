@@ -12,6 +12,7 @@ import {
   loadServerConfig,
   migrateLegacyKeys,
   parseConfigFileJson,
+  parseRestorableConfigJson,
   resolveConfigFilePath,
 } from '@/server/infra/config'
 
@@ -110,6 +111,22 @@ describe('infra/config — loadConfig', () => {
     expect(written.storage.database).toBe('/data/from-env.db')
     // parseValues: numeric strings land as native JSON numbers
     expect(written.server.port).toBe(5000)
+  })
+
+  it('never coerces a numeric-looking secret on write-back (precision/type loss corrupts the file)', () => {
+    const dir = makeTmpDir()
+    const path = configPathIn(dir)
+    writeConfig(path, { storage: { database: '/data/from-file.db' } })
+    withConfigArg(path)
+    // 40 digits: exact-looking to the Number grammar, but a z.string() slot
+    // must keep it verbatim — as a Number it would lose precision AND type.
+    const secret = '1234567890123456789012345678901234567890'
+    vi.stubEnv('security__sessionSecret', secret)
+
+    loadConfig()
+
+    const written = JSON.parse(readFileSync(path, 'utf-8'))
+    expect(written.security.sessionSecret).toBe(secret)
   })
 
   it('survives an unwritable config location (warns, keeps effective values in memory)', () => {
@@ -377,6 +394,15 @@ describe('infra/config — loadServerConfig', () => {
     expect(stderr).toHaveBeenCalledWith(expect.stringContaining('security.trustedProxies'))
   })
 
+  it('rejects 0.0.0.0/0 in trustedProxies (would trust proxy headers from any peer)', () => {
+    stubRequiredEnv()
+    vi.stubEnv('security__trustedProxies', '0.0.0.0/0')
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
+    expect(() => loadServerConfig()).toThrow('process.exit called')
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('security.trustedProxies'))
+  })
+
   it('treats empty-string optional values as unset (an auto-created file boots)', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
@@ -592,6 +618,43 @@ describe('infra/config — parseConfigFileJson (the boot schema, without exiting
     // Unknown keys and values the strict schema rejects both land in `schema`.
     expect(kindOf(JSON.stringify({ nope: true }))).toBe('schema')
     expect(kindOf(JSON.stringify({ security: { encryptionKey: 'short' } }))).toBe('schema')
+  })
+})
+
+describe('infra/config — parseRestorableConfigJson (boot-equivalence for restores)', () => {
+  beforeEach(() => {
+    clearConfigEnv()
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('accepts a config whose gaps the env covers (the env-over-file merge boots)', () => {
+    vi.stubEnv('security__sessionSecret', 'a-secret-that-is-at-least-32-characters-long')
+    vi.stubEnv('security__encryptionKey', 'an-encryption-key-at-least-32-chars-long')
+
+    const parsed = parseRestorableConfigJson(JSON.stringify({ storage: { data: '/data' } }))
+
+    expect(parsed.data.storage).toEqual({ data: '/data' })
+  })
+
+  it('rejects a config missing a required value the all-optional file schema alone would pass', () => {
+    // No sessionSecret in the file NOR the env — the file schema accepts
+    // this, but the next boot would exit(1) AFTER the restore's engine swap.
+    vi.stubEnv('security__sessionSecret', '')
+    vi.stubEnv('security__encryptionKey', '')
+
+    let thrown: unknown
+    try {
+      parseRestorableConfigJson(JSON.stringify({ storage: { data: '/data' } }))
+    } catch (error) {
+      thrown = error
+    }
+    expect(thrown).toBeInstanceOf(ConfigFileError)
+    expect((thrown as ConfigFileError).kind).toBe('schema')
+    expect((thrown as Error).message).toContain('security.sessionSecret')
+    expect((thrown as Error).message).toContain('security.encryptionKey')
   })
 })
 

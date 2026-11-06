@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { buildBackupS3Key, isValidBackupKey } from '@/server/domains/backup/services/backup'
+import {
+  BackupEncryptionMisconfiguredError,
+  buildBackupS3Key,
+  isValidBackupKey,
+  resetBackupEncryption,
+  resolveStoredEncryptionPassword,
+  wireBackupEncryption,
+} from '@/server/domains/backup/services/backup'
 
 describe('services/backup — key validation', () => {
   it('accepts legacy bare timestamps and suffixed backup ids', () => {
@@ -29,5 +36,40 @@ describe('services/backup — key validation', () => {
     expect(buildBackupS3Key('2026-06-05T12-34-56-0123456789abcdef')).toBe(
       'backup/backup-2026-06-05T12-34-56-0123456789abcdef.db.tar.gz',
     )
+  })
+})
+
+describe('services/backup — encryption resolver (fail closed on misconfiguration)', () => {
+  afterEach(() => {
+    resetBackupEncryption()
+  })
+
+  it('returns null when unwired or when encryption is off', () => {
+    expect(resolveStoredEncryptionPassword()).toBeNull()
+    wireBackupEncryption({ resolveEncryptionPassword: () => null })
+    expect(resolveStoredEncryptionPassword()).toBeNull()
+  })
+
+  it('returns the wired password when encryption is configured', () => {
+    wireBackupEncryption({ resolveEncryptionPassword: () => 'settings-password' })
+    expect(resolveStoredEncryptionPassword()).toBe('settings-password')
+  })
+
+  it('declines a misconfigured resolver into the password prompt (restore path never 500s)', () => {
+    wireBackupEncryption({
+      resolveEncryptionPassword: () => {
+        throw new BackupEncryptionMisconfiguredError('enabled but passwordless')
+      },
+    })
+    expect(resolveStoredEncryptionPassword()).toBeNull()
+  })
+
+  it('does not swallow unrelated resolver failures', () => {
+    wireBackupEncryption({
+      resolveEncryptionPassword: () => {
+        throw new Error('database on fire')
+      },
+    })
+    expect(() => resolveStoredEncryptionPassword()).toThrow('database on fire')
   })
 })

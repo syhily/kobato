@@ -11,7 +11,11 @@ import { wireSessionStorageDb } from '@/server/domains/auth/session-storage'
 import { createRestoreCompletion } from '@/server/domains/backup/restore-completion'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { rescheduleBackup } from '@/server/domains/backup/scheduler'
-import { wireBackupEncryption, wireBackupSnapshots } from '@/server/domains/backup/services/backup'
+import {
+  BackupEncryptionMisconfiguredError,
+  wireBackupEncryption,
+  wireBackupSnapshots,
+} from '@/server/domains/backup/services/backup'
 import { recoverPreRestoreFiles, sweepStaleRestoreDirs } from '@/server/domains/backup/services/restore'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import { hashContent } from '@/server/domains/comments/services/mutate'
@@ -93,12 +97,21 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   wireBackupEncryption({
     // Live read at backup time: toggling the settings card takes effect on
     // the next backup without a restart. Missing bundle/section (tests) or
-    // an empty password = encryption off.
+    // encryption off = no password. Enabled-but-passwordless (rows written
+    // before the settings schema rejected that state) fails CLOSED — a
+    // plaintext archive must never be written while the UI claims encryption.
     resolveEncryptionPassword: () => {
       const encryption = getBlogSettingsBundleSync()?.backup?.encryption
-      return encryption?.enabled === true && encryption.password !== undefined && encryption.password !== ''
-        ? encryption.password
-        : null
+      if (encryption?.enabled !== true) {
+        return null
+      }
+      const password = encryption.password?.trim()
+      if (password === undefined || password === '') {
+        throw new BackupEncryptionMisconfiguredError(
+          '备份加密已启用但未设置密码 — 请在设置中填写备份加密密码或关闭加密',
+        )
+      }
+      return password
     },
   })
   wireWebmentionPostPublishHook()

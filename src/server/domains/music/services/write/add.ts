@@ -78,8 +78,11 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
   const metadata = mergeMetadata(track, input.prefill)
 
   const playerId = restoring?.playerId ?? (await generateUniquePlayerId(db))
-  const audioStoragePath = restoring?.audioStoragePath ?? `musics/${playerId}.mp3`
-  const coverStoragePath = restoring?.coverStoragePath ?? `musics/${playerId}.jpg`
+  // A restored row's persisted storage keys ride inside the (craftable)
+  // backup archive — always re-derive them from the row's playerId so a
+  // crafted row can never aim a put/delete outside `musics/<playerId>.*`.
+  const audioStoragePath = `musics/${playerId}.mp3`
+  const coverStoragePath = `musics/${playerId}.jpg`
 
   const [audioUrl, coverUrl] = await Promise.all([
     input.prefill?.audioUrl ?? provider.resolveAudioUrl(track),

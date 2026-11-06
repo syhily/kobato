@@ -140,8 +140,29 @@ export function resetBackupEncryption(): void {
  *  Shared by the create pipeline and the restore controller so the
  *  stored-password semantics live in exactly one place (the composition
  *  root's resolver). */
+/** Thrown by the composition-root resolver when `backup.encryption.enabled`
+ *  is true but no password is stored — a plaintext archive must never be
+ *  written while the UI claims encryption (rows saved before the settings
+ *  schema rejected that state). The create path lets it propagate; the
+ *  restore path declines into the password prompt instead. */
+export class BackupEncryptionMisconfiguredError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BackupEncryptionMisconfiguredError'
+  }
+}
+
 export function resolveStoredEncryptionPassword(): string | null {
-  return encryptionPasswordResolver?.() ?? null
+  try {
+    return encryptionPasswordResolver?.() ?? null
+  } catch (error) {
+    // A misconfigured encryption toggle must not fail a RESTORE — decline
+    // into the password prompt like an unset password would.
+    if (error instanceof BackupEncryptionMisconfiguredError) {
+      return null
+    }
+    throw error
+  }
 }
 
 export interface CreateBackupOptions {
