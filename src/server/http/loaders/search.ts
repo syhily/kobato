@@ -12,6 +12,7 @@ import { searchPostOptions } from '@/server/infra/search/options'
 import { searchPosts } from '@/server/infra/search/search'
 import { listingSeo } from '@/server/render/seo/listing-seo'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { SEARCH_KEYWORD_MAX_LENGTH } from '@/shared/contracts/content'
 import { toClientPost, toListingPostCard } from '@/shared/types/catalog'
 import { pagePath, searchRootPath } from '@/shared/utils/paths'
 
@@ -38,7 +39,10 @@ export async function searchLoader(
   // down, keeping the search infra free of business rules.
   const liveWhere = livePostWhere()
   const { hits, page, totalPages } = await searchPosts(db, liveWhere, query, pageSize, (pageNum - 1) * pageSize)
-  if (auditContext !== undefined) {
+  // The audit row persists the raw keyword — never write one for a blank or
+  // over-cap query (the contract cap makes the latter unreachable over RPC;
+  // the guard keeps this loader honest on its own).
+  if (auditContext !== undefined && query.length > 0 && query.length <= SEARCH_KEYWORD_MAX_LENGTH) {
     recordAuditEventFromContext(auditContext, {
       action: 'search',
       resourceType: 'search',

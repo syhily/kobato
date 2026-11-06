@@ -16,7 +16,7 @@ import { translateThrownResponse } from '@/server/http/content-signals'
 import { loadHomeData } from '@/server/http/loaders/home'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { searchLoader } from '@/server/http/loaders/search'
-import { publicProc } from '@/server/http/orpc-base'
+import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import {
   contentArchivesOutputSchema,
   contentCategoriesListOutputSchema,
@@ -135,10 +135,13 @@ const postsList = publicProc
   })
 
 // Keyword search — the empty-keyword 302, overflow redirects, and the audit event stay inside `searchLoader`.
+// Every miss is a full-corpus LIKE scan and every distinct keyword with hits
+// writes a slug list to the cache + an audit row, so the procedure is throttled.
 const search = publicProc
   .route({ method: 'GET', path: '/content/search' })
   .input(contentSearchInputSchema)
   .output(contentSearchOutputSchema)
+  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     const auditContext: AuditContext = {
       viewer: context.viewer,
@@ -155,9 +158,12 @@ const categoriesList = publicProc
     return { categories: await listAllCategories(context.db) }
   })
 
+// The archives payload (up to 10k posts + 4 metadata statements) is a
+// deliberate full-corpus fan-out — throttle it like the other expensive reads.
 const archives = publicProc
   .route({ method: 'GET', path: '/content/archives' })
   .output(contentArchivesOutputSchema)
+  .use(resourceRateLimit)
   .handler(async ({ context }) => {
     const db = context.db
     const listingNowIso = new Date().toISOString()

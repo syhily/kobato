@@ -18,13 +18,22 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
  */
 export const STORAGE_REDIRECT_CACHE_CONTROL = 'public, max-age=300'
 
-/** Positive-integer query param (malformed → null). */
-function parseTransformParam(value: string | null): number | null {
-  if (value === null || !/^\d+$/.test(value) || value === '0') {
+/** Positive-integer query param within `max` (malformed / out-of-range → null). */
+function parseTransformParam(value: string | null, max: number): number | null {
+  if (value === null || !/^\d+$/.test(value)) {
     return null
   }
-  return Number(value)
+  const parsed = Number(value)
+  return parsed >= 1 && parsed <= max ? parsed : null
 }
+
+// Clamp the transform keyspace: an unclamped `?w=&h=` pair would mint a
+// distinct CDN transform URL per request (each one a cache miss on the CDN's
+// transform cache and a line on the bill). Out-of-range values are ignored
+// exactly like a malformed one — no substitution, the query string rides
+// along untouched (the same behavior as an unset template).
+const MAX_TRANSFORM_DIMENSION = 4096
+const MAX_TRANSFORM_QUALITY = 100
 
 /**
  * Build the redirect target: `<publicBase>/<key>` plus the request's query
@@ -35,20 +44,21 @@ function parseTransformParam(value: string | null): number | null {
  * `src/shared/types/images.ts` (which emits the `w`/`h`/`q` params this
  * consumes); keep the two semantics in sync. Mirrors the legacy client-side
  * template semantics: `{src}` → the object URL, a template without `{src}`
- * appended to it; `w`/`h` must both be valid positive integers (the client
- * emits them as a pair), missing/invalid `q` falls back to the historical
- * default of 100. The transform params are consumed; everything else
- * (e.g. `?v=`) survives.
+ * appended to it; `w`/`h` must both be valid positive integers within
+ * `MAX_TRANSFORM_DIMENSION` (the client emits them as a pair), missing /
+ * out-of-range `q` falls back to the historical default of 100 (the quality
+ * is clamped to `MAX_TRANSFORM_QUALITY`). The transform params are consumed;
+ * everything else (e.g. `?v=`) survives.
  */
 function buildRedirectLocation(objectUrl: string, search: string): string {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
   let location = objectUrl
 
-  const width = parseTransformParam(params.get('w'))
-  const height = parseTransformParam(params.get('h'))
+  const width = parseTransformParam(params.get('w'), MAX_TRANSFORM_DIMENSION)
+  const height = parseTransformParam(params.get('h'), MAX_TRANSFORM_DIMENSION)
   const template = width !== null && height !== null ? readUrlTemplate() : ''
   if (template !== '') {
-    const quality = parseTransformParam(params.get('q')) ?? 100
+    const quality = parseTransformParam(params.get('q'), MAX_TRANSFORM_QUALITY) ?? 100
     location = template
       .replaceAll('{width}', String(width))
       .replaceAll('{height}', String(height))

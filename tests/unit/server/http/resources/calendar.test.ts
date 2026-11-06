@@ -76,6 +76,39 @@ describe('serveCalendar', () => {
     })
   })
 
+  it('throws 404 for a year below the supported window', async () => {
+    const serveCalendar = await importServeCalendar()
+    await expect(serveCalendar(db, { year: '1969', time: '0617' }, 'light', {})).rejects.toMatchObject({
+      status: 404,
+    })
+  })
+
+  it('throws 404 for a year above the supported window', async () => {
+    const serveCalendar = await importServeCalendar()
+    await expect(serveCalendar(db, { year: '2101', time: '0617' }, 'light', {})).rejects.toMatchObject({
+      status: 404,
+    })
+  })
+
+  it('serves the window edges (1970 and 2100)', async () => {
+    const through = vi.fn().mockResolvedValue(Buffer.from('png-bytes'))
+    vi.doMock('@/server/infra/http/status', () => ({
+      pngResponse: vi.fn(
+        (buffer: Buffer) => new Response(new Uint8Array(buffer), { headers: { 'Content-Type': 'image/png' } }),
+      ),
+    }))
+    vi.doMock('@/server/infra/cache/registry', () => ({ through }))
+    vi.doMock('@/server/render/calendar/render', () => ({
+      renderCalendar: vi.fn().mockResolvedValue(Buffer.from('png-bytes')),
+    }))
+
+    const serveCalendar = await importServeCalendar()
+    for (const year of ['1970', '2100']) {
+      const res = await serveCalendar(db, { year, time: '0617' }, 'light', {})
+      expect(res.status).toBe(200)
+    }
+  })
+
   it('throws 404 for a date that rolls over', async () => {
     const serveCalendar = await importServeCalendar()
     await expect(serveCalendar(db, { year: '2026', time: '1399' }, 'light', {})).rejects.toMatchObject({

@@ -162,6 +162,13 @@ describe('images resource', () => {
     expect(res.status).toBe(404)
   })
 
+  it('rejects a calendar year outside the supported window with a 404', async () => {
+    // The PNG render is expensive and cache-keyed by date — the year window
+    // bounds how many distinct renders a client can ask for.
+    expect((await requestImages('http://localhost/images/calendar/1969/0424.png')).status).toBe(404)
+    expect((await requestImages('http://localhost/images/calendar/dark/2101/0424.png')).status).toBe(404)
+  })
+
   it('maps a png outcome to a 200 image/png response', async () => {
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'png', buffer: Buffer.from('av') })
     const res = await requestImages('http://localhost/images/avatar/abc.png')

@@ -157,8 +157,13 @@ export const contentCommentsByKeyInputSchema = z.object({
 
 export const contentCommentsByKeyOutputSchema = z.custom<DetailPageComments>()
 
+// The keyword drives a full-corpus LIKE scan (three leading-wildcard patterns)
+// and becomes a cache key + audit detail — cap it. Empty stays legal: the
+// loader bounces a blank keyword to `/` (and skips the audit row).
+export const SEARCH_KEYWORD_MAX_LENGTH = 200
+
 export const contentSearchInputSchema = z.object({
-  keyword: z.string().optional(),
+  keyword: z.string().trim().max(SEARCH_KEYWORD_MAX_LENGTH).optional(),
   num: z.string().optional(),
 })
 

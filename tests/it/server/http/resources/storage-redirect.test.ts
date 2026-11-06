@@ -79,6 +79,32 @@ describe('storage redirect — site-owned /storage/* URLs', () => {
     expect(res.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?w=abc&h=150&v=123')
   })
 
+  it('clamps dimensions: 4096 is substituted, 4097 is ignored', async () => {
+    withStorage({ urlTemplate: '!{width}x{height}' })
+    const atLimit = await localStorageRouter.request('/storage/images/a.jpg?w=4096&h=4096')
+    expect(atLimit.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg!4096x4096')
+
+    // Out of range → no transform; the query string rides along untouched.
+    const overLimit = await localStorageRouter.request('/storage/images/a.jpg?w=4097&h=4096')
+    expect(overLimit.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?w=4097&h=4096')
+
+    // Leading zeros can't smuggle a zero dimension past the floor.
+    const zero = await localStorageRouter.request('/storage/images/a.jpg?w=0000&h=4096')
+    expect(zero.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?w=0000&h=4096')
+  })
+
+  it('clamps quality: out-of-range q falls back to the default 100', async () => {
+    withStorage({ urlTemplate: '{src}?q={quality}' })
+    const tooHigh = await localStorageRouter.request('/storage/images/a.jpg?w=640&h=360&q=101')
+    expect(tooHigh.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?q=100')
+
+    const atLimit = await localStorageRouter.request('/storage/images/a.jpg?w=640&h=360&q=100')
+    expect(atLimit.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?q=100')
+
+    const zero = await localStorageRouter.request('/storage/images/a.jpg?w=640&h=360&q=0')
+    expect(zero.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?q=100')
+  })
+
   it('still streams local bytes when S3 is disabled', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,

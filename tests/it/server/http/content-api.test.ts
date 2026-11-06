@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
@@ -13,6 +14,7 @@ import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { weakEtag } from '@/server/infra/http/etag'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 // The `content.*` read procedures over the real RPCHandler JSON round-trip:
 // union signals (redirect / not-modified), NOT_FOUNDs, and happy-path payloads.
@@ -110,6 +112,14 @@ async function seedPage(
 }
 
 type RpcError = { code: string; status: number; message: string }
+
+/** Shrink the `resourceIp` bucket so the second hit in a window trips. */
+function seedSingleAttemptResourceBucket() {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    rateLimit: { ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!, resourceIp: { windowSeconds: 60, maxAttempts: 1 } },
+  })
+}
 
 describe('content.bootstrap', () => {
   it('returns the root data segment (identity, redacted bundle, fonts, csrf token)', async () => {
@@ -494,6 +504,21 @@ describe('content.search', () => {
 
     expect(json).toEqual({ kind: 'redirect', to: '/search/react/page/2', status: 302 })
   })
+
+  it('rejects a keyword over the contract cap before any scan', async () => {
+    const res = await callRpc('/content/search', { keyword: 'x'.repeat(201) }, makePublicCtx({ db }))
+    expect(res.status).toBe(400)
+  })
+
+  it('throttles through the shared resource bucket', async () => {
+    __resetRateLimitsForTests()
+    seedSingleAttemptResourceBucket()
+
+    expect((await callRpc('/content/search', { keyword: 'react' }, makePublicCtx({ db }))).status).toBe(200)
+    const throttled = await callRpc('/content/search', { keyword: 'react' }, makePublicCtx({ db }))
+    expect(throttled.status).toBe(429)
+    await expect(throttled.text()).resolves.toContain('TOO_MANY_REQUESTS')
+  })
 })
 
 describe('content.categories.list', () => {
@@ -533,5 +558,15 @@ describe('content.archives', () => {
 
     expect(json.resolvedPosts.map((p) => p.slug)).toEqual(['visible-post', 'hidden-post'])
     expect(json.listingNowIso).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  it('throttles the 10k-post fan-out through the shared resource bucket', async () => {
+    __resetRateLimitsForTests()
+    seedSingleAttemptResourceBucket()
+
+    expect((await callRpc('/content/archives', undefined, makePublicCtx({ db }))).status).toBe(200)
+    const throttled = await callRpc('/content/archives', undefined, makePublicCtx({ db }))
+    expect(throttled.status).toBe(429)
+    await expect(throttled.text()).resolves.toContain('TOO_MANY_REQUESTS')
   })
 })
