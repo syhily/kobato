@@ -19,7 +19,7 @@ describe('settings/sections/mail', () => {
   })
 
   it('defaults transport to "zeabur" when omitted', () => {
-    const result = mailSchema.safeParse({ mail: { enabled: false, host: 'h', sender: '' } })
+    const result = mailSchema.safeParse({ mail: { enabled: false, host: 'mail.example.com', sender: '' } })
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.mail.transport).toBe('zeabur')
@@ -27,17 +27,19 @@ describe('settings/sections/mail', () => {
   })
 
   it('accepts empty string as a valid sender (no reply address)', () => {
-    expect(mailSchema.safeParse({ mail: { enabled: false, host: 'h', sender: '' } }).success).toBe(true)
+    expect(mailSchema.safeParse({ mail: { enabled: false, host: 'mail.example.com', sender: '' } }).success).toBe(true)
   })
 
   it('rejects an invalid sender email', () => {
-    expect(mailSchema.safeParse({ mail: { enabled: false, host: 'h', sender: 'not-an-email' } }).success).toBe(false)
+    expect(
+      mailSchema.safeParse({ mail: { enabled: false, host: 'mail.example.com', sender: 'not-an-email' } }).success,
+    ).toBe(false)
   })
 
   it('rejects an unknown transport', () => {
     expect(
       mailSchema.safeParse({
-        mail: { enabled: false, host: 'h', sender: '', transport: 'sendgrid' },
+        mail: { enabled: false, host: 'mail.example.com', sender: '', transport: 'sendgrid' },
       }).success,
     ).toBe(false)
   })
