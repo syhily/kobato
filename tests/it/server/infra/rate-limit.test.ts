@@ -30,7 +30,7 @@ describe('server/rate-limit — config-driven thresholds', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        likeIncreaseIp: { windowSeconds: 120, maxAttempts: 2 },
+        like: { windowSeconds: 120, maxAttempts: 2 },
       },
     })
 
@@ -53,7 +53,7 @@ describe('server/rate-limit — config-driven thresholds', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        signInIp: { windowSeconds: 60, maxAttempts: 3 },
+        signIn: { windowSeconds: 60, maxAttempts: 3 },
       },
     })
     expect((await tryRateLimit('5.5.5.5')).exceeded).toBe(false)
@@ -66,7 +66,7 @@ describe('server/rate-limit — config-driven thresholds', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        signInIp: { windowSeconds: 60, maxAttempts: 1 },
+        signIn: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
     // Counter for `5.5.5.5` is already at 4 — over the new cap of 1.

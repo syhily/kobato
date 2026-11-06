@@ -78,11 +78,11 @@ describe('client/api/client — error interceptor', () => {
 
   it('folds a rejection’s zod-issue list into the error message', async () => {
     const err = Object.assign(new Error('设置数据无效'), {
-      data: [{ message: '最大尝试次数不能超过 1000', path: ['resourceIp', 'maxAttempts'] }],
+      data: [{ message: '最大尝试次数不能超过 1000', path: ['resource', 'maxAttempts'] }],
     })
     const interceptor = lastInterceptors.current[0]!
     await expect(interceptor({ next: () => Promise.reject(err) })).rejects.toBe(err)
-    expect(err.message).toBe('设置数据无效：resourceIp.maxAttempts：最大尝试次数不能超过 1000')
+    expect(err.message).toBe('设置数据无效：resource.maxAttempts：最大尝试次数不能超过 1000')
   })
 
   it('rethrows issue-less errors untouched', async () => {

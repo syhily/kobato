@@ -10,13 +10,13 @@ import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie } from '@/shared/utils/comment-token'
 
-/** Shrink the `resourceIp` bucket so the second hit in a window trips. */
+/** Shrink the `resource` bucket so the second hit in a window trips. */
 function seedSingleAttemptResourceBucket() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
     rateLimit: {
       ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-      resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+      resource: { windowSeconds: 60, maxAttempts: 1 },
     },
   })
 }

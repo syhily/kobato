@@ -6,7 +6,7 @@ import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { through } from '@/server/infra/cache/registry'
 import { buildSitemapXml } from '@/server/render/seo/sitemap'
 
-export const sitemapRouter = new Hono<Env>().get('/sitemap.xml', rateLimitByIp('sitemap', 'resourceIp'), async (c) => {
+export const sitemapRouter = new Hono<Env>().get('/sitemap.xml', rateLimitByIp('sitemap', 'resource'), async (c) => {
   const xml = await through(c.var.requestContext.db, 'sitemap', {}, () => buildSitemapXml(c.var.requestContext.db))
   c.header('Content-Type', 'application/xml; charset=utf-8')
   c.header('Cache-Control', 'public, max-age=3600')

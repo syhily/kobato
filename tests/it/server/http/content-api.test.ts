@@ -113,11 +113,11 @@ async function seedPage(
 
 type RpcError = { code: string; status: number; message: string }
 
-/** Shrink the `resourceIp` bucket so the second hit in a window trips. */
+/** Shrink the `resource` bucket so the second hit in a window trips. */
 function seedSingleAttemptResourceBucket() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
-    rateLimit: { ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!, resourceIp: { windowSeconds: 60, maxAttempts: 1 } },
+    rateLimit: { ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!, resource: { windowSeconds: 60, maxAttempts: 1 } },
   })
 }
 

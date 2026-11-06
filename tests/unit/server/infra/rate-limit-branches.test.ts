@@ -135,7 +135,7 @@ describe('rate-limit — window + exceed branches', () => {
   })
 
   it('reports exceeded=true when the count strictly exceeds maxAttempts', async () => {
-    // resourceIp default maxAttempts is 60; the 61st hit trips.
+    // resource default maxAttempts is 60; the 61st hit trips.
     for (let i = 0; i < 60; i += 1) {
       expect((await tryResourceRateLimit('8.8.8.8')).exceeded).toBe(false)
     }
@@ -147,13 +147,15 @@ describe('rate-limit — window + exceed branches', () => {
   })
 
   it('reports exceeded=false exactly at the threshold (count === maxAttempts)', async () => {
-    // inviteEmail has maxAttempts=1; count of 1 is allowed (strict >).
+    // invite default maxAttempts is 3; counts 1-3 are allowed (strict >).
     expect(await tryInviteByEmailRateLimit(7, 'a@b.c')).toEqual({ count: 1, exceeded: false })
+    expect((await tryInviteByEmailRateLimit(7, 'a@b.c')).exceeded).toBe(false)
+    expect((await tryInviteByEmailRateLimit(7, 'a@b.c')).exceeded).toBe(false)
     expect((await tryInviteByEmailRateLimit(7, 'a@b.c')).exceeded).toBe(true)
   })
 
   it('applies the settings-driven windowSeconds to the window length', async () => {
-    // resourceIp fixture windowSeconds is 60: t+59s shares the window, t+61s starts fresh.
+    // resource fixture windowSeconds is 60: t+59s shares the window, t+61s starts fresh.
     expect((await tryResourceRateLimit('10.0.0.1')).count).toBe(1)
     vi.setSystemTime(T0 + 59_000)
     expect((await tryResourceRateLimit('10.0.0.1')).count).toBe(2)

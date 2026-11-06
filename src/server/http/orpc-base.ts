@@ -90,7 +90,7 @@ function requireRole(role: Role) {
   })
 }
 
-// Rate-limit guard for expensive public procedures — `resourceIp` bucket; Hono routes use `rateLimitByIp`.
+// Rate-limit guard for expensive public procedures — `resource` bucket; Hono routes use `rateLimitByIp`.
 export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   const { exceeded } = await tryResourceRateLimit(context.clientAddress)
   if (exceeded) {

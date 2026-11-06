@@ -40,11 +40,9 @@ const SHUTDOWN_TIMEOUT_MS = 15_000
 function relaxRateLimitsForE2e(databasePath: string) {
   const relaxed = {
     ...rateLimitDefaults,
-    signInIp: { windowSeconds: 60 * 30, maxAttempts: 100 },
-    signInEmail: { windowSeconds: 60 * 30, maxAttempts: 100 },
-    otpSendIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    otpSendEmail: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    resourceIp: { windowSeconds: 60, maxAttempts: 1000 },
+    signIn: { windowSeconds: 60 * 30, maxAttempts: 100 },
+    otpSend: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    resource: { windowSeconds: 60, maxAttempts: 1000 },
   }
   const db = new DatabaseSync(databasePath)
   try {

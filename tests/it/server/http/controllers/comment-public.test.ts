@@ -136,7 +136,7 @@ describe('likesRouter.increase', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        likeIncreaseIp: { windowSeconds: 60, maxAttempts: 0 },
+        like: { windowSeconds: 60, maxAttempts: 0 },
       },
     })
     const ctx = makePublicCtx({ db, clientAddress: '1.2.3.4' })
@@ -248,7 +248,7 @@ describe('commentsRouter.replyComment', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        commentPostIp: { windowSeconds: 60, maxAttempts: 0 },
+        comment: { windowSeconds: 60, maxAttempts: 0 },
       },
     })
     try {
@@ -341,7 +341,7 @@ describe('commentsRouter.edit', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        resourceIp: { windowSeconds: 60, maxAttempts: 0 },
+        resource: { windowSeconds: 60, maxAttempts: 0 },
       },
     })
     try {

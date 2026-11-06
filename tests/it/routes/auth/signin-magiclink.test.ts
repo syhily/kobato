@@ -62,9 +62,8 @@ const MAGIC_LINK_TEST_BUNDLE = {
   },
   rateLimit: {
     ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit,
-    signInIp: { windowSeconds: 60, maxAttempts: 10 },
-    otpSendIp: { windowSeconds: 60, maxAttempts: 3 },
-    otpSendEmail: { windowSeconds: 60, maxAttempts: 10 },
+    signIn: { windowSeconds: 60, maxAttempts: 10 },
+    otpSend: { windowSeconds: 60, maxAttempts: 3 },
   },
 } as BlogSettingsBundle
 

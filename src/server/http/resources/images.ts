@@ -117,7 +117,7 @@ function stripPng(filename: string | undefined): string {
 
 // Per-route limiter, never router-level `.use()` — mounted at `/`, a bare
 // `.use()` would rate-limit every public SSR page view against the images bucket.
-const imagesRateLimit = rateLimitByIp('images', 'resourceIp')
+const imagesRateLimit = rateLimitByIp('images', 'resource')
 
 export const imagesRouter = new Hono<Env>()
   .get('/images/og/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([postOgAdapter, pageOgAdapter]))

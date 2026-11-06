@@ -44,7 +44,7 @@ async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: 
 // Scope is known at compile time per handler; the per-IP resource limiter
 // guards all feeds. Passed per route, NEVER router-level `.use()` — mounted
 // at `/`, a bare `.use()` would count every SSR page view against the bucket.
-const feedRateLimit = rateLimitByIp('feed', 'resourceIp')
+const feedRateLimit = rateLimitByIp('feed', 'resource')
 
 export const feedRouter = new Hono<Env>()
   .get('/feed', feedRateLimit, (c) => writeFeedResponse(c, 'rss'))

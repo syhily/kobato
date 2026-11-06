@@ -218,7 +218,7 @@ describe('account controller', () => {
     })
 
     it('rejects with TOO_MANY_REQUESTS when the rate limit is exceeded', async () => {
-      setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signInIp', 1))
+      setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signIn', 1))
       const id = await seedUser({ password: await bcrypt.hash('OldPass1234', 4) })
       const ip = nextIp()
 
@@ -331,7 +331,7 @@ describe('account controller', () => {
     })
 
     it('throws TOO_MANY_REQUESTS when rate-limited', async () => {
-      setBlogSettingsBundleForTests(withBucket(PASSKEY_ON, 'passkeyRegisterBeginIp', 1))
+      setBlogSettingsBundleForTests(withBucket(PASSKEY_ON, 'passkeyManage', 1))
       const id = await seedUser()
       const ip = nextIp()
       swaMocks.generateRegistrationOptions.mockResolvedValue({ challenge: 'reg-rl' })
@@ -384,7 +384,7 @@ describe('account controller', () => {
     })
 
     it('throws TOO_MANY_REQUESTS when rate-limited', async () => {
-      setBlogSettingsBundleForTests(withBucket(PASSKEY_ON, 'passkeyRegisterFinishIp', 1))
+      setBlogSettingsBundleForTests(withBucket(PASSKEY_ON, 'passkeyManage', 1))
       const id = await seedUser()
       const ip = nextIp()
 
@@ -553,7 +553,7 @@ describe('account controller', () => {
     })
 
     it('throws TOO_MANY_REQUESTS when rate-limited', async () => {
-      setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'passkeySetForceIp', 1))
+      setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'passkeyManage', 1))
       const id = await seedUser()
       const ip = nextIp()
 

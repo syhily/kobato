@@ -126,7 +126,7 @@ describe('images resource', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+        resource: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
     // Several hits past the bucket ceiling — none may count against it.

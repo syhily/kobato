@@ -17,7 +17,7 @@ const MAX_FORM_BODY_BYTES = 16 * 1024
 // shape-only check + enqueue, 202 at once (docs/plans/2026-08-02-webmention-async-inbox-design.md).
 export const webmentionRouter = new Hono<Env>().post(
   '/webmention',
-  rateLimitByIp('webmention', 'resourceIp'),
+  rateLimitByIp('webmention', 'resource'),
   dynamicBodyLimit({
     maxSize: MAX_FORM_BODY_BYTES,
     onError: (c) => c.json({ error: { message: 'Payload too large' } }, 413),

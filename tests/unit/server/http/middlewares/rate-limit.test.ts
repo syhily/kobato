@@ -32,7 +32,7 @@ function seedSingleAttemptResourceBucket() {
     ...TEST_BLOG_SETTINGS_BUNDLE,
     rateLimit: {
       ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-      resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+      resource: { windowSeconds: 60, maxAttempts: 1 },
     },
   })
 }
@@ -43,7 +43,7 @@ describe('rateLimitByIp middleware', () => {
   })
 
   it('passes through under the budget, keying the counter on the client IP', async () => {
-    const res = await buildApp('feed', 'resourceIp').request('/ping')
+    const res = await buildApp('feed', 'resource').request('/ping')
 
     expect(res.status).toBe(200)
     await expect(res.text()).resolves.toBe('pong')
@@ -52,14 +52,14 @@ describe('rateLimitByIp middleware', () => {
 
   // V3-09: bucket key must follow the `port:<n>` per-connection discriminator.
   it('keys the bucket on the per-connection port when the peer IP is unknown', async () => {
-    const res = await buildAppWithAddress('port:43210', 'feed', 'resourceIp').request('/ping')
+    const res = await buildAppWithAddress('port:43210', 'feed', 'resource').request('/ping')
 
     expect(res.status).toBe(200)
     expect(__rateLimitKeysForTests()).toEqual(['rate-limit:feed:port:43210'])
   })
 
   it('falls back to the shared unknown bucket when neither IP nor port is known', async () => {
-    const res = await buildAppWithAddress('unknown', 'feed', 'resourceIp').request('/ping')
+    const res = await buildAppWithAddress('unknown', 'feed', 'resource').request('/ping')
 
     expect(res.status).toBe(200)
     expect(__rateLimitKeysForTests()).toEqual(['rate-limit:feed:unknown'])
@@ -67,7 +67,7 @@ describe('rateLimitByIp middleware', () => {
 
   it('answers 429 with the default HTTPException shape when exceeded', async () => {
     seedSingleAttemptResourceBucket()
-    const app = buildApp('setupRestore', 'resourceIp')
+    const app = buildApp('setupRestore', 'resource')
     expect((await app.request('/ping')).status).toBe(200)
 
     const res = await app.request('/ping')

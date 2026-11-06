@@ -87,7 +87,7 @@ describe('feed resource', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+        resource: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
     expect((await requestFeed('http://localhost/feed')).status).toBe(200)
@@ -103,7 +103,7 @@ describe('feed resource', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+        resource: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
     // Several hits past the bucket ceiling — none may count against it.

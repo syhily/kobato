@@ -175,13 +175,12 @@ describe('admin users-admin controller', () => {
   })
 
   it('rejects an invite when rate limited', async () => {
-    // inviteIp: 1 / inviteEmail: 100 — the 429 must be attributable to the IP guard.
+    // invite: 1 — the second invite exhausts the shared bucket and gets a 429.
     withMailEnabled({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        inviteIp: { windowSeconds: 60, maxAttempts: 1 },
-        inviteEmail: { windowSeconds: 60, maxAttempts: 100 },
+        invite: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
     const fetchMock = installFetch()

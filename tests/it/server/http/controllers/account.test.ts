@@ -183,7 +183,7 @@ describe('accountRouter.updatePassword', () => {
   })
 
   it('throws TOO_MANY_REQUESTS when the rate limit is exceeded', async () => {
-    setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signInIp', 1))
+    setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signIn', 1))
     const id = await seedUser({ password: await bcrypt.hash('OldPass1234', 4) })
     const ip = nextIp()
 

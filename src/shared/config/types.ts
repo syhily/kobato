@@ -231,28 +231,22 @@ export interface RateLimitBucket {
   maxAttempts: number
 }
 
+// One bucket per scenario; the per-IP and per-email counters of a scenario
+// share its (window, maxAttempts) — the legacy per-dimension twins
+// (`signInIp`/`signInEmail`, …) were merged so the settings surface stays
+// manageable. `rate-limit-bucket.ts` upgrades legacy stored rows on parse.
 export interface RateLimitSettings {
-  signInIp: RateLimitBucket
-  commentPostIp: RateLimitBucket
-  commentPostEmail: RateLimitBucket
-  likeIncreaseIp: RateLimitBucket
-  inviteIp: RateLimitBucket
-  inviteEmail: RateLimitBucket
-  passwordResetIp: RateLimitBucket
-  passwordResetEmail: RateLimitBucket
+  signIn: RateLimitBucket
+  otpSend: RateLimitBucket
+  otpVerify: RateLimitBucket
+  passwordReset: RateLimitBucket
   passwordResetTarget: RateLimitBucket
-  resourceIp: RateLimitBucket
-  otpSendIp: RateLimitBucket
-  otpSendEmail: RateLimitBucket
-  otpVerifyIp: RateLimitBucket
-  otpVerifyEmail: RateLimitBucket
-  signInEmail: RateLimitBucket
-  passkeyAuthBeginIp: RateLimitBucket
-  passkeyAuthFinishIp: RateLimitBucket
-  passkeyRegisterBeginIp: RateLimitBucket
-  passkeyRegisterFinishIp: RateLimitBucket
-  passkeySetForceIp: RateLimitBucket
-  passkeyDeleteIp: RateLimitBucket
+  comment: RateLimitBucket
+  like: RateLimitBucket
+  invite: RateLimitBucket
+  resource: RateLimitBucket
+  passkeyAuth: RateLimitBucket
+  passkeyManage: RateLimitBucket
 }
 
 export interface FontsSettings {

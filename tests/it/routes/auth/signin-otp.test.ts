@@ -58,11 +58,9 @@ const OTP_TEST_BUNDLE = {
   },
   rateLimit: {
     ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit,
-    signInIp: { windowSeconds: 60, maxAttempts: 10 },
-    otpSendIp: { windowSeconds: 60, maxAttempts: 3 },
-    otpSendEmail: { windowSeconds: 60, maxAttempts: 10 },
-    otpVerifyIp: { windowSeconds: 60, maxAttempts: 10 },
-    otpVerifyEmail: { windowSeconds: 60, maxAttempts: 10 },
+    signIn: { windowSeconds: 60, maxAttempts: 10 },
+    otpSend: { windowSeconds: 60, maxAttempts: 3 },
+    otpVerify: { windowSeconds: 60, maxAttempts: 10 },
   },
 } as BlogSettingsBundle
 
@@ -400,7 +398,7 @@ describe('integration: OTP login flow (real DB)', () => {
     // Use a unique IP so parallel tests don't share the same rate-limit bucket.
     const uniqueIp = '127.0.0.99'
 
-    // Send OTP 3 times (maxAttempts=3 for otpSendIp)
+    // Send OTP 3 times (maxAttempts=3 for otpSend)
     for (let i = 0; i < 3; i++) {
       await callAction(null, loginFormData(), '/admin', uniqueIp)
       testSession.unset('pendingOtpUser')

@@ -1,14 +1,20 @@
-import { ChevronDownIcon, InfoIcon } from 'lucide-react'
-import { Fragment, useState } from 'react'
+import { ChevronDownIcon, InfoIcon, RotateCcwIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useWatch, type UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 
-import type { RateLimitSettings } from '@/shared/config/types'
+import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/types'
 
-import { rateLimitBounds } from '@/shared/config/defaults'
+import { rateLimitBounds, rateLimitDefaults } from '@/shared/config/defaults'
 import { rateLimitBucketSchema } from '@/shared/config/rate-limit-bucket'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import { BUCKET_META, GROUPS, type BucketKey } from '@/ui/admin/settings/rate-limit/constants'
+import {
+  ADVANCED_GROUPS,
+  ALL_KEYS,
+  BUCKET_META,
+  COMMON_KEYS,
+  type BucketKey,
+} from '@/ui/admin/settings/rate-limit/constants'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
@@ -136,6 +142,91 @@ function AttemptsEditCell({
   )
 }
 
+function BucketRow({
+  bucketKey,
+  form,
+  flushOnBlur,
+}: {
+  bucketKey: BucketKey
+  form: UseFormReturn<RateLimitSettings>
+  flushOnBlur: () => void
+}) {
+  const windowSeconds = useWatch({ control: form.control, name: `${bucketKey}.windowSeconds` })
+  const maxAttempts = useWatch({ control: form.control, name: `${bucketKey}.maxAttempts` })
+  const defaults: RateLimitBucket = rateLimitDefaults[bucketKey]
+  const isDefault = windowSeconds === defaults.windowSeconds && maxAttempts === defaults.maxAttempts
+
+  const resetToDefaults = () => {
+    form.setValue(`${bucketKey}.windowSeconds`, defaults.windowSeconds, { shouldDirty: true, shouldValidate: true })
+    form.setValue(`${bucketKey}.maxAttempts`, defaults.maxAttempts, { shouldDirty: true, shouldValidate: true })
+    flushOnBlur()
+  }
+
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{BUCKET_META[bucketKey].title}</span>
+          <Popover>
+            <PopoverTrigger className="inline-flex cursor-help">
+              <InfoIcon className="size-3.5 text-muted-foreground" />
+            </PopoverTrigger>
+            <PopoverContent side="top" className="w-max max-w-xs px-3 py-2 text-xs">
+              {BUCKET_META[bucketKey].description}
+            </PopoverContent>
+          </Popover>
+        </div>
+      </TableCell>
+      <TableCell>
+        <WindowEditCell bucketKey={bucketKey} form={form} flushOnBlur={flushOnBlur} />
+      </TableCell>
+      <TableCell className="text-right">
+        <AttemptsEditCell bucketKey={bucketKey} form={form} flushOnBlur={flushOnBlur} />
+      </TableCell>
+      <TableCell className="w-10 text-right">
+        <button
+          type="button"
+          onClick={resetToDefaults}
+          disabled={isDefault}
+          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+          aria-label={`重置${BUCKET_META[bucketKey].title}为默认值`}
+          title="重置为默认值"
+        >
+          <RotateCcwIcon className="size-3.5" />
+        </button>
+      </TableCell>
+    </TableRow>
+  )
+}
+
+function BucketTable({
+  keys,
+  form,
+  flushOnBlur,
+}: {
+  keys: readonly BucketKey[]
+  form: UseFormReturn<RateLimitSettings>
+  flushOnBlur: () => void
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="min-w-[140px]">场景</TableHead>
+          <TableHead>时间窗口</TableHead>
+          <TableHead className="w-24 text-right">最大尝试次数</TableHead>
+          <TableHead className="w-10" />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {keys.map((key) => (
+          <BucketRow key={key} bucketKey={key} form={form} flushOnBlur={flushOnBlur} />
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
 export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<RateLimitSettings, RateLimitSettings>({
     section: 'rateLimit',
@@ -145,56 +236,51 @@ export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
     fromState: (state) => ({ ...state }),
     schema: rateLimitFormSchema,
   })
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const resetAllToDefaults = () => {
+    for (const key of ALL_KEYS) {
+      form.setValue(key, { ...rateLimitDefaults[key] }, { shouldDirty: true, shouldValidate: true })
+    }
+    flushOnBlur()
+  }
 
   return (
     <SettingGroup
       title="流控设置"
-      description="各业务场景的限流策略配置。时间窗口内超过最大尝试次数的请求将被拒绝。"
+      description="各业务场景的限流策略。同一场景的按 IP / 按邮箱计数共用一组配置；时间窗口内超过最大尝试次数的请求将被拒绝。"
+      actions={
+        <button
+          type="button"
+          onClick={resetAllToDefaults}
+          className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <RotateCcwIcon className="size-3.5" />
+          全部恢复默认
+        </button>
+      }
       {...settingGroupProps}
     >
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="min-w-[140px]">场景</TableHead>
-            <TableHead>时间窗口</TableHead>
-            <TableHead className="w-24 text-right">最大尝试次数</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {GROUPS.map((group) => (
-            <Fragment key={group.label}>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableCell colSpan={3} className="font-medium text-muted-foreground">
-                  {group.label}
-                </TableCell>
-              </TableRow>
-              {group.keys.map((key) => (
-                <TableRow key={key}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{BUCKET_META[key].title}</span>
-                      <Popover>
-                        <PopoverTrigger className="inline-flex cursor-help">
-                          <InfoIcon className="size-3.5 text-muted-foreground" />
-                        </PopoverTrigger>
-                        <PopoverContent side="top" className="w-max max-w-xs px-3 py-2 text-xs">
-                          {BUCKET_META[key].description}
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <WindowEditCell bucketKey={key} form={form} flushOnBlur={flushOnBlur} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <AttemptsEditCell bucketKey={key} form={form} flushOnBlur={flushOnBlur} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </Fragment>
+      <BucketTable keys={COMMON_KEYS} form={form} flushOnBlur={flushOnBlur} />
+
+      <div className="flex flex-col gap-4">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((open) => !open)}
+          aria-expanded={showAdvanced}
+          className="flex items-center gap-1.5 self-start text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronDownIcon className={cn('size-4 transition-transform', !showAdvanced && '-rotate-90')} />
+          高级选项（{ADVANCED_GROUPS.reduce((count, group) => count + group.keys.length, 0)} 项）
+        </button>
+        {showAdvanced &&
+          ADVANCED_GROUPS.map((group) => (
+            <div key={group.label} className="flex flex-col gap-2">
+              <h4 className="text-sm font-medium text-muted-foreground">{group.label}</h4>
+              <BucketTable keys={group.keys} form={form} flushOnBlur={flushOnBlur} />
+            </div>
           ))}
-        </TableBody>
-      </Table>
+      </div>
     </SettingGroup>
   )
 }

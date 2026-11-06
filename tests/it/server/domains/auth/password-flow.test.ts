@@ -53,12 +53,12 @@ const GENERIC = '如果该邮箱存在且符合要求，重置邮件已发送。
 const hasApprovedComments = vi.fn(async (_db: unknown, _userId: number) => false)
 const resetDeps = { hasApprovedComments }
 
-function withResetBucket(bucket: 'passwordResetIp' | 'passwordResetEmail', maxAttempts: number): BlogSettingsBundle {
+function withResetBucket(maxAttempts: number): BlogSettingsBundle {
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,
     rateLimit: {
       ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-      [bucket]: { windowSeconds: 60, maxAttempts },
+      passwordReset: { windowSeconds: 60, maxAttempts },
     },
   } as BlogSettingsBundle
 }
@@ -133,7 +133,7 @@ afterEach(async () => {
 
 describe('auth/password-flow — requestPasswordReset (real db + tokens)', () => {
   it('short-circuits with the generic success when the per-IP limit trips (no token, no email, no audit)', async () => {
-    setBlogSettingsBundleForTests(withResetBucket('passwordResetIp', 1))
+    setBlogSettingsBundleForTests(withResetBucket(1))
     const userId = await seedUser({ email: 'a@example.com' })
 
     // First reach consumes the single-slot budget.
@@ -151,7 +151,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
   })
 
   it('short-circuits with the generic success when the per-email limit trips', async () => {
-    setBlogSettingsBundleForTests(withResetBucket('passwordResetEmail', 1))
+    setBlogSettingsBundleForTests(withResetBucket(1))
     await seedUser({ email: 'a@example.com' })
 
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)

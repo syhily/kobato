@@ -109,27 +109,17 @@ const fixtureBundle: BlogSettingsBundle = {
     },
   },
   rateLimit: {
-    signInIp: { windowSeconds: 60 * 30, maxAttempts: 5 },
-    commentPostIp: { windowSeconds: 60 * 60, maxAttempts: 12 },
-    commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
-    likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
-    inviteIp: { windowSeconds: 60 * 60, maxAttempts: 5 },
-    inviteEmail: { windowSeconds: 60 * 60, maxAttempts: 1 },
-    passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
-    passwordResetEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
+    signIn: { windowSeconds: 60 * 30, maxAttempts: 5 },
+    otpSend: { windowSeconds: 60 * 5, maxAttempts: 3 },
+    otpVerify: { windowSeconds: 60 * 5, maxAttempts: 5 },
+    passwordReset: { windowSeconds: 60 * 30, maxAttempts: 3 },
     passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
-    resourceIp: { windowSeconds: 60, maxAttempts: 60 },
-    otpSendIp: { windowSeconds: 60 * 5, maxAttempts: 3 },
-    otpSendEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
-    otpVerifyIp: { windowSeconds: 60 * 5, maxAttempts: 5 },
-    otpVerifyEmail: { windowSeconds: 60 * 5, maxAttempts: 5 },
-    signInEmail: { windowSeconds: 60 * 30, maxAttempts: 5 },
-    passkeyAuthBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeyAuthFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeyRegisterBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeyRegisterFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeySetForceIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    comment: { windowSeconds: 60 * 60, maxAttempts: 12 },
+    like: { windowSeconds: 60 * 60, maxAttempts: 30 },
+    invite: { windowSeconds: 60 * 60, maxAttempts: 3 },
+    resource: { windowSeconds: 60, maxAttempts: 60 },
+    passkeyAuth: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    passkeyManage: { windowSeconds: 60 * 5, maxAttempts: 10 },
   },
   fonts: {
     og: { family: '' },
@@ -581,27 +571,17 @@ describe('services/settings — rateLimit section', () => {
       db,
       'rateLimit',
       {
-        signInIp: { windowSeconds: 600, maxAttempts: 3 },
-        signInEmail: { windowSeconds: 60 * 30, maxAttempts: 5 },
-        commentPostIp: { windowSeconds: 60 * 30, maxAttempts: 6 },
-        commentPostEmail: { windowSeconds: 60 * 30, maxAttempts: 4 },
-        likeIncreaseIp: { windowSeconds: 60 * 5, maxAttempts: 100 },
-        inviteIp: { windowSeconds: 60 * 60, maxAttempts: 5 },
-        inviteEmail: { windowSeconds: 60 * 60, maxAttempts: 1 },
-        passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
-        passwordResetEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
+        signIn: { windowSeconds: 600, maxAttempts: 3 },
+        comment: { windowSeconds: 60 * 30, maxAttempts: 4 },
+        like: { windowSeconds: 60 * 5, maxAttempts: 100 },
+        invite: { windowSeconds: 60 * 60, maxAttempts: 1 },
+        passwordReset: { windowSeconds: 60 * 5, maxAttempts: 1 },
         passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
-        resourceIp: { windowSeconds: 60, maxAttempts: 60 },
-        otpSendIp: { windowSeconds: 60 * 5, maxAttempts: 3 },
-        otpSendEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
-        otpVerifyIp: { windowSeconds: 60 * 5, maxAttempts: 5 },
-        otpVerifyEmail: { windowSeconds: 60 * 5, maxAttempts: 5 },
-        passkeyAuthBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-        passkeyAuthFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-        passkeyRegisterBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-        passkeyRegisterFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-        passkeySetForceIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-        passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+        resource: { windowSeconds: 60, maxAttempts: 60 },
+        otpSend: { windowSeconds: 60 * 5, maxAttempts: 1 },
+        otpVerify: { windowSeconds: 60 * 5, maxAttempts: 5 },
+        passkeyAuth: { windowSeconds: 60 * 5, maxAttempts: 10 },
+        passkeyManage: { windowSeconds: 60 * 5, maxAttempts: 10 },
       },
       11,
     )
@@ -609,10 +589,10 @@ describe('services/settings — rateLimit section', () => {
     const row = readRow('blog.rateLimit')
     expect(row.updatedBy).toBe(11)
     expect(row.data).toMatchObject({
-      signInIp: { windowSeconds: 600, maxAttempts: 3 },
-      likeIncreaseIp: { windowSeconds: 60 * 5, maxAttempts: 100 },
+      signIn: { windowSeconds: 600, maxAttempts: 3 },
+      like: { windowSeconds: 60 * 5, maxAttempts: 100 },
     })
-    expect(next.bundle?.rateLimit?.signInIp).toEqual({ windowSeconds: 600, maxAttempts: 3 })
+    expect(next.bundle?.rateLimit?.signIn).toEqual({ windowSeconds: 600, maxAttempts: 3 })
   })
 
   it('rejects a window shorter than 60s', async () => {
@@ -621,12 +601,11 @@ describe('services/settings — rateLimit section', () => {
         db,
         'rateLimit',
         {
-          signInIp: { windowSeconds: 30, maxAttempts: 5 },
-          commentPostIp: { windowSeconds: 3600, maxAttempts: 12 },
-          commentPostEmail: { windowSeconds: 3600, maxAttempts: 8 },
-          likeIncreaseIp: { windowSeconds: 3600, maxAttempts: 30 },
-          inviteIp: { windowSeconds: 3600, maxAttempts: 5 },
-          passwordResetIp: { windowSeconds: 1800, maxAttempts: 3 },
+          signIn: { windowSeconds: 30, maxAttempts: 5 },
+          comment: { windowSeconds: 3600, maxAttempts: 8 },
+          like: { windowSeconds: 3600, maxAttempts: 30 },
+          invite: { windowSeconds: 3600, maxAttempts: 5 },
+          passwordReset: { windowSeconds: 1800, maxAttempts: 3 },
         },
         null,
       ),
@@ -640,12 +619,11 @@ describe('services/settings — rateLimit section', () => {
         db,
         'rateLimit',
         {
-          signInIp: { windowSeconds: 1800, maxAttempts: 5 },
-          commentPostIp: { windowSeconds: 3600, maxAttempts: 12 },
-          commentPostEmail: { windowSeconds: 3600, maxAttempts: 8 },
-          likeIncreaseIp: { windowSeconds: 3600, maxAttempts: 0 },
-          inviteIp: { windowSeconds: 3600, maxAttempts: 5 },
-          passwordResetIp: { windowSeconds: 1800, maxAttempts: 3 },
+          signIn: { windowSeconds: 1800, maxAttempts: 5 },
+          comment: { windowSeconds: 3600, maxAttempts: 8 },
+          like: { windowSeconds: 3600, maxAttempts: 0 },
+          invite: { windowSeconds: 3600, maxAttempts: 5 },
+          passwordReset: { windowSeconds: 1800, maxAttempts: 3 },
         },
         null,
       ),
@@ -660,17 +638,17 @@ describe('services/settings — rateLimit section', () => {
       db,
       'rateLimit',
       {
-        signInIp: { windowSeconds: 600, maxAttempts: 3 },
+        signIn: { windowSeconds: 600, maxAttempts: 3 },
       },
       null,
     )
 
     const row = readRow('blog.rateLimit').data as Record<string, unknown>
     // Patched bucket overwritten; omitted buckets survive from the stored row.
-    expect(row.signInIp).toEqual({ windowSeconds: 600, maxAttempts: 3 })
-    expect(row.commentPostIp).toEqual(fixtureBundle.rateLimit!.commentPostIp)
-    expect(row.likeIncreaseIp).toEqual(fixtureBundle.rateLimit!.likeIncreaseIp)
-    expect(row.passkeyDeleteIp).toEqual(fixtureBundle.rateLimit!.passkeyDeleteIp)
+    expect(row.signIn).toEqual({ windowSeconds: 600, maxAttempts: 3 })
+    expect(row.comment).toEqual(fixtureBundle.rateLimit!.comment)
+    expect(row.like).toEqual(fixtureBundle.rateLimit!.like)
+    expect(row.passkeyManage).toEqual(fixtureBundle.rateLimit!.passkeyManage)
   })
 })
 

@@ -177,7 +177,7 @@ describe('integration / friends apply', () => {
       },
       rateLimit: {
         ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
-        resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+        resource: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
 

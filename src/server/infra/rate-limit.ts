@@ -13,33 +13,11 @@ const log = getLogger('rate-limit')
 // namespace — see `RESERVED_CACHE_PREFIXES` in settings/sections/cache.
 const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 
-const signInKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}signin:${ip}`
-const inviteKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}invite:${ip}`
-const passwordResetKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}password-reset:${ip}`
-const passwordResetTargetKey = (userId: number) => `${RATE_LIMIT_NAMESPACE}password-reset-target:${userId.toString()}`
-const commentPostIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}comment-post:${ip}`
-
 // Hash the email so the raw address never lands in the counter map (SHA-256, 32 hex chars).
 function hashEmail(email: string): string {
   const normalized = email.trim().toLowerCase()
   return createHash('sha256').update(normalized).digest('hex').slice(0, 32)
 }
-
-const commentPostEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}comment-email:${hashEmail(email)}`
-const inviteEmailKey = (adminId: number, email: string) =>
-  `${RATE_LIMIT_NAMESPACE}invite-email:${adminId.toString()}:${hashEmail(email)}`
-const passwordResetEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}password-reset-email:${hashEmail(email)}`
-const likeIncreaseKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}like-increase:${ip}`
-const otpSendIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}otp-send:${ip}`
-const otpSendEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}otp-send-email:${hashEmail(email)}`
-const otpVerifyIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}otp-verify:${ip}`
-const otpVerifyEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}otp-verify-email:${hashEmail(email)}`
-const passkeyAuthBeginIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-auth-begin:${ip}`
-const passkeyAuthFinishIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-auth-finish:${ip}`
-const passkeyRegisterBeginIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-register-begin:${ip}`
-const passkeyRegisterFinishIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-register-finish:${ip}`
-const passkeySetForceIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-set-force:${ip}`
-const passkeyDeleteIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-delete:${ip}`
 
 // Fallbacks used only before the settings snapshot is hydrated; sourced from `rateLimitDefaults`, same payload the install flow seeds.
 const FALLBACK_RATE_LIMITS: RateLimitSettings = rateLimitDefaults
@@ -129,111 +107,77 @@ export function __rateLimitKeysForTests(): string[] {
   return [...entries.keys()]
 }
 
-/**
- * Throttles login attempts by client IP; success and failure both bump the counter.
- */
-export async function tryRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(signInKey(ip), readBucket('signInIp'))
+// Counter dimensions: a scenario's settings bucket feeds one or more counter
+// families (per-IP, per-email, …). The families stay distinct — only the
+// configured (window, maxAttempts) is shared since the twin-bucket merge.
+
+/** Counter keyed by client IP. */
+function byIp(bucket: keyof RateLimitSettings, ns: string) {
+  return (ip: string): Promise<RateLimitResult> =>
+    tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${ip}`, readBucket(bucket))
 }
 
-export async function tryInviteRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(inviteKey(ip), readBucket('inviteIp'))
+/** Counter keyed by hashed email (spam from many IPs, one mailbox). */
+function byEmail(bucket: keyof RateLimitSettings, ns: string) {
+  return (email: string): Promise<RateLimitResult> =>
+    tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${hashEmail(email)}`, readBucket(bucket))
 }
 
-/**
- * Throttles invitations by `(adminId, invitee email)`; additive to
- * {@link tryInviteRateLimit}. Email is hashed before it becomes a key.
- */
-export async function tryInviteByEmailRateLimit(adminId: number, email: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(inviteEmailKey(adminId, email), readBucket('inviteEmail'))
+/** Counter keyed by target user id — per-target, so no admin (even a
+ *  compromised cookie) can carpet-bomb a mailbox. */
+function byUserId(bucket: keyof RateLimitSettings, ns: string) {
+  return (userId: number): Promise<RateLimitResult> =>
+    tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${userId.toString()}`, readBucket(bucket))
 }
 
-export async function tryPasswordResetRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passwordResetKey(ip), readBucket('passwordResetIp'))
+/** Counter keyed by `(adminId, invitee email)`; additive to the per-IP one. */
+function byAdminEmail(bucket: keyof RateLimitSettings, ns: string) {
+  return (adminId: number, email: string): Promise<RateLimitResult> =>
+    tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${adminId.toString()}:${hashEmail(email)}`, readBucket(bucket))
 }
 
-/**
- * Throttles lostpassword submissions by target email; additive to
- * {@link tryPasswordResetRateLimit}. Email is hashed before it becomes a key.
- */
-export async function tryPasswordResetByEmailRateLimit(email: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passwordResetEmailKey(email), readBucket('passwordResetEmail'))
-}
+/** Login attempts by client IP; success and failure both bump the counter. */
+export const tryRateLimit = byIp('signIn', 'signin')
 
-/**
- * Throttles admin-triggered password-reset emails by target user id —
- * per-target, so no admin (even a compromised cookie) can carpet-bomb a mailbox.
- */
-export async function tryPasswordResetByTargetRateLimit(userId: number): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passwordResetTargetKey(userId), readBucket('passwordResetTarget'))
-}
+/** Login attempts by target email; additive to the per-IP one. */
+export const trySignInByEmailRateLimit = byEmail('signIn', 'signin-email')
 
-/** Throttles public comment submissions by IP (independent of login rate limits). */
-export async function tryCommentPostRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(commentPostIpKey(ip), readBucket('commentPostIp'))
-}
+export const tryOtpSendRateLimit = byIp('otpSend', 'otp-send')
+export const tryOtpSendByEmailRateLimit = byEmail('otpSend', 'otp-send-email')
+export const tryOtpVerifyRateLimit = byIp('otpVerify', 'otp-verify')
+export const tryOtpVerifyByEmailRateLimit = byEmail('otpVerify', 'otp-verify-email')
 
-/** Throttles public comment submissions by normalized email (spam from many IPs, one mailbox). */
-export async function tryCommentPostRateLimitByEmail(email: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(commentPostEmailKey(email), readBucket('commentPostEmail'))
-}
+/** Public lostpassword form by client IP. */
+export const tryPasswordResetRateLimit = byIp('passwordReset', 'password-reset')
 
-/**
- * Throttles `like` increases by client IP; cancellation does NOT bump this
- * counter — only fresh inserts add rows, keeping table growth bounded.
- */
-export async function tryLikeIncreaseRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(likeIncreaseKey(ip), readBucket('likeIncreaseIp'))
-}
+/** Public lostpassword form by target email; additive to the per-IP one. */
+export const tryPasswordResetByEmailRateLimit = byEmail('passwordReset', 'password-reset-email')
 
-const resourceKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}resource:${ip}`
+/** Admin-triggered password-reset emails by target user id. */
+export const tryPasswordResetByTargetRateLimit = byUserId('passwordResetTarget', 'password-reset-target')
 
-export async function tryResourceRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(resourceKey(ip), readBucket('resourceIp'))
-}
+/** Public comment submissions by IP (independent of login rate limits). */
+export const tryCommentPostRateLimit = byIp('comment', 'comment-post')
 
-export async function tryOtpSendRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(otpSendIpKey(ip), readBucket('otpSendIp'))
-}
+/** Public comment submissions by author email. */
+export const tryCommentPostRateLimitByEmail = byEmail('comment', 'comment-email')
 
-export async function tryOtpSendByEmailRateLimit(email: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(otpSendEmailKey(email), readBucket('otpSendEmail'))
-}
+/** `like` increases by client IP; cancellation does NOT bump this counter —
+ *  only fresh inserts add rows, keeping table growth bounded. */
+export const tryLikeIncreaseRateLimit = byIp('like', 'like-increase')
 
-export async function tryOtpVerifyRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(otpVerifyIpKey(ip), readBucket('otpVerifyIp'))
-}
+/** Admin invitations by client IP. */
+export const tryInviteRateLimit = byIp('invite', 'invite')
 
-export async function tryOtpVerifyByEmailRateLimit(email: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(otpVerifyEmailKey(email), readBucket('otpVerifyEmail'))
-}
+/** Admin invitations by `(adminId, invitee email)`; additive to the per-IP one. */
+export const tryInviteByEmailRateLimit = byAdminEmail('invite', 'invite-email')
 
-const signInEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}signin-email:${hashEmail(email)}`
+/** Public resources (RSS, sitemap, OG images, avatars) by client IP. */
+export const tryResourceRateLimit = byIp('resource', 'resource')
 
-export async function trySignInByEmailRateLimit(email: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(signInEmailKey(email), readBucket('signInEmail'))
-}
-
-export async function tryPasskeyAuthBeginRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passkeyAuthBeginIpKey(ip), readBucket('passkeyAuthBeginIp'))
-}
-
-export async function tryPasskeyAuthFinishRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passkeyAuthFinishIpKey(ip), readBucket('passkeyAuthFinishIp'))
-}
-
-export async function tryPasskeyRegisterBeginRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passkeyRegisterBeginIpKey(ip), readBucket('passkeyRegisterBeginIp'))
-}
-
-export async function tryPasskeyRegisterFinishRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passkeyRegisterFinishIpKey(ip), readBucket('passkeyRegisterFinishIp'))
-}
-
-export async function tryPasskeySetForceRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passkeySetForceIpKey(ip), readBucket('passkeySetForceIp'))
-}
-
-export async function tryPasskeyDeleteRateLimit(ip: string): Promise<RateLimitResult> {
-  return tryKeyedRateLimit(passkeyDeleteIpKey(ip), readBucket('passkeyDeleteIp'))
-}
+export const tryPasskeyAuthBeginRateLimit = byIp('passkeyAuth', 'passkey-auth-begin')
+export const tryPasskeyAuthFinishRateLimit = byIp('passkeyAuth', 'passkey-auth-finish')
+export const tryPasskeyRegisterBeginRateLimit = byIp('passkeyManage', 'passkey-register-begin')
+export const tryPasskeyRegisterFinishRateLimit = byIp('passkeyManage', 'passkey-register-finish')
+export const tryPasskeySetForceRateLimit = byIp('passkeyManage', 'passkey-set-force')
+export const tryPasskeyDeleteRateLimit = byIp('passkeyManage', 'passkey-delete')

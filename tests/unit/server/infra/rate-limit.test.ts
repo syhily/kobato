@@ -51,13 +51,13 @@ describe('rate-limit', () => {
   it('readBucket prefers live settings and falls back to defaults', () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
-      rateLimit: { ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!, signInIp: sampleBucket },
+      rateLimit: { ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!, signIn: sampleBucket },
     })
-    expect(readBucket('signInIp')).toEqual(sampleBucket)
+    expect(readBucket('signIn')).toEqual(sampleBucket)
 
     // Snapshot not hydrated → the conservative registry defaults apply.
     setBlogSettingsBundleForTests(null)
-    expect(readBucket('signInIp')).toEqual(rateLimitDefaults.signInIp)
+    expect(readBucket('signIn')).toEqual(rateLimitDefaults.signIn)
   })
 
   it('counts post-increment within a window and trips strictly above maxAttempts', async () => {

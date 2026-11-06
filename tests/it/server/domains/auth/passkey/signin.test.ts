@@ -47,7 +47,7 @@ function passkeyFinishBucket(maxAttempts: number): BlogSettingsBundle {
     ...PASSKEY_ON,
     rateLimit: {
       ...PASSKEY_ON.rateLimit!,
-      passkeyAuthFinishIp: { windowSeconds: 60, maxAttempts },
+      passkeyAuth: { windowSeconds: 60, maxAttempts },
     },
   } as BlogSettingsBundle
 }

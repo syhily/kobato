@@ -64,12 +64,9 @@ const MAIL_READY_BUNDLE = {
   },
   rateLimit: {
     ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit,
-    signInIp: { windowSeconds: 60, maxAttempts: 10 },
-    signInEmail: { windowSeconds: 60, maxAttempts: 10 },
-    otpSendIp: { windowSeconds: 60, maxAttempts: 10 },
-    otpSendEmail: { windowSeconds: 60, maxAttempts: 10 },
-    otpVerifyIp: { windowSeconds: 60, maxAttempts: 10 },
-    otpVerifyEmail: { windowSeconds: 60, maxAttempts: 10 },
+    signIn: { windowSeconds: 60, maxAttempts: 10 },
+    otpSend: { windowSeconds: 60, maxAttempts: 10 },
+    otpVerify: { windowSeconds: 60, maxAttempts: 10 },
   },
 } as BlogSettingsBundle
 
@@ -419,7 +416,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
   })
 
   it('blocks OTP send when rate limit is exceeded', async () => {
-    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSendIp', 1))
+    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSend', 1))
     await seedUser()
 
     // First login consumes the single-slot budget and sends.
@@ -524,7 +521,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
   })
 
   it('blocks OTP verify when rate limit is exceeded', async () => {
-    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpVerifyIp', 2))
+    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpVerify', 2))
     const admin = await seedUser()
     const otpCode = await doLogin()
 
@@ -549,7 +546,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
   })
 
   it('blocks login when login rate limit exceeded', async () => {
-    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'signInIp', 1))
+    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'signIn', 1))
     await seedUser()
 
     // First attempt consumes the single-slot budget (dirty mark cleared first).
@@ -669,7 +666,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
   })
 
   it('blocks resend when rate limit exceeded', async () => {
-    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSendIp', 1))
+    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSend', 1))
     await seedUser()
     // The initial login already consumed the single-slot send budget.
     await doLogin()
@@ -761,7 +758,7 @@ describe('routes/signin — identify (real db)', () => {
   })
 
   it('blocks identify when rate limit is exceeded', async () => {
-    setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signInIp', 1))
+    setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signIn', 1))
 
     // First identify consumes the single-slot budget.
     await callAction('identify', emailFormData('admin@example.com'))

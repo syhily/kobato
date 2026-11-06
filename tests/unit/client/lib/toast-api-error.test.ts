@@ -78,12 +78,12 @@ describe('toastApiError', () => {
     // folded into the message by the link interceptor in
     // `@/client/api/client`; the toast never inspects `data` itself.
     const err = new ORPCError('BAD_REQUEST', {
-      message: '设置数据无效：resourceIp.maxAttempts：最大尝试次数不能超过 1000',
-      data: [{ message: '最大尝试次数不能超过 1000', path: ['resourceIp', 'maxAttempts'] }],
+      message: '设置数据无效：resource.maxAttempts：最大尝试次数不能超过 1000',
+      data: [{ message: '最大尝试次数不能超过 1000', path: ['resource', 'maxAttempts'] }],
     })
     toastApiError(err, '保存失败')
     expect(toastMock.error).toHaveBeenCalledWith('保存失败', {
-      description: '设置数据无效：resourceIp.maxAttempts：最大尝试次数不能超过 1000',
+      description: '设置数据无效：resource.maxAttempts：最大尝试次数不能超过 1000',
     })
   })
 

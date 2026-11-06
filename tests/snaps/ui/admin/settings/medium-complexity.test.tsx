@@ -186,27 +186,17 @@ const baseSocials: SocialsSettings = {
 }
 
 const baseRateLimit: RateLimitSettings = {
-  signInIp: { windowSeconds: 1800, maxAttempts: 5 },
-  signInEmail: { windowSeconds: 1800, maxAttempts: 5 },
-  otpSendIp: { windowSeconds: 300, maxAttempts: 3 },
-  otpSendEmail: { windowSeconds: 300, maxAttempts: 1 },
-  otpVerifyIp: { windowSeconds: 300, maxAttempts: 5 },
-  otpVerifyEmail: { windowSeconds: 300, maxAttempts: 5 },
-  passwordResetIp: { windowSeconds: 1800, maxAttempts: 3 },
-  passwordResetEmail: { windowSeconds: 300, maxAttempts: 1 },
+  signIn: { windowSeconds: 1800, maxAttempts: 5 },
+  otpSend: { windowSeconds: 300, maxAttempts: 3 },
+  otpVerify: { windowSeconds: 300, maxAttempts: 5 },
+  passwordReset: { windowSeconds: 1800, maxAttempts: 3 },
   passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
-  commentPostIp: { windowSeconds: 3600, maxAttempts: 12 },
-  commentPostEmail: { windowSeconds: 3600, maxAttempts: 8 },
-  likeIncreaseIp: { windowSeconds: 3600, maxAttempts: 30 },
-  inviteIp: { windowSeconds: 3600, maxAttempts: 5 },
-  inviteEmail: { windowSeconds: 3600, maxAttempts: 1 },
-  resourceIp: { windowSeconds: 60, maxAttempts: 60 },
-  passkeyAuthBeginIp: { windowSeconds: 300, maxAttempts: 10 },
-  passkeyAuthFinishIp: { windowSeconds: 300, maxAttempts: 10 },
-  passkeyRegisterBeginIp: { windowSeconds: 300, maxAttempts: 10 },
-  passkeyRegisterFinishIp: { windowSeconds: 300, maxAttempts: 10 },
-  passkeySetForceIp: { windowSeconds: 300, maxAttempts: 10 },
-  passkeyDeleteIp: { windowSeconds: 300, maxAttempts: 10 },
+  comment: { windowSeconds: 3600, maxAttempts: 12 },
+  like: { windowSeconds: 3600, maxAttempts: 30 },
+  invite: { windowSeconds: 3600, maxAttempts: 3 },
+  resource: { windowSeconds: 60, maxAttempts: 60 },
+  passkeyAuth: { windowSeconds: 300, maxAttempts: 10 },
+  passkeyManage: { windowSeconds: 300, maxAttempts: 10 },
 }
 
 const baseAnalytics: AnalyticsSettings = {
@@ -332,11 +322,17 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('微信')
   })
 
-  it('ThresholdForm renders rate-limit table with grouped buckets', () => {
+  it('ThresholdForm renders common buckets behind the advanced disclosure', () => {
     const html = stableHtml(renderToHtml(<ThresholdForm rateLimit={baseRateLimit} />))
     expect(html).toContain('流控设置')
-    expect(html).toContain('登录限流（按 IP）')
-    expect(html).toContain('评论限流（按 IP）')
-    expect(html).toContain('公共资源限流（按 IP）')
+    expect(html).toContain('登录限流')
+    expect(html).toContain('评论限流')
+    expect(html).toContain('点赞限流')
+    expect(html).toContain('公共资源限流')
+    expect(html).toContain('高级选项')
+    expect(html).toContain('恢复默认')
+    // Advanced buckets stay hidden behind the collapsed disclosure.
+    expect(html).not.toContain('OTP 发送限流')
+    expect(html).not.toContain('邀请限流')
   })
 })

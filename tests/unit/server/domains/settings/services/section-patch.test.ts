@@ -56,7 +56,7 @@ const NESTED_OBJECT_KEY: Partial<Record<SettingsSection, string>> = {
   mail: 'mail',
   newsletter: 'newsletter',
   cache: 'cache',
-  rateLimit: 'signInIp',
+  rateLimit: 'signIn',
   fonts: 'og',
   backup: 'scheduled',
   analytics: 'analytics',
@@ -131,6 +131,6 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
   it('accepts partial patches (honest single-field writes)', () => {
     expect(() => assertSectionPatchKeys('security', { cors: { enabled: true } })).not.toThrow()
     expect(() => assertSectionPatchKeys('mail', { mail: { host: 'api.zeabur.com' } })).not.toThrow()
-    expect(() => assertSectionPatchKeys('rateLimit', { signInIp: { windowSeconds: 600 } })).not.toThrow()
+    expect(() => assertSectionPatchKeys('rateLimit', { signIn: { windowSeconds: 600 } })).not.toThrow()
   })
 })
