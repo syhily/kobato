@@ -44,16 +44,19 @@ wait_healthy() {
   local deadline=$((SECONDS + HEALTH_TIMEOUT_S))
   local code
   while [ "$SECONDS" -lt "$deadline" ]; do
-    if ! systemctl is-active --quiet kobato; then
-      echo "kobato.service is not active"
+    if systemctl is-active --quiet kobato; then
+      code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:${APP_PORT}/health" || true)"
+      # Any HTTP response counts as up — /health may be gated before install.
+      if [ -n "$code" ] && [ "$code" != "000" ]; then
+        echo "health check passed (HTTP ${code})"
+        return 0
+      fi
+    elif systemctl is-failed --quiet kobato; then
+      # A crash-looped unit never recovers on its own — bail early.
+      echo "kobato.service entered the failed state"
       return 1
     fi
-    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:${APP_PORT}/health" || true)"
-    # Any HTTP response counts as up — /health may be gated before install.
-    if [ -n "$code" ] && [ "$code" != "000" ]; then
-      echo "health check passed (HTTP ${code})"
-      return 0
-    fi
+    # Activating (or not yet started) is transient — keep polling.
     sleep 2
   done
   echo "no HTTP response within ${HEALTH_TIMEOUT_S}s"

@@ -1,5 +1,5 @@
 #!/bin/sh
-# configure: fresh install → bootstrap + enable --now; upgrade → try-restart.
+# configure: fresh install → bootstrap + enable --now; upgrade → restart.
 set -e
 
 APP_USER="kobato"
@@ -31,7 +31,9 @@ JSON
   if [ -z "${2:-}" ]; then
     systemctl enable --now kobato.service
   else
-    systemctl try-restart kobato.service
+    # restart (not try-restart) also starts a unit that was stopped before
+    # the upgrade — a downed service must come back with the new deb.
+    systemctl restart kobato.service
   fi
   ;;
 esac
