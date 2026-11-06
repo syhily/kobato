@@ -61,6 +61,9 @@ function downloadError(result: SafeFetchFailure, originalUrl: string, what: 'aud
     case 'http-error':
       log.error('Music asset fetch returned non-2xx', { url: originalUrl, what, status: result.status })
       return new DomainError('INTERNAL', `${action}失败：${result.status}`)
+    case 'dns-failure':
+      log.error('Music asset DNS resolution failed', { url: result.url, what, error: result.error })
+      return new DomainError('INTERNAL', `${action}失败，请稍后再试`)
     case 'timeout':
     case 'fetch-failed':
       log.error('Music asset fetch failed', { url: result.url, what, error: result.error })

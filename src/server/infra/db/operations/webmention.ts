@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNull, lte, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, isNull, lt, lte, or, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
@@ -183,13 +183,19 @@ export async function setWebmentionStatus(
 // the 24h waterline caps re-fetch to once per day.
 
 export const WEBMENTION_REVERIFY_INTERVAL_MS = 24 * 60 * 60 * 1000
+
+/** Consecutive daily verification failures that take a row out of the
+ *  re-fetch cycle (`hidden`). Applies to `approved` AND `pending` rows —
+ *  an unapproved row that never verifies must not be re-fetched forever. */
+export const WEBMENTION_HIDE_STREAK = 7
+
 const MAX_LAST_ERROR_LENGTH = 500
 
 function truncateVerifyError(message: string): string {
   return message.length > MAX_LAST_ERROR_LENGTH ? `${message.slice(0, MAX_LAST_ERROR_LENGTH)}…` : message
 }
 
-/** Terminally failed receive-time verification: `pending` + `'failed'` row, `approved` pairs demote, streak stays 0 (daily cycle only). */
+/** Terminally failed receive-time verification: `pending` + `'failed'` row, `approved` pairs demote. A new row starts at streak 0; an existing row keeps its streak (the daily cycle owns the countdown). */
 export async function upsertWebmentionVerificationFailure(
   db: Database,
   values: {
@@ -224,29 +230,62 @@ export async function upsertWebmentionVerificationFailure(
   }
   const rows = await db
     .update(webmention)
-    .set({ ...failureSet, status: existing.status === 'approved' ? 'pending' : existing.status })
+    .set({
+      verificationStatus: 'failed',
+      lastVerifiedAt: now,
+      lastError: failureSet.lastError,
+      updatedAt: now,
+      status: existing.status === 'approved' ? 'pending' : existing.status,
+      // `verifyFailStreak` stays untouched: re-submitting a failing source
+      // must not reset the daily cycle's countdown (unbounded re-fetching).
+    })
     .where(eq(webmention.id, existing.id))
     .returning()
   return rows[0]!
 }
 
-/** Re-verify picks: `approved` or failed-receive `pending`, past the 24h waterline; `hidden`/`rejected` are never picked. */
+/** The re-fetch cycle's row filter: approved rows, plus failed-receive
+ *  `pending` rows that have NOT spent their failure budget. Rows at or past
+ *  the hide threshold are excluded — they are one atomic UPDATE away from
+ *  `hidden` and must never be fetched again. */
+function reverifyCycleWhere() {
+  return or(
+    eq(webmention.status, 'approved'),
+    and(
+      eq(webmention.status, 'pending'),
+      eq(webmention.verificationStatus, 'failed'),
+      lt(webmention.verifyFailStreak, WEBMENTION_HIDE_STREAK),
+    ),
+  )
+}
+
+/** Re-verify picks: cycle rows past the 24h waterline; `hidden`/`rejected` are never picked. */
 export async function pickWebmentionsDueForReverify(db: Database, now: Date, limit: number): Promise<WebmentionRow[]> {
   const cutoff = new Date(now.getTime() - WEBMENTION_REVERIFY_INTERVAL_MS)
   return db
     .select()
     .from(webmention)
-    .where(
-      and(
-        or(
-          eq(webmention.status, 'approved'),
-          and(eq(webmention.status, 'pending'), eq(webmention.verificationStatus, 'failed')),
-        ),
-        or(isNull(webmention.lastVerifiedAt), lte(webmention.lastVerifiedAt, cutoff)),
-      ),
-    )
+    .where(and(reverifyCycleWhere(), or(isNull(webmention.lastVerifiedAt), lte(webmention.lastVerifiedAt, cutoff))))
     .orderBy(asc(webmention.lastVerifiedAt), asc(webmention.id))
     .limit(limit)
+}
+
+/** Repairs legacy rows that reached the hide threshold while `pending`
+ *  (before failed verifications hid non-approved rows): hide them without
+ *  fetching. Self-healing — the picker already excludes them. */
+export async function hideExhaustedPendingWebmentions(db: Database): Promise<number> {
+  const rows = await db
+    .update(webmention)
+    .set({ status: 'hidden', updatedAt: new Date() })
+    .where(
+      and(
+        eq(webmention.status, 'pending'),
+        eq(webmention.verificationStatus, 'failed'),
+        gte(webmention.verifyFailStreak, WEBMENTION_HIDE_STREAK),
+      ),
+    )
+    .returning({ id: webmention.id })
+  return rows.length
 }
 
 /** Earliest 24h waterline among cycle rows; `'now'` when one is due, else null. No nudge seam — the suspended poll (30s) re-evaluates. */
@@ -254,12 +293,7 @@ export function findNextWebmentionReverifyDueAt(db: Database): Date | 'now' | nu
   const rows = db
     .select({ lastVerifiedAt: webmention.lastVerifiedAt })
     .from(webmention)
-    .where(
-      or(
-        eq(webmention.status, 'approved'),
-        and(eq(webmention.status, 'pending'), eq(webmention.verificationStatus, 'failed')),
-      ),
-    )
+    .where(reverifyCycleWhere())
     .orderBy(asc(webmention.lastVerifiedAt))
     .limit(1)
     .all()
@@ -318,7 +352,7 @@ export async function applyWebmentionReverifyFailure(
     .update(webmention)
     .set({
       status: daily
-        ? sql`CASE WHEN ${webmention.status} = 'approved' AND ${webmention.verifyFailStreak} + 1 >= ${values.hideStreak} THEN 'hidden' ELSE ${webmention.status} END`
+        ? sql`CASE WHEN ${webmention.status} IN ('approved', 'pending') AND ${webmention.verifyFailStreak} + 1 >= ${values.hideStreak} THEN 'hidden' ELSE ${webmention.status} END`
         : undefined,
       verificationStatus: 'failed',
       lastVerifiedAt: daily ? now : undefined,

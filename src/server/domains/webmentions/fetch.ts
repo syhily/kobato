@@ -1,5 +1,6 @@
 import type { SafeFetchFailure } from '@/server/infra/safe-fetch'
 
+import { isHtmlContentType } from '@/server/domains/webmentions/content-type'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { safeFetch } from '@/server/infra/safe-fetch'
@@ -27,6 +28,9 @@ function sourceFetchError(result: SafeFetchFailure): DomainError {
     case 'missing-redirect-location':
     case 'redirect-vetoed':
       return new DomainError('BAD_REQUEST', 'source could not be fetched (invalid redirect)')
+    case 'dns-failure':
+      log.warn('Webmention source DNS resolution failed', { url: result.url, error: result.error })
+      return new DomainError('BAD_REQUEST', 'source could not be fetched (DNS resolution failed)', undefined, true)
     case 'timeout':
     case 'fetch-failed':
       log.warn('Webmention source fetch failed', { url: result.url, error: result.error })
@@ -51,6 +55,10 @@ export async function fetchSourceHtml(sourceUrl: string): Promise<string> {
   })
   if (!result.ok) {
     throw sourceFetchError(result)
+  }
+  // Permanent failure: a document declared as non-HTML will not become HTML on retry.
+  if (!isHtmlContentType(result.response.headers.get('content-type'))) {
+    throw new DomainError('BAD_REQUEST', 'source document is not HTML')
   }
   return new TextDecoder('utf-8').decode(result.body)
 }

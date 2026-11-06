@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { installFetch } from '#/_helpers/fetch'
+import { htmlResponse, installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
@@ -84,7 +84,7 @@ describe('integration / daily re-verification cycle', () => {
   it('re-verifies a due approved mention, keeping it verified with a fresh waterline', async () => {
     await seedLivePost()
     const id = await seedMention({ status: 'approved' })
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml(TARGET), { status: 200 }))
+    mockFetch.enqueue(SOURCE, htmlResponse(linkingHtml(TARGET), { status: 200 }))
 
     expect(await runWebmentionReverifyBatch(db)).toBe(1)
 
@@ -144,7 +144,7 @@ describe('integration / daily re-verification cycle', () => {
       lastError: 'old error',
       verifyFailStreak: 2,
     })
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml(TARGET), { status: 200 }))
+    mockFetch.enqueue(SOURCE, htmlResponse(linkingHtml(TARGET), { status: 200 }))
 
     expect(await runWebmentionReverifyBatch(db)).toBe(1)
 
@@ -163,13 +163,13 @@ describe('integration / daily re-verification cycle', () => {
     expect(mockFetch.calls).toHaveLength(0)
   })
 
-  it('caps the streak at the hide threshold for pending rows', async () => {
+  it('hides a pending mention on its 7th consecutive daily failure and stops fetching it', async () => {
     await seedLivePost()
     const id = await seedMention({
       status: 'pending',
       verificationStatus: 'failed',
       lastError: 'old error',
-      verifyFailStreak: 7,
+      verifyFailStreak: 6,
     })
     mockFetch.enqueue(SOURCE, () => {
       throw new Error('simulated timeout')
@@ -178,9 +178,29 @@ describe('integration / daily re-verification cycle', () => {
     expect(await runWebmentionReverifyBatch(db)).toBe(1)
 
     const row = await rowOf(id)
-    expect(row.status).toBe('pending') // only approved rows can hide
+    expect(row.status).toBe('hidden') // a never-verifying pending row leaves the cycle too
     expect(row.verificationStatus).toBe('failed')
-    // Bounded: MIN(streak + 1, 7) — a gone-target pending row must not accumulate unboundedly.
+    expect(row.verifyFailStreak).toBe(7)
+
+    // Out of the re-fetch cycle: the next run touches nothing.
+    expect(await runWebmentionReverifyBatch(db)).toBe(0)
+    expect(mockFetch.calls).toHaveLength(1)
+  })
+
+  it('sweeps a legacy pending row already at the threshold to hidden without fetching it', async () => {
+    await seedLivePost()
+    const id = await seedMention({
+      status: 'pending',
+      verificationStatus: 'failed',
+      lastError: 'old error',
+      verifyFailStreak: 7,
+    })
+
+    expect(await runWebmentionReverifyBatch(db)).toBe(0)
+    expect(mockFetch.calls).toHaveLength(0)
+
+    const row = await rowOf(id)
+    expect(row.status).toBe('hidden')
     expect(row.verifyFailStreak).toBe(7)
   })
 
@@ -207,7 +227,7 @@ describe('integration / manual re-verification (admin)', () => {
       lastError: 'source could not be fetched (HTTP 404)',
       verifyFailStreak: 12,
     })
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml(TARGET), { status: 200 }))
+    mockFetch.enqueue(SOURCE, htmlResponse(linkingHtml(TARGET), { status: 200 }))
 
     const updated = await reverifyWebmention(db, id.toString())
 
@@ -291,7 +311,7 @@ describe('integration / admin reverify procedure (audit + wire)', () => {
       lastError: 'boom',
       verifyFailStreak: 8,
     })
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml(TARGET), { status: 200 }))
+    mockFetch.enqueue(SOURCE, htmlResponse(linkingHtml(TARGET), { status: 200 }))
 
     const wire = await call(
       adminWebmentionsRouter.reverify,
@@ -336,6 +356,14 @@ describe('integration / pickWebmentionsDueForReverify', () => {
       lastVerifiedAt: dueAt(),
     })
     await seedMention({ sourceUrl: `${SOURCE}?a=5`, status: 'rejected', lastVerifiedAt: dueAt() })
+    // Spent its failure budget: the sweep hides it, the picker never re-fetches it.
+    await seedMention({
+      sourceUrl: `${SOURCE}?a=6`,
+      status: 'pending',
+      verificationStatus: 'failed',
+      verifyFailStreak: 7,
+      lastVerifiedAt: dueAt(),
+    })
 
     const picked = await pickWebmentionsDueForReverify(db, new Date(), 10)
 

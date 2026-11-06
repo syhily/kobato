@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { drawOpenGraph } from '@/server/render/og/render'
 
@@ -52,6 +52,39 @@ describe('services/images/og — drawOpenGraph', () => {
     // Verify aspect ratio matches the typical OG card (~1.9). If a future
     // refactor sets a square OG image this test will surface it.
     expect(meta.width! / meta.height!).toBeCloseTo(1.9, 0)
+  })
+
+  it(
+    'fetches a remote cover through the guarded fetch, never loadImage’s own HTTP path',
+    { timeout: 30_000 },
+    async () => {
+      const cover = await makeCoverBuffer()
+      const fetchMock = vi.fn(
+        async (_input: RequestInfo | URL) =>
+          new Response(new Uint8Array(cover), { status: 200, headers: { 'content-type': 'image/png' } }),
+      )
+      vi.stubGlobal('fetch', fetchMock)
+      try {
+        const output = await drawOpenGraph({
+          title: 'remote cover',
+          summary: 'summary',
+          cover: 'https://cdn.example.com/cover.png',
+        })
+        expect(Buffer.isBuffer(output)).toBe(true)
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+        expect(fetchMock.mock.calls[0]?.[0]).toBe('https://cdn.example.com/cover.png')
+      } finally {
+        vi.unstubAllGlobals()
+      }
+    },
+  )
+
+  it('refuses a cover that is neither a site-owned path nor http(s)', { timeout: 30_000 }, async () => {
+    // A raw string must never reach `loadImage`: it treats existing paths as
+    // local files (file read) and everything else as an unbounded HTTP GET.
+    await expect(drawOpenGraph({ title: 't', summary: 's', cover: 'file:///etc/passwd' })).rejects.toThrow(
+      /OG cover is not/,
+    )
   })
 
   it('trims summaries longer than 80 chars without crashing', { timeout: 30_000 }, async () => {

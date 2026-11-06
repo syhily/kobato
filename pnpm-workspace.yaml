@@ -129,6 +129,7 @@ catalog:
   taze: ^21.3.0
   typescript: 7.0.2
   ua-parser-js: ^2.0.10
+  undici: ^8.12.4
   vite: ^8.3.6
   vite-node: ^6.0.0
   vite-plugin-svgr: 5.2.0

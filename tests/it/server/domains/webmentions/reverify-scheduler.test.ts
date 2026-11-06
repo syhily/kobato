@@ -9,7 +9,7 @@ vi.mock('node:dns/promises', () => ({
 }))
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { installFetch } from '#/_helpers/fetch'
+import { htmlResponse, installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { REVERIFY_BATCH_SIZE } from '@/server/domains/webmentions/reverify'
 import { REVERIFY_MIN_DELAY_MS } from '@/server/domains/webmentions/reverify-scheduler'
@@ -51,12 +51,10 @@ async function seedRow(lastVerifiedAt: Date): Promise<void> {
     title: 'Mentioning post',
     summary: null,
   })
-  mockFetch.enqueue(
-    /sender\.example/,
-    () =>
-      new Response(`<html><body><p>I wrote about <a href="${TARGET}">this post</a>.</p></body></html>`, {
-        status: 200,
-      }),
+  mockFetch.enqueue(/sender\.example/, () =>
+    htmlResponse(`<html><body><p>I wrote about <a href="${TARGET}">this post</a>.</p></body></html>`, {
+      status: 200,
+    }),
   )
 }
 

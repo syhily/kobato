@@ -1,5 +1,6 @@
 import type { SafeFetchFailure } from '@/server/infra/safe-fetch'
 
+import { isHtmlContentType } from '@/server/domains/webmentions/content-type'
 import { safeFetch } from '@/server/infra/safe-fetch'
 import { isHttpUrl } from '@/shared/utils/safe-url'
 
@@ -87,7 +88,12 @@ export async function discoverEndpoint(targetUrl: string, ua: string): Promise<D
   if (!result.ok) {
     return { kind: 'retry', error: formatFetchFailure(result) }
   }
-  const html = new TextDecoder('utf-8').decode(result.body)
+  // Only an HTML document may be scanned for `<link>`/`<a>`. The Link
+  // response header is media-type independent, so it is still consulted;
+  // without one a non-HTML body can never yield an endpoint.
+  const html = isHtmlContentType(result.response.headers.get('content-type'))
+    ? new TextDecoder('utf-8').decode(result.body)
+    : ''
   const endpoint = parseWebmentionEndpoint(result.response.headers.get('link'), html, result.url)
   return endpoint === null ? { kind: 'none' } : { kind: 'found', endpoint }
 }

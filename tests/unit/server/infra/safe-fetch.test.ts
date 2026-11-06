@@ -1,6 +1,8 @@
+import type { AddressInfo } from 'node:net'
 import type { Mock } from 'vitest'
 
 import { lookup } from 'node:dns/promises'
+import { createServer } from 'node:http'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { safeFetch } from '@/server/infra/safe-fetch'
@@ -107,12 +109,33 @@ describe('infra/safe-fetch — DNS guard', () => {
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
-  it('lets the fetch surface its own error when DNS resolution fails', async () => {
+  it('fails closed when DNS resolution fails', async () => {
     lookupMock.mockRejectedValue(new Error('ENOTFOUND'))
     const fn = mockFetch(() => new Response(new Uint8Array([1]), { status: 200 }))
     const result = await safeFetch('https://gone.example.com/x')
-    expect(result.ok).toBe(true)
-    expect(fn).toHaveBeenCalledTimes(1)
+    expect(result).toMatchObject({ ok: false, reason: 'dns-failure', url: 'https://gone.example.com/x' })
+    expect(fn).not.toHaveBeenCalled()
+  })
+
+  it('fails closed when DNS resolves to an empty address list', async () => {
+    lookupMock.mockResolvedValue([])
+    const fn = mockFetch(() => new Response(new Uint8Array([1]), { status: 200 }))
+    const result = await safeFetch('https://empty.example.com/x')
+    expect(result).toMatchObject({ ok: false, reason: 'dns-failure' })
+    expect(fn).not.toHaveBeenCalled()
+  })
+
+  it('hands every hop a dial-time validating dispatcher', async () => {
+    const fn = mockFetch((url) =>
+      url === 'https://cdn.example.com/start'
+        ? new Response(null, { status: 302, headers: { location: '/next' } })
+        : new Response(new Uint8Array([1]), { status: 200 }),
+    )
+    await safeFetch('https://cdn.example.com/start')
+    expect(fn).toHaveBeenCalledTimes(2)
+    for (const [, init] of fn.mock.calls) {
+      expect(init).toMatchObject({ dispatcher: expect.objectContaining({ dispatch: expect.any(Function) }) })
+    }
   })
 
   it('re-runs the DNS guard on every redirect hop', async () => {
@@ -123,6 +146,36 @@ describe('infra/safe-fetch — DNS guard', () => {
     const result = await safeFetch('https://cdn.example.com/start')
     expect(result).toMatchObject({ ok: false, reason: 'blocked-host', url: 'https://internal.example.com/x' })
     expect(fn).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('infra/safe-fetch — dial-time DNS binding', () => {
+  it('blocks a host whose DNS flips to loopback between the pre-check and the dial', async () => {
+    // Real socket, real undici Agent — only `node:dns/promises` is mocked.
+    let hits = 0
+    const server = createServer((_req, res) => {
+      hits += 1
+      res.writeHead(200)
+      res.end('internal')
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const port = (server.address() as AddressInfo).port
+    try {
+      // 1st resolution: the pre-check sees a public address (passes).
+      // 2nd resolution: the dial sees loopback (must abort the connection).
+      lookupMock.mockResolvedValueOnce(publicDns).mockResolvedValueOnce([{ address: '127.0.0.1', family: 4 }])
+      const result = await safeFetch(`http://rebind.example.com:${port}/latest/meta-data`)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('fetch-failed')
+        // The dial itself must have rejected the blocked address — not a
+        // generic "unresolvable host" failure.
+        expect(String((result.error as Error).cause)).toContain('blocked address')
+      }
+      expect(hits).toBe(0)
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()))
+    }
   })
 })
 

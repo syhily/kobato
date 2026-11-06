@@ -37,6 +37,13 @@ vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
     status: 'idle',
   }),
 }))
+// `safeFetch` resolves hostnames before dialing; tests stub `fetch`, so DNS
+// must not depend on the machine's resolver (VPN/fake-IP setups answer every
+// name with 198.18.0.0/15, which the SSRF blocklist correctly rejects).
+// Hostnames default to one public address; a file-level mock overrides this.
+vi.mock('node:dns/promises', () => ({
+  lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
+}))
 
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 

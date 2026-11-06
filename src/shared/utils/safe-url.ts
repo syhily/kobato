@@ -144,19 +144,34 @@ function parseIpv4(host: string): number | null {
   return ip
 }
 
-/** Private/reserved check on a 32-bit IPv4 value; must mirror the `IPV4_PRIVATE` regex exactly. */
+/** Every IPv4 range an outbound fetch must never target: "this network",
+ *  RFC 1918 private space, CGNAT (cloud metadata lives at 100.100.100.200
+ *  on Aliyun), loopback, link-local (169.254.169.254 metadata), IETF
+ *  protocol assignments (192.0.0.0/24), benchmarking (198.18.0.0/15),
+ *  multicast and reserved/broadcast (224.0.0.0/3). */
+const BLOCKED_IPV4_CIDRS: ReadonlyArray<{ base: number; prefix: number }> = [
+  { base: 0x00000000, prefix: 8 }, // 0.0.0.0/8 this network
+  { base: 0x0a000000, prefix: 8 }, // 10.0.0.0/8
+  { base: 0x64400000, prefix: 10 }, // 100.64.0.0/10 CGNAT (cloud metadata: 100.100.100.200)
+  { base: 0x7f000000, prefix: 8 }, // 127.0.0.0/8 loopback
+  { base: 0xa9fe0000, prefix: 16 }, // 169.254.0.0/16 link-local (169.254.169.254 metadata)
+  { base: 0xac100000, prefix: 12 }, // 172.16.0.0/12
+  { base: 0xc0000000, prefix: 24 }, // 192.0.0.0/24 IETF protocol assignments
+  { base: 0xc0a80000, prefix: 16 }, // 192.168.0.0/16
+  { base: 0xc6120000, prefix: 15 }, // 198.18.0.0/15 benchmarking
+  { base: 0xe0000000, prefix: 3 }, // 224.0.0.0/3 multicast + reserved + broadcast
+]
+
+function ipv4InCidr(ip: number, base: number, prefix: number): boolean {
+  const shift = 32 - prefix
+  return ip >>> shift === base >>> shift
+}
+
+/** Private/reserved check on a 32-bit IPv4 value. The CIDR table is the
+ *  authoritative numeric verdict; `IPV4_PRIVATE` is only the name-level
+ *  fast path (`127.0.0.1.nip.io`) and deliberately stays narrow. */
 function isPrivateIpv4Number(ip: number): boolean {
-  const a = Math.floor(ip / 256 ** 3)
-  const b = Math.floor(ip / 256 ** 2) % 256
-  return (
-    a === 0 ||
-    a === 10 ||
-    a === 127 ||
-    a >= 224 ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168) ||
-    (a === 169 && b === 254)
-  )
+  return BLOCKED_IPV4_CIDRS.some(({ base, prefix }) => ipv4InCidr(ip, base, prefix))
 }
 
 /** One side of a (possibly `::`-compressed) IPv6 address into hextets;
@@ -211,15 +226,23 @@ function parseIpv6(host: string): number[] | null {
 }
 
 /** Private/reserved check on parsed IPv6 hextets: loopback `::1`,
- *  unspecified `::`, ULA fc00::/7, link-local fe80::/10, and the
- *  IPv4-mapped `::ffff:a.b.c.d` range (inner IPv4 goes through the same
- *  private check). */
+ *  unspecified `::`, ULA fc00::/7, link-local fe80::/10, the IPv4-mapped
+ *  `::ffff:a.b.c.d` range (inner IPv4 goes through the same private
+ *  check), and the two IPv4-embedding transition prefixes — NAT64
+ *  `64:ff9b::/96` (`64:ff9b::a9fe:a9fe` is 169.254.169.254) and 6to4
+ *  `2002::/16` (`2002:7f00:1::` is 127.0.0.1). */
 function isPrivateIpv6(hextets: number[]): boolean {
   const first = hextets[0]
   if ((first & 0xfe00) === 0xfc00) {
     return true
   }
   if ((first & 0xffc0) === 0xfe80) {
+    return true
+  }
+  if (first === 0x0064 && hextets[1] === 0xff9b && hextets.slice(2, 6).every((h) => h === 0)) {
+    return true
+  }
+  if (first === 0x2002) {
     return true
   }
   if (hextets.slice(0, 5).every((h) => h === 0) && hextets[5] === 0xffff) {

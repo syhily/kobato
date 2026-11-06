@@ -135,6 +135,41 @@ describe('client: safe-url utilities', () => {
       expect(isBlockedFetchHost('172.16.0.1')).toBe(true)
     })
 
+    it('blocks CGNAT, benchmarking, and IETF assignment ranges', () => {
+      // Aliyun ECS metadata — a plain IPv4 literal that used to pass.
+      expect(isBlockedFetchHost('100.100.100.200')).toBe(true)
+      expect(isBlockedFetchHost('100.64.0.1')).toBe(true)
+      expect(isBlockedFetchHost('100.127.255.255')).toBe(true)
+      expect(isBlockedFetchHost('198.18.0.1')).toBe(true)
+      expect(isBlockedFetchHost('198.19.255.255')).toBe(true)
+      expect(isBlockedFetchHost('192.0.0.1')).toBe(true)
+      expect(isBlockedFetchHost('192.0.0.170')).toBe(true)
+    })
+
+    it('allows addresses just outside the added ranges', () => {
+      expect(isBlockedFetchHost('100.63.255.255')).toBe(false)
+      expect(isBlockedFetchHost('100.128.0.1')).toBe(false)
+      expect(isBlockedFetchHost('198.17.255.255')).toBe(false)
+      expect(isBlockedFetchHost('198.20.0.1')).toBe(false)
+      expect(isBlockedFetchHost('192.0.1.1')).toBe(false)
+      expect(isBlockedFetchHost('192.0.2.1')).toBe(false) // TEST-NET-1 stays reachable
+    })
+
+    it('blocks IPv4-embedding IPv6 transition ranges (NAT64 and 6to4)', () => {
+      expect(isBlockedFetchHost('64:ff9b::a9fe:a9fe')).toBe(true) // NAT64 → 169.254.169.254
+      expect(isBlockedFetchHost('[64:ff9b::a9fe:a9fe]')).toBe(true)
+      expect(isBlockedFetchHost('64:ff9b::7f00:1')).toBe(true) // NAT64 → 127.0.0.1
+      expect(isBlockedFetchHost('64:ff9b::')).toBe(true)
+      expect(isBlockedFetchHost('2002:7f00:1::')).toBe(true) // 6to4 → 127.0.0.1
+      expect(isBlockedFetchHost('2002:a9fe:a9fe::')).toBe(true) // 6to4 → 169.254.169.254
+    })
+
+    it('allows public addresses outside the transition prefixes', () => {
+      expect(isBlockedFetchHost('64:ff9b:1::808:808')).toBe(false) // RFC 8215 local-use prefix
+      expect(isBlockedFetchHost('2003::1')).toBe(false)
+      expect(isBlockedFetchHost('2606:4700::1')).toBe(false)
+    })
+
     it('blocks IPv6 ULA / link-local ranges', () => {
       expect(isBlockedFetchHost('fc00::1')).toBe(true)
       expect(isBlockedFetchHost('fd12::1')).toBe(true)

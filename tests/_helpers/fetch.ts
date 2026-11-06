@@ -52,6 +52,16 @@ export function installFetch(): MockFetchHandle {
   }
 }
 
+/** Response carrying an HTML document. A `Response` built from a string
+ *  defaults to `text/plain`, which the webmention HTML parsers reject. */
+export function htmlResponse(body: string, init: ResponseInit = {}): Response {
+  const headers = new Headers(init.headers)
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'text/html; charset=utf-8')
+  }
+  return new Response(body, { ...init, headers })
+}
+
 export function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   const headers = new Headers(init.headers)
   if (!headers.has('Content-Type')) {

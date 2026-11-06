@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { installFetch } from '#/_helpers/fetch'
+import { htmlResponse, installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { receiveWebmention } from '@/server/domains/webmentions/receive'
 import { post } from '@/server/infra/db/schema/post'
@@ -31,7 +31,7 @@ async function seedLivePost(slug: string): Promise<number> {
 }
 
 function enqueueSource(source: string) {
-  mockFetch.enqueue(source, new Response(linkingHtml(TARGET), { status: 200 }))
+  mockFetch.enqueue(source, htmlResponse(linkingHtml(TARGET), { status: 200 }))
 }
 
 async function receive(source: string) {
@@ -91,7 +91,9 @@ describe('integration / receiveWebmention — response type classification (Phas
       const source = `https://sender.example/${expected}`
       mockFetch.enqueue(
         source,
-        new Response(`<html><body><a class="${marker}" href="${TARGET}">response</a></body></html>`, { status: 200 }),
+        htmlResponse(`<html><body><a class="${marker}" href="${TARGET}">response</a></body></html>`, {
+          status: 200,
+        }),
       )
       const res = await receive(source)
       expect(res.row.type).toBe(expected)
@@ -107,7 +109,9 @@ describe('integration / receiveWebmention — response type classification (Phas
     // The author re-sends as a reply — same pair, new classification.
     mockFetch.enqueue(
       'https://sender.example/post',
-      new Response(`<html><body><a class="u-in-reply-to" href="${TARGET}">reply</a></body></html>`, { status: 200 }),
+      htmlResponse(`<html><body><a class="u-in-reply-to" href="${TARGET}">reply</a></body></html>`, {
+        status: 200,
+      }),
     )
     const second = await receive('https://sender.example/post')
     expect(second.row.id).toBe(first.row.id)

@@ -10,7 +10,9 @@ import {
   applyWebmentionReverifyFailure,
   applyWebmentionReverifySuccess,
   findWebmentionById,
+  hideExhaustedPendingWebmentions,
   pickWebmentionsDueForReverify,
+  WEBMENTION_HIDE_STREAK,
 } from '@/server/infra/db/operations/webmention'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
@@ -19,13 +21,11 @@ import { idFromString } from '@/shared/utils/id'
 const log = getLogger('webmentions.reverify')
 
 // Daily re-verification cycle: approved/pending rows are re-checked per 24h
-// waterline; an `approved` row's 7th consecutive failure flips to `hidden`,
-// which only the admin's manual re-verification can recover.
+// waterline; the 7th consecutive failure of an `approved` OR `pending` row
+// flips it to `hidden`, which only the admin's manual re-verification can
+// recover. Non-approved rows therefore leave the fetch schedule too.
 
 export const REVERIFY_BATCH_SIZE = 10
-
-/** Consecutive daily failures that move an `approved` row to `hidden`. */
-export const WEBMENTION_HIDE_STREAK = 7
 
 type VerifySuccess = { ok: true; meta: SourceMetadata; type: WebmentionType }
 type VerifyFailure = { ok: false; error: string }
@@ -47,7 +47,7 @@ async function checkRow(db: Database, row: WebmentionRow): Promise<VerifyOutcome
 }
 
 /** One row's daily outcome: success refreshes metadata and resets the streak;
- *  failure bumps it and hides the row once the budget is spent. */
+ *  failure bumps it and hides the row (approved or pending) once the budget is spent. */
 async function applyDailyOutcome(db: Database, row: WebmentionRow, outcome: VerifyOutcome): Promise<void> {
   if (outcome.ok) {
     await applyWebmentionReverifySuccess(db, row.id, { ...outcome.meta, type: outcome.type })
@@ -66,8 +66,14 @@ async function applyDailyOutcome(db: Database, row: WebmentionRow, outcome: Veri
   }
 }
 
-/** The scheduler's batch: one check + outcome per due row. */
+/** The scheduler's batch: sweep already-exhausted pending rows (legacy
+ *  rows at the threshold are excluded by the picker), then one check +
+ *  outcome per due row. */
 export async function runWebmentionReverifyBatch(db: Database): Promise<number> {
+  const swept = await hideExhaustedPendingWebmentions(db)
+  if (swept > 0) {
+    log.info('Exhausted pending webmentions hidden', { count: swept })
+  }
   return runDueRows({
     pick: () => pickWebmentionsDueForReverify(db, new Date(), REVERIFY_BATCH_SIZE),
     handleRow: async (row) => applyDailyOutcome(db, row, await checkRow(db, row)),

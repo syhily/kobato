@@ -178,6 +178,7 @@
     "taze": "catalog:",
     "typescript": "catalog:",
     "ua-parser-js": "catalog:",
+    "undici": "catalog:",
     "vite": "catalog:",
     "vite-node": "catalog:",
     "vite-plugin-svgr": "catalog:",

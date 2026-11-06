@@ -1,15 +1,53 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
-import type { Buffer } from 'node:buffer'
 
 import { Canvas, loadImage } from '@napi-rs/canvas'
+import { Buffer } from 'node:buffer'
 
 import { compressImage } from '@/server/infra/image/compress'
+import { safeFetch } from '@/server/infra/safe-fetch'
+import { getGeneralWebsite } from '@/server/infra/storage/public-url'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
 import { logoDark } from '@/server/render/og/assets'
 import { layoutCanvasLines } from '@/server/render/pretext-layout'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { isHttpUrl } from '@/shared/utils/safe-url'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
+
+// Cover fetch budget: TTFB + body, and a hard byte cap. A cover can never
+// justify more — the render is best-effort and cached by the caller.
+const COVER_TIMEOUT_MS = 5_000
+const COVER_MAX_BYTES = 8 * 1024 * 1024
+
+/** Cover reference → absolute URL. Site-owned refs (`/storage/…`,
+ *  `/images/…`) resolve against the site origin; anything else must already
+ *  be http(s). Null means "not fetchable" — never hand it to `loadImage`. */
+function resolveCoverUrl(cover: string): string | null {
+  if (cover.startsWith('/') && !cover.startsWith('//')) {
+    const website = getGeneralWebsite()
+    return website === '' ? null : `${website}${cover}`
+  }
+  return isHttpUrl(cover) ? cover : null
+}
+
+/** `@napi-rs/canvas`'s `loadImage` does its own unbounded HTTP GET (20
+ *  redirects, no timeout, no size cap, no SSRF guard), so cover bytes are
+ *  fetched through `safeFetch` and decoded from the buffer. */
+async function loadCover(cover: string): Promise<Image> {
+  // Inline images decode locally — no network, so no guard applies.
+  if (/^\s*data:/i.test(cover)) {
+    return loadImage(cover)
+  }
+  const url = resolveCoverUrl(cover)
+  if (url === null) {
+    throw new Error(`OG cover is not a site-owned path or http(s) URL: ${cover}`)
+  }
+  const result = await safeFetch(url, { timeoutMs: COVER_TIMEOUT_MS, maxBytes: COVER_MAX_BYTES })
+  if (!result.ok) {
+    throw new Error(`OG cover fetch failed (${result.reason}): ${url}`)
+  }
+  return loadImage(Buffer.from(result.body))
+}
 
 // Modified snippet from https://stackoverflow.com/questions/21961839/simulation-background-size-cover-in-canvas
 function drawImageProp(
@@ -93,7 +131,7 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const seo = requireBlogSettingsSection('seo')
 
-  const [coverImage, logoBuffer] = await Promise.all([loadImage(cover), logoDark()])
+  const [coverImage, logoBuffer] = await Promise.all([loadCover(cover), logoDark()])
   const logoImage = await loadImage(logoBuffer)
 
   const description = summary.replace(/<[^>]+>/g, '').trim()

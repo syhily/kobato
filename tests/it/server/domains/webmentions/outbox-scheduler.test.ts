@@ -9,7 +9,7 @@ vi.mock('node:dns/promises', () => ({
   lookup: async () => [{ address: '93.184.216.34', family: 4 }],
 }))
 
-import { installFetch } from '#/_helpers/fetch'
+import { htmlResponse, installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { OUTBOX_BATCH_SIZE } from '@/server/domains/webmentions/outbox'
 import { OUTBOX_MIN_DELAY_MS, rescheduleWebmentionOutbox } from '@/server/domains/webmentions/outbox-scheduler'
@@ -37,7 +37,7 @@ async function seedDueRow(nextRetryAt?: Date): Promise<void> {
     targetUrl: `https://target.example/article-${key}`,
     nextRetryAt: nextRetryAt ?? null,
   })
-  mockFetch.enqueue(/target\.example/, () => new Response('<html><head><title>plain</title></head>', { status: 200 }))
+  mockFetch.enqueue(/target\.example/, () => htmlResponse('<html><head><title>plain</title></head>', { status: 200 }))
 }
 
 // Sync (node:sqlite).

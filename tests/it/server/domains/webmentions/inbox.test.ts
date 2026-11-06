@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { installFetch } from '#/_helpers/fetch'
+import { htmlResponse, installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { processWebmentionInboxRow, runWebmentionInboxBatch } from '@/server/domains/webmentions/inbox'
 import {
@@ -70,7 +70,7 @@ describe('integration / webmention inbox worker', () => {
   it('verifies a queued pair, lands the mention pending, and deletes the queue row', async () => {
     await seedLivePost('wm-target')
     await enqueue()
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }))
+    mockFetch.enqueue(SOURCE, htmlResponse(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }))
 
     expect(await runWebmentionInboxBatch(db)).toBe(1)
 
@@ -88,7 +88,7 @@ describe('integration / webmention inbox worker', () => {
   it('records a failed pending row when the source does not link to the target (terminal)', async () => {
     await seedLivePost('wm-target')
     await enqueue()
-    mockFetch.enqueue(SOURCE, new Response('<html><body><p>No link at all.</p></body></html>', { status: 200 }))
+    mockFetch.enqueue(SOURCE, htmlResponse('<html><body><p>No link at all.</p></body></html>', { status: 200 }))
 
     await runWebmentionInboxBatch(db)
 
@@ -98,6 +98,24 @@ describe('integration / webmention inbox worker', () => {
     expect(rows[0]!.status).toBe('pending')
     expect(rows[0]!.verificationStatus).toBe('failed')
     expect(rows[0]!.lastError).toBe('source does not link to target')
+    expect(vi.mocked(sendNewWebmention)).not.toHaveBeenCalled()
+  })
+
+  it('rejects a source served with a non-HTML content type instead of parsing it', async () => {
+    await seedLivePost('wm-target')
+    await enqueue()
+    mockFetch.enqueue(
+      SOURCE,
+      new Response(linkingHtml(TARGET), { status: 200, headers: { 'content-type': 'application/json' } }),
+    )
+
+    await runWebmentionInboxBatch(db)
+
+    expect(await listWebmentionInbox(db)).toHaveLength(0)
+    const rows = await db.select().from(webmention)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.verificationStatus).toBe('failed')
+    expect(rows[0]!.lastError).toBe('source document is not HTML')
     expect(vi.mocked(sendNewWebmention)).not.toHaveBeenCalled()
   })
 
@@ -186,7 +204,7 @@ describe('integration / webmention inbox worker', () => {
 
     // The sender re-POSTs (resetting the backoff), the source is back.
     await enqueue()
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }))
+    mockFetch.enqueue(SOURCE, htmlResponse(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }))
 
     await runWebmentionInboxBatch(db)
     expect(await listWebmentionInbox(db)).toHaveLength(0)

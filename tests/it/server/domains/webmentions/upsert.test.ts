@@ -192,6 +192,21 @@ describe('integration / upsertWebmentionVerificationFailure (terminal receive-ti
     expect(row.verificationStatus).toBe('failed')
   })
 
+  it('never resets an existing row’s failure streak on a failed re-send', async () => {
+    // Repeatedly re-submitting a failing source must not restart the daily
+    // cycle's countdown — that would keep the row in the fetch schedule forever.
+    const { row } = await upsertWebmention(
+      db,
+      mentionValues({ verificationStatus: 'failed', lastError: 'old error', verifyFailStreak: 5 }),
+    )
+
+    await upsertWebmentionVerificationFailure(db, failureValues('third failure'))
+
+    const updated = await rowOf(row.id)
+    expect(updated.verifyFailStreak).toBe(5)
+    expect(updated.lastError).toBe('third failure')
+  })
+
   it('demotes an approved row back to pending on a failed re-verification', async () => {
     const { row } = await upsertWebmention(db, mentionValues())
     await setWebmentionStatus(db, row.id, 'approved')
