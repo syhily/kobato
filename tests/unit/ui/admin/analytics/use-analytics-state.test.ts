@@ -41,9 +41,9 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
     mock.useSearchParams.mockImplementation(() => [new URLSearchParams(), mock.setSearchParams])
   })
 
-  it('defaults to no preset, no filters, trend view and visits metric', () => {
+  it('defaults to the last-7d preset, no filters, trend view and visits metric', () => {
     const state = renderHook(() => useAnalyticsState())
-    expect(state.preset).toBeNull()
+    expect(state.preset).toBe('last-7d')
     expect(state.filters).toEqual({})
     expect(state.viewMode).toBe('trend')
     expect(state.heatmapMetric).toBe('visits')
@@ -55,16 +55,24 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
     expect(range.endAt - range.startAt).toBe(expectedSpan.endAt - expectedSpan.startAt)
   })
 
-  it('parses a recognised preset param and ignores unknown ones', () => {
+  it('parses a recognised preset param and falls back to last-7d for unknown ones', () => {
     withParams({ preset: 'today' })
     expect(renderHook(() => useAnalyticsState()).preset).toBe('today')
     withParams({ preset: 'bogus' })
-    expect(renderHook(() => useAnalyticsState()).preset).toBeNull()
+    expect(renderHook(() => useAnalyticsState()).preset).toBe('last-7d')
   })
 
   it('parses explicit startAt/endAt over the preset-derived range', () => {
     withParams({ startAt: '1000', endAt: '2000' })
     expect(renderHook(() => useAnalyticsState()).range).toEqual({ startAt: 1000, endAt: 2000 })
+  })
+
+  it('marks an explicit startAt/endAt pair as a custom range (null preset)', () => {
+    withParams({ startAt: '1000', endAt: '2000' })
+    expect(renderHook(() => useAnalyticsState()).preset).toBeNull()
+    // An invalid pair is not a custom range — the default preset shows.
+    withParams({ startAt: '2000', endAt: '1000' })
+    expect(renderHook(() => useAnalyticsState()).preset).toBe('last-7d')
   })
 
   it('falls back to the preset range when startAt/endAt are invalid', () => {
@@ -91,6 +99,24 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
     const state = renderHook(() => useAnalyticsState())
     expect(state.viewMode).toBe('heatmap')
     expect(state.heatmapMetric).toBe('visitors')
+  })
+
+  it('parses includeUnknown only for the literal true', () => {
+    expect(renderHook(() => useAnalyticsState()).includeUnknown).toBe(false)
+    withParams({ includeUnknown: 'true' })
+    expect(renderHook(() => useAnalyticsState()).includeUnknown).toBe(true)
+    withParams({ includeUnknown: 'bogus' })
+    expect(renderHook(() => useAnalyticsState()).includeUnknown).toBe(false)
+  })
+
+  it('setIncludeUnknown writes the param and deletes it for the default', () => {
+    const { setIncludeUnknown } = renderHook(() => useAnalyticsState())
+    setIncludeUnknown(true)
+    expect(applyUpdater(0).get('includeUnknown')).toBe('true')
+    mock.setSearchParams.mockClear()
+    const { setIncludeUnknown: setAgain } = renderHook(() => useAnalyticsState())
+    setAgain(false)
+    expect(applyUpdater(0, new URLSearchParams({ includeUnknown: 'true' })).get('includeUnknown')).toBeNull()
   })
 
   it('ignores unknown view/metric values', () => {
@@ -184,6 +210,7 @@ describe('ui/admin/analytics/buildAnalyticsInput', () => {
     preset: null,
     range: { startAt: 1000, endAt: 2000 },
     filters: { country: 'CN' } as const,
+    includeUnknown: false,
   }
 
   it('expands the URL state into the per-dimension wire fields', () => {
@@ -195,6 +222,11 @@ describe('ui/admin/analytics/buildAnalyticsInput', () => {
     // The client timezone is always attached.
     expect(typeof input.clientTimezone).toBe('string')
     expect(input.clientTimezone!.length).toBeGreaterThan(0)
+  })
+
+  it('omits includeUnknown unless the toggle is on', () => {
+    expect(buildAnalyticsInput(base).includeUnknown).toBeUndefined()
+    expect(buildAnalyticsInput({ ...base, includeUnknown: true }).includeUnknown).toBe(true)
   })
 
   it('sends the preset instead of the explicit range when a preset is active', () => {

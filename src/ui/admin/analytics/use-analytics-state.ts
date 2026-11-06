@@ -34,6 +34,8 @@ export interface AnalyticsState {
   filters: Filters
   viewMode: AnalyticsViewMode
   heatmapMetric: HeatmapMetric
+  /** Whether geo-unknown events (country blob = '') are included — excluded by default. */
+  includeUnknown: boolean
   setPreset: (preset: PresetKey) => void
   setRange: (range: DateRange) => void
   setFilter: (type: MetricType, value: string) => void
@@ -41,18 +43,33 @@ export interface AnalyticsState {
   clearAllFilters: () => void
   setViewMode: (view: AnalyticsViewMode) => void
   setHeatmapMetric: (metric: HeatmapMetric) => void
+  setIncludeUnknown: (include: boolean) => void
 }
 
 export function useAnalyticsState(): AnalyticsState {
   const [params, setParams] = useSearchParams()
 
-  const preset = useMemo<PresetKey | null>(() => {
-    const raw = params.get('preset')
-    return PRESET_KEYS.find((key) => key === raw) ?? null
-  }, [params])
-
   const startAt = params.get('startAt')
   const endAt = params.get('endAt')
+
+  const hasExplicitRange = useMemo(() => {
+    if (startAt && endAt) {
+      const s = Number.parseInt(startAt, 10)
+      const e = Number.parseInt(endAt, 10)
+      return Number.isFinite(s) && Number.isFinite(e) && e > s
+    }
+    return false
+  }, [startAt, endAt])
+
+  // `null` marks a custom (explicit startAt/endAt) range; absent params
+  // default to the last-7d preset rather than a null/custom presentation.
+  const preset = useMemo<PresetKey | null>(() => {
+    if (hasExplicitRange) {
+      return null
+    }
+    const raw = params.get('preset')
+    return PRESET_KEYS.find((key) => key === raw) ?? 'last-7d'
+  }, [params, hasExplicitRange])
 
   const range = useMemo<DateRange>(() => {
     if (startAt && endAt) {
@@ -78,6 +95,7 @@ export function useAnalyticsState(): AnalyticsState {
 
   const viewMode: AnalyticsViewMode = params.get('view') === 'heatmap' ? 'heatmap' : 'trend'
   const heatmapMetric: HeatmapMetric = params.get('metric') === 'visitors' ? 'visitors' : 'visits'
+  const includeUnknown = params.get('includeUnknown') === 'true'
 
   const setPreset = useCallback(
     (p: PresetKey) => {
@@ -183,6 +201,23 @@ export function useAnalyticsState(): AnalyticsState {
     [setParams],
   )
 
+  const setIncludeUnknown = useCallback(
+    (include: boolean) => {
+      setParams(
+        (prev) => {
+          if (include) {
+            prev.set('includeUnknown', 'true')
+          } else {
+            prev.delete('includeUnknown')
+          }
+          return prev
+        },
+        { replace: true },
+      )
+    },
+    [setParams],
+  )
+
   return useMemo(
     () => ({
       preset,
@@ -190,6 +225,7 @@ export function useAnalyticsState(): AnalyticsState {
       filters,
       viewMode,
       heatmapMetric,
+      includeUnknown,
       setPreset,
       setRange,
       setFilter,
@@ -197,6 +233,7 @@ export function useAnalyticsState(): AnalyticsState {
       clearAllFilters,
       setViewMode,
       setHeatmapMetric,
+      setIncludeUnknown,
     }),
     [
       preset,
@@ -204,6 +241,7 @@ export function useAnalyticsState(): AnalyticsState {
       filters,
       viewMode,
       heatmapMetric,
+      includeUnknown,
       setPreset,
       setRange,
       setFilter,
@@ -211,6 +249,7 @@ export function useAnalyticsState(): AnalyticsState {
       clearAllFilters,
       setViewMode,
       setHeatmapMetric,
+      setIncludeUnknown,
     ],
   )
 }
@@ -233,7 +272,7 @@ export type AnalyticsQueryInput = z.input<typeof analyticsQuerySchema>
  * cannot know (`unit` from the resolved range, `clientTimezone` from Intl).
  */
 export function buildAnalyticsInput(
-  state: Pick<AnalyticsState, 'preset' | 'range' | 'filters'>,
+  state: Pick<AnalyticsState, 'preset' | 'range' | 'filters' | 'includeUnknown'>,
   options: { scope?: AnalyticsScope; unit?: TimeUnit; limit?: number } = {},
 ): AnalyticsQueryInput {
   return {
@@ -246,5 +285,6 @@ export function buildAnalyticsInput(
     clientTimezone: getClientTimezone(),
     unit: options.unit ?? pickTimeUnit(state.range),
     limit: options.limit,
+    includeUnknown: state.includeUnknown || undefined,
   }
 }
