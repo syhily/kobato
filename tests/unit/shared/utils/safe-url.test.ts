@@ -57,6 +57,32 @@ describe('client: safe-url utilities', () => {
     it('preserves query and hash', () => {
       expect(safeRedirectPath('/path?foo=1#bar', '/home', origin)).toBe('/path?foo=1#bar')
     })
+
+    it('returns fallback for dot-segment paths that normalize to a network-path reference', () => {
+      // `new URL('/..//evil.com', origin)` normalizes to pathname `//evil.com`
+      // — a single-slash input must never yield a cross-origin redirect.
+      expect(safeRedirectPath('/..//evil.com', '/home', origin)).toBe('/home')
+      expect(safeRedirectPath('/.//evil.com', '/home', origin)).toBe('/home')
+      expect(safeRedirectPath('/%2e%2e//evil.com', '/home', origin)).toBe('/home')
+      expect(safeRedirectPath('/a/..//evil.com', '/home', origin)).toBe('/home')
+      expect(safeRedirectPath('/a/%2e%2e//evil.com', '/home', origin)).toBe('/home')
+    })
+
+    it('returns fallback for explicit network-path and backslash references', () => {
+      expect(safeRedirectPath('//evil.com', '/home', origin)).toBe('/home')
+      expect(safeRedirectPath('/\\evil.com', '/home', origin)).toBe('/home')
+    })
+
+    it('returns fallback for control characters', () => {
+      expect(safeRedirectPath('/admin\u0000//evil.com', '/home', origin)).toBe('/home')
+      expect(safeRedirectPath('/admin\n//evil.com', '/home', origin)).toBe('/home')
+      expect(safeRedirectPath('/admin\r//evil.com', '/home', origin)).toBe('/home')
+      expect(safeRedirectPath('/admin\u007f', '/home', origin)).toBe('/home')
+    })
+
+    it('keeps a normal same-origin path with a query', () => {
+      expect(safeRedirectPath('/admin?x=1', '/home', origin)).toBe('/admin?x=1')
+    })
   })
 
   describe('optionalHttpUrlSchema', () => {

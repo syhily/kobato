@@ -2,6 +2,19 @@ import { z } from 'zod'
 
 const HTTP_URL_MESSAGE = '请输入 http(s) URL'
 
+// Control characters in a redirect target are never legitimate: the URL
+// parser silently strips some (tab/newline) and percent-encodes others, so
+// reject the raw value before either can reshape the path.
+function hasControlChar(value: string): boolean {
+  for (const char of value) {
+    const code = char.codePointAt(0)
+    if (code !== undefined && (code <= 0x1f || code === 0x7f)) {
+      return true
+    }
+  }
+  return false
+}
+
 export function safeHref(value: string | null | undefined): string | undefined {
   if (value === null || value === undefined) {
     return undefined
@@ -18,7 +31,7 @@ export function safeRedirectPath(value: string | null | undefined, fallback: str
     return fallback
   }
   const trimmed = value.trim()
-  if (trimmed === '') {
+  if (trimmed === '' || hasControlChar(trimmed)) {
     return fallback
   }
 
@@ -28,7 +41,15 @@ export function safeRedirectPath(value: string | null | undefined, fallback: str
     if (url.origin !== base.origin) {
       return fallback
     }
-    return `${url.pathname}${url.search}${url.hash}`
+    // Dot-segment normalization can rewrite a single-slash input into a
+    // network-path reference (`/..//evil.com` → `//evil.com`), which the
+    // browser resolves as a cross-origin URL. Only a single-slash path is
+    // same-origin.
+    if (!url.pathname.startsWith('/') || url.pathname.startsWith('//')) {
+      return fallback
+    }
+    const path = `${url.pathname}${url.search}${url.hash}`
+    return hasControlChar(path) ? fallback : path
   } catch {
     return fallback
   }

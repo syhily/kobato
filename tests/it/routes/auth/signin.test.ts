@@ -319,6 +319,22 @@ describe('routes/signin', () => {
     expect(extractData(result).redirectTo).toBe('/admin')
   })
 
+  it('rejects redirect targets whose dot segments normalize to a network-path reference', async () => {
+    testSession.set('user', adminUser())
+    for (const target of ['/..//evil.example/phish', '/a/..//evil.example/phish', '/%2e%2e//evil.example']) {
+      const response = await callLoader(`?redirect_to=${encodeURIComponent(target)}`)
+
+      expect(response.status, target).toBe(302)
+      expect(response.headers.get('location'), target).toBe('/')
+    }
+  })
+
+  it('rejects dot-segment redirect targets before they reach the login form', async () => {
+    const result = await callAction(null, withCsrf(), '/..//evil.example/phish')
+
+    expect(extractData(result).redirectTo).toBe('/admin')
+  })
+
   it('falls back to the login view for POST-only action names', async () => {
     // POST-only action names must resolve to the login view, or the form
     // unmounts on commit.
