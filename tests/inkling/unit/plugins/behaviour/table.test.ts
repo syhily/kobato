@@ -69,11 +69,11 @@ function $firstTable(): TableNode {
 function $cell(rowIndex: number, cellIndex: number): TableCellNode {
   const row = $firstTable().getChildren()[rowIndex]
   if (!(row instanceof TableRowNode)) {
-    throw new Error(`no row ${rowIndex}`)
+    throw new TypeError(`no row ${rowIndex}`)
   }
   const cell = row.getChildren()[cellIndex]
   if (!(cell instanceof TableCellNode)) {
-    throw new Error(`no cell ${rowIndex}/${cellIndex}`)
+    throw new TypeError(`no cell ${rowIndex}/${cellIndex}`)
   }
   return cell
 }

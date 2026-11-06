@@ -53,7 +53,7 @@ function getBackdrop(): HTMLElement {
   const wrapper = screen.getByRole('dialog').parentElement
   const backdrop = Array.from(wrapper?.children ?? []).find((el) => el.getAttribute('aria-hidden') === 'true')
   if (!(backdrop instanceof HTMLElement)) {
-    throw new Error('popup backdrop not found')
+    throw new TypeError('popup backdrop not found')
   }
   return backdrop
 }

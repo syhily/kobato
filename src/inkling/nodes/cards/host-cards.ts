@@ -77,7 +77,7 @@ export function defineCard<
   // is to require the base to extend it (build bases with
   // generateDecoratorNode).
   if (!(spec.baseNode.prototype instanceof InklingDecoratorNode)) {
-    throw new Error(
+    throw new TypeError(
       `[defineCard] '${spec.nodeType}': baseNode must extend InklingDecoratorNode (build it with generateDecoratorNode)`,
     )
   }

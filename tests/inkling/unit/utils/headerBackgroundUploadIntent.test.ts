@@ -38,7 +38,7 @@ describe('headerBackgroundUploadIntent', () => {
     return editor.getEditorState().read(() => {
       const node = $getNodeByKey(nodeKey)
       if (!(node instanceof BaseHeaderNode)) {
-        throw new Error('header node missing')
+        throw new TypeError('header node missing')
       }
       return {
         src: node.backgroundImageSrc,

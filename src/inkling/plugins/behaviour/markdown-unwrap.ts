@@ -47,7 +47,7 @@ export function $unwrapSpecialMarkupFormat(anchorNode: TextNode, selection: Rang
       const markup = SPECIAL_MARKUPS[format]
       let newText = textContent
       // for replacement strings e.g. {{variable}} we shouldn't add the markup (assumes use of ReplacementStringsPlugin)
-      if (!(format === 'code' && /{.*?}(?![A-Za-z\s])/.exec(textContent))) {
+      if (!(format === 'code' && /{.*?}(?![A-Za-z\s])/.test(textContent))) {
         newText = markup + newText + markup
       }
       newText = newText.slice(0, -1) // remove the last character (the eaten one or the trailing markup)

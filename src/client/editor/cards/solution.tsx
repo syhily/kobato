@@ -47,7 +47,7 @@ const solutionNestedEditors = [
 // The merged interface self-types the spec-driven nested-editor fields — the
 // inkling BaseToggleNode idiom; the pair needs the declaration-merging
 // exemption inkling's oxlint scope grants (src/client sits outside it).
-// oxlint-disable-next-line no-redeclare, typescript/no-unsafe-declaration-merging, typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-unsafe-declaration-merging, typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseSolutionNode extends CardSpecFieldMapFor<readonly [], typeof solutionNestedEditors> {}
 export class BaseSolutionNode extends generateDecoratorNode({
   nodeType: SOLUTION_NODE_TYPE,

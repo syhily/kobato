@@ -55,7 +55,7 @@ function options(): UseFileUploadOptions {
 function selectFile(file: File) {
   const input = document.querySelector('input[type="file"]')
   if (!(input instanceof HTMLInputElement)) {
-    throw new Error('file input not rendered')
+    throw new TypeError('file input not rendered')
   }
   fireEvent.change(input, { target: { files: [file] } })
 }
