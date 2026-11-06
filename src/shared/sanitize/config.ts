@@ -1,7 +1,16 @@
 // Strategy data shared by the two sanitize engines. Dependency-free so both
 // engines and the facade can import it in either bundle.
 
-export type SafeHtmlStrategy = 'shiki' | 'math' | 'email' | 'audit' | 'preview' | 'body' | 'feed' | 'comment-email'
+export type SafeHtmlStrategy =
+  | 'shiki'
+  | 'math'
+  | 'email'
+  | 'audit'
+  | 'preview'
+  | 'body'
+  | 'feed'
+  | 'comment'
+  | 'comment-email'
 
 export interface SanitizeStrategyConfig {
   tags: readonly string[]
@@ -71,8 +80,8 @@ const BASE_SCHEMES = ['http', 'https', 'mailto'] as const
 // Restricted to the property/value shapes shiki actually emits, so a hand-crafted
 // body can't smuggle in `expression()` / `url(javascript:)` etc.
 const SHIKI_ALLOWED_STYLES: Readonly<Record<string, readonly RegExp[]>> = {
-  color: [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\(/],
-  'background-color': [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\(/],
+  color: [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\([^()]*\)$/],
+  'background-color': [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\([^()]*\)$/],
   'font-weight': [/^\d{3}$/],
   'font-style': [/^(italic|normal|oblique)$/i],
   'text-decoration': [/^(underline|line-through|none)$/i],
@@ -163,6 +172,30 @@ const EMAIL_ATTRIBUTES = [
   'src',
 ] as const
 
+// Tags the comment feed-variant projection can actually emit — the comment
+// editor's node whitelist (`shared/lexical/node-whitelist`'s
+// COMMENT_NODE_TYPES) admits paragraphs, inline marks, blockquote, lists,
+// code blocks, and links; math degrades to TeX text in the feed variant.
+// Shared by the 'comment' and 'comment-email' strategies.
+const COMMENT_TAGS = [
+  'p',
+  'br',
+  'strong',
+  'em',
+  'u',
+  's',
+  'mark',
+  'code',
+  'pre',
+  'blockquote',
+  'ul',
+  'ol',
+  'li',
+  'a',
+  'sup',
+  'sub',
+] as const
+
 // inkling `exportDOM` additions over BASE: inline marks (u/s/sup/sub/mark),
 // media wrappers (figure/figcaption/audio), the footnotes <section>, and the
 // solution card's inline SVG QED mark. `viewbox` matches sanitize-html's
@@ -171,7 +204,6 @@ const EMAIL_ATTRIBUTES = [
 const BODY_TAGS = ['u', 's', 'sup', 'sub', 'mark', 'figure', 'figcaption', 'section', 'audio', 'svg', 'rect'] as const
 
 const BODY_ATTRIBUTES = [
-  'id',
   'style',
   'src',
   'srcset',
@@ -247,6 +279,20 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
       return {
         tags: [...BASE_TAGS, ...BODY_TAGS, ...MATH_TAGS],
         attributes: [...BASE_ATTRIBUTES, ...BODY_ATTRIBUTES, ...MATH_ATTRIBUTES],
+        // `id` only where the projection actually emits one: heading anchors
+        // (inkling's heading transformer) and the footnote ref/definition
+        // anchors. A free-floating id on any other tag is DOM-clobbering
+        // surface with no legitimate producer.
+        tagAttributes: {
+          h1: ['id'],
+          h2: ['id'],
+          h3: ['id'],
+          h4: ['id'],
+          h5: ['id'],
+          h6: ['id'],
+          sup: ['id'],
+          li: ['id'],
+        },
         schemes: BASE_SCHEMES,
         styles: BODY_ALLOWED_STYLES,
       }
@@ -324,30 +370,30 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
     // lists, plain pre/code (artifacts stripped), and links.
     case 'comment-email':
       return {
-        tags: [
-          'p',
-          'br',
-          'strong',
-          'em',
-          'u',
-          's',
-          'mark',
-          'code',
-          'pre',
-          'blockquote',
-          'ul',
-          'ol',
-          'li',
-          'a',
-          'sup',
-          'sub',
-        ],
+        tags: COMMENT_TAGS,
         attributes: ['class'],
         tagAttributes: {
           a: ['href', 'title', 'rel', 'target'],
         },
         schemes: BASE_SCHEMES,
         noProtocolRelative: true,
+      }
+
+    // Public-site render boundary for the same comment `content` column
+    // (`ui/public/comments/CommentContentHtml`). Same tag set as
+    // 'comment-email' — the comment editor's node whitelist
+    // (COMMENT_NODE_TYPES) admits no media or heading nodes — plus the
+    // blank-target rel rewrite for untrusted commenter links.
+    case 'comment':
+      return {
+        tags: COMMENT_TAGS,
+        attributes: ['class'],
+        tagAttributes: {
+          a: ['href', 'title', 'rel', 'target'],
+        },
+        schemes: BASE_SCHEMES,
+        noProtocolRelative: true,
+        noopenerOnBlankTarget: true,
       }
   }
 }

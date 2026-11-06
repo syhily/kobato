@@ -344,6 +344,22 @@ describe('content.posts.bySlug', () => {
     expect(json.payload.post.title).toBe('Secret')
   })
 
+  it('serves the saved body_html projection raw — sanitization is the render boundary', async () => {
+    // Raw-at-rest invariant: the wire DTO carries the UNSANITIZED projection
+    // and the public body renderer owns the 'body'-strategy sanitize pass.
+    // Pin both directions — no server-side stripping (the payload survives
+    // verbatim) and no server-side escaping (markup stays markup).
+    const raw = '<p>raw <strong>body</strong></p><form action="https://evil.example"><button>x</button></form>'
+    await seedPost({ slug: 'raw-body', publishedAt: new Date('2024-01-01') })
+    await db.update(contentTable).set({ bodyHtml: raw })
+
+    const res = await callRpc('/content/posts/bySlug', { slug: 'raw-body' }, makePublicCtx({ db }))
+    const json = await parseRpcJson<{ kind: string; payload: { bodyHtml: string } }>(res)
+
+    expect(json.kind).toBe('ok')
+    expect(json.payload.bodyHtml).toBe(raw)
+  })
+
   it('404s an author previewing another author’s draft', async () => {
     await seedDraftPost('secret', 'Secret', 1)
 

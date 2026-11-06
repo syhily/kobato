@@ -82,7 +82,9 @@ server or client boundary catch and log it.
 - `sanitize/` — the isomorphic DOMPurify sanitize stack: `config`
   (per-strategy allowlists, including the server-only `feed` /
   `comment-email` strategies consumed by `server/render/feed` and
-  `server/domains/comments`), `purify-core` (every behavioral rule, shared
+  `server/domains/comments`, and the `comment` strategy consumed by
+  `ui/public/comments/CommentContentHtml`), `purify-core` (every behavioral
+  rule, shared
   so SSR and hydration bytes cannot drift), `sanitize-html` (facade:
   `sanitizeHtmlString` / `sanitizeHtml`), and the two engine bindings.
   `engine.node.ts` is the one sanctioned exception to this layer's

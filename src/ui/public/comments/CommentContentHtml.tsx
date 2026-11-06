@@ -8,6 +8,6 @@ import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 // the raw projection. Pre-R12 rows hold markdown-era text that degrades to
 // readable plain text here; the R15 backfill rebuilds their projection.
 export function CommentContentHtml({ content, className }: { content: string | null; className?: string }) {
-  const clean = useMemo(() => sanitizeHtml(content ?? '', 'body'), [content])
+  const clean = useMemo(() => sanitizeHtml(content ?? '', 'comment'), [content])
   return <div className={className} dangerouslySetInnerHTML={{ __html: clean }} />
 }

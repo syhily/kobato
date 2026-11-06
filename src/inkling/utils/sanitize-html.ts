@@ -83,6 +83,9 @@ export function sanitizeHtml(html = '', options: SanitizeHtmlOptions = {}, windo
   return purify.sanitize(result, {
     ALLOWED_URI_REGEXP: /^(?:https?:|\/|blob:)/,
     ADD_ATTR: ['id'],
-    FORBID_TAGS: ['style'],
+    // `style` kills style-tag CSS injection; the form family kills
+    // overlay/phishing markup pasted into the live editor (DOMPurify's
+    // default allowlist would keep them).
+    FORBID_TAGS: ['style', 'form', 'input', 'button', 'textarea', 'select'],
   })
 }

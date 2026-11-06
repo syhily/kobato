@@ -7,7 +7,17 @@ import { sanitizeHtmlEngine } from '@/shared/sanitize/engine.browser'
 // Parity suite for the DOMPurify browser engine (vite aliases the facade's
 // engine import here); mirrors tests/unit/shared/sanitize/sanitize-html.test.ts.
 
-const strategies: SafeHtmlStrategy[] = ['shiki', 'math', 'email', 'audit', 'preview', 'body', 'feed', 'comment-email']
+const strategies: SafeHtmlStrategy[] = [
+  'shiki',
+  'math',
+  'email',
+  'audit',
+  'preview',
+  'body',
+  'feed',
+  'comment',
+  'comment-email',
+]
 
 function clean(html: string, strategy: SafeHtmlStrategy): string {
   // Leading ZWSP shields the first element from a happy-dom-only DOMPurify quirk.

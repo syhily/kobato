@@ -4,7 +4,17 @@ import type { SafeHtmlStrategy } from '@/shared/sanitize/config'
 
 import { sanitizeHtmlString } from '@/shared/sanitize/sanitize-html'
 
-const strategies: SafeHtmlStrategy[] = ['shiki', 'math', 'email', 'audit', 'preview', 'body', 'feed', 'comment-email']
+const strategies: SafeHtmlStrategy[] = [
+  'shiki',
+  'math',
+  'email',
+  'audit',
+  'preview',
+  'body',
+  'feed',
+  'comment',
+  'comment-email',
+]
 
 describe('shared/sanitize/sanitize-html', () => {
   it('strips script tags for every strategy', () => {
@@ -231,6 +241,31 @@ describe('shared/sanitize/sanitize-html', () => {
       expect(clean).not.toContain('javascript')
       expect(clean).not.toContain('onerror')
     })
+
+    it('keeps id only on heading anchors and footnote refs, strips it elsewhere', () => {
+      const html =
+        '<h2 id="intro">t</h2><p id="para">x</p><div id="mount">y</div>' +
+        '<sup id="user-content-fnref-1"><a href="#user-content-fn-1">1</a></sup>' +
+        '<ol><li id="user-content-fn-1">note</li></ol>'
+      const clean = sanitizeHtmlString(html, 'body')
+      expect(clean).toContain('<h2 id="intro">')
+      expect(clean).toContain('id="user-content-fnref-1"')
+      expect(clean).toContain('id="user-content-fn-1"')
+      expect(clean).not.toContain('id="para"')
+      expect(clean).not.toContain('id="mount"')
+    })
+
+    it('keeps a plain var() color but rejects var() carrying nested parentheses', () => {
+      const html =
+        '<span style="color: var(--shiki-light)">ok</span>' +
+        '<span style="color: var(--x, rgba(0,0,0,1))">bad</span>' +
+        '<span style="color: var(--x); background: url(javascript:1)">evil</span>'
+      const clean = sanitizeHtmlString(html, 'body')
+      expect(clean).toContain('color: var(--shiki-light)')
+      expect(clean).not.toContain('rgba(0,0,0,1)')
+      expect(clean).not.toContain('javascript')
+      expect(clean).not.toContain('background')
+    })
   })
 
   it('keeps allowed link schemes and strips javascript: links', () => {
@@ -301,6 +336,37 @@ describe('shared/sanitize/sanitize-html', () => {
       const clean = sanitizeHtmlString('<p class="x" data-tracker="1">hi</p>', 'comment-email')
       expect(clean).toContain('class="x"')
       expect(clean).not.toContain('data-tracker')
+    })
+  })
+
+  describe('comment strategy (public comment content boundary)', () => {
+    it('keeps the comment projection tags, drops media and headings the editor cannot produce', () => {
+      const html =
+        '<p>hi <strong>there</strong> <a href="https://example.com">link</a></p>' +
+        '<blockquote>q</blockquote><ul><li>one</li></ul><pre><code>c</code></pre>' +
+        '<h2 id="x">heading</h2><figure><img src="https://example.com/a.png"></figure>' +
+        '<form action="https://evil.example"><button>go</button></form>'
+      const clean = sanitizeHtmlString(html, 'comment')
+      expect(clean).toContain('<strong>there</strong>')
+      expect(clean).toContain('<blockquote>q</blockquote>')
+      expect(clean).toContain('<li>one</li>')
+      expect(clean).toContain('<pre><code>c</code></pre>')
+      expect(clean).not.toContain('<h2')
+      expect(clean).not.toContain('<figure')
+      expect(clean).not.toContain('<img')
+      expect(clean).not.toContain('<form')
+      expect(clean).not.toContain('<button')
+    })
+
+    it('rejects protocol-relative URLs', () => {
+      const clean = sanitizeHtmlString('<a href="//evil.example/x">click</a>', 'comment')
+      expect(clean).not.toContain('//evil.example')
+    })
+
+    it('rewrites rel=noopener on blank-target commenter links', () => {
+      const clean = sanitizeHtmlString('<a href="https://example.com" target="_blank" rel="friend">x</a>', 'comment')
+      expect(clean).toContain('rel="noopener noreferrer nofollow"')
+      expect(clean).not.toContain('friend')
     })
   })
 

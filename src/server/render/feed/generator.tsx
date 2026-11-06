@@ -29,13 +29,25 @@ export function sanitizeFeedHtml(html: string): string {
   return sanitizeHtmlString(html, 'feed')
 }
 
+// xml-js (the feed library's serializer) CDATA-wraps title/description/
+// content but splits only the FIRST `]]>` a payload contains — a second
+// occurrence would terminate the CDATA early and invalidate the whole
+// document. Escape every occurrence up front: inside the HTML payload
+// (`content:encoded`) the entity decodes back to `>` in the reader, and a
+// literal `]]>` in a title is pathological anyway — either beats shipping
+// unparseable XML to every subscriber.
+/** Exported for unit tests. */
+export function escapeCdataPayload(value: string): string {
+  return value.replaceAll(']]>', ']]&gt;')
+}
+
 async function renderEntryContent(entry: Post | Page): Promise<string> {
   // The saved `body_html_feed` projection already carries the rssMode
   // degradations (math→TeX, code→plain pre, host cards flattened) and
   // origin-absolutized media srcs; the sanitize allowlist below is the last
   // boundary before the XML.
   const html = await resolveBodyHtmlFeed(entry)
-  return sanitizeFeedHtml(html)
+  return escapeCdataPayload(sanitizeFeedHtml(html))
 }
 
 export async function generateFeeds(db: Database, options: FeedOptions = {}) {
@@ -107,10 +119,10 @@ export async function generateFeeds(db: Database, options: FeedOptions = {}) {
       })
     }
     feed.addItem({
-      title: post.title,
+      title: escapeCdataPayload(post.title),
       id: joinUrl(siteIdentity.website, post.permalink),
       link: joinUrl(siteIdentity.website, post.permalink),
-      description: post.summary,
+      description: escapeCdataPayload(post.summary),
       content: contents[i],
       author: [
         {

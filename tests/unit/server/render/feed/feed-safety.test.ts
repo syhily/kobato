@@ -2,10 +2,20 @@ import { describe, expect, it } from 'vitest'
 
 import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
-import { sanitizeFeedHtml } from '@/server/render/feed/generator'
+import { escapeCdataPayload, sanitizeFeedHtml } from '@/server/render/feed/generator'
 import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
 describe('feed-safety', () => {
+  describe('escapeCdataPayload', () => {
+    it('escapes EVERY ]]> so the CDATA wrapper cannot terminate early', () => {
+      // xml-js splits only the first occurrence — the second must already
+      // be neutralized when the payload reaches the serializer.
+      expect(escapeCdataPayload('a ]]> b ]]> c')).toBe('a ]]&gt; b ]]&gt; c')
+      expect(escapeCdataPayload(']]>')).toBe(']]&gt;')
+      expect(escapeCdataPayload('clean text')).toBe('clean text')
+    })
+  })
+
   describe('sanitizeFeedHtml', () => {
     it('removes script tags', () => {
       const input = '<p>hello</p><script>alert(1)</script><p>world</p>'

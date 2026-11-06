@@ -55,7 +55,8 @@ parent.
   reused across client-side navigations (only its innerHTML is swapped), so without the key the
   previous article's enhancements would leak on detached nodes (a music player's audio keeps
   playing) and the new article's markup would never upgrade. Comment bodies render the stored `content` HTML column through
-  `comments/CommentContentHtml` with the same `'body'` sanitize preset.
+  `comments/CommentContentHtml` with the narrower `'comment'` sanitize preset (the comment
+  editor's node whitelist admits no media/headings — pinned by the sanitize strategy tests).
 - `ui/icons/` — static-export icon library. Named imports only — no `<Icon name="..." />` string
   lookups. Import directly from `lucide-react`; the build tree-shakes unused icons.
 - `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
