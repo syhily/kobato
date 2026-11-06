@@ -146,10 +146,11 @@ sharp / @napi-rs/canvas / @duckdb/node-api are **statically imported and
 bundled**; `scripts/sea/redirect-native-requires.ts` (a Vite plugin)
 rewrites their platform-specifier `require(...)` sites to
 `nativeRequire(...)` against the flat dir + embedded `natives-meta/*`
-(`src/server/infra/native-require.ts`). jsdom and css-tree read static
-data files at runtime in ways the single-file bundle cannot survive, so
-`scripts/sea/inline-package-data.ts` inlines each read (call-site shapes
-pinned by `tests/unit/shared/contracts/inline-package-data.test.ts`).
+(`src/server/infra/native-require.ts`). jsdom resolves its sync-XHR
+worker path at module scope in a way the single-file bundle cannot
+survive, so `scripts/sea/inline-package-data.ts` stubs the resolve
+(call-site shapes pinned by
+`tests/unit/shared/contracts/inline-package-data.test.ts`).
 
 - `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`), budgeted at
   230 MB by the smoke. Deliberately NOT UPX-compressed — every ordering

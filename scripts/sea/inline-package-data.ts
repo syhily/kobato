@@ -1,22 +1,19 @@
 // Bundler plugin: inline static package data files into the server bundle.
-// Several bundled packages read data files at runtime in ways the
-// single-file ESM SEA binary cannot survive:
+// Bundled packages occasionally reach for files at runtime in ways the
+// single-file ESM SEA binary cannot survive; every payload is static, so
+// the transform swaps each read for a literal carrying the real content
+// (JSON payloads embed verbatim — a JSON text IS a JS expression — so
+// consumers still bind objects, not strings).
 //
-//   - jsdom's `lib/jsdom/living/css/helpers/computed-style.js` does a
-//     module-scope `fs.readFileSync(path.resolve(__dirname, "…"))` — there
-//     is no `__dirname` in the bundle, so evaluating the module throws
-//     `__dirname is not defined` at boot (and no file would exist anyway).
-//   - css-tree's ESM entry files (`lib/data.js`, `lib/data-patch.js`,
-//     `lib/version.js`) load JSON through
-//     `createRequire(import.meta.url)(…)` — opaque runtime calls the
-//     bundler cannot resolve, so they reach the binary verbatim and die
-//     with MODULE_NOT_FOUND at boot. Their cjs/ twins use plain `require`
-//     with the same specifiers; they are covered too so a resolution-
-//     condition flip never reopens the hole.
+// Currently covered:
 //
-// Every payload is static, so the transform swaps each read for a literal
-// carrying the real content (JSON payloads embed verbatim — a JSON text IS
-// a JS expression — so consumers still bind objects, not strings).
+//   - jsdom's `lib/jsdom/living/xhr/XMLHttpRequest-impl.js` does a
+//     module-scope `require.resolve("./xhr-sync-worker.js")` — the Worker
+//     is constructed only for SYNC XHR, which the sanitize engine never
+//     performs, so a placeholder path is inlined instead (see `path-stub`).
+//     jsdom 31 pre-generates its default stylesheet into a plain JS module
+//     and dropped css-tree entirely, so neither needs data inlining anymore.
+//
 // Registered in vite.config.ts (the SEA bundle wraps build/server, where
 // these packages are already inlined) and in vite.sea.config.ts (in case a
 // package is ever externalized into the SEA graph). Every call-site shape
@@ -58,18 +55,6 @@ export interface InlineDataCase {
 
 export const INLINE_DATA_CASES: InlineDataCase[] = [
   {
-    name: 'jsdom default stylesheet',
-    modulePattern: /[\\/]jsdom[\\/]lib[\\/]jsdom[\\/]living[\\/]css[\\/]helpers[\\/]computed-style\.js$/,
-    reads: [
-      {
-        pattern:
-          /fs\.readFileSync\(\s*path\.resolve\(__dirname,\s*["'][^"']*browser\/default-stylesheet\.css["']\),?\s*\{[^}]*\}\s*\)/,
-        dataFile: '../../../browser/default-stylesheet.css',
-        kind: 'text',
-      },
-    ],
-  },
-  {
     name: 'jsdom xhr sync worker path',
     modulePattern: /[\\/]jsdom[\\/]lib[\\/]jsdom[\\/]living[\\/]xhr[\\/]XMLHttpRequest-impl\.js$/,
     reads: [
@@ -81,72 +66,6 @@ export const INLINE_DATA_CASES: InlineDataCase[] = [
         kind: 'path-stub',
       },
     ],
-  },
-  {
-    name: 'css-tree data patch (esm)',
-    modulePattern: /[\\/]css-tree[\\/]lib[\\/]data-patch\.js$/,
-    reads: [
-      { pattern: /require\(\s*["']\.\.\/data\/patch\.json["']\s*\)/, dataFile: '../data/patch.json', kind: 'json' },
-    ],
-  },
-  {
-    name: 'css-tree data patch (cjs)',
-    modulePattern: /[\\/]css-tree[\\/]cjs[\\/]data-patch\.cjs$/,
-    reads: [
-      { pattern: /require\(\s*["']\.\.\/data\/patch\.json["']\s*\)/, dataFile: '../data/patch.json', kind: 'json' },
-    ],
-  },
-  {
-    name: 'css-tree data (esm)',
-    modulePattern: /[\\/]css-tree[\\/]lib[\\/]data\.js$/,
-    reads: [
-      {
-        pattern: /require\(\s*["']mdn-data\/css\/at-rules\.json["']\s*\)/,
-        dataFile: 'bare:mdn-data/css/at-rules.json',
-        kind: 'json',
-      },
-      {
-        pattern: /require\(\s*["']mdn-data\/css\/properties\.json["']\s*\)/,
-        dataFile: 'bare:mdn-data/css/properties.json',
-        kind: 'json',
-      },
-      {
-        pattern: /require\(\s*["']mdn-data\/css\/syntaxes\.json["']\s*\)/,
-        dataFile: 'bare:mdn-data/css/syntaxes.json',
-        kind: 'json',
-      },
-    ],
-  },
-  {
-    name: 'css-tree data (cjs)',
-    modulePattern: /[\\/]css-tree[\\/]cjs[\\/]data\.cjs$/,
-    reads: [
-      {
-        pattern: /require\(\s*["']mdn-data\/css\/at-rules\.json["']\s*\)/,
-        dataFile: 'bare:mdn-data/css/at-rules.json',
-        kind: 'json',
-      },
-      {
-        pattern: /require\(\s*["']mdn-data\/css\/properties\.json["']\s*\)/,
-        dataFile: 'bare:mdn-data/css/properties.json',
-        kind: 'json',
-      },
-      {
-        pattern: /require\(\s*["']mdn-data\/css\/syntaxes\.json["']\s*\)/,
-        dataFile: 'bare:mdn-data/css/syntaxes.json',
-        kind: 'json',
-      },
-    ],
-  },
-  {
-    name: 'css-tree version (esm)',
-    modulePattern: /[\\/]css-tree[\\/]lib[\\/]version\.js$/,
-    reads: [{ pattern: /require\(\s*["']\.\.\/package\.json["']\s*\)/, dataFile: '../package.json', kind: 'json' }],
-  },
-  {
-    name: 'css-tree version (cjs)',
-    modulePattern: /[\\/]css-tree[\\/]cjs[\\/]version\.cjs$/,
-    reads: [{ pattern: /require\(\s*["']\.\.\/package\.json["']\s*\)/, dataFile: '../package.json', kind: 'json' }],
   },
 ]
 

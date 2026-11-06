@@ -26,8 +26,8 @@
 // builtins stay external. The inline-package-data plugin (registered in
 // BOTH configs — these packages reach the SEA bundle via the prebuilt
 // build/server graph) swaps runtime data-file reads the binary cannot
-// survive (jsdom's `__dirname` stylesheet read, css-tree's createRequire
-// patch.json load) for inlined literals. Node builtins are external
+// survive (jsdom's module-scope sync-XHR worker `require.resolve`,
+// stubbed with a placeholder path) for inlined literals. Node builtins are external
 // automatically for SSR builds — no externals config is needed.
 
 import { readFileSync } from 'node:fs'

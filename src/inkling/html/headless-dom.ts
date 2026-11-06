@@ -23,7 +23,7 @@ let cachedDefaultDom: Promise<ExportDOMDom> | undefined
  * process-cached JSDOM — the class-level cache the renderer used to carry,
  * moved here. The import stays lazy even though jsdom is a plain bundled
  * dependency now (inlined into the SEA binary with its data files patched):
- * it defers jsdom/css-tree evaluation off the boot path and preserves the
+ * it defers jsdom evaluation off the boot path and preserves the
  * one-importer discipline the guard pins. That also makes the failure leg
  * unreachable in every shipped artifact — the `load` injection port exists
  * solely so tests can exercise that unreachable leg as a synchronous table

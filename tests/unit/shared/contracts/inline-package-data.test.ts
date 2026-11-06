@@ -9,13 +9,15 @@ import {
   inlinePackageData,
 } from '../../../../scripts/sea/inline-package-data.ts'
 
-// Contract test: the server bundle inlines jsdom (the sanitize engine)
-// and css-tree (jsdom's CSS parser). Both read static data files at
-// runtime in ways the single-file ESM SEA binary cannot survive — a
-// module-scope `__dirname` read and `createRequire(import.meta.url)` JSON
-// loads. The inline-package-data plugin rewrites those exact call sites;
-// this test pins their shape in the INSTALLED packages so an upstream
-// release that changes one fails here instead of in the smoke.
+// Contract test: the server bundle inlines jsdom (the sanitize engine),
+// which resolves its sync-XHR worker path at module scope — a code path
+// the server never takes, but the resolve must not throw inside the
+// single-file ESM SEA binary. (jsdom 31 pre-generates its default
+// stylesheet into a JS module and dropped css-tree, so neither the old
+// stylesheet read nor the css-tree JSON loads need inlining anymore.)
+// The inline-package-data plugin rewrites the exact call site; this test
+// pins its shape in the INSTALLED package so an upstream release that
+// changes it fails here instead of in the smoke.
 
 /** Real path of an installed package root. */
 function packageRoot(name: string): string {
@@ -25,17 +27,7 @@ function packageRoot(name: string): string {
 
 /** One installed representative file per plugin case. */
 const CASE_FILES: [caseName: string, file: string][] = [
-  [
-    'jsdom default stylesheet',
-    join(packageRoot('jsdom'), 'lib', 'jsdom', 'living', 'css', 'helpers', 'computed-style.js'),
-  ],
-  ['css-tree data patch (esm)', join(packageRoot('css-tree'), 'lib', 'data-patch.js')],
   ['jsdom xhr sync worker path', join(packageRoot('jsdom'), 'lib', 'jsdom', 'living', 'xhr', 'XMLHttpRequest-impl.js')],
-  ['css-tree data patch (cjs)', join(packageRoot('css-tree'), 'cjs', 'data-patch.cjs')],
-  ['css-tree data (esm)', join(packageRoot('css-tree'), 'lib', 'data.js')],
-  ['css-tree data (cjs)', join(packageRoot('css-tree'), 'cjs', 'data.cjs')],
-  ['css-tree version (esm)', join(packageRoot('css-tree'), 'lib', 'version.js')],
-  ['css-tree version (cjs)', join(packageRoot('css-tree'), 'cjs', 'version.cjs')],
 ]
 
 describe('contract: inline package data', () => {

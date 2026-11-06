@@ -164,7 +164,7 @@ describe('shared/sanitize/engine.browser', () => {
         '<span class="line"><span style="color:#111">const</span></span></code></pre>'
       const result = clean(html, 'body')
       expect(result).toContain('data-language="typescript"')
-      expect(result).toContain('data-code="const a = <b>"')
+      expect(result).toContain('data-code="const a = &lt;b&gt;"')
       expect(result).toContain('class="language-typescript"')
       expect(result).toContain('color: #111')
     })
