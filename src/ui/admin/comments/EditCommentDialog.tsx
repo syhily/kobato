@@ -45,7 +45,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   const { data: rawData } = rawQuery
 
   const editMutation = useMutation({
-    ...orpcQuery.comments.edit.mutationOptions(),
+    ...orpcQuery.admin.comments.edit.mutationOptions(),
     onSuccess: (payload) => onSaved({ body: payload.comment.body }),
     onError: onMutationError('保存评论失败'),
   })
@@ -90,7 +90,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
               toast.error('评论内容不能为空')
               return
             }
-            editMutation.mutate({ rid: idStr(comment.id), body })
+            editMutation.mutate({ commentId: idStr(comment.id), body })
           }}
           className="flex flex-col gap-4"
         >

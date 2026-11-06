@@ -1,10 +1,12 @@
 import { call } from '@orpc/server'
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
+import { makePublicCtx } from '#/_helpers/mock-ctx'
+import { approveCommentById } from '@/server/domains/comments/services/moderate'
 import { issueCommentToken } from '@/server/domains/comments/services/token'
 import { extractRequestFacts } from '@/server/http/utils/request-facts'
 import { comment } from '@/server/infra/db/schema/comment'
@@ -111,6 +113,20 @@ function makePublicCtxWithCookie(cookie: string): ReturnType<typeof makePublicCt
   ctx.request = request
   ctx.requestFacts = extractRequestFacts(request)
   return ctx
+}
+
+/** Public context holding the ownership cookie for one comment. */
+async function makeTokenCtx(commentId: number, userId: number): Promise<ReturnType<typeof makePublicCtx>> {
+  const token = await issueCommentToken(db, commentId, userId, 'pk-edit', 600)
+  const cookie = serializeCommentTokensCookie({
+    'pk-edit': [{ token, expiresAt: Date.now() + 600_000 }],
+  })
+  return makePublicCtxWithCookie(cookie)
+}
+
+async function readComment(id: number) {
+  const [row] = await db.select().from(comment).where(eq(comment.id, id))
+  return row
 }
 
 describe('likesRouter.increase', () => {
@@ -308,17 +324,137 @@ describe('commentsRouter.edit', () => {
     })
   })
 
-  it('lets an admin edit any comment body', async () => {
+  it('throws FORBIDDEN when the commenter holds no token for the comment', async () => {
     const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
-    const pid = await seedPost('edit-target')
+    const pid = await seedPost('no-token-target')
+    const id = await seedComment({ userId: uid, ownerId: pid, body: validBody })
+
+    await expect(
+      call(
+        commentsRouter.edit,
+        { rid: String(id), body: makeCommentBody('hijacked') },
+        { context: makePublicCtx({ db }) },
+      ),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+
+    expect((await readComment(id))?.content).toBe('hello')
+  })
+
+  it('rejects a token scoped to another comment (no cross-comment rewrite)', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('cross-token-target')
+    const owned = await seedComment({ userId: uid, ownerId: pid, body: validBody })
+    const other = await seedComment({ userId: uid, ownerId: pid, body: validBody })
+    const ctx = await makeTokenCtx(owned, uid)
+
+    await expect(
+      call(commentsRouter.edit, { rid: String(other), body: makeCommentBody('hijacked') }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+
+    expect((await readComment(other))?.content).toBe('hello')
+  })
+
+  it('keeps an approved comment approved when the token edit lands inside the grace window', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('grace-edit')
+    const id = await seedComment({
+      userId: uid,
+      ownerId: pid,
+      body: validBody,
+      content: 'hello',
+      isPending: false,
+      createdAt: new Date(Date.now() - 5 * 60 * 1000),
+    })
+    const ctx = await makeTokenCtx(id, uid)
+
+    const res = await call(
+      commentsRouter.edit,
+      { rid: String(id), body: makeCommentBody('edited in grace') },
+      { context: ctx },
+    )
+
+    expect(res.comment.isPending).toBe(false)
+    const row = await readComment(id)
+    expect(row?.isPending).toBe(false)
+    expect(row?.content).toContain('edited in grace')
+    // The token cookie is refreshed by the middleware on every authorized edit.
+    expect(ctx.responseHeaders.get('Set-Cookie')).toContain('__comment_tokens=')
+  })
+
+  it('re-queues an approved comment when the token edit lands outside the grace window', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('re-pend-edit')
+    await seedMetricRow('post', pid, 'pk-edit')
+    const id = await seedComment({
+      userId: uid,
+      ownerId: pid,
+      body: validBody,
+      content: 'hello',
+      isPending: false,
+      createdAt: new Date(Date.now() - 60 * 60 * 1000),
+    })
+    const ctx = await makeTokenCtx(id, uid)
+
+    const res = await call(
+      commentsRouter.edit,
+      { rid: String(id), body: makeCommentBody('spam link later') },
+      { context: ctx },
+    )
+
+    expect(res.comment.isPending).toBe(true)
+    const row = await readComment(id)
+    expect(row?.isPending).toBe(true)
+    expect(row?.content).toContain('spam link later')
+
+    // Re-pended: gone from the anonymous list until an admin approves it again.
+    const beforeApproval = await call(
+      commentsRouter.loadComments,
+      { page_key: 'pk-edit', offset: 0 },
+      { context: makePublicCtx({ db }) },
+    )
+    expect(beforeApproval.comments).toHaveLength(0)
+
+    await approveCommentById(db, id)
+    const afterApproval = await call(
+      commentsRouter.loadComments,
+      { page_key: 'pk-edit', offset: 0 },
+      { context: makePublicCtx({ db }) },
+    )
+    expect(afterApproval.comments).toHaveLength(1)
+    expect(afterApproval.comments[0]?.isPending).toBe(false)
+  })
+
+  it('refuses a token edit once the author requested deletion', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('delete-requested-edit')
+    const id = await seedComment({
+      userId: uid,
+      ownerId: pid,
+      body: validBody,
+      content: 'hello',
+      deleteRequestedAt: new Date(),
+      deleteRequestedBy: uid,
+    })
+    const ctx = await makeTokenCtx(id, uid)
+
+    await expect(
+      call(commentsRouter.edit, { rid: String(id), body: makeCommentBody('edited') }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'CONFLICT', message: '已申请删除，无法编辑。' })
+
+    expect((await readComment(id))?.content).toBe('hello')
+  })
+
+  it('refuses a token edit once an approved reply exists', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('replied-edit')
     const id = await seedComment({ userId: uid, ownerId: pid, body: validBody, content: 'hello' })
-    const newBody = makeCommentBody('moderated')
-    const ctx = makeAuthedCtx({ db, role: 'admin' })
+    await seedComment({ userId: uid, ownerId: pid, body: validBody, rid: id, rootId: id, isPending: false })
+    const ctx = await makeTokenCtx(id, uid)
 
-    const res = await call(commentsRouter.edit, { rid: String(id), body: newBody }, { context: ctx })
+    await expect(
+      call(commentsRouter.edit, { rid: String(id), body: makeCommentBody('edited') }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'CONFLICT', message: '已有回复，无法再编辑。' })
 
-    expect(res.comment).toMatchObject({ id: String(id) })
-    const stored = await db.select().from(comment)
-    expect(stored[0]?.content).toContain('moderated')
+    expect((await readComment(id))?.content).toBe('hello')
   })
 })

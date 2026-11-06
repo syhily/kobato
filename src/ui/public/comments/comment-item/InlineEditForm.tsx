@@ -3,12 +3,11 @@ import { useState } from 'react'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
-import type { CommentEditOutput } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { Button } from '@/ui/components/button'
-import { useCommentsActions } from '@/ui/public/comments/comments-context'
+import { useCommentsActions, useCommentsIdentity } from '@/ui/public/comments/comments-context'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineEditFormProps {
@@ -19,23 +18,36 @@ interface InlineEditFormProps {
 
 export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormProps) {
   const actions = useCommentsActions('InlineEditForm')
-  const editAction = useMutation({
+  const identity = useCommentsIdentity('InlineEditForm')
+  // The wire shape is shared, but the policy differs: moderators hit the
+  // admin route (rewrite in place), owners hit the own-edit route (grace
+  // window + re-moderation fences).
+  const onSuccess = (payload: { comment: CommentItemType }) => {
+    actions.onEdited(payload.comment)
+    onSaved(payload.comment)
+  }
+  const adminEdit = useMutation({
+    ...orpcQuery.admin.comments.edit.mutationOptions(),
+    onSuccess,
+  })
+  const ownEdit = useMutation({
     ...orpcQuery.comments.edit.mutationOptions(),
-    onSuccess: (payload: CommentEditOutput) => {
-      actions.onEdited(payload.comment)
-      onSaved(payload.comment)
-    },
+    onSuccess,
   })
   const seed = comment.body
   const [body, setBody] = useState<CommentEditorState>(seed)
 
-  const saving = editAction.isPending
+  const saving = identity.admin ? adminEdit.isPending : ownEdit.isPending
 
   const handleSave = () => {
     if (isCommentEditorStateBlank(body)) {
       return
     }
-    editAction.mutate({ rid: comment.id, body })
+    if (identity.admin) {
+      adminEdit.mutate({ commentId: comment.id, body })
+    } else {
+      ownEdit.mutate({ rid: comment.id, body })
+    }
   }
 
   return (

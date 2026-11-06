@@ -151,10 +151,6 @@ export interface ReplyCommentOutput {
   comment: CommentItemWire
 }
 
-export interface CommentEditOutput {
-  comment: CommentItemWire
-}
-
 export interface LoadCommentsOutput {
   comments: CommentItemWire[]
   next: boolean

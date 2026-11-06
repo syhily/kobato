@@ -23,7 +23,8 @@ import { useCommentsActions, useCommentsIdentity } from '@/ui/public/comments/co
 
 interface CommentActionsProps {
   comment: CommentItemType
-  /** Open the admin edit area (round-trips through `comment.edit`). */
+  /** Open the inline editor — moderators hit `admin.comments.edit`, token
+   *  owners hit `comments.edit` (same own-edit policy as `updateOwn`). */
   onEditAdmin: () => void
   /** Open the visitor self-edit area (posts to `comment.updateOwn`). */
   onEditOwn: () => void

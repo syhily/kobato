@@ -198,18 +198,17 @@ export async function updateOwnComment(db: Database, rid: string, newBody: Comme
   return withCommentBadgeTextColor(r)
 }
 
-/** Visitor self-edit: ownership check, delete-request fence, has-replies
- *  lock, then the grace-window mutation. Audits; wire-contract errors. */
-export async function editOwnComment(
-  db: Database,
-  rid: string,
-  newBody: CommentEditorState,
-  viewer: ViewerIdentity,
-  audit: AuditContext,
-) {
+/**
+ * Own-edit policy shared by every owner-authorized edit route: the
+ * delete-request fence, the approved-replies lock, then the grace-window
+ * mutation. Callers own the ownership check (session identity or comment
+ * token) and the audit event. Never use this for moderator edits — those
+ * go through {@link updateComment} so they never re-queue.
+ */
+export async function applyOwnCommentEdit(db: Database, rid: string, newBody: CommentEditorState) {
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
-  if (existing === null || !isCommentOwner(viewer, existing)) {
+  if (existing === null) {
     throw new DomainError('NOT_FOUND', '资源不存在。')
   }
   if (existing.deleteRequestedAt !== null) {
@@ -224,6 +223,23 @@ export async function editOwnComment(
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '更新评论失败')
   }
+  return updated
+}
+
+/** Visitor self-edit: ownership check, then the shared own-edit policy.
+ *  Audits; wire-contract errors. */
+export async function editOwnComment(
+  db: Database,
+  rid: string,
+  newBody: CommentEditorState,
+  viewer: ViewerIdentity,
+  audit: AuditContext,
+) {
+  const existing = await findCommentWithUserById(db, idFromString(rid))
+  if (existing === null || !isCommentOwner(viewer, existing)) {
+    throw new DomainError('NOT_FOUND', '资源不存在。')
+  }
+  const updated = await applyOwnCommentEdit(db, rid, newBody)
   recordAuditEventFromContext(audit, {
     action: 'comment_own_updated',
     resourceType: 'comment',

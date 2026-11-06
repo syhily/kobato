@@ -2,6 +2,7 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
@@ -137,6 +138,51 @@ describe('adminCommentsRouter.delete', () => {
     expect(rows[0]!.resourceType).toBe('comment')
     expect(rows[0]!.resourceId).toBe(String(cid))
     expect(rows[0]!.actorId).toBe(admin)
+  })
+})
+
+describe('adminCommentsRouter.edit', () => {
+  it('rewrites in place without re-queuing — past the grace window and with approved replies', async () => {
+    const admin = await seedAdmin()
+    const uid = await seedUser()
+    const pid = await seedPost('Moderator Edit Post', 'moderator-edit-post')
+    const cid = await seedComment({
+      userId: uid,
+      ownerId: pid,
+      isPending: false,
+      content: 'hello',
+      createdAt: new Date(Date.now() - 60 * 60 * 1000),
+    })
+    await seedComment({ userId: uid, ownerId: pid, rid: cid, rootId: cid, isPending: false })
+
+    const res = await call(
+      adminCommentsRouter.edit,
+      { commentId: String(cid), body: makeCommentBody('moderated') },
+      { context: adminCtx(admin) },
+    )
+
+    expect(res.comment.id).toBe(String(cid))
+    expect(res.comment.isPending).toBe(false)
+    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    expect(row!.isPending).toBe(false)
+    expect(row!.content).toContain('moderated')
+
+    const rows = await auditRowsFor('comment_updated')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.resourceType).toBe('comment')
+    expect(rows[0]!.resourceId).toBe(String(cid))
+    expect(rows[0]!.actorId).toBe(admin)
+  })
+
+  it('translates a vanished comment onto the wire as NOT_FOUND', async () => {
+    const admin = await seedAdmin()
+    await expect(
+      call(
+        adminCommentsRouter.edit,
+        { commentId: '9999', body: makeCommentBody('orphan') },
+        { context: adminCtx(admin) },
+      ),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 })
 

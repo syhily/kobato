@@ -8,7 +8,7 @@ import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments
 import { commentReplySchema, commentRidSchema } from '@/server/domains/comments/schema'
 import { verifyCommentAccess } from '@/server/domains/comments/services/access'
 import { findCommentWithUserById } from '@/server/domains/comments/services/lookup'
-import { updateComment } from '@/server/domains/comments/services/moderate'
+import { applyOwnCommentEdit } from '@/server/domains/comments/services/moderate'
 import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
@@ -17,7 +17,7 @@ import { commentTokenCookie, publicProc, resourceRateLimit } from '@/server/http
 import { getLogger } from '@/server/infra/logger'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-import { commentItemDto } from '@/shared/contracts/comments'
+import { commentItemDto, ownCommentMutationDto } from '@/shared/contracts/comments'
 import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { idFromString } from '@/shared/utils/id'
@@ -106,10 +106,14 @@ const getRaw = publicProc
     return { body: comment.body }
   })
 
+// Owner-authorized edit (comment token or session ownership). Runs the SAME
+// own-edit policy as `/comments/update-own`: in-grace edits rewrite in place,
+// out-of-grace edits re-enter the moderation queue, and the delete-request +
+// approved-replies fences apply. Moderator edits live on `/comment-admin/edit`.
 const edit = publicProc
   .route({ method: 'POST', path: '/comments/edit' })
   .input(commentRidSchema.extend({ body: commentEditorStateSchema }))
-  .output(z.object({ comment: commentItemDto }))
+  .output(ownCommentMutationDto)
   .use(resourceRateLimit)
   .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
@@ -119,12 +123,9 @@ const edit = publicProc
       throw new ORPCError('FORBIDDEN', { message: '无权编辑该评论' })
     }
     context.commentTokens.refreshed = cleaned
-    const updated = await updateComment(context.db, input.rid, input.body)
-    if (!updated) {
-      throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })
-    }
+    const updated = await applyOwnCommentEdit(context.db, input.rid, input.body)
     recordAuditEventFromContext(context, {
-      action: 'comment_updated',
+      action: 'comment_own_updated',
       resourceType: 'comment',
       resourceId: input.rid,
     })

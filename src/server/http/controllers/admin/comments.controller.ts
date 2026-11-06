@@ -1,7 +1,8 @@
+import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { asAdminCommentsWire } from '@/server/domains/comments/projection'
+import { asAdminCommentsWire, asCommentItemWire } from '@/server/domains/comments/projection'
 import {
   countAdminPendingDashboard,
   loadAdminPendingDashboard,
@@ -14,10 +15,12 @@ import {
   approveComment,
   deleteCommentById,
   resolveCommentDeleteRequest,
+  updateComment,
 } from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminCommentsPendingCountOutputSchema } from '@/shared/contracts/admin'
-import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/comments'
+import { adminCommentDto, adminPendingDashboardDto, ownCommentMutationDto } from '@/shared/contracts/comments'
+import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { idFromString } from '@/shared/utils/id'
 
 const approve = adminProc
@@ -44,6 +47,26 @@ const deleteOne = adminProc
       resourceType: 'comment',
       resourceId: input.commentId,
     })
+  })
+
+// Moderator edit: rewrites in place and never re-queues — the commenter-facing
+// own-edit policy (grace window, delete fence, reply lock) is deliberately
+// not applied here.
+const editOne = adminProc
+  .route({ method: 'POST', path: '/comment-admin/edit' })
+  .input(z.object({ commentId: z.string(), body: commentEditorStateSchema }))
+  .output(ownCommentMutationDto)
+  .handler(async ({ input, context }) => {
+    const updated = await updateComment(context.db, input.commentId, input.body)
+    if (!updated) {
+      throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })
+    }
+    recordAuditEventFromContext(context, {
+      action: 'comment_updated',
+      resourceType: 'comment',
+      resourceId: input.commentId,
+    })
+    return { comment: asCommentItemWire(updated) }
   })
 
 const loadAll = adminProc
@@ -188,6 +211,7 @@ const probeAvatarMirrors = adminProc
 export const adminCommentsRouter = {
   approve,
   delete: deleteOne,
+  edit: editOne,
   loadAll,
   searchPages,
   searchAuthors,
