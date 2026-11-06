@@ -328,7 +328,7 @@ Each card POSTs an honest Section patch (owned fields only). The server deep-mer
 
 ## Storage configuration & migration
 
-S3-compatible storage is configured on `/admin/library/storage` (NOT `/admin/settings` — the assets section there keeps only upload limits + robots.txt). The rules:
+S3-compatible storage is configured on `/admin/settings` in the 存储配置 (assets) section — the `StorageCards` component (`src/ui/admin/settings/StorageCards.tsx`) carries 当前存储 / 存储迁移 / 资源域名 / S3 兼容存储; the section's own `AssetsForm` adds upload limits + robots.txt. The rules:
 
 - First-time saves of `assets.storage.*` are connectivity-probed (`validateS3Config`, HeadBucket + ListObjectsV2 fallback) before persisting; an unreachable/invalid config rejects with BAD_REQUEST.
 - Once `storage.enabled` is true the config is LOCKED: `updateBlogSettingsSection` rejects `storage.*` patches unless the caller passes `{ allowStorageConfigOverride: true }` — that flag is reserved for the migration task. ONE exemption: a patch that changes only `accessKeyId` / `secretAccessKey` / `urlTemplate` (credential rotation, CDN template) is allowed while locked; like every allowed S3 change, it is connectivity-probed on the merged config before persisting. All other storage.* changes require a migration.

@@ -130,7 +130,7 @@ export async function updateBlogSettingsSection(
  *    only `accessKeyId` / `secretAccessKey` / `urlTemplate` (credential
  *    rotation / CDN template tweaks); structural changes (endpoint, region,
  *    bucket, path-style, the toggle) go through the migration wizard
- *    (`/admin/library/storage`), not this pipeline.
+ *    (`/admin/settings` → 存储配置), not this pipeline.
  * 3. Every patch allowed through — first-time configuration / enablement AND
  *    a locked-state credential/template change — probes the merged config
  *    (HeadBucket) and rejects when it cannot connect.
@@ -171,7 +171,7 @@ async function assertAssetsStoragePatchAllowed(
       merged.bucket !== current.bucket ||
       merged.forcePathStyle !== current.forcePathStyle
     if (structuralChange) {
-      throw new DomainError('BAD_REQUEST', 'S3 配置已锁定；如需变更请使用存储迁移功能（媒体管理 → 存储管理）')
+      throw new DomainError('BAD_REQUEST', 'S3 配置已锁定；如需变更请使用存储迁移功能（系统设置 → 存储配置）')
     }
     // An enabled config must stay complete — an exempt patch that empties a
     // required field must not slip through unprobed.

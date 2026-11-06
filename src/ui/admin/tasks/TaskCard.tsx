@@ -121,7 +121,7 @@ function MigrationActions({ migration }: { migration: StorageMigrationStatus }) 
           从断点继续
         </Button>
       )}
-      {canStartNew && <Button variant="ghost" size="sm" render={<Link to="/admin/library/storage">发起新迁移</Link>} />}
+      {canStartNew && <Button variant="ghost" size="sm" render={<Link to="/admin/settings">发起新迁移</Link>} />}
     </>
   )
 }

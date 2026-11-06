@@ -170,7 +170,7 @@ describe('snapshot: TasksView', () => {
     expect(html).toContain('href="/admin/webmentions?tab=outbox"')
     expect(html).toContain('去审核')
     expect(html).toContain('发起新迁移')
-    expect(html).toContain('href="/admin/library/storage"')
+    expect(html).toContain('href="/admin/settings"')
     // 5 non-queue tasks → 5 history triggers; queue tasks never record history.
     expect(html.match(/执行历史/g)).toHaveLength(5)
     // Idle migration offers neither cancel nor resume.

@@ -92,10 +92,10 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
   const settings = requireBlogSettingsSection('assets')
   const storage = settings.storage
   if (options?.requireEnabled !== false && !storage.enabled) {
-    throw new ActionFailure(503, '图片上传未开启；请到 /admin/library/storage 完成存储迁移以启用 S3')
+    throw new ActionFailure(503, '图片上传未开启；请到 /admin/settings 完成存储迁移以启用 S3')
   }
   if ((storage.secretAccessKey ?? '') === '') {
-    throw new ActionFailure(503, '请先在 /admin/library/storage 配置 S3 凭据')
+    throw new ActionFailure(503, '请先在 /admin/settings 配置 S3 凭据')
   }
 
   const fingerprint = fingerprintFor(storage)

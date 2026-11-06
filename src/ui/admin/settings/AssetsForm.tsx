@@ -5,13 +5,13 @@ import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput, SettingsTextarea } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { StorageCards } from '@/ui/admin/settings/StorageCards'
 
 interface AssetsFormProps {
   assets: AssetsLoaderShape
 }
 
-// 资源域名 / S3 存储 / 存储迁移 live on `/admin/library/storage`; this form keeps
-// only the upload limits and robots.txt.
+// Upload limits: 资源域名 / S3 存储 / 存储迁移 live in `StorageCards` above.
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
     AssetsLoaderShape,
@@ -99,6 +99,7 @@ function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
 export function AssetsForm({ assets }: AssetsFormProps) {
   return (
     <div className="flex flex-col gap-5">
+      <StorageCards assets={assets} />
       <AssetsUploadCard assets={assets} />
       <AssetsRobotsTxtCard assets={assets} />
     </div>

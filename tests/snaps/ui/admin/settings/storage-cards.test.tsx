@@ -4,7 +4,7 @@ import type { AssetsLoaderShape } from '@/shared/config/projection'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
-import { StorageView } from '@/ui/admin/library/StorageView'
+import { StorageCards } from '@/ui/admin/settings/StorageCards'
 
 mockTanstackQuery()
 
@@ -52,10 +52,9 @@ function buildAssets(overrides: Partial<AssetsLoaderShape['storage']> = {}): Ass
   }
 }
 
-describe('snapshot: StorageView', () => {
+describe('snapshot: StorageCards', () => {
   it('renders status, domain and editable S3 cards when S3 is not configured', () => {
-    const html = stableHtml(renderToHtml(<StorageView assets={buildAssets()} />))
-    expect(html).toContain('存储管理')
+    const html = stableHtml(renderToHtml(<StorageCards assets={buildAssets()} />))
     expect(html).toContain('当前存储')
     expect(html).toContain('本地文件系统')
     expect(html).toContain('迁移存储…')
@@ -68,7 +67,7 @@ describe('snapshot: StorageView', () => {
   it('locks the structural S3 fields once enabled but keeps credentials editable', () => {
     const html = stableHtml(
       renderToHtml(
-        <StorageView
+        <StorageCards
           assets={buildAssets({
             enabled: true,
             endpoint: 'https://s3.example.com',
@@ -89,11 +88,5 @@ describe('snapshot: StorageView', () => {
     // …while credentials and the URL template stay editable.
     expect(inputById('assets-access-key-id')).not.toContain('disabled=""')
     expect(inputById('assets-url-template')).not.toContain('disabled=""')
-  })
-
-  it('renders a placeholder when settings are not initialized', () => {
-    const html = stableHtml(renderToHtml(<StorageView assets={null} />))
-    expect(html).toContain('站点设置尚未初始化')
-    expect(html).not.toContain('id="assets-asset-host"')
   })
 })
