@@ -34,10 +34,10 @@ describe('analytics counters from raw access_events', () => {
     const startAt = now - DAY
 
     await seedAccessEvents(handle, [
-      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/' },
-      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/post/1' },
+      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/', country: 'US' },
+      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/post/1', country: 'US' },
       // Outside the 24-hour window.
-      { ts: dateAt('2026-01-14T11:59:59.000Z'), visitorHash: 'c', path: '/' },
+      { ts: dateAt('2026-01-14T11:59:59.000Z'), visitorHash: 'c', path: '/', country: 'US' },
     ])
 
     const result = await queryCounters(handle.reader, { range: { startAt, endAt: now } })
@@ -50,11 +50,11 @@ describe('analytics counters from raw access_events', () => {
     const startAt = now - DAY
 
     await seedAccessEvents(handle, [
-      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/', refererHost: 'google.com' },
-      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/', refererHost: 'google.com' },
-      { ts: dateAt('2026-01-15T09:00:00.000Z'), visitorHash: 'c', path: '/', refererHost: 'x.com' },
-      { ts: dateAt('2026-01-15T08:00:00.000Z'), visitorHash: 'd', path: '/', refererHost: null },
-      { ts: dateAt('2026-01-15T07:00:00.000Z'), visitorHash: 'e', path: '/', refererHost: '' },
+      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/', refererHost: 'google.com', country: 'US' },
+      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/', refererHost: 'google.com', country: 'US' },
+      { ts: dateAt('2026-01-15T09:00:00.000Z'), visitorHash: 'c', path: '/', refererHost: 'x.com', country: 'US' },
+      { ts: dateAt('2026-01-15T08:00:00.000Z'), visitorHash: 'd', path: '/', refererHost: null, country: 'US' },
+      { ts: dateAt('2026-01-15T07:00:00.000Z'), visitorHash: 'e', path: '/', refererHost: '', country: 'US' },
     ])
 
     const result = await queryCounters(handle.reader, { range: { startAt, endAt: now } })
@@ -67,8 +67,8 @@ describe('analytics counters from raw access_events', () => {
     const startAt = now - DAY
 
     await seedAccessEvents(handle, [
-      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/' },
-      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'bot', path: '/', isBot: true },
+      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/', country: 'US' },
+      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'bot', path: '/', isBot: true, country: 'US' },
     ])
 
     const result = await queryCounters(handle.reader, { range: { startAt, endAt: now } })
@@ -95,9 +95,23 @@ describe('analytics counters from raw access_events', () => {
     const startAt = now - DAY
 
     await seedAccessEvents(handle, [
-      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/post/1', entityType: 'post', entityId: 1 },
-      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/post/2', entityType: 'post', entityId: 2 },
-      { ts: dateAt('2026-01-15T09:00:00.000Z'), visitorHash: 'c', path: '/' },
+      {
+        ts: dateAt('2026-01-15T11:00:00.000Z'),
+        visitorHash: 'a',
+        path: '/post/1',
+        entityType: 'post',
+        entityId: 1,
+        country: 'US',
+      },
+      {
+        ts: dateAt('2026-01-15T10:00:00.000Z'),
+        visitorHash: 'b',
+        path: '/post/2',
+        entityType: 'post',
+        entityId: 2,
+        country: 'US',
+      },
+      { ts: dateAt('2026-01-15T09:00:00.000Z'), visitorHash: 'c', path: '/', country: 'US' },
     ])
 
     const result = await queryCounters(handle.reader, {
@@ -122,5 +136,22 @@ describe('analytics counters from raw access_events', () => {
     const result = await queryCounters(handle.reader, { range: { startAt, endAt: now }, country: 'US,CN' })
 
     expect(result).toEqual({ visits: 2, visitors: 2, referers: 0 })
+  })
+
+  it('excludes geo-unknown rows by default and includes them on opt-in', async () => {
+    const now = unixAt('2026-01-15T12:00:00.000Z')
+    const startAt = now - DAY
+
+    await seedAccessEvents(handle, [
+      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/', country: 'US' },
+      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/', country: '' },
+      { ts: dateAt('2026-01-15T09:00:00.000Z'), visitorHash: 'c', path: '/', country: null },
+    ])
+
+    const excluded = await queryCounters(handle.reader, { range: { startAt, endAt: now } })
+    expect(excluded).toEqual({ visits: 1, visitors: 1, referers: 0 })
+
+    const included = await queryCounters(handle.reader, { range: { startAt, endAt: now }, includeUnknown: true })
+    expect(included).toEqual({ visits: 3, visitors: 3, referers: 0 })
   })
 })

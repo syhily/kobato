@@ -18,7 +18,9 @@ import {
  * `is_bot = FALSE`, the resolved [startAt, endAt) range (unix seconds,
  * bound through `to_timestamp(?)`), optional entity scoping (`index1`)
  * and per-dimension equality filters (comma-separated → `IN (...)`).
- * User values travel as bound parameters only.
+ * Geo-unknown events (country `blob7 = ''`) are excluded unless the query
+ * opts in via `includeUnknown` — writes always keep them. User values
+ * travel as bound parameters only.
  */
 
 // Metric dimension → blob slot. `referer` filters the referer HOST,
@@ -47,6 +49,10 @@ export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<
 
   if (query.entityType && query.entityId !== undefined) {
     filters.push(sql<boolean>`${sql.ref('index1')} = ${index1Of(query.entityType, query.entityId)}`)
+  }
+
+  if (query.includeUnknown !== true) {
+    filters.push(sql<boolean>`${sql.ref(DIMENSION_COLUMN.country)} <> ''`)
   }
 
   for (const type of METRIC_TYPES) {
@@ -84,7 +90,17 @@ export function getSafeTimezone(tz: string): string {
   return isValidTimezone(tz) ? tz : 'Etc/UTC'
 }
 
-const SEARCH_KEYS = ['preset', 'startAt', 'endAt', 'entityType', 'entityId', 'unit', 'clientTimezone', 'limit'] as const
+const SEARCH_KEYS = [
+  'preset',
+  'startAt',
+  'endAt',
+  'entityType',
+  'entityId',
+  'unit',
+  'clientTimezone',
+  'limit',
+  'includeUnknown',
+] as const
 
 /**
  * URL-grammar entry point for callers whose input is a query string (the

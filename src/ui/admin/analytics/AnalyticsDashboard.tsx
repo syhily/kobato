@@ -10,6 +10,7 @@ import { MetricsGroup } from '@/ui/admin/analytics/MetricsGroup'
 import { TrendTabs } from '@/ui/admin/analytics/TrendTabs'
 import { type AnalyticsScope, type AnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Card } from '@/ui/components/card'
+import { Switch } from '@/ui/components/switch'
 import { cn } from '@/ui/lib/cn'
 
 // The full analytics dashboard body shared by the site-wide overview and the
@@ -49,12 +50,24 @@ export function AnalyticsDashboard({ data, state, scope }: AnalyticsDashboardPro
     <AnalyticsStateProvider state={state}>
       <Card className="px-4 py-3 shadow-none">
         <div className="flex flex-col gap-3">
-          <DateRangePicker
-            preset={state.preset}
-            range={state.range}
-            onSelect={state.setPreset}
-            onSelectRange={state.setRange}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <DateRangePicker
+              preset={state.preset}
+              range={state.range}
+              onSelect={state.setPreset}
+              onSelectRange={state.setRange}
+            />
+            <div className="flex items-center gap-2">
+              <Switch
+                id="analytics-include-unknown"
+                checked={state.includeUnknown}
+                onCheckedChange={(checked) => state.setIncludeUnknown(checked === true)}
+              />
+              <label htmlFor="analytics-include-unknown" className="cursor-pointer text-xs text-muted-foreground">
+                包含未知地区
+              </label>
+            </div>
+          </div>
           <FiltersBar filters={state.filters} onClear={state.clearFilter} onClearAll={state.clearAllFilters} />
         </div>
       </Card>

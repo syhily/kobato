@@ -30,3 +30,16 @@ describe('analyticsQuerySchema dimension filters', () => {
     expect(analyticsQuerySchema.safeParse({ country: value }).success).toBe(false)
   })
 })
+
+describe('analyticsQuerySchema includeUnknown', () => {
+  it('parses string and boolean forms, defaulting to absent', () => {
+    expect(analyticsQuerySchema.parse({ includeUnknown: 'true' }).includeUnknown).toBe(true)
+    expect(analyticsQuerySchema.parse({ includeUnknown: 'false' }).includeUnknown).toBe(false)
+    expect(analyticsQuerySchema.parse({ includeUnknown: true }).includeUnknown).toBe(true)
+    expect(analyticsQuerySchema.parse({}).includeUnknown).toBeUndefined()
+  })
+
+  it('rejects non-boolean strings', () => {
+    expect(analyticsQuerySchema.safeParse({ includeUnknown: 'yes' }).success).toBe(false)
+  })
+})

@@ -54,6 +54,22 @@ describe('analytics filters', () => {
     expect(compiled.parameters).toEqual([100, 200])
   })
 
+  it('excludes geo-unknown events (empty country blob) by default', () => {
+    const compiled = compileAnalyticsQuery(createAnalyticsQuery().selectAll().where(buildAnalyticsFilter(baseQuery)))
+    expect(compiled.sql).toContain(`blob7 <> ''`)
+    // The exclusion is a literal — no extra bound parameter.
+    expect(compiled.parameters).toEqual([100, 200])
+  })
+
+  it('keeps geo-unknown events when includeUnknown is true', () => {
+    const compiled = compileAnalyticsQuery(
+      createAnalyticsQuery()
+        .selectAll()
+        .where(buildAnalyticsFilter({ ...baseQuery, includeUnknown: true })),
+    )
+    expect(compiled.sql).not.toContain(`blob7 <> ''`)
+  })
+
   it('combines entity, dimension, and range filters with bound parameters', () => {
     const filter = buildAnalyticsFilter({
       ...baseQuery,

@@ -10,6 +10,7 @@ export function makeAnalyticsState(overrides: Partial<AnalyticsState> = {}): Ana
     filters: {},
     viewMode: 'trend',
     heatmapMetric: 'visits',
+    includeUnknown: false,
     setPreset: () => {},
     setRange: () => {},
     setFilter: () => {},
@@ -17,6 +18,7 @@ export function makeAnalyticsState(overrides: Partial<AnalyticsState> = {}): Ana
     clearAllFilters: () => {},
     setViewMode: () => {},
     setHeatmapMetric: () => {},
+    setIncludeUnknown: () => {},
     ...overrides,
   }
 }

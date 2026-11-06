@@ -89,6 +89,12 @@ describe('analytics/query-filter — parseAnalyticsSearch', () => {
     expect(input.unit).toBe('hour')
     expect(input.clientTimezone).toBe('Asia/Shanghai')
   })
+
+  it('parses includeUnknown only for the literal true', () => {
+    expect(parseAnalyticsSearch(new URLSearchParams({ includeUnknown: 'true' })).includeUnknown).toBe(true)
+    expect(parseAnalyticsSearch(new URLSearchParams({ includeUnknown: 'false' })).includeUnknown).toBe(false)
+    expect(parseAnalyticsSearch(new URLSearchParams()).includeUnknown).toBeUndefined()
+  })
 })
 
 describe('analytics/views — queryViews', () => {
@@ -111,9 +117,9 @@ describe('analytics/views — queryViews', () => {
   it('returns minute-bucketed points for a sub-hour range', async () => {
     const start = ts('2026-01-15T11:00:00Z')
     await seedAccessEvents(handle, [
-      { ts: ts('2026-01-15T11:05:00Z'), visitorHash: 'a', path: '/' },
-      { ts: ts('2026-01-15T11:05:30Z'), visitorHash: 'a', path: '/' },
-      { ts: ts('2026-01-15T11:25:00Z'), visitorHash: 'b', path: '/' },
+      { ts: ts('2026-01-15T11:05:00Z'), visitorHash: 'a', path: '/', country: 'US' },
+      { ts: ts('2026-01-15T11:05:30Z'), visitorHash: 'a', path: '/', country: 'US' },
+      { ts: ts('2026-01-15T11:25:00Z'), visitorHash: 'b', path: '/', country: 'US' },
     ])
     const result = await queryViews(handle.reader, {
       range: { startAt: Math.floor(start.getTime() / 1000), endAt: Math.floor(start.getTime() / 1000) + 3600 },
@@ -126,7 +132,7 @@ describe('analytics/views — queryViews', () => {
 
   it('buckets in the client timezone, not UTC', async () => {
     // 2026-01-15T23:30:00Z is 2026-01-16 07:30 in Asia/Shanghai.
-    await seedAccessEvents(handle, [{ ts: ts('2026-01-15T23:30:00Z'), visitorHash: 'a', path: '/' }])
+    await seedAccessEvents(handle, [{ ts: ts('2026-01-15T23:30:00Z'), visitorHash: 'a', path: '/', country: 'US' }])
     const range = {
       startAt: Math.floor(ts('2026-01-15T00:00:00Z').getTime() / 1000),
       endAt: Math.floor(ts('2026-01-17T00:00:00Z').getTime() / 1000),
@@ -139,7 +145,7 @@ describe('analytics/views — queryViews', () => {
   })
 
   it('falls back to Etc/UTC for an invalid clientTimezone', async () => {
-    await seedAccessEvents(handle, [{ ts: ts('2026-01-15T23:30:00Z'), visitorHash: 'a', path: '/' }])
+    await seedAccessEvents(handle, [{ ts: ts('2026-01-15T23:30:00Z'), visitorHash: 'a', path: '/', country: 'US' }])
     const result = await queryViews(handle.reader, {
       range: {
         startAt: Math.floor(ts('2026-01-15T00:00:00Z').getTime() / 1000),
@@ -192,11 +198,18 @@ describe('analytics/metric — queryMetric', () => {
       { ts: ts('2026-01-15T11:03:00Z'), visitorHash: 'd', path: '/', country: '' },
     ])
     const now = Math.floor(Date.now() / 1000)
-    const result = await queryMetric(handle.reader, { range: { startAt: 0, endAt: now } }, 'country')
-    expect(result.length).toBeGreaterThan(0)
-    // Empty-string rows show up as '(unknown)'.
-    const unknown = result.find((r) => r.name === '(unknown)')
-    expect(unknown).toBeDefined()
+    // Geo-unknown rows are excluded by default; opting in via
+    // `includeUnknown` brings them back as the '(unknown)' bucket.
+    const excluded = await queryMetric(handle.reader, { range: { startAt: 0, endAt: now } }, 'country')
+    expect(excluded.length).toBeGreaterThan(0)
+    expect(excluded.find((r) => r.name === '(unknown)')).toBeUndefined()
+
+    const included = await queryMetric(
+      handle.reader,
+      { range: { startAt: 0, endAt: now }, includeUnknown: true },
+      'country',
+    )
+    expect(included.find((r) => r.name === '(unknown)')).toBeDefined()
   })
 
   it('groups referers by host (blob3), not the full referer', async () => {
@@ -207,6 +220,7 @@ describe('analytics/metric — queryMetric', () => {
         path: '/',
         referer: 'https://google.com/x',
         refererHost: 'google.com',
+        country: 'US',
       },
       {
         ts: ts('2026-01-15T11:01:00Z'),
@@ -214,6 +228,7 @@ describe('analytics/metric — queryMetric', () => {
         path: '/',
         referer: 'https://google.com/y',
         refererHost: 'google.com',
+        country: 'US',
       },
     ])
     const now = Math.floor(Date.now() / 1000)
@@ -230,8 +245,8 @@ describe('analytics/heatmap — queryHeatmap', () => {
   it('returns ISO weekday/hour buckets in the client timezone', async () => {
     // 2026-01-15T23:30:00Z: Thursday 23:30 UTC; Friday 07:30 in Asia/Shanghai.
     await seedAccessEvents(handle, [
-      { ts: ts('2026-01-15T23:30:00Z'), visitorHash: 'a', path: '/' },
-      { ts: ts('2026-01-15T23:45:00Z'), visitorHash: 'b', path: '/' },
+      { ts: ts('2026-01-15T23:30:00Z'), visitorHash: 'a', path: '/', country: 'US' },
+      { ts: ts('2026-01-15T23:45:00Z'), visitorHash: 'b', path: '/', country: 'US' },
     ])
     const range = { range: { startAt: 0, endAt: Math.floor(Date.now() / 1000) } }
 
@@ -246,23 +261,25 @@ describe('analytics/heatmap — queryHeatmap', () => {
 describe('analytics/export — queryExportCsv', () => {
   it('exports per-path views/visitors/referers as CSV text', async () => {
     await seedAccessEvents(handle, [
-      { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '/hello', refererHost: 'google.com' },
-      { ts: ts('2026-01-15T11:01:00Z'), visitorHash: 'a', path: '/hello', refererHost: 'google.com' },
-      { ts: ts('2026-01-15T11:02:00Z'), visitorHash: 'b', path: '/world' },
+      { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '/hello', refererHost: 'google.com', country: 'US' },
+      { ts: ts('2026-01-15T11:01:00Z'), visitorHash: 'a', path: '/hello', refererHost: 'google.com', country: 'US' },
+      { ts: ts('2026-01-15T11:02:00Z'), visitorHash: 'b', path: '/world', country: 'US' },
     ])
     const csv = await queryExportCsv(handle.reader, { range: { startAt: 0, endAt: Math.floor(Date.now() / 1000) } })
     expect(csv).toBe(['path,views,visitors,referers', '/hello,2,1,1', '/world,1,1,0', ''].join('\r\n'))
   })
 
   it('quotes cells carrying commas or quotes', async () => {
-    await seedAccessEvents(handle, [{ ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '/weird,"path"' }])
+    await seedAccessEvents(handle, [
+      { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '/weird,"path"', country: 'US' },
+    ])
     const csv = await queryExportCsv(handle.reader, { range: { startAt: 0, endAt: Math.floor(Date.now() / 1000) } })
     expect(csv).toContain('"/weird,""path""",1,1,0')
   })
 
   it('neutralizes formula-triggering path cells', async () => {
     await seedAccessEvents(handle, [
-      { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '=HYPERLINK("https://evil.example")' },
+      { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '=HYPERLINK("https://evil.example")', country: 'US' },
     ])
     const csv = await queryExportCsv(handle.reader, { range: { startAt: 0, endAt: Math.floor(Date.now() / 1000) } })
     expect(csv).toContain(`"'=HYPERLINK(""https://evil.example"")",1,1,0`)
@@ -270,12 +287,12 @@ describe('analytics/export — queryExportCsv', () => {
 
   it('honours the query limit', async () => {
     await seedAccessEvents(handle, [
-      { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '/a' },
-      { ts: ts('2026-01-15T11:01:00Z'), visitorHash: 'a', path: '/a' },
-      { ts: ts('2026-01-15T11:02:00Z'), visitorHash: 'b', path: '/a' },
-      { ts: ts('2026-01-15T11:03:00Z'), visitorHash: 'c', path: '/b' },
-      { ts: ts('2026-01-15T11:04:00Z'), visitorHash: 'c', path: '/b' },
-      { ts: ts('2026-01-15T11:05:00Z'), visitorHash: 'd', path: '/c' },
+      { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '/a', country: 'US' },
+      { ts: ts('2026-01-15T11:01:00Z'), visitorHash: 'a', path: '/a', country: 'US' },
+      { ts: ts('2026-01-15T11:02:00Z'), visitorHash: 'b', path: '/a', country: 'US' },
+      { ts: ts('2026-01-15T11:03:00Z'), visitorHash: 'c', path: '/b', country: 'US' },
+      { ts: ts('2026-01-15T11:04:00Z'), visitorHash: 'c', path: '/b', country: 'US' },
+      { ts: ts('2026-01-15T11:05:00Z'), visitorHash: 'd', path: '/c', country: 'US' },
     ])
     const csv = await queryExportCsv(handle.reader, {
       range: { startAt: 0, endAt: Math.floor(Date.now() / 1000) },

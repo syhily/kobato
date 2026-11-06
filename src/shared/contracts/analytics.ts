@@ -4,6 +4,8 @@
 
 import { z } from 'zod'
 
+import { safeBoolean } from '@/shared/utils/schema'
+
 export const PRESET_KEYS = ['last-1h', 'today', 'yesterday', 'last-7d', 'last-30d', 'last-90d', 'last-365d'] as const
 
 export type PresetKey = (typeof PRESET_KEYS)[number]
@@ -122,6 +124,8 @@ const dimensionFilter = z
  * unix seconds; `clientTimezone` is an IANA zone name validated against
  * the shape here and against `Intl.DateTimeFormat` server-side (fallback
  * `Etc/UTC`); dimension filters are comma-separated equality lists.
+ * `includeUnknown` opts back into geo-unknown events (country blob = '') —
+ * queries exclude them by default while writes always keep them.
  */
 export const analyticsQuerySchema = z.object({
   preset: z.enum(PRESET_KEY_VALUES).optional(),
@@ -148,6 +152,7 @@ export const analyticsQuerySchema = z.object({
     .max(64)
     .default('Etc/UTC'),
   limit: z.coerce.number().int().min(1).max(500).default(500),
+  includeUnknown: safeBoolean().optional(),
 })
 
 export type AnalyticsQuery = z.infer<typeof analyticsQuerySchema>

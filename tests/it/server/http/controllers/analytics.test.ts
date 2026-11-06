@@ -46,6 +46,7 @@ async function seedViews() {
       entityId: 1,
       refererHost: 'google.com',
       browser: 'Chrome',
+      country: 'US',
     },
     {
       ts: new Date(1_300_000),
@@ -54,6 +55,7 @@ async function seedViews() {
       entityType: 'post',
       entityId: 1,
       browser: 'Chrome',
+      country: 'US',
     },
     {
       ts: new Date(1_400_000),
@@ -62,6 +64,7 @@ async function seedViews() {
       entityType: 'post',
       entityId: 1,
       browser: 'Firefox',
+      country: 'US',
     },
   ])
 }
@@ -77,6 +80,26 @@ describe('analyticsRouter.counters', () => {
     }
     // visits = row count; visitors = distinct blob5; referers = distinct non-empty blob3.
     expect(res).toEqual({ visits: 3, visitors: 2, referers: 1 })
+  })
+
+  it('excludes geo-unknown events unless includeUnknown is passed', async () => {
+    await seedViews()
+    await seedAccessEvents(analyticsHandle, [
+      { ts: new Date(1_500_000), visitorHash: 'c', path: '/post/hello', entityType: 'post', entityId: 1, country: '' },
+    ])
+    const ctx = makeAuthedCtx({ db })
+
+    const excluded = (await call(analyticsRouter.counters, rangeInput, { context: ctx })) as { visits: number }
+    expect(excluded.visits).toBe(3)
+
+    const included = (await call(
+      analyticsRouter.counters,
+      { ...rangeInput, includeUnknown: true },
+      { context: ctx },
+    )) as {
+      visits: number
+    }
+    expect(included.visits).toBe(4)
   })
 })
 

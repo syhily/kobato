@@ -78,9 +78,9 @@ async function seedComment(userId: number, overrides: Record<string, unknown> = 
 async function seedVisits(): Promise<void> {
   const ts = new Date(Date.now() - 10_000)
   await seedAccessEvents(analyticsHandle, [
-    { ts, visitorHash: 'a', path: '/', refererHost: 'google.com' },
-    { ts, visitorHash: 'a', path: '/post/hello' },
-    { ts, visitorHash: 'b', path: '/post/world' },
+    { ts, visitorHash: 'a', path: '/', refererHost: 'google.com', country: 'US' },
+    { ts, visitorHash: 'a', path: '/post/hello', country: 'US' },
+    { ts, visitorHash: 'b', path: '/post/world', country: 'US' },
   ])
 }
 
