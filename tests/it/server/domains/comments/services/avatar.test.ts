@@ -221,6 +221,20 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
     expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
   })
 
+  it('rejects an upstream body above the 2 MiB cap without buffering it', async () => {
+    const body = await pngOfSize(512)
+    const fetchFn = mockFetch([
+      new Response(new Uint8Array(body), {
+        status: 200,
+        headers: { 'Content-Type': 'image/png', 'Content-Length': String(3 * 1024 * 1024) },
+      }),
+    ])
+
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
+    // fetch ran (the SSRF guard + DNS passed) and the size cap is what stopped it.
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
   it('accepts an upstream image at exactly the requested size', async () => {
     const body = await pngOfSize(120)
     mockFetch([new Response(new Uint8Array(body), { status: 200, headers: { 'Content-Type': 'image/png' } })])

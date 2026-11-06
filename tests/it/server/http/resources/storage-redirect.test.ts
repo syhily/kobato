@@ -118,4 +118,32 @@ describe('storage redirect — site-owned /storage/* URLs', () => {
     expect(res.headers.get('Content-Type')).toBe('image/jpeg')
     expect(await res.text()).toBe('img-bytes')
   })
+
+  it('re-encodes reserved characters of the decoded key for the Location header', async () => {
+    withStorage({ urlTemplate: '' })
+    // The route decodes before the allowlist check; a raw `?` in the Location
+    // would truncate the CDN object path into a query, `#` into a fragment, and
+    // a space is not even a legal URL character. All three pass the allowlist
+    // (no empty/dot segments under an allowlisted prefix), so the Location must
+    // carry them percent-encoded.
+    const question = await localStorageRouter.request('/storage/images/a%3Fb.jpg?v=1')
+    expect(question.status).toBe(302)
+    expect(question.headers.get('Location')).toBe('https://assets.example.com/images/a%3Fb.jpg?v=1')
+
+    const fragment = await localStorageRouter.request('/storage/images/a%23b.jpg')
+    expect(fragment.headers.get('Location')).toBe('https://assets.example.com/images/a%23b.jpg')
+
+    const space = await localStorageRouter.request('/storage/images/a%20b.jpg')
+    expect(space.headers.get('Location')).toBe('https://assets.example.com/images/a%20b.jpg')
+
+    // A literal `%` (decoded from `%25`) must not become a broken escape.
+    const percent = await localStorageRouter.request('/storage/images/100%25.png')
+    expect(percent.headers.get('Location')).toBe('https://assets.example.com/images/100%25.png')
+  })
+
+  it('keeps slashes as separators and still substitutes the encoded object URL into a template', async () => {
+    withStorage({ urlTemplate: '{src}?q={quality}' })
+    const res = await localStorageRouter.request('/storage/images/a%20b.jpg?w=640&h=360')
+    expect(res.headers.get('Location')).toBe('https://assets.example.com/images/a%20b.jpg?q=100')
+  })
 })

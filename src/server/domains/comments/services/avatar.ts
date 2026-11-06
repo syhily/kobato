@@ -72,6 +72,10 @@ interface SafeFetchOptions {
   allowRedirect?: boolean
 }
 
+// Avatar upstreams answer with a few KB at `?s=<=512`; anything larger is an
+// unbounded body from a hostile/compromised mirror, buffered on the main thread.
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024
+
 /** Bounded redirects/timeout via safe-fetch; returns `null` on any failure. */
 async function safeFetchAvatar(
   label: 'avatar' | 'avatar.qq' | 'avatar.github',
@@ -82,6 +86,7 @@ async function safeFetchAvatar(
   const result = await safeFetch(initialLink, {
     timeoutMs: FETCH_TIMEOUT_MS,
     maxRedirects: allowRedirect ? MAX_REDIRECT_HOPS : 0,
+    maxBytes: MAX_AVATAR_BYTES,
     headers,
     // A redirect to our own default avatar is the mirror's "no avatar" signal.
     shouldFollowRedirect: (nextUrl) => nextUrl.toString() !== defaultAvatarUrl(),

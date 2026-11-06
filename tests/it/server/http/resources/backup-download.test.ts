@@ -8,6 +8,7 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeMemoryBackend } from '#/_helpers/memory-storage'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { adminSession } from '#/_helpers/session'
+import { onErrorHandler } from '@/server/http/errors'
 import { insertBackup } from '@/server/infra/db/operations/backup'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
@@ -48,6 +49,8 @@ async function buildApp(session: BlogSession = adminSession()) {
     await next()
   })
   app.route('/', backupRouter)
+  // ActionFailure → its HTTP status, exactly like the real app.
+  app.onError(onErrorHandler)
   return app
 }
 
@@ -83,5 +86,18 @@ describe('/api/admin/backup/download/:timestamp', () => {
 
     const body = Buffer.from(await res.arrayBuffer())
     expect(body.equals(payload)).toBe(true)
+  })
+
+  it('refuses a row whose storage_path is not a backup key (a restored DB can forge it)', async () => {
+    const ASSET_KEY = 'images/2026/05/live.jpg'
+    await mem.backend.put({ key: ASSET_KEY, body: Buffer.from('asset-bytes'), contentType: 'image/jpeg' })
+    await insertBackup(db, { timestamp: TIMESTAMP, storagePath: ASSET_KEY, storageDriver: 's3', byteSize: 11 })
+
+    const app = await buildApp()
+    const res = await app.request(`/api/admin/backup/download/${TIMESTAMP}`)
+
+    expect(res.status).toBe(400)
+    // The object it names was never opened.
+    expect(mem.store.has(ASSET_KEY)).toBe(true)
   })
 })

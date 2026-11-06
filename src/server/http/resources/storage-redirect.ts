@@ -95,11 +95,23 @@ function serviceUnavailable(): Response {
 }
 
 /**
+ * Re-encode a DECODED storage key for the Location header, one path segment at
+ * a time. The `/storage/*` route (and the fonts route) decode before the
+ * allowlist check, so a key holding `?`, `#`, `%`, or a space would otherwise
+ * be interpolated raw — truncating the CDN path (`a?b.png` → file `a` plus a
+ * query) or emitting a fragment. Slashes stay separators.
+ */
+function encodeKeyForUrl(key: string): string {
+  return key.split('/').map(encodeURIComponent).join('/')
+}
+
+/**
  * `302 Found` to `<current public base>/<key>` when S3 is the primary
  * backend, preserving the request query string (e.g. the `?v=` cache buster);
  * `null` when the local driver serves and the caller should stream (transform
- * params are simply ignored there). A missing public base while S3 is active
- * is a config error, not a crash.
+ * params are simply ignored there). `key` must be the DECODED storage key —
+ * it is re-encoded per segment for the Location header. A missing public base
+ * while S3 is active is a config error, not a crash.
  */
 export function s3StorageRedirect(key: string, search: string): Response | null {
   if (!isS3Primary()) {
@@ -112,7 +124,7 @@ export function s3StorageRedirect(key: string, search: string): Response | null 
   return new Response(null, {
     status: 302,
     headers: {
-      Location: buildRedirectLocation(`${base}/${key}`, search),
+      Location: buildRedirectLocation(`${base}/${encodeKeyForUrl(key)}`, search),
       'Cache-Control': STORAGE_REDIRECT_CACHE_CONTROL,
     },
   })

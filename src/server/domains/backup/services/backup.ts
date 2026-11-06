@@ -2,7 +2,7 @@ import type { Readable } from 'node:stream'
 
 import { sql } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
-import { statSync } from 'node:fs'
+import { chmodSync, statSync } from 'node:fs'
 import { copyFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -55,6 +55,30 @@ function parseBackupIdFromKey(key: string): string | null {
     return null
   }
   return isValidBackupKey(match[1]) ? match[1] : null
+}
+
+/**
+ * Whether a row's `storage_path` is still one of OUR keys. The row rides
+ * inside a restored database, so a crafted archive can point it at any object
+ * the backend can reach (`images/…`: a local delete would unlink a live asset,
+ * an S3 delete would remove an arbitrary bucket object). Every read/delete
+ * path checks this before touching the object; `parseBackupIdFromKey` owns
+ * the key grammar, so a new archive shape only needs updating there.
+ */
+export function isValidBackupStoragePath(key: string): boolean {
+  return parseBackupIdFromKey(key) !== null
+}
+
+/** Backup staging files hold a full DB dump — keep them owner-only. */
+function restrictStagingFile(filePath: string): void {
+  try {
+    chmodSync(filePath, 0o600)
+  } catch (error) {
+    log.warn('Backup: failed to restrict staging file permissions', {
+      filePath,
+      err: error instanceof Error ? error.message : String(error),
+    })
+  }
 }
 
 /** Reconcile: insert DB rows for backend objects that have none — idempotent
@@ -194,6 +218,7 @@ async function createBackupUnchecked(
 
   // `VACUUM INTO`: a consistent, fully-checkpointed copy in one step; the sidecar is copied byte-for-byte.
   db.run(sql.raw(`VACUUM INTO '${stagingPath.replaceAll("'", "''")}'`))
+  restrictStagingFile(stagingPath)
 
   // Unwired snapshot fn is a composition-root bug — fail loudly, don't archive content only.
   const snapshot = snapshotAnalytics
@@ -205,6 +230,7 @@ async function createBackupUnchecked(
     const entries: { name: string; path: string; size: number }[] = []
     try {
       if (await snapshot(analyticsStagingPath)) {
+        restrictStagingFile(analyticsStagingPath)
         entries.push({ name: 'analytics.duckdb', path: analyticsStagingPath, size: 0 })
       }
     } catch (error) {
@@ -226,6 +252,7 @@ async function createBackupUnchecked(
       try {
         configStagingPath = path.join(tmpdir(), `kobato-backup-${backupId}-${attemptId}.config.json`)
         await copyFile(configPath, configStagingPath)
+        restrictStagingFile(configStagingPath)
         entries.push({ name: CONFIG_FILE_NAME, path: configStagingPath, size: 0 })
       } catch (error) {
         configStagingPath = null
@@ -307,6 +334,9 @@ export async function getBackupBuffer(db: Database, timestamp: string): Promise<
   if (row === null) {
     throw new ActionFailure(404, '备份不存在。')
   }
+  if (!isValidBackupStoragePath(row.storagePath)) {
+    throw new ActionFailure(400, '备份记录的存储路径无效，已拒绝读取。')
+  }
   return backendFor(row.storageDriver).get(row.storagePath)
 }
 
@@ -319,6 +349,12 @@ export async function getBackupStream(
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
     throw new ActionFailure(404, '备份不存在。')
+  }
+  // The URL parameter was validated by the route; the ROW's path rides in from
+  // a restored database and is not — never stream an object it names without
+  // checking it against the backup key grammar first.
+  if (!isValidBackupStoragePath(row.storagePath)) {
+    throw new ActionFailure(400, '备份记录的存储路径无效，已拒绝下载。')
   }
   const stream = await backendFor(row.storageDriver).getStream(row.storagePath)
   return {
@@ -347,6 +383,16 @@ export async function deleteBackup(db: Database, timestamp: string): Promise<voi
     log.warn('Backup delete: row not found; nothing to delete', { timestamp })
     return
   }
+  if (!isValidBackupStoragePath(row.storagePath)) {
+    // The row's path came from a restored database and names something that is
+    // not a backup — drop the row only; the object it points at stays untouched.
+    log.warn('Backup delete: row storage path failed validation; object untouched', {
+      timestamp,
+      storagePath: row.storagePath,
+    })
+    await deleteBackupRow(db, row.id)
+    return
+  }
   // Best-effort delete: drop the row even if storage removal fails; `reconcileBackups` re-registers orphans.
   try {
     await backendFor(row.storageDriver).delete(row.storagePath)
@@ -369,6 +415,16 @@ export async function cleanupOldBackups(db: Database, days: number): Promise<voi
   }
   log.info('Cleaning up old backups', { count: rows.length, cutoff: cutoff.toISOString() })
   for (const row of rows) {
+    if (!isValidBackupStoragePath(row.storagePath)) {
+      // Same posture as the explicit delete: never touch the named object, but
+      // drop the row so the sweep does not retry it every run.
+      log.warn('Old backup row has an invalid storage path; object untouched', {
+        timestamp: row.timestamp,
+        storagePath: row.storagePath,
+      })
+      await deleteBackupRow(db, row.id)
+      continue
+    }
     try {
       await backendFor(row.storageDriver).delete(row.storagePath)
     } catch (error) {

@@ -1,7 +1,19 @@
 import type { Readable } from 'node:stream'
 
 import { createReadStream, createWriteStream, rmSync, statSync } from 'node:fs'
-import { copyFile, mkdtemp, access, open, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  copyFile,
+  mkdtemp,
+  access,
+  open,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -12,7 +24,7 @@ import { createGunzip } from 'node:zlib'
 import { BackupDecryptionError, createBackupDecipher, isEncryptedBackup } from '@/server/domains/backup/services/crypto'
 import { isTarArchive, listTarEntriesInFile } from '@/server/domains/backup/services/tar'
 import { resolveAnalyticsPath } from '@/server/infra/analytics/duckdb'
-import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@/server/infra/config'
+import { ConfigFileError, CONFIG_FILE_NAME, parseConfigFileJson, resolveConfigFilePath } from '@/server/infra/config'
 import { isInMemoryPath, resolveDatabasePath } from '@/server/infra/db/database'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
@@ -141,17 +153,25 @@ export function decompressedSizeGuard(maxBytes: number): Transform {
   })
 }
 
-/** The staged config must be a JSON object — it overwrites the live
- *  `kobato.config.json` verbatim, so reject garbage here. */
+/** The staged config must pass the SAME schema the next boot applies — it
+ *  overwrites the live `kobato.config.json` verbatim, and a config the boot
+ *  parse rejects exits the process AFTER the databases were swapped. Reuses
+ *  `parseConfigFileJson` (migration + strict file schema) so there is one
+ *  definition of "loadable config", never a second copy here. */
 async function assertConfigBackup(configPath: string): Promise<void> {
-  let parsed: unknown
   try {
-    parsed = JSON.parse(await readFile(configPath, 'utf8'))
-  } catch {
-    throw new ActionFailure(400, '备份归档中的配置文件不是有效的 JSON')
-  }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new ActionFailure(400, '备份归档中的配置文件格式无效')
+    parseConfigFileJson(await readFile(configPath, 'utf8'))
+  } catch (error) {
+    if (!(error instanceof ConfigFileError)) {
+      throw error
+    }
+    if (error.kind === 'json') {
+      throw new ActionFailure(400, '备份归档中的配置文件不是有效的 JSON')
+    }
+    if (error.kind === 'shape') {
+      throw new ActionFailure(400, '备份归档中的配置文件格式无效')
+    }
+    throw new ActionFailure(400, `备份归档中的配置文件无法通过服务端校验，还原已中止:${error.message}`)
   }
 }
 
@@ -369,8 +389,44 @@ async function swapStagedFile(sourcePath: string, targetPath: string): Promise<v
 const PRE_RESTORE_SUFFIX = '.pre-restore'
 const RESTORE_STAGING_SUFFIX = '.restore-staging'
 
+/** Apply the staged config file: park the live copy at the `.pre-restore`
+ *  sibling, then rename a staged copy straight over it. Unlike the engine
+ *  swap this has NO missing-target window — the config is read at module
+ *  load (before `recoverPreRestoreFiles` can run), so a momentarily absent
+ *  file would be auto-created with defaults and the sibling then dropped as
+ *  "stale". A missing live file skips the park step. */
+async function swapStagedConfig(sourcePath: string, targetPath: string): Promise<void> {
+  const stagingPath = `${targetPath}${RESTORE_STAGING_SUFFIX}`
+  const preRestorePath = `${targetPath}${PRE_RESTORE_SUFFIX}`
+  try {
+    await copyFile(sourcePath, stagingPath)
+    // The config carries `security.*` secrets — never let the restored copy be
+    // more permissive than the 0600 `writeConfigFile` produces at boot.
+    await chmod(stagingPath, 0o600).catch((error: unknown) => {
+      log.warn('Restore: failed to restrict the restored config file permissions', {
+        err: error instanceof Error ? error.message : String(error),
+      })
+    })
+    await copyFile(targetPath, preRestorePath).catch((error: unknown) => {
+      // Nothing to park (a first install, or a target whose parent dir is
+      // missing) — the replace below still applies the archive's config.
+      if (!isMissingFileError(error)) {
+        throw error
+      }
+    })
+    await rename(stagingPath, targetPath)
+  } catch (error) {
+    await rm(stagingPath, { force: true })
+    throw error
+  }
+}
+
+function isMissingFileError(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
+}
+
 /** Live engine files the swap touches (skipped when in-memory). */
-function swapTargets(): string[] {
+function engineTargets(): string[] {
   const targets: string[] = []
   const dbPath = resolveDatabasePath()
   if (!isInMemoryPath(dbPath)) {
@@ -379,6 +435,19 @@ function swapTargets(): string[] {
   const analyticsPath = resolveAnalyticsPath()
   if (!isInMemoryPath(analyticsPath)) {
     targets.push(analyticsPath)
+  }
+  return targets
+}
+
+/** Every live file a restore may replace — the engine files plus the config
+ *  file. The `.pre-restore` / `.restore-staging` machinery below owns all of
+ *  them uniformly (recovery, rollback, cleanup, leftover sweep); null in the
+ *  VITEST env-only mode, where no config file exists. */
+function restoreTargets(): string[] {
+  const targets = engineTargets()
+  const configPath = resolveConfigFilePath()
+  if (configPath !== null) {
+    targets.push(configPath)
   }
   return targets
 }
@@ -402,9 +471,12 @@ async function pathExists(path: string): Promise<boolean> {
  *    target present + `.pre-restore` present  → the swap completed (or
  *      never started): the sibling is stale and safe to drop;
  *    `.restore-staging` orphans               → always safe to drop.
+ *  Also covers the config file (`restoreTargets`). That leg can't crash into
+ *  a missing target (see `swapStagedConfig`), so for it the "target present"
+ *  branch is the only reachable one.
  *  Best-effort per file with loud logs. */
 export async function recoverPreRestoreFiles(): Promise<void> {
-  for (const target of swapTargets()) {
+  for (const target of restoreTargets()) {
     const preRestorePath = `${target}${PRE_RESTORE_SUFFIX}`
     if (await pathExists(preRestorePath)) {
       if (await pathExists(target)) {
@@ -433,7 +505,7 @@ export async function recoverPreRestoreFiles(): Promise<void> {
 /** Roll the `.pre-restore` originals back — must run before the recovery
  * reopen. Best-effort per file: a missing sibling is skipped. */
 export async function rollbackPreRestoreFiles(): Promise<void> {
-  for (const target of swapTargets()) {
+  for (const target of restoreTargets()) {
     const backupPath = `${target}${PRE_RESTORE_SUFFIX}`
     try {
       await access(backupPath)
@@ -457,7 +529,7 @@ export async function rollbackPreRestoreFiles(): Promise<void> {
 /** Delete the `.pre-restore` originals (and any staging orphan) after a
  *  successful restore chain. Best-effort. */
 export async function cleanupPreRestoreFiles(): Promise<void> {
-  for (const target of swapTargets()) {
+  for (const target of restoreTargets()) {
     await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true }).catch(() => undefined)
     await rm(`${target}${RESTORE_STAGING_SUFFIX}`, { force: true }).catch(() => undefined)
   }
@@ -468,7 +540,7 @@ export async function cleanupPreRestoreFiles(): Promise<void> {
  *  leftover a best-effort delete could not remove would roll a later
  *  failure back to a ghost database. Failure aborts the restore. */
 async function discardSwapLeftovers(): Promise<void> {
-  for (const target of swapTargets()) {
+  for (const target of restoreTargets()) {
     await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true })
     await rm(`${target}${RESTORE_STAGING_SUFFIX}`, { force: true })
   }
@@ -492,7 +564,8 @@ export interface RestoreResult {
  * analytics sidecar, then the config file — and clean the temp dir. The
  * sidecar applies only when the upload carries it AND `withAnalytics`; the
  * config applies whenever the archive carried one (write failure is
- * warn-only and never rolls back the completed engine swaps). */
+ * warn-only and never rolls back the completed engine swaps — the swap
+ * itself never leaves a torn or missing config). */
 export async function restoreFromStagedBackup(
   staged: StagedBackup,
   fileName: string,
@@ -506,6 +579,13 @@ export async function restoreFromStagedBackup(
     hasConfig: staged.config !== null,
     withAnalytics,
   })
+  // Point of no return below — re-validate the staged config against the
+  // boot-time schema first. `stageBackup` already rejected an invalid one;
+  // this covers any caller that hands over a StagedBackup directly. A config
+  // the next boot would reject is fatal (`process.exit(1)`) AFTER the swap.
+  if (staged.config !== null) {
+    await assertConfigBackup(staged.config)
+  }
   // Drop any stale swap leftovers BEFORE creating new ones — the rollback
   // path keys on the mere existence of a `.pre-restore` sibling, so a
   // leftover from an earlier restore (best-effort cleanup missed it) would
@@ -535,7 +615,7 @@ export async function restoreFromStagedBackup(
         log.warn('Restore: staged config present but this process has no config file (env-only mode); skipping it')
       } else {
         try {
-          await copyFile(staged.config, configPath)
+          await swapStagedConfig(staged.config, configPath)
           configApplied = true
           log.info('Restore: config file replaced; it takes effect on the next process restart', { configPath })
         } catch (error) {

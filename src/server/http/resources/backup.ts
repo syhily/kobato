@@ -199,8 +199,9 @@ export const backupRouter = new Hono<Env>()
     }
     // Streamed: backups exceed the 100MB buffered-read cap, buffering would 413.
     const { stream, byteSize, encrypted, fileName } = await getBackupStream(c.var.requestContext.db, timestamp)
-    // The name comes from a DB row — a restored backup can carry an arbitrary
-    // storage_path, so pin the header to a quoted-string-safe whitelist.
+    // The name comes from a DB row; `getBackupStream` already refused a path
+    // that is not a backup key, and the whitelist keeps the header safe even if
+    // that ever regresses.
     const safeFileName = fileName.replace(/[^A-Za-z0-9._-]/g, '_')
     c.header('Content-Type', encrypted ? 'application/octet-stream' : 'application/gzip')
     c.header('Content-Disposition', `attachment; filename="${safeFileName}"`)

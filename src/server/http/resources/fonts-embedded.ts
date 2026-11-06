@@ -15,9 +15,18 @@ import { EMBEDDED_FONT_ROUTE_PREFIX, parseAssetUrlPath } from '@/shared/types/as
 export const fontsEmbeddedRouter = new Hono<Env>()
 
 fontsEmbeddedRouter.get('/fonts/embedded/*', async (c) => {
+  // Percent-decode first, exactly like `/storage/*`: the path grammar below and
+  // `s3StorageRedirect` both operate on DECODED keys (and the redirect
+  // re-encodes them per segment for the Location header).
+  let pathname: string
+  try {
+    pathname = decodeURIComponent(c.req.path)
+  } catch {
+    return c.body(null, 400)
+  }
   // URL → storage-key inverse of `resolveAssetUrl`'s route override; both
   // directions share the path grammar in `@/shared/types/asset-url`.
-  const parsed = parseAssetUrlPath(c.req.path)
+  const parsed = parseAssetUrlPath(pathname)
   if (parsed === null || parsed.route !== EMBEDDED_FONT_ROUTE_PREFIX) {
     return c.body(null, 400)
   }

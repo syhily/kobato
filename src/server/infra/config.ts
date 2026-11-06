@@ -343,6 +343,63 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
   return { migrated: notes.length > 0, notes }
 }
 
+export type ConfigFileErrorKind = 'json' | 'shape' | 'schema'
+
+/** A raw config-file payload the boot-time parse would reject. The message
+ *  body is the fragment `loadConfig` reports after the file path; `kind`
+ *  lets a caller that must not exit (the backup restore path) word its own
+ *  error. */
+export class ConfigFileError extends Error {
+  constructor(
+    readonly kind: ConfigFileErrorKind,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'ConfigFileError'
+  }
+}
+
+export interface ParsedConfigFile {
+  /** The raw stripped JSON `loadConfig` keeps in memory — never the transformed output. */
+  data: Record<string, unknown>
+  /** Legacy keys were moved in place; a file-backed caller may persist that. */
+  migrated: boolean
+  notes: string[]
+}
+
+/**
+ * Parse + migrate + validate a raw config file EXACTLY as boot does
+ * (`loadConfig`): legacy-key moves run first (archived configs from older
+ * builds stay loadable), '' means unset, then the strict file schema. Throws
+ * `ConfigFileError`; never exits.
+ *
+ * The backup restore path shares this so a restored `kobato.config.json` is
+ * checked against the SAME schema the next boot applies — a config that
+ * would fail there (`process.exit(1)`, with the databases already swapped)
+ * is rejected before any swap.
+ */
+export function parseConfigFileJson(raw: string): ParsedConfigFile {
+  let parsedJson: unknown
+  try {
+    parsedJson = JSON.parse(raw)
+  } catch (error) {
+    throw new ConfigFileError('json', `不是合法的 JSON:${error instanceof Error ? error.message : String(error)}`)
+  }
+  if (!isRecord(parsedJson)) {
+    throw new ConfigFileError('shape', '的顶层必须是一个 JSON 对象。')
+  }
+  // Migrate legacy keys (renames + the removed redis block) before
+  // validation — the strict file schema would reject them otherwise.
+  const { migrated, notes } = migrateLegacyKeys(parsedJson)
+  const stripped = stripEmptyStrings(parsedJson)
+  const result = fileSchema.safeParse(stripped)
+  if (!result.success) {
+    throw new ConfigFileError('schema', `包含无效内容:\n${formatIssues(result.error.issues)}`)
+  }
+  // Use the RAW stripped JSON, not result.data: transformed output (sessionSecret → string[]) must never round-trip into the file.
+  return { data: unsafeCast<Record<string, unknown>>(stripped), migrated, notes }
+}
+
 /**
  * The config file path this process resolved — same order as `loadConfig`
  * (--config/-c > SEA execDir > cwd > ~/.config) — or null in the VITEST
@@ -386,21 +443,19 @@ export function loadConfig(): Record<string, unknown> {
     } catch (error) {
       fail(`无法读取配置文件 ${filePath}:${error instanceof Error ? error.message : String(error)}`)
     }
-    let parsedJson: unknown
+    let parsed: ParsedConfigFile
     try {
-      parsedJson = JSON.parse(raw)
+      parsed = parseConfigFileJson(raw)
     } catch (error) {
-      fail(`配置文件 ${filePath} 不是合法的 JSON:${error instanceof Error ? error.message : String(error)}`)
+      if (error instanceof ConfigFileError) {
+        fail(`配置文件 ${filePath} ${error.message}`)
+      }
+      throw error
     }
-    if (!isRecord(parsedJson)) {
-      fail(`配置文件 ${filePath} 的顶层必须是一个 JSON 对象。`)
-    }
-    // Migrate legacy keys (renames + the removed redis block) before
-    // validation — the strict file schema would reject them otherwise.
-    const { migrated, notes } = migrateLegacyKeys(parsedJson)
+    const { migrated, notes } = parsed
     if (migrated) {
       try {
-        writeConfigFile(filePath, parsedJson)
+        writeConfigFile(filePath, parsed.data)
       } catch (error) {
         process.stderr.write(
           `警告:无法将迁移后的配置写回配置文件 ${filePath}(${error instanceof Error ? error.message : String(error)}),本次以内存中的生效值继续。\n`,
@@ -408,13 +463,8 @@ export function loadConfig(): Record<string, unknown> {
       }
       process.stderr.write(`已迁移配置文件 ${filePath} 中的旧配置项:${notes.join(', ')}\n`)
     }
-    const stripped = stripEmptyStrings(parsedJson)
-    const result = fileSchema.safeParse(stripped)
-    if (!result.success) {
-      fail(`配置文件 ${filePath} 包含无效内容:\n${formatIssues(result.error.issues)}`)
-    }
-    // Use the RAW stripped JSON, not result.data: transformed output (sessionSecret → string[]) must never round-trip into the file.
-    fileData = unsafeCast<Record<string, unknown>>(stripped)
+    // Use the RAW stripped JSON, not transformed output (sessionSecret → string[]) — that must never round-trip into the file.
+    fileData = parsed.data
   }
 
   const runtimeEnv: Record<string, unknown> = {}
