@@ -1,14 +1,11 @@
 import { z } from 'zod'
 
-import { rateLimitBounds, rateLimitDefaults } from '@/shared/config/defaults'
+import { rateLimitDefaults } from '@/shared/config/defaults'
+import { rateLimitBucketSchema } from '@/shared/config/rate-limit-bucket'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Centralised rate-limiting policy; buckets map 1:1 to `@/server/infra/rate-limit`,
 // and the bounds live in `@/shared/config/defaults` (mirrored by the admin form).
-const rateLimitBucketSchema = z.object({
-  windowSeconds: z.coerce.number().int().min(rateLimitBounds.windowSeconds.min).max(rateLimitBounds.windowSeconds.max),
-  maxAttempts: z.coerce.number().int().min(rateLimitBounds.maxAttempts.min).max(rateLimitBounds.maxAttempts.max),
-})
 
 // `rateLimitDefaults` is the single source of truth for the bucket set (P1-26); the keys
 // are DERIVED and narrowed back to the concrete key set (the runtime value IS the

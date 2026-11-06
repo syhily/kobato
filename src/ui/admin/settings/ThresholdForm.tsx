@@ -1,10 +1,13 @@
 import { ChevronDownIcon, InfoIcon } from 'lucide-react'
 import { Fragment, useState } from 'react'
 import { useWatch, type UseFormReturn } from 'react-hook-form'
+import { z } from 'zod'
 
 import type { RateLimitSettings } from '@/shared/config/types'
 
 import { rateLimitBounds } from '@/shared/config/defaults'
+import { rateLimitBucketSchema } from '@/shared/config/rate-limit-bucket'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { BUCKET_META, GROUPS, type BucketKey } from '@/ui/admin/settings/rate-limit/constants'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
@@ -12,6 +15,16 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
+
+// Client-side mirror of the server section schema, composed from the same
+// shared bucket schema: blur commits validate BEFORE the POST so an
+// out-of-range value rolls back with a named reason (red border + toast)
+// instead of a bare 400 the user cannot read.
+const rateLimitFormSchema = z.object(
+  unsafeCast<Record<BucketKey, typeof rateLimitBucketSchema>>(
+    Object.fromEntries(Object.keys(BUCKET_META).map((key) => [key, rateLimitBucketSchema])),
+  ),
+)
 
 interface RateLimitFormProps {
   rateLimit: RateLimitSettings
@@ -130,6 +143,7 @@ export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
     toState: (source) => source,
     // This card owns the whole section, so its full state IS the honest patch.
     fromState: (state) => ({ ...state }),
+    schema: rateLimitFormSchema,
   })
 
   return (

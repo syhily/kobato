@@ -1,3 +1,4 @@
+import { ORPCError } from '@orpc/client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // sonner is stubbed so toast copy is asserted, not rendered.
@@ -70,5 +71,35 @@ describe('toastApiError', () => {
     toastApiError(new Error('boom'), '删除失败')
     const [title] = toastMock.error.mock.calls[0] as [string]
     expect(title).toBe('删除失败')
+  })
+
+  it('appends an ORPCError zod-issue list so the failing field is named', () => {
+    // The settings save path: DomainError('BAD_REQUEST', '设置数据无效', issues)
+    // rides the ORPCError data channel as [{ message, path }].
+    const err = new ORPCError('BAD_REQUEST', {
+      message: '设置数据无效',
+      data: [{ message: '最大尝试次数不能超过 1000', path: ['resourceIp', 'maxAttempts'] }],
+    })
+    toastApiError(err, '保存失败')
+    expect(toastMock.error).toHaveBeenCalledWith('保存失败', {
+      description: '设置数据无效：resourceIp.maxAttempts：最大尝试次数不能超过 1000',
+    })
+  })
+
+  it('joins multiple issues and tolerates a missing path', () => {
+    const err = new ORPCError('BAD_REQUEST', {
+      message: '设置数据无效',
+      data: [{ message: '时间窗口不能小于 60 秒', path: ['signInIp', 'windowSeconds'] }, { message: '格式错误' }],
+    })
+    toastApiError(err, '保存失败')
+    expect(toastMock.error).toHaveBeenCalledWith('保存失败', {
+      description: '设置数据无效：signInIp.windowSeconds：时间窗口不能小于 60 秒；格式错误',
+    })
+  })
+
+  it('ignores non-issue data payloads', () => {
+    const err = new ORPCError('CONFLICT', { message: '存储迁移进行中', data: { retry: true } })
+    toastApiError(err, '保存失败')
+    expect(toastMock.error).toHaveBeenCalledWith('保存失败', { description: '存储迁移进行中' })
   })
 })
