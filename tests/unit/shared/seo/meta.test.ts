@@ -13,6 +13,7 @@ import { bundleFromMatches, metaWithFallback, pageTitle, routeMeta, seoForPage, 
 const fixture: BlogSettingsBundle = {
   siteIdentity: {
     title: 'Test Blog',
+    titleSeparator: '-',
     description: 'Test description',
     website: 'https://test.example',
     keywords: ['react', 'router'],
@@ -180,6 +181,15 @@ describe('services/seo/meta — pageTitle', () => {
 
   it('appends the site name to per-page titles', () => {
     expect(pageTitle('文章标题')).toBe(`文章标题 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('joins with the configured title separator', () => {
+    const custom: BlogSettingsBundle = {
+      ...fixture,
+      siteIdentity: { ...fixture.siteIdentity!, titleSeparator: '·' },
+    }
+    expect(pageTitle('文章标题', custom)).toBe('文章标题 · Test Blog')
+    expect(pageTitle(undefined, custom)).toBe('Test Blog · Test description')
   })
 })
 

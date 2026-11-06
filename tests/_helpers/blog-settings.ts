@@ -18,6 +18,7 @@ import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   siteIdentity: {
     title: '且听书吟',
+    titleSeparator: '-',
     description: '诗与梦想的远方',
     website: 'https://example.com',
     keywords: ['雨帆', '且听书吟', 'syhily', 'kobato', 'こばと'],

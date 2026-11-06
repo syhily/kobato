@@ -44,6 +44,7 @@ vi.mock('react-router', async () => {
 
 const baseSiteIdentity: SiteIdentitySettings = {
   title: '且听书吟',
+  titleSeparator: '-',
   description: '诗与梦想的远方',
   website: 'https://example.com',
   keywords: ['雨帆'],
@@ -220,13 +221,14 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('上传 GeoLite2-City.mmdb')
   })
 
-  it('AssetsForm renders upload and robots cards (domain/S3 moved to /admin/library/storage)', () => {
+  it('AssetsForm renders storage, upload and robots cards', () => {
     const html = stableHtml(renderToHtml(<AssetsForm assets={baseAssets} />))
+    expect(html).toContain('当前存储')
+    expect(html).toContain('资源域名')
+    expect(html).toContain('S3 兼容存储')
     expect(html).toContain('上传参数')
     expect(html).toContain('robots.txt')
-    expect(html).not.toContain('资源域名')
     expect(html).not.toContain('启用图片上传')
-    expect(html).not.toContain('S3 兼容存储')
   })
 
   it('CacheView renders clear-all section and reserved buckets heading', () => {

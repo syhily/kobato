@@ -73,8 +73,8 @@ export function pageTitle(title?: string, bundle?: BlogSettingsBundle | null): s
     return title ?? PRE_INSTALL_TITLE
   }
   return title === undefined
-    ? `${siteIdentity.title} - ${siteIdentity.description}`
-    : `${title} - ${siteIdentity.title}`
+    ? `${siteIdentity.title} ${siteIdentity.titleSeparator} ${siteIdentity.description}`
+    : `${title} ${siteIdentity.titleSeparator} ${siteIdentity.title}`
 }
 
 function baseTags(

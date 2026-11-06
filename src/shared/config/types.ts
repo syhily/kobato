@@ -9,6 +9,7 @@ import type { AvatarSource } from '@/shared/utils/avatar'
 
 export interface SiteIdentitySettings {
   title: string
+  titleSeparator: string
   description: string
   website: string
   keywords: string[]

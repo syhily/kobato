@@ -24,12 +24,13 @@ export function entityCommentUrl(type: 'post' | 'page', slug: string): string {
   return joinUrl(website, entityPermalink(type, slug), '/')
 }
 
-/** Strip the ` - <site title>` suffix document titles carry. */
+/** Strip the `<separator> <site title>` suffix document titles carry. */
 export function trimSiteSuffix(title: string | null): string {
   let trim = title ?? ''
-  const siteTitle = requireBlogSettingsSection('siteIdentity').title
-  if (trim.includes(` - ${siteTitle}`)) {
-    trim = trim.substring(0, trim.indexOf(` - ${siteTitle}`))
+  const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const suffix = ` ${siteIdentity.titleSeparator} ${siteIdentity.title}`
+  if (trim.includes(suffix)) {
+    trim = trim.substring(0, trim.indexOf(suffix))
   }
   return trim
 }

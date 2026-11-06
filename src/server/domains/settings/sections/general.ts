@@ -6,6 +6,8 @@ import { isSupportedTimeZone } from '@/server/domains/settings/timezones'
 // language consumed by `formatLocalDate` (`yyyy LL MM dd HH mm`).
 export const generalSchema = z.object({
   title: z.string().trim().min(1).max(120),
+  // `.default(...)` so rows persisted before this key existed still parse.
+  titleSeparator: z.string().trim().min(1).max(10).default('-'),
   description: z.string().trim().min(1).max(240),
   website: z.url(),
   keywords: z.array(z.string().trim().min(1).max(60)).max(20),

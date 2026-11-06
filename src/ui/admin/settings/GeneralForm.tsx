@@ -26,6 +26,7 @@ interface GeneralFormProps {
 
 const generalFormSchema = z.object({
   title: z.string().trim().min(1, '请填写站点标题').max(120, '最多 120 个字符'),
+  titleSeparator: z.string().trim().min(1, '请填写标题分隔符').max(10, '最多 10 个字符'),
   description: z.string().trim().min(1, '请填写站点描述').max(240, '最多 240 个字符'),
   website: z.url({ message: '请填写完整的 URL（包含 https://）' }),
   keywords: z
@@ -52,6 +53,7 @@ type GeneralFormValues = z.infer<typeof generalFormSchema>
 function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
   return {
     title: source.title,
+    titleSeparator: source.titleSeparator,
     description: source.description,
     website: source.website,
     keywords: source.keywords.map((value) => ({ value })),
@@ -73,6 +75,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
     toState: toFormValues,
     fromState: (values) => ({
       title: values.title.trim(),
+      titleSeparator: values.titleSeparator.trim(),
       description: values.description.trim(),
       website: values.website.trim(),
       keywords: values.keywords.map((k) => k.value.trim()).filter((v) => v.length > 0),
@@ -91,6 +94,20 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
       <SettingGroupContent>
         <SettingsRow label="站点标题" htmlFor="general-title" error={formState.errors.title?.message}>
           <SettingsInput flushOnBlur={flushOnBlur} id="general-title" maxLength={120} {...form.register('title')} />
+        </SettingsRow>
+        <SettingsRow
+          label="标题分隔符"
+          htmlFor="general-title-separator"
+          hint="连接页面标题与站点标题的符号，例如 -、·、｜。"
+          error={formState.errors.titleSeparator?.message}
+        >
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="general-title-separator"
+            maxLength={10}
+            placeholder="-"
+            {...form.register('titleSeparator')}
+          />
         </SettingsRow>
         <SettingsRow
           label="站点描述"

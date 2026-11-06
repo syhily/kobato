@@ -42,6 +42,7 @@ describe('server/domains/settings/services/install-flow', () => {
       const general = builtRows()[0]?.payload
 
       expect(general?.title).toBe('My Blog')
+      expect(general?.titleSeparator).toBe('-')
       expect(general?.website).toBe('https://localhost')
       expect(general?.author).toMatchObject({ name: 'Admin', email: 'admin@example.com', url: 'https://localhost' })
       expect(general?.locale).toBe('zh-CN')

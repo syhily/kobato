@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import {
   canonicalPostPath,
   entityCommentUrl,
@@ -89,6 +89,15 @@ describe('shared/utils/paths — trimSiteSuffix', () => {
 
   it('strips the ` - <site title>` suffix', () => {
     expect(trimSiteSuffix(`Hello - ${siteTitle}`)).toBe('Hello')
+  })
+
+  it('strips the suffix built with a custom title separator', () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, titleSeparator: '｜' },
+    })
+    expect(trimSiteSuffix(`Hello ｜ ${siteTitle}`)).toBe('Hello')
+    expect(trimSiteSuffix(`Hello - ${siteTitle}`)).toBe(`Hello - ${siteTitle}`)
   })
 
   it('leaves titles without the suffix untouched', () => {

@@ -22,6 +22,7 @@ const db: Database = getTestDb()
 const fixtureBundle: BlogSettingsBundle = {
   siteIdentity: {
     title: 'fixture title',
+    titleSeparator: '-',
     description: 'fixture description',
     website: 'https://example.com',
     keywords: [],

@@ -34,6 +34,7 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
   const { title, name, email, hostname } = input
   const siteIdentity: SiteIdentitySettings = {
     title,
+    titleSeparator: '-',
     description: 'Welcome',
     website: `https://${hostname}`,
     keywords: [],
