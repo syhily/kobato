@@ -96,6 +96,11 @@ export function createPurifySanitizer(purify: Purify): (html: string, config: Sa
     try {
       // ALLOWED_ATTR is string-only; the /^data-.*$/ RegExp maps to
       // ALLOW_DATA_ATTR — new RegExp attributes need a real translation.
+      // The flag is passed ALWAYS: DOMPurify's own default is `true`, which
+      // would silently let every `data-*` through for a preset that never
+      // opted in (feed / comment-email). Those presets enumerate the exact
+      // data attributes they need in ALLOWED_ATTR, so `false` still keeps
+      // them while dropping undeclared ones.
       const hasDataAttr = config.attributes.some((attr) => attr instanceof RegExp)
       const allowedAttr = [
         ...config.attributes.filter((attr): attr is string => typeof attr === 'string'),
@@ -105,7 +110,7 @@ export function createPurifySanitizer(purify: Purify): (html: string, config: Sa
         ALLOWED_TAGS: [...config.tags],
         ALLOWED_ATTR: allowedAttr,
         ALLOWED_URI_REGEXP: config.noProtocolRelative === true ? ALLOWED_URI_NO_PROTOCOL_RELATIVE : ALLOWED_URI,
-        ...(hasDataAttr ? { ALLOW_DATA_ATTR: true } : {}),
+        ALLOW_DATA_ATTR: hasDataAttr,
       })
     } finally {
       activeStyles = undefined

@@ -135,4 +135,57 @@ describe('settings/sections/mail', () => {
     })
     expect(toZeabur.success).toBe(true)
   })
+
+  describe('host / mailgunDomain hostname shape', () => {
+    function parse(overrides: Record<string, unknown>) {
+      return mailSchema.safeParse({
+        mail: { enabled: true, sender: 'noreply@example.com', ...overrides },
+      })
+    }
+
+    it('accepts dotted hostnames and the empty string', () => {
+      for (const value of ['api.zeabur.com', 'mg.example.com', 'smtp.eu.mailgun.org', 'a-b.example.co.uk', '']) {
+        expect(parse({ host: value }).success, `host=${value}`).toBe(true)
+      }
+      for (const value of ['mg.example.com', 'sandbox123.mailgun.org', '']) {
+        expect(parse({ transport: 'mailgun', mailgunDomain: value }).success, `mailgunDomain=${value}`).toBe(true)
+      }
+    })
+
+    it('trims before validating', () => {
+      const result = parse({ host: '  api.zeabur.com  ' })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.mail.host).toBe('api.zeabur.com')
+      }
+    })
+
+    it('rejects schemes, ports, paths, emails, IP literals, and bare labels', () => {
+      const rejected = [
+        'https://api.zeabur.com',
+        'api.zeabur.com:443',
+        'api.zeabur.com/path',
+        'user@api.zeabur.com',
+        '127.0.0.1',
+        '10.0.0.1',
+        '[::1]',
+        'localhost',
+        '-bad.example.com',
+        'bad-.example.com',
+        'bad label.example.com',
+      ]
+      for (const value of rejected) {
+        expect(parse({ host: value }).success, `host=${value}`).toBe(false)
+        expect(parse({ transport: 'mailgun', mailgunDomain: value }).success, `mailgunDomain=${value}`).toBe(false)
+      }
+    })
+
+    it('surfaces a user-facing Chinese message', () => {
+      const result = parse({ host: 'https://api.zeabur.com' })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.issues[0]?.message).toContain('不能带协议、端口、路径或 IP 地址')
+      }
+    })
+  })
 })

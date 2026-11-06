@@ -119,14 +119,36 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
   }
 
   if (PRODUCTION && mergedOptions.autoServe !== false) {
+    const baseServeOptions = {
+      fetch: app.fetch.bind(app),
+      port: mergedOptions.port,
+      overrideGlobalObjects: mergedOptions.overrideGlobalObjects,
+      hostname: mergedOptions.hostname,
+    }
+    // Explicit socket timeouts — Node's defaults are wrong for this app:
+    // - `headersTimeout` covers header receipt only; a peer that needs more
+    //   than 20s to send headers is a slowloris, not a slow client. Node
+    //   re-checks sockets every `connectionsCheckingInterval` (default 30s),
+    //   so tighten that to keep the 20s cap meaningful.
+    // - `requestTimeout` covers receiving the ENTIRE request and defaults to
+    //   300s, which would cut off the backup upload/restore endpoints that
+    //   legitimately run under a 30-minute per-route budget. Disable it (0):
+    //   the `requestTimeout` middleware — 30s default, 30min for
+    //   `/api/admin/backup/upload-restore*` + `/api/setup/restore` — is the
+    //   single whole-request governor.
+    // A custom `createServer` (https / http2) owns its own socket options and
+    // replaces these defaults wholesale.
     const server = serve(
-      {
-        fetch: app.fetch.bind(app),
-        port: mergedOptions.port,
-        overrideGlobalObjects: mergedOptions.overrideGlobalObjects,
-        hostname: mergedOptions.hostname,
-        ...mergedOptions.customNodeServer,
-      },
+      mergedOptions.customNodeServer === undefined
+        ? {
+            ...baseServeOptions,
+            serverOptions: {
+              headersTimeout: 20_000,
+              connectionsCheckingInterval: 10_000,
+              requestTimeout: 0,
+            },
+          }
+        : { ...baseServeOptions, ...mergedOptions.customNodeServer },
       mergedOptions.listeningListener,
     )
     mergedOptions.onServe?.(server)

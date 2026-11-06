@@ -267,6 +267,16 @@ describe('shared/sanitize/sanitize-html', () => {
       const clean = sanitizeHtmlString(html, 'feed')
       expect(clean).toContain('src="data:image/png;base64,iVBORw0KGgo="')
     })
+
+    it('keeps only the declared data-* attributes (ALLOW_DATA_ATTR false)', () => {
+      const html =
+        '<pre data-language="ts"><code data-language="ts" data-smuggled="1">x</code></pre>' +
+        '<a href="https://example.com" data-extra="1">link</a>'
+      const clean = sanitizeHtmlString(html, 'feed')
+      expect(clean).toContain('data-language="ts"')
+      expect(clean).not.toContain('data-smuggled')
+      expect(clean).not.toContain('data-extra')
+    })
   })
 
   describe('comment-email strategy', () => {
@@ -286,5 +296,17 @@ describe('shared/sanitize/sanitize-html', () => {
       const clean = sanitizeHtmlString('<a href="//evil.example/x">click</a>', 'comment-email')
       expect(clean).not.toContain('//evil.example')
     })
+
+    it('drops every data-* attribute (the preset declares none)', () => {
+      const clean = sanitizeHtmlString('<p class="x" data-tracker="1">hi</p>', 'comment-email')
+      expect(clean).toContain('class="x"')
+      expect(clean).not.toContain('data-tracker')
+    })
+  })
+
+  it('keeps arbitrary data-* attributes for the body projection (mount points)', () => {
+    const clean = sanitizeHtmlString('<div class="aplayer" data-anything="1" data-url="/x.mp3"></div>', 'body')
+    expect(clean).toContain('data-anything="1"')
+    expect(clean).toContain('data-url="/x.mp3"')
   })
 })

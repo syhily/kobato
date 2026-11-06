@@ -118,7 +118,12 @@ export function configureMiddleware(app: Hono<Env>): void {
     secureHeaders({
       contentSecurityPolicy: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        // Dev: Vite / React Router tooling injects un-nonced inline scripts.
+        // Production HTML always carries the request nonce through the dynamic
+        // policy below; this static policy only survives responses that never
+        // reach `requestContextMiddleware` (301/404 short-circuits) and those
+        // are not HTML, so no inline script is legitimate there.
+        scriptSrc: import.meta.env.DEV ? ["'self'", "'unsafe-inline'"] : ["'self'"],
         workerSrc: ["'self'", 'blob:'],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'blob:'],

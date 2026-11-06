@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
@@ -146,6 +146,37 @@ describe('dynamic CSP middleware', () => {
     const res = await app.request('/health')
     const csp = res.headers.get('Content-Security-Policy')
     expect(csp).toContain("base-uri 'self'")
+  })
+})
+
+describe('static fallback CSP script-src', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  function staticScriptSrc(csp: string | null): string {
+    expect(csp).not.toBeNull()
+    return /script-src[^;]+/.exec(csp ?? '')?.[0] ?? ''
+  }
+
+  it('drops unsafe-inline in production (no HTML response keeps this policy)', async () => {
+    vi.stubEnv('DEV', false)
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    const res = await app.request('/wp-login.php')
+    expect(res.status).toBe(404)
+    const scriptSrc = staticScriptSrc(res.headers.get('Content-Security-Policy'))
+    // Markers only the static policy carries (the dynamic one adds base-uri).
+    expect(scriptSrc).toBe("script-src 'self'")
+  })
+
+  it('keeps unsafe-inline in development for Vite / React Router tooling', async () => {
+    vi.stubEnv('DEV', true)
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    const res = await app.request('/wp-login.php')
+    expect(res.status).toBe(404)
+    expect(staticScriptSrc(res.headers.get('Content-Security-Policy'))).toBe("script-src 'self' 'unsafe-inline'")
   })
 })
 

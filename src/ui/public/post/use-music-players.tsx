@@ -3,6 +3,28 @@ import { createRoot, type Root } from 'react-dom/client'
 
 import type { MusicPlayerCardProps } from '@/ui/public/music-player/music-player'
 
+import { isHttpUrl } from '@/shared/utils/safe-url'
+
+// Defense-in-depth for the hydrated mount points: `data-url` / `data-cover`
+// are sanitized with the `body` preset before they land in the projected
+// body_html, but this hook assigns them to `audio.src` / `<img src>` directly.
+// Accept only http(s) URLs and same-origin relative paths (`/…`, never `//host`)
+// — `javascript:`, `data:`, and protocol-relative values skip the card and leave
+// its static fallback in place.
+export function safeMediaSrc(value: string | null | undefined): string | undefined {
+  if (value === null || value === undefined) {
+    return undefined
+  }
+  const trimmed = value.trim()
+  if (trimmed === '') {
+    return undefined
+  }
+  if (trimmed.startsWith('/')) {
+    return trimmed.startsWith('//') ? undefined : trimmed
+  }
+  return isHttpUrl(trimmed) ? trimmed : undefined
+}
+
 // Music-player cards export a static mount point (`<div class="aplayer"
 // data-url …>` wrapping a static fallback card); this hook upgrades every
 // mount point with a URL to the real player after hydration. Mount points
@@ -38,15 +60,15 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
         return
       }
       for (const mount of mounts) {
-        const url = mount.getAttribute('data-url')
-        if (url === null || url === '') {
+        const url = safeMediaSrc(mount.getAttribute('data-url'))
+        if (url === undefined) {
           continue
         }
         const audio: MusicPlayerCardProps = {
           name: mount.getAttribute('data-name') ?? '',
           artist: mount.getAttribute('data-artist') ?? '',
           url,
-          cover: mount.getAttribute('data-cover') || undefined,
+          cover: safeMediaSrc(mount.getAttribute('data-cover')),
           lrc: mount.getAttribute('data-lrc') || undefined,
         }
         // Drop the static fallback card before React takes over the node.
