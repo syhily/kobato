@@ -91,6 +91,12 @@ const upload = authorProc
     const uploader = { id: idFromString(sessionUser.id), name: sessionUser.name }
     const buffer = Buffer.from(await input.file.arrayBuffer())
     const { metadata } = input
+    // Category covers and friend posters are site-global state keys — an
+    // author overwriting one would replace (and then own) an admin-managed
+    // asset, so those kinds are admin-only.
+    if (metadata.kind !== 'generic' && context.viewer.role !== 'admin') {
+      throw new ORPCError('FORBIDDEN', { message: '分类封面与友链海报仅管理员可上传' })
+    }
     const baseArgs = {
       buffer,
       note: metadata.note ?? null,

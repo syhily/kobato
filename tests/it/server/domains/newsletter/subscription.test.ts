@@ -11,6 +11,7 @@ import { callRpc } from '#/_helpers/rpc-call'
 import { signUnsubscribeId } from '@/server/domains/newsletter/signing'
 import { newsletterSubscriber } from '@/server/infra/db/schema/newsletter'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 const db = getTestDb()
 
@@ -38,6 +39,7 @@ function enableNewsletter() {
 
 beforeEach(async () => {
   await clearAllTables(db)
+  __resetRateLimitsForTests()
   mockFetch.reset()
   globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
   enableNewsletter()
@@ -175,5 +177,22 @@ describe('integration / newsletter', () => {
     const res = await callRpc('/newsletter/subscribe', { email: 'off@example.com' }, ctx)
     expect(res.status).toBe(400)
     expect(await findRow('off@example.com')).toBeNull()
+  })
+
+  it('caps repeated subscribes of one address at 3/hour (per-email limit)', async () => {
+    const ctx = makePublicCtx({ db })
+    for (let i = 0; i < 3; i++) {
+      mockFetch.enqueue('https://mail.test/api/v1/zsend/emails', new Response(null, { status: 200 }))
+    }
+
+    for (let i = 0; i < 3; i++) {
+      const res = await callRpc('/newsletter/subscribe', { email: 'victim@example.com' }, ctx)
+      expect(res.status).toBe(200)
+    }
+    // A case-variant of the same address hits the same counter (hashes normalize).
+    const fourth = await callRpc('/newsletter/subscribe', { email: 'Victim@Example.com' }, ctx)
+    expect(fourth.status).toBe(429)
+    // The rejected attempt never reached the mail transport.
+    expect(mockFetch.calls).toHaveLength(3)
   })
 })

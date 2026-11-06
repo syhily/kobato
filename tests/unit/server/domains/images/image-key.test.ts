@@ -9,15 +9,21 @@ describe('server/images/key — buildObjectKey', () => {
       // The generic key is built from UTC components, keeping the test timezone-stable.
       const now = new Date(Date.UTC(2026, 0, 7, 3, 4, 5, 987))
       const key = buildObjectKey({ kind: 'generic', now })
-      // 987 ms % 100 = 87 → trailing `87`.
-      expect(key).toBe('images/2026/01/2026010703040587.jpg')
+      // 987 ms % 100 = 87 → `87` before the random suffix.
+      expect(key).toMatch(/^images\/2026\/01\/2026010703040587-[0-9a-f]{8}\.jpg$/)
     })
 
     it('zero-pads the ms-mod-100 segment when the remainder is single-digit', () => {
       const now = new Date(Date.UTC(2026, 11, 31, 23, 59, 59, 4))
       const key = buildObjectKey({ kind: 'generic', now })
-      // 4 ms % 100 = 4 → trailing `04` after the seconds.
-      expect(key).toBe('images/2026/12/2026123123595904.jpg')
+      // 4 ms % 100 = 4 → `04` after the seconds.
+      expect(key).toMatch(/^images\/2026\/12\/2026123123595904-[0-9a-f]{8}\.jpg$/)
+    })
+
+    it('never collides inside the same 10ms bucket (the random suffix)', () => {
+      const now = new Date(Date.UTC(2026, 0, 7, 3, 4, 5, 987))
+      const keys = new Set(Array.from({ length: 1000 }, () => buildObjectKey({ kind: 'generic', now })))
+      expect(keys.size).toBe(1000)
     })
   })
 

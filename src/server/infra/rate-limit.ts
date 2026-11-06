@@ -188,6 +188,19 @@ export const tryCommentPostRateLimit = byIp('comment', 'comment-post')
 /** Public comment submissions by author email. */
 export const tryCommentPostRateLimitByEmail = byEmail('comment', 'comment-email')
 
+// Newsletter subscribe is anonymous AND mails the submitted address, so the
+// per-IP resource bucket alone makes it an email-bomb relay for one victim.
+// No settings bucket (the surface stays deliberately small after the
+// twin-bucket merge): 3/hour per address is ample for a human confirming.
+const NEWSLETTER_SUBSCRIBE_EMAIL_BUCKET: RateLimitBucket = { windowSeconds: 60 * 60, maxAttempts: 3 }
+
+/** Newsletter subscribe attempts by target address. */
+export const tryNewsletterSubscribeByEmailRateLimit = (email: string): Promise<RateLimitResult> =>
+  tryKeyedRateLimit(
+    `${RATE_LIMIT_NAMESPACE}newsletter-subscribe-email:${hashEmail(email)}`,
+    NEWSLETTER_SUBSCRIBE_EMAIL_BUCKET,
+  )
+
 /** `like` increases by client IP; cancellation does NOT bump this counter —
  *  only fresh inserts add rows, keeping table growth bounded. */
 export const tryLikeIncreaseRateLimit = byIp('like', 'like-increase')

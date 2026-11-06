@@ -247,4 +247,21 @@ describe('adminImagesRouter.upload — orchestration only', () => {
       expect.objectContaining({ kind: { kind: 'category', slug: 'tech' }, note: 'cover' }),
     )
   })
+
+  it('rejects category/friend kinds for authors (site-global state keys are admin-only)', async () => {
+    const author = await db
+      .insert(user)
+      .values({ name: 'Author', email: `author-${++seq}@example.com`, password: 'hashed', role: 'author' })
+      .returning({ id: user.id })
+    const ctx = makeAuthedCtx({ userId: String(author[0]!.id), role: 'author', db })
+    const file = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' })
+
+    await expect(
+      call(adminImagesRouter.upload, { file, metadata: { kind: 'category', slug: 'tech' } }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(
+      call(adminImagesRouter.upload, { file, metadata: { kind: 'friend', host: 'example.com' } }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    expect(uploadService.uploadImage).not.toHaveBeenCalled()
+  })
 })

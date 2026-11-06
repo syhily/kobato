@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto'
+
 import { DomainError } from '@/server/infra/http/errors'
 
 // S3 object key generator. Generic keys are unique per upload (always
@@ -33,9 +35,12 @@ export function buildObjectKey(spec: ImageKindSpec): string {
       const HH = String(spec.now.getUTCHours()).padStart(2, '0')
       const mm = String(spec.now.getUTCMinutes()).padStart(2, '0')
       const ss = String(spec.now.getUTCSeconds()).padStart(2, '0')
-      // Deliberate `% 100` of ms (JS lacks ns precision) — key format pinned.
+      // `% 100` of ms kept for name sortability; the random suffix kills
+      // the 10ms-bucket collision — two same-window uploads used to share
+      // one key, and the loser's put overwrote the winner's bytes while
+      // the winner's row kept pointing at it.
       const nn = String(spec.now.getUTCMilliseconds() % 100).padStart(2, '0')
-      return `images/${yyyy}/${MM}/${yyyy}${MM}${dd}${HH}${mm}${ss}${nn}.jpg`
+      return `images/${yyyy}/${MM}/${yyyy}${MM}${dd}${HH}${mm}${ss}${nn}-${randomBytes(4).toString('hex')}.jpg`
     }
     case 'category':
       return `images/categories/${assertSafePathSegment(spec.slug, '分类 slug')}.jpg`

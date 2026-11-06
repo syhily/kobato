@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { randomBytes } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
@@ -21,6 +22,16 @@ vi.mock('@/server/infra/db/operations/image', async (importOriginal) => {
     upsertImageByStoragePath: vi.fn(actual.upsertImageByStoragePath),
   }
 })
+
+// Same wrap-don't-replace: one test pins the generic key's random suffix
+// so a frozen clock can still force a duplicate key.
+vi.mock('node:crypto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:crypto')>()
+  return { ...actual, randomBytes: vi.fn(actual.randomBytes) }
+})
+
+const randomBytesMock = vi.mocked(randomBytes)
+const passthroughRandomBytes = randomBytesMock.getMockImplementation()!
 
 // isAvailable() === true makes the mem backend S3-active, so uploads record driver 's3'.
 const mem = makeMemoryBackend()
@@ -208,15 +219,17 @@ describe('images/services/upload — pure validation + mime detection', () => {
       })
       const rows = await allImageRows()
       expect(rows).toHaveLength(1)
-      expect(rows[0].storagePath).toMatch(/^images\/\d{4}\/\d{2}\/\d{16}\.jpg$/)
+      expect(rows[0].storagePath).toMatch(/^images\/\d{4}\/\d{2}\/\d{16}-[0-9a-f]{8}\.jpg$/)
       expect(rows[0].storageDriver).toBe('s3')
       expect(dto.storagePath).toBe(rows[0].storagePath)
       expect(mem.store.has(rows[0].storagePath)).toBe(true)
     })
 
     it('swallows a duplicate-key insert failure into a friendly DomainError', async () => {
-      // Freeze the clock and occupy the key: the second insert hits the UNIQUE constraint.
+      // Freeze the clock AND the random suffix, then occupy the key: the
+      // second insert hits the UNIQUE constraint.
       vi.useFakeTimers()
+      randomBytesMock.mockImplementation(((size: number) => Buffer.alloc(size, 0xde)) as typeof randomBytes)
       try {
         vi.setSystemTime(new Date('2026-07-30T12:34:56.789Z'))
         const key = buildObjectKey({ kind: 'generic', now: new Date() })
@@ -243,6 +256,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
         expect(mem.deletedKeys).not.toContain(key)
         expect(mem.store.has(key)).toBe(true)
       } finally {
+        randomBytesMock.mockImplementation(passthroughRandomBytes)
         vi.useRealTimers()
       }
     })

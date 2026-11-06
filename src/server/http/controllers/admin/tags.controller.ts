@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/domains/taxonomies/tags/service'
-import { authorProc } from '@/server/http/orpc-base'
+import { adminProc, authorProc } from '@/server/http/orpc-base'
 import { adminTagDto } from '@/shared/contracts/tags'
 import { idFromString } from '@/shared/utils/id'
 
@@ -51,7 +51,10 @@ const upsert = authorProc
     return { tag }
   })
 
-const remove = authorProc
+// Deleting shared tags is admin-only (like renaming): the in-use CONFLICT
+// enumerates the posts carrying the tag, which would leak other authors'
+// post titles to any author probing tag ids.
+const remove = adminProc
   .route({ method: 'POST', path: '/admin/tags/remove' })
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
