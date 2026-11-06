@@ -14,9 +14,11 @@ const okOutput = z.object({ ok: z.literal(true) })
 
 const subscribeProc = publicProc
   .route({ method: 'POST', path: '/newsletter/subscribe' })
+  // Limiter before `.input(...)`: oRPC validates input at its declared
+  // index, so a trailing middleware never sees a malformed payload.
+  .use(resourceRateLimit)
   .input(newsletterSubscribeSchema)
   .output(okOutput)
-  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     await subscribe(context.db, input.email)
     return { ok: true as const }
@@ -24,9 +26,9 @@ const subscribeProc = publicProc
 
 const confirmProc = publicProc
   .route({ method: 'POST', path: '/newsletter/confirm' })
+  .use(resourceRateLimit)
   .input(newsletterConfirmSchema)
   .output(okOutput)
-  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     await confirm(context.db, input.token)
     return { ok: true as const }
@@ -34,9 +36,9 @@ const confirmProc = publicProc
 
 const unsubscribeProc = publicProc
   .route({ method: 'POST', path: '/newsletter/unsubscribe' })
+  .use(resourceRateLimit)
   .input(newsletterUnsubscribeSchema)
   .output(okOutput)
-  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     await unsubscribe(context.db, idFromString(input.id), input.sig)
     return { ok: true as const }

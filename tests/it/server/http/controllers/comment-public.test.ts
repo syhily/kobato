@@ -241,6 +241,27 @@ describe('commentsRouter.loadComments', () => {
 })
 
 describe('commentsRouter.replyComment', () => {
+  it('rate-limits before oRPC validates the Lexical body (limiter ordered ahead of .input)', async () => {
+    // A single-hit bucket + an invalid body: the limiter must answer first,
+    // proving the middleware sits before the input-validation index.
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+        commentPostIp: { windowSeconds: 60, maxAttempts: 0 },
+      },
+    })
+    try {
+      const ctx = makePublicCtx({ db })
+      await expect(
+        call(commentsRouter.replyComment, { ...makeValidReplyInput(), name: 'a'.repeat(101) }, { context: ctx }),
+      ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' })
+    } finally {
+      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+      __resetRateLimitsForTests()
+    }
+  })
+
   it('throws BAD_REQUEST when link is not an HTTP URL', async () => {
     const ctx = makePublicCtx({ db })
     await expect(
@@ -315,6 +336,25 @@ describe('commentsRouter.getRaw', () => {
 })
 
 describe('commentsRouter.edit', () => {
+  it('rate-limits before oRPC validates the Lexical body (limiter ordered ahead of .input)', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+        resourceIp: { windowSeconds: 60, maxAttempts: 0 },
+      },
+    })
+    try {
+      const ctx = makePublicCtx({ db })
+      await expect(
+        call(commentsRouter.edit, { rid: 'not-a-number', body: EMPTY_COMMENT_EDITOR_STATE }, { context: ctx }),
+      ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' })
+    } finally {
+      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+      __resetRateLimitsForTests()
+    }
+  })
+
   it('throws BAD_REQUEST when rid is not numeric', async () => {
     const ctx = makePublicCtx({ db })
     await expect(

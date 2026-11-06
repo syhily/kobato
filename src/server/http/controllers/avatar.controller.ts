@@ -8,9 +8,11 @@ import { joinUrl } from '@/shared/utils/urls'
 
 const findAvatar = publicProc
   .route({ method: 'GET', path: '/avatar/find' })
+  // Limiter before `.input(...)`: oRPC validates input at its declared
+  // index, so a trailing middleware never sees a malformed payload.
+  .use(resourceRateLimit)
   .input(z.object({ email: z.email() }))
   .output(z.object({ avatar: z.string() }))
-  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     const hash = await resolveAvatarForEmail(context.db, input.email)
     return {

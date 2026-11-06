@@ -5,6 +5,9 @@ import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 
 const resolveThumbhash = publicProc
   .route({ method: 'GET', path: '/image/resolve-thumbhash' })
+  // Limiter before `.input(...)`: oRPC validates input at its declared
+  // index, so a trailing middleware never sees a malformed payload.
+  .use(resourceRateLimit)
   .input(z.object({ src: z.string().trim().min(1).max(2000) }))
   .output(
     z.object({
@@ -13,7 +16,6 @@ const resolveThumbhash = publicProc
       height: z.number().nullable(),
     }),
   )
-  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     const image = await resolveImageRef(context.db, input.src)
     return {

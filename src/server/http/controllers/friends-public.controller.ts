@@ -8,9 +8,11 @@ import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 // mirror the comment submit path; rows land pending and notify the admin.
 const apply = publicProc
   .route({ method: 'POST', path: '/friends/apply' })
+  // Limiter before `.input(...)`: oRPC validates input at its declared
+  // index, so a trailing middleware never sees a malformed payload.
+  .use(resourceRateLimit)
   .input(applyFriendSchema)
   .output(z.object({ ok: z.literal(true) }))
-  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     await applyFriend(context.db, {
       website: input.website,

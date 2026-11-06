@@ -10,7 +10,21 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 export interface InsertBatcherOptions {
   flushIntervalMs: number
   flushThreshold: number
+  /**
+   * Hard cap on buffered events, `DEFAULT_MAX_BUFFER_SIZE` when omitted.
+   * A writer that stalls (DuckDB append, the flush singleflight) would
+   * otherwise let an event flood grow the heap without bound — past this
+   * point incoming events are dropped and counted instead.
+   */
+  maxBufferSize?: number
 }
+
+/**
+ * Five 2048-row DuckDB append chunks. At the 100-event flush threshold the
+ * buffer only reaches this size while the writer is stalled — precisely the
+ * flood the cap defends against.
+ */
+export const DEFAULT_MAX_BUFFER_SIZE = 10_000
 
 export interface FlushResult {
   committed: number
@@ -169,6 +183,12 @@ export abstract class FlushLoop<Pending, Result> {
 // the DuckDB sidecar opens after registration, and restore reopens it.
 export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], FlushResult> {
   private buffer: T[] = []
+  private readonly maxBufferSize: number
+  /** Cumulative drops since construction — rides every overflow warning. */
+  private dropped = 0
+  /** True while the buffer is saturated; one warning per drop burst instead
+   *  of one per event, so a flood cannot become a log flood. */
+  private overflowing = false
 
   constructor(
     private readonly opts: InsertBatcherOptions,
@@ -176,6 +196,7 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
     private readonly resolveWriter: () => W,
   ) {
     super(opts.flushIntervalMs, scope, { committed: 0, deadLettered: 0 })
+    this.maxBufferSize = opts.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE
   }
 
   protected takePending(): T[] | null {
@@ -209,6 +230,21 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
   protected abstract onInsertFailed(events: T[], error: unknown): Promise<FlushResult>
 
   push(event: T): void {
+    if (this.buffer.length >= this.maxBufferSize) {
+      this.dropped += 1
+      if (!this.overflowing) {
+        this.overflowing = true
+        // No dead-letter here: a page view lost to backpressure is not worth
+        // replaying, and writing every dropped event would just move the
+        // flood to the disk. One warning per burst keeps the count visible.
+        this.log.warn('insert batcher buffer full; dropping incoming events', {
+          maxBufferSize: this.maxBufferSize,
+          dropped: this.dropped,
+        })
+      }
+      return
+    }
+    this.overflowing = false
     this.buffer.push(event)
 
     if (this.buffer.length >= this.opts.flushThreshold) {

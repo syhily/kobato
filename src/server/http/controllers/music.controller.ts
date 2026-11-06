@@ -7,6 +7,9 @@ import { publicMusicMetaDto } from '@/shared/contracts/music'
 
 const get = publicProc
   .route({ method: 'GET', path: '/music/get' })
+  // Limiter before `.input(...)`: oRPC validates input at its declared
+  // index, so a trailing middleware never sees a malformed payload.
+  .use(resourceRateLimit)
   .input(
     z.object({
       id: z
@@ -16,7 +19,6 @@ const get = publicProc
     }),
   )
   .output(z.object({ music: publicMusicMetaDto }))
-  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     const meta = await getMusicMetaForPlayer(context.db, input.id)
     if (meta === null) {

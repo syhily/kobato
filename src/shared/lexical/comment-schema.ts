@@ -49,6 +49,38 @@ export function safeValidateCommentEditorState(
 }
 
 /**
+ * Cheap pre-render length bound for the server perimeter: the sum of the
+ * text payloads that survive into the degraded-HTML projection (text nodes,
+ * linebreaks, codeblock `code`, math `tex`). Every counted character is
+ * emitted in the projection too, so exceeding the content cap here is
+ * guaranteed to exceed it on the rendered side — but the check costs one
+ * tree walk instead of a jsdom render of a body the 10 MB perimeter limit
+ * allows.
+ */
+export function commentEditorStateTextLength(state: CommentEditorState): number {
+  let total = 0
+  visitLexicalNodes(state, (node) => {
+    const text = unsafeCast<{ text?: unknown }>(node).text
+    if (typeof text === 'string') {
+      total += text.length
+      return
+    }
+    if (node.type === 'linebreak') {
+      total += 1
+      return
+    }
+    const dataset = unsafeCast<{ code?: unknown; tex?: unknown }>(node)
+    if (typeof dataset.code === 'string') {
+      total += dataset.code.length
+    }
+    if (typeof dataset.tex === 'string') {
+      total += dataset.tex.length
+    }
+  })
+  return total
+}
+
+/**
  * Blank check (submit gating on both the comment form and the server
  * perimeter): a comment is blank when no text content survives trimming and
  * every codeblock `code` / math `tex` payload is empty. Mirrors the PT

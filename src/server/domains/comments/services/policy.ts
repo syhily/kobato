@@ -54,6 +54,18 @@ export function decideCommenterGate(
   return null
 }
 
+/**
+ * Length cap for everyone. Shared by the cheap pre-render text walk
+ * (`canonicalizeCommentBody`) and the authoritative rendered-content gate
+ * below, so both reject with the same code and message.
+ */
+export function decideContentLengthGate(contentLength: number): GateFailure | null {
+  if (contentLength > MAX_COMMENT_LENGTH) {
+    return { code: 'BAD_REQUEST', message: `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。` }
+  }
+  return null
+}
+
 /** Length cap for everyone; dedupe (same hash within DEDUPE_WINDOW_MS) skips
  *  admins. Length is checked first, so over-long duplicates report the length error. */
 export function decideContentGate(input: {
@@ -62,8 +74,9 @@ export function decideContentGate(input: {
   contentHash: string
   recentContentHashes: string[]
 }): GateFailure | null {
-  if (input.contentLength > MAX_COMMENT_LENGTH) {
-    return { code: 'BAD_REQUEST', message: `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。` }
+  const lengthFailure = decideContentLengthGate(input.contentLength)
+  if (lengthFailure !== null) {
+    return lengthFailure
   }
   if (input.role !== 'admin' && input.recentContentHashes.includes(input.contentHash)) {
     return {

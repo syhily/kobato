@@ -13,9 +13,9 @@ import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { appendCommentToken, issueCommentToken } from '@/server/domains/comments/services/token'
-import { commentTokenCookie, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import { commentTokenCookie, commentPostRateLimit, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
-import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
+import { tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { commentItemDto, ownCommentMutationDto } from '@/shared/contracts/comments'
 import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
@@ -24,16 +24,16 @@ import { idFromString } from '@/shared/utils/id'
 
 const replyComment = publicProc
   .route({ method: 'POST', path: '/comments/reply' })
+  // Before `.input(...)`: oRPC validates the (potentially multi-megabyte)
+  // Lexical body at the input-validation index, so the bucket check must
+  // sit in an earlier middleware slot.
+  .use(commentPostRateLimit)
   .input(commentReplySchema)
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
     const { requestFacts, clientAddress, session, responseHeaders } = context
     const isAdmin = context.viewer?.role === 'admin'
     if (!isAdmin) {
-      const byIp = await tryCommentPostRateLimit(clientAddress)
-      if (byIp.exceeded) {
-        throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
-      }
       const byEmail = await tryCommentPostRateLimitByEmail(input.email)
       if (byEmail.exceeded) {
         throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
@@ -112,9 +112,11 @@ const getRaw = publicProc
 // approved-replies fences apply. Moderator edits live on `/comment-admin/edit`.
 const edit = publicProc
   .route({ method: 'POST', path: '/comments/edit' })
+  // Limiter before `.input(...)` — oRPC validates the body at the
+  // input-validation index, which precedes later middlewares.
+  .use(resourceRateLimit)
   .input(commentRidSchema.extend({ body: commentEditorStateSchema }))
   .output(ownCommentMutationDto)
-  .use(resourceRateLimit)
   .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
     const sessionUser = context.viewer ?? undefined

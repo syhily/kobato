@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   COMMENT_LIST_MAX_DEPTH,
   commentEditorStateSchema,
+  commentEditorStateTextLength,
+  EMPTY_COMMENT_EDITOR_STATE,
   safeValidateCommentEditorState,
 } from '@/shared/lexical/comment-schema'
 
@@ -120,5 +122,24 @@ describe('safeValidateCommentEditorState', () => {
     if (!result.ok) {
       expect(result.error.issues.length).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('commentEditorStateTextLength', () => {
+  it('counts text payloads the projection emits without double-counting ancestors', () => {
+    const value = state([
+      element('paragraph', [text('hello')]),
+      element('paragraph', [text('a'), element('link', [text('bc')], { url: 'https://example.com' })]),
+      { type: 'linebreak', version: 1 },
+      { type: 'codeblock', version: 1, code: 'x()', language: 'js', caption: '', highlightedHtml: '' },
+      { type: 'math', version: 1, tex: '\\int x', mathml: '', svg: '' },
+    ])
+    const parsed = commentEditorStateSchema.parse(value)
+    // 'hello' + ('a' + 'bc') + linebreak + 'x()' + '\int x'
+    expect(commentEditorStateTextLength(parsed)).toBe(5 + 3 + 1 + 3 + 6)
+  })
+
+  it('returns 0 for the blank composer state', () => {
+    expect(commentEditorStateTextLength(EMPTY_COMMENT_EDITOR_STATE)).toBe(0)
   })
 })

@@ -3,11 +3,16 @@ import { z } from 'zod'
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { lexicalStateToPlainText } from '@/inkling/headless'
+import { decideContentLengthGate } from '@/server/domains/comments/services/policy'
 import { DomainError } from '@/server/infra/http/errors'
 import { prerenderLexicalEditorState } from '@/server/infra/pt/lexical-prerender'
 import { computeCommentContentProjection } from '@/server/infra/pt/lexical-projection'
 import { SERVER_FILLED_NODE_FIELDS } from '@/shared/lexical/artifacts'
-import { commentEditorStateSchema, isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
+import {
+  commentEditorStateSchema,
+  commentEditorStateTextLength,
+  isCommentEditorStateBlank,
+} from '@/shared/lexical/comment-schema'
 import { visitLexicalNodes } from '@/shared/lexical/walk'
 
 const COMMENT_MAX_BLOCKS = 200
@@ -38,6 +43,16 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
   }
   if (countLinks(parsed) > COMMENT_MAX_HTTP_URLS) {
     throw new DomainError('BAD_REQUEST', `评论中链接过多（最多 ${COMMENT_MAX_HTTP_URLS} 个）。`)
+  }
+
+  // Cheap length gate BEFORE the jsdom prerender: a hostile state can carry
+  // megabytes of text under the global 10 MB body cap, and the rendered
+  // gate downstream would only run after paying for the render. The plain-text
+  // total is a lower bound of the projected HTML, so anything rejected here
+  // would also have been rejected there — same code and message.
+  const lengthFailure = decideContentLengthGate(commentEditorStateTextLength(parsed))
+  if (lengthFailure !== null) {
+    throw new DomainError(lengthFailure.code, lengthFailure.message)
   }
 
   // Strip client-supplied pre-rendered fields (stored XSS); server re-generates them.

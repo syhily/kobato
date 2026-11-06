@@ -8,7 +8,7 @@ import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { translateDomainError } from '@/server/http/translate-domain-error'
 import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
-import { tryResourceRateLimit } from '@/server/infra/rate-limit'
+import { tryCommentPostRateLimit, tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
@@ -93,6 +93,24 @@ function requireRole(role: Role) {
 // Rate-limit guard for expensive public procedures — `resourceIp` bucket; Hono routes use `rateLimitByIp`.
 export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   const { exceeded } = await tryResourceRateLimit(context.clientAddress)
+  if (exceeded) {
+    throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+  }
+  return next({})
+})
+
+/**
+ * Comment submissions carry a whole Lexical state — oRPC validates that
+ * input before the handler runs, so the per-IP comment bucket must be a
+ * middleware placed BEFORE `.input(...)` to gate a ≤10 MB schema parse.
+ * Admins are exempt (the same rule the handler applied when this check
+ * lived inline).
+ */
+export const commentPostRateLimit = root.middleware(async ({ context, next }) => {
+  if (context.viewer?.role === 'admin') {
+    return next({})
+  }
+  const { exceeded } = await tryCommentPostRateLimit(context.clientAddress)
   if (exceeded) {
     throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
   }

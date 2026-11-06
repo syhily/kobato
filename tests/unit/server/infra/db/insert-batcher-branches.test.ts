@@ -10,7 +10,24 @@ vi.mock('@/server/infra/lifecycle', () => ({
   unregisterShutdownHook: vi.fn(),
 }))
 
-import { InsertBatcher, type FlushResult, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/insert-batcher'
+const logger = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
+vi.mock('@/server/infra/logger', () => ({
+  getLogger: () => logger,
+}))
+
+import {
+  DEFAULT_MAX_BUFFER_SIZE,
+  InsertBatcher,
+  type FlushResult,
+  replayDeadLetter,
+  writeDeadLetter,
+} from '@/server/infra/db/insert-batcher'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 
 const tmp = mkdtempSync(join(tmpdir(), 'insert-batcher-test-'))
@@ -301,5 +318,95 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
       log,
     )
     expect(result).toEqual({ replayed: 0, failed: 0 })
+  })
+})
+
+describe('server/infra/db/insert-batcher — buffer cap', () => {
+  it('drops events past the cap instead of growing the heap, warning once per burst', async () => {
+    vi.useFakeTimers()
+    try {
+      TestBatcher.inserted = []
+      logger.warn.mockClear()
+      const batcher = new TestBatcher(
+        { flushIntervalMs: 60_000, flushThreshold: 1_000, maxBufferSize: 5 },
+        'test',
+        () => fakeDb(),
+      )
+
+      for (let i = 0; i < 8; i += 1) {
+        batcher.push(`e${i}`)
+      }
+
+      // The three overflow events are dropped, not dead-lettered and not written.
+      expect(await batcher.flush()).toEqual({ committed: 5, deadLettered: 0 })
+      expect(TestBatcher.inserted).toEqual([['e0', 'e1', 'e2', 'e3', 'e4']])
+      expect(logger.warn).toHaveBeenCalledTimes(1)
+      expect(logger.warn).toHaveBeenCalledWith('insert batcher buffer full; dropping incoming events', {
+        maxBufferSize: 5,
+        dropped: 1,
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('counts drops cumulatively across bursts', async () => {
+    vi.useFakeTimers()
+    try {
+      TestBatcher.inserted = []
+      logger.warn.mockClear()
+      const batcher = new TestBatcher(
+        { flushIntervalMs: 60_000, flushThreshold: 1_000, maxBufferSize: 2 },
+        'test',
+        () => fakeDb(),
+      )
+
+      batcher.push('a')
+      batcher.push('b')
+      batcher.push('drop-1')
+      batcher.push('drop-2')
+      await batcher.flush()
+
+      // A drain frees capacity; the next burst warns again with the cumulative count.
+      batcher.push('c')
+      batcher.push('d')
+      batcher.push('drop-3')
+      expect(await batcher.flush()).toEqual({ committed: 2, deadLettered: 0 })
+
+      expect(TestBatcher.inserted).toEqual([
+        ['a', 'b'],
+        ['c', 'd'],
+      ])
+      expect(logger.warn).toHaveBeenCalledTimes(2)
+      expect(logger.warn).toHaveBeenLastCalledWith('insert batcher buffer full; dropping incoming events', {
+        maxBufferSize: 2,
+        dropped: 3,
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('defaults to DEFAULT_MAX_BUFFER_SIZE', async () => {
+    vi.useFakeTimers()
+    try {
+      TestBatcher.inserted = []
+      logger.warn.mockClear()
+      const batcher = new TestBatcher(
+        { flushIntervalMs: 60_000, flushThreshold: DEFAULT_MAX_BUFFER_SIZE + 1 },
+        'test',
+        () => fakeDb(),
+      )
+
+      for (let i = 0; i <= DEFAULT_MAX_BUFFER_SIZE; i += 1) {
+        batcher.push('e')
+      }
+
+      expect(await batcher.flush()).toEqual({ committed: DEFAULT_MAX_BUFFER_SIZE, deadLettered: 0 })
+      expect(TestBatcher.inserted[0]).toHaveLength(DEFAULT_MAX_BUFFER_SIZE)
+      expect(logger.warn).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

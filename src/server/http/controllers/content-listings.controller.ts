@@ -139,9 +139,11 @@ const postsList = publicProc
 // writes a slug list to the cache + an audit row, so the procedure is throttled.
 const search = publicProc
   .route({ method: 'GET', path: '/content/search' })
+  // Limiter before `.input(...)`: oRPC validates input at its declared
+  // index, so a trailing middleware never sees a malformed payload.
+  .use(resourceRateLimit)
   .input(contentSearchInputSchema)
   .output(contentSearchOutputSchema)
-  .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
     const auditContext: AuditContext = {
       viewer: context.viewer,
