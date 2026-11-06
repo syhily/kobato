@@ -170,6 +170,8 @@ describe('snapshot: BackupFileList', () => {
     expect(html).toContain('操作')
     expect(html).toContain('2024-01-15.sql.gz')
     expect(html).toContain('2024-01-14.sql.gz.enc')
+    // Long hex/`.enc` tails must wrap anywhere — otherwise the row overflows the card.
+    expect(html).toContain('<span class="break-all">2024-01-14.sql.gz.enc</span>')
     // The encrypted row carries the lock marker.
     expect(html).toContain('已加密')
     expect(html).toContain('下载')

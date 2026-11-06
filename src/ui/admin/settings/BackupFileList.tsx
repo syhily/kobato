@@ -104,7 +104,8 @@ export function BackupFileList({
                           <LockIcon size={13} className="shrink-0 text-muted-foreground" aria-label="已加密" />
                         </span>
                       )}
-                      {file.fileName}
+                      {/* break-all: the hex + `.enc` tail has no wrap points — without it the cell's min-content overflows the card. */}
+                      <span className="break-all">{file.fileName}</span>
                     </span>
                   </td>
                   <td className="px-4 py-2 text-right tabular-nums">{formatBytes(file.size)}</td>
