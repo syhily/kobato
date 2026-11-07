@@ -61,7 +61,7 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin }: Notificatio
       <SheetContent side="right" className="gap-0 p-0 sm:max-w-md">
         {selected === null ? (
           <>
-            <SheetHeader className="flex-row items-center gap-2 border-b">
+            <SheetHeader className="flex-row items-center gap-2 border-b pr-12">
               <SheetTitle className="flex-1 text-base">
                 消息通知
                 <NotificationBadge count={unreadCount} className="ml-2" />
@@ -95,7 +95,12 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin }: Notificatio
             <NotificationListPane key={tab} tab={tab} onOpen={setSelected} />
           </>
         ) : (
-          <NotificationDetailPane item={selected} isAdmin={isAdmin} onBack={() => setSelected(null)} />
+          <NotificationDetailPane
+            item={selected}
+            isAdmin={isAdmin}
+            onBack={() => setSelected(null)}
+            onClose={() => closeDrawer(false)}
+          />
         )}
       </SheetContent>
       {isAdmin ? <ComposeNotificationDialog open={composeOpen} onOpenChange={setComposeOpen} /> : null}

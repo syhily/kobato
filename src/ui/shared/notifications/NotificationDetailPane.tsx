@@ -29,11 +29,13 @@ interface NotificationDetailPaneProps {
   /** Admins can recall announcements / system alerts (never direct messages). */
   isAdmin: boolean
   onBack: () => void
+  /** Closes the host drawer; the 去处理 link navigates underneath it. */
+  onClose: () => void
 }
 
 // Thread pane: the root message plus its replies as a chat-like transcript,
 // with the reply composer gated by the server's canReply verdict.
-export function NotificationDetailPane({ item, isAdmin, onBack }: NotificationDetailPaneProps) {
+export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: NotificationDetailPaneProps) {
   const invalidate = useInvalidateNotifications()
   const threadQuery = useQuery(orpcQuery.notifications.thread.queryOptions({ input: { threadId: item.threadId } }))
   const markRead = useMutation(orpcQuery.notifications.markRead.mutationOptions({ onSuccess: () => void invalidate() }))
@@ -63,7 +65,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack }: NotificationDe
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex items-center gap-2 border-b px-3 py-2">
+      <div className="flex items-center gap-2 border-b px-3 py-2 pr-12">
         <Button variant="ghost" size="iconSm" onClick={onBack} aria-label="返回列表">
           <ArrowLeftIcon className="size-4" />
         </Button>
@@ -109,7 +111,13 @@ export function NotificationDetailPane({ item, isAdmin, onBack }: NotificationDe
           </p>
         </div>
         {item.actionUrl !== null ? (
-          <Button variant="outline" size="sm" className="mt-3 w-fit" render={<Link to={item.actionUrl} />}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 w-fit"
+            onClick={onClose}
+            render={<Link to={item.actionUrl} />}
+          >
             <ExternalLinkIcon className="size-3.5" /> 去处理
           </Button>
         ) : null}

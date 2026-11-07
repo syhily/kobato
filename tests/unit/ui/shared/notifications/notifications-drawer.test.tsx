@@ -1,11 +1,34 @@
 // @vitest-environment happy-dom
 
+import type { ComponentProps } from 'react'
+
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
+
+// The「去处理」button renders a Router Link. Render it as a plain anchor and
+// prevent the default like the real Link does, so the suite stays Router-free.
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<typeof import('react-router')>('react-router')
+  return {
+    ...actual,
+    Link: ({ to, onClick, children, ...props }: ComponentProps<'a'> & { to: string }) => (
+      <a
+        href={to}
+        onClick={(event) => {
+          event.preventDefault()
+          onClick?.(event)
+        }}
+        {...props}
+      >
+        {children}
+      </a>
+    ),
+  }
+})
 
 const control = mockTanstackQuery()
 
@@ -185,5 +208,21 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     fireEvent.click(screen.getByText('系统升级公告'))
 
     expect(screen.queryByRole('button', { name: '撤回' })).toBeNull()
+  })
+
+  it('closes the drawer when the 去处理 link is followed', () => {
+    const item = makeItem({ actionUrl: '/admin/comments' })
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.query.data = { messages: [], canReply: false }
+    const onOpenChange = vi.fn()
+
+    render(<NotificationsDrawer open onOpenChange={onOpenChange} isAdmin={false} />)
+    fireEvent.click(screen.getByText('系统升级公告'))
+
+    const link = screen.getByRole('link', { name: '去处理' })
+    expect(link.getAttribute('href')).toBe('/admin/comments')
+    fireEvent.click(link)
+
+    expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 })
