@@ -70,7 +70,6 @@ export const notificationThreadInput = z.object({
 })
 
 export const notificationThreadOutput = z.object({
-  root: notificationDto,
   messages: z.array(threadMessageDto),
   // Whether the caller may post a reply into this thread.
   canReply: z.boolean(),

@@ -72,7 +72,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     const item = makeItem({ kind: 'direct', sender: { id: '2', name: '管理员' } })
     control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
     control.query.data = {
-      root: item,
       messages: [
         { id: '1', body: '你好，在吗', sender: { id: '2', name: '管理员' }, mine: false, createdAt: item.createdAt },
       ],
@@ -92,7 +91,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     const item = makeItem()
     control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
     control.query.data = {
-      root: item,
       messages: [{ id: '1', body: '今晚 24 点例行维护', sender: null, mine: false, createdAt: item.createdAt }],
       canReply: false,
     }

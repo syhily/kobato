@@ -201,18 +201,3 @@ export function findUserNamesByIds(db: Database, ids: readonly number[]): Map<nu
     .all()
   return new Map(rows.map((row) => [row.id, row.name]))
 }
-
-/** Recipient read-state map for a single message — powers the per-user DTO. */
-export function findRecipientRow(
-  db: Database,
-  notificationId: number,
-  userId: number,
-): NotificationRecipientRow | null {
-  const rows = db
-    .select()
-    .from(notificationRecipient)
-    .where(and(eq(notificationRecipient.notificationId, notificationId), eq(notificationRecipient.userId, userId)))
-    .limit(1)
-    .all()
-  return rows[0] ?? null
-}

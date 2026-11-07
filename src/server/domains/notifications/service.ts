@@ -11,7 +11,6 @@ import type {
 import {
   countUnreadNotifications,
   createNotificationWithRecipients,
-  findRecipientRow,
   findUserNamesByIds,
   isThreadParticipant,
   listNotificationsForUser,
@@ -239,7 +238,6 @@ function canReplyInThread(root: NotificationRow, viewer: SessionUser): boolean {
 }
 
 export interface ThreadView {
-  root: NotificationDto
   messages: ThreadMessageDto[]
   canReply: boolean
 }
@@ -253,13 +251,7 @@ export async function getThread(db: Database, viewer: SessionUser, threadId: num
     db,
     messages.map((row) => row.senderId).filter((id): id is number => id !== null),
   )
-  const rootRecipient = findRecipientRow(db, root.id, userId)
   return {
-    root: toNotificationDto(
-      root,
-      root.senderId !== null ? (senders.get(root.senderId) ?? null) : null,
-      rootRecipient !== null && rootRecipient.readAt !== null,
-    ),
     messages: messages.map((row) => ({
       id: String(row.id),
       body: row.body,

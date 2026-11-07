@@ -248,13 +248,12 @@ describe('notifications / threads & replies', () => {
     )
   })
 
-  it('projects read=false and canReply=false for the broadcast creator', async () => {
+  it('projects canReply=false for the broadcast creator', async () => {
     const adminId = await seedUser('admin', 'admin')
     await seedUser('visitor', 'visitor')
     const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: true })
 
     const thread = await getThread(db, viewer(adminId, 'admin'), root.threadId)
-    expect(thread.root.read).toBe(false)
     expect(thread.canReply).toBe(false)
   })
 
