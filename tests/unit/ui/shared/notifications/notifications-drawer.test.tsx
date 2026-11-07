@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
@@ -39,18 +39,6 @@ beforeEach(() => {
   control.infinite.isFetchingNextPage = false
   control.mutation.mutate.mockClear()
 })
-
-afterEach(() => {
-  vi.restoreAllMocks()
-  // happy-dom ships no `confirm` — tests install their own and drop it after.
-  Reflect.deleteProperty(window, 'confirm')
-})
-
-function stubConfirm(result: boolean) {
-  const spy = vi.fn(() => result)
-  window.confirm = spy
-  return spy
-}
 
 describe('ui/shared/notifications/NotificationsDrawer', () => {
   it('renders the tab bar and the unread badge from the count query', () => {
@@ -132,37 +120,47 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     expect(screen.getByLabelText('写消息')).toBeTruthy()
   })
 
-  it('offers recall to admins on non-direct messages and mutates with the row id', () => {
+  it('offers recall to admins behind a confirmation dialog and mutates with the row id', () => {
     const item = makeItem()
     control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
     control.query.data = {
       messages: [{ id: '1', body: item.body, sender: null, mine: false, createdAt: item.createdAt }],
       canReply: false,
     }
-    const confirmSpy = stubConfirm(true)
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
     fireEvent.click(screen.getByText('系统升级公告'))
     fireEvent.click(screen.getByRole('button', { name: '撤回' }))
 
-    expect(confirmSpy).toHaveBeenCalledTimes(1)
+    // Opening the entry only asks — the mutation fires on confirm.
+    expect(control.mutation.mutate).not.toHaveBeenCalledWith({ id: '1' })
+    const dialog = screen.getByRole('alertdialog')
+    expect(within(dialog).getByText('撤回这条消息？')).toBeTruthy()
+    expect(within(dialog).getByText('确定撤回「系统升级公告」吗？撤回后所有收件人都将看不到这条消息。')).toBeTruthy()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: '撤回' }))
     expect(control.mutation.mutate).toHaveBeenCalledWith({ id: '1' })
   })
 
-  it('does not recall when the confirmation is declined', () => {
+  it('does not recall when the confirmation is cancelled', () => {
     const item = makeItem()
     control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
     control.query.data = {
       messages: [{ id: '1', body: item.body, sender: null, mine: false, createdAt: item.createdAt }],
       canReply: false,
     }
-    stubConfirm(false)
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
     fireEvent.click(screen.getByText('系统升级公告'))
     fireEvent.click(screen.getByRole('button', { name: '撤回' }))
 
+    const dialog = screen.getByRole('alertdialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: '取消' }))
+
     expect(control.mutation.mutate).not.toHaveBeenCalledWith({ id: '1' })
+    // happy-dom never fires `transitionend`, so Base UI keeps the popup mounted
+    // in its exit phase rather than removing it — assert we entered that phase.
+    expect(dialog.hasAttribute('data-ending-style')).toBe(true)
   })
 
   it('hides the recall entry from non-admins', () => {

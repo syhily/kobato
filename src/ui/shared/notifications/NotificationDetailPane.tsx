@@ -9,7 +9,17 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useInvalidateNotifications } from '@/client/hooks/use-notifications'
 import { useNow } from '@/client/hooks/use-now'
 import { onMutationError } from '@/client/lib/toast-api-error'
-import { Button } from '@/ui/components/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/ui/components/alert-dialog'
+import { Button, buttonVariants } from '@/ui/components/button'
 import { Textarea } from '@/ui/components/textarea'
 import { cn } from '@/ui/lib/cn'
 import { formatNotificationTime, notificationMeta } from '@/ui/shared/notifications/notification-meta'
@@ -37,16 +47,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack }: NotificationDe
     }),
   )
 
-  const confirmRecall = () => {
-    if (recall.isPending) {
-      return
-    }
-    // oxlint-disable-next-line no-alert -- one-shot destructive confirm inside the lightweight drawer; a dedicated dialog would outweigh the action
-    if (!window.confirm(`确定撤回「${item.title}」吗？撤回后所有收件人都将看不到这条消息。`)) {
-      return
-    }
-    recall.mutate({ id: item.id })
-  }
+  const [recallConfirmOpen, setRecallConfirmOpen] = useState(false)
 
   // Opening an unread message marks it read once; the badge follows the invalidation.
   useEffect(() => {
@@ -72,7 +73,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack }: NotificationDe
             variant="ghost"
             size="sm"
             className="ml-auto h-7 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={confirmRecall}
+            onClick={() => setRecallConfirmOpen(true)}
             disabled={recall.isPending}
           >
             {recall.isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : <Undo2Icon className="size-3.5" />}
@@ -80,6 +81,26 @@ export function NotificationDetailPane({ item, isAdmin, onBack }: NotificationDe
           </Button>
         ) : null}
       </div>
+      <AlertDialog open={recallConfirmOpen} onOpenChange={setRecallConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>撤回这条消息？</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定撤回「{item.title}」吗？撤回后所有收件人都将看不到这条消息。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              disabled={recall.isPending}
+              onClick={() => recall.mutate({ id: item.id })}
+            >
+              撤回
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="flex flex-col gap-1">
           <h3 className="text-base font-semibold">{item.title}</h3>
