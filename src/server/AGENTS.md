@@ -56,7 +56,9 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
   (`findUserEmailsByIds`), renders the shared `AdminNotificationEmail` family and sends one
   message per recipient sequentially. The gate is `mail.enabled` AND `mail.notificationEmails`
   (default ON); broadcasts never email, producers keep their synchronous
-  signatures, and a transport failure only reaches the server log.
+  signatures, and a transport failure only reaches the server log. Retention (ADR-0010): the
+  daily maintenance job prunes READ recipient rows and orphan roots once the message is 180 days
+  old — unread rows are never pruned, and recall itself deletes nothing.
 - Three strata: **Core** (`content`, `posts`, `pages`, `pt`, `settings`), **Feature** (`auth`, `users`, `comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`, `friends`, `newsletter`, `webmentions`, `notifications`), **Platform** (`analytics`, `audit`, `backup`, `update`, `storage`). Platform services are leaves — cross-domain imports INTO them compose at the perimeter.
 
 ## http/

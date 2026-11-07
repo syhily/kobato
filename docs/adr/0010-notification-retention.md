@@ -1,7 +1,8 @@
 # ADR-0010: Notification retention — prune READ messages after 180 days
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-07
+- Amended: 2026-11-07 (plan 028 — implemented as specified)
 
 ## Context
 
