@@ -48,7 +48,7 @@ import {
   type Database,
   type DatabaseHandle,
 } from '@/server/infra/db/database'
-import { sweepOrphanedJobRuns, wireJobRunRecorder } from '@/server/infra/db/job-run-recorder'
+import { sweepOrphanedJobRuns, wireJobFailureNotifier, wireJobRunRecorder } from '@/server/infra/db/job-run-recorder'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { startQueryDiagnostics } from '@/server/infra/db/query-diagnostics'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
@@ -91,6 +91,17 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   // Job-run history recorder: unwired = silent no-op. Pure setter — the
   // crash-recovery sweep is a boot-only call (see initDatabase).
   wireJobRunRecorder({ getDb })
+  // Terminal job failures surface in the admin inbox (deduped per task key
+  // inside the recorder); notifyAdmins returns null pre-install, so the
+  // pre-install boot stays quiet.
+  wireJobFailureNotifier(({ taskKey, error }) => {
+    notifyAdmins(getDb(), {
+      title: `后台任务失败：${taskKey}`,
+      body: `任务「${taskKey}」最近一次执行失败${error ? `：${error}` : '。'}请到「任务」页面查看详情。`,
+      source: 'job-run',
+      actionUrl: '/admin/tasks',
+    })
+  })
   // Background jobs share one lazy handle getter (invoked at fire/evaluate
   // time, so a reopened handle is picked up); the job registry owns their
   // boot start-up.

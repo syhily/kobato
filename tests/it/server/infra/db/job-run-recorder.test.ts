@@ -1,15 +1,18 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
+  JOB_FAILURE_NOTIFY_DEDUPE_MS,
   JOB_RUN_KEEP_PER_TASK,
   finishJobRun,
   latestJobRunsByTask,
   listJobRuns,
   pruneJobRuns,
+  resetJobFailureNotifier,
   startJobRun,
   sweepOrphanedJobRuns,
+  wireJobFailureNotifier,
 } from '@/server/infra/db/job-run-recorder'
 import { jobRun } from '@/server/infra/db/schema/job-run'
 
@@ -60,6 +63,81 @@ describe('job-run-recorder — start/finish', () => {
 
   it('finishJobRun on an unknown id is a no-op', () => {
     expect(() => finishJobRun(999_999, 'success')).not.toThrow()
+  })
+})
+
+describe('job-run-recorder — failure notifier', () => {
+  beforeEach(() => {
+    resetJobFailureNotifier()
+  })
+
+  afterEach(() => {
+    resetJobFailureNotifier()
+    vi.useRealTimers()
+  })
+
+  it('invokes the notifier on a failed finish only', () => {
+    const notify = vi.fn()
+    wireJobFailureNotifier(notify)
+
+    const failed = startJobRun('backup', 'scheduled')!
+    finishJobRun(failed, 'failed', 'boom')
+    expect(notify).toHaveBeenCalledTimes(1)
+    expect(notify).toHaveBeenCalledWith({ taskKey: 'backup', error: 'boom' })
+
+    const succeeded = startJobRun('backup', 'scheduled')!
+    finishJobRun(succeeded, 'success')
+    const cancelled = startJobRun('backup', 'scheduled')!
+    finishJobRun(cancelled, 'cancelled')
+    expect(notify).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes a null error when the failure carries no message', () => {
+    const notify = vi.fn()
+    wireJobFailureNotifier(notify)
+
+    finishJobRun(startJobRun('backup', 'scheduled'), 'failed')
+    expect(notify).toHaveBeenCalledWith({ taskKey: 'backup', error: null })
+  })
+
+  it('dedupes per task key inside the window and re-notifies after it', () => {
+    vi.useFakeTimers()
+    const notify = vi.fn()
+    wireJobFailureNotifier(notify)
+
+    finishJobRun(startJobRun('backup', 'scheduled'), 'failed', 'one')
+    finishJobRun(startJobRun('backup', 'scheduled'), 'failed', 'two')
+    expect(notify).toHaveBeenCalledTimes(1)
+
+    // A different task key notifies independently.
+    finishJobRun(startJobRun('geoip', 'scheduled'), 'failed', 'three')
+    expect(notify).toHaveBeenCalledTimes(2)
+
+    // Past the window the same key notifies again.
+    vi.setSystemTime(Date.now() + JOB_FAILURE_NOTIFY_DEDUPE_MS + 1)
+    finishJobRun(startJobRun('backup', 'scheduled'), 'failed', 'four')
+    expect(notify).toHaveBeenCalledTimes(3)
+    expect(notify).toHaveBeenLastCalledWith({ taskKey: 'backup', error: 'four' })
+  })
+
+  it('never lets a throwing notifier break the finish', () => {
+    wireJobFailureNotifier(() => {
+      throw new Error('notifier bug')
+    })
+
+    const id = startJobRun('backup', 'scheduled')!
+    expect(() => finishJobRun(id, 'failed', 'boom')).not.toThrow()
+    const row = db.select().from(jobRun).where(eq(jobRun.id, id)).get()!
+    expect(row.status).toBe('failed')
+    expect(row.error).toBe('boom')
+  })
+
+  it('stays silent for an unknown run id', () => {
+    const notify = vi.fn()
+    wireJobFailureNotifier(notify)
+
+    finishJobRun(999_999, 'failed', 'boom')
+    expect(notify).not.toHaveBeenCalled()
   })
 })
 

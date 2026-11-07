@@ -12,6 +12,11 @@ import { getLogger } from '@/server/infra/logger'
 // stay free of side effects). Writes NEVER throw — history must not be able
 // to kill the job it records. The boot-time orphan sweep
 // (`sweepOrphanedJobRuns`) takes its db explicitly.
+//
+// A second injected seam, `wireJobFailureNotifier`, lets the composition
+// root route terminal run failures somewhere visible (the admin inbox)
+// without infra importing a domain — deduped per task key so a crash-looping
+// job does not spam.
 
 const log = getLogger('job-run-recorder')
 
@@ -21,8 +26,46 @@ const ERROR_MAX_CHARS = 500
 export const JOB_RUN_RETENTION_DAYS = 30
 /** Retention: at most this many newest rows per task are kept. */
 export const JOB_RUN_KEEP_PER_TASK = 200
+/** Failure notifications for the same task key are deduped inside this window. */
+export const JOB_FAILURE_NOTIFY_DEDUPE_MS = 24 * 60 * 60 * 1000
 
 let resolveDb: (() => Database) | null = null
+
+export interface JobFailureNotice {
+  taskKey: string
+  error: string | null
+}
+
+let notifyFailure: ((info: JobFailureNotice) => void) | null = null
+const lastFailureNoticeAt = new Map<string, number>()
+
+/** Wire the failure notifier (composition root). Pure setter, like {@link wireJobRunRecorder}. */
+export function wireJobFailureNotifier(cb: (info: JobFailureNotice) => void): void {
+  notifyFailure = cb
+}
+
+/** Test seam: drop the injected notifier and clear the dedupe window. */
+export function resetJobFailureNotifier(): void {
+  notifyFailure = null
+  lastFailureNoticeAt.clear()
+}
+
+function maybeNotifyFailure(taskKey: string, error: string | null): void {
+  if (notifyFailure === null) {
+    return
+  }
+  const now = Date.now()
+  const last = lastFailureNoticeAt.get(taskKey)
+  if (last !== undefined && now - last < JOB_FAILURE_NOTIFY_DEDUPE_MS) {
+    return
+  }
+  lastFailureNoticeAt.set(taskKey, now)
+  try {
+    notifyFailure({ taskKey, error })
+  } catch (cause) {
+    log.warn('job failure notifier threw', { taskKey, err: cause instanceof Error ? cause.message : String(cause) })
+  }
+}
 
 export interface JobRunRow {
   id: number
@@ -86,18 +129,24 @@ export function finishJobRun(runId: number | null, status: 'success' | 'failed' 
   }
   try {
     // One atomic UPDATE: `duration_ms` derives from the stored `started_at`
-    // in-SQL (epoch-ms column), so an unknown id is a natural 0-changes no-op.
+    // in-SQL (epoch-ms column), so an unknown id is a natural 0-changes no-op
+    // — and returns no row, which doubles as the notifier's unknown-id guard.
     const finishedAt = new Date()
-    resolveDb()
+    const truncatedError = error === undefined ? null : error.slice(0, ERROR_MAX_CHARS)
+    const updated = resolveDb()
       .update(jobRun)
       .set({
         status,
         finishedAt,
         durationMs: sql<number>`${finishedAt.getTime()} - ${jobRun.startedAt}`,
-        error: error === undefined ? null : error.slice(0, ERROR_MAX_CHARS),
+        error: truncatedError,
       })
       .where(eq(jobRun.id, runId))
-      .run()
+      .returning({ taskKey: jobRun.taskKey })
+      .all()
+    if (status === 'failed' && updated.length > 0) {
+      maybeNotifyFailure(updated[0]!.taskKey, truncatedError)
+    }
   } catch (cause) {
     log.warn('finishJobRun failed', { runId, err: cause instanceof Error ? cause.message : String(cause) })
   }

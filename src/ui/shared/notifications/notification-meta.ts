@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 
 import { formatDistance } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { MailWarningIcon, MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon } from 'lucide-react'
+import { MailWarningIcon, MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, WrenchIcon } from 'lucide-react'
 
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
@@ -16,6 +16,9 @@ export interface NotificationMeta {
 export function notificationMeta(item: Pick<NotificationDto, 'kind' | 'source'>): NotificationMeta {
   if (item.source === 'zeabur-mail-cleanup') {
     return { icon: MailWarningIcon, kindLabel: '系统提醒' }
+  }
+  if (item.source === 'job-run') {
+    return { icon: WrenchIcon, kindLabel: '任务提醒' }
   }
   switch (item.kind) {
     case 'direct':
