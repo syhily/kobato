@@ -9,6 +9,7 @@ import {
   LazyNotificationsDrawer,
   warmNotificationsDrawerChunk,
 } from '@/ui/shared/notifications/LazyNotificationsDrawer'
+import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
 interface NavNotificationsProps {
   role: AdminShellProps['currentUser']['role']
@@ -33,11 +34,7 @@ export function NavNotifications({ role }: NavNotificationsProps) {
             >
               <BellIcon className="size-4 shrink-0" />
               <span className="flex-1 truncate">消息通知</span>
-              {unreadCount > 0 ? (
-                <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              ) : null}
+              <NotificationBadge count={unreadCount} />
             </button>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -22,6 +22,7 @@ import {
   LazyNotificationsDrawer,
   warmNotificationsDrawerChunk,
 } from '@/ui/shared/notifications/LazyNotificationsDrawer'
+import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
 interface Props {
   currentUser: HeaderCurrentUser
@@ -40,7 +41,13 @@ export function UserMenu({ currentUser, logoutRedirectTo }: Props) {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="icon" className="relative size-9 rounded-full" aria-label="用户菜单">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative size-9 rounded-full"
+            aria-label={unreadCount > 0 ? `用户菜单，${unreadCount} 条未读消息` : '用户菜单'}
+          >
+            {' '}
             <Avatar className="size-8">
               <AvatarImage src={avatarImageUrl(currentUser.id)} alt={currentUser.name} />
               <AvatarFallback>{initial}</AvatarFallback>
@@ -62,11 +69,7 @@ export function UserMenu({ currentUser, logoutRedirectTo }: Props) {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setNotificationsOpen(true)} onPointerEnter={warmNotificationsDrawerChunk}>
           <BellIcon /> 消息通知
-          {unreadCount > 0 ? (
-            <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[11px] leading-none font-medium text-primary-foreground">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          ) : null}
+          <NotificationBadge count={unreadCount} className="px-1.5 text-[11px] leading-none" />
         </DropdownMenuItem>
         <DropdownMenuItem
           render={

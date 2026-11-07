@@ -7,6 +7,7 @@ import type { NotificationDto } from '@/shared/contracts/notifications'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInvalidateNotifications } from '@/client/hooks/use-notifications'
+import { useNow } from '@/client/hooks/use-now'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
 import { Textarea } from '@/ui/components/textarea'
@@ -35,6 +36,7 @@ export function NotificationDetailPane({ item, onBack }: NotificationDetailPaneP
 
   const meta = notificationMeta(item)
   const thread = threadQuery.data
+  const now = useNow()
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -48,7 +50,7 @@ export function NotificationDetailPane({ item, onBack }: NotificationDetailPaneP
         <div className="flex flex-col gap-1">
           <h3 className="text-base font-semibold">{item.title}</h3>
           <p className="text-xs text-muted-foreground">
-            {item.sender === null ? '系统' : item.sender.name} · {formatNotificationTime(item.createdAt)}
+            {item.sender === null ? '系统' : item.sender.name} · {formatNotificationTime(item.createdAt, now)}
           </p>
         </div>
         {item.actionUrl !== null ? (
@@ -75,7 +77,8 @@ export function NotificationDetailPane({ item, onBack }: NotificationDetailPaneP
                   {message.body}
                 </div>
                 <span className="px-1 text-[11px] text-muted-foreground/80">
-                  {message.mine ? '我' : (message.sender?.name ?? '系统')} · {formatNotificationTime(message.createdAt)}
+                  {message.mine ? '我' : (message.sender?.name ?? '系统')} ·{' '}
+                  {formatNotificationTime(message.createdAt, now)}
                 </span>
               </div>
             ))}

@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistance } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { MailWarningIcon, MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon } from 'lucide-react'
 
@@ -27,7 +27,11 @@ export function notificationMeta(item: Pick<NotificationDto, 'kind' | 'source'>)
   }
 }
 
-export function formatNotificationTime(iso: string): string {
-  const date = new Date(iso)
-  return formatDistanceToNow(date, { addSuffix: true, locale: zhCN })
+/**
+ * "3 分钟前"-style label. `now` lets a ticking clock (see
+ * `@/client/hooks/use-now`) refresh the text without remounting; pass the
+ * same value to every call in a render pass so labels agree.
+ */
+export function formatNotificationTime(iso: string, now: number | Date = Date.now()): string {
+  return formatDistance(new Date(iso), now, { addSuffix: true, locale: zhCN })
 }

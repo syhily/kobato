@@ -6,6 +6,7 @@ import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifi
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
+import { useNow } from '@/client/hooks/use-now'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 import { formatNotificationTime, notificationMeta } from '@/ui/shared/notifications/notification-meta'
@@ -32,6 +33,7 @@ export function NotificationListPane({ tab, onOpen }: NotificationListPaneProps)
     }),
   )
   const items = query.data?.pages.flatMap((page) => page.items) ?? []
+  const now = useNow()
   const sentinelRef = useInfiniteScrollSentinel({
     hasNextPage: query.hasNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
@@ -73,10 +75,10 @@ export function NotificationListPane({ tab, onOpen }: NotificationListPaneProps)
         {items.map((item, index) =>
           index === items.length - 1 ? (
             <Fragment ref={sentinelRef} key={item.id}>
-              <NotificationRow item={item} onOpen={onOpen} />
+              <NotificationRow item={item} now={now} onOpen={onOpen} />
             </Fragment>
           ) : (
-            <NotificationRow key={item.id} item={item} onOpen={onOpen} />
+            <NotificationRow key={item.id} item={item} now={now} onOpen={onOpen} />
           ),
         )}
       </ul>
@@ -89,7 +91,15 @@ export function NotificationListPane({ tab, onOpen }: NotificationListPaneProps)
   )
 }
 
-function NotificationRow({ item, onOpen }: { item: NotificationDto; onOpen: (item: NotificationDto) => void }) {
+function NotificationRow({
+  item,
+  now,
+  onOpen,
+}: {
+  item: NotificationDto
+  now: number
+  onOpen: (item: NotificationDto) => void
+}) {
   const meta = notificationMeta(item)
   const Icon = meta.icon
   return (
@@ -114,7 +124,7 @@ function NotificationRow({ item, onOpen }: { item: NotificationDto; onOpen: (ite
           <span className="flex items-center gap-2">
             <span className={cn('truncate text-sm', !item.read ? 'font-semibold' : 'font-medium')}>{item.title}</span>
             <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-              {formatNotificationTime(item.createdAt)}
+              {formatNotificationTime(item.createdAt, now)}
             </span>
           </span>
           <span className="line-clamp-2 text-xs text-muted-foreground">{item.body}</span>

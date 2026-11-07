@@ -29,7 +29,13 @@ export function AppSidebar({
         pendingWebmentionCount={pendingWebmentionCount}
         userCount={userCount}
       />
-      <AppSidebarFooter className="gap-0 p-5" id={currentUser.id} name={currentUser.name} email={currentUser.email} />
+      <AppSidebarFooter
+        className="gap-0 p-5"
+        id={currentUser.id}
+        name={currentUser.name}
+        email={currentUser.email}
+        role={currentUser.role}
+      />
     </Sidebar>
   )
 }

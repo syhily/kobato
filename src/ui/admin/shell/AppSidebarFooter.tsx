@@ -1,6 +1,16 @@
-import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, UserIcon } from 'lucide-react'
+import {
+  BellIcon,
+  ChevronsUpDownIcon,
+  InfoIcon,
+  LogOutIcon,
+  MessageSquareIcon,
+  MonitorIcon,
+  UserIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
+
+import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
 
 import { useLogout } from '@/client/hooks/use-logout'
 import { useUnreadNotificationCount } from '@/client/hooks/use-notifications'
@@ -16,16 +26,23 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
 import { SidebarFooter, SidebarMenu, SidebarMenuItem } from '@/ui/components/sidebar'
+import {
+  LazyNotificationsDrawer,
+  warmNotificationsDrawerChunk,
+} from '@/ui/shared/notifications/LazyNotificationsDrawer'
+import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
 interface AppSidebarFooterProps {
   className?: string
   id: string
   name: string
   email: string
+  role: AdminShellProps['currentUser']['role']
 }
 
-export function AppSidebarFooter({ className, id, name, email }: AppSidebarFooterProps) {
+export function AppSidebarFooter({ className, id, name, email, role }: AppSidebarFooterProps) {
   const [versionOpen, setVersionOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const logout = useLogout()
   const unreadCount = useUnreadNotificationCount()
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
@@ -40,7 +57,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                 <button
                   type="button"
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  aria-label="用户菜单"
+                  aria-label={unreadCount > 0 ? `用户菜单，${unreadCount} 条未读消息` : '用户菜单'}
                 >
                   <span className="relative">
                     <Avatar className="size-8">
@@ -78,6 +95,15 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-2" />
+              <DropdownMenuItem
+                className="my-0.5 rounded-xl px-3 py-2 text-sm"
+                onClick={() => setNotificationsOpen(true)}
+                onPointerEnter={warmNotificationsDrawerChunk}
+              >
+                <BellIcon className="mr-2 size-4" />
+                消息通知
+                <NotificationBadge count={unreadCount} />
+              </DropdownMenuItem>
               <DropdownMenuItem
                 className="my-0.5 rounded-xl px-3 py-2 text-sm"
                 render={
@@ -118,6 +144,11 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
             </DropdownMenuContent>
           </DropdownMenu>
           <VersionDialog open={versionOpen} onOpenChange={setVersionOpen} />
+          <LazyNotificationsDrawer
+            open={notificationsOpen}
+            onOpenChange={setNotificationsOpen}
+            isAdmin={role === 'admin'}
+          />
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarFooter>

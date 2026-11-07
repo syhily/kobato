@@ -11,6 +11,7 @@ import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/ui/components/sheet'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { ComposeNotificationDialog } from '@/ui/shared/notifications/ComposeNotificationDialog'
+import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 import { NotificationDetailPane } from '@/ui/shared/notifications/NotificationDetailPane'
 import { NotificationListPane } from '@/ui/shared/notifications/NotificationListPane'
 
@@ -63,11 +64,7 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin }: Notificatio
             <SheetHeader className="flex-row items-center gap-2 border-b">
               <SheetTitle className="flex-1 text-base">
                 消息通知
-                {unreadCount > 0 ? (
-                  <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                ) : null}
+                <NotificationBadge count={unreadCount} className="ml-2" />
               </SheetTitle>
               {isAdmin ? (
                 <Button variant="ghost" size="iconSm" onClick={() => setComposeOpen(true)} aria-label="写消息">

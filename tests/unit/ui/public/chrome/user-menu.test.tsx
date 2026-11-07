@@ -58,9 +58,14 @@ describe('ui/public/chrome/UserMenu', () => {
   it('renders the notifications item with the unread badge inside the menu', () => {
     control.query.data = { count: 4 }
     renderMenu()
-    fireEvent.click(screen.getByLabelText('用户菜单'))
+    fireEvent.click(screen.getByLabelText('用户菜单，4 条未读消息'))
 
     expect(screen.getByText('消息通知')).toBeTruthy()
     expect(screen.getByText('4')).toBeTruthy()
+  })
+
+  it('keeps the plain aria-label when nothing is unread', () => {
+    renderMenu()
+    expect(screen.getByLabelText('用户菜单')).toBeTruthy()
   })
 })
