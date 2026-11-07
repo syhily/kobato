@@ -51,7 +51,7 @@ describe('zeabur mail cleanup', () => {
     expect(notify).toHaveBeenCalledTimes(1)
   })
 
-  it('cleans rows that only carry the legacy keys without the zeabur transport', async () => {
+  it('leaves a working smtp row with leftover legacy keys untouched', async () => {
     await db.insert(setting).values({
       scope: 'blog.mail',
       data: { mail: { enabled: true, transport: 'smtp', smtpHost: 'smtp.example.com', apiKey: 'leftover' } },
@@ -60,10 +60,60 @@ describe('zeabur mail cleanup', () => {
 
     await runZeaburMailCleanupAtBoot(db, notify)
 
-    const mail = readMailRow()
-    expect(mail).toMatchObject({ enabled: false, transport: 'smtp', smtpHost: 'smtp.example.com' })
-    expect(mail).not.toHaveProperty('apiKey')
-    expect(notify).toHaveBeenCalledTimes(1)
+    expect(readMailRow()).toMatchObject({ enabled: true, transport: 'smtp', smtpHost: 'smtp.example.com' })
+    expect(notify).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'system.zeabur-mail-cleanup')).not.toBeNull()
+  })
+
+  it('leaves a working smtp config carrying the legacy zeabur defaults untouched', async () => {
+    // Every pre-cleanup install seeded host/apiKey from the old defaults —
+    // their presence must not trigger a disable.
+    await db.insert(setting).values({
+      scope: 'blog.mail',
+      data: {
+        mail: {
+          enabled: true,
+          transport: 'smtp',
+          host: 'api.zeabur.com',
+          apiKey: '',
+          smtpHost: 'mail.example.com',
+          smtpPort: 465,
+        },
+      },
+    })
+    const notify = vi.fn()
+
+    await runZeaburMailCleanupAtBoot(db, notify)
+
+    expect(readMailRow()).toMatchObject({
+      enabled: true,
+      transport: 'smtp',
+      smtpHost: 'mail.example.com',
+      smtpPort: 465,
+    })
+    expect(notify).not.toHaveBeenCalled()
+  })
+
+  it('leaves a working mailgun row with leftover legacy keys untouched', async () => {
+    await db.insert(setting).values({
+      scope: 'blog.mail',
+      data: {
+        mail: {
+          enabled: true,
+          transport: 'mailgun',
+          host: 'api.zeabur.com',
+          apiKey: '',
+          mailgunDomain: 'mail.test',
+          mailgunApiKey: 'key',
+        },
+      },
+    })
+    const notify = vi.fn()
+
+    await runZeaburMailCleanupAtBoot(db, notify)
+
+    expect(readMailRow()).toMatchObject({ enabled: true, transport: 'mailgun', mailgunDomain: 'mail.test' })
+    expect(notify).not.toHaveBeenCalled()
   })
 
   it('leaves a modern row untouched and only writes the flag', async () => {

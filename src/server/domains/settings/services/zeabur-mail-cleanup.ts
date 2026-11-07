@@ -19,14 +19,19 @@ export interface ZeaburMailCleanupNotify {
 
 /**
  * Zeabur's hosted mail API is gone. A stored `blog.mail` row still carrying
- * the legacy `transport: 'zeabur'` (or its `host`/`apiKey` fields) would
- * hydrate onto the SMTP transport — silently sending nothing, since no SMTP
- * host is configured. This one-shot boot cleanup rewrites such a row through
- * the honest section update path: mail disabled, transport pinned to SMTP,
- * legacy keys dropped by the write-schema validation (zod strips unknown
- * keys), the in-memory bundle refreshed and the transport cache invalidated
- * by the registered section-change handlers. When a row was actually
- * cleaned, the injected notifier alerts the admins.
+ * the legacy `transport: 'zeabur'` would hydrate onto the SMTP transport —
+ * silently sending nothing, since no SMTP host is configured. This one-shot
+ * boot cleanup rewrites such a row through the honest section update path:
+ * mail disabled, transport pinned to SMTP, legacy keys dropped by the
+ * write-schema validation (zod strips unknown keys), the in-memory bundle
+ * refreshed and the transport cache invalidated by the registered
+ * section-change handlers. When a row was actually cleaned, the injected
+ * notifier alerts the admins.
+ *
+ * Rows that merely CARRY the legacy `host`/`apiKey` keys are left untouched:
+ * every pre-cleanup install seeded those keys from the old defaults, so their
+ * presence says nothing about the transport in use — and hydration strips
+ * unknown keys anyway, making them inert for smtp/mailgun rows.
  *
  * Flag-gated and failure-swallowing like the other boot backfills: the flag
  * is written only after the cleanup (and its notification) succeeded, so a
@@ -44,7 +49,7 @@ export async function runZeaburMailCleanupAtBoot(
     const stored = findSettingByScope(db, 'blog.mail')
     const data: unknown = stored?.data
     const mail = isRecord(data) && isRecord(data.mail) ? data.mail : null
-    if (mail !== null && (mail.transport === 'zeabur' || 'host' in mail || 'apiKey' in mail)) {
+    if (mail?.transport === 'zeabur') {
       await updateBlogSettingsSection(db, 'mail', { mail: { enabled: false, transport: 'smtp' } }, null)
       cleaned = true
       log.warn('Disabled a legacy Zeabur mail configuration; mail stays off until SMTP or Mailgun is configured')
