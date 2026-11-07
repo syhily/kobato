@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { fallbackMessages } from '@/shared/i18n/fallback-messages'
 import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
 import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 import { uiMessagesZhTW } from '@/shared/i18n/messages/ui/zh-TW'
@@ -255,9 +256,9 @@ describe('services/seo/meta — routeMeta', () => {
 })
 
 describe('services/seo/meta — pageTitle pre-install fallback', () => {
-  it('returns the English last-resort title when no bundle is hydrated', () => {
+  it('uses the shared fallback module when no bundle is hydrated', () => {
     setBlogSettingsBundleForTests(null)
-    expect(pageTitle()).toBe('Installing')
+    expect(pageTitle()).toBe(fallbackMessages['meta.preinstall'])
     expect(pageTitle('Custom')).toBe('Custom')
   })
 })
@@ -280,6 +281,29 @@ describe('services/seo/meta — page variant and feedLinks', () => {
     ) as MetaEntry[]
     expect(findByProperty(meta, 'og:type')?.content).toBe('article')
     expect(findByProperty(meta, 'article:section')?.content).toBe('页面')
+  })
+
+  it('falls back to the shared fallback module for the page section without a payload', () => {
+    const meta = routeMeta({
+      title: 'About',
+      variant: { kind: 'page', article: { date: new Date('2024-01-01') } },
+    }) as MetaEntry[]
+
+    // Never an empty section: the fallback module is the last-resort language source.
+    expect(findByProperty(meta, 'article:section')?.content).toBe(fallbackMessages['meta.section.page'])
+  })
+
+  it('localizes the page section per locale from the matches payload', () => {
+    const meta = routeMeta(
+      {
+        titleKey: 'meta.title.public.categories',
+        variant: { kind: 'page', article: { date: new Date('2024-01-01') } },
+      },
+      fixture,
+      { locale: 'zh-TW', messages: uiMessagesZhTW },
+    ) as MetaEntry[]
+
+    expect(findByProperty(meta, 'article:section')?.content).toBe('頁面')
   })
 
   it('maps og:locale to the underscore spelling', () => {
@@ -473,6 +497,14 @@ describe('services/seo/meta — titleKey (static route titles)', () => {
     const meta = titleMeta('meta.title.auth.signin')({ matches: rootMatchWithI18n('zh-CN') }) as MetaEntry[]
 
     expect(meta[0]?.title).toBe(`用户登陆 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('uses the shared fallback module for the pre-install title without matches', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.setup')({ matches: [] }) as MetaEntry[]
+
+    expect(meta[0]).toMatchObject({ title: fallbackMessages['meta.preinstall'] })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
   })
 
   it('localizes the pre-install title through matches', () => {

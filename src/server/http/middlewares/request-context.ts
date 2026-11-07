@@ -3,7 +3,6 @@ import { randomBytes } from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
 import type { RequestContext } from '@/server/http/request-context'
-import type { AppLocalization } from '@/shared/i18n/app-localization'
 
 import { getDb } from '@/server/bootstrap/db-lifecycle'
 import {
@@ -20,7 +19,7 @@ import { getClientAddress } from '@/server/http/utils/client-address'
 import { isExempt as isCookieExemptPath } from '@/server/http/utils/cookie-exempt'
 import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
 import { serverConfig } from '@/server/infra/config'
-import { resolveAppLocalization } from '@/shared/i18n/app-localization'
+import { createLazyAppLocalization } from '@/shared/i18n/app-localization'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
@@ -86,8 +85,9 @@ export async function deriveRequestContext(input: {
 
   const rawUrl = new URL(request.url)
   // Lazy + memoized: the settings snapshot is hydrated by `buildLoadContext`
-  // AFTER this context exists; readers (loaders/controllers) run after that await.
-  let localization: AppLocalization | null = null
+  // (RR loaders) and by the `/rpc/*` bridge, both AFTER this context exists —
+  // every reader therefore resolves it post-hydration.
+  const localization = createLazyAppLocalization()
   const requestContext: RequestContext = {
     session: sessionCtx.session,
     viewer: sessionCtx.user ?? null,
@@ -97,8 +97,7 @@ export async function deriveRequestContext(input: {
     db,
     cspNonce: randomBytes(16).toString('base64'),
     get localization() {
-      localization ??= resolveAppLocalization()
-      return localization
+      return localization()
     },
     markSessionDirty() {
       dirty = true

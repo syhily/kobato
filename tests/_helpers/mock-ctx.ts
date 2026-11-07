@@ -2,7 +2,7 @@ import type { HandlerContext } from '@/server/http/orpc-base'
 import type { Database } from '@/server/infra/db/database'
 
 import { extractRequestFacts } from '@/server/http/utils/request-facts'
-import { resolveAppLocalization } from '@/shared/i18n/app-localization'
+import { createLazyAppLocalization } from '@/shared/i18n/app-localization'
 
 // Builders for the oRPC `context` argument. Authed procedures gate on
 // `context.viewer` via requireAuth/requireRole; this seeds both the
@@ -47,6 +47,9 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
     opts.url ?? 'http://localhost/rpc',
     opts.cookie === undefined ? undefined : { headers: { Cookie: opts.cookie } },
   )
+  // Lazy pair: a HandlerContext built before the snapshot hydrates must not
+  // pin the pre-hydration defaults.
+  const lazyLocalization = createLazyAppLocalization()
   return {
     request,
     requestFacts: extractRequestFacts(request),
@@ -55,7 +58,9 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
     db: opts.db ?? ({} as Database),
-    localization: resolveAppLocalization(),
+    get localization() {
+      return lazyLocalization()
+    },
   }
 }
 
@@ -64,6 +69,7 @@ export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
     opts.url ?? 'http://localhost/rpc',
     opts.cookie === undefined ? undefined : { headers: { Cookie: opts.cookie } },
   )
+  const lazyLocalization = createLazyAppLocalization()
   return {
     request,
     requestFacts: extractRequestFacts(request),
@@ -72,6 +78,8 @@ export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
     db: opts.db ?? ({} as Database),
-    localization: resolveAppLocalization(),
+    get localization() {
+      return lazyLocalization()
+    },
   }
 }

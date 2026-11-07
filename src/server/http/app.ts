@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import type { Env } from '@/server/http/context'
 import type { HandlerContext } from '@/server/http/orpc-base'
 
+import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { apiRouter } from '@/server/http/api-router'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
@@ -38,6 +39,12 @@ export function createApiApp(): Hono<Env> {
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
     const rc = c.var.requestContext
+    // Pure `/rpc/*` requests never pass through `buildLoadContext`, so hydrate
+    // here BEFORE projecting `rc.localization` — otherwise a cold process
+    // memoizes the pre-hydration default pair (settings hydration is a
+    // single-flight over the process snapshot, so this is cheap after the
+    // first call and reuses the RR path's snapshot).
+    await hydrateBlogSettings(rc.db)
     // Pure projection — no re-derivation; `markSessionDirty` deliberately
     // omitted (procedures get a read-only session).
     const context: HandlerContext = {

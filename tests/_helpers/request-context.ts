@@ -5,7 +5,7 @@ import type { AppLocalization } from '@/shared/i18n/app-localization'
 
 import { regularSession } from '#/_helpers/session'
 import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
-import { resolveAppLocalization } from '@/shared/i18n/app-localization'
+import { createLazyAppLocalization } from '@/shared/i18n/app-localization'
 
 // Stand-in for the canonical `RequestContext` — the suite's single
 // factory; never hand-roll `{ session, viewer, … }` literals.
@@ -20,7 +20,7 @@ export interface MakeRequestContextOptions {
   clientAddress?: string
   db?: Database
   cspNonce?: string
-  /** Defaults to the settings snapshot's pair (zh-CN / UTC with no fixture). */
+  /** Explicit override; omitted means the lazy settings-snapshot pair (like production). */
   localization?: AppLocalization
   markSessionDirty?: () => void
 }
@@ -36,6 +36,9 @@ export function makeRequestContext({
   markSessionDirty = () => {},
 }: MakeRequestContextOptions = {}): RequestContext {
   const resolvedUser = user === undefined ? ((session?.data?.user as SessionUser | undefined) ?? null) : user
+  // Lazy by default: mirrors the real context, where the snapshot hydrates
+  // after derivation — a pre-hydration capture would mask cold-boot bugs.
+  const lazyLocalization = createLazyAppLocalization()
   return {
     session,
     viewer: resolvedUser,
@@ -44,7 +47,9 @@ export function makeRequestContext({
     requestFacts: extractRequestFacts(request),
     db: (db ?? {}) as Database,
     cspNonce,
-    localization: localization ?? resolveAppLocalization(),
+    get localization() {
+      return localization ?? lazyLocalization()
+    },
     markSessionDirty,
   }
 }

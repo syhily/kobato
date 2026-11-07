@@ -73,9 +73,11 @@ emails and notifications must resolve the locale explicitly.
 **Bundle boundary.** `messages/ui/**`, `messages/server/**` and `catalog.ts`
 are server-side value imports: the client receives one locale's UI catalog from
 the root loader (`content.bootstrap` → `i18n: { locale, messages }`).
-`fallback-messages.ts` is the single sanctioned exception — a three-string
-module duplicated from the Simplified Chinese catalog (parity pinned by test) so
-the root ErrorBoundary can render before any settings load.
+`fallback-messages.ts` is the single sanctioned exception — a small module
+duplicated from the Simplified Chinese catalog (parity pinned by test) holding
+the root ErrorBoundary copy plus the no-payload meta fallbacks (pre-install
+title, page `article:section`). It is the only language source used when no
+`i18n` payload exists; meta never emits an empty section or its own literal.
 
 **One provider, meta reads matches.** The root `Layout` owns the only
 react-intl provider, fed from the loader payload (falling back to

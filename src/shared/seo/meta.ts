@@ -10,14 +10,12 @@ import type { UiMessageId, UiMessages } from '@/shared/i18n/messages/ui/en-US'
 // arrives as the root loader's `i18n` payload through `matches`.
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { brandingVersionSuffix, extractXHandle } from '@/shared/config/utils'
+import { fallbackMessages } from '@/shared/i18n/fallback-messages'
 import { isSupportedLocale, toOpenGraphLocale } from '@/shared/i18n/locales'
 import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { joinUrl } from '@/shared/utils/urls'
-
-/** English last resort for the pre-install title: every real render carries `i18n`. */
-const PRE_INSTALL_TITLE_FALLBACK = 'Installing'
 
 /**
  * The i18n payload the root loader forwards from `content.bootstrap`.
@@ -90,7 +88,7 @@ export function pageTitle(title?: string, bundle?: BlogSettingsBundle | null): s
   const resolved = bundle ?? getBlogSettingsBundleSync()
   const siteIdentity = resolved?.siteIdentity
   if (siteIdentity === null || siteIdentity === undefined) {
-    return title ?? PRE_INSTALL_TITLE_FALLBACK
+    return title ?? fallbackMessages['meta.preinstall']
   }
   return title === undefined
     ? `${siteIdentity.title} ${siteIdentity.titleSeparator} ${siteIdentity.description}`
@@ -234,7 +232,10 @@ function articleTags(variant: SeoVariant, authorName: string, i18n?: SeoI18n | n
     {
       property: 'article:section',
       // A page's section is system copy (localized); a post's is its category (content).
-      content: variant.kind === 'page' ? (i18n?.messages['meta.section.page'] ?? '') : (variant.article.category ?? ''),
+      content:
+        variant.kind === 'page'
+          ? (i18n?.messages['meta.section.page'] ?? fallbackMessages['meta.section.page'])
+          : (variant.article.category ?? ''),
     },
   )
   if (variant.kind === 'post') {
@@ -349,7 +350,12 @@ export function routeMeta(
   if (resolved === null || siteIdentity === null || siteIdentity === undefined) {
     // Pre-install fallback: the split-screen renders before settings
     // exist — emit a minimal `<title>` and noindex.
-    return [{ title: rawTitle ?? i18n?.messages['meta.preinstall'] ?? PRE_INSTALL_TITLE_FALLBACK }, ...robotsTags(true)]
+    // No payload at all (root loader failed): the minimal fallback module is the
+    // last-resort language source — never a bare literal and never another catalog.
+    return [
+      { title: rawTitle ?? i18n?.messages['meta.preinstall'] ?? fallbackMessages['meta.preinstall'] },
+      ...robotsTags(true),
+    ]
   }
 
   const seo = resolved.seo ?? {

@@ -100,9 +100,11 @@ server or client boundary catch and log it.
   the other three `satisfies` them), `catalog` (aggregation + English fallback
   merge + ICU validation — SERVER-ONLY value import; the client gets one
   locale's UI catalog from the root loader), `fallback-messages` (the only
-  message module the client may import directly: three strings for the root
-  ErrorBoundary), `app-localization` (`resolveAppLocalization` — the single
-  locale + site-time-zone resolver), and `feature-flags`
+  message module the client may import directly: the root ErrorBoundary copy
+  plus the no-payload meta fallbacks — pre-install title and page
+  `article:section`), `app-localization` (`resolveAppLocalization` — the single
+  locale + site-time-zone resolver — plus `createLazyAppLocalization`, the
+  per-request memo the request context projects), and `feature-flags`
   (`I18N_SETTINGS_ENABLED`). The server translator lives in
   `server/infra/i18n`; `shared/seo/title-meta` takes message ids and resolves
   them from the root loader's `i18n` payload via `matches`. The AST guard for

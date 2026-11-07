@@ -32,3 +32,17 @@ export function resolveAppLocalization(bundle?: BlogSettingsBundle | null): AppL
   }
   return { locale: siteIdentity.locale, timeZone: siteIdentity.timeZone }
 }
+
+/**
+ * Per-request lazy memo for the pair: resolve on FIRST access, then pin it for
+ * that request. Request context is derived before settings hydrate, so the
+ * accessor must not read the snapshot eagerly — every surface that builds a
+ * RequestContext projects this accessor instead of a resolved value.
+ */
+export function createLazyAppLocalization(): () => AppLocalization {
+  let resolved: AppLocalization | null = null
+  return () => {
+    resolved ??= resolveAppLocalization()
+    return resolved
+  }
+}
