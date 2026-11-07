@@ -4,20 +4,22 @@ import { formatDistance } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { MailWarningIcon, MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, WrenchIcon } from 'lucide-react'
 
-import type { NotificationDto } from '@/shared/contracts/notifications'
+import { NOTIFICATION_SOURCES, type NotificationDto } from '@/shared/contracts/notifications'
 
 export interface NotificationMeta {
   icon: LucideIcon
   kindLabel: string
 }
 
+const [ZEABUR_MAIL_CLEANUP_SOURCE, JOB_RUN_SOURCE] = NOTIFICATION_SOURCES
+
 // Kind drives the default chrome; `source` lets system producers override the
 // icon (the Zeabur cleanup alert reads as a mail problem, not a generic one).
 export function notificationMeta(item: Pick<NotificationDto, 'kind' | 'source'>): NotificationMeta {
-  if (item.source === 'zeabur-mail-cleanup') {
+  if (item.source === ZEABUR_MAIL_CLEANUP_SOURCE) {
     return { icon: MailWarningIcon, kindLabel: '系统提醒' }
   }
-  if (item.source === 'job-run') {
+  if (item.source === JOB_RUN_SOURCE) {
     return { icon: WrenchIcon, kindLabel: '任务提醒' }
   }
   switch (item.kind) {

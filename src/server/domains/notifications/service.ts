@@ -5,6 +5,7 @@ import type {
   NotificationDto,
   NotificationKind,
   NotificationSenderDto,
+  NotificationSource,
   NotificationTab,
   ThreadMessageDto,
 } from '@/shared/contracts/notifications'
@@ -64,7 +65,7 @@ function senderDtosByIds(db: Database, senderIds: Iterable<number>): Map<number,
 export interface NotifyMessage {
   title: string
   body: string
-  source?: string
+  source?: NotificationSource
   actionUrl?: string
 }
 
@@ -104,27 +105,6 @@ export function notifyAdmins(db: Database, message: NotifyMessage): Notification
   )
   queueNotificationEmail(db, row, adminIds)
   return row
-}
-
-/** System → all users. Never replyable (the replyable flavor is admin-created). */
-export function notifyAllUsers(db: Database, message: NotifyMessage): NotificationRow | null {
-  const userIds = listRecipientUserIds(db, { adminsOnly: false })
-  if (userIds.length === 0) {
-    return null
-  }
-  return createAndFanOut(
-    db,
-    {
-      kind: 'broadcast',
-      senderId: null,
-      replyable: false,
-      title: message.title,
-      body: message.body,
-      source: message.source ?? null,
-      actionUrl: message.actionUrl ?? null,
-    },
-    userIds,
-  )
 }
 
 /** Admin → one user; always opens a replyable private thread. */
@@ -352,7 +332,8 @@ export async function replyToThread(
     throw new DomainError('BAD_REQUEST', '该消息不支持回复')
   }
   if (root.kind === 'broadcast') {
-    const recipients = listRecipientUserIds(db, { adminsOnly: true }).filter((id) => id !== userId)
+    // The role gate upstream refuses admins, so the replier is never in the list.
+    const recipients = listRecipientUserIds(db, { adminsOnly: true })
     if (recipients.length === 0) {
       throw new DomainError('BAD_REQUEST', '当前没有管理员可以接收回复')
     }

@@ -59,6 +59,7 @@ import '@/server/domains/analytics/services/batcher'
 import '@/server/domains/analytics/services/pv-batcher'
 import '@/server/domains/audit/services/batcher'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@/shared/config/getters'
+import { NOTIFICATION_SOURCES } from '@/shared/contracts/notifications'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // HMR re-evaluates server.ts per cycle; import.meta.hot.data persists.
@@ -84,6 +85,8 @@ const engine = new ManagedEngine<DatabaseHandle>(
   'handle',
 )
 
+const JOB_RUN_SOURCE = NOTIFICATION_SOURCES[1]
+
 function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartGetDb(getDb)
   setRestartRefreshSettings(refreshBlogSettings)
@@ -98,7 +101,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
     notifyAdmins(getDb(), {
       title: `后台任务失败：${taskKey}`,
       body: `任务「${taskKey}」最近一次执行失败${error ? `：${error}` : '。'}请到「任务」页面查看详情。`,
-      source: 'job-run',
+      source: JOB_RUN_SOURCE,
       actionUrl: '/admin/tasks',
     })
   })

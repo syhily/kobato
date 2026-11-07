@@ -12,7 +12,6 @@ import {
   markRead,
   markUnread,
   notifyAdmins,
-  notifyAllUsers,
   recallMessage,
   replyToThread,
   sendBroadcast,
@@ -70,17 +69,6 @@ describe('notifications / producers', () => {
 
     expect(unreadCount(db, adminId)).toBe(1)
     expect(unreadCount(db, authorId)).toBe(0)
-  })
-
-  it('notifyAllUsers broadcasts to every active user', async () => {
-    const adminId = await seedUser('admin', 'admin')
-    const visitorId = await seedUser('visitor', 'visitor')
-
-    const row = notifyAllUsers(db, { title: '维护通知', body: '今晚维护' })
-    expect(row!.kind).toBe('broadcast')
-    expect(row!.replyable).toBe(false)
-    expect(unreadCount(db, adminId)).toBe(1)
-    expect(unreadCount(db, visitorId)).toBe(1)
   })
 
   it('sendDirectMessage rejects an unknown recipient', async () => {

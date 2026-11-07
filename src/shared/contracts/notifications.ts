@@ -12,6 +12,11 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
 export const NOTIFICATION_TABS = ['all', 'unread', 'direct', 'announce'] as const
 export type NotificationTab = (typeof NOTIFICATION_TABS)[number]
 
+// System-producer vocabulary. The WIRE field stays `z.string().nullable()`:
+// stored rows may outlive the vocabulary, so the read schema never narrows.
+export const NOTIFICATION_SOURCES = ['zeabur-mail-cleanup', 'job-run'] as const
+export type NotificationSource = (typeof NOTIFICATION_SOURCES)[number]
+
 export const notificationSenderDto = z.object({
   id: idString,
   name: z.string(),

@@ -3,9 +3,11 @@ import type { Database } from '@/server/infra/db/database'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { getLogger } from '@/server/infra/logger'
+import { NOTIFICATION_SOURCES, type NotificationSource } from '@/shared/contracts/notifications'
 import { isRecord } from '@/shared/utils/type-guards'
 
 const log = getLogger('settings.zeabur-mail-cleanup')
+const [ZEABUR_MAIL_CLEANUP_SOURCE] = NOTIFICATION_SOURCES
 
 /** Durable one-shot flag: a `system.`-scoped `setting` row (hydration reads `blog.*` only). */
 const BOOT_FLAG_SCOPE = 'system.zeabur-mail-cleanup'
@@ -13,7 +15,7 @@ const BOOT_FLAG_SCOPE = 'system.zeabur-mail-cleanup'
 export interface ZeaburMailCleanupNotify {
   title: string
   body: string
-  source?: string
+  source?: NotificationSource
   actionUrl?: string
 }
 
@@ -58,7 +60,7 @@ export async function runZeaburMailCleanupAtBoot(
       await notify({
         title: '邮件服务已自动关闭',
         body: 'Zeabur 邮件服务已下线，系统检测到站点仍在使用它，已自动关闭邮件发送。请到「系统设置 → 邮件」重新配置 SMTP 或 Mailgun 后重新启用。',
-        source: 'zeabur-mail-cleanup',
+        source: ZEABUR_MAIL_CLEANUP_SOURCE,
         actionUrl: '/admin/settings',
       })
     }

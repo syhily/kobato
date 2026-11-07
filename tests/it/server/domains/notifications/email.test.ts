@@ -8,7 +8,6 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { NOTIFICATION_EMAIL_FOOTER } from '@/server/domains/notifications/email'
 import {
   notifyAdmins,
-  notifyAllUsers,
   replyToThread,
   sendBroadcast,
   sendDirectMessage,
@@ -172,12 +171,11 @@ describe('notifications email — direct and admin kinds', () => {
     expect(authorId).toBeGreaterThan(0)
   })
 
-  it('never emails a broadcast (sendBroadcast or notifyAllUsers)', async () => {
+  it('never emails a broadcast', async () => {
     const adminId = await seedUser('admin', 'admin')
     await seedUser('visitor', 'visitor')
 
     sendBroadcast(db, adminId, { title: '公告', body: '正文', replyable: true })
-    notifyAllUsers(db, { title: '维护', body: '今晚维护' })
     await settle()
 
     expect(fetchMock).not.toHaveBeenCalled()
