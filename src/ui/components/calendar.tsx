@@ -1,4 +1,3 @@
-import { zhCN } from 'date-fns/locale'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, type ComponentProps } from 'react'
 import {
@@ -10,8 +9,10 @@ import {
   type WeekNumberProps,
 } from 'react-day-picker'
 
+import { dateFnsLocaleFor, formatDate } from '@/shared/i18n/format'
 import { Button, buttonVariants } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export type CalendarProps = ComponentProps<typeof DayPicker> & {
   buttonVariant?: ComponentProps<typeof Button>['variant']
@@ -39,8 +40,17 @@ function CalendarWeekNumber({ children, ...weekProps }: WeekNumberProps) {
   )
 }
 
-const DEFAULT_FORMATTERS = {
-  formatMonthDropdown: (date: Date) => date.toLocaleString('zh-CN', { month: 'short' }),
+// DayPicker dates are WALL-CLOCK dates (local components are the truth), so a
+// formatter normalizes them onto UTC and formats in UTC — explicit zone, no
+// host-zone drift between SSR and hydration.
+export function calendarWallClockDate(date: Date): Date {
+  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+}
+
+/** Machine value for `data-day`: always `yyyy-MM-dd`, never a localized date. */
+export function calendarMachineDay(date: Date): string {
+  const pad = (value: number): string => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 const BASE_COMPONENTS = {
@@ -58,11 +68,23 @@ export function Calendar({
   buttonVariant = 'ghost',
   formatters,
   components,
+  locale: localeProp,
   ...props
 }: CalendarProps) {
+  const { locale: appLocale } = useI18n()
+  const locale = localeProp ?? dateFnsLocaleFor(appLocale)
   const defaultClassNames = useMemo(() => getDefaultClassNames(), [])
 
-  const mergedFormatters = useMemo(() => ({ ...DEFAULT_FORMATTERS, ...formatters }), [formatters])
+  // Month dropdown labels are WALL-CLOCK text: normalized onto UTC and formatted
+  // in UTC so SSR and hydration agree regardless of the host/browser zone.
+  const mergedFormatters = useMemo(
+    () => ({
+      formatMonthDropdown: (date: Date) =>
+        formatDate(calendarWallClockDate(date), { locale: appLocale, timeZone: 'Etc/UTC', month: 'short' }),
+      ...formatters,
+    }),
+    [appLocale, formatters],
+  )
 
   const mergedClassNames = useMemo(
     () => ({
@@ -140,7 +162,7 @@ export function Calendar({
         className,
       )}
       captionLayout={captionLayout}
-      locale={zhCN}
+      locale={locale}
       formatters={mergedFormatters}
       classNames={mergedClassNames}
       components={mergedComponents}
@@ -164,7 +186,7 @@ export function CalendarDayButton({ className, day, modifiers, ...props }: Compo
       ref={ref}
       variant="ghost"
       size="icon"
-      data-day={day.date.toLocaleDateString()}
+      data-day={calendarMachineDay(day.date)}
       data-selected-single={
         modifiers.selected && !modifiers.range_start && !modifiers.range_end && !modifiers.range_middle
       }

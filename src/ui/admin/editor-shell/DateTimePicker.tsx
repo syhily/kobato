@@ -1,14 +1,20 @@
 import type { DropdownProps } from 'react-day-picker'
 
-import { zhCN } from 'date-fns/locale'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { formatDate, formatDateTime } from '@/shared/i18n/format'
 import { dateToLocalInputValue, parseLocalDateTimeInput } from '@/ui/admin/editor-shell/editor-datetime'
 import { Button } from '@/ui/components/button'
-import { Calendar } from '@/ui/components/calendar'
+import { Calendar, calendarWallClockDate } from '@/ui/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
+
+// The picker edits BROWSER-LOCAL wall-clock parts. Every rendered value is
+// normalized onto UTC and formatted in UTC, so SSR and the first client render
+// produce identical text on any host; the parts themselves are zone-free.
+const WALL_CLOCK_ZONE = 'Etc/UTC'
 
 export interface DateTimePickerProps {
   value: string
@@ -20,11 +26,6 @@ export interface DateTimePickerProps {
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 
-const CALENDAR_FORMATTERS = {
-  formatMonthDropdown: (date: Date) => new Intl.DateTimeFormat('zh-CN', { month: 'long' }).format(date),
-  formatYearDropdown: (date: Date) => `${date.getFullYear()} 年`,
-}
-
 const CALENDAR_COMPONENTS = { Dropdown: CalendarDropdown }
 
 // Placeholder center for the pre-open year window — the calendar mounts only
@@ -32,6 +33,7 @@ const CALENDAR_COMPONENTS = { Dropdown: CalendarDropdown }
 const PRE_OPEN_YEAR = 2000
 
 export function DateTimePicker({ value, onChange, disabled, id }: DateTimePickerProps) {
+  const { locale, t } = useI18n()
   const [open, setOpen] = useState(false)
   const parsed = parseLocalDateTimeInput(value)
   const triggerId = id ?? 'datetime-picker'
@@ -50,6 +52,14 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
       endMonth: new Date(newestYear, 11, 31),
     }
   }, [parsed, openedYear])
+
+  const calendarFormatters = useMemo(
+    () => ({
+      formatMonthDropdown: (date: Date) => formatWallClockMonth(date, locale),
+      formatYearDropdown: (date: Date) => t('common.datetime.yearOption', { year: date.getFullYear() }),
+    }),
+    [locale, t],
+  )
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen)
@@ -100,10 +110,7 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
     commit(next)
   }
 
-  const display =
-    parsed === null
-      ? '选择日期与时间'
-      : `${new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }).format(parsed)} ${parsed.getHours() < 12 ? '上午' : '下午'} ${pad(((parsed.getHours() + 11) % 12) + 1)}:${pad(parsed.getMinutes())}`
+  const display = parsed === null ? t('common.datetime.placeholder') : formatWallClockDateTime(parsed, locale)
 
   const currentHour12 = parsed === null ? null : ((parsed.getHours() + 11) % 12) + 1
   const currentMinute = parsed?.getMinutes() ?? null
@@ -133,11 +140,9 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
             selected={parsed ?? undefined}
             defaultMonth={parsed ?? undefined}
             captionLayout="dropdown"
-            locale={zhCN}
             startMonth={startMonth}
             endMonth={endMonth}
-            // Override the calendar's default month/year dropdown formatters with zhCN-bound ones.
-            formatters={CALENDAR_FORMATTERS}
+            formatters={calendarFormatters}
             components={CALENDAR_COMPONENTS}
             onSelect={handleDateSelect}
             disabled={disabled}
@@ -150,7 +155,7 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
                   active={currentHour12 === hour}
                   onClick={() => handleHour(hour)}
                   disabled={disabled}
-                  aria-label={`${hour} 时`}
+                  aria-label={t('common.datetime.hourOption', { hour })}
                 >
                   {pad(hour)}
                 </SlotButton>
@@ -163,7 +168,7 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
                   active={currentMinute === minute}
                   onClick={() => handleMinute(minute)}
                   disabled={disabled}
-                  aria-label={`${minute} 分`}
+                  aria-label={t('common.datetime.minuteOption', { minute })}
                 >
                   {pad(minute)}
                 </SlotButton>
@@ -174,17 +179,17 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
                 active={currentIsPm === false}
                 onClick={() => handleAmPm('am')}
                 disabled={disabled}
-                aria-label="上午"
+                aria-label={t('common.datetime.am')}
               >
-                上午
+                {t('common.datetime.am')}
               </SlotButton>
               <SlotButton
                 active={currentIsPm === true}
                 onClick={() => handleAmPm('pm')}
                 disabled={disabled}
-                aria-label="下午"
+                aria-label={t('common.datetime.pm')}
               >
-                下午
+                {t('common.datetime.pm')}
               </SlotButton>
             </ColumnScroller>
           </div>
@@ -195,11 +200,12 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
 }
 
 function CalendarDropdown({ options, ...selectProps }: DropdownProps) {
+  const { t } = useI18n()
   return (
     <select
       {...selectProps}
       value={String(selectProps.value ?? '')}
-      aria-label="选择月份或年份"
+      aria-label={t('common.datetime.monthYearSelector')}
       className={cn(
         'h-8 w-auto appearance-none rounded-md border border-input bg-background px-2 pr-6 text-sm shadow-sm transition-colors focus-visible:shadow-focus focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
         selectProps.className,
@@ -250,4 +256,27 @@ function defaultTime(): Date {
   const d = new Date()
   d.setHours(9, 0, 0, 0)
   return d
+}
+
+/** Wall-clock parts normalized onto UTC, so the rendered text is host-zone independent. */
+export function wallClockInstant(date: Date): Date {
+  return new Date(
+    Date.UTC(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      date.getHours(),
+      date.getMinutes(),
+      date.getSeconds(),
+    ),
+  )
+}
+
+/** Wall-clock date + time formatted in an explicit zone — identical on server and client. */
+function formatWallClockDateTime(date: Date, locale: 'en-US' | 'zh-CN' | 'zh-HK' | 'zh-TW'): string {
+  return formatDateTime(wallClockInstant(date), { locale, timeZone: WALL_CLOCK_ZONE })
+}
+
+function formatWallClockMonth(date: Date, locale: 'en-US' | 'zh-CN' | 'zh-HK' | 'zh-TW'): string {
+  return formatDate(calendarWallClockDate(date), { locale, timeZone: WALL_CLOCK_ZONE, month: 'long' })
 }

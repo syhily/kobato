@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { APP_VERSION } from '@/shared/config/version'
 import { resolveAppLocalization } from '@/shared/i18n/app-localization'
@@ -12,7 +14,7 @@ import { resolveAppLocalization } from '@/shared/i18n/app-localization'
  */
 export interface RepresentationFingerprint {
   version: string
-  locale: string
+  locale: AppLocale
   timeZone: string
   /** `auto` when the site follows the locale's Intl default. */
   timeFormat: string

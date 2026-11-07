@@ -10,14 +10,12 @@
 import type { ReactNode } from 'react'
 
 import { createContext, useCallback, useContext } from 'react'
-import { createIntl, createIntlCache, IntlContext, IntlProvider } from 'react-intl'
+import { IntlContext, IntlProvider } from 'react-intl'
 
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { getLogger } from '@/client/lib/logger'
-import { fallbackMessages } from '@/shared/i18n/fallback-messages'
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales'
 
 const log = getLogger('i18n')
 
@@ -78,17 +76,14 @@ export function I18nProvider({ locale, messages, children }: I18nProviderProps) 
  * throwing (rather than silently rendering ids) keeps a missing provider a
  * loud test failure.
  */
-// Provider-less fallback for components rendered outside the root tree (unit
-// tests, defensive leaves): the minimal fallback catalog, never a full one.
-const fallbackIntl = createIntl(
-  { locale: DEFAULT_LOCALE, messages: fallbackMessages, onError: () => undefined },
-  createIntlCache(),
-)
-
 export function useI18n(): I18nValue {
   const locale = useContext(LocaleContext)
-  const provided = useContext(IntlContext)
-  const intl = provided ?? fallbackIntl
+  // Strict on purpose: a component rendered outside the root provider is an
+  // integration bug, not a case to paper over with a partial catalog.
+  const intl = useContext(IntlContext)
+  if (intl === null) {
+    throw new Error('useI18n() requires the root <I18nProvider> (see src/root.tsx).')
+  }
   // Plain messages never carry rich tags, so the string narrowing is exact.
   const t = useCallback<I18nValue['t']>(
     (id, params) => {
@@ -99,5 +94,8 @@ export function useI18n(): I18nValue {
     [intl],
   )
   const tRich = useCallback<I18nValue['tRich']>((id, params) => intl.formatMessage({ id }, params) as ReactNode, [intl])
-  return { locale: locale ?? DEFAULT_LOCALE, t, tRich }
+  if (locale === null) {
+    throw new Error('useI18n() requires the root <I18nProvider> (see src/root.tsx).')
+  }
+  return { locale, t, tRich }
 }

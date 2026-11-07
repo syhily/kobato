@@ -51,10 +51,6 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/ui/public/friends/FriendApplyForm.tsx', rules: ['jsx-text', 'jsx-attribute'], text: 'Honeypot' },
   // `&rarr;` is a decorative arrow glyph in a CTA, not copy.
   { path: 'src/ui/admin/auth/AdminInstallForm.tsx', rules: ['jsx-text'], text: '&rarr;' },
-  // Music-player control labels are pinned byte-for-byte to the SSR fallback
-  // HTML (`musicPlayerFallbackHtml`) by the hydration parity test; localizing
-  // both together belongs to the projection slice.
-  { path: 'src/ui/public/music-player/music-player.tsx', rules: ['jsx-attribute'] },
   // "Setup Token" names a server-console credential — a protocol term.
   { path: 'src/ui/admin/auth/SetupTokenVerifyForm.tsx', rules: ['jsx-text'], text: 'Setup Token' },
 ]
@@ -82,7 +78,6 @@ describe('production sources', () => {
         'src/ui/public/friends/FriendApplyForm.tsx',
         'src/ui/admin/auth/AdminInstallForm.tsx',
         'src/ui/admin/auth/SetupTokenVerifyForm.tsx',
-        'src/ui/public/music-player/music-player.tsx',
       ]),
     )
   })

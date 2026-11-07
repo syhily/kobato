@@ -221,11 +221,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <I18nProvider locale={locale} messages={messages}>
           {children}
+          <ChunkReloadOverlay />
+          <ScrollRestoration nonce={rootData?.cspNonce} />
+          <Scripts nonce={rootData?.cspNonce} />
+          <RouteWarmupScript chunks={tier2Chunks} nonce={rootData?.cspNonce} />
         </I18nProvider>
-        <ChunkReloadOverlay />
-        <ScrollRestoration nonce={rootData?.cspNonce} />
-        <Scripts nonce={rootData?.cspNonce} />
-        <RouteWarmupScript chunks={tier2Chunks} nonce={rootData?.cspNonce} />
       </body>
     </html>
   )

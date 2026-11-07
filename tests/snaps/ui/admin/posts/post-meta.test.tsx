@@ -110,7 +110,7 @@ describe('snapshot: PostMetaSidebar', () => {
     )
     expect(html).toContain('已计划发布')
     // DateTimePicker renders the chosen instant as a localized string.
-    expect(html).toContain('2099年6月1日')
+    expect(html).toContain('2099/6/1 09:00')
     // Saved-at hint from the saveStatus.
     expect(html).toMatch(/2023年\d+月\d+日/u)
   })

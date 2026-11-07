@@ -235,6 +235,7 @@ describe('root ErrorBoundary — loader-failure behavior', () => {
     expect(html).toContain(fallbackMessages['error.boundary.description'])
     // BaseLayout chrome (skip link text from the public shell) must not mount.
     expect(html).not.toContain('跳转到主要内容')
+    expect(html).not.toContain('Skip to main content')
   })
 
   it('mounts the full error layout and the loader locale when i18n data exists', async () => {
@@ -254,9 +255,10 @@ describe('root ErrorBoundary — loader-failure behavior', () => {
     )
 
     expect(html).toContain('<html lang="en-US"')
+    expect(html).toContain('Skip to main content')
     expect(html).toContain('Internal error')
     // Dev mode shows the thrown message instead of the catalog description.
     expect(html).toContain('boom')
-    expect(html).toContain('跳转到主要内容')
+    expect(html).toContain('Skip to main content')
   })
 })

@@ -2,6 +2,7 @@ import { ListMusicIcon, Loader2Icon, PauseIcon, PlayIcon, Volume2Icon, VolumeXIc
 import { useState } from 'react'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 import { formatAudioDuration } from '@/ui/public/music-player/format-time'
 import { LyricsPanel } from '@/ui/public/music-player/lyrics'
@@ -20,6 +21,7 @@ export type MusicPlayerCardProps = {
 const stopEvent = (event: React.SyntheticEvent) => event.stopPropagation()
 
 export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: MusicPlayerCardProps) {
+  const { t } = useI18n()
   const playback = useMusicPlayback({ src: url })
   const [lyricsOpen, setLyricsOpen] = useState(false)
   // Touch has no hover (and iOS never focuses buttons on tap), so the
@@ -36,7 +38,7 @@ export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: Mu
       <div className="flex items-center gap-3 p-3">
         <button
           type="button"
-          aria-label={playback.isPlaying ? '暂停' : '播放'}
+          aria-label={playback.isPlaying ? t('public.music.pause') : t('public.music.play')}
           disabled={playback.hasError}
           className="group/cover relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-md bg-surface-dim"
           onClick={(event) => {
@@ -76,7 +78,7 @@ export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: Mu
         {hasLrc ? (
           <button
             type="button"
-            aria-label="歌词"
+            aria-label={t('public.music.lyrics')}
             aria-pressed={lyricsOpen}
             className={cn(
               'flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors',
@@ -95,7 +97,7 @@ export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: Mu
         <div className="group/volume flex shrink-0 items-center">
           <button
             type="button"
-            aria-label={playback.muted ? '取消静音' : '静音'}
+            aria-label={playback.muted ? t('public.music.unmute') : t('public.music.mute')}
             className="flex size-8 cursor-pointer items-center justify-center rounded-md text-ink-3 transition-colors hover:text-ink-1"
             onClick={(event) => {
               event.stopPropagation()
