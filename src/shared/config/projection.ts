@@ -54,10 +54,8 @@ export const assetsLoaderShapeSchema = z.object({
 export const mailLoaderShapeSchema = z.object({
   mail: z.object({
     enabled: z.boolean(),
-    host: z.string(),
     sender: z.string(),
-    apiKeyMask: z.string().nullable(),
-    transport: z.enum(['zeabur', 'smtp', 'mailgun']),
+    transport: z.enum(['smtp', 'mailgun']),
     smtpHost: z.string(),
     smtpPort: z.number(),
     smtpUser: z.string(),
@@ -130,16 +128,14 @@ export interface AssetsLoaderShape {
   }
 }
 
-// Mirrors `MailSettings` with the three secrets swapped for their masks;
+// Mirrors `MailSettings` with the two secrets swapped for their masks;
 // the outer `mail:` wrapper matches `mailSchema` so card patches validate
 // without translation.
 export interface MailLoaderShape {
   mail: {
     enabled: boolean
-    host: string
     sender: string
-    apiKeyMask: string | null
-    transport: 'zeabur' | 'smtp' | 'mailgun'
+    transport: 'smtp' | 'mailgun'
     smtpHost: string
     smtpPort: number
     smtpUser: string
@@ -253,7 +249,6 @@ export function projectAssetsForAdmin(
 export function projectMailForAdmin(
   mail: MailSettings,
   masks?: {
-    apiKeyMask?: string | null
     smtpPassMask?: string | null
     mailgunApiKeyMask?: string | null
   },
@@ -262,9 +257,7 @@ export function projectMailForAdmin(
   return {
     mail: {
       enabled: m.enabled,
-      host: m.host,
       sender: m.sender,
-      apiKeyMask: masks?.apiKeyMask ?? (m.apiKey ? m.apiKey.slice(-4) : null),
       transport: m.transport,
       smtpHost: m.smtpHost,
       smtpPort: m.smtpPort,

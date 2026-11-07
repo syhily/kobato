@@ -61,7 +61,7 @@ function trustProxyGate(): { host: string } | null {
 }
 
 /**
- * Trust-proxy scheme fix. TLS-terminating proxies (Zeabur, nginx, …) forward
+ * Trust-proxy scheme fix. TLS-terminating proxies (nginx, Cloudflare, …) forward
  * plain HTTP, so `@hono/node-server` builds `request.url` with `http:` while
  * the browser's `Origin` is `https:` — React Router 8.3.1+'s
  * `throwIfPotentialCSRFAttack` then rejects every `.data` action POST with

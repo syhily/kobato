@@ -142,10 +142,8 @@ export interface FooterNavItem {
 export interface MailSettings {
   mail: {
     enabled: boolean
-    host: string
-    apiKey?: string | undefined
     sender: string
-    transport: 'zeabur' | 'smtp' | 'mailgun'
+    transport: 'smtp' | 'mailgun'
     smtpHost: string
     smtpPort: number
     smtpUser: string
@@ -310,7 +308,6 @@ export interface SecuritySettings {
 }
 
 export interface SecretMasks {
-  mailApiKeyMask: string | null
   mailSmtpPassMask: string | null
   mailMailgunApiKeyMask: string | null
   assetsSecretAccessKeyMask: string | null

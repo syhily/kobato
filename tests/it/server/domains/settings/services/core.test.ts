@@ -242,7 +242,7 @@ describe('server/domains/settings/services/core — assets write-path URL rules'
 describe('computeSecretMasks', () => {
   it('derives a last-4 mask for every SECRET_FIELDS entry', () => {
     const bundle = {
-      mail: { mail: { apiKey: 'key-aa11', smtpPass: 'pass-bb22', mailgunApiKey: 'mg-cc33' } },
+      mail: { mail: { smtpPass: 'pass-bb22', mailgunApiKey: 'mg-cc33' } },
       assets: { storage: { secretAccessKey: 's3-dd44' } },
       comments: { comments: { githubToken: 'ghp-ee55' } },
       backup: { encryption: { password: 'bk-ff66' } },
@@ -255,7 +255,6 @@ describe('computeSecretMasks', () => {
       expect(masks[maskKey]).not.toBeNull()
     }
     expect(masks).toEqual({
-      mailApiKeyMask: 'aa11',
       mailSmtpPassMask: 'bb22',
       mailMailgunApiKeyMask: 'cc33',
       assetsSecretAccessKeyMask: 'dd44',
@@ -266,14 +265,13 @@ describe('computeSecretMasks', () => {
 
   it('returns null masks when secrets are missing or empty', () => {
     const bundle = {
-      mail: { mail: { apiKey: '', smtpPass: 'pass-bb22', mailgunApiKey: null } },
+      mail: { mail: { smtpPass: 'pass-bb22', mailgunApiKey: null } },
       assets: null,
     } as unknown as BlogSettingsBundle
 
     const masks = computeSecretMasks(bundle)
 
     expect(masks).toEqual({
-      mailApiKeyMask: null,
       mailSmtpPassMask: 'bb22',
       mailMailgunApiKeyMask: null,
       assetsSecretAccessKeyMask: null,

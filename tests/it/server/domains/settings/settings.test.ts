@@ -81,10 +81,8 @@ const fixtureBundle: BlogSettingsBundle = {
   mail: {
     mail: {
       enabled: false,
-      host: 'api.zeabur.com',
-      apiKey: '',
       sender: 'noreply@example.com',
-      transport: 'zeabur',
+      transport: 'smtp',
       smtpHost: '',
       smtpPort: 587,
       smtpUser: '',
@@ -245,12 +243,12 @@ describe('services/settings — hydrateBlogSettings', () => {
     await seedSections(fixtureBundle, {
       override: {
         'blog.mail': {
-          mail: { ...(fixtureBundle.mail!.mail as Record<string, unknown>), apiKey: undecryptable },
+          mail: { ...(fixtureBundle.mail!.mail as Record<string, unknown>), smtpPass: undecryptable },
         },
       },
     })
 
-    await expect(hydrateBlogSettings(db)).rejects.toThrow(/Failed to decrypt secret setting 'mail\.mail\.apiKey'/)
+    await expect(hydrateBlogSettings(db)).rejects.toThrow(/Failed to decrypt secret setting 'mail\.mail\.smtpPass'/)
   })
 })
 
@@ -359,8 +357,6 @@ describe('services/settings — mail section', () => {
       {
         mail: {
           enabled: true,
-          host: 'api.zeabur.com',
-          apiKey: 'NEWKEY',
           smtpPass: 'NEWSMTPPASS',
           mailgunApiKey: 'NEWMAILGUNKEY',
           sender: 'noreply@example.com',
@@ -371,9 +367,6 @@ describe('services/settings — mail section', () => {
 
     const mail = readBucket('blog.mail', 'mail')
     expect(mail.enabled).toBe(true)
-    expect(mail.host).toBe('api.zeabur.com')
-    expect(mail.apiKey).toMatch(/^enc2:/)
-    expect(decryptIfNeeded(mail.apiKey as string)).toBe('NEWKEY')
     expect(mail.smtpPass).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.smtpPass as string)).toBe('NEWSMTPPASS')
     expect(mail.mailgunApiKey).toMatch(/^enc2:/)
@@ -383,12 +376,7 @@ describe('services/settings — mail section', () => {
 
   it('rejects a sender that is not a valid email and writes nothing', async () => {
     await expect(
-      updateBlogSettingsSection(
-        db,
-        'mail',
-        { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'not-an-email' } },
-        null,
-      ),
+      updateBlogSettingsSection(db, 'mail', { mail: { enabled: false, sender: 'not-an-email' } }, null),
     ).rejects.toBeInstanceOf(DomainError)
     expect(findSettingByScope(db, 'blog.mail')).toBeNull()
   })
@@ -403,8 +391,6 @@ describe('services/settings — mail section', () => {
       data: {
         mail: {
           enabled: true,
-          host: 'api.zeabur.com',
-          apiKey: 'ZEABURKEY',
           sender: 'a@b.co',
           transport: 'smtp',
           smtpHost: 'smtp.old.com',
@@ -422,7 +408,6 @@ describe('services/settings — mail section', () => {
       {
         mail: {
           enabled: true,
-          host: 'api.zeabur.com',
           sender: 'noreply@example.com',
           transport: 'smtp',
           smtpHost: 'smtp.example.com',
@@ -441,9 +426,6 @@ describe('services/settings — mail section', () => {
     expect(mail.smtpHost).toBe('smtp.example.com')
     expect(mail.smtpUser).toBe('user')
     expect(mail.smtpSecure).toBe(true)
-    // apiKey preserved and re-encrypted — every mail secret routes through encryptSecretsInRow.
-    expect(mail.apiKey).toMatch(/^enc2:/)
-    expect(decryptIfNeeded(mail.apiKey as string)).toBe('ZEABURKEY')
   })
 
   it("preserves the existing mailgunApiKey by reading scope='blog.mail' when omitted", async () => {
@@ -453,8 +435,6 @@ describe('services/settings — mail section', () => {
       data: {
         mail: {
           enabled: true,
-          host: 'api.zeabur.com',
-          apiKey: 'ZEABURKEY',
           sender: 'a@b.co',
           transport: 'mailgun',
           smtpHost: '',
@@ -474,7 +454,6 @@ describe('services/settings — mail section', () => {
       {
         mail: {
           enabled: true,
-          host: 'api.zeabur.com',
           sender: 'noreply@mg.example.com',
           transport: 'mailgun',
           mailgunDomain: 'mg.example.com',
@@ -489,8 +468,6 @@ describe('services/settings — mail section', () => {
     // mailgunApiKey omitted from the patch and preserved from the existing row.
     expect(mail.mailgunApiKey).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.mailgunApiKey as string)).toBe('STOREDMAILGUNKEY')
-    expect(mail.apiKey).toMatch(/^enc2:/)
-    expect(decryptIfNeeded(mail.apiKey as string)).toBe('ZEABURKEY')
   })
 })
 
@@ -876,7 +853,7 @@ describe('services/settings — security section', () => {
 })
 
 describe('services/settings — section patch merge', () => {
-  it('keeps the stored SMTP TLS flags when a Zeabur-style patch only carries host', async () => {
+  it('keeps the stored SMTP TLS flags when a focused patch only carries the sender', async () => {
     // A focused patch must never reset the stored row's untouched fields.
     await seedSections(fixtureBundle, { except: ['blog.mail'] })
     await db.insert(setting).values({
@@ -884,13 +861,12 @@ describe('services/settings — section patch merge', () => {
       data: {
         mail: {
           enabled: true,
-          host: 'old.zeabur.com',
-          apiKey: 'STORED-ZEABUR-KEY',
           sender: 'a@b.co',
           transport: 'smtp',
           smtpHost: 'smtp.example.com',
           smtpPort: 465,
           smtpUser: 'user',
+          smtpPass: 'STORED-SMTP-PASS',
           smtpSecure: true,
           smtpRequireTls: false,
           smtpRejectUnauthorized: false,
@@ -898,25 +874,22 @@ describe('services/settings — section patch merge', () => {
       },
     })
 
-    await updateBlogSettingsSection(db, 'mail', { mail: { host: 'api.zeabur.com' } }, null)
+    await updateBlogSettingsSection(db, 'mail', { mail: { sender: 'new@example.com' } }, null)
 
     const mail = readBucket('blog.mail', 'mail')
-    expect(mail.host).toBe('api.zeabur.com')
+    expect(mail.sender).toBe('new@example.com')
     expect(mail.smtpSecure).toBe(true)
     expect(mail.smtpRequireTls).toBe(false)
     expect(mail.smtpRejectUnauthorized).toBe(false)
     expect(mail.transport).toBe('smtp')
-    expect(mail.apiKey).toMatch(/^enc2:/)
-    expect(decryptIfNeeded(mail.apiKey as string)).toBe('STORED-ZEABUR-KEY')
+    expect(mail.smtpPass).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.smtpPass as string)).toBe('STORED-SMTP-PASS')
   })
 
   it('rejects an unknown key inside a nested bucket with the issue list', async () => {
-    const error = await updateBlogSettingsSection(
-      db,
-      'mail',
-      { mail: { host: 'api.zeabur.com', bogus: 1 } },
-      null,
-    ).catch((e: unknown) => e)
+    const error = await updateBlogSettingsSection(db, 'mail', { mail: { sender: 'a@b.co', bogus: 1 } }, null).catch(
+      (e: unknown) => e,
+    )
 
     expect(error).toBeInstanceOf(DomainError)
     expect((error as InstanceType<typeof DomainError>).code).toBe('BAD_REQUEST')

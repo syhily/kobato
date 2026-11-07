@@ -11,7 +11,6 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 const TRANSPORT_OPTIONS: { value: MailLoaderShape['mail']['transport']; label: string }[] = [
-  { value: 'zeabur', label: 'Zeabur ZSend' },
   { value: 'smtp', label: 'SMTP' },
   { value: 'mailgun', label: 'Mailgun' },
 ]
@@ -43,11 +42,7 @@ export function ProviderSelectCard({
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow
-          label="提供商"
-          htmlFor="mail-transport"
-          hint="Zeabur ZSend 适合 Zeabur 部署，SMTP 适合自有邮件服务器。"
-        >
+        <SettingsRow label="提供商" htmlFor="mail-transport" hint="SMTP 适合自有邮件服务器，Mailgun 适合托管邮件服务。">
           <Controller
             control={form.control}
             name="transport"
@@ -57,7 +52,7 @@ export function ProviderSelectCard({
                 value={field.value}
                 save={save}
                 onValueChange={(value) => {
-                  if (value === 'zeabur' || value === 'smtp' || value === 'mailgun') {
+                  if (value === 'smtp' || value === 'mailgun') {
                     field.onChange(value)
                   }
                 }}

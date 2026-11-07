@@ -123,8 +123,6 @@ describe('shared/config/projection — projectMailForAdmin', () => {
   const baseMail: MailSettings = {
     mail: {
       enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'sk-zeabur-abcd',
       sender: 'noreply@example.com',
       transport: 'smtp',
       smtpHost: 'smtp.example.com',
@@ -143,7 +141,6 @@ describe('shared/config/projection — projectMailForAdmin', () => {
     const out = projectMailForAdmin(baseMail)
     expect(out.mail).toMatchObject({
       enabled: true,
-      host: 'api.zeabur.com',
       sender: 'noreply@example.com',
       transport: 'smtp',
       smtpHost: 'smtp.example.com',
@@ -164,33 +161,28 @@ describe('shared/config/projection — projectMailForAdmin', () => {
     expect(out.mail.smtpRejectUnauthorized).toBe(false)
   })
 
-  it('swaps the three secrets for the passed masks and never leaks the raw values', () => {
+  it('swaps the two secrets for the passed masks and never leaks the raw values', () => {
     const out = projectMailForAdmin(baseMail, {
-      apiKeyMask: '••••key',
       smtpPassMask: '••••pass',
       mailgunApiKeyMask: '••••mgkey',
     })
-    expect(out.mail.apiKeyMask).toBe('••••key')
     expect(out.mail.smtpPassMask).toBe('••••pass')
     expect(out.mail.mailgunApiKeyMask).toBe('••••mgkey')
     const serialized = JSON.stringify(out)
-    expect(serialized).not.toContain('sk-zeabur-abcd')
     expect(serialized).not.toContain('smtp-pass-wxyz')
     expect(serialized).not.toContain('mg-key-1234')
   })
 
   it('falls back to the last 4 chars of the raw secret when no mask is passed', () => {
     const out = projectMailForAdmin(baseMail)
-    expect(out.mail.apiKeyMask).toBe('abcd')
     expect(out.mail.smtpPassMask).toBe('wxyz')
     expect(out.mail.mailgunApiKeyMask).toBe('1234')
   })
 
   it('returns null masks when the secrets are unset', () => {
     const out = projectMailForAdmin({
-      mail: { ...baseMail.mail, apiKey: undefined, smtpPass: undefined, mailgunApiKey: undefined },
+      mail: { ...baseMail.mail, smtpPass: undefined, mailgunApiKey: undefined },
     })
-    expect(out.mail.apiKeyMask).toBeNull()
     expect(out.mail.smtpPassMask).toBeNull()
     expect(out.mail.mailgunApiKeyMask).toBeNull()
   })

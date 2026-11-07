@@ -57,7 +57,6 @@ export function projectSectionForAdmin(
     projected = projectAssetsForAdmin(requireBundleSection(redacted, 'assets'), masks.assetsSecretAccessKeyMask)
   } else if (section === 'mail') {
     projected = projectMailForAdmin(requireBundleSection(redacted, 'mail'), {
-      apiKeyMask: masks.mailApiKeyMask,
       smtpPassMask: masks.mailSmtpPassMask,
       mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
     })

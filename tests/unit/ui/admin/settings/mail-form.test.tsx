@@ -22,10 +22,8 @@ const { MailForm } = await import('@/ui/admin/settings/MailForm')
 const baseMail: MailLoaderShape = {
   mail: {
     enabled: false,
-    host: '',
     sender: 'noreply@example.com',
-    apiKeyMask: null,
-    transport: 'zeabur',
+    transport: 'smtp',
     smtpHost: '',
     smtpPort: 587,
     smtpUser: '',
@@ -38,13 +36,13 @@ const baseMail: MailLoaderShape = {
   },
 }
 
-function mailWithTransport(transport: 'zeabur' | 'smtp' | 'mailgun'): MailLoaderShape {
+function mailWithTransport(transport: 'smtp' | 'mailgun'): MailLoaderShape {
   return { mail: { ...baseMail.mail, transport } }
 }
 
 describe('ui/admin/settings/MailForm', () => {
   it('renders the sender field exactly once regardless of transport', () => {
-    for (const transport of ['zeabur', 'smtp', 'mailgun'] as const) {
+    for (const transport of ['smtp', 'mailgun'] as const) {
       const html = renderToStaticMarkup(<MailForm mail={mailWithTransport(transport)} />)
       const senderMatches = html.match(/id="mail-sender"/g) ?? []
       expect(senderMatches.length, `transport=${transport}`).toBe(1)
@@ -56,8 +54,8 @@ describe('ui/admin/settings/MailForm', () => {
     expect(smtpHtml).not.toContain('id="mail-smtp-sender"')
     expect(smtpHtml).not.toContain('id="mail-mailgun-sender"')
 
-    const zeaburHtml = renderToStaticMarkup(<MailForm mail={mailWithTransport('zeabur')} />)
-    expect(zeaburHtml).not.toContain('id="mail-mailgun-sender"')
-    expect(zeaburHtml).not.toContain('id="mail-smtp-sender"')
+    const mailgunHtml = renderToStaticMarkup(<MailForm mail={mailWithTransport('mailgun')} />)
+    expect(mailgunHtml).not.toContain('id="mail-mailgun-sender"')
+    expect(mailgunHtml).not.toContain('id="mail-smtp-sender"')
   })
 })

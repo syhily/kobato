@@ -137,7 +137,7 @@ describe('snapshot: SettingsNav', () => {
       label: '邮件服务',
       icon: 'Mail',
       group: 'service' as const,
-      keywords: ['smtp', 'zeabur'],
+      keywords: ['smtp', 'mailgun'],
     },
     {
       id: 'cache' as const,

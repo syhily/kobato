@@ -13,39 +13,44 @@ import { socialsSchema } from '@/server/domains/settings/sections/socials'
 describe('settings/sections/mail', () => {
   it('accepts a fully-populated payload', () => {
     const result = mailSchema.safeParse({
-      mail: { enabled: true, host: 'example.com', apiKey: 'k', sender: 'a@b.com', transport: 'zeabur' },
+      mail: {
+        enabled: true,
+        sender: 'a@b.com',
+        transport: 'smtp',
+        smtpHost: 'smtp.example.com',
+        smtpUser: 'u',
+        smtpPass: 'p',
+      },
     })
     expect(result.success).toBe(true)
   })
 
-  it('defaults transport to "zeabur" when omitted', () => {
-    const result = mailSchema.safeParse({ mail: { enabled: false, host: 'mail.example.com', sender: '' } })
+  it('defaults transport to "smtp" when omitted', () => {
+    const result = mailSchema.safeParse({ mail: { enabled: false, sender: '' } })
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.mail.transport).toBe('zeabur')
+      expect(result.data.mail.transport).toBe('smtp')
     }
   })
 
   it('accepts empty string as a valid sender (no reply address)', () => {
-    expect(mailSchema.safeParse({ mail: { enabled: false, host: 'mail.example.com', sender: '' } }).success).toBe(true)
+    expect(mailSchema.safeParse({ mail: { enabled: false, sender: '' } }).success).toBe(true)
   })
 
   it('rejects an invalid sender email', () => {
-    expect(
-      mailSchema.safeParse({ mail: { enabled: false, host: 'mail.example.com', sender: 'not-an-email' } }).success,
-    ).toBe(false)
+    expect(mailSchema.safeParse({ mail: { enabled: false, sender: 'not-an-email' } }).success).toBe(false)
   })
 
-  it('rejects an unknown transport', () => {
-    expect(
-      mailSchema.safeParse({
-        mail: { enabled: false, host: 'mail.example.com', sender: '', transport: 'sendgrid' },
-      }).success,
-    ).toBe(false)
+  it('coerces an out-of-union transport stored by an older build to smtp', () => {
+    const result = mailSchema.safeParse({ mail: { enabled: false, sender: '', transport: 'sendgrid' } })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.mail.transport).toBe('smtp')
+    }
   })
 
-  it('allows an empty host so the provider can be switched without filling fields first', () => {
-    expect(mailSchema.safeParse({ mail: { enabled: false, host: '', sender: '' } }).success).toBe(true)
+  it('allows an empty smtpHost so the provider can be switched without filling fields first', () => {
+    expect(mailSchema.safeParse({ mail: { enabled: false, sender: '', smtpHost: '' } }).success).toBe(true)
   })
 })
 

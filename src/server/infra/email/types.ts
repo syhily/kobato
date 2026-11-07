@@ -1,4 +1,4 @@
-// The seam every concrete transport (Zeabur, SMTP, Mailgun, …) implements;
+// The seam every concrete transport (SMTP, Mailgun, …) implements;
 // the registry in `sender.ts` picks one at runtime. Types live here so
 // transports never import the dispatcher (acyclic graph).
 

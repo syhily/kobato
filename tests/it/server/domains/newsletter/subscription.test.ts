@@ -27,14 +27,15 @@ function enableNewsletter() {
       mail: {
         ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
         enabled: true,
-        host: 'mail.test',
-        apiKey: 'TEST-KEY',
+        transport: 'mailgun',
+        mailgunDomain: 'mail.test',
+        mailgunApiKey: 'TEST-KEY',
         sender: 'noreply@example.com',
       },
     },
   })
   invalidateMailTransportCache()
-  mockFetch.enqueue('https://mail.test/api/v1/zsend/emails', new Response(null, { status: 200 }))
+  mockFetch.enqueue('https://api.mailgun.net/v3/mail.test/messages', new Response(null, { status: 200 }))
 }
 
 beforeEach(async () => {
@@ -50,10 +51,11 @@ async function findRow(email: string): Promise<NewsletterSubscriberRow | null> {
   return rows[0] ?? null
 }
 
-function lastMailBody(): { to: string[]; subject: string; html: string } {
+function lastMailBody(): { to: string; subject: string; html: string } {
   const call = mockFetch.calls.at(-1)
   expect(call).toBeDefined()
-  return JSON.parse(call!.init?.body as string)
+  const body = call!.init?.body as FormData
+  return { to: body.get('to') as string, subject: body.get('subject') as string, html: body.get('html') as string }
 }
 
 function extractConfirmToken(): string {
@@ -76,7 +78,7 @@ describe('integration / newsletter', () => {
     expect(pending!.confirmTokenHash).not.toBeNull()
 
     expect(mockFetch.calls).toHaveLength(1)
-    expect(lastMailBody().to).toEqual(['reader@example.com'])
+    expect(lastMailBody().to).toBe('reader@example.com')
 
     const confirmRes = await callRpc('/newsletter/confirm', { token: extractConfirmToken() }, ctx)
     expect(confirmRes.status).toBe(200)
@@ -92,7 +94,7 @@ describe('integration / newsletter', () => {
     const ctx = makePublicCtx({ db })
 
     await callRpc('/newsletter/subscribe', { email: 'dup@example.com' }, ctx)
-    mockFetch.enqueue('https://mail.test/api/v1/zsend/emails', new Response(null, { status: 200 }))
+    mockFetch.enqueue('https://api.mailgun.net/v3/mail.test/messages', new Response(null, { status: 200 }))
     const first = await findRow('dup@example.com')
 
     const resub = await callRpc('/newsletter/subscribe', { email: 'Dup@Example.COM' }, ctx)
@@ -182,7 +184,7 @@ describe('integration / newsletter', () => {
   it('caps repeated subscribes of one address at 3/hour (per-email limit)', async () => {
     const ctx = makePublicCtx({ db })
     for (let i = 0; i < 3; i++) {
-      mockFetch.enqueue('https://mail.test/api/v1/zsend/emails', new Response(null, { status: 200 }))
+      mockFetch.enqueue('https://api.mailgun.net/v3/mail.test/messages', new Response(null, { status: 200 }))
     }
 
     for (let i = 0; i < 3; i++) {

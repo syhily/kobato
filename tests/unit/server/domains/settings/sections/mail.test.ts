@@ -3,12 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { mailSchema } from '@/server/domains/settings/sections/mail'
 
 describe('settings/sections/mail', () => {
-  it('defaults to zeabur transport and empty smtp fields', () => {
+  it('defaults to smtp transport and empty smtp fields', () => {
     const result = mailSchema.safeParse({
       mail: {
         enabled: false,
-        host: 'api.zeabur.com',
-        apiKey: '',
         sender: 'noreply@example.com',
       },
     })
@@ -16,7 +14,7 @@ describe('settings/sections/mail', () => {
     if (!result.success) {
       return
     }
-    expect(result.data.mail.transport).toBe('zeabur')
+    expect(result.data.mail.transport).toBe('smtp')
     expect(result.data.mail.smtpHost).toBe('')
     expect(result.data.mail.smtpPort).toBe(587)
     expect(result.data.mail.smtpUser).toBe('')
@@ -29,7 +27,6 @@ describe('settings/sections/mail', () => {
     const result = mailSchema.safeParse({
       mail: {
         enabled: true,
-        host: '',
         sender: 'noreply@example.com',
         transport: 'smtp',
         smtpHost: 'smtp.example.com',
@@ -48,16 +45,22 @@ describe('settings/sections/mail', () => {
     expect(result.data.mail.smtpSecure).toBe(true)
   })
 
-  it('rejects invalid transport values', () => {
-    const result = mailSchema.safeParse({
-      mail: {
-        enabled: true,
-        host: 'api.zeabur.com',
-        sender: 'noreply@example.com',
-        transport: 'sendgrid',
-      },
-    })
-    expect(result.success).toBe(false)
+  it('coerces out-of-union transport values stored by older builds to smtp', () => {
+    for (const legacy of ['zeabur', 'sendgrid']) {
+      const result = mailSchema.safeParse({
+        mail: {
+          enabled: true,
+          sender: 'noreply@example.com',
+          transport: legacy,
+          smtpHost: 'smtp.example.com',
+        },
+      })
+      expect(result.success, `transport=${legacy}`).toBe(true)
+      if (result.success) {
+        expect(result.data.mail.transport).toBe('smtp')
+        expect(result.data.mail.smtpHost).toBe('smtp.example.com')
+      }
+    }
   })
 
   it('accepts mailgun transport with domain and api key', () => {
@@ -98,74 +101,76 @@ describe('settings/sections/mail', () => {
     const result = mailSchema.safeParse({
       mail: {
         enabled: true,
-        host: 'api.zeabur.com',
         sender: 'noreply@example.com',
-        transport: 'zeabur',
+        transport: 'smtp',
       },
     })
     expect(result.success).toBe(true)
     if (!result.success) {
       return
     }
-    expect(result.data.mail.apiKey).toBeUndefined()
     expect(result.data.mail.smtpPass).toBeUndefined()
+    expect(result.data.mail.mailgunApiKey).toBeUndefined()
   })
 
   it('allows switching transport without the other provider fields filled', () => {
     const toSmtp = mailSchema.safeParse({
       mail: {
         enabled: true,
-        host: 'api.zeabur.com',
-        apiKey: 'key',
         sender: 'noreply@example.com',
         transport: 'smtp',
+        mailgunDomain: 'mg.example.com',
+        mailgunApiKey: 'key',
       },
     })
     expect(toSmtp.success).toBe(true)
 
-    const toZeabur = mailSchema.safeParse({
+    const toMailgun = mailSchema.safeParse({
       mail: {
         enabled: true,
         sender: 'noreply@example.com',
-        transport: 'zeabur',
+        transport: 'mailgun',
         smtpHost: 'smtp.example.com',
         smtpUser: 'user',
         smtpPass: 'secret',
       },
     })
-    expect(toZeabur.success).toBe(true)
+    expect(toMailgun.success).toBe(true)
   })
 
-  describe('host / mailgunDomain hostname shape', () => {
+  describe('mailgunDomain hostname shape', () => {
     function parse(overrides: Record<string, unknown>) {
       return mailSchema.safeParse({
-        mail: { enabled: true, sender: 'noreply@example.com', ...overrides },
+        mail: { enabled: true, sender: 'noreply@example.com', transport: 'mailgun', ...overrides },
       })
     }
 
     it('accepts dotted hostnames and the empty string', () => {
-      for (const value of ['api.zeabur.com', 'mg.example.com', 'smtp.eu.mailgun.org', 'a-b.example.co.uk', '']) {
-        expect(parse({ host: value }).success, `host=${value}`).toBe(true)
-      }
-      for (const value of ['mg.example.com', 'sandbox123.mailgun.org', '']) {
-        expect(parse({ transport: 'mailgun', mailgunDomain: value }).success, `mailgunDomain=${value}`).toBe(true)
+      for (const value of [
+        'mg.example.com',
+        'sandbox123.mailgun.org',
+        'smtp.eu.mailgun.org',
+        'a-b.example.co.uk',
+        '',
+      ]) {
+        expect(parse({ mailgunDomain: value }).success, `mailgunDomain=${value}`).toBe(true)
       }
     })
 
     it('trims before validating', () => {
-      const result = parse({ host: '  api.zeabur.com  ' })
+      const result = parse({ mailgunDomain: '  mg.example.com  ' })
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.mail.host).toBe('api.zeabur.com')
+        expect(result.data.mail.mailgunDomain).toBe('mg.example.com')
       }
     })
 
     it('rejects schemes, ports, paths, emails, IP literals, and bare labels', () => {
       const rejected = [
-        'https://api.zeabur.com',
-        'api.zeabur.com:443',
-        'api.zeabur.com/path',
-        'user@api.zeabur.com',
+        'https://mg.example.com',
+        'mg.example.com:443',
+        'mg.example.com/path',
+        'user@mg.example.com',
         '127.0.0.1',
         '10.0.0.1',
         '[::1]',
@@ -175,13 +180,12 @@ describe('settings/sections/mail', () => {
         'bad label.example.com',
       ]
       for (const value of rejected) {
-        expect(parse({ host: value }).success, `host=${value}`).toBe(false)
-        expect(parse({ transport: 'mailgun', mailgunDomain: value }).success, `mailgunDomain=${value}`).toBe(false)
+        expect(parse({ mailgunDomain: value }).success, `mailgunDomain=${value}`).toBe(false)
       }
     })
 
     it('surfaces a user-facing Chinese message', () => {
-      const result = parse({ host: 'https://api.zeabur.com' })
+      const result = parse({ mailgunDomain: 'https://mg.example.com' })
       expect(result.success).toBe(false)
       if (!result.success) {
         expect(result.error.issues[0]?.message).toContain('不能带协议、端口、路径或 IP 地址')

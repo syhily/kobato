@@ -114,9 +114,9 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
   })
 
   it('rejects mask fields the loader projection attaches', () => {
-    expect(() => assertSectionPatchKeys('mail', { mail: { host: 'api.zeabur.com', apiKeyMask: 'abcd' } })).toThrowError(
-      DomainError,
-    )
+    expect(() =>
+      assertSectionPatchKeys('mail', { mail: { smtpHost: 'smtp.example.com', smtpPassMask: 'abcd' } }),
+    ).toThrowError(DomainError)
   })
 
   it('treats arrays as leaves — element values are the merged validation’s job', () => {
@@ -130,7 +130,7 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
 
   it('accepts partial patches (honest single-field writes)', () => {
     expect(() => assertSectionPatchKeys('security', { cors: { enabled: true } })).not.toThrow()
-    expect(() => assertSectionPatchKeys('mail', { mail: { host: 'api.zeabur.com' } })).not.toThrow()
+    expect(() => assertSectionPatchKeys('mail', { mail: { smtpHost: 'smtp.example.com' } })).not.toThrow()
     expect(() => assertSectionPatchKeys('rateLimit', { signIn: { windowSeconds: 600 } })).not.toThrow()
   })
 })

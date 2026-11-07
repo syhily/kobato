@@ -59,10 +59,10 @@ const MAIL_READY: BlogSettingsBundle = {
     mail: {
       ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
       enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'zsend-key',
+      transport: 'mailgun',
+      mailgunDomain: 'mg.example.com',
+      mailgunApiKey: 'mg-key',
       sender: 'noreply@example.com',
-      transport: 'zeabur',
     },
   },
 }

@@ -62,7 +62,7 @@ describe('adminSettingsRouter.update', () => {
       {
         section: 'mail',
         payload: {
-          mail: { enabled: false, host: 'api.zeabur.com', sender: 'noreply@example.com', apiKey: 'zsend-secret-1234' },
+          mail: { enabled: false, sender: 'noreply@example.com', smtpPass: 'smtp-secret-1234' },
         },
       },
       { context: adminCtx() },
@@ -72,16 +72,15 @@ describe('adminSettingsRouter.update', () => {
     expect(res.section).toMatchObject({
       mail: {
         enabled: false,
-        host: 'api.zeabur.com',
         sender: 'noreply@example.com',
-        apiKeyMask: '1234',
+        smtpPassMask: '1234',
       },
     })
-    expect((res.section as { mail: Record<string, unknown> }).mail).not.toHaveProperty('apiKey')
+    expect((res.section as { mail: Record<string, unknown> }).mail).not.toHaveProperty('smtpPass')
 
     // The secret rests encrypted in the stored row.
     const [row] = await db.select().from(setting).where(eq(setting.scope, 'blog.mail'))
-    expect((row.data as { mail: { apiKey: string } }).mail.apiKey).toMatch(/^enc2:/)
+    expect((row.data as { mail: { smtpPass: string } }).mail.smtpPass).toMatch(/^enc2:/)
 
     await flushAuditLog()
     const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'settings_updated'))
@@ -97,7 +96,7 @@ describe('adminSettingsRouter.update', () => {
         adminSettingsRouter.update,
         {
           section: 'mail',
-          payload: { mail: { enabled: false, host: '', sender: 'not-an-email' } },
+          payload: { mail: { enabled: false, sender: 'not-an-email' } },
         },
         { context: adminCtx() },
       ),
@@ -110,7 +109,7 @@ describe('adminSettingsRouter.update', () => {
         adminSettingsRouter.update,
         {
           section: 'mail',
-          payload: { mail: { host: 'api.zeabur.com', bogus: 1 } },
+          payload: { mail: { sender: 'a@b.co', bogus: 1 } },
         },
         { context: adminCtx() },
       ),

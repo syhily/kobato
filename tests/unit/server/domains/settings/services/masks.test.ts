@@ -9,7 +9,6 @@ import { redactSecretsFromBundle } from '@/server/domains/settings/services/mask
 
 function bundleWithSecrets(): BlogSettingsBundle {
   const bundle = structuredClone(TEST_BLOG_SETTINGS_BUNDLE)
-  bundle.mail!.mail.apiKey = 'key-aa11'
   bundle.mail!.mail.smtpPass = 'pass-bb22'
   bundle.mail!.mail.mailgunApiKey = 'mg-cc33'
   bundle.assets!.storage.secretAccessKey = 's3-dd44'
@@ -21,13 +20,12 @@ describe('redactSecretsFromBundle', () => {
   it('blanks every configured secret and keeps the sibling fields intact', () => {
     const redacted = redactSecretsFromBundle(bundleWithSecrets())
 
-    expect(redacted.mail?.mail.apiKey).toBe('')
     expect(redacted.mail?.mail.smtpPass).toBe('')
     expect(redacted.mail?.mail.mailgunApiKey).toBe('')
     expect(redacted.assets?.storage.secretAccessKey).toBe('')
     expect(redacted.comments?.comments.githubToken).toBe('')
     // Non-secret neighbours survive the redaction untouched.
-    expect(redacted.mail?.mail.host).toBe(TEST_BLOG_SETTINGS_BUNDLE.mail?.mail.host)
+    expect(redacted.mail?.mail.smtpHost).toBe(TEST_BLOG_SETTINGS_BUNDLE.mail?.mail.smtpHost)
     expect(redacted.mail?.mail.sender).toBe(TEST_BLOG_SETTINGS_BUNDLE.mail?.mail.sender)
     expect(redacted.assets?.storage.accessKeyId).toBe(TEST_BLOG_SETTINGS_BUNDLE.assets?.storage.accessKeyId)
     expect(redacted.assets?.asset).toEqual(TEST_BLOG_SETTINGS_BUNDLE.assets?.asset)
@@ -42,7 +40,7 @@ describe('redactSecretsFromBundle', () => {
     const redacted = redactSecretsFromBundle(frozen)
 
     expect(redacted).not.toBe(frozen)
-    expect(frozen.mail?.mail.apiKey).toBe('key-aa11')
+    expect(frozen.mail?.mail.smtpPass).toBe('pass-bb22')
     expect(frozen.assets?.storage.secretAccessKey).toBe('s3-dd44')
   })
 

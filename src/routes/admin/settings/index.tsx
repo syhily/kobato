@@ -103,7 +103,6 @@ const SECTION_CONFIGS = [
     render: (bundle, _tz, masks) => (
       <MailForm
         mail={projectMailForAdmin(bundle.mail, {
-          apiKeyMask: masks.mailApiKeyMask,
           smtpPassMask: masks.mailSmtpPassMask,
           mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
         })}

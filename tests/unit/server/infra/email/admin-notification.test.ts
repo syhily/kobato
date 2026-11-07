@@ -9,8 +9,9 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 interface MailFixture {
   enabled: boolean
-  host: string
-  apiKey: string
+  transport: 'mailgun'
+  mailgunDomain: string
+  mailgunApiKey: string
   sender: string
 }
 
@@ -40,8 +41,9 @@ describe('email/admin-notification — sendAdminNotification', () => {
   it('sends to the site author under the 您的网站【title】 subject convention', async () => {
     setMail({
       enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'SECRET',
+      transport: 'mailgun',
+      mailgunDomain: 'mg.example.com',
+      mailgunApiKey: 'SECRET',
       sender: 'noreply@example.com',
     })
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
@@ -54,10 +56,10 @@ describe('email/admin-notification — sendAdminNotification', () => {
     expect(result.ok).toBe(true)
     expect(fetchMock).toHaveBeenCalledOnce()
     const [, init] = fetchMock.mock.calls[0]
-    const body = JSON.parse(init?.body as string)
-    expect(body.to).toEqual([TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email])
-    expect(body.subject).toBe(`您的网站【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】有了新评论`)
-    expect(body.html).toContain('stub notification body')
+    const body = init?.body as FormData
+    expect(body.get('to')).toBe(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email)
+    expect(body.get('subject')).toBe(`您的网站【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】有了新评论`)
+    expect(body.get('html')).toContain('stub notification body')
   })
 })
 

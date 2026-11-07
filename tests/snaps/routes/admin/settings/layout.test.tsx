@@ -17,7 +17,6 @@ const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }
 
 const MASKS = {
   assetsSecretAccessKeyMask: '',
-  mailApiKeyMask: '',
   mailSmtpPassMask: '',
   mailMailgunApiKeyMask: '',
 }

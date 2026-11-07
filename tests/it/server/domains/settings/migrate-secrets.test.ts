@@ -49,32 +49,32 @@ beforeEach(async () => {
 describe('migrateSecretsEncryption', () => {
   it('is skipped in test mode', async () => {
     gate.vitest = true
-    await seedSetting('blog.mail', { mail: { apiKey: 'plain-mail-key' } })
+    await seedSetting('blog.mail', { mail: { smtpPass: 'plain-mail-key' } })
 
     await migrateSecretsEncryption(db)
 
-    expect(await readData('blog.mail')).toEqual({ mail: { apiKey: 'plain-mail-key' } })
+    expect(await readData('blog.mail')).toEqual({ mail: { smtpPass: 'plain-mail-key' } })
   })
 
   it('encrypts plaintext secrets in place with the enc2: format and upserts only dirty scopes', async () => {
-    await seedSetting('blog.mail', { mail: { apiKey: 'plain-mail-key' } })
+    await seedSetting('blog.mail', { mail: { smtpPass: 'plain-mail-key' } })
     await seedSetting('blog.assets', { storage: { secretAccessKey: 'plain-s3-key' } })
 
     await migrateSecretsEncryption(db)
 
     const mail = (await readData('blog.mail')).mail as Record<string, unknown>
     const storage = (await readData('blog.assets')).storage as Record<string, unknown>
-    expect(mail.apiKey).toMatch(/^enc2:/)
+    expect(mail.smtpPass).toMatch(/^enc2:/)
     expect(storage.secretAccessKey).toMatch(/^enc2:/)
     const { decryptIfNeeded } = await import('@/server/infra/crypto/secret-encryption')
-    expect(decryptIfNeeded(mail.apiKey as string)).toBe('plain-mail-key')
+    expect(decryptIfNeeded(mail.smtpPass as string)).toBe('plain-mail-key')
     expect(decryptIfNeeded(storage.secretAccessKey as string)).toBe('plain-s3-key')
   })
 
   it('leaves already-encrypted (enc2:) secrets untouched', async () => {
     const ciphertext = encryptIfNeeded('already-encrypted')
     expect(ciphertext).toMatch(/^enc2:/)
-    await seedSetting('blog.mail', { mail: { apiKey: ciphertext } })
+    await seedSetting('blog.mail', { mail: { smtpPass: ciphertext } })
     const before = await readData('blog.mail')
 
     await migrateSecretsEncryption(db)
@@ -85,7 +85,7 @@ describe('migrateSecretsEncryption', () => {
   it('verifies legacy enc: values encrypted with the old SHA-256 key without rewriting them', async () => {
     const legacy = encryptLegacy('legacy-secret', serverConfig.security.encryptionKey)
     expect(legacy).toMatch(/^enc:/)
-    await seedSetting('blog.mail', { mail: { apiKey: legacy } })
+    await seedSetting('blog.mail', { mail: { smtpPass: legacy } })
     const before = await readData('blog.mail')
 
     await migrateSecretsEncryption(db)
@@ -94,18 +94,18 @@ describe('migrateSecretsEncryption', () => {
   })
 
   it('skips empty strings and missing secret paths', async () => {
-    await seedSetting('blog.mail', { mail: { apiKey: '' } })
+    await seedSetting('blog.mail', { mail: { smtpPass: '' } })
     await seedSetting('blog.assets', { storage: { accessKeyId: 'not-a-secret' } })
 
     await migrateSecretsEncryption(db)
 
-    expect(await readData('blog.mail')).toEqual({ mail: { apiKey: '' } })
+    expect(await readData('blog.mail')).toEqual({ mail: { smtpPass: '' } })
     expect(await readData('blog.assets')).toEqual({ storage: { accessKeyId: 'not-a-secret' } })
   })
 
   it('aborts without touching the row when a ciphertext cannot be decrypted with the current key', async () => {
     const wrongKeyCiphertext = encryptLegacy('secret-value', 'totally-different-key-32-chars!!')
-    await seedSetting('blog.mail', { mail: { apiKey: wrongKeyCiphertext } })
+    await seedSetting('blog.mail', { mail: { smtpPass: wrongKeyCiphertext } })
     const before = await readData('blog.mail')
 
     await expect(migrateSecretsEncryption(db)).rejects.toThrow(/Secrets encryption migration aborted/)

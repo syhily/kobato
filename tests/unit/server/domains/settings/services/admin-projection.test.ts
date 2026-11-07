@@ -9,7 +9,6 @@ import { DomainError } from '@/server/infra/http/errors'
 
 function bundleWithSecrets(): BlogSettingsBundle {
   const bundle = structuredClone(TEST_BLOG_SETTINGS_BUNDLE)
-  bundle.mail!.mail.apiKey = 'key-aa11'
   bundle.mail!.mail.smtpPass = 'pass-bb22'
   bundle.mail!.mail.mailgunApiKey = 'mg-cc33'
   bundle.assets!.storage.secretAccessKey = 's3-dd44'
@@ -25,14 +24,12 @@ describe('projectSectionForAdmin', () => {
       mail: Record<string, unknown>
     }
 
-    expect(projected.mail.apiKeyMask).toBe('aa11')
     expect(projected.mail.smtpPassMask).toBe('bb22')
     expect(projected.mail.mailgunApiKeyMask).toBe('cc33')
     // The ciphertext/plaintext fields never reach the admin shape.
-    expect('apiKey' in projected.mail).toBe(false)
     expect('smtpPass' in projected.mail).toBe(false)
     expect('mailgunApiKey' in projected.mail).toBe(false)
-    expect(projected.mail.host).toBe(bundle.mail?.mail.host)
+    expect(projected.mail.smtpHost).toBe(bundle.mail?.mail.smtpHost)
   })
 
   it('projects the assets section with the storage mask and the full branding status map', () => {

@@ -24,7 +24,7 @@ describe('services/settings — write isolation', () => {
         db,
         'mail',
         {
-          mail: { enabled: true, host: 'api.zeabur.com', apiKey: 'KEY-A', sender: 'a@example.com' },
+          mail: { enabled: true, sender: 'a@example.com', smtpHost: 'smtp.example.com', smtpPass: 'KEY-A' },
         },
         null,
       ),
@@ -83,11 +83,11 @@ describe('services/settings — write isolation', () => {
     expect(rows[0].scope).toBe('blog.sidebar')
   })
 
-  it('mail save with omitted apiKey reads ONLY the mail scope, not any other section', async () => {
+  it('mail save with omitted smtpPass reads ONLY the mail scope, not any other section', async () => {
     await db.insert(setting).values({
       scope: 'blog.mail',
       data: {
-        mail: { enabled: true, host: 'old.example.com', apiKey: 'KEEP-ME', sender: 'a@b.co' },
+        mail: { enabled: true, smtpHost: 'old.example.com', smtpPass: 'KEEP-ME', sender: 'a@b.co' },
       },
       updatedBy: null,
     })
@@ -95,16 +95,16 @@ describe('services/settings — write isolation', () => {
     await updateBlogSettingsSection(
       db,
       'mail',
-      { mail: { enabled: true, host: 'api.zeabur.com', sender: 'noreply@example.com' } },
+      { mail: { enabled: true, smtpHost: 'smtp.example.com', sender: 'noreply@example.com' } },
       null,
     )
 
     const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.mail'))
     expect(rows).toHaveLength(1)
     const mail = (rows[0].data as Record<string, unknown>).mail as Record<string, unknown>
-    expect(typeof mail.apiKey).toBe('string')
-    expect((mail.apiKey as string).length).toBeGreaterThan(0)
-    expect(mail.host).toBe('api.zeabur.com')
+    expect(typeof mail.smtpPass).toBe('string')
+    expect((mail.smtpPass as string).length).toBeGreaterThan(0)
+    expect(mail.smtpHost).toBe('smtp.example.com')
     expect(mail.sender).toBe('noreply@example.com')
   })
 })

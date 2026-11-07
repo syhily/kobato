@@ -18,7 +18,7 @@ import type { SmtpConfig } from '@/server/infra/email/transports/smtp'
 import { SmtpTransport } from '@/server/infra/email/transports/smtp'
 
 // These tests pin the SMTP transport stub. They lock in the same
-// skip / happy / failure vocabulary the Zeabur transport speaks so the
+// skip / happy / failure vocabulary the other transports speak so the
 // dispatcher can swap them transparently.
 
 const baseConfig: SmtpConfig = {

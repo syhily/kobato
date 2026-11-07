@@ -59,7 +59,9 @@ const MAIL_READY_BUNDLE = {
     mail: {
       ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
       enabled: true,
-      apiKey: 'test-key',
+      transport: 'mailgun',
+      mailgunDomain: 'mail.test',
+      mailgunApiKey: 'test-key',
     },
   },
   rateLimit: {

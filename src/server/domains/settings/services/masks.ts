@@ -8,7 +8,6 @@ import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
  */
 export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
   const masks: SecretMasks = {
-    mailApiKeyMask: null,
     mailSmtpPassMask: null,
     mailMailgunApiKeyMask: null,
     assetsSecretAccessKeyMask: null,

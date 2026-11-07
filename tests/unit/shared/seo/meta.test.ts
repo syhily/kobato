@@ -77,10 +77,8 @@ const fixture: BlogSettingsBundle = {
   mail: {
     mail: {
       enabled: false,
-      host: '',
-      apiKey: '',
       sender: '',
-      transport: 'zeabur',
+      transport: 'smtp',
       smtpHost: '',
       smtpPort: 587,
       smtpUser: '',

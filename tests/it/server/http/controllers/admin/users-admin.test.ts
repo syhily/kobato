@@ -16,14 +16,14 @@ import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user as userTable, verification } from '@/server/infra/db/schema/user'
 
 // users-admin router against the real engine; only double: `installFetch` at the
-// Zeabur ZSend HTTP boundary (invite / password-reset delivery).
+// Mailgun HTTP boundary (invite / password-reset delivery).
 const { RPCHandler } = await import('@orpc/server/fetch')
 const { adminUsersAdminRouter } = await import('@/server/http/controllers/admin/users-admin.controller')
 const { __resetRateLimitsForTests } = await import('@/server/infra/rate-limit')
 const handler = new RPCHandler(adminUsersAdminRouter)
 
 const db = getTestDb()
-const ZSEND_URL = 'https://mail.test/api/v1/zsend/emails'
+const MAILGUN_URL = 'https://api.mailgun.net/v3/mail.test/messages'
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -80,7 +80,7 @@ async function auditRowsFor(action: string) {
   return db.select().from(auditLog).where(eq(auditLog.action, action))
 }
 
-/** Flip the mail section on with a Zeabur config that routes through `installFetch`. */
+/** Flip the mail section on with a Mailgun config that routes through `installFetch`. */
 function withMailEnabled(bundle: BlogSettingsBundle = TEST_BLOG_SETTINGS_BUNDLE): void {
   setBlogSettingsBundleForTests({
     ...bundle,
@@ -88,17 +88,23 @@ function withMailEnabled(bundle: BlogSettingsBundle = TEST_BLOG_SETTINGS_BUNDLE)
       mail: {
         ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
         enabled: true,
-        host: 'mail.test',
-        apiKey: 'test-key',
+        transport: 'mailgun',
+        mailgunDomain: 'mail.test',
+        mailgunApiKey: 'test-key',
         sender: 'noreply@example.com',
-        transport: 'zeabur',
       },
     },
   })
 }
 
-function zsendPayload(init: RequestInit | undefined): { to: string[]; bcc?: string[]; subject: string; html: string } {
-  return JSON.parse(String(init?.body)) as { to: string[]; bcc?: string[]; subject: string; html: string }
+function mailgunPayload(init: RequestInit | undefined): { to: string; bcc: string[]; subject: string; html: string } {
+  const body = init?.body as FormData
+  return {
+    to: body.get('to') as string,
+    bcc: body.getAll('bcc') as string[],
+    subject: body.get('subject') as string,
+    html: body.get('html') as string,
+  }
 }
 
 describe('admin users-admin controller', () => {
@@ -149,7 +155,7 @@ describe('admin users-admin controller', () => {
   it('invites an author', async () => {
     withMailEnabled()
     const fetchMock = installFetch()
-    fetchMock.enqueue(ZSEND_URL, jsonResponse({ ok: true }))
+    fetchMock.enqueue(MAILGUN_URL, jsonResponse({ ok: true }))
     const viewerId = await seedViewer()
 
     const response = await call('/inviteAuthor', { email: 'bob@example.com', name: 'Bob' }, viewerId)
@@ -165,9 +171,9 @@ describe('admin users-admin controller', () => {
     expect(tokens).toHaveLength(1)
 
     expect(fetchMock.calls).toHaveLength(1)
-    expect(fetchMock.calls[0]!.url).toBe(ZSEND_URL)
-    const payload = zsendPayload(fetchMock.calls[0]!.init)
-    expect(payload.to).toEqual(['bob@example.com'])
+    expect(fetchMock.calls[0]!.url).toBe(MAILGUN_URL)
+    const payload = mailgunPayload(fetchMock.calls[0]!.init)
+    expect(payload.to).toBe('bob@example.com')
     expect(payload.bcc).toEqual(['test@example.com'])
     expect(payload.html).toContain('https://example.com/admin/signin?action=accept-invite')
 
@@ -186,7 +192,7 @@ describe('admin users-admin controller', () => {
       },
     })
     const fetchMock = installFetch()
-    fetchMock.enqueue(ZSEND_URL, jsonResponse({ ok: true }))
+    fetchMock.enqueue(MAILGUN_URL, jsonResponse({ ok: true }))
     const viewerId = await seedViewer()
 
     expect((await call('/inviteAuthor', { email: 'bob@example.com', name: 'Bob' }, viewerId)).status).toBe(200)
@@ -202,7 +208,7 @@ describe('admin users-admin controller', () => {
     withMailEnabled()
     const id = await seedUser({ name: 'Alice', email: 'alice@example.com' })
     const fetchMock = installFetch()
-    fetchMock.enqueue(ZSEND_URL, jsonResponse({ ok: true }))
+    fetchMock.enqueue(MAILGUN_URL, jsonResponse({ ok: true }))
 
     const viewerId = await seedViewer()
     const response = await call('/sendPasswordReset', { email: 'alice@example.com' }, viewerId)
@@ -214,8 +220,8 @@ describe('admin users-admin controller', () => {
     expect(tokens).toHaveLength(1)
 
     expect(fetchMock.calls).toHaveLength(1)
-    const payload = zsendPayload(fetchMock.calls[0]!.init)
-    expect(payload.to).toEqual(['alice@example.com'])
+    const payload = mailgunPayload(fetchMock.calls[0]!.init)
+    expect(payload.to).toBe('alice@example.com')
     expect(payload.html).toContain('https://example.com/admin/signin?action=resetpassword')
 
     const audit = await auditRowsFor('password_reset_sent')

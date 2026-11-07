@@ -9,7 +9,6 @@ import SignInLink from '@/server/infra/email/templates/SignInLink'
 import SignInOtp from '@/server/infra/email/templates/SignInOtp'
 import { MailgunTransport } from '@/server/infra/email/transports/mailgun'
 import { SmtpTransport } from '@/server/infra/email/transports/smtp'
-import { ZeaburZSendTransport } from '@/server/infra/email/transports/zeabur-zsend'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { escapeHtml } from '@/shared/utils/security'
@@ -23,10 +22,8 @@ const SIGNIN_LINK_TTL_MINUTES = 15
 
 interface MailConfig {
   enabled: boolean
-  host: string
-  apiKey?: string | undefined
   sender: string
-  transport: 'zeabur' | 'smtp' | 'mailgun'
+  transport: 'smtp' | 'mailgun'
   smtpHost: string
   smtpPort: number
   smtpUser: string
@@ -62,17 +59,6 @@ interface TransportRegistryEntry {
 }
 
 const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry> = {
-  zeabur: {
-    isReady: (mail) => Boolean(mail.host && mail.apiKey && mail.sender),
-    unconfiguredMessage: 'Zeabur 邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
-    build: (mail, opts) =>
-      new ZeaburZSendTransport({
-        enabled: opts?.forceEnabled ?? mail.enabled,
-        sender: mail.sender,
-        host: mail.host,
-        apiKey: mail.apiKey ?? '',
-      }),
-  },
   smtp: {
     isReady: (mail) => Boolean(mail.smtpHost && mail.smtpUser && mail.smtpPass && mail.sender),
     unconfiguredMessage: 'SMTP 服务尚未配置完整（缺少服务器地址 / 用户名 / 密码 / 发件人）',
@@ -102,13 +88,13 @@ const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry
   },
 }
 
-// A snapshot from another build can hold an out-of-union `transport` — fall back to Zeabur.
+// A snapshot from another build can hold an out-of-union `transport` — fall back to SMTP.
 function resolveTransportEntry(mail: MailConfig): TransportRegistryEntry {
-  const transport = mail.transport ?? 'zeabur'
+  const transport = mail.transport ?? 'smtp'
   const entry = (TRANSPORT_REGISTRY as Record<string, TransportRegistryEntry>)[transport]
   if (entry === undefined) {
-    log.warn('Unknown mail transport, falling back to Zeabur ZSend', { transport })
-    return TRANSPORT_REGISTRY.zeabur
+    log.warn('Unknown mail transport, falling back to SMTP', { transport })
+    return TRANSPORT_REGISTRY.smtp
   }
   return entry
 }
@@ -142,8 +128,6 @@ function computeMailFingerprint(mail: MailConfig): string {
         transport: mail.transport,
         enabled: mail.enabled,
         sender: mail.sender,
-        host: mail.host,
-        apiKey: mail.apiKey,
         smtpHost: mail.smtpHost,
         smtpPort: mail.smtpPort,
         smtpUser: mail.smtpUser,

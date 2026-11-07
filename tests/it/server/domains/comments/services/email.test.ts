@@ -9,22 +9,31 @@ import { post } from '@/server/infra/db/schema/post'
 import { sendTestMail } from '@/server/infra/email/sender'
 
 // `sendNewComment` against the real engine: the slug/title lookup and the
-// saved `content`-projection email body are real; only `fetch` (Zeabur ZSend)
+// saved `content`-projection email body are real; only `fetch` (Mailgun)
 // is stubbed.
 
 const db = getTestDb()
 
 interface MailFixture {
   enabled: boolean
-  host: string
-  apiKey: string
+  transport: 'mailgun'
+  mailgunDomain: string
+  mailgunApiKey: string
   sender: string
+}
+
+const mailgunConfigured: MailFixture = {
+  enabled: true,
+  transport: 'mailgun',
+  mailgunDomain: 'mg.example.com',
+  mailgunApiKey: 'SECRET',
+  sender: 'noreply@example.com',
 }
 
 function setMail(mail: Partial<MailFixture>) {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
-    mail: { mail: { ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail, ...mail } },
+    mail: { mail: { ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail, ...mailgunConfigured, ...mail } },
   })
 }
 
@@ -83,12 +92,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   } as unknown as CommentAndUser
 
   it('skips with reason=disabled when the master switch is off', async () => {
-    setMail({
-      enabled: false,
-      host: 'api.zeabur.com',
-      apiKey: 'KEY',
-      sender: 'noreply@example.com',
-    })
+    setMail({ enabled: false })
     const ownerId = await seedTargetPost()
 
     const result = await sendNewComment(db, commentInfo, { type: 'post', ownerId })
@@ -101,7 +105,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   })
 
   it('skips with reason=unconfigured when API key is empty even if enabled', async () => {
-    setMail({ enabled: true, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' })
+    setMail({ mailgunApiKey: '' })
     const ownerId = await seedTargetPost()
 
     const result = await sendNewComment(db, commentInfo, { type: 'post', ownerId })
@@ -113,13 +117,8 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('POSTs to the configured Zeabur ZSend endpoint with the bearer token', async () => {
-    setMail({
-      enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'SECRET',
-      sender: 'noreply@example.com',
-    })
+  it('POSTs to the Mailgun messages endpoint with basic auth', async () => {
+    setMail({})
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
     const ownerId = await seedTargetPost()
 
@@ -128,22 +127,16 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     expect(result.ok).toBe(true)
     expect(fetchMock).toHaveBeenCalledOnce()
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('https://api.zeabur.com/api/v1/zsend/emails')
+    expect(url).toBe('https://api.mailgun.net/v3/mg.example.com/messages')
     const headers = (init?.headers ?? {}) as Record<string, string>
-    expect(headers.Authorization).toBe('Bearer SECRET')
-    expect(headers['Content-Type']).toBe('application/json')
-    const body = JSON.parse(init?.body as string)
-    expect(body.from).toBe('noreply@example.com')
-    expect(body.to).toEqual([TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email])
+    expect(headers.Authorization).toBe(`Basic ${Buffer.from('api:SECRET').toString('base64')}`)
+    const body = init?.body as FormData
+    expect(body.get('from')).toBe('noreply@example.com')
+    expect(body.get('to')).toBe(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email)
   })
 
   it('reports upstream rejections through reason=upstream with the status code', async () => {
-    setMail({
-      enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'SECRET',
-      sender: 'noreply@example.com',
-    })
+    setMail({})
     fetchMock.mockResolvedValueOnce(new Response('quota exceeded', { status: 429, statusText: 'Too Many Requests' }))
     const ownerId = await seedTargetPost()
 
@@ -160,12 +153,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   })
 
   it('reports network failures through reason=network', async () => {
-    setMail({
-      enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'SECRET',
-      sender: 'noreply@example.com',
-    })
+    setMail({})
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
     const ownerId = await seedTargetPost()
 
@@ -210,18 +198,13 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
     user: { id: 1, name: 'visitor', email: 'visitor@example.com' },
   } as unknown as CommentAndUser
 
-  function sentBody(): Record<string, unknown> {
+  function sentBody(): FormData {
     const [, init] = fetchMock.mock.calls[0]
-    return JSON.parse(init?.body as string)
+    return init?.body as FormData
   }
 
   beforeEach(() => {
-    setMail({
-      enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'SECRET',
-      sender: 'noreply@example.com',
-    })
+    setMail({})
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
   })
 
@@ -231,9 +214,9 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
     await sendNewComment(db, commentInfo, { type: 'post', ownerId })
 
     const body = sentBody()
-    expect(body.to).toEqual([TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email])
-    expect(body.subject).toBe(`您的网站【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】有了新评论`)
-    const html = body.html as string
+    expect(body.get('to')).toBe(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email)
+    expect(body.get('subject')).toBe(`您的网站【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】有了新评论`)
+    const html = body.get('html') as string
     expect(html).toContain('新留言')
     expect(html).toContain('留言文章：')
     // Resolved from the seeded post row: slug `hi`, title `Hi`.
@@ -255,7 +238,7 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
       { type: 'post', ownerId },
     )
 
-    const html = sentBody().html as string
+    const html = sentBody().get('html') as string
     expect(html).not.toContain('<script')
     expect(html).not.toContain('javascript:')
     expect(html).toContain('<p>hi</p>')
@@ -279,7 +262,7 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
 
     await sendNewComment(db, legacy, { type: 'post', ownerId })
 
-    const html = sentBody().html as string
+    const html = sentBody().get('html') as string
     // Plain text, escaped — the markdown snapshot is NOT injected as HTML.
     expect(html).toContain('legacy &lt;b&gt;raw&lt;/b&gt; text')
     expect(html).not.toContain('<b>raw</b>')
@@ -290,18 +273,13 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
 
     await sendNewComment(db, { ...commentInfo, isPending: true }, { type: 'post', ownerId })
 
-    expect(sentBody().html).toContain('该留言需要审核')
+    expect(sentBody().get('html')).toContain('该留言需要审核')
   })
 })
 
 describe('email/sender — sendTestMail', () => {
   it('bypasses the enabled toggle so editors can verify before going live', async () => {
-    setMail({
-      enabled: false,
-      host: 'api.zeabur.com',
-      apiKey: 'KEY',
-      sender: 'noreply@example.com',
-    })
+    setMail({ enabled: false })
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
     const result = await sendTestMail('me@example.com')
@@ -309,13 +287,13 @@ describe('email/sender — sendTestMail', () => {
     expect(result.ok).toBe(true)
     expect(fetchMock).toHaveBeenCalledOnce()
     const [, init] = fetchMock.mock.calls[0]
-    const body = JSON.parse(init?.body as string)
-    expect(body.to).toEqual(['me@example.com'])
-    expect(body.subject).toContain(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title)
+    const body = init?.body as FormData
+    expect(body.get('to')).toBe('me@example.com')
+    expect(body.get('subject')).toContain(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title)
   })
 
   it('still refuses to send when the configuration is incomplete', async () => {
-    setMail({ enabled: true, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' })
+    setMail({ mailgunApiKey: '' })
 
     const result = await sendTestMail('me@example.com')
 
@@ -327,12 +305,7 @@ describe('email/sender — sendTestMail', () => {
   })
 
   it('surfaces upstream errors with the original status', async () => {
-    setMail({
-      enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'SECRET',
-      sender: 'noreply@example.com',
-    })
+    setMail({})
     fetchMock.mockResolvedValueOnce(new Response('forbidden', { status: 403, statusText: 'Forbidden' }))
 
     const result = await sendTestMail('me@example.com')

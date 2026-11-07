@@ -122,10 +122,8 @@ const baseLimits: LimitsSettings = {
 const baseMail: MailLoaderShape = {
   mail: {
     enabled: false,
-    host: 'api.zeabur.com',
     sender: 'noreply@example.com',
-    apiKeyMask: null,
-    transport: 'zeabur',
+    transport: 'smtp',
     smtpHost: '',
     smtpPort: 587,
     smtpUser: '',
@@ -277,7 +275,7 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('邮件发送总开关')
     expect(html).toContain('邮件服务提供商')
     expect(html).toContain('发件人邮箱')
-    expect(html).toContain('Zeabur ZSend 配置')
+    expect(html).toContain('SMTP 配置')
     expect(html).toContain('测试发送')
   })
 

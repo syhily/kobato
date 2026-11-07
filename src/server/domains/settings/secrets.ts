@@ -76,7 +76,6 @@ export function declareSecret<
 // Single source of truth for settings sections that contain encrypted secrets: the
 // snapshot reader, the write path, and the admin mask projection all derive from it.
 export const SECRET_FIELDS = [
-  declareSecret({ section: 'mail', path: 'mail', field: 'apiKey', maskKey: 'mailApiKeyMask' }),
   declareSecret({ section: 'mail', path: 'mail', field: 'smtpPass', maskKey: 'mailSmtpPassMask' }),
   declareSecret({ section: 'mail', path: 'mail', field: 'mailgunApiKey', maskKey: 'mailMailgunApiKeyMask' }),
   declareSecret({ section: 'assets', path: 'storage', field: 'secretAccessKey', maskKey: 'assetsSecretAccessKeyMask' }),

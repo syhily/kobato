@@ -23,7 +23,7 @@ const mockFetch = installFetch()
 
 const ADMIN_EMAIL = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email
 
-// Zeabur transport against the mocked fetch; tests `vi.waitFor` the send so the fire-and-forget promise settles in-test.
+// Mailgun transport against the mocked fetch; tests `vi.waitFor` the send so the fire-and-forget promise settles in-test.
 function enableMail() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -31,14 +31,15 @@ function enableMail() {
       mail: {
         ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
         enabled: true,
-        host: 'mail.test',
-        apiKey: 'TEST-KEY',
+        transport: 'mailgun',
+        mailgunDomain: 'mail.test',
+        mailgunApiKey: 'TEST-KEY',
         sender: 'noreply@example.com',
       },
     },
   })
   invalidateMailTransportCache()
-  mockFetch.enqueue('https://mail.test/api/v1/zsend/emails', new Response(null, { status: 200 }))
+  mockFetch.enqueue('https://api.mailgun.net/v3/mail.test/messages', new Response(null, { status: 200 }))
 }
 
 beforeEach(async () => {
@@ -58,10 +59,11 @@ async function friendRows(): Promise<(typeof friend.$inferSelect)[]> {
   return db.select().from(friend)
 }
 
-function lastMailBody(): { to: string[]; subject: string; html: string } {
+function lastMailBody(): { to: string; subject: string; html: string } {
   const mailCall = mockFetch.calls.at(-1)
   expect(mailCall).toBeDefined()
-  return JSON.parse(mailCall!.init?.body as string)
+  const body = mailCall!.init?.body as FormData
+  return { to: body.get('to') as string, subject: body.get('subject') as string, html: body.get('html') as string }
 }
 
 // audit_log.actor_id references user.id — a missing actor row dead-letters the audit insert.
@@ -111,7 +113,7 @@ describe('integration / friends apply', () => {
       expect(mockFetch.calls).toHaveLength(1)
     })
     const mail = lastMailBody()
-    expect(mail.to).toEqual([ADMIN_EMAIL])
+    expect(mail.to).toBe(ADMIN_EMAIL)
     expect(mail.subject).toContain('友链申请')
     expect(mail.html).toContain('小鱼的博客')
     expect(mail.html).toContain('https://blog.example.com')
@@ -170,8 +172,9 @@ describe('integration / friends apply', () => {
         mail: {
           ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
           enabled: true,
-          host: 'mail.test',
-          apiKey: 'TEST-KEY',
+          transport: 'mailgun',
+          mailgunDomain: 'mail.test',
+          mailgunApiKey: 'TEST-KEY',
           sender: 'noreply@example.com',
         },
       },

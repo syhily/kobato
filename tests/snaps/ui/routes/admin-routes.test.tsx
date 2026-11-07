@@ -62,7 +62,6 @@ const TagsRoute = asRoute(TagsRouteRaw)
 // Minimal SecretMasks shape expected by settings forms.
 const MASKS = {
   assetsSecretAccessKeyMask: '',
-  mailApiKeyMask: '',
   mailSmtpPassMask: '',
   mailMailgunApiKeyMask: '',
 } as const

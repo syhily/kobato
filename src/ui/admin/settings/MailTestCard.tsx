@@ -52,9 +52,7 @@ export function MailTestCard({
   const inner = mail.mail
   const isTestPending = testMutation.isPending
   // Readiness follows the parent's last-saved transport, not the loader snapshot.
-  const isZeabur = transport === 'zeabur'
   const isMailgun = transport === 'mailgun'
-  const zeaburReady = inner.host.trim() !== '' && inner.sender.trim() !== '' && inner.apiKeyMask !== null
   const smtpReady =
     inner.smtpHost.trim() !== '' &&
     inner.smtpUser.trim() !== '' &&
@@ -62,14 +60,12 @@ export function MailTestCard({
     inner.sender.trim() !== ''
   const mailgunReady =
     inner.mailgunDomain.trim() !== '' && inner.mailgunApiKeyMask !== null && inner.sender.trim() !== ''
-  const configured = isZeabur ? zeaburReady : isMailgun ? mailgunReady : smtpReady
+  const configured = isMailgun ? mailgunReady : smtpReady
   const canSendTest = !isTestPending && configured && isLikelyEmail(testTo)
 
-  const missingHint = isZeabur
-    ? '请先填入并保存 Zeabur 接入域名、API Key 和发件人邮箱'
-    : isMailgun
-      ? '请先填入并保存 Mailgun 发送域名、API Key 和发件人邮箱'
-      : '请先填入并保存 SMTP 服务器地址、用户名、密码和发件人邮箱'
+  const missingHint = isMailgun
+    ? '请先填入并保存 Mailgun 发送域名、API Key 和发件人邮箱'
+    : '请先填入并保存 SMTP 服务器地址、用户名、密码和发件人邮箱'
 
   return (
     <SettingGroup title="测试发送" description="不依赖「启用邮件发送」开关，可在配置完成后立即验证连接。">

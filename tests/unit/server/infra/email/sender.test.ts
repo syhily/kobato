@@ -1,18 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const transportSendMock = vi.fn<(payload: unknown, opts: unknown) => Promise<unknown>>()
-const ZeaburCtorMock = vi.fn()
 const SmtpCtorMock = vi.fn()
 const MailgunCtorMock = vi.fn()
-
-vi.mock('@/server/infra/email/transports/zeabur-zsend', () => ({
-  ZeaburZSendTransport: class {
-    constructor(config: unknown) {
-      ZeaburCtorMock(config)
-    }
-    send = transportSendMock
-  },
-}))
 
 vi.mock('@/server/infra/email/transports/smtp', () => ({
   SmtpTransport: class {
@@ -61,7 +51,6 @@ import {
 
 beforeEach(() => {
   transportSendMock.mockReset()
-  ZeaburCtorMock.mockReset()
   SmtpCtorMock.mockReset()
   MailgunCtorMock.mockReset()
   transportSendMock.mockResolvedValue({ ok: true })
@@ -71,14 +60,12 @@ beforeEach(() => {
     mail: {
       mail: {
         enabled: true,
-        host: 'api.zeabur.com',
-        apiKey: 'k',
         sender: 'noreply@example.com',
-        transport: 'zeabur',
-        smtpHost: '',
+        transport: 'smtp',
+        smtpHost: 'smtp.example.com',
         smtpPort: 587,
-        smtpUser: '',
-        smtpPass: '',
+        smtpUser: 'user',
+        smtpPass: 'pass',
         smtpSecure: false,
         smtpRequireTls: true,
         smtpRejectUnauthorized: true,
@@ -99,10 +86,8 @@ describe('infra/email/sender — checkMailReady readiness matrix', () => {
 
   const fullyConfigured: Mail = {
     enabled: true,
-    host: 'h',
-    apiKey: 'k',
     sender: 's',
-    transport: 'zeabur',
+    transport: 'smtp',
     smtpHost: 'smtp.example.com',
     smtpPort: 587,
     smtpUser: 'u',
@@ -129,27 +114,6 @@ describe('infra/email/sender — checkMailReady readiness matrix', () => {
       name: 'ready when disabled but test sends bypass the master switch',
       mail: { ...fullyConfigured, enabled: false },
       options: { ignoreEnabled: true },
-      expected: { ready: true },
-    },
-    // zeabur requires host / apiKey / sender
-    {
-      name: 'zeabur missing host',
-      mail: { ...fullyConfigured, transport: 'zeabur', host: '' },
-      expected: { ready: false, reason: 'unconfigured' },
-    },
-    {
-      name: 'zeabur missing apiKey',
-      mail: { ...fullyConfigured, transport: 'zeabur', apiKey: '' },
-      expected: { ready: false, reason: 'unconfigured' },
-    },
-    {
-      name: 'zeabur missing sender',
-      mail: { ...fullyConfigured, transport: 'zeabur', sender: '' },
-      expected: { ready: false, reason: 'unconfigured' },
-    },
-    {
-      name: 'zeabur fully configured',
-      mail: { ...fullyConfigured, transport: 'zeabur' },
       expected: { ready: true },
     },
     // smtp requires smtpHost / smtpUser / smtpPass / sender
@@ -211,22 +175,20 @@ describe('infra/email/sender — checkMailReady readiness matrix', () => {
 })
 
 describe('infra/email/sender — sendEmail', () => {
-  it('delegates to the zeabur transport by default', async () => {
+  it('delegates to the smtp transport by default', async () => {
     const result = await sendEmail('to@x.com', 'subj', '<p>hi</p>')
     expect(transportSendMock).toHaveBeenCalledTimes(1)
-    expect(ZeaburCtorMock).toHaveBeenCalledTimes(1)
-    expect(SmtpCtorMock).not.toHaveBeenCalled()
+    expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
+    expect(MailgunCtorMock).not.toHaveBeenCalled()
     expect(result.ok).toBe(true)
   })
 
-  it('uses smtp transport when transport is smtp', async () => {
+  it('passes the stored TLS flags through to the smtp transport', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       mail: {
         mail: {
           enabled: true,
-          host: '',
-          apiKey: '',
           sender: 'noreply@example.com',
           transport: 'smtp',
           smtpHost: 'smtp.example.com',
@@ -269,8 +231,6 @@ describe('infra/email/sender — sendEmail', () => {
       mail: {
         mail: {
           enabled: true,
-          host: '',
-          apiKey: '',
           sender: 'noreply@mg.example.com',
           transport: 'mailgun',
           smtpHost: '',
@@ -308,7 +268,7 @@ describe('infra/email/sender — sendEmail', () => {
     await sendEmail('a@x.com', 'subj 1', '<p>one</p>')
     await sendEmail('b@x.com', 'subj 2', '<p>two</p>')
     expect(transportSendMock).toHaveBeenCalledTimes(2)
-    expect(ZeaburCtorMock).toHaveBeenCalledTimes(1)
+    expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
   })
 
   it('rebuilds the transport when the mail config changes', async () => {
@@ -318,14 +278,12 @@ describe('infra/email/sender — sendEmail', () => {
       mail: {
         mail: {
           enabled: true,
-          host: 'api.zeabur.com',
-          apiKey: 'k2',
           sender: 'noreply@example.com',
-          transport: 'zeabur',
-          smtpHost: '',
+          transport: 'smtp',
+          smtpHost: 'smtp.example.com',
           smtpPort: 587,
-          smtpUser: '',
-          smtpPass: '',
+          smtpUser: 'user',
+          smtpPass: 'pass2',
           smtpSecure: false,
           smtpRequireTls: true,
           smtpRejectUnauthorized: true,
@@ -336,7 +294,7 @@ describe('infra/email/sender — sendEmail', () => {
     })
     await sendEmail('b@x.com', 'subj 2', '<p>two</p>')
     expect(transportSendMock).toHaveBeenCalledTimes(2)
-    expect(ZeaburCtorMock).toHaveBeenCalledTimes(2)
+    expect(SmtpCtorMock).toHaveBeenCalledTimes(2)
   })
 
   it('rebuilds the transport after the cache is invalidated', async () => {
@@ -344,7 +302,7 @@ describe('infra/email/sender — sendEmail', () => {
     invalidateMailTransportCache()
     await sendEmail('b@x.com', 'subj 2', '<p>two</p>')
     expect(transportSendMock).toHaveBeenCalledTimes(2)
-    expect(ZeaburCtorMock).toHaveBeenCalledTimes(2)
+    expect(SmtpCtorMock).toHaveBeenCalledTimes(2)
   })
 })
 
@@ -384,10 +342,8 @@ describe('infra/email/sender — sendTestMail', () => {
       mail: {
         mail: {
           enabled: true,
-          host: '',
-          apiKey: '',
           sender: '',
-          transport: 'zeabur',
+          transport: 'smtp',
           smtpHost: '',
           smtpPort: 587,
           smtpUser: '',
@@ -434,27 +390,6 @@ describe('infra/email/sender — sendTestMail', () => {
   })
 
   it('uses smtp transport when configured', async () => {
-    setBlogSettingsBundleForTests({
-      ...TEST_BLOG_SETTINGS_BUNDLE,
-      mail: {
-        mail: {
-          enabled: true,
-          host: '',
-          apiKey: '',
-          sender: 'noreply@example.com',
-          transport: 'smtp',
-          smtpHost: 'smtp.example.com',
-          smtpPort: 587,
-          smtpUser: 'user',
-          smtpPass: 'pass',
-          smtpSecure: false,
-          smtpRequireTls: true,
-          smtpRejectUnauthorized: true,
-          mailgunDomain: '',
-          mailgunApiKey: '',
-        },
-      },
-    })
     transportSendMock.mockResolvedValueOnce({ ok: true })
     const result = await sendTestMail('to@x.com')
     expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
@@ -467,8 +402,6 @@ describe('infra/email/sender — sendTestMail', () => {
       mail: {
         mail: {
           enabled: true,
-          host: '',
-          apiKey: '',
           sender: 'noreply@mg.example.com',
           transport: 'mailgun',
           smtpHost: '',
@@ -495,14 +428,12 @@ describe('infra/email/sender — sendTestMail', () => {
       mail: {
         mail: {
           enabled: false,
-          host: 'api.zeabur.com',
-          apiKey: 'k',
           sender: 'noreply@example.com',
-          transport: 'zeabur',
-          smtpHost: '',
+          transport: 'smtp',
+          smtpHost: 'smtp.example.com',
           smtpPort: 587,
-          smtpUser: '',
-          smtpPass: '',
+          smtpUser: 'user',
+          smtpPass: 'pass',
           smtpSecure: false,
           smtpRequireTls: true,
           smtpRejectUnauthorized: true,
@@ -513,7 +444,7 @@ describe('infra/email/sender — sendTestMail', () => {
     })
     transportSendMock.mockResolvedValueOnce({ ok: true })
     const result = await sendTestMail('to@x.com')
-    expect(ZeaburCtorMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }))
+    expect(SmtpCtorMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }))
     expect(result.ok).toBe(true)
   })
 })
