@@ -6,10 +6,12 @@ import { Link } from 'react-router'
 import type { CountersDto, ViewsDto, ViewsPoint } from '@/shared/contracts/analytics'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { formatNumber } from '@/shared/i18n/format'
 import { dayKeyOfLabel } from '@/ui/admin/analytics/time-labels'
 import { getClientTimezone } from '@/ui/admin/analytics/use-analytics-state'
 import { Button } from '@/ui/components/button'
 import { Skeleton } from '@/ui/components/skeleton'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 
 interface VisitSummaryCardProps {
@@ -34,6 +36,7 @@ const KPI_ENTRIES: KpiEntry[] = [
 // the first client render emit the skeleton (byte-identical markup), and the
 // client query — which sends clientTimezone — is the only data source.
 export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps) {
+  const { locale } = useI18n()
   const values = [summary.visits, summary.visitors, summary.referers]
   const trendQuery = useQuery(
     orpcQuery.analytics.views.queryOptions({
@@ -67,7 +70,7 @@ export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps
               </div>
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">{entry.label}</p>
-                <p className="text-xl font-semibold tabular-nums">{values[i]?.toLocaleString() ?? 0}</p>
+                <p className="text-xl font-semibold tabular-nums">{formatNumber(values[i] ?? 0, { locale })}</p>
               </div>
             </li>
           )
@@ -180,5 +183,5 @@ function aggregateToDaily(points: ViewsPoint[]): { date: string; visits: number;
   }
   return Array.from(map.entries())
     .map(([date, vals]) => Object.assign({ date }, vals))
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
 }

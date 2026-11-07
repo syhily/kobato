@@ -9,6 +9,7 @@ import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-se
 import { usePatchNotificationReadState } from '@/client/hooks/use-notifications'
 import { useNow } from '@/client/hooks/use-now'
 import { onMutationError } from '@/client/lib/toast-api-error'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
@@ -133,7 +134,8 @@ function NotificationRow({
   onOpen: (item: NotificationDto) => void
 }) {
   const meta = notificationMeta(item)
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const Icon = meta.icon
   const titleId = `notification-row-title-${item.id}`
   const patchReadState = usePatchNotificationReadState()
@@ -170,12 +172,12 @@ function NotificationRow({
             {!item.read ? <span className="sr-only">未读：</span> : null}
             <span className={cn('truncate text-sm', !item.read ? 'font-semibold' : 'font-medium')}>{item.title}</span>
             <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-              {formatNotificationTime(item.createdAt, now)}
+              {formatNotificationTime(item.createdAt, { locale, timeZone, now })}
             </span>
           </span>
           <span className="line-clamp-2 text-xs text-muted-foreground">{item.body}</span>
           <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
-            <span>{meta.kindLabel}</span>
+            <span>{t(meta.kindLabelId)}</span>
             <span aria-hidden>·</span>
             <span>{item.sender === null ? '系统' : item.sender.name}</span>
           </span>

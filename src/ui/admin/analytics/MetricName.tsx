@@ -81,6 +81,10 @@ import {
 import { Bot, Globe, Laptop, MonitorCheck, Mouse, Smartphone, Tablet, Terminal } from 'lucide-react'
 
 import type { MetricType } from '@/shared/contracts/analytics'
+import type { AppLocale } from '@/shared/i18n/locales'
+
+import { formatDisplayName } from '@/shared/i18n/format'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Brand-icon map ported from Slite's `metrics/name/Icon.vue`
 // (vue3-simple-icons → @icons-pack/react-simple-icons `Si*` names, lucide
@@ -228,30 +232,18 @@ export function flagEmojiFor(code: string): string {
   return String.fromCodePoint(0x1f1e6 + upper.charCodeAt(0) - 65, 0x1f1e6 + upper.charCodeAt(1) - 65)
 }
 
-// The admin UI is zh-CN only — pin the DisplayNames locale so SSR and
-// hydration produce byte-identical names (the server locale differs).
-const DISPLAY_LOCALE = 'zh-CN'
-
-export function regionDisplayName(code: string): string {
-  if (typeof Intl === 'undefined' || typeof Intl.DisplayNames !== 'function') {
-    return code
-  }
-  try {
-    return new Intl.DisplayNames([DISPLAY_LOCALE], { type: 'region' }).of(code.toUpperCase()) ?? code
-  } catch {
-    return code
-  }
+// Region / language display names run through the shared formatting facade with
+// the ACTIVE UI locale (explicit at both call sites), so SSR and hydration agree
+// and the names follow the admin language instead of a pinned zh-CN.
+export function regionDisplayName(code: string, locale: AppLocale): string {
+  const upper = code.toUpperCase()
+  // `none` keeps the caller's original spelling when the code is unresolvable.
+  const display = formatDisplayName('region', upper, { locale, fallback: 'none' })
+  return display === upper ? code : display
 }
 
-export function languageDisplayName(code: string): string {
-  if (typeof Intl === 'undefined' || typeof Intl.DisplayNames !== 'function') {
-    return code
-  }
-  try {
-    return new Intl.DisplayNames([DISPLAY_LOCALE], { type: 'language' }).of(code) ?? code
-  } catch {
-    return code
-  }
+export function languageDisplayName(code: string, locale: AppLocale): string {
+  return formatDisplayName('language', code, { locale, fallback: 'none' })
 }
 
 export interface MetricNameProps {
@@ -260,6 +252,7 @@ export interface MetricNameProps {
 }
 
 export function MetricName({ name, type }: MetricNameProps) {
+  const { locale } = useI18n()
   if (!name) {
     return <span className="text-muted-foreground">{type === 'referer' ? '直接访问' : '未知'}</span>
   }
@@ -273,13 +266,13 @@ export function MetricName({ name, type }: MetricNameProps) {
             {flag}
           </span>
         )}
-        <span className="min-w-0 break-all">{regionDisplayName(name)}</span>
+        <span className="min-w-0 break-all">{regionDisplayName(name, locale)}</span>
       </span>
     )
   }
 
   if (type === 'language') {
-    return <span className="min-w-0 break-all">{languageDisplayName(name)}</span>
+    return <span className="min-w-0 break-all">{languageDisplayName(name, locale)}</span>
   }
 
   if (type === 'referer') {

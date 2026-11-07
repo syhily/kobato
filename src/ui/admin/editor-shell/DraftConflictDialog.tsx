@@ -2,9 +2,11 @@ import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
+import { formatWallClockDateTime } from '@/ui/admin/editor-shell/wall-clock'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/lexical-body-diff'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface DraftConflictDialogProps {
   open: boolean
@@ -83,13 +85,16 @@ interface DraftPanelProps {
 }
 
 function DraftPanel({ title, icon, timestamp, side, diff }: DraftPanelProps) {
+  const { locale } = useI18n()
   return (
     <div className="flex min-h-0 flex-col rounded-xl border bg-card">
       <div className="flex items-center gap-2 border-b px-3 py-2 text-sm font-medium">
         {icon}
         {title}
         {timestamp !== null ? (
-          <span className="ml-auto text-xs text-muted-foreground">{new Date(timestamp).toLocaleString('zh-CN')}</span>
+          <span className="ml-auto text-xs text-muted-foreground">
+            {formatWallClockDateTime(new Date(timestamp), locale)}
+          </span>
         ) : null}
       </div>
       <div className="max-h-(--spacing-editor-min) overflow-y-auto p-3">

@@ -12,7 +12,8 @@ import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend } from '@/server/infra/storage/registry'
-import { formatBytes } from '@/shared/utils/formatter'
+import { resolveAppLocalization } from '@/shared/i18n/app-localization'
+import { formatBytes } from '@/shared/i18n/format'
 
 const log = getLogger('images.service')
 
@@ -51,7 +52,7 @@ export function assertImageUploadAllowed(file: { type: string; size: number }, m
   }
   if (file.size > maxBytes) {
     throw new ORPCError('PAYLOAD_TOO_LARGE', {
-      message: `图片体积超过上限（${formatBytes(maxBytes)}）`,
+      message: `图片体积超过上限（${formatBytes(maxBytes, { locale: resolveAppLocalization().locale })}）`,
     })
   }
 }
@@ -112,7 +113,10 @@ function isValidImageBuffer(buffer: Buffer): boolean {
 
 export async function uploadImage(db: Database, input: UploadImageInputs): Promise<AdminImageDto> {
   if (input.buffer.byteLength > input.maxBytes) {
-    throw new DomainError('BAD_REQUEST', `图片体积超过上限（${formatBytes(input.maxBytes)}）`)
+    throw new DomainError(
+      'BAD_REQUEST',
+      `图片体积超过上限（${formatBytes(input.maxBytes, { locale: resolveAppLocalization().locale })}）`,
+    )
   }
 
   if (!isValidImageBuffer(input.buffer)) {
@@ -125,7 +129,10 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
   })
 
   if (processed.buffer.byteLength > input.maxBytes) {
-    throw new DomainError('BAD_REQUEST', `重编码后体积超过上限（${formatBytes(input.maxBytes)}）`)
+    throw new DomainError(
+      'BAD_REQUEST',
+      `重编码后体积超过上限（${formatBytes(input.maxBytes, { locale: resolveAppLocalization().locale })}）`,
+    )
   }
 
   const keySpec = toKeySpec(input.kind)

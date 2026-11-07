@@ -8,7 +8,7 @@ import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { isStorageMigrationInFlightPhase } from '@/shared/contracts/storage'
-import { formatBytes } from '@/shared/utils/formatter'
+import { formatBytes } from '@/shared/i18n/format'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -37,7 +37,7 @@ const DIRECTION_LABEL: Record<string, string> = {
 export function StorageMigrationCard() {
   const queryClient = useQueryClient()
   const revalidator = useRevalidator()
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
   const { data: status } = useQuery(
     orpcQuery.admin.storage.migrationStatus.queryOptions({
       input: {},
@@ -60,11 +60,11 @@ export function StorageMigrationCard() {
     }
     completedRef.current = status.finishedAt
     toast.success('存储迁移已完成', {
-      description: `复制 ${status.copiedObjects} 个对象（${formatBytes(status.copiedBytes)}），跳过 ${status.skippedObjects} 个已存在对象。`,
+      description: `复制 ${status.copiedObjects} 个对象（${formatBytes(status.copiedBytes, { locale })}），跳过 ${status.skippedObjects} 个已存在对象。`,
     })
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.storage.stats.key() })
     void revalidator.revalidate()
-  }, [status, queryClient, revalidator])
+  }, [status, queryClient, revalidator, locale])
 
   if (status == null || status.phase === 'idle') {
     return null
@@ -129,21 +129,24 @@ export function StorageMigrationCard() {
         </SettingsRow>
         <SettingsRow label="进度">
           <p className="text-sm text-muted-foreground">
-            已复制 {status.copiedObjects} 个对象（{formatBytes(status.copiedBytes)}），跳过 {status.skippedObjects} 个
+            已复制 {status.copiedObjects} 个对象（{formatBytes(status.copiedBytes, { locale })}），跳过{' '}
+            {status.skippedObjects} 个
           </p>
         </SettingsRow>
         {status.verification !== null && (
           <SettingsRow label="一致性校验">
             {status.verification.matches ? (
               <p className="text-sm text-muted-foreground">
-                源 {status.verification.sourceCount} 个对象（{formatBytes(status.verification.sourceBytes)}） · 目标{' '}
-                {status.verification.targetCount} 个对象（{formatBytes(status.verification.targetBytes)}） — 校验一致
+                源 {status.verification.sourceCount} 个对象（{formatBytes(status.verification.sourceBytes, { locale })}
+                ） · 目标 {status.verification.targetCount} 个对象（
+                {formatBytes(status.verification.targetBytes, { locale })}） — 校验一致
               </p>
             ) : (
               <p className="text-sm text-destructive">
                 校验不一致：源 {status.verification.sourceCount} 个对象（
-                {formatBytes(status.verification.sourceBytes)}），目标只有 {status.verification.targetCount} 个对象（
-                {formatBytes(status.verification.targetBytes)}
+                {formatBytes(status.verification.sourceBytes, { locale })}），目标只有 {status.verification.targetCount}{' '}
+                个对象（
+                {formatBytes(status.verification.targetBytes, { locale })}
                 ）——目标存储可能缺少对象。请检查目标 Bucket 内容；如需重试，请确认配置后重新发起一次新的迁移。
               </p>
             )}

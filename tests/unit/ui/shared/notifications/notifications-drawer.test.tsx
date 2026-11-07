@@ -7,8 +7,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
+import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 
 // The「去处理」button renders a Router Link. Render it as a plain anchor and
 // prevent the default like the real Link does, so the suite stays Router-free.
@@ -40,7 +42,9 @@ const { isForkReply } = await import('@/ui/shared/notifications/NotificationDeta
 // provider mounted across `rerender` calls.
 function render(ui: ReactElement) {
   return rtlRender(ui, {
-    wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{wrapWithI18n(children)}</BlogSettingsProvider>
+    ),
   })
 }
 

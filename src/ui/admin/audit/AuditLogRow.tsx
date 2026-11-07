@@ -6,10 +6,11 @@ import type { AuditLogItemDto } from '@/shared/contracts/audit'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { ROLE_LEVELS, roleLabel, type Role } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS, ROLE_LEVELS, type Role } from '@/shared/utils/roles'
 import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@/ui/admin/audit/filter-fields'
 import { Badge } from '@/ui/components/badge'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface AuditLogRowProps {
   row: AuditLogItemDto
@@ -45,6 +46,7 @@ function hasAuditDetails(row: AuditLogItemDto): boolean {
 }
 
 export function AuditLogRow({ row }: AuditLogRowProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -99,7 +101,7 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
           )}
           {row.actorRole && isKnownRole(row.actorRole) && (
             <Badge variant="secondary" className={roleBadgeClasses(row.actorRole)}>
-              {roleLabel(row.actorRole)}
+              {t(ROLE_LABEL_KEYS[row.actorRole])}
             </Badge>
           )}
         </div>

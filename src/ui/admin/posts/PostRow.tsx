@@ -2,8 +2,12 @@ import { ImageIcon, MessageSquareIcon, PinIcon, SquarePenIcon } from 'lucide-rea
 import { Link } from 'react-router'
 
 import type { AdminPostDto } from '@/shared/contracts/posts'
+import type { AppLocale } from '@/shared/i18n/locales'
 
+import { formatDate } from '@/shared/i18n/format'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 interface PostRowProps {
@@ -13,9 +17,11 @@ interface PostRowProps {
   onFilterCategory?: (categoryId: string, categoryName: string) => void
 }
 
-function formatPostDate(post: AdminPostDto): string {
+function formatPostDate(post: AdminPostDto, options: { locale: AppLocale; timeZone: string }): string {
   const date = post.published ? new Date(post.firstPublishedAt ?? post.publishedAt) : new Date(post.updatedAt)
-  return date.toLocaleDateString('zh-CN', {
+  return formatDate(date, {
+    locale: options.locale,
+    timeZone: options.timeZone,
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -63,9 +69,11 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
 }
 
 export function PostRow({ post, onFilterCategory }: PostRowProps) {
+  const { locale } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const isDeleted = post.deletedAt !== null
 
-  const dateText = `${formatPostDateLabel(post)} ${formatPostDate(post)}`
+  const dateText = `${formatPostDateLabel(post)} ${formatPostDate(post, { locale, timeZone })}`
 
   return (
     <div

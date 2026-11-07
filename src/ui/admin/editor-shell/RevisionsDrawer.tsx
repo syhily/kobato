@@ -7,6 +7,8 @@ import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { toastApiError } from '@/client/lib/toast-api-error'
+import { formatDateTime } from '@/shared/i18n/format'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/lexical-body-diff'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
@@ -192,6 +194,8 @@ interface RevisionRowProps {
 }
 
 function RevisionRow({ revision, isCurrent, onClick }: RevisionRowProps) {
+  const { locale } = useI18n()
+  const { timeZone } = useSiteIdentity()
   return (
     <li>
       <button
@@ -211,10 +215,10 @@ function RevisionRow({ revision, isCurrent, onClick }: RevisionRowProps) {
           {isCurrent ? <Badge variant="outline">当前</Badge> : null}
         </div>
         <div className="mt-2 text-xs text-muted-foreground">
-          创建于 {new Date(revision.createdAt).toLocaleString('zh-CN')}
+          创建于 {formatDateTime(new Date(revision.createdAt), { locale, timeZone })}
         </div>
         <div className="text-xs text-muted-foreground">
-          更新于 {new Date(revision.updatedAt).toLocaleString('zh-CN')}
+          更新于 {formatDateTime(new Date(revision.updatedAt), { locale, timeZone })}
         </div>
         {revision.headings.length > 0 || revision.imageSources.length > 0 ? (
           <div className="mt-2 text-xs text-muted-foreground">
@@ -234,6 +238,8 @@ interface RevisionDetailViewProps {
 }
 
 function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: RevisionDetailViewProps) {
+  const { locale } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const revisionBody = revision.body
   const diff = useMemo(() => diffBodies(revisionBody, currentBody), [revisionBody, currentBody])
   const changedCount = diff.filter((entry) => entry.status !== 'unchanged').length
@@ -244,7 +250,7 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
         <Badge variant={revision.status === 'published' ? 'default' : 'secondary'}>
           R{revision.revisionNo} · {revision.status === 'published' ? '已发布' : '草稿'}
         </Badge>
-        <span>更新于 {new Date(revision.updatedAt).toLocaleString('zh-CN')}</span>
+        <span>更新于 {formatDateTime(new Date(revision.updatedAt), { locale, timeZone })}</span>
         <span className="ml-auto">{changedCount === 0 ? '与当前一致' : `${changedCount} 处差异`}</span>
       </div>
       <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-xl border bg-card">

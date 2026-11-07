@@ -1,9 +1,17 @@
+import type { ReactElement } from 'react'
+
 import { SiGooglechrome, SiMacos } from '@icons-pack/react-simple-icons'
 import { Globe, MonitorCheck } from 'lucide-react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { MetricName, flagEmojiFor, regionDisplayName } from '@/ui/admin/analytics/MetricName'
+
+/** MetricName reads the UI translator; every render mounts the root provider. */
+function renderMetric(node: ReactElement): string {
+  return renderToStaticMarkup(wrapWithI18n(node))
+}
 
 // Brand-icon / flag selection for metric rows (Slite's metrics/name/*
 // port). Referer rows render a local letter avatar — no third-party favicon
@@ -18,20 +26,18 @@ function iconMarkup(Icon: typeof SiGooglechrome): string {
 
 describe('ui/admin/analytics/MetricName icon selection', () => {
   it('maps exact lowercase names to brand icons', () => {
-    expect(renderToStaticMarkup(<MetricName name="Chrome" type="browser" />)).toContain(iconMarkup(SiGooglechrome))
-    expect(renderToStaticMarkup(<MetricName name="chrome headless" type="browser" />)).toContain(
-      iconMarkup(SiGooglechrome),
-    )
-    expect(renderToStaticMarkup(<MetricName name="macOS" type="os" />)).toContain(iconMarkup(SiMacos))
+    expect(renderMetric(<MetricName name="Chrome" type="browser" />)).toContain(iconMarkup(SiGooglechrome))
+    expect(renderMetric(<MetricName name="chrome headless" type="browser" />)).toContain(iconMarkup(SiGooglechrome))
+    expect(renderMetric(<MetricName name="macOS" type="os" />)).toContain(iconMarkup(SiMacos))
   })
 
   it('falls back to the dimension icon for unknown names', () => {
-    expect(renderToStaticMarkup(<MetricName name="Some Obscure Browser" type="browser" />)).toContain(iconMarkup(Globe))
-    expect(renderToStaticMarkup(<MetricName name="Some Obscure OS" type="os" />)).toContain(iconMarkup(MonitorCheck))
+    expect(renderMetric(<MetricName name="Some Obscure Browser" type="browser" />)).toContain(iconMarkup(Globe))
+    expect(renderMetric(<MetricName name="Some Obscure OS" type="os" />)).toContain(iconMarkup(MonitorCheck))
   })
 
   it('renders no icon when neither name nor dimension has one', () => {
-    const html = renderToStaticMarkup(<MetricName name="whatever" type="browserType" />)
+    const html = renderMetric(<MetricName name="whatever" type="browserType" />)
     expect(html).not.toContain('<svg')
     expect(html).toContain('whatever')
   })
@@ -45,27 +51,28 @@ describe('ui/admin/analytics/MetricName icon selection', () => {
   })
 
   it('resolves zh-CN region names and survives invalid codes', () => {
-    expect(regionDisplayName('CN')).toBe('中国')
-    expect(regionDisplayName('US')).toBe('美国')
+    expect(regionDisplayName('CN', 'zh-CN')).toBe('中国')
+    expect(regionDisplayName('US', 'zh-CN')).toBe('美国')
+    expect(regionDisplayName('US', 'en-US')).toBe('United States')
     // Unknown/invalid input comes back verbatim instead of throwing.
-    expect(regionDisplayName('not-a-code')).toBe('not-a-code')
+    expect(regionDisplayName('not-a-code', 'zh-CN')).toBe('not-a-code')
   })
 })
 
 describe('ui/admin/analytics/MetricName rendering', () => {
   it('country rows carry the flag and the localized name', () => {
-    const html = renderToStaticMarkup(<MetricName name="JP" type="country" />)
+    const html = renderMetric(<MetricName name="JP" type="country" />)
     expect(html).toContain('🇯🇵')
     expect(html).toContain('日本')
   })
 
   it('language rows localize the language code', () => {
-    const html = renderToStaticMarkup(<MetricName name="zh" type="language" />)
+    const html = renderMetric(<MetricName name="zh" type="language" />)
     expect(html).toContain('中文')
   })
 
   it('referer rows render a local letter avatar, never an external image', () => {
-    const html = renderToStaticMarkup(<MetricName name="t.co" type="referer" />)
+    const html = renderMetric(<MetricName name="t.co" type="referer" />)
     expect(html).not.toContain('<img')
     expect(html).toContain('t.co')
     // The avatar carries the host's first character (visually uppercased via CSS).
@@ -73,38 +80,38 @@ describe('ui/admin/analytics/MetricName rendering', () => {
   })
 
   it('browser rows render an inline icon plus the raw name', () => {
-    const html = renderToStaticMarkup(<MetricName name="Firefox" type="browser" />)
+    const html = renderMetric(<MetricName name="Firefox" type="browser" />)
     expect(html).toContain('<svg')
     expect(html).toContain('Firefox')
   })
 
   it('region/city/timezone rows render the stored name verbatim', () => {
-    const html = renderToStaticMarkup(<MetricName name="Zhejiang" type="region" />)
+    const html = renderMetric(<MetricName name="Zhejiang" type="region" />)
     expect(html).toContain('Zhejiang')
     expect(html).not.toContain('<img')
   })
 
   it('empty names degrade to 直接访问 / 未知', () => {
-    expect(renderToStaticMarkup(<MetricName name="" type="referer" />)).toContain('直接访问')
-    expect(renderToStaticMarkup(<MetricName name="" type="os" />)).toContain('未知')
+    expect(renderMetric(<MetricName name="" type="referer" />)).toContain('直接访问')
+    expect(renderMetric(<MetricName name="" type="os" />)).toContain('未知')
   })
 })
 
 describe('ui/admin/analytics/MetricName environment dimensions', () => {
   it('localizes the color scheme and uppercases the network type', () => {
-    expect(renderToStaticMarkup(<MetricName name="dark" type="colorScheme" />)).toContain('深色')
-    expect(renderToStaticMarkup(<MetricName name="light" type="colorScheme" />)).toContain('浅色')
-    expect(renderToStaticMarkup(<MetricName name="4g" type="netEffectiveType" />)).toContain('4G')
-    expect(renderToStaticMarkup(<MetricName name="slow-2g" type="netEffectiveType" />)).toContain('SLOW-2G')
+    expect(renderMetric(<MetricName name="dark" type="colorScheme" />)).toContain('深色')
+    expect(renderMetric(<MetricName name="light" type="colorScheme" />)).toContain('浅色')
+    expect(renderMetric(<MetricName name="4g" type="netEffectiveType" />)).toContain('4G')
+    expect(renderMetric(<MetricName name="slow-2g" type="netEffectiveType" />)).toContain('SLOW-2G')
   })
 
   it('renders bucket labels verbatim without an icon', () => {
-    const viewport = renderToStaticMarkup(<MetricName name="≤768" type="viewport" />)
+    const viewport = renderMetric(<MetricName name="≤768" type="viewport" />)
     expect(viewport).toContain('≤768')
     expect(viewport).not.toContain('<svg')
 
-    expect(renderToStaticMarkup(<MetricName name="1920×1080" type="screen" />)).toContain('1920×1080')
-    expect(renderToStaticMarkup(<MetricName name="1–5 点" type="touch" />)).toContain('1–5 点')
-    expect(renderToStaticMarkup(<MetricName name="2.5x" type="dpr" />)).toContain('2.5x')
+    expect(renderMetric(<MetricName name="1920×1080" type="screen" />)).toContain('1920×1080')
+    expect(renderMetric(<MetricName name="1–5 点" type="touch" />)).toContain('1–5 点')
+    expect(renderMetric(<MetricName name="2.5x" type="dpr" />)).toContain('2.5x')
   })
 })

@@ -3,10 +3,10 @@ import type { DropdownProps } from 'react-day-picker'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { formatDate, formatDateTime } from '@/shared/i18n/format'
 import { dateToLocalInputValue, parseLocalDateTimeInput } from '@/ui/admin/editor-shell/editor-datetime'
+import { formatWallClockDateTime, formatWallClockMonth } from '@/ui/admin/editor-shell/wall-clock'
 import { Button } from '@/ui/components/button'
-import { Calendar, calendarWallClockDate } from '@/ui/components/calendar'
+import { Calendar } from '@/ui/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
@@ -14,7 +14,6 @@ import { useI18n } from '@/ui/lib/I18nProvider'
 // The picker edits BROWSER-LOCAL wall-clock parts. Every rendered value is
 // normalized onto UTC and formatted in UTC, so SSR and the first client render
 // produce identical text on any host; the parts themselves are zone-free.
-const WALL_CLOCK_ZONE = 'Etc/UTC'
 
 export interface DateTimePickerProps {
   value: string
@@ -256,27 +255,4 @@ function defaultTime(): Date {
   const d = new Date()
   d.setHours(9, 0, 0, 0)
   return d
-}
-
-/** Wall-clock parts normalized onto UTC, so the rendered text is host-zone independent. */
-export function wallClockInstant(date: Date): Date {
-  return new Date(
-    Date.UTC(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      date.getHours(),
-      date.getMinutes(),
-      date.getSeconds(),
-    ),
-  )
-}
-
-/** Wall-clock date + time formatted in an explicit zone — identical on server and client. */
-function formatWallClockDateTime(date: Date, locale: 'en-US' | 'zh-CN' | 'zh-HK' | 'zh-TW'): string {
-  return formatDateTime(wallClockInstant(date), { locale, timeZone: WALL_CLOCK_ZONE })
-}
-
-function formatWallClockMonth(date: Date, locale: 'en-US' | 'zh-CN' | 'zh-HK' | 'zh-TW'): string {
-  return formatDate(calendarWallClockDate(date), { locale, timeZone: WALL_CLOCK_ZONE, month: 'long' })
 }

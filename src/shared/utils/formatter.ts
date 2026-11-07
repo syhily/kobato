@@ -1,6 +1,9 @@
 // Date formatter primitives shared between SSR and the client bundle.
 // Built on date-fns + @date-fns/tz: `TZDate` carries the site-configured
 // time zone (runtime DB-backed config), so callers thread it in.
+//
+// Byte sizes and durations live in `@/shared/i18n/format` (explicit locale);
+// this module only owns the site-zone date/relative-time primitives.
 
 import { TZDate } from '@date-fns/tz'
 import { format as formatZonedDate } from 'date-fns'
@@ -164,30 +167,4 @@ function zonedDateFormatter(locale: string, timeZone: string): Intl.DateTimeForm
   const formatter = new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short', timeZone })
   zonedDateFormatters.set(key, formatter)
   return formatter
-}
-
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`
-  }
-  if (bytes < 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
-}
-
-/** Compact duration for admin job/queue displays (`1.2 秒` / `3 分 5 秒`). */
-export function formatDurationMs(ms: number): string {
-  if (ms < 1000) {
-    return `${ms} 毫秒`
-  }
-  if (ms < 60_000) {
-    return `${(ms / 1000).toFixed(1)} 秒`
-  }
-  // Staircase truncation like formatBytes: the seconds digit is floored, never
-  // rounded — rounding would emit `1 分 60 秒` for 119.5s.
-  return `${Math.floor(ms / 60_000)} 分 ${Math.floor((ms % 60_000) / 1000)} 秒`
 }

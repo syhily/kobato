@@ -9,7 +9,7 @@ import type { StorageMigrationStatus } from '@/shared/contracts/storage'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { isStorageMigrationInFlightPhase } from '@/shared/contracts/storage'
-import { formatBytes, formatDurationMs } from '@/shared/utils/formatter'
+import { formatBytes, formatDuration } from '@/shared/i18n/format'
 import {
   MIGRATION_PHASE_META,
   RUN_STATUS_META,
@@ -147,12 +147,13 @@ function QueueStatsLines({ queue }: { queue: QueueTaskStatsDto }) {
 
 // Migration phase/progress/error lines for the storage-migration task.
 function MigrationStatusLines({ migration }: { migration: StorageMigrationStatus }) {
+  const { locale, t } = useI18n()
   return (
     <>
-      <p>阶段：{MIGRATION_PHASE_META[migration.phase].label}</p>
+      <p>阶段：{t(MIGRATION_PHASE_META[migration.phase].labelId)}</p>
       <p>
-        已复制 {migration.copiedObjects} 个对象（{formatBytes(migration.copiedBytes)}），跳过 {migration.skippedObjects}{' '}
-        个
+        已复制 {migration.copiedObjects} 个对象（{formatBytes(migration.copiedBytes, { locale })}），跳过{' '}
+        {migration.skippedObjects} 个
       </p>
       {migration.error !== null && <p className="text-status-error-fg">{migration.error}</p>}
     </>
@@ -161,6 +162,7 @@ function MigrationStatusLines({ migration }: { migration: StorageMigrationStatus
 
 export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?: StorageMigrationStatus }) {
   const date = useFormatAdminDate()
+  const { locale, t } = useI18n()
   const capabilities = TASK_CAPABILITIES[task.taskKey]
   const meta = STATUS_META[taskStatus(task, migration)]
 
@@ -172,7 +174,7 @@ export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?:
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           {task.label}
-          <Badge variant={meta.variant}>{meta.label}</Badge>
+          <Badge variant={meta.variant}>{t(meta.labelId)}</Badge>
         </CardTitle>
         <p className="text-sm text-muted-foreground">{task.description}</p>
       </CardHeader>
@@ -192,8 +194,8 @@ export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?:
 
         {lastRun !== null && (
           <p>
-            上次运行 {date(lastRun.startedAt)} · {RUN_STATUS_META[lastRun.status].label}
-            {lastRun.durationMs !== null && ` · 耗时 ${formatDurationMs(lastRun.durationMs)}`}
+            上次运行 {date(lastRun.startedAt)} · {t(RUN_STATUS_META[lastRun.status].labelId)}
+            {lastRun.durationMs !== null && ` · 耗时 ${formatDuration(lastRun.durationMs, { locale })}`}
             {lastRun.trigger === 'manual' && ' · 手动触发'}
           </p>
         )}
@@ -204,7 +206,11 @@ export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?:
         {capabilities.action === 'backup' && <BackupAction />}
         {capabilities.action === 'migration' && migration !== undefined && <MigrationActions migration={migration} />}
         {capabilities.link !== undefined && (
-          <Button variant="ghost" size="sm" render={<Link to={capabilities.link.to}>{capabilities.link.label}</Link>} />
+          <Button
+            variant="ghost"
+            size="sm"
+            render={<Link to={capabilities.link.to}>{t(capabilities.link.labelId)}</Link>}
+          />
         )}
         {task.kind !== 'queue' && <RunHistorySheet taskKey={task.taskKey} taskLabel={task.label} />}
       </CardFooter>

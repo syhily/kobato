@@ -3,9 +3,12 @@ import { useId, useMemo } from 'react'
 
 import type { TimeUnit, ViewsPoint } from '@/shared/contracts/analytics'
 
+import { formatNumber } from '@/shared/i18n/format'
 import { escapeHtml } from '@/shared/utils/security'
 import { formatTimeLabel, parseTimeLabel } from '@/ui/admin/analytics/time-labels'
+import { getClientTimezone } from '@/ui/admin/analytics/use-analytics-state'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The @unovis chart body — CLIENT ONLY. This module is lazy-loaded behind
 // the hydration gate in `ViewsChart.tsx`; never import it statically from an
@@ -28,6 +31,9 @@ export interface ViewsChartInnerProps {
 }
 
 export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProps) {
+  const { locale } = useI18n()
+  // Bucket labels are browser-zoned analytics data — pass the browser zone explicitly.
+  const timeZone = getClientTimezone()
   const summaryId = `trend-summary-${useId()}`
   const data = useMemo<ChartDatum[]>(
     () =>
@@ -54,7 +60,7 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
   )
 
   const summary = peak
-    ? `访问趋势: 总访问量 ${totalVisits.toLocaleString('zh-CN')}, 总访客数 ${totalVisitors.toLocaleString('zh-CN')}。峰值出现在 ${formatTimeLabel(unit, peak.label)}, 访问量 ${peak.visits.toLocaleString('zh-CN')}。`
+    ? `访问趋势: 总访问量 ${formatNumber(totalVisits, { locale })}, 总访客数 ${formatNumber(totalVisitors, { locale })}。峰值出现在 ${formatTimeLabel(unit, peak.label, { locale, timeZone })}, 访问量 ${formatNumber(peak.visits, { locale })}。`
     : '当前时间范围内暂无数据'
 
   const x = (d: ChartDatum) => d.x
@@ -64,16 +70,16 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
   // The tooltip template is raw HTML — escape every interpolated value.
   const tooltipTemplate = (d: ChartDatum) => `
     <div class="min-w-[150px] rounded-xl border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
-      <div class="font-medium">${escapeHtml(formatTimeLabel(unit, d.label))}</div>
+      <div class="font-medium">${escapeHtml(formatTimeLabel(unit, d.label, { locale, timeZone }))}</div>
       <div class="mt-1 flex items-center gap-2">
         <span class="inline-block size-2 rounded-full" style="background: ${COLOR_VISITS}"></span>
         <span class="text-muted-foreground">访问量</span>
-        <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(d.visits.toLocaleString('zh-CN'))}</span>
+        <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(formatNumber(d.visits, { locale }))}</span>
       </div>
       <div class="mt-0.5 flex items-center gap-2">
         <span class="inline-block size-2 rounded-full" style="background: ${COLOR_VISITORS}"></span>
         <span class="text-muted-foreground">访客数</span>
-        <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(d.visitors.toLocaleString('zh-CN'))}</span>
+        <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(formatNumber(d.visitors, { locale }))}</span>
       </div>
     </div>`
 
@@ -103,7 +109,7 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
         )}
         <VisAxis
           type="y"
-          tickFormat={(value) => Number(value).toLocaleString('zh-CN')}
+          tickFormat={(value) => formatNumber(Number(value), { locale })}
           tickLine={false}
           domainLine={false}
           gridLine={true}

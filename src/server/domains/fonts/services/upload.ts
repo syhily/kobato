@@ -9,6 +9,8 @@ import { sliceFont } from '@/server/domains/fonts/slice'
 import { putFont, fontCssKey, type FontPackageFile } from '@/server/domains/fonts/storage'
 import { font } from '@/server/infra/db/schema/font'
 import { DomainError } from '@/server/infra/http/errors'
+import { resolveAppLocalization } from '@/shared/i18n/app-localization'
+import { formatNumber } from '@/shared/i18n/format'
 
 // Upload pipeline: magic-byte validate → hash → dedupe → slice → store →
 // insert. Synchronous within the request; rows only exist once inserted,
@@ -37,6 +39,8 @@ export function validateFontTableBounds(buffer: Uint8Array): void {
     throw new DomainError('BAD_REQUEST', '字体文件不完整：无法读取表目录')
   }
   const numTables = (buffer[4] << 8) | buffer[5]
+  // Offsets are diagnostic digits in a server error — format them in the settings locale.
+  const { locale } = resolveAppLocalization()
   for (let i = 0; i < numTables; i++) {
     const off = 12 + i * 16
     if (off + 16 > buffer.length) {
@@ -48,7 +52,7 @@ export function validateFontTableBounds(buffer: Uint8Array): void {
     if (tableOffset + tableLength > buffer.length) {
       throw new DomainError(
         'BAD_REQUEST',
-        `字体文件不完整：'${tag}' 表超出文件末尾（偏移 ${tableOffset.toLocaleString()} + 长度 ${tableLength.toLocaleString()} > 文件大小 ${buffer.length.toLocaleString()}），请使用完整的字体文件`,
+        `字体文件不完整：'${tag}' 表超出文件末尾（偏移 ${formatNumber(tableOffset, { locale })} + 长度 ${formatNumber(tableLength, { locale })} > 文件大小 ${formatNumber(buffer.length, { locale })}），请使用完整的字体文件`,
       )
     }
   }

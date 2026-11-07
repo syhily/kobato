@@ -2,8 +2,10 @@ import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon
 import { useEffect, useRef, useState } from 'react'
 
 import type { AdminImageDto } from '@/shared/contracts/images'
+import type { AppLocale } from '@/shared/i18n/locales'
 
-import { formatBytes } from '@/shared/utils/formatter'
+import { formatBytes, formatDateTime } from '@/shared/i18n/format'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -16,6 +18,7 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ImageDetailDialogProps {
   image: AdminImageDto | null
@@ -43,6 +46,8 @@ export function ImageDetailDialog({
   onDelete,
   onRecalculateThumbhash,
 }: ImageDetailDialogProps) {
+  const { locale } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const [editingNote, setEditingNote] = useState(false)
   const [noteDraft, setNoteDraft] = useState('')
   const [lastKey, setLastKey] = useState<{ open: boolean; imageId: string | null }>({
@@ -112,11 +117,11 @@ export function ImageDetailDialog({
               <MetaField label="尺寸">
                 {image.width}×{image.height}
               </MetaField>
-              <MetaField label="大小">{formatBytes(image.byteSize)}</MetaField>
+              <MetaField label="大小">{formatBytes(image.byteSize, { locale })}</MetaField>
               <MetaField label="MIME">{image.mimeType}</MetaField>
               <MetaField label="上传人">{image.uploaderName ?? '—'}</MetaField>
-              <MetaField label="创建时间">{formatDateTime(image.createdAt)}</MetaField>
-              <MetaField label="更新时间">{formatDateTime(image.updatedAt)}</MetaField>
+              <MetaField label="创建时间">{formatImageTimestamp(image.createdAt, { locale, timeZone })}</MetaField>
+              <MetaField label="更新时间">{formatImageTimestamp(image.updatedAt, { locale, timeZone })}</MetaField>
             </dl>
 
             <div className="flex flex-col gap-1.5">
@@ -230,14 +235,10 @@ function MetaField({ label, children }: { label: string; children: React.ReactNo
   )
 }
 
-function formatDateTime(iso: string): string {
-  try {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) {
-      return iso
-    }
-    return date.toLocaleString()
-  } catch {
+function formatImageTimestamp(iso: string, options: { locale: AppLocale; timeZone: string }): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) {
     return iso
   }
+  return formatDateTime(date, { locale: options.locale, timeZone: options.timeZone })
 }

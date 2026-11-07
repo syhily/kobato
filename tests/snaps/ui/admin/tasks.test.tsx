@@ -157,7 +157,7 @@ describe('snapshot: TasksView', () => {
     expect(html).toContain('运行中')
     expect(html).toContain('空闲')
     expect(html).toContain('下次运行 2026-08-21 04:00:00')
-    expect(html).toContain('上次运行 2026-08-20 04:00:00 · 成功 · 耗时 1.2 秒')
+    expect(html).toContain('上次运行 2026-08-20 04:00:00 · 成功 · 耗时 1.2秒钟')
     expect(html).toContain('S3 连接超时')
 
     // Queue stats.
@@ -206,7 +206,7 @@ describe('snapshot: TaskCard migration phases', () => {
     )
     expect(html).toContain('运行中')
     expect(html).toContain('正在复制对象')
-    expect(html).toContain('已复制 12 个对象（2.0 KB），跳过 1 个')
+    expect(html).toContain('已复制 12 个对象（2.0 kB），跳过 1 个')
     expect(html).toContain('取消迁移')
     expect(html).not.toContain('从断点继续')
     expect(html).not.toContain('发起新迁移')
@@ -240,7 +240,7 @@ describe('snapshot: RunHistoryRow', () => {
     expect(html).toContain('成功')
     expect(html).toContain('定时触发')
     expect(html).toContain('2026-08-20 04:00:00')
-    expect(html).toContain('耗时 1.2 秒')
+    expect(html).toContain('耗时 1.2秒钟')
   })
 
   it('renders a failed manual run with its error', () => {
@@ -253,7 +253,7 @@ describe('snapshot: RunHistoryRow', () => {
     )
     expect(html).toContain('失败')
     expect(html).toContain('手动触发')
-    expect(html).toContain('耗时 300 毫秒')
+    expect(html).toContain('耗时 300毫秒')
     expect(html).toContain('备份单飞冲突')
   })
 })

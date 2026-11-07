@@ -1,8 +1,10 @@
 import { requireRole } from '@/server/domains/auth/rbac'
 import { createSsrCaller } from '@/server/http/ssr-caller'
+import { formatNumber } from '@/shared/i18n/format'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Card, CardContent } from '@/ui/components/card'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 import type { Route } from './+types/mentions'
 
@@ -15,6 +17,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function MentionsPage({ loaderData }: Route.ComponentProps) {
+  const { locale } = useI18n()
   const { referers } = loaderData
   const state = useAnalyticsState()
 
@@ -57,10 +60,10 @@ export default function MentionsPage({ loaderData }: Route.ComponentProps) {
                     )}
                   </span>
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    {row.visits.toLocaleString()} 次访问
+                    {formatNumber(row.visits, { locale })} 次访问
                   </span>
                   <span className="hidden text-xs text-muted-foreground tabular-nums sm:inline">
-                    ({row.visitors.toLocaleString()} 访客)
+                    ({formatNumber(row.visitors, { locale })} 访客)
                   </span>
                 </li>
               ))}

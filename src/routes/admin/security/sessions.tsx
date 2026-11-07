@@ -2,6 +2,8 @@ import { data } from 'react-router'
 
 import { requireRole } from '@/server/domains/auth/rbac'
 import { createSsrCaller } from '@/server/http/ssr-caller'
+import { resolveAppLocalization } from '@/shared/i18n/app-localization'
+import { compareDisplayText } from '@/shared/i18n/format'
 import { titleMeta } from '@/shared/seo/title-meta'
 import {
   DEFAULT_ADMIN_SORT,
@@ -41,6 +43,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   )
 
   const all = await caller.admin.users.listSessions()
+  // Display collation follows the active UI locale (settings seam); machine timestamps keep numeric order.
+  const { locale } = resolveAppLocalization()
   const sorted = [...all].sort((a, b) => {
     let cmp = 0
     switch (sort.field) {
@@ -48,7 +52,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         cmp = a.loginAt.getTime() - b.loginAt.getTime()
         break
       case 'userName':
-        cmp = a.userName.localeCompare(b.userName, 'zh-Hans-CN')
+        cmp = compareDisplayText(a.userName, b.userName, locale)
         break
       case 'lastActive':
         cmp = a.lastActiveAt.getTime() - b.lastActiveAt.getTime()

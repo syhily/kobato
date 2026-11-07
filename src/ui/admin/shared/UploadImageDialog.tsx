@@ -5,7 +5,7 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 import type { LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 
 import { orpc } from '@/client/api/client'
-import { formatBytes } from '@/shared/utils/formatter'
+import { formatBytes } from '@/shared/i18n/format'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -17,6 +17,7 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const ImageEditorCanvas = lazy(() =>
   import('@/ui/admin/shared/ImageEditorCanvas').then((m) => ({ default: m.ImageEditorCanvas })),
@@ -35,6 +36,7 @@ export interface UploadImageDialogProps {
 const LOCKED_ASPECT: LockedAspect = { width: 1280, height: 425 }
 
 export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile }: UploadImageDialogProps) {
+  const { locale } = useI18n()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const [file, setFile] = useState<File | null>(null)
@@ -192,7 +194,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{file.name}</span>
-                    <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
+                    <span className="text-xs text-muted-foreground">{formatBytes(file.size, { locale })}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button

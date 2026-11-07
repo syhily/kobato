@@ -4,9 +4,11 @@ import { useId, useMemo } from 'react'
 
 import type { MetricRow } from '@/shared/contracts/analytics'
 
+import { formatNumber } from '@/shared/i18n/format'
 import { escapeHtml } from '@/shared/utils/security'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { regionDisplayName } from '@/ui/admin/analytics/MetricName'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The @unovis choropleth — CLIENT ONLY. Lazy-loaded behind the hydration
 // gate in `LocationsMap.tsx`; WorldMapTopoJSON rides this chunk.
@@ -23,6 +25,7 @@ export interface LocationsMapInnerProps {
 }
 
 export function LocationsMapInner({ rows }: LocationsMapInnerProps) {
+  const { locale } = useI18n()
   const summaryId = `locations-summary-${useId()}`
 
   const areas = useMemo<AreaDatum[]>(
@@ -54,16 +57,16 @@ export function LocationsMapInner({ rows }: LocationsMapInnerProps) {
     }
     return `
       <div class="min-w-[120px] rounded-xl border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
-        <div class="font-medium">${escapeHtml(regionDisplayName(area.id))}</div>
+        <div class="font-medium">${escapeHtml(regionDisplayName(area.id, locale))}</div>
         <div class="mt-1 flex items-center gap-2">
           <span class="inline-block size-2 rounded-full" style="background: ${COLOR_AREA}"></span>
           <span class="text-muted-foreground">访问量</span>
-          <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(area.count.toLocaleString('zh-CN'))}</span>
+          <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(formatNumber(area.count, { locale }))}</span>
         </div>
       </div>`
   }
 
-  const summary = `地理位置分布: 共 ${areas.length} 个国家或地区,总访问量 ${totalVisits.toLocaleString('zh-CN')}。`
+  const summary = `地理位置分布: 共 ${areas.length} 个国家或地区,总访问量 ${formatNumber(totalVisits, { locale })}。`
 
   return (
     <div className="absolute inset-0" role="img" aria-label={summary} aria-describedby={summaryId}>
@@ -80,7 +83,7 @@ export function LocationsMapInner({ rows }: LocationsMapInnerProps) {
         <ul>
           {topAreas.map((area) => (
             <li key={area.id}>
-              {regionDisplayName(area.id)}: {area.count.toLocaleString('zh-CN')}
+              {regionDisplayName(area.id, locale)}: {formatNumber(area.count, { locale })}
             </li>
           ))}
         </ul>

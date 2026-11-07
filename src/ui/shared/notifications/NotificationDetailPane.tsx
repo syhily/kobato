@@ -10,6 +10,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useInvalidateNotifications, usePatchNotificationReadState } from '@/client/hooks/use-notifications'
 import { useNow } from '@/client/hooks/use-now'
 import { onMutationError } from '@/client/lib/toast-api-error'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +44,8 @@ export function isForkReply(currentThreadId: string, resultThreadId: string): bo
 // Thread pane: the root message plus its replies as a chat-like transcript,
 // with the reply composer gated by the server's canReply verdict.
 export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: NotificationDetailPaneProps) {
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const invalidate = useInvalidateNotifications()
   const patchReadState = usePatchNotificationReadState()
   const threadQuery = useQuery(orpcQuery.notifications.thread.queryOptions({ input: { threadId: item.threadId } }))
@@ -91,7 +93,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
         <Button ref={backRef} variant="ghost" size="iconSm" onClick={onBack} aria-label="返回列表">
           <ArrowLeftIcon className="size-4" />
         </Button>
-        <span className="text-xs text-muted-foreground">{meta.kindLabel}</span>
+        <span className="text-xs text-muted-foreground">{t(meta.kindLabelId)}</span>
         {isAdmin && item.kind !== 'direct' ? (
           <Button
             variant="ghost"
@@ -129,7 +131,8 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
         <div className="flex flex-col gap-1">
           <h3 className="text-base font-semibold">{item.title}</h3>
           <p className="text-xs text-muted-foreground">
-            {item.sender === null ? '系统' : item.sender.name} · {formatNotificationTime(item.createdAt, now)}
+            {item.sender === null ? '系统' : item.sender.name} ·{' '}
+            {formatNotificationTime(item.createdAt, { locale, timeZone, now })}
           </p>
         </div>
         {item.actionUrl !== null ? (
@@ -163,7 +166,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
                 </div>
                 <span className="px-1 text-[11px] text-muted-foreground/80">
                   {message.mine ? '我' : (message.sender?.name ?? '系统')} ·{' '}
-                  {formatNotificationTime(message.createdAt, now)}
+                  {formatNotificationTime(message.createdAt, { locale, timeZone, now })}
                 </span>
               </div>
             ))}

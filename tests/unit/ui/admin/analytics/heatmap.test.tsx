@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { HeatmapCell } from '@/shared/contracts/analytics'
 
 import { makeAnalyticsState } from '#/_helpers/analytics-state'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { AnalyticsStateProvider } from '@/ui/admin/analytics/analytics-state-context'
 import { Heatmap } from '@/ui/admin/analytics/Heatmap'
@@ -25,9 +26,11 @@ const CELLS: HeatmapCell[] = [
 
 function renderHeatmap() {
   return render(
-    <AnalyticsStateProvider state={makeAnalyticsState()}>
-      <Heatmap metric="visits" />
-    </AnalyticsStateProvider>,
+    wrapWithI18n(
+      <AnalyticsStateProvider state={makeAnalyticsState()}>
+        <Heatmap metric="visits" />
+      </AnalyticsStateProvider>,
+    ),
   )
 }
 

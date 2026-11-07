@@ -1,4 +1,3 @@
-import { format as formatDate } from 'date-fns'
 import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
 import { useId, useState } from 'react'
 
@@ -8,12 +7,15 @@ import type {
   SidebarSaveStatus,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { formatDateTime } from '@/shared/i18n/format'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
 import { dateToLocalInputValue } from '@/ui/admin/editor-shell/editor-datetime'
 import { LabelledRadioCard } from '@/ui/admin/shared/LabelledRadio'
 import { Badge } from '@/ui/components/badge'
 import { Label } from '@/ui/components/label'
 import { RadioGroup } from '@/ui/components/radio-group'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface PublishStatusRowProps {
   status: SidebarPublishStatus
@@ -145,13 +147,19 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
 }
 
 function SaveStatusLine({ status }: { status: SidebarSaveStatus }) {
+  const { locale } = useI18n()
+  const { timeZone } = useSiteIdentity()
   switch (status.kind) {
     case 'unsaved':
       return <span className="text-xs text-muted-foreground">未保存</span>
     case 'saving':
       return <span className="text-xs text-muted-foreground">保存中…</span>
     case 'saved':
-      return <span className="text-xs text-muted-foreground">{formatSavedAtLocal(status.atMs)}</span>
+      return (
+        <span className="text-xs text-muted-foreground">
+          {formatDateTime(new Date(status.atMs), { locale, timeZone })}
+        </span>
+      )
     case 'error':
       return <span className="text-xs text-destructive">{status.message}</span>
     case 'conflict':
@@ -161,8 +169,4 @@ function SaveStatusLine({ status }: { status: SidebarSaveStatus }) {
     case 'info':
       return <span className="text-xs text-status-warn-fg">{status.message}</span>
   }
-}
-
-function formatSavedAtLocal(ms: number): string {
-  return formatDate(new Date(ms), 'yyyy年M月d日 HH:mm')
 }

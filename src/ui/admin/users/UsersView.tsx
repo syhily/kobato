@@ -3,6 +3,7 @@ import { MailIcon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { formatNumber } from '@/shared/i18n/format'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
@@ -14,6 +15,7 @@ import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
 import { type UsersFilters, useUsersFilters } from '@/ui/admin/users/useUsersFilters'
 import { Button } from '@/ui/components/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function buildQueryInput(filters: UsersFilters, offset: number) {
   return {
@@ -27,6 +29,7 @@ function buildQueryInput(filters: UsersFilters, offset: number) {
 }
 
 export function UsersView() {
+  const { locale } = useI18n()
   const config = useSiteIdentity()
   const { filters, setQ, setRole, setSortBy, setIncludeDeleted } = useUsersFilters()
 
@@ -53,7 +56,9 @@ export function UsersView() {
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-baseline gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">用户管理</h1>
-            {!isLoading && <span className="text-lg font-normal text-muted-foreground">{total.toLocaleString()}</span>}
+            {!isLoading && (
+              <span className="text-lg font-normal text-muted-foreground">{formatNumber(total, { locale })}</span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <InputGroup className="h-9 w-full sm:w-56">

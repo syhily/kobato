@@ -4,11 +4,13 @@ import type { ReactElement } from 'react'
 
 import { fireEvent, render, screen } from '@testing-library/react'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { wrapWithI18n } from '#/_helpers/i18n-render'
 
-// These forms read `useI18n()`; mount the root provider for every RTL render.
+// These forms read the UI translator and the site identity; mount both
+// providers for every RTL render.
 function renderUi(ui: ReactElement) {
-  return render(wrapWithI18n(ui))
+  return render(wrapWithI18n(<BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{ui}</BlogSettingsProvider>))
 }
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -16,6 +18,7 @@ import type { UseFileUploadOptions } from '@/client/hooks/use-file-upload'
 import type { AnalyticsSettings } from '@/shared/config/types'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
+import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 
 // The GeoIP rows read status / fire mutations through orpc + TanStack Query;
 // the canonical inert hook doubles keep this spec focused on the upload wiring.

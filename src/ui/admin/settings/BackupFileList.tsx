@@ -1,9 +1,10 @@
 import { LockIcon } from 'lucide-react'
 import { useState } from 'react'
 
+import type { AppLocale } from '@/shared/i18n/locales'
 import type { BackupFileDto } from '@/shared/types/backup'
 
-import { formatBytes } from '@/shared/utils/formatter'
+import { formatBytes, formatDateTime } from '@/shared/i18n/format'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import {
@@ -18,6 +19,7 @@ import {
 } from '@/ui/components/alert-dialog'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface BackupFileListProps {
   backups: BackupFileDto[]
@@ -46,11 +48,13 @@ const BASE_OPTS: Intl.DateTimeFormatOptions = {
   hour12: false,
 }
 
-function formatDateTime(iso: string, timeZone: string): string {
+function formatBackupTimestamp(iso: string, options: { locale: AppLocale; timeZone: string }): string {
+  const { locale, timeZone } = options
   try {
-    return new Intl.DateTimeFormat('zh-CN', { ...BASE_OPTS, timeZone }).format(new Date(iso))
+    return formatDateTime(new Date(iso), { ...BASE_OPTS, locale, timeZone })
   } catch {
-    return new Intl.DateTimeFormat('zh-CN', BASE_OPTS).format(new Date(iso))
+    // An invalid configured zone must not crash the list — format the same parts in UTC.
+    return formatDateTime(new Date(iso), { ...BASE_OPTS, locale, timeZone: 'UTC' })
   }
 }
 
@@ -68,6 +72,7 @@ export function BackupFileList({
   isLoadingMore,
   hasMore,
 }: BackupFileListProps) {
+  const { locale } = useI18n()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [createPassword, setCreatePassword] = useState('')
@@ -108,8 +113,10 @@ export function BackupFileList({
                       <span className="break-all">{file.fileName}</span>
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums">{formatBytes(file.size)}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{formatDateTime(file.lastModified, timeZone)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{formatBytes(file.size, { locale })}</td>
+                  <td className="px-4 py-2 text-muted-foreground">
+                    {formatBackupTimestamp(file.lastModified, { locale, timeZone })}
+                  </td>
                   <td className="px-4 py-2 text-right" aria-label="操作">
                     <div className="flex justify-end gap-2">
                       <Button

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { ROLE_LEVELS, hasAtLeast, roleLabel } from '@/shared/utils/roles'
+import { makeTranslator } from '#/_helpers/i18n'
+import { ROLE_LABEL_KEYS, ROLE_LEVELS, hasAtLeast } from '@/shared/utils/roles'
 
 describe('shared/utils/roles — ROLE_LEVELS', () => {
   it('orders visitor below author below admin', () => {
@@ -33,10 +34,13 @@ describe('shared/utils/roles — hasAtLeast', () => {
   })
 })
 
-describe('shared/utils/roles — roleLabel', () => {
-  it('returns the Chinese label for each role', () => {
-    expect(roleLabel('admin')).toBe('管理员')
-    expect(roleLabel('author')).toBe('作者')
-    expect(roleLabel('visitor')).toBe('访客')
+describe('shared/utils/roles — ROLE_LABEL_KEYS', () => {
+  it('resolves to the role names in zh-CN and en-US', () => {
+    const tZhCN = makeTranslator('zh-CN')
+    const tEnUS = makeTranslator('en-US')
+    expect(tZhCN(ROLE_LABEL_KEYS.admin)).toBe('管理员')
+    expect(tZhCN(ROLE_LABEL_KEYS.author)).toBe('作者')
+    expect(tZhCN(ROLE_LABEL_KEYS.visitor)).toBe('访客')
+    expect(tEnUS(ROLE_LABEL_KEYS.admin)).toBe('Administrator')
   })
 })

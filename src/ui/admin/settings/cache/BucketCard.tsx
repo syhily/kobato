@@ -21,6 +21,7 @@ import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 type CacheSlice = CacheSettings['cache']
 
@@ -37,6 +38,7 @@ interface BucketCardProps {
 }
 
 export function BucketCard({ bucket, settings, allBuckets, isClearPending, clearStatus, onClear }: BucketCardProps) {
+  const { locale } = useI18n()
   const editable = settings !== undefined
   // Non-tunable buckets fall back to the stats row — memoized for a stable identity (compared by reference below).
   const effectiveSettings = useMemo(
@@ -203,7 +205,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
         <BucketField label="缓存条数" value={`${bucket.keyCount}`} />
         <BucketField label="当前前缀" value={<code className="font-mono text-xs">{bucket.prefix}</code>} />
         <BucketField label="键匹配模式" value={<code className="font-mono text-xs">{bucket.pattern}</code>} />
-        <BucketField label="当前 TTL" value={formatTtl(bucket.ttlSeconds)} />
+        <BucketField label="当前 TTL" value={formatTtl(bucket.ttlSeconds, { locale })} />
       </dl>
 
       {editable && isEditing ? (

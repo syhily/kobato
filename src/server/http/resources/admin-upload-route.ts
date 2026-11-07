@@ -11,6 +11,7 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/services/rec
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 type UploadBody = BodyData<{ all: false }>
 type UploadAuditEvent = Omit<AuditEventInput, 'actorId' | 'actorRole' | 'ipAddress' | 'userAgent' | 'createdAt'>
@@ -28,7 +29,8 @@ interface AdminUploadValidation<T> {
 interface AdminUploadRouteOptions<TValidated> {
   path: string
   maxSize: number
-  tooLargeMessage: string
+  /** Static copy, or a per-request resolver for locale-aware number formatting. */
+  tooLargeMessage: string | ((c: Context<Env>) => string)
   missingFileMessage: string
   logScope: string
   logMessage: string
@@ -54,7 +56,20 @@ export function adminUploadRoute<TValidated>(options: AdminUploadRouteOptions<TV
     csrfGuard,
     bodyLimit({
       maxSize: options.maxSize,
-      onError: (c) => c.json({ error: { message: options.tooLargeMessage } }, 413),
+      // `bodyLimit` types its context as `Context<any, any, {}>`; the mounted
+      // route always runs under `Env`, so the resolver gets that same context.
+      onError: (c) =>
+        c.json(
+          {
+            error: {
+              message:
+                typeof options.tooLargeMessage === 'function'
+                  ? options.tooLargeMessage(unsafeCast<Context<Env>>(c))
+                  : options.tooLargeMessage,
+            },
+          },
+          413,
+        ),
     }),
     async (c) => {
       const body = await c.req.parseBody({ all: false })

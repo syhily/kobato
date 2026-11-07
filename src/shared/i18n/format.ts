@@ -375,11 +375,12 @@ export function formatDisplayName(
   options: DisplayNameOptions,
 ): string {
   const fallback = options.fallback ?? 'code'
-  const formatter = displayNamesFormatter(options.locale, type, fallback)
   try {
+    const formatter = displayNamesFormatter(options.locale, type, fallback)
     return formatter.of(code) ?? code
   } catch {
-    // Malformed codes must not crash a render — show the raw code.
+    // Malformed codes (or a runtime without Intl.DisplayNames) must not crash
+    // a render — show the raw code.
     return code
   }
 }

@@ -3,7 +3,7 @@ import { Fragment, useState } from 'react'
 import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@/shared/contracts/jobs'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { formatDurationMs } from '@/shared/utils/formatter'
+import { formatDuration } from '@/shared/i18n/format'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { RUN_STATUS_META, useFormatAdminDate } from '@/ui/admin/tasks/meta'
@@ -11,6 +11,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyTitle } from '@/ui/components/empty'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 20
 
@@ -22,17 +23,18 @@ const TRIGGER_LABEL: Record<JobRunTrigger, string> = {
 /** Pure row — exported so snapshot tests can render it without the client-only Sheet portal. */
 export function RunHistoryRow({ run }: { run: JobRunDto }) {
   const date = useFormatAdminDate()
+  const { locale, t } = useI18n()
   const meta = RUN_STATUS_META[run.status]
   return (
     <div className="flex flex-col gap-1 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={meta.variant}>{meta.label}</Badge>
+        <Badge variant={meta.variant}>{t(meta.labelId)}</Badge>
         <span className="text-xs text-muted-foreground">{`${TRIGGER_LABEL[run.trigger]}触发`}</span>
         <span className="text-xs text-muted-foreground">{date(run.startedAt)}</span>
       </div>
       {(run.durationMs !== null || run.status === 'running' || run.error !== null) && (
         <p className="text-xs text-muted-foreground">
-          {run.durationMs !== null && `耗时 ${formatDurationMs(run.durationMs)}`}
+          {run.durationMs !== null && `耗时 ${formatDuration(run.durationMs, { locale })}`}
           {run.status === 'running' && '仍在运行'}
           {run.error !== null && <span className="text-status-error-fg">{run.error}</span>}
         </p>

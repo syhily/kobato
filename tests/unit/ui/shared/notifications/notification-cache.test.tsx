@@ -7,7 +7,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifications'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { wrapWithI18n } from '#/_helpers/i18n-render'
+import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 
 // The canonical `mockTanstackQuery()` cannot express this suite: the patch
 // path needs a REAL QueryClient (cache writes against oRPC's infinite-key
@@ -56,10 +58,13 @@ const { NotificationsDrawer } = await import('@/ui/shared/notifications/Notifica
 const { orpcQuery } = await import('@/client/api/orpc-query')
 const { patchNotificationReadState } = await import('@/client/hooks/use-notifications')
 
-// The drawer reads `useI18n()`; the provider is mounted as a render wrapper.
+// The drawer reads `useI18n()` and the site identity; both providers ride the
+// render wrapper (a wrapper, not inline JSX, so cache assertions keep their tree).
 function render(ui: ReactElement) {
   return rtlRender(ui, {
-    wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{wrapWithI18n(children)}</BlogSettingsProvider>
+    ),
   })
 }
 

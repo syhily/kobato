@@ -1,15 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { format } from 'date-fns'
 import { RefreshCwIcon, UploadIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { Controller } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import type { AnalyticsSettings } from '@/shared/config/types'
+import type { AppLocale } from '@/shared/i18n/locales'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useFileUpload } from '@/client/hooks/use-file-upload'
 import { onMutationError } from '@/client/lib/toast-api-error'
+import { formatDateTime } from '@/shared/i18n/format'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -82,7 +84,10 @@ function MaxMindUploadRow() {
   )
 }
 
-function describeGeoipStatus(status: GeoipStatus | undefined): string {
+function describeGeoipStatus(
+  status: GeoipStatus | undefined,
+  options: { locale: AppLocale; timeZone: string },
+): string {
   if (!status) {
     return '正在读取数据库状态…'
   }
@@ -91,13 +96,17 @@ function describeGeoipStatus(status: GeoipStatus | undefined): string {
   }
   const version = status.version ?? '未知版本'
   const source = status.source === 'remote' ? '远程下载' : '本地上传'
-  const updatedAt = status.updatedAt ? `，更新于 ${format(new Date(status.updatedAt), 'yyyy-MM-dd HH:mm')}` : ''
+  const updatedAt =
+    status.updatedAt === null
+      ? ''
+      : `，更新于 ${formatDateTime(new Date(status.updatedAt), { locale: options.locale, timeZone: options.timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}`
   return `当前版本 ${version}（${source}${updatedAt}）`
 }
 
 function MaxMindRemoteUpdateRow() {
   const queryClient = useQueryClient()
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const { data: status } = useQuery(orpcQuery.admin.geoip.status.queryOptions({ input: {} }))
   const updateMutation = useMutation({
     ...orpcQuery.admin.geoip.update.mutationOptions(),
@@ -124,7 +133,7 @@ function MaxMindRemoteUpdateRow() {
         <RefreshCwIcon data-icon="sm" />
         {updateMutation.isPending ? '检查中…' : '检查并更新'}
       </Button>
-      <span className="text-sm text-muted-foreground">{describeGeoipStatus(status)}</span>
+      <span className="text-sm text-muted-foreground">{describeGeoipStatus(status, { locale, timeZone })}</span>
     </div>
   )
 }

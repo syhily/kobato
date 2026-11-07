@@ -6,7 +6,7 @@ import { createSsrCaller } from '@/server/http/ssr-caller'
 import { computeDateRange } from '@/shared/contracts/analytics'
 import { pickEmptyStateLine } from '@/shared/contracts/dashboard'
 import { titleMeta } from '@/shared/seo/title-meta'
-import { roleLabel } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS } from '@/shared/utils/roles'
 import { BodyProjectionCard } from '@/ui/admin/dashboard/BodyProjectionCard'
 import { QuickActions } from '@/ui/admin/dashboard/QuickActions'
 import { RecentDraftsCard } from '@/ui/admin/dashboard/RecentDraftsCard'
@@ -15,6 +15,7 @@ import { SearchReindexCard } from '@/ui/admin/dashboard/SearchReindexCard'
 import { StatsGrid } from '@/ui/admin/dashboard/StatsGrid'
 import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 import type { Route } from './+types/dashboard'
 
@@ -95,6 +96,7 @@ function Greeting({ name }: { name: string }) {
 }
 
 export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
+  const { t } = useI18n()
   const {
     name,
     role,
@@ -117,7 +119,7 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
               <Greeting name={name} />
             </Suspense>
           </h1>
-          <p className="mt-1 text-muted-foreground">当前身份：{roleLabel(role)}</p>
+          <p className="mt-1 text-muted-foreground">当前身份：{t(ROLE_LABEL_KEYS[role])}</p>
         </div>
         <QuickActions />
       </div>

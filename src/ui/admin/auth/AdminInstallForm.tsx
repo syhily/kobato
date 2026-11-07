@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
 import { useFileUpload } from '@/client/hooks/use-file-upload'
+import { formatBytes } from '@/shared/i18n/format'
 import { isApiAccepted } from '@/shared/utils/api-error'
-import { formatBytes } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
@@ -24,7 +24,7 @@ function useCsrfToken(): string | undefined {
 }
 
 export function AdminInstallForm() {
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const [showPassword, setShowPassword] = useState(false)
@@ -301,7 +301,7 @@ export function AdminInstallForm() {
               </Button>
               {selectedFile ? (
                 <span className="text-sm text-muted-foreground">
-                  {selectedFile.name}（{formatBytes(selectedFile.size)}）
+                  {selectedFile.name}（{formatBytes(selectedFile.size, { locale })}）
                 </span>
               ) : (
                 <span className="text-sm text-muted-foreground">{t('auth.install.noFile')}</span>

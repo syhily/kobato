@@ -6,11 +6,12 @@ import type { AdminSessionItem } from '@/routes/admin/security/sessions'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { ROLE_LEVELS, roleLabel, type Role } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS, ROLE_LEVELS, type Role } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { maskIp } from '@/ui/lib/mask'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -38,6 +39,7 @@ function roleBadgeClasses(role: Role): string {
 }
 
 export function AdminSessionRow({ item, submitting, onRevoke, config }: AdminSessionRowProps) {
+  const { t } = useI18n()
   const label = item.label
   const initial = (item.userName || item.userEmail || '?').slice(0, 1).toUpperCase()
 
@@ -59,7 +61,7 @@ export function AdminSessionRow({ item, submitting, onRevoke, config }: AdminSes
             <span className="text-xs text-muted-foreground">{item.userEmail}</span>
             {!!item.userRole && isKnownRole(item.userRole) && (
               <Badge variant="secondary" className={roleBadgeClasses(item.userRole)}>
-                {roleLabel(item.userRole)}
+                {t(ROLE_LABEL_KEYS[item.userRole])}
               </Badge>
             )}
             {item.isCurrent && (

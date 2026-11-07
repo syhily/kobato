@@ -9,12 +9,13 @@ import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate, formatShowDate } from '@/shared/utils/formatter'
-import { roleLabel } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const DATE_FORMAT = 'yyyy-LL-dd'
@@ -84,6 +85,7 @@ interface UserRowProps {
 }
 
 const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
   const detailPath = `/admin/security/users/${user.id}`
@@ -116,14 +118,16 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
               onClick={(e) => e.stopPropagation()}
               className="block truncate font-medium hover:underline"
             >
-              {user.name || '匿名'}
+              {user.name || t('common.role.anonymous')}
             </Link>
             <div className="truncate text-sm text-muted-foreground">{user.email}</div>
           </div>
         </div>
       </TableCell>
       <TableCell className="px-4 py-4">
-        <span className="text-sm">{user.role === null ? '匿名' : roleLabel(user.role)}</span>
+        <span className="text-sm">
+          {user.role === null ? t('common.role.anonymous') : t(ROLE_LABEL_KEYS[user.role])}
+        </span>
       </TableCell>
       <TableCell className="px-4 py-4">
         <span className={cn('text-sm', statusClass)}>{statusText}</span>

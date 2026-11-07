@@ -1,8 +1,10 @@
 import type { ClearCacheTarget } from '@/shared/types/cache'
 import type { ClearStatus } from '@/ui/admin/settings/cache/cache-status'
 
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatTimestamp } from '@/ui/admin/settings/cache/cache-formatters'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface CacheStatusLineProps {
   status: ClearStatus
@@ -11,6 +13,8 @@ interface CacheStatusLineProps {
 }
 
 export function CacheStatusLine({ status, target, generatedAt }: CacheStatusLineProps) {
+  const { locale } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const isSuccess = status.target === target && status.state === 'success' && !!status.message
   const isError = status.target === target && status.state === 'error' && !!status.message
   const message = isSuccess
@@ -18,7 +22,7 @@ export function CacheStatusLine({ status, target, generatedAt }: CacheStatusLine
     : isError
       ? status.message
       : generatedAt
-        ? `数据采集时间：${formatTimestamp(generatedAt)}`
+        ? `数据采集时间：${formatTimestamp(generatedAt, { locale, timeZone })}`
         : ''
   return (
     <output aria-live="polite" className={cn('text-xs', isError ? 'text-destructive' : 'text-muted-foreground')}>

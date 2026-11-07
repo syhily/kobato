@@ -6,6 +6,7 @@ import type { AssetsLoaderShape, BrandingSlotStatus } from '@/shared/config/proj
 
 import { useFileUpload } from '@/client/hooks/use-file-upload'
 import { toastApiError } from '@/client/lib/toast-api-error'
+import { formatNumber } from '@/shared/i18n/format'
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Button } from '@/ui/components/button'
@@ -237,7 +238,7 @@ function SlotGroupCard({ group, branding }: { group: SlotGroup; branding: Assets
 
 function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus }) {
   const revalidator = useRevalidator()
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [clearing, setClearing] = useState(false)
   const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
@@ -255,8 +256,8 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
     messages: {
       invalidType: { title: '文件类型错误', description: `请选择 ${meta.accept} 格式的文件` },
       tooLarge: (file) => ({
-        title: `文件过大（${(file.size / 1024).toFixed(0)} KB）`,
-        description: `${meta.label} 大小上限为 ${(meta.maxBytes / 1024).toFixed(0)} KB。`,
+        title: `文件过大（${formatNumber(file.size / 1024, { locale, style: 'unit', unit: 'kilobyte', unitDisplay: 'short', maximumFractionDigits: 0 })}）`,
+        description: `${meta.label} 大小上限为 ${formatNumber(meta.maxBytes / 1024, { locale, style: 'unit', unit: 'kilobyte', unitDisplay: 'short', maximumFractionDigits: 0 })}。`,
       }),
       success: `${meta.label} 已上传`,
     },

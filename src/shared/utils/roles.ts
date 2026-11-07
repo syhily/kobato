@@ -2,6 +2,8 @@
 // throwing `requireRole` / `requireUserRole` guards in
 // `@/server/domains/auth/rbac`; UI consumers stick to `Role` + helpers.
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 export const ROLE_LEVELS = { visitor: 1, author: 2, admin: 3 } as const
 
 export type Role = keyof typeof ROLE_LEVELS
@@ -16,23 +18,12 @@ export function hasAtLeast(role: RoleOrNull | undefined, min: Role): boolean {
 }
 
 /**
- * Message ids for the role names — the localized surface public UI reads.
- * `roleLabel` below is the pre-i18n admin label, retired in the admin slice.
+ * Message ids for the role names — the localized surface every UI consumer
+ * reads (public chrome + admin views). There is no hardcoded label helper: the
+ * registry stays neutral and the component supplies its `t`.
  */
 export const ROLE_LABEL_KEYS = {
   admin: 'common.role.admin',
   author: 'common.role.author',
   visitor: 'common.role.visitor',
-} as const
-
-/** Human-readable Chinese label; callers must narrow to a non-null `Role` first (every call site sits behind a session gate). */
-export function roleLabel(role: Role): string {
-  switch (role) {
-    case 'admin':
-      return '管理员'
-    case 'author':
-      return '作者'
-    case 'visitor':
-      return '访客'
-  }
-}
+} as const satisfies Record<Role, UiMessageId>

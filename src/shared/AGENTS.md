@@ -105,10 +105,19 @@ server or client boundary catch and log it.
   `article:section`), `app-localization` (`resolveAppLocalization` — the single
   locale + site-time-zone resolver — plus `createLazyAppLocalization`, the
   per-request memo the request context projects), and `feature-flags`
-  (`I18N_SETTINGS_ENABLED`). The server translator lives in
-  `server/infra/i18n`; `shared/seo/title-meta` takes message ids and resolves
-  them from the root loader's `i18n` payload via `matches`. The AST guard for
-  hardcoded copy is `tests/_helpers/i18n-literals`.
+  (`I18N_SETTINGS_ENABLED`). `format` is the ONE display-formatting facade
+  (dates in an explicit locale + site zone, numbers, byte sizes, durations,
+  relative time, DisplayNames, collation) — UI code never calls `toLocale*`,
+  `Intl.*` formatters or date-fns relative formatting directly, and
+  `utils/formatter` keeps only the site-zone date primitives (the old
+  `formatBytes`/`formatDurationMs` retired into the facade). Display registries
+  (`config/display`, `cache/registry`, `utils/roles`, `utils/sessions-sort`,
+  `ui/admin/tasks/meta`, `ui/shared/notifications/notification-meta`) hold
+  message ids, never copy; the consumer resolves them with its own `t`. The
+  server translator lives in `server/infra/i18n`; `shared/seo/title-meta` takes
+  message ids and resolves them from the root loader's `i18n` payload via
+  `matches`. The AST guard for hardcoded copy is
+  `tests/_helpers/i18n-literals`.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`,
   `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`,

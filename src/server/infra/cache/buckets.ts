@@ -7,22 +7,33 @@ import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@/shared
 import { resolveCacheSlot } from '@/server/infra/cache/registry'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { session } from '@/server/infra/db/schema/session'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { rateLimitEntryCount } from '@/server/infra/rate-limit'
 import { CACHE_DECLARATIONS } from '@/shared/cache/registry'
+import { resolveAppLocalization } from '@/shared/i18n/app-localization'
 import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@/shared/types/cache'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Admin view over the shared cache declarations; bucket IDs double as the
 // `kv_cache.bucket` column value. Sessions and rate-limit counters are
 // deliberately excluded — they surface read-only via `RESERVED_CACHE_BUCKETS`.
+//
+// The registry stores message ids, so the DTO keeps its historical
+// `label`/`description` string shape: translate through the settings locale
+// seam here rather than shipping ids across the wire.
+
+function cacheTranslator() {
+  return createServerTranslator(resolveAppLocalization().locale)
+}
 
 export function getCacheBuckets(): CacheBucket[] {
+  const t = cacheTranslator()
   return CACHE_DECLARATIONS.map((declaration) => {
     const slot = resolveCacheSlot(declaration.id)
     return {
       id: declaration.id,
-      label: declaration.label,
-      description: declaration.description(slot.prefix),
+      label: t.format(declaration.labelId),
+      description: t.format(declaration.descriptionId, { prefix: slot.prefix }),
       prefix: slot.prefix,
       ttlSeconds: slot.ttlSeconds,
       pattern: `${slot.prefix}*`,
@@ -76,11 +87,12 @@ async function countReservedBucket(db: Database, id: ReservedCacheBucketId): Pro
 
 /** Count the read-only reserved buckets (live sessions, rate-limit windows) — visibility without a clear button. */
 export async function snapshotReservedBuckets(db: Database): Promise<ReservedCacheBucketStats[]> {
+  const t = cacheTranslator()
   return Promise.all(
     RESERVED_CACHE_BUCKETS.map(async (bucket) => ({
       id: bucket.id,
-      label: bucket.label,
-      description: bucket.description,
+      label: t.format(bucket.labelId),
+      description: t.format(bucket.descriptionId),
       keyCount: await countReservedBucket(db, bucket.id),
     })),
   )

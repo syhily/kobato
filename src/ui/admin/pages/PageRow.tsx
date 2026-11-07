@@ -2,17 +2,23 @@ import { ImageIcon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { AdminPageDto } from '@/shared/contracts/pages'
+import type { AppLocale } from '@/shared/i18n/locales'
 
+import { formatDate } from '@/shared/i18n/format'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 interface PageRowProps {
   page: AdminPageDto
 }
 
-function formatPageDate(page: AdminPageDto): string {
+function formatPageDate(page: AdminPageDto, options: { locale: AppLocale; timeZone: string }): string {
   const date = page.published ? new Date(page.publishedAt) : new Date(page.updatedAt)
-  return date.toLocaleDateString('zh-CN', {
+  return formatDate(date, {
+    locale: options.locale,
+    timeZone: options.timeZone,
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -52,9 +58,11 @@ function PageStatusText({ page }: { page: AdminPageDto }) {
 }
 
 export function PageRow({ page }: PageRowProps) {
+  const { locale } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const isDeleted = page.deletedAt !== null
 
-  const dateText = `${formatPageDateLabel(page)} ${formatPageDate(page)}`
+  const dateText = `${formatPageDateLabel(page)} ${formatPageDate(page, { locale, timeZone })}`
 
   return (
     <div

@@ -2,12 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { formatNumber } from '@/shared/i18n/format'
 import { useAnalyticsDashboardState } from '@/ui/admin/analytics/analytics-state-context'
 import { AnalyticsQueryState } from '@/ui/admin/analytics/AnalyticsQueryState'
 import { useAnalyticsQueryData } from '@/ui/admin/analytics/use-analytics-query'
 import { buildAnalyticsInput, type AnalyticsScope, type HeatmapMetric } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // 7×24 weekday × hour heatmap (Slite's `analysis/Heatmap.vue`): CSS grid +
 // color-mix intensity, isodow weekdays (Mon-first rows), a visits/visitors
@@ -32,6 +34,7 @@ export interface HeatmapProps {
 }
 
 export function Heatmap({ metric, className, scope }: HeatmapProps) {
+  const { locale } = useI18n()
   const state = useAnalyticsDashboardState()
   const query = useQuery(
     orpcQuery.analytics.heatmap.queryOptions({
@@ -66,9 +69,9 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
   }, [cells, metric])
 
   const metricLabel = METRIC_LABEL[metric]
-  const summary = `每周访问热力图。${metricLabel}总计 ${total.toLocaleString('zh-CN')}。${
+  const summary = `每周访问热力图。${metricLabel}总计 ${formatNumber(total, { locale })}。${
     peak
-      ? `峰值出现在周${WEEKDAY_LABELS[peak.weekday - 1]} ${peak.hour}:00,${metricLabel} ${peak.value.toLocaleString('zh-CN')}。`
+      ? `峰值出现在周${WEEKDAY_LABELS[peak.weekday - 1]} ${peak.hour}:00,${metricLabel} ${formatNumber(peak.value, { locale })}。`
       : ''
   }`
 
@@ -162,8 +165,8 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
                           className="relative block size-full rounded-sm border-0 p-0 transition-[background-color,box-shadow] duration-300 hover:ring-1 hover:ring-foreground/10 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transition-none"
                           style={{ backgroundColor: cellColor(index) }}
                           tabIndex={activeIndex === index ? 0 : -1}
-                          aria-label={`周${weekdayLabel} ${hour}:00。${metricLabel}: ${value.toLocaleString('zh-CN')}。`}
-                          title={`周${weekdayLabel} ${hour}:00 — ${metricLabel} ${value.toLocaleString('zh-CN')}`}
+                          aria-label={`周${weekdayLabel} ${hour}:00。${metricLabel}: ${formatNumber(value, { locale })}。`}
+                          title={`周${weekdayLabel} ${hour}:00 — ${metricLabel} ${formatNumber(value, { locale })}`}
                           onFocus={() => setActiveIndex(index)}
                           onKeyDown={(event) => handleCellKeydown(event, index)}
                         />

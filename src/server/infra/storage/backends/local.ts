@@ -205,8 +205,9 @@ export const localBackend: StorageBackend = {
       return []
     }
     // Sort before slicing so `maxKeys` is a deterministic prefix (matches S3's lexicographic order).
+    // Code-unit order on purpose — a locale collation would reorder object keys.
     const walked = await walk(base, STORAGE_DIR)
-    let items = walked.sort((a, b) => a.key.localeCompare(b.key))
+    let items = walked.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
     if (opts?.startAfter !== undefined) {
       const startAfter = opts.startAfter
       items = items.filter((item) => item.key > startAfter)

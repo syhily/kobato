@@ -29,6 +29,19 @@ const SCAN_ROOTS = [
   'src/ui/admin/auth',
   'src/routes/public',
   'src/routes/auth',
+  // Step 4b: the migrated formatting + registry modules (no JSX copy lives in
+  // these files, so the formatting rules — locale-less `toLocale*`, bare locale
+  // literals — are enforced cleanly here).
+  'src/shared/config/display.ts',
+  'src/shared/cache/registry.ts',
+  'src/shared/types/cache.ts',
+  'src/shared/utils/roles.ts',
+  'src/shared/utils/formatter.ts',
+  'src/ui/admin/analytics/time-labels.ts',
+  'src/ui/admin/editor-shell/wall-clock.ts',
+  'src/ui/admin/settings/cache/cache-formatters.ts',
+  'src/ui/admin/tasks/meta.ts',
+  'src/ui/shared/notifications/notification-meta.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -88,6 +101,21 @@ describe('production sources', () => {
     expect(scannedFiles).toContain('src/shared/i18n/locales.ts')
     expect(scannedFiles).toContain('src/shared/i18n/messages/ui/en-US.ts')
     expect(scannedFiles).toContain('src/shared/i18n/messages/server/zh-TW.ts')
+    // Step 4b slice: every migrated formatting / registry module is scanned.
+    expect(scannedFiles).toEqual(
+      expect.arrayContaining([
+        'src/shared/config/display.ts',
+        'src/shared/cache/registry.ts',
+        'src/shared/types/cache.ts',
+        'src/shared/utils/roles.ts',
+        'src/shared/utils/formatter.ts',
+        'src/ui/admin/analytics/time-labels.ts',
+        'src/ui/admin/editor-shell/wall-clock.ts',
+        'src/ui/admin/settings/cache/cache-formatters.ts',
+        'src/ui/admin/tasks/meta.ts',
+        'src/ui/shared/notifications/notification-meta.ts',
+      ]),
+    )
   })
 })
 

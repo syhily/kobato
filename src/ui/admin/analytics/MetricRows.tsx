@@ -1,7 +1,9 @@
 import type { MetricRow, MetricType } from '@/shared/contracts/analytics'
 
+import { formatNumber } from '@/shared/i18n/format'
 import { MetricName } from '@/ui/admin/analytics/MetricName'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Pure row list shared by the group card (top 10) and the details dialog
 // (full set): name + count(percent) + a chart-1 progress bar, modeled on
@@ -18,6 +20,7 @@ export interface MetricRowsProps {
 }
 
 export function MetricRows({ rows, total, type, onSelect, className }: MetricRowsProps) {
+  const { locale } = useI18n()
   return (
     <div className={cn('w-full text-sm', className)}>
       <div className="flex justify-between border-b leading-[40px]">
@@ -46,7 +49,7 @@ export function MetricRows({ rows, total, type, onSelect, className }: MetricRow
                     <MetricName name={row.name} type={type} />
                   </span>
                   <span className="shrink-0 text-right tabular-nums">
-                    {row.visits.toLocaleString()}
+                    {formatNumber(row.visits, { locale })}
                     <span className="text-xs text-muted-foreground"> ({percent}%)</span>
                   </span>
                 </span>

@@ -5,6 +5,7 @@ import type { SessionSortDirection, SessionSortOption, SessionSortState } from '
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface SessionSortSelectProps<T extends string = string> {
   sort: SessionSortState<T>
@@ -13,6 +14,7 @@ interface SessionSortSelectProps<T extends string = string> {
 }
 
 export function SessionSortSelect<T extends string>({ sort, options, onChange }: SessionSortSelectProps<T>) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const current = options.find((o) => o.value === sort.field)
 
@@ -39,7 +41,7 @@ export function SessionSortSelect<T extends string>({ sort, options, onChange }:
             'focus-visible:shadow-focus focus-visible:outline-none',
           )}
         >
-          <span>{current?.label ?? sort.field}</span>
+          <span>{current === undefined ? sort.field : t(current.labelId)}</span>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-44 p-0">
           <div className="border-b px-3 py-2 text-sm font-medium">排序</div>
@@ -56,7 +58,7 @@ export function SessionSortSelect<T extends string>({ sort, options, onChange }:
                   )}
                   onClick={() => handleFieldChange(option.value)}
                 >
-                  {option.label}
+                  {t(option.labelId)}
                   {selected && <CheckIcon className="size-4" />}
                 </button>
               )

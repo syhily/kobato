@@ -9,7 +9,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { roleLabel } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS } from '@/shared/utils/roles'
 import { LoginMethodCard } from '@/ui/admin/my/LoginMethodCard'
 import { PasskeyManagementCard } from '@/ui/admin/my/PasskeyManagementCard'
 import { PasswordChangeForm } from '@/ui/admin/my/PasswordChangeForm'
@@ -22,6 +22,7 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Separator } from '@/ui/components/separator'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { maskIp, maskUa } from '@/ui/lib/mask'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -54,6 +55,7 @@ export interface MyProfileViewProps {
 }
 
 export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyProfileViewProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
 
@@ -76,7 +78,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
   // Only privileged roles can paint a custom badge; the updateProfile action enforces the same rule.
   const canSetBadge = user.role === 'admin' || user.role === 'author'
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
-  const roleLabelText = user.role ? roleLabel(user.role) : '匿名'
+  const roleLabelText = user.role ? t(ROLE_LABEL_KEYS[user.role]) : t('common.role.anonymous')
 
   return (
     <AdminListPage>

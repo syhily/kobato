@@ -2,11 +2,16 @@ import type { DateRange as DayPickerRange } from 'react-day-picker'
 
 import { useState } from 'react'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+
 import { type DateRange, type PresetKey, PRESET_KEYS } from '@/shared/contracts/analytics'
+import { formatDate } from '@/shared/i18n/format'
+import { getClientTimezone } from '@/ui/admin/analytics/use-analytics-state'
 import { Button } from '@/ui/components/button'
 import { Calendar } from '@/ui/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Preset chip row for the seven canonical ranges plus a 自定义 chip that
 // opens a two-month range-calendar popover (the shared admin range-picker
@@ -23,8 +28,13 @@ const PRESET_LABEL: Record<PresetKey, string> = {
   'last-365d': '最近 365 天',
 }
 
-function shortDate(unixSec: number): string {
-  return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short' }).format(unixSec * 1000)
+function shortDate(unixSec: number, options: { locale: AppLocale; timeZone: string }): string {
+  // Analytics dates stay BROWSER-zoned; the formatting locale follows the UI.
+  return formatDate(new Date(unixSec * 1000), {
+    locale: options.locale,
+    timeZone: options.timeZone,
+    dateStyle: 'short',
+  })
 }
 
 /** Local midnight at the start of the given day, in unix seconds. */
@@ -46,6 +56,8 @@ export interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ preset, range, onSelect, onSelectRange, className }: DateRangePickerProps) {
+  const { locale } = useI18n()
+  const timeZone = getClientTimezone()
   const [customOpen, setCustomOpen] = useState(false)
   // The calendar is fully controlled, so the first click's start-only
   // selection must be fed back as `selected` — otherwise the second click
@@ -88,7 +100,9 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
               aria-pressed={customActive}
               className={cn('h-8 px-3 text-xs font-medium', !customActive && 'bg-transparent')}
             >
-              {customActive ? `${shortDate(range.startAt)} – ${shortDate(range.endAt)}` : '自定义'}
+              {customActive
+                ? `${shortDate(range.startAt, { locale, timeZone })} – ${shortDate(range.endAt, { locale, timeZone })}`
+                : '自定义'}
             </Button>
           }
         />

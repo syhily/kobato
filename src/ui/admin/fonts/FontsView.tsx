@@ -20,7 +20,7 @@ import type { AdminFontDto, FontSlot } from '@/shared/contracts/fonts'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError } from '@/client/lib/toast-api-error'
-import { formatBytes } from '@/shared/utils/formatter'
+import { formatBytes } from '@/shared/i18n/format'
 import {
   isDragData,
   isSlotDropData,
@@ -205,6 +205,7 @@ function LibrarySection({
 }
 
 function LibraryFontRow({ font, onDelete }: { font: AdminFontDto; onDelete: (font: AdminFontDto) => void }) {
+  const { locale } = useI18n()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: libDragId(font.id),
     data: { type: 'library', fontId: font.id } satisfies LibraryDragData,
@@ -238,7 +239,7 @@ function LibraryFontRow({ font, onDelete }: { font: AdminFontDto; onDelete: (fon
           <span className="text-xs text-muted-foreground">{font.sourceName}</span>
         </div>
         <div className="text-xs text-muted-foreground">
-          {font.chunkCount} 个分包 · {formatBytes(font.totalBytes)}
+          {font.chunkCount} 个分包 · {formatBytes(font.totalBytes, { locale })}
         </div>
       </div>
       <Button

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
+import { makeTranslator } from '#/_helpers/i18n'
+import { NAV_GROUP_LABEL_KEYS, SECTION_DISPLAY } from '@/shared/config/display'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
+
+const tZhCN = makeTranslator('zh-CN')
+const tEnUS = makeTranslator('en-US')
 
 describe('shared/config/display — SECTION_DISPLAY', () => {
   it('exposes one entry per settings section', () => {
@@ -10,15 +14,17 @@ describe('shared/config/display — SECTION_DISPLAY', () => {
     }
   })
 
-  it('every entry carries a non-empty Chinese label and description', () => {
+  it('every entry carries label/description message ids that resolve in every locale', () => {
     for (const meta of Object.values(SECTION_DISPLAY)) {
-      expect(meta.label.length).toBeGreaterThan(0)
-      expect(meta.description.length).toBeGreaterThan(0)
+      for (const t of [tZhCN, tEnUS]) {
+        expect(t(meta.labelId).length).toBeGreaterThan(0)
+        expect(t(meta.descriptionId).length).toBeGreaterThan(0)
+      }
     }
   })
 
   it('every entry references a known nav group', () => {
-    const groups = Object.keys(NAV_GROUP_LABEL)
+    const groups = Object.keys(NAV_GROUP_LABEL_KEYS)
     for (const meta of Object.values(SECTION_DISPLAY)) {
       expect(groups).toContain(meta.group)
     }
@@ -31,11 +37,19 @@ describe('shared/config/display — SECTION_DISPLAY', () => {
   })
 })
 
-describe('shared/config/display — NAV_GROUP_LABEL', () => {
-  it('covers all four groups with non-empty labels', () => {
-    expect(NAV_GROUP_LABEL.site).toBe('站点')
-    expect(NAV_GROUP_LABEL.content).toBe('内容与展示')
-    expect(NAV_GROUP_LABEL.service).toBe('服务集成')
-    expect(NAV_GROUP_LABEL.system).toBe('系统运维')
+describe('shared/config/display — NAV_GROUP_LABEL_KEYS', () => {
+  it('covers all four groups and resolves through the catalogs', () => {
+    expect(tZhCN(NAV_GROUP_LABEL_KEYS.site)).toBe('站点')
+    expect(tZhCN(NAV_GROUP_LABEL_KEYS.content)).toBe('内容与展示')
+    expect(tZhCN(NAV_GROUP_LABEL_KEYS.service)).toBe('服务集成')
+    expect(tZhCN(NAV_GROUP_LABEL_KEYS.system)).toBe('系统运维')
+    expect(tEnUS(NAV_GROUP_LABEL_KEYS.site)).toBe('Site')
+    expect(tEnUS(NAV_GROUP_LABEL_KEYS.system)).toBe('System operations')
+  })
+
+  it('resolves section labels per locale', () => {
+    expect(tZhCN(SECTION_DISPLAY.general.labelId)).toBe('基本信息')
+    expect(tEnUS(SECTION_DISPLAY.general.labelId)).toBe('Basic info')
+    expect(tZhCN(SECTION_DISPLAY.cache.descriptionId)).toBe('OG 图 / 头像 / 日历的服务端缓存')
   })
 })
