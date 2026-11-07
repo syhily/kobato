@@ -21,8 +21,8 @@ export interface AdminSessionItem {
   userName: string
   userEmail: string
   userRole: 'admin' | 'author' | 'visitor' | null
-  userAgent: string
-  platformHint: string | null
+  /** Server-rendered UA label (the browser never parses UAs). */
+  label: string
   ip: string
   loginAtIso: string
   lastActiveAtIso: string
@@ -63,8 +63,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     userName: s.userName,
     userEmail: s.userEmail,
     userRole: s.userRole,
-    userAgent: s.userAgent,
-    platformHint: s.platformHint,
+    label: s.label,
     ip: s.ip,
     loginAtIso: s.loginAt.toISOString(),
     lastActiveAtIso: s.lastActiveAt.toISOString(),

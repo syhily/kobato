@@ -17,8 +17,8 @@ export const meta = titleMeta('登录设备')
 
 export interface MySessionItem {
   sid: string
-  userAgent: string
-  platformHint: string | null
+  /** Server-rendered UA label (the browser never parses UAs). */
+  label: string
   ip: string
   loginAtIso: string
   lastActiveAtIso: string
@@ -51,8 +51,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   })
   const items: MySessionItem[] = sorted.map((s) => ({
     sid: s.sid,
-    userAgent: s.userAgent,
-    platformHint: s.platformHint,
+    label: s.label,
     ip: s.ip,
     loginAtIso: s.loginAt.toISOString(),
     lastActiveAtIso: s.lastActiveAt.toISOString(),

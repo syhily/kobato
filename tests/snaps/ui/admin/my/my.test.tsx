@@ -46,8 +46,7 @@ function makeCounts(overrides: Partial<MyProfileCounts> = {}): MyProfileCounts {
 function makeSession(overrides: Partial<MySessionItem> = {}): MySessionItem {
   return {
     sid: overrides.sid ?? 'session-1',
-    userAgent: overrides.userAgent ?? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-    platformHint: overrides.platformHint ?? 'macOS',
+    label: overrides.label ?? 'Chrome 120 · macOS',
     ip: overrides.ip ?? '127.0.0.1',
     loginAtIso: overrides.loginAtIso ?? '2024-01-01T00:00:00.000Z',
     lastActiveAtIso: overrides.lastActiveAtIso ?? '2024-01-02T00:00:00.000Z',

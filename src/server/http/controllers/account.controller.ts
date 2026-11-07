@@ -3,6 +3,7 @@ import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { formatUaLabel } from '@/server/domains/analytics/ua-parse'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import {
@@ -102,11 +103,25 @@ const profile = authedProc
     return { user, passkeyEnabled: isPasskeyEnabled(), mailReady: isMailLoginReady() }
   })
 
-// Raw session rows — sorting and `isCurrent` stay in the route loader.
+// Raw session rows — sorting and `isCurrent` stay in the route loader. The
+// UA label is rendered HERE, at the perimeter: the detector dataset is
+// server-only and the public/admin route whitelists must not import the
+// analytics domain.
 const sessions = authedProc
   .route({ method: 'GET', path: '/account/sessions' })
   .output(accountSessionsOutputSchema)
-  .handler(async ({ context }) => listSessionsByUser(context.db, idFromString(context.viewer.id)))
+  .handler(async ({ context }) => {
+    const rows = await listSessionsByUser(context.db, idFromString(context.viewer.id))
+    return rows.map((row) => ({
+      sid: row.sid,
+      userId: row.userId,
+      label: formatUaLabel(row.userAgent, row.platformHint),
+      ip: row.ip,
+      loginAt: row.loginAt,
+      lastActiveAt: row.lastActiveAt,
+      expiresAt: row.expiresAt,
+    }))
+  })
 
 const updateProfile = authedProc
   .route({ method: 'POST', path: '/account/update-profile' })

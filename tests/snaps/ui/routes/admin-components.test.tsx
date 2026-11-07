@@ -32,8 +32,7 @@ describe('admin routes — Component SSR renders', () => {
     const items = [
       {
         sid: 'abc123',
-        userAgent: 'Mozilla/5.0',
-        platformHint: 'macOS',
+        label: 'Chrome 120 · macOS',
         ip: '127.0.0.1',
         loginAtIso: '2025-01-01T00:00:00.000Z',
         lastActiveAtIso: '2025-01-02T00:00:00.000Z',
@@ -42,8 +41,7 @@ describe('admin routes — Component SSR renders', () => {
       },
       {
         sid: 'def456',
-        userAgent: 'curl/8',
-        platformHint: null,
+        label: 'curl 8',
         ip: '10.0.0.1',
         loginAtIso: '2025-01-01T00:00:00.000Z',
         lastActiveAtIso: '2025-01-01T00:00:00.000Z',
@@ -52,9 +50,9 @@ describe('admin routes — Component SSR renders', () => {
       },
     ]
     const html = stableHtml(renderInRouter(<MySessionsRoute loaderData={{ items }} />, '/admin/me/sessions'))
-    // IP octets are masked — assert the verbatim platform/UA + current-session badge.
-    expect(html).toContain('macOS')
-    expect(html).toContain('curl/8')
+    // IP octets are masked — assert the server-rendered labels + current-session badge.
+    expect(html).toContain('Chrome 120 · macOS')
+    expect(html).toContain('curl 8')
     expect(html).toContain('当前会话')
   })
 
@@ -66,8 +64,7 @@ describe('admin routes — Component SSR renders', () => {
         userName: 'Alice',
         userEmail: 'alice@example.com',
         userRole: 'admin' as const,
-        userAgent: 'Mozilla',
-        platformHint: 'Linux',
+        label: 'Chrome 120 · Linux',
         ip: '192.0.2.1',
         loginAtIso: '2025-01-01T00:00:00.000Z',
         lastActiveAtIso: '2025-01-01T00:00:00.000Z',

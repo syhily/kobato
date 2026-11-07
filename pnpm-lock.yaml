@@ -521,9 +521,6 @@ catalogs:
     typescript:
       specifier: 7.0.2
       version: 7.0.2
-    ua-parser-modern:
-      specifier: ^0.1.1
-      version: 0.1.1
     undici:
       specifier: ^8.12.4
       version: 8.12.4
@@ -922,9 +919,6 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
-      ua-parser-modern:
-        specifier: 'catalog:'
-        version: 0.1.1
       undici:
         specifier: 'catalog:'
         version: 8.12.4
@@ -4881,10 +4875,6 @@ packages:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
     engines: {node: '>=16.20.0'}
     hasBin: true
-
-  ua-parser-modern@0.1.1:
-    resolution: {integrity: sha512-7w/roxPc8S0HCZi8JvmZsg5rAdjLi6Tiw1Qs5bXJkZRpSiKhEP3HObm8F/oNGB9oOaQAIGZ27p8tO82mtMcOyA==}
-    engines: {node: '>=20.19.0'}
 
   uc.micro@2.1.0:
     resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
@@ -8929,8 +8919,6 @@ snapshots:
       '@typescript/typescript-sunos-x64': 7.0.2
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
-
-  ua-parser-modern@0.1.1: {}
 
   uc.micro@2.1.0: {}
 

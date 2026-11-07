@@ -10,7 +10,6 @@ import { useLogout } from '@/client/hooks/use-logout'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { DEFAULT_ADMIN_SORT, SESSION_SORT_OPTIONS } from '@/shared/utils/sessions-sort'
-import { formatUserAgentLabel } from '@/shared/utils/user-agent'
 import { AdminSessionRow } from '@/ui/admin/sessions/AdminSessionRow'
 import { SessionSortSelect } from '@/ui/admin/sessions/SessionSortSelect'
 import { useSessionSort } from '@/ui/admin/sessions/useSessionSort'
@@ -48,7 +47,7 @@ export function SessionsView({ items }: SessionsViewProps) {
       title: item.isCurrent ? '注销你当前的会话？' : `注销 ${item.userName} 的此会话？`,
       description: item.isCurrent
         ? '这是你正在使用的会话。注销后页面会跳转到登录页，需要重新输入密码。'
-        : `该设备 (${formatUserAgentLabel(item.userAgent)}) 将立即退出登录。`,
+        : `该设备 (${item.label}) 将立即退出登录。`,
       actionLabel: '注销',
       destructive: true,
       actionIcon: <LogOutIcon data-icon />,

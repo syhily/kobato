@@ -4,7 +4,6 @@ import type { MySessionItem } from '@/routes/admin/me/sessions'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { formatUserAgentLabel } from '@/shared/utils/user-agent'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
@@ -19,7 +18,7 @@ interface MySessionRowProps {
 }
 
 export function MySessionRow({ item, submitting, onRevoke, dateFormat, config }: MySessionRowProps) {
-  const label = formatUserAgentLabel(item.userAgent, item.platformHint)
+  const label = item.label
 
   return (
     <div
@@ -44,9 +43,6 @@ export function MySessionRow({ item, submitting, onRevoke, dateFormat, config }:
           <span className="mx-1.5 text-muted-foreground/60">·</span>
           过期 {formatLocalDate(new Date(item.expiresAtIso), dateFormat, config)}
         </p>
-        {item.userAgent && item.userAgent !== label && (
-          <div className="break-all text-(--text-micro) text-muted-foreground/80">{item.userAgent}</div>
-        )}
       </div>
       <div className="flex shrink-0 items-center self-center">
         <Button

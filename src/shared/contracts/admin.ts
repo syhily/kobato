@@ -1,12 +1,12 @@
 import { z } from 'zod'
 
 import type { AnalyticsOverviewData } from '@/server/domains/analytics/services/overview'
-import type { SessionMeta, SessionWithUser } from '@/server/domains/auth/repo'
 import type { AccountProfile } from '@/server/domains/users/services/account'
 import type { SettingsBundle, SecretMasks } from '@/shared/config/types'
 import type { MetricRow } from '@/shared/contracts/analytics'
 import type { DraftSummary } from '@/shared/contracts/dashboard'
 import type { AdminPostDto } from '@/shared/contracts/posts'
+import type { Role } from '@/shared/utils/roles'
 
 // The admin/me dashboard, settings, session, and analytics SSR loaders
 // reach their data through these procedures (in-process via
@@ -23,14 +23,31 @@ export const accountProfileOutputSchema = z.object({
 })
 export type AccountProfileOutput = z.infer<typeof accountProfileOutputSchema>
 
-// Raw `listSessionsByUser` rows — sorting / `isCurrent` projection stays
-// in the route loader (`parseSessionSort` is shared).
-export const accountSessionsOutputSchema = z.custom<SessionMeta[]>()
+// Session-list wire rows. The UA label is rendered server-side
+// (`formatUaLabel`, node-device-detector) — the browser never parses a UA.
+// Sorting / `isCurrent` projection stays in the route loader.
+export interface AccountSessionDto {
+  sid: string
+  userId: number
+  label: string
+  ip: string
+  loginAt: Date
+  lastActiveAt: Date
+  expiresAt: Date
+}
+
+export interface AdminSessionDto extends AccountSessionDto {
+  userName: string
+  userEmail: string
+  userRole: Role | null
+}
+
+export const accountSessionsOutputSchema = z.custom<AccountSessionDto[]>()
 export type AccountSessionsOutput = z.infer<typeof accountSessionsOutputSchema>
 
 export const adminUsersCountOutputSchema = z.number().int().nonnegative()
 
-export const adminUsersListSessionsOutputSchema = z.custom<SessionWithUser[]>()
+export const adminUsersListSessionsOutputSchema = z.custom<AdminSessionDto[]>()
 
 export const adminUsersPasskeyFlagOutputSchema = z.boolean()
 

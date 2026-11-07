@@ -132,7 +132,7 @@ describe('account.profile', () => {
 })
 
 describe('account.sessions', () => {
-  it('returns the raw session rows of the caller, other users excluded', async () => {
+  it('returns the session rows of the caller with server-rendered labels, other users excluded', async () => {
     const me = await seedUser({ name: 'Me' })
     const other = await seedUser({ name: 'Other' })
     await seedSession('sess-mine', me)
@@ -141,11 +141,11 @@ describe('account.sessions', () => {
 
     const res = await callRpc('/account/sessions', undefined, makeAuthedCtx({ db, userId: String(me) }))
     expect(res.status).toBe(200)
-    const json = await parseRpcJson<Array<{ sid: string; userId: number; userAgent: string; loginAt: string }>>(res)
+    const json = await parseRpcJson<Array<{ sid: string; userId: number; label: string; loginAt: string }>>(res)
 
     expect(json.map((s) => s.sid).sort()).toEqual(['sess-mine', 'sess-mine-2'])
     expect(json[0]!.userId).toBe(me)
-    expect(json[0]!.userAgent).toBe('vitest')
+    expect(json[0]!.label).toBe('vitest')
     expect(json[0]!.loginAt).toBe('2024-01-01T00:00:00.000Z')
   })
 })
@@ -249,13 +249,17 @@ describe('admin.users.listSessions', () => {
 
     const res = await callRpc('/admin/users/listSessions', undefined, makeAuthedCtx({ db, userId: String(admin) }))
     expect(res.status).toBe(200)
-    const json = await parseRpcJson<Array<{ sid: string; userName: string; userEmail: string; userRole: string }>>(res)
+    const json =
+      await parseRpcJson<Array<{ sid: string; userName: string; userEmail: string; userRole: string; label: string }>>(
+        res,
+      )
 
     expect(json.map((s) => s.sid).sort()).toEqual(['sess-admin', 'sess-author'])
     expect(json.find((s) => s.sid === 'sess-admin')).toMatchObject({
       userName: 'Admin',
       userEmail: 'admin@example.com',
       userRole: 'admin',
+      label: 'vitest',
     })
   })
 })

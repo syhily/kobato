@@ -107,6 +107,51 @@ function deviceLabel(brand: string, model: string): string {
 const detector = new DeviceDetector({ skipBotDetection: false, osVersionTruncate: null, clientVersionTruncate: null })
 const hintsParser = new ClientHints()
 
+const MAX_RAW_LABEL = 80
+
+/** `Sec-CH-UA-Platform` is a structured string — the raw header keeps its quotes. */
+function normalizePlatformHint(hint: string | null | undefined): string | null {
+  const unquoted = hint?.replace(/^"|"$/g, '') ?? ''
+  return unquoted === '' ? null : unquoted
+}
+
+/**
+ * Short session-list label, rendered server-side because the full
+ * node-device-detector dataset must never enter the browser bundle. Shares
+ * this module's detector instance with the analytics dimension parser — one
+ * configured engine for the whole server. `platformHint` (`Sec-CH-UA-Platform`)
+ * wins over the parsed OS because desktop-mode iOS sends a macOS-like UA.
+ * Browser/OS names run through the same normalization maps as the analytics
+ * dimensions so both surfaces spell them identically.
+ */
+export function formatUaLabel(ua: string | null | undefined, platformHint?: string | null): string {
+  const platform = normalizePlatformHint(platformHint)
+  if (!ua) {
+    return platform ?? '未知设备'
+  }
+
+  const result = detector.detect(ua, {})
+  const clientName = result.client?.name || null
+  const browserName = clientName ? (BROWSER_NAME_MAP[clientName] ?? clientName) : null
+  const majorVersion = result.client?.version ? result.client.version.split('.')[0] : ''
+  const browser = browserName ? (majorVersion ? `${browserName} ${majorVersion}` : browserName) : null
+
+  const osName = result.os?.name || null
+  const os = platform ?? (osName ? (OS_NAME_MAP[osName] ?? osName) : null)
+
+  if (browser && os) {
+    return `${browser} · ${os}`
+  }
+  if (browser) {
+    return browser
+  }
+  if (os) {
+    return os
+  }
+
+  return ua.length > MAX_RAW_LABEL ? `${ua.slice(0, MAX_RAW_LABEL - 1)}…` : ua
+}
+
 function hasHints(hints: UaClientHints | undefined): hints is UaClientHints {
   return (
     !!hints &&

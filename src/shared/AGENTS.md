@@ -95,7 +95,7 @@ server or client boundary catch and log it.
 - `seo/` — isomorphic meta-tag builders (`meta`, `title-meta`,
   `og-image`) shared by routes, loaders, and the feed/OG renderers.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
-  `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
+  `formatter`, `pagination`, `toc`, `paths`, `roles`,
   `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`,
   `theme-cookie`.
 - `cache/`, `constants/`, `lib/` — small standalone modules; a few

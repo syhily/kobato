@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { formatUaLabel } from '@/server/domains/analytics/ua-parse'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { listAllSessions } from '@/server/domains/auth/services/sessions'
 import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '@/server/domains/auth/session-guard'
@@ -12,11 +13,27 @@ import { idFromString } from '@/shared/utils/id'
 const userIdInput = z.object({ userId: z.string().min(1) })
 const successOutput = z.object({ success: z.boolean() })
 
-// Every live session, raw joined rows — the security page sorts/projects in the loader.
+// Every live session, joined against the user — the security page sorts and
+// projects `isCurrent` in the loader. The UA label is rendered here (the
+// detector dataset is server-only; route loaders cannot import the domain).
 const listSessions = adminProc
   .route({ method: 'GET', path: '/admin/users/list-sessions' })
   .output(adminUsersListSessionsOutputSchema)
-  .handler(({ context }) => listAllSessions(context.db))
+  .handler(async ({ context }) => {
+    const rows = await listAllSessions(context.db)
+    return rows.map((row) => ({
+      sid: row.sid,
+      userId: row.userId,
+      label: formatUaLabel(row.userAgent, row.platformHint),
+      ip: row.ip,
+      loginAt: row.loginAt,
+      lastActiveAt: row.lastActiveAt,
+      expiresAt: row.expiresAt,
+      userName: row.userName,
+      userEmail: row.userEmail,
+      userRole: row.userRole,
+    }))
+  })
 
 const revokeSession = adminProc
   .route({ method: 'POST', path: '/admin/users/revoke-session' })

@@ -173,7 +173,6 @@ export default defineConfig(({ command }) => ({
       'react-day-picker',
       'react-hook-form',
       'sonner',
-      'ua-parser-modern',
       'zod',
       // The inkling editor (src/inkling) joined the client graph as SOURCE
       // (previously a pre-bundled workspace dist): pin its heavy runtime

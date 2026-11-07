@@ -7,7 +7,6 @@ import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { ROLE_LEVELS, roleLabel, type Role } from '@/shared/utils/roles'
-import { formatUserAgentLabel } from '@/shared/utils/user-agent'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
@@ -39,7 +38,7 @@ function roleBadgeClasses(role: Role): string {
 }
 
 export function AdminSessionRow({ item, submitting, onRevoke, config }: AdminSessionRowProps) {
-  const label = formatUserAgentLabel(item.userAgent, item.platformHint)
+  const label = item.label
   const initial = (item.userName || item.userEmail || '?').slice(0, 1).toUpperCase()
 
   return (
