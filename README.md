@@ -17,9 +17,9 @@ This repository is the complete product: public site, admin SPA, API, SSR render
 The whole deployment is one process — content lives in an embedded **SQLite** database, analytics in an
 embedded **DuckDB** sidecar. There is no database server to run, back up, or upgrade.
 
-> **Contributors:** start at [AGENTS.md](AGENTS.md) — it documents the import
-> boundaries, the four-layer `src/server/` graph, the install contract, and the
-> API permission matrix.
+> **Contributors:** start at [AGENTS.md](AGENTS.md) — it maps the folder-scoped
+> docs covering the import boundaries, the four-layer `src/server/` graph, the
+> install contract, and the API permission matrix.
 
 ## Features
 

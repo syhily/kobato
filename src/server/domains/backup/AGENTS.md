@@ -1,0 +1,27 @@
+# Backup domain conventions
+
+The archive is a gzipped tar of three payloads: `kobato.db` (content), `analytics.duckdb` (analytics sidecar), and the env-converged `kobato.config.json`. Sidecars from pre-rewrite backups carry the legacy named-column `access_log` schema — the boot-time blob migration (`src/server/domains/analytics/services/blob-migration.ts`, flag `system.analytics-blob-migration`) converts them to `access_events` on the first boot after the restore.
+
+## Encryption
+
+Optional password encryption (settings `backup.encryption` — enabling REQUIRES a stored password: the section schema rejects `enabled` without one and the create path fails closed via `BackupEncryptionMisconfiguredError`; per-run override on manual creates, min 8 chars) streams the archive through chunked AES-256-GCM (`src/server/domains/backup/services/crypto.ts`: scrypt-derived key, `KOBENC01` magic). Each record is `[u32 ctLen][1B flags][12B IV][ct][16B tag]` with AAD = seq‖flags — reordering/truncation/forged-length attacks fail authentication (a declared length over the 4 MiB chunk size is rejected before any read); bit0 flags FINAL, exactly one per stream. `BackupDecryptionError.kind` splits failures: `'auth'` (GCM tag check — retryable) vs `'format'` (header/framing/truncation — no retry helps). Encrypted archives carry a `.enc` storage suffix — that suffix, not a stream probe, is how `listBackups` / `isBackupEncrypted` / the download route know.
+
+The encryption password resolver reaches the backup domain through `wireBackupEncryption` at the composition root (Platform domains must not import settings); `resetBackupEncryption` is the test seam; `resolveStoredEncryptionPassword()` in `services/backup.ts` is the single reader. Passwords are TRIMMED on both the create and restore paths.
+
+## Restore
+
+Restore applies the three payloads IN ORDER — content DB → analytics sidecar (skipped on the setup flow) → config file. The staged config is validated during staging AND again before the first swap against the same checks the next boot applies (`parseRestorableConfigJson`: `parseConfigFileJson`'s legacy-key migration + `''`-as-unset + strict file schema, PLUS the env-over-file merged per-entry parse — the file schema alone is all-optional, so a config missing a required secret would pass and then `process.exit(1)` on the next boot, databases already swapped): a config the next boot would reject aborts with a 400 and no swap. The config leg then overwrites the live file (takes effect on the next restart; skipped in env-only mode); its write failure stays warn-only — never rolls back the completed engine swaps.
+
+Swap crash consistency: the engine swaps' two renames are not atomic, so boot runs `recoverPreRestoreFiles()` BEFORE the engines open — target missing + `.pre-restore` present = mid-swap crash, the sibling (last good copy) is renamed back; target present = stale sibling dropped; `.restore-staging` orphans always dropped. The config file joins the same `.pre-restore` machinery (`restoreTargets()` = engine files + config; its replace is a single rename with no missing-target window). Before every restore, `discardSwapLeftovers()` removes stale leftovers STRICTLY (a failed delete aborts the restore — a leftover would let a later failure roll back to a ghost database).
+
+Wrong passwords surface as `BackupPasswordError` (400, `services/restore.ts`) — never a 500; the stored-backup restore controller catches `EncryptedBackupPasswordRequired`, discards the staged dir, and answers `{passwordRequired: true}`. Every restore path passes `onFailureFn` so a pre-swap drain/prepare failure sweeps the staged dir.
+
+A backup row's `storage_path` rides inside the restored database, so every stream/delete path re-checks it against the backup key grammar (`isValidBackupStoragePath`): the download refuses with 400, the deletes/sweeps drop the row and never touch the object it names.
+
+## Encrypted uploads
+
+Encrypted uploads restore in two steps: `upload-restore` stages the raw bytes, detects the magic, parks the temp dir in `pending-uploads.ts` (10-minute token, max 4 parked, LRU eviction never touches an in-flight entry, all-busy park → 429) and answers `{encrypted, token}`; the UI prompts and calls `upload-restore/decrypt` (IP rate limit, 64 KB body limit, per-token in-flight mutex → 409, unknown/expired token → 410, structural staging failures → 410 with the token released, wrong password → 400 with the token kept). The setup flow has no two-step prompt — the password rides along as a form field, and its gate checks (installed/session/token/CSRF) run BEFORE the rate limiter so anonymous requests never burn the 5/hour budget. The stored settings password is tried first for stored-backup restores; a decrypt failure declines into the same prompt. Restores audit `backup_restored`, downloads `backup_downloaded`.
+
+Progress: the browser uploads via XHR (the only API with real upload percent) and polls from the start; pre-claim decrypt/extract byte progress merges with the restore machine's phases in `restore-progress.ts` behind `GET /api/admin/backup/restore-progress`.
+
+The global 30s request timeout exempts the long-running restore endpoints (`/api/admin/backup/upload-restore*`, `/api/setup/restore` get a 30-minute budget) — 500 MB over a slow uplink would otherwise 503 mid-staging.

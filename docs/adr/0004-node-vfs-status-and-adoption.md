@@ -84,7 +84,7 @@ physics.
 - **Adopting the flagged subsystem early** (`--experimental-vfs` in
   production) — Stability 1 APIs change without notice, and shipping
   production binaries on an experimental flag contradicts the stock-Node
-  posture (see the AGENTS.md SEA section). The minimal landed subsystem
+  posture (see `scripts/sea/AGENTS.md`). The minimal landed subsystem
   also does not yet provide filesystem module loading, so it would buy
   nothing today.
 
@@ -92,12 +92,12 @@ physics.
 
 - Watch item: on each Node LTS upgrade, re-check the three adoption
   triggers against the current `node:vfs` docs and the #61478 status.
-- Until then, the patch layer documented in AGENTS.md (asset plumbing,
-  compression registry, single-file bundles, eval workers, native-require
-  redirect) is the supported design; changes to it should preserve the
-  invariant that a later VFS adoption can delete it without touching
-  product code (the seam is `getEmbeddedAsset` / `nativeRequire`, not
-  call-site conventions).
+- Until then, the patch layer documented in `scripts/sea/AGENTS.md`
+  (asset plumbing, compression registry, single-file bundles, eval
+  workers, native-require redirect) is the supported design; changes to
+  it should preserve the invariant that a later VFS adoption can delete
+  it without touching product code (the seam is `getEmbeddedAsset` /
+  `nativeRequire`, not call-site conventions).
 - This ADR records status as of 2026-07-27; when any trigger flips, amend
   it rather than adding a new ADR, then schedule the deletion work.
 
@@ -252,9 +252,9 @@ New capabilities noted, none adopted:
 ## Amendment 2026-10-16: Node 26.12.0 — re-pinned, no deletions, `vfsArchive` declined
 
 The toolchain pin moved 26.10.0 → **26.12.0** (`.nvmrc`, CI matrices,
-AGENTS.md). 26.11.0/26.11.1/26.12.0 shipped a wave of VFS work; the full
-probe matrix was re-run on an official 26.12.0 dist (`pnpm run sea:probe`,
-darwin-x64) — **20/20 checks, 63/63 assertions**.
+`scripts/sea/AGENTS.md`). 26.11.0/26.11.1/26.12.0 shipped a wave of VFS
+work; the full probe matrix was re-run on an official 26.12.0 dist
+(`pnpm run sea:probe`, darwin-x64) — **20/20 checks, 63/63 assertions**.
 
 **Changelog review (26.11.0–26.12.0), VFS/SEA-relevant commits:** none
 touch the SEA mount behavior this ADR pins. The notable ones:
@@ -321,8 +321,9 @@ the transition lands — no action required.
 ## Amendment 2026-11-05: Node 26.13.0 — re-pinned, no deletions
 
 The toolchain pin moved 26.12.1 → **26.13.0** (`.nvmrc`, CI matrices,
-AGENTS.md). The full probe matrix was re-run on the official 26.13.0 dist
-(`pnpm run sea:probe`, darwin-x64) — **20/20 checks, 63/63 assertions**.
+`scripts/sea/AGENTS.md`). The full probe matrix was re-run on the official
+26.13.0 dist (`pnpm run sea:probe`, darwin-x64) — **20/20 checks, 63/63
+assertions**.
 
 **Empirical re-pin on 26.13.0** — nothing to delete:
 
