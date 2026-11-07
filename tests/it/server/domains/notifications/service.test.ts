@@ -122,6 +122,29 @@ describe('notifications / inbox', () => {
     markRead(db, visitorId)
     expect(unreadCount(db, visitorId)).toBe(0)
   })
+
+  it("marks only the caller's rows read when ids are given", async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const aId = await seedUser('visitor', 'a')
+    const bId = await seedUser('visitor', 'b')
+    sendBroadcast(db, adminId, { title: '一', body: 'b1', replyable: false })
+    const second = sendBroadcast(db, adminId, { title: '二', body: 'b2', replyable: false })
+
+    const touched = markRead(db, aId, [second.id])
+    expect(touched).toBe(1)
+    expect(unreadCount(db, aId)).toBe(1)
+    expect(unreadCount(db, bId)).toBe(2)
+  })
+
+  it('renders a vanished sender as null', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    sendDirectMessage(db, adminId, visitorId, { title: '私信', body: 'hello' })
+    await db.delete(user).where(eq(user.id, adminId))
+
+    const inbox = await listInbox(db, visitorId, { tab: 'all', limit: 10 })
+    expect(inbox.items[0]!.sender).toBeNull()
+  })
 })
 
 describe('notifications / threads & replies', () => {
@@ -223,6 +246,16 @@ describe('notifications / threads & replies', () => {
     await expect(replyToThread(db, viewer(adminId, 'admin'), { threadId: root.threadId, body: 'x' })).rejects.toThrow(
       DomainError,
     )
+  })
+
+  it('projects read=false and canReply=false for the broadcast creator', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    await seedUser('visitor', 'visitor')
+    const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: true })
+
+    const thread = await getThread(db, viewer(adminId, 'admin'), root.threadId)
+    expect(thread.root.read).toBe(false)
+    expect(thread.canReply).toBe(false)
   })
 
   it('rejects a broadcast reply when no admin can receive it', async () => {
