@@ -26,10 +26,12 @@ import {
 import { runPtLexicalBackfillAtBoot } from '@/server/domains/content/services/pt-lexical-backfill'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
+import { notifyAdmins } from '@/server/domains/notifications/service'
 import { reindexSearchToCompletion } from '@/server/domains/posts/services/search-reindex'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { registerSectionChangeHandler } from '@/server/domains/settings/services/section-changes'
+import { runZeaburMailCleanupAtBoot } from '@/server/domains/settings/services/zeabur-mail-cleanup'
 import { wireS3Migration } from '@/server/domains/storage/s3-migration'
 import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
 import { isVitest } from '@/server/infra/config'
@@ -216,6 +218,11 @@ if (!isVitest()) {
       resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(getDb(), playerIds),
       hashCommentContent: hashContent,
       reindexSearchIndex: () => reindexSearchToCompletion(getDb()),
+    })
+    // Legacy Zeabur mail rows disable themselves here; the admin alert rides
+    // the notifications domain, injected so settings never imports it.
+    await runZeaburMailCleanupAtBoot(getDb(), (message) => {
+      notifyAdmins(getDb(), message)
     })
   })()
 }

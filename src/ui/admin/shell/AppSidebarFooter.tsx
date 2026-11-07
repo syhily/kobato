@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 
 import { useLogout } from '@/client/hooks/use-logout'
+import { useUnreadNotificationCount } from '@/client/hooks/use-notifications'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { VersionDialog } from '@/ui/admin/shell/VersionDialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
@@ -26,6 +27,7 @@ interface AppSidebarFooterProps {
 export function AppSidebarFooter({ className, id, name, email }: AppSidebarFooterProps) {
   const [versionOpen, setVersionOpen] = useState(false)
   const logout = useLogout()
+  const unreadCount = useUnreadNotificationCount()
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
 
   return (
@@ -40,12 +42,20 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   aria-label="用户菜单"
                 >
-                  <Avatar className="size-8">
-                    {id ? <AvatarImage src={avatarImageUrl(id)} alt={name} /> : null}
-                    <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
-                      {initial}
-                    </AvatarFallback>
-                  </Avatar>
+                  <span className="relative">
+                    <Avatar className="size-8">
+                      {id ? <AvatarImage src={avatarImageUrl(id)} alt={name} /> : null}
+                      <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                        {initial}
+                      </AvatarFallback>
+                    </Avatar>
+                    {unreadCount > 0 ? (
+                      <span
+                        className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-destructive ring-2 ring-sidebar"
+                        aria-hidden
+                      />
+                    ) : null}
+                  </span>
                   <div className="grid flex-1 text-left leading-tight">
                     <span className="truncate font-semibold">{name}</span>
                     <span className="truncate text-xs text-muted-foreground">{email}</span>

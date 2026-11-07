@@ -11,6 +11,7 @@ import { adminImagesRouter } from '@/server/http/controllers/admin/images.contro
 import { adminJobsRouter } from '@/server/http/controllers/admin/jobs.controller'
 import { adminMailRouter } from '@/server/http/controllers/admin/mail.controller'
 import { adminMusicRouter } from '@/server/http/controllers/admin/music.controller'
+import { adminNotificationsRouter } from '@/server/http/controllers/admin/notifications.controller'
 import { adminPagesRouter } from '@/server/http/controllers/admin/pages.controller'
 import { adminPostsRouter } from '@/server/http/controllers/admin/posts.controller'
 import { adminRendersRouter } from '@/server/http/controllers/admin/renders.controller'
@@ -37,6 +38,7 @@ import { imageRouter } from '@/server/http/controllers/image.controller'
 import { likesRouter } from '@/server/http/controllers/likes.controller'
 import { musicRouter } from '@/server/http/controllers/music.controller'
 import { newsletterPublicRouter } from '@/server/http/controllers/newsletter-public.controller'
+import { notificationsRouter } from '@/server/http/controllers/notifications.controller'
 import { passkeyPublicRouter } from '@/server/http/controllers/passkey-public.controller'
 import { webmentionPublicRouter } from '@/server/http/controllers/webmention-public.controller'
 
@@ -64,6 +66,7 @@ export const apiRouter = {
   likes: likesRouter,
   music: musicRouter,
   newsletter: newsletterPublicRouter,
+  notifications: notificationsRouter,
   passkey: passkeyPublicRouter,
   webmention: webmentionPublicRouter,
   admin: {
@@ -79,6 +82,7 @@ export const apiRouter = {
     images: adminImagesRouter,
     jobs: adminJobsRouter,
     music: adminMusicRouter,
+    notifications: adminNotificationsRouter,
     pages: adminPagesRouter,
     posts: adminPostsRouter,
     renders: adminRendersRouter,

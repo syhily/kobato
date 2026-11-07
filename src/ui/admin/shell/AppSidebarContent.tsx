@@ -2,6 +2,7 @@ import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
 
 import { NavContent } from '@/ui/admin/shell/NavContent'
 import { NavMain } from '@/ui/admin/shell/NavMain'
+import { NavNotifications } from '@/ui/admin/shell/NavNotifications'
 import { NavSettings } from '@/ui/admin/shell/NavSettings'
 import { SidebarContent } from '@/ui/components/sidebar'
 
@@ -30,6 +31,7 @@ export function AppSidebarContent({
         />
       </div>
       <div className="flex flex-col gap-2">
+        <NavNotifications role={role} />
         <NavSettings role={role} />
       </div>
     </SidebarContent>

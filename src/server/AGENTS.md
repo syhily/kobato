@@ -28,7 +28,15 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
 
 - Domains may import `shared/`, `infra/`, other `domains/` — acyclically. When composition would close a cycle, the consumer declares an injected parameter and the caller wires it.
 - A domain's `repos/**` (or root `repo.ts`) is **private** — cross-domain consumers import the surface only.
-- Three strata: **Core** (`content`, `posts`, `pages`, `pt`, `settings`), **Feature** (`auth`, `users`, `comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`, `friends`, `newsletter`, `webmentions`), **Platform** (`analytics`, `audit`, `backup`, `update`, `storage`). Platform services are leaves — cross-domain imports INTO them compose at the perimeter.
+- `notifications/` — the message center: `notification` rows fanned out at creation into
+  `notification_recipient` (unread = `readAt IS NULL`; later-registered users never see historical
+  broadcasts). Kinds: `direct` (admin ↔ user, always replyable), `admin` (system → all admins, never
+  replyable), `broadcast` (system or admin → all users minus the author; only the admin-created flavor
+  can be replyable, and replies from non-admins reach ALL current admins). System producers call
+  `notifyAdmins` / `notifyAllUsers` — Platform domains get them injected at the composition root (see
+  the Zeabur mail cleanup wiring in `bootstrap/db-lifecycle.ts`); raw queries live in
+  `infra/db/operations/notification.ts`.
+- Three strata: **Core** (`content`, `posts`, `pages`, `pt`, `settings`), **Feature** (`auth`, `users`, `comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`, `friends`, `newsletter`, `webmentions`, `notifications`), **Platform** (`analytics`, `audit`, `backup`, `update`, `storage`). Platform services are leaves — cross-domain imports INTO them compose at the perimeter.
 
 ## http/
 

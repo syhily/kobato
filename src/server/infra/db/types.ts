@@ -7,6 +7,7 @@ import type { kvCache } from '@/server/infra/db/schema/kv-cache'
 import type { image, music } from '@/server/infra/db/schema/media'
 import type { like, metric } from '@/server/infra/db/schema/metric'
 import type { newsletterSubscriber } from '@/server/infra/db/schema/newsletter'
+import type { notification, notificationRecipient } from '@/server/infra/db/schema/notification'
 import type { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import type { page } from '@/server/infra/db/schema/page'
 import type { passkeyCredential } from '@/server/infra/db/schema/passkey'
@@ -33,6 +34,8 @@ export type NewPostMeta = typeof post.$inferInsert
 export type NewContent = typeof content.$inferInsert
 export type NewBackup = typeof backup.$inferInsert
 export type NewNewsletterSubscriber = typeof newsletterSubscriber.$inferInsert
+export type NewNotification = typeof notification.$inferInsert
+export type NewNotificationRecipient = typeof notificationRecipient.$inferInsert
 export type NewWebmention = typeof webmention.$inferInsert
 export type NewWebmentionOutbox = typeof webmentionOutbox.$inferInsert
 export type NewWebmentionInbox = typeof webmentionInbox.$inferInsert
@@ -57,6 +60,8 @@ export type PostMetaRow = typeof post.$inferSelect
 export type ContentRow = typeof content.$inferSelect
 export type BackupRow = typeof backup.$inferSelect
 export type NewsletterSubscriberRow = typeof newsletterSubscriber.$inferSelect
+export type NotificationRow = typeof notification.$inferSelect
+export type NotificationRecipientRow = typeof notificationRecipient.$inferSelect
 export type WebmentionRow = typeof webmention.$inferSelect
 export type WebmentionOutboxRow = typeof webmentionOutbox.$inferSelect
 export type WebmentionInboxRow = typeof webmentionInbox.$inferSelect

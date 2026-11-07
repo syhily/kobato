@@ -1,0 +1,53 @@
+import { sql } from 'drizzle-orm'
+import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+
+import { NOTIFICATION_KINDS, type NotificationKind } from '@/shared/contracts/notifications'
+
+// Single source: the CHECK enum is generated from the wire contract's
+// constant array (same pattern as schema/job-run.ts).
+const sqlEnumList = (values: readonly string[]) => sql.raw(values.map((value) => `'${value}'`).join(', '))
+
+// Notification center — one row per message. Root messages carry
+// `threadId = id` (backfilled in the same sync transaction); replies reuse
+// the root's threadId. `senderId` NULL means "system-generated" (boot
+// cleanups, background jobs). `source` tags the producer for icons/links.
+export const notification = sqliteTable(
+  'notification',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    threadId: integer('thread_id').notNull(),
+    kind: text('kind').$type<NotificationKind>().notNull(),
+    senderId: integer('sender_id'),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    replyable: integer('replyable', { mode: 'boolean' }).default(false).notNull(),
+    source: text('source'),
+    actionUrl: text('action_url'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    check('notification_kind_chk', sql`${table.kind} IN (${sqlEnumList(NOTIFICATION_KINDS)})`),
+    index('idx_notification_thread').on(table.threadId, table.id),
+  ],
+)
+
+// Fan-out recipient rows, written once at message creation (later-registered
+// users never see historical broadcasts). `readAt` NULL = unread; the unread
+// badge counts exactly these rows.
+export const notificationRecipient = sqliteTable(
+  'notification_recipient',
+  {
+    notificationId: integer('notification_id').notNull(),
+    userId: integer('user_id').notNull(),
+    readAt: integer('read_at', { mode: 'timestamp_ms' }),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('uq_notification_recipient').on(table.notificationId, table.userId),
+    index('idx_notification_recipient_user').on(table.userId, table.readAt),
+  ],
+)

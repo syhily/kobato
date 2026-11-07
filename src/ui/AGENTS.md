@@ -14,6 +14,10 @@ parent.
   `friends/`, `widgets/`, `music-player/` (the MusicPlayerCard: cover + rAF-driven progress/volume
   scrub bars + synced LRC lyrics panel, hydrated onto `.aplayer[data-*]` mount points by
   `useMusicPlayers`), plus single-file leaves (`Search`, `Sidebar`, `LikeActions`).
+- **`ui/shared/`** — feature components consumed by BOTH the public chrome and the admin shell
+  (today: `notifications/` — the global right-side message drawer, opened from the admin sidebar's
+  「消息通知」nav item and the public user menu; `notification-meta.ts` owns the kind/source → icon/label
+  mapping). Anything only one side uses stays in its own tier.
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`, `categories`, `comments`, `editor`,
   `editor-shell`, `editor-shared`, `fonts`, `friends`, `images`, `library`, `musics`, `my`, `pages`,
   `posts`, `sessions`, `settings`, `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).
