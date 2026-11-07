@@ -234,7 +234,10 @@ describe('notifications email — failure isolation', () => {
 
     await vi.waitFor(() => expect(logWarn).toHaveBeenCalled())
     const [, context] = logWarn.mock.calls[0]!
-    expect(context).toMatchObject({ reason: 'network' })
+    expect(context).toMatchObject({ reason: 'network', userId: visitorId })
+    // Recipient PII stays out of the log: the user id carries the same debug value.
+    expect(context).not.toMatchObject({ to: expect.anything() })
+    expect(JSON.stringify(context)).not.toContain('visitor-2@example.com')
     expect(unreadCount(db, visitorId)).toBe(1)
   })
 })

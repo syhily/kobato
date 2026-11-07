@@ -56,11 +56,11 @@ function renderNotificationEmail(
   )
 }
 
-function logSendResult(notificationId: number, to: string, result: SendResult): void {
+function logSendResult(notificationId: number, userId: number, result: SendResult): void {
   // An `ok:false` result is a normal, logged skip (disabled / unconfigured /
   // upstream) — never an error the producer could have seen.
   if (!result.ok) {
-    log.warn('notification email not sent', { notificationId, to, reason: result.reason })
+    log.warn('notification email not sent', { notificationId, userId, reason: result.reason })
   }
 }
 
@@ -88,7 +88,7 @@ export async function sendNotificationEmail(
     try {
       const html = renderNotificationEmail(row, siteIdentity, names.get(userId) ?? siteIdentity.author.name)
       const result = await sendEmail(email, subject, html)
-      logSendResult(row.id, email, result)
+      logSendResult(row.id, userId, result)
     } catch (error) {
       // One bad recipient must not starve the rest of the fan-out.
       log.error('failed to send notification email', { notificationId: row.id, error })
