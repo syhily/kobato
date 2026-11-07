@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query'
 import { ChevronRightIcon, InboxIcon, Loader2Icon, MailIcon } from 'lucide-react'
-import { Fragment } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 
 import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifications'
 
@@ -16,6 +16,10 @@ import { formatNotificationTime, notificationMeta } from '@/ui/shared/notificati
 interface NotificationListPaneProps {
   tab: NotificationTab
   onOpen: (item: NotificationDto) => void
+  /** Row that should regain focus after returning from the thread pane. */
+  focusItemId?: string
+  /** Called once the requested focus has been placed (or fallen back). */
+  onFocusHandled: () => void
 }
 
 const EMPTY_COPY: Record<NotificationTab, string> = {
@@ -26,7 +30,7 @@ const EMPTY_COPY: Record<NotificationTab, string> = {
 }
 
 // Inbox pane of the drawer: cursor-paginated, newest first, infinite-scroll.
-export function NotificationListPane({ tab, onOpen }: NotificationListPaneProps) {
+export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled }: NotificationListPaneProps) {
   const query = useInfiniteQuery(
     orpcQuery.notifications.list.infiniteOptions({
       input: (pageParam) => ({ tab, cursor: pageParam === '' ? undefined : pageParam, limit: 20 }),
@@ -42,6 +46,21 @@ export function NotificationListPane({ tab, onOpen }: NotificationListPaneProps)
     fetchNextPage: query.fetchNextPage,
     tailKey: items[items.length - 1]?.id,
   })
+  const listRef = useRef<HTMLDivElement>(null)
+  const loadedCount = items.length
+
+  // Returning from a thread restores focus to the row that opened it; when the
+  // row is not on the loaded pages the list container takes the focus instead
+  // so the pane swap never strands it on the document body.
+  useEffect(() => {
+    if (focusItemId === undefined || loadedCount === 0 || listRef.current === null) {
+      return
+    }
+    const container = listRef.current
+    const row = container.querySelector<HTMLElement>(`[data-notification-row="${focusItemId}"]`)
+    ;(row ?? container).focus()
+    onFocusHandled()
+  }, [focusItemId, loadedCount, onFocusHandled])
 
   if (query.isPending) {
     return (
@@ -72,7 +91,7 @@ export function NotificationListPane({ tab, onOpen }: NotificationListPaneProps)
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div ref={listRef} tabIndex={-1} className="flex-1 overflow-y-auto outline-none">
       <ul className="flex flex-col">
         {items.map((item, index) =>
           index === items.length - 1 ? (
@@ -104,6 +123,7 @@ function NotificationRow({
 }) {
   const meta = notificationMeta(item)
   const Icon = meta.icon
+  const titleId = `notification-row-title-${item.id}`
   const patchReadState = usePatchNotificationReadState()
   const markUnread = useMutation(
     orpcQuery.notifications.markUnread.mutationOptions({
@@ -112,13 +132,17 @@ function NotificationRow({
     }),
   )
   return (
-    <li>
+    <li
+      className={cn(
+        'group flex items-start gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/60',
+        !item.read && 'bg-muted/30',
+      )}
+    >
       <button
         type="button"
-        className={cn(
-          'group flex w-full items-start gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-muted/60',
-          !item.read && 'bg-muted/30',
-        )}
+        data-notification-row={item.id}
+        aria-labelledby={titleId}
+        className="flex min-w-0 flex-1 items-start gap-3 text-left"
         onClick={() => onOpen(item)}
       >
         <span
@@ -130,7 +154,8 @@ function NotificationRow({
           <Icon className="size-4" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex items-center gap-2">
+          <span id={titleId} className="flex items-center gap-2">
+            {!item.read ? <span className="sr-only">未读：</span> : null}
             <span className={cn('truncate text-sm', !item.read ? 'font-semibold' : 'font-medium')}>{item.title}</span>
             <span className="ml-auto shrink-0 text-xs text-muted-foreground">
               {formatNotificationTime(item.createdAt, now)}
@@ -143,26 +168,23 @@ function NotificationRow({
             <span>{item.sender === null ? '系统' : item.sender.name}</span>
           </span>
         </span>
-        <span className="flex shrink-0 items-center self-center">
-          {!item.read ? (
-            <span className="mr-1 size-2 rounded-full bg-primary" aria-label="未读" />
-          ) : (
-            <button
-              type="button"
-              aria-label="标为未读"
-              disabled={markUnread.isPending}
-              className="mr-1 rounded-full p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100"
-              onClick={(event) => {
-                event.stopPropagation()
-                markUnread.mutate({ ids: [item.id] })
-              }}
-            >
-              <MailIcon className="size-4" />
-            </button>
-          )}
-          <ChevronRightIcon className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
-        </span>
       </button>
+      <span className="flex shrink-0 items-center self-center">
+        {!item.read ? (
+          <span aria-hidden className="mr-1 size-2 rounded-full bg-primary" />
+        ) : (
+          <button
+            type="button"
+            aria-label="标为未读"
+            disabled={markUnread.isPending}
+            className="mr-1 rounded-full p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100"
+            onClick={() => markUnread.mutate({ ids: [item.id] })}
+          >
+            <MailIcon className="size-4" />
+          </button>
+        )}
+        <ChevronRightIcon className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
+      </span>
     </li>
   )
 }

@@ -40,6 +40,7 @@ function isNotificationTab(value: unknown): value is NotificationTab {
 export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }: NotificationsDrawerProps) {
   const [tab, setTab] = useState<NotificationTab>('all')
   const [selected, setSelected] = useState<NotificationDto | null>(null)
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
   const [composeOpen, setComposeOpen] = useState(false)
   const invalidate = useInvalidateNotifications()
   const patchReadState = usePatchNotificationReadState()
@@ -60,7 +61,15 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
     onOpenChange(next)
     if (!next) {
       setSelected(null)
+      // Closing the drawer hands focus back to its trigger — do not fight the
+      // sheet's focus restoration with a row focus target.
+      setLastSelectedId(null)
     }
+  }
+
+  const openItem = (item: NotificationDto) => {
+    setSelected(item)
+    setLastSelectedId(item.id)
   }
 
   return (
@@ -89,7 +98,16 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
               </Button>
             </SheetHeader>
             <div className="border-b px-4 py-2">
-              <Tabs value={tab} onValueChange={(value) => isNotificationTab(value) && setTab(value)}>
+              <Tabs
+                value={tab}
+                onValueChange={(value) => {
+                  if (isNotificationTab(value)) {
+                    setTab(value)
+                    // A pending row-focus target belongs to the previous tab.
+                    setLastSelectedId(null)
+                  }
+                }}
+              >
                 <TabsList className="w-full">
                   {TAB_LABELS.map(({ value, label }) => (
                     <TabsTrigger key={value} value={value} className="flex-1">
@@ -99,7 +117,13 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
                 </TabsList>
               </Tabs>
             </div>
-            <NotificationListPane key={tab} tab={tab} onOpen={setSelected} />
+            <NotificationListPane
+              key={tab}
+              tab={tab}
+              onOpen={openItem}
+              focusItemId={lastSelectedId ?? undefined}
+              onFocusHandled={() => setLastSelectedId(null)}
+            />
           </>
         ) : (
           <NotificationDetailPane

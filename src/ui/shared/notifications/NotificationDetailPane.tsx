@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, ExternalLinkIcon, Loader2Icon, SendIcon, Undo2Icon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 
@@ -61,6 +61,13 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   )
 
   const [recallConfirmOpen, setRecallConfirmOpen] = useState(false)
+  const backRef = useRef<HTMLButtonElement>(null)
+
+  // The pane swap replaces the list in place, so focus must be placed here
+  // explicitly — otherwise it falls to the document body on open.
+  useEffect(() => {
+    backRef.current?.focus()
+  }, [])
 
   // Opening an unread message marks it read once; the patch carries the
   // server's authoritative count into the badge.
@@ -78,7 +85,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex items-center gap-2 border-b px-3 py-2 pr-12">
-        <Button variant="ghost" size="iconSm" onClick={onBack} aria-label="返回列表">
+        <Button ref={backRef} variant="ghost" size="iconSm" onClick={onBack} aria-label="返回列表">
           <ArrowLeftIcon className="size-4" />
         </Button>
         <span className="text-xs text-muted-foreground">{meta.kindLabel}</span>
@@ -165,6 +172,8 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   )
 }
 
+const REPLY_HINT_ID = 'notification-reply-shortcut-hint'
+
 function ReplyComposer({ threadId }: { threadId: string }) {
   const [body, setBody] = useState('')
   const invalidate = useInvalidateNotifications()
@@ -199,6 +208,8 @@ function ReplyComposer({ threadId }: { threadId: string }) {
           value={body}
           onChange={(event) => setBody(event.target.value)}
           placeholder="输入回复…"
+          aria-label="回复内容"
+          aria-describedby={REPLY_HINT_ID}
           rows={2}
           maxLength={5000}
           className="min-h-10 flex-1 resize-none"
@@ -213,7 +224,9 @@ function ReplyComposer({ threadId }: { threadId: string }) {
           {reply.isPending ? <Loader2Icon className="size-4 animate-spin" /> : <SendIcon className="size-4" />}
         </Button>
       </div>
-      <p className="mt-1 px-1 text-[11px] text-muted-foreground/70">⌘/Ctrl + Enter 发送</p>
+      <p id={REPLY_HINT_ID} className="mt-1 px-1 text-[11px] text-muted-foreground/70">
+        ⌘/Ctrl + Enter 发送
+      </p>
     </div>
   )
 }

@@ -233,6 +233,69 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
+
+  it('places the mark-unread action beside the row button instead of inside it', () => {
+    const item = makeItem({ read: true })
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 0 }] }
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+
+    const row = screen.getByText('系统升级公告').closest('li') as HTMLElement
+    const action = within(row).getByLabelText('标为未读')
+    // The action's nearest <button> is itself: a button is never nested in
+    // another one, and the row's main button does not contain the action.
+    expect(action.closest('button')).toBe(action)
+    expect(row.querySelectorAll('button button')).toHaveLength(0)
+    const main = row.querySelector('button[data-notification-row="1"]')
+    expect(main).toBeTruthy()
+    expect(main?.contains(action)).toBe(false)
+  })
+
+  it('announces an unread row as unread and hides the dot from the accessibility tree', () => {
+    const item = makeItem({ read: false })
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+
+    // The row's accessible name carries the state via the sr-only prefix.
+    const rowButton = screen.getByRole('button', { name: /未读/ })
+    expect(within(rowButton).getByText('未读：')).toBeTruthy()
+    // The dot is decorative — it no longer carries a label of its own.
+    const row = rowButton.closest('li') as HTMLElement
+    expect(row.querySelector('span.size-2')?.getAttribute('aria-hidden')).toBe('true')
+    expect(screen.queryByLabelText('未读')).toBeNull()
+  })
+
+  it('gives the reply composer an accessible name and description', () => {
+    const item = makeItem({ kind: 'direct', sender: { id: '2', name: '管理员' } })
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.query.data = { messages: [], canReply: true }
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+    fireEvent.click(screen.getByText('系统升级公告'))
+
+    const input = screen.getByRole('textbox', { name: '回复内容' })
+    const describedBy = input.getAttribute('aria-describedby')
+    expect(describedBy).toBeTruthy()
+    expect(document.getElementById(describedBy as string)?.textContent).toContain('⌘/Ctrl + Enter 发送')
+  })
+
+  it('focuses 返回列表 on open and the originating row on back', () => {
+    const item = makeItem({ read: true })
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 0 }] }
+    control.query.data = { messages: [], canReply: false }
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /系统升级公告/ }))
+
+    const back = screen.getByLabelText('返回列表')
+    expect(document.activeElement).toBe(back)
+
+    fireEvent.click(back)
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /系统升级公告/ }))
+  })
 })
 
 // The mutation harness cannot drive `onSuccess`, so the fork decision that
