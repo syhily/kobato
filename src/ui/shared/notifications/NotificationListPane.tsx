@@ -1,12 +1,14 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { ChevronRightIcon, InboxIcon, Loader2Icon } from 'lucide-react'
+import { useInfiniteQuery, useMutation } from '@tanstack/react-query'
+import { ChevronRightIcon, InboxIcon, Loader2Icon, MailIcon } from 'lucide-react'
 import { Fragment } from 'react'
 
 import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifications'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
+import { useInvalidateNotifications } from '@/client/hooks/use-notifications'
 import { useNow } from '@/client/hooks/use-now'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 import { formatNotificationTime, notificationMeta } from '@/ui/shared/notifications/notification-meta'
@@ -102,6 +104,13 @@ function NotificationRow({
 }) {
   const meta = notificationMeta(item)
   const Icon = meta.icon
+  const invalidate = useInvalidateNotifications()
+  const markUnread = useMutation(
+    orpcQuery.notifications.markUnread.mutationOptions({
+      onSuccess: () => void invalidate(),
+      onError: onMutationError('操作失败'),
+    }),
+  )
   return (
     <li>
       <button
@@ -135,7 +144,22 @@ function NotificationRow({
           </span>
         </span>
         <span className="flex shrink-0 items-center self-center">
-          {!item.read ? <span className="mr-1 size-2 rounded-full bg-primary" aria-label="未读" /> : null}
+          {!item.read ? (
+            <span className="mr-1 size-2 rounded-full bg-primary" aria-label="未读" />
+          ) : (
+            <button
+              type="button"
+              aria-label="标为未读"
+              disabled={markUnread.isPending}
+              className="mr-1 rounded-full p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100"
+              onClick={(event) => {
+                event.stopPropagation()
+                markUnread.mutate({ ids: [item.id] })
+              }}
+            >
+              <MailIcon className="size-4" />
+            </button>
+          )}
           <ChevronRightIcon className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
         </span>
       </button>

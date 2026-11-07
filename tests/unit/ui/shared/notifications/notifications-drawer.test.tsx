@@ -102,6 +102,19 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     expect(screen.queryByPlaceholderText('输入回复…')).toBeNull()
   })
 
+  it('marks a read row unread from the row action without opening the thread', () => {
+    const item = makeItem({ read: true })
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 0 }] }
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    const action = screen.getByLabelText('标为未读')
+    fireEvent.click(action)
+
+    expect(control.mutation.mutate).toHaveBeenCalledWith({ ids: ['1'] })
+    // The click stayed on the action — the thread pane did not open.
+    expect(screen.queryByLabelText('返回列表')).toBeNull()
+  })
+
   it('exposes the compose entry to admins', () => {
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
     expect(screen.getByLabelText('写消息')).toBeTruthy()

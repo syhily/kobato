@@ -1,9 +1,17 @@
-import { getThread, listInbox, markRead, replyToThread, unreadCount } from '@/server/domains/notifications/service'
+import {
+  getThread,
+  listInbox,
+  markRead,
+  markUnread,
+  replyToThread,
+  unreadCount,
+} from '@/server/domains/notifications/service'
 import { authedProc, resourceRateLimit } from '@/server/http/orpc-base'
 import {
   listNotificationsInput,
   listNotificationsOutput,
   markNotificationsReadInput,
+  markNotificationsUnreadInput,
   notificationThreadInput,
   notificationThreadOutput,
   replyNotificationInput,
@@ -42,6 +50,20 @@ const markReadProc = authedProc
     return { count: unreadCount(context.db, userId) }
   })
 
+const markUnreadProc = authedProc
+  .route({ method: 'POST', path: '/notifications/mark-unread' })
+  .input(markNotificationsUnreadInput)
+  .output(unreadCountOutput)
+  .handler(({ input, context }) => {
+    const userId = Number(context.viewer.id)
+    markUnread(
+      context.db,
+      userId,
+      input.ids.map((id) => Number(id)),
+    )
+    return { count: unreadCount(context.db, userId) }
+  })
+
 const thread = authedProc
   .route({ method: 'GET', path: '/notifications/thread' })
   .input(notificationThreadInput)
@@ -61,4 +83,11 @@ const reply = authedProc
     }),
   }))
 
-export const notificationsRouter = { list, unreadCount: unread, markRead: markReadProc, thread, reply }
+export const notificationsRouter = {
+  list,
+  unreadCount: unread,
+  markRead: markReadProc,
+  markUnread: markUnreadProc,
+  thread,
+  reply,
+}

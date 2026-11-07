@@ -55,6 +55,12 @@ export const markNotificationsReadInput = z.object({
   ids: z.array(idString).min(1).max(100).optional(),
 })
 
+// The inverse gesture ("deal with this later") — ids are REQUIRED: there is
+// deliberately no "unread everything".
+export const markNotificationsUnreadInput = z.object({
+  ids: z.array(idString).min(1).max(100),
+})
+
 // One thread message in the detail view. `mine` drives the chat alignment.
 export const threadMessageDto = z.object({
   id: idString,

@@ -18,6 +18,7 @@ import {
   listThreadNotifications,
   listThreadParticipantIds,
   markNotificationsRead,
+  markNotificationsUnread,
   type NewNotificationRow,
 } from '@/server/infra/db/operations/notification'
 import { DomainError } from '@/server/infra/http/errors'
@@ -204,6 +205,11 @@ export function unreadCount(db: Database, userId: number): number {
 /** `ids` omitted = mark everything read. */
 export function markRead(db: Database, userId: number, ids?: readonly number[]): number {
   return markNotificationsRead(db, userId, ids)
+}
+
+/** Return messages to the unread pile ("deal with this later"). */
+export function markUnread(db: Database, userId: number, ids: readonly number[]): number {
+  return markNotificationsUnread(db, userId, ids)
 }
 
 // ---------------------------------------------------------------------------

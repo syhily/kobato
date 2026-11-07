@@ -9,6 +9,7 @@ import {
   getThread,
   listInbox,
   markRead,
+  markUnread,
   notifyAdmins,
   notifyAllUsers,
   replyToThread,
@@ -135,6 +136,24 @@ describe('notifications / inbox', () => {
     expect(touched).toBe(1)
     expect(unreadCount(db, aId)).toBe(1)
     expect(unreadCount(db, bId)).toBe(2)
+  })
+
+  it('marks a read message unread again, scoped to the caller', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const aId = await seedUser('visitor', 'a')
+    const bId = await seedUser('visitor', 'b')
+    const row = sendBroadcast(db, adminId, { title: '一', body: 'b1', replyable: false })
+
+    markRead(db, aId, [row.id])
+    markRead(db, bId, [row.id])
+    expect(unreadCount(db, aId)).toBe(0)
+
+    // Back to unread — idempotent on a double click…
+    expect(markUnread(db, aId, [row.id])).toBe(1)
+    expect(markUnread(db, aId, [row.id])).toBe(0)
+    expect(unreadCount(db, aId)).toBe(1)
+    // …and scoped to the caller: b's row stays read.
+    expect(unreadCount(db, bId)).toBe(0)
   })
 
   it('renders a vanished sender as null', async () => {

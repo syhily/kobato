@@ -86,6 +86,25 @@ describe('integration / notifications controller', () => {
     expect((cleared.json.json as { count: number }).count).toBe(0)
   })
 
+  it('markUnread returns a message to the unread pile', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+    const visitorCtx = makeAuthedCtx({ userId: String(visitorId), role: 'visitor', db })
+
+    await callJson('/admin/notifications/sendBroadcast', { title: 'a', body: 'b', replyable: false }, adminCtx)
+    const inbox = await callJson('/notifications/list', { tab: 'all', limit: 20 }, visitorCtx)
+    const item = (inbox.json.json as { items: Array<{ id: string }> }).items[0]!
+
+    await callJson('/notifications/markRead', {}, visitorCtx)
+    const restored = await callJson('/notifications/markUnread', { ids: [item.id] }, visitorCtx)
+    expect(restored.status).toBe(200)
+    expect((restored.json.json as { count: number }).count).toBe(1)
+
+    const unread = await callJson('/notifications/unreadCount', {}, visitorCtx)
+    expect((unread.json.json as { count: number }).count).toBe(1)
+  })
+
   it('forks a broadcast reply into a private thread visible to both sides', async () => {
     const adminId = await seedUser('admin', 'admin')
     const visitorId = await seedUser('visitor', 'visitor')

@@ -125,6 +125,25 @@ export function markNotificationsRead(db: Database, userId: number, ids?: readon
   return Number(result.changes)
 }
 
+/**
+ * The inverse: return rows to unread. `readAt IS NOT NULL` keeps it
+ * idempotent — a double click touches 0 rows the second time.
+ */
+export function markNotificationsUnread(db: Database, userId: number, ids: readonly number[]): number {
+  const result = db
+    .update(notificationRecipient)
+    .set({ readAt: null })
+    .where(
+      and(
+        eq(notificationRecipient.userId, userId),
+        inArray(notificationRecipient.notificationId, [...ids]),
+        isNotNull(notificationRecipient.readAt),
+      ),
+    )
+    .run()
+  return Number(result.changes)
+}
+
 export async function listThreadNotifications(db: Database, threadId: number): Promise<NotificationRow[]> {
   return db.select().from(notification).where(eq(notification.threadId, threadId)).orderBy(notification.id)
 }
