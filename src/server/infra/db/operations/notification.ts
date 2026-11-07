@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, isNotNull, isNull, lt, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, isNull, lt, notInArray, or, type SQL } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { NewNotificationRecipient, NotificationRecipientRow, NotificationRow } from '@/server/infra/db/types'
@@ -307,4 +307,61 @@ export function findUserEmailsByIds(db: Database, ids: readonly number[]): Map<n
     .where(inArray(user.id, [...ids]))
     .all()
   return new Map(rows.map((row) => [row.id, row.email]))
+}
+
+/**
+ * Retention: READ recipient rows whose MESSAGE is older than this are pruned
+ * by the daily maintenance. 180 days matches the analytics lifetime
+ * (`ACCESS_EVENTS_RETENTION_DAYS`), the number this repo already treats as
+ * "how long user data lives" (ADR-0010).
+ */
+export const NOTIFICATION_RETENTION_DAYS = 180
+
+export interface NotificationPruneCounts {
+  recipientsPruned: number
+  notificationsPruned: number
+}
+
+/**
+ * Retention prune (daily maintenance, ADR-0010): delete READ recipient rows
+ * whose message is older than {@link NOTIFICATION_RETENTION_DAYS}, then
+ * reclaim root messages left with no recipient row (recalled, or past the
+ * same window). Age is ALWAYS the message's `created_at` — a message read
+ * late is still an old message, and `notification_recipient` carries no
+ * creation timestamp. Unread rows are never pruned. Runs in one sync
+ * transaction; returns the deleted row counts. Throws on failure (the caller
+ * logs).
+ *
+ * Takes the db explicitly — like `pruneJobRuns` — because the only caller
+ * (`runDbMaintenance`) already holds the current handle.
+ */
+export function pruneNotifications(db: Database, now: Date = new Date()): NotificationPruneCounts {
+  const cutoff = new Date(now.getTime() - NOTIFICATION_RETENTION_DAYS * 86_400_000)
+  return db.transaction((tx) => {
+    const agedMessageIds = tx
+      .select({ id: notification.id })
+      .from(notification)
+      .where(lt(notification.createdAt, cutoff))
+    const recipients = tx
+      .delete(notificationRecipient)
+      .where(
+        and(isNotNull(notificationRecipient.readAt), inArray(notificationRecipient.notificationId, agedMessageIds)),
+      )
+      .run()
+    // Runs AFTER step 1 in the same transaction, so roots whose last
+    // recipient rows were just deleted are reclaimed in this pass.
+    const remainingRecipientMessageIds = tx
+      .select({ notificationId: notificationRecipient.notificationId })
+      .from(notificationRecipient)
+    const roots = tx
+      .delete(notification)
+      .where(
+        and(
+          or(isNotNull(notification.recalledAt), lt(notification.createdAt, cutoff)),
+          notInArray(notification.id, remainingRecipientMessageIds),
+        ),
+      )
+      .run()
+    return { recipientsPruned: Number(recipients.changes), notificationsPruned: Number(roots.changes) }
+  })
 }
