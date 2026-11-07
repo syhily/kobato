@@ -15,6 +15,7 @@ import {
   createNotificationWithRecipients,
   findNotificationById,
   findUserNamesByIds,
+  isActiveUserId,
   isThreadParticipant,
   listNotificationsForUser,
   listRecipientUserIds,
@@ -132,8 +133,7 @@ export function sendDirectMessage(
   if (recipientId === senderId) {
     throw new DomainError('BAD_REQUEST', '不能给自己发送私信')
   }
-  const recipients = listRecipientUserIds(db, { adminsOnly: false })
-  if (!recipients.includes(recipientId)) {
+  if (!isActiveUserId(db, recipientId)) {
     throw new DomainError('NOT_FOUND', '目标用户不存在')
   }
   const row = createAndFanOut(db, { kind: 'direct', senderId, replyable: true, title: input.title, body: input.body }, [

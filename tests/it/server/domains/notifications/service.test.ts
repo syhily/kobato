@@ -19,6 +19,7 @@ import {
   unreadCount,
 } from '@/server/domains/notifications/service'
 import { listThreadParticipantIds } from '@/server/infra/db/operations/notification'
+import { notificationRecipient } from '@/server/infra/db/schema/notification'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
 
@@ -36,6 +37,16 @@ async function seedUser(role: Role, name: string): Promise<number> {
 
 function viewer(id: number, role: Role, name = 'user'): SessionUser {
   return { id: String(id), name, email: `${name}@example.com`, website: null, role }
+}
+
+/** `fn` is synchronous (node:sqlite), so a rejecting-promise capture would not see the throw. */
+function captureError(fn: () => void): unknown {
+  try {
+    fn()
+    return null
+  } catch (error) {
+    return error
+  }
 }
 
 beforeEach(async () => {
@@ -74,6 +85,45 @@ describe('notifications / producers', () => {
   it('sendDirectMessage rejects an unknown recipient', async () => {
     const adminId = await seedUser('admin', 'admin')
     expect(() => sendDirectMessage(db, adminId, 9999, { title: 't', body: 'b' })).toThrow(DomainError)
+  })
+
+  it('sendDirectMessage probes the active-user predicate, not the whole user list', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+
+    // Soft-delete the target: the probe must apply the SAME predicate
+    // `listRecipientUserIds` does (deleted_at IS NULL AND role IS NOT NULL).
+    db.update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId)).run()
+    for (const targetId of [9999, visitorId]) {
+      const error = captureError(() => sendDirectMessage(db, adminId, targetId, { title: 't', body: 'b' }))
+      expect(error).toBeInstanceOf(DomainError)
+      expect((error as DomainError).code).toBe('NOT_FOUND')
+      expect((error as DomainError).message).toBe('目标用户不存在')
+    }
+  })
+
+  it('chunks the broadcast fan-out across statements inside one transaction', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorIds: number[] = []
+    for (let i = 0; i < 1_200; i += 1) {
+      visitorIds.push(await seedUser('visitor', `v${i}`))
+    }
+
+    const row = sendBroadcast(db, adminId, { title: '清缓存公告', body: '请刷新页面', replyable: false })
+
+    const rows = db
+      .select({ userId: notificationRecipient.userId, readAt: notificationRecipient.readAt })
+      .from(notificationRecipient)
+      .where(eq(notificationRecipient.notificationId, row.id))
+      .all()
+    // 1 200 visitors + the author's pre-read self-row — 500/500/201 rows in
+    // three INSERTs, still ONE transaction.
+    expect(rows).toHaveLength(1_201)
+    expect(new Set(rows.map((recipient) => recipient.userId)).size).toBe(1_201)
+    expect(rows.find((recipient) => recipient.userId === adminId)?.readAt).not.toBeNull()
+    expect(rows.find((recipient) => recipient.userId !== adminId)?.readAt).toBeNull()
+    expect(unreadCount(db, visitorIds[0]!)).toBe(1)
+    expect(unreadCount(db, adminId)).toBe(0)
   })
 
   it('rejects a broadcast on a single-admin site with an honest 400', async () => {

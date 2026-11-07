@@ -7,6 +7,14 @@ import type { NotificationKind } from '@/shared/contracts/notifications'
 import { notification, notificationRecipient } from '@/server/infra/db/schema/notification'
 import { user } from '@/server/infra/db/schema/user'
 
+/**
+ * Recipient rows per INSERT. SQLite binds at most 32 766 variables per
+ * statement; at 3 columns per row a single broadcast insert died past
+ * ~10 922 recipients. 500 keeps the statement far under the ceiling while
+ * staying inside ONE transaction (atomicity preserved).
+ */
+const FAN_OUT_CHUNK_SIZE = 500
+
 export interface NewNotificationRow {
   kind: NotificationKind
   senderId: number | null
@@ -58,7 +66,11 @@ export function createNotificationWithRecipients(
         userId,
         ...(readSet.has(userId) ? { readAt } : {}),
       }))
-      tx.insert(notificationRecipient).values(rows).run()
+      for (let start = 0; start < rows.length; start += FAN_OUT_CHUNK_SIZE) {
+        tx.insert(notificationRecipient)
+          .values(rows.slice(start, start + FAN_OUT_CHUNK_SIZE))
+          .run()
+      }
     }
     return inserted
   })
@@ -250,6 +262,17 @@ export function listRecipientUserIds(db: Database, options: { adminsOnly: boolea
     .where(and(...conditions))
     .all()
     .map((row) => row.id)
+}
+
+/** Targeted probe for the SAME active-user predicate `listRecipientUserIds` applies. */
+export function isActiveUserId(db: Database, userId: number): boolean {
+  const rows = db
+    .select({ id: user.id })
+    .from(user)
+    .where(and(eq(user.id, userId), isNull(user.deletedAt), isNotNull(user.role)))
+    .limit(1)
+    .all()
+  return rows.length > 0
 }
 
 export function findUserNamesByIds(db: Database, ids: readonly number[]): Map<number, string> {
