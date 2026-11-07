@@ -11,7 +11,7 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { friend as friendTable } from '@/server/infra/db/schema/friend'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
-import { weakEtag } from '@/server/infra/http/etag'
+import { currentRepresentation, postEtag } from '@/server/infra/http/etag'
 
 // post/page.detail loaders against the real engine; seams: wrapped probes
 // gating per-test assertions.
@@ -256,7 +256,7 @@ describe('routes/post.detail loader — ETag probe', () => {
       }),
     )
     const etag = loaderEtag(first)
-    expect(etag).toBe(weakEtag(['post', String(postId), new Date('2024-01-01')]))
+    expect(etag).toBe(postEtag(postId, new Date('2024-01-01'), currentRepresentation()))
 
     mocks.findPostBySlug.mockClear()
     const second = await postRoute
@@ -280,7 +280,7 @@ describe('routes/post.detail loader — ETag probe', () => {
 
   it('re-runs the full load and stamps a fresh ETag after the post is republished', async () => {
     const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
-    const staleEtag = weakEtag(['post', String(postId), new Date('2024-01-01')])
+    const staleEtag = postEtag(postId, new Date('2024-01-01'), currentRepresentation())
 
     // A republication bumps `published_at` — the ETag input.
     await db
@@ -301,12 +301,12 @@ describe('routes/post.detail loader — ETag probe', () => {
     expect(mocks.findPostBySlug).toHaveBeenCalled()
     const freshEtag = loaderEtag(result)
     expect(freshEtag).not.toBe(staleEtag)
-    expect(freshEtag).toBe(weakEtag(['post', String(postId), new Date('2024-06-01')]))
+    expect(freshEtag).toBe(postEtag(postId, new Date('2024-06-01'), currentRepresentation()))
   })
 
   it('does not short-circuit an alias hit — the canonical 301 still fires', async () => {
     const postId = await seedPost({ slug: 'hello', alias: ['hello-old'], publishedAt: new Date('2024-01-01') })
-    const etag = weakEtag(['post', String(postId), new Date('2024-01-01')])
+    const etag = postEtag(postId, new Date('2024-01-01'), currentRepresentation())
 
     const result = await postRoute
       .loader(

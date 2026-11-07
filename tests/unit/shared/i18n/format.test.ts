@@ -85,6 +85,21 @@ describe('shared/i18n/format — relative time', () => {
     expect(formatRelativeTime('2024-06-15T01:00:00+08:00', { ...options, unit: 'hour' })).toBe('11小时前')
   })
 
+  it('normalizes plural unit spellings and formats quarters', () => {
+    const daysAgo = '2024-06-12T12:00:00+08:00'
+    // `days` must read the SAME calendar-day value as `day`, not seconds.
+    expect(formatRelativeTime(daysAgo, { ...options, unit: 'days' })).toBe('3天前')
+    expect(formatRelativeTime(daysAgo, { ...options, unit: 'day' })).toBe('3天前')
+    expect(formatRelativeTime(daysAgo, { ...options, locale: 'en-US', unit: 'days' })).toBe('3 days ago')
+
+    // ~6 months → 2 quarters.
+    expect(formatRelativeTime('2023-12-15T12:00:00+08:00', { ...options, locale: 'en-US', unit: 'quarter' })).toBe(
+      '2 quarters ago',
+    )
+    expect(formatRelativeTime('2023-12-15T12:00:00+08:00', { ...options, unit: 'quarters' })).toBe('2个季度前')
+    expect(formatRelativeValue(-2, 'quarters', 'en-US')).toBe('2 quarters ago')
+  })
+
   it('uses the passed reference instant, so SSR and hydration agree', () => {
     const value = '2024-06-10T12:00:00+08:00'
     expect(formatRelativeTime(value, { ...options, now: '2024-06-12T12:00:00+08:00' })).toBe('前天')

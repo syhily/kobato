@@ -241,9 +241,34 @@ export function formatRelativeTime(value: Date | string, options: RelativeTimeOp
   return rtf.format(targetParts.year - referenceParts.year, 'year')
 }
 
+type SingularUnit = 'year' | 'quarter' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second'
+
+/** Every `Intl.RelativeTimeFormatUnit` spelling maps onto one singular unit. */
+const SINGULAR_UNITS = {
+  year: 'year',
+  years: 'year',
+  quarter: 'quarter',
+  quarters: 'quarter',
+  month: 'month',
+  months: 'month',
+  week: 'week',
+  weeks: 'week',
+  day: 'day',
+  days: 'day',
+  hour: 'hour',
+  hours: 'hour',
+  minute: 'minute',
+  minutes: 'minute',
+  second: 'second',
+  seconds: 'second',
+} as const satisfies Record<Intl.RelativeTimeFormatUnit, SingularUnit>
+
 function forcedUnitValue(target: Date, reference: Date, unit: Intl.RelativeTimeFormatUnit, timeZone: string): number {
   const elapsedMs = target.getTime() - reference.getTime()
-  switch (unit) {
+  const targetParts = localParts(target, timeZone)
+  const referenceParts = localParts(reference, timeZone)
+  const days = dayNumber(referenceParts) - dayNumber(targetParts)
+  switch (SINGULAR_UNITS[unit]) {
     case 'second':
       return Math.round(elapsedMs / 1000)
     case 'minute':
@@ -251,17 +276,15 @@ function forcedUnitValue(target: Date, reference: Date, unit: Intl.RelativeTimeF
     case 'hour':
       return Math.round(elapsedMs / 3_600_000)
     case 'day':
-      return -(dayNumber(localParts(reference, timeZone)) - dayNumber(localParts(target, timeZone)))
+      return -days
     case 'week':
-      return -Math.floor((dayNumber(localParts(reference, timeZone)) - dayNumber(localParts(target, timeZone))) / 7)
+      return -Math.floor(days / 7)
     case 'month':
-      return -monthsBetween(localParts(target, timeZone), localParts(reference, timeZone))
+      return -monthsBetween(targetParts, referenceParts)
+    case 'quarter':
+      return -Math.round(monthsBetween(targetParts, referenceParts) / 3)
     case 'year':
-      return localParts(target, timeZone).year - localParts(reference, timeZone).year
-    // Plural unit spellings (`days`, `months`) and `quarter` fall back to the
-    // closest singular/elapsed reading — callers here use the singular names.
-    default:
-      return Math.round(elapsedMs / 1000)
+      return targetParts.year - referenceParts.year
   }
 }
 

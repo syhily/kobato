@@ -18,6 +18,8 @@
 
 // @vitest-environment jsdom
 
+import type { ReactElement } from 'react'
+
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { act, render } from '@testing-library/react'
 import { JSDOM } from 'jsdom'
@@ -28,6 +30,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MusicPickerDialogProps } from '@/ui/admin/editor/pickers/MusicPickerDialog'
 
 import { makeAdminMusic } from '#/_helpers/catalog'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import {
   BaseMusicPlayerNode,
   MusicCardPicker,
@@ -117,13 +120,23 @@ function normalized(html: string): string {
   return body.innerHTML
 }
 
+/** SSR render through the root i18n provider (the card chrome calls `useI18n`). */
+function renderHtml(node: ReactElement): string {
+  return renderToStaticMarkup(wrapWithI18n(node))
+}
+
+/** Client render through the root i18n provider. */
+function renderClient(ui: ReactElement) {
+  return render(wrapWithI18n(ui))
+}
+
 function outerHtml(output: { element: unknown }): string {
   return (output.element as HTMLElement).outerHTML
 }
 
 describe('host card parity — solution', () => {
   it('renders the same chrome markup on the canvas and in the export', () => {
-    const canvas = renderToStaticMarkup(
+    const canvas = renderHtml(
       <SolutionCardView>
         <p data-parity-marker="" />
       </SolutionCardView>,
@@ -154,7 +167,7 @@ describe('host card parity — solution', () => {
 
 describe('host card parity — two-column', () => {
   it('renders the same chrome markup on the canvas and in the export', () => {
-    const canvas = renderToStaticMarkup(
+    const canvas = renderHtml(
       <TwoColumnCardView
         left={
           <TwoColumnPaneView side="left">
@@ -208,7 +221,7 @@ describe('host card parity — music-player', () => {
   }
 
   it('renders the playable player on the canvas for a resolved card', () => {
-    const canvas = renderToStaticMarkup(<MusicPlayerCardComponent meta={META} nodeKey="test-key" />)
+    const canvas = renderHtml(<MusicPlayerCardComponent meta={META} nodeKey="test-key" />)
     expect(canvas).toContain('Song')
     expect(canvas).toContain('Artist')
     expect(canvas).toContain('/storage/music/cover.png')
@@ -219,7 +232,7 @@ describe('host card parity — music-player', () => {
 
   it('renders the pick placeholder on the canvas for an unresolved card', () => {
     const meta: MusicPlayerCardMeta = { playerId: '', name: '', artist: '', cover: '', audioUrl: '', lyric: '' }
-    const canvas = renderToStaticMarkup(<MusicPlayerCardComponent meta={meta} nodeKey="test-key" />)
+    const canvas = renderHtml(<MusicPlayerCardComponent meta={meta} nodeKey="test-key" />)
     expect(canvas).toContain('音乐播放器')
     expect(canvas).not.toContain('aria-label="播放"')
   })
@@ -320,7 +333,7 @@ describe('music-player pick seam', () => {
     expect(readMusicMeta(nodeKey)?.audioUrl).toBe('')
 
     const close = vi.fn()
-    render(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
+    renderClient(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
     const onPick = musicPickerDialogProps.current?.onPick
     expect(onPick).toBeDefined()
 
@@ -354,7 +367,7 @@ describe('music-player pick seam', () => {
   it('closes without writing when the dialog is dismissed', async () => {
     const nodeKey = await insertMusicNode()
     const close = vi.fn()
-    render(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
+    renderClient(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
 
     act(() => {
       musicPickerDialogProps.current?.onOpenChange?.(false)
@@ -367,7 +380,7 @@ describe('music-player pick seam', () => {
   it('no-ops the pick write when the card was deleted while the dialog was open', async () => {
     const nodeKey = await insertMusicNode()
     const close = vi.fn()
-    render(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
+    renderClient(<MusicCardPicker editor={sharedEditor} nodeKey={nodeKey} close={close} />)
     await new Promise<void>((resolve) => {
       sharedEditor.update(
         () => {

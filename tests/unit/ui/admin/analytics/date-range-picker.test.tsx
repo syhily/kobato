@@ -10,7 +10,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { DateRange } from '@/shared/contracts/analytics'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
+import { calendarMachineDay } from '@/ui/components/calendar'
 
 const RANGE: DateRange = { startAt: 1_700_000_000, endAt: 1_700_100_000 }
 
@@ -24,11 +26,19 @@ function startOfNextDaySec(date: Date): number {
 
 /** Day button for the given date (the calendar marks days via `data-day`). */
 function dayButton(date: Date): HTMLElement {
-  const el = document.querySelector<HTMLElement>(`[data-day="${date.toLocaleDateString()}"]`)
+  // `data-day` is the machine yyyy-MM-dd value the calendar stamps.
+  const machineDay = calendarMachineDay(date)
+  // DayPicker stamps `data-day` on its own day cell too; target OUR button
+  // (the calendar's day button carries the same machine value).
+  const el = document.querySelector<HTMLElement>(`button[data-day="${machineDay}"]`)
   if (!el) {
-    throw new Error(`day button not found: ${date.toLocaleDateString()}`)
+    throw new Error(`day button not found: ${machineDay}`)
   }
   return el
+}
+
+function renderPicker(ui: React.ReactElement) {
+  return render(wrapWithI18n(ui))
 }
 
 // Pick selectable days guaranteed inside the current month (never disabled,
@@ -52,7 +62,7 @@ async function openCustomPicker() {
 describe('DateRangePicker custom range', () => {
   it('commits only after the second click completes the range', async () => {
     const onSelectRange = vi.fn()
-    render(<DateRangePicker preset="last-7d" range={RANGE} onSelect={() => {}} onSelectRange={onSelectRange} />)
+    renderPicker(<DateRangePicker preset="last-7d" range={RANGE} onSelect={() => {}} onSelectRange={onSelectRange} />)
     await openCustomPicker()
 
     const { startDay, endDay } = pickDays()
@@ -69,7 +79,7 @@ describe('DateRangePicker custom range', () => {
 
   it('restarting from an active custom range also needs two clicks', async () => {
     const onSelectRange = vi.fn()
-    render(<DateRangePicker preset={null} range={RANGE} onSelect={() => {}} onSelectRange={onSelectRange} />)
+    renderPicker(<DateRangePicker preset={null} range={RANGE} onSelect={() => {}} onSelectRange={onSelectRange} />)
     await openCustomPicker()
 
     const { startDay, endDay } = pickDays()
@@ -82,7 +92,7 @@ describe('DateRangePicker custom range', () => {
 
   it('a discarded partial range does not leak into the next open', async () => {
     const onSelectRange = vi.fn()
-    render(<DateRangePicker preset="last-7d" range={RANGE} onSelect={() => {}} onSelectRange={onSelectRange} />)
+    renderPicker(<DateRangePicker preset="last-7d" range={RANGE} onSelect={() => {}} onSelectRange={onSelectRange} />)
     await openCustomPicker()
 
     const { startDay, endDay } = pickDays()

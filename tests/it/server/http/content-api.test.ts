@@ -13,7 +13,7 @@ import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
-import { weakEtag } from '@/server/infra/http/etag'
+import { currentRepresentation, pageEtag, postEtag } from '@/server/infra/http/etag'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { serverMessagesZhCN } from '@/shared/i18n/messages/server/zh-CN'
 import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
@@ -339,7 +339,7 @@ describe('content.posts.bySlug', () => {
     }>(res)
 
     expect(json.kind).toBe('ok')
-    expect(json.etag).toBe(weakEtag(['post', String(postId), new Date('2024-01-01')]))
+    expect(json.etag).toBe(postEtag(postId, new Date('2024-01-01'), currentRepresentation()))
     expect(json.payload.post.title).toBe('Hello')
     expect(json.payload.post.permalink).toBe('/posts/hello')
     expect(json.payload.draftMarker).toBeNull()
@@ -348,7 +348,7 @@ describe('content.posts.bySlug', () => {
 
   it('answers not-modified when the carried If-None-Match matches the probe ETag', async () => {
     const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
-    const etag = weakEtag(['post', String(postId), new Date('2024-01-01')])
+    const etag = postEtag(postId, new Date('2024-01-01'), currentRepresentation())
 
     const res = await callRpc('/content/posts/bySlug', { slug: 'hello', ifNoneMatch: etag }, makePublicCtx({ db }))
     expect(res.status).toBe(200)
@@ -460,7 +460,7 @@ describe('content.pages.bySlug', () => {
       .select({ publishedRevisionId: pageTable.publishedRevisionId })
       .from(pageTable)
       .where(eq(pageTable.id, pageId))
-    const etag = weakEtag(['page', String(pageId), rows[0]!.publishedRevisionId, new Date('2024-01-01')])
+    const etag = pageEtag(pageId, rows[0]!.publishedRevisionId, new Date('2024-01-01'), currentRepresentation())
 
     const res = await callRpc('/content/pages/bySlug', { slug: 'about', ifNoneMatch: etag }, makePublicCtx({ db }))
     const json = await parseRpcJson<{ kind: string; etag: string }>(res)
@@ -517,7 +517,12 @@ describe('content.pages.bySlug', () => {
       .select({ publishedRevisionId: pageTable.publishedRevisionId })
       .from(pageTable)
       .where(eq(pageTable.id, pageId))
-    const publishedEtag = weakEtag(['page', String(pageId), rows[0]!.publishedRevisionId, new Date('2024-01-01')])
+    const publishedEtag = pageEtag(
+      pageId,
+      rows[0]!.publishedRevisionId,
+      new Date('2024-01-01'),
+      currentRepresentation(),
+    )
 
     // `draft: true` must skip the published-ETag probe, or a match answers `not-modified` and the draft never renders.
     const res = await callRpc(
