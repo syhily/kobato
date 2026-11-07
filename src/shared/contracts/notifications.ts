@@ -43,7 +43,6 @@ export const listNotificationsInput = z.object({
 export const listNotificationsOutput = z.object({
   items: z.array(notificationDto),
   nextCursor: idString.nullable(),
-  unreadCount: z.number().int(),
 })
 
 export const unreadCountOutput = z.object({

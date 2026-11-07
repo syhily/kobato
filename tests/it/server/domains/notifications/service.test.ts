@@ -152,7 +152,6 @@ describe('notifications / inbox', () => {
     const all = await listInbox(db, visitorId, { tab: 'all', limit: 2 })
     expect(all.items).toHaveLength(2)
     expect(all.nextCursor).not.toBeNull()
-    expect(all.unreadCount).toBe(4)
 
     const rest = await listInbox(db, visitorId, { tab: 'all', cursor: Number(all.nextCursor), limit: 10 })
     expect(rest.items).toHaveLength(2)
@@ -175,6 +174,21 @@ describe('notifications / inbox', () => {
     // Mark-all empties the badge.
     markRead(db, visitorId)
     expect(unreadCount(db, visitorId)).toBe(0)
+  })
+
+  it('caps the list-row body as a preview while the thread keeps the full body', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const fullBody = 'a'.repeat(300)
+    const root = sendDirectMessage(db, adminId, visitorId, { title: '长文', body: fullBody })
+
+    const inbox = await listInbox(db, visitorId, { tab: 'direct', limit: 10 })
+    expect(inbox.items[0]!.body).toBe(fullBody.slice(0, 200))
+    expect(inbox.items[0]!.body).toHaveLength(200)
+
+    const thread = await getThread(db, viewer(visitorId, 'visitor'), root.threadId)
+    expect(thread.messages[0]!.body).toBe(fullBody)
+    expect(thread.messages[0]!.body).toHaveLength(300)
   })
 
   it("marks only the caller's rows read when ids are given", async () => {

@@ -32,13 +32,17 @@ import { DomainError } from '@/server/infra/http/errors'
 // DTO mapping
 // ---------------------------------------------------------------------------
 
+// The inbox row renders a two-line preview; the detail pane reads the full
+// body from the thread query. Capping keeps the list wire small.
+const LIST_BODY_PREVIEW_LENGTH = 200
+
 function toNotificationDto(row: NotificationRow, sender: NotificationSenderDto | null, read: boolean): NotificationDto {
   return {
     id: String(row.id),
     threadId: String(row.threadId),
     kind: row.kind,
     title: row.title,
-    body: row.body,
+    body: row.body.slice(0, LIST_BODY_PREVIEW_LENGTH),
     sender,
     replyable: row.replyable,
     source: row.source,
@@ -207,7 +211,6 @@ export function recallMessage(db: Database, id: number): RecalledMessage {
 export interface InboxPage {
   items: NotificationDto[]
   nextCursor: string | null
-  unreadCount: number
 }
 
 export async function listInbox(
@@ -242,7 +245,6 @@ export async function listInbox(
       ),
     ),
     nextCursor: rows.length > input.limit ? String(page[page.length - 1]!.message.id) : null,
-    unreadCount: countUnreadNotifications(db, userId),
   }
 }
 
