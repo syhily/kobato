@@ -12,7 +12,14 @@ describe('security / tabnabbing — Header external nav links', () => {
       { text: 'same tab', link: '/about' },
     ]
     const html = renderInRouter(
-      <Header navigation={navigation} currentUser={null} pathname="/" logoutRedirectTo="/" />,
+      <Header
+        navigation={navigation}
+        currentUser={null}
+        pathname="/"
+        logoutRedirectTo="/"
+        unreadCount={0}
+        onOpenNotifications={() => {}}
+      />,
       '/',
     )
     expect(html).toContain('rel="noopener noreferrer"')
@@ -21,7 +28,14 @@ describe('security / tabnabbing — Header external nav links', () => {
   it('does not add a rel to same-tab navigation links', () => {
     const navigation: NavigationItem[] = [{ text: 'internal', link: '/about' }]
     const html = renderInRouter(
-      <Header navigation={navigation} currentUser={null} pathname="/" logoutRedirectTo="/" />,
+      <Header
+        navigation={navigation}
+        currentUser={null}
+        pathname="/"
+        logoutRedirectTo="/"
+        unreadCount={0}
+        onOpenNotifications={() => {}}
+      />,
       '/',
     )
     expect(html).not.toContain('rel="noopener noreferrer"')

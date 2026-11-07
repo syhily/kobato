@@ -65,11 +65,10 @@ beforeEach(() => {
 })
 
 describe('ui/shared/notifications/NotificationsDrawer', () => {
-  it('renders the tab bar and the unread badge from the count query', () => {
-    control.query.data = { count: 7 }
+  it('renders the tab bar and the unread badge from the count prop', () => {
     control.infinite.data = { pages: [{ items: [], nextCursor: null, unreadCount: 7 }] }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={7} />)
 
     expect(screen.getByText('消息通知')).toBeTruthy()
     expect(screen.getByText('7')).toBeTruthy()
@@ -80,11 +79,19 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     expect(screen.queryByLabelText('写消息')).toBeNull()
   })
 
+  it('disables mark-all-read from the count prop', () => {
+    const { rerender } = render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+    expect(screen.getByLabelText('全部标为已读').hasAttribute('disabled')).toBe(true)
+
+    rerender(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={4} />)
+    expect(screen.getByLabelText('全部标为已读').hasAttribute('disabled')).toBe(false)
+  })
+
   it('lists inbox rows and shows the empty state per tab', () => {
     const item = makeItem()
     control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
 
     expect(screen.getByText('系统升级公告')).toBeTruthy()
     expect(screen.getByText('今晚 24 点例行维护')).toBeTruthy()
@@ -102,7 +109,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
       canReply: true,
     }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     fireEvent.click(screen.getByText('系统升级公告'))
 
     expect(screen.getByText('你好，在吗')).toBeTruthy()
@@ -119,7 +126,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
       canReply: false,
     }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     fireEvent.click(screen.getByText('系统升级公告'))
 
     expect(screen.getByText('今晚 24 点例行维护')).toBeTruthy()
@@ -130,7 +137,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     const item = makeItem({ read: true })
     control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 0 }] }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     const action = screen.getByLabelText('标为未读')
     fireEvent.click(action)
 
@@ -140,7 +147,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
   })
 
   it('exposes the compose entry to admins', () => {
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin unreadCount={0} />)
     expect(screen.getByLabelText('写消息')).toBeTruthy()
   })
 
@@ -152,7 +159,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
       canReply: false,
     }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin unreadCount={0} />)
     fireEvent.click(screen.getByText('系统升级公告'))
     fireEvent.click(screen.getByRole('button', { name: '撤回' }))
 
@@ -174,7 +181,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
       canReply: false,
     }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin unreadCount={0} />)
     fireEvent.click(screen.getByText('系统升级公告'))
     fireEvent.click(screen.getByRole('button', { name: '撤回' }))
 
@@ -191,7 +198,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     control.infinite.data = { pages: [{ items: [makeItem()], nextCursor: null, unreadCount: 1 }] }
     control.query.data = { messages: [], canReply: false }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     fireEvent.click(screen.getByText('系统升级公告'))
 
     expect(screen.queryByRole('button', { name: '撤回' })).toBeNull()
@@ -205,7 +212,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
       canReply: true,
     }
 
-    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin unreadCount={0} />)
     fireEvent.click(screen.getByText('系统升级公告'))
 
     expect(screen.queryByRole('button', { name: '撤回' })).toBeNull()
@@ -217,7 +224,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     control.query.data = { messages: [], canReply: false }
     const onOpenChange = vi.fn()
 
-    render(<NotificationsDrawer open onOpenChange={onOpenChange} isAdmin={false} />)
+    render(<NotificationsDrawer open onOpenChange={onOpenChange} isAdmin={false} unreadCount={0} />)
     fireEvent.click(screen.getByText('系统升级公告'))
 
     const link = screen.getByRole('link', { name: '去处理' })

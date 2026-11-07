@@ -5,7 +5,7 @@ import { useState } from 'react'
 import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifications'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInvalidateNotifications, useUnreadNotificationCount } from '@/client/hooks/use-notifications'
+import { useInvalidateNotifications } from '@/client/hooks/use-notifications'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/ui/components/sheet'
@@ -20,6 +20,8 @@ interface NotificationsDrawerProps {
   onOpenChange: (open: boolean) => void
   /** Admins get the compose entry (direct + broadcast). */
   isAdmin: boolean
+  /** Owned by the shell (one observer per shell) — the drawer never subscribes. */
+  unreadCount: number
 }
 
 const TAB_LABELS: Array<{ value: NotificationTab; label: string }> = [
@@ -35,11 +37,10 @@ function isNotificationTab(value: unknown): value is NotificationTab {
 
 // The global right-side drawer behind every「消息通知」entry: list ↔ detail
 // panes, mark-read actions, and the admin compose dialog.
-export function NotificationsDrawer({ open, onOpenChange, isAdmin }: NotificationsDrawerProps) {
+export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }: NotificationsDrawerProps) {
   const [tab, setTab] = useState<NotificationTab>('all')
   const [selected, setSelected] = useState<NotificationDto | null>(null)
   const [composeOpen, setComposeOpen] = useState(false)
-  const unreadCount = useUnreadNotificationCount()
   const invalidate = useInvalidateNotifications()
 
   const markAllRead = useMutation(

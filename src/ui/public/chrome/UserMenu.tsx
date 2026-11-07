@@ -1,11 +1,9 @@
 import { BellIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, SettingsIcon, UserIcon } from 'lucide-react'
-import { useState } from 'react'
 import { Link } from 'react-router'
 
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
 import { useLogout } from '@/client/hooks/use-logout'
-import { useUnreadNotificationCount } from '@/client/hooks/use-notifications'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { roleLabel } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
@@ -18,23 +16,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
-import {
-  LazyNotificationsDrawer,
-  warmNotificationsDrawerChunk,
-} from '@/ui/shared/notifications/LazyNotificationsDrawer'
+import { warmNotificationsDrawerChunk } from '@/ui/shared/notifications/LazyNotificationsDrawer'
 import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
 interface Props {
   currentUser: HeaderCurrentUser
   logoutRedirectTo: string
+  /** Owned by BaseLayout (the public shell's one subscriber) — never re-subscribe here. */
+  unreadCount: number
+  onOpenNotifications: () => void
 }
 
 // User menu in the public chrome's site-nav; a single avatar-button trigger
 // nests next to the other site-nav links without taking a full row.
-export function UserMenu({ currentUser, logoutRedirectTo }: Props) {
+export function UserMenu({ currentUser, logoutRedirectTo, unreadCount, onOpenNotifications }: Props) {
   const logout = useLogout()
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const unreadCount = useUnreadNotificationCount()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()
   const canEnterAdmin = currentUser.role === 'admin' || currentUser.role === 'author'
   return (
@@ -67,7 +63,7 @@ export function UserMenu({ currentUser, logoutRedirectTo }: Props) {
           <span className="text-xs font-normal text-muted-foreground">{roleLabel(currentUser.role)}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setNotificationsOpen(true)} onPointerEnter={warmNotificationsDrawerChunk}>
+        <DropdownMenuItem onClick={() => onOpenNotifications()} onPointerEnter={warmNotificationsDrawerChunk}>
           <BellIcon /> 消息通知
           <NotificationBadge count={unreadCount} className="px-1.5 text-[11px] leading-none" />
         </DropdownMenuItem>
@@ -106,11 +102,6 @@ export function UserMenu({ currentUser, logoutRedirectTo }: Props) {
           <LogOutIcon /> 登出
         </DropdownMenuItem>
       </DropdownMenuContent>
-      <LazyNotificationsDrawer
-        open={notificationsOpen}
-        onOpenChange={setNotificationsOpen}
-        isAdmin={currentUser.role === 'admin'}
-      />
     </DropdownMenu>
   )
 }

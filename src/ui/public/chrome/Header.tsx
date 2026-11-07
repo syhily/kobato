@@ -33,6 +33,10 @@ export interface HeaderProps {
   /** Where the logout flow returns to — built once by BaseLayout (which
    *  also serves the desktop menu) and threaded to the mobile UserMenu. */
   logoutRedirectTo: string
+  /** BaseLayout owns the shell's one unread-count subscription — threaded
+   *  down, never re-subscribed in the chrome. */
+  unreadCount: number
+  onOpenNotifications: () => void
 }
 
 const asideShellClass = cn(
@@ -115,7 +119,14 @@ function SocialNavIcon({ network, className }: { network: SocialNetwork; classNa
   return <Icon className={className} />
 }
 
-export function Header({ navigation, currentUser, pathname, logoutRedirectTo }: HeaderProps) {
+export function Header({
+  navigation,
+  currentUser,
+  pathname,
+  logoutRedirectTo,
+  unreadCount,
+  onOpenNotifications,
+}: HeaderProps) {
   const { title } = useSiteIdentity()
   const { socials } = useSocialsSettings()
   const assets = useAssetsSettingsOptional()
@@ -248,7 +259,12 @@ export function Header({ navigation, currentUser, pathname, logoutRedirectTo }: 
             <div className="flex-1" />
             {currentUser && (
               <div className="mr-3">
-                <UserMenu currentUser={currentUser} logoutRedirectTo={logoutRedirectTo} />
+                <UserMenu
+                  currentUser={currentUser}
+                  logoutRedirectTo={logoutRedirectTo}
+                  unreadCount={unreadCount}
+                  onOpenNotifications={onOpenNotifications}
+                />
               </div>
             )}
             <button

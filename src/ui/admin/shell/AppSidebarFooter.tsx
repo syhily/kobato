@@ -10,10 +10,7 @@ import {
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
-
 import { useLogout } from '@/client/hooks/use-logout'
-import { useUnreadNotificationCount } from '@/client/hooks/use-notifications'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { VersionDialog } from '@/ui/admin/shell/VersionDialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
@@ -26,10 +23,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
 import { SidebarFooter, SidebarMenu, SidebarMenuItem } from '@/ui/components/sidebar'
-import {
-  LazyNotificationsDrawer,
-  warmNotificationsDrawerChunk,
-} from '@/ui/shared/notifications/LazyNotificationsDrawer'
+import { warmNotificationsDrawerChunk } from '@/ui/shared/notifications/LazyNotificationsDrawer'
 import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
 interface AppSidebarFooterProps {
@@ -37,14 +31,21 @@ interface AppSidebarFooterProps {
   id: string
   name: string
   email: string
-  role: AdminShellProps['currentUser']['role']
+  /** Supplied by the shell's single count owner — never subscribe here. */
+  unreadCount: number
+  onOpenNotifications: () => void
 }
 
-export function AppSidebarFooter({ className, id, name, email, role }: AppSidebarFooterProps) {
+export function AppSidebarFooter({
+  className,
+  id,
+  name,
+  email,
+  unreadCount,
+  onOpenNotifications,
+}: AppSidebarFooterProps) {
   const [versionOpen, setVersionOpen] = useState(false)
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const logout = useLogout()
-  const unreadCount = useUnreadNotificationCount()
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
 
   return (
@@ -97,7 +98,7 @@ export function AppSidebarFooter({ className, id, name, email, role }: AppSideba
               <DropdownMenuSeparator className="my-2" />
               <DropdownMenuItem
                 className="my-0.5 rounded-xl px-3 py-2 text-sm"
-                onClick={() => setNotificationsOpen(true)}
+                onClick={() => onOpenNotifications()}
                 onPointerEnter={warmNotificationsDrawerChunk}
               >
                 <BellIcon className="mr-2 size-4" />
@@ -144,11 +145,6 @@ export function AppSidebarFooter({ className, id, name, email, role }: AppSideba
             </DropdownMenuContent>
           </DropdownMenu>
           <VersionDialog open={versionOpen} onOpenChange={setVersionOpen} />
-          <LazyNotificationsDrawer
-            open={notificationsOpen}
-            onOpenChange={setNotificationsOpen}
-            isAdmin={role === 'admin'}
-          />
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarFooter>

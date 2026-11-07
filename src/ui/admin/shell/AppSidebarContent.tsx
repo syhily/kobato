@@ -8,6 +8,8 @@ import { SidebarContent } from '@/ui/components/sidebar'
 
 interface AppSidebarContentProps {
   role: AdminShellProps['currentUser']['role']
+  unreadCount: number
+  onOpenNotifications: () => void
   pendingCommentCount?: number
   pendingWebmentionCount?: number
   userCount?: number
@@ -15,6 +17,8 @@ interface AppSidebarContentProps {
 
 export function AppSidebarContent({
   role,
+  unreadCount,
+  onOpenNotifications,
   pendingCommentCount,
   pendingWebmentionCount,
   userCount,
@@ -31,7 +35,7 @@ export function AppSidebarContent({
         />
       </div>
       <div className="flex flex-col gap-2">
-        <NavNotifications role={role} />
+        <NavNotifications unreadCount={unreadCount} onOpen={onOpenNotifications} />
         <NavSettings role={role} />
       </div>
     </SidebarContent>

@@ -22,7 +22,9 @@ beforeEach(() => {
 
 describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
   it('renders nothing until the first open (SSR-stable)', () => {
-    const { container } = render(<LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} />)
+    const { container } = render(
+      <LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} unreadCount={0} />,
+    )
     expect(container.innerHTML).toBe('')
   })
 
@@ -31,8 +33,10 @@ describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
     // race module loading when the full suite saturates the machine.
     await import('@/ui/shared/notifications/NotificationsDrawer')
 
-    const { rerender } = render(<LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} />)
-    rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    const { rerender } = render(
+      <LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} unreadCount={0} />,
+    )
+    rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
 
     // The everOpened latch + lazy boundary resolve on a later tick.
     await act(async () => {
@@ -41,8 +45,8 @@ describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
     expect(await screen.findByText('消息通知')).toBeTruthy()
 
     // Closing must not unmount the chain — drawer state survives reopen.
-    rerender(<LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} />)
-    rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    rerender(<LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+    rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     expect(screen.getByText('消息通知')).toBeTruthy()
   }, 15_000)
 })

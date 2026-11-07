@@ -2,7 +2,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 
@@ -10,58 +10,53 @@ vi.mock('@/client/hooks/use-logout', () => ({
   useLogout: () => vi.fn(),
 }))
 
-const drawerProps = vi.fn()
-vi.mock('@/ui/shared/notifications/LazyNotificationsDrawer', () => ({
-  LazyNotificationsDrawer: (props: { open: boolean; isAdmin: boolean }) => {
-    drawerProps(props)
-    return null
-  },
-  warmNotificationsDrawerChunk: vi.fn(),
-}))
-
-const control = mockTanstackQuery()
+// VersionDialog (inside the footer) queries the GitHub avatar — the count no
+// longer comes from react-query, but the shared mock supplies its slots.
+mockTanstackQuery()
 
 const { AppSidebarFooter } = await import('@/ui/admin/shell/AppSidebarFooter')
 
-function renderFooter() {
+function renderFooter(unreadCount = 0, onOpenNotifications: () => void = () => {}) {
   return render(
     <MemoryRouter initialEntries={['/admin']}>
-      <AppSidebarFooter id="1" name="管理员" email="admin@example.com" role="admin" />
+      <AppSidebarFooter
+        id="1"
+        name="管理员"
+        email="admin@example.com"
+        unreadCount={unreadCount}
+        onOpenNotifications={onOpenNotifications}
+      />
     </MemoryRouter>,
   )
 }
 
-beforeEach(() => {
-  drawerProps.mockClear()
-  control.query.data = { count: 0 }
-  control.query.isPending = false
-  control.query.isError = false
-})
-
 describe('ui/admin/shell/AppSidebarFooter', () => {
   it('shows the unread dot on the avatar only with unread messages', () => {
-    control.query.data = { count: 5 }
-    const { container, rerender } = renderFooter()
+    const { container, rerender } = renderFooter(5)
     expect(container.querySelector('.bg-destructive')).not.toBeNull()
 
-    control.query.data = { count: 0 }
     rerender(
       <MemoryRouter initialEntries={['/admin']}>
-        <AppSidebarFooter id="1" name="管理员" email="admin@example.com" role="admin" />
+        <AppSidebarFooter
+          id="1"
+          name="管理员"
+          email="admin@example.com"
+          unreadCount={0}
+          onOpenNotifications={() => {}}
+        />
       </MemoryRouter>,
     )
     expect(container.querySelector('.bg-destructive')).toBeNull()
   })
 
   it('announces the unread count through the trigger aria-label', () => {
-    control.query.data = { count: 3 }
-    renderFooter()
+    renderFooter(3)
     expect(screen.getByLabelText('用户菜单，3 条未读消息')).toBeTruthy()
   })
 
-  it('opens the notifications drawer from the 消息通知 menu item', () => {
-    control.query.data = { count: 2 }
-    renderFooter()
+  it('opens the shell-owned drawer from the 消息通知 menu item', () => {
+    const onOpenNotifications = vi.fn()
+    renderFooter(2, onOpenNotifications)
     fireEvent.click(screen.getByLabelText('用户菜单，2 条未读消息'))
 
     const item = screen.getByText('消息通知')
@@ -69,6 +64,6 @@ describe('ui/admin/shell/AppSidebarFooter', () => {
     expect(screen.getByText('2')).toBeTruthy()
 
     fireEvent.click(item)
-    expect(drawerProps).toHaveBeenLastCalledWith(expect.objectContaining({ open: true, isAdmin: true }))
+    expect(onOpenNotifications).toHaveBeenCalledTimes(1)
   })
 })

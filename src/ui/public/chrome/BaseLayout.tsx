@@ -1,14 +1,18 @@
 import type { ReactNode } from 'react'
 
+import { useState } from 'react'
+
 import type { NavigationItem } from '@/shared/config/types'
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
+import { useUnreadNotificationCount } from '@/client/hooks/use-notifications'
 import { useNavigationSettings } from '@/shared/lib/blog-config-context'
 import { Footer } from '@/ui/public/chrome/Footer'
 import { Header } from '@/ui/public/chrome/Header'
 import { ScrollTopButton } from '@/ui/public/chrome/ScrollTopButton'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { UserMenu } from '@/ui/public/chrome/UserMenu'
+import { LazyNotificationsDrawer } from '@/ui/shared/notifications/LazyNotificationsDrawer'
 // Static import so React Router preloads `public.css` during SSR (no FOUC).
 // Do NOT re-export from `@/root` — that would pin this module in the admin chunk.
 import '@/styles/public.css'
@@ -28,6 +32,12 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
   const resolvedNavigation = navigation || navigationSection.navigation.sideNav
   // Logout returns to the page the user signed out from.
   const logoutRedirectTo = `${pathname}${search}`
+  // The public shell's ONE notification owner: both UserMenus (desktop rail +
+  // mobile brand bar, always co-mounted) open this drawer and read this count.
+  // Interval refetches are per-observer and do not dedupe (ADR-0009).
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const unreadCount = useUnreadNotificationCount(currentUser !== null)
+  const openNotifications = () => setNotificationsOpen(true)
 
   return (
     <div className="flex flex-col lg:flex-row">
@@ -42,11 +52,18 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
         currentUser={currentUser}
         pathname={pathname}
         logoutRedirectTo={logoutRedirectTo}
+        unreadCount={unreadCount}
+        onOpenNotifications={openNotifications}
       />
       {currentUser && (
         // Above the detail-page cover image (z-aside-drawer / 1020) so the avatar and dropdown stay reachable.
         <div className="fixed top-4 right-4 z-modal hidden lg:block">
-          <UserMenu currentUser={currentUser} logoutRedirectTo={logoutRedirectTo} />
+          <UserMenu
+            currentUser={currentUser}
+            logoutRedirectTo={logoutRedirectTo}
+            unreadCount={unreadCount}
+            onOpenNotifications={openNotifications}
+          />
         </div>
       )}
       <main id="main-content" className="flex min-w-0 flex-1 flex-col">
@@ -59,6 +76,14 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
           <ThemeToggle mode="public" variant="floating" />
         </li>
       </ul>
+      {currentUser ? (
+        <LazyNotificationsDrawer
+          open={notificationsOpen}
+          onOpenChange={setNotificationsOpen}
+          isAdmin={currentUser.role === 'admin'}
+          unreadCount={unreadCount}
+        />
+      ) : null}
     </div>
   )
 }
