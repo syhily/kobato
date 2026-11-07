@@ -16,6 +16,7 @@ import {
   sendDirectMessage,
   unreadCount,
 } from '@/server/domains/notifications/service'
+import { listThreadParticipantIds } from '@/server/infra/db/operations/notification'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
 
@@ -162,6 +163,23 @@ describe('notifications / threads & replies', () => {
     expect(thread.canReply).toBe(true)
     expect(thread.messages[0]!.sender?.id).toBe(String(adminId))
     expect(thread.messages[1]!.mine).toBe(false)
+  })
+
+  it('skips soft-deleted participants when routing a reply', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const root = sendDirectMessage(db, adminId, visitorId, { title: '合作', body: '有兴趣吗' })
+
+    await db.update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId))
+
+    // The deleted counterpart drops out of the routing base…
+    expect(listThreadParticipantIds(db, root.threadId)).toEqual([adminId])
+    // …so the admin's reply has genuinely nobody to reach — an honest 400,
+    // not a silent send into the void.
+    await expect(
+      replyToThread(db, viewer(adminId, 'admin'), { threadId: root.threadId, body: '还在吗' }),
+    ).rejects.toThrow('该线程没有可接收回复的对象')
+    expect(unreadCount(db, visitorId)).toBe(1)
   })
 
   it('forks a broadcast reply into a private thread with the admin team', async () => {

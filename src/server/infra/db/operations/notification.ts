@@ -129,13 +129,14 @@ export async function listThreadNotifications(db: Database, threadId: number): P
   return db.select().from(notification).where(eq(notification.threadId, threadId)).orderBy(notification.id)
 }
 
-/** Distinct senders + recipients across the whole thread — the reply routing base. */
+/** Distinct ACTIVE senders + recipients across the whole thread — the reply routing base. */
 export function listThreadParticipantIds(db: Database, threadId: number): number[] {
   const participants = new Set<number>()
   const messages = db
     .select({ senderId: notification.senderId })
     .from(notification)
-    .where(and(eq(notification.threadId, threadId), isNotNull(notification.senderId)))
+    .innerJoin(user, eq(notification.senderId, user.id))
+    .where(and(eq(notification.threadId, threadId), isNotNull(notification.senderId), isNull(user.deletedAt)))
     .all()
   for (const message of messages) {
     participants.add(message.senderId!)
@@ -144,7 +145,8 @@ export function listThreadParticipantIds(db: Database, threadId: number): number
     .select({ userId: notificationRecipient.userId })
     .from(notificationRecipient)
     .innerJoin(notification, eq(notificationRecipient.notificationId, notification.id))
-    .where(eq(notification.threadId, threadId))
+    .innerJoin(user, eq(notificationRecipient.userId, user.id))
+    .where(and(eq(notification.threadId, threadId), isNull(user.deletedAt)))
     .all()
   for (const recipient of recipients) {
     participants.add(recipient.userId)
