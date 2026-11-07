@@ -4,6 +4,7 @@ import { Controller, useFieldArray, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { I18N_SETTINGS_ENABLED } from '@/shared/i18n/feature-flags'
 import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES, type AppLocale } from '@/shared/i18n/locales'
@@ -28,34 +29,58 @@ interface GeneralFormProps {
   timeZones: readonly string[]
 }
 
+// Client-only validation copy: message IDS (typed against the UI catalog), never
+// prose. `useSettingsCard` localizes them before they reach RHF errors.
+const MSG = {
+  titleRequired: 'admin.settings.validation.titleRequired',
+  separatorRequired: 'admin.settings.validation.separatorRequired',
+  descriptionRequired: 'admin.settings.validation.descriptionRequired',
+  websiteInvalid: 'admin.settings.validation.websiteInvalid',
+  keywordRequired: 'admin.settings.validation.keywordRequired',
+  keywordsMax: 'admin.settings.validation.keywordsMax',
+  authorNameRequired: 'admin.settings.validation.authorNameRequired',
+  emailInvalid: 'admin.settings.validation.emailInvalid',
+  localeRequired: 'admin.settings.validation.localeRequired',
+  timeZoneRequired: 'admin.settings.validation.timeZoneRequired',
+  timeFormatRequired: 'admin.settings.validation.timeFormatRequired',
+  max10: 'admin.settings.validation.maxChars10',
+  max40: 'admin.settings.validation.maxChars40',
+  max60: 'admin.settings.validation.maxChars60',
+  max64: 'admin.settings.validation.maxChars64',
+  max120: 'admin.settings.validation.maxChars120',
+  max240: 'admin.settings.validation.maxChars240',
+  initialYearMin: 'admin.settings.validation.initialYearMin',
+  initialYearMax: 'admin.settings.validation.initialYearMax',
+} as const satisfies Record<string, UiMessageId>
+
 const TIME_FORMAT_AUTO = 'auto'
 const TIME_FORMAT_CUSTOM = 'custom'
 /** Seed used when an admin switches from "follow the locale" to a custom pattern. */
 const DEFAULT_TIME_FORMAT_PATTERN = 'yyyy-LL-dd HH:mm'
 
 const generalFormSchema = z.object({
-  title: z.string().trim().min(1, '请填写站点标题').max(120, '最多 120 个字符'),
-  titleSeparator: z.string().trim().min(1, '请填写标题分隔符').max(10, '最多 10 个字符'),
-  description: z.string().trim().min(1, '请填写站点描述').max(240, '最多 240 个字符'),
-  website: z.url({ message: '请填写完整的 URL（包含 https://）' }),
+  title: z.string().trim().min(1, MSG.titleRequired).max(120, MSG.max120),
+  titleSeparator: z.string().trim().min(1, MSG.separatorRequired).max(10, MSG.max10),
+  description: z.string().trim().min(1, MSG.descriptionRequired).max(240, MSG.max240),
+  website: z.url({ message: MSG.websiteInvalid }),
   keywords: z
     .array(
       z.object({
-        value: z.string().trim().min(1, '关键词不能为空').max(60, '最多 60 个字符'),
+        value: z.string().trim().min(1, MSG.keywordRequired).max(60, MSG.max60),
       }),
     )
-    .max(20, '最多 20 个关键词'),
+    .max(20, MSG.keywordsMax),
   author: z.object({
-    name: z.string().trim().min(1, '请填写作者姓名').max(60, '最多 60 个字符'),
-    email: z.email({ message: '请填写合法的邮箱地址' }),
-    url: z.url({ message: '请填写完整的 URL（包含 https://）' }),
+    name: z.string().trim().min(1, MSG.authorNameRequired).max(60, MSG.max60),
+    email: z.email({ message: MSG.emailInvalid }),
+    url: z.url({ message: MSG.websiteInvalid }),
   }),
-  locale: z.enum(SUPPORTED_LOCALES, { message: '请选择站点语言' }),
-  timeZone: z.string().trim().min(1, '请选择时区').max(64, '最多 64 个字符'),
-  timeFormat: z.string().trim().min(1, '请填写日期格式').max(40, '最多 40 个字符').nullable(),
-  initialYear: z.coerce.number().int().min(1970, '年份不能早于 1970').max(9999, '年份不能超过 9999'),
-  icpNo: z.string().trim().max(60, '最多 60 个字符').optional(),
-  moeIcpNo: z.string().trim().max(60, '最多 60 个字符').optional(),
+  locale: z.enum(SUPPORTED_LOCALES, { message: MSG.localeRequired }),
+  timeZone: z.string().trim().min(1, MSG.timeZoneRequired).max(64, MSG.max64),
+  timeFormat: z.string().trim().min(1, MSG.timeFormatRequired).max(40, MSG.max40).nullable(),
+  initialYear: z.coerce.number().int().min(1970, MSG.initialYearMin).max(9999, MSG.initialYearMax),
+  icpNo: z.string().trim().max(60, MSG.max60).optional(),
+  moeIcpNo: z.string().trim().max(60, MSG.max60).optional(),
 })
 type GeneralFormValues = z.infer<typeof generalFormSchema>
 

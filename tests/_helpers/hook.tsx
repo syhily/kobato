@@ -2,6 +2,8 @@ import * as React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
 export interface RenderHookOptions<THookResult> {
   initialPath?: string
   /** Actions applied sequentially during the same render pass. */
@@ -29,7 +31,7 @@ export function renderHook<THookResult>(
     return null
   }
 
-  let element: React.ReactElement = <Harness />
+  let element: React.ReactElement = wrapWithI18n(<Harness />)
   if (Wrapper) {
     element = <Wrapper>{element}</Wrapper>
   }

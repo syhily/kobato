@@ -1,6 +1,15 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement } from 'react'
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
+// These forms read `useI18n()`; mount the root provider for every RTL render.
+function renderUi(ui: ReactElement) {
+  return render(wrapWithI18n(ui))
+}
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SocialsSettings } from '@/shared/config/types'
@@ -33,20 +42,20 @@ describe('SocialsEditor — focus retention across revalidates', () => {
   })
 
   it('keeps focus when a revalidate delivers an identical snapshot', () => {
-    const { rerender } = render(<SocialsEditor socials={socials} />)
+    const { rerender } = renderUi(<SocialsEditor socials={socials} />)
 
     const input = screen.getByDisplayValue('https://github.com/example') as HTMLInputElement
     input.focus()
     expect(document.activeElement).toBe(input)
 
-    rerender(<SocialsEditor socials={structuredClone(socials)} />)
+    rerender(wrapWithI18n(<SocialsEditor socials={structuredClone(socials)} />))
 
     expect(document.activeElement).toBe(input)
     expect(input.value).toBe('https://github.com/example')
   })
 
   it('keeps focus when the revalidate after this card’s own save lands', async () => {
-    const { rerender } = render(<SocialsEditor socials={socials} />)
+    const { rerender } = renderUi(<SocialsEditor socials={socials} />)
 
     const input = screen.getByDisplayValue('https://github.com/example') as HTMLInputElement
     input.focus()
@@ -58,11 +67,13 @@ describe('SocialsEditor — focus retention across revalidates', () => {
     input.focus()
     expect(document.activeElement).toBe(input)
     rerender(
-      <SocialsEditor
-        socials={{
-          socials: [{ name: 'GitHub', network: 'github', type: 'link', link: 'https://github.com/exampleX' }],
-        }}
-      />,
+      wrapWithI18n(
+        <SocialsEditor
+          socials={{
+            socials: [{ name: 'GitHub', network: 'github', type: 'link', link: 'https://github.com/exampleX' }],
+          }}
+        />,
+      ),
     )
 
     expect(document.activeElement).toBe(input)

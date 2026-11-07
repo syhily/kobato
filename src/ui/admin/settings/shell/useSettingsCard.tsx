@@ -20,6 +20,7 @@ import { getLogger } from '@/client/lib/logger'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const log = getLogger('settings.card')
 
@@ -173,6 +174,15 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [savedSource, setSavedSource] = useState<TSource | null>(null)
   const { commit, isPending, status } = useSettingsMutation()
+  const { localizeMessage } = useI18n()
+  // Zod messages may be catalog ids (typed at the schema call site) or Zod's own
+  // default prose; translate the ids, leave the prose untouched. Runs BEFORE
+  // `buildZodErrors` so a raw id can never reach a field error.
+  const localizeIssues = useCallback(
+    <Issue extends { message: string }>(issues: Issue[]): Issue[] =>
+      issues.map((issue) => ({ ...issue, message: localizeMessage(issue.message) })),
+    [localizeMessage],
+  )
   const { registerFlush } = useSettingsFlushContext()
 
   // `toState` returns TState; DefaultValues<TState> is wider (allows `undefined` leaves).
@@ -187,9 +197,9 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
       if (result.success) {
         return { values: result.data, errors: {} }
       }
-      return { values: {}, errors: buildZodErrors<TState>(result.error.issues) }
+      return { values: {}, errors: buildZodErrors<TState>(localizeIssues(result.error.issues)) }
     }
-  }, [schema])
+  }, [schema, localizeIssues])
 
   const form = useForm<TState>({
     defaultValues: initialValues,
@@ -278,7 +288,8 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
           if (!result.success) {
             setValue(unsafeCast<FieldPath<TState>>(field), unsafeCast<never>(getPathValue(lastCommitted, field)))
             toast.error('设置未保存', {
-              description: firstErrorMessage(buildZodErrors<TState>(result.error.issues)) ?? '请检查输入后重试',
+              description:
+                firstErrorMessage(buildZodErrors<TState>(localizeIssues(result.error.issues))) ?? '请检查输入后重试',
             })
             log.debug('Settings field save validation failed, rolled back', { field, errors: result.error.issues })
             return
@@ -297,7 +308,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         }
       })()
     },
-    [lastCommitted, getValues, setValue, schema, commit, section, fromState, onSaved],
+    [lastCommitted, getValues, setValue, schema, commit, section, fromState, onSaved, localizeIssues],
   )
 
   // Discrete controls fire immediately; a field name scopes the commit to that field.

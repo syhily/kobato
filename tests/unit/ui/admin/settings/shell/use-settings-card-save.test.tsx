@@ -1,6 +1,15 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement } from 'react'
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
+// These forms read `useI18n()`; mount the root provider for every RTL render.
+function renderUi(ui: ReactElement) {
+  return render(wrapWithI18n(ui))
+}
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
@@ -59,7 +68,7 @@ describe('useSettingsCard — schema-aware save baseline', () => {
       return <input aria-label="title" {...form.register('title')} onBlur={flushOnBlur} />
     }
 
-    render(<Harness source={{ title: 'Hello' }} />)
+    renderUi(<Harness source={{ title: 'Hello' }} />)
     const input = screen.getByRole('textbox', { name: 'title' })
 
     fireEvent.change(input, { target: { value: '  Typed  ' } })
@@ -87,7 +96,7 @@ describe('useSettingsCard — schema-aware save baseline', () => {
       )
     }
 
-    render(<Harness source={{ title: 'Hello' }} />)
+    renderUi(<Harness source={{ title: 'Hello' }} />)
     const input = screen.getByRole('textbox', { name: 'title' })
 
     fireEvent.change(input, { target: { value: '' } })
@@ -146,7 +155,7 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
       )
     }
 
-    render(<Harness source={{ title: 'Hello', enabled: false }} />)
+    renderUi(<Harness source={{ title: 'Hello', enabled: false }} />)
     const input = screen.getByRole('textbox', { name: 'title' })
 
     fireEvent.change(input, { target: { value: 'Half typed' } })
@@ -183,7 +192,7 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
       )
     }
 
-    render(<Harness source={{ title: 'Hello', enabled: false }} />)
+    renderUi(<Harness source={{ title: 'Hello', enabled: false }} />)
     const input = screen.getByRole('textbox', { name: 'title' })
 
     fireEvent.change(input, { target: { value: 'Half typed' } })
@@ -205,7 +214,7 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
       )
     }
 
-    render(<Harness source={{ title: 'Hello', enabled: false }} />)
+    renderUi(<Harness source={{ title: 'Hello', enabled: false }} />)
     fireEvent.click(screen.getByRole('button', { name: 'reselect' }))
     await settleSaveChains()
     expect(commit).not.toHaveBeenCalled()

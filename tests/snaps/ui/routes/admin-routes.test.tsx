@@ -32,7 +32,9 @@ import SettingsLayoutRouteRaw from '@/routes/admin/settings/layout'
 import CategoriesRouteRaw from '@/routes/admin/taxonomy/categories'
 import FriendsRouteRaw from '@/routes/admin/taxonomy/friends'
 import TagsRouteRaw from '@/routes/admin/taxonomy/tags'
+import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
+import { I18nProvider } from '@/ui/lib/I18nProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 // `asRoute` widens the strict `Route.ComponentProps` so tests pass only
@@ -102,7 +104,9 @@ function renderNested(
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,

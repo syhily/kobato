@@ -39,6 +39,13 @@ export interface I18nValue {
    * message per locale instead of concatenated fragments.
    */
   tRich: (id: UiMessageId, params: I18nMessageParams) => ReactNode
+  /**
+   * Translate a message-id STRING when it is a registered catalog key; return
+   * any other string unchanged. The seam for values whose typing is lost at
+   * runtime (Zod issue messages): raw ids never reach the UI, and Zod's own
+   * default messages pass through.
+   */
+  localizeMessage: (value: string) => string
 }
 
 const LocaleContext = createContext<AppLocale | null>(null)
@@ -97,5 +104,13 @@ export function useI18n(): I18nValue {
   if (locale === null) {
     throw new Error('useI18n() requires the root <I18nProvider> (see src/root.tsx).')
   }
-  return { locale, t, tRich }
+  const localizeMessage = (value: string): string => {
+    // Validation messages carry no ICU arguments, so the catalog value is the answer.
+    // react-intl types `messages` as raw strings or pre-parsed ASTs depending on the
+    // provider; we only ever feed it string catalogs, so narrow structurally.
+    const messages: Record<string, unknown> = intl.messages
+    const candidate = Object.hasOwn(messages, value) ? messages[value] : undefined
+    return typeof candidate === 'string' ? candidate : value
+  }
+  return { locale, t, tRich, localizeMessage }
 }

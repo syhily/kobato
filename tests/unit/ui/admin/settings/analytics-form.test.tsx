@@ -1,6 +1,15 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement } from 'react'
+
 import { fireEvent, render, screen } from '@testing-library/react'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
+// These forms read `useI18n()`; mount the root provider for every RTL render.
+function renderUi(ui: ReactElement) {
+  return render(wrapWithI18n(ui))
+}
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UseFileUploadOptions } from '@/client/hooks/use-file-upload'
@@ -49,7 +58,7 @@ describe('AnalyticsForm MaxMind upload wiring', () => {
   })
 
   it('hands the MaxMind row the shared upload options', () => {
-    render(<AnalyticsForm analytics={analytics} />)
+    renderUi(<AnalyticsForm analytics={analytics} />)
     const opts = options()
     expect(opts.endpoint).toBe('/api/admin/maxmind/upload')
     expect(opts.fields).toBeUndefined()
@@ -67,7 +76,7 @@ describe('AnalyticsForm MaxMind upload wiring', () => {
   })
 
   it('sends the selected file through the choreography', () => {
-    render(<AnalyticsForm analytics={analytics} />)
+    renderUi(<AnalyticsForm analytics={analytics} />)
     const file = new File([new Uint8Array(8)], 'GeoLite2-City.mmdb')
     fireEvent.change(screen.getByLabelText('选择 MaxMind 数据库文件'), { target: { files: [file] } })
     expect(hookMock.upload).toHaveBeenCalledWith(file)
@@ -75,7 +84,7 @@ describe('AnalyticsForm MaxMind upload wiring', () => {
 
   it('disables the button and shows progress copy while pending', () => {
     hookMock.pending = true
-    render(<AnalyticsForm analytics={analytics} />)
+    renderUi(<AnalyticsForm analytics={analytics} />)
     expect(screen.getByRole('button', { name: '上传中…' })).toBeDisabled()
   })
 })

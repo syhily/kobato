@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { MailLoaderShape } from '@/shared/config/projection'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 
 mockTanstackQuery()
@@ -44,18 +45,18 @@ function mailWithTransport(transport: 'smtp' | 'mailgun'): MailLoaderShape {
 describe('ui/admin/settings/MailForm', () => {
   it('renders the sender field exactly once regardless of transport', () => {
     for (const transport of ['smtp', 'mailgun'] as const) {
-      const html = renderToStaticMarkup(<MailForm mail={mailWithTransport(transport)} />)
+      const html = renderToStaticMarkup(wrapWithI18n(<MailForm mail={mailWithTransport(transport)} />))
       const senderMatches = html.match(/id="mail-sender"/g) ?? []
       expect(senderMatches.length, `transport=${transport}`).toBe(1)
     }
   })
 
   it('does not render a sender input inside transport cards', () => {
-    const smtpHtml = renderToStaticMarkup(<MailForm mail={mailWithTransport('smtp')} />)
+    const smtpHtml = renderToStaticMarkup(wrapWithI18n(<MailForm mail={mailWithTransport('smtp')} />))
     expect(smtpHtml).not.toContain('id="mail-smtp-sender"')
     expect(smtpHtml).not.toContain('id="mail-mailgun-sender"')
 
-    const mailgunHtml = renderToStaticMarkup(<MailForm mail={mailWithTransport('mailgun')} />)
+    const mailgunHtml = renderToStaticMarkup(wrapWithI18n(<MailForm mail={mailWithTransport('mailgun')} />))
     expect(mailgunHtml).not.toContain('id="mail-mailgun-sender"')
     expect(mailgunHtml).not.toContain('id="mail-smtp-sender"')
   })

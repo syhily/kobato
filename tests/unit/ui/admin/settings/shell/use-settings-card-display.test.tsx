@@ -1,6 +1,15 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement } from 'react'
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
+// These forms read `useI18n()`; mount the root provider for every RTL render.
+function renderUi(ui: ReactElement) {
+  return render(wrapWithI18n(ui))
+}
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
@@ -55,7 +64,7 @@ describe('useSettingsCard — response-authoritative display', () => {
 
   it('adopts the save response as the new display baseline (no client-side projection)', async () => {
     commit.mockResolvedValue({ ok: true, section: { title: 'Server Merged', description: 'World' } })
-    render(<Harness source={{ title: 'Hello', description: 'World' }} />)
+    renderUi(<Harness source={{ title: 'Hello', description: 'World' }} />)
     expect(screen.getByTestId('display-title').textContent).toBe('Hello')
 
     fireEvent.click(screen.getByRole('button', { name: 'save' }))

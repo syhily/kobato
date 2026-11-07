@@ -1,7 +1,16 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement } from 'react'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, waitFor } from '@testing-library/react'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
+// These forms read `useI18n()`; mount the root provider for every RTL render.
+function renderUi(ui: ReactElement) {
+  return render(wrapWithI18n(ui))
+}
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentsLoaderShape } from '@/shared/config/projection'
@@ -30,7 +39,7 @@ function renderCommentsForm(comments: CommentsLoaderShape) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
-  return render(
+  return renderUi(
     <QueryClientProvider client={queryClient}>
       <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
         <CommentsForm comments={comments} />
