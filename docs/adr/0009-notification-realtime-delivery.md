@@ -1,6 +1,6 @@
 # ADR-0009: Realtime delivery for notifications — tuned polling, SSE deferred (spike)
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-07
 
 ## Context
