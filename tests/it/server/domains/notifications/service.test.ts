@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { SessionUser } from '@/server/domains/auth/session-storage'
@@ -128,23 +129,100 @@ describe('notifications / threads & replies', () => {
     expect(thread.messages[1]!.mine).toBe(false)
   })
 
-  it('routes a broadcast reply to ALL admins, and keeps the thread going', async () => {
+  it('forks a broadcast reply into a private thread with the admin team', async () => {
     const adminA = await seedUser('admin', 'adminA')
     const adminB = await seedUser('admin', 'adminB')
     const visitorId = await seedUser('visitor', 'visitor')
     const root = sendBroadcast(db, adminA, { title: '新功能', body: '欢迎反馈', replyable: true })
 
-    await replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: '赞' })
-    // The reply reached every admin — not only the broadcast's creator
-    // (adminB's count also includes the broadcast itself; the creator never
-    // receives their own broadcast).
+    const reply = await replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: '赞' })
+    expect(reply.mine).toBe(true)
+    // The reply reached every admin — the creator never receives their own
+    // broadcast, so adminA's count is the reply alone; adminB also has the
+    // broadcast itself.
     expect(unreadCount(db, adminA)).toBe(1)
     expect(unreadCount(db, adminB)).toBe(2)
 
-    // An admin's follow-up reaches the user (thread participants minus self);
-    // the count also includes the still-unread original broadcast.
-    await replyToThread(db, viewer(adminB, 'admin', 'adminB'), { threadId: root.threadId, body: '谢谢反馈' })
+    // …in a NEW forked thread, not the broadcast thread.
+    const adminInbox = await listInbox(db, adminA, { tab: 'direct', limit: 10 })
+    expect(adminInbox.items).toHaveLength(1)
+    const forkThreadId = Number(adminInbox.items[0]!.threadId)
+    expect(forkThreadId).not.toBe(root.threadId)
+
+    // The broadcast thread itself still holds only the announcement.
+    const rootThread = await getThread(db, viewer(adminA, 'admin'), root.threadId)
+    expect(rootThread.messages).toHaveLength(1)
+
+    // An admin's follow-up inside the fork reaches the replier.
+    await replyToThread(db, viewer(adminB, 'admin', 'adminB'), { threadId: forkThreadId, body: '谢谢反馈' })
     expect(unreadCount(db, visitorId)).toBe(2)
+
+    const fork = await getThread(db, viewer(visitorId, 'visitor'), forkThreadId)
+    expect(fork.messages.map((message) => message.body)).toEqual(['赞', '谢谢反馈'])
+    expect(fork.canReply).toBe(true)
+  })
+
+  it("keeps a broadcast reply out of other users' inboxes", async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const v1 = await seedUser('visitor', 'v1')
+    const v2 = await seedUser('visitor', 'v2')
+    const root = sendBroadcast(db, adminId, { title: '新功能', body: '欢迎反馈', replyable: true })
+
+    await replyToThread(db, viewer(v1, 'visitor', 'v1'), { threadId: root.threadId, body: '赞' })
+
+    expect(unreadCount(db, v2)).toBe(1)
+    const v2Direct = await listInbox(db, v2, { tab: 'direct', limit: 10 })
+    expect(v2Direct.items).toHaveLength(0)
+  })
+
+  it('shows only the root message to broadcast recipients', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const v1 = await seedUser('visitor', 'v1')
+    const v2 = await seedUser('visitor', 'v2')
+    const root = sendBroadcast(db, adminId, { title: '新功能', body: '欢迎反馈', replyable: true })
+    await replyToThread(db, viewer(v1, 'visitor', 'v1'), { threadId: root.threadId, body: '私密反馈内容' })
+
+    const thread = await getThread(db, viewer(v2, 'visitor', 'v2'), root.threadId)
+    expect(thread.messages.map((message) => message.body)).toEqual(['欢迎反馈'])
+  })
+
+  it('lets the replier see their fork thread pre-read', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const v1 = await seedUser('visitor', 'v1')
+    const root = sendBroadcast(db, adminId, { title: '新功能', body: '欢迎反馈', replyable: true })
+
+    await replyToThread(db, viewer(v1, 'visitor', 'v1'), { threadId: root.threadId, body: '赞' })
+
+    const inbox = await listInbox(db, v1, { tab: 'direct', limit: 10 })
+    expect(inbox.items).toHaveLength(1)
+    expect(inbox.items[0]!.read).toBe(true)
+    expect(inbox.items[0]!.title).toBe('新功能')
+    const fork = await getThread(db, viewer(v1, 'visitor', 'v1'), Number(inbox.items[0]!.threadId))
+    expect(fork.messages[0]!.mine).toBe(true)
+    expect(fork.canReply).toBe(true)
+    // Only the broadcast itself stays unread for the replier.
+    expect(unreadCount(db, v1)).toBe(1)
+  })
+
+  it('rejects an admin reply in the broadcast root thread', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    await seedUser('visitor', 'visitor')
+    const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: true })
+    await expect(replyToThread(db, viewer(adminId, 'admin'), { threadId: root.threadId, body: 'x' })).rejects.toThrow(
+      DomainError,
+    )
+  })
+
+  it('rejects a broadcast reply when no admin can receive it', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const v1 = await seedUser('visitor', 'visitor')
+    const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: true })
+    // The broadcast's creator was the only admin; demote them so the fork
+    // would have no recipients at all.
+    await db.update(user).set({ role: 'visitor' }).where(eq(user.id, adminId))
+    await expect(
+      replyToThread(db, viewer(v1, 'visitor', 'v1'), { threadId: root.threadId, body: 'x' }),
+    ).rejects.toThrow(DomainError)
   })
 
   it('rejects replies on system messages and non-replyable broadcasts', async () => {

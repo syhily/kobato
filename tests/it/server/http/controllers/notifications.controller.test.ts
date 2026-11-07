@@ -85,4 +85,28 @@ describe('integration / notifications controller', () => {
     expect(cleared.status).toBe(200)
     expect((cleared.json.json as { count: number }).count).toBe(0)
   })
+
+  it('forks a broadcast reply into a private thread visible to both sides', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+    const visitorCtx = makeAuthedCtx({ userId: String(visitorId), role: 'visitor', db })
+
+    await callJson('/admin/notifications/sendBroadcast', { title: '公告', body: '欢迎反馈', replyable: true }, adminCtx)
+    const broadcastInbox = await callJson('/notifications/list', { tab: 'announce', limit: 20 }, visitorCtx)
+    const broadcast = (broadcastInbox.json.json as { items: Array<{ threadId: string }> }).items[0]!
+
+    const reply = await callJson('/notifications/reply', { threadId: broadcast.threadId, body: '赞' }, visitorCtx)
+    expect(reply.status).toBe(200)
+
+    // The replier sees their own fork thread, pre-read, under a new thread id.
+    const visitorDirect = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
+    const fork = (visitorDirect.json.json as { items: Array<{ threadId: string; read: boolean }> }).items[0]!
+    expect(fork.threadId).not.toBe(broadcast.threadId)
+    expect(fork.read).toBe(true)
+
+    // The admin sees the reply in their direct tab.
+    const adminDirect = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
+    expect((adminDirect.json.json as { items: unknown[] }).items).toHaveLength(1)
+  })
 })

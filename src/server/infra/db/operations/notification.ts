@@ -20,12 +20,15 @@ export interface NewNotificationRow {
 /**
  * Insert the message and its fan-out recipient rows in ONE sync transaction;
  * the root's `threadId` backfills to its own id (replies pass the root id in
- * `data.threadId` via the `threadId` argument instead).
+ * `data.threadId` via the `threadId` argument instead). `readRecipientIds`
+ * marks those recipients' rows read at insert (the replier's own copy of a
+ * forked thread — visible in their inbox without inflating the badge).
  */
 export function createNotificationWithRecipients(
   db: Database,
   data: NewNotificationRow & { threadId?: number },
   recipientIds: readonly number[],
+  options?: { readRecipientIds?: readonly number[] },
 ): NotificationRow {
   return db.transaction((tx) => {
     const inserted = tx
@@ -48,9 +51,12 @@ export function createNotificationWithRecipients(
       inserted.threadId = threadId
     }
     if (recipientIds.length > 0) {
+      const readSet = new Set(options?.readRecipientIds ?? [])
+      const readAt = new Date()
       const rows: NewNotificationRecipient[] = recipientIds.map((userId) => ({
         notificationId: inserted.id,
         userId,
+        ...(readSet.has(userId) ? { readAt } : {}),
       }))
       tx.insert(notificationRecipient).values(rows).run()
     }
@@ -144,6 +150,30 @@ export function listThreadParticipantIds(db: Database, threadId: number): number
     participants.add(recipient.userId)
   }
   return [...participants]
+}
+
+/**
+ * Membership probe for the thread gate — two early-return LIMIT 1 lookups so
+ * opening a broadcast-sized thread never materializes its whole audience.
+ */
+export function isThreadParticipant(db: Database, threadId: number, userId: number): boolean {
+  const sent = db
+    .select({ id: notification.id })
+    .from(notification)
+    .where(and(eq(notification.threadId, threadId), eq(notification.senderId, userId)))
+    .limit(1)
+    .all()
+  if (sent.length > 0) {
+    return true
+  }
+  const received = db
+    .select({ notificationId: notificationRecipient.notificationId })
+    .from(notificationRecipient)
+    .innerJoin(notification, eq(notificationRecipient.notificationId, notification.id))
+    .where(and(eq(notification.threadId, threadId), eq(notificationRecipient.userId, userId)))
+    .limit(1)
+    .all()
+  return received.length > 0
 }
 
 /** Active (non-soft-deleted, named-role) user ids; `adminsOnly` narrows to role='admin'. */

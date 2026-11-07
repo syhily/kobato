@@ -32,7 +32,13 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
   `notification_recipient` (unread = `readAt IS NULL`; later-registered users never see historical
   broadcasts). Kinds: `direct` (admin ↔ user, always replyable), `admin` (system → all admins, never
   replyable), `broadcast` (system or admin → all users minus the author; only the admin-created flavor
-  can be replyable, and replies from non-admins reach ALL current admins). System producers call
+  can be replyable, and only NON-ADMIN recipients may answer). A user's reply to a replyable broadcast
+  FORKS a new `direct` thread delivered to all current admins — the replier's own recipient row is
+  pre-marked read, admins answer inside the fork, and the broadcast root thread only ever contains the
+  announcement itself (so feedback stays private to the admin team and replies never fan back out to
+  the audience). Thread reads/replies are gated by `isThreadParticipant` (LIMIT-1 probes — never
+  materialize a broadcast-sized audience); `listThreadParticipantIds` only serves direct-thread reply
+  routing. System producers call
   `notifyAdmins` / `notifyAllUsers` — Platform domains get them injected at the composition root (see
   the Zeabur mail cleanup wiring in `bootstrap/db-lifecycle.ts`); raw queries live in
   `infra/db/operations/notification.ts`.

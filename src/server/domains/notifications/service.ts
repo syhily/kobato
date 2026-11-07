@@ -13,6 +13,7 @@ import {
   createNotificationWithRecipients,
   findRecipientRow,
   findUserNamesByIds,
+  isThreadParticipant,
   listNotificationsForUser,
   listRecipientUserIds,
   listThreadNotifications,
@@ -62,12 +63,13 @@ function createAndFanOut(
   db: Database,
   data: NewNotificationRow & { threadId?: number },
   recipientIds: readonly number[],
+  options?: { readRecipientIds?: readonly number[] },
 ): NotificationRow {
   // A message with zero recipients would be invisible forever — a producer bug.
   if (recipientIds.length === 0) {
     throw new DomainError('INTERNAL', '通知没有可投递的收件人')
   }
-  return createNotificationWithRecipients(db, data, [...new Set(recipientIds)])
+  return createNotificationWithRecipients(db, data, [...new Set(recipientIds)], options)
 }
 
 /** System → all current admins (boot cleanups, background-job results). Never replyable. */
@@ -211,22 +213,23 @@ async function loadThread(db: Database, threadId: number): Promise<NotificationR
   return messages
 }
 
-function assertParticipant(db: Database, threadId: number, userId: number): number[] {
-  const participants = listThreadParticipantIds(db, threadId)
-  if (!participants.includes(userId)) {
+function assertParticipant(db: Database, threadId: number, userId: number): void {
+  if (!isThreadParticipant(db, threadId, userId)) {
     throw new DomainError('NOT_FOUND', '消息不存在')
   }
-  return participants
 }
 
-/** The reply gate the list DTO's `replyable` mirrors: direct threads and admin-created replyable broadcasts. */
-function canReplyInThread(root: NotificationRow): boolean {
+/**
+ * The reply gate the list DTO's `replyable` mirrors. Direct threads are
+ * always answerable. A broadcast root can only be answered by a NON-ADMIN
+ * recipient (system broadcasts ride senderId NULL and can never be
+ * answered) — admins answer inside the forked per-replier threads instead.
+ */
+function canReplyInThread(root: NotificationRow, viewer: SessionUser): boolean {
   if (root.kind === 'direct') {
     return true
   }
-  // System broadcasts ride senderId NULL; only an admin-created broadcast can
-  // be answered, and only when its creator opted in.
-  return root.kind === 'broadcast' && root.replyable && root.senderId !== null
+  return root.kind === 'broadcast' && root.replyable && root.senderId !== null && viewer.role !== 'admin'
 }
 
 export interface ThreadView {
@@ -258,16 +261,19 @@ export async function getThread(db: Database, viewer: SessionUser, threadId: num
       mine: row.senderId === userId,
       createdAt: row.createdAt.toISOString(),
     })),
-    canReply: canReplyInThread(root),
+    canReply: canReplyInThread(root, viewer),
   }
 }
 
 /**
- * Reply routing: direct threads answer the counterpart; a reply from a
- * non-admin inside an admin-created broadcast thread reaches ALL current
- * admins (plus prior participants); admin replies reach the thread's
- * participants. The reply itself is a `direct` message so the conversation
- * stays replyable end-to-end.
+ * Reply routing. Direct threads answer the thread's participants minus the
+ * replier (admin ↔ user conversation). A non-admin's reply in a replyable
+ * admin-created broadcast FORKS a new private thread: the reply becomes its
+ * own thread root (kind 'direct'), delivered to all current admins, with the
+ * replier's own recipient row pre-marked read so the conversation is visible
+ * in their inbox without inflating their badge. Admins answer inside the
+ * fork, which keeps user feedback private to the admin team — the broadcast
+ * root thread only ever contains the announcement itself.
  */
 export async function replyToThread(
   db: Database,
@@ -277,18 +283,30 @@ export async function replyToThread(
   const userId = Number(viewer.id)
   const messages = await loadThread(db, input.threadId)
   const root = messages[0]!
-  const participants = assertParticipant(db, input.threadId, userId)
-  if (!canReplyInThread(root)) {
+  assertParticipant(db, input.threadId, userId)
+  if (!canReplyInThread(root, viewer)) {
     throw new DomainError('BAD_REQUEST', '该消息不支持回复')
   }
-  const recipients = new Set(participants.filter((id) => id !== userId))
-  if (viewer.role !== 'admin' && root.kind === 'broadcast') {
-    for (const adminId of listRecipientUserIds(db, { adminsOnly: true })) {
-      if (adminId !== userId) {
-        recipients.add(adminId)
-      }
+  if (root.kind === 'broadcast') {
+    const recipients = listRecipientUserIds(db, { adminsOnly: true }).filter((id) => id !== userId)
+    if (recipients.length === 0) {
+      throw new DomainError('BAD_REQUEST', '当前没有管理员可以接收回复')
+    }
+    const row = createAndFanOut(
+      db,
+      { kind: 'direct', senderId: userId, replyable: true, title: root.title, body: input.body },
+      [...recipients, userId],
+      { readRecipientIds: [userId] },
+    )
+    return {
+      id: String(row.id),
+      body: row.body,
+      sender: { id: viewer.id, name: viewer.name },
+      mine: true,
+      createdAt: row.createdAt.toISOString(),
     }
   }
+  const recipients = listThreadParticipantIds(db, input.threadId).filter((id) => id !== userId)
   const row = createAndFanOut(
     db,
     {
@@ -299,7 +317,7 @@ export async function replyToThread(
       body: input.body,
       threadId: root.threadId,
     },
-    [...recipients],
+    recipients,
   )
   return {
     id: String(row.id),
