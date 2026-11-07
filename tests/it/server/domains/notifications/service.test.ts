@@ -115,6 +115,22 @@ describe('notifications / producers', () => {
     expect(unreadCount(db, adminId)).toBe(0)
   })
 
+  it('does not deliver a historical broadcast to a later registrant', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const earlyId = await seedUser('visitor', 'early')
+    sendBroadcast(db, adminId, { title: '清缓存公告', body: '请刷新页面', replyable: false })
+
+    // The audience is snapshotted at send time: a user registered after the
+    // send has no row, no unread badge, and nothing in any tab.
+    const lateId = await seedUser('visitor', 'late')
+    expect(unreadCount(db, lateId)).toBe(0)
+    expect((await listInbox(db, lateId, { tab: 'all', limit: 10 })).items).toHaveLength(0)
+    expect((await listInbox(db, lateId, { tab: 'announce', limit: 10 })).items).toHaveLength(0)
+
+    // The pre-existing audience keeps its copy.
+    expect(unreadCount(db, earlyId)).toBe(1)
+  })
+
   it('rejects a broadcast on a single-admin site with an honest 400', async () => {
     const adminId = await seedUser('admin', 'admin')
     expect(() => sendBroadcast(db, adminId, { title: 't', body: 'b', replyable: false })).toThrow(
