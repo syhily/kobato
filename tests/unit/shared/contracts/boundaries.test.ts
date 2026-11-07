@@ -967,10 +967,14 @@ describe('contract: module and bundle boundaries', () => {
     // chrome over the oRPC client, never reachable from the server bundle.
     // `ui/lib/ThemeProvider` is the shared composer surface's theme read
     // (`client/editor/editor-surface`) — a leaf context module already in
-    // every bundle via root.tsx.
+    // every bundle via root.tsx. `ui/lib/I18nProvider` is the same story for
+    // the composer's locale read: the editor shell selects its label table and
+    // word-count language from the root translator, and the module is a leaf
+    // context (react-intl provider + logger) already mounted at the root.
     const CLIENT_TO_UI_ALLOWLIST = new Set([
       '@/ui/admin/editor/pickers/ImageLibraryPicker',
       '@/ui/admin/editor/pickers/MusicPickerDialog',
+      '@/ui/lib/I18nProvider',
       '@/ui/lib/ThemeProvider',
       '@/ui/public/music-player/music-player',
     ])

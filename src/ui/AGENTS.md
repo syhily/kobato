@@ -178,8 +178,8 @@ unrelated concerns.
   skeleton shared with the comment surface (`@/client/editor/editor-surface` — the
   registerAPI/body-reset wiring + the composer shell with labels/darkMode applied). The
   composer surface (floating format toolbar, slash menu, drag reorder, card chrome) comes from the
-  layer; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring, zh-CN labels)
-  lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
+  layer; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring, the per-locale label
+  tables) lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
   through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
   `src/styles/inkling-editor.css`.
 - Comment editor: `@/ui/public/comments/CommentBodyEditor` wraps the inkling composer with

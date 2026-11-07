@@ -4,7 +4,9 @@ import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { mockComposerContext } from '#/inkling/utils/composer-context'
+import InklingUiPrefsContext from '@/inkling/context/InklingUiPrefsContext'
 import { WordCountHandleContext } from '@/inkling/context/WordCountHandleContext'
+import { DEFAULT_LABELS } from '@/inkling/labels/inkling-labels'
 import { createWordCountHandle } from '@/inkling/plugins/behaviour/wordCountHandle'
 import { WordCountPlugin } from '@/inkling/plugins/WordCountPlugin'
 
@@ -35,6 +37,14 @@ function createTestEditor(overrides: { parentEditor?: LexicalEditor } = {}) {
   return editor
 }
 
+function ComposerPrefs({ language, children }: { language?: string; children: React.ReactNode }) {
+  const value = React.useMemo(
+    () => ({ darkMode: false, labels: DEFAULT_LABELS, wordCountLanguage: language }),
+    [language],
+  )
+  return <InklingUiPrefsContext.Provider value={value}>{children}</InklingUiPrefsContext.Provider>
+}
+
 describe('WordCountPlugin', () => {
   let editor: LexicalEditor
 
@@ -43,13 +53,20 @@ describe('WordCountPlugin', () => {
     editor = createTestEditor()
   })
 
-  function renderPlugin(onChange?: (count: number) => void, pluginEditor = editor, language?: string) {
+  function renderPlugin(
+    onChange?: (count: number) => void,
+    pluginEditor = editor,
+    language?: string,
+    composerLanguage?: string,
+  ) {
     mockComposerContext(pluginEditor)
 
     const wordCountHandle = createWordCountHandle()
     const result = renderHook(() => WordCountPlugin({ onChange, language }), {
       wrapper: ({ children }) => (
-        <WordCountHandleContext.Provider value={wordCountHandle}>{children}</WordCountHandleContext.Provider>
+        <ComposerPrefs language={composerLanguage}>
+          <WordCountHandleContext.Provider value={wordCountHandle}>{children}</WordCountHandleContext.Provider>
+        </ComposerPrefs>
       ),
     })
     return { wordCountHandle, ...result }
@@ -108,6 +125,26 @@ describe('WordCountPlugin', () => {
     const { wordCountHandle } = renderPlugin(onChange)
 
     expect(wordCountHandle.getState().language).toBe('en')
+  })
+
+  it('uses the composer wordCountLanguage when the plugin names none (host locale seam)', () => {
+    const onChange = vi.fn()
+    const { wordCountHandle, unmount } = renderPlugin(onChange, editor, undefined, 'zh-CN')
+
+    // The kobato composer shell passes its active UI locale here; nested
+    // composers then read this same value off the handle.
+    expect(wordCountHandle.getState().language).toBe('zh-CN')
+
+    unmount()
+
+    expect(wordCountHandle.getState().language).toBeNull()
+  })
+
+  it('lets an explicit plugin language win over the composer wordCountLanguage', () => {
+    const onChange = vi.fn()
+    const { wordCountHandle } = renderPlugin(onChange, editor, 'ja', 'zh-CN')
+
+    expect(wordCountHandle.getState().language).toBe('ja')
   })
 
   it('does nothing without an onChange callback', () => {

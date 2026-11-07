@@ -9,11 +9,12 @@
 //   optional seed shaping (`prepareSeed` — the comment surface's legacy-PT
 //   fallback + math-fence downgrade).
 // - `EditorSurfaceComposer` — the InklingComposer shell with the host
-//   constants applied (the zh-CN labels, theme-driven `darkMode`); every
-//   delta — node set, `fileUploader`/`cardConfig`, the ui-prefs flags
-//   (`isEmojiEnabled`, `codeEditor`), the drag scroll selector — passes
-//   straight through, and `nodes` stays required so a surface can never
-//   silently mount the full card set.
+//   constants applied (the active locale's labels, theme-driven `darkMode`,
+//   and the locale as the word-count language); every delta — node set,
+//   `fileUploader`/`cardConfig`, the ui-prefs flags (`isEmojiEnabled`,
+//   `codeEditor`), the drag scroll selector — passes straight through, and
+//   `nodes` stays required so a surface can never silently mount the full
+//   card set.
 //
 // What stays in the host components: the shell chrome around the composer
 // (the page surface's scroll container + hydration placeholder + focus-mode
@@ -25,9 +26,10 @@ import { useCallback, useState } from 'react'
 
 import type { ExternalControlAPI, InklingComposerProps, LexicalEditor, SerializedEditorState } from '@/inkling'
 
-import { inklingLabels } from '@/client/editor/inkling-labels'
+import { kobatoInklingLabels } from '@/client/editor/inkling-labels'
 import { useEditorBodyReset } from '@/client/editor/use-editor-body-reset'
 import { InklingComposer } from '@/inkling'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useTheme } from '@/ui/lib/ThemeProvider'
 
 export interface UseEditorSurfaceArgs<TBody extends SerializedEditorState> {
@@ -77,11 +79,25 @@ export function useEditorSurface<TBody extends SerializedEditorState>({
 
 /** Composer props minus the host-owned constants (`labels`, `darkMode`);
  *  `nodes` is re-required — a surface always names its node set. */
-export interface EditorSurfaceComposerProps extends Omit<InklingComposerProps, 'labels' | 'darkMode' | 'nodes'> {
+export interface EditorSurfaceComposerProps extends Omit<
+  InklingComposerProps,
+  'labels' | 'darkMode' | 'nodes' | 'wordCountLanguage'
+> {
   nodes: NonNullable<InklingComposerProps['nodes']>
 }
 
 export function EditorSurfaceComposer(props: EditorSurfaceComposerProps) {
   const { resolvedTheme } = useTheme()
-  return <InklingComposer {...props} labels={inklingLabels} darkMode={resolvedTheme === 'dark'} />
+  const { locale } = useI18n()
+  const { children, ...composerProps } = props
+  return (
+    <InklingComposer
+      {...composerProps}
+      labels={kobatoInklingLabels(locale)}
+      wordCountLanguage={locale}
+      darkMode={resolvedTheme === 'dark'}
+    >
+      {children}
+    </InklingComposer>
+  )
 }

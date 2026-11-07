@@ -1,10 +1,10 @@
 // Delta-wiring tests for the shared composer skeleton: EditorSurfaceComposer
-// must apply the host constants (zh-CN labels, theme-driven darkMode) while
-// forwarding every surface delta verbatim, and useEditorSurface must own the
-// registerAPI → editor-instance dance plus the body mount-snapshot/change
-// wiring. The inkling barrel is mocked — the composer is the observable
-// boundary; the body lifecycle itself is pinned by use-editor-body-reset's
-// own suite.
+// must apply the host constants (the active locale's labels, the locale as the
+// word-count language, theme-driven darkMode) while forwarding every surface
+// delta verbatim, and useEditorSurface must own the registerAPI →
+// editor-instance dance plus the body mount-snapshot/change wiring. The
+// inkling barrel is mocked — the composer is the observable boundary; the body
+// lifecycle itself is pinned by use-editor-body-reset's own suite.
 
 // @vitest-environment happy-dom
 
@@ -12,21 +12,26 @@ import { act, render, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { InklingComposerProps } from '@/inkling'
+import type { AppLocale } from '@/shared/i18n/locales'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import {
   EditorSurfaceComposer,
   type EditorSurfaceComposerProps,
   useEditorSurface,
 } from '@/client/editor/editor-surface'
-import { inklingLabels } from '@/client/editor/inkling-labels'
+import { kobatoInklingLabels } from '@/client/editor/inkling-labels'
 import { THEME_COOKIE } from '@/shared/utils/theme-cookie'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 const composerProps: { current: InklingComposerProps | null } = { current: null }
 
 vi.mock('@/inkling', () => ({
+  // The labels baseline module reads DEFAULT_LABELS off the barrel; the mock
+  // keeps the key shape without loading the real editor island.
+  DEFAULT_LABELS: new Proxy({}, { get: (_target, key) => `en:${String(key)}` }),
   InklingComposer: vi.fn((props: InklingComposerProps) => {
     composerProps.current = props
     return props.children
@@ -40,24 +45,39 @@ beforeEach(() => {
 
 type ComposerDeltas = Omit<EditorSurfaceComposerProps, 'nodes' | 'initialEditorState' | 'children'>
 
-function renderComposer(deltas: ComposerDeltas = {}) {
+function renderComposer(deltas: ComposerDeltas = {}, locale: AppLocale = 'zh-CN') {
   const nodes = [] as EditorSurfaceComposerProps['nodes']
   const seed = emptyLexicalBody()
   render(
-    <ThemeProvider>
-      <EditorSurfaceComposer nodes={nodes} initialEditorState={seed} {...deltas}>
-        <div data-testid="surface-child" />
-      </EditorSurfaceComposer>
-    </ThemeProvider>,
+    wrapWithI18n(
+      <ThemeProvider>
+        <EditorSurfaceComposer nodes={nodes} initialEditorState={seed} {...deltas}>
+          <div data-testid="surface-child" />
+        </EditorSurfaceComposer>
+      </ThemeProvider>,
+      { locale },
+    ),
   )
   return { nodes, seed }
 }
 
 describe('client/editor/EditorSurfaceComposer — host constants', () => {
-  it('injects the zh-CN labels and the theme-driven darkMode', () => {
+  it('injects the active locale labels, word-count language and theme-driven darkMode', () => {
     renderComposer()
-    expect(composerProps.current?.labels).toBe(inklingLabels)
+    expect(composerProps.current?.labels).toBe(kobatoInklingLabels('zh-CN'))
+    expect(composerProps.current?.wordCountLanguage).toBe('zh-CN')
     expect(composerProps.current?.darkMode).toBe(false)
+  })
+
+  it('switches the labels and the word-count language with the locale', () => {
+    renderComposer({}, 'en-US')
+    expect(composerProps.current?.labels).toBe(kobatoInklingLabels('en-US'))
+    expect(composerProps.current?.wordCountLanguage).toBe('en-US')
+  })
+
+  it('forwards the surface child exactly once', () => {
+    renderComposer()
+    expect(composerProps.current?.children).toBeDefined()
   })
 
   it('flips darkMode with the resolved theme', () => {

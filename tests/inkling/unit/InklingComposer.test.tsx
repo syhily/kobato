@@ -12,6 +12,7 @@ import InklingCollaborationContext, {
   type LexicalProviderFactory,
 } from '@/inkling/context/InklingCollaborationContext'
 import { type FileUploader, useInklingHostEssentials } from '@/inkling/context/InklingHostIntegrationContext'
+import InklingUiPrefsContext from '@/inkling/context/InklingUiPrefsContext'
 import trackEvent from '@/inkling/utils/analytics'
 import { normalizeInitialEditorState } from '@/inkling/utils/initial-document'
 
@@ -310,5 +311,37 @@ describe('normalizeInitialEditorState', () => {
 
   it('throws on malformed JSON', () => {
     expect(() => normalizeInitialEditorState('{not json')).toThrow()
+  })
+})
+
+function PrefsProbe({ onValue }: { onValue: (value: { wordCountLanguage?: string }) => void }) {
+  const prefs = React.useContext(InklingUiPrefsContext)
+  onValue(prefs)
+  return null
+}
+
+describe('InklingComposer — word-count language seam', () => {
+  it('publishes the host UI locale into the UI-prefs context', () => {
+    const seen: { wordCountLanguage?: string }[] = []
+    render(
+      <InklingComposer wordCountLanguage="zh-CN">
+        <PrefsProbe onValue={(value) => seen.push(value)} />
+        <EditorTree />
+      </InklingComposer>,
+    )
+
+    expect(seen.at(-1)?.wordCountLanguage).toBe('zh-CN')
+  })
+
+  it('leaves the context language unset when the host names none', () => {
+    const seen: { wordCountLanguage?: string }[] = []
+    render(
+      <InklingComposer>
+        <PrefsProbe onValue={(value) => seen.push(value)} />
+        <EditorTree />
+      </InklingComposer>,
+    )
+
+    expect(seen.at(-1)?.wordCountLanguage).toBeUndefined()
   })
 })

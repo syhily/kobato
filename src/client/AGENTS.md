@@ -25,13 +25,14 @@
   (the 'image' picker registration through the seam's variant channel, `registerCardPicker`, plus
   the pick→dataset write through the card write seam), `page-editor-upload` (paste/drop/file-dialog
   uploads through `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (card policy + the
-  debounced server KaTeX preview channel), `inkling-labels` (the zh-CN labels overlay),
+  debounced server KaTeX preview channel), `inkling-labels` (the four per-locale label tables under
+  `inkling-labels/`, selected by `kobatoInklingLabels(locale)`),
   `use-focus-mode` (the writing-focus preference toggle),
   `editor-surface` (the composer skeleton both surfaces share: `useEditorSurface` — the
   registerAPI → editor-instance dance + body mount-snapshot/reseed wiring — and
-  `EditorSurfaceComposer`, the InklingComposer shell with the zh-CN labels + theme-driven
-  darkMode applied; every delta — node set, fileUploader/cardConfig, ui-prefs flags —
-  passes through, `nodes` stays required),
+  `EditorSurfaceComposer`, the InklingComposer shell with the active locale's labels, the locale as
+  the word-count language, and theme-driven darkMode applied; every delta — node set,
+  fileUploader/cardConfig, ui-prefs flags — passes through, `nodes` stays required),
   `block-quote-aside-cycle` (the host-side Ctrl+Q capture shared by both surfaces — neither composer
   registers AsideNode), `use-editor-body-reset` (the shared body-lifecycle glue: mount-snapshot seed,
   imperative reseed on `bodyKey` change, stable narrowing `handleChange`), and `base-node-filter`

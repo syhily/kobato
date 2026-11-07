@@ -5,7 +5,7 @@
 // kobato glue lives under `@/client/editor/`: the node set, the markdown
 // shortcuts (`comment-markdown-transformers` — bold/italic/quote/list/link
 // and the ``` fence; ```math is the formula path, rendered to KaTeX MathML
-// by the server-side comment projection), the zh-CN labels, and the legacy
+// by the server-side comment projection), the active locale's labels, and the legacy
 // math-card seed downgrade (`comment-legacy-math`), plus the skeleton shared
 // with the page surface (`editor-surface` — the registerAPI/body-reset
 // wiring + the composer shell; `block-quote-aside-cycle` on the shell div).
