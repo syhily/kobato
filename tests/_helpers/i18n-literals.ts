@@ -4,14 +4,19 @@
 // would either miss copy or drown in false positives. Every rule maps to one
 // syntax position where interface copy (or a hardcoded locale) can hide:
 //
-//   jsx-text          JSX children with letters/Han/Kana/Hangul
-//   jsx-attribute     aria-label / placeholder / title / alt string literals
+//   jsx-text          JSX children — text nodes AND expression children
+//                     (`{'保存'}`, {`保存 ${name}`}, `{ok ? '保存' : '取消'}`)
+//   jsx-attribute     aria-label / placeholder / title / alt literals
 //   title-meta        `titleMeta('…')` arguments
 //   toast             `toast.*('…')` messages
 //   domain-error      `new DomainError('CODE', '…')` user-facing messages
-//   to-locale         `toLocale*()` calls with no explicit locale
-//   hardcoded-locale  literals naming a supported locale (or one of its aliases)
+//   to-locale         `toLocale*()` with no meaningful locale (omitted,
+//                     `undefined`, `void 0`, `[]`)
+//   hardcoded-locale  exact literals naming a supported locale or one of its
+//                     aliases (interpolated templates never match)
 //
+// Template literals are inspected with each interpolation replaced by a marker,
+// so `保存 ${name}` is still copy; a `=== 'admin'` comparison operand is not.
 // Exemptions are file/rule/snippet exact — never a blanket directory skip.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
@@ -98,7 +103,36 @@ function identifierName(node: unknown): string | null {
   return null
 }
 
-/** The literal text of a string literal / substitution-free template / JSX expression wrapper. */
+/** Placeholder inserted for an interpolation so copy around it stays visible. */
+const INTERPOLATION_MARKER = '\u2026'
+
+interface TemplateQuasis {
+  text: string
+  interpolated: boolean
+}
+
+function templateQuasis(node: AstNode): TemplateQuasis | null {
+  const quasis = node.quasis
+  if (!Array.isArray(quasis)) {
+    return null
+  }
+  const parts: string[] = []
+  for (const quasi of quasis) {
+    const value = (quasi as { value?: { cooked?: string; raw?: string } }).value
+    parts.push(value?.cooked ?? value?.raw ?? '')
+  }
+  const expressions = node.expressions
+  return {
+    text: parts.join(INTERPOLATION_MARKER),
+    interpolated: Array.isArray(expressions) && expressions.length > 0,
+  }
+}
+
+/**
+ * The literal copy a node carries: a string literal verbatim, a template with
+ * each interpolation replaced by a marker (so `` `保存 ${name}` `` still reads
+ * as copy), or a JSX expression wrapper around either.
+ */
 function literalText(node: unknown): string | null {
   if (!isNode(node)) {
     return null
@@ -107,19 +141,94 @@ function literalText(node: unknown): string | null {
     return node.value
   }
   if (node.type === 'TemplateLiteral') {
-    const expressions = node.expressions
-    const quasis = node.quasis
-    if (Array.isArray(expressions) && expressions.length === 0 && Array.isArray(quasis) && quasis.length === 1) {
-      const element = quasis[0] as { value?: { cooked?: string; raw?: string } }
-      const cooked = element.value?.cooked ?? element.value?.raw
-      return typeof cooked === 'string' ? cooked : null
-    }
-    return null
+    return templateQuasis(node)?.text ?? null
   }
   if (node.type === 'JSXExpressionContainer') {
     return literalText(node.expression)
   }
   return null
+}
+
+/**
+ * Exact text only when the node carries no interpolation — used for locale
+ * literals, where `zh-${x}` must never match but `` `zh-CN` `` must.
+ */
+function exactText(node: unknown): string | null {
+  if (!isNode(node)) {
+    return null
+  }
+  if (node.type === 'Literal' && typeof node.value === 'string') {
+    return node.value
+  }
+  if (node.type === 'TemplateLiteral') {
+    const quasis = templateQuasis(node)
+    return quasis !== null && !quasis.interpolated ? quasis.text : null
+  }
+  return null
+}
+
+/**
+ * Copy-bearing strings inside a JSX child expression. The expression's own
+ * branches are followed (`? :`, `&&`, `+` chains, `as` casts) so neither arm
+ * of a conditional can hide copy; comparisons keep their operands out of
+ * scope (an `=== 'admin'` test is not interface copy).
+ */
+function expressionCopyTexts(node: unknown, out: string[] = []): string[] {
+  if (!isNode(node)) {
+    return out
+  }
+  switch (node.type) {
+    case 'Literal':
+      if (typeof node.value === 'string' && COPY_TEXT.test(node.value)) {
+        out.push(node.value)
+      }
+      return out
+    case 'TemplateLiteral': {
+      const text = literalText(node)
+      if (text !== null && COPY_TEXT.test(text)) {
+        out.push(text)
+      }
+      return out
+    }
+    case 'ConditionalExpression':
+      expressionCopyTexts(node.consequent, out)
+      expressionCopyTexts(node.alternate, out)
+      return out
+    case 'LogicalExpression':
+      expressionCopyTexts(node.right, out)
+      return out
+    case 'BinaryExpression':
+      if (node.operator === '+') {
+        expressionCopyTexts(node.left, out)
+        expressionCopyTexts(node.right, out)
+      }
+      return out
+    case 'ParenthesizedExpression':
+    case 'JSXExpressionContainer':
+    case 'TSAsExpression':
+    case 'TSNonNullExpression':
+      return expressionCopyTexts(node.expression, out)
+    default:
+      return out
+  }
+}
+
+/** `toLocale*()` with no meaningful locale: omitted, `undefined`, `void 0`, or `[]`. */
+function isAbsentLocaleArgument(argument: unknown): boolean {
+  if (!isNode(argument)) {
+    return true
+  }
+  if (argument.type === 'Identifier' && argument.name === 'undefined') {
+    return true
+  }
+  if (argument.type === 'UnaryExpression' && argument.operator === 'void') {
+    return true
+  }
+  if (argument.type === 'ArrayExpression') {
+    const elements = argument.elements
+    return !Array.isArray(elements) || elements.length === 0
+  }
+  return false
 }
 
 function callArguments(node: AstNode): unknown[] {
@@ -150,10 +259,33 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
       }
       break
     }
+    case 'JSXElement':
+    case 'JSXFragment': {
+      // Children that are strings, not attributes: `{'保存'}` / {`保存 ${name}`}
+      // / `{ok ? '保存' : '取消'}`. Attribute values are handled by JSXAttribute,
+      // so nothing is reported twice.
+      const children = node.children
+      if (Array.isArray(children)) {
+        for (const child of children) {
+          if (isNode(child) && child.type === 'JSXExpressionContainer') {
+            for (const text of expressionCopyTexts(child.expression)) {
+              report(violations, source, file, 'jsx-text', child, text)
+            }
+          }
+        }
+      }
+      break
+    }
     case 'JSXAttribute': {
       const name = identifierName(node.name)
-      const text = literalText(node.value)
-      if (name !== null && COPY_ATTRIBUTES.has(name) && text !== null && COPY_TEXT.test(text)) {
+      if (name === null || !COPY_ATTRIBUTES.has(name)) {
+        break
+      }
+      // `alt="封面图"` / `placeholder={`请输入`}` / `title={ok ? '保存' : '取消'}`:
+      // the expression helper covers every branch and filters non-copy text.
+      const value = node.value
+      const expression = isNode(value) && value.type === 'JSXExpressionContainer' ? value.expression : value
+      for (const text of expressionCopyTexts(expression)) {
         report(violations, source, file, 'jsx-attribute', node, text)
       }
       break
@@ -177,7 +309,7 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
             report(violations, source, file, 'toast', node, text)
           }
         }
-        if (propertyName !== null && propertyName.startsWith('toLocale') && args.length === 0) {
+        if (propertyName !== null && propertyName.startsWith('toLocale') && isAbsentLocaleArgument(args[0])) {
           report(violations, source, file, 'to-locale', node, `${objectName ?? '…'}.${propertyName}()`)
         }
       }
@@ -195,6 +327,14 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
     case 'Literal': {
       if (typeof node.value === 'string' && isKnownLocaleValue(node.value) && node.value.trim() !== '') {
         report(violations, source, file, 'hardcoded-locale', node, node.value)
+      }
+      break
+    }
+    case 'TemplateLiteral': {
+      // Only an interpolation-free template is an exact locale literal.
+      const text = exactText(node)
+      if (text !== null && text.trim() !== '' && isKnownLocaleValue(text)) {
+        report(violations, source, file, 'hardcoded-locale', node, text)
       }
       break
     }

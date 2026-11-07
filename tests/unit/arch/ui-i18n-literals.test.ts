@@ -70,12 +70,30 @@ describe('scanner rules', () => {
     expect(rules('export function A() { return <div>{label}</div> }')).toEqual([])
   })
 
+  it('flags copy in JSX expression children', () => {
+    expect(rules("export function A() { return <div>{'保存'}</div> }")).toEqual(['jsx-text'])
+    expect(rules('export function A() { return <div>{`保存 ${name}`}</div> }')).toEqual(['jsx-text'])
+    expect(rules("export function A() { return <div>{ok ? '保存' : '取消'}</div> }")).toEqual(['jsx-text', 'jsx-text'])
+    expect(rules("export function A() { return <div>{'保存' + name}</div> }")).toEqual(['jsx-text'])
+    expect(rules("export function A() { return <div>{name === 'admin' ? label : name}</div> }")).toEqual([])
+    expect(rules('export function A() { return <div>{count}</div> }')).toEqual([])
+  })
+
   it('flags copy-bearing JSX attributes, including the expression form', () => {
     expect(rules('export function A() { return <img alt="封面图" /> }')).toEqual(['jsx-attribute'])
     expect(rules('export function A() { return <input placeholder={`请输入`} /> }')).toEqual(['jsx-attribute'])
     expect(rules('export function A() { return <button aria-label="删除" /> }')).toEqual(['jsx-attribute'])
     // Decorative images and technical class names are not copy.
     expect(rules('export function A() { return <img alt="" className="size-4" /> }')).toEqual([])
+  })
+
+  it('flags interpolated attribute copy exactly once (no double report)', () => {
+    expect(rules('export function A() { return <img alt={`封面 ${title}`} /> }')).toEqual(['jsx-attribute'])
+    expect(rules("export function A() { return <div title={ok ? '保存' : '取消'} /> }")).toEqual([
+      'jsx-attribute',
+      'jsx-attribute',
+    ])
+    expect(rules('export function A() { return <div title={copy} /> }')).toEqual([])
   })
 
   it('flags titleMeta() string arguments', () => {
@@ -85,6 +103,7 @@ describe('scanner rules', () => {
 
   it('flags toast messages', () => {
     expect(rules("export function A() { toast.error('设置未保存') }")).toEqual(['toast'])
+    expect(rules('export function A() { toast.error(`设置未保存：${reason}`) }')).toEqual(['toast'])
     expect(rules('export function A() { toast.success(message) }')).toEqual([])
   })
 
@@ -92,20 +111,40 @@ describe('scanner rules', () => {
     expect(rules("export function A() { throw new DomainError('BAD_REQUEST', '设置数据无效') }")).toEqual([
       'domain-error',
     ])
+    expect(rules("export function A() { throw new DomainError('BAD_REQUEST', `设置数据无效：${detail}`) }")).toEqual([
+      'domain-error',
+    ])
     expect(rules("export function A() { throw new DomainError('CONFLICT', reason) }")).toEqual([])
+    // English copy is copy: technical text is allowlisted per site later, never
+    // exempted by the rule itself.
+    expect(rules("export function A() { throw new DomainError('INTERNAL', 'row failed') }")).toEqual(['domain-error'])
+    expect(rules("export function A() { throw new DomainError('INTERNAL', String(code)) }")).toEqual([])
   })
 
-  it('flags toLocale*() calls without an explicit locale', () => {
+  it('flags toLocale*() calls without a meaningful locale', () => {
     expect(rules('export const a = (d: Date) => d.toLocaleDateString()')).toEqual(['to-locale'])
+    expect(rules('export const a = (d: Date) => d.toLocaleString(undefined, { hour: "2-digit" })')).toEqual([
+      'to-locale',
+    ])
+    expect(rules('export const a = (d: Date) => d.toLocaleString(void 0, options)')).toEqual(['to-locale'])
+    expect(rules('export const a = (d: Date) => d.toLocaleString([], options)')).toEqual(['to-locale'])
     expect(rules("export const a = (d: Date) => d.toLocaleDateString('zh-CN')")).toEqual(['hardcoded-locale'])
+    // A real locale argument (variable or literal) is not this rule's target.
     expect(rules('export const a = (d: Date) => d.toLocaleDateString(locale)')).toEqual([])
+    expect(rules('export const a = (d: Date) => d.toLocaleDateString(locales, options)')).toEqual([])
   })
 
   it('flags literals that name a supported locale or one of its aliases', () => {
     expect(rules("export const tag = 'zh-CN'", 'fixture.ts')).toEqual(['hardcoded-locale'])
     expect(rules("export const tag = 'zh-Hant-TW'", 'fixture.ts')).toEqual(['hardcoded-locale'])
     expect(rules("export const tag = 'en'", 'fixture.ts')).toEqual(['hardcoded-locale'])
+    expect(rules('export const tag = `zh-CN`', 'fixture.ts')).toEqual(['hardcoded-locale'])
     expect(rules("export const path = '/zh-CN/posts'", 'fixture.ts')).toEqual([])
+  })
+
+  it('never treats an interpolated locale template as an exact locale literal', () => {
+    expect(rules('export const tag = `zh-${region}`', 'fixture.ts')).toEqual([])
+    expect(rules('export const tag = `${base}-CN`', 'fixture.ts')).toEqual([])
   })
 
   it('reports a stable 1-based line and column', () => {

@@ -413,7 +413,7 @@ function GeneralTimeZoneCard({
         <SettingsRow
           label="日期格式"
           htmlFor="general-time-format-mode"
-          hint="跟随语言时使用当前语言的默认格式；自定义支持 yyyy / LL / MM / dd / HH / mm 占位符，例如 yyyy-LL-dd HH:mm。"
+          hint="跟随语言时使用当前语言的默认格式；自定义支持 yyyy / LL / MM / dd / HH / mm / ss 占位符，例如 yyyy-LL-dd HH:mm。"
           error={formState.errors.timeFormat?.message}
         >
           <div className="flex flex-col gap-2">

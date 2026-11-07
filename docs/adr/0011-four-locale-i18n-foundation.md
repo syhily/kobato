@@ -93,9 +93,10 @@ scan roots grow with each migration slice rather than switching on all at once.
   the alias rewrite is safe to re-run on every boot.
 - Existing sites keep their date display exactly; new installs get
   locale-appropriate dates without any admin action.
-- Adding a message means editing five files (four locales + the baseline) and
-  `tsc` enforces it; ICU structural drift fails the catalog test, not a
-  runtime render.
+- Adding a message means editing four files (the English baseline plus its three
+  translations, in whichever namespace the message belongs to), and `tsc`
+  enforces it; ICU structural drift fails the catalog test, not a runtime
+  render.
 - The four catalogs cost bundle size only on the server; the client pays for
   exactly one locale.
 - `zh-HK`/`zh-TW` terminology is now a maintenance commitment: no automated

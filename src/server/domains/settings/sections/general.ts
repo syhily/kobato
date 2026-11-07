@@ -5,7 +5,7 @@ import { DEFAULT_LOCALE, normalizeAppLocale, SUPPORTED_LOCALES } from '@/shared/
 
 // `locale` is one of the four supported UI locales; `timeZone` an IANA name;
 // `timeFormat` a small token language consumed by `formatLocalDate`
-// (`yyyy LL MM dd HH mm`), or `null` to follow the locale default.
+// (`yyyy LL MM dd HH mm ss`), or `null` to follow the locale default.
 
 // `timeFormat` reads as `null` when absent/blank so a row written before the
 // follow-the-locale model parses; every stored pattern is preserved verbatim

@@ -98,10 +98,10 @@ export function formatLocalDate(source: string | Date, format: string | undefine
   if (pattern === null) {
     return zonedDateFormatter(locale, timeZone).format(zoned)
   }
-  // The format string is USER-SUPPLIED (stored in settings): only the six
+  // The format string is USER-SUPPLIED (stored in settings): only the seven
   // documented tokens are substituted, so it never reaches date-fns — every
   // other character, including letters that are date-fns tokens (`a`, `E`,
-  // `p`…), renders verbatim. date-fns computes the six values off one
+  // `p`…), renders verbatim. date-fns computes the seven values off one
   // canonical pattern instead.
   const [year, month, day, hour, minute, second] = formatZonedDate(zoned, 'yyyy MM dd HH mm ss').split(' ')
   return pattern
