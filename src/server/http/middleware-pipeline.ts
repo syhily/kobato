@@ -48,6 +48,14 @@ export interface CspInput {
 }
 
 /**
+ * Opt the origin into User-Agent Client Hints (ADR-0006): Chromium sends the
+ * requested `Sec-CH-UA-*` headers on subsequent requests. The analytics
+ * enrich pipeline persists them in `device_env_server`.
+ */
+export const ACCEPT_CH_HEADER =
+  'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Model, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Form-Factors'
+
+/**
  * Dynamic CSP: per-request nonce (prod), dev-only `unsafe-inline` + blob workers.
  * Trusted origins: the asset CDN host on style/font/img/media, plus the
  * configured site origin on img/media only — content references absolute
@@ -113,10 +121,7 @@ export function configureMiddleware(app: Hono<Env>): void {
     // analytics recover the device model / OS version that Chrome's UA
     // reduction erased from the UA string (first-party, so no
     // Permissions-Policy delegation is needed).
-    c.res.headers.set(
-      'Accept-CH',
-      'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Model, Sec-CH-UA-Full-Version-List',
-    )
+    c.res.headers.set('Accept-CH', ACCEPT_CH_HEADER)
     const webmentionLink = webmentionLinkHeader(bundle)
     if (webmentionLink !== null) {
       c.res.headers.append('Link', webmentionLink)

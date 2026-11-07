@@ -24,6 +24,7 @@ const db = getTestDb()
 
 function makeRequestFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
   return {
+    analyticsEventId: '00000000-0000-4000-8000-0000000000af',
     path: '/',
     isDataRequest: false,
     userAgent: null,

@@ -4,10 +4,11 @@ import type { AnalyticsReader } from '@/server/domains/analytics/services/analyt
 import type { Database } from '@/server/infra/db/database'
 
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
-import { ACCESS_EVENTS_DDL } from '@/server/domains/analytics/services/access-log'
 import { wireAccessLogBatcher } from '@/server/domains/analytics/services/batcher'
 import { runAnalyticsBlobMigrationAtBoot } from '@/server/domains/analytics/services/blob-migration'
+import { wireDeviceEnvBeaconBatcher } from '@/server/domains/analytics/services/env-beacon'
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
+import { ANALYTICS_DDL } from '@/server/domains/analytics/services/schema'
 import {
   type AnalyticsHandle,
   closeAnalyticsDatabase,
@@ -24,14 +25,15 @@ import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/s
  */
 const engine = new ManagedEngine<AnalyticsHandle>(
   {
-    open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ACCESS_EVENTS_DDL),
+    open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ANALYTICS_DDL),
     close: closeAnalyticsDatabase,
   },
   'analyticsHandle',
 )
 
-// Lazy writer getter so the domain batcher never imports this module back.
+// Lazy writer getter so the domain batchers never import this module back.
 wireAccessLogBatcher({ getWriter: () => engine.get().writer })
+wireDeviceEnvBeaconBatcher({ getWriter: () => engine.get().writer })
 
 let maintenanceJob: ScheduledJob | null = null
 
@@ -101,21 +103,26 @@ export function getAnalyticsReader(): AnalyticsReader {
   return getAnalyticsHandle().reader
 }
 
-/** Checkpoint + copy the sidecar to `stagingPath` for a backup archive; false when the handle is in-memory, errors propagate. The access-log batcher stays paused across the window. */
+/** Checkpoint + copy the sidecar to `stagingPath` for a backup archive; false when the handle is in-memory, errors propagate. Every sidecar-writing batcher stays paused across the window. */
 export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean> {
   const handle = getAnalyticsHandle()
   if (handle.inMemory) {
     return false
   }
   return withAnalyticsMutationLock(async () => {
-    // Via the registry's uniform pause/resume seam, keyed by the batcher's registration name.
-    const batcher = getBatcher('AccessLogBatcher')
-    await batcher?.pause?.()
+    // Via the registry's uniform pause/resume seam, keyed by registration name.
+    // Every batcher writing to this file must be parked for the copy window.
+    const batchers = [getBatcher('AccessLogBatcher'), getBatcher('DeviceEnvBeaconBatcher')]
+    for (const batcher of batchers) {
+      await batcher?.pause?.()
+    }
     try {
       await handle.writer.run('CHECKPOINT')
       await copyFile(handle.path, stagingPath)
     } finally {
-      batcher?.resume?.()
+      for (const batcher of batchers) {
+        batcher?.resume?.()
+      }
     }
     return true
   })

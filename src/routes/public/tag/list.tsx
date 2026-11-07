@@ -1,3 +1,5 @@
+import type { PublicListingLoaderData } from '@/shared/types/listing'
+
 import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { createSsrCaller, unwrapListing } from '@/server/http/ssr-caller'
 import { metaWithFallback } from '@/shared/seo/meta'
@@ -6,8 +8,11 @@ import { PostListingBody } from '@/ui/public/post/PostListViews'
 import type { Route } from './+types/list'
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller } = createSsrCaller({ request, context })
-  return unwrapListing(caller.content.posts.list({ scope: { type: 'tag', slug: params.slug }, num: params.num }))
+  const { caller, analyticsEventId } = createSsrCaller({ request, context })
+  const listing = await unwrapListing(
+    caller.content.posts.list({ scope: { type: 'tag', slug: params.slug }, num: params.num }),
+  )
+  return { ...listing, eid: analyticsEventId } satisfies PublicListingLoaderData
 }
 
 export const headers = listingHeaders

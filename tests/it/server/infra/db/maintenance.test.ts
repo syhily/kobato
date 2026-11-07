@@ -3,7 +3,13 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
-import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
+import {
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+  seedDeviceEnvClientRows,
+  seedDeviceEnvServerRows,
+} from '#/_helpers/analytics-db'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import { runDbMaintenance } from '@/server/infra/db/maintenance'
@@ -91,6 +97,46 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
           bytesBefore: expect.any(Number),
           bytesAfter: expect.any(Number),
         }),
+      }),
+    )
+
+    await closeTestAnalyticsDb(analyticsHandle)
+  })
+
+  it('cuts both device-environment sidecars at the same retention boundary', async () => {
+    const old = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000)
+    const recent = new Date()
+    const oldId = '00000000-0000-4000-8000-000000000001'
+    const recentId = '00000000-0000-4000-8000-000000000002'
+
+    await seedAccessEvents(analyticsHandle, [
+      { ts: old, path: '/old' },
+      { ts: recent, path: '/recent' },
+    ])
+    await seedDeviceEnvServerRows(analyticsHandle, [
+      { eventId: oldId, timestamp: old, platform: 'macOS' },
+      { eventId: recentId, timestamp: recent, platform: 'macOS' },
+    ])
+    await seedDeviceEnvClientRows(analyticsHandle, [
+      { eventId: oldId, timestamp: old, hasStatic: true },
+      { eventId: recentId, timestamp: recent },
+    ])
+
+    await runAccessLogRetention(analyticsHandle)
+
+    const paths = await analyticsHandle.reader.runAndReadAll('SELECT blob1 AS path FROM access_events')
+    expect(paths.getRowObjects()).toEqual([{ path: '/recent' }])
+    const server = await analyticsHandle.reader.runAndReadAll('SELECT event_id::VARCHAR AS id FROM device_env_server')
+    expect(server.getRowObjects()).toEqual([{ id: recentId }])
+    const client = await analyticsHandle.reader.runAndReadAll('SELECT event_id::VARCHAR AS id FROM device_env_client')
+    expect(client.getRowObjects()).toEqual([{ id: recentId }])
+
+    // The logged totals cover all three tables (2 events + 2 + 2).
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'analytics maintenance completed',
+        ctx: expect.objectContaining({ rowsBefore: 6n, rowsAfter: 3n }),
       }),
     )
 

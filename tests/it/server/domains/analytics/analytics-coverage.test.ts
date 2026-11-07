@@ -305,6 +305,7 @@ describe('analytics/export — queryExportCsv', () => {
 describe('analytics/enrich — enrichEvent', () => {
   it('hashes the IP, parses referer + language, and detects bots', async () => {
     const event = await enrichEvent({
+      eventId: '00000000-0000-4000-8000-0000000000ef',
       ts: new Date(),
       ip: '127.0.0.1',
       ua: 'Mozilla/5.0 (compatible; Googlebot/2.1)',
@@ -323,6 +324,7 @@ describe('analytics/enrich — enrichEvent', () => {
 
   it('fills os/browser/browserType/device/deviceType from the user agent', async () => {
     const event = await enrichEvent({
+      eventId: '00000000-0000-4000-8000-0000000000ef',
       ts: new Date(),
       ip: '127.0.0.1',
       ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
@@ -341,6 +343,7 @@ describe('analytics/enrich — enrichEvent', () => {
   it('marks crawler/fetcher browser types as bots even when the hand-rolled matcher misses them', async () => {
     // ia_archiver trips the ua-parser crawler extension, not kobato's is-bot list.
     const event = await enrichEvent({
+      eventId: '00000000-0000-4000-8000-0000000000ef',
       ts: new Date(),
       ip: '127.0.0.1',
       ua: 'ia_archiver',
@@ -355,6 +358,7 @@ describe('analytics/enrich — enrichEvent', () => {
 
   it('strips query, hash and userinfo from the persisted referer', async () => {
     const event = await enrichEvent({
+      eventId: '00000000-0000-4000-8000-0000000000ef',
       ts: new Date(),
       ip: '127.0.0.1',
       ua: '',
@@ -370,6 +374,7 @@ describe('analytics/enrich — enrichEvent', () => {
 
   it('returns null fields when referer is malformed', async () => {
     const event = await enrichEvent({
+      eventId: '00000000-0000-4000-8000-0000000000ef',
       ts: new Date(),
       ip: '',
       ua: 'curl/7.0',
@@ -385,6 +390,7 @@ describe('analytics/enrich — enrichEvent', () => {
 
   it('returns null refererHost when referer is missing', async () => {
     const event = await enrichEvent({
+      eventId: '00000000-0000-4000-8000-0000000000ef',
       ts: new Date(),
       ip: '1.1.1.1',
       ua: '',

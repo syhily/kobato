@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -14,8 +15,8 @@ import {
   snapshotAnalyticsTo,
 } from '@/server/bootstrap/analytics-lifecycle'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
-import { ACCESS_EVENTS_DDL } from '@/server/domains/analytics/services/access-log'
 import { flushAccessLog, pushAccessEvent } from '@/server/domains/analytics/services/batcher'
+import { ANALYTICS_DDL } from '@/server/domains/analytics/services/schema'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 
@@ -28,6 +29,7 @@ let stagingDir: string
 
 function makeEvent(overrides: Partial<EnrichedAccessEvent> = {}): EnrichedAccessEvent {
   return {
+    eventId: randomUUID(),
     ts: new Date('2024-01-01T00:00:00Z'),
     visitorHash: 'v',
     path: '/',
@@ -82,14 +84,14 @@ afterAll(async () => {
 
 describe('snapshotAnalyticsTo', () => {
   it('archives a consistent copy: the staged file opens and carries every pre-snapshot row', async () => {
-    pushAccessEvent(makeEvent({ path: '/a' }))
-    pushAccessEvent(makeEvent({ path: '/b' }))
+    pushAccessEvent({ event: makeEvent({ path: '/a' }), envServer: null })
+    pushAccessEvent({ event: makeEvent({ path: '/b' }), envServer: null })
     await flushAccessLog()
 
     const stagingPath = join(stagingDir, 'analytics.duckdb')
     expect(await snapshotAnalyticsTo(stagingPath)).toBe(true)
 
-    const copy = await openAnalyticsDatabase(stagingPath, ACCESS_EVENTS_DDL)
+    const copy = await openAnalyticsDatabase(stagingPath, ANALYTICS_DDL)
     try {
       expect(await accessLogPaths(copy)).toEqual(['/a', '/b'])
     } finally {
@@ -103,14 +105,14 @@ describe('snapshotAnalyticsTo', () => {
     const decorated = Object.create(realWriter) as AnalyticsHandle['writer']
     decorated.run = async (sql: string) => {
       if (sql === 'CHECKPOINT') {
-        pushAccessEvent(makeEvent({ path: '/during' }))
+        pushAccessEvent({ event: makeEvent({ path: '/during' }), envServer: null })
       }
       return realWriter.run(sql)
     }
     __resetAnalyticsEngineForTests()
     __adoptAnalyticsHandleForTests({ ...analyticsHandle, writer: decorated })
 
-    pushAccessEvent(makeEvent({ path: '/before' }))
+    pushAccessEvent({ event: makeEvent({ path: '/before' }), envServer: null })
     expect(await snapshotAnalyticsTo(join(stagingDir, 'analytics.duckdb'))).toBe(true)
 
     // resume() fired an immediate flush — join it through the singleflight.
@@ -123,7 +125,7 @@ describe('snapshotAnalyticsTo', () => {
     const stagingPath = join(stagingDir, 'missing-dir', 'analytics.duckdb')
     await expect(snapshotAnalyticsTo(stagingPath)).rejects.toThrow()
 
-    pushAccessEvent(makeEvent({ path: '/after-failure' }))
+    pushAccessEvent({ event: makeEvent({ path: '/after-failure' }), envServer: null })
     const result = await flushAccessLog()
     expect(result).toEqual({ committed: 1, deadLettered: 0 })
     expect(await accessLogPaths(analyticsHandle)).toEqual(['/after-failure'])
@@ -131,8 +133,11 @@ describe('snapshotAnalyticsTo', () => {
 
   it('holds the retention DELETE out of a concurrent snapshot window (mutation lock)', async () => {
     // makeEvent's default ts is past the window — stamp the fresh row explicitly.
-    pushAccessEvent(makeEvent({ path: '/old', ts: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000) }))
-    pushAccessEvent(makeEvent({ path: '/new', ts: new Date() }))
+    pushAccessEvent({
+      event: makeEvent({ path: '/old', ts: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000) }),
+      envServer: null,
+    })
+    pushAccessEvent({ event: makeEvent({ path: '/new', ts: new Date() }), envServer: null })
     await flushAccessLog()
 
     // The decorated writer blocks the snapshot's CHECKPOINT until released.

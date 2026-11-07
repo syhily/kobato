@@ -6,8 +6,8 @@ import { CategoriesBody } from '@/ui/public/post/CategoriesBody'
 import type { Route } from './+types/categories'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller } = createSsrCaller({ request, context })
-  return caller.content.categories.list()
+  const { caller, analyticsEventId } = createSsrCaller({ request, context })
+  return { ...(await caller.content.categories.list()), eid: analyticsEventId }
 }
 
 export const headers = listingHeaders

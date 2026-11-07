@@ -19,7 +19,16 @@ export interface AnalyticsEventRow {
   [column: string]: unknown
 }
 
-type AnalyticsDatabase = { access_events: AnalyticsEventRow }
+/** Sidecar row shape — only the join key is typed; dimensions are raw columns. */
+export interface AnalyticsEnvRow {
+  event_id: string
+  [column: string]: unknown
+}
+
+export type AnalyticsDatabase = {
+  access_events: AnalyticsEventRow
+  device_env_client: AnalyticsEnvRow
+}
 
 // Identifiers are application-owned; user values must use bound parameters.
 const identifierPattern = /^[A-Za-z_][A-Za-z0-9_]*$/
@@ -52,6 +61,11 @@ const coldDb = new Kysely<AnalyticsDatabase>({
 
 export function createAnalyticsQuery() {
   return coldDb.selectFrom('access_events')
+}
+
+/** `access_events` INNER JOIN `device_env_client` — the env-dimension metric source. */
+export function createEnvMetricQuery() {
+  return createAnalyticsQuery().innerJoin('device_env_client', 'device_env_client.event_id', 'access_events.event_id')
 }
 
 export function compileAnalyticsQuery(query: Compilable) {

@@ -1,7 +1,8 @@
+import type { RawAccessEvent } from '@/server/domains/analytics/types'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
-import { enrichEvent } from '@/server/domains/analytics/enrich'
+import { buildDeviceEnvServerRow, enrichEvent } from '@/server/domains/analytics/enrich'
 import { pushAccessEvent } from '@/server/domains/analytics/services/batcher'
 import { bumpPageView } from '@/server/domains/analytics/services/pv-batcher'
 import { getLogger } from '@/server/infra/logger'
@@ -11,15 +12,45 @@ import { isBot } from '@/shared/utils/is-bot'
 // Single owner of "what counts as a view": one call fans out to the
 // per-entity counter and the time-series access log. Prefetch and admin
 // visits (unless `trackAdmin`) never write; bots land in the time-series
-// only when `keepBotRows` is on. Callers `void` the promise — fire-and-forget.
+// only when `keepBotRows` is on (the counter still bumps). Every gate is
+// synchronous; only the enrich → push tail is async, so the caller gets
+// the event id (the ADR-0006 beacon join key) back immediately.
 
 const log = getLogger('analytics.track')
+
+/** In-flight enrich → push chains, so tests can settle them deterministically. */
+const inflightTracks = new Set<Promise<void>>()
 
 function isPrefetch(facts: RequestFacts): boolean {
   return facts.purpose?.toLowerCase().includes('prefetch') ?? false
 }
 
+async function enrichAndPush(raw: RawAccessEvent): Promise<void> {
+  try {
+    const event = await enrichEvent(raw)
+    pushAccessEvent({ event, envServer: buildDeviceEnvServerRow(raw) })
+  } catch (err) {
+    // An analytics failure must never break the user-facing request.
+    log.error('trackPageView failed', { err: err instanceof Error ? err.message : String(err) })
+  }
+}
+
+function schedule(raw: RawAccessEvent): void {
+  const pending = enrichAndPush(raw)
+  inflightTracks.add(pending)
+  void pending.finally(() => inflightTracks.delete(pending))
+}
+
+/** Test seam: await every in-flight enrich → push chain. */
+export async function flushTrackedEvents(): Promise<void> {
+  while (inflightTracks.size > 0) {
+    await Promise.allSettled(inflightTracks)
+  }
+}
+
 export interface TrackPageViewOptions {
+  /** Override the event id; defaults to the request's minted id (tests only). */
+  eventId?: string
   /** Override the request timestamp; defaults to `new Date()` at call time. */
   now?: Date
   /** Skip the bot check (useful in tests). */
@@ -36,20 +67,26 @@ export interface TrackPageViewOptions {
   clientAddress?: string
 }
 
-export async function trackPageView(
+/**
+ * Record a page view. Returns the event id the server-side row will carry
+ * (and the client beacon must echo), or `null` when a gate dropped the
+ * visit — a bot filtered by the bot gate also gets `null` even though the
+ * counter may already have bumped.
+ */
+export function trackPageView(
   facts: RequestFacts,
   target: EntityTarget | null,
   options: TrackPageViewOptions = {},
-): Promise<void> {
+): string | null {
   try {
     const bundle = getBlogSettingsBundleSync()
     const analytics = bundle?.analytics?.analytics ?? { trackAdmin: false, keepBotRows: false }
 
     if (options.isAdmin && !analytics.trackAdmin) {
-      return
+      return null
     }
     if (isPrefetch(facts)) {
-      return
+      return null
     }
 
     // Counter signal — the gates above have already passed.
@@ -63,10 +100,12 @@ export async function trackPageView(
     // Bot gate BEFORE enrichment: rows `keepBotRows` would drop anyway
     // must not pay for the GeoIP lookup + salted IP hash.
     if (isBot(ua) && !analytics.keepBotRows && !options.skipBotFilter) {
-      return
+      return null
     }
 
-    const event = await enrichEvent({
+    const eventId = options.eventId ?? facts.analyticsEventId
+    schedule({
+      eventId,
       ts: options.now ?? new Date(),
       ip,
       ua,
@@ -76,10 +115,9 @@ export async function trackPageView(
       acceptLanguage: facts.acceptLanguage,
       target,
     })
-
-    pushAccessEvent(event)
+    return eventId
   } catch (err) {
-    // An analytics failure must never break the user-facing request.
     log.error('trackPageView failed', { err: err instanceof Error ? err.message : String(err) })
+    return null
   }
 }

@@ -6,8 +6,8 @@ import { ArchivesBody } from '@/ui/public/post/ArchivesBody'
 import type { Route } from './+types/archives'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller } = createSsrCaller({ request, context })
-  return caller.content.archives()
+  const { caller, analyticsEventId } = createSsrCaller({ request, context })
+  return { ...(await caller.content.archives()), eid: analyticsEventId }
 }
 
 export const headers = listingHeaders

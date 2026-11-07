@@ -13,8 +13,8 @@ export async function loadPublicDetailData(
   target: EntityTarget,
 ): Promise<DetailCriticalPayload> {
   // Both analytics signals from the single domain entry point — the view
-  // gate lives inside `trackPageView`; the loader never re-reads headers. `void`d.
-  void trackPageView(context.requestFacts, target, {
+  // gate lives inside `trackPageView`; the loader never re-reads headers.
+  trackPageView(context.requestFacts, target, {
     isAdmin: context.viewer?.role === 'admin',
     clientAddress: context.clientAddress,
   })

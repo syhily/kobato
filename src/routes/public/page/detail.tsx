@@ -17,7 +17,7 @@ export const handle: RouteHandle = { footer: false, postFonts: true }
 export const headers = detailHeaders
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller } = createSsrCaller({ request, context })
+  const { caller, analyticsEventId } = createSsrCaller({ request, context })
   const wantsDraftPreview = new URL(request.url).searchParams.get('draft') === 'true'
 
   const result = await unwrapDetail(
@@ -40,6 +40,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       showFriends: result.payload.showFriends,
       draftMarker: result.payload.draftMarker,
       detail: { ...result.payload.critical, comments, webmentions },
+      eid: analyticsEventId,
     },
     {
       headers: result.etag === null ? undefined : { ETag: result.etag },

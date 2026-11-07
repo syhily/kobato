@@ -8,6 +8,8 @@ import type { UaClientHints } from '@/server/domains/analytics/ua-parse'
 import type { EntityTarget } from '@/server/infra/db/target'
 
 export interface RawAccessEvent {
+  /** The request's minted analytics event id (ADR-0006 join key). */
+  eventId: string
   /** Defaults to `new Date()` at call site. */
   ts: Date
   /** Client IP after proxy-header resolution; used for the GeoIP lookup and the salted hash, never persisted. */
@@ -28,6 +30,7 @@ export interface RawAccessEvent {
 }
 
 export interface EnrichedAccessEvent {
+  eventId: string
   ts: Date
   /** Daily-salted SHA-256 of the client IP — the ONLY visitor identifier ever stored. */
   visitorHash: string

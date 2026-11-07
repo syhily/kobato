@@ -4,6 +4,9 @@
  * address is deliberately absent (threaded separately as `clientAddress`).
  */
 export interface RequestFacts {
+  /** Minted once per request — the analytics join key shared by the
+   *  server-side row and the client beacon (ADR-0006). */
+  analyticsEventId: string
   /** Normalized pathname: `.data` suffixes and `_routes` / `index` params stripped. */
   path: string
   /** True for React Router data requests (client navigation / fetcher revalidation). */
@@ -23,5 +26,9 @@ export interface RequestFacts {
     platformVersion: string | null
     mobile: string | null
     brands: string | null
+    fullVersion: string | null
+    arch: string | null
+    bitness: string | null
+    formFactors: string | null
   } | null
 }

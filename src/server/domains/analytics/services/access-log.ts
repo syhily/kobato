@@ -1,5 +1,4 @@
 import { DuckDBTimestampTZValue, DuckDBUUIDValue, type DuckDBAppender, type DuckDBConnection } from '@duckdb/node-api'
-import { randomUUID } from 'node:crypto'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
@@ -72,11 +71,12 @@ const BLOB_KEYS = unsafeCast<BlobsKey[]>(Object.keys(blobsMap).sort((a, b) => Nu
 
 /**
  * Append one event as an access_events row — the single owner of the
- * event → blob-slot mapping. Callers own the Appender protocol
- * (`endRow`/`flushSync`/`closeSync`).
+ * event → blob-slot mapping. The event id is minted upstream (request
+ * facts) so the client beacon can join on it. Callers own the Appender
+ * protocol (`endRow`/`flushSync`/`closeSync`).
  */
 export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEvent): void {
-  appender.appendUUID(DuckDBUUIDValue.fromUint128(uuidToUint128(randomUUID())))
+  appender.appendUUID(DuckDBUUIDValue.fromUint128(uuidToUint128(e.eventId)))
   appender.appendVarchar(index1Of(e.entityType, e.entityId))
   appender.appendTimestampTZ(new DuckDBTimestampTZValue(BigInt(e.ts.getTime()) * 1000n))
   appender.appendBoolean(e.isBot)

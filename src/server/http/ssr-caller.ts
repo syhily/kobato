@@ -29,6 +29,9 @@ type SsrCallerArgs = {
 export type SsrCallerResult = {
   caller: SsrCaller
   cspNonce: string
+  /** The request's minted analytics event id — public loaders publish it as
+   *  loader data `eid` so the client beacon can join the server-side row. */
+  analyticsEventId: string
   /**
    * Canonical session identity — route-level `requireRole` gates read it,
    * so route modules never import `getRequestContext` themselves.
@@ -54,6 +57,7 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
   return {
     caller: createRouterClient(apiRouter, { context }),
     cspNonce: rc.cspNonce,
+    analyticsEventId: rc.requestFacts.analyticsEventId,
     viewer: rc.viewer,
     session: rc.session,
   }

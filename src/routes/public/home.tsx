@@ -1,3 +1,6 @@
+import type { HomeExtra } from '@/shared/contracts/content'
+import type { PublicListingLoaderData } from '@/shared/types/listing'
+
 import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { createSsrCaller, unwrapListing } from '@/server/http/ssr-caller'
 import { metaWithFallback } from '@/shared/seo/meta'
@@ -6,8 +9,9 @@ import { HomeLayoutBody } from '@/ui/public/post/PostListViews'
 import type { Route } from './+types/home'
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller } = createSsrCaller({ request, context })
-  return unwrapListing(caller.content.home({ num: params.num }))
+  const { caller, analyticsEventId } = createSsrCaller({ request, context })
+  const listing = await unwrapListing(caller.content.home({ num: params.num }))
+  return { ...listing, eid: analyticsEventId } satisfies PublicListingLoaderData<HomeExtra>
 }
 
 export const headers = listingHeaders

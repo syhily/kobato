@@ -105,6 +105,8 @@ describe('routes/home loader', () => {
     expect(Object.keys(result.extra.categoryLinks)).toContain('general')
     expect(result.extra.categoryLinks.general).toBe('/cats/general')
     expect(result.extra.sidebar.recentComments).toEqual([])
+    // The client beacon's join key rides the loader data (ADR-0006).
+    expect(result.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 
   it('returns the deep-paginated payload (with seo populated) on /page/N', async () => {

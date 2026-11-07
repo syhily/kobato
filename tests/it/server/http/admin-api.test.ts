@@ -497,7 +497,7 @@ describe('admin.analytics.mentions', () => {
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ referers: Array<{ name: string; visits: number; visitors: number }> }>(res)
 
-    // Referers group by the referer HOST slot (blob3) — see `DIMENSION_COLUMN` in query-filter.ts.
+    // Referers group by the referer HOST slot (blob3) — see `METRIC_DIMENSIONS` in metric-dimensions.ts.
     expect(json.referers.map((r) => r.name).sort()).toEqual(['(unknown)', 'google.com', 'twitter.com'])
     expect(json.referers.find((r) => r.name === 'google.com')).toMatchObject({ visits: 2, visitors: 2 })
   })

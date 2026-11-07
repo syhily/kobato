@@ -15,7 +15,7 @@ export const handle: RouteHandle = { postFonts: true }
 export const headers = detailHeaders
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller } = createSsrCaller({ request, context })
+  const { caller, analyticsEventId } = createSsrCaller({ request, context })
 
   const result = await unwrapDetail(
     caller.content.posts.bySlug({
@@ -38,6 +38,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       tags: result.payload.tags,
       detail: { ...result.payload.critical, comments, webmentions },
       draftMarker: result.payload.draftMarker,
+      eid: analyticsEventId,
     },
     { headers: { ETag: result.etag } },
   )

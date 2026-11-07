@@ -227,6 +227,16 @@ export const tryInviteByEmailRateLimit = byAdminEmail('invite', 'invite-email')
 /** Public resources (RSS, sitemap, OG images, avatars) by client IP. */
 export const tryResourceRateLimit = byIp('resource', 'resource')
 
+// Device-environment beacons arrive once per page view from anonymous
+// clients; a dedicated fixed bucket (no settings surface — same "small
+// perimeter" rule as the newsletter/backup ones) absorbs rapid SPA browsing
+// while bounding a spray. 120/min per IP.
+const DEVICE_ENV_BEACON_BUCKET: RateLimitBucket = { windowSeconds: 60, maxAttempts: 120 }
+
+/** Device-environment beacons (`POST /api/analytics/env`) by client IP. */
+export const tryDeviceEnvBeaconRateLimit = (ip: string): Promise<RateLimitResult> =>
+  tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}analytics-env-beacon:${rateLimitIpKey(ip)}`, DEVICE_ENV_BEACON_BUCKET)
+
 export const tryPasskeyAuthBeginRateLimit = byIp('passkeyAuth', 'passkey-auth-begin')
 export const tryPasskeyAuthFinishRateLimit = byIp('passkeyAuth', 'passkey-auth-finish')
 export const tryPasskeyRegisterBeginRateLimit = byIp('passkeyManage', 'passkey-register-begin')

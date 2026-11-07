@@ -1,8 +1,11 @@
 import { type DuckDBConnection } from '@duckdb/node-api'
+import { randomUUID } from 'node:crypto'
 
+import type { DeviceEnvServerRow } from '@/server/domains/analytics/services/device-env'
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { appendAccessEvents } from '@/server/domains/analytics/services/access-log'
+import { appendDeviceEnvServerRows } from '@/server/domains/analytics/services/device-env'
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import {
   deserializeDeadLetterJsonLine,
@@ -18,14 +21,38 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const BATCHER_NAME = 'AccessLogBatcher'
 
+/** One event plus its device-environment sidecar row — written in the same flush. */
+export interface AccessLogItem {
+  event: EnrichedAccessEvent
+  /** NULL only for legacy dead-letter rows (written before the sidecar existed). */
+  envServer: DeviceEnvServerRow | null
+}
+
 function deadLetterPath(): string {
   return ANALYTICS_DEAD_LETTER_PATH
 }
 
-function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
+function reviveEventTimestamp(raw: Record<string, unknown>): EnrichedAccessEvent {
+  const event = unsafeCast<EnrichedAccessEvent>(raw)
+  event.ts = new Date(unsafeCast<number>(event.ts))
+  return event
+}
+
+function deserializeFromDeadLetter(line: string): AccessLogItem | null {
   return deserializeDeadLetterJsonLine(line, (raw) => {
-    raw.ts = new Date(unsafeCast<number>(raw.ts))
-    return unsafeCast<EnrichedAccessEvent>(raw)
+    if (typeof raw.event === 'object' && raw.event !== null) {
+      const item = unsafeCast<AccessLogItem>(raw)
+      item.event.ts = new Date(unsafeCast<number>(item.event.ts))
+      if (item.envServer !== null) {
+        item.envServer.timestamp = new Date(unsafeCast<number>(item.envServer.timestamp))
+      }
+      return item
+    }
+    // Legacy flat-event line: the original id was never persisted, so mint a
+    // fresh one and skip the sidecar row that never existed.
+    const event = reviveEventTimestamp(raw)
+    event.eventId = randomUUID()
+    return { event, envServer: null }
   })
 }
 
@@ -47,18 +74,26 @@ function requireWriter(): DuckDBConnection {
 
 // The writer getter is lazy: the sidecar opens AFTER the batchers
 // register, so the connection resolves at flush time, never at construction.
-class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnection> {
+class AccessLogBatcher extends InsertBatcher<AccessLogItem, DuckDBConnection> {
   constructor() {
     super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.batcher', requireWriter)
   }
 
-  protected async insertBatch(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
-    await appendAccessEvents(writer, events)
+  /** The event table first, then the sidecar rows of the same batch. */
+  protected async insertBatch(writer: DuckDBConnection, items: AccessLogItem[]): Promise<void> {
+    await appendAccessEvents(
+      writer,
+      items.map((item) => item.event),
+    )
+    const envRows = items.flatMap((item) => (item.envServer === null ? [] : [item.envServer]))
+    if (envRows.length > 0) {
+      await appendDeviceEnvServerRows(writer, envRows)
+    }
   }
 
-  protected async onInsertFailed(events: EnrichedAccessEvent[]): Promise<FlushResult> {
-    await writeDeadLetter(events, serializeDeadLetterJsonLines, deadLetterPath(), this.log)
-    return { committed: 0, deadLettered: events.length }
+  protected async onInsertFailed(items: AccessLogItem[]): Promise<FlushResult> {
+    await writeDeadLetter(items, serializeDeadLetterJsonLines, deadLetterPath(), this.log)
+    return { committed: 0, deadLettered: items.length }
   }
 }
 
@@ -68,8 +103,8 @@ registerBatcher(BATCHER_NAME, () => new AccessLogBatcher(), {
   replayDeadLetter: () => replayDeadLetterAccessLog(),
 })
 
-export function pushAccessEvent(event: EnrichedAccessEvent): void {
-  requireBatcher<AccessLogBatcher>(BATCHER_NAME).push(event)
+export function pushAccessEvent(item: AccessLogItem): void {
+  requireBatcher<AccessLogBatcher>(BATCHER_NAME).push(item)
 }
 
 export function flushAccessLog(): Promise<FlushResult> {
@@ -85,7 +120,7 @@ export async function replayDeadLetterAccessLog(path?: string): Promise<{ replay
   return replayFromInfra(
     path ?? deadLetterPath(),
     deserializeFromDeadLetter,
-    (events) => batcher.ingest(events),
+    (items) => batcher.ingest(items),
     getLogger('analytics.batcher'),
   )
 }

@@ -3,6 +3,7 @@ import { Outlet, useLocation, useMatches, useRouteLoaderData } from 'react-route
 import type { RouteHandle } from '@/root'
 
 import { useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
+import { useDeviceEnvBeacon } from '@/client/hooks/use-device-env-beacon'
 import { isRecord } from '@/shared/utils/type-guards'
 import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
@@ -45,6 +46,8 @@ function useResolvedChromeProps(): {
 export default function PublicLayoutRoute() {
   const { currentUser, footer } = useResolvedChromeProps()
   const { pathname, search } = useLocation()
+  // One device-environment beacon per page view (ADR-0006); DNT silences it.
+  useDeviceEnvBeacon()
 
   return (
     <BaseLayout currentUser={currentUser} footer={footer} pathname={pathname} search={search}>

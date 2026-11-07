@@ -7,8 +7,9 @@ import { isInMemoryPath, resolveStoragePath } from '@/server/infra/db/database'
 
 /**
  * The embedded DuckDB analytics sidecar: one file, one instance, one
- * reader + one writer connection, hosting `access_events`. Backups archive
- * it with the content DB, but a missing file is recreated empty — restore is a bonus.
+ * reader + one writer connection, hosting the analytics tables (schema
+ * injected by the caller). Backups archive it with the content DB, but a
+ * missing file is recreated empty — restore is a bonus.
  */
 export interface AnalyticsHandle {
   instance: DuckDBInstance
@@ -27,9 +28,9 @@ export function resolveAnalyticsPath(): string {
   return resolveStoragePath(serverConfig.storage.analyticsDatabase, 'analytics.duckdb')
 }
 
-/** Open the sidecar and apply the caller's DDL (idempotent — a missing
- *  file is created empty). DDL is injected: infra owns no analytics schema. */
-export async function openAnalyticsDatabase(analyticsPath: string, ddl: string): Promise<AnalyticsHandle> {
+/** Open the sidecar and apply the caller's DDL statements (idempotent — a
+ *  missing file is created empty). DDL is injected: infra owns no analytics schema. */
+export async function openAnalyticsDatabase(analyticsPath: string, ddl: string | string[]): Promise<AnalyticsHandle> {
   // mkdir first — a custom path in a missing directory must exist before DuckDB opens.
   const inMemory = isInMemoryPath(analyticsPath)
   if (!inMemory) {
@@ -38,7 +39,9 @@ export async function openAnalyticsDatabase(analyticsPath: string, ddl: string):
   const instance = inMemory ? await DuckDBInstance.create() : await DuckDBInstance.create(analyticsPath)
   const writer = await instance.connect()
   const reader = await instance.connect()
-  await writer.run(ddl)
+  for (const statement of typeof ddl === 'string' ? [ddl] : ddl) {
+    await writer.run(statement)
+  }
   return { instance, writer, reader, path: analyticsPath, inMemory, closed: false }
 }
 

@@ -22,6 +22,12 @@ export const METRIC_TYPE_LABEL: Record<MetricType, string> = {
   browserType: '浏览器类型',
   device: '设备',
   deviceType: '设备类型',
+  screen: '屏幕分辨率',
+  viewport: '视口宽度',
+  dpr: '像素密度',
+  touch: '触控能力',
+  colorScheme: '深色模式',
+  netEffectiveType: '网络类型',
   path: '路径',
 }
 

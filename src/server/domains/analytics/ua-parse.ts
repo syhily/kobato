@@ -29,6 +29,14 @@ export interface UaClientHints {
   mobile?: string | null
   /** `Sec-CH-UA-Full-Version-List` (preferred) or `Sec-CH-UA`. */
   brands?: string | null
+  /** `Sec-CH-UA-Full-Version`. */
+  fullVersion?: string | null
+  /** `Sec-CH-UA-Arch`. */
+  arch?: string | null
+  /** `Sec-CH-UA-Bitness`. */
+  bitness?: string | null
+  /** `Sec-CH-UA-Form-Factors` (raw header value). */
+  formFactors?: string | null
 }
 
 export interface ParsedUaFields {
@@ -100,7 +108,20 @@ const detector = new DeviceDetector({ skipBotDetection: false, osVersionTruncate
 const hintsParser = new ClientHints()
 
 function hasHints(hints: UaClientHints | undefined): hints is UaClientHints {
-  return !!hints && !!(hints.model || hints.platform || hints.platformVersion || hints.mobile || hints.brands)
+  return (
+    !!hints &&
+    !!(
+      hints.model ||
+      hints.platform ||
+      hints.platformVersion ||
+      hints.mobile ||
+      hints.brands ||
+      hints.fullVersion ||
+      hints.arch ||
+      hints.bitness ||
+      hints.formFactors
+    )
+  )
 }
 
 function toRawHints(hints: UaClientHints): Record<string, string> {
@@ -119,6 +140,18 @@ function toRawHints(hints: UaClientHints): Record<string, string> {
   }
   if (hints.brands) {
     raw['sec-ch-ua-full-version-list'] = hints.brands
+  }
+  if (hints.fullVersion) {
+    raw['sec-ch-ua-full-version'] = hints.fullVersion
+  }
+  if (hints.arch) {
+    raw['sec-ch-ua-arch'] = hints.arch
+  }
+  if (hints.bitness) {
+    raw['sec-ch-ua-bitness'] = hints.bitness
+  }
+  if (hints.formFactors) {
+    raw['sec-ch-ua-form-factors'] = hints.formFactors
   }
   return raw
 }

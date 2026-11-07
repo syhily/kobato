@@ -89,3 +89,22 @@ describe('ui/admin/analytics/MetricName rendering', () => {
     expect(renderToStaticMarkup(<MetricName name="" type="os" />)).toContain('未知')
   })
 })
+
+describe('ui/admin/analytics/MetricName environment dimensions', () => {
+  it('localizes the color scheme and uppercases the network type', () => {
+    expect(renderToStaticMarkup(<MetricName name="dark" type="colorScheme" />)).toContain('深色')
+    expect(renderToStaticMarkup(<MetricName name="light" type="colorScheme" />)).toContain('浅色')
+    expect(renderToStaticMarkup(<MetricName name="4g" type="netEffectiveType" />)).toContain('4G')
+    expect(renderToStaticMarkup(<MetricName name="slow-2g" type="netEffectiveType" />)).toContain('SLOW-2G')
+  })
+
+  it('renders bucket labels verbatim without an icon', () => {
+    const viewport = renderToStaticMarkup(<MetricName name="≤768" type="viewport" />)
+    expect(viewport).toContain('≤768')
+    expect(viewport).not.toContain('<svg')
+
+    expect(renderToStaticMarkup(<MetricName name="1920×1080" type="screen" />)).toContain('1920×1080')
+    expect(renderToStaticMarkup(<MetricName name="1–5 点" type="touch" />)).toContain('1–5 点')
+    expect(renderToStaticMarkup(<MetricName name="2.5x" type="dpr" />)).toContain('2.5x')
+  })
+})

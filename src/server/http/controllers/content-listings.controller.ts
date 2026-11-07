@@ -2,8 +2,10 @@ import { ORPCError } from '@orpc/server'
 
 import type { AuditContext } from '@/server/domains/audit/types'
 import type { Database } from '@/server/infra/db/database'
+import type { RequestFacts } from '@/server/infra/http/request-facts'
 import type { ContentRedirectSignal } from '@/shared/contracts/content'
 
+import { trackPageView } from '@/server/domains/analytics/track'
 import {
   countPublicPosts,
   getClientPostsWithMetadata,
@@ -49,6 +51,9 @@ async function scopedPostsListing({
   title,
   description,
   ogImageUrl,
+  requestFacts,
+  isAdmin,
+  clientAddress,
 }: {
   db: Database
   num: string | undefined
@@ -57,7 +62,14 @@ async function scopedPostsListing({
   title: string
   description?: string
   ogImageUrl?: string
+  requestFacts: RequestFacts
+  isAdmin: boolean
+  clientAddress: string
 }) {
+  // Every public listing document counts one page view; the gate lives in
+  // `trackPageView`. Slug misses 404 before reaching this point.
+  trackPageView(requestFacts, null, { isAdmin, clientAddress })
+
   return listingLoader(db, {
     rawNum: num,
     totalPosts: await countPublicPosts(db, filters),
@@ -112,6 +124,9 @@ const postsList = publicProc
           rootPath: `/tags/${tag.slug}`,
           title: tag.name,
           ogImageUrl: tag.ogImage || undefined,
+          requestFacts: context.requestFacts,
+          isAdmin: context.viewer?.role === 'admin',
+          clientAddress: context.clientAddress,
         }),
       )
     }
@@ -130,6 +145,9 @@ const postsList = publicProc
         title: category.name,
         description: category.description,
         ogImageUrl: category.og ?? `/images/og/cats/${category.slug}.png`,
+        requestFacts: context.requestFacts,
+        isAdmin: context.viewer?.role === 'admin',
+        clientAddress: context.clientAddress,
       }),
     )
   })
@@ -150,13 +168,25 @@ const search = publicProc
       clientAddress: context.clientAddress,
       requestFacts: context.requestFacts,
     }
-    return runListing(() => searchLoader(context.db, { keyword: input.keyword, num: input.num, auditContext }))
+    return runListing(async () => {
+      const listing = await searchLoader(context.db, { keyword: input.keyword, num: input.num, auditContext })
+      // Only a rendered result page counts — the blank/overflow 302s throw above.
+      trackPageView(context.requestFacts, null, {
+        isAdmin: context.viewer?.role === 'admin',
+        clientAddress: context.clientAddress,
+      })
+      return listing
+    })
   })
 
 const categoriesList = publicProc
   .route({ method: 'GET', path: '/content/categories/list' })
   .output(contentCategoriesListOutputSchema)
   .handler(async ({ context }) => {
+    trackPageView(context.requestFacts, null, {
+      isAdmin: context.viewer?.role === 'admin',
+      clientAddress: context.clientAddress,
+    })
     return { categories: await listAllCategories(context.db) }
   })
 
@@ -167,6 +197,10 @@ const archives = publicProc
   .output(contentArchivesOutputSchema)
   .use(resourceRateLimit)
   .handler(async ({ context }) => {
+    trackPageView(context.requestFacts, null, {
+      isAdmin: context.viewer?.role === 'admin',
+      clientAddress: context.clientAddress,
+    })
     const db = context.db
     const listingNowIso = new Date().toISOString()
     // Archives promise completeness — explicit 10k bound (helper defaults to 200);

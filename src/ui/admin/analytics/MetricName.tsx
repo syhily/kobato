@@ -303,6 +303,14 @@ export function MetricName({ name, type }: MetricNameProps) {
     return <span className="min-w-0 font-mono text-xs break-all">{name}</span>
   }
 
+  if (type === 'colorScheme') {
+    return <span className="min-w-0 break-all">{name === 'dark' ? '深色' : name === 'light' ? '浅色' : name}</span>
+  }
+
+  if (type === 'netEffectiveType') {
+    return <span className="min-w-0 break-all">{name.toUpperCase()}</span>
+  }
+
   if (type === 'os' || type === 'browser' || type === 'browserType' || type === 'device' || type === 'deviceType') {
     // Direct member access on the module-scope map — a helper call here
     // trips the react-compiler static-components rule.

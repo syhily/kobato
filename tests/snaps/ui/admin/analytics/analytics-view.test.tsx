@@ -194,4 +194,26 @@ describe('snapshot: MetricsGroup', () => {
     // The active tab's MetricList renders the initial rows.
     expect(html).toContain('中国')
   })
+
+  it('renders all eight device tabs, environment dimensions included', () => {
+    const html = stableHtml(
+      renderInRouter(
+        withAnalyticsState(<MetricsGroup group="device" initial={{ device: METRIC_ROWS }} />),
+        '/admin/analytics',
+      ),
+    )
+
+    for (const label of [
+      '设备',
+      '设备类型',
+      '屏幕分辨率',
+      '视口宽度',
+      '像素密度',
+      '触控能力',
+      '深色模式',
+      '网络类型',
+    ]) {
+      expect(html).toContain(label)
+    }
+  })
 })

@@ -7,6 +7,8 @@ const { data: DATA_PATH, defaultFont: DEFAULT_FONT_PATH } = serverConfig.storage
 
 export const FONT_DIR = path.resolve(DATA_PATH, 'fonts')
 export const ANALYTICS_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'analytics', 'dead-letter.jsonl')
+// Separate file: the env-beacon rows have a different wire shape than access events.
+export const ANALYTICS_ENV_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'analytics', 'env-dead-letter.jsonl')
 export const AUDIT_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'audit', 'dead-letter.jsonl')
 export const MAXMIND_DB_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City.mmdb')
 // Provenance sidecar for the GeoIP database (installed version, upload vs download, install time).

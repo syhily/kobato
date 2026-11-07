@@ -216,6 +216,7 @@ describe('routes/post.detail loader', () => {
     const data = unwrapLoaderData<{
       post: { title: string; permalink: string }
       bodyHtml: string
+      eid: string | null
     }>(
       await postRoute.loader(
         makeLoaderArgs({
@@ -232,6 +233,7 @@ describe('routes/post.detail loader', () => {
     // Seeded with a legacy PT body and no projection column — the fallback
     // renders empty rather than failing the page.
     expect(data.bodyHtml).toBe('')
+    expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 })
 
@@ -352,7 +354,7 @@ describe('routes/page.detail loader', () => {
   it('returns the canonical page payload for a real page slug', async () => {
     await seedPage({ slug: 'about', title: 'About' })
 
-    const data = unwrapLoaderData<{ page: { permalink: string } }>(
+    const data = unwrapLoaderData<{ page: { permalink: string }; eid: string | null }>(
       await pageRoute.loader(
         makeLoaderArgs({
           request: new Request('http://localhost/about'),
@@ -364,6 +366,7 @@ describe('routes/page.detail loader', () => {
     )
 
     expect(data.page.permalink).toBe('/about')
+    expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 
   it('throws instead of re-resolving the session when the canonical request context is missing', async () => {

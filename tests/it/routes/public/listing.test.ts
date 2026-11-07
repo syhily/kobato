@@ -112,6 +112,7 @@ describe('routes/category.list loader', () => {
         tag.rel === 'canonical',
     ) as { href: string } | undefined
     expect(canonical?.href).toContain('/cats/general')
+    expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 
   it('includes hidden posts for public category visitors', async () => {
@@ -170,6 +171,7 @@ describe('routes/tag.list loader', () => {
     )
 
     expect(data.title).toContain('typescript')
+    expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 
   it('includes hidden tag posts for public visitors', async () => {
@@ -217,6 +219,7 @@ describe('routes/search.list loader', () => {
       (tag) => tag !== null && typeof tag === 'object' && 'name' in tag && tag.name === 'robots',
     ) as { content: string } | undefined
     expect(robots?.content).toContain('noindex')
+    expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 
   it('includes hidden posts in public search results', async () => {

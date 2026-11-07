@@ -1,11 +1,15 @@
+import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import type { DeviceEnvClientRow, DeviceEnvServerRow } from '@/server/domains/analytics/services/device-env'
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { ACCESS_EVENTS_DDL, appendAccessEvents } from '@/server/domains/analytics/services/access-log'
+import { appendAccessEvents } from '@/server/domains/analytics/services/access-log'
+import { appendDeviceEnvClientRows, appendDeviceEnvServerRows } from '@/server/domains/analytics/services/device-env'
+import { ANALYTICS_DDL } from '@/server/domains/analytics/services/schema'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 
 const handles: AnalyticsHandle[] = []
@@ -15,7 +19,7 @@ const dirs: string[] = []
 export async function createTestAnalyticsDb(): Promise<AnalyticsHandle> {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-duckdb-it-'))
   dirs.push(dir)
-  const handle = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'), ACCESS_EVENTS_DDL)
+  const handle = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'), ANALYTICS_DDL)
   handles.push(handle)
   return handle
 }
@@ -41,6 +45,8 @@ export function closeAllTestAnalyticsDbs(): void {
  *  constants, everything else optional — mirrors `EnrichedAccessEvent`
  *  (the helper writes through the same blobsMap mapping as production). */
 export interface SeedAccessEvent {
+  /** Pin the primary key so a device_env_client row can join on it. */
+  eventId?: string
   ts: Date
   visitorHash?: string
   path?: string
@@ -67,6 +73,7 @@ export interface SeedAccessEvent {
 /** Seed rows through the same Appender protocol the batcher uses. */
 export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAccessEvent[]): Promise<void> {
   const enriched: EnrichedAccessEvent[] = events.map((e) => ({
+    eventId: e.eventId ?? randomUUID(),
     ts: e.ts,
     visitorHash: e.visitorHash ?? 'visitor',
     path: e.path ?? '/',
@@ -95,4 +102,62 @@ export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAcce
 /** Wipe the access_events table between cases. */
 export async function clearAccessEvents(handle: AnalyticsHandle): Promise<void> {
   await handle.writer.run('DELETE FROM access_events')
+}
+
+/** Minimal device_env_server seed: eventId + timestamp required, strings default to '', mobile to NULL. */
+export type SeedDeviceEnvServerRow = Pick<DeviceEnvServerRow, 'eventId' | 'timestamp'> &
+  Partial<Omit<DeviceEnvServerRow, 'eventId' | 'timestamp'>>
+
+export async function seedDeviceEnvServerRows(handle: AnalyticsHandle, rows: SeedDeviceEnvServerRow[]): Promise<void> {
+  await appendDeviceEnvServerRows(
+    handle.writer,
+    rows.map((row) => ({
+      uaFullVersion: '',
+      platform: '',
+      platformVersion: '',
+      model: '',
+      mobile: null,
+      brands: '',
+      arch: '',
+      bitness: '',
+      formFactors: '',
+      acceptLanguage: '',
+      ...row,
+    })),
+  )
+}
+
+/** Minimal device_env_client seed: eventId + timestamp required, numbers default to NULL, strings to ''. */
+export type SeedDeviceEnvClientRow = Pick<DeviceEnvClientRow, 'eventId' | 'timestamp'> &
+  Partial<Omit<DeviceEnvClientRow, 'eventId' | 'timestamp'>>
+
+export async function seedDeviceEnvClientRows(handle: AnalyticsHandle, rows: SeedDeviceEnvClientRow[]): Promise<void> {
+  await appendDeviceEnvClientRows(
+    handle.writer,
+    rows.map((row) => ({
+      screenW: null,
+      screenH: null,
+      availW: null,
+      availH: null,
+      viewportW: null,
+      viewportH: null,
+      dpr: null,
+      colorDepth: null,
+      touchPoints: null,
+      pointer: '',
+      hover: '',
+      colorScheme: '',
+      reducedMotion: null,
+      netEffectiveType: '',
+      netDownlink: null,
+      netRtt: null,
+      netSaveData: null,
+      locale: '',
+      timezone: '',
+      hardwareConcurrency: null,
+      deviceMemory: null,
+      hasStatic: false,
+      ...row,
+    })),
+  )
 }

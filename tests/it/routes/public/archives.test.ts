@@ -60,5 +60,6 @@ describe('routes/archives loader', () => {
     expect(result.resolvedPosts.map((post) => post.slug)).toEqual(['visible-post', 'hidden-post'])
     expect(typeof result.listingNowIso).toBe('string')
     expect(result.listingNowIso).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(result.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 })

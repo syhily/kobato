@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 /**
@@ -35,8 +37,13 @@ export function extractRequestFacts(request: Request): RequestFacts {
     platformVersion: headers.get('sec-ch-ua-platform-version'),
     mobile: headers.get('sec-ch-ua-mobile'),
     brands: headers.get('sec-ch-ua-full-version-list') ?? headers.get('sec-ch-ua'),
+    fullVersion: headers.get('sec-ch-ua-full-version'),
+    arch: headers.get('sec-ch-ua-arch'),
+    bitness: headers.get('sec-ch-ua-bitness'),
+    formFactors: headers.get('sec-ch-ua-form-factors'),
   }
   return {
+    analyticsEventId: randomUUID(),
     path: normalizeDocumentUrl(rawUrl).pathname,
     isDataRequest: isDataRequestUrl(rawUrl),
     userAgent: headers.get('user-agent'),

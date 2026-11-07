@@ -81,6 +81,13 @@ export const METRIC_TYPES = [
   'browserType',
   'device',
   'deviceType',
+  // ADR-0006 environment dimensions (device_env_client, joined by event id).
+  'screen',
+  'viewport',
+  'dpr',
+  'touch',
+  'colorScheme',
+  'netEffectiveType',
   'path',
 ] as const
 
@@ -95,7 +102,7 @@ export const METRIC_GROUP_TABS: Record<MetricGroup, MetricType[]> = {
   location: ['country', 'region', 'city'],
   referer: ['referer', 'path'],
   time: ['language', 'timezone'],
-  device: ['device', 'deviceType'],
+  device: ['device', 'deviceType', 'screen', 'viewport', 'dpr', 'touch', 'colorScheme', 'netEffectiveType'],
   browser: ['os', 'browser', 'browserType'],
 }
 
@@ -144,6 +151,12 @@ export const analyticsQuerySchema = z.object({
   browserType: dimensionFilter,
   device: dimensionFilter,
   deviceType: dimensionFilter,
+  screen: dimensionFilter,
+  viewport: dimensionFilter,
+  dpr: dimensionFilter,
+  touch: dimensionFilter,
+  colorScheme: dimensionFilter,
+  netEffectiveType: dimensionFilter,
   path: dimensionFilter,
   unit: z.enum(TIME_UNITS).optional(),
   clientTimezone: z
@@ -213,3 +226,53 @@ export interface RealtimeEvent {
   deviceType: string | null
   isBot: boolean
 }
+
+/** Raw CSS-pixel screen / avail / viewport dimensions; panels bucket at query time. */
+const pixelDimension = z.number().int().min(0).max(32768).optional()
+
+const deviceEnvStaticFields = {
+  screenW: pixelDimension,
+  screenH: pixelDimension,
+  availW: pixelDimension,
+  availH: pixelDimension,
+  colorDepth: z.number().int().min(0).max(64).optional(),
+  touchPoints: z.number().int().min(0).max(64).optional(),
+  pointer: z.enum(['coarse', 'fine']).optional(),
+  hover: z.enum(['hover', 'none']).optional(),
+  locale: z.string().max(64).optional(),
+  timezone: z.string().max(64).optional(),
+  hardwareConcurrency: z.number().int().min(0).max(1024).optional(),
+  deviceMemory: z.number().min(0).max(1024).optional(),
+}
+
+const deviceEnvDynamicFields = {
+  viewportW: pixelDimension,
+  viewportH: pixelDimension,
+  /** Dynamic: dragging the window to another monitor changes it. */
+  dpr: z.number().min(0).max(10).optional(),
+  colorScheme: z.enum(['dark', 'light']).optional(),
+  reducedMotion: z.boolean().optional(),
+  netEffectiveType: z.enum(['slow-2g', '2g', '3g', '4g']).optional(),
+  netDownlink: z.number().min(0).max(10000).optional(),
+  netRtt: z.number().int().min(0).max(60000).optional(),
+  netSaveData: z.boolean().optional(),
+}
+
+/**
+ * Client device-environment beacon (ADR-0006). One beacon per page view,
+ * keyed by the event id published in the loader data; the columns land in
+ * `device_env_client`. Static fields (screen geometry, touch capability,
+ * locale, hardware) are sent only once per browser session — the
+ * `hasStatic` flag tells the panels which rows carry them, so static
+ * dimensions aggregate over the beacon-covered subset. Every dimension is
+ * optional: the client reports what the browser exposes. Values are raw —
+ * panels bucket at query time.
+ */
+export const deviceEnvBeaconSchema = z.object({
+  eventId: z.uuid(),
+  hasStatic: z.boolean(),
+  ...deviceEnvStaticFields,
+  ...deviceEnvDynamicFields,
+})
+
+export type DeviceEnvBeacon = z.infer<typeof deviceEnvBeaconSchema>

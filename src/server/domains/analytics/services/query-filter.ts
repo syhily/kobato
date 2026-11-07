@@ -3,13 +3,13 @@ import type { RawBuilder } from 'kysely'
 import { sql } from 'kysely'
 
 import { index1Of } from '@/server/domains/analytics/services/access-log'
+import { METRIC_DIMENSIONS, dimensionWhere } from '@/server/domains/analytics/services/metric-dimensions'
 import {
   METRIC_TYPES,
   analyticsQuerySchema,
   computeDateRange,
   type AnalyticsQuery,
   type DateRange,
-  type MetricType,
   type ResolvedAnalyticsQuery,
 } from '@/shared/contracts/analytics'
 
@@ -21,38 +21,25 @@ import {
  * Geo-unknown events (country `blob7 = ''`) are excluded unless the query
  * opts in via `includeUnknown` — writes always keep them. User values
  * travel as bound parameters only.
+ *
+ * Base columns are qualified with `access_events.` so the builder is also
+ * valid on the env-dimension metric query, which INNER JOINs
+ * `device_env_client` (both share `event_id`/`timestamp`).
  */
-
-// Metric dimension → blob slot. `referer` filters the referer HOST,
-// matching the metric grouping (the full referer is never a filter).
-export const DIMENSION_COLUMN: Record<MetricType, string> = {
-  country: 'blob7',
-  region: 'blob8',
-  city: 'blob9',
-  referer: 'blob3',
-  language: 'blob6',
-  timezone: 'blob10',
-  os: 'blob11',
-  browser: 'blob12',
-  browserType: 'blob13',
-  device: 'blob14',
-  deviceType: 'blob15',
-  path: 'blob1',
-}
 
 export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<boolean> {
   const filters: RawBuilder<boolean>[] = [
-    sql<boolean>`is_bot = FALSE`,
-    sql<boolean>`${sql.ref('timestamp')} >= to_timestamp(${query.range.startAt})`,
-    sql<boolean>`${sql.ref('timestamp')} < to_timestamp(${query.range.endAt})`,
+    sql<boolean>`${sql.ref('access_events.is_bot')} = FALSE`,
+    sql<boolean>`${sql.ref('access_events.timestamp')} >= to_timestamp(${query.range.startAt})`,
+    sql<boolean>`${sql.ref('access_events.timestamp')} < to_timestamp(${query.range.endAt})`,
   ]
 
   if (query.entityType && query.entityId !== undefined) {
-    filters.push(sql<boolean>`${sql.ref('index1')} = ${index1Of(query.entityType, query.entityId)}`)
+    filters.push(sql<boolean>`${sql.ref('access_events.index1')} = ${index1Of(query.entityType, query.entityId)}`)
   }
 
   if (query.includeUnknown !== true) {
-    filters.push(sql<boolean>`${sql.ref(DIMENSION_COLUMN.country)} <> ''`)
+    filters.push(sql<boolean>`${sql.ref('access_events.blob7')} <> ''`)
   }
 
   for (const type of METRIC_TYPES) {
@@ -62,7 +49,7 @@ export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<
     }
     const values = value.split(',').filter(Boolean)
     if (values.length > 0) {
-      filters.push(sql<boolean>`${sql.ref(DIMENSION_COLUMN[type])} in (${sql.join(values)})`)
+      filters.push(dimensionWhere(METRIC_DIMENSIONS[type], values))
     }
   }
 

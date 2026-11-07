@@ -57,7 +57,7 @@ export async function loadHomeData({
   num: string | undefined
 }): Promise<ListingPageLoaderData<HomeExtra>> {
   // Time-series access-log write; the view gate lives inside `trackPageView`.
-  void trackPageView(requestFacts, null, {
+  trackPageView(requestFacts, null, {
     isAdmin: viewer?.role === 'admin',
     clientAddress,
   })
