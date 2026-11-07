@@ -72,6 +72,18 @@ describe('notifications / producers', () => {
     const adminId = await seedUser('admin', 'admin')
     expect(() => sendDirectMessage(db, adminId, 9999, { title: 't', body: 'b' })).toThrow(DomainError)
   })
+
+  it('rejects a broadcast on a single-admin site with an honest 400', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    expect(() => sendBroadcast(db, adminId, { title: 't', body: 'b', replyable: false })).toThrow(
+      '站点内还没有其他用户，公告无人可接收',
+    )
+  })
+
+  it('rejects a direct message to oneself', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    expect(() => sendDirectMessage(db, adminId, adminId, { title: 't', body: 'b' })).toThrow('不能给自己发送私信')
+  })
 })
 
 describe('notifications / inbox', () => {

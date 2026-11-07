@@ -123,6 +123,9 @@ export function sendDirectMessage(
   recipientId: number,
   input: { title: string; body: string },
 ): NotificationRow {
+  if (recipientId === senderId) {
+    throw new DomainError('BAD_REQUEST', '不能给自己发送私信')
+  }
   const recipients = listRecipientUserIds(db, { adminsOnly: false })
   if (!recipients.includes(recipientId)) {
     throw new DomainError('NOT_FOUND', '目标用户不存在')
@@ -139,6 +142,9 @@ export function sendBroadcast(
   input: { title: string; body: string; replyable: boolean },
 ): NotificationRow {
   const userIds = listRecipientUserIds(db, { adminsOnly: false }).filter((id) => id !== senderId)
+  if (userIds.length === 0) {
+    throw new DomainError('BAD_REQUEST', '站点内还没有其他用户，公告无人可接收')
+  }
   return createAndFanOut(
     db,
     { kind: 'broadcast', senderId, replyable: input.replyable, title: input.title, body: input.body },
@@ -307,6 +313,9 @@ export async function replyToThread(
     }
   }
   const recipients = listThreadParticipantIds(db, input.threadId).filter((id) => id !== userId)
+  if (recipients.length === 0) {
+    throw new DomainError('BAD_REQUEST', '该线程没有可接收回复的对象')
+  }
   const row = createAndFanOut(
     db,
     {
