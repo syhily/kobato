@@ -4,6 +4,7 @@ import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { XIcon } from 'lucide-react'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function Dialog({ ...props }: ComponentProps<typeof BaseDialog.Root>) {
   return <BaseDialog.Root data-slot="dialog" {...props} />
@@ -40,6 +41,7 @@ function DialogContent({
   showCloseButton = true,
   ...props
 }: ComponentProps<typeof BaseDialog.Popup> & { showCloseButton?: boolean }) {
+  const { t } = useI18n()
   return (
     <DialogPortal>
       <DialogBackdrop />
@@ -58,7 +60,7 @@ function DialogContent({
             className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus-visible:shadow-focus focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4"
           >
             <XIcon />
-            <span className="sr-only">关闭</span>
+            <span className="sr-only">{t('common.action.close')}</span>
           </BaseDialog.Close>
         )}
       </BaseDialog.Popup>

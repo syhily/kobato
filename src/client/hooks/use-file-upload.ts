@@ -18,13 +18,13 @@ export interface FileUploadToast {
 }
 
 export interface FileUploadMessages {
-  /** Type-guard failure (`accept` mismatch). Defaults to a bare 文件类型错误 toast. */
+  /** Type-guard failure (`accept` mismatch). Defaults to a bare "wrong file type" toast. */
   invalidType?: FileUploadToast
   /** Size-guard failure. Receives the offending file so the copy can quote its size. */
   tooLarge?: (file: File) => FileUploadToast
   /** Success toast body. Omit to skip the success toast (custom onSuccess UX). */
   success?: string
-  /** Fallback when the server error body carries no extractable message. Defaults to `上传失败 (<status>)`. */
+  /** Fallback when the server error body carries no extractable message. Defaults to the translated `admin.toast.uploadStatusFailed`. */
   httpFailure?: (status: number) => string
   /** Fallback title message id for transport failures and non-Error throws. Defaults to `admin.toast.uploadFailed`. */
   failure?: UiMessageId
@@ -57,9 +57,6 @@ export interface UseFileUploadResult {
   pending: boolean
 }
 
-const defaultHttpFailure = (status: number): string => `上传失败 (${status})`
-const defaultTooLarge = (): FileUploadToast => ({ title: '文件过大' })
-
 export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResult {
   const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
   const csrfToken = rootData?.csrfToken
@@ -81,10 +78,13 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
       if (input instanceof File) {
         const lowerName = input.name.toLowerCase()
         if (accept !== undefined && !accept.some((ext) => lowerName.endsWith(ext))) {
-          return reportGuardFailure(messages?.invalidType ?? { title: '文件类型错误' })
+          return reportGuardFailure(messages?.invalidType ?? { title: t('admin.toast.invalidFileType') })
         }
         if (maxBytes !== undefined && input.size > maxBytes) {
-          const payload = messages?.tooLarge === undefined ? defaultTooLarge() : messages.tooLarge(input)
+          const payload =
+            messages?.tooLarge === undefined
+              ? ({ title: t('admin.toast.fileTooLarge') } satisfies FileUploadToast)
+              : messages.tooLarge(input)
           return reportGuardFailure(payload)
         }
       }
@@ -120,7 +120,9 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
         const body: unknown = parseJson === true ? await res.json() : undefined
         if (!res.ok) {
           const data: unknown = parseJson === true ? body : await res.json().catch(() => null)
-          const message = extractApiErrorMessage(data) ?? (messages?.httpFailure ?? defaultHttpFailure)(res.status)
+          const message =
+            extractApiErrorMessage(data) ??
+            (messages?.httpFailure ?? ((status: number) => t('admin.toast.uploadStatusFailed', { status })))(res.status)
           if (onError) {
             onError(message)
           } else {

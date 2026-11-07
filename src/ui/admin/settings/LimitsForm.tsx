@@ -5,6 +5,7 @@ import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface LimitsFormProps {
   limits: LimitsSettings
@@ -18,6 +19,7 @@ const BOUNDS = {
 } as const
 
 function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, flushOnBlur } = useSettingsCard<LimitsSettings, { maxRequestBodySize: number }>({
     section: 'limits',
     source: limits,
@@ -29,15 +31,19 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
 
   return (
     <SettingGroup
-      title="请求限制"
-      description="控制上传文件、表单提交等场景的最大请求体大小。过大可能增加内存压力，过小则可能导致图片上传失败。"
+      title={t('admin.settings.limits.request.title')}
+      description={t('admin.settings.limits.request.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="最大请求体大小（字节）"
+          label={t('admin.settings.limits.request.maxBody')}
           htmlFor="limits-max-request-body-size"
-          hint={`范围 ${BOUNDS.maxRequestBodySize.min} - ${BOUNDS.maxRequestBodySize.max}。默认 10 MB（${10 * 1024 * 1024}）。`}
+          hint={t('admin.settings.limits.request.maxBodyHint', {
+            min: BOUNDS.maxRequestBodySize.min,
+            max: BOUNDS.maxRequestBodySize.max,
+            bytes: 10 * 1024 * 1024,
+          })}
         >
           <SettingsInput
             id="limits-max-request-body-size"
@@ -54,6 +60,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, flushOnBlur } = useSettingsCard<LimitsSettings, { sessionMaxAge: number }>({
     section: 'limits',
     source: limits,
@@ -65,15 +72,19 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
 
   return (
     <SettingGroup
-      title="会话限制"
-      description="管理后台与公共站点的登录会话有效期。过期后用户需要重新登录。"
+      title={t('admin.settings.limits.session.title')}
+      description={t('admin.settings.limits.session.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="会话最大有效期（秒）"
+          label={t('admin.settings.limits.session.maxAge')}
           htmlFor="limits-session-max-age"
-          hint={`范围 ${BOUNDS.sessionMaxAge.min} - ${BOUNDS.sessionMaxAge.max}。默认 30 天（${60 * 60 * 24 * 30}）。`}
+          hint={t('admin.settings.limits.session.maxAgeHint', {
+            min: BOUNDS.sessionMaxAge.min,
+            max: BOUNDS.sessionMaxAge.max,
+            seconds: 60 * 60 * 24 * 30,
+          })}
         >
           <SettingsInput
             id="limits-session-max-age"
@@ -90,6 +101,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, flushOnBlur } = useSettingsCard<
     LimitsSettings,
     { auditLogDbRetentionDays: number; auditLogArchiveRetentionDays: number }
@@ -108,15 +120,18 @@ function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
 
   return (
     <SettingGroup
-      title="审计日志限制"
-      description="控制审计日志在数据库中的保留时长，以及归档到 S3 后的保留时长。S3 未开启时，超期日志将直接删除而不归档。"
+      title={t('admin.settings.limits.audit.title')}
+      description={t('admin.settings.limits.audit.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="数据库保留天数"
+          label={t('admin.settings.limits.audit.dbDays')}
           htmlFor="limits-audit-db-retention"
-          hint={`范围 ${BOUNDS.auditLogDbRetentionDays.min} - ${BOUNDS.auditLogDbRetentionDays.max}。默认 30 天。`}
+          hint={t('admin.settings.limits.audit.dbDaysHint', {
+            min: BOUNDS.auditLogDbRetentionDays.min,
+            max: BOUNDS.auditLogDbRetentionDays.max,
+          })}
         >
           <SettingsInput
             id="limits-audit-db-retention"
@@ -128,9 +143,12 @@ function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
           />
         </SettingsRow>
         <SettingsRow
-          label="S3 归档保留天数"
+          label={t('admin.settings.limits.audit.archiveDays')}
           htmlFor="limits-audit-archive-retention"
-          hint={`范围 ${BOUNDS.auditLogArchiveRetentionDays.min} - ${BOUNDS.auditLogArchiveRetentionDays.max}。默认 180 天。`}
+          hint={t('admin.settings.limits.audit.archiveDaysHint', {
+            min: BOUNDS.auditLogArchiveRetentionDays.min,
+            max: BOUNDS.auditLogArchiveRetentionDays.max,
+          })}
         >
           <SettingsInput
             id="limits-audit-archive-retention"

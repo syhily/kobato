@@ -1,17 +1,20 @@
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export type RestoreStep = 'uploading' | 'decrypting' | 'extracting' | 'switching' | 'restarting'
 
 const STEP_ORDER: RestoreStep[] = ['uploading', 'decrypting', 'extracting', 'switching', 'restarting']
 
-const STEP_LABELS: Record<RestoreStep, string> = {
-  uploading: '上传备份文件',
-  decrypting: '解密备份',
-  extracting: '解压与校验',
-  switching: '切换数据库',
-  restarting: '等待服务重启',
+const STEP_LABELS: Record<RestoreStep, UiMessageId> = {
+  uploading: 'admin.settings.backup.progress.uploading',
+  decrypting: 'admin.settings.backup.progress.decrypting',
+  extracting: 'admin.settings.backup.progress.extracting',
+  switching: 'admin.settings.backup.progress.switching',
+  restarting: 'admin.settings.backup.progress.restarting',
 }
 
 interface RestoreProgressPanelProps {
@@ -26,6 +29,7 @@ interface RestoreProgressPanelProps {
  *  percent (XHR), decrypt percent (server-reported bytes), indeterminate
  *  extraction, then the swap + restart legs. */
 export function RestoreProgressPanel({ current, percent, hasDecrypt }: RestoreProgressPanelProps) {
+  const { t } = useI18n()
   const steps = STEP_ORDER.filter((step) => hasDecrypt || step !== 'decrypting')
   const currentIndex = steps.indexOf(current)
   return (
@@ -50,7 +54,9 @@ export function RestoreProgressPanel({ current, percent, hasDecrypt }: RestorePr
                 <span className="size-1 rounded-full bg-current" />
               )}
             </span>
-            <span className={cn('text-sm', status === 'pending' && 'text-muted-foreground')}>{STEP_LABELS[step]}</span>
+            <span className={cn('text-sm', status === 'pending' && 'text-muted-foreground')}>
+              {t(STEP_LABELS[step])}
+            </span>
             {status === 'active' && percent !== null && (
               <span className="ml-auto flex items-center gap-2">
                 <span className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
@@ -63,7 +69,9 @@ export function RestoreProgressPanel({ current, percent, hasDecrypt }: RestorePr
               </span>
             )}
             {status === 'active' && percent === null && (
-              <span className="ml-auto text-xs text-muted-foreground">处理中…</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {t('admin.settings.backup.progress.processing')}
+              </span>
             )}
           </div>
         )

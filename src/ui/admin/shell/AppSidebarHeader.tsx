@@ -7,6 +7,7 @@ import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
 import { SearchShortcutHint } from '@/ui/admin/shared/SearchShortcutHint'
 import { AdminSearchDialog } from '@/ui/admin/shell/AdminSearchDialog'
 import { SidebarHeader } from '@/ui/components/sidebar'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface AppSidebarHeaderProps {
   className?: string
@@ -14,6 +15,7 @@ interface AppSidebarHeaderProps {
 }
 
 export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps) {
+  const { t } = useI18n()
   const [searchOpen, setSearchOpen] = useState(false)
   const location = useLocation()
   const isSettingsPage = location.pathname.startsWith('/admin/settings')
@@ -53,17 +55,17 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
             <div className="size-8 shrink-0 rounded-xl">
               <img
                 src={`/logo.svg${light}`}
-                alt="站点图标"
+                alt={t('admin.shell.brand.iconAlt')}
                 className="h-full w-full rounded-xl object-cover dark:hidden"
               />
               <img
                 src={`/logo-dark.svg${dark}`}
-                alt="站点图标"
+                alt={t('admin.shell.brand.iconAlt')}
                 className="hidden h-full w-full rounded-xl object-cover dark:block"
               />
             </div>
             <div className="min-w-0 flex-1 overflow-hidden text-md font-semibold text-ellipsis whitespace-nowrap text-foreground">
-              {siteTitle ?? '管理后台'}
+              {siteTitle || t('admin.shell.brand.adminConsole')}
             </div>
           </div>
         </div>
@@ -78,7 +80,7 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
         >
           <div className="flex items-center gap-2">
             <SearchIcon className="size-4" />
-            全站搜索
+            {t('admin.shell.search.title')}
           </div>
           <SearchShortcutHint />
         </button>

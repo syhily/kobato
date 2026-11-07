@@ -42,6 +42,12 @@ const SCAN_ROOTS = [
   'src/ui/admin/settings/cache/cache-formatters.ts',
   'src/ui/admin/tasks/meta.ts',
   'src/ui/shared/notifications/notification-meta.ts',
+  // Step 4d: the admin shell, settings surface and the shared UI primitives.
+  'src/ui/admin/shell',
+  'src/ui/admin/settings',
+  'src/routes/admin/settings',
+  'src/routes/admin/layout.tsx',
+  'src/ui/components',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -66,6 +72,16 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/ui/admin/auth/AdminInstallForm.tsx', rules: ['jsx-text'], text: '&rarr;' },
   // "Setup Token" names a server-console credential — a protocol term.
   { path: 'src/ui/admin/auth/SetupTokenVerifyForm.tsx', rules: ['jsx-text'], text: 'Setup Token' },
+  // Step 4d: technical tokens that are never translated — SI units, provider
+  // names, protocol paths, keyboard keys and example URLs.
+  { path: 'src/ui/admin/settings/CommentsForm.tsx', rules: ['jsx-text'], text: 'ms' },
+  { path: 'src/ui/admin/settings/GeneralForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  { path: 'src/ui/admin/settings/SecurityForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  { path: 'src/ui/admin/settings/SecurityForm.tsx', rules: ['jsx-attribute'], text: '/webhook/github' },
+  { path: 'src/ui/admin/settings/StorageCards.tsx', rules: ['jsx-text'], text: 'S3 ·' },
+  { path: 'src/ui/admin/shell/AdminSearchDialog.tsx', rules: ['jsx-text'], text: 'ESC' },
+  { path: 'src/ui/admin/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'v' },
+  { path: 'src/ui/admin/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'GitHub' },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -91,6 +107,12 @@ describe('production sources', () => {
         'src/ui/public/friends/FriendApplyForm.tsx',
         'src/ui/admin/auth/AdminInstallForm.tsx',
         'src/ui/admin/auth/SetupTokenVerifyForm.tsx',
+        'src/ui/admin/settings/CommentsForm.tsx',
+        'src/ui/admin/settings/GeneralForm.tsx',
+        'src/ui/admin/settings/SecurityForm.tsx',
+        'src/ui/admin/settings/StorageCards.tsx',
+        'src/ui/admin/shell/AdminSearchDialog.tsx',
+        'src/ui/admin/shell/VersionDialog.tsx',
       ]),
     )
   })
@@ -114,6 +136,14 @@ describe('production sources', () => {
         'src/ui/admin/settings/cache/cache-formatters.ts',
         'src/ui/admin/tasks/meta.ts',
         'src/ui/shared/notifications/notification-meta.ts',
+        // Step 4d slice: the admin shell, settings pages and shared primitives.
+        'src/ui/admin/shell/AdminShell.tsx',
+        'src/ui/admin/settings/StorageCards.tsx',
+        'src/ui/admin/settings/cache/BucketCard.tsx',
+        'src/routes/admin/settings/layout.tsx',
+        'src/routes/admin/layout.tsx',
+        'src/ui/components/pagination.tsx',
+        'src/ui/components/combobox.tsx',
       ]),
     )
   })

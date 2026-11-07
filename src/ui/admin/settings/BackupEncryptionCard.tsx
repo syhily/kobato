@@ -9,6 +9,7 @@ import { SettingsSecretInput, secretFieldStrings } from '@/ui/admin/settings/she
 import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface FormState {
   encryptionEnabled: boolean
@@ -20,6 +21,7 @@ interface BackupEncryptionCardProps {
 }
 
 export function BackupEncryptionCard({ backup }: BackupEncryptionCardProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, save, display, settingGroupProps } = useSettingsCard<BackupLoaderShape, FormState>({
     section: 'backup',
     source: backup,
@@ -36,20 +38,21 @@ export function BackupEncryptionCard({ backup }: BackupEncryptionCardProps) {
 
   const enabled = useWatch({ control: form.control, name: 'encryptionEnabled' })
   const strings = secretFieldStrings({
+    t,
     mask: display.passwordMask,
-    keepLabel: '保留现有密码',
-    emptyHint: '设置后，所有新备份（含定时备份）都会用该密码加密；还原加密备份时需要输入它。',
-    emptyPlaceholder: '至少 8 位',
+    keepLabel: t('admin.settings.backup.encryption.keepPassword'),
+    emptyHint: t('admin.settings.backup.encryption.passwordHintEmpty'),
+    emptyPlaceholder: t('admin.settings.backup.encryption.passwordPlaceholder'),
   })
 
   return (
     <SettingGroup
-      title="备份加密"
-      description="用密码加密备份归档（分块 AES-256-GCM），加密备份的存储键以 .enc 结尾。"
+      title={t('admin.settings.backup.encryption.title')}
+      description={t('admin.settings.backup.encryption.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="加密新备份">
+        <SettingsRow label={t('admin.settings.backup.encryption.enable')}>
           <Controller
             control={form.control}
             name="encryptionEnabled"
@@ -63,7 +66,7 @@ export function BackupEncryptionCard({ backup }: BackupEncryptionCardProps) {
                   save={save}
                 />
                 <FieldLabel htmlFor="backup-encryption-enabled" className="font-normal">
-                  开启
+                  {t('admin.settings.backup.encryption.enableLabel')}
                 </FieldLabel>
               </div>
             )}
@@ -72,7 +75,7 @@ export function BackupEncryptionCard({ backup }: BackupEncryptionCardProps) {
 
         {enabled && (
           <>
-            <SettingsRow label="加密密码" hint={strings.hint}>
+            <SettingsRow label={t('admin.settings.backup.encryption.password')} hint={strings.hint}>
               <SettingsSecretInput
                 flushOnBlur={flushOnBlur}
                 placeholder={strings.placeholder}
@@ -80,7 +83,7 @@ export function BackupEncryptionCard({ backup }: BackupEncryptionCardProps) {
               />
             </SettingsRow>
             {display.passwordMask === null && (
-              <p className="text-sm text-status-warn-fg">已启用加密但尚未设置密码——在设置密码之前，备份不会加密。</p>
+              <p className="text-sm text-status-warn-fg">{t('admin.settings.backup.encryption.missingPassword')}</p>
             )}
           </>
         )}

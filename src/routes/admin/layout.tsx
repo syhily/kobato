@@ -40,11 +40,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return data({
     currentUser: {
       id: user?.id ?? '',
-      name: user?.name ?? '管理员',
+      // Display fallbacks are translated by the shell chrome, never here.
+      name: user?.name ?? '',
       email: user?.email ?? '',
       role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,
     },
-    siteTitle: getBlogSettingsBundleSync()?.siteIdentity?.title ?? '管理后台',
+    siteTitle: getBlogSettingsBundleSync()?.siteIdentity?.title ?? '',
     pendingCommentCount: pendingComments.all,
     pendingWebmentionCount: pendingWebmentions,
     userCount,

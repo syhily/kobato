@@ -5,12 +5,14 @@ import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface SeoFormProps {
   seo: SeoSettings
 }
 
 function SeoTocCard({ seo }: { seo: SeoSettings }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<SeoSettings, { tocMin: number; tocMax: number }>({
     section: 'seo',
     source: seo,
@@ -24,9 +26,17 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
   })
 
   return (
-    <SettingGroup title="目录 (TOC)" description="文章右侧目录的标题层级范围。" {...settingGroupProps}>
+    <SettingGroup
+      title={t('admin.settings.seo.toc.title')}
+      description={t('admin.settings.seo.toc.description')}
+      {...settingGroupProps}
+    >
       <SettingGroupContent>
-        <SettingsRow label="最浅级别" htmlFor="seo-toc-min" hint="只显示比这个级别更深的标题。1 表示包含 h1。">
+        <SettingsRow
+          label={t('admin.settings.seo.toc.min')}
+          htmlFor="seo-toc-min"
+          hint={t('admin.settings.seo.toc.minHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="seo-toc-min"
@@ -36,7 +46,11 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
             {...form.register('tocMin', { valueAsNumber: true })}
           />
         </SettingsRow>
-        <SettingsRow label="最深级别" htmlFor="seo-toc-max" hint="超过该级别的标题不计入目录。">
+        <SettingsRow
+          label={t('admin.settings.seo.toc.max')}
+          htmlFor="seo-toc-max"
+          hint={t('admin.settings.seo.toc.maxHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="seo-toc-max"
@@ -52,6 +66,7 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
 }
 
 function SeoOgCard({ seo }: { seo: SeoSettings }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<SeoSettings, { ogWidth: number; ogHeight: number }>({
     section: 'seo',
     source: seo,
@@ -66,15 +81,15 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
 
   return (
     <SettingGroup
-      title="OG 图渲染尺寸"
-      description="服务端 Canvas 用以下尺寸生成 /images/og/:slug.png 并写入 og:image:width / og:image:height meta。修改后会立即影响新生成的图片，已缓存的图片需手动清理。"
+      title={t('admin.settings.seo.og.title')}
+      description={t('admin.settings.seo.og.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="宽度 (px)"
+          label={t('admin.settings.seo.og.width')}
           htmlFor="seo-og-width"
-          hint="600–4096，建议 ≥1200 以满足 X / Facebook 卡片清晰度。"
+          hint={t('admin.settings.seo.og.widthHint')}
         >
           <SettingsInput
             flushOnBlur={flushOnBlur}
@@ -85,7 +100,11 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
             {...form.register('ogWidth', { valueAsNumber: true })}
           />
         </SettingsRow>
-        <SettingsRow label="高度 (px)" htmlFor="seo-og-height" hint="315–4096，常见 1.91:1 比例对应 1200×630。">
+        <SettingsRow
+          label={t('admin.settings.seo.og.height')}
+          htmlFor="seo-og-height"
+          hint={t('admin.settings.seo.og.heightHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="seo-og-height"

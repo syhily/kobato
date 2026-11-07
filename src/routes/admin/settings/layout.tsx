@@ -4,6 +4,7 @@ import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'r
 import type { SecretMasks, SettingsBundle } from '@/shared/config/types'
 
 import { createSsrCaller } from '@/server/http/ssr-caller'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 import type { Route } from './+types/layout'
 
@@ -44,15 +45,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 // Render section errors inside a simple card so the admin chrome survives.
 export function ErrorBoundary() {
+  const { t } = useI18n()
   const error = useRouteError()
-  const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : '设置加载失败'
+  const title = isRouteErrorResponse(error)
+    ? `${error.status} ${error.statusText}`
+    : t('admin.settings.layout.loadFailed')
   const message = isRouteErrorResponse(error)
     ? typeof error.data === 'string'
       ? error.data
       : error.statusText
     : error instanceof Error
       ? error.message
-      : '未知错误'
+      : t('admin.shell.error.unknown')
 
   return (
     <div className="flex min-h-admin-content-min items-start justify-center pt-20">

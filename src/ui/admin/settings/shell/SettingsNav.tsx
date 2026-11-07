@@ -134,6 +134,7 @@ interface SettingsNavProps {
 }
 
 export function SettingsNav({ items }: SettingsNavProps) {
+  const { t } = useI18n()
   const { noResult } = useSettingsSearch()
 
   const groups = items.reduce<Record<SettingsNavGroup, typeof items>>(
@@ -151,7 +152,7 @@ export function SettingsNav({ items }: SettingsNavProps) {
 
   return (
     <>
-      {noResult && <div className="px-3 py-2 text-sm text-muted-foreground">未找到匹配的设置</div>}
+      {noResult && <div className="px-3 py-2 text-sm text-muted-foreground">{t('admin.settings.shell.noResults')}</div>}
       {groupOrder.map((group) =>
         groups[group]?.length ? <NavGroup key={group} group={group} items={groups[group]} /> : null,
       )}

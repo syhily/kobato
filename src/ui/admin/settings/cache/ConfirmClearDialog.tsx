@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/ui/components/alert-dialog'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ConfirmClearDialogProps {
   open: boolean
@@ -24,6 +25,7 @@ interface ConfirmClearDialogProps {
 }
 
 export function ConfirmClearDialog({ open, target, buckets, onConfirm, onCancel }: ConfirmClearDialogProps) {
+  const { t } = useI18n()
   const [lastTarget, setLastTarget] = useState<ClearCacheTarget | null>(target)
   if (target !== null && target !== lastTarget) {
     setLastTarget(target)
@@ -32,10 +34,15 @@ export function ConfirmClearDialog({ open, target, buckets, onConfirm, onCancel 
   const isAll = renderTarget === 'all'
   const bucket = !isAll && renderTarget ? buckets.find((entry) => entry.id === renderTarget) : null
   const total = isAll ? buckets.reduce((sum, entry) => sum + entry.keyCount, 0) : (bucket?.keyCount ?? 0)
-  const title = isAll ? '清空全部缓存？' : `清空「${bucket?.label ?? ''}」缓存？`
+  const title = isAll
+    ? t('admin.settings.cache.view.confirmAllTitle')
+    : t('admin.settings.cache.view.confirmBucketTitle', { label: bucket?.label ?? '' })
   const description = isAll
-    ? `本次操作会删除数据库缓存表中全部 ${total} 条记录。下一次访问 OG 图 / 头像 / 日历会重新生成或拉取，可能短时间内增加服务器负载。该操作不可撤销。`
-    : `本次操作会删除缓存表中 ${total} 条键匹配 ${bucket?.pattern ?? ''} 的记录。该操作不可撤销。`
+    ? t('admin.settings.cache.view.confirmAllDescription', { count: total })
+    : t('admin.settings.cache.view.confirmBucketDescription', {
+        count: total,
+        pattern: bucket?.pattern ?? '',
+      })
 
   return (
     <AlertDialog open={open} onOpenChange={(next) => (next ? null : onCancel())}>
@@ -46,10 +53,11 @@ export function ConfirmClearDialog({ open, target, buckets, onConfirm, onCancel 
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>
-            <XIcon data-icon /> 取消
+            <XIcon data-icon /> {t('common.action.cancel')}
           </AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>
-            <Trash2Icon data-icon /> {isAll ? '确认清空全部' : '确认清空'}
+            <Trash2Icon data-icon />{' '}
+            {isAll ? t('admin.settings.cache.view.confirmAll') : t('admin.settings.cache.view.confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

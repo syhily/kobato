@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { renderWithI18n } from '#/_helpers/i18n-render'
 import { SettingsCombobox } from '@/ui/admin/settings/shell/SettingsCombobox'
 import { ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 
@@ -24,7 +25,7 @@ describe('ui/admin/settings/shell/SettingsCombobox', () => {
   it('runs the guarded upstream handler, then save', async () => {
     const onChange = vi.fn()
     const save = vi.fn()
-    render(
+    renderWithI18n(
       <SettingsCombobox<ZoneItem>
         name="zone"
         items={ZONES}

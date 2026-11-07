@@ -1,97 +1,97 @@
 import type { RateLimitSettings } from '@/shared/config/types'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 export type BucketKey = keyof RateLimitSettings
 
 export interface QuickOption {
-  label: string
+  labelId: UiMessageId
   seconds: number
 }
 
 // Three shared quick-pick profiles cover every scenario — the per-bucket
 // copies used to be duplicated across the whole table.
 const QUICK_AUTH: QuickOption[] = [
-  { label: '5分', seconds: 300 },
-  { label: '15分', seconds: 900 },
-  { label: '30分', seconds: 1800 },
-  { label: '1小时', seconds: 3600 },
+  { labelId: 'admin.settings.rateLimit.quick.5m', seconds: 300 },
+  { labelId: 'admin.settings.rateLimit.quick.15m', seconds: 900 },
+  { labelId: 'admin.settings.rateLimit.quick.30m', seconds: 1800 },
+  { labelId: 'admin.settings.rateLimit.quick.1h', seconds: 3600 },
 ]
 
 const QUICK_SHORT: QuickOption[] = [
-  { label: '1分', seconds: 60 },
-  { label: '5分', seconds: 300 },
-  { label: '15分', seconds: 900 },
-  { label: '30分', seconds: 1800 },
+  { labelId: 'admin.settings.rateLimit.quick.1m', seconds: 60 },
+  { labelId: 'admin.settings.rateLimit.quick.5m', seconds: 300 },
+  { labelId: 'admin.settings.rateLimit.quick.15m', seconds: 900 },
+  { labelId: 'admin.settings.rateLimit.quick.30m', seconds: 1800 },
 ]
 
 const QUICK_LONG: QuickOption[] = [
-  { label: '1小时', seconds: 3600 },
-  { label: '6小时', seconds: 21600 },
-  { label: '12小时', seconds: 43200 },
-  { label: '24小时', seconds: 86400 },
+  { labelId: 'admin.settings.rateLimit.quick.1h', seconds: 3600 },
+  { labelId: 'admin.settings.rateLimit.quick.6h', seconds: 21600 },
+  { labelId: 'admin.settings.rateLimit.quick.12h', seconds: 43200 },
+  { labelId: 'admin.settings.rateLimit.quick.24h', seconds: 86400 },
 ]
 
 export const BUCKET_META: Record<
   BucketKey,
   {
-    title: string
-    description: string
+    titleId: UiMessageId
+    descriptionId: UiMessageId
     quickWindowOptions: QuickOption[]
   }
 > = {
   signIn: {
-    title: '登录限流',
-    description:
-      '登录页重试上限，按客户端 IP 与目标邮箱分别计数、共用此配置。无论登录成功失败都计入；失败次数过多会临时锁定。',
+    titleId: 'admin.settings.rateLimit.bucket.signIn.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.signIn.description',
     quickWindowOptions: QUICK_AUTH,
   },
   comment: {
-    title: '评论限流',
-    description: '匿名评论 / 留言提交，按访客 IP 与作者邮箱分别计数、共用此配置。已登录管理员不受限制。',
+    titleId: 'admin.settings.rateLimit.bucket.comment.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.comment.description',
     quickWindowOptions: QUICK_LONG,
   },
   like: {
-    title: '点赞限流',
-    description: '文章 / 页面「喜欢」按 IP 计数，仅限制新增操作；取消点赞不消耗计数。',
+    titleId: 'admin.settings.rateLimit.bucket.like.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.like.description',
     quickWindowOptions: QUICK_LONG,
   },
   resource: {
-    title: '公共资源限流',
-    description: 'RSS、站点地图、OG 图片、头像等公共资源的访问按客户端 IP 计数。',
-    quickWindowOptions: [...QUICK_SHORT, { label: '1小时', seconds: 3600 }],
+    titleId: 'admin.settings.rateLimit.bucket.resource.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.resource.description',
+    quickWindowOptions: [...QUICK_SHORT, { labelId: 'admin.settings.rateLimit.quick.1h', seconds: 3600 }],
   },
   otpSend: {
-    title: 'OTP 发送限流',
-    description: '登录时发送 OTP 验证码邮件，按客户端 IP 与目标邮箱分别计数、共用此配置。',
+    titleId: 'admin.settings.rateLimit.bucket.otpSend.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.otpSend.description',
     quickWindowOptions: QUICK_SHORT,
   },
   otpVerify: {
-    title: 'OTP 验证限流',
-    description: 'OTP 验证码校验，按客户端 IP 与目标邮箱分别计数、共用此配置。',
+    titleId: 'admin.settings.rateLimit.bucket.otpVerify.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.otpVerify.description',
     quickWindowOptions: QUICK_SHORT,
   },
   passkeyAuth: {
-    title: 'Passkey 登录限流',
-    description: 'Passkey 认证挑战与认证完成请求按客户端 IP 计数。',
+    titleId: 'admin.settings.rateLimit.bucket.passkeyAuth.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.passkeyAuth.description',
     quickWindowOptions: QUICK_SHORT,
   },
   passkeyManage: {
-    title: 'Passkey 管理限流',
-    description: 'Passkey 注册、凭据删除与登录方式变更（密码 / 邮箱链接 / Passkey）按客户端 IP 计数。',
+    titleId: 'admin.settings.rateLimit.bucket.passkeyManage.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.passkeyManage.description',
     quickWindowOptions: QUICK_SHORT,
   },
   passwordReset: {
-    title: '密码重置限流',
-    description: '公共 lostpassword 表单，按客户端 IP 与目标邮箱分别计数、共用此配置。',
+    titleId: 'admin.settings.rateLimit.bucket.passwordReset.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.passwordReset.description',
     quickWindowOptions: QUICK_SHORT,
   },
   passwordResetTarget: {
-    title: '密码重置限流（按目标用户）',
-    description: '管理员触发的「发送密码重置」操作按目标用户 ID 计数。',
+    titleId: 'admin.settings.rateLimit.bucket.passwordResetTarget.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.passwordResetTarget.description',
     quickWindowOptions: QUICK_SHORT,
   },
   invite: {
-    title: '邀请限流',
-    description: '管理员邀请新作者，按客户端 IP 与「管理员 + 目标邮箱」分别计数、共用此配置。',
+    titleId: 'admin.settings.rateLimit.bucket.invite.title',
+    descriptionId: 'admin.settings.rateLimit.bucket.invite.description',
     quickWindowOptions: QUICK_LONG,
   },
 }
@@ -100,10 +100,10 @@ export const BUCKET_META: Record<
 export const COMMON_KEYS: readonly BucketKey[] = ['signIn', 'comment', 'like', 'resource']
 
 /** Advanced scenarios — grouped behind the 高级选项 disclosure. */
-export const ADVANCED_GROUPS: readonly { label: string; keys: readonly BucketKey[] }[] = [
-  { label: '认证与登录', keys: ['otpSend', 'otpVerify', 'passkeyAuth', 'passkeyManage'] },
-  { label: '密码重置', keys: ['passwordReset', 'passwordResetTarget'] },
-  { label: '管理操作', keys: ['invite'] },
+export const ADVANCED_GROUPS: readonly { labelId: UiMessageId; keys: readonly BucketKey[] }[] = [
+  { labelId: 'admin.settings.rateLimit.group.auth', keys: ['otpSend', 'otpVerify', 'passkeyAuth', 'passkeyManage'] },
+  { labelId: 'admin.settings.rateLimit.group.passwordReset', keys: ['passwordReset', 'passwordResetTarget'] },
+  { labelId: 'admin.settings.rateLimit.group.admin', keys: ['invite'] },
 ]
 
 /** Every bucket, common first — the reset-all iteration order. */

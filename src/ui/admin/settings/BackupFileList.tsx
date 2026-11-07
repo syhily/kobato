@@ -72,31 +72,31 @@ export function BackupFileList({
   isLoadingMore,
   hasMore,
 }: BackupFileListProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [createPassword, setCreatePassword] = useState('')
   return (
     <SettingGroup
-      title="备份文件"
-      description="S3 存储中 backup/ 目录下的所有备份文件。"
+      title={t('admin.settings.backup.files.title')}
+      description={t('admin.settings.backup.files.description')}
       actions={
         <Button type="button" disabled={isCreating} onClick={() => setCreateOpen(true)}>
-          {isCreating ? '备份中…' : '手动备份'}
+          {isCreating ? t('admin.settings.backup.files.creating') : t('admin.settings.backup.files.create')}
         </Button>
       }
     >
       {backups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">暂无备份文件</p>
+        <p className="text-sm text-muted-foreground">{t('admin.settings.backup.files.empty')}</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
-                <th className="px-4 py-2 text-left font-medium">文件名</th>
-                <th className="px-4 py-2 text-right font-medium">大小</th>
-                <th className="px-4 py-2 text-left font-medium">时间</th>
-                <th className="px-4 py-2 text-right font-medium">操作</th>
+                <th className="px-4 py-2 text-left font-medium">{t('admin.settings.backup.files.column.name')}</th>
+                <th className="px-4 py-2 text-right font-medium">{t('admin.settings.backup.files.column.size')}</th>
+                <th className="px-4 py-2 text-left font-medium">{t('admin.settings.backup.files.column.time')}</th>
+                <th className="px-4 py-2 text-right font-medium">{t('admin.settings.backup.files.column.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -105,8 +105,12 @@ export function BackupFileList({
                   <td className="px-4 py-2 font-mono text-xs">
                     <span className="inline-flex items-center gap-1.5">
                       {file.encrypted && (
-                        <span title="该备份已加密，还原时需要备份密码">
-                          <LockIcon size={13} className="shrink-0 text-muted-foreground" aria-label="已加密" />
+                        <span title={t('admin.settings.backup.files.encryptedTitle')}>
+                          <LockIcon
+                            size={13}
+                            className="shrink-0 text-muted-foreground"
+                            aria-label={t('admin.settings.backup.files.encrypted')}
+                          />
                         </span>
                       )}
                       {/* break-all: the hex + `.enc` tail has no wrap points — without it the cell's min-content overflows the card. */}
@@ -117,7 +121,7 @@ export function BackupFileList({
                   <td className="px-4 py-2 text-muted-foreground">
                     {formatBackupTimestamp(file.lastModified, { locale, timeZone })}
                   </td>
-                  <td className="px-4 py-2 text-right" aria-label="操作">
+                  <td className="px-4 py-2 text-right" aria-label={t('admin.settings.backup.files.column.actions')}>
                     <div className="flex justify-end gap-2">
                       <Button
                         type="button"
@@ -125,7 +129,7 @@ export function BackupFileList({
                         size="sm"
                         onClick={() => window.open(`/api/admin/backup/download/${encodeURIComponent(file.key)}`)}
                       >
-                        下载
+                        {t('admin.settings.backup.files.download')}
                       </Button>
                       <Button
                         type="button"
@@ -134,7 +138,7 @@ export function BackupFileList({
                         disabled={restorePending}
                         onClick={() => onRestore(file.key)}
                       >
-                        还原
+                        {t('admin.settings.backup.files.restore')}
                       </Button>
                       <Button
                         type="button"
@@ -143,15 +147,15 @@ export function BackupFileList({
                         disabled={deletePending}
                         onClick={() =>
                           setConfirm({
-                            title: `删除备份文件「${file.fileName}」？`,
-                            description: '此操作会从 S3 永久删除该备份文件，无法撤销。',
-                            actionLabel: '删除',
+                            title: t('admin.settings.backup.files.deleteTitle', { name: file.fileName }),
+                            description: t('admin.settings.backup.files.deleteDescription'),
+                            actionLabel: t('common.action.delete'),
                             destructive: true,
                             onConfirm: () => onDelete(file.key),
                           })
                         }
                       >
-                        删除
+                        {t('common.action.delete')}
                       </Button>
                     </div>
                   </td>
@@ -163,9 +167,11 @@ export function BackupFileList({
       )}
       {backups.length > 0 && hasMore && (
         <div className="flex items-center justify-between px-1 py-2">
-          <span className="text-xs text-muted-foreground">已展示 {backups.length} 个备份文件</span>
+          <span className="text-xs text-muted-foreground">
+            {t('admin.settings.backup.files.showing', { count: backups.length })}
+          </span>
           <Button type="button" variant="outline" size="sm" disabled={isLoadingMore} onClick={() => onLoadMore()}>
-            {isLoadingMore ? '加载中…' : '加载更多'}
+            {isLoadingMore ? t('admin.settings.backup.files.loadingMore') : t('admin.settings.backup.files.loadMore')}
           </Button>
         </div>
       )}
@@ -182,11 +188,11 @@ export function BackupFileList({
       >
         <AlertDialogContent className="sm:max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>手动备份</AlertDialogTitle>
+            <AlertDialogTitle>{t('admin.settings.backup.files.createTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
               {encryptionEnabled
-                ? '将使用设置中的加密密码创建加密备份；也可以为本次备份单独指定密码。'
-                : '创建一个包含内容数据库、访问统计与配置文件的备份归档。'}
+                ? t('admin.settings.backup.files.createEncryptedDescription')
+                : t('admin.settings.backup.files.createDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <form
@@ -203,15 +209,19 @@ export function BackupFileList({
             <Input
               type="password"
               autoComplete="off"
-              placeholder={encryptionEnabled ? '本次密码（留空使用默认）' : '本次加密密码（留空不加密）'}
+              placeholder={
+                encryptionEnabled
+                  ? t('admin.settings.backup.files.oncePassword')
+                  : t('admin.settings.backup.files.oncePasswordUnencrypted')
+              }
               value={createPassword}
               disabled={isCreating}
               onChange={(event) => setCreatePassword(event.target.value)}
             />
             <AlertDialogFooter className="mt-4">
-              <AlertDialogCancel disabled={isCreating}>取消</AlertDialogCancel>
+              <AlertDialogCancel disabled={isCreating}>{t('common.action.cancel')}</AlertDialogCancel>
               <AlertDialogAction type="submit" disabled={isCreating}>
-                {isCreating ? '备份中…' : '开始备份'}
+                {isCreating ? t('admin.settings.backup.files.creating') : t('admin.settings.backup.files.start')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </form>

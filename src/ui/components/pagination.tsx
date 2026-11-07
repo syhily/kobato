@@ -3,11 +3,13 @@ import type { ComponentProps } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function Pagination({ className, ...props }: ComponentProps<'nav'>) {
+  const { t } = useI18n()
   return (
     <nav
-      aria-label="pagination"
+      aria-label={t('common.pagination.label')}
       data-slot="pagination"
       className={cn('mx-auto flex w-full justify-center', className)}
       {...props}
@@ -54,22 +56,25 @@ function PaginationLink({ className, isActive, ...props }: PaginationLinkProps) 
 }
 
 function PaginationPrevious({ className, ...props }: ComponentProps<typeof PaginationLink>) {
+  const { t } = useI18n()
   return (
-    <PaginationLink aria-label="上一页" className={className} {...props}>
+    <PaginationLink aria-label={t('common.pagination.previous')} className={className} {...props}>
       <ChevronLeftIcon className="size-4" />
     </PaginationLink>
   )
 }
 
 function PaginationNext({ className, ...props }: ComponentProps<typeof PaginationLink>) {
+  const { t } = useI18n()
   return (
-    <PaginationLink aria-label="下一页" className={className} {...props}>
+    <PaginationLink aria-label={t('common.pagination.next')} className={className} {...props}>
       <ChevronRightIcon className="size-4" />
     </PaginationLink>
   )
 }
 
 function PaginationEllipsis({ className, ...props }: ComponentProps<'span'>) {
+  const { t } = useI18n()
   return (
     <span
       aria-hidden
@@ -78,7 +83,7 @@ function PaginationEllipsis({ className, ...props }: ComponentProps<'span'>) {
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />
-      <span className="sr-only">更多</span>
+      <span className="sr-only">{t('common.pagination.more')}</span>
     </span>
   )
 }

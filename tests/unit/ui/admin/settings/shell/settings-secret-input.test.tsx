@@ -3,6 +3,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { tZhCN } from '#/_helpers/i18n'
 import {
   SettingsSecretInput,
   secretFieldPatch,
@@ -33,10 +34,13 @@ describe('ui/admin/settings/shell/secretFieldPatch', () => {
   })
 })
 
+const t = tZhCN
+
 describe('ui/admin/settings/shell/secretFieldStrings', () => {
   it('returns the empty-state strings when no mask exists', () => {
     expect(
       secretFieldStrings({
+        t,
         mask: null,
         keepLabel: '保留现有 Key',
         emptyHint: '尚未配置。',
@@ -48,22 +52,30 @@ describe('ui/admin/settings/shell/secretFieldStrings', () => {
   it('composes the configured hint from the mask and keep label', () => {
     expect(
       secretFieldStrings({
+        t,
         mask: 'wxyz',
         keepLabel: '保留现有 Key',
         emptyHint: '尚未配置。',
         emptyPlaceholder: '粘贴 OpenAI API Key',
       }),
-    ).toEqual({ hint: '当前已配置（结尾 …wxyz）。留空保存表示保留现有 Key。', placeholder: '保留现有 Key' })
+    ).toEqual({
+      hint: t('admin.settings.shell.secret.configured', { mask: 'wxyz' }),
+      placeholder: '保留现有 Key',
+    })
+    expect(
+      secretFieldStrings({ t, mask: 'wxyz', keepLabel: '保留现有 Key', emptyHint: '', emptyPlaceholder: '' }).hint,
+    ).toBe('当前已配置（结尾 …wxyz）。留空保存表示保留现有密钥。')
   })
 
   it('supports non-Key keep labels byte-identically (no inserted space)', () => {
     const { hint, placeholder } = secretFieldStrings({
+      t,
       mask: 'abcd',
       keepLabel: '保留现有密码',
       emptyHint: '尚未配置。',
       emptyPlaceholder: '输入 SMTP 密码',
     })
-    expect(hint).toBe('当前已配置（结尾 …abcd）。留空保存表示保留现有密码。')
+    expect(hint).toBe('当前已配置（结尾 …abcd）。留空保存表示保留现有密钥。')
     expect(placeholder).toBe('保留现有密码')
   })
 })

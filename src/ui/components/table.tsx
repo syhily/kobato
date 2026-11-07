@@ -1,8 +1,10 @@
 import type { ComponentProps } from 'react'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function Table({ className, ...props }: ComponentProps<'table'>) {
+  const { t } = useI18n()
   // Block-level disable (the formatter splits the opening tag); region role +
   // tabIndex makes horizontally scrollable tables keyboard-accessible.
   /* oxlint-disable jsx-a11y/no-noninteractive-tabindex */
@@ -12,7 +14,7 @@ function Table({ className, ...props }: ComponentProps<'table'>) {
       className="relative w-full overflow-x-auto"
       role="region"
       tabIndex={0}
-      aria-label="数据表格"
+      aria-label={t('common.table.label')}
     >
       <table data-slot="table" className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>

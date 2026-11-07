@@ -15,6 +15,7 @@ import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
 import { hasAtLeast } from '@/shared/utils/roles'
 import { NavMenuItem } from '@/ui/admin/shell/NavMenuItem'
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuBadge } from '@/ui/components/sidebar'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface NavContentProps {
   role: AdminShellProps['currentUser']['role']
@@ -24,6 +25,7 @@ interface NavContentProps {
 }
 
 export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCount = 0, userCount }: NavContentProps) {
+  const { t } = useI18n()
   if (!role) {
     return null
   }
@@ -38,7 +40,7 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
           {showAuthorItems && (
             <NavMenuItem.Collapsible id="posts-submenu" paths={['/admin/posts']}>
               <NavMenuItem.CollapsibleItem
-                ariaLabel="展开文章子菜单"
+                ariaLabel={t('admin.shell.nav.expandPosts')}
                 action={
                   <NavMenuItem.Link
                     to="/editor/post/new"
@@ -49,23 +51,23 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
                 }
               >
                 <NotebookPenIcon />
-                <NavMenuItem.Label>文章管理</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('meta.title.admin.posts')}</NavMenuItem.Label>
               </NavMenuItem.CollapsibleItem>
 
               <NavMenuItem.CollapsibleMenu>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/posts" className="pl-11" end>
-                    <NavMenuItem.Label>全部文章</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('admin.shell.nav.allPosts')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/posts?status=draft" className="pl-11">
-                    <NavMenuItem.Label>草稿箱</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('admin.shell.nav.drafts')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/posts?status=published" className="pl-11">
-                    <NavMenuItem.Label>已发布</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('admin.shell.nav.published')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
               </NavMenuItem.CollapsibleMenu>
@@ -76,11 +78,11 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
             <NavMenuItem>
               <NavMenuItem.Link to="/admin/pages">
                 <FileTextIcon />
-                <NavMenuItem.Label>页面管理</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('meta.title.admin.pages')}</NavMenuItem.Label>
               </NavMenuItem.Link>
               <NavMenuItem.Link
                 to="/editor/page/new"
-                aria-label="新建页面"
+                aria-label={t('meta.title.editor.pageNew')}
                 className="absolute top-1/2 right-1 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-xl p-0 text-sidebar-foreground opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100"
               >
                 <PlusIcon className="size-4" />
@@ -92,7 +94,7 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
             <NavMenuItem>
               <NavMenuItem.Link to="/admin/comments">
                 <MessageSquareIcon />
-                <NavMenuItem.Label>评论管理</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('meta.title.admin.comments')}</NavMenuItem.Label>
               </NavMenuItem.Link>
               {pendingCommentCount > 0 && (
                 <SidebarMenuBadge className="bg-status-error-bg text-status-error-fg">
@@ -106,7 +108,7 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
             <NavMenuItem>
               <NavMenuItem.Link to="/admin/webmentions" tooltip="Webmention">
                 <AtSignIcon />
-                <NavMenuItem.Label>网页互动</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('admin.shell.nav.interactions')}</NavMenuItem.Label>
               </NavMenuItem.Link>
               {pendingWebmentionCount > 0 && (
                 <SidebarMenuBadge className="bg-status-error-bg text-status-error-fg">
@@ -120,7 +122,7 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
             <NavMenuItem>
               <NavMenuItem.Link to="/admin/tasks">
                 <ListChecksIcon />
-                <NavMenuItem.Label>任务管理</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('meta.title.admin.tasks')}</NavMenuItem.Label>
               </NavMenuItem.Link>
             </NavMenuItem>
           )}
@@ -130,28 +132,28 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
               id="taxonomy-submenu"
               paths={['/admin/taxonomy/categories', '/admin/taxonomy/tags', '/admin/taxonomy/friends']}
             >
-              <NavMenuItem.CollapsibleItem ariaLabel="展开分门别类子菜单">
+              <NavMenuItem.CollapsibleItem ariaLabel={t('admin.shell.nav.expandTaxonomy')}>
                 <LibraryIcon />
-                <NavMenuItem.Label>分门别类</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('admin.shell.nav.taxonomy')}</NavMenuItem.Label>
               </NavMenuItem.CollapsibleItem>
 
               <NavMenuItem.CollapsibleMenu>
                 {showAdminItems && (
                   <NavMenuItem>
                     <NavMenuItem.Link to="/admin/taxonomy/categories" className="pl-11">
-                      <NavMenuItem.Label>分类管理</NavMenuItem.Label>
+                      <NavMenuItem.Label>{t('meta.title.admin.categories')}</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
                 )}
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/taxonomy/tags" className="pl-11">
-                    <NavMenuItem.Label>标签管理</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('meta.title.admin.tags')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 {showAdminItems && (
                   <NavMenuItem>
                     <NavMenuItem.Link to="/admin/taxonomy/friends" className="pl-11">
-                      <NavMenuItem.Label>友链管理</NavMenuItem.Label>
+                      <NavMenuItem.Label>{t('meta.title.admin.friends')}</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
                 )}
@@ -169,33 +171,33 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
                 '/admin/library/fonts',
               ]}
             >
-              <NavMenuItem.CollapsibleItem ariaLabel="展开媒体管理子菜单">
+              <NavMenuItem.CollapsibleItem ariaLabel={t('admin.shell.nav.expandMedia')}>
                 <ImagesIcon />
-                <NavMenuItem.Label>媒体管理</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('admin.shell.nav.media')}</NavMenuItem.Label>
               </NavMenuItem.CollapsibleItem>
 
               <NavMenuItem.CollapsibleMenu>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/library/images" className="pl-11">
-                    <NavMenuItem.Label>图片管理</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('meta.title.admin.images')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/library/music" className="pl-11">
-                    <NavMenuItem.Label>音乐管理</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('meta.title.admin.music')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 {showAdminItems && (
                   <NavMenuItem>
                     <NavMenuItem.Link to="/admin/library/branding" className="pl-11">
-                      <NavMenuItem.Label>品牌素材</NavMenuItem.Label>
+                      <NavMenuItem.Label>{t('meta.title.admin.branding')}</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
                 )}
                 {showAdminItems && (
                   <NavMenuItem>
                     <NavMenuItem.Link to="/admin/library/fonts" className="pl-11">
-                      <NavMenuItem.Label>网站字体</NavMenuItem.Label>
+                      <NavMenuItem.Label>{t('meta.title.admin.fonts')}</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
                 )}
@@ -208,25 +210,25 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
               id="security-submenu"
               paths={['/admin/security/sessions', '/admin/security/audit-log', '/admin/security/users']}
             >
-              <NavMenuItem.CollapsibleItem ariaLabel="展开安全管理子菜单">
+              <NavMenuItem.CollapsibleItem ariaLabel={t('admin.shell.nav.expandSecurity')}>
                 <ShieldIcon />
-                <NavMenuItem.Label>安全管理</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('admin.shell.nav.security')}</NavMenuItem.Label>
               </NavMenuItem.CollapsibleItem>
 
               <NavMenuItem.CollapsibleMenu>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/security/sessions" className="pl-11" end>
-                    <NavMenuItem.Label>会话管理</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('meta.title.admin.sessions')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/security/audit-log" className="pl-11">
-                    <NavMenuItem.Label>审计日志</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('meta.title.admin.auditLog')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/security/users" className="pl-11" activeMatch="subpath">
-                    <NavMenuItem.Label>用户管理</NavMenuItem.Label>
+                    <NavMenuItem.Label>{t('meta.title.admin.users')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                   {userCount != null && <SidebarMenuBadge>{userCount}</SidebarMenuBadge>}
                 </NavMenuItem>

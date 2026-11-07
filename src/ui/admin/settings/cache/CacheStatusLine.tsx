@@ -13,7 +13,7 @@ interface CacheStatusLineProps {
 }
 
 export function CacheStatusLine({ status, target, generatedAt }: CacheStatusLineProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { timeZone } = useSiteIdentity()
   const isSuccess = status.target === target && status.state === 'success' && !!status.message
   const isError = status.target === target && status.state === 'error' && !!status.message
@@ -22,7 +22,9 @@ export function CacheStatusLine({ status, target, generatedAt }: CacheStatusLine
     : isError
       ? status.message
       : generatedAt
-        ? `数据采集时间：${formatTimestamp(generatedAt, { locale, timeZone })}`
+        ? t('admin.settings.cache.status.generatedAt', {
+            time: formatTimestamp(generatedAt, { locale, timeZone }),
+          })
         : ''
   return (
     <output aria-live="polite" className={cn('text-xs', isError ? 'text-destructive' : 'text-muted-foreground')}>
@@ -59,20 +61,21 @@ interface BucketSaveStatusProps {
 }
 
 export function BucketSaveStatus({ isDirty, isPending, status, validationError }: BucketSaveStatusProps) {
+  const { t } = useI18n()
   let message = ''
   let tone: 'muted' | 'error' = 'muted'
   if (isPending) {
-    message = '保存中…'
+    message = t('admin.settings.cache.status.saving')
   } else if (validationError !== null) {
-    message = '配置存在冲突，请先修正'
+    message = t('admin.settings.cache.status.conflict')
     tone = 'error'
   } else if (status === 'error') {
-    message = '保存失败'
+    message = t('admin.settings.cache.status.saveFailed')
     tone = 'error'
   } else if (status === 'saved' && !isDirty) {
-    message = '已保存'
+    message = t('admin.settings.cache.status.saved')
   } else if (isDirty) {
-    message = '尚未保存的更改'
+    message = t('admin.settings.cache.status.dirty')
   }
   return (
     <output

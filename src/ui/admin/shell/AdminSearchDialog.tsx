@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Dialog, DialogContent, DialogTitle } from '@/ui/components/dialog'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface AdminSearchDialogProps {
   open: boolean
@@ -13,6 +14,7 @@ interface AdminSearchDialogProps {
 }
 
 export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps) {
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -107,7 +109,7 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
           items[idx]?.focus()
         }}
       >
-        <DialogTitle className="sr-only">全站搜索</DialogTitle>
+        <DialogTitle className="sr-only">{t('admin.shell.search.title')}</DialogTitle>
 
         {/* Search input */}
         <div className="flex items-center gap-3 px-5 py-4">
@@ -117,9 +119,9 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="全站搜索…"
+            placeholder={t('admin.shell.search.placeholder')}
             className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:shadow-focus"
-            aria-label="搜索"
+            aria-label={t('admin.shell.search.aria')}
           />
           {isSearching ? (
             <Loader2Icon className="size-4 shrink-0 animate-spin text-muted-foreground" />
@@ -137,20 +139,20 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
         <div className="max-h-empty-state overflow-y-auto overscroll-contain">
           {!hasQuery && (
             <div className="px-5 pt-2 pb-5 text-center text-sm text-muted-foreground" role="status">
-              输入关键词搜索文章或页面
+              {t('admin.shell.search.hint')}
             </div>
           )}
 
           {hasQuery && !hasResults && !isSearching && (
             <div className="px-5 py-10 text-center text-sm text-muted-foreground" role="status">
-              未找到「{debouncedQuery}」相关的结果
+              {t('admin.shell.search.noResults', { query: debouncedQuery })}
             </div>
           )}
 
           {hasResults && (
-            <div role="listbox" aria-label="搜索结果">
+            <div role="listbox" aria-label={t('admin.shell.search.results')}>
               {posts.length > 0 && (
-                <SearchGroup label="文章" icon={NotebookPenIcon}>
+                <SearchGroup label={t('admin.shell.search.group.posts')} icon={NotebookPenIcon}>
                   {posts.map((post) => (
                     <SearchResultItem
                       key={post.id}
@@ -163,7 +165,7 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
               )}
 
               {pages.length > 0 && (
-                <SearchGroup label="页面" icon={FileTextIcon}>
+                <SearchGroup label={t('admin.shell.search.group.pages')} icon={FileTextIcon}>
                   {pages.map((page) => (
                     <SearchResultItem
                       key={page.id}
@@ -211,6 +213,7 @@ const SearchResultItem = memo(function SearchResultItem({
   published: boolean
   onClick: () => void
 }) {
+  const { t } = useI18n()
   return (
     <button
       type="button"
@@ -225,7 +228,7 @@ const SearchResultItem = memo(function SearchResultItem({
       <span className="min-w-0 truncate font-medium">{title}</span>
       {!published && (
         <span className="shrink-0 rounded-xl bg-status-warn-bg px-2 py-0.5 text-badge font-semibold text-status-warn-fg">
-          草稿
+          {t('admin.shell.search.draft')}
         </span>
       )}
     </button>

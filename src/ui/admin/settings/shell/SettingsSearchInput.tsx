@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useSettingsSearchFilter } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { SearchShortcutHint } from '@/ui/admin/shared/SearchShortcutHint'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function isTypingTarget(target: EventTarget | null): boolean {
   return (
@@ -13,6 +14,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function SettingsSearchInput() {
+  const { t } = useI18n()
   const { filter, setFilter } = useSettingsSearchFilter()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -42,7 +44,7 @@ export function SettingsSearchInput() {
         <Input
           ref={searchInputRef}
           type="text"
-          placeholder="搜索设置…"
+          placeholder={t('admin.settings.shell.searchPlaceholder')}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="h-10 w-full rounded-xl border border-transparent bg-card pr-8 pl-9 text-sm shadow-sm transition-[color,background-color,border-color,box-shadow] hover:shadow focus-visible:border-brand focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-brand/25"
@@ -58,7 +60,7 @@ export function SettingsSearchInput() {
             }}
             className="absolute top-1/2 right-2.5 z-10 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
-            <span className="sr-only">清除搜索</span>
+            <span className="sr-only">{t('admin.settings.shell.clearSearch')}</span>
             <XIcon className="size-3.5" />
           </button>
         ) : (

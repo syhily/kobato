@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Loader2Icon } from 'lucide-react'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface SettingGroupProps {
   title: string
@@ -15,6 +16,7 @@ interface SettingGroupProps {
 }
 
 export function SettingGroup({ title, description, children, className, actions, saveState }: SettingGroupProps) {
+  const { t } = useI18n()
   return (
     <div
       className={cn('relative flex flex-col gap-6 rounded-xl border border-border shadow-sm transition-all', className)}
@@ -34,7 +36,9 @@ export function SettingGroup({ title, description, children, className, actions,
                 <Loader2Icon data-icon className="size-3.5 animate-spin" />
               </span>
             ) : null}
-            {saveState === 'saved' ? <span className="text-xs text-muted-foreground">已保存</span> : null}
+            {saveState === 'saved' ? (
+              <span className="text-xs text-muted-foreground">{t('admin.settings.shell.saved')}</span>
+            ) : null}
           </div>
         </div>
         {children}

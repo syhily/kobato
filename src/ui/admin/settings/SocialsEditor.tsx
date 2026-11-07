@@ -8,6 +8,7 @@ import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Label } from '@/ui/components/label'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/brand'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface SocialsEditorProps {
   socials: SocialsSettings
@@ -35,6 +36,7 @@ function toFormState(source: SocialsSettings): { rows: SocialRow[] } {
 }
 
 export function SocialsEditor({ socials }: SocialsEditorProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
     section: 'socials',
     source: socials,
@@ -69,8 +71,8 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
 
   return (
     <SettingGroup
-      title="社交链接"
-      description="配置各社交平台的账号或二维码。填写链接后平台即生效，留空则不在网站展示。"
+      title={t('admin.settings.section.socials.label')}
+      description={t('admin.settings.socials.description')}
       {...settingGroupProps}
     >
       <div className="flex flex-col gap-3">
@@ -87,12 +89,14 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                 <div className="flex flex-col leading-tight">
                   <span className="text-sm font-medium">{meta.label}</span>
                   <span className="text-xs text-muted-foreground">
-                    {meta.type === 'qrcode' ? '点击图标会弹出二维码' : '点击图标会直接外跳链接'}
+                    {meta.type === 'qrcode'
+                      ? t('admin.settings.socials.qrcodeHint')
+                      : t('admin.settings.socials.linkHint')}
                   </span>
                 </div>
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor={`social-name-${row.network}`}>用户名（可选）</Label>
+                <Label htmlFor={`social-name-${row.network}`}>{t('admin.settings.socials.name')}</Label>
                 <SettingsInput
                   flushOnBlur={flushOnBlur}
                   id={`social-name-${row.network}`}
@@ -114,14 +118,14 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
               </div>
               {meta.type === 'qrcode' ? (
                 <div className="flex flex-col gap-3">
-                  <Label htmlFor={`social-title-${row.network}`}>二维码弹窗标题（可选）</Label>
+                  <Label htmlFor={`social-title-${row.network}`}>{t('admin.settings.socials.qrcodeTitle')}</Label>
                   <SettingsInput
                     flushOnBlur={flushOnBlur}
                     id={`social-title-${row.network}`}
                     value={row.title}
                     onChange={(e) => patch(index, { title: e.target.value })}
                     maxLength={120}
-                    placeholder={`扫码加我${meta.label}好友`}
+                    placeholder={t('admin.settings.socials.qrcodePlaceholder', { label: meta.label })}
                   />
                 </div>
               ) : null}

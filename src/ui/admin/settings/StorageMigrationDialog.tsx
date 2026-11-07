@@ -95,7 +95,7 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>迁移存储</DialogTitle>
+          <DialogTitle>{t('admin.settings.storage.migration.dialog.title')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-5">
@@ -110,15 +110,19 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
             <LabelledRadio
               id="migration-direction-s3"
               value="s3"
-              label={s3Primary ? '迁移到新的 S3 存储' : '配置并启用 S3 存储'}
-              description="把当前存储中的全部文件复制到新的 S3 Bucket，完成后切换。"
+              label={t(
+                s3Primary
+                  ? 'admin.settings.storage.migration.dialog.migrateToS3'
+                  : 'admin.settings.storage.migration.dialog.enableS3',
+              )}
+              description={t('admin.settings.storage.migration.dialog.s3Description')}
             />
             {s3Primary && (
               <LabelledRadio
                 id="migration-direction-local"
                 value="local"
-                label="回退到本地存储"
-                description="把 S3 中的全部文件复制回本地文件系统，完成后关闭 S3。"
+                label={t('admin.settings.storage.migration.dialog.localLabel')}
+                description={t('admin.settings.storage.migration.dialog.localDescription')}
               />
             )}
           </RadioGroup>
@@ -126,28 +130,28 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
           {direction === 's3' && (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <FieldLabel htmlFor="migration-endpoint">Endpoint</FieldLabel>
+                <FieldLabel htmlFor="migration-endpoint">{t('admin.settings.storage.s3.endpoint')}</FieldLabel>
                 <Input
                   id="migration-endpoint"
                   type="url"
-                  placeholder="https://s3.amazonaws.com"
+                  placeholder={t('admin.settings.storage.s3.endpointPlaceholder')}
                   value={target.endpoint}
                   onChange={(e) => set({ endpoint: e.target.value })}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <FieldLabel htmlFor="migration-region">Region</FieldLabel>
+                  <FieldLabel htmlFor="migration-region">{t('admin.settings.storage.s3.region')}</FieldLabel>
                   <Input
                     id="migration-region"
-                    placeholder="us-east-1 / auto"
+                    placeholder={t('admin.settings.storage.migration.dialog.regionPlaceholder')}
                     maxLength={60}
                     value={target.region}
                     onChange={(e) => set({ region: e.target.value })}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <FieldLabel htmlFor="migration-bucket">Bucket</FieldLabel>
+                  <FieldLabel htmlFor="migration-bucket">{t('admin.settings.storage.s3.bucket')}</FieldLabel>
                   <Input
                     id="migration-bucket"
                     maxLength={120}
@@ -157,7 +161,7 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <FieldLabel htmlFor="migration-access-key-id">Access Key ID</FieldLabel>
+                <FieldLabel htmlFor="migration-access-key-id">{t('admin.settings.storage.s3.accessKey')}</FieldLabel>
                 <Input
                   id="migration-access-key-id"
                   autoComplete="off"
@@ -167,7 +171,7 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <FieldLabel htmlFor="migration-secret">Secret Access Key</FieldLabel>
+                <FieldLabel htmlFor="migration-secret">{t('admin.settings.storage.s3.secret')}</FieldLabel>
                 <Input
                   id="migration-secret"
                   type="password"
@@ -178,7 +182,7 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <FieldLabel htmlFor="migration-url-template">图片地址模板（可选）</FieldLabel>
+                <FieldLabel htmlFor="migration-url-template">{t('admin.settings.storage.s3.urlTemplate')}</FieldLabel>
                 <Input
                   id="migration-url-template"
                   maxLength={500}
@@ -193,22 +197,22 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
                   onCheckedChange={(checked) => set({ forcePathStyle: checked })}
                 />
                 <FieldLabel htmlFor="migration-force-path-style" className="font-normal">
-                  强制使用 path-style URL
+                  {t('admin.settings.storage.s3.pathStyleLabel')}
                 </FieldLabel>
               </div>
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground">
-            提交前会对目标 S3 做连通性验证；迁移在后台执行，可取消、失败后可从断点继续。
-          </p>
+          <p className="text-xs text-muted-foreground">{t('admin.settings.storage.migration.dialog.verifyNote')}</p>
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-              取消
+              {t('common.action.cancel')}
             </Button>
             <Button onClick={() => void handleSubmit()} disabled={submitting || s3TargetIncomplete}>
-              {submitting ? '正在验证并启动…' : '开始迁移'}
+              {submitting
+                ? t('admin.settings.storage.migration.dialog.submitting')
+                : t('admin.settings.storage.migration.dialog.start')}
             </Button>
           </div>
         </div>

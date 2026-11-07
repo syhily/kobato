@@ -138,6 +138,9 @@ state.
 - Conditional classNames go through `cn()` from `@/ui/lib/cn`. A new `--<namespace>-<name>` token in
   `tailwind.css` MUST pair with an entry in `cn.ts`'s per-namespace list — enforced by
   `tests/unit/contract/tailwind-tokens.test.ts`.
+- Interface copy is a UI message id resolved through `useI18n()` — including the accessible
+  labels inside `ui/components/` primitives (`common.*` in the UI catalog). Any test that renders
+  one of those primitives directly must mount `I18nProvider` (`#/_helpers/i18n-render`).
 - Animation is Motion Only: JS-driven animation uses the `@/ui/components/lazy-motion` facade
   (`LazyMotion*` / `LazyAnimatePresence`) with shared constants from `@/client/lib/motion` — never
   React `<ViewTransition>` or `document.startViewTransition` (the root AGENTS.md defensive

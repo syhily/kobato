@@ -11,6 +11,7 @@ import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface TestStatus {
   state: 'idle' | 'pending' | 'success' | 'error'
@@ -30,6 +31,7 @@ export function MailTestCard({
   mail: MailLoaderShape
   transport: MailLoaderShape['mail']['transport']
 }) {
+  const { t } = useI18n()
   const { author } = useSiteIdentity()
   const [testTo, setTestTo] = useState<string>(author?.email ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>(idleTestStatus)
@@ -39,9 +41,10 @@ export function MailTestCard({
     onSuccess: () =>
       setTestStatus({
         state: 'success',
-        message: '测试邮件已发送，请到收件箱确认。',
+        message: t('admin.settings.mail.test.sent'),
       }),
-    onError: (error) => setTestStatus({ state: 'error', message: error.message ?? '测试发送失败' }),
+    onError: (error) =>
+      setTestStatus({ state: 'error', message: error.message ?? t('admin.settings.mail.test.failed') }),
   })
 
   const submitTest = useCallback(() => {
@@ -64,20 +67,24 @@ export function MailTestCard({
   const canSendTest = !isTestPending && configured && isLikelyEmail(testTo)
 
   const missingHint = isMailgun
-    ? '请先填入并保存 Mailgun 发送域名、API Key 和发件人邮箱'
-    : '请先填入并保存 SMTP 服务器地址、用户名、密码和发件人邮箱'
+    ? t('admin.settings.mail.test.missingMailgun')
+    : t('admin.settings.mail.test.missingSmtp')
 
   return (
-    <SettingGroup title="测试发送" description="不依赖「启用邮件发送」开关，可在配置完成后立即验证连接。">
+    <SettingGroup title={t('admin.settings.mail.test.title')} description={t('admin.settings.mail.test.description')}>
       <SettingGroupContent>
-        <SettingsRow label="收件人" htmlFor="mail-test-to" hint="默认填站点作者邮箱，可以改成任意能收信的地址来验证。">
+        <SettingsRow
+          label={t('admin.settings.mail.test.to')}
+          htmlFor="mail-test-to"
+          hint={t('admin.settings.mail.test.toHint')}
+        >
           <div className="flex flex-col gap-3 sm:flex-row">
             <Input
               id="mail-test-to"
               type="email"
               value={testTo}
               onChange={(e) => setTestTo(e.target.value)}
-              placeholder="someone@example.com"
+              placeholder={t('admin.settings.mail.test.placeholder')}
               className="flex-1"
             />
             <Button
@@ -85,9 +92,16 @@ export function MailTestCard({
               variant="secondary"
               disabled={!canSendTest}
               onClick={submitTest}
-              title={!configured ? missingHint : !isLikelyEmail(testTo) ? '请填写一个合法的邮箱地址' : undefined}
+              title={
+                !configured
+                  ? missingHint
+                  : !isLikelyEmail(testTo)
+                    ? t('admin.settings.mail.test.invalidEmail')
+                    : undefined
+              }
             >
-              <SendIcon data-icon /> {isTestPending ? '发送中…' : '测试发送'}
+              <SendIcon data-icon />{' '}
+              {isTestPending ? t('admin.settings.mail.test.sending') : t('admin.settings.mail.test.submit')}
             </Button>
           </div>
         </SettingsRow>

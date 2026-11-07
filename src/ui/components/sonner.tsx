@@ -2,15 +2,18 @@ import type { ComponentProps } from 'react'
 
 import { Toaster as Sonner } from 'sonner'
 
+import { useI18n } from '@/ui/lib/I18nProvider'
+
 type ToasterProps = ComponentProps<typeof Sonner>
 
 export function Toaster({ ...props }: ToasterProps) {
+  const { t } = useI18n()
   return (
     <Sonner
       position="top-center"
       closeButton
       visibleToasts={5}
-      containerAriaLabel="通知"
+      containerAriaLabel={t('common.sonner.regionLabel')}
       toastOptions={{
         classNames: {
           toast: 'group',

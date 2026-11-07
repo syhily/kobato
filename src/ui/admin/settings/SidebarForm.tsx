@@ -15,6 +15,7 @@ import type {
   SidebarWidget,
   SidebarWidgetType,
 } from '@/shared/config/types'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { isRecord } from '@/shared/utils/type-guards'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
@@ -28,26 +29,27 @@ import { resolveSortableMove, SortableDragHandle, useSortableRow, useSortableSen
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface SidebarFormProps {
   sidebar: SidebarSettings
 }
 
-const WIDGET_LABELS: Record<SidebarWidgetType, string> = {
-  search: '搜索框',
-  recentPosts: '推荐文章',
-  recentComments: '最近评论',
-  randomTags: '标签云',
-  todayCalendar: '日历组件',
-}
+const WIDGET_LABEL_IDS = {
+  search: 'admin.settings.sidebar.widget.search.label',
+  recentPosts: 'admin.settings.sidebar.widget.recentPosts.label',
+  recentComments: 'admin.settings.sidebar.widget.recentComments.label',
+  randomTags: 'admin.settings.sidebar.widget.randomTags.label',
+  todayCalendar: 'admin.settings.sidebar.widget.todayCalendar.label',
+} as const satisfies Record<SidebarWidgetType, UiMessageId>
 
-const WIDGET_HINTS: Record<SidebarWidgetType, string> = {
-  search: '文章标题关键字快速搜索。',
-  recentPosts: '从全部文章中随机抽取展示。',
-  recentComments: '展示最近的评论摘要。',
-  randomTags: '从全部标签里随机抽取展示。',
-  todayCalendar: '文章按月份归档的小日历。',
-}
+const WIDGET_HINT_IDS = {
+  search: 'admin.settings.sidebar.widget.search.hint',
+  recentPosts: 'admin.settings.sidebar.widget.recentPosts.hint',
+  recentComments: 'admin.settings.sidebar.widget.recentComments.hint',
+  randomTags: 'admin.settings.sidebar.widget.randomTags.hint',
+  todayCalendar: 'admin.settings.sidebar.widget.todayCalendar.hint',
+} as const satisfies Record<SidebarWidgetType, UiMessageId>
 
 function SortableWidgetRow({
   widget,
@@ -62,6 +64,7 @@ function SortableWidgetRow({
   save: () => void
   flushOnBlur: () => void
 }) {
+  const { t } = useI18n()
   const {
     setNodeRef,
     style: rowStyle,
@@ -80,7 +83,7 @@ function SortableWidgetRow({
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
       <SortableDragHandle {...dragHandleProps} />
       <div className="flex-1">
-        <SettingsRow label={WIDGET_LABELS[widget.type]} hint={WIDGET_HINTS[widget.type]}>
+        <SettingsRow label={t(WIDGET_LABEL_IDS[widget.type])} hint={t(WIDGET_HINT_IDS[widget.type])}>
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -96,13 +99,13 @@ function SortableWidgetRow({
               )}
             />
             <FieldLabel htmlFor={`sidebar-${widget.type}`} className="font-normal">
-              启用
+              {t('admin.settings.sidebar.widget.enable')}
             </FieldLabel>
           </div>
         </SettingsRow>
         {hasCount && (
           <div className="mt-2 pl-0">
-            <SettingsRow label="显示数量" htmlFor={`sidebar-${widget.type}-count`}>
+            <SettingsRow label={t('admin.settings.sidebar.widget.count')} htmlFor={`sidebar-${widget.type}-count`}>
               <SettingsInput
                 flushOnBlur={flushOnBlur}
                 id={`sidebar-${widget.type}-count`}
@@ -120,6 +123,7 @@ function SortableWidgetRow({
 }
 
 function SidebarWidgetsCard({ sidebar }: SidebarFormProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>(
     {
       section: 'sidebar',
@@ -142,8 +146,8 @@ function SidebarWidgetsCard({ sidebar }: SidebarFormProps) {
 
   return (
     <SettingGroup
-      title="侧边栏组件"
-      description="控制侧边栏的功能模块。拖拽可调整顺序，取消勾选则隐藏对应模块。"
+      title={t('admin.settings.sidebar.widgets.title')}
+      description={t('admin.settings.sidebar.widgets.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
@@ -173,13 +177,13 @@ function SidebarWidgetsCard({ sidebar }: SidebarFormProps) {
   )
 }
 
-const SOURCE_OPTIONS: { value: DailyQuoteSource; label: string }[] = [
-  { value: 'shanbay', label: '扇贝每日一句（默认）' },
-  { value: 'one', label: 'ONE · 一个' },
-  { value: 'hitokoto', label: '一言（hitokoto）' },
-  { value: 'custom', label: '自定义一言' },
-  { value: 'local', label: '本地内置一言' },
-]
+const SOURCE_OPTIONS = [
+  { value: 'shanbay', labelId: 'admin.settings.sidebar.quote.source.shanbay' },
+  { value: 'one', labelId: 'admin.settings.sidebar.quote.source.one' },
+  { value: 'hitokoto', labelId: 'admin.settings.sidebar.quote.source.hitokoto' },
+  { value: 'custom', labelId: 'admin.settings.sidebar.quote.source.custom' },
+  { value: 'local', labelId: 'admin.settings.sidebar.quote.source.local' },
+] as const satisfies readonly { value: DailyQuoteSource; labelId: UiMessageId }[]
 
 const MIN_CUSTOM_QUOTES = 10
 const MAX_CUSTOM_QUOTES = 500
@@ -194,6 +198,7 @@ function isQuoteRow(value: unknown): value is { content: string; author?: unknow
 }
 
 function DailyQuoteCard({ sidebar }: SidebarFormProps) {
+  const { t } = useI18n()
   const { form, settingGroupProps, save, isSaving } = useSettingsCard<SidebarSettings, DailyQuoteState>({
     section: 'sidebar',
     source: sidebar,
@@ -217,24 +222,32 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
     try {
       parsed = JSON.parse(await file.text())
     } catch {
-      toast.error('无法解析 JSON 文件', { description: '请确认文件内容是合法的 JSON。' })
+      toast.error(t('admin.settings.sidebar.quote.error.parseTitle'), {
+        description: t('admin.settings.sidebar.quote.error.parseDescription'),
+      })
       return
     }
     if (!Array.isArray(parsed) || !parsed.every(isQuoteRow)) {
-      toast.error('JSON 格式不符', {
-        description: '需要形如 [{"content":"…","author":"…"}] 的数组，且 content 不能为空。',
+      toast.error(t('admin.settings.sidebar.quote.error.shapeTitle'), {
+        description: t('admin.settings.sidebar.quote.error.shapeDescription'),
       })
       return
     }
     if (parsed.length < MIN_CUSTOM_QUOTES) {
-      toast.error('自定义一言数量不足', {
-        description: `文件包含 ${parsed.length} 条，至少需要 ${MIN_CUSTOM_QUOTES} 条。`,
+      toast.error(t('admin.settings.sidebar.quote.error.tooFewTitle'), {
+        description: t('admin.settings.sidebar.quote.error.tooFewDescription', {
+          count: parsed.length,
+          min: MIN_CUSTOM_QUOTES,
+        }),
       })
       return
     }
     if (parsed.length > MAX_CUSTOM_QUOTES) {
-      toast.error('自定义一言数量过多', {
-        description: `文件包含 ${parsed.length} 条，最多支持 ${MAX_CUSTOM_QUOTES} 条。`,
+      toast.error(t('admin.settings.sidebar.quote.error.tooManyTitle'), {
+        description: t('admin.settings.sidebar.quote.error.tooManyDescription', {
+          count: parsed.length,
+          max: MAX_CUSTOM_QUOTES,
+        }),
       })
       return
     }
@@ -255,17 +268,24 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
   const count = customQuotes.length
   const statusText =
     count === 0
-      ? '未配置自定义一言。'
-      : `已配置 ${count} 条自定义一言。${source === 'custom' && count < MIN_CUSTOM_QUOTES ? '未满 10 条，当前实际使用内置一言库。' : ''}`
+      ? t('admin.settings.sidebar.quote.status.empty')
+      : [
+          t('admin.settings.sidebar.quote.status.configured', { count }),
+          source === 'custom' && count < MIN_CUSTOM_QUOTES
+            ? t('admin.settings.sidebar.quote.status.insufficient', { min: MIN_CUSTOM_QUOTES })
+            : '',
+        ]
+          .filter((part) => part !== '')
+          .join(' ')
 
   return (
     <SettingGroup
-      title="每日一言"
-      description="日历图片底部的一言来源。远程接口失败时自动回退到本地内置一言库；自定义一言按日期轮换。已渲染的日历图片会在缓存过期后更新。"
+      title={t('admin.settings.sidebar.quote.title')}
+      description={t('admin.settings.sidebar.quote.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="一言来源" htmlFor="sidebar-daily-quote-source">
+        <SettingsRow label={t('admin.settings.sidebar.quote.source')} htmlFor="sidebar-daily-quote-source">
           <Controller
             control={form.control}
             name="source"
@@ -273,13 +293,16 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
               <SettingsSelect name={field.name} value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="sidebar-daily-quote-source" className="w-full">
                   <SelectValue>
-                    {(value: string | null) => SOURCE_OPTIONS.find((o) => o.value === value)?.label ?? value ?? ''}
+                    {(value: string | null) => {
+                      const option = SOURCE_OPTIONS.find((o) => o.value === value)
+                      return option === undefined ? (value ?? '') : t(option.labelId)
+                    }}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {SOURCE_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.labelId)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -288,8 +311,11 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
           />
         </SettingsRow>
         <SettingsRow
-          label="自定义一言"
-          hint={`上传 JSON 文件，格式 [{"content":"…","author":"…"}]，至少 ${MIN_CUSTOM_QUOTES} 条、最多 ${MAX_CUSTOM_QUOTES} 条。`}
+          label={t('admin.settings.sidebar.quote.custom')}
+          hint={t('admin.settings.sidebar.quote.uploadHint', {
+            min: MIN_CUSTOM_QUOTES,
+            max: MAX_CUSTOM_QUOTES,
+          })}
         >
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
@@ -298,7 +324,7 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
                 type="file"
                 accept="application/json,.json"
                 hidden
-                aria-label="选择自定义一言 JSON 文件"
+                aria-label={t('admin.settings.sidebar.quote.chooseFile')}
                 onChange={(e) => {
                   const file = e.target.files?.[0]
                   if (file) {
@@ -315,11 +341,11 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <UploadIcon data-icon="sm" />
-                上传 JSON
+                {t('admin.settings.sidebar.quote.upload')}
               </Button>
               {count > 0 && (
                 <Button type="button" variant="ghost" size="sm" disabled={isSaving} onClick={handleClear}>
-                  清除
+                  {t('admin.settings.sidebar.quote.clear')}
                 </Button>
               )}
             </div>

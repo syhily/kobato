@@ -13,6 +13,7 @@ import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ExemptPathRow {
   clientId: string
@@ -32,6 +33,7 @@ const MAX_EXEMPT_PATHS = 20
 const MAX_ORIGINS = 20
 
 function CsrfToggleCard({ security }: { security: SecuritySettings }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, save } = useSettingsCard<SecuritySettings, { enabled: boolean }>({
     section: 'security',
     source: security,
@@ -43,12 +45,15 @@ function CsrfToggleCard({ security }: { security: SecuritySettings }) {
 
   return (
     <SettingGroup
-      title="CSRF 防护"
-      description="跨站请求伪造保护。所有 /rpc/* 端点要求请求头携带有效的 X-CSRF-Token。关闭后任何请求均不验证令牌，仅建议在调试或特殊部署场景下关闭。"
+      title={t('admin.settings.security.csrf.title')}
+      description={t('admin.settings.security.csrf.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="启用 CSRF 防护" hint="关闭后所有 API 调用将跳过令牌验证。">
+        <SettingsRow
+          label={t('admin.settings.security.csrf.enable')}
+          hint={t('admin.settings.security.csrf.enableHint')}
+        >
           <Controller
             control={form.control}
             name="enabled"
@@ -62,7 +67,7 @@ function CsrfToggleCard({ security }: { security: SecuritySettings }) {
                   save={save}
                 />
                 <FieldLabel htmlFor="csrf-enabled" className="font-normal">
-                  {field.value ? '已开启' : '已关闭'}
+                  {field.value ? t('admin.settings.shared.toggle.on') : t('admin.settings.shared.toggle.off')}
                 </FieldLabel>
               </div>
             )}
@@ -74,6 +79,7 @@ function CsrfToggleCard({ security }: { security: SecuritySettings }) {
 }
 
 function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, flushOnBlur } = useSettingsCard<SecuritySettings, { exemptPaths: ExemptPathRow[] }>({
     section: 'security',
     source: security,
@@ -91,15 +97,18 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
 
   return (
     <SettingGroup
-      title="路径豁免"
-      description="匹配这些前缀的请求将跳过 CSRF 验证。适用于 Webhook 回调或需要无令牌访问的特定端点；/rpc 与 /api 前缀不可豁免。"
+      title={t('admin.settings.security.exempt.title')}
+      description={t('admin.settings.security.exempt.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="豁免路径" hint={`输入路径前缀（如 /webhook/github），最多 ${MAX_EXEMPT_PATHS} 条。`}>
+        <SettingsRow
+          label={t('admin.settings.security.exempt.paths')}
+          hint={t('admin.settings.security.exempt.pathsHint', { max: MAX_EXEMPT_PATHS })}
+        >
           <div className="flex flex-col gap-3">
             {rows.fields.length === 0 ? (
-              <p className="text-sm text-muted-foreground">无豁免路径。所有请求均需携带令牌。</p>
+              <p className="text-sm text-muted-foreground">{t('admin.settings.security.exempt.empty')}</p>
             ) : (
               rows.fields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
@@ -115,7 +124,7 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
                     variant="ghost"
                     size="icon"
                     onClick={() => rows.remove(index)}
-                    aria-label="删除此项"
+                    aria-label={t('admin.settings.security.removeItem')}
                   >
                     <Trash2Icon className="text-destructive" />
                   </Button>
@@ -130,10 +139,12 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
                 disabled={rows.fields.length >= MAX_EXEMPT_PATHS}
                 onClick={() => rows.append({ clientId: crypto.randomUUID(), path: '' })}
               >
-                <PlusIcon /> 添加路径
+                <PlusIcon /> {t('admin.settings.security.exempt.add')}
               </Button>
               {rows.fields.length >= MAX_EXEMPT_PATHS && (
-                <span className="ml-2 text-xs text-muted-foreground">上限 {MAX_EXEMPT_PATHS} 条</span>
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {t('admin.settings.security.exempt.limit', { max: MAX_EXEMPT_PATHS })}
+                </span>
               )}
             </div>
           </div>
@@ -144,6 +155,7 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
 }
 
 function CorsPolicyCard({ security }: { security: SecuritySettings }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, save, flushOnBlur } = useSettingsCard<
     SecuritySettings,
     { enabled: boolean; origins: OriginRow[] }
@@ -166,12 +178,15 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
 
   return (
     <SettingGroup
-      title="CORS 策略"
-      description="跨域资源共享配置。启用后，允许指定的外部域名通过浏览器直接访问站点资源。列表为空时将镜像请求来源（适用于开发环境）。"
+      title={t('admin.settings.security.cors.title')}
+      description={t('admin.settings.security.cors.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="启用 CORS" hint="关闭时，所有跨域请求将被浏览器拒绝。">
+        <SettingsRow
+          label={t('admin.settings.security.cors.enable')}
+          hint={t('admin.settings.security.cors.enableHint')}
+        >
           <Controller
             control={form.control}
             name="enabled"
@@ -185,23 +200,22 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
                   save={save}
                 />
                 <FieldLabel htmlFor="cors-enabled" className="font-normal">
-                  {field.value ? '已开启' : '已关闭'}
+                  {field.value ? t('admin.settings.shared.toggle.on') : t('admin.settings.shared.toggle.off')}
                 </FieldLabel>
               </div>
             )}
           />
         </SettingsRow>
         <SettingsRow
-          label="允许的来源"
-          hint={`每个来源必须是完整的 URL（如 https://example.com），最多 ${MAX_ORIGINS} 条。留空表示镜像模式。`}
+          label={t('admin.settings.security.cors.origins')}
+          hint={t('admin.settings.security.cors.originsHint', { max: MAX_ORIGINS })}
         >
           <p className="rounded-md border border-status-warn-border bg-status-warn-bg px-3 py-2 text-sm text-status-warn-fg">
-            安全提示：当前 CORS 配置允许携带身份凭证（cookies）。添加不可信的第三方来源可能导致会话劫持或 CSRF
-            攻击，请仅添加受信任的域名。
+            {t('admin.settings.security.cors.warning')}
           </p>
           <div className="flex flex-col gap-3">
             {rows.fields.length === 0 ? (
-              <p className="text-sm text-muted-foreground">镜像模式：将自动允许所有请求来源。</p>
+              <p className="text-sm text-muted-foreground">{t('admin.settings.security.cors.mirror')}</p>
             ) : (
               rows.fields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
@@ -218,7 +232,7 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
                     variant="ghost"
                     size="icon"
                     onClick={() => rows.remove(index)}
-                    aria-label="删除此项"
+                    aria-label={t('admin.settings.security.removeItem')}
                   >
                     <Trash2Icon className="text-destructive" />
                   </Button>
@@ -233,10 +247,12 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
                 disabled={rows.fields.length >= MAX_ORIGINS}
                 onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
               >
-                <PlusIcon /> 添加来源
+                <PlusIcon /> {t('admin.settings.security.cors.add')}
               </Button>
               {rows.fields.length >= MAX_ORIGINS && (
-                <span className="ml-2 text-xs text-muted-foreground">上限 {MAX_ORIGINS} 条</span>
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {t('admin.settings.security.cors.limit', { max: MAX_ORIGINS })}
+                </span>
               )}
             </div>
           </div>
@@ -247,6 +263,7 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
 }
 
 function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
+  const { t } = useI18n()
   const siteIdentity = useSiteIdentity()
   const website = siteIdentity?.website ?? ''
   const domainValid = isValidPasskeyDomain(website)
@@ -262,17 +279,17 @@ function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
 
   return (
     <SettingGroup
-      title="Passkey 登录"
-      description="开启后，用户可以使用 Passkey（指纹、面容识别、硬件密钥等）进行免密登录。"
+      title={t('admin.settings.security.passkey.title')}
+      description={t('admin.settings.security.passkey.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="启用 Passkey 登录"
+          label={t('admin.settings.security.passkey.enable')}
           hint={
             domainValid
-              ? '开启后用户可在个人资料中注册 Passkey。'
-              : '开启 Passkey 需要站点使用公开可访问的 HTTPS 域名。'
+              ? t('admin.settings.security.passkey.enableHint')
+              : t('admin.settings.security.passkey.requireDomain')
           }
         >
           <Controller
@@ -289,16 +306,14 @@ function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
                   disabled={!domainValid && !field.value}
                 />
                 <FieldLabel htmlFor="passkey-enabled" className="font-normal">
-                  {field.value ? '已开启' : '已关闭'}
+                  {field.value ? t('admin.settings.shared.toggle.on') : t('admin.settings.shared.toggle.off')}
                 </FieldLabel>
               </div>
             )}
           />
         </SettingsRow>
         {!domainValid && (
-          <p className="text-sm text-muted-foreground">
-            当前站点域名不满足 Passkey 要求（需要公开 HTTPS 域名，不能使用 localhost 或 IP 地址）。
-          </p>
+          <p className="text-sm text-muted-foreground">{t('admin.settings.security.passkey.domainWarning')}</p>
         )}
       </SettingGroupContent>
     </SettingGroup>

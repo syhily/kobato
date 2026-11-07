@@ -174,7 +174,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [savedSource, setSavedSource] = useState<TSource | null>(null)
   const { commit, isPending, status } = useSettingsMutation()
-  const { localizeMessage } = useI18n()
+  const { localizeMessage, t } = useI18n()
   // Zod messages may be catalog ids (typed at the schema call site) or Zod's own
   // default prose; translate the ids, leave the prose untouched. Runs BEFORE
   // `buildZodErrors` so a raw id can never reach a field error.
@@ -259,11 +259,13 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         // A rejected save must never be silent — roll back to the last
         // committed snapshot and surface the first issue.
         reset(lastCommitted)
-        toast.error('设置未保存', { description: firstErrorMessage(errors) ?? '请检查输入后重试' })
+        toast.error(t('admin.settings.shell.unsavedTitle'), {
+          description: firstErrorMessage(errors) ?? t('admin.settings.shell.unsavedDescription'),
+        })
         log.debug('Settings save validation failed, rolled back', { errors })
       },
     )()
-  }, [handleSubmit, section, commit, fromState, getValues, reset, lastCommitted, onSaved])
+  }, [handleSubmit, section, commit, fromState, getValues, reset, lastCommitted, onSaved, t])
 
   const isDirty = useCallback(() => {
     return JSON.stringify(getValues()) !== JSON.stringify(lastCommitted)
@@ -287,9 +289,10 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
           const result = await schema.safeParseAsync(scoped)
           if (!result.success) {
             setValue(unsafeCast<FieldPath<TState>>(field), unsafeCast<never>(getPathValue(lastCommitted, field)))
-            toast.error('设置未保存', {
+            toast.error(t('admin.settings.shell.unsavedTitle'), {
               description:
-                firstErrorMessage(buildZodErrors<TState>(localizeIssues(result.error.issues))) ?? '请检查输入后重试',
+                firstErrorMessage(buildZodErrors<TState>(localizeIssues(result.error.issues))) ??
+                t('admin.settings.shell.unsavedDescription'),
             })
             log.debug('Settings field save validation failed, rolled back', { field, errors: result.error.issues })
             return
@@ -308,7 +311,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         }
       })()
     },
-    [lastCommitted, getValues, setValue, schema, commit, section, fromState, onSaved, localizeIssues],
+    [lastCommitted, getValues, setValue, schema, commit, section, fromState, onSaved, localizeIssues, t],
   )
 
   // Discrete controls fire immediately; a field name scopes the commit to that field.

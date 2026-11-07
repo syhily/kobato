@@ -21,3 +21,11 @@ Framework-level flushes (close, ESC, scroll-away, page hide) call every register
 5. `useSettingsCard` re-seeds the form only when clean and `toState(source)` differs from current form values — prevents lost edits and focus drops.
 
 Each card POSTs an honest Section patch (owned fields only). The server deep-merges, validates, and writes only that row. `src/shared/config/merge-section-patch.ts` is the single merge implementation.
+
+## Copy
+
+Every interface string on this surface — card titles, hints, validation errors, toasts, dialog
+buttons — is a UI message id under `admin.settings.*`, resolved with `useI18n()`; never a Chinese
+literal fallback. `secretFieldStrings({ t, … })` takes the card's translator because its configured
+hint is a catalog message. Technical values (protocol names, URLs, paths, database column names)
+stay as-is.

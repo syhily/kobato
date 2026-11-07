@@ -1,6 +1,7 @@
 import { BellIcon } from 'lucide-react'
 
 import { SidebarMenuItem } from '@/ui/components/sidebar'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { warmNotificationsDrawerChunk } from '@/ui/shared/notifications/LazyNotificationsDrawer'
 import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
@@ -15,6 +16,7 @@ interface NavNotificationsProps {
 // 系统设置 in one menu so the bottom entries share item spacing. It is a
 // button opening the global right-side drawer, not a route.
 export function NavNotifications({ unreadCount, onOpen }: NavNotificationsProps) {
+  const { t } = useI18n()
   return (
     <SidebarMenuItem>
       <button
@@ -24,7 +26,7 @@ export function NavNotifications({ unreadCount, onOpen }: NavNotificationsProps)
         onPointerEnter={warmNotificationsDrawerChunk}
       >
         <BellIcon className="size-4 shrink-0" />
-        <span className="flex-1 truncate">消息通知</span>
+        <span className="flex-1 truncate">{t('public.chrome.notifications')}</span>
         <NotificationBadge count={unreadCount ?? 0} />
       </button>
     </SidebarMenuItem>

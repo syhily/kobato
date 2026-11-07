@@ -1,6 +1,7 @@
 import { Controller } from 'react-hook-form'
 
 import type { ContentSettings } from '@/shared/config/types'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
@@ -11,22 +12,24 @@ import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ContentFormProps {
   content: ContentSettings
 }
 
 const SORT_DIR_ITEMS = [
-  { value: 'desc', label: '最新优先（desc）' },
-  { value: 'asc', label: '最旧优先（asc）' },
-]
+  { value: 'desc', labelId: 'admin.settings.content.sort.dir.desc' },
+  { value: 'asc', labelId: 'admin.settings.content.sort.dir.asc' },
+] as const satisfies readonly { value: 'asc' | 'desc'; labelId: UiMessageId }[]
 
 const SORT_BY_ITEMS = [
-  { value: 'publishedAt', label: '首次发布时间' },
-  { value: 'updatedAt', label: '最近更新时间' },
-]
+  { value: 'publishedAt', labelId: 'admin.settings.content.sort.by.publishedAt' },
+  { value: 'updatedAt', labelId: 'admin.settings.content.sort.by.updatedAt' },
+] as const satisfies readonly { value: 'publishedAt' | 'updatedAt'; labelId: UiMessageId }[]
 
 function ContentPaginationCard({ content }: { content: ContentSettings }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
     ContentSettings,
     { pagPosts: number; pagCategory: number; pagTags: number; pagSearch: number }
@@ -51,12 +54,12 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
 
   return (
     <SettingGroup
-      title="分页"
-      description="每个列表页显示多少篇文章。改动会立即影响首页 / 分类 / 标签 / 搜索结果。"
+      title={t('admin.settings.content.pagination.title')}
+      description={t('admin.settings.content.pagination.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="首页每页文章数" htmlFor="content-pag-posts">
+        <SettingsRow label={t('admin.settings.content.pagination.posts')} htmlFor="content-pag-posts">
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="content-pag-posts"
@@ -66,7 +69,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
             {...form.register('pagPosts', { valueAsNumber: true })}
           />
         </SettingsRow>
-        <SettingsRow label="分类页每页文章数" htmlFor="content-pag-category">
+        <SettingsRow label={t('admin.settings.content.pagination.category')} htmlFor="content-pag-category">
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="content-pag-category"
@@ -76,7 +79,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
             {...form.register('pagCategory', { valueAsNumber: true })}
           />
         </SettingsRow>
-        <SettingsRow label="标签页每页文章数" htmlFor="content-pag-tags">
+        <SettingsRow label={t('admin.settings.content.pagination.tags')} htmlFor="content-pag-tags">
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="content-pag-tags"
@@ -86,7 +89,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
             {...form.register('pagTags', { valueAsNumber: true })}
           />
         </SettingsRow>
-        <SettingsRow label="搜索结果每页数" htmlFor="content-pag-search">
+        <SettingsRow label={t('admin.settings.content.pagination.search')} htmlFor="content-pag-search">
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="content-pag-search"
@@ -102,6 +105,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFeedCard({ content }: { content: ContentSettings }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<
     ContentSettings,
     { feedFull: boolean; feedSize: number }
@@ -119,12 +123,12 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
 
   return (
     <SettingGroup
-      title="RSS / Atom Feed"
-      description="决定 /feed 与 /feed/atom 输出的条目数与是否包含正文。"
+      title={t('admin.settings.content.feed.title')}
+      description={t('admin.settings.content.feed.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="包含完整正文" hint="关闭后只输出摘要 + 永久链接。订阅器中阅读体验更好但不利于离线阅读。">
+        <SettingsRow label={t('admin.settings.content.feed.full')} hint={t('admin.settings.content.feed.fullHint')}>
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -140,11 +144,11 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
               )}
             />
             <FieldLabel htmlFor="content-feed-full" className="font-normal">
-              输出完整正文
+              {t('admin.settings.content.feed.fullLabel')}
             </FieldLabel>
           </div>
         </SettingsRow>
-        <SettingsRow label="Feed 条目数" htmlFor="content-feed-size">
+        <SettingsRow label={t('admin.settings.content.feed.size')} htmlFor="content-feed-size">
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="content-feed-size"
@@ -160,6 +164,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentSortCard({ content }: { content: ContentSettings }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, save } = useSettingsCard<
     ContentSettings,
     {
@@ -186,12 +191,12 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
 
   return (
     <SettingGroup
-      title="文章排序与置顶"
-      description="文章列表的默认排序方向。开启置顶后，可在文章编辑页将文章置顶到首页精选区。"
+      title={t('admin.settings.content.sort.title')}
+      description={t('admin.settings.content.sort.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="排序字段" htmlFor="content-post-sort-by">
+        <SettingsRow label={t('admin.settings.content.sort.field')} htmlFor="content-post-sort-by">
           <Controller
             control={form.control}
             name="postSortBy"
@@ -199,13 +204,16 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
               <SettingsSelect name={field.name} value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="content-post-sort-by" className="w-full">
                   <SelectValue>
-                    {(value: string | null) => SORT_BY_ITEMS.find((o) => o.value === value)?.label ?? value ?? ''}
+                    {(value: string | null) => {
+                      const option = SORT_BY_ITEMS.find((o) => o.value === value)
+                      return option === undefined ? (value ?? '') : t(option.labelId)
+                    }}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {SORT_BY_ITEMS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.labelId)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -213,7 +221,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
             )}
           />
         </SettingsRow>
-        <SettingsRow label="排序方向" htmlFor="content-post-sort">
+        <SettingsRow label={t('admin.settings.content.sort.direction')} htmlFor="content-post-sort">
           <Controller
             control={form.control}
             name="postSort"
@@ -221,13 +229,16 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
               <SettingsSelect name={field.name} value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="content-post-sort" className="w-full">
                   <SelectValue>
-                    {(value: string | null) => SORT_DIR_ITEMS.find((o) => o.value === value)?.label ?? value ?? ''}
+                    {(value: string | null) => {
+                      const option = SORT_DIR_ITEMS.find((o) => o.value === value)
+                      return option === undefined ? (value ?? '') : t(option.labelId)
+                    }}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {SORT_DIR_ITEMS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.labelId)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -235,7 +246,10 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
             )}
           />
         </SettingsRow>
-        <SettingsRow label="开启置顶功能" hint="关闭后首页不展示精选文章，文章编辑页也不显示置顶开关。">
+        <SettingsRow
+          label={t('admin.settings.content.sort.feature')}
+          hint={t('admin.settings.content.sort.featureHint')}
+        >
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -251,7 +265,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
               )}
             />
             <FieldLabel htmlFor="content-post-feature-enabled" className="font-normal">
-              首页展示置顶文章
+              {t('admin.settings.content.sort.featureLabel')}
             </FieldLabel>
           </div>
         </SettingsRow>
@@ -261,6 +275,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFootnotesCard({ content }: { content: ContentSettings }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<ContentSettings, { footnotesSectionTitle: string }>({
     section: 'content',
     source: content,
@@ -274,12 +289,12 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
 
   return (
     <SettingGroup
-      title="脚注汇总标题"
-      description="Portable Text 页面文末脚注列表上方的标题，默认为「尾声礼记」。文章页始终使用默认标题，不受此设置影响。"
+      title={t('admin.settings.content.footnotes.title')}
+      description={t('admin.settings.content.footnotes.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="标题文案" htmlFor="content-footnotes-section-title">
+        <SettingsRow label={t('admin.settings.content.footnotes.label')} htmlFor="content-footnotes-section-title">
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="content-footnotes-section-title"

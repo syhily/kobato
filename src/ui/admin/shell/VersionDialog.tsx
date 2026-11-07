@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 
 import type { UpdateCheckResult, UpdateJobState } from '@/shared/contracts/update'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -18,6 +19,7 @@ import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { GithubIcon } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'dev' | 'error'
@@ -25,11 +27,11 @@ type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'dev' | 'err
 const IS_DEV_BUILD = APP_VERSION.includes('-dev')
 
 // Job-panel copy; no 'succeeded' state — the process exits on success.
-const JOB_STATE_COPY: Partial<Record<UpdateJobState, string>> = {
-  downloading: '正在下载更新包…',
-  verifying: '正在校验更新包…',
-  swapping: '正在替换二进制…',
-  restarting: '重启中，约 10 秒后自动刷新',
+const JOB_STATE_COPY: Partial<Record<UpdateJobState, UiMessageId>> = {
+  downloading: 'admin.shell.version.job.downloading',
+  verifying: 'admin.shell.version.job.verifying',
+  swapping: 'admin.shell.version.job.swapping',
+  restarting: 'admin.shell.version.job.restarting',
 }
 
 interface VersionDialogProps {
@@ -38,6 +40,7 @@ interface VersionDialogProps {
 }
 
 export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
+  const { t } = useI18n()
   const [checkState, setCheckState] = useState<CheckState>('idle')
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null)
   const [jobStarted, setJobStarted] = useState(false)
@@ -88,9 +91,9 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
       await orpc.admin.update.apply({})
       setJobStarted(true)
     } catch (err) {
-      setApplyError(err instanceof Error ? err.message : '启动更新失败，请稍后重试')
+      setApplyError(err instanceof Error ? err.message : t('admin.shell.version.applyFailedFallback'))
     }
-  }, [])
+  }, [t])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,7 +101,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <TagIcon className="size-5 text-muted-foreground" />
-            系统版本
+            {t('admin.shell.version.title')}
           </DialogTitle>
         </DialogHeader>
 
@@ -107,12 +110,12 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
             <div className="size-16">
               <img
                 src="/logo.svg?original"
-                alt="站点图标"
+                alt={t('admin.shell.brand.iconAlt')}
                 className="h-full w-full rounded-xl object-cover dark:hidden"
               />
               <img
                 src="/logo-dark.svg?original"
-                alt="站点图标"
+                alt={t('admin.shell.brand.iconAlt')}
                 className="hidden h-full w-full rounded-xl object-cover dark:block"
               />
             </div>
@@ -149,13 +152,13 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
               GitHub
             </VersionLink>
             <VersionLink href={`${APP_HOMEPAGE}/issues`} icon={<ExternalLinkIcon className="size-3.5" />}>
-              问题反馈
+              {t('admin.shell.version.feedback')}
             </VersionLink>
           </div>
 
           <div className="rounded-xl border p-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">更新检查</span>
+              <span className="text-sm font-medium">{t('admin.shell.version.checkTitle')}</span>
               <button
                 type="button"
                 onClick={() => void handleCheckUpdate()}
@@ -171,7 +174,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
                 ) : (
                   <RefreshCwIcon className="size-3.5" />
                 )}
-                检查更新
+                {t('admin.shell.version.check')}
               </button>
             </div>
 
@@ -185,7 +188,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
             {applyError !== null && (
               <div className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
                 <AlertCircleIcon className="size-3.5" />
-                启动更新失败：{applyError}
+                {t('admin.shell.version.applyFailed', { message: applyError })}
               </div>
             )}
 
@@ -194,12 +197,18 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
                 {jobState === 'failed' ? (
                   <>
                     <AlertCircleIcon className="size-3.5 text-destructive" />
-                    <span className="text-destructive">更新失败：{jobStatus?.error ?? '未知错误'}</span>
+                    <span className="text-destructive">
+                      {t('admin.shell.version.jobFailed', {
+                        message: jobStatus?.error ?? t('admin.shell.error.unknown'),
+                      })}
+                    </span>
                   </>
                 ) : (
                   <>
                     <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />
-                    <span className="text-muted-foreground">{JOB_STATE_COPY[jobState] ?? '正在下载更新包…'}</span>
+                    <span className="text-muted-foreground">
+                      {t(JOB_STATE_COPY[jobState] ?? 'admin.shell.version.job.downloading')}
+                    </span>
                   </>
                 )}
               </div>
@@ -236,15 +245,17 @@ function UpdateStatus({
   jobRunning: boolean
   onApplyUpdate: () => void
 }) {
+  const { t } = useI18n()
+
   if (state === 'idle') {
-    return <div className="mt-2 text-xs text-muted-foreground">点击上方按钮检查是否有新版本</div>
+    return <div className="mt-2 text-xs text-muted-foreground">{t('admin.shell.version.idle')}</div>
   }
 
   if (state === 'loading') {
     return (
       <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2Icon className="size-3.5 animate-spin" />
-        正在检查...
+        {t('admin.shell.version.checking')}
       </div>
     )
   }
@@ -253,7 +264,7 @@ function UpdateStatus({
     return (
       <div className="mt-2 flex items-center gap-1.5 text-xs text-status-success-fg">
         <CheckCircleIcon className="size-3.5" />
-        当前已是最新版本
+        {t('admin.shell.version.upToDate')}
       </div>
     )
   }
@@ -262,7 +273,7 @@ function UpdateStatus({
     return (
       <div className="mt-2 flex items-center gap-1.5 text-xs text-status-warn-fg">
         <AlertCircleIcon className="size-3.5" />
-        当前为开发版本，更新检查已跳过
+        {t('admin.shell.version.dev')}
       </div>
     )
   }
@@ -272,7 +283,7 @@ function UpdateStatus({
       <div className="mt-2 flex flex-col gap-2 text-xs">
         <div className="flex items-center gap-1.5">
           <ArrowUpCircleIcon className="size-3.5 text-status-info-fg" />
-          <span className="text-status-info-fg">发现新版本：</span>
+          <span className="text-status-info-fg">{t('admin.shell.version.available')}</span>
           <a
             href={checkResult.htmlUrl}
             target="_blank"
@@ -296,9 +307,9 @@ function UpdateStatus({
               )}
             >
               <ArrowUpCircleIcon className="size-3.5" />
-              立即更新
+              {t('admin.shell.version.apply')}
             </button>
-            <p className="text-muted-foreground">将下载并替换当前二进制，随后自动重启</p>
+            <p className="text-muted-foreground">{t('admin.shell.version.applyHint')}</p>
           </div>
         ) : (
           checkResult.reasons.length > 0 && (
@@ -319,7 +330,7 @@ function UpdateStatus({
   return (
     <div className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
       <AlertCircleIcon className="size-3.5" />
-      检查失败，请稍后重试
+      {t('admin.shell.version.checkFailed')}
     </div>
   )
 }

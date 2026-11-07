@@ -1,6 +1,7 @@
 import { Controller, useWatch } from 'react-hook-form'
 
 import type { BackupSettings } from '@/shared/config/types'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
@@ -11,6 +12,7 @@ import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface FormState {
   scheduledEnabled: boolean
@@ -23,14 +25,22 @@ interface FormState {
   retentionDays: number
 }
 
-const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+const WEEKDAY_LABEL_IDS: readonly UiMessageId[] = [
+  'admin.settings.backup.schedule.weekday.mon',
+  'admin.settings.backup.schedule.weekday.tue',
+  'admin.settings.backup.schedule.weekday.wed',
+  'admin.settings.backup.schedule.weekday.thu',
+  'admin.settings.backup.schedule.weekday.fri',
+  'admin.settings.backup.schedule.weekday.sat',
+  'admin.settings.backup.schedule.weekday.sun',
+]
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const MINUTES = [0, 30] as const
-const FREQUENCY_OPTIONS = [
-  { value: 'daily', label: '每天' },
-  { value: 'weekly', label: '每周' },
-  { value: 'monthly', label: '每月' },
-] as const
+const FREQUENCY_OPTIONS: readonly { value: 'daily' | 'weekly' | 'monthly'; labelId: UiMessageId }[] = [
+  { value: 'daily', labelId: 'admin.settings.backup.schedule.frequency.daily' },
+  { value: 'weekly', labelId: 'admin.settings.backup.schedule.frequency.weekly' },
+  { value: 'monthly', labelId: 'admin.settings.backup.schedule.frequency.monthly' },
+]
 
 function asBackupMinute(value: string | null): BackupSettings['scheduled']['minute'] {
   return value === '30' ? 30 : 0
@@ -41,6 +51,7 @@ interface BackupScheduleFormProps {
 }
 
 export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<BackupSettings, FormState>({
     section: 'backup',
     source: backup,
@@ -74,10 +85,21 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
   const frequency = useWatch({ control: form.control, name: 'frequency' })
   const retentionEnabled = useWatch({ control: form.control, name: 'retentionEnabled' })
 
+  const frequencyOptions = FREQUENCY_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) }))
+  const weekdayLabels = WEEKDAY_LABEL_IDS.map((id) => t(id))
+  const dayOfMonthOptions = Array.from({ length: 28 }, (_, i) => ({
+    value: String(i + 1),
+    label: t('admin.settings.backup.schedule.dayOfMonthOption', { day: i + 1 }),
+  }))
+
   return (
-    <SettingGroup title="定时备份" description="配置自动备份的频率与保留策略。" {...settingGroupProps}>
+    <SettingGroup
+      title={t('admin.settings.backup.schedule.title')}
+      description={t('admin.settings.backup.schedule.description')}
+      {...settingGroupProps}
+    >
       <SettingGroupContent>
-        <SettingsRow label="启用定时备份">
+        <SettingsRow label={t('admin.settings.backup.schedule.enable')}>
           <Controller
             control={form.control}
             name="scheduledEnabled"
@@ -91,7 +113,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
                   save={save}
                 />
                 <FieldLabel htmlFor="scheduled-enabled" className="font-normal">
-                  开启
+                  {t('admin.settings.shared.toggle.on')}
                 </FieldLabel>
               </div>
             )}
@@ -100,7 +122,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
 
         {enabled && (
           <>
-            <SettingsRow label="备份频率">
+            <SettingsRow label={t('admin.settings.backup.schedule.frequency')}>
               <Controller
                 control={form.control}
                 name="frequency"
@@ -110,13 +132,13 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
                     value={field.value}
                     onValueChange={field.onChange}
                     save={save}
-                    items={FREQUENCY_OPTIONS}
+                    items={frequencyOptions}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {FREQUENCY_OPTIONS.map((option) => (
+                      {frequencyOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -127,7 +149,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
               />
             </SettingsRow>
 
-            <SettingsRow label="备份时间">
+            <SettingsRow label={t('admin.settings.backup.schedule.time')}>
               <div className="flex gap-2">
                 <Controller
                   control={form.control}
@@ -181,7 +203,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
             </SettingsRow>
 
             {frequency === 'weekly' && (
-              <SettingsRow label="星期">
+              <SettingsRow label={t('admin.settings.backup.schedule.weekday')}>
                 <Controller
                   control={form.control}
                   name="dayOfWeek"
@@ -191,13 +213,13 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
                       value={String(field.value ?? 1)}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
-                      items={WEEKDAY_LABELS.map((label, idx) => ({ value: String(idx + 1), label }))}
+                      items={weekdayLabels.map((label, idx) => ({ value: String(idx + 1), label }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {WEEKDAY_LABELS.map((label, idx) => (
+                        {weekdayLabels.map((label, idx) => (
                           <SelectItem key={label} value={String(idx + 1)}>
                             {label}
                           </SelectItem>
@@ -210,7 +232,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
             )}
 
             {frequency === 'monthly' && (
-              <SettingsRow label="每月日期">
+              <SettingsRow label={t('admin.settings.backup.schedule.dayOfMonth')}>
                 <Controller
                   control={form.control}
                   name="dayOfMonth"
@@ -220,15 +242,15 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
                       value={String(field.value ?? 1)}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
-                      items={Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} 日` }))}
+                      items={dayOfMonthOptions}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                          <SelectItem key={d} value={String(d)}>
-                            {d} 日
+                        {dayOfMonthOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -238,7 +260,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
               </SettingsRow>
             )}
 
-            <SettingsRow label="保留策略">
+            <SettingsRow label={t('admin.settings.backup.schedule.retention')}>
               <Controller
                 control={form.control}
                 name="retentionEnabled"
@@ -252,7 +274,7 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
                       save={save}
                     />
                     <FieldLabel htmlFor="retention-enabled" className="font-normal">
-                      自动清理历史备份
+                      {t('admin.settings.backup.schedule.retentionToggle')}
                     </FieldLabel>
                   </div>
                 )}
@@ -260,7 +282,10 @@ export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
             </SettingsRow>
 
             {retentionEnabled && (
-              <SettingsRow label="保留天数" hint="超过此天数的旧备份将被自动删除。">
+              <SettingsRow
+                label={t('admin.settings.backup.schedule.retentionDays')}
+                hint={t('admin.settings.backup.schedule.retentionDaysHint')}
+              >
                 <SettingsInput
                   flushOnBlur={flushOnBlur}
                   type="number"

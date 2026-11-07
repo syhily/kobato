@@ -450,3 +450,33 @@ describe('useFileUpload — failure handling', () => {
     expect(onError).toHaveBeenCalledWith('上传失败')
   })
 })
+
+describe('useFileUpload — default copy follows the active locale', () => {
+  const tEn = makeTranslator('en-US')
+
+  it('translates the type and size guards', async () => {
+    const { result } = renderHook(() =>
+      useFileUpload({ t: tEn, endpoint: '/api/admin/example/upload', accept: ['.svg'], maxBytes: 10 }),
+    )
+
+    await act(async () => {
+      await result.current.upload(makeFile('icon.png', 1))
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('Wrong file type', { description: undefined })
+
+    await act(async () => {
+      await result.current.upload(makeFile('icon.svg', 100))
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('File too large', { description: undefined })
+  })
+
+  it('translates the status fallback when the error body carries no message', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({}, 413))
+    const { result } = renderHook(() => useFileUpload({ t: tEn, endpoint: '/api/admin/example/upload' }))
+
+    await act(async () => {
+      await result.current.upload(makeFile('a.bin', 1))
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('Upload failed', { description: 'Upload failed (413)' })
+  })
+})
