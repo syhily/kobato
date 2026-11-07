@@ -212,7 +212,9 @@ projected — never re-derived — onto the three context surfaces: Hono
 React Router `RouterContextProvider` key. It carries the session, the
 viewer, the proxy-aware client address, the normalized document URL
 (`.data` / `_routes` / `index` stripped), the request facts, the
-db/pool handles, and the CSP nonce. Same-session mutations call
+db/pool handles, the CSP nonce, and the per-request `localization` pair
+(`locale` + site `timeZone`, resolved from the settings snapshot on first
+access). Same-session mutations call
 `markSessionDirty()` and the middleware commits — the only Set-Cookie
 commit point; sid-changing flows (login rotation) keep their explicit
 Set-Cookie channel.

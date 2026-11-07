@@ -96,8 +96,10 @@ describe('scanner rules', () => {
     expect(rules('export function A() { return <div title={copy} /> }')).toEqual([])
   })
 
-  it('flags titleMeta() string arguments', () => {
+  it('accepts only message ids as titleMeta() arguments', () => {
     expect(rules("export const meta = () => titleMeta('登录')")).toEqual(['title-meta'])
+    expect(rules('export const meta = () => titleMeta(`登录页`)')).toEqual(['title-meta'])
+    expect(rules("export const meta = () => titleMeta('meta.title.auth.signin')")).toEqual([])
     expect(rules('export const meta = () => titleMeta(pageTitle)')).toEqual([])
   })
 

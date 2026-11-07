@@ -4,7 +4,7 @@ import { UsersView } from '@/ui/admin/users/UsersView'
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('用户管理')
+export const meta = titleMeta('meta.title.admin.users')
 
 export default function WpAdminUsersRoute() {
   return <UsersView />

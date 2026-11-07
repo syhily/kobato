@@ -13,7 +13,7 @@ import { SessionsView } from '@/ui/admin/sessions/SessionsView'
 
 import type { Route } from './+types/sessions'
 
-export const meta = titleMeta('会话管理')
+export const meta = titleMeta('meta.title.admin.sessions')
 
 export interface AdminSessionItem {
   sid: string

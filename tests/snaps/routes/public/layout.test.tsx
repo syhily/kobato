@@ -8,7 +8,9 @@ import { describe, expect, it } from 'vitest'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { asRoute } from '#/_helpers/route-test-utils'
 import PublicLayoutRoute, { ErrorBoundary } from '@/routes/public/layout'
+import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
+import { I18nProvider } from '@/ui/lib/I18nProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 const testQueryClient = new QueryClient({
@@ -21,7 +23,9 @@ function renderRoutes(routes: RouteObject[], initialPath: string): string {
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,

@@ -3,10 +3,12 @@ import { redactSecretsFromBundle } from '@/server/domains/settings/services/mask
 import { publicProc } from '@/server/http/orpc-base'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { contentBootstrapOutputSchema } from '@/shared/contracts/content'
+import { uiMessagesFor } from '@/shared/i18n/catalog'
 import { parseThemeCookie } from '@/shared/utils/theme-cookie'
 
 // The root loader's data segment (public AND admin): redacted settings
-// bundle, fonts, theme, CSRF token. No input — theme parsed from the cookie.
+// bundle, fonts, theme, CSRF token, and the CURRENT locale's UI messages.
+// No input — theme parsed from the cookie.
 export const contentBootstrap = publicProc
   .route({ method: 'GET', path: '/content/bootstrap' })
   .output(contentBootstrapOutputSchema)
@@ -29,5 +31,10 @@ export const contentBootstrap = publicProc
 
     const theme = parseThemeCookie(context.requestFacts.cookie)
 
-    return { admin: role === 'admin', currentUser, blogSettings, fonts, theme, csrfToken }
+    // The UI catalog is resolved HERE (server side) and shipped as data; the
+    // root layout must never value-import the catalog modules.
+    const { locale } = context.localization
+    const i18n = { locale, messages: uiMessagesFor(locale) }
+
+    return { admin: role === 'admin', currentUser, blogSettings, fonts, theme, csrfToken, i18n }
   })

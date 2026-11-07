@@ -135,7 +135,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   })
 }
 
-export const meta = titleMeta('用户登陆')
+export const meta = titleMeta('meta.title.auth.signin')
 
 function localizeAuthError(error: string | null): string | null {
   if (error === null) {

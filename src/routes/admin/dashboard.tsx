@@ -18,7 +18,7 @@ import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
 
 import type { Route } from './+types/dashboard'
 
-export const meta = titleMeta('欢迎')
+export const meta = titleMeta('meta.title.admin.dashboard')
 
 // Keep in lockstep with the `PAGE_SIZE` constant in `PendingModerationPanel.tsx` — the panel's pagination assumes this size.
 const PENDING_PAGE_SIZE = 3

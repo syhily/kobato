@@ -5,7 +5,7 @@ import { guardOnlyLoader } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { cn } from '@/ui/lib/cn'
 
-export const meta = titleMeta('访问统计')
+export const meta = titleMeta('meta.title.admin.analytics')
 
 // Intentionally thin — the date-range picker + filters live on the child
 // routes so the realtime feed isn't forced to react to range changes.

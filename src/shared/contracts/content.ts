@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { UiMessages } from '@/shared/i18n/messages/ui/en-US'
 import type {
   Category,
   ClientTag,
@@ -17,6 +18,8 @@ import type { DetailPageComments, LatestComment } from '@/shared/types/comments'
 import type { ResolvedFonts } from '@/shared/types/fonts'
 import type { ListingPageLoaderData } from '@/shared/types/listing'
 import type { Role } from '@/shared/utils/roles'
+
+import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
 // `content.*` — the Ghost-Content-API-style read-only group backing every public SSR
 // loader (in-process via `@/server/http/ssr-caller`). HTTP signals that can't cross the
@@ -41,6 +44,18 @@ export type ContentSignal = ContentRedirectSignal | ContentNotModifiedSignal
 
 // The root loader's data segment. No input: the theme is parsed from
 // the cookie inside the procedure so the route never touches cookie names.
+//
+// `i18n` carries the CURRENT locale's merged UI catalog only — the server
+// catalog and the catalog modules themselves never enter the client graph.
+// `messages` is typed rather than re-validated here: its id set is a
+// compile-time catalog type, and importing the catalog into this module would
+// defeat that boundary (the sanctioned `z.custom<T>()` exception, see above).
+export const contentBootstrapI18nSchema = z.object({
+  locale: z.enum(SUPPORTED_LOCALES),
+  messages: z.custom<UiMessages>(),
+})
+export type ContentBootstrapI18n = z.infer<typeof contentBootstrapI18nSchema>
+
 export const contentBootstrapOutputSchema = z.object({
   admin: z.boolean(),
   currentUser: z.custom<{ id: string; name: string; role: Role } | null>(),
@@ -48,6 +63,7 @@ export const contentBootstrapOutputSchema = z.object({
   fonts: z.custom<ResolvedFonts>().nullable(),
   theme: z.enum(['dark', 'light']).nullable(),
   csrfToken: z.string(),
+  i18n: contentBootstrapI18nSchema,
 })
 export type ContentBootstrapOutput = z.infer<typeof contentBootstrapOutputSchema>
 

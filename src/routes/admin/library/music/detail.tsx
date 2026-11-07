@@ -13,7 +13,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   return { id: params.id }
 }
 
-export const meta = titleMeta('歌曲详情')
+export const meta = titleMeta('meta.title.admin.musicDetail')
 
 export default function AdminMusicDetailRoute({ params }: Route.ComponentProps) {
   const navigate = useNavigate()

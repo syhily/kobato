@@ -129,7 +129,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   return data({ error: '未知操作。' })
 }
 
-export const meta = titleMeta('创建站点')
+export const meta = titleMeta('meta.title.auth.setup')
 
 export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
   const navigation = useNavigation()

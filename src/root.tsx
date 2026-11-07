@@ -6,6 +6,8 @@ import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
 
+import type { ContentBootstrapI18n } from '@/shared/contracts/content'
+
 import { setCsrfToken } from '@/client/api/client'
 import { makeQueryClient } from '@/client/api/query-client'
 import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
@@ -16,10 +18,13 @@ import { defaultTransition } from '@/client/lib/motion'
 import { createSsrCaller } from '@/server/http/ssr-caller'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/config/getters'
+import { fallbackMessages } from '@/shared/i18n/fallback-messages'
+import { DEFAULT_LOCALE, type AppLocale } from '@/shared/i18n/locales'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
-import { bundleFromMatches, routeMeta } from '@/shared/seo/meta'
+import { bundleFromMatches, i18nFromMatches, routeMeta } from '@/shared/seo/meta'
 import { isRecord } from '@/shared/utils/type-guards'
 import { LazyMotionConfig } from '@/ui/components/lazy-motion'
+import { I18nProvider } from '@/ui/lib/I18nProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
@@ -62,7 +67,11 @@ function collectTier2Chunks(
 export const middleware: MiddlewareFunction<Response>[] = []
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
-  return routeMeta(undefined, loaderData?.blogSettings ?? bundleFromMatches(matches))
+  return routeMeta(
+    undefined,
+    loaderData?.blogSettings ?? bundleFromMatches(matches),
+    loaderData?.i18n ?? i18nFromMatches(matches),
+  )
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -86,6 +95,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     fonts: boot.fonts,
     theme: boot.theme,
     csrfToken: boot.csrfToken,
+    i18n: boot.i18n,
     criticalLinks,
     tier2Chunks,
     cspNonce,
@@ -118,6 +128,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     tier2Chunks?: string[]
     csrfToken?: string
     cspNonce?: string
+    i18n?: ContentBootstrapI18n | null
   }>('root')
   const theme = rootData?.theme ?? null
   const assetHost = rootData?.blogSettings?.assets?.asset?.host
@@ -159,7 +170,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const criticalLinks = rootData?.criticalLinks ?? []
   const tier2Chunks = rootData?.tier2Chunks ?? []
 
-  const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
+  // One i18n payload drives both the document language and the provider.
+  // `fallbackMessages` is the ONLY synchronous message module the client may
+  // import directly; the full catalog arrives as loader data.
+  const i18n = rootData?.i18n ?? null
+  const locale: AppLocale = i18n?.locale ?? DEFAULT_LOCALE
+  const messages = i18n?.messages ?? fallbackMessages
 
   // When custom fonts are configured, override the CSS font tokens on <html>
   // so the slot's stack prepends the existing fallback chain:
@@ -203,7 +219,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ))}
       </head>
       <body>
-        {children}
+        <I18nProvider locale={locale} messages={messages}>
+          {children}
+        </I18nProvider>
         <ChunkReloadOverlay />
         <ScrollRestoration nonce={rootData?.cspNonce} />
         <Scripts nonce={rootData?.cspNonce} />
@@ -257,7 +275,10 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
     <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
         <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
-          {blogSettings ? (
+          {/* Full chrome only with a COMPLETE i18n payload: a root-loader failure
+              renders the minimal ErrorView over the fallback messages, never a
+              layout whose chrome still needs catalog copy. */}
+          {loaderData?.i18n ? (
             <Suspense fallback={body}>
               <PublicErrorLayout currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
                 {body}

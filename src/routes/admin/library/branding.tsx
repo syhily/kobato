@@ -18,7 +18,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return { branding: projected.branding }
 }
 
-export const meta = titleMeta('品牌素材')
+export const meta = titleMeta('meta.title.admin.branding')
 
 export default function WpAdminBrandingRoute({ loaderData }: Route.ComponentProps) {
   return <BrandingView branding={loaderData.branding} />

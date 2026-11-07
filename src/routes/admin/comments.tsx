@@ -9,7 +9,7 @@ import { parseCommentFiltersFromSearchParams } from '@/ui/admin/comments/useComm
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('评论管理')
+export const meta = titleMeta('meta.title.admin.comments')
 
 export default function WpAdminCommentsRoute() {
   const { currentUser } = useOutletContext<{

@@ -52,6 +52,7 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
     clientAddress: rc.clientAddress,
     responseHeaders: new Headers(),
     db: rc.db,
+    localization: rc.localization,
   }
   // Nonce derives once here so route modules never call `getRequestContext` themselves.
   return {

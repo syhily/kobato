@@ -1,16 +1,33 @@
 import type { MetaDescriptor } from 'react-router'
 
 import type { BlogSettingsBundle, SiteAssetBranding } from '@/shared/config/types'
+import type { AppLocale } from '@/shared/i18n/locales'
+import type { UiMessageId, UiMessages } from '@/shared/i18n/messages/ui/en-US'
 
 // Isomorphic by construction: route `meta()` exports pull this module
-// into the browser bundle, so it may only import `@/shared/*`.
+// into the browser bundle, so it may only import `@/shared/*`. In particular it
+// must NOT import `@/shared/i18n/catalog` (the four catalogs) — localized copy
+// arrives as the root loader's `i18n` payload through `matches`.
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { brandingVersionSuffix, extractXHandle } from '@/shared/config/utils'
+import { isSupportedLocale, toOpenGraphLocale } from '@/shared/i18n/locales'
 import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { isRecord } from '@/shared/utils/type-guards'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { joinUrl } from '@/shared/utils/urls'
 
-const PRE_INSTALL_TITLE = '正在安装'
+/** English last resort for the pre-install title: every real render carries `i18n`. */
+const PRE_INSTALL_TITLE_FALLBACK = 'Installing'
+
+/**
+ * The i18n payload the root loader forwards from `content.bootstrap`.
+ * `meta()` runs again on client navigation, so this MUST come from `matches`
+ * — never from the server settings snapshot.
+ */
+export interface SeoI18n {
+  locale: AppLocale
+  messages: UiMessages
+}
 
 interface ArticleSeo {
   date: Date | string
@@ -28,7 +45,10 @@ export interface FeedLinkOptions {
 }
 
 export interface RouteSeoOptions {
+  /** Raw content title (post/page/category/tag/navigation copy). Never a message id. */
   title?: string
+  /** Static document title: a UI message id resolved from matches' i18n payload. */
+  titleKey?: UiMessageId
   description?: string
   pageUrl?: string
   ogImageUrl?: string
@@ -70,7 +90,7 @@ export function pageTitle(title?: string, bundle?: BlogSettingsBundle | null): s
   const resolved = bundle ?? getBlogSettingsBundleSync()
   const siteIdentity = resolved?.siteIdentity
   if (siteIdentity === null || siteIdentity === undefined) {
-    return title ?? PRE_INSTALL_TITLE
+    return title ?? PRE_INSTALL_TITLE_FALLBACK
   }
   return title === undefined
     ? `${siteIdentity.title} ${siteIdentity.titleSeparator} ${siteIdentity.description}`
@@ -199,7 +219,7 @@ function twitterTags(
   return meta
 }
 
-function articleTags(variant: SeoVariant, authorName: string): MetaDescriptor[] {
+function articleTags(variant: SeoVariant, authorName: string, i18n?: SeoI18n | null): MetaDescriptor[] {
   if (variant.kind === 'website') {
     return []
   }
@@ -213,7 +233,8 @@ function articleTags(variant: SeoVariant, authorName: string): MetaDescriptor[] 
     { property: 'article:author', content: authorName },
     {
       property: 'article:section',
-      content: variant.kind === 'page' ? '页面' : (variant.article.category ?? ''),
+      // A page's section is system copy (localized); a post's is its category (content).
+      content: variant.kind === 'page' ? (i18n?.messages['meta.section.page'] ?? '') : (variant.article.category ?? ''),
     },
   )
   if (variant.kind === 'post') {
@@ -285,9 +306,29 @@ export function seoForPage(page: PageMetaShape): RouteSeoOptions {
   }
 }
 
+/**
+ * Static titles arrive as message ids and resolve ONLY from the root loader's
+ * i18n payload (works on client navigation, where no server translator exists).
+ * Raw content titles pass through untouched.
+ */
+function resolveTitle(
+  title: string | undefined,
+  titleKey: UiMessageId | undefined,
+  i18n: SeoI18n | null | undefined,
+): string | undefined {
+  if (title !== undefined) {
+    return title
+  }
+  if (titleKey === undefined) {
+    return undefined
+  }
+  return i18n?.messages[titleKey]
+}
+
 export function routeMeta(
   {
     title,
+    titleKey,
     description,
     pageUrl,
     ogImageUrl,
@@ -300,13 +341,15 @@ export function routeMeta(
     feedLinks,
   }: RouteSeoOptions = {},
   bundle?: BlogSettingsBundle | null,
+  i18n?: SeoI18n | null,
 ): MetaDescriptor[] {
   const resolved = bundle ?? getBlogSettingsBundleSync()
   const siteIdentity = resolved?.siteIdentity
+  const rawTitle = resolveTitle(title, titleKey, i18n)
   if (resolved === null || siteIdentity === null || siteIdentity === undefined) {
     // Pre-install fallback: the split-screen renders before settings
     // exist — emit a minimal `<title>` and noindex.
-    return [{ title: title ?? PRE_INSTALL_TITLE }, ...robotsTags(true)]
+    return [{ title: rawTitle ?? i18n?.messages['meta.preinstall'] ?? PRE_INSTALL_TITLE_FALLBACK }, ...robotsTags(true)]
   }
 
   const seo = resolved.seo ?? {
@@ -315,7 +358,7 @@ export function routeMeta(
   }
   const socials = resolved.socials ?? { socials: [] }
 
-  const resolvedTitle = pageTitle(title, resolved)
+  const resolvedTitle = pageTitle(rawTitle, resolved)
   const resolvedDescription = description || siteIdentity.description
   const resolvedPageUrl = absoluteUrl(pageUrl, siteIdentity.website) || siteIdentity.website
   const imageUrl = resolveOgImage(siteIdentity.website, ogImageUrl, resolved?.assets?.branding)
@@ -333,10 +376,10 @@ export function routeMeta(
         imageUrl,
         imageAlt,
       },
-      siteIdentity.locale,
+      toOpenGraphLocale(siteIdentity.locale),
       seo.og,
     ),
-    ...articleTags(variant, siteIdentity.author.name),
+    ...articleTags(variant, siteIdentity.author.name, i18n),
     ...twitterTags(
       { title: resolvedTitle, description: resolvedDescription, imageUrl, imageAlt },
       extractXHandle(socials.socials),
@@ -384,6 +427,7 @@ export function routeMeta(
 
 interface RootLoaderData {
   blogSettings?: BlogSettingsBundle | null
+  i18n?: unknown
 }
 
 function isRootLoaderData(value: unknown): value is RootLoaderData {
@@ -394,21 +438,42 @@ function isRootLoaderData(value: unknown): value is RootLoaderData {
   return bs === undefined || bs === null || isRecord(bs)
 }
 
-export function bundleFromMatches(matches: readonly unknown[]): BlogSettingsBundle | null | undefined {
-  const rootMatch = matches.find((m) => {
-    if (!isRecord(m)) {
-      return false
-    }
-    return m.id === 'root'
-  })
-  if (!isRecord(rootMatch)) {
+function rootLoaderData(matches: readonly unknown[]): RootLoaderData | undefined {
+  const rootMatch = matches.find((m) => isRecord(m) && m.id === 'root')
+  if (!isRecord(rootMatch) || !isRootLoaderData(rootMatch.loaderData)) {
     return undefined
   }
-  const rootLoader = rootMatch.loaderData
-  if (!isRootLoaderData(rootLoader)) {
+  return rootMatch.loaderData
+}
+
+export function bundleFromMatches(matches: readonly unknown[]): BlogSettingsBundle | null | undefined {
+  const rootLoader = rootLoaderData(matches)
+  if (rootLoader === undefined) {
     return undefined
   }
   return rootLoader.blogSettings ?? null
+}
+
+/**
+ * The root loader's i18n payload, validated structurally. `meta()` resolves
+ * static titles and system section labels from HERE — the only source that
+ * exists on both SSR and client navigation.
+ */
+export function i18nFromMatches(matches: readonly unknown[]): SeoI18n | null {
+  const candidate = rootLoaderData(matches)?.i18n
+  if (!isRecord(candidate)) {
+    return null
+  }
+  const { locale, messages } = candidate
+  if (typeof locale !== 'string' || !isSupportedLocale(locale) || !isRecord(messages)) {
+    return null
+  }
+  for (const value of Object.values(messages)) {
+    if (typeof value !== 'string') {
+      return null
+    }
+  }
+  return { locale, messages: unsafeCast<UiMessages>(messages) }
 }
 
 export function metaWithFallback({
@@ -429,5 +494,5 @@ export function metaWithFallback({
   if (fallback !== undefined) {
     return fallback(bundle)
   }
-  return routeMeta(undefined, bundle)
+  return routeMeta(undefined, bundle, i18nFromMatches(matches))
 }

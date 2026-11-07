@@ -3,6 +3,7 @@ import { ORPCError, os } from '@orpc/server'
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
+import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
@@ -23,6 +24,8 @@ export interface HandlerContext {
   clientAddress: string
   responseHeaders: Headers
   db: Database
+  /** UI locale + site time zone, projected from the canonical RequestContext. */
+  localization: AppLocalization
 }
 
 // Narrowed by `requireAuth`/`requireRole`: `viewer` is guaranteed non-null.

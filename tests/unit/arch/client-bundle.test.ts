@@ -2,6 +2,11 @@
  * Client-bundle architecture guard: fails when the client layers value-import a
  * node-only specifier. Routes may import `@/server/*` for loaders only; keep
  * server imports out of render paths. New node-only deps go in NODE_ONLY_PACKAGES.
+ *
+ * The same scan enforces the i18n bundle boundary: message catalogs and the
+ * server translator are SERVER-ONLY value imports. The browser receives the
+ * current locale's UI catalog as root-loader data (`content.bootstrap`), and
+ * `@/shared/i18n/fallback-messages` is the single synchronous exception.
  */
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -206,6 +211,97 @@ describe('client bundle guard', () => {
         ["import type { Options } from 'nodemailer'", 'export type { Options }'].join('\n'),
       )
       expect(collectViolations(fixtureRoot)).toEqual([])
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true })
+    }
+  })
+})
+
+// --- i18n bundle boundary -------------------------------------------------
+
+// `@/shared/i18n/messages/**` are the four catalogs (they also TYPE the message
+// ids, so `import type` is fine); `catalog` aggregates them; `server/infra/i18n`
+// is the server translator. All three must stay out of the client static graph.
+const I18N_SERVER_ONLY_SPECIFIERS = [
+  /^@\/shared\/i18n\/catalog$/,
+  /^@\/shared\/i18n\/messages\//,
+  /^@\/server\/infra\/i18n$/,
+]
+
+/** The aggregator itself may import the per-locale catalogs — that is its job. */
+const I18N_CATALOG_OWNER = 'src/shared/i18n/catalog.ts'
+
+const I18N_SCANNED_ROOTS = ['src/ui', 'src/client', 'src/routes', 'src/shared']
+/** Root route module: part of the client bundle, so it must not pin the catalogs. */
+const I18N_SCANNED_ROOT_FILES = ['src/root.tsx']
+
+function isI18nServerOnlySpecifier(specifier: string): boolean {
+  return I18N_SERVER_ONLY_SPECIFIERS.some((pattern) => pattern.test(specifier))
+}
+
+function collectI18nViolations(filePaths: readonly string[]): string[] {
+  const violations: string[] = []
+  for (const filePath of filePaths) {
+    const rel = relativePath(filePath)
+    if (rel === I18N_CATALOG_OWNER) {
+      continue
+    }
+    const source = readFileSync(filePath, 'utf-8')
+    for (const specifier of getValueSpecifiers(source)) {
+      if (isI18nServerOnlySpecifier(specifier)) {
+        violations.push(`${rel} value-imports server-only i18n module '${specifier}'`)
+      }
+    }
+  }
+  return violations.sort()
+}
+
+function collectI18nFiles(): string[] {
+  const files: string[] = []
+  for (const root of I18N_SCANNED_ROOTS) {
+    walk(join(PROJECT_ROOT, root), (filePath) => files.push(filePath))
+  }
+  for (const rel of I18N_SCANNED_ROOT_FILES) {
+    files.push(join(PROJECT_ROOT, rel))
+  }
+  return files
+}
+
+describe('i18n bundle boundary', () => {
+  it('client layers and the root route never value-import the catalogs or the server translator', () => {
+    expect(collectI18nViolations(collectI18nFiles())).toEqual([])
+  })
+
+  it('tripwire: reports catalog/translator value imports and ignores type-only ones', () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), 'client-bundle-i18n-'))
+    try {
+      const leak = join(fixtureRoot, 'leak.ts')
+      const typesOnly = join(fixtureRoot, 'types-only.ts')
+      writeFileSync(
+        leak,
+        [
+          "import { uiMessagesFor } from '@/shared/i18n/catalog'",
+          "import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'",
+          "import { createServerTranslator } from '@/server/infra/i18n'",
+          'export const send = () => import("@/shared/i18n/catalog")',
+        ].join('\n'),
+      )
+      writeFileSync(
+        typesOnly,
+        ["import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'", 'export type Id = UiMessageId'].join(
+          '\n',
+        ),
+      )
+
+      const violations = collectI18nViolations([leak, typesOnly])
+      expect(violations).toHaveLength(4)
+      for (const specifier of ['@/shared/i18n/catalog', '@/shared/i18n/messages/ui/zh-CN', '@/server/infra/i18n']) {
+        expect(
+          violations.some((v) => v.includes('leak.ts') && v.includes(`'${specifier}'`)),
+          `expected a violation naming leak.ts and '${specifier}'`,
+        ).toBe(true)
+      }
+      expect(violations.some((v) => v.includes('types-only.ts'))).toBe(false)
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true })
     }

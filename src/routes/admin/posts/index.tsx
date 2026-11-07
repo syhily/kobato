@@ -4,7 +4,7 @@ import { PostsView } from '@/ui/admin/posts/PostsView'
 
 export const loader = guardOnlyLoader('author')
 
-export const meta = titleMeta('文章管理')
+export const meta = titleMeta('meta.title.admin.posts')
 
 export default function WpAdminPostsRoute() {
   return <PostsView />

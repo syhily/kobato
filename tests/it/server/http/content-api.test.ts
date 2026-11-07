@@ -15,6 +15,9 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { weakEtag } from '@/server/infra/http/etag'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
+import { serverMessagesZhCN } from '@/shared/i18n/messages/server/zh-CN'
+import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 
 // The `content.*` read procedures over the real RPCHandler JSON round-trip:
 // union signals (redirect / not-modified), NOT_FOUNDs, and happy-path payloads.
@@ -156,6 +159,49 @@ describe('content.bootstrap', () => {
       makePublicCtx({ db, csrfToken: 'test-csrf-token', cookie: 'other=1; kobato-blog-theme=light' }),
     )
     expect((await parseRpcJson<{ theme: string | null }>(light)).theme).toBe('light')
+  })
+
+  it('ships the current locale UI catalog and nothing from the server catalog', async () => {
+    const res = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const json = await parseRpcJson<{ i18n: { locale: string; messages: Record<string, string> } }>(res)
+
+    expect(json.i18n.locale).toBe('zh-CN')
+    expect(json.i18n.messages['common.action.save']).toBe('保存')
+    expect(json.i18n.messages['meta.title.admin.dashboard']).toBe('欢迎')
+    // Exactly the locale's full UI catalog — email/notification keys never cross the wire.
+    expect(Object.keys(json.i18n.messages).sort()).toEqual(Object.keys(uiMessagesZhCN).sort())
+    for (const key of Object.keys(serverMessagesZhCN)) {
+      expect(Object.hasOwn(json.i18n.messages, key)).toBe(false)
+    }
+  })
+
+  it('follows the configured locale, and defaults pre-install', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+    })
+    const localized = await callRpc(
+      '/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
+    const localizedJson = await parseRpcJson<{ i18n: { locale: string; messages: Record<string, string> } }>(localized)
+    expect(localizedJson.i18n.locale).toBe('en-US')
+    expect(Object.keys(localizedJson.i18n.messages).sort()).toEqual(Object.keys(uiMessagesEnUS).sort())
+    expect(localizedJson.i18n.messages['common.action.save']).toBe('Save')
+
+    // Pre-install: no settings row at all — the default locale still ships a full catalog.
+    setBlogSettingsBundleForTests(null)
+    const preinstall = await callRpc(
+      '/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
+    const preinstallJson = await parseRpcJson<{ i18n: { locale: string; messages: Record<string, string> } }>(
+      preinstall,
+    )
+    expect(preinstallJson.i18n.locale).toBe('zh-CN')
+    expect(Object.keys(preinstallJson.i18n.messages).sort()).toEqual(Object.keys(uiMessagesZhCN).sort())
   })
 
   it('answers a null theme when the cookie is absent or invalid', async () => {

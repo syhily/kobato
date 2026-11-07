@@ -4,7 +4,7 @@ import { TagsView } from '@/ui/admin/tags/TagsView'
 
 export const loader = guardOnlyLoader('author')
 
-export const meta = titleMeta('标签管理')
+export const meta = titleMeta('meta.title.admin.tags')
 
 export default function WpAdminTagsRoute() {
   return <TagsView />

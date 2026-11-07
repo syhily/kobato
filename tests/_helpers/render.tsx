@@ -7,7 +7,9 @@ import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
+import { I18nProvider } from '@/ui/lib/I18nProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 const testQueryClient = new QueryClient({
@@ -23,7 +25,11 @@ export function renderToHtml(element: ReactElement): string {
   return renderToString(
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
-        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            {element}
+          </I18nProvider>
+        </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
   )
@@ -38,7 +44,9 @@ export function renderInRouter(node: ReactNode, initialPath: string = '/'): stri
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
@@ -60,7 +68,9 @@ export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, o
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
@@ -73,7 +83,11 @@ export async function prerenderToHtml(element: ReactNode): Promise<string> {
   const { prelude } = await prerenderToNodeStream(
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
-        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            {element}
+          </I18nProvider>
+        </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
   )
@@ -93,7 +107,9 @@ export async function prerenderInRouter(node: ReactNode, initialPath: string = '
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,

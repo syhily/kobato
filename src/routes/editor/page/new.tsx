@@ -6,7 +6,7 @@ import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('新建页面')
+export const meta = titleMeta('meta.title.editor.pageNew')
 
 export default function WpAdminPageNewRoute() {
   const navigate = useNavigate()

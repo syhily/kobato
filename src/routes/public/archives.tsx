@@ -12,7 +12,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export const headers = listingHeaders
 
-export const meta = titleMeta('归档')
+export const meta = titleMeta('meta.title.public.archives')
 
 export default function ArchivesRoute({ loaderData }: Route.ComponentProps) {
   return <ArchivesBody resolvedPosts={loaderData.resolvedPosts} listingNowIso={loaderData.listingNowIso} />

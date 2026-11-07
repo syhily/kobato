@@ -8,7 +8,7 @@ import type { Route } from './+types/edit'
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('编辑页面')
+export const meta = titleMeta('meta.title.editor.pageEdit')
 
 export default function WpAdminPageEditRoute({ params }: Route.ComponentProps) {
   const navigate = useNavigate()

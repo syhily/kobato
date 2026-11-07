@@ -44,7 +44,7 @@ import { ThresholdForm } from '@/ui/admin/settings/ThresholdForm'
 import { WebmentionsForm } from '@/ui/admin/settings/WebmentionsForm'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 
-export const meta = titleMeta('系统设置')
+export const meta = titleMeta('meta.title.admin.settings')
 
 export const loader = guardOnlyLoader('admin')
 

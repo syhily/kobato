@@ -5,7 +5,7 @@ import type { RouteHandle } from '@/root'
 
 import { detailHeaders } from '@/server/http/loaders/route-exports'
 import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@/server/http/ssr-caller'
-import { bundleFromMatches, routeMeta, seoForPost } from '@/shared/seo/meta'
+import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPost } from '@/shared/seo/meta'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
 import { WebmentionList } from '@/ui/public/webmentions/WebmentionList'
 
@@ -46,10 +46,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   const bundle = bundleFromMatches(matches)
+  const i18n = i18nFromMatches(matches)
   if (!loaderData) {
-    return routeMeta(undefined, bundle)
+    return routeMeta(undefined, bundle, i18n)
   }
-  return routeMeta(seoForPost(loaderData.post), bundle)
+  return routeMeta(seoForPost(loaderData.post), bundle, i18n)
 }
 
 export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {

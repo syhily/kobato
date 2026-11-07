@@ -70,6 +70,9 @@ const COPY_TEXT =
 
 const COPY_ATTRIBUTES = new Set(['aria-label', 'placeholder', 'title', 'alt'])
 
+/** Dotted message id (`meta.title.admin.dashboard`) — the only accepted titleMeta() argument. */
+const MESSAGE_ID = /^[a-z][A-Za-z0-9]*(\.[A-Za-z0-9]+)+$/
+
 interface AstNode {
   type: string
   start: number
@@ -295,8 +298,10 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
       const callee = node.callee
       const calleeName = identifierName(callee)
       if (calleeName === 'titleMeta') {
+        // Static titles are message ids: a dotted id is the correct form, any
+        // other literal is unlocalized copy.
         const text = literalText(args[0])
-        if (text !== null) {
+        if (text !== null && !MESSAGE_ID.test(text.trim())) {
           report(violations, source, file, 'title-meta', node, text)
         }
       }

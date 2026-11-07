@@ -72,9 +72,19 @@ emails and notifications must resolve the locale explicitly.
 
 **Bundle boundary.** `messages/ui/**`, `messages/server/**` and `catalog.ts`
 are server-side value imports: the client receives one locale's UI catalog from
-the root loader. `fallback-messages.ts` is the single sanctioned exception — a
-three-string module duplicated from the Simplified Chinese catalog (parity
-pinned by test) so the root ErrorBoundary can render before any settings load.
+the root loader (`content.bootstrap` → `i18n: { locale, messages }`).
+`fallback-messages.ts` is the single sanctioned exception — a three-string
+module duplicated from the Simplified Chinese catalog (parity pinned by test) so
+the root ErrorBoundary can render before any settings load.
+
+**One provider, meta reads matches.** The root `Layout` owns the only
+react-intl provider, fed from the loader payload (falling back to
+`fallback-messages` when the root loader failed — that path renders the minimal
+`ErrorView`, never the public chrome). Route `meta()` re-runs on client
+navigation, so static titles are message ids resolved from the root match's
+payload (`i18nFromMatches`), never from the server settings snapshot or a
+server translator; raw content titles stay raw strings. `og:locale` maps
+through `toOpenGraphLocale`, and a page's `article:section` is catalog copy.
 
 **Release flag.** `I18N_SETTINGS_ENABLED` (source-level, `false`) hides the
 General locale selector until every surface, cache dimension and e2e journey
@@ -93,6 +103,9 @@ scan roots grow with each migration slice rather than switching on all at once.
   the alias rewrite is safe to re-run on every boot.
 - Existing sites keep their date display exactly; new installs get
   locale-appropriate dates without any admin action.
+- Static route titles are message ids now: `titleMeta('meta.title.…')` fails
+  `tsc` for a missing translation and resolves on both SSR and client
+  navigation, while post/page/category/tag titles remain author content.
 - Adding a message means editing four files (the English baseline plus its three
   translations, in whichever namespace the message belongs to), and `tsc`
   enforces it; ICU structural drift fails the catalog test, not a runtime

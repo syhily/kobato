@@ -6,7 +6,7 @@ import { WebmentionsView, type WebmentionTab } from '@/ui/admin/webmentions/Webm
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('Webmention 管理')
+export const meta = titleMeta('meta.title.admin.webmentions')
 
 export default function WpAdminWebmentionsRoute() {
   const [searchParams, setSearchParams] = useSearchParams()

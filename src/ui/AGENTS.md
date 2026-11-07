@@ -63,7 +63,9 @@ parent.
   editor's node whitelist admits no media/headings — pinned by the sanitize strategy tests).
 - `ui/icons/` — static-export icon library. Named imports only — no `<Icon name="..." />` string
   lookups. Import directly from `lucide-react`; the build tree-shakes unused icons.
-- `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
+- `ui/lib/` — UI utilities (`cn`, `code-languages`, `I18nProvider` (react-intl
+  provider + typed `useI18n()`; messages arrive as root-loader data),
+  `ThemeProvider`,
   `use-media-query`). shadcn's `aliases.lib` is pinned here. No `src/lib/` parallel.
 
 ## Merge-engine tokens

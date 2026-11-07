@@ -26,7 +26,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   }
 }
 
-export const meta = titleMeta('文章分析')
+export const meta = titleMeta('meta.title.admin.postAnalytics')
 
 export default function EditorPostAnalyticsPage({ loaderData }: Route.ComponentProps) {
   const { post, counters, initialMetrics } = loaderData

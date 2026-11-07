@@ -13,7 +13,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return { passkeyEnabled: await caller.admin.users.passkeyFlag() }
 }
 
-export const meta = titleMeta('用户详情')
+export const meta = titleMeta('meta.title.admin.userDetail')
 
 export default function WpAdminUserDetailRoute({ loaderData, params }: Route.ComponentProps) {
   const navigate = useNavigate()

@@ -4,7 +4,7 @@ import { ImagesView } from '@/ui/admin/images/ImagesView'
 
 export const loader = guardOnlyLoader('author')
 
-export const meta = titleMeta('图片管理')
+export const meta = titleMeta('meta.title.admin.images')
 
 export default function WpAdminImagesRoute() {
   return <ImagesView />

@@ -12,7 +12,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export const headers = listingHeaders
 
-export const meta = titleMeta('分类')
+export const meta = titleMeta('meta.title.public.categories')
 
 export default function CategoriesRoute({ loaderData }: Route.ComponentProps) {
   return <CategoriesBody title="分类" categories={loaderData.categories} />

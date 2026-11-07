@@ -13,7 +13,7 @@ import { MySessionsView } from '@/ui/admin/my/MySessionsView'
 
 import type { Route } from './+types/sessions'
 
-export const meta = titleMeta('登录设备')
+export const meta = titleMeta('meta.title.admin.mySessions')
 
 export interface MySessionItem {
   sid: string

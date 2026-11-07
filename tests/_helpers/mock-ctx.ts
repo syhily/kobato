@@ -2,6 +2,7 @@ import type { HandlerContext } from '@/server/http/orpc-base'
 import type { Database } from '@/server/infra/db/database'
 
 import { extractRequestFacts } from '@/server/http/utils/request-facts'
+import { resolveAppLocalization } from '@/shared/i18n/app-localization'
 
 // Builders for the oRPC `context` argument. Authed procedures gate on
 // `context.viewer` via requireAuth/requireRole; this seeds both the
@@ -54,6 +55,7 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
     db: opts.db ?? ({} as Database),
+    localization: resolveAppLocalization(),
   }
 }
 
@@ -70,5 +72,6 @@ export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
     db: opts.db ?? ({} as Database),
+    localization: resolveAppLocalization(),
   }
 }

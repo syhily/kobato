@@ -112,7 +112,7 @@ Tier-2 buckets derive automatically from route-ID prefixes (`routes/public|admin
 
 ## Sessions & Request Context
 
-One perimeter middleware derives the canonical `RequestContext` once per request — session, viewer, client address, normalized URL, request facts, db, CSP nonce. Every surface (oRPC bridge, RR `buildLoadContext`, resource routers) projects from it. Same-session mutations call `markSessionDirty()`; the middleware commits `Set-Cookie` after the response. ADR-0003.
+One perimeter middleware derives the canonical `RequestContext` once per request — session, viewer, client address, normalized URL, request facts, db, CSP nonce, and the lazily-memoized `localization` pair (UI locale + site time zone, resolved by `resolveAppLocalization` after `buildLoadContext` hydrates settings). Every surface (oRPC bridge, RR `buildLoadContext`, resource routers) projects from it. Same-session mutations call `markSessionDirty()`; the middleware commits `Set-Cookie` after the response. ADR-0003.
 
 ## Databases
 
