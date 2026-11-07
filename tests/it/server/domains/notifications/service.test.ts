@@ -5,6 +5,7 @@ import type { SessionUser } from '@/server/domains/auth/session-storage'
 import type { Role } from '@/shared/utils/roles'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import {
   getThread,
   listInbox,
@@ -18,7 +19,7 @@ import {
   sendDirectMessage,
   unreadCount,
 } from '@/server/domains/notifications/service'
-import { listThreadParticipantIds } from '@/server/infra/db/operations/notification'
+import { listThreadParticipantIds, notificationInboxQuery } from '@/server/infra/db/operations/notification'
 import { notificationRecipient } from '@/server/infra/db/schema/notification'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
@@ -215,6 +216,36 @@ describe('notifications / inbox', () => {
 
     const inbox = await listInbox(db, visitorId, { tab: 'all', limit: 10 })
     expect(inbox.items[0]!.sender).toBeNull()
+  })
+
+  it('pins the inbox access path: index-fed ordering, no temp B-tree', () => {
+    // Every inbox page (all / unread / cursor / kind-filtered) must walk
+    // `idx_notification_recipient_user_nid` backwards. Losing the index (or
+    // ordering by the joined table) reintroduces a temp B-tree over the
+    // user's whole recipient history. The raw client is used because
+    // `EXPLAIN QUERY PLAN` needs the statement's bound values, which the
+    // drizzle `all` surface does not accept.
+    const client = getDatabaseHandle().client
+    const cases = [
+      { label: 'all', filters: { limit: 20 } },
+      { label: 'unread', filters: { unreadOnly: true, limit: 20 } },
+      { label: 'cursor', filters: { cursorId: 500, limit: 20 } },
+      { label: 'kinds', filters: { kinds: ['direct'] as const, limit: 20 } },
+    ]
+    for (const { label, filters } of cases) {
+      const query = notificationInboxQuery(db, 1, filters).toSQL()
+      const plan = client
+        .prepare(`EXPLAIN QUERY PLAN ${query.sql}`)
+        .all(...(query.params as number[]))
+        .map((row) => String(row.detail))
+      expect(plan, label).toContain(
+        'SEARCH notification_recipient USING INDEX idx_notification_recipient_user_nid (user_id=?)',
+      )
+      expect(
+        plan.filter((detail) => detail.includes('TEMP B-TREE')),
+        label,
+      ).toEqual([])
+    }
   })
 })
 

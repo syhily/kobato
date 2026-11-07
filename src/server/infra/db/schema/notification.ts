@@ -45,12 +45,13 @@ export const notificationRecipient = sqliteTable(
     notificationId: integer('notification_id').notNull(),
     userId: integer('user_id').notNull(),
     readAt: integer('read_at', { mode: 'timestamp_ms' }),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .$defaultFn(() => new Date()),
   },
   (table) => [
     uniqueIndex('uq_notification_recipient').on(table.notificationId, table.userId),
     index('idx_notification_recipient_user').on(table.userId, table.readAt),
+    // Inbox ordering index: the list sorts by message id DESC, so the
+    // user-prefixed column order lets the planner scan backwards instead of
+    // sorting the user's whole history in a temp B-tree.
+    index('idx_notification_recipient_user_nid').on(table.userId, table.notificationId),
   ],
 )

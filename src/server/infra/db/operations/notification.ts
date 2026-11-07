@@ -90,12 +90,21 @@ export interface InboxFilters {
 }
 
 // Inbox listing, newest first; the cursor paginates by message id. Recalled
-// messages (ADR-0007) are invisible to every recipient.
+// messages (ADR-0007) are invisible to every recipient. Ordering by the
+// RECIPIENT's notification id (equal to the joined message id) is what the
+// `(user_id, notification_id)` index feeds — ordering by `notification.id`
+// sorted the user's whole history in a temp B-tree.
 export async function listNotificationsForUser(
   db: Database,
   userId: number,
   filters: InboxFilters,
 ): Promise<NotificationInboxRow[]> {
+  return notificationInboxQuery(db, userId, filters)
+}
+
+/** The inbox read, unexecuted — its access path (no temp B-tree) is pinned by
+ *  `tests/it/server/domains/notifications/service.test.ts`. */
+export function notificationInboxQuery(db: Database, userId: number, filters: InboxFilters) {
   const conditions: SQL[] = [eq(notificationRecipient.userId, userId), isNull(notification.recalledAt)]
   if (filters.kinds !== undefined) {
     conditions.push(inArray(notification.kind, [...filters.kinds]))
@@ -111,7 +120,7 @@ export async function listNotificationsForUser(
     .from(notificationRecipient)
     .innerJoin(notification, eq(notificationRecipient.notificationId, notification.id))
     .where(and(...conditions))
-    .orderBy(desc(notification.id))
+    .orderBy(desc(notificationRecipient.notificationId))
     .limit(filters.limit)
 }
 
