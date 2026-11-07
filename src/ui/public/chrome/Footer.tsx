@@ -1,9 +1,11 @@
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useChromeClock } from '@/ui/public/chrome/use-chrome-clock'
 
 export function Footer() {
   const siteIdentity = useSiteIdentity()
+  const { t } = useI18n()
   const { website, title } = siteIdentity
   // Hydration-safe live clock (see useChromeClock).
   const thisYear = formatLocalDate(useChromeClock(), 'yyyy', siteIdentity)
@@ -13,9 +15,7 @@ export function Footer() {
   return (
     <footer className="mt-4 flex flex-1 flex-col items-center justify-center gap-1 border-t border-line py-6 text-center text-xs md:mt-4 md:py-8 lg:mt-5 lg:py-10">
       <div className="flex flex-row flex-wrap justify-center gap-[0.5em]">
-        <span>
-          Copyright © {initialYear}-{thisYear}{' '}
-        </span>
+        <span>{t('public.chrome.copyright', { start: initialYear, end: thisYear })} </span>
         <a href={website} title={title} rel="home" className="text-ink-1 hover:text-brand">
           {title}
         </a>
@@ -27,7 +27,7 @@ export function Footer() {
               href="https://beian.miit.gov.cn"
               rel="nofollow noreferrer"
               target="_blank"
-              title="ICP 备案"
+              title={t('public.chrome.icpTitle')}
               className="text-ink-1 hover:text-brand"
             >
               {icpNo}
@@ -38,7 +38,7 @@ export function Footer() {
               href={`https://icp.gov.moe/?keyword=${website.replace(/^https?:\/\//, '')}`}
               rel="nofollow noreferrer"
               target="_blank"
-              title="萌国 ICP 备案"
+              title={t('public.chrome.moeIcpTitle')}
               className="text-ink-1 hover:text-brand"
             >
               {moeIcpNo}

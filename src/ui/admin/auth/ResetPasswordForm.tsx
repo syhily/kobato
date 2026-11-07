@@ -8,6 +8,7 @@ import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Covers both resetpassword and accept-invite.
 export interface ResetPasswordFormProps {
@@ -18,6 +19,7 @@ export interface ResetPasswordFormProps {
 }
 
 export function ResetPasswordForm({ action, token, isSubmitting, csrfToken }: ResetPasswordFormProps) {
+  const { t } = useI18n()
   const [showPassword, setShowPassword] = useState(false)
 
   return (
@@ -26,7 +28,7 @@ export function ResetPasswordForm({ action, token, isSubmitting, csrfToken }: Re
       {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
       <div className="flex w-full flex-col gap-2">
         <Label htmlFor="loginForm-password" className="font-semibold text-(--text-admin-base)">
-          新密码
+          {t('auth.reset.newPassword')}
         </Label>
         <div className="relative w-full">
           <Input
@@ -51,10 +53,10 @@ export function ResetPasswordForm({ action, token, isSubmitting, csrfToken }: Re
         className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
-          '保存中…'
+          t('auth.reset.saving')
         ) : (
           <>
-            设置密码 <ArrowRightIcon className="ml-1 inline-block" size={18} />
+            {t('auth.reset.submit')} <ArrowRightIcon className="ml-1 inline-block" size={18} />
           </>
         )}
       </Button>

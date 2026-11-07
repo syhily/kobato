@@ -7,6 +7,7 @@ import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useCommentsActions, useCommentsIdentity } from '@/ui/public/comments/comments-context'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
@@ -17,6 +18,7 @@ interface InlineEditFormProps {
 }
 
 export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormProps) {
+  const { t } = useI18n()
   const actions = useCommentsActions('InlineEditForm')
   const identity = useCommentsIdentity('InlineEditForm')
   // The wire shape is shared, but the policy differs: moderators hit the
@@ -69,10 +71,10 @@ export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormPro
           onClick={handleSave}
           disabled={saving}
         >
-          {saving ? '保存中…' : '保存'}
+          {saving ? t('common.state.saving') : t('common.action.save')}
         </Button>
         <Button variant="light" onMouseDown={(event) => event.preventDefault()} onClick={onCancel} disabled={saving}>
-          取消
+          {t('common.action.cancel')}
         </Button>
       </div>
     </div>

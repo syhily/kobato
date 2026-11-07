@@ -10,22 +10,37 @@
 import type { ReactNode } from 'react'
 
 import { createContext, useCallback, useContext } from 'react'
-import { IntlProvider, useIntl } from 'react-intl'
+import { createIntl, createIntlCache, IntlContext, IntlProvider } from 'react-intl'
 
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { getLogger } from '@/client/lib/logger'
+import { fallbackMessages } from '@/shared/i18n/fallback-messages'
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales'
 
 const log = getLogger('i18n')
 
-/** ICU values accepted by react-intl for message interpolation. */
-export type I18nMessageParams = Record<string, string | number | boolean | Date | null | undefined>
+/**
+ * ICU values accepted by react-intl: plain interpolation values plus the
+ * rich-text form (`<link>{title}</link>`) — a function receiving the tag's
+ * chunks. Never build sentences by concatenating translated fragments.
+ */
+export type I18nMessageParams = Record<
+  string,
+  string | number | Date | null | undefined | ReactNode | ((chunks: ReactNode[]) => ReactNode)
+>
 
 export interface I18nValue {
   locale: AppLocale
-  /** Format one UI message id; `params` fill the ICU placeholders. */
+  /** Format one UI message id; `params` fill the ICU placeholders. Plain string result. */
   t: (id: UiMessageId, params?: I18nMessageParams) => string
+  /**
+   * Rich-text form for messages with `<tag>…</tag>` placeholders (e.g. a link
+   * inside a sentence). Returns a React node so the interpolation stays one
+   * message per locale instead of concatenated fragments.
+   */
+  tRich: (id: UiMessageId, params: I18nMessageParams) => ReactNode
 }
 
 const LocaleContext = createContext<AppLocale | null>(null)
@@ -63,12 +78,26 @@ export function I18nProvider({ locale, messages, children }: I18nProviderProps) 
  * throwing (rather than silently rendering ids) keeps a missing provider a
  * loud test failure.
  */
+// Provider-less fallback for components rendered outside the root tree (unit
+// tests, defensive leaves): the minimal fallback catalog, never a full one.
+const fallbackIntl = createIntl(
+  { locale: DEFAULT_LOCALE, messages: fallbackMessages, onError: () => undefined },
+  createIntlCache(),
+)
+
 export function useI18n(): I18nValue {
   const locale = useContext(LocaleContext)
-  const intl = useIntl()
-  const t = useCallback<I18nValue['t']>((id, params) => intl.formatMessage({ id }, params), [intl])
-  if (locale === null) {
-    throw new Error('useI18n() requires the root <I18nProvider> (see src/root.tsx).')
-  }
-  return { locale, t }
+  const provided = useContext(IntlContext)
+  const intl = provided ?? fallbackIntl
+  // Plain messages never carry rich tags, so the string narrowing is exact.
+  const t = useCallback<I18nValue['t']>(
+    (id, params) => {
+      const formatted = intl.formatMessage({ id }, params)
+      // Plain messages never carry rich tags, so react-intl returns a string.
+      return typeof formatted === 'string' ? formatted : ''
+    },
+    [intl],
+  )
+  const tRich = useCallback<I18nValue['tRich']>((id, params) => intl.formatMessage({ id }, params) as ReactNode, [intl])
+  return { locale: locale ?? DEFAULT_LOCALE, t, tRich }
 }

@@ -9,6 +9,7 @@ import { useSidebarSettings, useSiteIdentity } from '@/shared/lib/blog-config-co
 import { formatShowDate } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Pagination } from '@/ui/public/post/Pagination'
 import { postTitleClass } from '@/ui/public/post/postChrome'
 import { Sidebar, type SidebarData } from '@/ui/public/Sidebar'
@@ -67,6 +68,7 @@ export function HomeLayoutBody({
 }
 
 function EmptyHomeState({ currentUser, hasSidebar }: { currentUser?: { role: string } | null; hasSidebar: boolean }) {
+  const { t } = useI18n()
   const canWrite = currentUser?.role === 'admin' || currentUser?.role === 'author'
   return (
     <div
@@ -81,12 +83,12 @@ function EmptyHomeState({ currentUser, hasSidebar }: { currentUser?: { role: str
             <PenLineIcon className="size-8" aria-hidden />
           </div>
           <div className="mb-6 text-ink-4">
-            <div className="mb-1 text-lg font-medium text-ink-1">还没有文章</div>
-            <div className="text-sm">
-              {canWrite ? '去写第一篇文章，开始你的博客之旅吧' : '博客正在建设中，敬请期待'}
-            </div>
+            <div className="mb-1 text-lg font-medium text-ink-1">{t('public.posts.empty')}</div>
+            <div className="text-sm">{canWrite ? t('public.posts.emptyOwner') : t('public.posts.emptyVisitor')}</div>
           </div>
-          {canWrite && <Button render={<Link to="/editor/post/new" prefetch="intent" />}>新建文章</Button>}
+          {canWrite && (
+            <Button render={<Link to="/editor/post/new" prefetch="intent" />}>{t('public.posts.newPost')}</Button>
+          )}
         </div>
       </div>
     </div>
@@ -114,6 +116,7 @@ export function PostListingBody({
   pagination = 'always',
   listingNowIso,
 }: PostListingBodyProps) {
+  const { t } = useI18n()
   return (
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
@@ -129,7 +132,7 @@ export function PostListingBody({
           <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
             <div className="my-auto">
               <h1 className="font-number text-empty-state-hero">404</h1>
-              <div>抱歉，没有你要找的内容...</div>
+              <div>{t('error.notFound.description')}</div>
             </div>
           </div>
         ) : (
@@ -236,6 +239,7 @@ export function PostCards({
   layout = 'with-sidebar',
 }: PostCardsProps) {
   const config = useSiteIdentity()
+  const { t } = useI18n()
   return (
     <div
       className={cn(
@@ -285,8 +289,8 @@ export function PostCards({
                   <div className="line-clamp-2">
                     {!post.published && (
                       <span className="text-alert">
-                        <span className="sr-only">未发布草稿：</span>
-                        【草稿】
+                        <span className="sr-only">{t('public.posts.draftPrefix')}</span>
+                        {t('public.posts.draftBadge')}
                       </span>
                     )}
                     {post.title}

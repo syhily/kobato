@@ -8,6 +8,7 @@ import { useSeoSettingsOptional } from '@/shared/lib/blog-config-context'
 import { generateToC } from '@/shared/utils/toc'
 import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv, LazyMotionSpan } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { TocItems } from '@/ui/public/post/TocItems'
 
 const DEFAULT_TOC_CONFIG = {
@@ -21,6 +22,7 @@ export interface TableOfContentsProps {
 }
 
 export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsProps) {
+  const { t } = useI18n()
   const seo = useSeoSettingsOptional()
   const generateTocConfig = toc === 'enabled' ? (seo?.toc ?? DEFAULT_TOC_CONFIG) : false
   const items = generateToC(headings, generateTocConfig)
@@ -85,7 +87,7 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
           x: visible ? -280 : -20,
         }}
         transition={transitions.drawer}
-        aria-label={visible ? '关闭文章目录' : '展开文章目录'}
+        aria-label={visible ? t('public.posts.tocClose') : t('public.posts.tocOpen')}
         aria-expanded={visible}
         onClick={onToggle}
       >
@@ -118,7 +120,9 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
       >
         <div className="absolute top-0 -right-12 bottom-0 left-0 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="mr-12 pt-11.5">
-            <h2 className="w-full px-10 text-left text-toc-title leading-[3.6rem] font-bold text-ink-1">文章目录</h2>
+            <h2 className="w-full px-10 text-left text-toc-title leading-[3.6rem] font-bold text-ink-1">
+              {t('public.posts.tocLabel')}
+            </h2>
             <div className="pt-8">
               <TocItems items={items} tabIndex={visible ? 0 : -1} />
             </div>

@@ -11,6 +11,7 @@ import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
 
@@ -92,6 +93,7 @@ export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'un
 }
 
 export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeButtonProps) {
+  const { t } = useI18n()
   // Dispatch inside a transition and keep it pending until `onSuccess` commits.
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
@@ -219,9 +221,9 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
           'transition-[transform,box-shadow,background-color,border-color] duration-200 ease-[cubic-bezier(0.175,0.885,0.32,1.1)] hover:scale-[1.04] hover:shadow-[0_12px_32px_-6px_rgb(0_0_0/0.25)]',
           'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
         )}
-        title="Do you like me?"
+        title={t('public.like.title')}
         aria-pressed={state.liked}
-        aria-label={state.liked ? '取消点赞' : '点赞'}
+        aria-label={state.liked ? t('public.like.unlike') : t('public.like.like')}
         data-liked={state.liked ? 'true' : 'false'}
         onClick={onClick}
         disabled={isPending}
@@ -256,6 +258,7 @@ export interface LikeShareProps {
 
 export function LikeShare({ post }: LikeShareProps) {
   const { website } = useSiteIdentity()
+  const { t } = useI18n()
   const postURL = joinUrl(website, post.permalink)
   const qq = new URLSearchParams({
     url: postURL,
@@ -278,8 +281,10 @@ export function LikeShare({ post }: LikeShareProps) {
         size="iconMd"
         shape="circle"
         className="mx-1"
-        render={<a href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`} aria-label="分享到 QQ 空间" />}
-        title="分享到 QQ 空间"
+        render={
+          <a href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`} aria-label={t('public.like.shareQq')} />
+        }
+        title={t('public.like.shareQq')}
       >
         <IconButtonContent>
           <QQIcon className="size-5" />
@@ -287,8 +292,8 @@ export function LikeShare({ post }: LikeShareProps) {
       </Button>
       <QRDialog
         url={postURL}
-        name="在微信中请长按二维码"
-        title="微信扫一扫 分享朋友圈"
+        name={t('public.like.wechatQrHint')}
+        title={t('public.like.shareWechat')}
         trigger={<WechatIcon className="size-5" />}
         variant="light"
         size="iconMd"
@@ -300,8 +305,10 @@ export function LikeShare({ post }: LikeShareProps) {
         size="iconMd"
         shape="circle"
         className="mx-1"
-        render={<a href={`https://service.weibo.com/share/share.php?${weibo}`} aria-label="分享到微博" />}
-        title="分享到微博"
+        render={
+          <a href={`https://service.weibo.com/share/share.php?${weibo}`} aria-label={t('public.like.shareWeibo')} />
+        }
+        title={t('public.like.shareWeibo')}
       >
         <IconButtonContent>
           <WeiboIcon className="size-5" />

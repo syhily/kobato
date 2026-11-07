@@ -6,6 +6,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
 vi.mock('@/client/hooks/use-logout', () => ({
   useLogout: () => vi.fn(),
 }))
@@ -20,14 +22,16 @@ const currentUser: HeaderCurrentUser = {
 
 function renderMenu(unreadCount = 0, onOpenNotifications: () => void = () => {}) {
   return render(
-    <MemoryRouter initialEntries={['/']}>
-      <UserMenu
-        currentUser={currentUser}
-        logoutRedirectTo="/"
-        unreadCount={unreadCount}
-        onOpenNotifications={onOpenNotifications}
-      />
-    </MemoryRouter>,
+    wrapWithI18n(
+      <MemoryRouter initialEntries={['/']}>
+        <UserMenu
+          currentUser={currentUser}
+          logoutRedirectTo="/"
+          unreadCount={unreadCount}
+          onOpenNotifications={onOpenNotifications}
+        />
+      </MemoryRouter>,
+    ),
   )
 }
 
@@ -37,9 +41,11 @@ describe('ui/public/chrome/UserMenu', () => {
     expect(container.querySelector('.bg-destructive')).not.toBeNull()
 
     rerender(
-      <MemoryRouter initialEntries={['/']}>
-        <UserMenu currentUser={currentUser} logoutRedirectTo="/" unreadCount={0} onOpenNotifications={() => {}} />
-      </MemoryRouter>,
+      wrapWithI18n(
+        <MemoryRouter initialEntries={['/']}>
+          <UserMenu currentUser={currentUser} logoutRedirectTo="/" unreadCount={0} onOpenNotifications={() => {}} />
+        </MemoryRouter>,
+      ),
     )
     expect(container.querySelector('.bg-destructive')).toBeNull()
   })

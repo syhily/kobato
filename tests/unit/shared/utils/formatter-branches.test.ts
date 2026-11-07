@@ -73,6 +73,22 @@ describe('shared/utils/formatter — formatShowDate far-past branch', () => {
     expect(out).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
   })
 
+  it('localizes the relative buckets per locale (en-US / zh-HK / zh-TW)', () => {
+    const now = new Date('2024-06-15T12:00:00+08:00')
+    const same = new Date('2024-06-15T01:00:00+08:00')
+    const yesterday = new Date('2024-06-14T01:00:00+08:00')
+    const en = { settings: { locale: 'en-US', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd' } }
+    const hk = { settings: { locale: 'zh-HK', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd' } }
+    const tw = { settings: { locale: 'zh-TW', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd' } }
+
+    expect(formatShowDate(same, en, now)).toBe('today')
+    expect(formatShowDate(yesterday, en, now)).toBe('yesterday')
+    expect(formatShowDate(same, hk, now)).toBe('今日')
+    expect(formatShowDate(yesterday, hk, now)).toBe('昨日')
+    expect(formatShowDate(same, tw, now)).toBe('今天')
+    expect(formatShowDate(yesterday, tw, now)).toBe('昨天')
+  })
+
   it('uses "今天" when the date is the same day as now', () => {
     const now = new Date('2024-06-15T12:00:00+08:00')
     const same = new Date('2024-06-15T01:00:00+08:00')
@@ -105,11 +121,27 @@ describe('shared/utils/formatter — formatLocalDate token substitution', () => 
     expect(out).toBe('2024年03月05日 14时07分08秒')
   })
 
-  it('renders letters that are date-fns tokens as verbatim literals', () => {
-    // The format string is user-supplied: only the six documented tokens are
-    // substituted — `a`, `E`, `p` (and any other letter) must render as-is.
+  it('substitutes the dayPeriod token but leaves other date-fns letters verbatim', () => {
+    // The format string is user-supplied: only the nine documented tokens are
+    // substituted — `E`, `p` (and any other letter) must render as-is.
     const out = formatLocalDate('2024-03-05T06:07:08Z', 'yyyy年LL月dd日 a E p', SETTINGS)
-    expect(out).toBe('2024年03月05日 a E p')
+    expect(out).toBe('2024年03月05日 下午 E p')
+  })
+
+  it('substitutes the 12-hour token and a localized dayPeriod', () => {
+    // 14:07 Asia/Shanghai → 02:07 PM.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'hh:mm a', SETTINGS)).toBe('02:07 下午')
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'HH:mm a', SETTINGS)).toBe('14:07 下午')
+    expect(formatLocalDate('2024-03-05T18:07:08Z', 'hh:mm a', SETTINGS)).toBe('02:07 上午')
+    // March 5 in New York is EST (UTC-5) → 01:07 AM.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'hh:mm a', NEW_YORK)).toBe('01:07 AM')
+  })
+
+  it('only treats a STANDALONE `a` as the dayPeriod token', () => {
+    // `day` is a literal word in the custom pattern, not a token + letters.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'day=dd month=LL year=yyyy', SETTINGS)).toBe(
+      'day=05 month=03 year=2024',
+    )
   })
 
   it('substitutes tokens adjacent to date-fns-token letters without swallowing them', () => {

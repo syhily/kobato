@@ -5,11 +5,13 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Textarea } from '@/ui/components/textarea'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { LazyPopup as Popup } from '@/ui/public/widgets/LazyPopup'
 
 // Public friend-link application: a signup button opens a Popup holding the form,
 // an off-screen honeypot (`contact`), and a success state.
 export function FriendApplyForm() {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
@@ -63,29 +65,29 @@ export function FriendApplyForm() {
   return (
     <div className="not-typeset mt-10 flex justify-center px-4 md:mt-8 md:px-0">
       <Button variant="dark" size="lg" onClick={handleOpen}>
-        申请友链
+        {t('public.friends.apply')}
       </Button>
       {open && (
         <Popup open={open} onClose={handleClose} size="md" aria-labelledby="friend-apply-title">
           <div className="text-center">
             <div id="friend-apply-title" className="text-xl leading-tight font-semibold">
-              申请友链
+              {t('public.friends.apply')}
             </div>
-            <p className="mt-1 text-sm text-ink-3">留下你的站点信息，审核通过后展示</p>
+            <p className="mt-1 text-sm text-ink-3">{t('public.friends.applyHint')}</p>
           </div>
           {submitted ? (
             <p role="status" className="mt-6 text-center text-sm text-ink-3">
-              申请已提交，等待博主审核
+              {t('public.friends.submitted')}
             </p>
           ) : (
             <form ref={formRef} onSubmit={handleSubmit} className="relative mt-5 flex flex-col gap-3">
               <label htmlFor="friend-apply-website" className="sr-only">
-                站名
+                {t('public.friends.siteName')}
               </label>
               <Input
                 id="friend-apply-website"
                 className="bg-canvas"
-                placeholder="站名"
+                placeholder={t('public.friends.siteName')}
                 name="website"
                 type="text"
                 autoComplete="organization"
@@ -93,45 +95,45 @@ export function FriendApplyForm() {
                 required
               />
               <label htmlFor="friend-apply-homepage" className="sr-only">
-                主页 URL
+                {t('public.friends.homepage')}
               </label>
               <Input
                 id="friend-apply-homepage"
                 className="bg-canvas"
-                placeholder="主页 URL"
+                placeholder={t('public.friends.homepage')}
                 name="homepage"
                 type="url"
                 autoComplete="url"
                 required
               />
               <label htmlFor="friend-apply-description" className="sr-only">
-                简介（可选）
+                {t('public.friends.description')}
               </label>
               <Textarea
                 id="friend-apply-description"
                 className="bg-canvas"
-                placeholder="一句话介绍你的博客（可选）"
+                placeholder={t('public.friends.descriptionPlaceholder')}
                 name="description"
                 maxLength={999}
                 rows={2}
               />
               <label htmlFor="friend-apply-poster" className="sr-only">
-                封面图 URL（可选）
+                {t('public.friends.poster')}
               </label>
               <Input
                 id="friend-apply-poster"
                 className="bg-canvas"
-                placeholder="封面图 URL（可选）"
+                placeholder={t('public.friends.poster')}
                 name="poster"
                 type="url"
               />
               <label htmlFor="friend-apply-rss" className="sr-only">
-                RSS URL（可选）
+                {t('public.friends.rss')}
               </label>
               <Input
                 id="friend-apply-rss"
                 className="bg-canvas"
-                placeholder="RSS URL（可选）"
+                placeholder={t('public.friends.rss')}
                 name="rssUrl"
                 type="url"
               />
@@ -142,7 +144,7 @@ export function FriendApplyForm() {
                 </div>
               )}
               <Button name="submit" type="submit" variant="dark" size="lg" block disabled={isPending}>
-                {isPending ? '提交中…' : '提交申请'}
+                {isPending ? t('public.friends.submitting') : t('public.friends.submit')}
               </Button>
             </form>
           )}

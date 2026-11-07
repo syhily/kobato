@@ -11,6 +11,7 @@ import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface LoginActionData {
   method?: 'passkey' | 'password'
@@ -62,7 +63,7 @@ function extractAuthOptions(value: unknown): PublicKeyCredentialRequestOptionsJS
     return value.options
   }
   // Unreachable in practice — throw so a malformed response surfaces as a caught error.
-  throw new Error('Passkey 服务返回数据格式错误')
+  throw new Error('Passkey service returned malformed data')
 }
 
 type LoginStep = 'email' | 'password' | 'passkey'
@@ -72,6 +73,7 @@ type LoginStep = 'email' | 'password' | 'passkey'
 const PASSKEY_TIMEOUT_MS = 120_000
 
 export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: LoginFormProps) {
+  const { t } = useI18n()
   // Initial step derives from the identify answer so a fresh mount / SSR lands on the right step.
   const [step, setStep] = useState<LoginStep>(() =>
     actionData?.method === 'password' ? 'password' : actionData?.method === 'passkey' ? 'passkey' : 'email',
@@ -113,7 +115,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
       // Dismiss the native prompt so the QR sheet doesn't linger behind the error state.
       WebAuthnAbortService.cancelCeremony()
       setPasskeyPending(false)
-      setPasskeyError('Passkey 验证超时，请重试。多次失败可通过下方链接改用邮箱登录。')
+      setPasskeyError(t('auth.signin.passkeyTimeout'))
     }, PASSKEY_TIMEOUT_MS)
     try {
       const result: unknown = await orpc.passkey.authBegin({ email: email.trim() })
@@ -150,19 +152,19 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
         return
       }
       setPasskeyPending(false)
-      let message = 'Passkey 登录失败，请重试。'
+      let message = t('auth.signin.passkeyFailed')
       if (err instanceof DOMException) {
         if (err.name === 'NotAllowedError') {
-          message = 'Passkey 验证被取消或超时。'
+          message = t('auth.signin.passkeyCancelled')
         } else if (err.name === 'SecurityError') {
-          message = 'Passkey 验证因安全原因被拒绝。'
+          message = t('auth.signin.passkeyRejected')
         }
       } else if (err instanceof Error && err.message) {
         message = err.message
       }
       setPasskeyError(message)
     }
-  }, [email])
+  }, [email, t])
 
   // Leaving the passkey step retires any in-flight ceremony and dismisses the
   // lingering native prompt.
@@ -206,12 +208,12 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
             onClick={backToEmail}
             className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            更换邮箱
+            {t('auth.signin.changeEmail')}
           </button>
         </div>
         <div className="flex w-full flex-col gap-2">
           <Label htmlFor="loginForm-password" className="font-semibold text-(--text-admin-base)">
-            密码
+            {t('auth.signin.password')}
           </Label>
           <div className="relative w-full">
             <Input
@@ -232,7 +234,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
                 to="?action=lostpassword"
                 className="flex items-center border-l border-foreground/20 px-4 text-sm text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
               >
-                忘记？
+                {t('auth.signin.forgot')}
               </Link>
             </div>
           </div>
@@ -243,10 +245,10 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
           className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
         >
           {isSubmitting ? (
-            '登陆中...'
+            t('auth.signin.submitting')
           ) : (
             <>
-              登陆 <ArrowRightIcon className="ml-1 inline-block" size={18} />
+              {t('auth.signin.submit')} <ArrowRightIcon className="ml-1 inline-block" size={18} />
             </>
           )}
         </Button>
@@ -269,7 +271,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
         <div className="flex w-full flex-col gap-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="identifyForm-email" className="font-semibold text-(--text-admin-base)">
-              邮箱
+              {t('auth.signin.email')}
             </Label>
             {isPasskeyStep && (
               <button
@@ -277,7 +279,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
                 onClick={backToEmail}
                 className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                更换邮箱
+                {t('auth.signin.changeEmail')}
               </button>
             )}
           </div>
@@ -286,7 +288,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="your@email.com"
+            placeholder={t('auth.shared.emailPlaceholder')}
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -305,10 +307,10 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
             className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {passkeyPending ? (
-              '等待验证器…'
+              t('auth.signin.waitingAuthenticator')
             ) : (
               <>
-                {passkeyError ? '重试 Passkey 登陆' : '使用 Passkey 登陆'}
+                {passkeyError ? t('auth.signin.retryPasskey') : t('auth.signin.usePasskey')}
                 <FingerprintIcon className="ml-1 inline-block" size={18} />
               </>
             )}
@@ -320,10 +322,10 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
             className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isSubmitting ? (
-              '登陆中...'
+              t('auth.signin.submitting')
             ) : (
               <>
-                登陆 <ArrowRightIcon className="ml-1 inline-block" size={18} />
+                {t('auth.signin.submit')} <ArrowRightIcon className="ml-1 inline-block" size={18} />
               </>
             )}
           </Button>
@@ -336,7 +338,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
           </Form>
           {!webAuthnSupported && (
             <p role="alert" className="text-center text-sm text-destructive">
-              当前浏览器不支持 Passkey。
+              {t('auth.signin.passkeyUnsupported')}
             </p>
           )}
           {passkeyError && (
@@ -345,18 +347,16 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
             </p>
           )}
           <p className="text-center text-sm text-muted-foreground">
-            {passkeyPending
-              ? '正在验证 Passkey，请按浏览器提示完成验证（跨设备登陆可扫码）。'
-              : '此账号已启用 Passkey 验证，请点击上方按钮完成登陆。'}
+            {passkeyPending ? t('auth.signin.passkeyVerifying') : t('auth.signin.passkeyPrompt')}
           </p>
           {/* Passkey-only account with a failing ceremony is otherwise a lockout — identify always routes back here. */}
           <p className="text-center text-sm text-muted-foreground">
-            无法使用 Passkey？
+            {t('auth.signin.passkeyUnavailable')}
             <Link
               to="?action=lostpassword"
               className="underline-offset-2 transition-colors hover:text-foreground hover:underline"
             >
-              通过邮箱重置密码
+              {t('auth.signin.resetViaEmail')}
             </Link>
           </p>
         </>

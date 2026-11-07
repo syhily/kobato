@@ -42,9 +42,9 @@ describe('snapshot: ArchivesBody', () => {
     const html = renderInRouter(<ArchivesBody resolvedPosts={posts} listingNowIso="2026-04-25T12:00:00.000Z" />)
 
     expect(html).toContain('共 3 篇文章')
-    expect(html).toContain('2024 年 1 月')
+    expect(html).toContain('2024年1月')
     expect(html).toContain('本月累计 2 篇')
-    expect(html).toContain('2024 年 2 月')
+    expect(html).toContain('2024年2月')
     expect(html).toContain('本月累计 1 篇')
     expect(html).toContain('January Post')
     expect(html).toContain('February Post')

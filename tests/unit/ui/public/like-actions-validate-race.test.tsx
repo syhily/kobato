@@ -29,6 +29,7 @@ vi.mock('@number-flow/react', () => ({
   default: ({ value }: { value: number }) => <span>{value}</span>,
 }))
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { LikeButton } from '@/ui/public/LikeActions'
 
 const PERMALINK = '/posts/hello'
@@ -60,9 +61,11 @@ function renderButton(likes = 5) {
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
   })
   render(
-    <QueryClientProvider client={queryClient}>
-      <LikeButton permalink={PERMALINK} commentKey="key-1" likes={likes} />
-    </QueryClientProvider>,
+    wrapWithI18n(
+      <QueryClientProvider client={queryClient}>
+        <LikeButton permalink={PERMALINK} commentKey="key-1" likes={likes} />
+      </QueryClientProvider>,
+    ),
   )
   return screen.getByRole('button', { name: '点赞' })
 }

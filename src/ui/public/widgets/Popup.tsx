@@ -7,6 +7,7 @@ import { browser, createPortal } from 'react-dom'
 import { transitions } from '@/client/lib/motion'
 import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export type PopupSize = 'sm' | 'md' | 'lg'
 
@@ -75,6 +76,7 @@ export function Popup({
   children,
 }: PopupProps) {
   use(browser())
+  const { t } = useI18n()
 
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const portalRef = useRef<HTMLDivElement | null>(null)
@@ -202,7 +204,7 @@ export function Popup({
             <LazyMotionButton
               key="popup-close"
               type="button"
-              aria-label="关闭"
+              aria-label={t('common.action.close')}
               variants={closeButtonVariants}
               initial="hidden"
               animate="visible"

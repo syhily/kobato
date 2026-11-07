@@ -5,6 +5,8 @@
 import { TZDate } from '@date-fns/tz'
 import { format as formatZonedDate } from 'date-fns'
 
+import { dateFnsLocaleFor, formatRelativeValue } from '@/shared/i18n/format'
+import { normalizeAppLocale } from '@/shared/i18n/locales'
 import { createBoundedMap } from '@/shared/utils/memo'
 
 export type FormatterLocale =
@@ -66,25 +68,32 @@ function weekStartDay(parts: Pick<LocalDateParts, 'year' | 'month' | 'day'>): nu
   return day - ((weekday + 6) % 7)
 }
 
-/** `now` defaults to the runtime clock; pass an ISO string from the route loader so SSR and hydration agree. */
+/**
+ * Post-list display date: localized relative buckets for the recent past, the
+ * configured date pattern beyond them. `now` defaults to the runtime clock;
+ * pass an ISO string from the route loader so SSR and hydration agree.
+ */
 export function formatShowDate(date: Date, config: FormatterLocale, now?: Date | string) {
-  const { locale, timeZone } = pickLocale(config)
+  const { timeZone } = pickLocale(config)
+  const locale = normalizeAppLocale(pickLocale(config).locale)
   const source = localDateParts(date, locale, timeZone)
   const nowInstant = now === undefined ? new Date() : new Date(now)
   const nowParts = localDateParts(nowInstant, locale, timeZone)
   const deltaDays = dayNumber(nowParts) - dayNumber(source)
 
   if (deltaDays < 1) {
-    return '今天'
+    // `numeric: 'auto'` is what makes 0 days read as 今天/today, -1 as 昨天/yesterday.
+    return formatRelativeValue(0, 'day', locale, { numeric: 'auto' })
   } else if (deltaDays < 2) {
-    return '昨天'
+    return formatRelativeValue(-1, 'day', locale, { numeric: 'auto' })
   } else if (deltaDays < 7) {
-    return `${deltaDays} 天前`
+    return formatRelativeValue(-deltaDays, 'day', locale)
   } else if (deltaDays < 30) {
-    return `${Math.floor((weekStartDay(nowParts) - weekStartDay(source)) / 7)} 周前`
+    const weeks = Math.floor((weekStartDay(nowParts) - weekStartDay(source)) / 7)
+    return formatRelativeValue(-weeks, 'week', locale)
   } else if (deltaDays < 210) {
     const months = (nowParts.year - source.year) * 12 + nowParts.month - source.month
-    return `${months} 月前`
+    return formatRelativeValue(-months, 'month', locale)
   }
   return formatLocalDate(date, undefined, config)
 }
@@ -98,21 +107,47 @@ export function formatLocalDate(source: string | Date, format: string | undefine
   if (pattern === null) {
     return zonedDateFormatter(locale, timeZone).format(zoned)
   }
-  // The format string is USER-SUPPLIED (stored in settings): only the seven
+  // The format string is USER-SUPPLIED (stored in settings): only the nine
   // documented tokens are substituted, so it never reaches date-fns — every
-  // other character, including letters that are date-fns tokens (`a`, `E`,
-  // `p`…), renders verbatim. date-fns computes the seven values off one
-  // canonical pattern instead.
-  const [year, month, day, hour, minute, second] = formatZonedDate(zoned, 'yyyy MM dd HH mm ss').split(' ')
-  return pattern
-    .replaceAll('yyyy', year)
-    .replaceAll('LL', month)
-    .replaceAll('MM', month)
-    .replaceAll('dd', day)
-    .replaceAll('HH', hour)
-    .replaceAll('mm', minute)
-    .replaceAll('ss', second)
+  // other character renders verbatim. One fixed canonical pattern computes all
+  // nine values (the dayPeriod needs the locale, everything else does not).
+  const canonical = formatZonedDate(zoned, 'yyyy MM dd HH hh mm ss a', { locale: dateFnsLocaleFor(locale) })
+  const [year, month, day, hour24, hour12, minute, second, dayPeriod] = canonical.split(' ')
+  return pattern.replace(DATE_TOKEN_PATTERN, (token, offset: number) => {
+    switch (token) {
+      case 'yyyy':
+        return year!
+      case 'LL':
+      case 'MM':
+        return month!
+      case 'dd':
+        return day!
+      case 'HH':
+        return hour24!
+      case 'hh':
+        return hour12!
+      case 'mm':
+        return minute!
+      case 'ss':
+        return second!
+      case 'a': {
+        // `a` is a single letter: only a STANDALONE one is a token, so literal
+        // words such as `day` in a custom pattern survive verbatim.
+        return isAsciiLetter(pattern[offset - 1]) || isAsciiLetter(pattern[offset + 1]) ? token : dayPeriod!
+      }
+      default:
+        return token
+    }
+  })
 }
+
+function isAsciiLetter(char: string | undefined): boolean {
+  return char !== undefined && /[A-Za-z]/.test(char)
+}
+
+// Single pass, multi-character tokens first: a substituted value is never
+// re-scanned as another token.
+const DATE_TOKEN_PATTERN = /yyyy|LL|MM|dd|HH|hh|mm|ss|a/g
 
 // Construction reads locale data, so it is cached per immutable
 // (locale, timeZone) pair rather than rebuilt for every list row. FIFO-evict

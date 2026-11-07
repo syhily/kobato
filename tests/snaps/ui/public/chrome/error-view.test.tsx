@@ -22,7 +22,7 @@ describe('snapshot: ErrorView', () => {
   it('renders the WordPress probe warning for the special 404 status text', () => {
     const html = renderToHtml(<ErrorView error={routeError(404, 'Not WordPress')} />)
     expect(html).toContain('这里不是 WordPress 网站')
-    expect(html).toContain('This is not a WordPress site')
+    expect(html).toContain('本站未使用 WordPress')
   })
 
   it('renders the generic 500 page for a non-route error', () => {

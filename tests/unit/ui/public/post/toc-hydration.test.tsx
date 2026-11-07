@@ -4,6 +4,7 @@ import { hydrateRoot } from 'react-dom/client'
 import { renderToPipeableStream } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
 // Hydration contract for the TOC (audit: React error #418):
@@ -37,7 +38,7 @@ const headings = [
 
 describe('ui/public/post/TableOfContents — hydration contract', () => {
   it('renders the closed-drawer DOM on the server (no null fallback)', async () => {
-    const html = await renderToPipeableStreamString(<TableOfContents headings={headings} toc="enabled" />)
+    const html = await renderToPipeableStreamString(wrapWithI18n(<TableOfContents headings={headings} toc="enabled" />))
     expect(html).toContain('展开文章目录')
     expect(html).toContain('文章目录')
     expect(html).toContain('aria-expanded="false"')
@@ -47,16 +48,20 @@ describe('ui/public/post/TableOfContents — hydration contract', () => {
   })
 
   it('hydrates without a mismatch when the motion chunk is already loaded', async () => {
-    const html = await renderToPipeableStreamString(<TableOfContents headings={headings} toc="enabled" />)
+    const html = await renderToPipeableStreamString(wrapWithI18n(<TableOfContents headings={headings} toc="enabled" />))
 
     // Warm the module cache before hydration, like a preloaded chunk would.
     await import('motion/react')
 
     document.body.innerHTML = `<div id="probe-root">${html}</div>`
     const errors: unknown[] = []
-    hydrateRoot(document.getElementById('probe-root')!, <TableOfContents headings={headings} toc="enabled" />, {
-      onRecoverableError: (error) => errors.push(error),
-    })
+    hydrateRoot(
+      document.getElementById('probe-root')!,
+      wrapWithI18n(<TableOfContents headings={headings} toc="enabled" />),
+      {
+        onRecoverableError: (error) => errors.push(error),
+      },
+    )
     await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(errors.map((e) => (e instanceof Error ? e.message : String(e)))).toEqual([])

@@ -15,6 +15,16 @@ export function hasAtLeast(role: RoleOrNull | undefined, min: Role): boolean {
   return ROLE_LEVELS[role] >= ROLE_LEVELS[min]
 }
 
+/**
+ * Message ids for the role names — the localized surface public UI reads.
+ * `roleLabel` below is the pre-i18n admin label, retired in the admin slice.
+ */
+export const ROLE_LABEL_KEYS = {
+  admin: 'common.role.admin',
+  author: 'common.role.author',
+  visitor: 'common.role.visitor',
+} as const
+
 /** Human-readable Chinese label; callers must narrow to a non-null `Role` first (every call site sits behind a session gate). */
 export function roleLabel(role: Role): string {
   switch (role) {

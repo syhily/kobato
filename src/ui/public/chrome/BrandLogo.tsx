@@ -6,9 +6,11 @@ import { cn } from '@/ui/lib/cn'
 
 export interface BrandLogoProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> {
   className?: string
+  /** Accessible name — the configured site title, or `''` when the logo is decorative. */
+  alt: string
 }
 
-export function BrandLogo({ className, alt = '且听书吟', ...rest }: BrandLogoProps) {
+export function BrandLogo({ className, alt, ...rest }: BrandLogoProps) {
   const assets = useAssetsSettingsOptional()
   const light = brandingVersionSuffix(assets?.branding?.logoLargeSvg)
   const dark = brandingVersionSuffix(assets?.branding?.logoLargeDarkSvg)

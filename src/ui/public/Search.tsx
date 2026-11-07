@@ -9,6 +9,7 @@ import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { LazyPopup as Popup } from '@/ui/public/widgets/LazyPopup'
 
 const sidebarSearchInputClass = cn(
@@ -34,6 +35,7 @@ function navigateToSearch(navigate: NavigateFunction, form: HTMLFormElement): bo
 
 export function SearchBar() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   return (
     <div id="search" className="mb-10">
       <Form
@@ -45,17 +47,17 @@ export function SearchBar() {
         }}
       >
         <label htmlFor="sidebar-search-input" className="sr-only">
-          文章寻踪
+          {t('public.search.label')}
         </label>
         <input
           id="sidebar-search-input"
           type="search"
           className={sidebarSearchInputClass}
-          placeholder="文章寻踪（输入后回车）"
+          placeholder={t('public.search.placeholder')}
           name="q"
           required
           enterKeyHint="search"
-          aria-label="文章寻踪"
+          aria-label={t('public.search.label')}
         />
       </Form>
     </div>
@@ -64,6 +66,7 @@ export function SearchBar() {
 
 export function SearchIconButton() {
   const [open, setOpen] = useState(false)
+  const { t } = useI18n()
   const popupInputRef = useRef<HTMLInputElement | null>(null)
   const handleClose = useCallback(() => setOpen(false), [])
   const focusPopupInput = useCallback(() => {
@@ -76,8 +79,8 @@ export function SearchIconButton() {
         variant="dark"
         size="iconSm"
         shape="circle"
-        title="搜索"
-        aria-label="打开搜索"
+        title={t('public.search.title')}
+        aria-label={t('public.search.open')}
         onClick={() => {
           flushSync(() => setOpen(true))
           focusPopupInput()
@@ -100,8 +103,9 @@ interface SearchPopupProps {
 
 function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
   const navigate = useNavigate()
+  const { t } = useI18n()
   return (
-    <Popup open={open} onClose={onClose} size="md" aria-label="搜索文章">
+    <Popup open={open} onClose={onClose} size="md" aria-label={t('public.search.popupTitle')}>
       <Form
         className="text-center"
         method="get"
@@ -124,12 +128,12 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
                 enterKeyHint="search"
                 size="lg"
                 className="bg-canvas text-center"
-                placeholder="搜索并回车"
-                aria-label="搜索文章"
+                placeholder={t('public.search.inputPlaceholder')}
+                aria-label={t('public.search.popupTitle')}
               />
             </div>
             <Button type="submit" variant="default" size="lg" block>
-              搜索
+              {t('public.search.title')}
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { tZhCN } from '#/_helpers/i18n'
 import {
   asKey,
   childrenListClass,
@@ -82,39 +83,39 @@ describe('ui/public/comments/comment-item/helpers', () => {
     })
 
     it('returns the pending hint when no expiry and pending', () => {
-      expect(editableHint(undefined, true)).toBe('此消息正在等待审核，可编辑。')
+      expect(editableHint(undefined, true, tZhCN, 'zh-CN')).toBe('此消息正在等待审核，可编辑。')
     })
 
     it('returns the editable hint when no expiry and not pending', () => {
-      expect(editableHint(undefined, false)).toBe('可编辑此消息。')
+      expect(editableHint(undefined, false, tZhCN, 'zh-CN')).toBe('可编辑此消息。')
     })
 
     it('shows expired pending hint', () => {
-      expect(editableHint(Date.now() - 1000, true)).toBe('此消息正在等待审核，编辑时间已过期。')
+      expect(editableHint(Date.now() - 1000, true, tZhCN, 'zh-CN')).toBe('此消息正在等待审核，编辑时间已过期。')
     })
 
     it('shows expired non-pending hint', () => {
-      expect(editableHint(Date.now() - 1000, false)).toBe('编辑时间已过期。')
+      expect(editableHint(Date.now() - 1000, false, tZhCN, 'zh-CN')).toBe('编辑时间已过期。')
     })
 
     it('shows seconds remaining when under a minute', () => {
       const expiresAt = Date.now() + 30_000
-      expect(editableHint(expiresAt, false)).toBe('30 秒内可编辑此消息。')
+      expect(editableHint(expiresAt, false, tZhCN, 'zh-CN')).toBe('你可以在 30秒钟内编辑此消息。')
     })
 
     it('shows minutes remaining', () => {
       const expiresAt = Date.now() + 5 * 60 * 1000
-      expect(editableHint(expiresAt, true)).toBe('此消息正在等待审核，5 分钟内可编辑。')
+      expect(editableHint(expiresAt, true, tZhCN, 'zh-CN')).toBe('此消息正在等待审核，5分钟内可编辑。')
     })
 
     it('shows hours and minutes remaining when >= 60 minutes', () => {
       const expiresAt = Date.now() + 2 * 60 * 60 * 1000 + 30 * 60 * 1000
-      expect(editableHint(expiresAt, false)).toBe('2 小时 30 分钟内可编辑此消息。')
+      expect(editableHint(expiresAt, false, tZhCN, 'zh-CN')).toBe('你可以在 2小时30分钟内编辑此消息。')
     })
 
     it('shows only hours when the remaining minutes are a whole hour', () => {
       const expiresAt = Date.now() + 3 * 60 * 60 * 1000
-      expect(editableHint(expiresAt, false)).toBe('3 小时内可编辑此消息。')
+      expect(editableHint(expiresAt, false, tZhCN, 'zh-CN')).toBe('你可以在 3小时内编辑此消息。')
     })
   })
 })

@@ -155,7 +155,7 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
   return (
     <div className="flex flex-col gap-8">
       <header className="text-center">
-        <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
+        <BrandLogo alt="" className="mx-auto mb-10 h-20 w-auto" />
       </header>
 
       {hasError(actionData) || hasMessage(actionData) || loaderData.tokenError || loaderData.authError ? (

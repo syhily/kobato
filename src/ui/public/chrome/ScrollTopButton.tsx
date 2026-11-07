@@ -4,10 +4,12 @@ import { useShowOnScroll } from '@/client/hooks/use-show-on-scroll'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // `opacity` + `pointer-events` (not `display`) avoids iOS Safari scroll ghosting; `transform-gpu` keeps opacity GPU-accelerated.
 export function ScrollTopButton() {
   const show = useShowOnScroll()
+  const { t } = useI18n()
   return (
     <li
       aria-hidden={!show}
@@ -21,7 +23,7 @@ export function ScrollTopButton() {
         variant="fab"
         size="iconLg"
         shape="pill"
-        aria-label="回到顶部"
+        aria-label={t('public.chrome.scrollTop')}
         tabIndex={show ? 0 : -1}
         onClick={() => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' })}
       >

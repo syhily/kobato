@@ -16,6 +16,7 @@ import { avatarImageUrl } from '@/shared/utils/avatar'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { commentBodyPlainText } from '@/ui/public/comments/comment-body-helpers'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
@@ -38,6 +39,7 @@ export function CommentReplyForm({
   onCancel,
   onReplied,
 }: CommentReplyFormProps) {
+  const { t } = useI18n()
   const { profile: guestProfile, saveProfile: saveGuestProfile, clearProfile: clearGuestProfile } = useCommentGuest()
   const isGuestMode = !user && guestProfile !== null
   const assets = useAssetsSettingsOptional()
@@ -148,7 +150,7 @@ export function CommentReplyForm({
           onClick={isGuestMode ? clearGuestProfile : undefined}
         >
           <img
-            alt="头像"
+            alt={t('public.comments.avatarAlt')}
             src={avatarSrc}
             className="size-full rounded-full object-cover"
             height={40}
@@ -198,7 +200,7 @@ export function CommentReplyForm({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={onCancel}
               >
-                再想想
+                {t('public.comments.cancelReply')}
               </Button>
             )}
             <Button
@@ -209,7 +211,7 @@ export function CommentReplyForm({
               disabled={isPending}
               onMouseDown={(event) => event.preventDefault()}
             >
-              {isPending ? '发表中…' : '发表评论'}
+              {isPending ? t('public.comments.submitting') : t('public.comments.submit')}
             </Button>
           </div>
         </div>
@@ -237,9 +239,10 @@ const replyingToOverlayClass = cn(
 )
 
 function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {
+  const { t } = useI18n()
   return (
     <div className={replyingToOverlayClass}>
-      <span className="font-medium">回复 @{authorName}</span>
+      <span className="font-medium">{t('public.comments.replyingTo', { name: authorName })}</span>
       {!!originalContent && <span>: {originalContent}</span>}
     </div>
   )
@@ -272,6 +275,7 @@ interface CommentFormFieldsProps {
 }
 
 function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailBlur }: CommentFormFieldsProps) {
+  const { t } = useI18n()
   const admin = user?.admin === true
   const hasIdentity = admin || guestProfile !== null
   const nameValue = admin ? user.name : (guestProfile?.name ?? '')
@@ -281,16 +285,23 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
   return (
     <div className="-mx-1 -mt-2 mb-4 flex flex-wrap md:-mx-2 md:-mt-4">
       {hasIdentity ? (
-        <input name="name" type="text" readOnly hidden defaultValue={nameValue} aria-label="昵称" />
+        <input
+          name="name"
+          type="text"
+          readOnly
+          hidden
+          defaultValue={nameValue}
+          aria-label={t('public.comments.name')}
+        />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
           <label htmlFor="comment-name" className="sr-only">
-            昵称
+            {t('public.comments.name')}
           </label>
           <Input
             id="comment-name"
             className="border-line bg-canvas"
-            placeholder="昵称"
+            placeholder={t('public.comments.name')}
             name="name"
             type="text"
             autoComplete="name"
@@ -299,17 +310,24 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
         </div>
       )}
       {hasIdentity ? (
-        <input name="email" defaultValue={emailValue} type="email" readOnly hidden aria-label="邮箱" />
+        <input
+          name="email"
+          defaultValue={emailValue}
+          type="email"
+          readOnly
+          hidden
+          aria-label={t('public.comments.email')}
+        />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
           <label htmlFor="comment-email" className="sr-only">
-            邮箱
+            {t('public.comments.email')}
           </label>
           <Input
             id="comment-email"
             className="border-line bg-canvas"
             name="email"
-            placeholder="邮箱"
+            placeholder={t('public.comments.email')}
             type="email"
             autoComplete="email"
             required
@@ -317,19 +335,33 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
           />
         </div>
       )}
-      <input hidden name="page_key" type="text" defaultValue={commentKey} aria-label="页面标识" />
-      <input hidden name="rid" type="text" value={String(replyToId)} readOnly aria-label="回复目标" />
+      <input hidden name="page_key" type="text" defaultValue={commentKey} aria-label={t('public.comments.pageKey')} />
+      <input
+        hidden
+        name="rid"
+        type="text"
+        value={String(replyToId)}
+        readOnly
+        aria-label={t('public.comments.replyTarget')}
+      />
       {hasIdentity ? (
-        <input name="link" type="url" readOnly hidden defaultValue={linkValue} aria-label="网址" />
+        <input
+          name="link"
+          type="url"
+          readOnly
+          hidden
+          defaultValue={linkValue}
+          aria-label={t('public.comments.website')}
+        />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:px-2">
           <label htmlFor="comment-url" className="sr-only">
-            网址
+            {t('public.comments.website')}
           </label>
           <Input
             id="comment-url"
             className="border-line bg-canvas"
-            placeholder="网址"
+            placeholder={t('public.comments.website')}
             name="link"
             type="url"
             autoComplete="url"

@@ -7,6 +7,7 @@ import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
 import { useUnreadNotificationCount } from '@/client/hooks/use-notifications'
 import { useNavigationSettings } from '@/shared/lib/blog-config-context'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Footer } from '@/ui/public/chrome/Footer'
 import { Header } from '@/ui/public/chrome/Header'
 import { ScrollTopButton } from '@/ui/public/chrome/ScrollTopButton'
@@ -36,6 +37,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
   // mobile brand bar, always co-mounted) open this drawer and read this count.
   // Interval refetches are per-observer and do not dedupe (ADR-0009).
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const { t } = useI18n()
   const unreadCount = useUnreadNotificationCount(currentUser !== null)
   const openNotifications = () => setNotificationsOpen(true)
 
@@ -45,7 +47,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-modal focus:rounded-md focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
       >
-        跳转到主要内容
+        {t('public.chrome.skipToContent')}
       </a>
       <Header
         navigation={resolvedNavigation}

@@ -13,6 +13,7 @@ import type {
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import {
@@ -187,10 +188,11 @@ function createCommentTreeState(items: CommentItemType[], rootsCount: number): C
 }
 
 export function Comments({ commentKey, comments, items, user }: CommentsProps) {
+  const { t } = useI18n()
   if (comments == null) {
     return (
       <div id="comments" className="pt-12">
-        评论加载失败 ❌
+        {t('public.comments.failed')}
       </div>
     )
   }
@@ -342,9 +344,10 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
 
 function CommentsHeader() {
   const { totalCount } = useCommentsTree('Comments.Header')
+  const { t } = useI18n()
   return (
     <div className="mb-6 text-xl leading-body font-semibold">
-      评论 <small className="font-theme text-sm">({totalCount})</small>
+      {t('public.comments.title')} <small className="font-theme text-sm">({totalCount})</small>
     </div>
   )
 }
@@ -369,6 +372,7 @@ function CommentsList() {
 }
 
 function CommentsLoadMore() {
+  const { t } = useI18n()
   const { commentKey, state } = useCommentsTree('Comments.LoadMore')
   const actions = useCommentsActions('Comments.LoadMore')
 
@@ -406,7 +410,7 @@ function CommentsLoadMore() {
   return (
     <div className="mt-4 text-center md:mt-6">
       <Button variant="light" onClick={onLoadMore} disabled={moreLoading}>
-        {moreLoading ? '加载中…' : '加载更多'}
+        {moreLoading ? t('common.state.loading') : t('public.comments.loadMore')}
       </Button>
     </div>
   )

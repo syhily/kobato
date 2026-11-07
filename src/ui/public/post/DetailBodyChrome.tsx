@@ -10,6 +10,7 @@ import type { MarkdownHeading } from '@/shared/utils/toc'
 import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Comments } from '@/ui/public/comments/Comments'
 import { CommentsSkeleton } from '@/ui/public/comments/CommentsSkeleton'
 import { LikeButton } from '@/ui/public/LikeActions'
@@ -83,6 +84,7 @@ export function DetailBodyChrome({
   contentWrapperClassName,
   metaClassName,
 }: DetailBodyChromeProps) {
+  const { t } = useI18n()
   const markerLabel = draftMarker !== null ? DRAFT_MARKER_LABELS[draftMarker] : null
   const publishedIso = date.toISOString()
   const updatedAt = updated ?? date
@@ -98,8 +100,8 @@ export function DetailBodyChrome({
         <Link
           to={editHref}
           className="absolute top-4 right-4 inline-flex h-8 w-8 translate-y-0.5 items-center justify-center rounded-md text-ink-4 transition-colors hover:bg-surface-soft hover:text-ink-1 md:top-8 md:right-8 md:translate-y-1"
-          aria-label="编辑"
-          title="编辑"
+          aria-label={t('common.action.edit')}
+          title={t('common.action.edit')}
           prefetch="intent"
         >
           <PencilIcon className="size-4" />
@@ -121,7 +123,7 @@ export function DetailBodyChrome({
           </time>
           {showUpdated && (
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
-              <span className="shrink-0">修改于</span>
+              <span className="shrink-0">{t('public.posts.updatedAt')}</span>
               <time dateTime={updatedIso} className="tabular-nums">
                 {formatLocalDate(updatedAt, 'yyyy-MM-dd HH:mm', siteIdentity)}
               </time>

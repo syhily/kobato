@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import type { ClientCategory } from '@/shared/types/catalog'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { postTitleClass } from '@/ui/public/post/postChrome'
 import { Image } from '@/ui/public/widgets/Image'
 
@@ -12,6 +13,7 @@ export interface CategoriesBodyProps {
 }
 
 export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
+  const { t } = useI18n()
   return (
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
@@ -59,7 +61,9 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
                   </div>
                   <div className="mt-2">
                     <div className="text-sm text-ink-4">
-                      <span className="inline-block">{`${category.counts} 篇文章`}</span>
+                      <span className="inline-block">
+                        {t('public.posts.categoryCount', { count: category.counts })}
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { tZhCN } from '#/_helpers/i18n'
 import { commentAvatarClass, commentContentClass, editableHint } from '@/ui/public/comments/comment-item/helpers'
 
 describe('editableHint — pending/non-pending branch coverage', () => {
@@ -14,33 +15,33 @@ describe('editableHint — pending/non-pending branch coverage', () => {
 
   it('shows hours-and-minutes pending hint when >= 60 minutes remain', () => {
     const expiresAt = Date.now() + 2 * 60 * 60 * 1000 + 30 * 60 * 1000
-    expect(editableHint(expiresAt, true)).toBe('此消息正在等待审核，2 小时 30 分钟内可编辑。')
+    expect(editableHint(expiresAt, true, tZhCN, 'zh-CN')).toBe('此消息正在等待审核，2小时30分钟内可编辑。')
   })
 
   it('shows whole-hour pending hint when remaining minutes are an exact hour', () => {
     const expiresAt = Date.now() + 3 * 60 * 60 * 1000
-    expect(editableHint(expiresAt, true)).toBe('此消息正在等待审核，3 小时内可编辑。')
+    expect(editableHint(expiresAt, true, tZhCN, 'zh-CN')).toBe('此消息正在等待审核，3小时内可编辑。')
   })
 
   it('shows seconds pending hint when under a minute remains', () => {
     const expiresAt = Date.now() + 30_000
-    expect(editableHint(expiresAt, true)).toBe('此消息正在等待审核，30 秒内可编辑。')
+    expect(editableHint(expiresAt, true, tZhCN, 'zh-CN')).toBe('此消息正在等待审核，30秒钟内可编辑。')
   })
 
   it('shows minutes non-pending hint', () => {
     const expiresAt = Date.now() + 5 * 60 * 1000
-    expect(editableHint(expiresAt, false)).toBe('5 分钟内可编辑此消息。')
+    expect(editableHint(expiresAt, false, tZhCN, 'zh-CN')).toBe('你可以在 5分钟内编辑此消息。')
   })
 
   it('treats exactly 1 remaining minute as the seconds branch', () => {
     const expiresAt = Date.now() + 500 // ceil → 1 second, ceil-mins → 1
-    const out = editableHint(expiresAt, false)
-    expect(out).toMatch(/秒内可编辑此消息。$/)
+    const out = editableHint(expiresAt, false, tZhCN, 'zh-CN')
+    expect(out).toMatch(/秒内编辑此消息。$/)
   })
 
   it('returns the raw error string when authError is an unknown code', () => {
     const expiresAt = Date.now() + 10 * 60 * 1000
-    expect(editableHint(expiresAt, false)).toBe('10 分钟内可编辑此消息。')
+    expect(editableHint(expiresAt, false, tZhCN, 'zh-CN')).toBe('你可以在 10分钟内编辑此消息。')
   })
 })
 

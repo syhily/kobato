@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 import type { CardRenderContext } from '@/shared/lexical/cards/card-html'
 
 import { diffHtmlStructures, structureFromHtml } from '#/_helpers/dom-structure'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import {
   MUSIC_PLAYER_CARD_CLASSES,
   type MusicPlayerCardMeta,
@@ -86,13 +87,13 @@ describe('ui/public/music-player/music-player', () => {
   })
 
   it('starts playing when the cover button is clicked', () => {
-    const { getByLabelText } = render(<MusicPlayerCard {...base} />)
+    const { getByLabelText } = render(wrapWithI18n(<MusicPlayerCard {...base} />))
     fireEvent.click(getByLabelText('播放'))
     expect(playMock).toHaveBeenCalled()
   })
 
   it('expands the lyrics panel on toggle and seeks on line click', () => {
-    const { getByLabelText, getByText, queryByText } = render(<MusicPlayerCard {...base} />)
+    const { getByLabelText, getByText, queryByText } = render(wrapWithI18n(<MusicPlayerCard {...base} />))
     expect(queryByText('First line')).toBeNull()
 
     fireEvent.click(getByLabelText('歌词'))
@@ -117,7 +118,7 @@ describe('ui/public/music-player/music-player', () => {
       dispatchEvent: () => false,
     }))
     try {
-      const { getByLabelText } = render(<MusicPlayerCard {...base} />)
+      const { getByLabelText } = render(wrapWithI18n(<MusicPlayerCard {...base} />))
       const container = getByLabelText('音量').parentElement
       expect(container?.className).toContain('w-20')
       expect(container?.className).not.toContain('w-0')

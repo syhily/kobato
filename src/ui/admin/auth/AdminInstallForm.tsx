@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Shared auth input styling — must match @/ui/admin/auth/shared.
 const inputClasses =
@@ -23,6 +24,7 @@ function useCsrfToken(): string | undefined {
 }
 
 export function AdminInstallForm() {
+  const { t } = useI18n()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const [showPassword, setShowPassword] = useState(false)
@@ -41,8 +43,8 @@ export function AdminInstallForm() {
     credentials: 'include',
     parseJson: true,
     messages: {
-      httpFailure: () => '恢复失败，请检查备份文件后重试。',
-      failure: '网络错误，请稍后重试。',
+      httpFailure: () => t('auth.install.restoreFailed'),
+      failure: t('auth.install.networkError'),
     },
     onError: setRestoreError,
     onSuccess: (body) => {
@@ -67,7 +69,7 @@ export function AdminInstallForm() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
     if (file && !/\.(db|db\.tar\.gz|db\.gz|gz)$/i.test(file.name)) {
-      setRestoreError('仅支持 .db.tar.gz、.db.gz、.db 或 .gz 格式的备份文件')
+      setRestoreError(t('auth.install.unsupportedFormat'))
       setSelectedFile(null)
       e.target.value = ''
       return
@@ -116,16 +118,14 @@ export function AdminInstallForm() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Loader2Icon className="animate-spin" size={18} />
-              {waitStatus === 'polling' ? '数据库恢复中，请稍候…' : '连接超时'}
+              {waitStatus === 'polling' ? t('auth.install.restoringDb') : t('auth.install.connectTimeout')}
             </DialogTitle>
             <DialogDescription>
-              {waitStatus === 'polling'
-                ? '备份已接收，服务正在重启。此过程可能需要数十秒，请勿关闭页面。'
-                : '等待服务重启超时，请手动刷新页面后前往登录。'}
+              {waitStatus === 'polling' ? t('auth.install.restartReceived') : t('auth.install.restartTimeout')}
             </DialogDescription>
           </DialogHeader>
           {waitStatus === 'timeout' && (
-            <Button onClick={() => (window.location.href = '/admin/signin')}>前往登录</Button>
+            <Button onClick={() => (window.location.href = '/admin/signin')}>{t('auth.install.goSignin')}</Button>
           )}
         </DialogContent>
       </Dialog>
@@ -146,7 +146,7 @@ export function AdminInstallForm() {
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          全新安装
+          {t('auth.install.fresh')}
         </button>
         <button
           type="button"
@@ -164,7 +164,7 @@ export function AdminInstallForm() {
             '',
           )}
         >
-          从备份恢复
+          {t('auth.install.fromBackup')}
         </button>
       </div>
 
@@ -174,14 +174,14 @@ export function AdminInstallForm() {
           {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="install-title" className="font-semibold text-(--text-admin-base)">
-              站点名称
+              {t('auth.install.siteName')}
             </Label>
             <Input
               id="install-title"
               name="title"
               type="text"
               autoComplete="off"
-              placeholder="My Blog"
+              placeholder={t('auth.install.siteNamePlaceholder')}
               required
               disabled={isSubmitting}
               className={inputClasses}
@@ -190,14 +190,14 @@ export function AdminInstallForm() {
 
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="install-name" className="font-semibold text-(--text-admin-base)">
-              昵称
+              {t('auth.install.nickname')}
             </Label>
             <Input
               id="install-name"
               name="name"
               type="text"
               autoComplete="nickname"
-              placeholder="你的名字"
+              placeholder={t('auth.install.nicknamePlaceholder')}
               required
               disabled={isSubmitting}
               className={inputClasses}
@@ -206,14 +206,14 @@ export function AdminInstallForm() {
 
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="install-email" className="font-semibold text-(--text-admin-base)">
-              邮箱
+              {t('auth.install.email')}
             </Label>
             <Input
               id="install-email"
               name="email"
               type="email"
               autoComplete="username"
-              placeholder="your@email.com"
+              placeholder={t('auth.shared.emailPlaceholder')}
               required
               disabled={isSubmitting}
               className={inputClasses}
@@ -222,7 +222,7 @@ export function AdminInstallForm() {
 
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="install-password" className="font-semibold text-(--text-admin-base)">
-              密码
+              {t('auth.install.password')}
             </Label>
             <div className="relative w-full">
               <Input
@@ -230,7 +230,7 @@ export function AdminInstallForm() {
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder="至少 10 个字符"
+                placeholder={t('auth.install.passwordPlaceholder')}
                 required
                 minLength={10}
                 disabled={isSubmitting}
@@ -241,7 +241,7 @@ export function AdminInstallForm() {
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   className="px-1 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                  aria-label={showPassword ? t('auth.shared.hidePassword') : t('auth.shared.showPassword')}
                 >
                   {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
                 </button>
@@ -255,10 +255,10 @@ export function AdminInstallForm() {
             className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isSubmitting ? (
-              '创建中...'
+              t('auth.install.creating')
             ) : (
               <>
-                创建账号并开始写作 <span aria-hidden>&rarr;</span>
+                {t('auth.install.create')} <span aria-hidden>&rarr;</span>
               </>
             )}
           </Button>
@@ -274,7 +274,7 @@ export function AdminInstallForm() {
           {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="restore-file" className="font-semibold text-(--text-admin-base)">
-              备份文件
+              {t('auth.install.backupFile')}
             </Label>
             <input
               ref={fileInputRef}
@@ -286,7 +286,7 @@ export function AdminInstallForm() {
               disabled={isRestoring}
               onChange={handleFileChange}
               className="sr-only"
-              aria-label="选择备份文件"
+              aria-label={t('auth.install.selectBackup')}
             />
             <div className="flex items-center gap-3 rounded-xl bg-muted px-3 py-2.5">
               <Button
@@ -296,24 +296,24 @@ export function AdminInstallForm() {
                 disabled={isRestoring}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {selectedFile ? '重新选择' : '选择文件'}
+                {selectedFile ? t('auth.install.reselect') : t('auth.install.select')}
               </Button>
               {selectedFile ? (
                 <span className="text-sm text-muted-foreground">
                   {selectedFile.name}（{formatBytes(selectedFile.size)}）
                 </span>
               ) : (
-                <span className="text-sm text-muted-foreground">未选择文件</span>
+                <span className="text-sm text-muted-foreground">{t('auth.install.noFile')}</span>
               )}
             </div>
           </div>
 
           <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-            <p className="mb-2 font-medium text-foreground">恢复说明</p>
+            <p className="mb-2 font-medium text-foreground">{t('auth.install.restoreNotes')}</p>
             <ul className="flex list-disc flex-col gap-1 pl-4">
-              <li>支持 .db、.db.gz 或 .db.tar.gz 格式的备份文件。</li>
-              <li>备份文件仅还原数据库内容（文章、设置、评论等）。</li>
-              <li>S3 上的图片、音乐、品牌资产等不会自动恢复，需单独处理。</li>
+              <li>{t('auth.install.noteFormats')}</li>
+              <li>{t('auth.install.noteDbOnly')}</li>
+              <li>{t('auth.install.noteAssets')}</li>
             </ul>
           </div>
 
@@ -328,7 +328,7 @@ export function AdminInstallForm() {
             disabled={isRestoring || restoreError !== null}
             className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
-            {isRestoring ? '恢复中...' : '上传并恢复'}
+            {isRestoring ? t('auth.install.restoring') : t('auth.install.uploadRestore')}
           </Button>
         </form>
       )}

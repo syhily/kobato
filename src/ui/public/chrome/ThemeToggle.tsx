@@ -2,6 +2,7 @@ import { Moon, Sun } from 'lucide-react'
 
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useTheme } from '@/ui/lib/ThemeProvider'
 
 interface ThemeToggleProps {
@@ -16,6 +17,7 @@ const sunClass = 'absolute inset-0 m-auto scale-0 opacity-0 transition-all dark:
 
 export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme()
+  const { t } = useI18n()
 
   const toggle = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
@@ -24,11 +26,11 @@ export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
   if (mode === 'public') {
     const a11y = (
       <>
-        <span className="sr-only dark:hidden">切换到暗色模式</span>
-        <span className="sr-only hidden dark:inline">切换到亮色模式</span>
+        <span className="sr-only dark:hidden">{t('public.chrome.themeToDark')}</span>
+        <span className="sr-only hidden dark:inline">{t('public.chrome.themeToLight')}</span>
       </>
     )
-    const staticTitle = '切换深浅色模式'
+    const staticTitle = t('public.chrome.themeToggle')
 
     if (variant === 'floating') {
       return (
@@ -59,7 +61,7 @@ export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
     )
   }
 
-  const adminLabel = resolvedTheme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'
+  const adminLabel = resolvedTheme === 'dark' ? t('public.chrome.themeToLight') : t('public.chrome.themeToDark')
   return (
     <Button
       variant="ghost"

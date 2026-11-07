@@ -10,6 +10,7 @@ import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
 import { SetupTokenVerifyForm } from '@/ui/admin/auth/SetupTokenVerifyForm'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/index'
@@ -132,6 +133,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 export const meta = titleMeta('meta.title.auth.setup')
 
 export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
+  const { t } = useI18n()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const csrfToken = loaderData.csrfToken
@@ -139,11 +141,11 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
   return (
     <div className="flex flex-col gap-8">
       <header className="text-center">
-        <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
+        <BrandLogo className="mx-auto mb-10 h-20 w-auto" alt="" />
         {!loaderData.setupTokenVerified ? (
-          <p className="text-base text-muted-foreground md:text-lg">验证 Setup Token 以继续。</p>
+          <p className="text-base text-muted-foreground md:text-lg">{t('auth.setup.tokenHint')}</p>
         ) : (
-          <p className="text-base text-muted-foreground md:text-lg">填写以下信息，开启你的创作之旅。</p>
+          <p className="text-base text-muted-foreground md:text-lg">{t('auth.setup.intro')}</p>
         )}
       </header>
 
