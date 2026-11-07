@@ -18,7 +18,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
-import { NotificationsDrawer } from '@/ui/shared/notifications/NotificationsDrawer'
+import {
+  LazyNotificationsDrawer,
+  warmNotificationsDrawerChunk,
+} from '@/ui/shared/notifications/LazyNotificationsDrawer'
 
 interface Props {
   currentUser: HeaderCurrentUser
@@ -57,7 +60,7 @@ export function UserMenu({ currentUser, logoutRedirectTo }: Props) {
           <span className="text-xs font-normal text-muted-foreground">{roleLabel(currentUser.role)}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setNotificationsOpen(true)}>
+        <DropdownMenuItem onClick={() => setNotificationsOpen(true)} onPointerEnter={warmNotificationsDrawerChunk}>
           <BellIcon /> 消息通知
           {unreadCount > 0 ? (
             <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[11px] leading-none font-medium text-primary-foreground">
@@ -100,7 +103,7 @@ export function UserMenu({ currentUser, logoutRedirectTo }: Props) {
           <LogOutIcon /> 登出
         </DropdownMenuItem>
       </DropdownMenuContent>
-      <NotificationsDrawer
+      <LazyNotificationsDrawer
         open={notificationsOpen}
         onOpenChange={setNotificationsOpen}
         isAdmin={currentUser.role === 'admin'}
