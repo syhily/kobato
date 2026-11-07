@@ -120,11 +120,13 @@ describe('WordCountPlugin', () => {
     expect(wordCountHandle.getState().language).toBeNull()
   })
 
-  it('defaults the published language to en', () => {
+  it('keeps the language unset (regex fallback) when neither side names one', () => {
     const onChange = vi.fn()
     const { wordCountHandle } = renderPlugin(onChange)
 
-    expect(wordCountHandle.getState().language).toBe('en')
+    // The host-agnostic contract: no language means countWords' original regex
+    // path — never an implicit English Intl.Segmenter.
+    expect(wordCountHandle.getState().language).toBeNull()
   })
 
   it('uses the composer wordCountLanguage when the plugin names none (host locale seam)', () => {

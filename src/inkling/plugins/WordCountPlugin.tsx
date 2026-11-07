@@ -7,13 +7,13 @@ import { createWordCounter } from '@/inkling/plugins/behaviour/word-counter'
 import { publishWordCountCallback } from '@/inkling/plugins/behaviour/wordCountHandle'
 
 // `language` selects the Intl.Segmenter word-granularity path in countWords;
-// without Segmenter the counter falls back
-// to the regex path. It is published on the composer handle alongside
-// onChange so nested composers count with the same language — the
-// top-level-only publish gate lives in publishWordCountCallback beside the
-// handle (mirroring registerTkNodeTracking). The explicit prop wins over the
-// composer's `wordCountLanguage` (the host's UI locale); `en` is the last
-// fallback for hosts that never name a locale.
+// with no language the counter keeps Inkling's original regex path (never an
+// implicit English segmenter), so a host that names nothing keeps its old
+// counts. It is published on the composer handle alongside onChange so nested
+// composers count with the same language — the top-level-only publish gate
+// lives in publishWordCountCallback beside the handle (mirroring
+// registerTkNodeTracking). The explicit prop wins over the composer's
+// `wordCountLanguage` (the host's UI locale).
 export const WordCountPlugin = ({
   onChange,
   language,
@@ -21,7 +21,7 @@ export const WordCountPlugin = ({
   const [editor] = useLexicalComposerContext()
   const wordCountHandle = useWordCountHandle()
   const { wordCountLanguage } = React.useContext(InklingUiPrefsContext)
-  const resolvedLanguage = language ?? wordCountLanguage ?? 'en'
+  const resolvedLanguage = language ?? wordCountLanguage
 
   React.useLayoutEffect(() => {
     if (!onChange) {
@@ -30,7 +30,7 @@ export const WordCountPlugin = ({
 
     const unpublish = publishWordCountCallback(wordCountHandle, editor, {
       onChange,
-      language: resolvedLanguage,
+      language: resolvedLanguage ?? null,
     })
 
     const counter = createWordCounter({ editor, onChange, language: resolvedLanguage })

@@ -10,7 +10,8 @@ import { isNestedEditor } from '@/inkling/utils/lexical-internals'
 // shared context ref that InklingNestedComposer read once at render time.
 // `language` rides alongside so nested
 // editors count with the top-level plugin's language instead of silently
-// falling back to 'en'.
+// dropping it; `null` means the host named no language and the nested counter
+// keeps Inkling's regex fallback.
 // Fed at mount by the top-level WordCountPlugin; React subscribes render-only
 // via useWordCountCallback. One instance per top-level composer (created in
 // InklingComposer) — nested composers share the top-level handle, exactly as
@@ -36,7 +37,7 @@ export function createWordCountHandle(): WordCountHandle {
 export function publishWordCountCallback(
   handle: WordCountHandle,
   editor: LexicalEditor,
-  { onChange, language }: { onChange: (count: number) => void; language: string },
+  { onChange, language }: { onChange: (count: number) => void; language: string | null },
 ): () => void {
   if (isNestedEditor(editor)) {
     return () => {
