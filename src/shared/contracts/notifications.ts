@@ -88,6 +88,10 @@ export const replyNotificationInput = z.object({
 
 export const replyNotificationOutput = z.object({
   message: threadMessageDto,
+  // The thread the reply landed in. A broadcast reply forks a new private
+  // thread, so this differs from the input thread id — the UI uses the
+  // mismatch to explain where the reply went.
+  threadId: idString,
 })
 
 export const adminSendDirectInput = z.object({

@@ -76,12 +76,13 @@ const reply = authedProc
   .route({ method: 'POST', path: '/notifications/reply' })
   .input(replyNotificationInput)
   .output(replyNotificationOutput)
-  .handler(async ({ input, context }) => ({
-    message: await replyToThread(context.db, context.viewer, {
+  .handler(async ({ input, context }) => {
+    const result = await replyToThread(context.db, context.viewer, {
       threadId: Number(input.threadId),
       body: input.body,
-    }),
-  }))
+    })
+    return { message: result.message, threadId: String(result.threadId) }
+  })
 
 export const notificationsRouter = {
   list,

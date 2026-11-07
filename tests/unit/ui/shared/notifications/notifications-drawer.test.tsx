@@ -33,6 +33,7 @@ vi.mock('react-router', async () => {
 const control = mockTanstackQuery()
 
 const { NotificationsDrawer } = await import('@/ui/shared/notifications/NotificationsDrawer')
+const { isForkReply } = await import('@/ui/shared/notifications/NotificationDetailPane')
 
 function makeItem(overrides: Partial<NotificationDto> = {}): NotificationDto {
   return {
@@ -224,5 +225,17 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     fireEvent.click(link)
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+})
+
+// The mutation harness cannot drive `onSuccess`, so the fork decision that
+// gates the「转入私信」toast is pinned as a pure helper instead.
+describe('ui/shared/notifications/isForkReply', () => {
+  it('flags a reply that landed in a different thread (a broadcast fork)', () => {
+    expect(isForkReply('3', '7')).toBe(true)
+  })
+
+  it('leaves an inline direct reply unflagged', () => {
+    expect(isForkReply('3', '3')).toBe(false)
   })
 })

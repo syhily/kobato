@@ -341,7 +341,7 @@ export async function replyToThread(
   db: Database,
   viewer: SessionUser,
   input: { threadId: number; body: string },
-): Promise<ThreadMessageDto> {
+): Promise<{ message: ThreadMessageDto; threadId: number }> {
   const userId = Number(viewer.id)
   const messages = await loadThread(db, input.threadId)
   const root = messages[0]!
@@ -364,11 +364,15 @@ export async function replyToThread(
     // fork do (ADR-0008 — the fork is the admin-facing half of a reply).
     queueNotificationEmail(db, row, recipients)
     return {
-      id: String(row.id),
-      body: row.body,
-      sender: { id: viewer.id, name: viewer.name },
-      mine: true,
-      createdAt: row.createdAt.toISOString(),
+      message: {
+        id: String(row.id),
+        body: row.body,
+        sender: { id: viewer.id, name: viewer.name },
+        mine: true,
+        createdAt: row.createdAt.toISOString(),
+      },
+      // The fork's own thread — never the broadcast root the user replied to.
+      threadId: row.threadId,
     }
   }
   const recipients = listThreadParticipantIds(db, input.threadId).filter((id) => id !== userId)
@@ -389,10 +393,13 @@ export async function replyToThread(
   )
   queueNotificationEmail(db, row, recipients)
   return {
-    id: String(row.id),
-    body: row.body,
-    sender: { id: viewer.id, name: viewer.name },
-    mine: true,
-    createdAt: row.createdAt.toISOString(),
+    message: {
+      id: String(row.id),
+      body: row.body,
+      sender: { id: viewer.id, name: viewer.name },
+      mine: true,
+      createdAt: row.createdAt.toISOString(),
+    },
+    threadId: root.threadId,
   }
 }

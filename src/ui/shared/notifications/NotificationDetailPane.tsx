@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, ExternalLinkIcon, Loader2Icon, SendIcon, Undo2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
@@ -31,6 +32,11 @@ interface NotificationDetailPaneProps {
   onBack: () => void
   /** Closes the host drawer; the 去处理 link navigates underneath it. */
   onClose: () => void
+}
+
+/** True when a reply landed in a different thread than the one it was sent from. */
+export function isForkReply(currentThreadId: string, resultThreadId: string): boolean {
+  return resultThreadId !== currentThreadId
 }
 
 // Thread pane: the root message plus its replies as a chat-like transcript,
@@ -158,8 +164,14 @@ function ReplyComposer({ threadId }: { threadId: string }) {
   const invalidate = useInvalidateNotifications()
   const reply = useMutation(
     orpcQuery.notifications.reply.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (data) => {
         setBody('')
+        // A broadcast reply lands in a freshly forked private thread, so the
+        // user stays on an announcement thread that never shows the reply —
+        // explain the move instead of letting them retype it.
+        if (isForkReply(threadId, data.threadId)) {
+          toast.success('已发送，回复已转入私信，管理员会私信回复你')
+        }
         void invalidate()
       },
       onError: onMutationError('回复发送失败'),

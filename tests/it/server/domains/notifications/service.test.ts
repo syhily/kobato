@@ -175,7 +175,8 @@ describe('notifications / threads & replies', () => {
     const root = sendDirectMessage(db, adminId, visitorId, { title: '合作', body: '有兴趣吗' })
 
     const reply = await replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: '有！' })
-    expect(reply.mine).toBe(true)
+    expect(reply.message.mine).toBe(true)
+    expect(reply.threadId).toBe(root.threadId)
     expect(unreadCount(db, adminId)).toBe(1)
 
     const thread = await getThread(db, viewer(adminId, 'admin'), root.threadId)
@@ -209,7 +210,7 @@ describe('notifications / threads & replies', () => {
     const root = sendBroadcast(db, adminA, { title: '新功能', body: '欢迎反馈', replyable: true })
 
     const reply = await replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: '赞' })
-    expect(reply.mine).toBe(true)
+    expect(reply.message.mine).toBe(true)
     // The reply reached every admin — the creator's own broadcast row is
     // pre-read, so adminA's count is the reply alone; adminB also has the
     // broadcast itself.
@@ -221,6 +222,7 @@ describe('notifications / threads & replies', () => {
     expect(adminInbox.items).toHaveLength(1)
     const forkThreadId = Number(adminInbox.items[0]!.threadId)
     expect(forkThreadId).not.toBe(root.threadId)
+    expect(reply.threadId).toBe(forkThreadId)
 
     // The broadcast thread itself still holds only the announcement.
     const rootThread = await getThread(db, viewer(adminA, 'admin'), root.threadId)
@@ -400,7 +402,8 @@ describe('notifications / recall (ADR-0007)', () => {
       threadId: forkThreadId,
       body: '谢谢反馈',
     })
-    expect(followUp.mine).toBe(true)
+    expect(followUp.message.mine).toBe(true)
+    expect(followUp.threadId).toBe(forkThreadId)
     expect((await getThread(db, viewer(visitorId, 'visitor'), forkThreadId)).messages).toHaveLength(2)
   })
 

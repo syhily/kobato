@@ -64,6 +64,8 @@ describe('integration / notifications controller', () => {
 
     const reply = await callJson('/notifications/reply', { threadId: items[0]!.threadId, body: '你好' }, visitorCtx)
     expect(reply.status).toBe(200)
+    // An inline direct reply stays in the thread it was sent to.
+    expect((reply.json.json as { threadId: string }).threadId).toBe(items[0]!.threadId)
 
     const adminInbox = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
     expect((adminInbox.json.json as { items: unknown[] }).items).toHaveLength(1)
@@ -124,11 +126,15 @@ describe('integration / notifications controller', () => {
 
     const reply = await callJson('/notifications/reply', { threadId: broadcast.threadId, body: '赞' }, visitorCtx)
     expect(reply.status).toBe(200)
+    // The reply names its own (forked) thread, not the broadcast root.
+    const replyThreadId = (reply.json.json as { threadId: string }).threadId
+    expect(replyThreadId).not.toBe(broadcast.threadId)
 
     // The replier sees their own fork thread, pre-read, under a new thread id.
     const visitorDirect = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
     const fork = (visitorDirect.json.json as { items: Array<{ threadId: string; read: boolean }> }).items[0]!
     expect(fork.threadId).not.toBe(broadcast.threadId)
+    expect(replyThreadId).toBe(fork.threadId)
     expect(fork.read).toBe(true)
 
     // The admin sees the reply in their direct tab.
