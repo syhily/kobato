@@ -8,6 +8,7 @@ import type { AdminUserDto } from '@/shared/contracts/users'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInvalidateNotifications } from '@/client/hooks/use-notifications'
 import { onMutationError } from '@/client/lib/toast-api-error'
+import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -46,6 +47,7 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
   const invalidate = useInvalidateNotifications()
 
   const reset = () => {
+    setMode('broadcast')
     setRecipient(null)
     setTitle('')
     setBody('')
@@ -152,10 +154,11 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
 }
 
 function RecipientPicker({ value, onChange }: { value: AdminUserDto | null; onChange: (user: AdminUserDto) => void }) {
-  const [keyword, setKeyword] = useState('')
+  const [q, setQ] = useState('')
+  const [keyword, setKeyword] = useDebouncedSearch({ onChange: (value) => setQ(value) })
   const search = useQuery(
     orpcQuery.admin.users.list.queryOptions({
-      input: { q: keyword.trim() === '' ? keyword.trim() : undefined, limit: 8, offset: 0 },
+      input: { q: q.trim() === '' ? undefined : q.trim(), limit: 8, offset: 0 },
     }),
   )
   const users = search.data?.users ?? []
@@ -185,7 +188,7 @@ function RecipientPicker({ value, onChange }: { value: AdminUserDto | null; onCh
       <ul className="flex max-h-44 flex-col overflow-y-auto rounded-lg border">
         {users.length === 0 ? (
           <li className="px-3 py-4 text-center text-xs text-muted-foreground">
-            {search.isPending ? '搜索中…' : '没有匹配的用户'}
+            {search.isPending ? '搜索中…' : search.isError ? '搜索失败，请重试' : '没有匹配的用户'}
           </li>
         ) : (
           users.map((user) => (

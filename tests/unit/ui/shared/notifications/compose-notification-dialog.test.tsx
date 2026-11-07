@@ -1,13 +1,48 @@
 // @vitest-environment happy-dom
 
-import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 
 const control = mockTanstackQuery()
+
+// The recipient search contract: the typed keyword must reach the query input
+// after the debounce window. The oRPC query-utils module is mocked to capture
+// the exact input objects (react-query keeps the canonical mock).
+const captured = vi.hoisted(() => ({
+  queryInputs: [] as { q?: string; limit: number; offset: number }[],
+  onDirectSuccess: [] as (() => void)[],
+}))
+
+vi.mock('@/client/api/orpc-query', () => ({
+  orpcQuery: {
+    notifications: { key: () => ['notifications'] },
+    admin: {
+      users: {
+        list: {
+          queryOptions: (options: { input: { q?: string; limit: number; offset: number } }) => {
+            captured.queryInputs.push(options.input)
+            return { queryKey: ['admin', 'users', 'list', options.input] }
+          },
+        },
+      },
+      notifications: {
+        sendDirect: {
+          mutationOptions: (options: { onSuccess?: () => void }) => {
+            if (options.onSuccess !== undefined) {
+              captured.onDirectSuccess.push(options.onSuccess)
+            }
+            return {}
+          },
+        },
+        sendBroadcast: { mutationOptions: () => ({}) },
+      },
+    },
+  },
+}))
 
 const { ComposeNotificationDialog } = await import('@/ui/shared/notifications/ComposeNotificationDialog')
 
@@ -39,11 +74,17 @@ beforeEach(() => {
   control.query.isPending = false
   control.query.isError = false
   control.mutation.mutate.mockClear()
+  captured.queryInputs.length = 0
+  captured.onDirectSuccess.length = 0
 })
 
 function fill(title: string, body: string) {
   fireEvent.change(screen.getByLabelText('标题'), { target: { value: title } })
   fireEvent.change(screen.getByLabelText('内容'), { target: { value: body } })
+}
+
+function lastQueryInput() {
+  return captured.queryInputs[captured.queryInputs.length - 1]
 }
 
 describe('ui/shared/notifications/ComposeNotificationDialog', () => {
@@ -92,5 +133,52 @@ describe('ui/shared/notifications/ComposeNotificationDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: '发送私信' }))
 
     expect(control.mutation.mutate).toHaveBeenCalledWith({ userId: '7', title: '合作邀请', body: '有兴趣吗' })
+  })
+
+  it('sends the debounced keyword to the recipient search', async () => {
+    render(<ComposeNotificationDialog open onOpenChange={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: '私信' }))
+
+    fireEvent.change(screen.getByLabelText('收件人'), { target: { value: '小明' } })
+
+    await waitFor(() => {
+      expect(lastQueryInput()).toEqual({ q: '小明', limit: 8, offset: 0 })
+    })
+  })
+
+  it('clears the keyword from the recipient search when the input is emptied', async () => {
+    render(<ComposeNotificationDialog open onOpenChange={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: '私信' }))
+
+    const input = screen.getByLabelText('收件人')
+    fireEvent.change(input, { target: { value: '小明' } })
+    await waitFor(() => {
+      expect(lastQueryInput()).toEqual({ q: '小明', limit: 8, offset: 0 })
+    })
+
+    fireEvent.change(input, { target: { value: '' } })
+    await waitFor(() => {
+      expect(lastQueryInput()).toEqual({ q: undefined, limit: 8, offset: 0 })
+    })
+  })
+
+  it('resets to broadcast mode after a successful direct send', () => {
+    render(<ComposeNotificationDialog open onOpenChange={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: '私信' }))
+    expect(screen.getByLabelText('收件人')).toBeTruthy()
+
+    act(() => captured.onDirectSuccess.at(-1)?.())
+
+    expect(screen.getByLabelText('允许回复')).toBeTruthy()
+    expect(screen.queryByLabelText('收件人')).toBeNull()
+  })
+
+  it('shows a retry message when the recipient search fails', () => {
+    control.query.isError = true
+    render(<ComposeNotificationDialog open onOpenChange={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: '私信' }))
+
+    expect(screen.getByText('搜索失败，请重试')).toBeTruthy()
+    expect(screen.queryByText('没有匹配的用户')).toBeNull()
   })
 })
