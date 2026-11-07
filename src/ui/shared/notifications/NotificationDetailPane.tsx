@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInvalidateNotifications } from '@/client/hooks/use-notifications'
+import { useInvalidateNotifications, usePatchNotificationReadState } from '@/client/hooks/use-notifications'
 import { useNow } from '@/client/hooks/use-now'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import {
@@ -43,8 +43,13 @@ export function isForkReply(currentThreadId: string, resultThreadId: string): bo
 // with the reply composer gated by the server's canReply verdict.
 export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: NotificationDetailPaneProps) {
   const invalidate = useInvalidateNotifications()
+  const patchReadState = usePatchNotificationReadState()
   const threadQuery = useQuery(orpcQuery.notifications.thread.queryOptions({ input: { threadId: item.threadId } }))
-  const markRead = useMutation(orpcQuery.notifications.markRead.mutationOptions({ onSuccess: () => void invalidate() }))
+  const markRead = useMutation(
+    orpcQuery.notifications.markRead.mutationOptions({
+      onSuccess: (data) => patchReadState([item.id], true, data.count),
+    }),
+  )
   const recall = useMutation(
     orpcQuery.admin.notifications.recall.mutationOptions({
       onSuccess: () => {
@@ -57,7 +62,8 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
 
   const [recallConfirmOpen, setRecallConfirmOpen] = useState(false)
 
-  // Opening an unread message marks it read once; the badge follows the invalidation.
+  // Opening an unread message marks it read once; the patch carries the
+  // server's authoritative count into the badge.
   useEffect(() => {
     if (!item.read) {
       markRead.mutate({ ids: [item.id] })

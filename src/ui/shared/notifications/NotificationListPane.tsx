@@ -6,7 +6,7 @@ import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifi
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
-import { useInvalidateNotifications } from '@/client/hooks/use-notifications'
+import { usePatchNotificationReadState } from '@/client/hooks/use-notifications'
 import { useNow } from '@/client/hooks/use-now'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
@@ -104,10 +104,10 @@ function NotificationRow({
 }) {
   const meta = notificationMeta(item)
   const Icon = meta.icon
-  const invalidate = useInvalidateNotifications()
+  const patchReadState = usePatchNotificationReadState()
   const markUnread = useMutation(
     orpcQuery.notifications.markUnread.mutationOptions({
-      onSuccess: () => void invalidate(),
+      onSuccess: (data) => patchReadState([item.id], false, data.count),
       onError: onMutationError('操作失败'),
     }),
   )

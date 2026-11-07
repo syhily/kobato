@@ -5,7 +5,7 @@ import { useState } from 'react'
 import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifications'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInvalidateNotifications } from '@/client/hooks/use-notifications'
+import { useInvalidateNotifications, usePatchNotificationReadState } from '@/client/hooks/use-notifications'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/ui/components/sheet'
@@ -42,10 +42,16 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
   const [selected, setSelected] = useState<NotificationDto | null>(null)
   const [composeOpen, setComposeOpen] = useState(false)
   const invalidate = useInvalidateNotifications()
+  const patchReadState = usePatchNotificationReadState()
 
   const markAllRead = useMutation(
     orpcQuery.notifications.markRead.mutationOptions({
-      onSuccess: () => void invalidate(),
+      onSuccess: (data) => {
+        // Every row in every tab changes, so the pages must refetch — seed the
+        // badge from the authoritative count first so it never flickers.
+        patchReadState([], true, data.count)
+        void invalidate()
+      },
       onError: onMutationError('操作失败'),
     }),
   )
