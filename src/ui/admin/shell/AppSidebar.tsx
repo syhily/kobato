@@ -17,10 +17,9 @@ interface AppSidebarProps {
   userCount?: number
 }
 
-// The admin shell's ONE notification owner: both「消息通知」entries (the nav
-// item and the user menu) open this drawer, and the badge count is subscribed
-// here once instead of per entry point — interval refetches are per-observer
-// and do not dedupe (ADR-0009).
+// The admin shell's ONE notification owner: the「消息通知」nav item opens this
+// drawer, and the badge count is subscribed here once instead of per entry
+// point — interval refetches are per-observer and do not dedupe (ADR-0009).
 export function AppSidebar({
   currentUser,
   siteTitle,
@@ -49,7 +48,6 @@ export function AppSidebar({
         name={currentUser.name}
         email={currentUser.email}
         unreadCount={unreadCount}
-        onOpenNotifications={openNotifications}
       />
       <LazyNotificationsDrawer
         open={notificationsOpen}

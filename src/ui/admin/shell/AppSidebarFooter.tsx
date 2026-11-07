@@ -1,12 +1,4 @@
-import {
-  BellIcon,
-  ChevronsUpDownIcon,
-  InfoIcon,
-  LogOutIcon,
-  MessageSquareIcon,
-  MonitorIcon,
-  UserIcon,
-} from 'lucide-react'
+import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, UserIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 
@@ -23,8 +15,6 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
 import { SidebarFooter, SidebarMenu, SidebarMenuItem } from '@/ui/components/sidebar'
-import { warmNotificationsDrawerChunk } from '@/ui/shared/notifications/LazyNotificationsDrawer'
-import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
 interface AppSidebarFooterProps {
   className?: string
@@ -34,17 +24,9 @@ interface AppSidebarFooterProps {
   /** Supplied by the shell's single count owner — never subscribe here.
    *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
-  onOpenNotifications: () => void
 }
 
-export function AppSidebarFooter({
-  className,
-  id,
-  name,
-  email,
-  unreadCount,
-  onOpenNotifications,
-}: AppSidebarFooterProps) {
+export function AppSidebarFooter({ className, id, name, email, unreadCount }: AppSidebarFooterProps) {
   const [versionOpen, setVersionOpen] = useState(false)
   const logout = useLogout()
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
@@ -99,15 +81,6 @@ export function AppSidebarFooter({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-2" />
-              <DropdownMenuItem
-                className="my-0.5 rounded-xl px-3 py-2 text-sm"
-                onClick={() => onOpenNotifications()}
-                onPointerEnter={warmNotificationsDrawerChunk}
-              >
-                <BellIcon className="mr-2 size-4" />
-                消息通知
-                <NotificationBadge count={badgeCount} />
-              </DropdownMenuItem>
               <DropdownMenuItem
                 className="my-0.5 rounded-xl px-3 py-2 text-sm"
                 render={
