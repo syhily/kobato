@@ -49,7 +49,14 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
   path filters `recalled_at IS NULL` — the inbox list and the unread badge (now an INNER JOIN on
   `notification`) drop the message, `getThread` answers NOT_FOUND in the same shape as a missing
   thread, and `canReplyInThread` refuses new replies on a recalled root. Existing forked direct
-  threads are untouched: they stay readable and replyable.
+  threads are untouched: they stay readable and replyable. Email delivery (ADR-0008) is a
+  fire-and-forget side effect attached AFTER `createAndFanOut` in the `direct` and `admin`
+  producers only (`notifyAdmins`, `sendDirectMessage`, both `replyToThread` branches) through
+  `email.ts::queueNotificationEmail`: it resolves recipient emails
+  (`findUserEmailsByIds`), renders the shared `AdminNotificationEmail` family and sends one
+  message per recipient sequentially. The gate is `mail.enabled` AND `mail.notificationEmails`
+  (default ON); broadcasts and `notifyAllUsers` never email, producers keep their synchronous
+  signatures, and a transport failure only reaches the server log.
 - Three strata: **Core** (`content`, `posts`, `pages`, `pt`, `settings`), **Feature** (`auth`, `users`, `comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`, `friends`, `newsletter`, `webmentions`, `notifications`), **Platform** (`analytics`, `audit`, `backup`, `update`, `storage`). Platform services are leaves — cross-domain imports INTO them compose at the perimeter.
 
 ## http/

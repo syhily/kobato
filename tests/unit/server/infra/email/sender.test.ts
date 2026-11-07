@@ -60,6 +60,7 @@ beforeEach(() => {
     mail: {
       mail: {
         enabled: true,
+        notificationEmails: true,
         sender: 'noreply@example.com',
         transport: 'smtp',
         smtpHost: 'smtp.example.com',
@@ -86,6 +87,7 @@ describe('infra/email/sender — checkMailReady readiness matrix', () => {
 
   const fullyConfigured: Mail = {
     enabled: true,
+    notificationEmails: true,
     sender: 's',
     transport: 'smtp',
     smtpHost: 'smtp.example.com',
@@ -189,6 +191,7 @@ describe('infra/email/sender — sendEmail', () => {
       mail: {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'noreply@example.com',
           transport: 'smtp',
           smtpHost: 'smtp.example.com',
@@ -231,6 +234,7 @@ describe('infra/email/sender — sendEmail', () => {
       mail: {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'noreply@mg.example.com',
           transport: 'mailgun',
           smtpHost: '',
@@ -278,6 +282,7 @@ describe('infra/email/sender — sendEmail', () => {
       mail: {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'noreply@example.com',
           transport: 'smtp',
           smtpHost: 'smtp.example.com',
@@ -342,6 +347,7 @@ describe('infra/email/sender — sendTestMail', () => {
       mail: {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: '',
           transport: 'smtp',
           smtpHost: '',
@@ -402,6 +408,7 @@ describe('infra/email/sender — sendTestMail', () => {
       mail: {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'noreply@mg.example.com',
           transport: 'mailgun',
           smtpHost: '',
@@ -428,6 +435,7 @@ describe('infra/email/sender — sendTestMail', () => {
       mail: {
         mail: {
           enabled: false,
+          notificationEmails: true,
           sender: 'noreply@example.com',
           transport: 'smtp',
           smtpHost: 'smtp.example.com',

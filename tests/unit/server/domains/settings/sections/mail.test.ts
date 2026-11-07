@@ -138,6 +138,38 @@ describe('settings/sections/mail', () => {
     expect(toMailgun.success).toBe(true)
   })
 
+  describe('notificationEmails (ADR-0008)', () => {
+    it('defaults to true when the key is absent, so existing rows hydrate ON', () => {
+      const result = mailSchema.safeParse({
+        mail: { enabled: true, sender: 'noreply@example.com' },
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.mail.notificationEmails).toBe(true)
+      }
+    })
+
+    it('honors an explicit false', () => {
+      const result = mailSchema.safeParse({
+        mail: { enabled: true, notificationEmails: false, sender: 'noreply@example.com' },
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.mail.notificationEmails).toBe(false)
+      }
+    })
+
+    it('coerces form-data string literals', () => {
+      const result = mailSchema.safeParse({
+        mail: { enabled: 'true', notificationEmails: 'false', sender: '' },
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.mail.notificationEmails).toBe(false)
+      }
+    })
+  })
+
   describe('mailgunDomain hostname shape', () => {
     function parse(overrides: Record<string, unknown>) {
       return mailSchema.safeParse({

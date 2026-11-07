@@ -1,6 +1,6 @@
 # ADR-0008: Email delivery for notifications (spike)
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-07
 
 ## Context

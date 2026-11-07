@@ -9,6 +9,7 @@ import type {
   ThreadMessageDto,
 } from '@/shared/contracts/notifications'
 
+import { queueNotificationEmail } from '@/server/domains/notifications/email'
 import {
   countUnreadNotifications,
   createNotificationWithRecipients,
@@ -83,7 +84,7 @@ export function notifyAdmins(db: Database, message: NotifyMessage): Notification
     // pre-install state — skipping is honest.
     return null
   }
-  return createAndFanOut(
+  const row = createAndFanOut(
     db,
     {
       kind: 'admin',
@@ -96,6 +97,8 @@ export function notifyAdmins(db: Database, message: NotifyMessage): Notification
     },
     adminIds,
   )
+  queueNotificationEmail(db, row, adminIds)
+  return row
 }
 
 /** System → all users. Never replyable (the replyable flavor is admin-created). */
@@ -133,9 +136,11 @@ export function sendDirectMessage(
   if (!recipients.includes(recipientId)) {
     throw new DomainError('NOT_FOUND', '目标用户不存在')
   }
-  return createAndFanOut(db, { kind: 'direct', senderId, replyable: true, title: input.title, body: input.body }, [
+  const row = createAndFanOut(db, { kind: 'direct', senderId, replyable: true, title: input.title, body: input.body }, [
     recipientId,
   ])
+  queueNotificationEmail(db, row, [recipientId])
+  return row
 }
 
 /**
@@ -355,6 +360,9 @@ export async function replyToThread(
       [...recipients, userId],
       { readRecipientIds: [userId] },
     )
+    // The replier's own pre-read row gets no mail; the admins receiving the
+    // fork do (ADR-0008 — the fork is the admin-facing half of a reply).
+    queueNotificationEmail(db, row, recipients)
     return {
       id: String(row.id),
       body: row.body,
@@ -379,6 +387,7 @@ export async function replyToThread(
     },
     recipients,
   )
+  queueNotificationEmail(db, row, recipients)
   return {
     id: String(row.id),
     body: row.body,

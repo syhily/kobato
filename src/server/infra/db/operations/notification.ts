@@ -263,3 +263,16 @@ export function findUserNamesByIds(db: Database, ids: readonly number[]): Map<nu
     .all()
   return new Map(rows.map((row) => [row.id, row.name]))
 }
+
+/** Recipient email lookup for notification emails (ADR-0008). Callers pass already-active recipient ids. */
+export function findUserEmailsByIds(db: Database, ids: readonly number[]): Map<number, string> {
+  if (ids.length === 0) {
+    return new Map()
+  }
+  const rows = db
+    .select({ id: user.id, email: user.email })
+    .from(user)
+    .where(inArray(user.id, [...ids]))
+    .all()
+  return new Map(rows.map((row) => [row.id, row.email]))
+}

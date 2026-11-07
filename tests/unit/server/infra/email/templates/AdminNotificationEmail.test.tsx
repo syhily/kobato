@@ -50,6 +50,18 @@ describe('email/templates/AdminNotificationEmail', () => {
     expect(html).toContain('新留言')
   })
 
+  it('greets an explicit receiver instead of the site author', () => {
+    const html = renderTemplate({ receiver: '收件人甲' })
+    expect(html).toContain('你好，收件人甲')
+    expect(html).not.toContain('你好，雨帆')
+  })
+
+  it('renders the optional footer note under the CTA and omits it when absent', () => {
+    const footer = '此邮件由系统通知触发，可在「系统设置 → 邮件」中关闭通知邮件。'
+    expect(renderTemplate({ footerNote: footer })).toContain(footer)
+    expect(renderTemplate()).not.toContain(footer)
+  })
+
   it('renders html rows raw (comment bodies are pre-sanitised)', () => {
     const html = renderTemplate({ rows: [{ html: '<p>写得非常<strong>清楚</strong></p>' }] })
     expect(html).toContain('<p>写得非常<strong>清楚</strong></p>')

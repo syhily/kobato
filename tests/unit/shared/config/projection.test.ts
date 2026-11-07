@@ -123,6 +123,7 @@ describe('shared/config/projection — projectMailForAdmin', () => {
   const baseMail: MailSettings = {
     mail: {
       enabled: true,
+      notificationEmails: true,
       sender: 'noreply@example.com',
       transport: 'smtp',
       smtpHost: 'smtp.example.com',
@@ -141,6 +142,7 @@ describe('shared/config/projection — projectMailForAdmin', () => {
     const out = projectMailForAdmin(baseMail)
     expect(out.mail).toMatchObject({
       enabled: true,
+      notificationEmails: true,
       sender: 'noreply@example.com',
       transport: 'smtp',
       smtpHost: 'smtp.example.com',

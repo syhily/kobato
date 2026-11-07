@@ -81,6 +81,7 @@ const fixtureBundle: BlogSettingsBundle = {
   mail: {
     mail: {
       enabled: false,
+      notificationEmails: true,
       sender: 'noreply@example.com',
       transport: 'smtp',
       smtpHost: '',
@@ -391,6 +392,7 @@ describe('services/settings — mail section', () => {
       data: {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'a@b.co',
           transport: 'smtp',
           smtpHost: 'smtp.old.com',
@@ -408,6 +410,7 @@ describe('services/settings — mail section', () => {
       {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'noreply@example.com',
           transport: 'smtp',
           smtpHost: 'smtp.example.com',
@@ -435,6 +438,7 @@ describe('services/settings — mail section', () => {
       data: {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'a@b.co',
           transport: 'mailgun',
           smtpHost: '',
@@ -454,6 +458,7 @@ describe('services/settings — mail section', () => {
       {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'noreply@mg.example.com',
           transport: 'mailgun',
           mailgunDomain: 'mg.example.com',
@@ -861,6 +866,7 @@ describe('services/settings — section patch merge', () => {
       data: {
         mail: {
           enabled: true,
+          notificationEmails: true,
           sender: 'a@b.co',
           transport: 'smtp',
           smtpHost: 'smtp.example.com',

@@ -29,6 +29,7 @@ vi.mock('@/client/api/client', () => ({
 const smtpPopulated: MailLoaderShape = {
   mail: {
     enabled: true,
+    notificationEmails: true,
     sender: 'postmaster@example.com',
     transport: 'smtp',
     smtpHost: 'smtp.example.com',
@@ -46,6 +47,7 @@ const smtpPopulated: MailLoaderShape = {
 const mailgunPopulated: MailLoaderShape = {
   mail: {
     enabled: true,
+    notificationEmails: true,
     sender: 'mailgun@example.com',
     transport: 'mailgun',
     smtpHost: '',
@@ -64,6 +66,7 @@ const mailgunPopulated: MailLoaderShape = {
 const emptyMail: MailLoaderShape = {
   mail: {
     enabled: false,
+    notificationEmails: true,
     sender: '',
     transport: 'smtp',
     smtpHost: '',

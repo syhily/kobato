@@ -9,6 +9,8 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 export type AdminNotificationRow = { label?: string; value: string } | { html: string }
 
 interface Props {
+  /** Greeting name; defaults to the site author (the other callers are admin alerts). */
+  receiver?: string
   /** Inbox preheader line, e.g. `在《…》中有一条新留言`. */
   preview: string
   /** Bold headline, e.g. `新留言`. */
@@ -20,14 +22,25 @@ interface Props {
   /** Card content. The last rendered row drops its bottom margin. */
   rows: AdminNotificationRow[]
   cta: { label: string; href: string }
+  /** Optional footer line under the CTA (opt-out copy for notification emails). */
+  footerNote?: string
 }
 
 // The single layout all admin notification emails render through — a new
 // notification type is one data-mapping function, not a new template.
-export function AdminNotificationEmail({ preview, title, contextLine, mutedNote, rows, cta }: Props) {
+export function AdminNotificationEmail({
+  receiver,
+  preview,
+  title,
+  contextLine,
+  mutedNote,
+  rows,
+  cta,
+  footerNote,
+}: Props) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   return (
-    <EmailLayout receiver={siteIdentity.author.name} preview={preview}>
+    <EmailLayout receiver={receiver ?? siteIdentity.author.name} preview={preview}>
       <Text
         style={{
           fontSize: 26,
@@ -160,6 +173,20 @@ export function AdminNotificationEmail({ preview, title, contextLine, mutedNote,
           {cta.label}
         </Link>
       </div>
+
+      {footerNote && (
+        <Text
+          style={{
+            fontSize: 12,
+            color: light.textMuted,
+            lineHeight: 1.6,
+            margin: '8px 0 0',
+          }}
+          className="dark-text-muted"
+        >
+          {footerNote}
+        </Text>
+      )}
     </EmailLayout>
   )
 }

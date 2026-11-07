@@ -77,6 +77,7 @@ const fixture: BlogSettingsBundle = {
   mail: {
     mail: {
       enabled: false,
+      notificationEmails: true,
       sender: '',
       transport: 'smtp',
       smtpHost: '',

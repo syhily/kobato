@@ -122,6 +122,7 @@ const baseLimits: LimitsSettings = {
 const baseMail: MailLoaderShape = {
   mail: {
     enabled: false,
+    notificationEmails: true,
     sender: 'noreply@example.com',
     transport: 'smtp',
     smtpHost: '',

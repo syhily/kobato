@@ -54,6 +54,7 @@ export const assetsLoaderShapeSchema = z.object({
 export const mailLoaderShapeSchema = z.object({
   mail: z.object({
     enabled: z.boolean(),
+    notificationEmails: z.boolean(),
     sender: z.string(),
     transport: z.enum(['smtp', 'mailgun']),
     smtpHost: z.string(),
@@ -134,6 +135,7 @@ export interface AssetsLoaderShape {
 export interface MailLoaderShape {
   mail: {
     enabled: boolean
+    notificationEmails: boolean
     sender: string
     transport: 'smtp' | 'mailgun'
     smtpHost: string
@@ -257,6 +259,7 @@ export function projectMailForAdmin(
   return {
     mail: {
       enabled: m.enabled,
+      notificationEmails: m.notificationEmails,
       sender: m.sender,
       transport: m.transport,
       smtpHost: m.smtpHost,

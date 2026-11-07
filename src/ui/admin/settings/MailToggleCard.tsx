@@ -10,19 +10,25 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
 
 export function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
-  const { form, settingGroupProps, save } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
+  const { form, settingGroupProps, save } = useSettingsCard<
+    MailLoaderShape,
+    { enabled: boolean; notificationEmails: boolean }
+  >({
     section: 'mail',
     source: mail,
-    toState: (source) => ({ enabled: source.mail.enabled }),
+    toState: (source) => ({
+      enabled: source.mail.enabled,
+      notificationEmails: source.mail.notificationEmails,
+    }),
     fromState: (state) => ({
-      mail: { enabled: state.enabled },
+      mail: { enabled: state.enabled, notificationEmails: state.notificationEmails },
     }),
   })
 
   return (
     <SettingGroup
       title="邮件发送总开关"
-      description="关闭后，所有评论通知 / 回复通知 / 审核通过通知都不会再发送（不会报错，仅记录 debug 日志）。"
+      description="关闭后，所有评论通知 / 回复通知 / 审核通过通知 / 通知邮件都不会再发送（不会报错，仅记录 debug 日志）。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
@@ -43,6 +49,29 @@ export function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
             />
             <FieldLabel htmlFor="mail-enabled" className="font-normal">
               发送通知邮件
+            </FieldLabel>
+          </div>
+        </SettingsRow>
+        <SettingsRow
+          label="通知邮件"
+          hint="私信与系统提醒同时发送邮件。邮件服务启用后默认开启；关闭后这些消息仅站内可见。"
+        >
+          <div className="flex items-center gap-3">
+            <Controller
+              control={form.control}
+              name="notificationEmails"
+              render={({ field }) => (
+                <SettingsSwitch
+                  name={field.name}
+                  id="mail-notification-emails"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  save={save}
+                />
+              )}
+            />
+            <FieldLabel htmlFor="mail-notification-emails" className="font-normal">
+              私信与系统提醒发送邮件
             </FieldLabel>
           </div>
         </SettingsRow>

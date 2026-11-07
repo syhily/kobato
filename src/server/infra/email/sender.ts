@@ -22,6 +22,7 @@ const SIGNIN_LINK_TTL_MINUTES = 15
 
 interface MailConfig {
   enabled: boolean
+  notificationEmails: boolean
   sender: string
   transport: 'smtp' | 'mailgun'
   smtpHost: string

@@ -142,6 +142,8 @@ export interface FooterNavItem {
 export interface MailSettings {
   mail: {
     enabled: boolean
+    /** Send an email alongside direct messages and admin alerts (ADR-0008). */
+    notificationEmails: boolean
     sender: string
     transport: 'smtp' | 'mailgun'
     smtpHost: string

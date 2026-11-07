@@ -22,6 +22,7 @@ const { MailForm } = await import('@/ui/admin/settings/MailForm')
 const baseMail: MailLoaderShape = {
   mail: {
     enabled: false,
+    notificationEmails: true,
     sender: 'noreply@example.com',
     transport: 'smtp',
     smtpHost: '',
