@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router'
 
 import {
   BASIC_NODES,

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate, type NavigateFunction } from 'react-router-dom'
+import { useNavigate, type NavigateFunction } from 'react-router'
 
 declare global {
   interface Window {

@@ -3,7 +3,7 @@ import '@/inkling/styles/variants.css'
 import './styles/inkling.css'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { Route, HashRouter as Router, Routes } from 'react-router-dom'
+import { Route, HashRouter as Router, Routes } from 'react-router'
 
 import DesignSandbox from './components/DesignSandbox'
 import Navigator from './components/Navigator'

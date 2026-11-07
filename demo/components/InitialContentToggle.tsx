@@ -1,4 +1,4 @@
-import type { SetURLSearchParams } from 'react-router-dom'
+import type { SetURLSearchParams } from 'react-router'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $createParagraphNode, $getRoot } from 'lexical'

@@ -1,6 +1,6 @@
 import { ListItemNode, ListNode } from '@lexical/list'
 import React from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 
 import { MINIMAL_NODES, RestrictContentPlugin } from '@/inkling'
 
