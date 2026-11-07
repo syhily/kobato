@@ -8,6 +8,7 @@ import type { SettingsSectionPatch } from '@/shared/config/types'
 import { orpc } from '@/client/api/client'
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export type SettingsCommitResult = { ok: true; section: unknown } | { ok: false }
 
@@ -22,6 +23,7 @@ export interface UseSettingsMutationResult {
 }
 
 export function useSettingsMutation(): UseSettingsMutationResult {
+  const { t } = useI18n()
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   useEffect(() => {
@@ -55,11 +57,11 @@ export function useSettingsMutation(): UseSettingsMutationResult {
         return { ok: true, section: result.section }
       } catch (error: unknown) {
         setStatus('error')
-        toastApiError(error, '保存失败')
+        toastApiError(error, 'admin.toast.saveFailed', t)
         return { ok: false }
       }
     },
-    [updateMutation],
+    [updateMutation, t],
   )
 
   return {

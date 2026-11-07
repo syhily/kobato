@@ -11,6 +11,7 @@ import { useNow } from '@/client/hooks/use-now'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { formatNotificationTime, notificationMeta } from '@/ui/shared/notifications/notification-meta'
 
 interface NotificationListPaneProps {
@@ -132,13 +133,14 @@ function NotificationRow({
   onOpen: (item: NotificationDto) => void
 }) {
   const meta = notificationMeta(item)
+  const { t } = useI18n()
   const Icon = meta.icon
   const titleId = `notification-row-title-${item.id}`
   const patchReadState = usePatchNotificationReadState()
   const markUnread = useMutation(
     orpcQuery.notifications.markUnread.mutationOptions({
       onSuccess: (data) => patchReadState([item.id], false, data.count),
-      onError: onMutationError('操作失败'),
+      onError: onMutationError('admin.toast.operationFailed', t),
     }),
   )
   return (

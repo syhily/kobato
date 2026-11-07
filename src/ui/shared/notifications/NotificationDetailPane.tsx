@@ -23,6 +23,7 @@ import {
 import { Button, buttonVariants } from '@/ui/components/button'
 import { Textarea } from '@/ui/components/textarea'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { formatNotificationTime, notificationMeta } from '@/ui/shared/notifications/notification-meta'
 
 interface NotificationDetailPaneProps {
@@ -42,13 +43,14 @@ export function isForkReply(currentThreadId: string, resultThreadId: string): bo
 // Thread pane: the root message plus its replies as a chat-like transcript,
 // with the reply composer gated by the server's canReply verdict.
 export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: NotificationDetailPaneProps) {
+  const { t } = useI18n()
   const invalidate = useInvalidateNotifications()
   const patchReadState = usePatchNotificationReadState()
   const threadQuery = useQuery(orpcQuery.notifications.thread.queryOptions({ input: { threadId: item.threadId } }))
   const markRead = useMutation(
     orpcQuery.notifications.markRead.mutationOptions({
       onSuccess: (data) => patchReadState([item.id], true, data.count),
-      onError: onMutationError('标记已读失败'),
+      onError: onMutationError('admin.toast.markReadFailed', t),
     }),
   )
   const recall = useMutation(
@@ -57,7 +59,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
         void invalidate()
         onBack()
       },
-      onError: onMutationError('撤回失败'),
+      onError: onMutationError('admin.toast.recallFailed', t),
     }),
   )
 
@@ -176,6 +178,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
 const REPLY_HINT_ID = 'notification-reply-shortcut-hint'
 
 function ReplyComposer({ threadId }: { threadId: string }) {
+  const { t } = useI18n()
   const [body, setBody] = useState('')
   const invalidate = useInvalidateNotifications()
   const reply = useMutation(
@@ -190,7 +193,7 @@ function ReplyComposer({ threadId }: { threadId: string }) {
         }
         void invalidate()
       },
-      onError: onMutationError('回复发送失败'),
+      onError: onMutationError('admin.toast.replySendFailed', t),
     }),
   )
 

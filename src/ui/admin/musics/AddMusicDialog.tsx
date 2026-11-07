@@ -25,6 +25,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const RESULT_LIMIT_OPTIONS: { value: string; label: string }[] = [5, 10, 15, 20, 30].map((n) => ({
@@ -39,6 +40,7 @@ export interface AddMusicDialogProps {
 }
 
 export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) {
+  const { t } = useI18n()
   const [keyword, setKeyword] = useState('')
   const [source, setSource] = useState<MetingSource>('netease')
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
@@ -82,7 +84,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     },
     onError: (error) => {
       setAddingSourceId(null)
-      toastApiError(error, '添加音乐失败')
+      toastApiError(error, 'admin.toast.musicAddFailed', t)
     },
   })
   const { mutate: submitAdd } = addMutation

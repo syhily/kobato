@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { orpc } from '@/client/api/client'
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ReindexProgress {
   phase: 'idle' | 'running' | 'success'
@@ -17,6 +18,7 @@ const IDLE: ReindexProgress = { phase: 'idle', total: 0, processed: 0, failed: 0
 /** Manual search-index rebuild — the recovery hatch after bulk imports
  *  (database pump, WordPress migration); the index maintains itself otherwise. */
 export function SearchReindexCard() {
+  const { t } = useI18n()
   const [reindex, setReindex] = useState<ReindexProgress>(IDLE)
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function SearchReindexCard() {
       setReindex({ phase: 'success', total, processed, failed })
     } catch (err) {
       setReindex(IDLE)
-      toastApiError(err, '索引重建失败')
+      toastApiError(err, 'admin.toast.searchReindexFailed', t)
     }
   }
 

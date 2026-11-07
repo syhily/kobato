@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { orpc } from '@/client/api/client'
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ReprojectProgress {
   phase: 'idle' | 'running' | 'success'
@@ -20,6 +21,7 @@ const IDLE: ReprojectProgress = { phase: 'idle', total: 0, processed: 0, rewritt
  *  body_text / body_html_feed columns stale; the save pipeline maintains
  *  them otherwise. */
 export function BodyProjectionCard() {
+  const { t } = useI18n()
   const [reproject, setReproject] = useState<ReprojectProgress>(IDLE)
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export function BodyProjectionCard() {
       setReproject({ phase: 'success', total, processed, rewritten, failed })
     } catch (err) {
       setReproject(IDLE)
-      toastApiError(err, '缓存重建失败')
+      toastApiError(err, 'admin.toast.cacheRebuildFailed', t)
     }
   }
 

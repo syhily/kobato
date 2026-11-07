@@ -35,6 +35,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 
@@ -57,6 +58,7 @@ export interface MyCommentsViewProps {
 }
 
 export function MyCommentsView({ status, q, entity, entityOptions, currentUser }: MyCommentsViewProps) {
+  const { t } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
 
@@ -149,7 +151,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
       ...(entity ? { entity } : {}),
     }),
     selectRows: (page) => page.items,
-    noun: '评论',
+    noun: 'admin.list.noun.comments',
   })
 
   const invalidateList = useCallback(() => {
@@ -161,14 +163,14 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     onSuccess: () => {
       invalidateList()
     },
-    onError: onMutationError('申请删除失败'),
+    onError: onMutationError('admin.toast.deleteRequestFailed', t),
   })
   const cancelDelete = useMutation({
     ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
     onSuccess: () => {
       invalidateList()
     },
-    onError: onMutationError('撤回删除申请失败'),
+    onError: onMutationError('admin.toast.deleteRequestWithdrawFailed', t),
   })
 
   const submitting = requestDelete.isPending || cancelDelete.isPending

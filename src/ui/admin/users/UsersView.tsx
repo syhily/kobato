@@ -37,7 +37,7 @@ export function UsersView() {
     pageSize: filters.pageSize,
     buildInput: (offset) => buildQueryInput(filters, offset),
     selectRows: (page) => page.users,
-    noun: '用户',
+    noun: 'admin.list.noun.users',
   })
 
   const [qInput, setQInput] = useDebouncedSearch({

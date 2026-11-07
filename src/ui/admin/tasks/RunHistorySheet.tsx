@@ -52,7 +52,7 @@ export function RunHistorySheet({ taskKey, taskLabel }: { taskKey: JobHistoryInp
     pageSize: PAGE_SIZE,
     buildInput: (offset) => ({ taskKey, offset, limit: PAGE_SIZE }),
     selectRows: (page) => page.items,
-    noun: '执行历史',
+    noun: 'admin.list.noun.runHistory',
     enabled: open,
     refetchInterval: 10_000,
   })

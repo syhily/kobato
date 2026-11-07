@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface ReplyCommentDialogProps {
@@ -31,12 +32,13 @@ export interface ReplyCommentDialogProps {
 }
 
 export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, onReplied }: ReplyCommentDialogProps) {
+  const { t } = useI18n()
   const mutation = useMutation({
     ...orpcQuery.comments.replyComment.mutationOptions(),
     onSuccess: () => {
       onReplied()
     },
-    onError: onMutationError('回复发送失败'),
+    onError: onMutationError('admin.toast.replySendFailed', t),
   })
   const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)

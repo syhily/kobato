@@ -19,6 +19,7 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 
@@ -29,13 +30,14 @@ export interface EditUserDialogProps {
 }
 
 export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProps) {
+  const { t } = useI18n()
   const mutation = useMutation({
     mutationFn: (payload: Record<string, string | null>) => {
       const { id, ...body } = payload
       return orpc.admin.users.update({ id: id!, ...body })
     },
     onSuccess: () => onSaved(),
-    onError: onMutationError('保存用户信息失败'),
+    onError: onMutationError('admin.toast.userSaveFailed', t),
   })
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
   const [name, setName] = useState(comment?.name ?? '')

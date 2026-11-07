@@ -1,10 +1,14 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement, ReactNode } from 'react'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render } from '@testing-library/react'
+import { act, render as rtlRender } from '@testing-library/react'
 import { useState } from 'react'
 import { createMemoryRouter, RouterProvider, useSearchParams } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 
 // The controller's list query and the pills' autocomplete queries hit the
 // oRPC client; mocked at the same seam use-comments-actions.test.tsx uses.
@@ -66,6 +70,9 @@ function setup(initialPath: string) {
   const router = createMemoryRouter([{ path: '*', element: <Harness sink={sink} /> }], {
     initialEntries: [initialPath],
   })
+  // The controller reads `useI18n()`; the provider is mounted as a render wrapper.
+  const render = (ui: ReactElement) =>
+    rtlRender(ui, { wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children) })
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

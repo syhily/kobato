@@ -11,6 +11,7 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface FontsFormProps {
   fonts: FontsSettings
@@ -18,8 +19,10 @@ interface FontsFormProps {
 
 function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label: string; family: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { t } = useI18n()
   const { upload, pending } = useFileUpload({
     endpoint: '/api/admin/fonts/upload',
+    t,
     fields: { slot },
     accept: ['.ttf', '.otf'],
     maxBytes: 60 * 1024 * 1024,

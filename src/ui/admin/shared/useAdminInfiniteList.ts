@@ -7,8 +7,11 @@ import {
 } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { toastApiError } from '@/client/lib/toast-api-error'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Page contract shared by every admin list procedure: offset-paginated; `hasMore` gates the next fetch, `total` optional.
 interface AdminListPageShape {
@@ -45,13 +48,14 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
   pageSize: number
   buildInput: (offset: number) => TInput
   selectRows: (page: TPage) => TRow[]
-  /** Display noun for the error toast ('加载{noun}列表失败'). Omit when the view surfaces errors inline. */
-  noun?: string
+  /** Display noun message id for the error toast; translated through the same catalog as the title. Omit when the view surfaces errors inline. */
+  noun?: UiMessageId
   /** Pass false to hold the query idle until the caller arms it (e.g. a search waiting for a submitted keyword). */
   enabled?: boolean
   /** Poll cadence in ms (refetches all loaded pages) — for views tracking live rows. */
   refetchInterval?: number
 }) {
+  const { t } = useI18n()
   const options = namespace.infiniteOptions({
     input: buildInput,
     initialPageParam: 0,
@@ -69,9 +73,9 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
 
   useEffect(() => {
     if (noun && listQuery.error) {
-      toastApiError(listQuery.error, `加载${noun}列表失败`)
+      toastApiError(listQuery.error, 'admin.toast.listLoadFailed', t, { noun: t(noun) })
     }
-  }, [listQuery.error, noun])
+  }, [listQuery.error, noun, t])
 
   const sentinelRef = useInfiniteScrollSentinel({
     hasNextPage,

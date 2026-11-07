@@ -11,6 +11,7 @@ import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { RadioGroup } from '@/ui/components/radio-group'
 import { Switch } from '@/ui/components/switch'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface StorageMigrationDialogProps {
   open: boolean
@@ -46,6 +47,7 @@ const EMPTY_TARGET: S3TargetForm = {
  */
 export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: StorageMigrationDialogProps) {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const [direction, setDirection] = useState<'s3' | 'local'>('s3')
   const [target, setTarget] = useState<S3TargetForm>(EMPTY_TARGET)
   const [submitting, setSubmitting] = useState(false)
@@ -75,7 +77,7 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
       onOpenChange(false)
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.storage.migrationStatus.key() })
     } catch (error) {
-      toastApiError(error, '启动迁移失败')
+      toastApiError(error, 'admin.toast.migrationStartFailed', t)
     }
     // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
     setSubmitting(false)

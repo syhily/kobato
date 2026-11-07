@@ -2,6 +2,9 @@ import { useCallback, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
+import type { ToastTranslator } from '@/client/lib/toast-api-error'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
 
@@ -23,12 +26,14 @@ export interface FileUploadMessages {
   success?: string
   /** Fallback when the server error body carries no extractable message. Defaults to `上传失败 (<status>)`. */
   httpFailure?: (status: number) => string
-  /** Fallback for transport failures and non-Error throws. Defaults to 上传失败. */
-  failure?: string
+  /** Fallback title message id for transport failures and non-Error throws. Defaults to `admin.toast.uploadFailed`. */
+  failure?: UiMessageId
 }
 
 export interface UseFileUploadOptions {
   endpoint: string
+  /** The caller's `useI18n().t` — resolves the failure title and the inline `onError` copy. */
+  t: ToastTranslator
   /** Extra fields appended to the FormData ahead of the file (File uploads only). */
   fields?: Record<string, string>
   /** Dotted-suffix allowlist matched against the file name (e.g. '.svg', '.sql.gz'); omit to skip the type guard. Guards only run for File inputs. */
@@ -62,7 +67,7 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
 
   const upload = useCallback(
     async (input: File | FormData): Promise<boolean> => {
-      const { endpoint, fields, accept, maxBytes, credentials, parseJson, messages, onSuccess, onError } = options
+      const { endpoint, fields, accept, maxBytes, credentials, parseJson, messages, t, onSuccess, onError } = options
 
       const reportGuardFailure = (payload: FileUploadToast): false => {
         if (onError) {
@@ -134,12 +139,12 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
         failure = err
       }
       if (failed) {
-        const fallback = messages?.failure ?? '上传失败'
+        const failureId = messages?.failure ?? 'admin.toast.uploadFailed'
         if (onError) {
           // Inline-error mode: only transport/parse/onSuccess throws land here — the !res.ok path already reported its message.
-          onError(fallback)
+          onError(t(failureId))
         } else {
-          toastApiError(failure, fallback)
+          toastApiError(failure, failureId, t)
         }
       }
       setPending(false)

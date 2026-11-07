@@ -31,7 +31,7 @@ export function PagesView() {
     pageSize: PAGE_SIZE,
     buildInput: (offset) => ({ ...pills.queryInput<PagesFilterQuery>(), offset, limit: PAGE_SIZE }),
     selectRows: (page) => page.pages,
-    noun: '页面',
+    noun: 'admin.list.noun.pages',
   })
 
   const filterBar = <FilterPillBar {...pills.bar} />

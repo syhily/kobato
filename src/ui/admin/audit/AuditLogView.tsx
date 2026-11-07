@@ -25,6 +25,7 @@ import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const PAGE_SIZE = 20
@@ -34,6 +35,7 @@ interface AuditLogViewProps {
 }
 
 export function AuditLogView({ retentionDays }: AuditLogViewProps) {
+  const { t } = useI18n()
   const actorsQuery = useQuery(orpcQuery.admin.auditLog.actors.queryOptions())
   const actors = useMemo(() => actorsQuery.data ?? [], [actorsQuery.data])
   const fields = useMemo(() => buildAuditFilterFields(actors), [actors])
@@ -45,9 +47,9 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
   const actorsError = actorsQuery.error
   useEffect(() => {
     if (actorsError) {
-      toastApiError(actorsError, '加载操作人列表失败')
+      toastApiError(actorsError, 'admin.toast.actorListLoadFailed', t)
     }
-  }, [actorsError])
+  }, [actorsError, t])
 
   const [exportOpen, setExportOpen] = useState(false)
   const [includeFullIp, setIncludeFullIp] = useState(false)
@@ -88,9 +90,9 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
       setExportOpen(false)
     } catch (error) {
       // mutateAsync rejects — surface the failure; the dialog stays open for a retry.
-      toastApiError(error, '导出审计日志失败')
+      toastApiError(error, 'admin.toast.auditExportFailed', t)
     }
-  }, [queryInput, exportMutation, includeFullIp])
+  }, [queryInput, exportMutation, includeFullIp, t])
 
   const hasActiveFilters = pills.hasFilters
 

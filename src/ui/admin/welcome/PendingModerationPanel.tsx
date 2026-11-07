@@ -14,6 +14,7 @@ import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 3
 const ROW_DATE_FORMAT = 'LL-dd HH:mm'
@@ -24,6 +25,7 @@ export interface PendingModerationPanelProps {
 }
 
 export function PendingModerationPanel({ initial, emptyStateLine }: PendingModerationPanelProps) {
+  const { t } = useI18n()
   const [offset, setOffset] = useState(0)
 
   const {
@@ -56,7 +58,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success('已通过该评论')
       refresh()
     },
-    onError: onMutationError('操作失败，请刷新页面重试'),
+    onError: onMutationError('admin.toast.operationFailedRefresh', t),
   })
   const rejectApi = useMutation({
     mutationFn: (vars: { commentId: string }) => orpc.admin.comments.delete({ commentId: vars.commentId }),
@@ -64,7 +66,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success('已拒绝并删除该评论')
       refresh()
     },
-    onError: onMutationError('操作失败，请刷新页面重试'),
+    onError: onMutationError('admin.toast.operationFailedRefresh', t),
   })
   const approveDeletionApi = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
@@ -72,7 +74,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success(data ? '已处理该删除申请' : '已处理')
       refresh()
     },
-    onError: onMutationError('操作失败，请刷新页面重试'),
+    onError: onMutationError('admin.toast.operationFailedRefresh', t),
   })
 
   const onApprove = (item: AdminPendingItemDto) => {

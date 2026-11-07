@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface EditCommentDialogProps {
@@ -29,6 +30,7 @@ export interface EditCommentDialogProps {
 }
 
 export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDialogProps) {
+  const { t } = useI18n()
   const [initialBody, setInitialBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
@@ -47,7 +49,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   const editMutation = useMutation({
     ...orpcQuery.admin.comments.edit.mutationOptions(),
     onSuccess: (payload) => onSaved({ body: payload.comment.body }),
-    onError: onMutationError('保存评论失败'),
+    onError: onMutationError('admin.toast.commentSaveFailed', t),
   })
 
   // Reset the editor when the target comment changes; only refetch on id change.

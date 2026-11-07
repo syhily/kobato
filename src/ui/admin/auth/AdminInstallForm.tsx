@@ -42,9 +42,10 @@ export function AdminInstallForm() {
     endpoint: '/api/setup/restore',
     credentials: 'include',
     parseJson: true,
+    t,
     messages: {
       httpFailure: () => t('auth.install.restoreFailed'),
-      failure: t('auth.install.networkError'),
+      failure: 'auth.install.networkError',
     },
     onError: setRestoreError,
     onSuccess: (body) => {

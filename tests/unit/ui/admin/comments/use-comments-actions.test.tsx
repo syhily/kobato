@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { makeAdminComment } from '#/_helpers/catalog'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 
 // Drives `useCommentsController` at the hook level; the plain-object
 // `orpc` mock covers loadAll and the three comment mutations.
@@ -56,7 +57,7 @@ function makeWrapper() {
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>{children}</MemoryRouter>
+        <MemoryRouter>{wrapWithI18n(children)}</MemoryRouter>
       </QueryClientProvider>
     )
   }

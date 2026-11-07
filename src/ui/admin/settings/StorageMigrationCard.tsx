@@ -13,6 +13,7 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PHASE_LABEL: Record<string, string> = {
   copying: '正在复制对象',
@@ -36,6 +37,7 @@ const DIRECTION_LABEL: Record<string, string> = {
 export function StorageMigrationCard() {
   const queryClient = useQueryClient()
   const revalidator = useRevalidator()
+  const { t } = useI18n()
   const { data: status } = useQuery(
     orpcQuery.admin.storage.migrationStatus.queryOptions({
       input: {},
@@ -79,7 +81,7 @@ export function StorageMigrationCard() {
       await orpc.admin.storage.cancelMigration({})
       await invalidateStatus()
     } catch (error) {
-      toastApiError(error, '取消迁移失败')
+      toastApiError(error, 'admin.toast.migrationCancelFailed', t)
     }
   }
 
@@ -88,7 +90,7 @@ export function StorageMigrationCard() {
       await orpc.admin.storage.resumeMigration({})
       await invalidateStatus()
     } catch (error) {
-      toastApiError(error, '继续迁移失败')
+      toastApiError(error, 'admin.toast.migrationResumeFailed', t)
     }
   }
 

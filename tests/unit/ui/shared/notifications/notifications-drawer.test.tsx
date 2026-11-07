@@ -1,12 +1,13 @@
 // @vitest-environment happy-dom
 
-import type { ComponentProps } from 'react'
+import type { ComponentProps, ReactElement, ReactNode } from 'react'
 
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 
 // The「去处理」button renders a Router Link. Render it as a plain anchor and
@@ -34,6 +35,14 @@ const control = mockTanstackQuery()
 
 const { NotificationsDrawer } = await import('@/ui/shared/notifications/NotificationsDrawer')
 const { isForkReply } = await import('@/ui/shared/notifications/NotificationDetailPane')
+
+// The drawer reads `useI18n()`; a render wrapper (not inline JSX) keeps the
+// provider mounted across `rerender` calls.
+function render(ui: ReactElement) {
+  return rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
+  })
+}
 
 function makeItem(overrides: Partial<NotificationDto> = {}): NotificationDto {
   return {

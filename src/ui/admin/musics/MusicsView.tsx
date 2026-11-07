@@ -80,7 +80,7 @@ export function MusicsView() {
       sortOrder,
     }),
     selectRows: (page) => page.musics,
-    noun: '音乐',
+    noun: 'admin.list.noun.music',
   })
 
   const sentinelRef = useInfiniteScrollSentinel({

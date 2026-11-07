@@ -17,12 +17,14 @@ import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Badge } from '@/ui/components/badge'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface SessionsViewProps {
   items: AdminSessionItem[]
 }
 
 export function SessionsView({ items }: SessionsViewProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const logout = useLogout()
   const revalidator = useRevalidator()
@@ -31,7 +33,7 @@ export function SessionsView({ items }: SessionsViewProps) {
     onSuccess: () => {
       void revalidator.revalidate()
     },
-    onError: onMutationError('注销会话失败'),
+    onError: onMutationError('admin.toast.sessionSignOutFailed', t),
   })
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 

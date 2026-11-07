@@ -75,7 +75,7 @@ export function PostsView() {
       sortOrder,
     }),
     selectRows: (page) => page.posts,
-    noun: '文章',
+    noun: 'admin.list.noun.posts',
   })
 
   const sortValue = `${sortBy}-${sortOrder}`

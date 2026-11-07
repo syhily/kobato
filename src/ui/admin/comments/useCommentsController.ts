@@ -24,6 +24,7 @@ import {
   singleDateFilterLabel,
 } from '@/ui/admin/shared/date-filter'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface StatusCounts {
   all: number
@@ -205,6 +206,7 @@ export interface UseCommentsControllerOptions {
 }
 
 export function useCommentsController({ filters, dispatch, queryInput, intents }: UseCommentsControllerOptions) {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
 
   // Mirror active filters into the URL (debounced — text/date edits dispatch per keystroke) so a filtered view stays shareable.
@@ -299,7 +301,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
       ...queryInput,
     }),
     selectRows: (page) => page.comments,
-    noun: '评论',
+    noun: 'admin.list.noun.comments',
   })
   const statusCounts = firstPage?.statusCounts ?? ZERO_STATUS_COUNTS
 
@@ -334,17 +336,17 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
   const approveMutation = useMutation({
     ...orpcQuery.admin.comments.approve.mutationOptions(),
     onSuccess: (_result, variables) => approveComment(variables.commentId),
-    onError: onMutationError('审核通过失败'),
+    onError: onMutationError('admin.toast.commentApproveFailed', t),
   })
   const deleteMutation = useMutation({
     ...orpcQuery.admin.comments.delete.mutationOptions(),
     onSuccess: (_result, variables) => removeComment(variables.commentId),
-    onError: onMutationError('删除评论失败'),
+    onError: onMutationError('admin.toast.commentDeleteFailed', t),
   })
   // Shared by 同意删除 / 拒绝删除 — the per-call `onSuccess` captures the comment for the reject path's count fixup.
   const resolveDeletionMutation = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
-    onError: onMutationError('处理删除申请失败'),
+    onError: onMutationError('admin.toast.commentDeleteRequestFailed', t),
   })
 
   const actions: CommentActions = {

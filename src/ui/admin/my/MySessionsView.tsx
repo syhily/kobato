@@ -16,6 +16,7 @@ import { useSessionSort } from '@/ui/admin/sessions/useSessionSort'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -24,6 +25,7 @@ export interface MySessionsViewProps {
 }
 
 export function MySessionsView({ items }: MySessionsViewProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const logout = useLogout()
   const revalidator = useRevalidator()
@@ -32,7 +34,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
     onSuccess: () => {
       void revalidator.revalidate()
     },
-    onError: onMutationError('注销会话失败'),
+    onError: onMutationError('admin.toast.sessionSignOutFailed', t),
   })
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 

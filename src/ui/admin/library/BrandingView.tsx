@@ -11,6 +11,7 @@ import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent } from '@/ui/components/card'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Per-slot UI metadata: `publicPath` mirrors the server-side `ASSET_ROUTES` table.
 type BrandingFileSlot =
@@ -236,6 +237,7 @@ function SlotGroupCard({ group, branding }: { group: SlotGroup; branding: Assets
 
 function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus }) {
   const revalidator = useRevalidator()
+  const { t } = useI18n()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [clearing, setClearing] = useState(false)
   const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
@@ -246,6 +248,7 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
 
   const { upload, pending } = useFileUpload({
     endpoint: '/api/admin/branding/upload',
+    t,
     fields: { slot: meta.slot },
     accept: [meta.accept],
     maxBytes: meta.maxBytes,
@@ -275,17 +278,17 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
       if (!res.ok) {
         const data: unknown = await res.json().catch(() => null)
         const message = extractApiErrorMessage(data)
-        toastApiError(new Error(message ?? `清除失败 (${res.status})`), '清除失败')
+        toastApiError(new Error(message ?? `清除失败 (${res.status})`), 'admin.toast.clearFailed', t)
       } else {
         toast.success(`${meta.label} 已清除`)
         await revalidator.revalidate()
       }
     } catch (err) {
-      toastApiError(err, '清除失败')
+      toastApiError(err, 'admin.toast.clearFailed', t)
     }
     // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
     setClearing(false)
-  }, [csrfToken, meta, revalidator])
+  }, [csrfToken, meta, revalidator, t])
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">

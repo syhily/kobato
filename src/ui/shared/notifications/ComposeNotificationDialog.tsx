@@ -24,6 +24,7 @@ import { Switch } from '@/ui/components/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { Textarea } from '@/ui/components/textarea'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ComposeNotificationDialogProps {
   open: boolean
@@ -39,6 +40,7 @@ function isComposeMode(value: unknown): value is ComposeMode {
 // Admin-only compose dialog: a private message to one user, or a broadcast
 // to everyone (optionally answerable).
 export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotificationDialogProps) {
+  const { t } = useI18n()
   const [mode, setMode] = useState<ComposeMode>('broadcast')
   const [recipient, setRecipient] = useState<AdminUserDto | null>(null)
   const [title, setTitle] = useState('')
@@ -62,7 +64,7 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
         reset()
         onOpenChange(false)
       },
-      onError: onMutationError('私信发送失败'),
+      onError: onMutationError('admin.toast.privateMessageSendFailed', t),
     }),
   )
   const sendBroadcast = useMutation(
@@ -73,7 +75,7 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
         reset()
         onOpenChange(false)
       },
-      onError: onMutationError('公告发布失败'),
+      onError: onMutationError('admin.toast.announcementPublishFailed', t),
     }),
   )
   const pending = sendDirect.isPending || sendBroadcast.isPending

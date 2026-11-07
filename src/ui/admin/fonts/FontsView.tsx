@@ -39,6 +39,7 @@ import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialo
 import { SortableDragHandle, sortableIndexOf, useSortableRow, useSortableSensors } from '@/ui/admin/shared/sortable'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Web-font library + slot assignment: draggable grid, upload dialog, and
 // three slot columns persisted via `admin.fonts.setSlot` + revalidate.
@@ -57,6 +58,7 @@ const SLOT_DESCRIPTIONS: Record<FontSlot, string> = {
 const SLOT_ORDER: FontSlot[] = ['global', 'post', 'code']
 
 export function FontsView() {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
   const revalidator = useRevalidator()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -75,7 +77,7 @@ export function FontsView() {
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
     },
-    onError: onMutationError('删除失败'),
+    onError: onMutationError('admin.toast.deleteFailed', t),
   })
 
   const onDelete = (font: AdminFontDto) => {

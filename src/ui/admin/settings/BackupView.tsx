@@ -18,6 +18,7 @@ import { RestoreProgressPanel } from '@/ui/admin/settings/RestoreProgressPanel'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { useBackupUploadRestore, waitForRestartAndReport } from '@/ui/admin/settings/use-backup-restore'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 type RestorePhase = 'confirm' | 'waiting'
 
@@ -34,6 +35,7 @@ const FALLBACK_BACKUP: BackupLoaderShape = {
 }
 
 export function BackupView({ backup, timeZone }: BackupViewProps) {
+  const { t } = useI18n()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [restoreKey, setRestoreKey] = useState<string | null>(null)
   const [restorePhase, setRestorePhase] = useState<RestorePhase>('confirm')
@@ -52,21 +54,24 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
 
   const uploadRestore = useBackupUploadRestore({ csrfToken })
 
-  const loadPage = useCallback(async (limit: number, token?: string) => {
-    try {
-      const res = await orpc.admin.backup.list({ limit, continuationToken: token })
-      if (token) {
-        setBackupFiles((prev) => [...(prev ?? []), ...res.files])
-      } else {
-        setBackupFiles(res.files)
+  const loadPage = useCallback(
+    async (limit: number, token?: string) => {
+      try {
+        const res = await orpc.admin.backup.list({ limit, continuationToken: token })
+        if (token) {
+          setBackupFiles((prev) => [...(prev ?? []), ...res.files])
+        } else {
+          setBackupFiles(res.files)
+        }
+        setNextToken(res.nextContinuationToken)
+        return res
+      } catch (err) {
+        toastApiError(err, 'admin.toast.backupListLoadFailed', t)
+        throw err
       }
-      setNextToken(res.nextContinuationToken)
-      return res
-    } catch (err) {
-      toastApiError(err, '加载备份列表失败')
-      throw err
-    }
-  }, [])
+    },
+    [t],
+  )
 
   const safeLoadPage = useCallback(
     (limit: number, token?: string) =>
@@ -105,7 +110,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       // flash the "loading / empty" states over a successful create.
       void safeLoadPage(5)
     },
-    onError: onMutationError('创建备份失败'),
+    onError: onMutationError('admin.toast.backupCreateFailed', t),
   })
 
   /** Shared tail for the list-restore flow: wait out the restart, toast, reload. */
@@ -113,14 +118,14 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     setRestorePhase('waiting')
     pollAbortRef.current = new AbortController()
     const signal = pollAbortRef.current.signal
-    void waitForRestartAndReport(signal).then((done) => {
+    void waitForRestartAndReport(signal, t).then((done) => {
       if (!done) {
         setRestoreKey(null)
         setPasswordKey(null)
         setRestorePhase('confirm')
       }
     })
-  }, [])
+  }, [t])
 
   const restoreMutation = useMutation({
     mutationFn: ({ key, password }: { key: string; password?: string }) =>
@@ -137,7 +142,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       waitForRestart()
     },
     onError: (error: Error) => {
-      toastApiError(error, '还原失败')
+      toastApiError(error, 'admin.toast.restoreFailed', t)
       // A wrong password (400) keeps the prompt open for a retry — same
       // contract as the upload flow; anything else resets the flow.
       if (error.message.includes('密码') && passwordKey !== null) {
@@ -156,7 +161,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       toast.success('备份文件已删除')
       void safeLoadPage(5)
     },
-    onError: onMutationError('删除失败'),
+    onError: onMutationError('admin.toast.deleteFailed', t),
   })
 
   const handleLoadMore = useCallback(() => {

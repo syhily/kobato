@@ -18,6 +18,7 @@ import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { Tooltip } from '@/ui/components/tooltip'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 30
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm:ss'
@@ -217,6 +218,7 @@ function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRow
 // and only reach the public page once approved; rejection is kept (audit trail);
 // 7 consecutive daily verification failures flip an approved row to `hidden`.
 export function WebmentionInboxView() {
+  const { t } = useI18n()
   const [status, setStatus] = useState<StatusFilter>('all')
 
   const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef, patchPages } = useAdminInfiniteList({
@@ -228,25 +230,25 @@ export function WebmentionInboxView() {
       limit: PAGE_SIZE,
     }),
     selectRows: (page) => page.mentions,
-    noun: 'Webmention',
+    noun: 'admin.list.noun.webmentions',
   })
 
   const approveMutation = useMutation({
     ...orpcQuery.admin.webmentions.approve.mutationOptions(),
     onSuccess: (_result, variables) =>
       patchPages((data) => moderateMentionInPages(data, variables.id, 'approved', status)),
-    onError: onMutationError('批准 Webmention 失败'),
+    onError: onMutationError('admin.toast.webmentionApproveFailed', t),
   })
   const rejectMutation = useMutation({
     ...orpcQuery.admin.webmentions.reject.mutationOptions(),
     onSuccess: (_result, variables) =>
       patchPages((data) => moderateMentionInPages(data, variables.id, 'rejected', status)),
-    onError: onMutationError('拒绝 Webmention 失败'),
+    onError: onMutationError('admin.toast.webmentionRejectFailed', t),
   })
   const reverifyMutation = useMutation({
     ...orpcQuery.admin.webmentions.reverify.mutationOptions(),
     onSuccess: (row) => patchPages((data) => applyReverifyToPages(data, row, status)),
-    onError: onMutationError('重新验证失败'),
+    onError: onMutationError('admin.toast.webmentionRevalidateFailed', t),
   })
 
   const isBusy = (mention: AdminWebmentionWire) =>

@@ -16,6 +16,7 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -36,6 +37,7 @@ function resolveRegistrationOptions(response: unknown): PublicKeyCredentialCreat
 }
 
 function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof useRevalidator>) {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
   const [registerError, setRegisterError] = useState<string | null>(null)
   const [registerMessage, setRegisterMessage] = useState<string | null>(null)
@@ -60,7 +62,7 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
       void revalidator.revalidate()
     },
     onError: (error) => {
-      toastApiError(error, '删除 Passkey 失败')
+      toastApiError(error, 'admin.toast.passkeyDeleteFailed', t)
     },
   })
 

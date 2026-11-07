@@ -12,6 +12,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface RevisionHistoryDrawerProps {
   type: 'page' | 'post'
@@ -30,6 +31,7 @@ export function RevisionHistoryDrawer({
   currentBody,
   onAdoptRevision,
 }: RevisionHistoryDrawerProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [revisions, setRevisions] = useState<AdminRevisionDto[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -58,9 +60,9 @@ export function RevisionHistoryDrawer({
 
   useEffect(() => {
     if (listQuery.error) {
-      toastApiError(listQuery.error, '加载历史版本失败')
+      toastApiError(listQuery.error, 'admin.toast.revisionsLoadFailed', t)
     }
-  }, [listQuery.error])
+  }, [listQuery.error, t])
 
   const isPending = listQuery.isFetching
 

@@ -23,6 +23,7 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 type Role = NonNullable<AdminUserDto['role']>
 
@@ -42,6 +43,7 @@ interface UserOperationsCardProps {
 
 export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDeleted }: UserOperationsCardProps) {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
 
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [roleDraft, setRoleDraft] = useState<Role | ''>('')
@@ -56,7 +58,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     },
     onError: (error) => {
       setRoleDraft('')
-      toastApiError(error, '修改角色失败')
+      toastApiError(error, 'admin.toast.roleChangeFailed', t)
     },
   })
 
@@ -65,7 +67,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     onSuccess: () => {
       toast.success('重置邮件已发送')
     },
-    onError: onMutationError('发送重置邮件失败'),
+    onError: onMutationError('admin.toast.resetEmailFailed', t),
   })
 
   const revokeSessionsMutation = useMutation({
@@ -73,7 +75,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     onSuccess: () => {
       toast.success('已强制该用户全部登出')
     },
-    onError: onMutationError('强制登出失败'),
+    onError: onMutationError('admin.toast.forceSignOutFailed', t),
   })
 
   const clearPasskeysMutation = useMutation({
@@ -82,7 +84,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
       invalidateUsersCache(queryClient)
       toast.success('已清除 Passkey')
     },
-    onError: onMutationError('清除 Passkey 失败'),
+    onError: onMutationError('admin.toast.passkeyClearFailed', t),
   })
 
   const muteMutation = useMutation({
@@ -92,7 +94,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
       invalidateUsersCache(queryClient)
       toast.success(vars.muted ? '已禁言该用户' : '已解除禁言')
     },
-    onError: onMutationError('禁言操作失败'),
+    onError: onMutationError('admin.toast.muteFailed', t),
   })
 
   const bulkApproveMutation = useMutation({
@@ -102,7 +104,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
       toast.success('已通过全部待审评论')
     },
-    onError: onMutationError('批量通过失败'),
+    onError: onMutationError('admin.toast.batchApproveFailed', t),
   })
 
   const deleteMutation = useMutation({
@@ -111,7 +113,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
       invalidateUsersCache(queryClient)
       onDeleted()
     },
-    onError: onMutationError('删除用户失败'),
+    onError: onMutationError('admin.toast.userDeleteFailed', t),
   })
 
   const restoreMutation = useMutation({
@@ -120,7 +122,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
       invalidateUsersCache(queryClient)
       toast.success('用户已恢复')
     },
-    onError: onMutationError('恢复用户失败'),
+    onError: onMutationError('admin.toast.userRestoreFailed', t),
   })
 
   const bulkDeleteMutation = useMutation({
@@ -130,7 +132,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
       toast.success('已删除该用户的全部评论')
     },
-    onError: onMutationError('批量删除评论失败'),
+    onError: onMutationError('admin.toast.batchCommentDeleteFailed', t),
   })
 
   return (

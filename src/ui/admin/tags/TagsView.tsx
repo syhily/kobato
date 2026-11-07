@@ -35,7 +35,7 @@ export function TagsView() {
       limit: PAGE_SIZE,
     }),
     selectRows: (page) => page.tags,
-    noun: '标签',
+    noun: 'admin.list.noun.tags',
   })
 
   // Whole-namespace invalidation, no local mirror; a rejected delete (409) surfaces through the confirm dialog.

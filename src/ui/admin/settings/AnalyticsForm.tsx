@@ -17,6 +17,7 @@ import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface AnalyticsFormProps {
   analytics: AnalyticsSettings
@@ -36,8 +37,10 @@ function geoipStatusKey() {
 function MaxMindUploadRow() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const { upload, pending } = useFileUpload({
     endpoint: '/api/admin/maxmind/upload',
+    t,
     accept: ['.mmdb'],
     maxBytes: 100 * 1024 * 1024,
     messages: {
@@ -94,6 +97,7 @@ function describeGeoipStatus(status: GeoipStatus | undefined): string {
 
 function MaxMindRemoteUpdateRow() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const { data: status } = useQuery(orpcQuery.admin.geoip.status.queryOptions({ input: {} }))
   const updateMutation = useMutation({
     ...orpcQuery.admin.geoip.update.mutationOptions(),
@@ -105,7 +109,7 @@ function MaxMindRemoteUpdateRow() {
       }
       void queryClient.invalidateQueries({ queryKey: geoipStatusKey() })
     },
-    onError: onMutationError('GeoIP 更新失败'),
+    onError: onMutationError('admin.toast.geoipUpdateFailed', t),
   })
 
   return (

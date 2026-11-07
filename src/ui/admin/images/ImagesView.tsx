@@ -21,9 +21,11 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Button } from '@/ui/components/button'
 import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Infinite-scroll image library: filter state in `useImagesReducer`, rows cached via `useInfiniteQuery`.
 export function ImagesView() {
+  const { t } = useI18n()
   const { q, kind, dispatch, pageSize, activeFilters } = useImagesReducer()
   const { asset, storage } = useAssetsSettings()
   const { website } = useSiteIdentity()
@@ -50,7 +52,7 @@ export function ImagesView() {
       limit: pageSize,
     }),
     selectRows: (page) => page.images,
-    noun: '图片',
+    noun: 'admin.list.noun.images',
   })
 
   // Both cache types (`infinite` grid, `query` picker) — the procedure-level key partial-matches both.
@@ -65,7 +67,7 @@ export function ImagesView() {
       toast.success('图片已删除')
       invalidateList()
     },
-    onError: onMutationError('删除图片失败'),
+    onError: onMutationError('admin.toast.imageDeleteFailed', t),
   })
 
   const updateNoteMutation = useMutation({
@@ -76,7 +78,7 @@ export function ImagesView() {
       toast.success('备注已更新')
       invalidateList()
     },
-    onError: onMutationError('更新图片备注失败'),
+    onError: onMutationError('admin.toast.imageNoteUpdateFailed', t),
   })
   const submitUpdateNote = updateNoteMutation.mutate
   const isUpdatingNote = updateNoteMutation.isPending
@@ -88,7 +90,7 @@ export function ImagesView() {
       toast.success('缩略图已重新计算')
       invalidateList()
     },
-    onError: onMutationError('重新计算缩略图失败'),
+    onError: onMutationError('admin.toast.thumbnailRebuildFailed', t),
   })
   const submitRecalculate = recalculateMutation.mutate
   const isRecalculating = recalculateMutation.isPending

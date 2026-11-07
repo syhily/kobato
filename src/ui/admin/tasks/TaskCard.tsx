@@ -22,6 +22,7 @@ import { RunHistorySheet } from '@/ui/admin/tasks/RunHistorySheet'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/ui/components/card'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function taskStatus(task: JobSummaryDto, migration?: StorageMigrationStatus): TaskStatus {
   if (TASK_CAPABILITIES[task.taskKey].usesMigrationStatus && migration !== undefined) {
@@ -50,6 +51,7 @@ function taskStatus(task: JobSummaryDto, migration?: StorageMigrationStatus): Ta
 
 function BackupAction() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const createMutation = useMutation({
     ...orpcQuery.admin.backup.create.mutationOptions(),
     onSuccess: async (result) => {
@@ -58,7 +60,7 @@ function BackupAction() {
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.jobs.key() })
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.backup.key() })
     },
-    onError: onMutationError('手动备份失败'),
+    onError: onMutationError('admin.toast.manualBackupFailed', t),
   })
   return (
     <Button
@@ -76,6 +78,7 @@ function BackupAction() {
 
 function MigrationActions({ migration }: { migration: StorageMigrationStatus }) {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.jobs.key() })
     await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.storage.migrationStatus.key() })
@@ -83,12 +86,12 @@ function MigrationActions({ migration }: { migration: StorageMigrationStatus }) 
   const cancelMutation = useMutation({
     ...orpcQuery.admin.storage.cancelMigration.mutationOptions(),
     onSuccess: invalidate,
-    onError: onMutationError('取消迁移失败'),
+    onError: onMutationError('admin.toast.migrationCancelFailed', t),
   })
   const resumeMutation = useMutation({
     ...orpcQuery.admin.storage.resumeMigration.mutationOptions(),
     onSuccess: invalidate,
-    onError: onMutationError('继续迁移失败'),
+    onError: onMutationError('admin.toast.migrationResumeFailed', t),
   })
 
   const inFlight = isStorageMigrationInFlightPhase(migration.phase)

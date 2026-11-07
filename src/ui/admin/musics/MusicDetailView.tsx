@@ -19,6 +19,7 @@ import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 import { LazyMotionDiv, LazyMotionH1, LazyMotionP, LazyMotionSpan } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 const DATE_FORMAT = 'yyyy-LL-dd'
@@ -29,6 +30,7 @@ interface MusicDetailViewProps {
 }
 
 export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
   const config = useSiteIdentity()
   const { load, toggle } = useMusicPlayerActions()
@@ -87,7 +89,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       toast.success('已保存')
       setEditing(false)
     },
-    onError: onMutationError('保存失败'),
+    onError: onMutationError('admin.toast.saveFailed', t),
   })
 
   const enterEdit = useCallback(() => {
@@ -147,7 +149,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       toast.success('已删除')
       void navigate('/admin/library/music')
     },
-    onError: onMutationError('删除失败'),
+    onError: onMutationError('admin.toast.deleteFailed', t),
   })
 
   const handleDelete = useCallback(() => {

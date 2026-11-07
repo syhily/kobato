@@ -18,9 +18,11 @@ import { useMetingMusicSearch } from '@/ui/admin/musics/useMetingMusicSearch'
 import { Label } from '@/ui/components/label'
 import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export function AddMusicView() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const queryClient = useQueryClient()
   const [keyword, setKeyword] = useState('')
   const [source, setSource] = useState<MetingSource>('netease')
@@ -62,7 +64,7 @@ export function AddMusicView() {
     },
     onError: (error) => {
       setAddingSourceId(null)
-      toastApiError(error, '添加音乐失败')
+      toastApiError(error, 'admin.toast.musicAddFailed', t)
     },
   })
   const { mutate: submitAdd } = addMutation

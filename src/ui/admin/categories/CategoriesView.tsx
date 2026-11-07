@@ -16,10 +16,12 @@ import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { resolveSortableMove, useSortableSensors } from '@/ui/admin/shared/sortable'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 type EditTarget = AdminCategoryDto | null | undefined
 
 export function CategoriesView() {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -33,9 +35,9 @@ export function CategoriesView() {
 
   useEffect(() => {
     if (listQuery.error) {
-      toastApiError(listQuery.error, '加载分类失败')
+      toastApiError(listQuery.error, 'admin.toast.categoriesLoadFailed', t)
     }
-  }, [listQuery.error])
+  }, [listQuery.error, t])
 
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.categories.list.key() })

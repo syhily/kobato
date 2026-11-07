@@ -75,7 +75,7 @@ export function WebmentionOutboxView() {
       limit: PAGE_SIZE,
     }),
     selectRows: (page) => page.rows,
-    noun: '发送记录',
+    noun: 'admin.list.noun.sendHistory',
   })
 
   return (

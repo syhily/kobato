@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 // Self-edit dialog for `/admin/me/comments`: posts to `comment.updateOwn`
@@ -30,10 +31,11 @@ export interface MyEditCommentDialogProps {
 }
 
 export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentDialogProps) {
+  const { t } = useI18n()
   const update = useMutation({
     ...orpcQuery.comments.updateOwn.mutationOptions(),
     onSuccess: () => onSaved(),
-    onError: onMutationError('保存评论失败'),
+    onError: onMutationError('admin.toast.commentSaveFailed', t),
   })
   const [initialBody, setInitialBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)

@@ -1,9 +1,13 @@
 // @vitest-environment happy-dom
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import type { ReactElement, ReactNode } from 'react'
+
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifications'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 
 // The canonical `mockTanstackQuery()` cannot express this suite: the patch
 // path needs a REAL QueryClient (cache writes against oRPC's infinite-key
@@ -51,6 +55,13 @@ vi.mock('@tanstack/react-query', async () => {
 const { NotificationsDrawer } = await import('@/ui/shared/notifications/NotificationsDrawer')
 const { orpcQuery } = await import('@/client/api/orpc-query')
 const { patchNotificationReadState } = await import('@/client/hooks/use-notifications')
+
+// The drawer reads `useI18n()`; the provider is mounted as a render wrapper.
+function render(ui: ReactElement) {
+  return rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
+  })
+}
 
 const COUNT_KEY = orpcQuery.notifications.unreadCount.queryOptions({}).queryKey
 

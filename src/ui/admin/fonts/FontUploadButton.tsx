@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Web-font upload via the dedicated resource route, not oRPC — fonts can be
 // 60 MiB and oRPC sits behind the request-wide body limit.
@@ -28,6 +29,7 @@ type UploadPhase =
 export function FontUploadButton() {
   const revalidator = useRevalidator()
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const familyInputRef = useRef<HTMLInputElement>(null)
   const [phase, setPhase] = useState<UploadPhase>({ kind: 'idle' })
@@ -40,6 +42,7 @@ export function FontUploadButton() {
 
   const { upload } = useFileUpload({
     endpoint: '/api/admin/fonts/package/upload',
+    t,
     fields: { familyName: trimmedFamilyName },
     accept: ['.ttf', '.otf'],
     maxBytes: 60 * 1024 * 1024,
@@ -47,7 +50,7 @@ export function FontUploadButton() {
       invalidType: { title: '仅支持 .ttf 或 .otf 字体文件' },
       tooLarge: () => ({ title: '字体文件大小上限为 60 MB' }),
       httpFailure: (status) => `服务器错误 (${status})`,
-      failure: '未知错误，请稍后重试',
+      failure: 'admin.toast.unknownErrorRetry',
     },
     onSuccess: async () => {
       // Await the refetch so the success phase renders the fresh list.

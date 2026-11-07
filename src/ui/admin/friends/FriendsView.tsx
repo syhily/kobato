@@ -21,6 +21,7 @@ import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 30
 
@@ -30,6 +31,7 @@ const PENDING_LIMIT = 50
 type EditTarget = AdminFriendDto | null | undefined
 
 export function FriendsView() {
+  const { t } = useI18n()
   const [q, setQ] = useState('')
   const [includeHidden, setIncludeHidden] = useState(false)
   const queryClient = useQueryClient()
@@ -52,7 +54,7 @@ export function FriendsView() {
       limit: PAGE_SIZE,
     }),
     selectRows: (page) => page.friends,
-    noun: '友链',
+    noun: 'admin.list.noun.friendLinks',
   })
 
   const invalidateList = useCallback(() => {
@@ -66,7 +68,7 @@ export function FriendsView() {
       toast.success('友链已删除')
       invalidateList()
     },
-    onError: onMutationError('删除友链失败'),
+    onError: onMutationError('admin.toast.friendDeleteFailed', t),
   })
 
   // One-click approve flips `visible` via the existing upsert path; rows without a poster can't pass the schema.
@@ -85,7 +87,7 @@ export function FriendsView() {
       toast.success('友链已通过审核')
       invalidateList()
     },
-    onError: onMutationError('通过友链失败'),
+    onError: onMutationError('admin.toast.friendApproveFailed', t),
   })
 
   const [qInput, setQInput] = useDebouncedSearch({
