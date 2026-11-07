@@ -12,6 +12,7 @@ import {
   markUnread,
   notifyAdmins,
   notifyAllUsers,
+  recallMessage,
   replyToThread,
   sendBroadcast,
   sendDirectMessage,
@@ -209,8 +210,8 @@ describe('notifications / threads & replies', () => {
 
     const reply = await replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: '赞' })
     expect(reply.mine).toBe(true)
-    // The reply reached every admin — the creator never receives their own
-    // broadcast, so adminA's count is the reply alone; adminB also has the
+    // The reply reached every admin — the creator's own broadcast row is
+    // pre-read, so adminA's count is the reply alone; adminB also has the
     // broadcast itself.
     expect(unreadCount(db, adminA)).toBe(1)
     expect(unreadCount(db, adminB)).toBe(2)
@@ -330,5 +331,140 @@ describe('notifications / threads & replies', () => {
     await expect(
       replyToThread(db, viewer(outsiderId, 'visitor'), { threadId: root.threadId, body: 'x' }),
     ).rejects.toThrow(DomainError)
+  })
+})
+
+describe('notifications / recall (ADR-0007)', () => {
+  it('hides a recalled broadcast from every tab and drops the badge for every recipient', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const aId = await seedUser('visitor', 'a')
+    const bId = await seedUser('visitor', 'b')
+    const root = sendBroadcast(db, adminId, { title: '发早了', body: 'b', replyable: true })
+
+    expect(unreadCount(db, aId)).toBe(1)
+    expect(unreadCount(db, bId)).toBe(1)
+
+    const result = recallMessage(db, root.id)
+    expect(result.newlyRecalled).toBe(true)
+    expect(result.kind).toBe('broadcast')
+
+    for (const userId of [aId, bId, adminId]) {
+      expect(unreadCount(db, userId)).toBe(0)
+      for (const tab of ['all', 'unread', 'announce'] as const) {
+        const page = await listInbox(db, userId, { tab, limit: 10 })
+        expect(page.items).toHaveLength(0)
+      }
+    }
+  })
+
+  it('answers NOT_FOUND for a recalled thread to recipients and admins alike', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: true })
+
+    recallMessage(db, root.id)
+
+    await expect(getThread(db, viewer(visitorId, 'visitor'), root.threadId)).rejects.toThrow('消息不存在')
+    await expect(getThread(db, viewer(adminId, 'admin'), root.threadId)).rejects.toThrow('消息不存在')
+  })
+
+  it('refuses new replies on a recalled replyable broadcast', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: true })
+
+    recallMessage(db, root.id)
+
+    await expect(
+      replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: 'x' }),
+    ).rejects.toThrow('该消息不支持回复')
+  })
+
+  it('leaves existing fork threads readable and replyable after the root is recalled', async () => {
+    const adminA = await seedUser('admin', 'adminA')
+    const adminB = await seedUser('admin', 'adminB')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const root = sendBroadcast(db, adminA, { title: '新功能', body: '欢迎反馈', replyable: true })
+
+    await replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: '反馈' })
+    const directBefore = await listInbox(db, adminA, { tab: 'direct', limit: 10 })
+    const forkThreadId = Number(directBefore.items[0]!.threadId)
+
+    recallMessage(db, root.id)
+
+    // The fork is an independent direct thread — untouched by the recall.
+    const fork = await getThread(db, viewer(visitorId, 'visitor'), forkThreadId)
+    expect(fork.messages.map((message) => message.body)).toEqual(['反馈'])
+    expect(fork.canReply).toBe(true)
+    const followUp = await replyToThread(db, viewer(adminB, 'admin', 'adminB'), {
+      threadId: forkThreadId,
+      body: '谢谢反馈',
+    })
+    expect(followUp.mine).toBe(true)
+    expect((await getThread(db, viewer(visitorId, 'visitor'), forkThreadId)).messages).toHaveLength(2)
+  })
+
+  it('gives the creator a pre-read self-row and lets them recall from it', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    await seedUser('visitor', 'visitor')
+    const root = sendBroadcast(db, adminId, { title: '我已发出', body: 'b', replyable: true })
+
+    // The author's own copy: visible, pre-read, badge untouched.
+    expect(unreadCount(db, adminId)).toBe(0)
+    const inbox = await listInbox(db, adminId, { tab: 'announce', limit: 10 })
+    expect(inbox.items).toHaveLength(1)
+    expect(inbox.items[0]!.id).toBe(String(root.id))
+    expect(inbox.items[0]!.read).toBe(true)
+
+    const recalled = recallMessage(db, Number(inbox.items[0]!.id))
+    expect(recalled.newlyRecalled).toBe(true)
+    expect((await listInbox(db, adminId, { tab: 'announce', limit: 10 })).items).toHaveLength(0)
+  })
+
+  it('is idempotent — a second recall is a no-op keeping the first timestamp', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    await seedUser('visitor', 'visitor')
+    const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: false })
+
+    const first = recallMessage(db, root.id)
+    const second = recallMessage(db, root.id)
+    expect(first.newlyRecalled).toBe(true)
+    expect(second.newlyRecalled).toBe(false)
+    expect(second.recalledAt.getTime()).toBe(first.recalledAt.getTime())
+  })
+
+  it('recalls an admin-kind system alert', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const row = notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件' })!
+    expect(unreadCount(db, adminId)).toBe(1)
+
+    const recalled = recallMessage(db, row.id)
+    expect(recalled.kind).toBe('admin')
+    expect(unreadCount(db, adminId)).toBe(0)
+    expect(recalled.newlyRecalled).toBe(true)
+  })
+
+  it('refuses to recall a direct message and leaves it visible', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const direct = sendDirectMessage(db, adminId, visitorId, { title: '私信', body: 'hello' })
+
+    expect(() => recallMessage(db, direct.id)).toThrow('私信不支持撤回')
+    const inbox = await listInbox(db, visitorId, { tab: 'direct', limit: 10 })
+    expect(inbox.items).toHaveLength(1)
+    expect(inbox.items[0]!.title).toBe('私信')
+  })
+
+  it('rejects recalling a missing message', async () => {
+    expect(() => recallMessage(db, 9999)).toThrow('消息不存在')
+  })
+
+  it('refuses a broadcast when the author is the only user, creating no rows', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    expect(() => sendBroadcast(db, adminId, { title: 't', body: 'b', replyable: false })).toThrow(
+      '站点内还没有其他用户，公告无人可接收',
+    )
+    expect((await listInbox(db, adminId, { tab: 'all', limit: 10 })).items).toHaveLength(0)
+    expect(unreadCount(db, adminId)).toBe(0)
   })
 })

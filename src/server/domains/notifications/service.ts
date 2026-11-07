@@ -3,6 +3,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { NotificationRow } from '@/server/infra/db/types'
 import type {
   NotificationDto,
+  NotificationKind,
   NotificationSenderDto,
   NotificationTab,
   ThreadMessageDto,
@@ -11,6 +12,7 @@ import type {
 import {
   countUnreadNotifications,
   createNotificationWithRecipients,
+  findNotificationById,
   findUserNamesByIds,
   isThreadParticipant,
   listNotificationsForUser,
@@ -19,6 +21,7 @@ import {
   listThreadParticipantIds,
   markNotificationsRead,
   markNotificationsUnread,
+  recallNotification,
   type NewNotificationRow,
 } from '@/server/infra/db/operations/notification'
 import { DomainError } from '@/server/infra/http/errors'
@@ -135,21 +138,61 @@ export function sendDirectMessage(
   ])
 }
 
-/** Admin → all users; the ONLY replyable broadcast flavor. The author never receives their own broadcast. */
+/**
+ * Admin → all users; the ONLY replyable broadcast flavor. The author gets a
+ * self-row, pre-marked read (ADR-0007): recall needs the author to see their
+ * own broadcast, and it makes the inbox the single surface for "what did I
+ * send". The empty-audience gate still counts OTHER users — a single-admin
+ * site cannot send an announcement nobody would receive.
+ */
 export function sendBroadcast(
   db: Database,
   senderId: number,
   input: { title: string; body: string; replyable: boolean },
 ): NotificationRow {
-  const userIds = listRecipientUserIds(db, { adminsOnly: false }).filter((id) => id !== senderId)
-  if (userIds.length === 0) {
+  const userIds = listRecipientUserIds(db, { adminsOnly: false })
+  if (userIds.every((id) => id === senderId)) {
     throw new DomainError('BAD_REQUEST', '站点内还没有其他用户，公告无人可接收')
   }
   return createAndFanOut(
     db,
     { kind: 'broadcast', senderId, replyable: input.replyable, title: input.title, body: input.body },
     userIds,
+    { readRecipientIds: [senderId] },
   )
+}
+
+export interface RecalledMessage {
+  id: number
+  kind: NotificationKind
+  recalledAt: Date
+  /** False for the second (no-op) call — the caller skips its audit row. */
+  newlyRecalled: boolean
+}
+
+/**
+ * Recall an announcement or a system alert (ADR-0007). `direct` messages are
+ * deliberately NOT recallable — private threads between people stay honest.
+ * Idempotent: a second call returns the existing state without re-stamping.
+ */
+export function recallMessage(db: Database, id: number): RecalledMessage {
+  const existing = findNotificationById(db, id)
+  if (existing === null) {
+    throw new DomainError('NOT_FOUND', '消息不存在')
+  }
+  if (existing.kind === 'direct') {
+    throw new DomainError('BAD_REQUEST', '私信不支持撤回')
+  }
+  const result = recallNotification(db, id)
+  if (result === null) {
+    throw new DomainError('NOT_FOUND', '消息不存在')
+  }
+  return {
+    id: result.row.id,
+    kind: result.row.kind,
+    recalledAt: result.row.recalledAt!,
+    newlyRecalled: result.recalled,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -235,8 +278,13 @@ function assertParticipant(db: Database, threadId: number, userId: number): void
  * always answerable. A broadcast root can only be answered by a NON-ADMIN
  * recipient (system broadcasts ride senderId NULL and can never be
  * answered) — admins answer inside the forked per-replier threads instead.
+ * A recalled root accepts no NEW replies (ADR-0007) — defense in depth
+ * behind the hidden UI entry; existing forks stay answerable.
  */
 function canReplyInThread(root: NotificationRow, viewer: SessionUser): boolean {
+  if (root.recalledAt !== null) {
+    return false
+  }
   if (root.kind === 'direct') {
     return true
   }
@@ -251,8 +299,13 @@ export interface ThreadView {
 export async function getThread(db: Database, viewer: SessionUser, threadId: number): Promise<ThreadView> {
   const userId = Number(viewer.id)
   const messages = await loadThread(db, threadId)
-  assertParticipant(db, threadId, userId)
   const root = messages[0]!
+  // A recalled thread answers exactly like a missing one — existence is not
+  // leaked to recipients, admins, or outsiders (ADR-0007).
+  if (root.recalledAt !== null) {
+    throw new DomainError('NOT_FOUND', '消息不存在')
+  }
+  assertParticipant(db, threadId, userId)
   const senders = senderDtosByIds(
     db,
     messages.map((row) => row.senderId).filter((id): id is number => id !== null),

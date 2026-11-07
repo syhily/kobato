@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { ArrowLeftIcon, ExternalLinkIcon, Loader2Icon, SendIcon } from 'lucide-react'
+import { ArrowLeftIcon, ExternalLinkIcon, Loader2Icon, SendIcon, Undo2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
@@ -16,15 +16,37 @@ import { formatNotificationTime, notificationMeta } from '@/ui/shared/notificati
 
 interface NotificationDetailPaneProps {
   item: NotificationDto
+  /** Admins can recall announcements / system alerts (never direct messages). */
+  isAdmin: boolean
   onBack: () => void
 }
 
 // Thread pane: the root message plus its replies as a chat-like transcript,
 // with the reply composer gated by the server's canReply verdict.
-export function NotificationDetailPane({ item, onBack }: NotificationDetailPaneProps) {
+export function NotificationDetailPane({ item, isAdmin, onBack }: NotificationDetailPaneProps) {
   const invalidate = useInvalidateNotifications()
   const threadQuery = useQuery(orpcQuery.notifications.thread.queryOptions({ input: { threadId: item.threadId } }))
   const markRead = useMutation(orpcQuery.notifications.markRead.mutationOptions({ onSuccess: () => void invalidate() }))
+  const recall = useMutation(
+    orpcQuery.admin.notifications.recall.mutationOptions({
+      onSuccess: () => {
+        void invalidate()
+        onBack()
+      },
+      onError: onMutationError('撤回失败'),
+    }),
+  )
+
+  const confirmRecall = () => {
+    if (recall.isPending) {
+      return
+    }
+    // oxlint-disable-next-line no-alert -- one-shot destructive confirm inside the lightweight drawer; a dedicated dialog would outweigh the action
+    if (!window.confirm(`确定撤回「${item.title}」吗？撤回后所有收件人都将看不到这条消息。`)) {
+      return
+    }
+    recall.mutate({ id: item.id })
+  }
 
   // Opening an unread message marks it read once; the badge follows the invalidation.
   useEffect(() => {
@@ -45,6 +67,18 @@ export function NotificationDetailPane({ item, onBack }: NotificationDetailPaneP
           <ArrowLeftIcon className="size-4" />
         </Button>
         <span className="text-xs text-muted-foreground">{meta.kindLabel}</span>
+        {isAdmin && item.kind !== 'direct' ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-7 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={confirmRecall}
+            disabled={recall.isPending}
+          >
+            {recall.isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : <Undo2Icon className="size-3.5" />}
+            撤回
+          </Button>
+        ) : null}
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="flex flex-col gap-1">

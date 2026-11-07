@@ -1,6 +1,6 @@
 # ADR-0007: Broadcast recall via soft-delete
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-07
 
 ## Context

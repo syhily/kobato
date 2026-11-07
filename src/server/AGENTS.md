@@ -31,7 +31,8 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
 - `notifications/` — the message center: `notification` rows fanned out at creation into
   `notification_recipient` (unread = `readAt IS NULL`; later-registered users never see historical
   broadcasts). Kinds: `direct` (admin ↔ user, always replyable), `admin` (system → all admins, never
-  replyable), `broadcast` (system or admin → all users minus the author; only the admin-created flavor
+  replyable), `broadcast` (system → all users; admin → all users INCLUDING a pre-read creator self-row,
+  so the author can find and recall what they sent; only the admin-created flavor
   can be replyable, and only NON-ADMIN recipients may answer). A user's reply to a replyable broadcast
   FORKS a new `direct` thread delivered to all current admins — the replier's own recipient row is
   pre-marked read, admins answer inside the fork, and the broadcast root thread only ever contains the
@@ -41,7 +42,14 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
   routing. System producers call
   `notifyAdmins` / `notifyAllUsers` — Platform domains get them injected at the composition root (see
   the Zeabur mail cleanup wiring in `bootstrap/db-lifecycle.ts`); raw queries live in
-  `infra/db/operations/notification.ts`.
+  `infra/db/operations/notification.ts`. Recall (ADR-0007) is a soft delete: `recallNotification`
+  stamps `notification.recalled_at` only where NULL (idempotent), `recallMessage` refuses `direct`
+  messages, and the admin procedure `admin.notifications.recall` audits
+  `notification_broadcast_recalled` / `notification_admin_recalled` ONLY on the first call. Every read
+  path filters `recalled_at IS NULL` — the inbox list and the unread badge (now an INNER JOIN on
+  `notification`) drop the message, `getThread` answers NOT_FOUND in the same shape as a missing
+  thread, and `canReplyInThread` refuses new replies on a recalled root. Existing forked direct
+  threads are untouched: they stay readable and replyable.
 - Three strata: **Core** (`content`, `posts`, `pages`, `pt`, `settings`), **Feature** (`auth`, `users`, `comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`, `friends`, `newsletter`, `webmentions`, `notifications`), **Platform** (`analytics`, `audit`, `backup`, `update`, `storage`). Platform services are leaves — cross-domain imports INTO them compose at the perimeter.
 
 ## http/

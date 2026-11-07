@@ -26,6 +26,9 @@ export const notification = sqliteTable(
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
+    // Soft-delete marker for admin recall (ADR-0007). Rows stay in place —
+    // every read path filters `recalled_at IS NULL`; NULL = visible.
+    recalledAt: integer('recalled_at', { mode: 'timestamp_ms' }),
   },
   (table) => [
     check('notification_kind_chk', sql`${table.kind} IN (${sqlEnumList(NOTIFICATION_KINDS)})`),

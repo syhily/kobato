@@ -95,7 +95,7 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin }: Notificatio
             <NotificationListPane key={tab} tab={tab} onOpen={setSelected} />
           </>
         ) : (
-          <NotificationDetailPane item={selected} onBack={() => setSelected(null)} />
+          <NotificationDetailPane item={selected} isAdmin={isAdmin} onBack={() => setSelected(null)} />
         )}
       </SheetContent>
       {isAdmin ? <ComposeNotificationDialog open={composeOpen} onOpenChange={setComposeOpen} /> : null}

@@ -1,8 +1,12 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc } from '#/_helpers/rpc-call'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { notifyAdmins } from '@/server/domains/notifications/service'
+import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
@@ -19,6 +23,9 @@ async function seedUser(role: 'admin' | 'visitor', name: string): Promise<number
 }
 
 beforeEach(async () => {
+  // Land buffered audit events from a previous case before the wipe, so the
+  // next flush cannot repopulate the table with stale rows.
+  await flushAuditLog()
   await clearAllTables(db)
   __resetRateLimitsForTests()
 })
@@ -127,5 +134,88 @@ describe('integration / notifications controller', () => {
     // The admin sees the reply in their direct tab.
     const adminDirect = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
     expect((adminDirect.json.json as { items: unknown[] }).items).toHaveLength(1)
+  })
+
+  it('recalls a broadcast end to end and audits it exactly once', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+    const visitorCtx = makeAuthedCtx({ userId: String(visitorId), role: 'visitor', db })
+
+    await callJson('/admin/notifications/sendBroadcast', { title: '发早了', body: 'b', replyable: true }, adminCtx)
+
+    const inbox = await callJson('/notifications/list', { tab: 'announce', limit: 20 }, visitorCtx)
+    const item = (inbox.json.json as { items: Array<{ id: string; threadId: string }> }).items[0]!
+    const unreadBefore = await callJson('/notifications/unreadCount', {}, visitorCtx)
+    expect((unreadBefore.json.json as { count: number }).count).toBe(1)
+
+    const recalled = await callJson('/admin/notifications/recall', { id: item.id }, adminCtx)
+    expect(recalled.status).toBe(200)
+    expect((recalled.json.json as { id: string }).id).toBe(item.id)
+    expect((recalled.json.json as { recalledAt: string }).recalledAt).toBeTruthy()
+
+    // Gone from the recipient's inbox and badge, and the thread now 404s.
+    const afterInbox = await callJson('/notifications/list', { tab: 'all', limit: 20 }, visitorCtx)
+    expect((afterInbox.json.json as { items: unknown[] }).items).toHaveLength(0)
+    const unreadAfter = await callJson('/notifications/unreadCount', {}, visitorCtx)
+    expect((unreadAfter.json.json as { count: number }).count).toBe(0)
+    const thread = await callRpc('/notifications/thread', { threadId: item.threadId }, visitorCtx)
+    expect(thread.status).toBe(404)
+
+    // Idempotent: a second call succeeds with the SAME timestamp, and no
+    // second audit row is written (ADR-0007 recommended policy).
+    const again = await callJson('/admin/notifications/recall', { id: item.id }, adminCtx)
+    expect(again.status).toBe(200)
+    expect((again.json.json as { recalledAt: string }).recalledAt).toBe(
+      (recalled.json.json as { recalledAt: string }).recalledAt,
+    )
+
+    await flushAuditLog()
+    const auditRows = db.select().from(auditLog).where(eq(auditLog.action, 'notification_broadcast_recalled')).all()
+    expect(auditRows).toHaveLength(1)
+    expect(auditRows[0]!.resourceId).toBe(item.id)
+  })
+
+  it('recalls an admin-kind system alert under its own audit verb', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+    const row = notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件' })!
+
+    const recalled = await callJson('/admin/notifications/recall', { id: String(row.id) }, adminCtx)
+    expect(recalled.status).toBe(200)
+
+    await flushAuditLog()
+    const rows = db.select().from(auditLog).where(eq(auditLog.action, 'notification_admin_recalled')).all()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.resourceId).toBe(String(row.id))
+  })
+
+  it('refuses recall to non-admins', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+    const visitorCtx = makeAuthedCtx({ userId: String(visitorId), role: 'visitor', db })
+
+    const sent = await callJson('/admin/notifications/sendBroadcast', { title: 'a', body: 'b' }, adminCtx)
+    const id = (sent.json.json as { id: string }).id
+
+    const res = await callRpc('/admin/notifications/recall', { id }, visitorCtx)
+    expect(res.status).toBe(403)
+  })
+
+  it('refuses to recall a direct message', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+
+    const sent = await callJson(
+      '/admin/notifications/sendDirect',
+      { userId: String(visitorId), title: 'Hi', body: 'hello' },
+      adminCtx,
+    )
+    const id = (sent.json.json as { id: string }).id
+
+    const res = await callRpc('/admin/notifications/recall', { id }, adminCtx)
+    expect(res.status).toBe(400)
   })
 })

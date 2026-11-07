@@ -105,3 +105,14 @@ export const adminSendBroadcastInput = z.object({
 export const adminSendOutput = z.object({
   id: idString,
 })
+
+// Soft-delete recall (ADR-0007). Broadcasts and admin-kind system messages
+// are recallable; direct messages are not. Idempotent on the server side.
+export const adminRecallNotificationInput = z.object({
+  id: idString,
+})
+
+export const adminRecallNotificationOutput = z.object({
+  id: idString,
+  recalledAt: isoDateTime,
+})

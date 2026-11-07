@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
@@ -39,6 +39,18 @@ beforeEach(() => {
   control.infinite.isFetchingNextPage = false
   control.mutation.mutate.mockClear()
 })
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  // happy-dom ships no `confirm` — tests install their own and drop it after.
+  Reflect.deleteProperty(window, 'confirm')
+})
+
+function stubConfirm(result: boolean) {
+  const spy = vi.fn(() => result)
+  window.confirm = spy
+  return spy
+}
 
 describe('ui/shared/notifications/NotificationsDrawer', () => {
   it('renders the tab bar and the unread badge from the count query', () => {
@@ -118,5 +130,62 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
   it('exposes the compose entry to admins', () => {
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
     expect(screen.getByLabelText('写消息')).toBeTruthy()
+  })
+
+  it('offers recall to admins on non-direct messages and mutates with the row id', () => {
+    const item = makeItem()
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.query.data = {
+      messages: [{ id: '1', body: item.body, sender: null, mine: false, createdAt: item.createdAt }],
+      canReply: false,
+    }
+    const confirmSpy = stubConfirm(true)
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
+    fireEvent.click(screen.getByText('系统升级公告'))
+    fireEvent.click(screen.getByRole('button', { name: '撤回' }))
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1)
+    expect(control.mutation.mutate).toHaveBeenCalledWith({ id: '1' })
+  })
+
+  it('does not recall when the confirmation is declined', () => {
+    const item = makeItem()
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.query.data = {
+      messages: [{ id: '1', body: item.body, sender: null, mine: false, createdAt: item.createdAt }],
+      canReply: false,
+    }
+    stubConfirm(false)
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
+    fireEvent.click(screen.getByText('系统升级公告'))
+    fireEvent.click(screen.getByRole('button', { name: '撤回' }))
+
+    expect(control.mutation.mutate).not.toHaveBeenCalledWith({ id: '1' })
+  })
+
+  it('hides the recall entry from non-admins', () => {
+    control.infinite.data = { pages: [{ items: [makeItem()], nextCursor: null, unreadCount: 1 }] }
+    control.query.data = { messages: [], canReply: false }
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
+    fireEvent.click(screen.getByText('系统升级公告'))
+
+    expect(screen.queryByRole('button', { name: '撤回' })).toBeNull()
+  })
+
+  it('hides the recall entry on direct messages even for admins', () => {
+    const item = makeItem({ kind: 'direct', sender: { id: '2', name: '管理员' } })
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.query.data = {
+      messages: [{ id: '1', body: item.body, sender: item.sender, mine: false, createdAt: item.createdAt }],
+      canReply: true,
+    }
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin />)
+    fireEvent.click(screen.getByText('系统升级公告'))
+
+    expect(screen.queryByRole('button', { name: '撤回' })).toBeNull()
   })
 })

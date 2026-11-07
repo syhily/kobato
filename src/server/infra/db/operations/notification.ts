@@ -77,13 +77,14 @@ export interface InboxFilters {
   limit: number
 }
 
-// Inbox listing, newest first; the cursor paginates by message id.
+// Inbox listing, newest first; the cursor paginates by message id. Recalled
+// messages (ADR-0007) are invisible to every recipient.
 export async function listNotificationsForUser(
   db: Database,
   userId: number,
   filters: InboxFilters,
 ): Promise<NotificationInboxRow[]> {
-  const conditions: SQL[] = [eq(notificationRecipient.userId, userId)]
+  const conditions: SQL[] = [eq(notificationRecipient.userId, userId), isNull(notification.recalledAt)]
   if (filters.kinds !== undefined) {
     conditions.push(inArray(notification.kind, [...filters.kinds]))
   }
@@ -102,11 +103,23 @@ export async function listNotificationsForUser(
     .limit(filters.limit)
 }
 
+/**
+ * The badge count. Recalled messages join out (ADR-0007): the recipient index
+ * still narrows to the user's unread rows, and each surviving row probes the
+ * message's PRIMARY KEY — bounded by one user's unread count.
+ */
 export function countUnreadNotifications(db: Database, userId: number): number {
   const rows = db
     .select({ value: count() })
     .from(notificationRecipient)
-    .where(and(eq(notificationRecipient.userId, userId), isNull(notificationRecipient.readAt)))
+    .innerJoin(notification, eq(notificationRecipient.notificationId, notification.id))
+    .where(
+      and(
+        eq(notificationRecipient.userId, userId),
+        isNull(notificationRecipient.readAt),
+        isNull(notification.recalledAt),
+      ),
+    )
     .all()
   return rows[0]?.value ?? 0
 }
@@ -145,7 +158,35 @@ export function markNotificationsUnread(db: Database, userId: number, ids: reado
 }
 
 export async function listThreadNotifications(db: Database, threadId: number): Promise<NotificationRow[]> {
+  // Recalled rows stay in the table (audit evidence, reversible) — the read
+  // paths that must hide them gate on `recalledAt` themselves, so thread
+  // loading can still find the root and refuse replies honestly.
   return db.select().from(notification).where(eq(notification.threadId, threadId)).orderBy(notification.id)
+}
+
+export function findNotificationById(db: Database, id: number): NotificationRow | null {
+  return db.select().from(notification).where(eq(notification.id, id)).limit(1).all()[0] ?? null
+}
+
+export interface RecallNotificationResult {
+  /** True only for the call that actually set the flag. */
+  recalled: boolean
+  row: NotificationRow
+}
+
+/**
+ * Idempotent soft delete (ADR-0007): `recalled_at` is written once and never
+ * overwritten. A repeated call touches no row and reports the current state.
+ */
+export function recallNotification(db: Database, id: number): RecallNotificationResult | null {
+  const updated = db
+    .update(notification)
+    .set({ recalledAt: new Date() })
+    .where(and(eq(notification.id, id), isNull(notification.recalledAt)))
+    .returning()
+    .all()
+  const row = updated[0] ?? findNotificationById(db, id)
+  return row === null ? null : { recalled: updated.length > 0, row }
 }
 
 /** Distinct ACTIVE senders + recipients across the whole thread — the reply routing base. */
