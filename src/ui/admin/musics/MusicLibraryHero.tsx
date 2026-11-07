@@ -266,7 +266,7 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
   const hasBackground = allCoverUrls.length > 0
 
   return (
-    <div className={cn('relative -mx-4 -mt-4 mb-8', 'lg:-mx-6 lg:-mt-6')}>
+    <div className={cn('relative -mx-8 -mt-8 mb-8', 'md:-mx-10 md:-mt-10', 'lg:-mx-12 lg:-mt-12')}>
       {hasPlayingTrack && currentTrack.coverUrl ? (
         <PlayingBackground coverUrl={currentTrack.coverUrl} extractedColor={extractedColor} />
       ) : hasBackground ? (
@@ -283,7 +283,7 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
         }}
       />
 
-      <div className="relative z-10 px-4 pt-12 pb-8 lg:px-6 lg:pt-16 lg:pb-12">
+      <div className="relative z-10 px-8 pt-12 pb-8 md:px-10 lg:px-12 lg:pt-16 lg:pb-12">
         <h1
           className="text-5xl font-black tracking-tight text-white"
           style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
@@ -301,7 +301,7 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
         </p>
       </div>
 
-      {children && <div className="relative z-10 px-4 pb-8 lg:px-6 lg:pb-12">{children}</div>}
+      {children && <div className="relative z-10 px-8 pb-8 md:px-10 lg:px-12 lg:pb-12">{children}</div>}
     </div>
   )
 }

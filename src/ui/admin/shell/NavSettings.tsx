@@ -4,7 +4,7 @@ import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
 
 import { hasAtLeast } from '@/shared/utils/roles'
 import { NavMenuItem } from '@/ui/admin/shell/NavMenuItem'
-import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem } from '@/ui/components/sidebar'
+import { SidebarMenuItem } from '@/ui/components/sidebar'
 import { Switch } from '@/ui/components/switch'
 import { useTheme } from '@/ui/lib/ThemeProvider'
 
@@ -18,19 +18,15 @@ export function NavSettings({ role }: NavSettingsProps) {
   }
 
   return (
-    <SidebarGroup>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          <NavMenuItem>
-            <NavMenuItem.Link to="/admin/settings" activeMatch="subpath">
-              <SettingsIcon />
-              <NavMenuItem.Label>系统设置</NavMenuItem.Label>
-            </NavMenuItem.Link>
-          </NavMenuItem>
-          <ThemeToggleItem />
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+    <>
+      <NavMenuItem>
+        <NavMenuItem.Link to="/admin/settings" activeMatch="subpath">
+          <SettingsIcon />
+          <NavMenuItem.Label>系统设置</NavMenuItem.Label>
+        </NavMenuItem.Link>
+      </NavMenuItem>
+      <ThemeToggleItem />
+    </>
   )
 }
 

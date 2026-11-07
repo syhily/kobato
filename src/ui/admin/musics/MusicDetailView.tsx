@@ -224,7 +224,11 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
 
       {/* Hero */}
       <div
-        className={cn('-mx-4 -mt-4 mb-8 px-4 pt-8 pb-8 lg:-mx-6 lg:-mt-6 lg:px-6 lg:pt-12 lg:pb-12')}
+        className={cn(
+          '-mx-8 -mt-8 mb-8 px-8 pt-8 pb-8',
+          'md:-mx-10 md:-mt-10 md:px-10',
+          'lg:-mx-12 lg:-mt-12 lg:px-12 lg:pt-12 lg:pb-12',
+        )}
         style={{
           background: `linear-gradient(180deg, color-mix(in oklab, var(--surface-dim) 70%, transparent) 0%, transparent 100%)`,
         }}

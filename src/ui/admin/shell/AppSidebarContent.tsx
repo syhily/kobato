@@ -4,7 +4,7 @@ import { NavContent } from '@/ui/admin/shell/NavContent'
 import { NavMain } from '@/ui/admin/shell/NavMain'
 import { NavNotifications } from '@/ui/admin/shell/NavNotifications'
 import { NavSettings } from '@/ui/admin/shell/NavSettings'
-import { SidebarContent } from '@/ui/components/sidebar'
+import { SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu } from '@/ui/components/sidebar'
 
 interface AppSidebarContentProps {
   role: AdminShellProps['currentUser']['role']
@@ -35,10 +35,14 @@ export function AppSidebarContent({
           userCount={userCount}
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <NavNotifications unreadCount={unreadCount} onOpen={onOpenNotifications} />
-        <NavSettings role={role} />
-      </div>
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <NavNotifications unreadCount={unreadCount} onOpen={onOpenNotifications} />
+            <NavSettings role={role} />
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
     </SidebarContent>
   )
 }

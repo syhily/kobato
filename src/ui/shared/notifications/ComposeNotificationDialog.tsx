@@ -109,9 +109,9 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
             </TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {mode === 'direct' ? <RecipientPicker value={recipient} onChange={setRecipient} /> : null}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2.5">
             <Label htmlFor="compose-title">标题</Label>
             <Input
               id="compose-title"
@@ -121,7 +121,7 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
               placeholder="一句话说明主题"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2.5">
             <Label htmlFor="compose-body">内容</Label>
             <Textarea
               id="compose-body"
@@ -164,10 +164,10 @@ function RecipientPicker({ value, onChange }: { value: AdminUserDto | null; onCh
   const users = search.data?.users ?? []
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2.5">
       <Label htmlFor="compose-recipient">收件人</Label>
       <div className="relative">
-        <SearchIcon className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
+        <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           id="compose-recipient"
           value={keyword}
