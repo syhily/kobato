@@ -36,4 +36,25 @@ describe('shared/utils/formatter — date formatting', () => {
     const date = new Date('2024-05-15T12:34:56.000Z')
     expect(formatLocalDate(date, 'yyyy-LL-dd', config)).toBe('2024-05-15')
   })
+
+  describe('timeFormat: null (follow the locale)', () => {
+    const auto = { settings: { ...config.settings, timeFormat: null } }
+
+    it('renders the locale default in the site time zone', () => {
+      const date = new Date('2024-05-15T06:34:56.000Z')
+      // 06:34 UTC is 14:34 in Asia/Shanghai; zh-CN short date + short time.
+      expect(formatLocalDate(date, undefined, auto)).toBe('2024/5/15 14:34')
+    })
+
+    it('follows the locale rather than a fixed pattern', () => {
+      const date = new Date('2024-05-15T06:34:56.000Z')
+      const english = { settings: { ...config.settings, locale: 'en-US', timeZone: 'UTC', timeFormat: null } }
+      expect(formatLocalDate(date, undefined, english)).toBe('5/15/24, 6:34 AM')
+    })
+
+    it('formatShowDate falls back to the locale default past the relative window', () => {
+      const date = new Date('2023-01-02T06:00:00.000Z')
+      expect(formatShowDate(date, auto, '2024-06-01T00:00:00.000Z')).toBe('2023/1/2 14:00')
+    })
+  })
 })

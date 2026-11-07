@@ -5,14 +5,16 @@
 import { TZDate } from '@date-fns/tz'
 import { format as formatZonedDate } from 'date-fns'
 
+import { createBoundedMap } from '@/shared/utils/memo'
+
 export type FormatterLocale =
-  | { locale: string; timeZone: string; timeFormat: string }
-  | { settings: { locale: string; timeZone: string; timeFormat: string } }
+  | { locale: string; timeZone: string; timeFormat: string | null }
+  | { settings: { locale: string; timeZone: string; timeFormat: string | null } }
 
 function pickLocale(config: FormatterLocale): {
   locale: string
   timeZone: string
-  timeFormat: string
+  timeFormat: string | null
 } {
   if ('settings' in config) {
     return config.settings
@@ -88,15 +90,21 @@ export function formatShowDate(date: Date, config: FormatterLocale, now?: Date |
 }
 
 export function formatLocalDate(source: string | Date, format: string | undefined, config: FormatterLocale): string {
-  const { timeZone, timeFormat } = pickLocale(config)
+  const { locale, timeZone, timeFormat } = pickLocale(config)
   const zoned = requireValidZonedDate(new Date(source), timeZone)
+  const pattern = format ?? timeFormat
+  // `null` = follow the locale: the short date + short time Intl default
+  // (zh-CN → `2026/11/8 14:30`), still rendering in the site time zone.
+  if (pattern === null) {
+    return zonedDateFormatter(locale, timeZone).format(zoned)
+  }
   // The format string is USER-SUPPLIED (stored in settings): only the six
   // documented tokens are substituted, so it never reaches date-fns — every
   // other character, including letters that are date-fns tokens (`a`, `E`,
   // `p`…), renders verbatim. date-fns computes the six values off one
   // canonical pattern instead.
   const [year, month, day, hour, minute, second] = formatZonedDate(zoned, 'yyyy MM dd HH mm ss').split(' ')
-  return (format || timeFormat)
+  return pattern
     .replaceAll('yyyy', year)
     .replaceAll('LL', month)
     .replaceAll('MM', month)
@@ -104,6 +112,23 @@ export function formatLocalDate(source: string | Date, format: string | undefine
     .replaceAll('HH', hour)
     .replaceAll('mm', minute)
     .replaceAll('ss', second)
+}
+
+// Construction reads locale data, so it is cached per immutable
+// (locale, timeZone) pair rather than rebuilt for every list row. FIFO-evict
+// bounded like the other process-level Intl caches (ADR-0002).
+const ZONED_DATE_FORMATTER_CAP = 8
+const zonedDateFormatters = createBoundedMap<string, Intl.DateTimeFormat>(ZONED_DATE_FORMATTER_CAP)
+
+function zonedDateFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
+  const key = `${locale}|${timeZone}`
+  const cached = zonedDateFormatters.get(key)
+  if (cached !== undefined) {
+    return cached
+  }
+  const formatter = new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short', timeZone })
+  zonedDateFormatters.set(key, formatter)
+  return formatter
 }
 
 export function formatBytes(bytes: number): string {

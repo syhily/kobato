@@ -142,6 +142,10 @@ ceremony:
     must stay mutation-proof across tests
   - `#/_helpers/dom-structure` — normalized DOM-tree diff for markup parity
     pins (a rendered React tree vs its hand-written HTML twin)
+  - `#/_helpers/i18n-literals` — the AST scanner behind
+    `tests/unit/arch/ui-i18n-literals.test.ts` (hardcoded UI copy, toast /
+    `DomainError` text, locale-less `toLocale*`, hardcoded locale literals) plus
+    its exact file/rule/snippet allowlist; scan roots grow per migration slice
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/analytics-db` — DuckDB sidecar creation / seeding / teardown
     (analytics integration tests)

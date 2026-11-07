@@ -19,7 +19,7 @@ Pure primitives; imports nothing from `domains/`, `http/`, or `render/`. Module-
 - `analytics/` — the DuckDB sidecar wrapper (`duckdb.ts`: open/close/path — zero business knowledge; the table DDLs + appenders live in `domains/analytics/services/access-log` and `device-env`).
 - `cache/` — `registry` behavior plane; `through`/`get`/`set`/`remove`/`clear`/`throughMany` verbs, generation counters, `kv-maintenance` hourly expiry sweep, `inflight` request coalescing.
 - `http/` — `etag`, `headers`, `status`, `errors` with `DomainError` / `ActionFailure`.
-- `email/`, `search/` (LIKE-only dispatcher), `image/` (worker_threads pool), `crypto/`, `config.ts` (+ `config-arg.ts` — side-effect-free `--config` argv parsing shared with `sea-cli.ts`), `logger.ts`, `rate-limit.ts`, `slug/`.
+- `email/`, `search/` (LIKE-only dispatcher), `image/` (worker_threads pool), `crypto/`, `config.ts` (+ `config-arg.ts` — side-effect-free `--config` argv parsing shared with `sea-cli.ts`), `i18n.ts` (the server translator: react-intl `createIntl` over the merged UI + server catalogs, cached per immutable locale, degrading to English when the catalogs fail validation), `logger.ts`, `rate-limit.ts`, `slug/`.
 - `safe-fetch.ts` — THE outbound-fetch surface for user-influenced URLs (SSRF guard: http(s) only, 80/443 port allowlist with a fixed-endpoint opt-out, per-hop DNS-rebinding-validating dial, host revalidation per redirect, credential headers stripped on cross-origin redirects, byte caps). Raw `fetch(` sites in `src/server/` are pinned to an audited allowlist by the boundaries contract test; log lines must use `redactUrlForLog` (shared/utils/safe-url) so signed query strings never reach a log.
 
 ## domains/
@@ -134,7 +134,7 @@ Two embedded engines, zero services:
 - In-memory: `BlogSettingsBundle` (`@/shared/config/types`). SSR reads slices via `requireBlogSettingsSection('<key>')`; UI uses per-section hooks. New UI MUST NOT read the whole bundle.
 - Install flow: (1) `/admin/setup` creates first admin; (2) sets `blog.general` + `blog.assets`, seeds remaining 16 sections from registry defaults.
 - `honoInstallGateMiddleware`: no admin → `/admin/setup`; installed → through. "Has admin" == "installed".
-- Admin saves: each card POSTs a Section patch; server strict-checks keys, deep-merges, validates against `SECTION_REGISTRY[section].schema`, writes ONLY that row.
+- Admin saves: each card POSTs a Section patch; server strict-checks keys, deep-merges, validates against `SECTION_REGISTRY[section].writeSchema ?? .schema` (the write schema is the strict one — hydration and the merge base always use the lenient read schema), writes ONLY that row.
 
 ## Content
 

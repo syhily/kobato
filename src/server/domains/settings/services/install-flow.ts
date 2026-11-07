@@ -41,7 +41,8 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
     author: { name, email, url: `https://${hostname}` },
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
-    timeFormat: 'yyyy-LL-dd HH:mm',
+    // Follow the locale's Intl default; admins may pin a custom token pattern later.
+    timeFormat: null,
     initialYear: new Date().getFullYear(),
     icpNo: '',
     moeIcpNo: '',

@@ -144,6 +144,39 @@ fields one card owns. The server merges it against the stored section
 snapshot; unknown fields are rejected.
 _Avoid_: full-section snapshot, loader shape as write base
 
+### Internationalization
+
+**UI locale**:
+`siteIdentity.locale`, one of the four supported tags (`en-US`, `zh-HK`,
+`zh-TW`, `zh-CN`, `@/shared/i18n/locales`). It drives every system surface —
+public/admin/auth/editor copy, validation and error messages, emails,
+notifications, SEO, feeds and formatting — and is the tag emitted as
+`<html lang>` / `Content-Language`. It is NOT the language of the content.
+_Avoid_: site language (suggests the posts' language), i18n locale, language
+code (the stored value is a tag, canonicalized from legacy aliases)
+
+**Content language**:
+The language an author wrote a post, page, comment or site title in. Author
+input, never rewritten by the UI locale, and out of scope for translation.
+_Avoid_: confusing it with UI locale
+
+**Message catalog**:
+One typed ICU module per locale per namespace — `messages/ui/<locale>` (client
+copy, shipped through the root loader) and `messages/server/<locale>` (email,
+notifications, background jobs). English defines the message-id type; the other
+locales `satisfies` it. `@/shared/i18n/catalog` aggregates them, merges the
+English baseline, and validates the ICU contract (variables, argument kinds,
+plural categories legal for the locale, select coverage). Adding copy means
+adding the key to all four locales — never inlining a string.
+_Avoid_: translations file, messages JSON (the catalogs are TS modules inside
+the SEA bundle), "just the Chinese strings" (English is the baseline)
+
+**Time format**:
+`siteIdentity.timeFormat`: `null` means "follow the UI locale" (Intl's short
+date + short time, in the site time zone); a string is the admin's custom token
+pattern, substituted token-by-token and never handed to date-fns.
+_Avoid_: default date format (there is no separate default — `null` IS it)
+
 ### Cache
 
 **Cache declaration**:

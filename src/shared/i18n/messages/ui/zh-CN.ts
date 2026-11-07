@@ -1,0 +1,25 @@
+import type { UiMessages } from '@/shared/i18n/messages/ui/en-US'
+
+export const uiMessagesZhCN = {
+  'common.action.back': '返回',
+  'common.action.cancel': '取消',
+  'common.action.close': '关闭',
+  'common.action.confirm': '确认',
+  'common.action.delete': '删除',
+  'common.action.edit': '编辑',
+  'common.action.reload': '刷新',
+  'common.action.retry': '重试',
+  'common.action.save': '保存',
+  'common.action.search': '搜索',
+  'common.count.items': '{count, plural, other {# 项}}',
+  'common.state.loading': '加载中…',
+  'error.boundary.description': '抱歉，网站系统出现内部错误。请刷新页面重试。',
+  'error.boundary.title': '内部错误',
+  'error.notFound.description': '抱歉，没有你要找的内容…',
+  'error.notFound.title': '未找到页面',
+  'validation.form.invalidEmail': '请填写合法的邮箱地址。',
+  'validation.form.invalidUrl': '请填写完整的 URL（包含 https://）。',
+  'validation.form.maxLength': '最多 {max} 个字符。',
+  'validation.form.minLength': '至少 {min} 个字符。',
+  'validation.form.required': '请填写此项。',
+} satisfies UiMessages

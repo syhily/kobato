@@ -1,18 +1,22 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
-import { useMemo } from 'react'
-import { Controller, useFieldArray } from 'react-hook-form'
+import { useEffect, useMemo, useRef } from 'react'
+import { Controller, useFieldArray, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
 
+import { I18N_SETTINGS_ENABLED } from '@/shared/i18n/feature-flags'
+import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES, type AppLocale } from '@/shared/i18n/locales'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsCombobox } from '@/ui/admin/settings/shell/SettingsCombobox'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 interface TimeZoneItem {
   value: string
@@ -23,6 +27,11 @@ interface GeneralFormProps {
   siteIdentity: SiteIdentitySettings
   timeZones: readonly string[]
 }
+
+const TIME_FORMAT_AUTO = 'auto'
+const TIME_FORMAT_CUSTOM = 'custom'
+/** Seed used when an admin switches from "follow the locale" to a custom pattern. */
+const DEFAULT_TIME_FORMAT_PATTERN = 'yyyy-LL-dd HH:mm'
 
 const generalFormSchema = z.object({
   title: z.string().trim().min(1, '请填写站点标题').max(120, '最多 120 个字符'),
@@ -41,9 +50,9 @@ const generalFormSchema = z.object({
     email: z.email({ message: '请填写合法的邮箱地址' }),
     url: z.url({ message: '请填写完整的 URL（包含 https://）' }),
   }),
-  locale: z.string().trim().min(2, 'BCP 47 标签至少 2 个字符').max(35, '最多 35 个字符'),
+  locale: z.enum(SUPPORTED_LOCALES, { message: '请选择站点语言' }),
   timeZone: z.string().trim().min(1, '请选择时区').max(64, '最多 64 个字符'),
-  timeFormat: z.string().trim().min(1, '请填写日期格式').max(40, '最多 40 个字符'),
+  timeFormat: z.string().trim().min(1, '请填写日期格式').max(40, '最多 40 个字符').nullable(),
   initialYear: z.coerce.number().int().min(1970, '年份不能早于 1970').max(9999, '年份不能超过 9999'),
   icpNo: z.string().trim().max(60, '最多 60 个字符').optional(),
   moeIcpNo: z.string().trim().max(60, '最多 60 个字符').optional(),
@@ -295,9 +304,10 @@ function GeneralTimeZoneCard({
     schema: generalFormSchema,
     toState: toFormValues,
     fromState: (values) => ({
-      locale: values.locale.trim(),
+      locale: values.locale,
       timeZone: values.timeZone.trim(),
-      timeFormat: values.timeFormat.trim(),
+      // `null` is the "follow the locale" state, never a blank override.
+      timeFormat: values.timeFormat === null ? null : values.timeFormat.trim(),
     }),
   })
 
@@ -307,6 +317,18 @@ function GeneralTimeZoneCard({
   )
   const { formState } = form
 
+  // Switching to "custom" restores the last pattern the admin typed, so the
+  // round-trip through "follow the locale" never silently loses it.
+  // `useWatch` (never `form.watch`) — the React Compiler would freeze a
+  // render-time `watch()` value at its initial state.
+  const timeFormat = useWatch({ control: form.control, name: 'timeFormat' })
+  const lastPatternRef = useRef(siteIdentity.timeFormat ?? DEFAULT_TIME_FORMAT_PATTERN)
+  useEffect(() => {
+    if (typeof timeFormat === 'string' && timeFormat.trim() !== '') {
+      lastPatternRef.current = timeFormat
+    }
+  }, [timeFormat])
+
   return (
     <SettingGroup
       title="时间与本地化"
@@ -314,20 +336,42 @@ function GeneralTimeZoneCard({
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow
-          label="语言"
-          htmlFor="general-locale"
-          hint="BCP 47 语言标签，例如 zh-CN、en-US。"
-          error={formState.errors.locale?.message}
-        >
-          <SettingsInput
-            flushOnBlur={flushOnBlur}
-            id="general-locale"
-            maxLength={35}
-            placeholder="zh-CN"
-            {...form.register('locale')}
-          />
-        </SettingsRow>
+        {I18N_SETTINGS_ENABLED ? (
+          <SettingsRow
+            label="语言"
+            htmlFor="general-locale"
+            hint="站点界面、系统邮件与服务端输出的统一语言。"
+            error={formState.errors.locale?.message}
+          >
+            <Controller
+              control={form.control}
+              name="locale"
+              render={({ field }) => (
+                <SettingsSelect<AppLocale>
+                  name={field.name}
+                  value={field.value}
+                  save={save}
+                  onValueChange={(value) => {
+                    if (value !== null) {
+                      field.onChange(value)
+                    }
+                  }}
+                >
+                  <SelectTrigger id="general-locale" className="w-full">
+                    <SelectValue>{(value: AppLocale | null) => (value ? LOCALE_DISPLAY_NAMES[value] : '')}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_LOCALES.map((locale) => (
+                      <SelectItem key={locale} value={locale}>
+                        {LOCALE_DISPLAY_NAMES[locale]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </SettingsSelect>
+              )}
+            />
+          </SettingsRow>
+        ) : null}
         <SettingsRow
           label="时区"
           htmlFor="general-timezone"
@@ -368,17 +412,42 @@ function GeneralTimeZoneCard({
         </SettingsRow>
         <SettingsRow
           label="日期格式"
-          htmlFor="general-time-format"
-          hint="支持 yyyy / LL / MM / dd / HH / mm 占位符，例如 yyyy-LL-dd HH:mm。"
+          htmlFor="general-time-format-mode"
+          hint="跟随语言时使用当前语言的默认格式；自定义支持 yyyy / LL / MM / dd / HH / mm 占位符，例如 yyyy-LL-dd HH:mm。"
           error={formState.errors.timeFormat?.message}
         >
-          <SettingsInput
-            flushOnBlur={flushOnBlur}
-            id="general-time-format"
-            maxLength={40}
-            placeholder="yyyy-LL-dd HH:mm"
-            {...form.register('timeFormat')}
-          />
+          <div className="flex flex-col gap-2">
+            <SettingsSelect<string>
+              name="timeFormat"
+              value={timeFormat === null ? TIME_FORMAT_AUTO : TIME_FORMAT_CUSTOM}
+              save={save}
+              onValueChange={(value) => {
+                form.setValue('timeFormat', value === TIME_FORMAT_AUTO ? null : lastPatternRef.current, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }}
+            >
+              <SelectTrigger id="general-time-format-mode" className="w-full">
+                <SelectValue>
+                  {(value: string | null) => (value === TIME_FORMAT_CUSTOM ? '自定义' : '跟随语言')}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TIME_FORMAT_AUTO}>跟随语言</SelectItem>
+                <SelectItem value={TIME_FORMAT_CUSTOM}>自定义</SelectItem>
+              </SelectContent>
+            </SettingsSelect>
+            {timeFormat !== null ? (
+              <SettingsInput
+                flushOnBlur={flushOnBlur}
+                id="general-time-format"
+                maxLength={40}
+                placeholder={DEFAULT_TIME_FORMAT_PATTERN}
+                {...form.register('timeFormat')}
+              />
+            ) : null}
+          </div>
         </SettingsRow>
       </SettingGroupContent>
     </SettingGroup>

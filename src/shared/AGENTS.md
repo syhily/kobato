@@ -94,6 +94,16 @@ server or client boundary catch and log it.
   `tests/unit/arch/client-bundle.test.ts`'s jsdom `allowedIn` entry).
 - `seo/` — isomorphic meta-tag builders (`meta`, `title-meta`,
   `og-image`) shared by routes, loaders, and the feed/OG renderers.
+- `i18n/` — the locale contract and message catalogs: `locales` (the four
+  supported tags, alias normalization, `og:locale` spelling, endonym labels),
+  `messages/ui/*` and `messages/server/*` (English defines the message-id types,
+  the other three `satisfies` them), `catalog` (aggregation + English fallback
+  merge + ICU validation — SERVER-ONLY value import; the client gets one
+  locale's UI catalog from the root loader), `fallback-messages` (the only
+  message module the client may import directly: three strings for the root
+  ErrorBoundary), and `feature-flags` (`I18N_SETTINGS_ENABLED`). The server
+  translator lives in `server/infra/i18n`; the AST guard for hardcoded copy is
+  `tests/_helpers/i18n-literals`.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`,
   `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`,
