@@ -70,7 +70,10 @@ export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled 
     )
   }
 
-  if (query.isError) {
+  // A failed NEXT page leaves the already-loaded rows in `data` with the
+  // query in `status: 'error'` — only an empty result means the whole pane
+  // has nothing to show. Loaded rows stay visible; the tail row offers retry.
+  if (query.isError && items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-sm text-muted-foreground">
         <p>消息加载失败</p>
@@ -106,6 +109,13 @@ export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled 
       {query.isFetchingNextPage ? (
         <div className="flex justify-center py-3">
           <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : query.isFetchNextPageError ? (
+        <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+          <span>加载更多失败</span>
+          <Button variant="ghost" size="sm" onClick={() => void query.fetchNextPage()}>
+            重试
+          </Button>
         </div>
       ) : null}
     </div>

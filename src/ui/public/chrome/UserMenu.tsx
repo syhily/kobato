@@ -22,8 +22,9 @@ import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 interface Props {
   currentUser: HeaderCurrentUser
   logoutRedirectTo: string
-  /** Owned by BaseLayout (the public shell's one subscriber) — never re-subscribe here. */
-  unreadCount: number
+  /** Owned by BaseLayout (the public shell's one subscriber) — never re-subscribe here.
+   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
+  unreadCount: number | null
   onOpenNotifications: () => void
 }
 
@@ -33,6 +34,8 @@ export function UserMenu({ currentUser, logoutRedirectTo, unreadCount, onOpenNot
   const logout = useLogout()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()
   const canEnterAdmin = currentUser.role === 'admin' || currentUser.role === 'author'
+  // An unknown count renders like zero: no dot, no badge, plain aria label.
+  const badgeCount = unreadCount ?? 0
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -41,14 +44,14 @@ export function UserMenu({ currentUser, logoutRedirectTo, unreadCount, onOpenNot
             variant="ghost"
             size="icon"
             className="relative size-9 rounded-full"
-            aria-label={unreadCount > 0 ? `用户菜单，${unreadCount} 条未读消息` : '用户菜单'}
+            aria-label={badgeCount > 0 ? `用户菜单，${badgeCount} 条未读消息` : '用户菜单'}
           >
             {' '}
             <Avatar className="size-8">
               <AvatarImage src={avatarImageUrl(currentUser.id)} alt={currentUser.name} />
               <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
-            {unreadCount > 0 ? (
+            {badgeCount > 0 ? (
               <span
                 className="absolute top-0 right-0 size-2.5 rounded-full bg-destructive ring-2 ring-background"
                 aria-hidden
@@ -65,7 +68,7 @@ export function UserMenu({ currentUser, logoutRedirectTo, unreadCount, onOpenNot
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onOpenNotifications()} onPointerEnter={warmNotificationsDrawerChunk}>
           <BellIcon /> 消息通知
-          <NotificationBadge count={unreadCount} className="px-1.5 text-[11px] leading-none" />
+          <NotificationBadge count={badgeCount} className="px-1.5 text-[11px] leading-none" />
         </DropdownMenuItem>
         <DropdownMenuItem
           render={

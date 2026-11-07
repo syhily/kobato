@@ -59,14 +59,17 @@ beforeEach(() => {
   control.infinite.data = { pages: [] }
   control.infinite.isPending = false
   control.infinite.isError = false
+  control.infinite.isFetchNextPageError = false
   control.infinite.hasNextPage = false
   control.infinite.isFetchingNextPage = false
+  control.infinite.fetchNextPage.mockClear()
+  control.infinite.refetch.mockClear()
   control.mutation.mutate.mockClear()
 })
 
 describe('ui/shared/notifications/NotificationsDrawer', () => {
   it('renders the tab bar and the unread badge from the count prop', () => {
-    control.infinite.data = { pages: [{ items: [], nextCursor: null, unreadCount: 7 }] }
+    control.infinite.data = { pages: [{ items: [], nextCursor: null }] }
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={7} />)
 
@@ -79,17 +82,22 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     expect(screen.queryByLabelText('写消息')).toBeNull()
   })
 
-  it('disables mark-all-read from the count prop', () => {
-    const { rerender } = render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+  it('disables mark-all-read only on a known zero count', () => {
+    // `null` means "unknown" (not loaded / failed), not "zero" — marking read
+    // stays available, since the list may well have unread rows.
+    const { rerender } = render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={null} />)
+    expect(screen.getByLabelText('全部标为已读').hasAttribute('disabled')).toBe(false)
+
+    rerender(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     expect(screen.getByLabelText('全部标为已读').hasAttribute('disabled')).toBe(true)
 
     rerender(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={4} />)
     expect(screen.getByLabelText('全部标为已读').hasAttribute('disabled')).toBe(false)
   })
 
-  it('lists inbox rows and shows the empty state per tab', () => {
+  it('lists inbox rows with the server payload', () => {
     const item = makeItem()
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
 
@@ -99,9 +107,61 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     expect(screen.getByText('系统')).toBeTruthy()
   })
 
+  it('shows the per-tab empty copy when a tab has no rows', () => {
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+
+    expect(screen.getByText('暂时没有消息')).toBeTruthy()
+
+    const otherTabs: Array<[label: string, copy: string]> = [
+      ['未读', '没有未读消息'],
+      ['私信', '还没有私信'],
+      ['公告', '还没有公告'],
+    ]
+    for (const [label, copy] of otherTabs) {
+      fireEvent.click(screen.getByRole('tab', { name: label }))
+      expect(screen.getByText(copy)).toBeTruthy()
+    }
+  })
+
+  it('keeps loaded rows and offers a tail retry when the next page fails', () => {
+    const first = makeItem()
+    const second = makeItem({ id: '2', threadId: '2', title: '第二条消息' })
+    control.infinite.data = {
+      pages: [
+        { items: [first], nextCursor: 'cursor-1' },
+        { items: [second], nextCursor: null },
+      ],
+    }
+    control.infinite.isError = true
+    control.infinite.isFetchNextPageError = true
+    control.infinite.hasNextPage = true
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+
+    // The already-loaded pages survive — no full-screen error.
+    expect(screen.getByText('系统升级公告')).toBeTruthy()
+    expect(screen.getByText('第二条消息')).toBeTruthy()
+    expect(screen.queryByText('消息加载失败')).toBeNull()
+
+    expect(screen.getByText('加载更多失败')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(control.infinite.fetchNextPage).toHaveBeenCalledTimes(1)
+  })
+
+  it('replaces an empty pane with the full-screen error when the first page fails', () => {
+    control.infinite.data = undefined
+    control.infinite.isError = true
+
+    render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={null} />)
+
+    expect(screen.getByText('消息加载失败')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(control.infinite.refetch).toHaveBeenCalledTimes(1)
+  })
+
   it('opens the thread pane on row click and renders the reply composer when canReply', () => {
     const item = makeItem({ kind: 'direct', sender: { id: '2', name: '管理员' } })
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
     control.query.data = {
       messages: [
         { id: '1', body: '你好，在吗', sender: { id: '2', name: '管理员' }, mine: false, createdAt: item.createdAt },
@@ -120,7 +180,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('hides the reply composer for non-replyable system messages', () => {
     const item = makeItem()
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
     control.query.data = {
       messages: [{ id: '1', body: '今晚 24 点例行维护', sender: null, mine: false, createdAt: item.createdAt }],
       canReply: false,
@@ -135,7 +195,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('marks a read row unread from the row action without opening the thread', () => {
     const item = makeItem({ read: true })
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 0 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     const action = screen.getByLabelText('标为未读')
@@ -153,7 +213,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('offers recall to admins behind a confirmation dialog and mutates with the row id', () => {
     const item = makeItem()
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
     control.query.data = {
       messages: [{ id: '1', body: item.body, sender: null, mine: false, createdAt: item.createdAt }],
       canReply: false,
@@ -175,7 +235,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('does not recall when the confirmation is cancelled', () => {
     const item = makeItem()
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
     control.query.data = {
       messages: [{ id: '1', body: item.body, sender: null, mine: false, createdAt: item.createdAt }],
       canReply: false,
@@ -195,7 +255,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
   })
 
   it('hides the recall entry from non-admins', () => {
-    control.infinite.data = { pages: [{ items: [makeItem()], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [makeItem()], nextCursor: null }] }
     control.query.data = { messages: [], canReply: false }
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
@@ -206,7 +266,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('hides the recall entry on direct messages even for admins', () => {
     const item = makeItem({ kind: 'direct', sender: { id: '2', name: '管理员' } })
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
     control.query.data = {
       messages: [{ id: '1', body: item.body, sender: item.sender, mine: false, createdAt: item.createdAt }],
       canReply: true,
@@ -220,7 +280,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('closes the drawer when the 去处理 link is followed', () => {
     const item = makeItem({ actionUrl: '/admin/comments' })
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
     control.query.data = { messages: [], canReply: false }
     const onOpenChange = vi.fn()
 
@@ -236,7 +296,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('places the mark-unread action beside the row button instead of inside it', () => {
     const item = makeItem({ read: true })
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 0 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
 
@@ -253,7 +313,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('announces an unread row as unread and hides the dot from the accessibility tree', () => {
     const item = makeItem({ read: false })
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
 
@@ -268,7 +328,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('gives the reply composer an accessible name and description', () => {
     const item = makeItem({ kind: 'direct', sender: { id: '2', name: '管理员' } })
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 1 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
     control.query.data = { messages: [], canReply: true }
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
@@ -282,7 +342,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
   it('focuses 返回列表 on open and the originating row on back', () => {
     const item = makeItem({ read: true })
-    control.infinite.data = { pages: [{ items: [item], nextCursor: null, unreadCount: 0 }] }
+    control.infinite.data = { pages: [{ items: [item], nextCursor: null }] }
     control.query.data = { messages: [], canReply: false }
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)

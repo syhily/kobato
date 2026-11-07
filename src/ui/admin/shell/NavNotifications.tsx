@@ -5,8 +5,9 @@ import { warmNotificationsDrawerChunk } from '@/ui/shared/notifications/LazyNoti
 import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
 interface NavNotificationsProps {
-  /** Supplied by the shell's single count owner — never subscribe here. */
-  unreadCount: number
+  /** Supplied by the shell's single count owner — never subscribe here.
+   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
+  unreadCount: number | null
   onOpen: () => void
 }
 
@@ -26,7 +27,7 @@ export function NavNotifications({ unreadCount, onOpen }: NavNotificationsProps)
             >
               <BellIcon className="size-4 shrink-0" />
               <span className="flex-1 truncate">消息通知</span>
-              <NotificationBadge count={unreadCount} />
+              <NotificationBadge count={unreadCount ?? 0} />
             </button>
           </SidebarMenuItem>
         </SidebarMenu>

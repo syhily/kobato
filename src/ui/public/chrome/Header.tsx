@@ -34,8 +34,9 @@ export interface HeaderProps {
    *  also serves the desktop menu) and threaded to the mobile UserMenu. */
   logoutRedirectTo: string
   /** BaseLayout owns the shell's one unread-count subscription — threaded
-   *  down, never re-subscribed in the chrome. */
-  unreadCount: number
+   *  down, never re-subscribed in the chrome.
+   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
+  unreadCount: number | null
   onOpenNotifications: () => void
 }
 

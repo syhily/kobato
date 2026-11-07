@@ -30,8 +30,13 @@ import { isRecord } from '@/shared/utils/type-guards'
  * new call site. TanStack's `refetchInterval` runs one timer per observer
  * with no freshness check, and a shared cache entry does not dedupe
  * staggered timers, so extra observers silently multiply the fetch cadence.
+ *
+ * Tri-state on purpose: `null` means UNKNOWN (not loaded yet, or the query
+ * failed) — never fold it into `0`, which is a confirmed "nothing unread".
+ * Badges render `?? 0`; controls that a false zero would disable compare
+ * against `0` explicitly.
  */
-export function useUnreadNotificationCount(enabled = true): number {
+export function useUnreadNotificationCount(enabled = true): number | null {
   const query = useQuery(
     orpcQuery.notifications.unreadCount.queryOptions({
       refetchInterval: 120_000,
@@ -39,7 +44,7 @@ export function useUnreadNotificationCount(enabled = true): number {
       enabled,
     }),
   )
-  return query.data?.count ?? 0
+  return query.data?.count ?? null
 }
 
 /**

@@ -8,7 +8,8 @@ import { SidebarContent } from '@/ui/components/sidebar'
 
 interface AppSidebarContentProps {
   role: AdminShellProps['currentUser']['role']
-  unreadCount: number
+  /** `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
+  unreadCount: number | null
   onOpenNotifications: () => void
   pendingCommentCount?: number
   pendingWebmentionCount?: number

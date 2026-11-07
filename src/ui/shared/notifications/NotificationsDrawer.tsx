@@ -20,8 +20,9 @@ interface NotificationsDrawerProps {
   onOpenChange: (open: boolean) => void
   /** Admins get the compose entry (direct + broadcast). */
   isAdmin: boolean
-  /** Owned by the shell (one observer per shell) — the drawer never subscribes. */
-  unreadCount: number
+  /** Owned by the shell (one observer per shell) — the drawer never subscribes.
+   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
+  unreadCount: number | null
 }
 
 const TAB_LABELS: Array<{ value: NotificationTab; label: string }> = [
@@ -80,7 +81,7 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
             <SheetHeader className="flex-row items-center gap-2 border-b pr-12">
               <SheetTitle className="flex-1 text-base">
                 消息通知
-                <NotificationBadge count={unreadCount} className="ml-2" />
+                <NotificationBadge count={unreadCount ?? 0} className="ml-2" />
               </SheetTitle>
               {isAdmin ? (
                 <Button variant="ghost" size="iconSm" onClick={() => setComposeOpen(true)} aria-label="写消息">

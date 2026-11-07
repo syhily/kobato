@@ -5,8 +5,9 @@ interface LazyNotificationsDrawerProps {
   onOpenChange: (open: boolean) => void
   /** Admins get the compose entry (direct + broadcast). */
   isAdmin: boolean
-  /** Owned by the shell (one observer per shell) — the drawer never subscribes. */
-  unreadCount: number
+  /** Owned by the shell (one observer per shell) — the drawer never subscribes.
+   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
+  unreadCount: number | null
 }
 
 const NotificationsDrawer = lazy(() =>

@@ -36,10 +36,13 @@ const control: TanstackQueryControl = {
     isLoading: false,
     isPending: false,
     isFetching: false,
+    isError: false,
     isFetchingNextPage: false,
+    isFetchNextPageError: false,
     hasNextPage: false,
     error: null as unknown,
     fetchNextPage: vi.fn(),
+    refetch: vi.fn(),
   },
   queryClient: {
     invalidateQueries: vi.fn(),

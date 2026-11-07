@@ -48,6 +48,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   const markRead = useMutation(
     orpcQuery.notifications.markRead.mutationOptions({
       onSuccess: (data) => patchReadState([item.id], true, data.count),
+      onError: onMutationError('标记已读失败'),
     }),
   )
   const recall = useMutation(

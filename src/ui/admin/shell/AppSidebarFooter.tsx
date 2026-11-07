@@ -31,8 +31,9 @@ interface AppSidebarFooterProps {
   id: string
   name: string
   email: string
-  /** Supplied by the shell's single count owner — never subscribe here. */
-  unreadCount: number
+  /** Supplied by the shell's single count owner — never subscribe here.
+   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
+  unreadCount: number | null
   onOpenNotifications: () => void
 }
 
@@ -47,6 +48,8 @@ export function AppSidebarFooter({
   const [versionOpen, setVersionOpen] = useState(false)
   const logout = useLogout()
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
+  // An unknown count renders like zero: no dot, no badge, plain aria label.
+  const badgeCount = unreadCount ?? 0
 
   return (
     <SidebarFooter className={className}>
@@ -58,7 +61,7 @@ export function AppSidebarFooter({
                 <button
                   type="button"
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  aria-label={unreadCount > 0 ? `用户菜单，${unreadCount} 条未读消息` : '用户菜单'}
+                  aria-label={badgeCount > 0 ? `用户菜单，${badgeCount} 条未读消息` : '用户菜单'}
                 >
                   <span className="relative">
                     <Avatar className="size-8">
@@ -67,7 +70,7 @@ export function AppSidebarFooter({
                         {initial}
                       </AvatarFallback>
                     </Avatar>
-                    {unreadCount > 0 ? (
+                    {badgeCount > 0 ? (
                       <span
                         className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-destructive ring-2 ring-sidebar"
                         aria-hidden
@@ -103,7 +106,7 @@ export function AppSidebarFooter({
               >
                 <BellIcon className="mr-2 size-4" />
                 消息通知
-                <NotificationBadge count={unreadCount} />
+                <NotificationBadge count={badgeCount} />
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="my-0.5 rounded-xl px-3 py-2 text-sm"
