@@ -31,6 +31,7 @@ function makeRequestFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
     acceptLanguage: null,
     purpose: null,
     cookie: null,
+    clientHints: null,
     ...overrides,
   }
 }

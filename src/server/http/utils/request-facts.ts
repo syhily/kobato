@@ -29,6 +29,13 @@ export function isDataRequestUrl(url: URL): boolean {
 export function extractRequestFacts(request: Request): RequestFacts {
   const headers = request.headers
   const rawUrl = new URL(request.url)
+  const clientHints = {
+    model: headers.get('sec-ch-ua-model'),
+    platform: headers.get('sec-ch-ua-platform'),
+    platformVersion: headers.get('sec-ch-ua-platform-version'),
+    mobile: headers.get('sec-ch-ua-mobile'),
+    brands: headers.get('sec-ch-ua-full-version-list') ?? headers.get('sec-ch-ua'),
+  }
   return {
     path: normalizeDocumentUrl(rawUrl).pathname,
     isDataRequest: isDataRequestUrl(rawUrl),
@@ -37,5 +44,6 @@ export function extractRequestFacts(request: Request): RequestFacts {
     acceptLanguage: headers.get('accept-language'),
     purpose: headers.get('purpose') ?? headers.get('sec-purpose'),
     cookie: headers.get('cookie'),
+    clientHints: Object.values(clientHints).some((value) => value !== null) ? clientHints : null,
   }
 }

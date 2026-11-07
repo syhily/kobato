@@ -108,6 +108,15 @@ export function configureMiddleware(app: Hono<Env>): void {
     const bundle = getBlogSettingsBundleSync()
     const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev: import.meta.env.DEV })
     c.res.headers.set('Content-Security-Policy', csp)
+    // Opt the origin into User-Agent Client Hints: Chromium sends the
+    // requested Sec-CH-UA-* headers on subsequent requests, letting
+    // analytics recover the device model / OS version that Chrome's UA
+    // reduction erased from the UA string (first-party, so no
+    // Permissions-Policy delegation is needed).
+    c.res.headers.set(
+      'Accept-CH',
+      'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Model, Sec-CH-UA-Full-Version-List',
+    )
     const webmentionLink = webmentionLinkHeader(bundle)
     if (webmentionLink !== null) {
       c.res.headers.append('Link', webmentionLink)

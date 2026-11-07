@@ -15,4 +15,13 @@ export interface RequestFacts {
   purpose: string | null
   /** Raw `Cookie` header — domains parse the cookies they own out of it. */
   cookie: string | null
+  /** User-Agent Client Hints (`Sec-CH-UA-*` request headers), when the
+   *  browser opted in after an `Accept-CH` response. */
+  clientHints: {
+    model: string | null
+    platform: string | null
+    platformVersion: string | null
+    mobile: string | null
+    brands: string | null
+  } | null
 }

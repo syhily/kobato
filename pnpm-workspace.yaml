@@ -103,6 +103,7 @@ catalog:
   markdown-it-sup: 2.0.0
   medium-zoom: ^1.1.2
   motion: ^14.10.1
+  node-device-detector: ^2.2.7
   nodemailer: ^10.3.1
   oxc-transform-react: ^0.157.0
   oxfmt: ^0.77.0
@@ -119,7 +120,6 @@ catalog:
   react-dom: ^19.3.1
   react-hook-form: ^7.91.0
   react-router: ^8.5.1
-  react-router-dom: 7.18.1
   rolldown: 1.2.0
   rolldown-plugin-dts: 0.27.14
   sharp: ^0.35.5
@@ -128,7 +128,7 @@ catalog:
   tailwindcss: ^4.3.5
   taze: ^21.3.0
   typescript: 7.0.2
-  ua-parser-js: ^2.0.10
+  ua-parser-modern: ^0.1.1
   undici: ^8.12.4
   vite: ^8.3.6
   vite-node: ^6.0.0

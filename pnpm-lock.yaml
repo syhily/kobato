@@ -455,6 +455,9 @@ catalogs:
     motion:
       specifier: ^14.10.1
       version: 14.10.1
+    node-device-detector:
+      specifier: ^2.2.7
+      version: 2.2.7
     nodemailer:
       specifier: ^10.3.1
       version: 10.3.1
@@ -500,9 +503,6 @@ catalogs:
     react-router:
       specifier: ^8.5.1
       version: 8.5.1
-    react-router-dom:
-      specifier: 7.18.1
-      version: 7.18.1
     sharp:
       specifier: ^0.35.5
       version: 0.35.5
@@ -521,9 +521,9 @@ catalogs:
     typescript:
       specifier: 7.0.2
       version: 7.0.2
-    ua-parser-js:
-      specifier: ^2.0.10
-      version: 2.0.10
+    ua-parser-modern:
+      specifier: ^0.1.1
+      version: 0.1.1
     undici:
       specifier: ^8.12.4
       version: 8.12.4
@@ -859,6 +859,9 @@ importers:
       motion:
         specifier: 'catalog:'
         version: 14.10.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      node-device-detector:
+        specifier: 'catalog:'
+        version: 2.2.7
       nodemailer:
         specifier: 'catalog:'
         version: 10.3.1
@@ -904,9 +907,6 @@ importers:
       react-router:
         specifier: 'catalog:'
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      react-router-dom:
-        specifier: 'catalog:'
-        version: 7.18.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       shiki:
         specifier: 'catalog:'
         version: 4.6.0
@@ -922,9 +922,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
-      ua-parser-js:
+      ua-parser-modern:
         specifier: 'catalog:'
-        version: 2.0.10
+        version: 0.1.1
       undici:
         specifier: 'catalog:'
         version: 8.12.4
@@ -3629,9 +3629,6 @@ packages:
   destr@2.0.5:
     resolution: {integrity: sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==}
 
-  detect-europe-js@0.1.2:
-    resolution: {integrity: sha512-lgdERlL3u0aUdHocoouzT10d9I89VVhk0qNRmll7mXdGfJT1/wqZ2ZLA4oJAjeACPY5fT1wsbq2AT+GkuInsow==}
-
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
@@ -4034,9 +4031,6 @@ packages:
   is-potential-custom-element-name@1.0.1:
     resolution: {integrity: sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==}
 
-  is-standalone-pwa@0.1.1:
-    resolution: {integrity: sha512-9Cbovsa52vNQCjdXOzeQq5CnCbAcRk05aU62K20WO372NrTv0NxibLFCK6lQ4/iZEFdEA3p3t2VNOn8AJ53F5g==}
-
   isbot@5.2.2:
     resolution: {integrity: sha512-iQcBXcd+Rv/pkubRyGh2utW2j1oPG5hZY6TUhVPpqK4G+o3IbxpJNx04hgksjc/N7GK5pEorUxDeg31cFgEk/w==}
     engines: {node: '>=18'}
@@ -4343,6 +4337,10 @@ packages:
   no-case@3.0.4:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
 
+  node-device-detector@2.2.7:
+    resolution: {integrity: sha512-75DMuWtUq5g7bLAd6wNpS/TWoGQD+xM30s4IbxsGHwvbSlZ5XbV2nmgn1sg4Fdqs29Sjf6bCLi8MUyiXDL9YTg==}
+    engines: {node: '>= 10.x', npm: '>= 6.x'}
+
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
 
@@ -4585,23 +4583,6 @@ packages:
     resolution: {integrity: sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw==}
     engines: {node: '>=0.10.0'}
 
-  react-router-dom@7.18.1:
-    resolution: {integrity: sha512-KaZh+X/6UtEp28x51AUYZDMg9NGoz2ja3dNHa+ta/tk40vCzKhQ/RypCWBMLbmDr6//E24Vv5uPsrqXFozdkAg==}
-    engines: {node: '>=20.0.0'}
-    peerDependencies:
-      react: '>=18'
-      react-dom: '>=18'
-
-  react-router@7.18.1:
-    resolution: {integrity: sha512-GDLgg3i3uM0aeJO3Fm+TCS+sDQ7gu12T6x0qdTEzcwqEfleci7JwugVNIF3U//0FWKnJT7ptG+20B2jfDqnZAg==}
-    engines: {node: '>=20.0.0'}
-    peerDependencies:
-      react: '>=18'
-      react-dom: '>=18'
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
-
   react-router@8.5.1:
     resolution: {integrity: sha512-5u1eQ46QjuXjNfEnLwzrnou1Bm5dquO3xjVYkkMYCudtkicD2AQHtx+fvXzPATtPJx8TW6DR1x1TDRqsfHyZBw==}
     engines: {node: '>=22.22.0'}
@@ -4709,9 +4690,6 @@ packages:
     resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
     engines: {node: '>=10'}
     hasBin: true
-
-  set-cookie-parser@2.7.3:
-    resolution: {integrity: sha512-irZHtTqurLna57KQG/s+fzOwv/J6XSH4cs8M/vsrY3uCaQ3S6+QJguAH0WdN47SXlk82voMZ4naWMQf8fdEoIg==}
 
   sharp@0.35.5:
     resolution: {integrity: sha512-Ywn4OnzGukp7CDMrp08RQ50YKmuwG47brZgIVPTvBaaAfQlRlygrRqSrxdCiL9M+LlzLBiJ68IR1QqvzHyjC7g==}
@@ -4904,12 +4882,9 @@ packages:
     engines: {node: '>=16.20.0'}
     hasBin: true
 
-  ua-is-frozen@0.1.2:
-    resolution: {integrity: sha512-RwKDW2p3iyWn4UbaxpP2+VxwqXh0jpvdxsYpZ5j/MLLiQOfbsV5shpgQiw93+KMYQPcteeMQ289MaAFzs3G9pw==}
-
-  ua-parser-js@2.0.10:
-    resolution: {integrity: sha512-t+3Ktbq0Ies2vaSezfOaWiolH4OigQIO1dk+1xDpOydB1COVPocVYOrEV5rqZ0kFY9XYG1v9LutCyMgYBpABcw==}
-    hasBin: true
+  ua-parser-modern@0.1.1:
+    resolution: {integrity: sha512-7w/roxPc8S0HCZi8JvmZsg5rAdjLi6Tiw1Qs5bXJkZRpSiKhEP3HObm8F/oNGB9oOaQAIGZ27p8tO82mtMcOyA==}
+    engines: {node: '>=20.19.0'}
 
   uc.micro@2.1.0:
     resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
@@ -7868,8 +7843,6 @@ snapshots:
 
   destr@2.0.5: {}
 
-  detect-europe-js@0.1.2: {}
-
   detect-libc@2.1.2: {}
 
   devlop@1.1.0:
@@ -8092,8 +8065,6 @@ snapshots:
   is-decimal@2.0.1: {}
 
   is-potential-custom-element-name@1.0.1: {}
-
-  is-standalone-pwa@0.1.1: {}
 
   isbot@5.2.2: {}
 
@@ -8378,6 +8349,8 @@ snapshots:
       lower-case: 2.0.2
       tslib: 2.9.1
 
+  node-device-detector@2.2.7: {}
+
   node-fetch-native@1.6.7: {}
 
   node-releases@2.0.63: {}
@@ -8643,20 +8616,6 @@ snapshots:
 
   react-refresh@0.18.0: {}
 
-  react-router-dom@7.18.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
-    dependencies:
-      react: 19.3.1
-      react-dom: 19.3.1(react@19.3.1)
-      react-router: 7.18.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-
-  react-router@7.18.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
-    dependencies:
-      cookie: 1.1.1
-      react: 19.3.1
-      set-cookie-parser: 2.7.3
-    optionalDependencies:
-      react-dom: 19.3.1(react@19.3.1)
-
   react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       '@remix-run/route-pattern': 0.22.1
@@ -8754,8 +8713,6 @@ snapshots:
   semver@6.3.2: {}
 
   semver@7.8.6: {}
-
-  set-cookie-parser@2.7.3: {}
 
   sharp@0.35.5(@types/node@26.6.6):
     dependencies:
@@ -8973,13 +8930,7 @@ snapshots:
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
 
-  ua-is-frozen@0.1.2: {}
-
-  ua-parser-js@2.0.10:
-    dependencies:
-      detect-europe-js: 0.1.2
-      is-standalone-pwa: 0.1.1
-      ua-is-frozen: 0.1.2
+  ua-parser-modern@0.1.1: {}
 
   uc.micro@2.1.0: {}
 

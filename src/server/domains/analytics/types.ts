@@ -4,6 +4,7 @@
 // slots through `blobsMap`/`doublesMap` in `services/access-log` —
 // adding a field means assigning it a slot there.
 
+import type { UaClientHints } from '@/server/domains/analytics/ua-parse'
 import type { EntityTarget } from '@/server/infra/db/target'
 
 export interface RawAccessEvent {
@@ -13,6 +14,9 @@ export interface RawAccessEvent {
   ip: string
   /** Raw `User-Agent` header. Empty string is fine — `enrich()` will null the parsed fields. */
   ua: string
+  /** User-Agent Client Hints (`Sec-CH-UA-*`) — recovers device model / OS
+   *  version that Chrome's UA reduction erased from the UA string. */
+  clientHints?: UaClientHints | null
   /** Request path (no query string). */
   path: string
   /** Raw `Referer` header. */

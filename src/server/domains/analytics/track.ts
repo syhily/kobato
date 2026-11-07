@@ -70,6 +70,7 @@ export async function trackPageView(
       ts: options.now ?? new Date(),
       ip,
       ua,
+      clientHints: facts.clientHints,
       path: facts.path,
       referer: facts.referer,
       acceptLanguage: facts.acceptLanguage,

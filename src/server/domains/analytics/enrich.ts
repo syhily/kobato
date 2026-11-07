@@ -1,13 +1,11 @@
 import { createHash } from 'node:crypto'
-import { UAParser } from 'ua-parser-js'
-import { CLIs, Crawlers, Emails, ExtraDevices, Fetchers, InApps, MediaPlayers, Vehicles } from 'ua-parser-js/extensions'
 
 import type { EnrichedAccessEvent, RawAccessEvent } from '@/server/domains/analytics/types'
 
 import { lookupCity } from '@/server/domains/analytics/geoip'
 import { getDailySalt } from '@/server/domains/analytics/salt'
+import { parseUaFields } from '@/server/domains/analytics/ua-parse'
 import { isBot } from '@/shared/utils/is-bot'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Row-shaped event for the append pipeline: never touches request/response
 // objects; failures degrade to null fields rather than throwing.
@@ -58,45 +56,6 @@ function parsePrimaryLanguage(header: string | null): string | null {
   return first ? first : null
 }
 
-// ua-parser-js v2 extension packs merged into the browser/device regex
-// maps (the constructor merges per key): crawlers/fetchers/CLIs gain a
-// `browser.type`, extra devices a `device.type`. The packs' public typing
-// is an opaque union, so the merge boundary casts once.
-interface UaExtensionPack {
-  browser?: unknown[]
-  device?: unknown[]
-}
-
-const browserPacks = unsafeCast<UaExtensionPack[]>([Crawlers, CLIs, Emails, Fetchers, InApps, MediaPlayers, Vehicles])
-const devicePacks = unsafeCast<UaExtensionPack[]>([ExtraDevices])
-
-type UaExtensions = UAParser.UAParserExt
-
-const UA_EXTENSIONS = unsafeCast<UaExtensions>({
-  browser: browserPacks.flatMap((pack) => pack.browser ?? []),
-  device: devicePacks.flatMap((pack) => pack.device ?? []),
-})
-
-// The constructor merges the extension packs into the regex maps — do it
-// once. A parser instance carries no cross-parse state: getResult() builds
-// fresh UAItems from the current setUA() string, and parseUserAgent runs
-// both synchronously, so concurrent enrichEvent calls cannot interleave.
-const UA_PARSER = new UAParser(UA_EXTENSIONS)
-
-function parseUserAgent(ua: string) {
-  if (!ua) {
-    return { os: null, browser: null, browserType: null, device: null, deviceType: null }
-  }
-  const info = UA_PARSER.setUA(ua).getResult()
-  return {
-    os: info.os?.name ?? null,
-    browser: info.browser?.name ?? null,
-    browserType: info.browser?.type ?? null,
-    device: info.device?.model ?? null,
-    deviceType: info.device?.type ?? null,
-  }
-}
-
 export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEvent> {
   const ua = raw.ua ?? ''
   const language = parsePrimaryLanguage(raw.acceptLanguage)
@@ -109,7 +68,7 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
   const longitude = geo?.location?.longitude ?? null
   const timezone = geo?.location?.timeZone ?? null
 
-  const parsed = parseUserAgent(ua)
+  const parsed = parseUaFields(ua, raw.clientHints ?? undefined)
 
   return {
     ts: raw.ts,
@@ -130,8 +89,8 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
     language,
     ua: ua || null,
     ...parsed,
-    // Primary gate stays the hand-rolled matcher; ua-parser's
-    // crawler/fetcher browserType is the secondary signal.
+    // Primary gate stays the hand-rolled matcher; node-device-detector's
+    // bot/feed-reader classification is the secondary signal.
     isBot: isBot(ua) || ['crawler', 'fetcher'].includes(parsed.browserType ?? ''),
   }
 }
