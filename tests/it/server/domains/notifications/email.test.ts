@@ -238,4 +238,51 @@ describe('notifications email — failure isolation', () => {
     expect(JSON.stringify(context)).not.toContain('visitor-2@example.com')
     expect(unreadCount(db, visitorId)).toBe(1)
   })
+
+  it('keeps fanning out when one recipient’s transport rejects', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const secondAdminId = await seedUser('admin', 'admin2')
+    // Only the FIRST send rejects; the rest of the fan-out is healthy.
+    fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
+
+    notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件', source: 'zeabur-mail-cleanup' })
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    const attempted = fetchMock.mock.calls.map((_, index) => String(sentMessage(index).get('to')))
+    expect(new Set(attempted)).toEqual(new Set(['admin-1@example.com', 'admin2-2@example.com']))
+
+    // Exactly ONE failure — the first attempt — and the second recipient's
+    // send still happened: one bad address never starves the fan-out.
+    expect(logWarn).toHaveBeenCalledTimes(1)
+    const warned = logWarn.mock.calls[0]![1] as { reason: string; userId: number }
+    expect(warned.reason).toBe('network')
+    expect(attempted[0]).toBe(warned.userId === adminId ? 'admin-1@example.com' : 'admin2-2@example.com')
+    expect(logError).not.toHaveBeenCalled()
+
+    // Every recipient still owns their in-app row regardless of mail outcome.
+    expect(unreadCount(db, adminId)).toBe(1)
+    expect(unreadCount(db, secondAdminId)).toBe(1)
+  })
+
+  it('a thrown send for one recipient does not starve the rest of the fan-out', async () => {
+    const senderModule = await import('@/server/infra/email/sender')
+    await seedUser('admin', 'admin')
+    await seedUser('admin', 'admin2')
+    // `sendEmail` itself throws (not a transport-level `ok:false`): only the
+    // per-recipient try/catch stands between this and the next admin's mail.
+    const rejectOnce = vi.spyOn(senderModule, 'sendEmail').mockRejectedValueOnce(new Error('bad address'))
+
+    try {
+      notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件', source: 'zeabur-mail-cleanup' })
+
+      await vi.waitFor(() => expect(logError).toHaveBeenCalledTimes(1))
+      expect(logError.mock.calls[0]![0]).toBe('failed to send notification email')
+      // The remaining recipient was still attempted and delivered.
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+      expect(rejectOnce).toHaveBeenCalledTimes(2)
+      expect(logWarn).not.toHaveBeenCalled()
+    } finally {
+      rejectOnce.mockRestore()
+    }
+  })
 })
