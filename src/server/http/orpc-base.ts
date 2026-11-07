@@ -8,7 +8,7 @@ import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { translateDomainError } from '@/server/http/translate-domain-error'
 import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
-import { tryCommentPostRateLimit, tryResourceRateLimit } from '@/server/infra/rate-limit'
+import { tryCommentPostRateLimit, tryNotificationReplyRateLimit, tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
@@ -113,6 +113,23 @@ export const commentPostRateLimit = root.middleware(async ({ context, next }) =>
   const { exceeded } = await tryCommentPostRateLimit(context.clientAddress)
   if (exceeded) {
     throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+  }
+  return next({})
+})
+
+/**
+ * Per-user reply throttle — the per-IP resource bucket cannot stop one
+ * invited account from fanning replies into every inbox and mailing the
+ * whole admin team. Placed after `requireAuth`, so `viewer` is non-null;
+ * admins are exempt (same rule as `commentPostRateLimit`).
+ */
+export const notificationReplyRateLimit = root.middleware(async ({ context, next }) => {
+  if (context.viewer?.role === 'admin') {
+    return next({})
+  }
+  const { exceeded } = await tryNotificationReplyRateLimit(context.viewer!.id)
+  if (exceeded) {
+    throw new ORPCError('TOO_MANY_REQUESTS', { message: '回复过于频繁，请稍后再试。' })
   }
   return next({})
 })

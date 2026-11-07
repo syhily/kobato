@@ -201,6 +201,15 @@ export const tryNewsletterSubscribeByEmailRateLimit = (email: string): Promise<R
     NEWSLETTER_SUBSCRIBE_EMAIL_BUCKET,
   )
 
+// Notification replies fan out to other inboxes and mail every admin — the
+// per-IP resource bucket alone would let one account mail-bomb the admin
+// team. Generous for humans, fatal for scripts.
+const NOTIFICATION_REPLY_BUCKET: RateLimitBucket = { windowSeconds: 60, maxAttempts: 10 }
+
+/** Notification replies by author id. */
+export const tryNotificationReplyRateLimit = (userId: number | string): Promise<RateLimitResult> =>
+  tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}notification-reply:${userId}`, NOTIFICATION_REPLY_BUCKET)
+
 // Stored-backup restore decrypts server-side, so every explicit password
 // guess is an online oracle for the archive key. No settings bucket (same
 // "small surface" rule as newsletter-subscribe): 10 tries/hour per

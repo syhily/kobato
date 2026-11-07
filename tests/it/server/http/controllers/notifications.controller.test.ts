@@ -35,6 +35,14 @@ async function callJson(path: string, input: unknown, ctx: Parameters<typeof cal
   return { status: res.status, json: (await res.json()) as { json: unknown } }
 }
 
+type TestCtx = Parameters<typeof callRpc>[2]
+
+async function openDirectThread(adminCtx: TestCtx, visitorCtx: TestCtx, visitorId: number): Promise<string> {
+  await callJson('/admin/notifications/sendDirect', { userId: String(visitorId), title: 'Hi', body: 'hello' }, adminCtx)
+  const inbox = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
+  return (inbox.json.json as { items: Array<{ threadId: string }> }).items[0]!.threadId
+}
+
 describe('integration / notifications controller', () => {
   it('requires auth for the inbox procedures', async () => {
     const res = await callRpc('/notifications/list', { tab: 'all', limit: 20 }, makePublicCtx({ db }))
@@ -69,6 +77,56 @@ describe('integration / notifications controller', () => {
 
     const adminInbox = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
     expect((adminInbox.json.json as { items: unknown[] }).items).toHaveLength(1)
+  })
+
+  it('throttles the 11th reply from the same user in a minute', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+    const visitorCtx = makeAuthedCtx({ userId: String(visitorId), role: 'visitor', db })
+    const threadId = await openDirectThread(adminCtx, visitorCtx, visitorId)
+
+    for (let i = 0; i < 10; i += 1) {
+      const reply = await callJson('/notifications/reply', { threadId, body: `第 ${i + 1} 条` }, visitorCtx)
+      expect(reply.status).toBe(200)
+    }
+
+    const throttled = await callRpc('/notifications/reply', { threadId, body: '超了' }, visitorCtx)
+    expect(throttled.status).toBe(429)
+  })
+
+  it('keeps the reply bucket per user', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const fastId = await seedUser('visitor', 'fast')
+    const quietId = await seedUser('visitor', 'quiet')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+    const fastCtx = makeAuthedCtx({ userId: String(fastId), role: 'visitor', db })
+    const quietCtx = makeAuthedCtx({ userId: String(quietId), role: 'visitor', db })
+    const fastThread = await openDirectThread(adminCtx, fastCtx, fastId)
+    const quietThread = await openDirectThread(adminCtx, quietCtx, quietId)
+
+    for (let i = 0; i < 10; i += 1) {
+      await callJson('/notifications/reply', { threadId: fastThread, body: `第 ${i + 1} 条` }, fastCtx)
+    }
+    const throttled = await callRpc('/notifications/reply', { threadId: fastThread, body: '超了' }, fastCtx)
+    expect(throttled.status).toBe(429)
+
+    // A different user's bucket is untouched (both share one client address).
+    const quiet = await callJson('/notifications/reply', { threadId: quietThread, body: '你好' }, quietCtx)
+    expect(quiet.status).toBe(200)
+  })
+
+  it('exempts admins from the reply throttle', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+    const visitorCtx = makeAuthedCtx({ userId: String(visitorId), role: 'visitor', db })
+    const threadId = await openDirectThread(adminCtx, visitorCtx, visitorId)
+
+    for (let i = 0; i < 11; i += 1) {
+      const reply = await callJson('/notifications/reply', { threadId, body: `第 ${i + 1} 条` }, adminCtx)
+      expect(reply.status).toBe(200)
+    }
   })
 
   it('sendBroadcast is admin-only', async () => {

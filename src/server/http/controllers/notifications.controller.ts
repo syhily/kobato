@@ -6,7 +6,7 @@ import {
   replyToThread,
   unreadCount,
 } from '@/server/domains/notifications/service'
-import { authedProc, resourceRateLimit } from '@/server/http/orpc-base'
+import { authedProc, notificationReplyRateLimit, resourceRateLimit } from '@/server/http/orpc-base'
 import {
   listNotificationsInput,
   listNotificationsOutput,
@@ -70,9 +70,11 @@ const thread = authedProc
   .output(notificationThreadOutput)
   .handler(({ input, context }) => getThread(context.db, context.viewer, Number(input.threadId)))
 
-// Replies write to other users' inboxes — gate the per-IP resource bucket.
+// Replies write to other users' inboxes AND mail the admin team — gate the
+// per-IP resource bucket and a per-user bucket.
 const reply = authedProc
   .use(resourceRateLimit)
+  .use(notificationReplyRateLimit)
   .route({ method: 'POST', path: '/notifications/reply' })
   .input(replyNotificationInput)
   .output(replyNotificationOutput)
