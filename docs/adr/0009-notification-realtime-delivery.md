@@ -115,3 +115,28 @@ considered: SSE is strictly sufficient for server→client badge pushes.
 - Multi-tab: each tab receives its own stream; badge updates in all.
 - SIGTERM drain: streams end (or are force-closed within the 8 s
   budget) and clients reconnect to the restarted server.
+
+## Amendment — 2026-11-07
+
+**The badge query is no longer index-only.** The Context section above
+prices `countUnreadNotifications` as "a bare COUNT over
+`notification_recipient` … index-only, sub-ms" (verified at `d557c3ae`).
+ADR-0007 later made every read path filter recalled messages, so the
+shipped count is a `notification_recipient INNER JOIN notification` with
+`notification.recalled_at IS NULL`
+(`src/server/infra/db/operations/notification.ts`): the recipient index
+still narrows to the user's unread rows, and each surviving row probes the
+message's PRIMARY KEY — one probe per unread row, bounded by that user's
+unread count (ADR-0007's own cost model). Still sub-ms at this product's
+scale, but not index-only; the decision (tuned polling over SSE) rests on
+the magnitude being negligible, which it remains.
+
+**Effective cadence: one timer per shell.** The Context section notes one
+shared TanStack Query entry consumed by "the sidebar nav item, the user
+menu, the admin footer, and the drawer header". TanStack's
+`refetchInterval` runs one timer per observer with no freshness check, so
+those consumers used to multiply the poll rate. Post-consolidation (plan 019) exactly one observer exists per shell — `AppSidebar` on admin and
+`BaseLayout` on public — and the count is passed DOWN as a prop to the
+drawer, nav items, and user menus
+(`src/client/hooks/use-notifications.ts`). The 120 s constant therefore
+buys one timer per shell, not one per badge consumer.

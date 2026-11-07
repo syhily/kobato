@@ -150,3 +150,24 @@ recallable (private threads between people stay honest; see below).
 - Do `admin`-kind system alerts age out on their own (read + time), or
   is recall their only cleanup? A retention sweep may be the better
   answer for those.
+
+## Amendment — 2026-11-07
+
+**Shipped: two audit verbs, not one.** The API + audit section above says
+the one recall procedure also accepts `admin`-kind rows "for uniformity —
+one gate, one audit verb shape". That sentence describes the original
+design; the shipped controller
+(`src/server/http/controllers/admin/notifications.controller.ts`) keeps the
+single gate (one `admin.notifications.recall` procedure, one idempotency
+rule) but splits the audit verb by the recalled row's kind:
+
+- `notification_broadcast_recalled` — an operator withdrawing an
+  announcement.
+- `notification_admin_recalled` — clearing a system alert (e.g. a stale
+  Zeabur-cleanup alert).
+
+The split lets the audit stream distinguish an operator action from
+housekeeping on a system alert, which one verb would blur. Everything else
+in the decision stands: `direct` messages remain non-recallable, recall is
+a soft delete, and a repeated (no-op) call still writes no second audit
+row.

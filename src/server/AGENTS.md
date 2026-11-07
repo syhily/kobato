@@ -40,7 +40,7 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
   the audience). Thread reads/replies are gated by `isThreadParticipant` (LIMIT-1 probes — never
   materialize a broadcast-sized audience); `listThreadParticipantIds` only serves direct-thread reply
   routing. System producers call
-  `notifyAdmins` / `notifyAllUsers` — Platform domains get them injected at the composition root (see
+  `notifyAdmins` — Platform domains get it injected at the composition root (see
   the Zeabur mail cleanup wiring in `bootstrap/db-lifecycle.ts`); raw queries live in
   `infra/db/operations/notification.ts`. Recall (ADR-0007) is a soft delete: `recallNotification`
   stamps `notification.recalled_at` only where NULL (idempotent), `recallMessage` refuses `direct`
@@ -55,7 +55,7 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
   `email.ts::queueNotificationEmail`: it resolves recipient emails
   (`findUserEmailsByIds`), renders the shared `AdminNotificationEmail` family and sends one
   message per recipient sequentially. The gate is `mail.enabled` AND `mail.notificationEmails`
-  (default ON); broadcasts and `notifyAllUsers` never email, producers keep their synchronous
+  (default ON); broadcasts never email, producers keep their synchronous
   signatures, and a transport failure only reaches the server log.
 - Three strata: **Core** (`content`, `posts`, `pages`, `pt`, `settings`), **Feature** (`auth`, `users`, `comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`, `friends`, `newsletter`, `webmentions`, `notifications`), **Platform** (`analytics`, `audit`, `backup`, `update`, `storage`). Platform services are leaves — cross-domain imports INTO them compose at the perimeter.
 
