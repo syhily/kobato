@@ -27,18 +27,22 @@ describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
   })
 
   it('mounts the drawer on first open and keeps it mounted after close', async () => {
+    // Resolve the chunk the lazy boundary imports, so the assertions never
+    // race module loading when the full suite saturates the machine.
+    await import('@/ui/shared/notifications/NotificationsDrawer')
+
     const { rerender } = render(<LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} />)
     rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
 
-    // The everOpened effect + lazy chunk resolve on a later tick.
+    // The everOpened latch + lazy boundary resolve on a later tick.
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50))
     })
-    expect(await screen.findByText('消息通知', {}, { timeout: 3000 })).toBeTruthy()
+    expect(await screen.findByText('消息通知')).toBeTruthy()
 
     // Closing must not unmount the chain — drawer state survives reopen.
     rerender(<LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} />)
     rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} />)
-    expect(await screen.findByText('消息通知')).toBeTruthy()
-  })
+    expect(screen.getByText('消息通知')).toBeTruthy()
+  }, 15_000)
 })
