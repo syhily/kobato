@@ -61,7 +61,7 @@ function SortableWidgetRow({
   widget: SidebarWidget
   index: number
   form: ReturnType<typeof useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>>['form']
-  save: () => void
+  save: () => unknown
   flushOnBlur: () => void
 }) {
   const { t } = useI18n()
@@ -257,12 +257,12 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
     }))
     form.setValue('customQuotes', quotes, { shouldDirty: true })
     // 离散动作（非逐行列表编辑），立即保存才能给出服务端校验的即时反馈。
-    save('customQuotes')
+    void save('customQuotes')
   }
 
   function handleClear() {
     form.setValue('customQuotes', [], { shouldDirty: true })
-    save('customQuotes')
+    void save('customQuotes')
   }
 
   const count = customQuotes.length

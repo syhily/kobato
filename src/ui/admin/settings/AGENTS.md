@@ -4,13 +4,18 @@
 
 Controls trigger saves differently:
 
-| Control                       | Trigger       | When it fires                      |
-| ----------------------------- | ------------- | ---------------------------------- |
-| Text `<Input>` / `<Textarea>` | `flushOnBlur` | Input loses focus; no-op if clean  |
-| Switch / Select / Combobox    | `save`        | `onChange`, immediately            |
-| List append/remove/move       | none          | Relies on the next blur or a flush |
+| Control                       | Trigger       | When it fires                                                                 |
+| ----------------------------- | ------------- | ----------------------------------------------------------------------------- |
+| Text `<Input>` / `<Textarea>` | `flushOnBlur` | Input loses focus; no-op if clean                                             |
+| Switch / Select / Combobox    | `save`        | `onChange`, immediately (after awaiting an async upstream `onValueChange`)    |
+| **General locale `Select`**   | `save`        | **The one exception** — see below: flush every dirty card, THEN commit locale |
+| List append/remove/move       | none          | Relies on the next blur or a flush                                            |
 
-Framework-level flushes (close, ESC, scroll-away, page hide) call every registered card via `SettingsFlushProvider`.
+Framework-level flushes (close, ESC, scroll-away, page hide) call every registered card via `SettingsFlushProvider`. `flushAll` / `flushSection` are fire-and-forget; `flushAllAndWait()` is the awaitable variant and resolves `true` only when EVERY card is clean (each card flush resolves a boolean — validation failure, rejected commit and exceptions are `false`).
+
+**The locale Select is the sole exception to "Switch/Select → onChange immediately saves".** Its upstream `onValueChange` runs `await flushAllAndWait()` first. Only when that resolves `true` does it call `field.onChange(newLocale)`; `SettingsSelect` then awaits `save('locale')`. Any failure (validation, commit, thrown handler) vetoes the whole switch: no field change, no locale save, no reload, and the unsaved input/errors stay on screen (the panel flush never resets dirty input). A reload happens only in `onSaved`, when `savedSection.locale` actually differs from the loader's original `siteIdentity.locale` — other general saves and same-value reselects never reload.
+
+`SettingsSelect` / `SettingsCombobox` AWAIT an async `onValueChange` before `save(name)` — a guard that vetoes the change must not commit anything.
 
 ## Adding a settings card
 

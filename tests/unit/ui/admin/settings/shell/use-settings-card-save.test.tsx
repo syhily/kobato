@@ -89,7 +89,12 @@ describe('useSettingsCard — schema-aware save baseline', () => {
       return (
         <div>
           <input aria-label="title" {...form.register('title')} />
-          <button type="button" onClick={() => save()}>
+          <button
+            type="button"
+            onClick={() => {
+              void save()
+            }}
+          >
             save
           </button>
         </div>
@@ -208,7 +213,12 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
     function Harness({ source }: { source: ToggleSource }) {
       const { save } = useSettingsCard<ToggleSource, ToggleState>(makeToggleProps(source))
       return (
-        <button type="button" onClick={() => save('enabled')}>
+        <button
+          type="button"
+          onClick={() => {
+            void save('enabled')
+          }}
+        >
           reselect
         </button>
       )
@@ -218,5 +228,195 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'reselect' }))
     await settleSaveChains()
     expect(commit).not.toHaveBeenCalled()
+  })
+})
+
+interface TwoFieldSource {
+  title: string
+  other: string
+}
+
+interface TwoFieldState {
+  title: string
+  other: string
+}
+
+function makeTwoFieldProps(source: TwoFieldSource, schema?: z.ZodType<TwoFieldState, any>) {
+  return {
+    section: 'general' as const,
+    source,
+    schema,
+    toState: (s: TwoFieldSource): TwoFieldState => ({ title: s.title, other: s.other }),
+    fromState: (state: TwoFieldState) => ({ title: state.title, other: state.other }),
+  }
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (error: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+function FlushHarness({
+  source,
+  schema,
+  results,
+}: {
+  source: TwoFieldSource
+  schema?: z.ZodType<TwoFieldState, any>
+  results: boolean[]
+}) {
+  const { form, save, flush, flushOnBlur } = useSettingsCard<TwoFieldSource, TwoFieldState>(
+    makeTwoFieldProps(source, schema),
+  )
+  return (
+    <div>
+      <input aria-label="title" {...form.register('title')} onBlur={flushOnBlur} />
+      <input aria-label="other" {...form.register('other')} onBlur={flushOnBlur} />
+      <button
+        type="button"
+        onClick={() => {
+          void flush().then((ok) => results.push(ok))
+        }}
+      >
+        flush
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          form.setValue('other', 'scoped-value')
+          void save('other')
+        }}
+      >
+        save-other
+      </button>
+    </div>
+  )
+}
+
+describe('useSettingsCard — awaitable flush + per-card serialization', () => {
+  beforeEach(() => {
+    commit.mockReset()
+    commit.mockResolvedValue({ ok: true, section: {} })
+    toastMock.error.mockReset()
+  })
+
+  it('resolves true for a clean card without posting', async () => {
+    const results: boolean[] = []
+    renderUi(<FlushHarness source={{ title: 'Hello', other: 'x' }} results={results} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+    await waitFor(() => expect(results).toEqual([true]))
+    expect(commit).not.toHaveBeenCalled()
+  })
+
+  it('dedupes two concurrent flushes into a single POST', async () => {
+    const gate = deferred<{ ok: true; section: unknown }>()
+    commit.mockReturnValue(gate.promise)
+    const results: boolean[] = []
+    renderUi(<FlushHarness source={{ title: 'Hello', other: 'x' }} results={results} />)
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'title' }), { target: { value: 'New' } })
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+
+    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    gate.resolve({ ok: true, section: {} })
+    await waitFor(() => expect(results).toEqual([true, true]))
+    expect(commit).toHaveBeenCalledOnce()
+  })
+
+  it('waits for an in-flight field save, then commits the OTHER dirty field', async () => {
+    const gate = deferred<{ ok: true; section: unknown }>()
+    commit.mockReturnValueOnce(gate.promise)
+    const results: boolean[] = []
+    renderUi(<FlushHarness source={{ title: 'Hello', other: 'x' }} results={results} />)
+
+    // A control-triggered field save goes in flight…
+    fireEvent.click(screen.getByRole('button', { name: 'save-other' }))
+    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    // …and the admin keeps editing another field.
+    fireEvent.change(screen.getByRole('textbox', { name: 'title' }), { target: { value: 'Typed' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+    // The flush must not treat "field save succeeded" as "card is clean".
+    expect(commit).toHaveBeenCalledOnce()
+
+    gate.resolve({ ok: true, section: {} })
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
+    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Typed', other: 'scoped-value' })
+    commit.mockResolvedValue({ ok: true, section: {} })
+    await waitFor(() => expect(results).toEqual([true]))
+  })
+
+  it('keeps a value typed DURING the save dirty and posts it on the next round', async () => {
+    const first = deferred<{ ok: true; section: unknown }>()
+    commit.mockReturnValueOnce(first.promise)
+    const results: boolean[] = []
+    renderUi(<FlushHarness source={{ title: 'Hello', other: 'x' }} results={results} />)
+    const input = screen.getByRole('textbox', { name: 'title' })
+
+    fireEvent.change(input, { target: { value: 'First' } })
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+
+    // Typed while the request is in flight — this input was NOT part of the POST.
+    fireEvent.change(input, { target: { value: 'Second' } })
+    first.resolve({ ok: true, section: {} })
+    commit.mockResolvedValue({ ok: true, section: {} })
+
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
+    expect(commit.mock.calls[0]![1]).toEqual({ title: 'First', other: 'x' })
+    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Second', other: 'x' })
+    await waitFor(() => expect(results).toEqual([true]))
+  })
+
+  it('reports false on a validation failure WITHOUT resetting unsaved input', async () => {
+    const schema = z.object({ title: z.string().min(2, '太短'), other: z.string() })
+    const results: boolean[] = []
+    renderUi(<FlushHarness source={{ title: 'Hello', other: 'x' }} schema={schema} results={results} />)
+    const input = screen.getByRole('textbox', { name: 'title' })
+
+    fireEvent.change(input, { target: { value: 'A' } })
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+
+    await waitFor(() => expect(results).toEqual([false]))
+    expect(commit).not.toHaveBeenCalled()
+    // The panel flush keeps the dirty input and its error (no rollback).
+    expect(input).toHaveValue('A')
+    expect(toastMock.error).toHaveBeenCalledOnce()
+  })
+
+  it('reports false on a rejected commit and leaves the card dirty for a retry', async () => {
+    commit.mockResolvedValueOnce({ ok: false })
+    const results: boolean[] = []
+    renderUi(<FlushHarness source={{ title: 'Hello', other: 'x' }} results={results} />)
+    const input = screen.getByRole('textbox', { name: 'title' })
+
+    fireEvent.change(input, { target: { value: 'Retry me' } })
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+    await waitFor(() => expect(results).toEqual([false]))
+
+    commit.mockResolvedValueOnce({ ok: true, section: {} })
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+    await waitFor(() => expect(results).toEqual([false, true]))
+    expect(commit).toHaveBeenCalledTimes(2)
+    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Retry me', other: 'x' })
+  })
+
+  it('reports false when the commit throws (no unhandled rejection)', async () => {
+    commit.mockRejectedValueOnce(new Error('network down'))
+    const results: boolean[] = []
+    renderUi(<FlushHarness source={{ title: 'Hello', other: 'x' }} results={results} />)
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'title' }), { target: { value: 'Boom' } })
+    fireEvent.click(screen.getByRole('button', { name: 'flush' }))
+
+    await waitFor(() => expect(results).toEqual([false]))
+    expect(screen.getByRole('textbox', { name: 'title' })).toHaveValue('Boom')
   })
 })

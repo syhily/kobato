@@ -12,6 +12,7 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsCombobox } from '@/ui/admin/settings/shell/SettingsCombobox'
+import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
@@ -356,6 +357,10 @@ function GeneralTimeZoneCard({
   timeZones: readonly string[]
 }) {
   const { t } = useI18n()
+  const { flushAllAndWait } = useSettingsFlushContext()
+  // A locale switch reloads exactly once, and only after the locale commit
+  // actually changed the stored language.
+  const reloadRequestedRef = useRef(false)
   const { form, settingGroupProps, flushOnBlur, save } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
@@ -367,6 +372,13 @@ function GeneralTimeZoneCard({
       // `null` is the "follow the locale" state, never a blank override.
       timeFormat: values.timeFormat === null ? null : values.timeFormat.trim(),
     }),
+    onSaved: (savedSection) => {
+      if (reloadRequestedRef.current || savedSection.locale === siteIdentity.locale) {
+        return
+      }
+      reloadRequestedRef.current = true
+      window.location.reload()
+    },
   })
 
   const timeZoneItems = useMemo<TimeZoneItem[]>(
@@ -409,10 +421,21 @@ function GeneralTimeZoneCard({
                   name={field.name}
                   value={field.value}
                   save={save}
-                  onValueChange={(value) => {
-                    if (value !== null) {
-                      field.onChange(value)
+                  onValueChange={async (value) => {
+                    if (value === null) {
+                      return
                     }
+                    // Strict order: every dirty card saves first. Any failure
+                    // (validation / commit / throw) vetoes the switch entirely —
+                    // no field change, no locale save, no reload, and the
+                    // admin's unsaved input stays on screen.
+                    const flushed = await flushAllAndWait()
+                    if (!flushed) {
+                      return
+                    }
+                    field.onChange(value)
+                    // SettingsSelect awaits this upstream handler, then awaits
+                    // save('locale') itself.
                   }}
                 >
                   <SelectTrigger id="general-locale" className="w-full">

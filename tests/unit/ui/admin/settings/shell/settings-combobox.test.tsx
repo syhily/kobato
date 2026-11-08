@@ -21,7 +21,61 @@ const ZONES: ZoneItem[] = [
   { value: 'UTC', label: 'UTC' },
 ]
 
+function deferred() {
+  let release!: () => void
+  const promise = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  return { promise, release }
+}
+
+const flushMicrotasks = () => new Promise((resolve) => setImmediate(resolve))
+
 describe('ui/admin/settings/shell/SettingsCombobox', () => {
+  it('awaits an async upstream handler BEFORE save', async () => {
+    const gate = deferred()
+    const onChange = vi.fn()
+    const save = vi.fn()
+    renderWithI18n(
+      <SettingsCombobox<ZoneItem>
+        name="zone"
+        items={ZONES}
+        value={ZONES[0]}
+        save={save}
+        onValueChange={async (item) => {
+          await gate.promise
+          if (item) {
+            onChange(item.value)
+          }
+        }}
+      >
+        <ComboboxTrigger aria-label="timezone">
+          <ComboboxValue />
+        </ComboboxTrigger>
+        <ComboboxContent<ZoneItem>>
+          {(item) => (
+            <ComboboxItem key={item.value} value={item}>
+              {item.label}
+            </ComboboxItem>
+          )}
+        </ComboboxContent>
+      </SettingsCombobox>,
+    )
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'timezone' }))
+    const option = await screen.findByRole('option', { name: 'UTC' })
+    fireEvent.pointerDown(option)
+    fireEvent.click(option)
+
+    await flushMicrotasks()
+    expect(onChange).not.toHaveBeenCalled()
+    expect(save).not.toHaveBeenCalled()
+
+    gate.release()
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('UTC'))
+    await waitFor(() => expect(save).toHaveBeenCalledWith('zone'))
+  })
+
   it('runs the guarded upstream handler, then save', async () => {
     const onChange = vi.fn()
     const save = vi.fn()

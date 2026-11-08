@@ -76,7 +76,7 @@ function SortableSideNavRow({
   index: number
   form: ReturnType<typeof useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>>['form']
   flushOnBlur: () => void
-  save: () => void
+  save: () => unknown
   onRemove: (index: number) => void
 }) {
   const { t } = useI18n()
@@ -348,7 +348,7 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
   function updateFooterItem(index: number, patch: Partial<FooterNavItem>) {
     const current = rows.fields[index]
     rows.update(index, { ...current, ...patch } as FooterNavItemRowState)
-    save('footerNavItems')
+    void save('footerNavItems')
   }
 
   const configuredNetworks = new Set(socials.map((s) => s.network))
