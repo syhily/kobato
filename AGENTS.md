@@ -84,7 +84,7 @@ These patterns are banned:
 
 ## Dependencies
 
-Every version number lives in the root `pnpm-workspace.yaml` `catalog:` table — the root `package.json` references entries as `"catalog:"`. `taze` edits the catalog in place. Version-exact pins (drizzle rc, the Lexical `0.46.0` family) stay exact inside the catalog.
+Every version number lives in the root `pnpm-workspace.yaml` `catalog:` table — the root `package.json` references entries as `"catalog:"`. `taze` edits the catalog in place. Version-exact pins (`@duckdb/node-api`, drizzle rc, the Lexical `0.46.0` family) stay exact inside the catalog — taze treats range-less entries as locked and skips them; every other entry carries a `^` range so `pnpm bump` keeps it current.
 
 Only packages that are **required at production runtime AND ship a native dynamic library** belong in `package.json`'s `dependencies`:
 
