@@ -2,9 +2,12 @@ import type { DateRange } from 'react-day-picker'
 
 import { CalendarIcon } from 'lucide-react'
 
+import type { I18nValue } from '@/ui/lib/I18nProvider'
+
 import { Button } from '@/ui/components/button'
 import { Calendar } from '@/ui/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const TRIGGER_CLASSES =
   'h-9 w-full justify-start gap-2 border-line bg-transparent px-3 py-2 font-normal shadow-xs transition-[color,box-shadow] data-[popup-open]:border-ring data-[popup-open]:shadow-focus'
@@ -25,15 +28,15 @@ export function toIsoDate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
-export function formatRangeLabel(from: string, to: string): string {
+export function formatRangeLabel(from: string, to: string, t: I18nValue['t']): string {
   if (from && to) {
     return `${from} → ${to}`
   }
   if (from) {
-    return `${from} 起`
+    return t('admin.shared.range.from', { from })
   }
   if (to) {
-    return `截至 ${to}`
+    return t('admin.shared.range.until', { to })
   }
   return ''
 }
@@ -45,13 +48,16 @@ interface DateRangeCalendarPickerProps {
 }
 
 export function DateRangeCalendarPicker({ from, to, onChange }: DateRangeCalendarPickerProps) {
+  const { t } = useI18n()
   return (
     <Popover>
       <PopoverTrigger
         render={
           <Button type="button" variant="outline" className={TRIGGER_CLASSES}>
             <CalendarIcon data-icon="inline-start" />
-            <span className="truncate">{from || to ? formatRangeLabel(from, to) : '选择时间范围'}</span>
+            <span className="truncate">
+              {from || to ? formatRangeLabel(from, to, t) : t('admin.shared.range.select')}
+            </span>
           </Button>
         }
       />

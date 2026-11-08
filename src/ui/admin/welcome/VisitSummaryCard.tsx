@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router'
 
 import type { CountersDto, ViewsDto, ViewsPoint } from '@/shared/contracts/analytics'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { formatNumber } from '@/shared/i18n/format'
@@ -20,15 +21,15 @@ interface VisitSummaryCardProps {
 }
 
 interface KpiEntry {
-  label: string
+  labelId: UiMessageId
   value: number
   icon: typeof EyeIcon
 }
 
 const KPI_ENTRIES: KpiEntry[] = [
-  { label: '访问量', value: 0, icon: EyeIcon },
-  { label: '访客数', value: 0, icon: UsersIcon },
-  { label: '来源域名', value: 0, icon: GlobeIcon },
+  { labelId: 'admin.welcome.visit.kpi.visits', value: 0, icon: EyeIcon },
+  { labelId: 'admin.welcome.visit.kpi.visitors', value: 0, icon: UsersIcon },
+  { labelId: 'admin.welcome.visit.kpi.referers', value: 0, icon: GlobeIcon },
 ]
 
 // The loader's weeklyTrend buckets are aggregated in Etc/UTC (the request
@@ -36,7 +37,7 @@ const KPI_ENTRIES: KpiEntry[] = [
 // the first client render emit the skeleton (byte-identical markup), and the
 // client query — which sends clientTimezone — is the only data source.
 export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const values = [summary.visits, summary.visitors, summary.referers]
   const trendQuery = useQuery(
     orpcQuery.analytics.views.queryOptions({
@@ -53,23 +54,23 @@ export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps
   return (
     <div className="flex h-full flex-col rounded-xl border bg-card p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-lg font-medium">今日概览</h2>
+        <h2 className="text-lg font-medium">{t('admin.welcome.visit.title')}</h2>
         <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/analytics?preset=today" />}>
-          <span className="hidden sm:inline">查看详情</span> <ArrowRightIcon data-icon />
+          <span className="hidden sm:inline">{t('admin.welcome.visit.details')}</span> <ArrowRightIcon data-icon />
         </Button>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">最近 24 小时访问统计</p>
+      <p className="mt-1 text-sm text-muted-foreground">{t('admin.welcome.visit.subtitle')}</p>
 
       <ul className="mt-6 flex flex-1 flex-col justify-center gap-5">
         {KPI_ENTRIES.map((entry, i) => {
           const Icon = entry.icon
           return (
-            <li key={entry.label} className="flex items-center gap-3">
+            <li key={entry.labelId} className="flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-status-info-bg">
                 <Icon aria-hidden="true" className="size-5 text-status-info-fg" strokeWidth={1.8} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">{entry.label}</p>
+                <p className="text-xs text-muted-foreground">{t(entry.labelId)}</p>
                 <p className="text-xl font-semibold tabular-nums">{formatNumber(values[i] ?? 0, { locale })}</p>
               </div>
             </li>
@@ -81,13 +82,13 @@ export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps
         <div className="mt-5 border-t pt-4">
           <div className="flex items-center gap-2">
             <TrendingUpIcon className="size-4 text-muted-foreground" />
-            <span className="text-sm font-medium">最近 7 天趋势</span>
+            <span className="text-sm font-medium">{t('admin.welcome.visit.trend')}</span>
           </div>
           <div className="mt-3 flex items-end gap-4">
             <TrendSparkline points={daily} />
             <div className="mb-1 flex flex-col gap-0.5 text-right">
               <span className="text-2xl font-semibold tabular-nums">{daily.reduce((s, d) => s + d.visits, 0)}</span>
-              <span className="text-xs text-muted-foreground">总访问</span>
+              <span className="text-xs text-muted-foreground">{t('admin.welcome.visit.totalVisits')}</span>
             </div>
           </div>
         </div>
@@ -99,9 +100,10 @@ export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps
 }
 
 function TrendSkeleton() {
+  const { t } = useI18n()
   return (
     <div className="mt-5 border-t pt-4" role="status" aria-busy="true">
-      <span className="sr-only">加载中</span>
+      <span className="sr-only">{t('common.state.loading')}</span>
       <div aria-hidden="true">
         <div className="flex items-center gap-2">
           <Skeleton className="size-4 rounded-sm" />

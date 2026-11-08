@@ -29,7 +29,7 @@ function buildQueryInput(filters: UsersFilters, offset: number) {
 }
 
 export function UsersView() {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const config = useSiteIdentity()
   const { filters, setQ, setRole, setSortBy, setIncludeDeleted } = useUsersFilters()
 
@@ -55,7 +55,7 @@ export function UsersView() {
       <div className="flex flex-col gap-6">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">用户管理</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('admin.users.title')}</h1>
             {!isLoading && (
               <span className="text-lg font-normal text-muted-foreground">{formatNumber(total, { locale })}</span>
             )}
@@ -69,7 +69,7 @@ export function UsersView() {
                 type="search"
                 value={qInput}
                 onChange={(e) => setQInput(e.target.value)}
-                placeholder="搜索用户名或邮箱"
+                placeholder={t('admin.users.searchPlaceholder')}
               />
             </InputGroup>
             <UsersToolbar
@@ -81,7 +81,7 @@ export function UsersView() {
               onIncludeDeletedChange={setIncludeDeleted}
             />
             <Button type="button" variant="default" size="sm" onClick={() => setInviteOpen(true)}>
-              <MailIcon data-icon /> 邀请作者
+              <MailIcon data-icon /> {t('admin.users.invite')}
             </Button>
           </div>
         </header>
@@ -90,7 +90,7 @@ export function UsersView() {
 
         {/* Bottom status */}
         <AdminInfiniteListFooter
-          noun="用户"
+          noun={t('admin.list.noun.users')}
           rowCount={rows.length}
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}

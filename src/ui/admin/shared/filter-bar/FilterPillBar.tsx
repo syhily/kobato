@@ -4,6 +4,7 @@ import type { FilterPillBarProps } from '@/ui/admin/shared/filter-bar/types'
 
 import { FilterAddButton } from '@/ui/admin/shared/filter-bar/add-button'
 import { FilterPill } from '@/ui/admin/shared/filter-bar/pill'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The filter chrome shared by every admin list surface: trigger-only with no
 // active filters, pill row + 添加筛选 + 清除 otherwise; state comes from `useFilterPills`.
@@ -15,6 +16,7 @@ export function FilterPillBar<K extends string>({
   onRemoveFilter,
   onClearFilters,
 }: FilterPillBarProps<K>) {
+  const { t } = useI18n()
   const hasFilters = filters.length > 0
 
   if (!hasFilters) {
@@ -40,7 +42,7 @@ export function FilterPillBar<K extends string>({
         onClick={onClearFilters}
       >
         <XIcon className="size-3.5" />
-        清除
+        {t('admin.shared.filter.clear')}
       </button>
     </div>
   )

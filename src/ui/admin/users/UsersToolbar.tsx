@@ -1,6 +1,7 @@
 import { FilterIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { RoleFilter, SortOrder } from '@/ui/admin/users/useUsersFilters'
 
 import { LabelledCheckbox } from '@/ui/admin/shared/LabelledCheckbox'
@@ -9,18 +10,19 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Separator } from '@/ui/components/separator'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
-const ROLE_OPTIONS: { value: RoleFilter; label: string }[] = [
-  { value: 'all', label: '全部' },
-  { value: 'admin', label: '管理员' },
-  { value: 'author', label: '作者' },
-  { value: 'visitor', label: '访客' },
-  { value: 'normal', label: '非管理员' },
+const ROLE_OPTIONS: { value: RoleFilter; labelId: UiMessageId }[] = [
+  { value: 'all', labelId: 'admin.users.role.all' },
+  { value: 'admin', labelId: 'common.role.admin' },
+  { value: 'author', labelId: 'common.role.author' },
+  { value: 'visitor', labelId: 'common.role.visitor' },
+  { value: 'normal', labelId: 'admin.users.role.normal' },
 ]
 
-const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
-  { value: 'recent', label: '最新注册' },
-  { value: 'commentCount', label: '评论数（高 → 低）' },
+const SORT_OPTIONS: { value: SortOrder; labelId: UiMessageId }[] = [
+  { value: 'recent', labelId: 'admin.users.sort.recent' },
+  { value: 'commentCount', labelId: 'admin.users.sort.commentCount' },
 ]
 
 interface UsersToolbarProps {
@@ -40,6 +42,7 @@ export function UsersToolbar({
   onSortByChange,
   onIncludeDeletedChange,
 }: UsersToolbarProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const hasFilters = role !== 'all' || includeDeleted
 
@@ -54,14 +57,16 @@ export function UsersToolbar({
               size="sm"
               className={cn(hasFilters && 'border-foreground/30 bg-secondary')}
             >
-              <FilterIcon /> 筛选
+              <FilterIcon /> {t('admin.users.toolbar.filter')}
             </Button>
           }
         />
         <PopoverContent className="w-64" align="end">
           <div className="flex flex-col gap-4">
             <div>
-              <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">角色</div>
+              <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                {t('admin.users.toolbar.role')}
+              </div>
               <div className="flex flex-wrap gap-1">
                 {ROLE_OPTIONS.map((option) => (
                   <button
@@ -75,7 +80,7 @@ export function UsersToolbar({
                     )}
                     onClick={() => onRoleChange(option.value)}
                   >
-                    {option.label}
+                    {t(option.labelId)}
                   </button>
                 ))}
               </div>
@@ -84,9 +89,11 @@ export function UsersToolbar({
             <Separator />
 
             <div>
-              <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">排序</div>
+              <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                {t('admin.users.toolbar.sort')}
+              </div>
               <Select
-                items={SORT_OPTIONS}
+                items={SORT_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) }))}
                 value={sortBy}
                 onValueChange={(value) => onSortByChange((value ?? 'recent') as SortOrder)}
               >
@@ -96,7 +103,7 @@ export function UsersToolbar({
                 <SelectContent>
                   {SORT_OPTIONS.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
-                      {item.label}
+                      {t(item.labelId)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -107,7 +114,7 @@ export function UsersToolbar({
 
             <LabelledCheckbox
               id="users-include-deleted"
-              label="包含已删除用户"
+              label={t('admin.users.includeDeleted')}
               checked={includeDeleted}
               onCheckedChange={onIncludeDeletedChange}
             />
@@ -125,7 +132,7 @@ export function UsersToolbar({
                     onIncludeDeletedChange(false)
                   }}
                 >
-                  <XIcon /> 清除筛选
+                  <XIcon /> {t('admin.users.clearFilters')}
                 </Button>
               </>
             )}

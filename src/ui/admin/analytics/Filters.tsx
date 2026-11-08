@@ -1,30 +1,11 @@
 import { XIcon } from 'lucide-react'
 
 import { METRIC_TYPES, type Filters, type MetricType } from '@/shared/contracts/analytics'
+import { METRIC_TYPE_LABEL_IDS } from '@/ui/admin/analytics/metric-labels'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
-
-const TYPE_LABEL: Record<MetricType, string> = {
-  country: '国家',
-  region: '地区',
-  city: '城市',
-  referer: '来源',
-  language: '语言',
-  timezone: '时区',
-  os: '系统',
-  browser: '浏览器',
-  browserType: '浏览器类型',
-  device: '设备',
-  deviceType: '设备类型',
-  screen: '屏幕分辨率',
-  viewport: '视口宽度',
-  dpr: '像素密度',
-  touch: '触控能力',
-  colorScheme: '深色模式',
-  netEffectiveType: '网络类型',
-  path: '路径',
-}
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface FiltersBarProps {
   filters: Filters
@@ -34,6 +15,7 @@ export interface FiltersBarProps {
 }
 
 export function FiltersBar({ filters, onClear, onClearAll, className }: FiltersBarProps) {
+  const { t } = useI18n()
   const entries: [MetricType, string][] = []
   for (const type of METRIC_TYPES) {
     const value = filters[type]
@@ -45,15 +27,18 @@ export function FiltersBar({ filters, onClear, onClearAll, className }: FiltersB
     return null
   }
   return (
-    <section className={cn('flex flex-wrap items-center gap-2', className)} aria-label="已应用的筛选">
+    <section
+      className={cn('flex flex-wrap items-center gap-2', className)}
+      aria-label={t('admin.analytics.filters.appliedAria')}
+    >
       {entries.map(([type, value]) => (
         <Badge key={type} variant="secondary" className="gap-1 py-1 pr-1 pl-2.5 font-normal">
-          <span className="text-muted-foreground">{TYPE_LABEL[type]}:</span>
+          <span className="text-muted-foreground">{t(METRIC_TYPE_LABEL_IDS[type])}:</span>
           <span className="text-foreground">{value}</span>
           <button
             type="button"
             onClick={() => onClear(type)}
-            aria-label={`移除 ${TYPE_LABEL[type]} 筛选`}
+            aria-label={t('admin.analytics.filters.removeAria', { type: t(METRIC_TYPE_LABEL_IDS[type]) })}
             className="ml-0.5 rounded-sm p-0.5 text-muted-foreground hover:bg-muted-foreground/15 hover:text-foreground"
           >
             <XIcon className="size-3" />
@@ -67,7 +52,7 @@ export function FiltersBar({ filters, onClear, onClearAll, className }: FiltersB
         className="h-7 px-2 text-xs text-muted-foreground"
         onClick={onClearAll}
       >
-        清空筛选
+        {t('admin.analytics.filters.clearAll')}
       </Button>
     </section>
   )

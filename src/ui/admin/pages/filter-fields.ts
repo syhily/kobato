@@ -1,6 +1,8 @@
 import { ListChecksIcon, UserIcon } from 'lucide-react'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { FilterFieldSpec, FilterQueryPatch } from '@/ui/admin/shared/filter-bar/types'
+import type { I18nValue } from '@/ui/lib/I18nProvider'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { deriveStatusQueryFields } from '@/ui/admin/shared/filter-bar/status-fields'
@@ -10,10 +12,10 @@ export type PageFilterFieldKey = 'status' | 'author'
 
 export type PageStatusFilter = 'all' | 'published' | 'draft' | 'deleted'
 
-export const PAGE_STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: 'published', label: '已发布' },
-  { value: 'draft', label: '草稿' },
-  { value: 'deleted', label: '已删除' },
+export const PAGE_STATUS_OPTIONS: { value: string; labelId: UiMessageId }[] = [
+  { value: 'published', labelId: 'admin.content.status.published' },
+  { value: 'draft', labelId: 'admin.content.status.draft' },
+  { value: 'deleted', labelId: 'admin.content.status.deleted' },
 ]
 
 // No `visible` leg — the page table has no `visible` column.
@@ -40,20 +42,21 @@ export interface PagesFilterQuery {
 
 export function buildPageFilterFields(
   authors: readonly { id: string; name: string }[],
+  t: I18nValue['t'],
 ): FilterFieldSpec<PageFilterFieldKey>[] {
   return [
     {
       key: 'status',
-      label: '状态',
+      label: t('admin.pages.filter.status'),
       icon: ListChecksIcon,
       kind: 'options',
-      options: PAGE_STATUS_OPTIONS,
+      options: PAGE_STATUS_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) })),
       // The status projection carries a boolean; the string-typed patch is the common case and merges verbatim — the cast is exact.
       toQuery: (value) => unsafeCast<FilterQueryPatch>(deriveStatusFields(unsafeCast<PageStatusFilter>(value))),
     },
     {
       key: 'author',
-      label: '作者',
+      label: t('admin.pages.filter.author'),
       icon: UserIcon,
       kind: 'options',
       options: authors.map((u) => ({ value: u.id, label: u.name })),

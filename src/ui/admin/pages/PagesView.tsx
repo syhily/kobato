@@ -13,15 +13,17 @@ import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 10
 
 export function PagesView() {
+  const { t } = useI18n()
   const { data: usersData } = useQuery(
     orpcQuery.admin.users.list.queryOptions({ input: { limit: 100, hasPages: true } }),
   )
 
-  const fields = useMemo(() => buildPageFilterFields(usersData?.users ?? []), [usersData])
+  const fields = useMemo(() => buildPageFilterFields(usersData?.users ?? [], t), [usersData, t])
 
   // The pills own the filter surface: reducer state + merged query input the list query spreads.
   const pills = useFilterPills({ fields })
@@ -42,7 +44,7 @@ export function PagesView() {
         <AdminListPage.Header
           title={
             <>
-              页面管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
+              {t('admin.pages.title')} <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
         >
@@ -56,7 +58,7 @@ export function PagesView() {
               className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90"
             >
               <PlusIcon className="size-4" />
-              新建页面
+              {t('admin.pages.new')}
             </Link>
           </div>
         </AdminListPage.Header>
@@ -72,7 +74,7 @@ export function PagesView() {
                 <EmptyMedia variant="icon">
                   <SearchIcon />
                 </EmptyMedia>
-                <EmptyTitle>未找到页面</EmptyTitle>
+                <EmptyTitle>{t('admin.pages.empty')}</EmptyTitle>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -90,7 +92,7 @@ export function PagesView() {
               </div>
               {/* Bottom status */}
               <AdminInfiniteListFooter
-                noun="页面"
+                noun={t('admin.list.noun.pages')}
                 rowCount={rows.length}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}

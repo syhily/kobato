@@ -25,7 +25,7 @@ export interface LocationsMapInnerProps {
 }
 
 export function LocationsMapInner({ rows }: LocationsMapInnerProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const summaryId = `locations-summary-${useId()}`
 
   const areas = useMemo<AreaDatum[]>(
@@ -60,13 +60,16 @@ export function LocationsMapInner({ rows }: LocationsMapInnerProps) {
         <div class="font-medium">${escapeHtml(regionDisplayName(area.id, locale))}</div>
         <div class="mt-1 flex items-center gap-2">
           <span class="inline-block size-2 rounded-full" style="background: ${COLOR_AREA}"></span>
-          <span class="text-muted-foreground">访问量</span>
+          <span class="text-muted-foreground">${escapeHtml(t('admin.analytics.metric.visits'))}</span>
           <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(formatNumber(area.count, { locale }))}</span>
         </div>
       </div>`
   }
 
-  const summary = `地理位置分布: 共 ${areas.length} 个国家或地区,总访问量 ${formatNumber(totalVisits, { locale })}。`
+  const summary = t('admin.analytics.locations.summary', {
+    count: areas.length,
+    total: formatNumber(totalVisits, { locale }),
+  })
 
   return (
     <div className="absolute inset-0" role="img" aria-label={summary} aria-describedby={summaryId}>

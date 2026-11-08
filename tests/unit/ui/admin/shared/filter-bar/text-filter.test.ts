@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseTextFilterValue, textFilterValueLabel } from '@/ui/admin/shared/filter-bar/text-filter'
+import { tZhCN } from '#/_helpers/i18n'
+import {
+  parseTextFilterValue,
+  textFilterValueLabel as textFilterValueLabelBase,
+} from '@/ui/admin/shared/filter-bar/text-filter'
+
+const textFilterValueLabel = (
+  value: Parameters<typeof textFilterValueLabelBase>[0],
+  operators: Parameters<typeof textFilterValueLabelBase>[1],
+) => textFilterValueLabelBase(value, operators, tZhCN)
 
 const OPERATORS = [
   { value: 'contains', label: '包含' },

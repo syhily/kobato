@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseCommentFiltersFromSearchParams } from '@/ui/admin/comments/useCommentsController'
+import { tZhCN } from '#/_helpers/i18n'
+import { parseCommentFiltersFromSearchParams as parseCommentFilters } from '@/ui/admin/comments/useCommentsController'
+
+const parseCommentFiltersFromSearchParams = (params: URLSearchParams) => parseCommentFilters(params, tZhCN)
 
 describe('parseCommentFiltersFromSearchParams — status / page / author', () => {
   it('returns an empty list for an empty search params', () => {

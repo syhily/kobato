@@ -252,9 +252,13 @@ export interface MetricNameProps {
 }
 
 export function MetricName({ name, type }: MetricNameProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   if (!name) {
-    return <span className="text-muted-foreground">{type === 'referer' ? '直接访问' : '未知'}</span>
+    return (
+      <span className="text-muted-foreground">
+        {type === 'referer' ? t('admin.analytics.direct') : t('admin.analytics.metrics.unknown')}
+      </span>
+    )
   }
 
   if (type === 'country') {
@@ -297,7 +301,15 @@ export function MetricName({ name, type }: MetricNameProps) {
   }
 
   if (type === 'colorScheme') {
-    return <span className="min-w-0 break-all">{name === 'dark' ? '深色' : name === 'light' ? '浅色' : name}</span>
+    return (
+      <span className="min-w-0 break-all">
+        {name === 'dark'
+          ? t('admin.analytics.metrics.dark')
+          : name === 'light'
+            ? t('admin.analytics.metrics.light')
+            : name}
+      </span>
+    )
   }
 
   if (type === 'netEffectiveType') {

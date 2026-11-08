@@ -72,7 +72,7 @@ describe('ui/admin/welcome/VisitSummaryCard trend block', () => {
 
   it('keeps the skeleton until the client query resolves', () => {
     renderCard([{ time: '2024-01-10', visits: 10, visitors: 5 }])
-    expect(screen.getByText('加载中')).toBeTruthy()
+    expect(screen.getByText('加载中…')).toBeTruthy()
     expect(screen.queryByText('最近 7 天趋势')).toBeNull()
   })
 })

@@ -127,11 +127,11 @@ export function useFontSlotsController() {
 
   const moveToSlot = (fontId: string, targetSlot: FontSlot, targetIndex: number | undefined, fromSlot?: FontSlot) => {
     if (slots[targetSlot].includes(fontId) && fromSlot !== targetSlot) {
-      toast.error('该字体已在目标槽位中')
+      toast.error(t('admin.fonts.slot.alreadyAssigned'))
       return
     }
     if (slots[targetSlot].length >= MAX_SLOT_FONTS && !slots[targetSlot].includes(fontId)) {
-      toast.error(`每个槽位最多 ${MAX_SLOT_FONTS} 个字体`)
+      toast.error(t('admin.fonts.slot.limitReached', { count: MAX_SLOT_FONTS }))
       return
     }
 

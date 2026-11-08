@@ -5,6 +5,7 @@ import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { SearchShortcutHint } from '@/ui/admin/shared/SearchShortcutHint'
 
 const originalPlatform = navigator.platform
@@ -23,7 +24,7 @@ afterEach(() => {
 describe('SearchShortcutHint', () => {
   it('hydrates without a recoverable error when the client is a Mac', async () => {
     setNavigatorPlatform('Linux x86_64')
-    const serverHtml = renderToString(<SearchShortcutHint />)
+    const serverHtml = renderToString(wrapWithI18n(<SearchShortcutHint />))
     const container = document.createElement('div')
     container.innerHTML = serverHtml
 
@@ -32,7 +33,7 @@ describe('SearchShortcutHint', () => {
     let root: ReturnType<typeof hydrateRoot> | undefined
 
     await act(async () => {
-      root = hydrateRoot(container, <SearchShortcutHint />, {
+      root = hydrateRoot(container, wrapWithI18n(<SearchShortcutHint />), {
         onRecoverableError: (error) => recoverableErrors.push(error),
       })
       await Promise.resolve()

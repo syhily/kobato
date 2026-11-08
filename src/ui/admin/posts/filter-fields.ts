@@ -1,7 +1,9 @@
 import { FolderIcon, ListChecksIcon, TagsIcon, UserIcon } from 'lucide-react'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { FilterFieldSpec, FilterQueryPatch } from '@/ui/admin/shared/filter-bar/types'
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
+import type { I18nValue } from '@/ui/lib/I18nProvider'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { deriveStatusQueryFields } from '@/ui/admin/shared/filter-bar/status-fields'
@@ -11,11 +13,11 @@ export type PostFilterFieldKey = 'status' | 'category' | 'tag' | 'author'
 
 export type PostStatusFilter = 'all' | 'published' | 'draft' | 'unlisted' | 'deleted'
 
-export const POST_STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: 'published', label: '已发布' },
-  { value: 'draft', label: '草稿' },
-  { value: 'unlisted', label: '不列出' },
-  { value: 'deleted', label: '已删除' },
+export const POST_STATUS_OPTIONS: { value: string; labelId: UiMessageId }[] = [
+  { value: 'published', labelId: 'admin.content.status.published' },
+  { value: 'draft', labelId: 'admin.content.status.draft' },
+  { value: 'unlisted', labelId: 'admin.content.status.unlisted' },
+  { value: 'deleted', labelId: 'admin.content.status.deleted' },
 ]
 
 // The posts leg set — includes the `visible` leg that pages lack (no `visible` column on pages).
@@ -52,24 +54,23 @@ export interface PostFilterFieldSources {
   authors: readonly { id: string; name: string }[]
 }
 
-export function buildPostFilterFields({
-  categories,
-  tags,
-  authors,
-}: PostFilterFieldSources): FilterFieldSpec<PostFilterFieldKey>[] {
+export function buildPostFilterFields(
+  { categories, tags, authors }: PostFilterFieldSources,
+  t: I18nValue['t'],
+): FilterFieldSpec<PostFilterFieldKey>[] {
   return [
     {
       key: 'status',
-      label: '状态',
+      label: t('admin.posts.filter.status'),
       icon: ListChecksIcon,
       kind: 'options',
-      options: POST_STATUS_OPTIONS,
+      options: POST_STATUS_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) })),
       // The status projection carries booleans; the string-typed patch is the common case and merges verbatim — the cast is exact.
       toQuery: (value) => unsafeCast<FilterQueryPatch>(deriveStatusFields(unsafeCast<PostStatusFilter>(value))),
     },
     {
       key: 'category',
-      label: '分类',
+      label: t('admin.posts.filter.category'),
       icon: FolderIcon,
       kind: 'options',
       options: categories.map((c) => ({ value: c.id, label: c.name })),
@@ -77,18 +78,18 @@ export function buildPostFilterFields({
     },
     {
       key: 'tag',
-      label: '标签',
+      label: t('admin.posts.filter.tag'),
       icon: TagsIcon,
       kind: 'options',
       options: tags.map((name) => ({ value: name, label: name })),
       searchable: true,
-      searchPlaceholder: '搜索标签…',
-      searchEmptyMessage: '无匹配标签',
+      searchPlaceholder: t('admin.posts.filter.searchTags'),
+      searchEmptyMessage: t('admin.posts.filter.noTags'),
       toQuery: (value) => ({ tag: value }),
     },
     {
       key: 'author',
-      label: '作者',
+      label: t('admin.posts.filter.author'),
       icon: UserIcon,
       kind: 'options',
       options: authors.map((u) => ({ value: u.id, label: u.name })),
@@ -102,7 +103,7 @@ const URL_FILTER_FIELDS = ['status', 'category', 'tag'] as const
 
 /** Seed pills from the URL (dashboard / sidebar / tag / category deep links);
  *  unknown or `all` statuses seed nothing — absence IS the unfiltered state. */
-export function postFiltersFromSearch(search: string): ActiveFilter<PostFilterFieldKey>[] {
+export function postFiltersFromSearch(search: string, t: I18nValue['t']): ActiveFilter<PostFilterFieldKey>[] {
   const params = new URLSearchParams(search)
   const pills: ActiveFilter<PostFilterFieldKey>[] = []
   const status = params.get('status')
@@ -117,7 +118,10 @@ export function postFiltersFromSearch(search: string): ActiveFilter<PostFilterFi
     pills.push({
       field: 'status',
       value: normalizedStatus,
-      label: POST_STATUS_OPTIONS.find((o) => o.value === normalizedStatus)?.label ?? normalizedStatus,
+      label: (() => {
+        const labelId = POST_STATUS_OPTIONS.find((o) => o.value === normalizedStatus)?.labelId
+        return labelId ? t(labelId) : normalizedStatus
+      })(),
     })
   }
   const category = params.get('category')
@@ -138,8 +142,9 @@ export function syncPostFiltersFromUrl(
   filters: ActiveFilter<PostFilterFieldKey>[],
   dispatch: (action: FilterPillsAction<PostFilterFieldKey>) => void,
   search: string,
+  t: I18nValue['t'],
 ): void {
-  const seeded = postFiltersFromSearch(search)
+  const seeded = postFiltersFromSearch(search, t)
   for (const field of URL_FILTER_FIELDS) {
     const next = seeded.find((f) => f.field === field)
     const current = filters.find((f) => f.field === field)

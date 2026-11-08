@@ -48,6 +48,34 @@ const SCAN_ROOTS = [
   'src/routes/admin/settings',
   'src/routes/admin/layout.tsx',
   'src/ui/components',
+  // Step 4e: the business admin surface, the notifications drawer and the
+  // remaining user-facing client modules (the editor family is 4f).
+  'src/routes/admin',
+  'src/ui/admin/analytics',
+  'src/ui/admin/audit',
+  'src/ui/admin/categories',
+  'src/ui/admin/comments',
+  'src/ui/admin/dashboard',
+  'src/ui/admin/fonts',
+  'src/ui/admin/friends',
+  'src/ui/admin/images',
+  'src/ui/admin/library',
+  'src/ui/admin/musics',
+  'src/ui/admin/my',
+  'src/ui/admin/pages',
+  'src/ui/admin/posts',
+  'src/ui/admin/sessions',
+  'src/ui/admin/shared',
+  'src/ui/admin/tags',
+  'src/ui/admin/tasks',
+  'src/ui/admin/users',
+  'src/ui/admin/webmentions',
+  'src/ui/admin/welcome',
+  'src/ui/shared',
+  'src/client/hooks',
+  'src/client/lib',
+  'src/client/components',
+  'src/client/api',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -82,6 +110,20 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/ui/admin/shell/AdminSearchDialog.tsx', rules: ['jsx-text'], text: 'ESC' },
   { path: 'src/ui/admin/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'v' },
   { path: 'src/ui/admin/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'GitHub' },
+  // Step 4e: technical tokens on the business admin surface — protocol names,
+  // URL prefixes, field identifiers, example URLs and keyboard keys.
+  { path: 'src/ui/admin/analytics/LocationsMap.tsx', rules: ['jsx-text'], text: 'IP Geolocation by DB-IP' },
+  { path: 'src/ui/admin/analytics/PostAnalyticsView.tsx', rules: ['jsx-text'], text: '/posts/' },
+  { path: 'src/ui/admin/categories/CategoryRow.tsx', rules: ['jsx-text'], text: '/cats/' },
+  { path: 'src/ui/admin/comments/EditUserDialog.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  { path: 'src/ui/admin/images/ImageDetailDialog.tsx', rules: ['jsx-text'], text: '×' },
+  { path: 'src/ui/admin/musics/MusicDetailView.tsx', rules: ['jsx-text'], text: 'playerId' },
+  { path: 'src/ui/admin/musics/MusicDetailView.tsx', rules: ['jsx-text'], text: 'sourceId' },
+  { path: 'src/ui/admin/my/MyProfileView.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  { path: 'src/ui/admin/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'Ctrl' },
+  { path: 'src/ui/admin/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'K' },
+  { path: 'src/ui/admin/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
+  { path: 'src/ui/admin/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -113,6 +155,16 @@ describe('production sources', () => {
         'src/ui/admin/settings/StorageCards.tsx',
         'src/ui/admin/shell/AdminSearchDialog.tsx',
         'src/ui/admin/shell/VersionDialog.tsx',
+        'src/ui/admin/analytics/LocationsMap.tsx',
+        'src/ui/admin/analytics/PostAnalyticsView.tsx',
+        'src/ui/admin/categories/CategoryRow.tsx',
+        'src/ui/admin/comments/EditUserDialog.tsx',
+        'src/ui/admin/images/ImageDetailDialog.tsx',
+        'src/ui/admin/musics/MusicDetailView.tsx',
+        'src/ui/admin/my/MyProfileView.tsx',
+        'src/ui/admin/shared/SearchShortcutHint.tsx',
+        'src/ui/admin/users/UserDetailView.tsx',
+        'src/ui/admin/users/UserEditForm.tsx',
       ]),
     )
   })

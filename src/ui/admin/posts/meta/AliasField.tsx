@@ -7,6 +7,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface AliasFieldProps {
   values: string[]
@@ -15,6 +16,7 @@ export interface AliasFieldProps {
 }
 
 export function AliasField({ values, onChange, disabled }: AliasFieldProps) {
+  const { t } = useI18n()
   const [input, setInput] = useState('')
 
   const addAlias = useCallback(
@@ -24,13 +26,13 @@ export function AliasField({ values, onChange, disabled }: AliasFieldProps) {
         return
       }
       if (!DERIVED_SLUG_PATTERN.test(slug)) {
-        toast.error('别名只能包含小写字母、数字和连字符，且不能以连字符开头或结尾。')
+        toast.error(t('admin.posts.meta.aliasInvalid'))
         return
       }
       onChange([...values, slug])
       setInput('')
     },
-    [values, onChange],
+    [values, onChange, t],
   )
 
   const removeAlias = useCallback(
@@ -42,7 +44,7 @@ export function AliasField({ values, onChange, disabled }: AliasFieldProps) {
 
   return (
     <div className="grid gap-2">
-      <Label>别名</Label>
+      <Label>{t('admin.posts.meta.alias')}</Label>
       <div className="flex flex-wrap gap-1.5">
         {values.map((alias) => (
           <Badge key={alias} variant="outline" className="gap-1 pr-1">
@@ -52,7 +54,7 @@ export function AliasField({ values, onChange, disabled }: AliasFieldProps) {
               onClick={() => removeAlias(alias)}
               disabled={disabled}
               className="rounded-full p-0.5 hover:bg-muted disabled:opacity-50"
-              aria-label={`移除别名 ${alias}`}
+              aria-label={t('admin.posts.meta.aliasRemoveAria', { alias })}
             >
               <XIcon className="size-3" />
             </button>
@@ -70,7 +72,7 @@ export function AliasField({ values, onChange, disabled }: AliasFieldProps) {
             }
           }}
           disabled={disabled}
-          placeholder="输入别名 slug，按回车添加"
+          placeholder={t('admin.posts.meta.aliasPlaceholder')}
           className="flex-1"
         />
         <Button
@@ -80,12 +82,10 @@ export function AliasField({ values, onChange, disabled }: AliasFieldProps) {
           onClick={() => addAlias(input)}
           disabled={disabled || input.trim() === ''}
         >
-          添加
+          {t('admin.posts.meta.aliasAdd')}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        别名会生成额外的访问路径 /posts/别名。只能包含小写字母、数字和连字符。
-      </p>
+      <p className="text-xs text-muted-foreground">{t('admin.posts.meta.aliasHint')}</p>
     </div>
   )
 }

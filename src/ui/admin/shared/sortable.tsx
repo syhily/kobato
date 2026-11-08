@@ -13,6 +13,8 @@ import { sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVerticalIcon } from 'lucide-react'
 
+import { useI18n } from '@/ui/lib/I18nProvider'
+
 // Shared chrome for the admin's @dnd-kit sortable lists: sensors, drag-end
 // plumbing, and row scaffolding — lists keep their own row contents and
 // container styling.
@@ -87,13 +89,14 @@ export function useSortableRow(options: {
 
 /** The grip button every sortable row leads with. */
 export function SortableDragHandle({ attributes, listeners }: SortableDragHandleProps) {
+  const { t } = useI18n()
   return (
     <button
       type="button"
       {...attributes}
       {...listeners}
       className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-      aria-label="拖拽排序"
+      aria-label={t('admin.shared.filter.dragSort')}
     >
       <GripVerticalIcon className="size-4" />
     </button>

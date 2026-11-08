@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
+import { tZhCN } from '#/_helpers/i18n'
 import {
   DEFAULT_TEXT_OPERATOR,
   isTextFilterOperator,
   parseTextFilter,
   TEXT_FILTER_OPERATORS,
-  textFilterLabel,
+  textFilterLabel as textFilterLabelBase,
 } from '@/ui/admin/comments/filter-fields'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
@@ -13,8 +14,12 @@ import {
   parseSingleDateFilter,
   resolveSingleDateFilterBounds,
   SINGLE_DATE_FILTER_OPERATORS,
-  singleDateFilterLabel,
+  singleDateFilterLabel as singleDateFilterLabelBase,
 } from '@/ui/admin/shared/date-filter'
+
+const textFilterLabel = (value: Parameters<typeof textFilterLabelBase>[0]) => textFilterLabelBase(value, tZhCN)
+const singleDateFilterLabel = (value: Parameters<typeof singleDateFilterLabelBase>[0]) =>
+  singleDateFilterLabelBase(value, tZhCN)
 
 describe('parseSingleDateFilter', () => {
   it('returns null for undefined or empty input', () => {

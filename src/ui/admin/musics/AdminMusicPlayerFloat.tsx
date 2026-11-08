@@ -7,6 +7,7 @@ import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
 import { LazyAnimatePresence, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 import { Image } from '@/ui/public/widgets/Image'
 
@@ -48,6 +49,7 @@ function savePosition(pos: PlayerPosition) {
 }
 
 export function AdminMusicPlayerFloat() {
+  const { t } = useI18n()
   const location = useLocation()
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const isMusicPage = location.pathname.startsWith('/admin/library/music')
@@ -207,7 +209,7 @@ export function AdminMusicPlayerFloat() {
               onMouseDown={stopPropagation}
               onTouchStart={stopPropagation}
               className="ml-1 shrink-0 text-ink-3 transition-colors hover:text-ink-1"
-              aria-label={isPlaying ? '暂停' : '播放'}
+              aria-label={isPlaying ? t('music.pause') : t('music.play')}
             >
               {isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
             </button>
@@ -218,7 +220,7 @@ export function AdminMusicPlayerFloat() {
               onMouseDown={stopPropagation}
               onTouchStart={stopPropagation}
               className="shrink-0 text-ink-4 transition-colors hover:text-ink-1"
-              aria-label="展开播放器"
+              aria-label={t('music.expandPlayer')}
             >
               <ChevronUp className="size-4" />
             </button>
@@ -237,7 +239,7 @@ export function AdminMusicPlayerFloat() {
           >
             {/* Header */}
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-ink-4">正在播放</span>
+              <span className="text-xs font-medium text-ink-4">{t('music.nowPlaying')}</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -245,7 +247,7 @@ export function AdminMusicPlayerFloat() {
                   onMouseDown={stopPropagation}
                   onTouchStart={stopPropagation}
                   className="text-ink-4 transition-colors hover:text-ink-1"
-                  aria-label="收起播放器"
+                  aria-label={t('music.collapsePlayer')}
                 >
                   <ChevronDown className="size-4" />
                 </button>
@@ -255,7 +257,7 @@ export function AdminMusicPlayerFloat() {
                   onMouseDown={stopPropagation}
                   onTouchStart={stopPropagation}
                   className="text-ink-4 transition-colors hover:text-ink-1"
-                  aria-label="关闭播放器"
+                  aria-label={t('music.closePlayer')}
                 >
                   <X className="size-4" />
                 </button>
@@ -291,7 +293,7 @@ export function AdminMusicPlayerFloat() {
                 onTouchStart={stopPropagation}
                 disabled={currentIndex <= 0}
                 className="text-ink-3 transition-colors hover:text-ink-1 disabled:opacity-30"
-                aria-label="上一首"
+                aria-label={t('music.previous')}
               >
                 <SkipBack className="size-5 fill-current" />
               </button>
@@ -302,7 +304,7 @@ export function AdminMusicPlayerFloat() {
                 onTouchStart={stopPropagation}
                 className="flex size-12 items-center justify-center rounded-full text-primary-foreground transition-transform hover:scale-105"
                 style={accentStyle}
-                aria-label={isPlaying ? '暂停' : '播放'}
+                aria-label={isPlaying ? t('music.pause') : t('music.play')}
               >
                 {isPlaying ? <Pause className="size-6 fill-current" /> : <Play className="size-6 fill-current" />}
               </button>
@@ -313,7 +315,7 @@ export function AdminMusicPlayerFloat() {
                 onTouchStart={stopPropagation}
                 disabled={currentIndex >= playlist.length - 1}
                 className="text-ink-3 transition-colors hover:text-ink-1 disabled:opacity-30"
-                aria-label="下一首"
+                aria-label={t('music.next')}
               >
                 <SkipForward className="size-5 fill-current" />
               </button>
@@ -328,7 +330,7 @@ export function AdminMusicPlayerFloat() {
                 onChange={seek}
                 accent={accent}
                 className="flex-1"
-                ariaLabel="播放进度"
+                ariaLabel={t('music.progressAria')}
               />
               <span className="w-9 text-nano text-ink-4">{formatTime(duration)}</span>
             </div>
@@ -341,7 +343,7 @@ export function AdminMusicPlayerFloat() {
                 onMouseDown={stopPropagation}
                 onTouchStart={stopPropagation}
                 className="text-ink-3 transition-colors hover:text-ink-1"
-                aria-label={muted ? '取消静音' : '静音'}
+                aria-label={muted ? t('music.unmute') : t('music.mute')}
               >
                 {muted || volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
               </button>
@@ -351,7 +353,7 @@ export function AdminMusicPlayerFloat() {
                 onChange={setVolume}
                 accent={accent}
                 className="flex-1"
-                ariaLabel="音量"
+                ariaLabel={t('music.volumeAria')}
               />
             </div>
           </LazyMotionDiv>

@@ -5,6 +5,7 @@ import type { MetricRow, MetricType } from '@/shared/contracts/analytics'
 import { MetricRows } from '@/ui/admin/analytics/MetricRows'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Full-set modal behind the card footer's 详情 button — same row rendering
 // as the card, scrollable up to the 500-row fetch limit (Slite's
@@ -20,12 +21,13 @@ export interface MetricDetailsDialogProps {
 }
 
 export function MetricDetailsDialog({ title, rows, total, type, onSelect }: MetricDetailsDialogProps) {
+  const { t } = useI18n()
   return (
     <Dialog>
       <DialogTrigger
         render={
           <Button type="button" variant="link" className="w-full">
-            <Maximize2Icon data-icon aria-hidden /> 详情
+            <Maximize2Icon data-icon aria-hidden /> {t('admin.analytics.metrics.details')}
           </Button>
         }
       />

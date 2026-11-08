@@ -64,7 +64,7 @@ export function ImagesView() {
     mutationFn: (id: string) => orpc.admin.images.delete({ id }),
     onSuccess: () => {
       setSelectedImage(null)
-      toast.success('图片已删除')
+      toast.success(t('admin.images.deleted'))
       invalidateList()
     },
     onError: onMutationError('admin.toast.imageDeleteFailed', t),
@@ -75,7 +75,7 @@ export function ImagesView() {
       orpc.admin.images.updateNote({ id: vars.id, note: vars.note }),
     onSuccess: (payload) => {
       setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
-      toast.success('备注已更新')
+      toast.success(t('admin.images.noteUpdated'))
       invalidateList()
     },
     onError: onMutationError('admin.toast.imageNoteUpdateFailed', t),
@@ -87,7 +87,7 @@ export function ImagesView() {
     mutationFn: (id: string) => orpc.admin.images.recalculateThumbhash({ id }),
     onSuccess: (payload) => {
       setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
-      toast.success('缩略图已重新计算')
+      toast.success(t('admin.images.thumbhashUpdated'))
       invalidateList()
     },
     onError: onMutationError('admin.toast.thumbnailRebuildFailed', t),
@@ -144,9 +144,11 @@ export function ImagesView() {
   const onDelete = useCallback(
     (image: AdminImageDto) => {
       setConfirm({
-        title: `删除图片「${image.storagePath.split('/').pop() ?? image.storagePath}」？`,
-        description: '此操作会从 S3 删除原始对象，并把元数据标记为软删除。引用该图片的页面将出现 404。',
-        actionLabel: '删除',
+        title: t('admin.images.deleteTitle', {
+          name: image.storagePath.split('/').pop() ?? image.storagePath,
+        }),
+        description: t('admin.images.deleteBody'),
+        actionLabel: t('common.action.delete'),
         destructive: true,
         onConfirm: () => {
           deleteMutation.mutate(image.id)
@@ -154,7 +156,7 @@ export function ImagesView() {
         },
       })
     },
-    [deleteMutation],
+    [deleteMutation, t],
   )
 
   const onRecalculateThumbhash = useCallback(
@@ -167,9 +169,12 @@ export function ImagesView() {
   return (
     <>
       <AdminListPage>
-        <AdminListPage.Header title="图片管理" description={`共 ${total} 条。删除时同步移除 S3 中的原始对象。`}>
+        <AdminListPage.Header
+          title={t('admin.images.title')}
+          description={t('admin.images.description', { count: total })}
+        >
           <Button type="button" onClick={() => setUploadOpen(true)}>
-            <PlusIcon /> 上传图片
+            <PlusIcon /> {t('admin.images.upload')}
           </Button>
         </AdminListPage.Header>
 
@@ -190,7 +195,7 @@ export function ImagesView() {
                   <EmptyMedia variant="icon">
                     <ImageOffIcon />
                   </EmptyMedia>
-                  <EmptyTitle>未找到图片</EmptyTitle>
+                  <EmptyTitle>{t('admin.images.empty')}</EmptyTitle>
                 </EmptyHeader>
               </Empty>
             </Card>
@@ -208,11 +213,11 @@ export function ImagesView() {
                 {isFetchingNextPage && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="size-4 animate-spin rounded-full border-2 border-muted border-t-primary" />
-                    加载中…
+                    {t('common.state.loading')}
                   </div>
                 )}
                 {!hasNextPage && allImages.length > 0 && (
-                  <p className="text-sm text-muted-foreground">已加载全部 {total} 张图片</p>
+                  <p className="text-sm text-muted-foreground">{t('admin.images.allLoaded', { count: total })}</p>
                 )}
               </div>
             </>

@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
+import { tZhCN } from '#/_helpers/i18n'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
-  dateFilterLabel,
+  dateFilterLabel as dateFilterLabelBase,
   isSingleDateFilterOperator,
   parseDateFilter,
   parseSingleDateFilter,
   resolveSingleDateFilterBounds,
   SINGLE_DATE_FILTER_OPERATORS,
-  singleDateFilterLabel,
+  singleDateFilterLabel as singleDateFilterLabelBase,
 } from '@/ui/admin/shared/date-filter'
+
+const dateFilterLabel = (value: Parameters<typeof dateFilterLabelBase>[0]) => dateFilterLabelBase(value, tZhCN)
+const singleDateFilterLabel = (value: Parameters<typeof singleDateFilterLabelBase>[0]) =>
+  singleDateFilterLabelBase(value, tZhCN)
 
 describe('parseDateFilter', () => {
   it('returns null for empty string', () => {

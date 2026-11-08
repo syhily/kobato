@@ -46,14 +46,14 @@ export function CategoriesView() {
   const deleteMutation = useMutation({
     ...orpcQuery.admin.categories.delete.mutationOptions(),
     onSuccess: () => {
-      toast.success('已删除分类')
+      toast.success(t('admin.categories.deleted'))
       invalidateList()
     },
     onError: (error) => {
       setConfirm({
-        title: '无法删除分类',
+        title: t('admin.categories.deleteBlockedTitle'),
         description: error.message,
-        actionLabel: '我知道了',
+        actionLabel: t('admin.categories.acknowledge'),
         destructive: false,
         onConfirm: () => undefined,
       })
@@ -78,9 +78,9 @@ export function CategoriesView() {
     onSuccess: invalidateList,
     onError: (error) => {
       setConfirm({
-        title: '排序保存失败',
-        description: `${error.message}。已重新加载最新顺序。`,
-        actionLabel: '我知道了',
+        title: t('admin.categories.reorderFailedTitle'),
+        description: t('admin.categories.reorderFailedBody', { message: error.message }),
+        actionLabel: t('admin.categories.acknowledge'),
         destructive: false,
         onConfirm: () => undefined,
       })
@@ -121,7 +121,7 @@ export function CategoriesView() {
         <AdminListPage.Header
           title={
             <>
-              分类管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
+              {t('admin.categories.title')} <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
         >
@@ -132,7 +132,7 @@ export function CategoriesView() {
               className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90"
             >
               <PlusIcon className="size-4" />
-              新增分类
+              {t('admin.categories.new')}
             </button>
           </div>
         </AdminListPage.Header>
@@ -146,7 +146,7 @@ export function CategoriesView() {
                 <EmptyMedia variant="icon">
                   <SearchIcon />
                 </EmptyMedia>
-                <EmptyTitle>未找到分类</EmptyTitle>
+                <EmptyTitle>{t('admin.categories.empty')}</EmptyTitle>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -166,10 +166,9 @@ export function CategoriesView() {
                       onEdit={() => setEditTarget(row)}
                       onDelete={() =>
                         setConfirm({
-                          title: `删除分类「${row.name}」？`,
-                          description:
-                            '此操作会从数据库直接删除该分类。如果仍有文章引用此分类，删除将被阻止；请先在引用文章中修改后再删除。',
-                          actionLabel: '删除',
+                          title: t('admin.categories.deleteTitle', { name: row.name }),
+                          description: t('admin.categories.deleteBody'),
+                          actionLabel: t('common.action.delete'),
                           destructive: true,
                           onConfirm: () => submitDelete({ id: row.id }),
                         })

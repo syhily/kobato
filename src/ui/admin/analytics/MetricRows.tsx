@@ -20,12 +20,16 @@ export interface MetricRowsProps {
 }
 
 export function MetricRows({ rows, total, type, onSelect, className }: MetricRowsProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   return (
     <div className={cn('w-full text-sm', className)}>
       <div className="flex justify-between border-b leading-[40px]">
-        <div className="px-4 text-left align-middle font-medium text-muted-foreground">名称</div>
-        <div className="px-4 text-right align-middle font-medium text-muted-foreground">数量</div>
+        <div className="px-4 text-left align-middle font-medium text-muted-foreground">
+          {t('admin.analytics.metrics.name')}
+        </div>
+        <div className="px-4 text-right align-middle font-medium text-muted-foreground">
+          {t('admin.analytics.metrics.count')}
+        </div>
       </div>
       <ul>
         {rows.map((row) => {
@@ -56,7 +60,7 @@ export function MetricRows({ rows, total, type, onSelect, className }: MetricRow
                 <span
                   className="mt-1 block h-2 w-full rounded-full bg-muted"
                   role="progressbar"
-                  aria-label={`数量占比: ${percent}%`}
+                  aria-label={t('admin.analytics.metrics.shareAria', { percent })}
                   aria-valuenow={percent}
                   aria-valuemin={0}
                   aria-valuemax={100}

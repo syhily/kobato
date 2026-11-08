@@ -8,6 +8,7 @@ import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface TagsFieldProps {
   values: string[]
@@ -16,6 +17,7 @@ export interface TagsFieldProps {
 }
 
 export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
+  const { t } = useI18n()
   const [input, setInput] = useState('')
   const [open, setOpen] = useState(false)
   const [highlighted, setHighlighted] = useState(0)
@@ -96,7 +98,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
 
   return (
     <div className="grid gap-2" ref={containerRef}>
-      <Label>标签</Label>
+      <Label>{t('admin.posts.meta.tags')}</Label>
       <div className="flex flex-wrap gap-1.5">
         {values.map((tag) => (
           <Badge key={tag} variant="secondary" className="gap-1 pr-1">
@@ -106,7 +108,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
               onClick={() => removeTag(tag)}
               disabled={disabled}
               className="rounded-full p-0.5 hover:bg-muted disabled:opacity-50"
-              aria-label={`移除标签 ${tag}`}
+              aria-label={t('admin.posts.meta.tagsRemoveAria', { tag })}
             >
               <XIcon className="size-3" />
             </button>
@@ -158,7 +160,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
               }
             }}
             disabled={disabled}
-            placeholder="输入标签名称，按回车添加"
+            placeholder={t('admin.posts.meta.tagsPlaceholder')}
             className="w-full"
             autoComplete="off"
           />
@@ -192,13 +194,12 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
           onClick={() => addTag(input)}
           disabled={disabled || input.trim() === ''}
         >
-          添加
+          {t('admin.posts.meta.tagsAdd')}
         </Button>
       </div>
       {unknownTags.length > 0 && (
         <p className="text-xs text-status-warn-fg">
-          警告：以下标签尚未在系统中创建：{unknownTags.join('、')}
-          。保存前请确认，或前往标签管理新建。
+          {t('admin.posts.meta.tagsUnknown', { tags: unknownTags.join(', ') })}
         </p>
       )}
     </div>

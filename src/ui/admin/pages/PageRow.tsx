@@ -7,7 +7,7 @@ import type { AppLocale } from '@/shared/i18n/locales'
 import { formatDate } from '@/shared/i18n/format'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { useI18n } from '@/ui/lib/I18nProvider'
+import { type I18nValue, useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 interface PageRowProps {
@@ -25,16 +25,17 @@ function formatPageDate(page: AdminPageDto, options: { locale: AppLocale; timeZo
   })
 }
 
-function formatPageDateLabel(page: AdminPageDto): string {
-  return page.published ? '发布于' : '更新于'
+function formatPageDateLabel(page: AdminPageDto, t: I18nValue['t']): string {
+  return page.published ? t('admin.content.publishedAt') : t('admin.content.updatedAt')
 }
 
 function PageStatusText({ page }: { page: AdminPageDto }) {
+  const { t } = useI18n()
   if (page.deletedAt !== null) {
     return (
       <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-destructive">
         <span className="size-1.5 rounded-full bg-destructive" />
-        已删除
+        {t('admin.content.status.deleted')}
       </span>
     )
   }
@@ -42,7 +43,7 @@ function PageStatusText({ page }: { page: AdminPageDto }) {
     return (
       <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-pink-500">
         <span className="size-1.5 rounded-full bg-pink-500" />
-        草稿
+        {t('admin.content.status.draft')}
       </span>
     )
   }
@@ -50,19 +51,19 @@ function PageStatusText({ page }: { page: AdminPageDto }) {
     return (
       <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
         <span className="size-1.5 rounded-full bg-amber-600" />
-        仅草稿
+        {t('admin.content.status.draftOnly')}
       </span>
     )
   }
-  return <span className="text-(--text-admin-sm) text-muted-foreground">已发布</span>
+  return <span className="text-(--text-admin-sm) text-muted-foreground">{t('admin.content.status.published')}</span>
 }
 
 export function PageRow({ page }: PageRowProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { timeZone } = useSiteIdentity()
   const isDeleted = page.deletedAt !== null
 
-  const dateText = `${formatPageDateLabel(page)} ${formatPageDate(page, { locale, timeZone })}`
+  const dateText = `${formatPageDateLabel(page, t)} ${formatPageDate(page, { locale, timeZone })}`
 
   return (
     <div
@@ -121,7 +122,7 @@ export function PageRow({ page }: PageRowProps) {
       <Link
         to={`/editor/page/${page.id}`}
         className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-        title="编辑"
+        title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />
       </Link>

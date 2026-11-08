@@ -57,7 +57,7 @@ export function AddMusicView() {
   const addMutation = useMutation({
     ...orpcQuery.admin.music.add.mutationOptions(),
     onSuccess: () => {
-      toast.success('音乐已添加')
+      toast.success(t('admin.musics.toastAdded'))
       setAddingSourceId(null)
       // The library hero is staleTime: Infinity — invalidate or it shows the pre-add library all session.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
@@ -136,13 +136,13 @@ export function AddMusicView() {
           void navigate('/admin/library/music')
         }}
         className="absolute top-2 right-0 z-40 flex size-10 items-center justify-center rounded-full bg-surface-dim/80 text-ink-3 backdrop-blur-sm transition-all hover:scale-110 hover:bg-surface hover:text-ink-1 active:scale-95 lg:top-4"
-        aria-label="关闭"
+        aria-label={t('common.action.close')}
       >
         <X className="size-5" />
       </button>
 
       {/* Hero */}
-      <MusicLibraryHero musics={libraryMusics} total={libraryTotal} title="添加音乐">
+      <MusicLibraryHero musics={libraryMusics} total={libraryTotal} title={t('admin.musics.add')}>
         <LazyMotionDiv
           className="mx-auto flex max-w-sm items-center gap-2"
           initial={{ opacity: 0, y: 16 }}
@@ -162,8 +162,8 @@ export function AddMusicView() {
                 type="text"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                placeholder="搜索歌曲、艺人、专辑..."
-                aria-label="搜索音乐"
+                placeholder={t('admin.musics.search.placeholder')}
+                aria-label={t('admin.musics.search.aria')}
                 className="h-10 w-full rounded-full bg-surface-dim py-2 pr-10 pl-10 text-sm text-ink-1 transition-colors outline-none placeholder:text-ink-4 focus:bg-surface sm:w-full"
               />
               {isSearching ? (
@@ -184,10 +184,10 @@ export function AddMusicView() {
           </form>
           <div className="flex shrink-0 items-center gap-2">
             <Label htmlFor="add-music-source-full" className="text-xs whitespace-nowrap text-white/80">
-              来源
+              {t('admin.musics.addDialog.source')}
             </Label>
             <Select
-              items={SOURCE_OPTIONS}
+              items={SOURCE_OPTIONS.map((item) => ({ value: item.value, label: t(item.labelId) }))}
               value={source}
               onValueChange={(value) => setSource((value ?? 'netease') as MetingSource)}
             >
@@ -195,7 +195,7 @@ export function AddMusicView() {
               <SelectContent>
                 {SOURCE_OPTIONS.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
-                    {item.label}
+                    {t(item.labelId)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -218,8 +218,8 @@ export function AddMusicView() {
           <GridSkeleton />
         ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-ink-4">
-            <p className="text-lg font-medium">输入关键词搜索音乐</p>
-            <p className="mt-1 text-sm">支持歌曲名称、艺人、专辑搜索</p>
+            <p className="text-lg font-medium">{t('admin.musics.search.emptyTitle')}</p>
+            <p className="mt-1 text-sm">{t('admin.musics.search.emptyHint')}</p>
           </div>
         ) : (
           <>

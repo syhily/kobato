@@ -1,5 +1,7 @@
 import { LoaderIcon } from 'lucide-react'
 
+import { useI18n } from '@/ui/lib/I18nProvider'
+
 // Bottom status for admin infinite lists: spinner / exhausted line / nothing.
 export function AdminInfiniteListFooter({
   noun,
@@ -12,15 +14,16 @@ export function AdminInfiniteListFooter({
   hasNextPage: boolean
   isFetchingNextPage: boolean
 }) {
+  const { t } = useI18n()
   return (
     <div className="py-6 text-center text-sm text-muted-foreground">
       {isFetchingNextPage ? (
         <span className="inline-flex items-center gap-2">
           <LoaderIcon className="size-4 animate-spin" />
-          加载中…
+          {t('common.state.loading')}
         </span>
       ) : !hasNextPage && rowCount > 0 ? (
-        `已加载全部${noun}`
+        t('admin.shared.list.exhausted', { noun })
       ) : null}
     </div>
   )

@@ -62,10 +62,8 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>修改评论</DialogTitle>
-          <DialogDescription>
-            评论发表 30 分钟内修改将直接生效；超过 30 分钟的修改将自动进入待审核状态。
-          </DialogDescription>
+          <DialogTitle>{t('admin.my.edit.title')}</DialogTitle>
+          <DialogDescription>{t('admin.my.edit.description')}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -74,7 +72,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
               return
             }
             if (isCommentEditorStateBlank(body)) {
-              toast.error('评论内容不能为空')
+              toast.error(t('admin.my.edit.empty'))
               return
             }
             update.mutate({ commentId: target.id, body })
@@ -82,7 +80,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-2">
-            <Label htmlFor="my-edit-comment-content">评论内容</Label>
+            <Label htmlFor="my-edit-comment-content">{t('admin.my.edit.content')}</Label>
             <LazyCommentBodyEditor
               eager
               initialBody={initialBody}
@@ -93,10 +91,10 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={onClose}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={submitting} onMouseDown={(event) => event.preventDefault()}>
-              <SaveIcon data-icon /> {submitting ? '保存中…' : '保存'}
+              <SaveIcon data-icon /> {submitting ? t('admin.my.edit.saving') : t('common.action.save')}
             </Button>
           </DialogFooter>
         </form>

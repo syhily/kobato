@@ -59,7 +59,7 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
   const sendDirect = useMutation(
     orpcQuery.admin.notifications.sendDirect.mutationOptions({
       onSuccess: () => {
-        toast.success('私信已发送')
+        toast.success(t('notifications.compose.directSent'))
         void invalidate()
         reset()
         onOpenChange(false)
@@ -70,7 +70,7 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
   const sendBroadcast = useMutation(
     orpcQuery.admin.notifications.sendBroadcast.mutationOptions({
       onSuccess: () => {
-        toast.success('公告已发布')
+        toast.success(t('notifications.compose.broadcastSent'))
         void invalidate()
         reset()
         onOpenChange(false)
@@ -83,7 +83,7 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
   const submit = () => {
     if (mode === 'direct') {
       if (recipient === null) {
-        toast.error('请选择收件人')
+        toast.error(t('notifications.compose.recipientRequired'))
         return
       }
       sendDirect.mutate({ userId: recipient.id, title: title.trim(), body: body.trim() })
@@ -98,56 +98,60 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>写消息</DialogTitle>
-          <DialogDescription>给某位用户发私信，或向全站发布公告。</DialogDescription>
+          <DialogTitle>{t('notifications.compose.title')}</DialogTitle>
+          <DialogDescription>{t('notifications.compose.description')}</DialogDescription>
         </DialogHeader>
         <Tabs value={mode} onValueChange={(value) => isComposeMode(value) && setMode(value)}>
           <TabsList className="w-full">
             <TabsTrigger value="broadcast" className="flex-1">
-              公告
+              {t('notifications.compose.tab.broadcast')}
             </TabsTrigger>
             <TabsTrigger value="direct" className="flex-1">
-              私信
+              {t('notifications.compose.tab.direct')}
             </TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex flex-col gap-4">
           {mode === 'direct' ? <RecipientPicker value={recipient} onChange={setRecipient} /> : null}
           <div className="flex flex-col gap-2.5">
-            <Label htmlFor="compose-title">标题</Label>
+            <Label htmlFor="compose-title">{t('notifications.compose.titleLabel')}</Label>
             <Input
               id="compose-title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               maxLength={120}
-              placeholder="一句话说明主题"
+              placeholder={t('notifications.compose.titlePlaceholder')}
             />
           </div>
           <div className="flex flex-col gap-2.5">
-            <Label htmlFor="compose-body">内容</Label>
+            <Label htmlFor="compose-body">{t('notifications.compose.bodyLabel')}</Label>
             <Textarea
               id="compose-body"
               value={body}
               onChange={(event) => setBody(event.target.value)}
               rows={5}
               maxLength={5000}
-              placeholder="正文内容"
+              placeholder={t('notifications.compose.bodyPlaceholder')}
             />
           </div>
           {mode === 'broadcast' ? (
             <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm">
               <span>
-                允许回复
-                <span className="block text-xs text-muted-foreground">用户的回复会发送给全体管理员</span>
+                {t('notifications.compose.replyable')}
+                <span className="block text-xs text-muted-foreground">{t('notifications.compose.replyableHint')}</span>
               </span>
-              <Switch checked={replyable} onCheckedChange={setReplyable} aria-label="允许回复" />
+              <Switch
+                checked={replyable}
+                onCheckedChange={setReplyable}
+                aria-label={t('notifications.compose.replyable')}
+              />
             </div>
           ) : null}
         </div>
         <DialogFooter>
           <Button onClick={submit} disabled={!ready || pending}>
             {pending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-            {mode === 'direct' ? '发送私信' : '发布公告'}
+            {mode === 'direct' ? t('notifications.compose.sendDirect') : t('notifications.compose.sendBroadcast')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -156,6 +160,7 @@ export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotific
 }
 
 function RecipientPicker({ value, onChange }: { value: AdminUserDto | null; onChange: (user: AdminUserDto) => void }) {
+  const { t } = useI18n()
   const [q, setQ] = useState('')
   const [keyword, setKeyword] = useDebouncedSearch({ onChange: (value) => setQ(value) })
   const search = useQuery(
@@ -167,14 +172,14 @@ function RecipientPicker({ value, onChange }: { value: AdminUserDto | null; onCh
 
   return (
     <div className="flex flex-col gap-2.5">
-      <Label htmlFor="compose-recipient">收件人</Label>
+      <Label htmlFor="compose-recipient">{t('notifications.compose.recipient')}</Label>
       <div className="relative">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           id="compose-recipient"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          placeholder="搜索用户名或邮箱"
+          placeholder={t('notifications.compose.searchPlaceholder')}
           className="pl-8"
         />
       </div>
@@ -190,7 +195,11 @@ function RecipientPicker({ value, onChange }: { value: AdminUserDto | null; onCh
       <ul className="flex max-h-44 flex-col overflow-y-auto rounded-lg border">
         {users.length === 0 ? (
           <li className="px-3 py-4 text-center text-xs text-muted-foreground">
-            {search.isPending ? '搜索中…' : search.isError ? '搜索失败，请重试' : '没有匹配的用户'}
+            {search.isPending
+              ? t('notifications.compose.searching')
+              : search.isError
+                ? t('notifications.compose.searchFailed')
+                : t('notifications.compose.noUsers')}
           </li>
         ) : (
           users.map((user) => (

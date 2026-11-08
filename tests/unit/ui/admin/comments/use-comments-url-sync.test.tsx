@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { createMemoryRouter, RouterProvider, useSearchParams } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { tZhCN } from '#/_helpers/i18n'
 import { wrapWithI18n } from '#/_helpers/i18n-render'
 
 // The controller's list query and the pills' autocomplete queries hit the
@@ -36,9 +37,11 @@ vi.mock('@/client/api/client', () => ({
   },
 }))
 
-import { COMMENT_FILTER_FIELDS, type CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
+import { buildCommentFilterFields, type CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
 import { parseCommentFiltersFromSearchParams, useCommentsController } from '@/ui/admin/comments/useCommentsController'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
+
+const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
 type Pills = ReturnType<typeof useFilterPills<CommentFilterFieldKey>>
 type Controller = ReturnType<typeof useCommentsController>
@@ -50,7 +53,7 @@ type Sink = { current: { pills: Pills; controller: Controller } | null }
 function Harness({ sink }: { sink: Sink }) {
   // Mirror the route's mount seed: parse the shared URL once per mount.
   const [searchParams] = useSearchParams()
-  const [initial] = useState(() => parseCommentFiltersFromSearchParams(searchParams))
+  const [initial] = useState(() => parseCommentFiltersFromSearchParams(searchParams, tZhCN))
   const pills = useFilterPills({ fields: COMMENT_FILTER_FIELDS, initial })
   const controller = useCommentsController({
     filters: pills.filters,

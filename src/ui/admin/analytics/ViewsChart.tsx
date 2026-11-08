@@ -11,6 +11,7 @@ import { useAnalyticsQueryData } from '@/ui/admin/analytics/use-analytics-query'
 import { buildAnalyticsInput, type AnalyticsScope } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 
 // Views time series behind the hydration-safe chart gate (Slite's
@@ -71,9 +72,10 @@ export function ViewsChart({ className, scope }: ViewsChartProps) {
 // Static pre-chart placeholder — byte-identical between SSR, the first
 // client render, and the lazy-boundary fallback (React #418 rule).
 function ViewsChartSkeleton({ className }: { className?: string }) {
+  const { t } = useI18n()
   return (
     <div className={cn('relative aspect-4/1 w-full', className)} role="status" aria-busy="true">
-      <span className="sr-only">加载中</span>
+      <span className="sr-only">{t('common.state.loading')}</span>
       <div aria-hidden="true" className="absolute inset-0">
         <div className="absolute inset-y-2 right-2 left-6 overflow-hidden border-b border-l border-border">
           <div className="absolute top-1/3 w-full border-t border-border/60" />

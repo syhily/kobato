@@ -51,7 +51,7 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
   const registerFinishMutation = useMutation({
     ...orpcQuery.account.passkeyRegisterFinish.mutationOptions(),
     onSuccess: () => {
-      setRegisterMessage('Passkey 注册成功。')
+      setRegisterMessage(t('admin.my.passkey.registered'))
       void queryClient.invalidateQueries({ queryKey: orpcQuery.account.passkeyList.key() })
     },
   })
@@ -79,14 +79,14 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
         challenge: opts.challenge,
       })
     } catch (err) {
-      let message = 'Passkey 注册失败，请重试。'
+      let message = t('admin.my.passkey.registerFailed')
       if (err instanceof DOMException) {
         if (err.name === 'NotAllowedError') {
-          message = 'Passkey 注册被取消或超时。'
+          message = t('admin.my.passkey.cancelled')
         } else if (err.name === 'InvalidStateError') {
-          message = '该设备已注册 Passkey。'
+          message = t('admin.my.passkey.alreadyRegistered')
         } else if (err.name === 'SecurityError') {
-          message = 'Passkey 注册因安全原因被拒绝。'
+          message = t('admin.my.passkey.securityRejected')
         }
       } else if (err instanceof Error && err.message) {
         message = err.message
@@ -119,6 +119,7 @@ interface PasskeyManagementCardProps {
 }
 
 export function PasskeyManagementCard({ userId, passkeyEnabled }: PasskeyManagementCardProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
   const webAuthnSupported = useWebAuthnSupported()
@@ -132,28 +133,28 @@ export function PasskeyManagementCard({ userId, passkeyEnabled }: PasskeyManagem
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Passkey 管理</CardTitle>
-        <CardDescription>管理你的 Passkey 凭据；选择 Passkey 登陆请到上方「登陆方式」。</CardDescription>
+        <CardTitle>{t('admin.my.passkey.title')}</CardTitle>
+        <CardDescription>{t('admin.my.passkey.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {passkey.isLoading ? (
-          <p className="text-sm text-muted-foreground">加载中…</p>
+          <p className="text-sm text-muted-foreground">{t('common.state.loading')}</p>
         ) : passkey.isError ? (
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm text-destructive">Passkey 列表加载失败。</p>
+            <p className="text-sm text-destructive">{t('admin.my.passkey.loadFailed')}</p>
             <Button type="button" variant="outline" size="sm" onClick={() => void passkey.refetch()}>
-              重试
+              {t('common.action.retry')}
             </Button>
           </div>
         ) : passkey.credentials.length === 0 ? (
-          <p className="text-sm text-muted-foreground">尚未注册任何 Passkey。</p>
+          <p className="text-sm text-muted-foreground">{t('admin.my.passkey.empty')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {passkey.credentials.map((c) => (
               <li key={c.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
                 <div className="flex items-center gap-2">
                   <FingerprintIcon size={16} className="text-muted-foreground" />
-                  <span className="text-sm">{c.deviceName || '未命名设备'}</span>
+                  <span className="text-sm">{c.deviceName || t('admin.my.passkey.unnamedDevice')}</span>
                   <span className="text-xs text-muted-foreground">
                     {c.createdAt ? formatLocalDate(new Date(c.createdAt), DATE_FORMAT, config) : ''}
                   </span>
@@ -164,7 +165,7 @@ export function PasskeyManagementCard({ userId, passkeyEnabled }: PasskeyManagem
                   size="icon"
                   disabled={passkey.deletePending}
                   onClick={() => passkey.handleDelete(c.id)}
-                  aria-label="删除"
+                  aria-label={t('common.action.delete')}
                 >
                   <Trash2Icon size={14} className="text-destructive" />
                 </Button>
@@ -175,12 +176,12 @@ export function PasskeyManagementCard({ userId, passkeyEnabled }: PasskeyManagem
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex flex-1 flex-col gap-2">
-            <Label htmlFor="passkey-device-name">设备名称（可选）</Label>
+            <Label htmlFor="passkey-device-name">{t('admin.my.passkey.deviceName')}</Label>
             <Input
               id="passkey-device-name"
               value={deviceNameInput}
               onChange={(e) => setDeviceNameInput(e.target.value)}
-              placeholder={`设备 ${passkey.credentials.length + 1}`}
+              placeholder={t('admin.my.passkey.devicePlaceholder', { number: passkey.credentials.length + 1 })}
             />
           </div>
           <Button
@@ -188,11 +189,14 @@ export function PasskeyManagementCard({ userId, passkeyEnabled }: PasskeyManagem
             variant="outline"
             disabled={passkey.registerPending}
             onClick={() => {
-              void passkey.handleRegister(deviceNameInput.trim() || `设备 ${passkey.credentials.length + 1}`)
+              void passkey.handleRegister(
+                deviceNameInput.trim() ||
+                  t('admin.my.passkey.defaultDeviceName', { number: passkey.credentials.length + 1 }),
+              )
             }}
           >
             <FingerprintIcon data-icon />
-            {passkey.registerPending ? '注册中…' : '添加新设备'}
+            {passkey.registerPending ? t('admin.my.passkey.registering') : t('admin.my.passkey.addDevice')}
           </Button>
         </div>
         {!!passkey.registerError && <p className="text-sm text-destructive">{passkey.registerError}</p>}

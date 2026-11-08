@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import type { LucideIcon } from '@/ui/icons/types'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Per-card palette: soft status bg + matching fg icon, auto-flips in dark mode.
 const TONE_CLASSES = {
@@ -25,31 +26,32 @@ interface StatsGridProps {
 }
 
 export function StatsGrid({ stats }: StatsGridProps) {
+  const { t } = useI18n()
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        label="我的草稿"
+        label={t('admin.dashboard.stats.drafts')}
         value={stats.draftCount}
         href="/admin/posts?status=draft"
         icon={SquarePenIcon}
         tone="warn"
       />
       <StatCard
-        label="已发布文章"
+        label={t('admin.dashboard.stats.published')}
         value={stats.publishedCount}
         href="/admin/posts?status=published"
         icon={FileCheck2Icon}
         tone="success"
       />
       <StatCard
-        label="我的评论"
+        label={t('admin.dashboard.stats.myComments')}
         value={stats.myCommentsTotal}
         href="/admin/me/comments"
         icon={MessageSquareIcon}
         tone="info"
       />
       <StatCard
-        label="待审评论"
+        label={t('admin.dashboard.stats.pendingComments')}
         value={stats.myCommentsPending}
         href="/admin/me/comments?status=pending"
         emphasis={stats.myCommentsPending > 0}

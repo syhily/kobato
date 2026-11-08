@@ -12,6 +12,7 @@ import { type AnalyticsScope, type AnalyticsState } from '@/ui/admin/analytics/u
 import { Card } from '@/ui/components/card'
 import { Switch } from '@/ui/components/switch'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The full analytics dashboard body shared by the site-wide overview and the
 // per-post analytics shells (Slite's `analysis/Index.vue` + `metrics/Index.vue`
@@ -46,6 +47,7 @@ const GROUP_SPAN: Record<MetricGroup, string> = {
 }
 
 export function AnalyticsDashboard({ data, state, scope }: AnalyticsDashboardProps) {
+  const { t } = useI18n()
   return (
     <AnalyticsStateProvider state={state}>
       <Card className="px-4 py-3 shadow-none">
@@ -64,7 +66,7 @@ export function AnalyticsDashboard({ data, state, scope }: AnalyticsDashboardPro
                 onCheckedChange={(checked) => state.setIncludeUnknown(checked === true)}
               />
               <label htmlFor="analytics-include-unknown" className="cursor-pointer text-xs text-muted-foreground">
-                包含未知地区
+                {t('admin.analytics.includeUnknown')}
               </label>
             </div>
           </div>
@@ -76,7 +78,10 @@ export function AnalyticsDashboard({ data, state, scope }: AnalyticsDashboardPro
 
       <TrendTabs scope={scope} />
 
-      <section aria-label="详细分布" className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-6">
+      <section
+        aria-label={t('admin.analytics.breakdownAria')}
+        className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-6"
+      >
         <LocationsMap initial={data.initialMetrics.country} scope={scope} className="lg:col-span-8" />
         {METRIC_GROUPS.map((group) => (
           <MetricsGroup

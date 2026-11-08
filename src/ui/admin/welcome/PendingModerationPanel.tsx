@@ -5,6 +5,7 @@ import { Link } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AdminPendingItemDto } from '@/shared/contracts/comments'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { ListPendingDashboardOutput } from '@/shared/types/comments'
 
 import { orpc } from '@/client/api/client'
@@ -21,10 +22,11 @@ const ROW_DATE_FORMAT = 'LL-dd HH:mm'
 
 export interface PendingModerationPanelProps {
   initial: ListPendingDashboardOutput
-  emptyStateLine: string
+  /** Catalog id picked by the loader — resolved here so the server never renders copy. */
+  emptyStateLineId: UiMessageId
 }
 
-export function PendingModerationPanel({ initial, emptyStateLine }: PendingModerationPanelProps) {
+export function PendingModerationPanel({ initial, emptyStateLineId }: PendingModerationPanelProps) {
   const { t } = useI18n()
   const [offset, setOffset] = useState(0)
 
@@ -55,7 +57,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   const approveApi = useMutation({
     mutationFn: (vars: { commentId: string }) => orpc.admin.comments.approve({ commentId: vars.commentId }),
     onSuccess: () => {
-      toast.success('已通过该评论')
+      toast.success(t('admin.welcome.pending.approved'))
       refresh()
     },
     onError: onMutationError('admin.toast.operationFailedRefresh', t),
@@ -63,7 +65,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   const rejectApi = useMutation({
     mutationFn: (vars: { commentId: string }) => orpc.admin.comments.delete({ commentId: vars.commentId }),
     onSuccess: () => {
-      toast.success('已拒绝并删除该评论')
+      toast.success(t('admin.welcome.pending.rejected'))
       refresh()
     },
     onError: onMutationError('admin.toast.operationFailedRefresh', t),
@@ -71,7 +73,9 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   const approveDeletionApi = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
     onSuccess: (data) => {
-      toast.success(data ? '已处理该删除申请' : '已处理')
+      toast.success(
+        data ? t('admin.welcome.pending.deletionHandled') : t('admin.welcome.pending.deletionHandledGeneric'),
+      )
       refresh()
     },
     onError: onMutationError('admin.toast.operationFailedRefresh', t),
@@ -105,21 +109,21 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-lg font-medium">
-            待审评论{' '}
+            {t('admin.welcome.pending.title')}{' '}
             <span className="ml-1 text-base font-normal text-muted-foreground">
               · {data?.counts.all ?? initial.counts.all}
             </span>
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">等待审核与作者删除申请合并展示，按时间倒序。</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('admin.welcome.pending.description')}</p>
         </div>
         {/* Both header CTAs share the same ghost-button shape so "refresh"
             and "go to full moderation page" read as one inline action group. */}
         <div className="flex items-center gap-1">
           <Button type="button" variant="ghost" size="sm" onClick={refresh} disabled={anyMutationPending}>
-            <RefreshCwIcon data-icon /> <span className="hidden sm:inline">刷新</span>
+            <RefreshCwIcon data-icon /> <span className="hidden sm:inline">{t('admin.welcome.pending.refresh')}</span>
           </Button>
           <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/comments?status=pending" />}>
-            <span className="hidden sm:inline">进入评论管理</span> <ArrowRightIcon data-icon />
+            <span className="hidden sm:inline">{t('admin.welcome.pending.manage')}</span> <ArrowRightIcon data-icon />
           </Button>
         </div>
       </div>
@@ -128,9 +132,9 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
           available height so the inner `overflow-y-auto` actually engages. */}
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
         {data === undefined ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">加载中…</p>
+          <p className="py-10 text-center text-sm text-muted-foreground">{t('common.state.loading')}</p>
         ) : data.items.length === 0 ? (
-          <EmptyState line={emptyStateLine} />
+          <EmptyState line={t(emptyStateLineId)} />
         ) : (
           <ul className="flex flex-col divide-y divide-border">
             {data.items.map((item) => (
@@ -151,7 +155,11 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       {data !== undefined && data.total > PAGE_SIZE && (
         <div className="mt-3 flex shrink-0 items-center justify-between gap-3 text-sm text-muted-foreground">
           <span>
-            共 {data.total} 条 · 第 {currentPage} / {totalPages} 页
+            {t('admin.welcome.pending.pagination', {
+              total: data.total,
+              page: currentPage,
+              pages: totalPages,
+            })}
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -161,7 +169,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
               onClick={() => switchPage(Math.max(0, offset - PAGE_SIZE))}
               disabled={offset === 0 || anyMutationPending}
             >
-              上一页
+              {t('common.pagination.previous')}
             </Button>
             <Button
               type="button"
@@ -170,7 +178,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
               onClick={() => switchPage(offset + PAGE_SIZE)}
               disabled={!data.hasMore || anyMutationPending}
             >
-              下一页
+              {t('common.pagination.next')}
             </Button>
           </div>
         </div>
@@ -189,6 +197,7 @@ interface PendingRowProps {
 }
 
 function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, onRejectDeletion }: PendingRowProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const isDeletion = item.kind === 'deletion'
   const timestampIso = isDeletion ? (item.deleteRequestedAtIso ?? item.createdAtIso) : item.createdAtIso
@@ -203,11 +212,11 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
           <span className="truncate font-medium text-foreground">{item.authorName}</span>
           {isDeletion ? (
             <Badge variant="destructive" className="h-5 px-1.5 text-xs font-normal">
-              等待删除
+              {t('admin.welcome.pending.deletionBadge')}
             </Badge>
           ) : (
             <Badge variant="secondary" className="h-5 px-1.5 text-xs font-normal">
-              等待审核
+              {t('admin.welcome.pending.reviewBadge')}
             </Badge>
           )}
           {item.pagePermalink && item.pageTitle ? (
@@ -220,7 +229,7 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
           ) : (
             <>
               <span aria-hidden="true">·</span>
-              <span className="truncate">（目标已删除）</span>
+              <span className="truncate">{t('admin.welcome.pending.targetDeleted')}</span>
             </>
           )}
           {timestampLabel && (
@@ -233,7 +242,7 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
           )}
         </div>
         <p className="line-clamp-2 leading-snug break-words text-(--text-admin-base) text-foreground">
-          {item.excerpt || '（空评论）'}
+          {item.excerpt || t('admin.welcome.pending.emptyComment')}
         </p>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:flex-nowrap">
@@ -246,7 +255,7 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
               disabled={disabled}
               onClick={() => onApproveDeletion(item)}
             >
-              <Trash2Icon data-icon /> 同意删除
+              <Trash2Icon data-icon /> {t('admin.welcome.pending.approveDeletion')}
             </Button>
             <Button
               type="button"
@@ -256,16 +265,16 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
               disabled={disabled}
               onClick={() => onRejectDeletion(item)}
             >
-              <XIcon data-icon /> 拒绝删除
+              <XIcon data-icon /> {t('admin.welcome.pending.rejectDeletion')}
             </Button>
           </>
         ) : (
           <>
             <Button type="button" size="sm" disabled={disabled} onClick={() => onApprove(item)}>
-              <CheckIcon data-icon /> 通过评论
+              <CheckIcon data-icon /> {t('admin.welcome.pending.approve')}
             </Button>
             <Button type="button" size="sm" variant="destructive" disabled={disabled} onClick={() => onReject(item)}>
-              <Trash2Icon data-icon /> 拒绝评论
+              <Trash2Icon data-icon /> {t('admin.welcome.pending.reject')}
             </Button>
           </>
         )}

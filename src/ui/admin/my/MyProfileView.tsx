@@ -62,7 +62,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
   const profileMutation = useMutation({
     ...orpcQuery.account.updateProfile.mutationOptions(),
     onSuccess: () => {
-      setProfileMessage('已保存。')
+      setProfileMessage(t('admin.my.profile.saved'))
       // Re-run the route loader so avatar / stats pick up a name change without a reload.
       void revalidator.revalidate()
     },
@@ -82,7 +82,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
 
   return (
     <AdminListPage>
-      <AdminListPage.Header title="个人信息" description="查看与修改你自己的资料、徽章和密码。" />
+      <AdminListPage.Header title={t('admin.my.profile.title')} description={t('admin.my.profile.description')} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-1">
@@ -93,14 +93,14 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                 <AvatarFallback className="bg-muted text-lg font-semibold">{initial}</AvatarFallback>
               </Avatar>
               <div>
-                <div className="text-lg font-semibold">{user.name || '未命名'}</div>
+                <div className="text-lg font-semibold">{user.name || t('admin.my.profile.unnamed')}</div>
                 <div className="text-sm text-muted-foreground">{user.email}</div>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                {user.role === 'admin' && <Badge variant="secondary">管理员</Badge>}
-                {user.role === 'author' && <Badge variant="secondary">作者</Badge>}
-                {user.role === 'visitor' && <Badge variant="secondary">访客</Badge>}
-                {user.role === null && <Badge variant="outline">匿名</Badge>}
+                {user.role === 'admin' && <Badge variant="secondary">{t(ROLE_LABEL_KEYS.admin)}</Badge>}
+                {user.role === 'author' && <Badge variant="secondary">{t(ROLE_LABEL_KEYS.author)}</Badge>}
+                {user.role === 'visitor' && <Badge variant="secondary">{t(ROLE_LABEL_KEYS.visitor)}</Badge>}
+                {user.role === null && <Badge variant="outline">{t('common.role.anonymous')}</Badge>}
                 {user.badgeName && (
                   <Badge
                     className="border-transparent"
@@ -118,39 +118,39 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
 
           <Card>
             <CardHeader>
-              <CardTitle>统计信息</CardTitle>
-              <CardDescription>你的评论与账户活动。</CardDescription>
+              <CardTitle>{t('admin.my.profile.stats')}</CardTitle>
+              <CardDescription>{t('admin.my.profile.statsDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">评论总数</span>
+                <span className="text-muted-foreground">{t('admin.my.profile.commentCount')}</span>
                 <span className="font-medium">{counts.total}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">待审核</span>
+                <span className="text-muted-foreground">{t('admin.my.profile.pending')}</span>
                 <span className={cn('font-medium', counts.pending > 0 && 'text-destructive')}>{counts.pending}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">申请删除</span>
+                <span className="text-muted-foreground">{t('admin.my.profile.deleteRequested')}</span>
                 <span className={cn('font-medium', counts.deleteRequested > 0 && 'text-destructive')}>
                   {counts.deleteRequested}
                 </span>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between">
-                <span className="text-muted-foreground">注册时间</span>
+                <span className="text-muted-foreground">{t('admin.my.profile.registered')}</span>
                 <span>{user.createdAt ? formatLocalDate(new Date(user.createdAt), DATE_FORMAT, config) : '—'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">角色</span>
+                <span className="text-muted-foreground">{t('admin.my.profile.role')}</span>
                 <span>{roleLabelText}</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">最近 IP</span>
+                <span className="text-xs text-muted-foreground">{t('admin.my.profile.lastIp')}</span>
                 <span className="break-all">{maskIp(user.lastIp) ?? '—'}</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">最近 User-Agent</span>
+                <span className="text-xs text-muted-foreground">{t('admin.my.profile.lastUa')}</span>
                 <span className="text-xs break-all">{maskUa(user.lastUa) ?? '—'}</span>
               </div>
             </CardContent>
@@ -160,8 +160,8 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>编辑信息</CardTitle>
-              <CardDescription>修改后立即对你在前后台的展示生效。</CardDescription>
+              <CardTitle>{t('admin.my.profile.editTitle')}</CardTitle>
+              <CardDescription>{t('admin.my.profile.editDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <form
@@ -183,7 +183,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                 className="grid gap-4 sm:grid-cols-2"
               >
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="profile-name">用户名</Label>
+                  <Label htmlFor="profile-name">{t('admin.my.profile.name')}</Label>
                   <Input
                     id="profile-name"
                     type="text"
@@ -193,12 +193,12 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="profile-email">邮箱</Label>
+                  <Label htmlFor="profile-email">{t('admin.my.profile.email')}</Label>
                   <Input id="profile-email" type="email" value={user.email} disabled />
-                  <p className="text-xs text-muted-foreground">如需修改邮箱请联系管理员。</p>
+                  <p className="text-xs text-muted-foreground">{t('admin.my.profile.emailHint')}</p>
                 </div>
                 <div className="flex flex-col gap-2 sm:col-span-2">
-                  <Label htmlFor="profile-link">个人主页</Label>
+                  <Label htmlFor="profile-link">{t('admin.my.profile.link')}</Label>
                   <Input
                     id="profile-link"
                     type="url"
@@ -210,7 +210,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                 {canSetBadge && (
                   <>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="profile-badge-name">徽章名称</Label>
+                      <Label htmlFor="profile-badge-name">{t('admin.my.profile.badgeName')}</Label>
                       <Input
                         id="profile-badge-name"
                         type="text"
@@ -219,7 +219,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="profile-badge-color">徽章颜色</Label>
+                      <Label htmlFor="profile-badge-color">{t('admin.my.profile.badgeColor')}</Label>
                       <Input
                         id="profile-badge-color"
                         type="color"
@@ -236,7 +236,8 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                 )}
                 <div className="flex justify-end gap-2 sm:col-span-2">
                   <Button type="submit" disabled={profileMutation.isPending}>
-                    <SaveIcon data-icon /> {profileMutation.isPending ? '保存中…' : '保存'}
+                    <SaveIcon data-icon />{' '}
+                    {profileMutation.isPending ? t('admin.my.profile.saving') : t('common.action.save')}
                   </Button>
                 </div>
               </form>

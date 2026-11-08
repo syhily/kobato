@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect } from 'react'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function parseLrc(lrcInput?: string | null): [time: number, text: string][] {
   if (!lrcInput) {
@@ -43,6 +44,7 @@ export interface LyricsDisplayProps {
 }
 
 export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
+  const { t } = useI18n()
   const lines = useMemo(() => parseLrc(lrcText), [lrcText])
   const containerRef = useRef<HTMLDivElement>(null)
   const isUserScrollingRef = useRef(false)
@@ -146,7 +148,7 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
   if (!lrcText || lines.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-ink-4">
-        <p className="text-sm">暂无歌词</p>
+        <p className="text-sm">{t('admin.musics.lyrics.empty')}</p>
       </div>
     )
   }

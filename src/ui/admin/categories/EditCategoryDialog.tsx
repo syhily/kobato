@@ -21,6 +21,7 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface EditCategoryDialogProps {
   category: AdminCategoryDto | null | undefined
@@ -37,6 +38,7 @@ const EMPTY_DRAFT = {
 }
 
 export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryDialogProps) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [lastCategory, setLastCategory] = useState<typeof category>(category)
@@ -44,7 +46,7 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
   const upsertMutation = useMutation({
     ...orpcQuery.admin.categories.upsert.mutationOptions(),
     onSuccess: (payload) => {
-      toast.success('分类已保存')
+      toast.success(t('admin.categories.form.saved'))
       setErrorMessage(null)
       onSaved(payload.category)
     },
@@ -92,11 +94,11 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? '编辑分类' : '新增分类'}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? t('admin.categories.form.editTitle') : t('admin.categories.form.newTitle')}
+          </DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? '修改分类的展示信息；文章通过 id 关联分类，重命名后所有引用自动生效。'
-              : '填写新分类的名称、URL slug 与展示封面。'}
+            {isEditing ? t('admin.categories.form.editDescription') : t('admin.categories.form.newDescription')}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -116,7 +118,7 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
           className="grid items-start gap-4 sm:grid-cols-2"
         >
           <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="category-name">名称</Label>
+            <Label htmlFor="category-name">{t('admin.categories.form.name')}</Label>
             <Input
               id="category-name"
               type="text"
@@ -124,31 +126,27 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
               onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
               maxLength={20}
               required
-              placeholder="例：编程"
+              placeholder={t('admin.categories.form.namePlaceholder')}
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="category-slug">URL slug</Label>
+            <Label htmlFor="category-slug">{t('admin.categories.form.slug')}</Label>
             <Input
               id="category-slug"
               type="text"
               value={draft.slug}
               onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
               maxLength={80}
-              placeholder="留空将从名称推导（拼音）"
+              placeholder={t('admin.categories.form.slugPlaceholder')}
               pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
             />
-            <p className="text-xs text-muted-foreground">仅允许小写字母、数字、短横线；留空时按拼音从名称自动生成。</p>
+            <p className="text-xs text-muted-foreground">{t('admin.categories.form.slugHint')}</p>
           </div>
           <div className="sm:col-span-1">
             <CoverInputRow
-              label="封面图"
+              label={t('admin.categories.form.cover')}
               htmlFor="category-cover"
-              description={
-                slugChanged
-                  ? '注意：slug 已修改，新封面会写入新 slug 对应的 S3 对象。'
-                  : '裁剪、旋转、调整画质后上传到 images/categories/<slug>.jpg。'
-              }
+              description={slugChanged ? t('admin.categories.form.coverChanged') : t('admin.categories.form.coverHint')}
               value={draft.cover}
               onChange={(value) => setDraft((prev) => ({ ...prev, cover: value }))}
               uploadKind={slugSafe ? { kind: 'category', slug: slugForOg } : null}
@@ -157,9 +155,9 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
           </div>
           <div className="sm:col-span-1">
             <CoverInputRow
-              label="OG 图"
+              label={t('admin.categories.form.og')}
               htmlFor="category-og"
-              description="默认基于封面图自动生成对应的 OG 图"
+              description={t('admin.categories.form.ogHint')}
               value={draft.og}
               onChange={(value) => setDraft((prev) => ({ ...prev, og: value }))}
               uploadKind={slugSafe ? { kind: 'generic' } : null}
@@ -168,23 +166,28 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor="category-description">简介</Label>
+            <Label htmlFor="category-description">{t('admin.categories.form.description')}</Label>
             <Textarea
               id="category-description"
               value={draft.description}
               onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
               maxLength={999}
               rows={4}
-              placeholder="该分类的简介，将在 /cats/:slug 顶部渲染（支持 Markdown）"
+              placeholder={t('admin.categories.form.descriptionPlaceholder')}
             />
           </div>
           {errorMessage ? <p className="text-sm text-destructive sm:col-span-2">{errorMessage}</p> : null}
           <DialogFooter className="sm:col-span-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={isPending}>
-              <SaveIcon data-icon /> {isPending ? '保存中…' : isEditing ? '保存' : '创建'}
+              <SaveIcon data-icon />{' '}
+              {isPending
+                ? t('admin.categories.form.saving')
+                : isEditing
+                  ? t('common.action.save')
+                  : t('admin.categories.form.create')}
             </Button>
           </DialogFooter>
         </form>

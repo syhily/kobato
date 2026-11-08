@@ -94,3 +94,32 @@ describe('ui/admin/analytics/Heatmap keyboard navigation', () => {
     expect(document.activeElement).toBe(last)
   })
 })
+
+describe('ui/admin/analytics/Heatmap summary copy', () => {
+  beforeEach(() => {
+    control.query.data = CELLS
+    control.query.isFetching = false
+    control.query.isError = false
+  })
+
+  it('summarizes the metric total and peak in zh-CN', () => {
+    renderHeatmap()
+    const label = screen.getByRole('grid').getAttribute('aria-label') ?? ''
+    expect(label).toContain('每周访问热力图。访问量总计 17。')
+    expect(label).toContain('峰值出现在周一 1:00,访问量 9。')
+  })
+
+  it('summarizes the metric total and peak in en-US', () => {
+    render(
+      wrapWithI18n(
+        <AnalyticsStateProvider state={makeAnalyticsState()}>
+          <Heatmap metric="visits" />
+        </AnalyticsStateProvider>,
+        { locale: 'en-US' },
+      ),
+    )
+    const label = screen.getByRole('grid').getAttribute('aria-label') ?? ''
+    expect(label).toContain('Weekly visit heatmap. Visits total 17.')
+    expect(label).toContain('The peak is on Mon 1:00,Visits 9.')
+  })
+})

@@ -44,7 +44,7 @@ export function SessionSortSelect<T extends string>({ sort, options, onChange }:
           <span>{current === undefined ? sort.field : t(current.labelId)}</span>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-44 p-0">
-          <div className="border-b px-3 py-2 text-sm font-medium">排序</div>
+          <div className="border-b px-3 py-2 text-sm font-medium">{t('admin.sessions.sort')}</div>
           <div className="p-1">
             {options.map((option) => {
               const selected = sort.field === option.value
@@ -68,7 +68,7 @@ export function SessionSortSelect<T extends string>({ sort, options, onChange }:
       </Popover>
       <button
         type="button"
-        aria-label={sort.direction === 'asc' ? '升序' : '降序'}
+        aria-label={sort.direction === 'asc' ? t('admin.sessions.sortAsc') : t('admin.sessions.sortDesc')}
         className={cn(
           'flex h-9 w-9 items-center justify-center border-l border-border text-muted-foreground transition',
           'hover:bg-accent hover:text-foreground',

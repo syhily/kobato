@@ -115,3 +115,16 @@ describe('ui/admin/analytics/MetricName environment dimensions', () => {
     expect(renderMetric(<MetricName name="2.5x" type="dpr" />)).toContain('2.5x')
   })
 })
+
+describe('ui/admin/analytics/MetricName — en-US metric fallbacks', () => {
+  function renderMetricEn(node: ReactElement): string {
+    return renderToStaticMarkup(wrapWithI18n(node, { locale: 'en-US' }))
+  }
+
+  it('localizes empty names, direct traffic and the color scheme', () => {
+    expect(renderMetricEn(<MetricName name="" type="referer" />)).toContain('Direct')
+    expect(renderMetricEn(<MetricName name="" type="os" />)).toContain('Unknown')
+    expect(renderMetricEn(<MetricName name="dark" type="colorScheme" />)).toContain('Dark')
+    expect(renderMetricEn(<MetricName name="light" type="colorScheme" />)).toContain('Light')
+  })
+})

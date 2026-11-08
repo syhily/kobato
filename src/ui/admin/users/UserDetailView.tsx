@@ -11,6 +11,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
+import { ROLE_LABEL_KEYS } from '@/shared/utils/roles'
 import { idStr } from '@/shared/utils/tools'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { UserEditForm } from '@/ui/admin/users/UserEditForm'
@@ -22,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -39,6 +41,7 @@ export interface UserDetailViewProps {
 }
 
 export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled }: UserDetailViewProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const queryClient = useQueryClient()
 
@@ -73,10 +76,10 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
     return (
       <AdminListPage>
         <div className="flex flex-col items-center justify-center gap-2 py-32 text-muted-foreground">
-          <p className="text-lg text-foreground">加载失败</p>
-          <p className="text-sm">{userQuery.error?.message ?? '请稍后重试'}</p>
+          <p className="text-lg text-foreground">{t('admin.list.loadFailed')}</p>
+          <p className="text-sm">{userQuery.error?.message ?? t('admin.list.retryHint')}</p>
           <Button type="button" variant="outline" className="mt-4" onClick={() => void userQuery.refetch()}>
-            重试
+            {t('common.action.retry')}
           </Button>
         </div>
       </AdminListPage>
@@ -98,13 +101,13 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
             variant="ghost"
             size="icon"
             onClick={() => void navigate('/admin/security/users')}
-            aria-label="返回用户列表"
+            aria-label={t('admin.users.detail.back')}
           >
             <ArrowLeftIcon />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">用户详情</h1>
-            <p className="text-sm text-muted-foreground">查看与编辑该用户信息，并管理其评论。</p>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('admin.users.detail.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('admin.users.detail.description')}</p>
           </div>
         </div>
       </header>
@@ -122,18 +125,18 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
                 <div className="text-sm text-muted-foreground">{user.email}</div>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                {user.role === 'admin' && <Badge variant="secondary">管理员</Badge>}
-                {user.role === 'author' && <Badge variant="secondary">作者</Badge>}
-                {user.role === 'visitor' && <Badge variant="secondary">访客</Badge>}
-                {user.role === null && <Badge variant="outline">匿名</Badge>}
+                {user.role === 'admin' && <Badge variant="secondary">{t(ROLE_LABEL_KEYS.admin)}</Badge>}
+                {user.role === 'author' && <Badge variant="secondary">{t(ROLE_LABEL_KEYS.author)}</Badge>}
+                {user.role === 'visitor' && <Badge variant="secondary">{t(ROLE_LABEL_KEYS.visitor)}</Badge>}
+                {user.role === null && <Badge variant="outline">{t('common.role.anonymous')}</Badge>}
                 {user.deletedAt ? (
                   <Badge variant="outline" className="text-muted-foreground">
-                    已删除
+                    {t('admin.users.status.deleted')}
                   </Badge>
                 ) : user.isMuted ? (
-                  <Badge variant="destructive">已禁言</Badge>
+                  <Badge variant="destructive">{t('admin.users.status.muted')}</Badge>
                 ) : (
-                  <Badge variant="secondary">正常</Badge>
+                  <Badge variant="secondary">{t('admin.users.status.normal')}</Badge>
                 )}
                 {user.badgeName && (
                   <Badge
@@ -152,22 +155,22 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
 
           <Card>
             <CardHeader>
-              <CardTitle>统计信息</CardTitle>
-              <CardDescription>评论次数与最近活动。</CardDescription>
+              <CardTitle>{t('admin.users.detail.stats')}</CardTitle>
+              <CardDescription>{t('admin.users.detail.statsDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">评论总数</span>
+                <span className="text-muted-foreground">{t('admin.users.detail.commentCount')}</span>
                 <span className="font-medium">{user.commentCount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">待审核</span>
+                <span className="text-muted-foreground">{t('admin.users.detail.pending')}</span>
                 <span className={cn('font-medium', user.pendingCount > 0 && 'text-destructive')}>
                   {user.pendingCount}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">最近评论</span>
+                <span className="text-muted-foreground">{t('admin.users.detail.lastComment')}</span>
                 <span>
                   {user.lastCommentAt ? formatLocalDate(new Date(user.lastCommentAt), DATE_FORMAT, config) : '—'}
                 </span>
@@ -175,7 +178,7 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
               <Separator className="my-2" />
 
               <div className="flex justify-between">
-                <span className="text-muted-foreground">注册时间</span>
+                <span className="text-muted-foreground">{t('admin.users.detail.registered')}</span>
                 <span>{formatLocalDate(new Date(user.createdAt), DATE_FORMAT, config)}</span>
               </div>
               {passkeyEnabled && (
@@ -201,25 +204,27 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between gap-2">
-                <span>最近评论</span>
+                <span>{t('admin.users.detail.recentComments')}</span>
                 {comments.length > 0 && (
-                  <span className="text-xs font-normal text-muted-foreground">显示 {comments.length} 条</span>
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {t('admin.users.detail.showing', { count: comments.length })}
+                  </span>
                 )}
               </CardTitle>
-              <CardDescription>最近 10 条评论；点击文章标题可跳转到评论详情。</CardDescription>
+              <CardDescription>{t('admin.users.detail.recentCommentsDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               {commentsQuery.isPending && comments.length === 0 ? (
                 <Skeleton className="h-32 w-full" />
               ) : commentsQuery.isError ? (
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm text-destructive">评论加载失败。</p>
+                  <p className="text-sm text-destructive">{t('admin.users.detail.commentsLoadFailed')}</p>
                   <Button type="button" variant="outline" size="sm" onClick={() => void commentsQuery.refetch()}>
-                    重试
+                    {t('common.action.retry')}
                   </Button>
                 </div>
               ) : comments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">该用户暂无评论。</p>
+                <p className="text-sm text-muted-foreground">{t('admin.users.detail.noComments')}</p>
               ) : (
                 <ul className="flex flex-col gap-3">
                   {comments.map((c) => (
@@ -236,7 +241,7 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
                         <span className="text-muted-foreground">
                           {c.createAt && formatLocalDate(c.createAt, DATE_FORMAT, config)}
                         </span>
-                        {c.isPending && <Badge variant="destructive">待审核</Badge>}
+                        {c.isPending && <Badge variant="destructive">{t('admin.users.detail.pending')}</Badge>}
                       </div>
                       <CommentContentHtml
                         content={c.content}

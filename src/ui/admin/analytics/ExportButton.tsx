@@ -6,6 +6,7 @@ import { orpc } from '@/client/api/client'
 import { buildAnalyticsInput, type AnalyticsScope, type AnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // CSV export for the current view: pulls `analytics.export` and downloads
 // it as a Blob (client-side only — the button disables itself in flight).
@@ -17,6 +18,7 @@ export interface ExportButtonProps {
 }
 
 export function ExportButton({ state, className, scope }: ExportButtonProps) {
+  const { t } = useI18n()
   const [pending, setPending] = useState(false)
 
   const download = async () => {
@@ -33,7 +35,7 @@ export function ExportButton({ state, className, scope }: ExportButtonProps) {
       anchor.remove()
       URL.revokeObjectURL(url)
     } catch {
-      toast.error('导出失败，请稍后重试')
+      toast.error(t('admin.analytics.export.failed'))
     } finally {
       setPending(false)
     }
@@ -49,7 +51,7 @@ export function ExportButton({ state, className, scope }: ExportButtonProps) {
       className={cn('h-8 gap-1.5', className)}
     >
       <DownloadIcon data-icon aria-hidden />
-      {pending ? '导出中…' : '导出 CSV'}
+      {pending ? t('admin.analytics.export.exporting') : t('admin.analytics.export.csv')}
     </Button>
   )
 }

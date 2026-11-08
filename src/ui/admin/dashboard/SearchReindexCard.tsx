@@ -65,8 +65,8 @@ export function SearchReindexCard() {
     <div className="rounded-xl border bg-card p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-medium">搜索索引</h2>
-          <p className="mt-1 text-sm text-muted-foreground">批量导入或更新文章后，可以手动重建搜索索引。</p>
+          <h2 className="text-base font-medium">{t('admin.dashboard.search.title')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('admin.dashboard.search.description')}</p>
         </div>
         <Button
           type="button"
@@ -78,20 +78,28 @@ export function SearchReindexCard() {
         >
           {reindex.phase === 'running' && <Loader2Icon className="animate-spin" />}
           {reindex.phase === 'success' && <CheckIcon className="text-status-success-fg" />}
-          {reindex.phase === 'idle' && '重建索引'}
-          {reindex.phase === 'running' && '索引中...'}
-          {reindex.phase === 'success' && '完成'}
+          {reindex.phase === 'idle' && t('admin.dashboard.search.build')}
+          {reindex.phase === 'running' && t('admin.dashboard.search.running')}
+          {reindex.phase === 'success' && t('common.state.done')}
         </Button>
       </div>
       {reindex.phase === 'running' && (
         <p className="mt-3 text-sm text-muted-foreground">
-          等待 {Math.max(0, reindex.total - reindex.processed - reindex.failed)} / 成功 {reindex.processed} / 失败{' '}
-          {reindex.failed}（共 {reindex.total}）
+          {t('admin.dashboard.search.progress', {
+            pending: Math.max(0, reindex.total - reindex.processed - reindex.failed),
+            processed: reindex.processed,
+            failed: reindex.failed,
+            total: reindex.total,
+          })}
         </p>
       )}
       {reindex.phase === 'success' && (
         <p className="mt-3 text-sm text-status-success-fg">
-          索引重建完成：成功 {reindex.processed} / 失败 {reindex.failed}（共 {reindex.total}）
+          {t('admin.dashboard.search.success', {
+            processed: reindex.processed,
+            failed: reindex.failed,
+            total: reindex.total,
+          })}
         </p>
       )}
     </div>

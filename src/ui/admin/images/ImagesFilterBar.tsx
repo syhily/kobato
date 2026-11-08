@@ -1,12 +1,14 @@
 import { FunnelIcon, FunnelPlusIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { AdminImageKind } from '@/shared/types/images'
 import type { ActiveImageFilter, ImageFilterField } from '@/ui/admin/images/useImagesReducer'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { cn } from '@/ui/lib/cn'
+import { type I18nValue, useI18n } from '@/ui/lib/I18nProvider'
 
 interface ImagesFilterBarProps {
   filters: ActiveImageFilter[]
@@ -15,10 +17,10 @@ interface ImagesFilterBarProps {
   onClearFilters: () => void
 }
 
-const KIND_OPTIONS: { value: AdminImageKind; label: string }[] = [
-  { value: 'generic', label: '普通图片' },
-  { value: 'category', label: '分类封面' },
-  { value: 'friend', label: '友链海报' },
+const KIND_OPTIONS: { value: AdminImageKind; labelId: UiMessageId }[] = [
+  { value: 'generic', labelId: 'admin.images.kind.generic' },
+  { value: 'category', labelId: 'admin.images.kind.category' },
+  { value: 'friend', labelId: 'admin.images.kind.friend' },
 ]
 
 function isAdminImageKind(value: string): value is AdminImageKind {
@@ -34,6 +36,7 @@ function SearchFilterPill({
   onChange: (value: string) => void
   onRemove: () => void
 }) {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState(value)
   const [lastValue, setLastValue] = useState(value)
@@ -55,7 +58,7 @@ function SearchFilterPill({
     <div className="flex items-center">
       <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-border bg-background px-3 text-sm text-foreground">
         <SearchIcon className="size-3.5 text-muted-foreground" />
-        搜索
+        {t('admin.images.filter.search')}
       </div>
       <div className="flex h-9 min-w-0 items-center border border-r-0 border-border bg-background">
         <input
@@ -69,7 +72,7 @@ function SearchFilterPill({
               commit(draft)
             }
           }}
-          placeholder="路径 / 备注"
+          placeholder={t('admin.images.filter.pathPlaceholder')}
           className="h-full w-32 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground sm:w-48"
           autoComplete="off"
         />
@@ -98,15 +101,16 @@ function KindFilterPill({
   onChange: (value: AdminImageKind) => void
   onRemove: () => void
 }) {
+  const { t } = useI18n()
   return (
     <div className="flex items-center">
       <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-border bg-background px-3 text-sm text-foreground">
-        用途
+        {t('admin.images.filter.kind')}
       </div>
       <div className="flex h-9 items-center border border-r-0 border-border bg-background">
         <Select<AdminImageKind>
           value={value}
-          items={KIND_OPTIONS}
+          items={KIND_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) }))}
           onValueChange={(v) => {
             if (v) {
               onChange(v)
@@ -119,7 +123,7 @@ function KindFilterPill({
           <SelectContent>
             {KIND_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                {t(option.labelId)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -141,6 +145,7 @@ function KindFilterPill({
 }
 
 export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearFilters }: ImagesFilterBarProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const hasFilters = filters.length > 0
   const hasSearch = filters.some((f) => f.field === 'q')
@@ -177,7 +182,7 @@ export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearF
           <KindFilterPill
             key={filter.field}
             value={filter.value}
-            onChange={(value) => onAddFilter('kind', value, kindLabel(value))}
+            onChange={(value) => onAddFilter('kind', value, kindLabel(value, t))}
             onRemove={() => onRemoveFilter('kind')}
           />
         ) : null,
@@ -191,7 +196,7 @@ export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearF
           )}
         >
           {hasFilters ? <FunnelPlusIcon className="size-4" /> : <FunnelIcon className="size-4" />}
-          {hasFilters ? '添加筛选' : '筛选'}
+          {hasFilters ? t('admin.shared.filter.add') : t('admin.shared.filter.trigger')}
         </PopoverTrigger>
         <PopoverContent align="start" className="w-56 p-0">
           <div className="max-h-60 overflow-y-auto p-1">
@@ -205,7 +210,7 @@ export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearF
                 }}
               >
                 <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
-                搜索
+                {t('admin.images.filter.search')}
               </button>
             )}
             {!hasKind && (
@@ -213,14 +218,16 @@ export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearF
                 type="button"
                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition hover:bg-accent hover:text-accent-foreground"
                 onClick={() => {
-                  onAddFilter('kind', 'generic', kindLabel('generic'))
+                  onAddFilter('kind', 'generic', kindLabel('generic', t))
                   setOpen(false)
                 }}
               >
-                用途
+                {t('admin.images.filter.kind')}
               </button>
             )}
-            {hasSearch && hasKind && <p className="px-2 py-1.5 text-sm text-muted-foreground">无匹配字段</p>}
+            {hasSearch && hasKind && (
+              <p className="px-2 py-1.5 text-sm text-muted-foreground">{t('admin.shared.filter.noFields')}</p>
+            )}
           </div>
         </PopoverContent>
       </Popover>
@@ -232,20 +239,13 @@ export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearF
           onClick={onClearFilters}
         >
           <XIcon className="size-3.5" />
-          清除
+          {t('admin.shared.filter.clear')}
         </button>
       )}
     </div>
   )
 }
 
-function kindLabel(kind: AdminImageKind): string {
-  switch (kind) {
-    case 'generic':
-      return '普通图片'
-    case 'category':
-      return '分类封面'
-    case 'friend':
-      return '友链海报'
-  }
+function kindLabel(kind: AdminImageKind, t: I18nValue['t']): string {
+  return t(KIND_OPTIONS.find((option) => option.value === kind)?.labelId ?? 'admin.images.kind.generic')
 }

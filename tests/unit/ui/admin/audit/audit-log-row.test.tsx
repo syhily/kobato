@@ -60,3 +60,32 @@ describe('AuditLogRow details sanitisation', () => {
     expect(panel!.innerHTML).not.toContain('src=')
   })
 })
+
+describe('AuditLogRow localized vocabulary', () => {
+  function renderRow(locale: 'zh-CN' | 'en-US', row: AuditLogItemDto) {
+    return render(
+      wrapWithI18n(
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <AuditLogRow row={row} />
+        </BlogSettingsProvider>,
+        { locale },
+      ),
+    )
+  }
+
+  it('renders the zh-CN action, resource and expand affordances', () => {
+    renderRow('zh-CN', makeRow({ action: 'post_published', resourceType: 'post' }))
+    expect(screen.getByText('文章发布')).toBeTruthy()
+    expect(screen.getByText('文章')).toBeTruthy()
+    expect(screen.getByLabelText('展开详情')).toBeTruthy()
+    expect(screen.getByText(/IP:\s*203\.0\.113\.\*/)).toBeTruthy()
+  })
+
+  it('renders the en-US action, resource and expand affordances', () => {
+    renderRow('en-US', makeRow({ action: 'post_published', resourceType: 'post' }))
+    expect(screen.getByText('Post published')).toBeTruthy()
+    expect(screen.getByText('Post')).toBeTruthy()
+    expect(screen.getByLabelText('Expand details')).toBeTruthy()
+    expect(screen.getByText(/IP:\s*203\.0\.113\.\*/)).toBeTruthy()
+  })
+})

@@ -8,6 +8,7 @@ import { transitions } from '@/client/lib/motion'
 import { useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { LazyAnimatePresence, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 interface MusicLibraryHeroProps {
@@ -254,7 +255,8 @@ function EmptyBackground() {
   )
 }
 
-export function MusicLibraryHero({ musics, total, title = '音乐库', children }: MusicLibraryHeroProps) {
+export function MusicLibraryHero({ musics, total, title, children }: MusicLibraryHeroProps) {
+  const { t } = useI18n()
   const { currentTrack, isPlaying, extractedColor } = useMusicPlayerState()
   const hasPlayingTrack = currentTrack && isPlaying
 
@@ -288,14 +290,14 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
           className="text-5xl font-black tracking-tight text-white"
           style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
         >
-          {title}
+          {title ?? t('admin.musics.libraryTitle')}
         </h1>
         <p className="mt-2 text-sm text-white/80" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.35)' }}>
-          {total > 0 && <>共 {total} 首歌曲</>}
+          {total > 0 && <>{t('admin.musics.total', { count: total })}</>}
           {hasPlayingTrack && (
             <span className="ml-2 inline-flex items-center gap-1.5 text-white">
               <span className="inline-block size-2 animate-pulse rounded-full bg-current" />
-              正在播放
+              {t('music.nowPlaying')}
             </span>
           )}
         </p>

@@ -19,13 +19,14 @@ import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const SORT_OPTIONS = [
-  { value: 'publishedAt-desc', label: '最新发布' },
-  { value: 'publishedAt-asc', label: '最早发布' },
-  { value: 'updatedAt-desc', label: '最近更新' },
-  { value: 'updatedAt-asc', label: '最早更新' },
-]
+  { value: 'publishedAt-desc', labelId: 'admin.posts.sort.latestPublished' },
+  { value: 'publishedAt-asc', labelId: 'admin.posts.sort.earliestPublished' },
+  { value: 'updatedAt-desc', labelId: 'admin.posts.sort.latestUpdated' },
+  { value: 'updatedAt-asc', labelId: 'admin.posts.sort.earliestUpdated' },
+] as const
 
 const PAGE_SIZE = 10
 
@@ -33,6 +34,7 @@ const pill =
   'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
 export function PostsView() {
+  const { t } = useI18n()
   const { data: categoriesData } = useQuery(orpcQuery.admin.categories.list.queryOptions({ input: {} }))
   const { data: tagsData } = useQuery(orpcQuery.admin.tags.list.queryOptions({ input: { limit: 100 } }))
   const { data: usersData } = useQuery(
@@ -41,17 +43,20 @@ export function PostsView() {
 
   const fields = useMemo(
     () =>
-      buildPostFilterFields({
-        categories: categoriesData?.categories ?? [],
-        tags: (tagsData?.tags ?? []).map((t) => t.name),
-        authors: usersData?.users ?? [],
-      }),
-    [categoriesData, tagsData, usersData],
+      buildPostFilterFields(
+        {
+          categories: categoriesData?.categories ?? [],
+          tags: (tagsData?.tags ?? []).map((tag) => tag.name),
+          authors: usersData?.users ?? [],
+        },
+        t,
+      ),
+    [categoriesData, tagsData, usersData, t],
   )
 
   // The pills own the filter surface: reducer state + merged query input; the URL seeds them and re-syncs on navigation.
   const { search } = useLocation()
-  const [initialFilters] = useState(() => postFiltersFromSearch(search))
+  const [initialFilters] = useState(() => postFiltersFromSearch(search, t))
   const pills = useFilterPills({ fields, initial: initialFilters })
 
   const [sortBy, setSortBy] = useState<'publishedAt' | 'updatedAt'>('publishedAt')
@@ -61,7 +66,7 @@ export function PostsView() {
   const [lastSearch, setLastSearch] = useState(search)
   if (search !== lastSearch) {
     setLastSearch(search)
-    syncPostFiltersFromUrl(pills.filters, pills.dispatch, search)
+    syncPostFiltersFromUrl(pills.filters, pills.dispatch, search, t)
   }
 
   const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
@@ -88,7 +93,7 @@ export function PostsView() {
         <AdminListPage.Header
           title={
             <>
-              文章管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
+              {t('admin.posts.title')} <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
         >
@@ -97,7 +102,7 @@ export function PostsView() {
             {!pills.hasFilters && filterBar}
 
             <Select
-              items={SORT_OPTIONS}
+              items={SORT_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) }))}
               value={sortValue}
               onValueChange={(value) => {
                 if (!value) {
@@ -121,7 +126,7 @@ export function PostsView() {
               <SelectContent>
                 {SORT_OPTIONS.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
-                    {item.label}
+                    {t(item.labelId)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -131,7 +136,7 @@ export function PostsView() {
               className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90"
             >
               <PlusIcon className="size-4" />
-              新建文章
+              {t('admin.posts.new')}
             </Link>
           </div>
         </AdminListPage.Header>
@@ -147,7 +152,7 @@ export function PostsView() {
                 <EmptyMedia variant="icon">
                   <SearchIcon />
                 </EmptyMedia>
-                <EmptyTitle>未找到文章</EmptyTitle>
+                <EmptyTitle>{t('admin.posts.empty')}</EmptyTitle>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -172,7 +177,7 @@ export function PostsView() {
                 })}
               </div>
               <AdminInfiniteListFooter
-                noun="文章"
+                noun={t('admin.list.noun.posts')}
                 rowCount={rows.length}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}

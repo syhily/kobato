@@ -95,6 +95,26 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     expect(screen.queryByLabelText('写消息')).toBeNull()
   })
 
+  it('renders the en-US tab bar, header and row actions', () => {
+    control.infinite.data = { pages: [{ items: [makeItem({ read: true })], nextCursor: null }] }
+
+    rtlRender(<NotificationsDrawer open onOpenChange={() => {}} isAdmin unreadCount={3} />, {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          {wrapWithI18n(children, { locale: 'en-US' })}
+        </BlogSettingsProvider>
+      ),
+    })
+
+    expect(screen.getByText('Notifications')).toBeTruthy()
+    for (const label of ['All', 'Unread', 'Direct', 'Announcements']) {
+      expect(screen.getByRole('tab', { name: label })).toBeTruthy()
+    }
+    expect(screen.getByLabelText('Mark all as read')).toBeTruthy()
+    expect(screen.getByLabelText('Write a message')).toBeTruthy()
+    expect(screen.getByLabelText('Mark as unread')).toBeTruthy()
+  })
+
   it('disables mark-all-read only on a known zero count', () => {
     // `null` means "unknown" (not loaded / failed), not "zero" — marking read
     // stays available, since the list may well have unread rows.

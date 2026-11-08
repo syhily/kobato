@@ -3,6 +3,7 @@ import { Fragment, useState } from 'react'
 import { Link } from 'react-router'
 
 import type { AdminWebmentionOutboxWire } from '@/shared/contracts/webmentions'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
@@ -13,17 +14,21 @@ import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { Badge, type BadgeProps } from '@/ui/components/badge'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 30
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm:ss'
 
 type StatusFilter = 'all' | AdminWebmentionOutboxWire['status']
 
-const STATUS_META: Record<AdminWebmentionOutboxWire['status'], { label: string; variant: BadgeProps['variant'] }> = {
-  pending: { label: '待发送', variant: 'secondary' },
-  sent: { label: '已发送', variant: 'default' },
-  'no-endpoint': { label: '无端点', variant: 'outline' },
-  failed: { label: '失败', variant: 'destructive' },
+const STATUS_META: Record<
+  AdminWebmentionOutboxWire['status'],
+  { labelId: UiMessageId; variant: BadgeProps['variant'] }
+> = {
+  pending: { labelId: 'admin.webmentions.outbox.pending', variant: 'secondary' },
+  sent: { labelId: 'admin.webmentions.outbox.sent', variant: 'default' },
+  'no-endpoint': { labelId: 'admin.webmentions.outbox.noEndpoint', variant: 'outline' },
+  failed: { labelId: 'admin.webmentions.outbox.failed', variant: 'destructive' },
 }
 
 function isStatusFilter(value: unknown): value is StatusFilter {
@@ -31,13 +36,14 @@ function isStatusFilter(value: unknown): value is StatusFilter {
 }
 
 function OutboxRow({ row }: { row: AdminWebmentionOutboxWire }) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const meta = STATUS_META[row.status]
   const date = (iso: string) => formatLocalDate(new Date(iso), ADMIN_DATE_FORMAT, config)
   return (
     <div className="flex flex-col gap-1 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={meta.variant}>{meta.label}</Badge>
+        <Badge variant={meta.variant}>{t(meta.labelId)}</Badge>
         <a
           href={row.targetUrl}
           target="_blank"
@@ -48,14 +54,16 @@ function OutboxRow({ row }: { row: AdminWebmentionOutboxWire }) {
         </a>
       </div>
       <p className="text-xs break-all text-muted-foreground">
-        来源 {row.sourceUrl}
-        {row.endpoint !== null && <> · 端点 {row.endpoint}</>}
+        {t('admin.webmentions.outbox.source', { url: row.sourceUrl })}
+        {row.endpoint !== null && <> · {t('admin.webmentions.outbox.endpoint', { url: row.endpoint })}</>}
       </p>
       <p className="text-xs text-muted-foreground">
-        入队 {date(row.createdAt)}
-        {row.attempts > 0 && ` · 已尝试 ${row.attempts} 次`}
-        {row.status === 'pending' && row.nextRetryAt !== null && ` · 下次重试 ${date(row.nextRetryAt)}`}
-        {row.sentAt !== null && ` · 发送于 ${date(row.sentAt)}`}
+        {t('admin.webmentions.outbox.queued', { time: date(row.createdAt) })}
+        {row.attempts > 0 && ` · ${t('admin.webmentions.outbox.attempts', { count: row.attempts })}`}
+        {row.status === 'pending' &&
+          row.nextRetryAt !== null &&
+          ` · ${t('admin.webmentions.outbox.nextRetry', { time: date(row.nextRetryAt) })}`}
+        {row.sentAt !== null && ` · ${t('admin.webmentions.outbox.sentAt', { time: date(row.sentAt) })}`}
         {row.lastError !== null && <span className="text-status-error-fg"> · {row.lastError}</span>}
       </p>
     </div>
@@ -64,6 +72,7 @@ function OutboxRow({ row }: { row: AdminWebmentionOutboxWire }) {
 
 // Read-only outbound send log — a retry is a republish, so this view offers filters and visibility, never actions.
 export function WebmentionOutboxView() {
+  const { t } = useI18n()
   const [status, setStatus] = useState<StatusFilter>('all')
 
   const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
@@ -91,15 +100,15 @@ export function WebmentionOutboxView() {
             }}
           >
             <TabsList>
-              <TabsTrigger value="all">全部</TabsTrigger>
-              <TabsTrigger value="pending">待发送</TabsTrigger>
-              <TabsTrigger value="sent">已发送</TabsTrigger>
-              <TabsTrigger value="no-endpoint">无端点</TabsTrigger>
-              <TabsTrigger value="failed">失败</TabsTrigger>
+              <TabsTrigger value="all">{t('common.filter.all')}</TabsTrigger>
+              <TabsTrigger value="pending">{t('admin.webmentions.outbox.pending')}</TabsTrigger>
+              <TabsTrigger value="sent">{t('admin.webmentions.outbox.sent')}</TabsTrigger>
+              <TabsTrigger value="no-endpoint">{t('admin.webmentions.outbox.noEndpoint')}</TabsTrigger>
+              <TabsTrigger value="failed">{t('admin.webmentions.outbox.failed')}</TabsTrigger>
             </TabsList>
           </Tabs>
           <Link to="/admin/tasks" className="text-link text-sm hover:underline">
-            队列状态见任务中心
+            {t('admin.webmentions.outbox.queueHint')}
           </Link>
         </div>
       </AdminListPage.Toolbar>
@@ -111,7 +120,7 @@ export function WebmentionOutboxView() {
               <EmptyMedia variant="icon">
                 <GlobeIcon />
               </EmptyMedia>
-              <EmptyTitle>暂无发送记录</EmptyTitle>
+              <EmptyTitle>{t('admin.webmentions.outbox.empty')}</EmptyTitle>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -128,7 +137,7 @@ export function WebmentionOutboxView() {
           </div>
         )}
         <AdminInfiniteListFooter
-          noun="条发送记录"
+          noun={t('admin.list.noun.sendHistory')}
           rowCount={total}
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}

@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { tZhCN } from '#/_helpers/i18n'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { buildAuditFilterFields, type AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-fields'
-import { COMMENT_FILTER_FIELDS } from '@/ui/admin/comments/filter-fields'
+import { buildCommentFilterFields } from '@/ui/admin/comments/filter-fields'
 import { buildMyCommentFilterFields } from '@/ui/admin/my/filter-fields'
 import {
   DateSingleFilterEditor,
@@ -15,6 +16,8 @@ import { TextFilterEditor } from '@/ui/admin/shared/filter-bar/editors'
 import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
 import { SearchableOptionList } from '@/ui/admin/shared/filter-bar/option-list'
 import { FilterPill } from '@/ui/admin/shared/filter-bar/pill'
+
+const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
 // SSR snapshots for the shared filter-pill chrome. Popover / combobox
 // contents mount through portals that Base UI does not emit during
@@ -36,7 +39,12 @@ describe('snapshot: FilterPillBar', () => {
   it('renders only the bare "筛选" trigger when no filters are active', () => {
     const html = stableHtml(
       renderToHtml(
-        <FilterPillBar fields={buildAuditFilterFields(AUDIT_ACTORS)} filters={[]} search={{}} {...NOOP_HANDLERS} />,
+        <FilterPillBar
+          fields={buildAuditFilterFields(AUDIT_ACTORS, tZhCN)}
+          filters={[]}
+          search={{}}
+          {...NOOP_HANDLERS}
+        />,
       ),
     )
     expect(html).toContain('筛选')
@@ -54,7 +62,7 @@ describe('snapshot: FilterPillBar', () => {
     const html = stableHtml(
       renderToHtml(
         <FilterPillBar
-          fields={buildAuditFilterFields(AUDIT_ACTORS)}
+          fields={buildAuditFilterFields(AUDIT_ACTORS, tZhCN)}
           filters={filters}
           search={{}}
           {...NOOP_HANDLERS}
@@ -105,7 +113,7 @@ describe('snapshot: FilterPillBar', () => {
 
 describe('snapshot: SearchableOptionList', () => {
   it('renders the actor rows through renderOption (icon + truncated label)', () => {
-    const actorField = buildAuditFilterFields(AUDIT_ACTORS).find((f) => f.key === 'actor')
+    const actorField = buildAuditFilterFields(AUDIT_ACTORS, tZhCN).find((f) => f.key === 'actor')
     if (actorField?.kind !== 'options') {
       throw new Error('actor field must be an options field')
     }
@@ -128,7 +136,7 @@ describe('snapshot: SearchableOptionList', () => {
   })
 
   it('renders the empty message when the local filter matches nothing', () => {
-    const actionField = buildAuditFilterFields([]).find((f) => f.key === 'action')
+    const actionField = buildAuditFilterFields([], tZhCN).find((f) => f.key === 'action')
     if (actionField?.kind !== 'options') {
       throw new Error('action field must be an options field')
     }
@@ -187,7 +195,7 @@ describe('snapshot: DateSingleFilterEditor', () => {
 
 describe('snapshot: TextFilterEditor', () => {
   const commentsTextField = COMMENT_FILTER_FIELDS.find((f) => f.key === 'text')
-  const myTextField = buildMyCommentFilterFields([]).find((f) => f.key === 'text')
+  const myTextField = buildMyCommentFilterFields([], tZhCN).find((f) => f.key === 'text')
 
   it('renders the text input with placeholder and the operator trigger', () => {
     if (commentsTextField?.kind !== 'text') {

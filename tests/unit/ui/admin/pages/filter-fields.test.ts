@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildPageFilterFields, deriveStatusFields, type PageFilterFieldKey } from '@/ui/admin/pages/filter-fields'
+import { tZhCN } from '#/_helpers/i18n'
+import {
+  buildPageFilterFields as buildPageFilterFieldsBase,
+  deriveStatusFields,
+  type PageFilterFieldKey,
+} from '@/ui/admin/pages/filter-fields'
 
-const fields = buildPageFilterFields([{ id: 'u-1', name: '雨帆' }])
+const fields = buildPageFilterFieldsBase([{ id: 'u-1', name: '雨帆' }], tZhCN)
 
 function fieldSpec(key: PageFilterFieldKey) {
   const field = fields.find((f) => f.key === key)

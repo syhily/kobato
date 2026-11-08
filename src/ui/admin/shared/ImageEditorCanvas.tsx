@@ -2,6 +2,7 @@ import { MoveDiagonal2Icon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { cn } from '@/ui/lib/cn'
+import { type I18nValue, useI18n } from '@/ui/lib/I18nProvider'
 
 const MAX_PREVIEW_DIMENSION = 1600
 
@@ -39,7 +40,7 @@ interface SourceBitmap {
   height: number
 }
 
-function loadImage(file: File): Promise<HTMLImageElement> {
+function loadImage(file: File, t: I18nValue['t']): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)
     const img = new Image()
@@ -50,7 +51,7 @@ function loadImage(file: File): Promise<HTMLImageElement> {
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
-      reject(new Error('无法加载图片'))
+      reject(new Error(t('admin.shared.imageEditor.loadFailed')))
     }
     img.src = url
   })
@@ -69,6 +70,7 @@ export function ImageEditorCanvas({
   onCropChange,
   onReady,
 }: ImageEditorCanvasProps) {
+  const { t } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [source, setSource] = useState<SourceBitmap | null>(null)
   const [crop, setCrop] = useState<CropRect | null>(null)
@@ -88,7 +90,7 @@ export function ImageEditorCanvas({
 
   useEffect(() => {
     let cancelled = false
-    loadImage(file)
+    loadImage(file, t)
       .then((img) => {
         if (cancelled) {
           return
@@ -106,7 +108,7 @@ export function ImageEditorCanvas({
     return () => {
       cancelled = true
     }
-  }, [file])
+  }, [file, t])
 
   const displayLayout = useMemo(() => {
     if (source === null) {
@@ -211,7 +213,7 @@ export function ImageEditorCanvas({
 
   const encode = useCallback(async (): Promise<{ blob: Blob; width: number; height: number }> => {
     if (source === null || crop === null || displayLayout === null) {
-      throw new Error('图片尚未加载完成')
+      throw new Error(t('admin.shared.imageEditor.notReady'))
     }
 
     let encodedWidth = Math.round(crop.width)
@@ -230,7 +232,7 @@ export function ImageEditorCanvas({
     offscreen.height = encodedHeight
     const ctx = offscreen.getContext('2d')
     if (ctx === null) {
-      throw new Error('浏览器不支持 Canvas')
+      throw new Error(t('admin.shared.imageEditor.noCanvas'))
     }
 
     // Draw the rotated source to a working canvas, then read back the cropped region.
@@ -239,7 +241,7 @@ export function ImageEditorCanvas({
     working.height = displayLayout.sourceHeight
     const workingCtx = working.getContext('2d')
     if (workingCtx === null) {
-      throw new Error('浏览器不支持 Canvas')
+      throw new Error(t('admin.shared.imageEditor.noCanvas'))
     }
 
     workingCtx.translate(displayLayout.sourceWidth / 2, displayLayout.sourceHeight / 2)
@@ -252,7 +254,7 @@ export function ImageEditorCanvas({
       offscreen.toBlob(
         (blob) => {
           if (blob === null) {
-            reject(new Error('图片导出失败'))
+            reject(new Error(t('admin.shared.imageEditor.exportFailed')))
           } else {
             resolve({ blob, width: encodedWidth, height: encodedHeight })
           }
@@ -261,7 +263,7 @@ export function ImageEditorCanvas({
         Math.max(0.4, Math.min(1, jpegQuality / 100)),
       )
     })
-  }, [source, crop, displayLayout, rotation, locked, outputWidth, jpegQuality])
+  }, [source, crop, displayLayout, rotation, locked, outputWidth, jpegQuality, t])
 
   useEffect(() => {
     onReady(encode)
@@ -333,7 +335,7 @@ export function ImageEditorCanvas({
   }
 
   if (source === null || displayLayout === null) {
-    return <p className="text-sm text-muted-foreground">正在加载图片预览…</p>
+    return <p className="text-sm text-muted-foreground">{t('admin.shared.imageEditor.loadingPreview')}</p>
   }
 
   return (
@@ -341,7 +343,7 @@ export function ImageEditorCanvas({
       <div className="relative max-w-full rounded-xl border bg-black/40">
         <canvas
           ref={canvasRef}
-          aria-label="图片裁剪画布"
+          aria-label={t('admin.shared.imageEditor.canvasAria')}
           className="block max-w-full cursor-move select-none"
           style={{ touchAction: 'none' }}
           onPointerDown={(event) => beginDrag(event, 'move')}
@@ -352,7 +354,7 @@ export function ImageEditorCanvas({
         {crop !== null && (
           <button
             type="button"
-            aria-label="拖动调整裁剪框尺寸"
+            aria-label={t('admin.shared.imageEditor.resizeAria')}
             className={cn(
               'absolute flex size-5 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize items-center justify-center text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] hover:text-white/80',
             )}
@@ -374,8 +376,12 @@ export function ImageEditorCanvas({
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        原图 {source.width}×{source.height} · 裁剪后 {formatCropSize(crop, locked)} · JPEG 质量 {jpegQuality}
-        {locked === undefined ? ' · 拖动图片移动裁剪框，拖动右下角图标调整尺寸' : ' · 拖动图片移动裁剪框'}
+        {t(locked === undefined ? 'admin.shared.imageEditor.summaryDrag' : 'admin.shared.imageEditor.summary', {
+          width: source.width,
+          height: source.height,
+          crop: formatCropSize(crop, locked),
+          quality: jpegQuality,
+        })}
       </p>
     </div>
   )

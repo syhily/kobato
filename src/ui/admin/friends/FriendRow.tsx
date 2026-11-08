@@ -7,6 +7,7 @@ import { safeHref } from '@/shared/utils/safe-url'
 import { Badge } from '@/ui/components/badge'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tooltip } from '@/ui/components/tooltip'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface FriendRowProps {
   friend: AdminFriendDto
@@ -16,6 +17,7 @@ interface FriendRowProps {
 }
 
 export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onDelete }: FriendRowProps) {
+  const { t } = useI18n()
   const homepageHref = safeHref(friend.homepage)
 
   return (
@@ -43,7 +45,7 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
           type="button"
           onClick={onEdit}
           disabled={disabled}
-          aria-label={`编辑友链 ${friend.website}`}
+          aria-label={t('admin.friends.row.edit', { website: friend.website })}
           className="truncate text-admin-base font-semibold hover:underline disabled:cursor-not-allowed disabled:opacity-50"
         >
           {friend.website}
@@ -75,11 +77,11 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
       <div className="hidden w-admin-col-narrow shrink-0 justify-end md:flex">
         {friend.visible ? (
           <Badge variant="secondary" className="gap-1">
-            <EyeIcon className="size-3" /> 显示
+            <EyeIcon className="size-3" /> {t('admin.friends.row.visible')}
           </Badge>
         ) : (
           <Badge variant="outline" className="gap-1 text-muted-foreground">
-            <EyeOffIcon className="size-3" /> 隐藏
+            <EyeOffIcon className="size-3" /> {t('admin.friends.row.hidden')}
           </Badge>
         )}
       </div>
@@ -90,7 +92,7 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         onClick={onEdit}
         disabled={disabled}
         className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-        title="编辑"
+        title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />
       </button>
@@ -101,8 +103,8 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         onClick={onDelete}
         disabled={disabled}
         className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
-        title="删除"
-        aria-label={`删除友链 ${friend.website}`}
+        title={t('common.action.delete')}
+        aria-label={t('admin.friends.row.delete', { website: friend.website })}
       >
         <Trash2Icon className="size-4" />
       </button>

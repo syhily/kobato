@@ -90,7 +90,13 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex items-center gap-2 border-b px-3 py-2 pr-12">
-        <Button ref={backRef} variant="ghost" size="iconSm" onClick={onBack} aria-label="返回列表">
+        <Button
+          ref={backRef}
+          variant="ghost"
+          size="iconSm"
+          onClick={onBack}
+          aria-label={t('notifications.detail.back')}
+        >
           <ArrowLeftIcon className="size-4" />
         </Button>
         <span className="text-xs text-muted-foreground">{t(meta.kindLabelId)}</span>
@@ -103,26 +109,26 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
             disabled={recall.isPending}
           >
             {recall.isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : <Undo2Icon className="size-3.5" />}
-            撤回
+            {t('notifications.detail.recall')}
           </Button>
         ) : null}
       </div>
       <AlertDialog open={recallConfirmOpen} onOpenChange={setRecallConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>撤回这条消息？</AlertDialogTitle>
+            <AlertDialogTitle>{t('notifications.detail.recallTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定撤回「{item.title}」吗？撤回后所有收件人都将看不到这条消息。
+              {t('notifications.detail.recallBody', { title: item.title })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.action.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className={buttonVariants({ variant: 'destructive' })}
               disabled={recall.isPending}
               onClick={() => recall.mutate({ id: item.id })}
             >
-              撤回
+              {t('notifications.detail.recall')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -131,7 +137,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
         <div className="flex flex-col gap-1">
           <h3 className="text-base font-semibold">{item.title}</h3>
           <p className="text-xs text-muted-foreground">
-            {item.sender === null ? '系统' : item.sender.name} ·{' '}
+            {item.sender === null ? t('notifications.detail.system') : item.sender.name} ·{' '}
             {formatNotificationTime(item.createdAt, { locale, timeZone, now })}
           </p>
         </div>
@@ -143,7 +149,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
             onClick={onClose}
             render={<Link to={item.actionUrl} />}
           >
-            <ExternalLinkIcon className="size-3.5" /> 去处理
+            <ExternalLinkIcon className="size-3.5" /> {t('notifications.detail.openAction')}
           </Button>
         ) : null}
         {threadQuery.isPending ? (
@@ -151,7 +157,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
             <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
           </div>
         ) : threadQuery.isError || thread === undefined ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">消息内容加载失败</p>
+          <p className="py-10 text-center text-sm text-muted-foreground">{t('notifications.detail.loadFailed')}</p>
         ) : (
           <div className="mt-4 flex flex-col gap-3">
             {thread.messages.map((message) => (
@@ -165,8 +171,10 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
                   {message.body}
                 </div>
                 <span className="px-1 text-[11px] text-muted-foreground/80">
-                  {message.mine ? '我' : (message.sender?.name ?? '系统')} ·{' '}
-                  {formatNotificationTime(message.createdAt, { locale, timeZone, now })}
+                  {message.mine
+                    ? t('notifications.detail.me')
+                    : (message.sender?.name ?? t('notifications.detail.system'))}{' '}
+                  · {formatNotificationTime(message.createdAt, { locale, timeZone, now })}
                 </span>
               </div>
             ))}
@@ -192,7 +200,7 @@ function ReplyComposer({ threadId }: { threadId: string }) {
         // user stays on an announcement thread that never shows the reply —
         // explain the move instead of letting them retype it.
         if (isForkReply(threadId, data.threadId)) {
-          toast.success('已发送，回复已转入私信，管理员会私信回复你')
+          toast.success(t('notifications.detail.replyForked'))
         }
         void invalidate()
       },
@@ -214,8 +222,8 @@ function ReplyComposer({ threadId }: { threadId: string }) {
         <Textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
-          placeholder="输入回复…"
-          aria-label="回复内容"
+          placeholder={t('notifications.detail.replyPlaceholder')}
+          aria-label={t('notifications.detail.replyAria')}
           aria-describedby={REPLY_HINT_ID}
           rows={2}
           maxLength={5000}
@@ -227,12 +235,17 @@ function ReplyComposer({ threadId }: { threadId: string }) {
             }
           }}
         />
-        <Button size="icon" onClick={submit} disabled={body.trim() === '' || reply.isPending} aria-label="发送回复">
+        <Button
+          size="icon"
+          onClick={submit}
+          disabled={body.trim() === '' || reply.isPending}
+          aria-label={t('notifications.detail.sendReply')}
+        >
           {reply.isPending ? <Loader2Icon className="size-4 animate-spin" /> : <SendIcon className="size-4" />}
         </Button>
       </div>
       <p id={REPLY_HINT_ID} className="mt-1 px-1 text-[11px] text-muted-foreground/70">
-        ⌘/Ctrl + Enter 发送
+        {t('notifications.detail.replyHint')}
       </p>
     </div>
   )

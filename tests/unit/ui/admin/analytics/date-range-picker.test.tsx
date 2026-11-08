@@ -112,3 +112,33 @@ describe('DateRangePicker custom range', () => {
     expect(onSelectRange).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('DateRangePicker preset copy', () => {
+  it('renders the zh-CN preset chips and the range aria label', () => {
+    renderPicker(<DateRangePicker preset="last-7d" range={RANGE} onSelect={() => {}} onSelectRange={() => {}} />)
+    expect(screen.getByLabelText('时间范围')).toBeTruthy()
+    for (const label of ['最近 1 小时', '今天', '昨天', '最近 7 天', '最近 30 天', '最近 90 天', '最近 365 天']) {
+      expect(screen.getByRole('button', { name: label })).toBeTruthy()
+    }
+  })
+
+  it('renders the en-US preset chips and the range aria label', () => {
+    render(
+      wrapWithI18n(<DateRangePicker preset="last-7d" range={RANGE} onSelect={() => {}} onSelectRange={() => {}} />, {
+        locale: 'en-US',
+      }),
+    )
+    expect(screen.getByLabelText('Date range')).toBeTruthy()
+    for (const label of [
+      'Last hour',
+      'Today',
+      'Yesterday',
+      'Last 7 days',
+      'Last 30 days',
+      'Last 90 days',
+      'Last 365 days',
+    ]) {
+      expect(screen.getByRole('button', { name: label })).toBeTruthy()
+    }
+  })
+})

@@ -1,35 +1,16 @@
 import type { MetricGroup, MetricRow, MetricType } from '@/shared/contracts/analytics'
 
 import { METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
+import { METRIC_TYPE_LABEL_IDS } from '@/ui/admin/analytics/metric-labels'
 import { MetricList } from '@/ui/admin/analytics/MetricList'
 import { type AnalyticsScope } from '@/ui/admin/analytics/use-analytics-state'
 import { Card } from '@/ui/components/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Tabbed metric card per Slite's `metrics/Group.vue` — one tab per
 // dimension of the group, each fetching its own top-N list.
-
-export const METRIC_TYPE_LABEL: Record<MetricType, string> = {
-  country: '国家',
-  region: '地区',
-  city: '城市',
-  referer: '来源',
-  language: '语言',
-  timezone: '时区',
-  os: '操作系统',
-  browser: '浏览器',
-  browserType: '浏览器类型',
-  device: '设备',
-  deviceType: '设备类型',
-  screen: '屏幕分辨率',
-  viewport: '视口宽度',
-  dpr: '像素密度',
-  touch: '触控能力',
-  colorScheme: '深色模式',
-  netEffectiveType: '网络类型',
-  path: '路径',
-}
 
 export interface MetricsGroupProps {
   group: MetricGroup
@@ -39,6 +20,7 @@ export interface MetricsGroupProps {
 }
 
 export function MetricsGroup({ group, initial, className, scope }: MetricsGroupProps) {
+  const { t } = useI18n()
   const tabs = METRIC_GROUP_TABS[group]
 
   return (
@@ -46,16 +28,22 @@ export function MetricsGroup({ group, initial, className, scope }: MetricsGroupP
       <Tabs defaultValue={tabs[0]} className="flex min-h-0 flex-1 flex-col gap-0">
         <div className="max-w-full shrink-0 overflow-x-auto border-b p-2">
           <TabsList className="h-8 min-w-max">
-            {tabs.map((t) => (
-              <TabsTrigger key={t} value={t} className="px-3 py-1 text-xs">
-                {METRIC_TYPE_LABEL[t]}
+            {tabs.map((metricType) => (
+              <TabsTrigger key={metricType} value={metricType} className="px-3 py-1 text-xs">
+                {t(METRIC_TYPE_LABEL_IDS[metricType])}
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
-        {tabs.map((t) => (
-          <TabsContent key={t} value={t} className="mt-0 flex min-h-0 flex-1 flex-col">
-            <MetricList type={t} title={METRIC_TYPE_LABEL[t]} initial={initial?.[t]} scope={scope} className="flex-1" />
+        {tabs.map((metricType) => (
+          <TabsContent key={metricType} value={metricType} className="mt-0 flex min-h-0 flex-1 flex-col">
+            <MetricList
+              type={metricType}
+              title={t(METRIC_TYPE_LABEL_IDS[metricType])}
+              initial={initial?.[metricType]}
+              scope={scope}
+              className="flex-1"
+            />
           </TabsContent>
         ))}
       </Tabs>

@@ -5,10 +5,12 @@ import type { RealtimeEvent } from '@/shared/contracts/analytics'
 import { useEventStream } from '@/ui/admin/analytics/use-event-stream'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Right-rail latest-50 feed from the SSE stream, rendered newest-first.
 
 export function RealtimeFeed({ className }: { className?: string }) {
+  const { t } = useI18n()
   const { events, state } = useEventStream({ bufferSize: 50 })
 
   const ordered = useMemo(() => {
@@ -24,12 +26,14 @@ export function RealtimeFeed({ className }: { className?: string }) {
   return (
     <Card className={cn('flex flex-col gap-2 shadow-none', className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-semibold">实时访问</CardTitle>
+        <CardTitle className="text-sm font-semibold">{t('admin.analytics.realtime.title')}</CardTitle>
         <StatusPip state={state} />
       </CardHeader>
       <CardContent className="px-2 pb-3">
         {ordered.length === 0 ? (
-          <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">等待第一条访问…</div>
+          <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+            {t('admin.analytics.realtime.empty')}
+          </div>
         ) : (
           <div className="max-h-[28rem] overflow-y-auto pr-2">
             <ul className="flex flex-col gap-1">
@@ -57,10 +61,11 @@ export function RealtimeFeed({ className }: { className?: string }) {
 }
 
 function StatusPip({ state }: { state: 'connecting' | 'live' | 'lost' }) {
+  const { t } = useI18n()
   const config: Record<typeof state, { label: string; color: string }> = {
-    connecting: { label: '连接中', color: 'bg-yellow-500' },
-    live: { label: '实时', color: 'bg-emerald-500' },
-    lost: { label: '已断开', color: 'bg-rose-500' },
+    connecting: { label: t('admin.analytics.realtime.status.connecting'), color: 'bg-yellow-500' },
+    live: { label: t('admin.analytics.realtime.status.live'), color: 'bg-emerald-500' },
+    lost: { label: t('admin.analytics.realtime.status.lost'), color: 'bg-rose-500' },
   }
   const { label, color } = config[state]
   return (

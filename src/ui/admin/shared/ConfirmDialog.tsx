@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from '@/ui/components/alert-dialog'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface ConfirmState {
   title: string
@@ -32,6 +33,7 @@ export interface ConfirmDialogProps {
 /** Generic approve/delete dialog. The last truthy `state` is cached through
  *  the close animation so title/buttons don't blank mid-animation. */
 export function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
+  const { t } = useI18n()
   const [lastState, setLastState] = useState<ConfirmState | null>(state)
   if (state !== null && state !== lastState) {
     setLastState(state)
@@ -48,7 +50,7 @@ export function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>
-            <XIcon data-icon /> 取消
+            <XIcon data-icon /> {t('common.action.cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
             className={cn(renderState?.destructive && 'bg-destructive hover:bg-destructive/90')}

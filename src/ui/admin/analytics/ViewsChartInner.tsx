@@ -31,7 +31,7 @@ export interface ViewsChartInnerProps {
 }
 
 export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   // Bucket labels are browser-zoned analytics data — pass the browser zone explicitly.
   const timeZone = getClientTimezone()
   const summaryId = `trend-summary-${useId()}`
@@ -60,8 +60,13 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
   )
 
   const summary = peak
-    ? `访问趋势: 总访问量 ${formatNumber(totalVisits, { locale })}, 总访客数 ${formatNumber(totalVisitors, { locale })}。峰值出现在 ${formatTimeLabel(unit, peak.label, { locale, timeZone })}, 访问量 ${formatNumber(peak.visits, { locale })}。`
-    : '当前时间范围内暂无数据'
+    ? t('admin.analytics.chart.summary', {
+        visits: formatNumber(totalVisits, { locale }),
+        visitors: formatNumber(totalVisitors, { locale }),
+        peak: formatTimeLabel(unit, peak.label, { locale, timeZone }),
+        value: formatNumber(peak.visits, { locale }),
+      })
+    : t('admin.analytics.empty')
 
   const x = (d: ChartDatum) => d.x
   const yVisits = (d: ChartDatum) => d.visits
@@ -73,12 +78,12 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
       <div class="font-medium">${escapeHtml(formatTimeLabel(unit, d.label, { locale, timeZone }))}</div>
       <div class="mt-1 flex items-center gap-2">
         <span class="inline-block size-2 rounded-full" style="background: ${COLOR_VISITS}"></span>
-        <span class="text-muted-foreground">访问量</span>
+        <span class="text-muted-foreground">${escapeHtml(t('admin.analytics.metric.visits'))}</span>
         <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(formatNumber(d.visits, { locale }))}</span>
       </div>
       <div class="mt-0.5 flex items-center gap-2">
         <span class="inline-block size-2 rounded-full" style="background: ${COLOR_VISITORS}"></span>
-        <span class="text-muted-foreground">访客数</span>
+        <span class="text-muted-foreground">${escapeHtml(t('admin.analytics.metric.visitors'))}</span>
         <span class="ml-auto pl-3 font-semibold tabular-nums">${escapeHtml(formatNumber(d.visitors, { locale }))}</span>
       </div>
     </div>`
@@ -87,7 +92,7 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
     <div
       className={cn('aspect-4/1 w-full', className)}
       role="img"
-      aria-label="访问量与访客数趋势图"
+      aria-label={t('admin.analytics.chart.aria')}
       aria-describedby={summaryId}
     >
       <VisXYContainer data={data} margin={{ left: 0, right: 0 }}>

@@ -79,8 +79,8 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>编辑评论</DialogTitle>
-          <DialogDescription>修改评论内容后保存，会立即在前台生效。</DialogDescription>
+          <DialogTitle>{t('admin.comments.edit.title')}</DialogTitle>
+          <DialogDescription>{t('admin.comments.edit.description')}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -89,7 +89,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
               return
             }
             if (isCommentEditorStateBlank(body)) {
-              toast.error('评论内容不能为空')
+              toast.error(t('admin.comments.edit.empty'))
               return
             }
             editMutation.mutate({ commentId: idStr(comment.id), body })
@@ -97,12 +97,12 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-2">
-            <Label htmlFor="edit-comment-content">评论内容</Label>
+            <Label htmlFor="edit-comment-content">{t('admin.comments.edit.content')}</Label>
             {rawQuery.isError ? (
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm text-destructive">评论内容加载失败。</p>
+                <p className="text-sm text-destructive">{t('admin.comments.edit.loadFailed')}</p>
                 <Button type="button" variant="outline" size="sm" onClick={() => void rawQuery.refetch()}>
-                  重试
+                  {t('common.action.retry')}
                 </Button>
               </div>
             ) : (
@@ -117,10 +117,10 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={onClose}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={submitting || !loaded} onMouseDown={(event) => event.preventDefault()}>
-              <SaveIcon data-icon /> {submitting ? '保存中…' : '保存'}
+              <SaveIcon data-icon /> {submitting ? t('admin.my.edit.saving') : t('common.action.save')}
             </Button>
           </DialogFooter>
         </form>

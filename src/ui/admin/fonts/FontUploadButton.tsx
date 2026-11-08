@@ -47,9 +47,9 @@ export function FontUploadButton() {
     accept: ['.ttf', '.otf'],
     maxBytes: 60 * 1024 * 1024,
     messages: {
-      invalidType: { title: '仅支持 .ttf 或 .otf 字体文件' },
-      tooLarge: () => ({ title: '字体文件大小上限为 60 MB' }),
-      httpFailure: (status) => `服务器错误 (${status})`,
+      invalidType: { title: t('admin.fonts.upload.invalidType') },
+      tooLarge: () => ({ title: t('admin.fonts.upload.tooLarge') }),
+      httpFailure: (status) => t('admin.fonts.upload.httpFailure', { status }),
       failure: 'admin.toast.unknownErrorRetry',
     },
     onSuccess: async () => {
@@ -74,7 +74,7 @@ export function FontUploadButton() {
 
   const startUpload = async (file: File) => {
     if (trimmedFamilyName === '') {
-      setPhase({ kind: 'error', familyName: inputFamilyName, message: '请填写字体族名' })
+      setPhase({ kind: 'error', familyName: inputFamilyName, message: t('admin.fonts.upload.familyNameRequired') })
       return
     }
     setPhase({ kind: 'uploading', fileName: file.name, familyName: inputFamilyName })
@@ -98,7 +98,7 @@ export function FontUploadButton() {
       <input ref={fileInputRef} type="file" accept=".ttf,.otf" hidden onChange={onFileSelected} />
       <Button type="button" onClick={() => fileInputRef.current?.click()}>
         <UploadIcon data-icon="sm" />
-        上传字体
+        {t('admin.fonts.upload.button')}
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && reset()}>
@@ -143,21 +143,18 @@ function UploadInputPhase({
   onCancel: () => void
   onUpload: () => void
 }) {
+  const { t } = useI18n()
   return (
     <>
       <DialogHeader>
-        <DialogTitle>上传网站字体</DialogTitle>
-        <DialogDescription>
-          文件：{fileName}
-          <br />
-          请输入字体族名，用于 CSS font-family 属性。
-        </DialogDescription>
+        <DialogTitle>{t('admin.fonts.upload.inputTitle')}</DialogTitle>
+        <DialogDescription>{t('admin.fonts.upload.inputDescription', { file: fileName })}</DialogDescription>
       </DialogHeader>
       <Input
         ref={familyInputRef}
         value={familyName}
         onChange={(e) => onFamilyNameChange(e.target.value)}
-        placeholder="例如：OPPOSans"
+        placeholder={t('admin.fonts.upload.familyPlaceholder')}
         maxLength={100}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
@@ -168,10 +165,10 @@ function UploadInputPhase({
       />
       <DialogFooter>
         <Button variant="outline" onClick={onCancel}>
-          取消
+          {t('common.action.cancel')}
         </Button>
         <Button onClick={onUpload} disabled={familyName.trim() === ''}>
-          上传
+          {t('admin.shared.upload.submit')}
         </Button>
       </DialogFooter>
     </>
@@ -179,20 +176,21 @@ function UploadInputPhase({
 }
 
 function UploadProgressPhase({ fileName, familyName }: { fileName: string; familyName: string }) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col items-center gap-4 py-4">
       <Loader2Icon className="size-10 animate-spin text-primary" />
       <div className="text-center">
-        <p className="font-semibold">处理中…</p>
-        <p className="mt-1 text-sm text-muted-foreground">分包可能需要数十秒，请耐心等待。</p>
+        <p className="font-semibold">{t('admin.fonts.upload.processing')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('admin.fonts.upload.processingHint')}</p>
       </div>
       <div className="w-full rounded-md border bg-muted/50 px-3 py-2 text-sm">
         <p>
-          <span className="text-muted-foreground">文件：</span>
+          <span className="text-muted-foreground">{t('admin.fonts.upload.fileLabel')}</span>
           {fileName}
         </p>
         <p>
-          <span className="text-muted-foreground">族名：</span>
+          <span className="text-muted-foreground">{t('admin.fonts.upload.familyLabel')}</span>
           {familyName}
         </p>
       </div>
@@ -201,16 +199,19 @@ function UploadProgressPhase({ fileName, familyName }: { fileName: string; famil
 }
 
 function UploadSuccessPhase({ familyName, onClose }: { familyName: string; onClose: () => void }) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col items-center gap-4 py-4">
       <CircleCheckIcon className="size-10 text-emerald-500" />
       <div className="text-center">
-        <p className="font-semibold">上传成功</p>
-        <p className="mt-1 text-sm text-muted-foreground">「{familyName}」已添加到网站字体库。</p>
+        <p className="font-semibold">{t('admin.fonts.upload.success')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t('admin.fonts.upload.successBody', { name: familyName })}
+        </p>
       </div>
       <DialogFooter className="w-full">
         <Button onClick={onClose} className="w-full">
-          关闭
+          {t('common.action.close')}
         </Button>
       </DialogFooter>
     </div>
@@ -226,13 +227,16 @@ function UploadErrorPhase({
   message: string
   onClose: () => void
 }) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col gap-4 py-4">
       <div className="flex flex-col items-center gap-3">
         <CircleAlertIcon className="size-10 text-destructive" />
         <div className="text-center">
-          <p className="font-semibold">上传失败</p>
-          <p className="mt-1 text-sm text-muted-foreground">「{familyName}」未能完成上传。</p>
+          <p className="font-semibold">{t('admin.fonts.upload.errorTitle')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('admin.fonts.upload.errorBody', { name: familyName })}
+          </p>
         </div>
       </div>
       <div className="w-full rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -240,7 +244,7 @@ function UploadErrorPhase({
       </div>
       <DialogFooter>
         <Button onClick={onClose} className="w-full">
-          关闭
+          {t('common.action.close')}
         </Button>
       </DialogFooter>
     </div>

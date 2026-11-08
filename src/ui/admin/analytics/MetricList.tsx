@@ -11,6 +11,7 @@ import { useAnalyticsQueryData } from '@/ui/admin/analytics/use-analytics-query'
 import { buildAnalyticsInput, type AnalyticsScope } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 // Self-fetching top-N panel for one metric dimension (Slite's
@@ -62,9 +63,10 @@ export function MetricList({ type, title, initial, className, scope }: MetricLis
 }
 
 function MetricListSkeleton({ className }: { className?: string }) {
+  const { t } = useI18n()
   return (
     <div className={cn('flex flex-col', className)} role="status" aria-busy="true">
-      <span className="sr-only">加载中</span>
+      <span className="sr-only">{t('common.state.loading')}</span>
       <div className="flex h-10 items-center justify-between px-4">
         <Skeleton className="h-4 w-24 rounded-full" />
         <Skeleton className="h-4 w-16 rounded-full" />

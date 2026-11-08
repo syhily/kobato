@@ -17,6 +17,7 @@ import type { AdminUserDto } from '@/shared/contracts/users'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError, toastApiError } from '@/client/lib/toast-api-error'
+import { ROLE_LABEL_KEYS } from '@/shared/utils/roles'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { invalidateUsersCache } from '@/ui/admin/users/users-cache'
 import { Button } from '@/ui/components/button'
@@ -54,7 +55,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     onSuccess: () => {
       setRoleDraft('')
       invalidateUsersCache(queryClient)
-      toast.success('角色已修改')
+      toast.success(t('admin.users.ops.roleChanged'))
     },
     onError: (error) => {
       setRoleDraft('')
@@ -65,7 +66,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
   const sendResetMutation = useMutation({
     ...orpcQuery.admin.users.sendPasswordReset.mutationOptions(),
     onSuccess: () => {
-      toast.success('重置邮件已发送')
+      toast.success(t('admin.users.ops.resetSent'))
     },
     onError: onMutationError('admin.toast.resetEmailFailed', t),
   })
@@ -73,7 +74,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
   const revokeSessionsMutation = useMutation({
     ...orpcQuery.admin.users.revokeAllSessions.mutationOptions(),
     onSuccess: () => {
-      toast.success('已强制该用户全部登出')
+      toast.success(t('admin.users.ops.revoked'))
     },
     onError: onMutationError('admin.toast.forceSignOutFailed', t),
   })
@@ -82,7 +83,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     mutationFn: (vars: { userId: string }) => orpc.admin.users.clearPasskeys({ id: vars.userId }),
     onSuccess: () => {
       invalidateUsersCache(queryClient)
-      toast.success('已清除 Passkey')
+      toast.success(t('admin.users.ops.passkeysCleared'))
     },
     onError: onMutationError('admin.toast.passkeyClearFailed', t),
   })
@@ -92,7 +93,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
       orpc.admin.users.mute({ id: vars.userId, muted: vars.muted }),
     onSuccess: (_result, vars) => {
       invalidateUsersCache(queryClient)
-      toast.success(vars.muted ? '已禁言该用户' : '已解除禁言')
+      toast.success(vars.muted ? t('admin.users.ops.muted') : t('admin.users.ops.unmuted'))
     },
     onError: onMutationError('admin.toast.muteFailed', t),
   })
@@ -102,7 +103,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     onSuccess: () => {
       invalidateUsersCache(queryClient)
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
-      toast.success('已通过全部待审评论')
+      toast.success(t('admin.users.ops.approvedAll'))
     },
     onError: onMutationError('admin.toast.batchApproveFailed', t),
   })
@@ -120,7 +121,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     mutationFn: (vars: { userId: string }) => orpc.admin.users.restore({ id: vars.userId, ...vars }),
     onSuccess: () => {
       invalidateUsersCache(queryClient)
-      toast.success('用户已恢复')
+      toast.success(t('admin.users.ops.restored'))
     },
     onError: onMutationError('admin.toast.userRestoreFailed', t),
   })
@@ -130,7 +131,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     onSuccess: () => {
       invalidateUsersCache(queryClient)
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
-      toast.success('已删除该用户的全部评论')
+      toast.success(t('admin.users.ops.commentsDeleted'))
     },
     onError: onMutationError('admin.toast.batchCommentDeleteFailed', t),
   })
@@ -139,18 +140,18 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     <>
       <Card>
         <CardHeader>
-          <CardTitle>操作</CardTitle>
-          <CardDescription>对该用户执行管理操作。</CardDescription>
+          <CardTitle>{t('admin.users.ops.title')}</CardTitle>
+          <CardDescription>{t('admin.users.ops.description')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           {user.id !== currentUserId && user.role !== null && (
             <div className="flex flex-col gap-2">
-              <Label htmlFor="user-role">角色</Label>
+              <Label htmlFor="user-role">{t('admin.users.ops.role')}</Label>
               <Select
                 items={[
-                  { value: 'admin', label: '管理员' },
-                  { value: 'author', label: '作者' },
-                  { value: 'visitor', label: '访客' },
+                  { value: 'admin', label: t(ROLE_LABEL_KEYS.admin) },
+                  { value: 'author', label: t(ROLE_LABEL_KEYS.author) },
+                  { value: 'visitor', label: t(ROLE_LABEL_KEYS.visitor) },
                 ]}
                 value={roleDraft || user.role}
                 onValueChange={(value) => {
@@ -165,9 +166,9 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
                   }
                   setRoleDraft(nextRole)
                   setConfirm({
-                    title: `修改角色为「${nextRole === 'admin' ? '管理员' : nextRole === 'author' ? '作者' : '访客'}」？`,
-                    description: '修改角色后，该用户的所有会话将被强制登出。',
-                    actionLabel: '确认修改',
+                    title: t('admin.users.ops.changeRoleTitle', { role: t(ROLE_LABEL_KEYS[nextRole]) }),
+                    description: t('admin.users.ops.changeRoleBody'),
+                    actionLabel: t('admin.users.ops.changeRoleConfirm'),
                     destructive: false,
                     onConfirm: () => updateRoleMutation.mutate({ userId: user.id, role: nextRole }),
                   })
@@ -177,9 +178,9 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">管理员</SelectItem>
-                  <SelectItem value="author">作者</SelectItem>
-                  <SelectItem value="visitor">访客</SelectItem>
+                  <SelectItem value="admin">{t(ROLE_LABEL_KEYS.admin)}</SelectItem>
+                  <SelectItem value="author">{t(ROLE_LABEL_KEYS.author)}</SelectItem>
+                  <SelectItem value="visitor">{t(ROLE_LABEL_KEYS.visitor)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -190,15 +191,15 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
               variant="outline"
               onClick={() =>
                 setConfirm({
-                  title: `发送重置邮件给 ${user.name}？`,
-                  description: '用户将收到一封包含一次性重置链接的邮件。链接 15 分钟内有效。',
-                  actionLabel: '发送',
+                  title: t('admin.users.ops.resetTitle', { name: user.name }),
+                  description: t('admin.users.ops.resetBody'),
+                  actionLabel: t('admin.users.ops.resetSend'),
                   destructive: false,
                   onConfirm: () => sendResetMutation.mutate({ email: user.email }),
                 })
               }
             >
-              <MailIcon /> 发送重置邮件
+              <MailIcon /> {t('admin.users.ops.reset')}
             </Button>
           )}
           {user.role !== null && user.deletedAt === null && (
@@ -207,16 +208,16 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
               variant="outline"
               onClick={() =>
                 setConfirm({
-                  title: `强制 ${user.name} 全部登出？`,
-                  description: '该用户在所有设备上的登录会话将立即被注销，下次访问需要重新登录。',
-                  actionLabel: '强制登出',
+                  title: t('admin.users.ops.revokeTitle', { name: user.name }),
+                  description: t('admin.users.ops.revokeBody'),
+                  actionLabel: t('admin.users.ops.revokeConfirm'),
                   destructive: true,
                   actionIcon: REVOKE_SESSIONS_ICON,
                   onConfirm: () => revokeSessionsMutation.mutate({ userId: user.id }),
                 })
               }
             >
-              <LogOutIcon /> 强制全部登出
+              <LogOutIcon /> {t('admin.users.ops.revoke')}
             </Button>
           )}
           {passkeyEnabled && user.role !== null && user.deletedAt === null && user.passkeyCount > 0 && (
@@ -225,16 +226,16 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
               variant="outline"
               onClick={() =>
                 setConfirm({
-                  title: `清除 ${user.name} 的 Passkey？`,
-                  description: '清除后该用户的所有 Passkey 将被删除，登陆方式将重置为密码登陆。',
-                  actionLabel: '清除',
+                  title: t('admin.users.ops.clearPasskeysTitle', { name: user.name }),
+                  description: t('admin.users.ops.clearPasskeysBody'),
+                  actionLabel: t('admin.users.ops.clearPasskeysConfirm'),
                   destructive: true,
                   actionIcon: CLEAR_PASSKEYS_ICON,
                   onConfirm: () => clearPasskeysMutation.mutate({ userId: user.id }),
                 })
               }
             >
-              <FingerprintIcon /> 清除 Passkey ({user.passkeyCount})
+              <FingerprintIcon /> {t('admin.users.ops.clearPasskeys', { count: user.passkeyCount })}
             </Button>
           )}
           {user.role !== 'admin' && (
@@ -243,11 +244,9 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
               variant="outline"
               onClick={() =>
                 setConfirm({
-                  title: user.isMuted ? '解除禁言？' : '禁言该用户？',
-                  description: user.isMuted
-                    ? '解除后该用户可以继续在站点发表评论。'
-                    : '禁言后该用户无法再发表新的评论，但已有评论保持可见。',
-                  actionLabel: user.isMuted ? '解除' : '禁言',
+                  title: user.isMuted ? t('admin.users.ops.unmuteTitle') : t('admin.users.ops.muteTitle'),
+                  description: user.isMuted ? t('admin.users.ops.unmuteBody') : t('admin.users.ops.muteBody'),
+                  actionLabel: user.isMuted ? t('admin.users.ops.unmute') : t('admin.users.ops.mute'),
                   destructive: !user.isMuted,
                   actionIcon: user.isMuted ? UNMUTE_ICON : MUTE_ICON,
                   onConfirm: () => muteMutation.mutate({ userId: user.id, muted: !user.isMuted }),
@@ -256,11 +255,11 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
             >
               {user.isMuted ? (
                 <>
-                  <Volume2Icon /> 解除禁言
+                  <Volume2Icon /> {t('admin.users.ops.unmuteAction')}
                 </>
               ) : (
                 <>
-                  <VolumeOffIcon /> 禁言
+                  <VolumeOffIcon /> {t('admin.users.ops.mute')}
                 </>
               )}
             </Button>
@@ -271,20 +270,20 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
               variant="outline"
               onClick={() =>
                 setConfirm({
-                  title: `审核全部 ${user.pendingCount} 条待审评论？`,
-                  description: '所有待审核评论将立即通过审核并对所有访客可见。',
-                  actionLabel: '通过',
+                  title: t('admin.users.ops.approveAllTitle', { count: user.pendingCount }),
+                  description: t('admin.users.ops.approveAllBody'),
+                  actionLabel: t('admin.users.ops.approveConfirm'),
                   destructive: false,
                   onConfirm: () => bulkApproveMutation.mutate({ userId: user.id }),
                 })
               }
             >
-              <CheckCheckIcon /> 通过全部待审 ({user.pendingCount})
+              <CheckCheckIcon /> {t('admin.users.ops.approveAll', { count: user.pendingCount })}
             </Button>
           )}
           {user.deletedAt ? (
             <Button type="button" variant="outline" onClick={() => restoreMutation.mutate({ userId: user.id })}>
-              <RotateCcwIcon /> 恢复用户
+              <RotateCcwIcon /> {t('admin.users.ops.restore')}
             </Button>
           ) : (
             user.role !== 'admin' && (
@@ -293,15 +292,15 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
                 variant="destructive"
                 onClick={() =>
                   setConfirm({
-                    title: '软删除该用户？',
-                    description: '此操作为软删除，用户记录保留，但在统计与列表中默认隐藏。',
-                    actionLabel: '删除',
+                    title: t('admin.users.ops.deleteTitle'),
+                    description: t('admin.users.ops.deleteBody'),
+                    actionLabel: t('common.action.delete'),
                     destructive: true,
                     onConfirm: () => deleteMutation.mutate({ userId: user.id }),
                   })
                 }
               >
-                <Trash2Icon /> 软删除用户
+                <Trash2Icon /> {t('admin.users.ops.softDelete')}
               </Button>
             )
           )}
@@ -311,15 +310,15 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
               variant="destructive"
               onClick={() =>
                 setConfirm({
-                  title: '删除该用户全部评论？',
-                  description: '此操作为软删除，可后续通过数据库恢复。',
-                  actionLabel: '删除',
+                  title: t('admin.users.ops.deleteCommentsTitle'),
+                  description: t('admin.users.ops.deleteCommentsBody'),
+                  actionLabel: t('common.action.delete'),
                   destructive: true,
                   onConfirm: () => bulkDeleteMutation.mutate({ userId: user.id }),
                 })
               }
             >
-              <Trash2Icon /> 删除其全部评论
+              <Trash2Icon /> {t('admin.users.ops.deleteComments')}
             </Button>
           )}
         </CardContent>

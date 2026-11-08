@@ -8,6 +8,7 @@ import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
 import { LazyAnimatePresence, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 // Directional track swap: next slides in from the right and out to the left,
@@ -19,6 +20,7 @@ const trackInfoVariants = {
 }
 
 export function AdminMusicPlayerBar() {
+  const { t } = useI18n()
   const location = useLocation()
   const isMusicPage = location.pathname.startsWith('/admin/library/music')
   const { currentTrack, isPlaying, duration, volume, muted, extractedColor, playlist, currentIndex } =
@@ -92,7 +94,7 @@ export function AdminMusicPlayerBar() {
               onClick={handlePrev}
               disabled={currentIndex <= 0}
               className="text-ink-3 transition-colors hover:text-ink-1 disabled:opacity-30"
-              aria-label="上一首"
+              aria-label={t('music.previous')}
             >
               <SkipBack className="size-5 fill-current" />
             </button>
@@ -101,7 +103,7 @@ export function AdminMusicPlayerBar() {
               onClick={toggle}
               className="flex size-10 items-center justify-center rounded-full text-primary-foreground transition-transform hover:scale-105"
               style={playButtonStyle}
-              aria-label={isPlaying ? '暂停' : '播放'}
+              aria-label={isPlaying ? t('music.pause') : t('music.play')}
             >
               {isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
             </button>
@@ -110,7 +112,7 @@ export function AdminMusicPlayerBar() {
               onClick={handleNext}
               disabled={currentIndex >= playlist.length - 1}
               className="text-ink-3 transition-colors hover:text-ink-1 disabled:opacity-30"
-              aria-label="下一首"
+              aria-label={t('music.next')}
             >
               <SkipForward className="size-5 fill-current" />
             </button>
@@ -124,7 +126,7 @@ export function AdminMusicPlayerBar() {
               onChange={seek}
               accent={accent}
               className="flex-1"
-              ariaLabel="播放进度"
+              ariaLabel={t('music.progressAria')}
             />
             <span className="w-10 text-micro text-ink-4">{formatTime(duration)}</span>
           </div>
@@ -137,7 +139,7 @@ export function AdminMusicPlayerBar() {
               type="button"
               onClick={toggleMute}
               className="text-ink-3 transition-colors hover:text-ink-1"
-              aria-label={muted ? '取消静音' : '静音'}
+              aria-label={muted ? t('music.unmute') : t('music.mute')}
             >
               {muted || volume === 0 ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
             </button>
@@ -150,7 +152,7 @@ export function AdminMusicPlayerBar() {
                   onChange={setVolume}
                   accent={accent}
                   orientation="vertical"
-                  ariaLabel="音量"
+                  ariaLabel={t('music.volumeAria')}
                 />
               </div>
             </div>
@@ -159,7 +161,7 @@ export function AdminMusicPlayerBar() {
             type="button"
             onClick={close}
             className="text-ink-4 transition-colors hover:text-ink-1"
-            aria-label="关闭播放器"
+            aria-label={t('music.closePlayer')}
           >
             <X className="size-5" />
           </button>

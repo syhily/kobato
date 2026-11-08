@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Shared query-state chrome for the self-fetching analytics panels
 // (Counters, ViewsChart, Heatmap, MetricList, LocationsMap): the error
@@ -30,12 +31,13 @@ export function AnalyticsQueryState({
   className,
   children,
 }: AnalyticsQueryStateProps) {
+  const { t } = useI18n()
   if (isError) {
     return (
       <div className={cn('flex items-center gap-2 text-sm text-destructive', className)} role="alert">
-        <span>统计数据加载失败</span>
+        <span>{t('admin.analytics.loadFailed')}</span>
         <Button type="button" variant="link" size="sm" className="text-destructive" onClick={onRetry}>
-          重试
+          {t('common.action.retry')}
         </Button>
       </div>
     )
@@ -48,7 +50,7 @@ export function AnalyticsQueryState({
   if (isEmpty) {
     return (
       <div className={cn('flex items-center justify-center text-sm text-muted-foreground', className)} role="status">
-        当前时间范围内暂无数据
+        {t('admin.analytics.empty')}
       </div>
     )
   }

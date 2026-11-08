@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
+  SINGLE_DATE_FILTER_OPERATOR_LABEL_IDS,
   SINGLE_DATE_FILTER_OPERATORS,
   type SingleDateFilterOperator,
   type SingleDateFilterValue,
@@ -11,6 +12,7 @@ import { Calendar } from '@/ui/components/calendar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/ui/components/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export function parseDateInput(value: string): Date | undefined {
   if (!value) {
@@ -47,7 +49,8 @@ function DateOperatorTrigger({
   onChange: (op: SingleDateFilterOperator) => void
   className?: string
 }) {
-  const currentLabel = SINGLE_DATE_FILTER_OPERATORS.find((o) => o.value === value)?.label ?? value
+  const { t } = useI18n()
+  const currentLabel = t(SINGLE_DATE_FILTER_OPERATOR_LABEL_IDS[value])
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -67,7 +70,7 @@ function DateOperatorTrigger({
             onClick={() => onChange(option.value)}
             className="flex items-center justify-between"
           >
-            <span>{option.label}</span>
+            <span>{t(SINGLE_DATE_FILTER_OPERATOR_LABEL_IDS[option.value])}</span>
             {option.value === value && <CheckIcon className="size-3.5 text-primary" />}
           </DropdownMenuItem>
         ))}
@@ -82,6 +85,7 @@ interface DateSingleFilterEditorProps {
 }
 
 export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEditorProps) {
+  const { t } = useI18n()
   const op = value?.op ?? DEFAULT_SINGLE_DATE_OPERATOR
   const [localDate, setLocalDate] = useState(value?.date ?? '')
   const [calendarOpen, setCalendarOpen] = useState(false)
@@ -153,11 +157,11 @@ export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEdit
       <div className="flex flex-1 items-stretch">
         <input
           ref={inputRef}
-          aria-label="日期"
+          aria-label={t('admin.shared.filter.dateAria')}
           autoComplete="off"
           inputMode="numeric"
           pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          placeholder={t('admin.shared.filter.datePlaceholder')}
           type="text"
           value={localDate}
           onChange={(e) => setLocalDate(e.target.value)}
@@ -169,7 +173,7 @@ export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEdit
         />
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger
-            aria-label="打开日历"
+            aria-label={t('admin.shared.filter.openCalendar')}
             className="flex w-8 cursor-pointer items-center justify-center text-muted-foreground transition hover:text-foreground focus-visible:outline-none"
           >
             <CalendarIcon className="size-3.5" />

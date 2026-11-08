@@ -8,6 +8,7 @@ import { useErroredSrc } from '@/ui/admin/shared/useErroredSrc'
 import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Shared cover/poster row; every image goes through the upload pipeline —
 // no manual URL pasting (keeps CSP `img-src` predictable).
@@ -41,6 +42,7 @@ export function CoverInputRow({
   thumbnailClassName,
   objectFit = 'cover',
 }: CoverInputRowProps) {
+  const { t } = useI18n()
   const [uploadOpen, setUploadOpen] = useState(false)
 
   const hasValue = value !== ''
@@ -54,7 +56,7 @@ export function CoverInputRow({
 
   // No "uploads disabled" gate — the only precondition is a supplied `kind` (the slug/host it needs).
   const uploadDisabled = uploadKind === null
-  const uploadTitle = uploadKind === null ? '请先填写 slug / host 后再上传' : undefined
+  const uploadTitle = uploadKind === null ? t('admin.shared.cover.uploadDisabled') : undefined
 
   return (
     <div className="flex flex-col gap-2">
@@ -65,8 +67,8 @@ export function CoverInputRow({
             variant="ghost"
             size="icon"
             type="button"
-            title="清空"
-            aria-label={`清空 ${label}`}
+            title={t('admin.shared.cover.clear')}
+            aria-label={t('admin.shared.cover.clearLabel', { label })}
             onClick={() => onChange('')}
           >
             <XIcon />
@@ -85,12 +87,12 @@ export function CoverInputRow({
               ? 'cursor-not-allowed opacity-60'
               : 'cursor-pointer hover:border-primary hover:ring-2 hover:ring-primary/30',
           )}
-          title={uploadTitle ?? (value === '' ? '点击上传' : '点击替换')}
+          title={uploadTitle ?? (value === '' ? t('admin.shared.cover.upload') : t('admin.shared.cover.replace'))}
         >
           {previewSrc !== null && !previewBroken ? (
             <img
               src={previewSrc}
-              alt={hasValue ? label : `${label} 预览`}
+              alt={hasValue ? label : t('admin.shared.cover.preview', { label })}
               loading="lazy"
               decoding="async"
               className={cn('h-full w-full', objectFit === 'contain' ? 'object-contain' : 'object-cover')}

@@ -46,7 +46,7 @@ export function ImageDetailDialog({
   onDelete,
   onRecalculateThumbhash,
 }: ImageDetailDialogProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { timeZone } = useSiteIdentity()
   const [editingNote, setEditingNote] = useState(false)
   const [noteDraft, setNoteDraft] = useState('')
@@ -114,18 +114,22 @@ export function ImageDetailDialog({
             </div>
 
             <dl className="grid grid-cols-2 gap-2 sm:gap-3">
-              <MetaField label="尺寸">
+              <MetaField label={t('admin.images.detail.dimensions')}>
                 {image.width}×{image.height}
               </MetaField>
-              <MetaField label="大小">{formatBytes(image.byteSize, { locale })}</MetaField>
-              <MetaField label="MIME">{image.mimeType}</MetaField>
-              <MetaField label="上传人">{image.uploaderName ?? '—'}</MetaField>
-              <MetaField label="创建时间">{formatImageTimestamp(image.createdAt, { locale, timeZone })}</MetaField>
-              <MetaField label="更新时间">{formatImageTimestamp(image.updatedAt, { locale, timeZone })}</MetaField>
+              <MetaField label={t('admin.images.detail.bytes')}>{formatBytes(image.byteSize, { locale })}</MetaField>
+              <MetaField label={t('admin.images.detail.mime')}>{image.mimeType}</MetaField>
+              <MetaField label={t('admin.images.detail.uploader')}>{image.uploaderName ?? '—'}</MetaField>
+              <MetaField label={t('admin.images.detail.created')}>
+                {formatImageTimestamp(image.createdAt, { locale, timeZone })}
+              </MetaField>
+              <MetaField label={t('admin.images.detail.updated')}>
+                {formatImageTimestamp(image.updatedAt, { locale, timeZone })}
+              </MetaField>
             </dl>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs text-muted-foreground">公开 URL</Label>
+              <Label className="text-xs text-muted-foreground">{t('admin.images.detail.publicUrl')}</Label>
               <div className="flex flex-wrap items-center gap-2">
                 <code className="min-w-0 flex-1 truncate rounded border bg-muted px-2 py-1 font-mono text-xs">
                   {image.publicUrl}
@@ -136,19 +140,26 @@ export function ImageDetailDialog({
                     variant="outline"
                     size="sm"
                     onClick={() => onCopyUrl(image)}
-                    aria-label="复制公开 URL"
+                    aria-label={t('admin.images.detail.copyAria')}
                   >
                     {copied ? <CheckIcon data-icon /> : <CopyIcon data-icon />}
-                    <span className="hidden sm:inline">{copied ? '已复制' : '复制'}</span>
+                    <span className="hidden sm:inline">
+                      {copied ? t('admin.images.detail.copied') : t('admin.images.detail.copy')}
+                    </span>
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     render={
-                      <a href={image.publicUrl} target="_blank" rel="nofollow noreferrer" aria-label="在新标签页打开">
+                      <a
+                        href={image.publicUrl}
+                        target="_blank"
+                        rel="nofollow noreferrer"
+                        aria-label={t('admin.images.detail.openAria')}
+                      >
                         <ExternalLinkIcon data-icon />
-                        <span className="hidden sm:inline">打开</span>
+                        <span className="hidden sm:inline">{t('admin.images.detail.open')}</span>
                       </a>
                     }
                   />
@@ -157,7 +168,7 @@ export function ImageDetailDialog({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs text-muted-foreground">备注</Label>
+              <Label className="text-xs text-muted-foreground">{t('admin.images.detail.note')}</Label>
               {editingNote ? (
                 <Input
                   ref={inputRef}
@@ -175,7 +186,7 @@ export function ImageDetailDialog({
                       cancelEdit()
                     }
                   }}
-                  placeholder="便于后台搜索（如「2024 年终总结题图」）"
+                  placeholder={t('admin.shared.upload.notePlaceholder')}
                 />
               ) : (
                 <button
@@ -185,9 +196,9 @@ export function ImageDetailDialog({
                     setEditingNote(true)
                   }}
                   className="cursor-text rounded border border-transparent px-2 py-1 text-left text-sm transition-colors outline-none hover:border-input hover:bg-muted/50 focus-visible:border-input focus-visible:bg-muted/50"
-                  title="点击编辑"
+                  title={t('admin.images.detail.noteEditTitle')}
                 >
-                  {image.note || <span className="text-muted-foreground">— 点击添加备注 —</span>}
+                  {image.note || <span className="text-muted-foreground">{t('admin.images.detail.noteEmpty')}</span>}
                 </button>
               )}
             </div>
@@ -201,7 +212,7 @@ export function ImageDetailDialog({
               className="w-full sm:w-auto"
               onClick={() => onDelete(image)}
             >
-              <Trash2Icon data-icon /> 删除
+              <Trash2Icon data-icon /> {t('common.action.delete')}
             </Button>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <Button
@@ -213,10 +224,12 @@ export function ImageDetailDialog({
                 disabled={isRecalculatingThumbhash}
               >
                 <RefreshCwIcon data-icon className={cn(isRecalculatingThumbhash && 'animate-spin')} />{' '}
-                {isRecalculatingThumbhash ? '计算中…' : '重新计算 thumbhash'}
+                {isRecalculatingThumbhash
+                  ? t('admin.images.detail.recalculating')
+                  : t('admin.images.detail.recalculate')}
               </Button>
               <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={onClose}>
-                <XIcon data-icon /> 关闭
+                <XIcon data-icon /> {t('common.action.close')}
               </Button>
             </div>
           </DialogFooter>

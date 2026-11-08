@@ -28,10 +28,7 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
-const RESULT_LIMIT_OPTIONS: { value: string; label: string }[] = [5, 10, 15, 20, 30].map((n) => ({
-  value: String(n),
-  label: `${n} 条`,
-}))
+const RESULT_LIMIT_VALUES = [5, 10, 15, 20, 30] as const
 
 export interface AddMusicDialogProps {
   open: boolean
@@ -77,7 +74,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const addMutation = useMutation({
     ...orpcQuery.admin.music.add.mutationOptions(),
     onSuccess: (payload) => {
-      toast.success('音乐已添加')
+      toast.success(t('admin.musics.toastAdded'))
       setAddingSourceId(null)
       onAdded(payload.music)
       setAddedSourceIds((prev) => new Set(prev).add(payload.music.sourceId))
@@ -146,10 +143,8 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
       <DialogContent className="flex h-[80vh] max-h-[640px] w-full flex-col gap-0 p-0 sm:max-w-xl">
         <DialogHeader className="border-b px-6 py-4">
-          <DialogTitle>添加音乐</DialogTitle>
-          <DialogDescription>
-            搜索并添加音乐到曲库。点击「试听」可在浏览器中预览，「添加」会下载音频与封面到本站 S3 并入库。
-          </DialogDescription>
+          <DialogTitle>{t('admin.musics.addDialog.title')}</DialogTitle>
+          <DialogDescription>{t('admin.musics.addDialog.description')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex items-center gap-3 border-b px-6 py-3">
@@ -168,20 +163,21 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                 type="search"
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
-                placeholder="例：Adele Hello、稻香、夜曲"
+                placeholder={t('admin.musics.addDialog.keywordPlaceholder')}
               />
             </InputGroup>
             <Button type="submit" disabled={isSearching || keyword.trim() === ''}>
-              {isSearching ? <Loader2Icon className="animate-spin" /> : <SearchIcon />} 搜索
+              {isSearching ? <Loader2Icon className="animate-spin" /> : <SearchIcon />}{' '}
+              {t('admin.musics.addDialog.search')}
             </Button>
           </form>
           <div className="flex shrink-0 items-center gap-4">
             <div className="flex items-center gap-2">
               <Label htmlFor="add-music-source" className="text-xs whitespace-nowrap text-muted-foreground">
-                来源
+                {t('admin.musics.addDialog.source')}
               </Label>
               <Select
-                items={SOURCE_OPTIONS}
+                items={SOURCE_OPTIONS.map((item) => ({ value: item.value, label: t(item.labelId) }))}
                 value={source}
                 onValueChange={(value) => setSource((value ?? 'netease') as MetingSource)}
               >
@@ -189,7 +185,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                 <SelectContent>
                   {SOURCE_OPTIONS.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
-                      {item.label}
+                      {t(item.labelId)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -197,16 +193,23 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="add-music-limit" className="text-xs whitespace-nowrap text-muted-foreground">
-                每页
+                {t('admin.musics.addDialog.perPage')}
               </Label>
-              <Select items={RESULT_LIMIT_OPTIONS} value={String(searchLimit)} onValueChange={() => void 0}>
+              <Select
+                items={RESULT_LIMIT_VALUES.map((n) => ({
+                  value: String(n),
+                  label: t('admin.musics.addDialog.limitOption', { count: n }),
+                }))}
+                value={String(searchLimit)}
+                onValueChange={() => void 0}
+              >
                 <SelectTrigger id="add-music-limit" size="sm" className="w-20" disabled>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {RESULT_LIMIT_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
+                  {RESULT_LIMIT_VALUES.map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {t('admin.musics.addDialog.limitOption', { count: n })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -224,7 +227,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
             {(isSearching || isLoadingMore) && results.length === 0 ? (
               skeletonKeys(3).map((key) => <Skeleton key={key} className="h-16 w-full rounded-xl" />)
             ) : results.length === 0 ? (
-              <p className="text-sm text-muted-foreground">输入关键词后点击搜索。</p>
+              <p className="text-sm text-muted-foreground">{t('admin.musics.addDialog.emptyHint')}</p>
             ) : (
               results.map((hit, index) => {
                 const previewId = `preview:${hit.sourceId}`
@@ -258,7 +261,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
         <DialogFooter className="border-t px-6 py-3">
           <Button type="button" variant="outline" onClick={onClose}>
-            <XIcon /> 关闭
+            <XIcon /> {t('common.action.close')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -4,6 +4,7 @@ import type { MetingSearchHit } from '@/shared/contracts/music'
 
 import { Equalizer } from '@/ui/admin/musics/Equalizer'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface SearchAlbumCardProps {
@@ -17,6 +18,7 @@ export interface SearchAlbumCardProps {
 }
 
 export function SearchAlbumCard({ hit, adding, added, isCurrent, isPlaying, onAdd, onPreview }: SearchAlbumCardProps) {
+  const { t } = useI18n()
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!adding && !added) {
@@ -65,7 +67,7 @@ export function SearchAlbumCard({ hit, adding, added, isCurrent, isPlaying, onAd
                 'transition-all duration-200',
                 isCurrentPlaying && 'translate-y-0 opacity-100',
               )}
-              aria-label={isCurrentPlaying ? '暂停' : '播放'}
+              aria-label={isCurrentPlaying ? t('music.pause') : t('music.play')}
             >
               {isCurrentPlaying ? <Pause className="size-6 fill-current" /> : <Play className="size-6 fill-current" />}
             </button>
@@ -82,7 +84,7 @@ export function SearchAlbumCard({ hit, adding, added, isCurrent, isPlaying, onAd
               'transition-all duration-200',
               added ? 'bg-status-success-bg text-status-success-fg' : 'bg-surface text-ink-1 hover:bg-surface-dim',
             )}
-            aria-label={added ? '已添加' : '添加音乐'}
+            aria-label={added ? t('admin.musics.search.added') : t('admin.musics.search.addAria')}
           >
             {adding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-5" />}
           </button>

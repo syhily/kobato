@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { useMutation } from '@tanstack/react-query'
 import { LogOutIcon, MonitorIcon } from 'lucide-react'
 import { useState } from 'react'
@@ -19,12 +21,17 @@ import { Badge } from '@/ui/components/badge'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
+/** tRich chunks renderer for the active-session count badge (module scope — stable). */
+function renderCountBadge(chunks: ReactNode[]): ReactNode {
+  return <Badge variant="secondary">{chunks}</Badge>
+}
+
 export interface SessionsViewProps {
   items: AdminSessionItem[]
 }
 
 export function SessionsView({ items }: SessionsViewProps) {
-  const { t } = useI18n()
+  const { t, tRich } = useI18n()
   const config = useSiteIdentity()
   const logout = useLogout()
   const revalidator = useRevalidator()
@@ -46,11 +53,13 @@ export function SessionsView({ items }: SessionsViewProps) {
 
   const onRevoke = (item: AdminSessionItem) => {
     setConfirm({
-      title: item.isCurrent ? '注销你当前的会话？' : `注销 ${item.userName} 的此会话？`,
+      title: item.isCurrent
+        ? t('admin.sessions.revokeCurrentTitle')
+        : t('admin.sessions.revokeUserTitle', { name: item.userName }),
       description: item.isCurrent
-        ? '这是你正在使用的会话。注销后页面会跳转到登录页，需要重新输入密码。'
-        : `该设备 (${item.label}) 将立即退出登录。`,
-      actionLabel: '注销',
+        ? t('admin.sessions.revokeCurrentBody')
+        : t('admin.sessions.revokeUserBody', { label: item.label }),
+      actionLabel: t('admin.sessions.revoke'),
       destructive: true,
       actionIcon: <LogOutIcon data-icon />,
       onConfirm: () => {
@@ -66,13 +75,16 @@ export function SessionsView({ items }: SessionsViewProps) {
   return (
     <>
       <AdminListPage>
-        <AdminListPage.Header title="会话管理" description="查看与管理站点全部活跃登录会话。">
+        <AdminListPage.Header title={t('admin.sessions.title')} description={t('admin.sessions.description')}>
           <SessionSortSelect sort={sort} options={SESSION_SORT_OPTIONS} onChange={setSort} />
         </AdminListPage.Header>
 
         <AdminListPage.Body>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            共 <Badge variant="secondary">{items.length}</Badge> 条活跃会话
+            {tRich('admin.sessions.count', {
+              count: items.length,
+              badge: renderCountBadge,
+            })}
           </div>
           <div className="mt-3 divide-y">
             {items.length === 0 ? (
@@ -81,7 +93,7 @@ export function SessionsView({ items }: SessionsViewProps) {
                   <EmptyMedia variant="icon">
                     <MonitorIcon />
                   </EmptyMedia>
-                  <EmptyTitle>没有匹配的会话</EmptyTitle>
+                  <EmptyTitle>{t('admin.sessions.empty')}</EmptyTitle>
                 </EmptyHeader>
               </Empty>
             ) : (

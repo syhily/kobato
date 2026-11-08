@@ -27,15 +27,12 @@ export function TasksView() {
 
   return (
     <AdminListPage>
-      <AdminListPage.Header
-        title="任务管理"
-        description="集中查看后台任务的调度状态与运行记录；支持的操作（手动备份、取消/继续存储迁移）在各任务卡片上。"
-      />
+      <AdminListPage.Header title={t('admin.tasks.title')} description={t('admin.tasks.description')} />
 
       {jobsQuery.isLoading ? (
         <TasksSkeleton />
       ) : jobsQuery.error !== null || data === undefined ? (
-        <p className="text-sm text-destructive">加载任务状态失败，请稍后刷新重试。</p>
+        <p className="text-sm text-destructive">{t('admin.tasks.loadFailed')}</p>
       ) : (
         GROUP_ORDER.map((group) => {
           const tasks = data.tasks.filter((task) => task.group === group)

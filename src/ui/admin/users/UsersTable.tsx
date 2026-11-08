@@ -29,21 +29,22 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableProps) {
+  const { t } = useI18n()
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            用户
+            {t('admin.users.table.user')}
           </TableHead>
           <TableHead className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            角色
+            {t('admin.users.table.role')}
           </TableHead>
           <TableHead className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            状态
+            {t('admin.users.table.status')}
           </TableHead>
           <TableHead className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            注册时间
+            {t('admin.users.table.registered')}
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -58,7 +59,7 @@ export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableP
                   <EmptyMedia variant="icon">
                     <SearchIcon />
                   </EmptyMedia>
-                  <EmptyTitle>未找到用户</EmptyTitle>
+                  <EmptyTitle>{t('admin.users.empty')}</EmptyTitle>
                 </EmptyHeader>
               </Empty>
             </TableCell>
@@ -90,7 +91,11 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
   const detailPath = `/admin/security/users/${user.id}`
 
-  const statusText = user.deletedAt ? '已删除' : user.isMuted ? '已禁言' : '正常'
+  const statusText = user.deletedAt
+    ? t('admin.users.status.deleted')
+    : user.isMuted
+      ? t('admin.users.status.muted')
+      : t('admin.users.status.normal')
   const statusClass = user.deletedAt ? 'text-muted-foreground' : user.isMuted ? 'text-destructive' : 'text-foreground'
 
   const createdDate = new Date(user.createdAt)

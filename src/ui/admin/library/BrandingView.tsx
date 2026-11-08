@@ -3,6 +3,7 @@ import { useRevalidator, useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AssetsLoaderShape, BrandingSlotStatus } from '@/shared/config/projection'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { useFileUpload } from '@/client/hooks/use-file-upload'
 import { toastApiError } from '@/client/lib/toast-api-error'
@@ -32,166 +33,164 @@ type BrandingFileSlot =
 
 interface SlotMeta {
   slot: BrandingFileSlot
-  label: string
+  labelId: UiMessageId
   publicPath: string
   accept: '.svg' | '.ico' | '.png'
   maxBytes: number
-  purpose: string
-  spec: string
+  purposeId: UiMessageId
+  specId: UiMessageId
   /** Render the preview thumbnail on a dark background — for dark-theme assets. */
   darkPreview?: boolean
 }
 
 interface SlotGroup {
-  title: string
-  description: string
+  titleId: UiMessageId
+  descriptionId: UiMessageId
   slots: SlotMeta[]
 }
 
 const SLOT_GROUPS: readonly SlotGroup[] = [
   {
-    title: 'Favicon 套件',
-    description:
-      '浏览器标签页、操作系统主屏、PWA 安装时使用的站点图标。上传 Favicon SVG 后会自动生成下面 4 个尺寸；如需精细控制也可单独上传覆盖。',
+    titleId: 'admin.branding.group.favicon.title',
+    descriptionId: 'admin.branding.group.favicon.description',
     slots: [
       {
         slot: 'faviconSvg',
-        label: 'Favicon SVG',
+        labelId: 'admin.branding.slot.faviconSvg.label',
         publicPath: '/favicon.svg',
         accept: '.svg',
         maxBytes: 50 * 1024,
-        purpose: '现代浏览器在地址栏、标签页、书签里展示的矢量图标，分辨率随场景自适应。',
-        spec: '建议 32×32 安全区的纯矢量 SVG，文件不超过 50 KB。',
+        purposeId: 'admin.branding.slot.faviconSvg.purpose',
+        specId: 'admin.branding.slot.faviconSvg.spec',
       },
       {
         slot: 'faviconIco',
-        label: 'Favicon ICO',
+        labelId: 'admin.branding.slot.faviconIco.label',
         publicPath: '/favicon.ico',
         accept: '.ico',
         maxBytes: 100 * 1024,
-        purpose: '老版本浏览器与 Windows 任务栏使用的多分辨率图标，通常由 SVG 自动生成。',
-        spec: '建议包含 16×16 + 32×32 两组帧，文件不超过 100 KB。',
+        purposeId: 'admin.branding.slot.faviconIco.purpose',
+        specId: 'admin.branding.slot.faviconIco.spec',
       },
       {
         slot: 'appleTouchIcon',
-        label: 'Apple Touch Icon',
+        labelId: 'admin.branding.slot.appleTouchIcon.label',
         publicPath: '/apple-touch-icon.png',
         accept: '.png',
         maxBytes: 200 * 1024,
-        purpose: 'iOS / iPadOS 用户将网站添加到主屏幕时的图标，也用于 Safari 的稍后阅读列表。',
-        spec: '180×180 PNG，留出 ~20% 安全边距。文件不超过 200 KB。',
+        purposeId: 'admin.branding.slot.appleTouchIcon.purpose',
+        specId: 'admin.branding.slot.appleTouchIcon.spec',
       },
       {
         slot: 'icon192',
-        label: 'Icon 192',
+        labelId: 'admin.branding.slot.icon192.label',
         publicPath: '/images/icon-192.png',
         accept: '.png',
         maxBytes: 100 * 1024,
-        purpose: 'Web App Manifest 中 192×192 条目，用于 Android 主屏与 PWA 启动器。',
-        spec: '192×192 PNG，背景透明或与品牌色一致。',
+        purposeId: 'admin.branding.slot.icon192.purpose',
+        specId: 'admin.branding.slot.icon192.spec',
       },
       {
         slot: 'icon512',
-        label: 'Icon 512',
+        labelId: 'admin.branding.slot.icon512.label',
         publicPath: '/images/icon-512.png',
         accept: '.png',
         maxBytes: 300 * 1024,
-        purpose: 'Web App Manifest 中 512×512 条目，PWA 启动画面与高分辨率主屏使用。',
-        spec: '512×512 PNG，文件不超过 300 KB。',
+        purposeId: 'admin.branding.slot.icon512.purpose',
+        specId: 'admin.branding.slot.icon512.spec',
       },
     ],
   },
   {
-    title: '站点 Logo',
-    description:
-      '页头、登录页、关于页使用的站点 Logo。提供浅色 / 暗色两套以适配主题切换，提供常规 / 大版以适配不同布局。',
+    titleId: 'admin.branding.group.logo.title',
+    descriptionId: 'admin.branding.group.logo.description',
     slots: [
       {
         slot: 'logoSvg',
-        label: 'Logo SVG（浅色主题）',
+        labelId: 'admin.branding.slot.logoSvg.label',
         publicPath: '/logo.svg',
         accept: '.svg',
         maxBytes: 100 * 1024,
-        purpose: '浅色主题下页头展示的站点 Logo。',
-        spec: 'SVG 矢量，建议高度 ~32px 可读，无内嵌位图。',
+        purposeId: 'admin.branding.slot.logoSvg.purpose',
+        specId: 'admin.branding.slot.logoSvg.spec',
       },
       {
         slot: 'logoDarkSvg',
-        label: 'Logo SVG（暗色主题）',
+        labelId: 'admin.branding.slot.logoDarkSvg.label',
         publicPath: '/logo-dark.svg',
         accept: '.svg',
         maxBytes: 100 * 1024,
-        purpose: '暗色主题下页头展示的站点 Logo（颜色反转或加描边版本）。',
-        spec: 'SVG 矢量，与浅色版宽高保持一致。',
+        purposeId: 'admin.branding.slot.logoDarkSvg.purpose',
+        specId: 'admin.branding.slot.logoDarkSvg.spec',
         darkPreview: true,
       },
       {
         slot: 'logoLargeSvg',
-        label: 'Logo Large SVG（浅色主题）',
+        labelId: 'admin.branding.slot.logoLargeSvg.label',
         publicPath: '/logo-large.svg',
         accept: '.svg',
         maxBytes: 200 * 1024,
-        purpose: '登录页 / 关于页等需要醒目展示的位置使用的大尺寸 Logo（浅色版）。',
-        spec: 'SVG 矢量，可包含完整的品牌名 + 图标横排版式。',
+        purposeId: 'admin.branding.slot.logoLargeSvg.purpose',
+        specId: 'admin.branding.slot.logoLargeSvg.spec',
       },
       {
         slot: 'logoLargeDarkSvg',
-        label: 'Logo Large SVG（暗色主题）',
+        labelId: 'admin.branding.slot.logoLargeDarkSvg.label',
         publicPath: '/logo-large-dark.svg',
         accept: '.svg',
         maxBytes: 200 * 1024,
-        purpose: '大尺寸 Logo 的暗色主题版本。',
-        spec: 'SVG 矢量，与浅色大版宽高保持一致。',
+        purposeId: 'admin.branding.slot.logoLargeDarkSvg.purpose',
+        specId: 'admin.branding.slot.logoLargeDarkSvg.spec',
         darkPreview: true,
       },
     ],
   },
   {
-    title: '社交卡片与海报',
-    description: '社交分享、首页装饰使用的位图素材。需要在 1200×630 这样的固定比例下保持清晰，因此用 PNG 而非 SVG。',
+    titleId: 'admin.branding.group.social.title',
+    descriptionId: 'admin.branding.group.social.description',
     slots: [
       {
         slot: 'openGraph',
-        label: 'Open Graph 图片',
+        labelId: 'admin.branding.slot.openGraph.label',
         publicPath: '/images/open-graph.png',
         accept: '.png',
         maxBytes: 600 * 1024,
-        purpose: '当文章自己没有封面时，社交平台（Twitter/X、Telegram、微信等）抓取的分享卡片图。',
-        spec: '1200×630 PNG，覆盖站点标识 + 品牌色，文件不超过 600 KB。',
+        purposeId: 'admin.branding.slot.openGraph.purpose',
+        specId: 'admin.branding.slot.openGraph.spec',
       },
       {
         slot: 'blogPoster',
-        label: '博客海报（浅色主题）',
+        labelId: 'admin.branding.slot.blogPoster.label',
         publicPath: '/images/blog-poster.png',
         accept: '.png',
         maxBytes: 600 * 1024,
-        purpose: '首页顶部大幅装饰位（浅色主题），用于强化品牌识别。',
-        spec: '建议 1600×900 PNG，需考虑首屏裁切。',
+        purposeId: 'admin.branding.slot.blogPoster.purpose',
+        specId: 'admin.branding.slot.blogPoster.spec',
       },
       {
         slot: 'blogPosterDark',
-        label: '博客海报（暗色主题）',
+        labelId: 'admin.branding.slot.blogPosterDark.label',
         publicPath: '/images/blog-poster-dark.png',
         accept: '.png',
         maxBytes: 600 * 1024,
-        purpose: '首页顶部大幅装饰位的暗色主题版本。',
-        spec: '与浅色版同尺寸，保证主题切换时不重排版面。',
+        purposeId: 'admin.branding.slot.blogPosterDark.purpose',
+        specId: 'admin.branding.slot.blogPosterDark.spec',
         darkPreview: true,
       },
     ],
   },
   {
-    title: '通用素材',
-    description: '其他需要被站点回退到的图片资源。',
+    titleId: 'admin.branding.group.misc.title',
+    descriptionId: 'admin.branding.group.misc.description',
     slots: [
       {
         slot: 'defaultAvatar',
-        label: '默认头像',
+        labelId: 'admin.branding.slot.defaultAvatar.label',
         publicPath: '/images/default-avatar.png',
         accept: '.png',
         maxBytes: 100 * 1024,
-        purpose: '匿名评论者、没有上传头像的注册用户使用的回退头像。',
-        spec: '正方形 PNG，建议 256×256，文件不超过 100 KB。',
+        purposeId: 'admin.branding.slot.defaultAvatar.purpose',
+        specId: 'admin.branding.slot.defaultAvatar.spec',
       },
     ],
   },
@@ -202,16 +201,14 @@ interface BrandingViewProps {
 }
 
 export function BrandingView({ branding }: BrandingViewProps) {
+  const { t } = useI18n()
   return (
     <AdminListPage>
-      <AdminListPage.Header
-        title="品牌素材"
-        description="集中管理 favicon、Logo、社交卡片与海报等站点品牌素材。上传写入当前存储后端（S3 优先，未配置时落本地），公开 URL 与默认资源一致。"
-      />
+      <AdminListPage.Header title={t('admin.branding.title')} description={t('admin.branding.description')} />
 
       <div className="flex flex-col gap-8">
         {SLOT_GROUPS.map((group) => (
-          <SlotGroupCard key={group.title} group={group} branding={branding} />
+          <SlotGroupCard key={group.titleId} group={group} branding={branding} />
         ))}
       </div>
     </AdminListPage>
@@ -219,11 +216,12 @@ export function BrandingView({ branding }: BrandingViewProps) {
 }
 
 function SlotGroupCard({ group, branding }: { group: SlotGroup; branding: AssetsLoaderShape['branding'] | null }) {
+  const { t } = useI18n()
   return (
     <section>
       <header className="mb-3">
-        <h2 className="text-lg font-semibold tracking-tight">{group.title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>
+        <h2 className="text-lg font-semibold tracking-tight">{t(group.titleId)}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t(group.descriptionId)}</p>
       </header>
       <Card>
         <CardContent className="divide-y divide-border p-0">
@@ -254,12 +252,32 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
     accept: [meta.accept],
     maxBytes: meta.maxBytes,
     messages: {
-      invalidType: { title: '文件类型错误', description: `请选择 ${meta.accept} 格式的文件` },
+      invalidType: {
+        title: t('admin.toast.invalidFileType'),
+        description: t('admin.branding.invalidTypeDescription', { accept: meta.accept }),
+      },
       tooLarge: (file) => ({
-        title: `文件过大（${formatNumber(file.size / 1024, { locale, style: 'unit', unit: 'kilobyte', unitDisplay: 'short', maximumFractionDigits: 0 })}）`,
-        description: `${meta.label} 大小上限为 ${formatNumber(meta.maxBytes / 1024, { locale, style: 'unit', unit: 'kilobyte', unitDisplay: 'short', maximumFractionDigits: 0 })}。`,
+        title: t('admin.branding.tooLargeTitle', {
+          size: formatNumber(file.size / 1024, {
+            locale,
+            style: 'unit',
+            unit: 'kilobyte',
+            unitDisplay: 'short',
+            maximumFractionDigits: 0,
+          }),
+        }),
+        description: t('admin.branding.tooLargeDescription', {
+          label: t(meta.labelId),
+          limit: formatNumber(meta.maxBytes / 1024, {
+            locale,
+            style: 'unit',
+            unit: 'kilobyte',
+            unitDisplay: 'short',
+            maximumFractionDigits: 0,
+          }),
+        }),
       }),
-      success: `${meta.label} 已上传`,
+      success: t('admin.branding.uploaded', { label: t(meta.labelId) }),
     },
     onSuccess: () => revalidator.revalidate(),
   })
@@ -279,9 +297,13 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
       if (!res.ok) {
         const data: unknown = await res.json().catch(() => null)
         const message = extractApiErrorMessage(data)
-        toastApiError(new Error(message ?? `清除失败 (${res.status})`), 'admin.toast.clearFailed', t)
+        toastApiError(
+          new Error(message ?? t('admin.branding.clearFailed', { status: res.status })),
+          'admin.toast.clearFailed',
+          t,
+        )
       } else {
-        toast.success(`${meta.label} 已清除`)
+        toast.success(t('admin.branding.cleared', { label: t(meta.labelId) }))
         await revalidator.revalidate()
       }
     } catch (err) {
@@ -299,19 +321,19 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
           meta.darkPreview ? 'border-line-muted bg-surface-secondary' : 'bg-muted/40',
         )}
       >
-        <img src={previewUrl} alt={meta.label} loading="lazy" className="max-h-20 max-w-full object-contain" />
+        <img src={previewUrl} alt={t(meta.labelId)} loading="lazy" className="max-h-20 max-w-full object-contain" />
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h3 className="text-sm font-semibold">{meta.label}</h3>
+          <h3 className="text-sm font-semibold">{t(meta.labelId)}</h3>
           <code className="text-xs text-muted-foreground">{meta.publicPath}</code>
           <span className={cn('text-xs', configured ? 'text-status-ok-fg' : 'text-muted-foreground')}>
-            {configured ? '已自定义' : '使用默认'}
+            {configured ? t('admin.branding.customized') : t('admin.branding.default')}
           </span>
         </div>
-        <p className="text-sm text-foreground/90">{meta.purpose}</p>
-        <p className="text-xs text-muted-foreground">{meta.spec}</p>
+        <p className="text-sm text-foreground/90">{t(meta.purposeId)}</p>
+        <p className="text-xs text-muted-foreground">{t(meta.specId)}</p>
       </div>
 
       <div className="flex shrink-0 flex-col items-stretch gap-2 sm:w-44">
@@ -319,7 +341,7 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
           ref={fileInputRef}
           type="file"
           accept={meta.accept}
-          aria-label={`选择 ${meta.label}`}
+          aria-label={t('admin.branding.chooseAria', { label: t(meta.labelId) })}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0]
@@ -336,7 +358,11 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
           disabled={pending || clearing}
           onClick={() => fileInputRef.current?.click()}
         >
-          {pending ? '上传中…' : configured ? '替换' : '上传'}
+          {pending
+            ? t('admin.shared.upload.uploading')
+            : configured
+              ? t('admin.branding.replace')
+              : t('admin.shared.upload.submit')}
         </Button>
         {configured ? (
           <Button
@@ -346,7 +372,7 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
             disabled={pending || clearing}
             onClick={() => void handleClear()}
           >
-            {clearing ? '清除中…' : '清除'}
+            {clearing ? t('admin.branding.clearing') : t('admin.branding.clear')}
           </Button>
         ) : null}
       </div>

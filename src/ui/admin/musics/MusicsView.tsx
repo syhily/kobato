@@ -12,6 +12,8 @@ import {
 import { Fragment, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -21,22 +23,23 @@ import { useMusicPlayerActions } from '@/ui/admin/musics/MusicPlayerContext'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/ui/components/dropdown-menu'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export type MusicSortBy = 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
 export type MusicSortOrder = 'asc' | 'desc'
 
 const PAGE_SIZE = 24
 
-const SORT_LABELS: Record<MusicSortBy, string> = {
-  createdAt: '创建时间',
-  updatedAt: '更新时间',
-  name: '歌曲名称',
-  artist: '艺人',
-  album: '专辑',
+const SORT_LABEL_IDS: Record<MusicSortBy, UiMessageId> = {
+  createdAt: 'admin.musics.sort.createdAt',
+  updatedAt: 'admin.musics.sort.updatedAt',
+  name: 'admin.musics.sort.name',
+  artist: 'admin.musics.sort.artist',
+  album: 'admin.musics.sort.album',
 }
 
-function sortLabelEntries(): [MusicSortBy, string][] {
-  return unsafeCast<[MusicSortBy, string][]>(Object.entries(SORT_LABELS))
+function sortLabelEntries(): [MusicSortBy, UiMessageId][] {
+  return unsafeCast<[MusicSortBy, UiMessageId][]>(Object.entries(SORT_LABEL_IDS))
 }
 
 export function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder: MusicSortOrder }) {
@@ -54,6 +57,7 @@ export function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder
 }
 
 export function MusicsView() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [sortBy, setSortBy] = useState<MusicSortBy>('createdAt')
@@ -125,7 +129,7 @@ export function MusicsView() {
             onClick={handlePlayAll}
             disabled={allMusics.length === 0}
             className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 disabled:opacity-40"
-            aria-label="播放全部"
+            aria-label={t('admin.musics.playAll')}
           >
             <Play className="size-7 fill-current" />
           </button>
@@ -136,10 +140,10 @@ export function MusicsView() {
               void navigate('/admin/library/music/add')
             }}
             className="flex shrink-0 items-center gap-2 rounded-full bg-surface-dim px-3 py-2.5 text-sm font-medium text-ink-1 transition-colors hover:bg-surface sm:px-5"
-            aria-label="添加音乐"
+            aria-label={t('admin.musics.add')}
           >
             <Plus className="size-4" />
-            <span className="hidden sm:inline">添加音乐</span>
+            <span className="hidden sm:inline">{t('admin.musics.add')}</span>
           </button>
 
           {/* Sort */}
@@ -147,10 +151,10 @@ export function MusicsView() {
             <DropdownMenu>
               <DropdownMenuTrigger
                 className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-ink-1 transition-colors hover:bg-surface sm:px-4"
-                aria-label="排序"
+                aria-label={t('admin.musics.sort')}
               >
                 <SortIcon sortBy={sortBy} sortOrder={sortOrder} />
-                <span className="hidden sm:inline">{SORT_LABELS[sortBy]}</span>
+                <span className="hidden sm:inline">{t(SORT_LABEL_IDS[sortBy])}</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-40">
                 {sortLabelEntries().map(([key, label]) => (
@@ -159,9 +163,11 @@ export function MusicsView() {
                     onClick={() => handleSortChange(key)}
                     className={cn(sortBy === key ? 'text-ink-1' : 'text-ink-3')}
                   >
-                    <span>{label}</span>
+                    <span>{t(label)}</span>
                     {sortBy === key && (
-                      <span className="ml-auto text-ink-4">{sortOrder === 'asc' ? '升序' : '降序'}</span>
+                      <span className="ml-auto text-ink-4">
+                        {sortOrder === 'asc' ? t('admin.sessions.sortAsc') : t('admin.sessions.sortDesc')}
+                      </span>
                     )}
                   </DropdownMenuItem>
                 ))}
@@ -173,7 +179,7 @@ export function MusicsView() {
               onClick={() => setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'))}
               className="px-3 py-2.5 text-sm text-ink-4 transition-colors hover:bg-surface hover:text-ink-1 sm:px-4"
             >
-              {sortOrder === 'asc' ? '升序' : '降序'}
+              {sortOrder === 'asc' ? t('admin.sessions.sortAsc') : t('admin.sessions.sortDesc')}
             </button>
           </div>
 
@@ -189,8 +195,8 @@ export function MusicsView() {
               type="search"
               value={qInput}
               onChange={(e) => setQInput(e.target.value)}
-              placeholder="搜索..."
-              aria-label="搜索歌曲"
+              placeholder={t('admin.musics.searchPlaceholder')}
+              aria-label={t('admin.musics.searchAria')}
               className="h-10 w-full rounded-full bg-surface-dim py-2 pr-4 pl-10 text-sm text-ink-1 transition-colors outline-none placeholder:text-ink-4 focus:bg-surface sm:w-64"
             />
           </form>
@@ -202,8 +208,8 @@ export function MusicsView() {
         <GridSkeleton />
       ) : allMusics.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 text-ink-4">
-          <p className="text-lg font-medium">还没有音乐</p>
-          <p className="mt-1 text-sm">点击上方按钮添加你的第一首歌</p>
+          <p className="text-lg font-medium">{t('admin.musics.emptyTitle')}</p>
+          <p className="mt-1 text-sm">{t('admin.musics.emptyHint')}</p>
           <button
             type="button"
             onClick={() => {
@@ -212,7 +218,7 @@ export function MusicsView() {
             className="mt-6 flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-105"
           >
             <Plus className="size-4" />
-            添加音乐
+            {t('admin.musics.add')}
           </button>
         </div>
       ) : (
@@ -239,10 +245,12 @@ export function MusicsView() {
             {isFetchingNextPage && (
               <div className="flex items-center gap-2 text-sm text-ink-4">
                 <div className="size-4 animate-spin rounded-full border-2 border-line-muted border-t-primary" />
-                加载中…
+                {t('common.state.loading')}
               </div>
             )}
-            {!hasNextPage && allMusics.length > 0 && <p className="text-sm text-ink-4">已加载全部 {total} 首歌曲</p>}
+            {!hasNextPage && allMusics.length > 0 && (
+              <p className="text-sm text-ink-4">{t('admin.musics.allLoaded', { count: total })}</p>
+            )}
           </div>
         </>
       )}

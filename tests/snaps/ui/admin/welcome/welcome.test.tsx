@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/contracts/comments'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
-import { EMPTY_STATE_LINES, pickEmptyStateLine } from '@/shared/contracts/dashboard'
+import { EMPTY_STATE_LINE_IDS, pickEmptyStateLineId } from '@/shared/contracts/dashboard'
 import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
 
@@ -62,17 +62,17 @@ function makeDashboard(items: AdminPendingItemDto[]): AdminPendingDashboardDto {
   }
 }
 
-describe('snapshot: pickEmptyStateLine', () => {
-  it('returns one of the EMPTY_STATE_LINES', () => {
-    const line = pickEmptyStateLine()
-    expect(EMPTY_STATE_LINES).toContain(line)
+describe('snapshot: pickEmptyStateLineId', () => {
+  it('returns one of the EMPTY_STATE_LINE_IDS', () => {
+    const id = pickEmptyStateLineId()
+    expect(EMPTY_STATE_LINE_IDS).toContain(id)
   })
 
-  it('exposes a non-empty set of fallback lines', () => {
-    expect(EMPTY_STATE_LINES.length).toBeGreaterThan(0)
-    for (const line of EMPTY_STATE_LINES) {
-      expect(typeof line).toBe('string')
-      expect(line.length).toBeGreaterThan(0)
+  it('exposes a non-empty set of fallback line ids', () => {
+    expect(EMPTY_STATE_LINE_IDS.length).toBeGreaterThan(0)
+    for (const id of EMPTY_STATE_LINE_IDS) {
+      expect(typeof id).toBe('string')
+      expect(id.length).toBeGreaterThan(0)
     }
   })
 })
@@ -81,7 +81,7 @@ describe('snapshot: PendingModerationPanel', () => {
   it('renders pending rows with approve/reject actions', () => {
     const initial = makeDashboard([approvalItem, deletionItem])
     const html = stableHtml(
-      renderInRouter(<PendingModerationPanel initial={initial} emptyStateLine={EMPTY_STATE_LINES[0]!} />),
+      renderInRouter(<PendingModerationPanel initial={initial} emptyStateLineId={EMPTY_STATE_LINE_IDS[0]!} />),
     )
     expect(html).toContain('待审评论')
     expect(html).toContain('等待审核与作者删除申请合并展示')
@@ -102,7 +102,9 @@ describe('snapshot: PendingModerationPanel', () => {
   it('renders the configured empty-state line when the queue is empty', () => {
     const line = '审核台空空如也，今日得清闲。'
     const html = stableHtml(
-      renderInRouter(<PendingModerationPanel initial={makeDashboard([])} emptyStateLine={line} />),
+      renderInRouter(
+        <PendingModerationPanel initial={makeDashboard([])} emptyStateLineId="admin.welcome.empty.line1" />,
+      ),
     )
     expect(html).toContain('待审评论')
     expect(html).toContain(line)

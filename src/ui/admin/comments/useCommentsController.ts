@@ -14,6 +14,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import {
   type CommentFilterFieldKey,
   type CommentsFilterQuery,
+  STATUS_OPTIONS,
   isTextFilterOperator,
   textFilterLabel,
 } from '@/ui/admin/comments/filter-fields'
@@ -24,7 +25,7 @@ import {
   singleDateFilterLabel,
 } from '@/ui/admin/shared/date-filter'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
-import { useI18n } from '@/ui/lib/I18nProvider'
+import { type I18nValue, useI18n } from '@/ui/lib/I18nProvider'
 
 export interface StatusCounts {
   all: number
@@ -150,17 +151,18 @@ export interface CommentActions extends CommentIntents {
 // back to defaults so a hand-edited URL never bricks the page.
 export function parseCommentFiltersFromSearchParams(
   searchParams: URLSearchParams,
+  t: I18nValue['t'],
 ): ActiveFilter<CommentFilterFieldKey>[] {
   const initialFilters: ActiveFilter<CommentFilterFieldKey>[] = []
 
   const status = searchParams.get('status')
   if (status && status !== 'all') {
-    const statusLabel: Record<string, string> = {
-      pending: '待审核',
-      approved: '已审核',
-      deleteRequested: '申请删除',
-    }
-    initialFilters.push({ field: 'status', value: status, label: statusLabel[status] ?? status })
+    const statusOption = STATUS_OPTIONS.find((option) => option.value === status)
+    initialFilters.push({
+      field: 'status',
+      value: status,
+      label: statusOption ? t(statusOption.labelId) : status,
+    })
   }
 
   const pageKey = searchParams.get('pageKey')
@@ -178,19 +180,19 @@ export function parseCommentFiltersFromSearchParams(
   if (q) {
     const op = isTextFilterOperator(matchRaw) ? matchRaw : 'contains'
     const value = JSON.stringify({ value: q, op })
-    initialFilters.push({ field: 'text', value, label: textFilterLabel({ value: q, op }) })
+    initialFilters.push({ field: 'text', value, label: textFilterLabel({ value: q, op }, t) })
   }
 
   const date = searchParams.get('date')
   const dateOp = searchParams.get('dateOp')
   if (date && isSingleDateFilterOperator(dateOp)) {
     const value = JSON.stringify({ date, op: dateOp })
-    initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op: dateOp }) })
+    initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op: dateOp }, t) })
   } else if (date) {
     // Partial date URL — pair with the default operator (Ghost's "on or before").
     const op = isSingleDateFilterOperator(dateOp) ? dateOp : DEFAULT_SINGLE_DATE_OPERATOR
     const value = JSON.stringify({ date, op })
-    initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op }) })
+    initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op }, t) })
   }
 
   return initialFilters
@@ -225,12 +227,12 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
       // The route already seeded the pills from this URL.
       return
     }
-    const restored = parseCommentFiltersFromSearchParams(searchParams)
+    const restored = parseCommentFiltersFromSearchParams(searchParams, t)
     dispatch({ type: 'clearFilters' })
     for (const filter of restored) {
       dispatch({ type: 'addFilter', field: filter.field, value: filter.value, label: filter.label })
     }
-  }, [searchParams, dispatch])
+  }, [searchParams, dispatch, t])
   useEffect(() => {
     if (urlSyncTimerRef.current !== null) {
       window.clearTimeout(urlSyncTimerRef.current)
@@ -353,25 +355,25 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     ...intents,
     approve: (comment) =>
       setConfirm({
-        title: '审核通过该评论？',
-        description: '审核通过后评论会立即对所有访客可见，并向作者发送通知邮件。',
-        actionLabel: '通过',
+        title: t('admin.comments.confirm.approveTitle'),
+        description: t('admin.comments.confirm.approveBody'),
+        actionLabel: t('admin.comments.row.approve'),
         destructive: false,
         onConfirm: () => approveMutation.mutate({ commentId: idStr(comment.id) }),
       }),
     remove: (comment) =>
       setConfirm({
-        title: '删除该评论？',
-        description: '此操作不可撤销，删除后评论从前后台彻底消失。',
-        actionLabel: '删除',
+        title: t('admin.comments.confirm.deleteTitle'),
+        description: t('admin.comments.confirm.deleteBody'),
+        actionLabel: t('common.action.delete'),
         destructive: true,
         onConfirm: () => deleteMutation.mutate({ commentId: idStr(comment.id) }),
       }),
     approveDeletion: (comment) =>
       setConfirm({
-        title: '同意删除该评论？',
-        description: '同意后评论会被标记为已删除，并从前后台隐藏。',
-        actionLabel: '同意删除',
+        title: t('admin.comments.confirm.approveDeletionTitle'),
+        description: t('admin.comments.confirm.approveDeletionBody'),
+        actionLabel: t('admin.comments.row.approveDeletion'),
         destructive: true,
         onConfirm: () =>
           resolveDeletionMutation.mutate(
@@ -381,9 +383,9 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
       }),
     rejectDeletion: (comment) =>
       setConfirm({
-        title: '拒绝删除申请？',
-        description: '拒绝后该评论会恢复为正常状态，作者需要重新申请才能再次删除。',
-        actionLabel: '拒绝删除',
+        title: t('admin.comments.confirm.rejectDeletionTitle'),
+        description: t('admin.comments.confirm.rejectDeletionBody'),
+        actionLabel: t('admin.comments.row.rejectDeletion'),
         destructive: false,
         onConfirm: () =>
           resolveDeletionMutation.mutate(

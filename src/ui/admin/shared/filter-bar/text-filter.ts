@@ -1,3 +1,5 @@
+import type { I18nValue } from '@/ui/lib/I18nProvider'
+
 import { isRecord } from '@/shared/utils/type-guards'
 
 // Pill-value codec for operator + free-text filters (`{op, value}` as JSON).
@@ -14,7 +16,7 @@ export interface TextFilterValue {
 
 export function parseTextFilterValue(
   raw: string | undefined,
-  operators: readonly TextFilterOperatorOption[],
+  operators: readonly { value: string }[],
 ): TextFilterValue | null {
   if (!raw) {
     return null
@@ -37,9 +39,13 @@ export function parseTextFilterValue(
   }
 }
 
-export function textFilterValueLabel(v: TextFilterValue, operators: readonly TextFilterOperatorOption[]): string {
+export function textFilterValueLabel(
+  v: TextFilterValue,
+  operators: readonly TextFilterOperatorOption[],
+  t: I18nValue['t'],
+): string {
   const opLabel = operators.find((o) => o.value === v.op)?.label ?? ''
   const trimmed = v.value.trim()
   const excerpt = trimmed.length > 8 ? `${trimmed.slice(0, 8)}…` : trimmed
-  return excerpt ? `${opLabel}「${excerpt}」` : opLabel
+  return excerpt ? t('admin.filter.text.value', { op: opLabel, value: excerpt }) : opLabel
 }

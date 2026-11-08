@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 import { Checkbox } from '@/ui/components/checkbox'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 
@@ -20,6 +21,7 @@ interface UserEditFormProps {
 }
 
 export function UserEditForm({ user }: UserEditFormProps) {
+  const { t } = useI18n()
   const [name, setName] = useState(user.name)
   const [email, setEmail] = useState(user.email)
   const [link, setLink] = useState(user.link ?? '')
@@ -58,8 +60,8 @@ export function UserEditForm({ user }: UserEditFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>编辑信息</CardTitle>
-        <CardDescription>修改后立即对该用户在前后台的展示生效。</CardDescription>
+        <CardTitle>{t('admin.users.edit.title')}</CardTitle>
+        <CardDescription>{t('admin.users.edit.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form
@@ -79,15 +81,15 @@ export function UserEditForm({ user }: UserEditFormProps) {
           className="grid gap-4 sm:grid-cols-2"
         >
           <div className="flex flex-col gap-2">
-            <Label htmlFor="user-name">用户名</Label>
+            <Label htmlFor="user-name">{t('admin.users.edit.name')}</Label>
             <Input id="user-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="user-email">邮箱</Label>
+            <Label htmlFor="user-email">{t('admin.users.edit.email')}</Label>
             <Input id="user-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor="user-link">网站链接</Label>
+            <Label htmlFor="user-link">{t('admin.users.edit.link')}</Label>
             <Input
               id="user-link"
               type="url"
@@ -97,11 +99,11 @@ export function UserEditForm({ user }: UserEditFormProps) {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="user-badge-name">徽章名称</Label>
+            <Label htmlFor="user-badge-name">{t('admin.users.edit.badgeName')}</Label>
             <Input id="user-badge-name" type="text" value={badgeName} onChange={(e) => setBadgeName(e.target.value)} />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="user-badge-color">徽章颜色</Label>
+            <Label htmlFor="user-badge-color">{t('admin.users.edit.badgeColor')}</Label>
             <Input
               id="user-badge-color"
               type="color"
@@ -118,9 +120,9 @@ export function UserEditForm({ user }: UserEditFormProps) {
                 onCheckedChange={(next) => setUseTextOverride(next === true)}
               />
               <Label htmlFor="user-badge-text-color-toggle" className="cursor-pointer font-normal">
-                自定义徽章字体颜色
+                {t('admin.users.edit.customTextColor')}
               </Label>
-              <span className="text-xs text-muted-foreground">未勾选时按背景自动选择黑/白对比色</span>
+              <span className="text-xs text-muted-foreground">{t('admin.users.edit.textColorHint')}</span>
             </div>
             {useTextOverride && (
               <div className="flex items-center gap-3">
@@ -138,7 +140,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
                     color: badgeTextColor,
                   }}
                 >
-                  {badgeName || '预览'}
+                  {badgeName || t('admin.users.edit.preview')}
                 </span>
               </div>
             )}
@@ -146,7 +148,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
           {updateError && <div className="text-sm text-destructive sm:col-span-2">{updateError}</div>}
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="submit" disabled={updateMutation.isPending}>
-              <SaveIcon data-icon /> {updateMutation.isPending ? '保存中…' : '保存'}
+              <SaveIcon data-icon /> {updateMutation.isPending ? t('admin.users.edit.saving') : t('common.action.save')}
             </Button>
           </div>
         </form>

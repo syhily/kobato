@@ -16,6 +16,7 @@ import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AdminFontDto, FontSlot } from '@/shared/contracts/fonts'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -43,16 +44,16 @@ import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Web-font library + slot assignment: draggable grid, upload dialog, and
 // three slot columns persisted via `admin.fonts.setSlot` + revalidate.
-const SLOT_LABELS: Record<FontSlot, string> = {
-  global: '全站',
-  post: '文章正文',
-  code: '代码',
+const SLOT_LABEL_IDS: Record<FontSlot, UiMessageId> = {
+  global: 'admin.fonts.slot.global',
+  post: 'admin.fonts.slot.post',
+  code: 'admin.fonts.slot.code',
 }
 
-const SLOT_DESCRIPTIONS: Record<FontSlot, string> = {
-  global: '所有页面加载，覆盖 UI 界面字体。',
-  post: '仅文章详情页加载，覆盖正文字体。',
-  code: '文章详情页加载，覆盖代码块字体。',
+const SLOT_DESCRIPTION_IDS: Record<FontSlot, UiMessageId> = {
+  global: 'admin.fonts.slot.globalDesc',
+  post: 'admin.fonts.slot.postDesc',
+  code: 'admin.fonts.slot.codeDesc',
 }
 
 const SLOT_ORDER: FontSlot[] = ['global', 'post', 'code']
@@ -72,7 +73,7 @@ export function FontsView() {
   const deleteMutation = useMutation({
     mutationFn: (fontId: string) => orpc.admin.fonts.delete({ fontId }),
     onSuccess: () => {
-      toast.success('字体已删除')
+      toast.success(t('admin.fonts.deleted'))
       // Invalidate via the procedure-level key — a hand-rolled array can't match TanStack's nested key grammar.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
@@ -82,9 +83,9 @@ export function FontsView() {
 
   const onDelete = (font: AdminFontDto) => {
     setConfirm({
-      title: '删除字体',
-      description: `确认删除「${font.familyName}」？若字体被任意槽位引用，请先从槽位移除。`,
-      actionLabel: '删除',
+      title: t('admin.fonts.deleteTitle'),
+      description: t('admin.fonts.deleteBody', { name: font.familyName }),
+      actionLabel: t('common.action.delete'),
       destructive: true,
       onConfirm: () => {
         deleteMutation.mutate(font.id)
@@ -152,10 +153,7 @@ export function FontsView() {
 
   return (
     <AdminListPage>
-      <AdminListPage.Header
-        title="网站字体"
-        description="上传 TTF/OTF 自动分包为 woff2，分配到全站 / 文章 / 代码槽位。"
-      >
+      <AdminListPage.Header title={t('admin.fonts.title')} description={t('admin.fonts.description')}>
         <FontUploadButton />
       </AdminListPage.Header>
       <AdminListPage.Body>
@@ -180,18 +178,17 @@ function LibrarySection({
   onDelete: (font: AdminFontDto) => void
   loading: boolean
 }) {
+  const { t } = useI18n()
   return (
     <Card>
       <CardHeader>
-        <CardTitle>已上传字体</CardTitle>
+        <CardTitle>{t('admin.fonts.library.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p className="text-sm text-muted-foreground">加载中…</p>
+          <p className="text-sm text-muted-foreground">{t('common.state.loading')}</p>
         ) : fonts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            还没有上传字体。点击右上角「上传字体」添加一个 .ttf 或 .otf 文件。
-          </p>
+          <p className="text-sm text-muted-foreground">{t('admin.fonts.library.empty')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {fonts.map((font) => (
@@ -205,7 +202,7 @@ function LibrarySection({
 }
 
 function LibraryFontRow({ font, onDelete }: { font: AdminFontDto; onDelete: (font: AdminFontDto) => void }) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: libDragId(font.id),
     data: { type: 'library', fontId: font.id } satisfies LibraryDragData,
@@ -229,7 +226,7 @@ function LibraryFontRow({ font, onDelete }: { font: AdminFontDto; onDelete: (fon
         {...dragAttributes}
         {...listeners}
         className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-        aria-label={`拖拽 ${font.familyName} 到槽位`}
+        aria-label={t('admin.fonts.library.dragAria', { name: font.familyName })}
       >
         <GripVerticalIcon className="size-4" />
       </button>
@@ -239,14 +236,17 @@ function LibraryFontRow({ font, onDelete }: { font: AdminFontDto; onDelete: (fon
           <span className="text-xs text-muted-foreground">{font.sourceName}</span>
         </div>
         <div className="text-xs text-muted-foreground">
-          {font.chunkCount} 个分包 · {formatBytes(font.totalBytes, { locale })}
+          {t('admin.fonts.library.chunks', {
+            chunks: font.chunkCount,
+            bytes: formatBytes(font.totalBytes, { locale }),
+          })}
         </div>
       </div>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        aria-label={`删除 ${font.familyName}`}
+        aria-label={t('admin.fonts.library.deleteAria', { name: font.familyName })}
         onClick={() => onDelete(font)}
       >
         <Trash2Icon className="text-destructive" />
@@ -284,6 +284,7 @@ function SlotColumn({
   assignedIds: string[]
   onRemove: (slot: FontSlot, fontId: string) => void
 }) {
+  const { t } = useI18n()
   const { setNodeRef, isOver } = useDroppable({
     id: slotDropId(slot),
     data: { type: 'slot', slot } satisfies SlotDropData,
@@ -298,8 +299,8 @@ function SlotColumn({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{SLOT_LABELS[slot]}</CardTitle>
-        <p className="text-xs text-muted-foreground">{SLOT_DESCRIPTIONS[slot]}</p>
+        <CardTitle>{t(SLOT_LABEL_IDS[slot])}</CardTitle>
+        <p className="text-xs text-muted-foreground">{t(SLOT_DESCRIPTION_IDS[slot])}</p>
       </CardHeader>
       <CardContent>
         <div
@@ -311,7 +312,7 @@ function SlotColumn({
         >
           {assigned.length === 0 ? (
             <p className="flex min-h-16 items-center justify-center rounded px-2 py-3 text-center text-sm text-muted-foreground">
-              该槽位暂无字体，拖拽左侧字体到此处添加。
+              {t('admin.fonts.slot.empty')}
             </p>
           ) : (
             <>
@@ -330,12 +331,14 @@ function SlotColumn({
                   (isOver ? ' border border-dashed border-primary/30 text-primary/70' : ' text-muted-foreground/0')
                 }
               >
-                {isOver ? '拖到此处追加到末尾' : ''}
+                {isOver ? t('admin.fonts.slot.appendHint') : ''}
               </div>
             </>
           )}
           {assigned.length >= MAX_SLOT_FONTS && (
-            <span className="mt-1 text-xs text-muted-foreground">已达上限 {MAX_SLOT_FONTS} 个</span>
+            <span className="mt-1 text-xs text-muted-foreground">
+              {t('admin.fonts.slot.limit', { count: MAX_SLOT_FONTS })}
+            </span>
           )}
         </div>
       </CardContent>
@@ -352,6 +355,7 @@ function SlotFontRow({
   font: AdminFontDto
   onRemove: (slot: FontSlot, fontId: string) => void
 }) {
+  const { t } = useI18n()
   const { setNodeRef, style, isDragging, dragHandleProps } = useSortableRow({
     id: slotItemId(slot, font.id),
     data: { type: 'slotItem', slot, fontId: font.id } satisfies SlotItemDragData,
@@ -367,7 +371,13 @@ function SlotFontRow({
     >
       <SortableDragHandle {...dragHandleProps} />
       <span className="flex-1 truncate">{font.familyName}</span>
-      <Button type="button" variant="ghost" size="icon" aria-label="移除" onClick={() => onRemove(slot, font.id)}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={t('admin.fonts.slot.removeAria')}
+        onClick={() => onRemove(slot, font.id)}
+      >
         <XIcon className="text-destructive" />
       </Button>
     </li>

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { FlameIcon, MousePointerClickIcon, UsersIcon } from 'lucide-react'
 
 import type { CountersDto } from '@/shared/contracts/analytics'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useAnalyticsDashboardState } from '@/ui/admin/analytics/analytics-state-context'
@@ -12,16 +13,17 @@ import { buildAnalyticsInput, type AnalyticsScope } from '@/ui/admin/analytics/u
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Three KPI cards modeled on Slite's `analysis/Counters.vue`: NumberFlow
 // animated digits, a first-load skeleton, opacity-60 while refetching, and
 // an error alert with retry. Self-fetching — `initial` is the loader's
 // first-paint payload shown until the client query resolves.
 
-const CARDS: { key: keyof CountersDto; label: string; icon: typeof MousePointerClickIcon }[] = [
-  { key: 'visits', label: '访问量', icon: MousePointerClickIcon },
-  { key: 'visitors', label: '访客数', icon: UsersIcon },
-  { key: 'referers', label: '来源域名', icon: FlameIcon },
+const CARDS: { key: keyof CountersDto; labelId: UiMessageId; icon: typeof MousePointerClickIcon }[] = [
+  { key: 'visits', labelId: 'admin.analytics.metric.visits', icon: MousePointerClickIcon },
+  { key: 'visitors', labelId: 'admin.analytics.metric.visitors', icon: UsersIcon },
+  { key: 'referers', labelId: 'admin.analytics.metric.referers', icon: FlameIcon },
 ]
 
 export interface CountersProps {
@@ -31,6 +33,7 @@ export interface CountersProps {
 }
 
 export function Counters({ initial, className, scope }: CountersProps) {
+  const { t } = useI18n()
   const state = useAnalyticsDashboardState()
   const query = useQuery(
     orpcQuery.analytics.counters.queryOptions({
@@ -55,7 +58,7 @@ export function Counters({ initial, className, scope }: CountersProps) {
           return (
             <Card key={card.key} className="gap-2 py-4 shadow-none">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-medium">{card.label}</CardTitle>
+                <CardTitle className="text-sm font-medium">{t(card.labelId)}</CardTitle>
                 <Icon aria-hidden className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>

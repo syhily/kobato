@@ -5,6 +5,10 @@
 ## Structure
 
 - `hooks/` — browser hooks. Admin file uploads go through `useFileUpload` (`@/client/hooks/use-file-upload`): it owns the CSRF read, accept/size guards, FormData POST, error unwrap, and toast choreography. Never hand-roll a fetch upload in a view. `use-device-env-beacon` is the ADR-0006 collector: mounted once by `routes/public/layout.tsx`, it reads the deepest match's `eid`, honors `navigator.doNotTrack === '1'`, and `sendBeacon`s one payload per page view (the static block once per session via the `kobato.env.static` marker; a bounded in-memory sent-id set drops navigation replays) — no fetch fallback.
+- User-facing hook copy is translated, never literal: a hook that only runs under the React tree (e.g.
+  `useAutosave`) reads `useI18n()` itself, while hooks that can be called from non-React entry
+  points (`useFileUpload`) take the caller's `t` explicitly. Both keep English as the catalog
+  baseline and every locale in step.
 - `lib/` — pure browser helpers shared by hooks/components (`logger`, `motion`, `draft-store`, …). `device-env` owns the ADR-0006 field collection (`collectStaticEnv` / `collectDynamicEnv`): every browser API is read defensively and an absent/non-finite value is omitted from the payload, never sent as null.
 - `editor/` — host glue for the `src/inkling` editor layer: the page/article composer (R11; consumed by
   `@/ui/admin/editor/PageBodyEditor`) and the comment composer (R12; consumed by

@@ -5,6 +5,7 @@ import type { AdminMusicDto } from '@/shared/contracts/music'
 import { Equalizer } from '@/ui/admin/musics/Equalizer'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface AlbumCardProps {
@@ -12,6 +13,7 @@ export interface AlbumCardProps {
 }
 
 export function AlbumCard({ music }: AlbumCardProps) {
+  const { t } = useI18n()
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { load, toggle } = useMusicPlayerActions()
   const isCurrent = currentTrack?.id === music.id
@@ -52,7 +54,7 @@ export function AlbumCard({ music }: AlbumCardProps) {
               'translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100',
               'transition-all duration-200',
             )}
-            aria-label={isCurrentPlaying ? '暂停' : '播放'}
+            aria-label={isCurrentPlaying ? t('music.pause') : t('music.play')}
           >
             {isCurrentPlaying ? <Pause className="size-6 fill-current" /> : <Play className="size-6 fill-current" />}
           </button>

@@ -8,6 +8,7 @@ import { transitions } from '@/client/lib/motion'
 import { getImageUrl } from '@/shared/types/images'
 import { LazyMotionButton, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 import { useDevicePixelRatio } from '@/ui/lib/use-device-pixel-ratio'
 import { useElementWidth } from '@/ui/lib/use-element-width'
@@ -154,6 +155,7 @@ export function JustifiedImageGrid({
   className,
   sentinelRef,
 }: JustifiedImageGridProps) {
+  const { t } = useI18n()
   const { ref, width } = useElementWidth()
   const targetHeight = targetRowHeight ?? targetRowHeightForWidth(width)
   const rows = useMemo(() => buildJustifiedRows(images, width, targetHeight, gap), [images, width, targetHeight, gap])
@@ -201,7 +203,7 @@ export function JustifiedImageGrid({
                       'focus-visible:shadow-focus focus-visible:outline-none',
                     )}
                     style={{ width: item.width, height: item.height }}
-                    aria-label={`查看图片 ${item.image.storagePath}`}
+                    aria-label={t('admin.images.grid.viewImage', { path: item.image.storagePath })}
                   >
                     <img src={thumbUrl} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
                   </LazyMotionButton>

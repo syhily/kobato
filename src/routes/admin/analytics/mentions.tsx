@@ -17,15 +17,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function MentionsPage({ loaderData }: Route.ComponentProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { referers } = loaderData
   const state = useAnalyticsState()
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-lg font-semibold">反向链接</h1>
-        <p className="text-sm text-muted-foreground">追踪来自其他网站的外部链接</p>
+        <h1 className="text-lg font-semibold">{t('admin.analytics.mentions.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('admin.analytics.mentions.description')}</p>
       </div>
 
       <Card className="px-4 py-3 shadow-none">
@@ -40,14 +40,14 @@ export default function MentionsPage({ loaderData }: Route.ComponentProps) {
       <Card className="gap-2 shadow-none">
         <CardContent className="px-4 pb-4">
           {referers.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">当前时间范围内暂无数据</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">{t('admin.analytics.empty')}</div>
           ) : (
             <ul className="flex flex-col gap-1">
               {referers.map((row) => (
                 <li key={row.name} className="flex items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-accent/60">
                   <span className="flex-1 truncate font-medium">
                     {row.name === '' || row.name === 'direct' ? (
-                      <span className="text-muted-foreground">直接访问</span>
+                      <span className="text-muted-foreground">{t('admin.analytics.direct')}</span>
                     ) : (
                       <a
                         href={`https://${row.name}`}
@@ -60,10 +60,10 @@ export default function MentionsPage({ loaderData }: Route.ComponentProps) {
                     )}
                   </span>
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    {formatNumber(row.visits, { locale })} 次访问
+                    {t('admin.analytics.visitsSuffix', { count: formatNumber(row.visits, { locale }) })}
                   </span>
                   <span className="hidden text-xs text-muted-foreground tabular-nums sm:inline">
-                    ({formatNumber(row.visitors, { locale })} 访客)
+                    {t('admin.analytics.visitorsParen', { count: formatNumber(row.visitors, { locale }) })}
                   </span>
                 </li>
               ))}
