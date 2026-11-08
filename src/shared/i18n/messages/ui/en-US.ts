@@ -2946,6 +2946,22 @@ export const uiMessagesEnUS = {
   'update.error.extractFailed': 'Extracting the update package failed; the update was aborted',
   'update.error.binaryHashMismatch': 'The update package contents failed verification; the update was aborted',
   'common.error.httpUrlRequired': 'Enter an http(s) URL',
+  'admin.settings.comments.avatar.mirrorPreset.gravatarOfficial': 'Gravatar official (www.gravatar.com)',
+  'admin.settings.comments.avatar.mirrorPreset.gravatarCn': 'Gravatar China (cn.gravatar.com)',
+  'admin.settings.comments.avatar.mirrorPreset.gravatarSecure': 'Gravatar Secure (secure.gravatar.com)',
+  'admin.settings.comments.avatar.mirrorPreset.loliNet': 'loli.net (gravatar.loli.net)',
+  'admin.settings.comments.avatar.mirrorPreset.geekzu': 'Geekzu (sdn.geekzu.org)',
+  'admin.settings.comments.avatar.mirrorPreset.v2ex': 'V2EX (cdn.v2ex.com)',
+  'admin.settings.comments.avatar.mirrorPreset.cravatarCn': 'Cravatar China (cravatar.cn)',
+  'admin.settings.comments.avatar.mirrorPreset.cravatar': 'Cravatar (cravatar.com)',
+  'admin.settings.comments.avatar.mirrorPreset.libravatarProxy': 'Libravatar proxy (seccdn.libravatar.org)',
+  'admin.settings.comments.avatar.mirrorPreset.weavatar': 'WeAvatar (weavatar.com)',
+  'admin.settings.comments.avatar.mirrorPreset.webpSe': 'webp.se (gravatar.webp.se)',
+  'admin.settings.comments.avatar.mirrorPreset.zeruns': 'Zeruns (gravatar.zeruns.com)',
+  'admin.settings.comments.avatar.mirrorPreset.zerunsTech': 'Zeruns Tech (gravatar.zeruns.tech)',
+  'admin.settings.comments.avatar.mirrorPreset.sepCc': 'sep.cc (cdn.sep.cc)',
+  'admin.settings.comments.avatar.mirrorPreset.w3tt': 'w3tt (gravatar.w3tt.com)',
+  'admin.settings.comments.avatar.mirrorPreset.sevenCdn': 'SevenCDN (use.sevencdn.com)',
 } as const
 
 export type UiMessageId = keyof typeof uiMessagesEnUS

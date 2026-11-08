@@ -152,11 +152,18 @@ function CommentsAvatarCard({ comments }: CommentsFormProps) {
   }
 
   // A configured mirror outside the presets stays selectable — never strand
-  // an existing (allowlisted but non-preset) value on an unreadable option.
+  // an existing (allowlisted but non-preset) value on an unreadable option;
+  // its only label is the URL itself.
   const current = comments.comments.avatar.mirror
-  const options = GRAVATAR_MIRROR_PRESETS.some((option) => option.value === current)
+  const options: ReadonlyArray<{ value: string; labelKey?: UiMessageId }> = GRAVATAR_MIRROR_PRESETS.some(
+    (option) => option.value === current,
+  )
     ? GRAVATAR_MIRROR_PRESETS
-    : [...GRAVATAR_MIRROR_PRESETS, { value: current, label: current }]
+    : [...GRAVATAR_MIRROR_PRESETS, { value: current }]
+
+  function optionLabel(option: { value: string; labelKey?: UiMessageId }): string {
+    return option.labelKey === undefined ? option.value : t(option.labelKey)
+  }
 
   const githubTokenField = secretFieldStrings({
     t,
@@ -243,14 +250,17 @@ function CommentsAvatarCard({ comments }: CommentsFormProps) {
               >
                 <SelectTrigger id="comments-avatar-mirror" className="w-full">
                   <SelectValue>
-                    {(value: string | null) => options.find((o) => o.value === value)?.label ?? value ?? ''}
+                    {(value: string | null) => {
+                      const option = options.find((entry) => entry.value === value)
+                      return option === undefined ? (value ?? '') : optionLabel(option)
+                    }}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {options.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       <span className="flex flex-1 items-center justify-between gap-4">
-                        <span>{option.label}</span>
+                        <span>{optionLabel(option)}</span>
                         {probeStatus(option.value)}
                       </span>
                     </SelectItem>

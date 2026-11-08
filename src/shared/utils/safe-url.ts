@@ -368,23 +368,35 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
  * configured mirror outside these presets remains valid and is appended to
  * the dropdown as a custom option by the form.
  */
-export const GRAVATAR_MIRROR_PRESETS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: 'https://www.gravatar.com/avatar', label: 'Gravatar 官方（www.gravatar.com）' },
-  { value: 'https://cn.gravatar.com/avatar', label: 'Gravatar 中国（cn.gravatar.com）' },
-  { value: 'https://secure.gravatar.com/avatar', label: 'Gravatar Secure（secure.gravatar.com）' },
-  { value: 'https://gravatar.loli.net/avatar', label: 'loli.net（gravatar.loli.net）' },
-  { value: 'https://sdn.geekzu.org/avatar', label: '极客族（sdn.geekzu.org）' },
-  { value: 'https://cdn.v2ex.com/gravatar', label: 'V2EX（cdn.v2ex.com）' },
-  { value: 'https://cravatar.cn/avatar', label: 'Cravatar 中国（cravatar.cn）' },
-  { value: 'https://cravatar.com/avatar', label: 'Cravatar（cravatar.com）' },
-  { value: 'https://seccdn.libravatar.org/gravatarproxy', label: 'Libravatar 代理（seccdn.libravatar.org）' },
-  { value: 'https://weavatar.com/avatar', label: 'WeAvatar（weavatar.com）' },
-  { value: 'https://gravatar.webp.se/avatar', label: 'webp.se（gravatar.webp.se）' },
-  { value: 'https://gravatar.zeruns.com/avatar', label: 'Zeruns（gravatar.zeruns.com）' },
-  { value: 'https://gravatar.zeruns.tech/avatar', label: 'Zeruns Tech（gravatar.zeruns.tech）' },
-  { value: 'https://cdn.sep.cc/avatar', label: 'sep.cc（cdn.sep.cc）' },
-  { value: 'https://gravatar.w3tt.com/avatar', label: 'w3tt（gravatar.w3tt.com）' },
-  { value: 'https://use.sevencdn.com/avatar', label: 'SevenCDN（use.sevencdn.com）' },
+export const GRAVATAR_MIRROR_PRESETS: ReadonlyArray<{ value: string; labelKey: UiMessageId }> = [
+  {
+    value: 'https://www.gravatar.com/avatar',
+    labelKey: 'admin.settings.comments.avatar.mirrorPreset.gravatarOfficial',
+  },
+  { value: 'https://cn.gravatar.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.gravatarCn' },
+  {
+    value: 'https://secure.gravatar.com/avatar',
+    labelKey: 'admin.settings.comments.avatar.mirrorPreset.gravatarSecure',
+  },
+  { value: 'https://gravatar.loli.net/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.loliNet' },
+  { value: 'https://sdn.geekzu.org/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.geekzu' },
+  { value: 'https://cdn.v2ex.com/gravatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.v2ex' },
+  { value: 'https://cravatar.cn/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.cravatarCn' },
+  { value: 'https://cravatar.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.cravatar' },
+  {
+    value: 'https://seccdn.libravatar.org/gravatarproxy',
+    labelKey: 'admin.settings.comments.avatar.mirrorPreset.libravatarProxy',
+  },
+  { value: 'https://weavatar.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.weavatar' },
+  { value: 'https://gravatar.webp.se/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.webpSe' },
+  { value: 'https://gravatar.zeruns.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.zeruns' },
+  {
+    value: 'https://gravatar.zeruns.tech/avatar',
+    labelKey: 'admin.settings.comments.avatar.mirrorPreset.zerunsTech',
+  },
+  { value: 'https://cdn.sep.cc/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.sepCc' },
+  { value: 'https://gravatar.w3tt.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.w3tt' },
+  { value: 'https://use.sevencdn.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.sevenCdn' },
 ]
 
 /** HTTPS on a known mirror host that is not private — a DNS rebinding

@@ -431,6 +431,8 @@ describe('production sources', () => {
         'src/server/domains/analytics/geoip-update.ts',
         'src/server/domains/update/pipeline.ts',
         'src/shared/utils/safe-url.ts',
+        // Step 5a-vi slice: the Gravatar mirror preset labels render through `t()`.
+        'src/ui/admin/settings/CommentsForm.tsx',
       ]),
     )
   })
