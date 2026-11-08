@@ -26,6 +26,7 @@ import {
 import { notification, notificationRecipient } from '@/server/infra/db/schema/notification'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
+import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
 const db = getTestDb()
 
@@ -666,16 +667,45 @@ describe('notifications / localized system messages (5b-ii)', () => {
     }
   })
 
-  it('translates the thread detail in the reader locale', async () => {
+  const DETAIL_BY_LOCALE = {
+    'en-US': {
+      title: 'Background task failed: backup',
+      body: 'Task backup failed on its most recent run. Open the Tasks page for details.',
+    },
+    'zh-CN': {
+      title: '后台任务失败：backup',
+      body: '任务「backup」最近一次执行失败。请到「任务」页面查看详情。',
+    },
+    'zh-TW': {
+      title: '後台任務失敗：backup',
+      body: '任務「backup」最近一次執行失敗。請到「任務」頁面檢視詳情。',
+    },
+    'zh-HK': {
+      title: '後台任務失敗：backup',
+      body: '任務「backup」最近一次執行失敗。請到「任務」頁面檢視詳情。',
+    },
+  } as const
+
+  it.each(SUPPORTED_LOCALES)('translates inbox title and thread detail in %s', async (locale) => {
     const adminId = await seedUser('admin', 'admin')
     const id = postSystemNotice()
     const stored = db.select().from(notification).where(eq(notification.id, id)).all()[0]!
+    const expected = DETAIL_BY_LOCALE[locale]
 
-    const zh = await getThread(db, viewer(adminId, 'admin'), stored.threadId, 'zh-CN')
-    expect(zh.messages[0]!.body).toBe('任务「backup」最近一次执行失败。请到「任务」页面查看详情。')
+    const inbox = await listInbox(db, adminId, { tab: 'all', limit: 10, locale })
+    expect(inbox.items[0]!.title).toBe(expected.title)
 
-    const en = await getThread(db, viewer(adminId, 'admin'), stored.threadId, 'en-US')
-    expect(en.messages[0]!.body).toBe('Task backup failed on its most recent run. Open the Tasks page for details.')
+    const thread = await getThread(db, viewer(adminId, 'admin'), stored.threadId, locale)
+    expect(thread.messages[0]!.body).toBe(expected.body)
+
+    // The detail is the TRANSLATED message. English legitimately equals the
+    // stored fallback; every other locale must differ from it.
+    if (locale === 'en-US') {
+      expect(thread.messages[0]!.body).toBe(stored.body)
+    } else {
+      expect(thread.messages[0]!.body).not.toBe(stored.body)
+      expect(thread.messages[0]!.body).not.toBe(DETAIL_BY_LOCALE['en-US'].body)
+    }
   })
 
   it('truncates the SAME translated body for the preview; the thread keeps it whole', async () => {

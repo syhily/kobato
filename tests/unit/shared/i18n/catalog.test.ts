@@ -78,6 +78,20 @@ describe('shared/i18n/catalog', () => {
     expect(uiMessagesFor('zh-HK')['auth.otp.resendIn']).toBe('{seconds} 秒後重新傳送')
   })
 
+  it('keeps the persisted server namespaces (notification.*, email.*) out of the UI catalog', () => {
+    // Plan 001 §5.2: `notification.*` keys are persisted in notification rows
+    // and `email.*` keys render server-side mail — both live ONLY in the server
+    // catalog. The plural `notifications.*` namespace is the UI one and stays
+    // allowed; only an exact `notification.` / `email.` prefix is a violation.
+    const PERSISTED_SERVER_PREFIX = /^(?:notification|email)\./
+    for (const locale of SUPPORTED_LOCALES) {
+      const leaked = Object.keys(uiMessagesFor(locale)).filter((key) => PERSISTED_SERVER_PREFIX.test(key))
+      expect(leaked, locale).toEqual([])
+    }
+    // Guard the guard: the UI namespace really is the plural one.
+    expect(Object.keys(uiMessagesEnUS).filter((key) => key.startsWith('notifications.'))).not.toHaveLength(0)
+  })
+
   it('resolves a locale to both catalogs', () => {
     const catalogs = messageCatalogsFor('zh-HK')
 

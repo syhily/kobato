@@ -14,6 +14,7 @@ import {
 } from '@/server/domains/notifications/service'
 import { user } from '@/server/infra/db/schema/user'
 import { createServerTranslator } from '@/server/infra/i18n'
+import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
 // ADR-0008 delivery: real in-app fan-out + real notification rows; only the
 // Mailgun `fetch` edge is stubbed (same seam as comments/services/email.test.ts).
@@ -358,11 +359,34 @@ describe('notifications email — site locale at send time', () => {
   })
 })
 
+const DESCRIPTOR_EMAIL_BY_LOCALE = {
+  'en-US': {
+    title: 'Background task failed: backup',
+    body: 'Task backup failed on its most recent run: DISK FULL Open the Tasks page for details.',
+  },
+  'zh-CN': {
+    title: '后台任务失败：backup',
+    body: '任务「backup」最近一次执行失败：DISK FULL请到「任务」页面查看详情。',
+  },
+  'zh-TW': {
+    title: '後台任務失敗：backup',
+    body: '任務「backup」最近一次執行失敗：DISK FULL請到「任務」頁面檢視詳情。',
+  },
+  'zh-HK': {
+    title: '後台任務失敗：backup',
+    body: '任務「backup」最近一次執行失敗：DISK FULL請到「任務」頁面檢視詳情。',
+  },
+} as const
+
+const STORED_FALLBACK_TITLE = 'Background task failed: backup'
+const STORED_FALLBACK_BODY = 'Task backup failed on its most recent run: DISK FULL Open the Tasks page for details.'
+
 describe('notifications email — descriptor resolution', () => {
-  it('renders the reader-locale message, never the stored English fallback', async () => {
-    setSiteLocale('zh-TW')
+  it.each(SUPPORTED_LOCALES)('renders the descriptor in %s at send time', async (locale) => {
+    setSiteLocale(locale)
     await seedUser('admin', 'admin')
-    const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+    const siteTitle = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+    const expected = DESCRIPTOR_EMAIL_BY_LOCALE[locale]
 
     const row = notifyAdmins(db, {
       titleKey: 'notification.job.failed.title',
@@ -373,13 +397,24 @@ describe('notifications email — descriptor resolution', () => {
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
     // The row persists the English fallback; the email resolves the keys.
-    expect(row.title).toBe('Background task failed: backup')
+    expect(row.title).toBe(STORED_FALLBACK_TITLE)
     const body = sentMessage(0)
-    expect(body.get('subject')).toBe(`【${title}】系統提醒：後台任務失敗：backup`)
+    expect(body.get('subject')).toBe(
+      createServerTranslator(locale).format('email.notification.adminSubject', {
+        siteTitle,
+        title: expected.title,
+      }),
+    )
     const html = body.get('html') as string
-    expect(html).toContain('後台任務失敗：backup')
-    expect(html).toContain('任務「backup」最近一次執行失敗：DISK FULL請到「任務」頁面檢視詳情。')
-    expect(html).not.toContain('Background task failed: backup')
+    expect(html).toContain(expected.title)
+    expect(html).toContain(expected.body)
+
+    // English legitimately equals the stored fallback; every other locale is a
+    // real translation, so neither the fallback title nor body may leak.
+    if (locale !== 'en-US') {
+      expect(html).not.toContain(STORED_FALLBACK_TITLE)
+      expect(html).not.toContain(STORED_FALLBACK_BODY)
+    }
   })
 
   it('falls back to the stored English message when the descriptor key is gone', async () => {

@@ -26,7 +26,7 @@ describe('ui/shared/notifications/notification-meta', () => {
   it('lets a known source override the kind chrome', () => {
     expect(notificationMeta({ kind: 'direct', source: 'job-run' })).toEqual({
       icon: WrenchIcon,
-      kindLabelId: 'notification.kind.job',
+      kindLabelId: 'notifications.kind.job',
     })
   })
 

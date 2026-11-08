@@ -21,18 +21,18 @@ const [ZEABUR_MAIL_CLEANUP_SOURCE, JOB_RUN_SOURCE] = NOTIFICATION_SOURCES
 // icon (the Zeabur cleanup alert reads as a mail problem, not a generic one).
 export function notificationMeta(item: Pick<NotificationDto, 'kind' | 'source'>): NotificationMeta {
   if (item.source === ZEABUR_MAIL_CLEANUP_SOURCE) {
-    return { icon: MailWarningIcon, kindLabelId: 'notification.kind.system' }
+    return { icon: MailWarningIcon, kindLabelId: 'notifications.kind.system' }
   }
   if (item.source === JOB_RUN_SOURCE) {
-    return { icon: WrenchIcon, kindLabelId: 'notification.kind.job' }
+    return { icon: WrenchIcon, kindLabelId: 'notifications.kind.job' }
   }
   switch (item.kind) {
     case 'direct':
-      return { icon: MessageSquareIcon, kindLabelId: 'notification.kind.direct' }
+      return { icon: MessageSquareIcon, kindLabelId: 'notifications.kind.direct' }
     case 'admin':
-      return { icon: ShieldAlertIcon, kindLabelId: 'notification.kind.admin' }
+      return { icon: ShieldAlertIcon, kindLabelId: 'notifications.kind.admin' }
     case 'broadcast':
-      return { icon: MegaphoneIcon, kindLabelId: 'notification.kind.broadcast' }
+      return { icon: MegaphoneIcon, kindLabelId: 'notifications.kind.broadcast' }
   }
 }
 
