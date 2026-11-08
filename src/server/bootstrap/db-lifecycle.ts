@@ -34,6 +34,7 @@ import { registerSectionChangeHandler } from '@/server/domains/settings/services
 import { runZeaburMailCleanupAtBoot } from '@/server/domains/settings/services/zeabur-mail-cleanup'
 import { wireS3Migration } from '@/server/domains/storage/s3-migration'
 import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
+import { clear } from '@/server/infra/cache/registry'
 import { isVitest } from '@/server/infra/config'
 import {
   flushAllBatchers,
@@ -206,6 +207,14 @@ wireRestoreMachine({
 })
 
 // Composition root: section-change side effects register here, keeping the registry module inert.
+// General owns the site language and identity: the localized feed/calendar
+// representations are keyed by locale, so every variant must be dropped. The
+// bucket clear covers all locale/version keys (no generation counter).
+registerSectionChangeHandler('general', () => {
+  const db = getDb()
+  clear(db, 'feed')
+  clear(db, 'calendar')
+})
 registerSectionChangeHandler('backup', rescheduleBackup)
 registerSectionChangeHandler('limits', rescheduleArchive)
 registerSectionChangeHandler('mail', invalidateMailTransportCache)

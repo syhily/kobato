@@ -43,6 +43,10 @@ export default function handleRequest(
   routerContext: EntryContext,
   loadContext: RouterContextProvider,
 ) {
+  // One AppLocale drives the document language: `<html lang>`, meta og:locale
+  // and this header all agree. 304/redirect responses never reach this entry.
+  responseHeaders.set('Content-Language', loadContext.get(requestContext).localization.locale)
+
   // https://httpwg.org/specs/rfc9110.html#HEAD
   if (request.method.toUpperCase() === 'HEAD') {
     return new Response(null, {

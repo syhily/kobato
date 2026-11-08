@@ -20,9 +20,78 @@ vi.mock('@react-router/node', () => ({
 
 const { default: handleRequest } = await import('@/entry.server')
 
+function routerContext(): unknown {
+  return {
+    staticHandlerContext: {
+      loaderData: {},
+      actionData: null,
+      errors: null,
+      statusCode: 200,
+      location: { pathname: '/' },
+      matches: [],
+    },
+    manifest: {},
+    routeModules: {},
+    criticalCss: null,
+    serverHandoffString: '{}',
+    serverHandoffStream: null,
+    renderMeta: {},
+    future: {},
+    ssr: true,
+    routeDiscovery: { mode: 'initial' },
+    isSpaMode: false,
+    serializeError: (err: unknown) => err,
+  } as never
+}
+
 describe('entry.server.tsx / handleRequest', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it.each(['zh-CN', 'en-US', 'zh-TW', 'zh-HK'] as const)(
+    'sets Content-Language to the request AppLocale (%s)',
+    (locale) => {
+      const responseHeaders = new Headers()
+      const loadContext = {
+        get: (context: unknown) =>
+          context === requestContext
+            ? makeRequestContext({ localization: { locale, timeZone: 'Asia/Shanghai' } })
+            : undefined,
+      }
+
+      void handleRequest(
+        new Request('http://localhost/'),
+        200,
+        responseHeaders,
+        routerContext() as never,
+        loadContext as never,
+      )
+
+      expect(responseHeaders.get('Content-Language')).toBe(locale)
+    },
+  )
+
+  it('sets Content-Language on a HEAD response too', () => {
+    const responseHeaders = new Headers()
+    const loadContext = {
+      get: (context: unknown) =>
+        context === requestContext
+          ? makeRequestContext({ localization: { locale: 'en-US', timeZone: 'UTC' } })
+          : undefined,
+    }
+
+    const response = handleRequest(
+      new Request('http://localhost/', { method: 'HEAD' }),
+      200,
+      responseHeaders,
+      routerContext() as never,
+      loadContext as never,
+    )
+
+    expect(responseHeaders.get('Content-Language')).toBe('en-US')
+    expect(response).toBeInstanceOf(Response)
+    expect((response as Response).headers.get('Content-Language')).toBe('en-US')
   })
 
   it('passes the nonce to ServerRouter and renderToPipeableStream', async () => {

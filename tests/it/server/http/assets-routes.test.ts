@@ -100,7 +100,7 @@ describe('assetsRouter static paths', () => {
 })
 
 describe('assetsRouter manifest', () => {
-  it('returns a valid webmanifest using site identity title', async () => {
+  it('returns a valid, localized webmanifest with revalidating cache headers', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Test Blog' },
@@ -108,11 +108,65 @@ describe('assetsRouter manifest', () => {
     const res = await assetsRouter.request('/manifest.webmanifest')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toContain('application/json')
+    expect(res.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(res.headers.get('Content-Language')).toBe('zh-CN')
     const json = await res.json()
     expect(json.name).toBe('Test Blog')
+    expect(json.lang).toBe('zh-CN')
     expect(json.icons).toHaveLength(2)
     expect(json.display).toBe('standalone')
   })
+
+  it('hashes the EXACT serialized bytes for the ETag (no object-hash / body drift)', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Test Blog' },
+    })
+    const res = await assetsRouter.request('/manifest.webmanifest')
+    const body = await res.text()
+
+    // Recompute over the received bytes — not a re-serialized object.
+    const { createHash } = await import('node:crypto')
+    const expected = `"${createHash('sha1').update(body).digest('hex').slice(0, 32)}"`
+    expect(res.headers.get('ETag')).toBe(expected)
+    expect(JSON.parse(body).lang).toBe('zh-CN')
+  })
+
+  it('answers 304 on a matching If-None-Match with the current language heads', async () => {
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    const first = await assetsRouter.request('/manifest.webmanifest')
+    const etag = first.headers.get('ETag')!
+    await first.text()
+
+    const cached = await assetsRouter.request('/manifest.webmanifest', {
+      headers: { 'If-None-Match': etag },
+    })
+
+    expect(cached.status).toBe(304)
+    expect(cached.headers.get('ETag')).toBe(etag)
+    expect(cached.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(cached.headers.get('Content-Language')).toBe('zh-CN')
+    expect(await cached.text()).toBe('')
+  })
+
+  it.each(['en-US', 'zh-CN', 'zh-TW', 'zh-HK'] as const)(
+    'carries the %s UI language in `lang`, Content-Language and a distinct ETag',
+    async (locale) => {
+      setBlogSettingsBundleForTests({
+        ...TEST_BLOG_SETTINGS_BUNDLE,
+        siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale },
+      })
+      try {
+        const res = await assetsRouter.request('/manifest.webmanifest')
+        expect(res.headers.get('Content-Language')).toBe(locale)
+        const json = await res.json()
+        expect(json.lang).toBe(locale)
+        expect(res.headers.get('ETag')).toMatch(/^"[0-9a-f]{32}"$/)
+      } finally {
+        setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+      }
+    },
+  )
 
   it('falls back to a default name when the bundle is null (early boot)', async () => {
     setBlogSettingsBundleForTests(null)
@@ -120,6 +174,7 @@ describe('assetsRouter manifest', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.name).toBe('Site')
+    expect(json.lang).toBe('zh-CN')
   })
 })
 describe('assetsRouter robots.txt', () => {
