@@ -139,14 +139,17 @@ parameters).
   to the stored text (one logged warning per key) when a key disappears.
   `direct`/`broadcast` rows keep the user's original text and no descriptor.
   `notification.*` keys are append-only.
-- **Feed, calendar and manifest are revalidated representations.** Their cache
-  entries are keyed by `locale:APP_VERSION:<content key>` (the calendar also
-  keeps the theme variant), and their HTTP responses are
-  `Cache-Control: public, no-cache` with an ETag computed over the exact served
-  bytes. A conditional request gets a `304` with the current
-  `Content-Language`/`ETag`, never a stale language. Saving the General section
-  clears the whole `feed` and `calendar` buckets (all locale variants) through
-  the existing `clear(db, bucket)` seam — no generation counters.
+- **Feed and calendar are localized server-cache entries; feed, calendar and
+  manifest are revalidated representations.** Only the `feed` and `calendar`
+  buckets key their entries by `locale:APP_VERSION:<content key>` (the calendar
+  also keeps the theme variant); the manifest has NO server-side cache entry.
+  All three HTTP responses are `Cache-Control: public, no-cache` with an ETag
+  computed over the exact served bytes (the manifest's hand-built JSON
+  included) plus the current `Content-Language`. A conditional request gets a
+  `304` with the current `Content-Language`/`ETag`, never a stale language.
+  Saving the General section clears the whole `feed` and `calendar` buckets
+  (all locale variants) through the existing `clear(db, bucket)` seam — no
+  generation counters, and nothing to clear for the manifest.
 - **The locale switch is a flushed, ordered flow.** The General language
   Select is the one control that does not save immediately: its upstream
   handler awaits `flushAllAndWait()` (every registered settings card reports a
