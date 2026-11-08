@@ -268,7 +268,10 @@ describe('integration / manual re-verification (admin)', () => {
     await seedLivePost()
     const id = await seedMention({ status: 'rejected', verificationStatus: 'failed', lastError: 'spam' })
 
-    await expect(reverifyWebmention(db, id.toString())).rejects.toThrow('不再参与验证')
+    await expect(reverifyWebmention(db, id.toString())).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'webmentions.error.rejected' },
+    })
 
     const row = await rowOf(id)
     expect(row.status).toBe('rejected')

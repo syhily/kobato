@@ -14,6 +14,7 @@ import {
   pickWebmentionsDueForReverify,
   WEBMENTION_HIDE_STREAK,
 } from '@/server/infra/db/operations/webmention'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { idFromString } from '@/shared/utils/id'
@@ -89,10 +90,10 @@ export async function runWebmentionReverifyBatch(db: Database): Promise<number> 
 export async function reverifyWebmention(db: Database, id: string): Promise<WebmentionRow> {
   const row = await findWebmentionById(db, idFromString(id))
   if (row === null) {
-    throw new DomainError('NOT_FOUND', 'Webmention 不存在。')
+    throw new DomainError('NOT_FOUND', descriptorFor('webmentions.error.notFound'))
   }
   if (row.status === 'rejected') {
-    throw new DomainError('BAD_REQUEST', '已拒绝的 Webmention 不再参与验证。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('webmentions.error.rejected'))
   }
   const outcome = await checkRow(db, row)
   if (!outcome.ok) {
@@ -108,7 +109,7 @@ export async function reverifyWebmention(db: Database, id: string): Promise<Webm
     type: outcome.type,
   })
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', 'Webmention 不存在。')
+    throw new DomainError('NOT_FOUND', descriptorFor('webmentions.error.notFound'))
   }
   return updated
 }

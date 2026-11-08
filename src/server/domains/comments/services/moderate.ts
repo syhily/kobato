@@ -22,7 +22,8 @@ import { asCommentTarget } from '@/server/domains/comments/services/shared'
 import { invalidateContent } from '@/server/domains/content/invalidate'
 import { comment } from '@/server/infra/db/schema/comment'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
-import { DomainError } from '@/server/infra/http/errors'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
+import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { idFromString } from '@/shared/utils/id'
 
@@ -113,10 +114,10 @@ export async function resolveCommentDeleteRequest(
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '评论不存在。')
+    throw new DomainError('NOT_FOUND', descriptorFor('comments.error.notFound'))
   }
   if (existing.deleteRequestedAt === null) {
-    throw new DomainError('CONFLICT', '该评论没有待处理的删除申请。')
+    throw new DomainError('CONFLICT', descriptorFor('comments.error.noPendingDelete'))
   }
   if (approve) {
     await softDeleteCommentById(db, id)
@@ -178,7 +179,7 @@ export async function updateOwnComment(db: Database, rid: string, newBody: Comme
       ? await updateOwnCommentBody(db, id, body, content, graceUpdatedAt)
       : await updateOwnCommentBodyAndPending(db, id, body, content, graceUpdatedAt)
   if (affected === 0) {
-    throw new DomainError('CONFLICT', '评论已被修改，请刷新后重试。')
+    throw new DomainError('CONFLICT', descriptorFor('comments.error.modified'))
   }
 
   const r = await findCommentWithUserById(db, id)
@@ -209,19 +210,19 @@ export async function applyOwnCommentEdit(db: Database, rid: string, newBody: Co
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '资源不存在。')
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   if (existing.deleteRequestedAt !== null) {
-    throw new DomainError('CONFLICT', '已申请删除，无法编辑。')
+    throw new DomainError('CONFLICT', descriptorFor('comments.error.deleteRequested'))
   }
   // Edit lock: approved replies make the parent's context immutable.
   const replyCount = await countApprovedRepliesOfComment(db, id)
   if (replyCount > 0) {
-    throw new DomainError('CONFLICT', '已有回复，无法再编辑。')
+    throw new DomainError('CONFLICT', descriptorFor('comments.error.hasReplies'))
   }
   const updated = await updateOwnComment(db, rid, newBody)
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '更新评论失败')
+    throw new DomainError('NOT_FOUND', descriptorFor('comments.error.updateFailed'))
   }
   return updated
 }
@@ -237,7 +238,7 @@ export async function editOwnComment(
 ) {
   const existing = await findCommentWithUserById(db, idFromString(rid))
   if (existing === null || !isCommentOwner(viewer, existing)) {
-    throw new DomainError('NOT_FOUND', '资源不存在。')
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   const updated = await applyOwnCommentEdit(db, rid, newBody)
   recordAuditEventFromContext(audit, {
@@ -259,7 +260,7 @@ export async function requestOwnCommentDeletion(
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
   if (existing === null || !isCommentOwner(viewer, existing)) {
-    throw new DomainError('NOT_FOUND', '资源不存在。')
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   if (existing.deleteRequestedAt !== null) {
     // Idempotent no-op: flag already set — return the current row untouched.
@@ -273,7 +274,7 @@ export async function requestOwnCommentDeletion(
   })
   const updated = await findCommentWithUserById(db, id)
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '资源不存在。')
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   return updated
 }
@@ -284,11 +285,11 @@ export async function cancelOwnCommentDeletion(db: Database, rid: string, viewer
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
   if (existing === null || !isCommentOwner(viewer, existing)) {
-    throw new DomainError('NOT_FOUND', '资源不存在。')
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   const ok = await clearDeleteRequest(db, id, idFromString(viewer.id))
   if (!ok) {
-    throw new DomainError('CONFLICT', '无法撤回删除申请。')
+    throw new DomainError('CONFLICT', descriptorFor('comments.error.withdrawFailed'))
   }
   recordAuditEventFromContext(audit, {
     action: 'comment_delete_request_cancelled',
@@ -297,7 +298,7 @@ export async function cancelOwnCommentDeletion(db: Database, rid: string, viewer
   })
   const updated = await findCommentWithUserById(db, id)
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '资源不存在。')
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   return updated
 }

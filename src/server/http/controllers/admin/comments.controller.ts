@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
@@ -17,7 +16,7 @@ import {
   resolveCommentDeleteRequest,
   updateComment,
 } from '@/server/domains/comments/services/moderate'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
 import { adminCommentsPendingCountOutputSchema } from '@/shared/contracts/admin'
 import { adminCommentDto, adminPendingDashboardDto, ownCommentMutationDto } from '@/shared/contracts/comments'
 import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
@@ -59,7 +58,7 @@ const editOne = adminProc
   .handler(async ({ input, context }) => {
     const updated = await updateComment(context.db, input.commentId, input.body)
     if (!updated) {
-      throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'comments.error.updateFailed')
     }
     recordAuditEventFromContext(context, {
       action: 'comment_updated',

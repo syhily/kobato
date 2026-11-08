@@ -122,6 +122,15 @@ const SCAN_ROOTS = [
   'src/server/http/controllers/admin/categories.controller.ts',
   'src/server/http/controllers/admin/tags.controller.ts',
   'src/server/http/controllers/admin/revision-router.ts',
+  // Step 5a-iii: comments + webmentions (email templates stay server-catalog
+  // work; user comment bodies/source HTML/fetch errors stay raw by design).
+  'src/server/domains/comments',
+  'src/server/domains/webmentions',
+  'src/server/http/controllers/comments-public.controller.ts',
+  'src/server/http/controllers/comments-authed.controller.ts',
+  'src/server/http/controllers/admin/comments.controller.ts',
+  'src/server/http/controllers/admin/webmentions.controller.ts',
+  'src/server/http/controllers/webmention-public.controller.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -184,6 +193,12 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/server/domains/posts/services/mutate.ts', rules: ['domain-error'] },
   { path: 'src/server/domains/pages/services/mutate.ts', rules: ['domain-error'] },
   { path: 'src/server/domains/settings/sections/registry.ts', rules: ['domain-error'] },
+  // Webmention verification/fetch failures are TECHNICAL diagnostics persisted
+  // as `last_error` (never rendered to a reader) — kept raw by design.
+  { path: 'src/server/domains/webmentions/fetch.ts', rules: ['domain-error'] },
+  { path: 'src/server/domains/webmentions/receive.ts', rules: ['domain-error'] },
+  { path: 'src/server/domains/webmentions/target.ts', rules: ['domain-error'] },
+  { path: 'src/server/domains/webmentions/verify.ts', rules: ['domain-error'] },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -233,6 +248,10 @@ describe('production sources', () => {
         'src/server/domains/posts/services/mutate.ts',
         'src/server/domains/pages/services/mutate.ts',
         'src/server/domains/settings/sections/registry.ts',
+        'src/server/domains/webmentions/fetch.ts',
+        'src/server/domains/webmentions/receive.ts',
+        'src/server/domains/webmentions/target.ts',
+        'src/server/domains/webmentions/verify.ts',
       ]),
     )
   })
@@ -310,6 +329,12 @@ describe('production sources', () => {
         'src/server/infra/slug/resolve.ts',
         'src/server/infra/slug/reservation.ts',
         'src/server/http/controllers/admin/revision-router.ts',
+        // Step 5a-iii slice: comments + webmentions.
+        'src/server/domains/comments/services/moderate.ts',
+        'src/server/domains/comments/services/policy.ts',
+        'src/server/domains/webmentions/reverify.ts',
+        'src/server/http/controllers/comments-public.controller.ts',
+        'src/server/http/controllers/admin/webmentions.controller.ts',
       ]),
     )
   })

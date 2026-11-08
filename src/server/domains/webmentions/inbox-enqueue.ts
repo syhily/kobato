@@ -9,6 +9,7 @@ import {
   countQueuedWebmentionInboxBySourceHost,
   upsertWebmentionInbox,
 } from '@/server/infra/db/operations/webmention-inbox'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 // The receive endpoint is unauthenticated by design, so the queue itself
@@ -32,7 +33,7 @@ export async function enqueueWebmention(db: Database, input: WebmentionReceiveIn
     await countQueuedWebmentionInboxBySourceHost(db, new URL(sourceKey).origin),
   ]
   if (queued >= INBOX_MAX_QUEUED || queuedFromHost >= INBOX_MAX_QUEUED_PER_SOURCE_HOST) {
-    throw new DomainError('RATE_LIMITED', 'Webmention 队列已满，请稍后再试。')
+    throw new DomainError('RATE_LIMITED', descriptorFor('webmentions.error.queueFull'))
   }
   await upsertWebmentionInbox(db, { sourceUrl: sourceKey, targetUrl: target.canonicalUrl })
   rescheduleWebmentionInbox()

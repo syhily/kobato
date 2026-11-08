@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import type { CommentReq } from '@/shared/types/comments'
@@ -13,7 +12,13 @@ import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { appendCommentToken, issueCommentToken } from '@/server/domains/comments/services/token'
-import { commentTokenCookie, commentPostRateLimit, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import {
+  commentTokenCookie,
+  commentPostRateLimit,
+  localizedOrpcError,
+  publicProc,
+  resourceRateLimit,
+} from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
 import { tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -36,7 +41,7 @@ const replyComment = publicProc
     if (!isAdmin) {
       const byEmail = await tryCommentPostRateLimitByEmail(input.email)
       if (byEmail.exceeded) {
-        throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+        throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'error.api.rateLimited')
       }
     }
     const commentPayload: CommentReq = {
@@ -80,7 +85,7 @@ const list = publicProc
     const target = await resolveMetricTarget(context.db, input.page_key)
     const comments = await loadComments(context.db, context.session, target, input.offset)
     if (comments === null) {
-      throw new ORPCError('BAD_GATEWAY', { message: '无法连接到评论服务器' })
+      throw localizedOrpcError(context, 'BAD_GATEWAY', 'comments.error.serverUnavailable')
     }
     const items = await parseComments(comments.comments)
     const next = requireBlogSettingsSection('comments').comments.size + input.offset < comments.roots_count
@@ -96,12 +101,12 @@ const getRaw = publicProc
     const sessionUser = context.viewer ?? undefined
     const { ok, cleaned } = await verifyCommentAccess(context.db, context.commentTokens.cookie, input.rid, sessionUser)
     if (!ok) {
-      throw new ORPCError('FORBIDDEN', { message: '无权查看该评论' })
+      throw localizedOrpcError(context, 'FORBIDDEN', 'comments.error.viewForbidden')
     }
     context.commentTokens.refreshed = cleaned
     const comment = await findCommentWithUserById(context.db, idFromString(input.rid))
     if (!comment) {
-      throw new ORPCError('NOT_FOUND', { message: '评论不存在' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'comments.error.notFound')
     }
     return { body: comment.body }
   })
@@ -122,7 +127,7 @@ const edit = publicProc
     const sessionUser = context.viewer ?? undefined
     const { ok, cleaned } = await verifyCommentAccess(context.db, context.commentTokens.cookie, input.rid, sessionUser)
     if (!ok) {
-      throw new ORPCError('FORBIDDEN', { message: '无权编辑该评论' })
+      throw localizedOrpcError(context, 'FORBIDDEN', 'comments.error.editForbidden')
     }
     context.commentTokens.refreshed = cleaned
     const updated = await applyOwnCommentEdit(context.db, input.rid, input.body)

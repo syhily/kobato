@@ -20,7 +20,7 @@ describe('comments/services/canonicalize — pre-render length gate', () => {
 
     await expect(canonicalizeCommentBody(makeCommentBody('a'.repeat(MAX_COMMENT_LENGTH + 1)))).rejects.toMatchObject({
       code: 'BAD_REQUEST',
-      message: `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。`,
+      descriptor: { messageKey: 'comments.error.contentTooLong', params: { max: MAX_COMMENT_LENGTH } },
     })
     expect(prerenderLexicalEditorState).not.toHaveBeenCalled()
   })

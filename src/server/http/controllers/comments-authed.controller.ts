@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { asCommentItemWire } from '@/server/domains/comments/projection'
@@ -13,7 +12,7 @@ import {
   requestOwnCommentDeletion,
 } from '@/server/domains/comments/services/moderate'
 import { resolveEntitiesForComments } from '@/server/domains/content/entities/slug-title'
-import { authedProc } from '@/server/http/orpc-base'
+import { authedProc, localizedOrpcError } from '@/server/http/orpc-base'
 import {
   commentsMyCountsOutputSchema,
   commentsResolveEntityInputSchema,
@@ -31,7 +30,7 @@ const updateOwn = authedProc
   .handler(async ({ input, context }) => {
     const commentId = input.commentId ? idFromString(input.commentId) : 0
     if (commentId === 0) {
-      throw new ORPCError('BAD_REQUEST', { message: '缺少 commentId' })
+      throw localizedOrpcError(context, 'BAD_REQUEST', 'comments.error.commentIdRequired')
     }
     // The edit-lock flow (ownership, delete-request fence, has-replies
     // lock, grace-window mutation, audit) lives in the comments domain.

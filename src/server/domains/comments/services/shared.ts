@@ -2,6 +2,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { MetricRow } from '@/server/infra/db/types'
 
 import { ensureMetric, findMetricByPublicId } from '@/server/infra/db/operations/metric'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 export interface MetricTarget {
@@ -24,11 +25,11 @@ export function asCommentTarget(type: string | null, ownerId: number | null): Me
 export async function resolveMetricTarget(db: Database, key: string): Promise<MetricTarget> {
   const row = await findMetricByPublicId(db, key)
   if (row?.type == null || row.ownerId == null) {
-    throw new DomainError('NOT_FOUND', '评论目标不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('comments.error.targetMissing'))
   }
   const target = asCommentTarget(row.type, row.ownerId)
   if (target === null) {
-    throw new DomainError('BAD_REQUEST', '无效的评论目标类型')
+    throw new DomainError('BAD_REQUEST', descriptorFor('comments.error.targetTypeInvalid'))
   }
   return target
 }

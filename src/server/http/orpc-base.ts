@@ -45,7 +45,9 @@ export type OrpcErrorCode =
   | 'TOO_MANY_REQUESTS'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
+  | 'CONFLICT'
   | 'INTERNAL_SERVER_ERROR'
+  | 'BAD_GATEWAY'
   | 'SERVICE_UNAVAILABLE'
 
 /**

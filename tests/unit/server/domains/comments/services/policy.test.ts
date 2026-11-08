@@ -36,9 +36,9 @@ describe('decideOwnEdit — 30-minute grace window', () => {
 
 describe('decideEmailGate — registered-account fence', () => {
   it('rejects an anonymous submission under a registered email', () => {
-    expect(decideEmailGate(undefined, true)).toEqual({
+    expect(decideEmailGate(undefined, true)).toMatchObject({
       code: 'UNAUTHORIZED',
-      message: '该邮箱已经注册，请登录后再进行评论留言。',
+      descriptor: { messageKey: 'comments.error.emailRegistered' },
     })
   })
 
@@ -53,10 +53,12 @@ describe('decideEmailGate — registered-account fence', () => {
 
 describe('decideCommenterGate — role and mute checks', () => {
   it('rejects an admin commenting anonymously', () => {
-    expect(decideCommenterGate(undefined, { email: 'admin@example.com', role: 'admin', isMuted: false })).toEqual({
-      code: 'UNAUTHORIZED',
-      message: '管理员账号需要登陆才能评论。',
-    })
+    expect(decideCommenterGate(undefined, { email: 'admin@example.com', role: 'admin', isMuted: false })).toMatchObject(
+      {
+        code: 'UNAUTHORIZED',
+        descriptor: { messageKey: 'comments.error.adminLoginRequired' },
+      },
+    )
   })
 
   it('passes a logged-in admin', () => {
@@ -71,9 +73,9 @@ describe('decideCommenterGate — role and mute checks', () => {
   it('rejects a logged-in non-admin commenting under a different email', () => {
     expect(
       decideCommenterGate({ email: 'me@example.com' }, { email: 'other@example.com', role: 'visitor', isMuted: false }),
-    ).toEqual({
+    ).toMatchObject({
       code: 'FORBIDDEN',
-      message: '评论邮箱与登陆账号不相符。',
+      descriptor: { messageKey: 'comments.error.emailMismatch' },
     })
   })
 
@@ -88,16 +90,16 @@ describe('decideCommenterGate — role and mute checks', () => {
   })
 
   it('rejects a muted commenter', () => {
-    expect(decideCommenterGate(undefined, { email: 'anon@example.com', role: null, isMuted: true })).toEqual({
+    expect(decideCommenterGate(undefined, { email: 'anon@example.com', role: null, isMuted: true })).toMatchObject({
       code: 'FORBIDDEN',
-      message: '您的评论功能已被管理员禁用，如有疑问请联系站长。',
+      descriptor: { messageKey: 'comments.error.muted' },
     })
   })
 
   it('checks role before mute (anonymous muted admin gets the login error)', () => {
-    expect(decideCommenterGate(undefined, { email: 'admin@example.com', role: 'admin', isMuted: true })).toEqual({
+    expect(decideCommenterGate(undefined, { email: 'admin@example.com', role: 'admin', isMuted: true })).toMatchObject({
       code: 'UNAUTHORIZED',
-      message: '管理员账号需要登陆才能评论。',
+      descriptor: { messageKey: 'comments.error.adminLoginRequired' },
     })
   })
 })
@@ -117,27 +119,27 @@ describe('decideContentGate — length cap and dedupe window', () => {
         contentHash: 'h1',
         recentContentHashes: [],
       }),
-    ).toEqual({
+    ).toMatchObject({
       code: 'BAD_REQUEST',
-      message: `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。`,
+      descriptor: { messageKey: 'comments.error.contentTooLong', params: { max: MAX_COMMENT_LENGTH } },
     })
   })
 
   it('rejects a duplicate hash inside the dedupe window for non-admins', () => {
     expect(
       decideContentGate({ role: 'visitor', contentLength: 10, contentHash: 'dup', recentContentHashes: ['dup'] }),
-    ).toEqual({
+    ).toMatchObject({
       code: 'CONFLICT',
-      message: '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。',
+      descriptor: { messageKey: 'comments.error.duplicate' },
     })
   })
 
   it('treats role-less (anonymous) commenters as non-admins for dedupe', () => {
     expect(
       decideContentGate({ role: null, contentLength: 10, contentHash: 'dup', recentContentHashes: ['dup'] }),
-    ).toEqual({
+    ).toMatchObject({
       code: 'CONFLICT',
-      message: '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。',
+      descriptor: { messageKey: 'comments.error.duplicate' },
     })
   })
 
@@ -161,9 +163,9 @@ describe('decideContentGate — length cap and dedupe window', () => {
         contentHash: 'dup',
         recentContentHashes: ['dup'],
       }),
-    ).toEqual({
+    ).toMatchObject({
       code: 'BAD_REQUEST',
-      message: `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。`,
+      descriptor: { messageKey: 'comments.error.contentTooLong', params: { max: MAX_COMMENT_LENGTH } },
     })
   })
 })

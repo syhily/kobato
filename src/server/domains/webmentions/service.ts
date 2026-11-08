@@ -30,6 +30,7 @@ import {
 } from '@/server/infra/db/operations/webmention-outbox'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
@@ -127,11 +128,11 @@ export async function loadPublicWebmentionsForTarget(
 async function moderate(db: Database, id: string, status: WebmentionStatus): Promise<void> {
   const row = await findWebmentionById(db, idFromString(id))
   if (row === null) {
-    throw new DomainError('NOT_FOUND', 'Webmention 不存在。')
+    throw new DomainError('NOT_FOUND', descriptorFor('webmentions.error.notFound'))
   }
   // A hidden mention returns to the public page only via successful re-verification.
   if (status === 'approved' && row.status === 'hidden') {
-    throw new DomainError('BAD_REQUEST', '已隐藏的 Webmention 只能通过重新验证恢复。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('webmentions.error.hidden'))
   }
   await setWebmentionStatus(db, row.id, status)
 }
