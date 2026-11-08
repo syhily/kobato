@@ -128,7 +128,7 @@ export function CategoriesView() {
         >
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Button type="button" size="sm" onClick={() => setEditTarget(null)}>
-              <PlusIcon className="size-4" />
+              <PlusIcon data-icon />
               {t('admin.categories.new')}
             </Button>
           </div>

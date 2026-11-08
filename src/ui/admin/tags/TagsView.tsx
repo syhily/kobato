@@ -104,7 +104,7 @@ export function TagsView() {
               />
             </div>
             <Button type="button" size="sm" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>
-              <PlusIcon className="size-4" />
+              <PlusIcon data-icon />
               {t('admin.tags.new')}
             </Button>
           </div>

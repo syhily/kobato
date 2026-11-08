@@ -131,7 +131,7 @@ export function PostsView() {
               </SelectContent>
             </Select>
             <Button type="button" size="sm" render={<Link to="/editor/post/new" />}>
-              <PlusIcon className="size-4" />
+              <PlusIcon data-icon />
               {t('admin.posts.new')}
             </Button>
           </div>

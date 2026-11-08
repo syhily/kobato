@@ -54,7 +54,7 @@ export function PagesView() {
             {!pills.hasFilters && filterBar}
 
             <Button type="button" size="sm" render={<Link to="/editor/page/new" />}>
-              <PlusIcon className="size-4" />
+              <PlusIcon data-icon />
               {t('admin.pages.new')}
             </Button>
           </div>
