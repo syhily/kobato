@@ -98,6 +98,20 @@ export function summarizeApiError(translated: TranslatedDomainError, translator:
   return translator.format('error.api.summary', { message: translated.message, issues: parts.join(separator) })
 }
 
+/**
+ * Join non-fatal descriptors into the wire `warning` string (space-separated,
+ * the pre-descriptor shape the revision contract keeps).
+ */
+export function formatWarningDescriptors(
+  descriptors: readonly ErrorMessageDescriptor[],
+  translator: ServerTranslator,
+): string | undefined {
+  if (descriptors.length === 0) {
+    return undefined
+  }
+  return descriptors.map((descriptor) => translator.format(descriptor.messageKey, descriptor.params)).join(' ')
+}
+
 /** The wire payload the adapters attach (`ORPCError.data`, Hono's `error` body). */
 export function apiErrorData(translated: TranslatedDomainError): ApiErrorData {
   return {

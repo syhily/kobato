@@ -1,6 +1,7 @@
 import type { UpsertMetaInputBase } from '@/server/domains/content/entities/descriptor'
 import type { PageMetaRow } from '@/server/infra/db/types'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 // Server-side write shape (number ids / Dates) — distinct from the wire
@@ -14,6 +15,6 @@ export interface PageMetaWriteInput extends UpsertMetaInputBase {
  */
 export function assertPageExists(meta: PageMetaRow | null): asserts meta is PageMetaRow {
   if (meta === null) {
-    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', descriptorFor('content.error.entityNotFound', { entity: 'page' }))
   }
 }

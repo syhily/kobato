@@ -1,6 +1,13 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { coerceBoolean } from '@/server/domains/settings/sections/shared'
+
+/** Custom validation messages: typed ids; the minimum rides `params`. */
+export const sidebarValidationMessages = {
+  customQuotesTooFew: 'admin.settings.sidebar.error.customQuotesTooFew',
+} as const satisfies Record<string, UiMessageId>
 
 export const sidebarSchema = z.object({
   sidebar: z.object({
@@ -24,7 +31,7 @@ export const sidebarSchema = z.object({
             }),
           )
           .max(500)
-          .refine((arr) => arr.length === 0 || arr.length >= 10, '自定义一言至少需要 10 条，或清空后使用内置一言库')
+          .refine((arr) => arr.length === 0 || arr.length >= 10, sidebarValidationMessages.customQuotesTooFew)
           .default([]),
       })
       .default({ source: 'shanbay', customQuotes: [] }),

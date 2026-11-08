@@ -3,6 +3,7 @@ import type { ContentType } from '@/server/domains/content/schemas/revision'
 import type { AdminListEngagement } from '@/server/domains/content/services/admin-list'
 import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 /**
@@ -90,8 +91,6 @@ export interface MetaEntityDescriptor<
   TRestore = undefined,
 > {
   entityType: ContentType
-  /** Chinese entity label for DomainError messages ('文章' / '页面'). */
-  label: string
   repos: MetaCrud<TMeta, TNew>
   /** Applied by the admin list when `filters.limit` is undefined (posts 20, pages 100). */
   defaultAdminListLimit: number
@@ -119,7 +118,12 @@ export interface MetaEntityDescriptor<
     /** Catalog projection of meta + revision (toCmsPost / toCmsPage). */
     project: (meta: TMeta, revision: ContentRow | null) => TPreview
     /** Post-publish side effects: invalidation for both entities; posts also refresh the search index. */
-    afterPublish: (db: Database, meta: TMeta, body: LexicalEditorState, warnings: string[]) => Promise<void>
+    afterPublish: (
+      db: Database,
+      meta: TMeta,
+      body: LexicalEditorState,
+      warnings: ErrorMessageDescriptor[],
+    ) => Promise<void>
   }
 
   adminDto: {
@@ -160,6 +164,6 @@ export interface MetaEntityDescriptor<
      */
     prepareRestore?: (tx: Database, meta: TMeta) => TRestore | null
     /** Post-commit restore side effects; may return a warning that follows the slug warning. */
-    afterRestore?: (db: Database, ctx: TRestore) => Promise<string | undefined>
+    afterRestore?: (db: Database, ctx: TRestore) => Promise<ErrorMessageDescriptor | undefined>
   }
 }

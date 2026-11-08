@@ -1,3 +1,4 @@
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { deriveSlug } from '@/server/infra/slug/derive'
 import { RESERVED_SLUGS } from '@/server/infra/slug/reservation'
@@ -7,7 +8,8 @@ export type SlugEntity = 'post' | 'page' | 'taxonomy'
 
 // Explicit non-empty slug wins (validated inline); blank falls back to
 // `deriveSlug(name)`. Failures throw `BAD_REQUEST` with `issues` path
-// `['slug']`; taxonomy skips the route-prefix fence.
+// `['slug']`; taxonomy skips the route-prefix fence. The entity noun is the
+// machine kind — the catalog's ICU `select` localizes it.
 export function resolveSlug(
   explicit: string | undefined,
   fallbackName: string,
@@ -15,43 +17,26 @@ export function resolveSlug(
 ): string {
   if (typeof explicit === 'string' && explicit.trim() !== '') {
     const slug = explicit.trim()
-    if (options.entity === 'taxonomy') {
-      if (!DERIVED_SLUG_PATTERN.test(slug)) {
-        throw new DomainError('BAD_REQUEST', 'slug 格式不合法（仅允许小写字母、数字、`-`）。', [
-          { message: 'slug 格式不合法', path: ['slug'] },
-        ])
-      }
-      if (slug.length > SLUG_MAX) {
-        throw new DomainError('BAD_REQUEST', `slug 长度不得超过 ${SLUG_MAX} 个字符。`, [
-          { message: `slug 长度不得超过 ${SLUG_MAX} 个字符`, path: ['slug'] },
-        ])
-      }
-      return slug
-    }
-    const label = options.entity === 'post' ? '文章' : '页面'
     if (!DERIVED_SLUG_PATTERN.test(slug)) {
-      throw new DomainError('BAD_REQUEST', `${label} slug 格式不合法（仅允许小写字母、数字、\`-\`）。`, [
-        { message: `${label} slug 格式不合法`, path: ['slug'] },
-      ])
+      const descriptor = descriptorFor('content.error.slugFormat', { entity: options.entity })
+      throw new DomainError('BAD_REQUEST', descriptor, [{ ...descriptor, path: ['slug'] }])
     }
     if (slug.length > SLUG_MAX) {
-      throw new DomainError('BAD_REQUEST', `${label} slug 长度不得超过 ${SLUG_MAX} 个字符。`, [
-        { message: `${label} slug 长度不得超过 ${SLUG_MAX} 个字符`, path: ['slug'] },
-      ])
+      const descriptor = descriptorFor('content.error.slugTooLong', { entity: options.entity, max: SLUG_MAX })
+      throw new DomainError('BAD_REQUEST', descriptor, [{ ...descriptor, path: ['slug'] }])
     }
-    if (RESERVED_SLUGS.has(slug)) {
-      throw new DomainError('BAD_REQUEST', `slug "${slug}" 是站点保留路径。`, [
-        { message: `slug "${slug}" 是站点保留路径`, path: ['slug'] },
-      ])
+    if (options.entity !== 'taxonomy' && RESERVED_SLUGS.has(slug)) {
+      const descriptor = descriptorFor('content.error.slugReserved', { slug })
+      throw new DomainError('BAD_REQUEST', descriptor, [{ ...descriptor, path: ['slug'] }])
     }
     return slug
   }
   const derived = deriveSlug(fallbackName)
   if (derived === '') {
-    const fallbackLabel = options.entity === 'taxonomy' ? '名称' : '标题'
-    throw new DomainError('BAD_REQUEST', `无法从${fallbackLabel}推导出 slug，请手动填写。`, [
-      { message: `${fallbackLabel}推导出空 slug，请手动填写`, path: ['slug'] },
-    ])
+    const descriptor = descriptorFor('content.error.slugUnderivable', {
+      source: options.entity === 'taxonomy' ? 'name' : 'title',
+    })
+    throw new DomainError('BAD_REQUEST', descriptor, [{ ...descriptor, path: ['slug'] }])
   }
   return derived
 }

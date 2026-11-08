@@ -47,31 +47,30 @@ describe('content/slug-reclaim — reclaimSlugOnRestore', () => {
     {
       restoring: 'post' as const,
       owner: 'post' as const,
-      message: 'slug "hello" 已被另一个文章占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。',
     },
     {
       restoring: 'post' as const,
       owner: 'page' as const,
-      message: 'slug "hello" 已被另一个页面占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。',
     },
     {
       restoring: 'page' as const,
       owner: 'post' as const,
-      message: 'slug "hello" 已被另一个文章占用，恢复后该 URL 不会指向此页面。请修改 slug 或先处理占用方。',
     },
     {
       restoring: 'page' as const,
       owner: 'page' as const,
-      message: 'slug "hello" 已被另一个页面占用，恢复后该 URL 不会指向此页面。请修改 slug 或先处理占用方。',
     },
   ])(
     'warns and skips the insert when another $owner owns the slug of a restored $restoring',
-    async ({ restoring, owner, message }) => {
+    async ({ restoring, owner }) => {
       await seedRegistryRow('hello', owner, 2)
 
       const warning = reclaimSlugOnRestore(db, restoring, 1, 'hello')
 
-      expect(warning).toBe(message)
+      expect(warning).toMatchObject({
+        messageKey: 'content.warning.slugTakenOnRestore',
+        params: { slug: 'hello', occupant: owner, target: restoring },
+      })
       const row = await registryRowFor('hello')
       expect(row?.entityType).toBe(owner)
       expect(row?.entityId).toBe(2)

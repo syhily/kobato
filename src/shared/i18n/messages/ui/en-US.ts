@@ -2665,6 +2665,61 @@ export const uiMessagesEnUS = {
   'admin.settings.errors.notInstalled': 'The site has not finished installation.',
   'admin.settings.errors.incompleteSections':
     'The settings data is incomplete; these sections are missing: {sections}. The install flow should have written every row, so this usually means a row was deleted manually. Re-run the install flow or restore from a backup.',
+  'admin.settings.comments.error.mirrorInvalid': 'The mirror must be a known Gravatar mirror HTTPS URL',
+  'admin.settings.comments.error.duplicateSource': 'Avatar sources cannot repeat',
+  'admin.settings.socials.error.fixedType': '{network} always uses the `{type}` display mode',
+  'admin.settings.socials.error.duplicateNetwork': '{network} has already been added. Edit the existing row instead.',
+  'admin.settings.cache.error.prefixFormat':
+    'The prefix may only contain letters / digits / `_` / `-` and must end with `:`',
+  'admin.settings.cache.error.prefixOverlap':
+    'The `{rightPrefix}` prefix of {right} conflicts with `{leftPrefix}` of {left}; prefix scans would hit each other',
+  'admin.settings.cache.error.reservedPrefix':
+    '`{prefix}` conflicts with the reserved prefix `{reserved}` (session / rate-limit / fixed caches cannot be cleared from the admin panel)',
+  'admin.settings.backup.error.dayOfWeekRequired': 'Choose a weekday',
+  'admin.settings.backup.error.dayOfMonthRequired': 'Choose a day of the month',
+  'admin.settings.backup.error.encryptionPasswordRequired': 'Set a password before enabling backup encryption',
+  'admin.settings.backup.error.encryptionPasswordTooShort':
+    'The backup encryption password must be at least {min} characters',
+  'admin.settings.sidebar.error.customQuotesTooFew':
+    'Custom quotes need at least {min} entries, or clear them to use the built-in bank',
+  'admin.settings.mail.error.hostnameInvalid':
+    'Enter a hostname or domain (letters / digits / `-` / `.` only); no scheme, port, path or IP address',
+  'admin.settings.fonts.error.familyInvalid': 'font-family must not contain quotes, backslashes, or braces',
+  'content.error.entityNotFound':
+    '{entity, select, post {The post} page {The page} other {The content}} does not exist or has been deleted.',
+  'content.error.entityNotDeleted':
+    '{entity, select, post {The post} page {The page} other {The content}} does not exist or is not deleted.',
+  'content.error.categoryNotFound': 'The category does not exist.',
+  'content.error.invalidBody': 'The body format is invalid.',
+  'content.error.slugConflict': 'The slug "{slug}" is already in use.',
+  'content.warning.imageSyncFailed': 'The image-library sync failed; some images may not display.',
+  'content.warning.projectionFailed': 'The body projection could not be generated. Save again to retry.',
+  'content.warning.searchIndexFailed': 'The search index update failed; this post may not appear in search results.',
+  'content.warning.publishHookFailed':
+    'Post-publish processing (e.g. queueing Webmentions) failed; the post itself is unaffected.',
+  'content.warning.slugTakenOnRestore':
+    'slug "{slug}" is already used by another {occupant, select, post {post} page {page} other {entry}}; after restoring, that URL will not point to this {target, select, post {post} page {page} other {entry}}. Change the slug or handle the occupant first.',
+  'content.warning.slugStolenOnRestore':
+    'slug "{slug}" was taken by other content during the restore; the URL will not point to this {target, select, post {post} page {page} other {entry}}.',
+  'taxonomy.error.nameTaken':
+    'A {entity, select, category {category} tag {tag} other {taxonomy}} named "{name}" already exists',
+  'taxonomy.error.slugTaken': 'The slug "{slug}" is already in use',
+  'taxonomy.error.nameTakenIssue': 'Name is already taken',
+  'taxonomy.error.slugTakenIssue': 'Slug is already taken',
+  'taxonomy.error.notFound': '{entity, select, category {Category} tag {Tag} other {Taxonomy}} not found',
+  'taxonomy.error.blockedByPosts':
+    '{entity, select, category {Category} tag {Tag} other {Taxonomy}} "{name}" is still referenced by {count, plural, one {# post} other {# posts}}: {preview}. Update those posts before deleting.',
+  'taxonomy.error.duplicateOrderIds': 'The ordering request contains duplicate category ids',
+  'taxonomy.error.orderStale': 'The ordering no longer matches the latest categories. Refresh and try again.',
+  'content.error.slugTakenByEntity':
+    'slug "{slug}" is already used by another {entity, select, post {post} page {page} other {entry}}.',
+  'content.error.slugFormat':
+    '{entity, select, post {Post} page {Page} taxonomy {Slug} other {Slug}} slug format is invalid (lowercase letters, digits and `-` only).',
+  'content.error.slugTooLong':
+    '{entity, select, post {Post} page {Page} taxonomy {Slug} other {Slug}} slug must be at most {max} characters.',
+  'content.error.slugReserved': 'slug "{slug}" is a reserved site path.',
+  'content.error.slugUnderivable':
+    'Could not derive a slug from the {source, select, title {title} name {name} other {input}}; enter one manually.',
 } as const
 
 export type UiMessageId = keyof typeof uiMessagesEnUS

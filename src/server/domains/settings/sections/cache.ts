@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { FIXED_CACHE_PREFIXES } from '@/shared/cache/registry'
 import { CACHE_BUCKET_FALLBACKS, type TunableCacheBucketId, TUNABLE_CACHE_BUCKET_IDS } from '@/shared/types/cache'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -10,6 +12,13 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 // editor-overwritable — session/rate-limit caches depend on stable key shapes.
 export const RESERVED_CACHE_PREFIXES: readonly string[] = ['session:', 'rate-limit:', 'avatar-status:']
 
+/** Custom validation messages: typed ids; the offending prefixes ride `params`. */
+export const cacheValidationMessages = {
+  prefixFormat: 'admin.settings.cache.error.prefixFormat',
+  prefixOverlap: 'admin.settings.cache.error.prefixOverlap',
+  reservedPrefix: 'admin.settings.cache.error.reservedPrefix',
+} as const satisfies Record<string, UiMessageId>
+
 const PREFIX_PATTERN = /^[a-z0-9_-]+:$/i
 // 1 hour ≤ TTL ≤ 30 days — below 1h a typo would treadmill regenerations;
 // above 30d stale renders outlive content renames.
@@ -17,12 +26,7 @@ const MIN_TTL_SECONDS = 60 * 60
 const MAX_TTL_SECONDS = 60 * 60 * 24 * 30
 
 const cacheBucketSchema = z.object({
-  prefix: z
-    .string()
-    .trim()
-    .min(2)
-    .max(40)
-    .regex(PREFIX_PATTERN, '前缀只能包含字母 / 数字 / `_` / `-`，且必须以 `:` 结尾'),
+  prefix: z.string().trim().min(2).max(40).regex(PREFIX_PATTERN, cacheValidationMessages.prefixFormat),
   ttlSeconds: z.coerce.number().int().min(MIN_TTL_SECONDS).max(MAX_TTL_SECONDS),
 })
 
@@ -59,7 +63,13 @@ export const cacheSchema = z
           ctx.addIssue({
             code: 'custom',
             path: ['cache', right.id, 'prefix'],
-            message: `「${right.id}」的前缀 \`${right.prefix}\` 与「${left.id}」的前缀 \`${left.prefix}\` 冲突，会让前缀扫描互相误伤`,
+            message: cacheValidationMessages.prefixOverlap,
+            params: {
+              right: right.id,
+              rightPrefix: right.prefix,
+              left: left.id,
+              leftPrefix: left.prefix,
+            },
           })
         }
       }
@@ -77,7 +87,8 @@ export const cacheSchema = z
           ctx.addIssue({
             code: 'custom',
             path: ['cache', entry.id, 'prefix'],
-            message: `\`${entry.prefix}\` 与系统保留前缀 \`${reserved}\` 冲突（session / rate-limit / 固定缓存不可被管理面板清空）`,
+            message: cacheValidationMessages.reservedPrefix,
+            params: { prefix: entry.prefix, reserved },
           })
         }
       }

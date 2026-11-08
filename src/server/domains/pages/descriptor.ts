@@ -44,7 +44,6 @@ export const pageDescriptor: MetaEntityDescriptor<
   Page
 > = {
   entityType: 'page',
-  label: '页面',
   repos: {
     findMetaById: findPageMetaById,
     findMetaBySlug: findPageMetaBySlug,

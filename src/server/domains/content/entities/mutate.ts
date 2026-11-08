@@ -5,6 +5,7 @@ import type {
   UpsertMetaInputBase,
 } from '@/server/domains/content/entities/descriptor'
 import type { Database } from '@/server/infra/db/database'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
 import { rescheduleScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
@@ -14,6 +15,7 @@ import {
   insertSlugRegistry,
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
 import { resolveSlug } from '@/server/infra/slug/resolve'
@@ -23,7 +25,11 @@ export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> 
   create: (db: Database, input: TInput, authorId: number | null, viewer?: ViewerIdentity) => Promise<TAdminDto>
   update: (db: Database, input: TInput & { id: number }, viewer?: ViewerIdentity) => Promise<TAdminDto>
   remove: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<{ deleted: boolean }>
-  restore: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<{ restored: boolean; warning?: string }>
+  restore: (
+    db: Database,
+    id: number,
+    viewer?: ViewerIdentity,
+  ) => Promise<{ restored: boolean; warningDescriptors?: ErrorMessageDescriptor[] }>
   unpublish: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<TAdminDto>
 }
 
@@ -136,7 +142,10 @@ export function makeEntityMutations<
         return result
       })
       if (updated === null) {
-        throw new DomainError('NOT_FOUND', `${descriptor.label}不存在或已被删除。`)
+        throw new DomainError(
+          'NOT_FOUND',
+          descriptorFor('content.error.entityNotFound', { entity: descriptor.entityType }),
+        )
       }
       await mutations.afterMutation?.(db, updated, 'update')
       // `publishedAt` may have been set/moved/cancelled — re-arm the timer (no-op until started).
@@ -171,14 +180,14 @@ export function makeEntityMutations<
     db: Database,
     id: number,
     viewer?: ViewerIdentity,
-  ): Promise<{ restored: boolean; warning?: string }> {
+  ): Promise<{ restored: boolean; warningDescriptors?: ErrorMessageDescriptor[] }> {
     const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
 
     // Gather post-commit needs inside the tx so a failed restore never touches external state.
     const { restored, slugWarning, ctx } = db.transaction((tx) => {
       const ok = repos.restoreMeta(tx, id)
-      let slugConflict: string | undefined
+      let slugConflict: ErrorMessageDescriptor | undefined
       let restoreCtx: TRestore | null | undefined
       if (ok) {
         const restoredMeta = repos.findMetaById(tx, id)
@@ -190,15 +199,17 @@ export function makeEntityMutations<
       return { restored: ok, slugWarning: slugConflict, ctx: restoreCtx }
     })
 
-    let restoreWarning: string | undefined
+    let restoreWarning: ErrorMessageDescriptor | undefined
     if (restored) {
       // `restored` implies the tx gathered a context (possibly the descriptor's own null/undefined).
       restoreWarning = await mutations.afterRestore?.(db, unsafeCast<TRestore>(ctx))
       // A restored scheduled row may be the next one now — re-arm.
       rescheduleScheduledPublish()
     }
-    const warning = [slugWarning, restoreWarning].filter((part) => part !== undefined).join(' ') || undefined
-    return { restored, warning }
+    const warningDescriptors = [slugWarning, restoreWarning].filter(
+      (part): part is ErrorMessageDescriptor => part !== undefined,
+    )
+    return { restored, ...(warningDescriptors.length === 0 ? {} : { warningDescriptors }) }
   }
 
   async function unpublish(db: Database, id: number, viewer?: ViewerIdentity): Promise<TAdminDto> {
@@ -211,7 +222,10 @@ export function makeEntityMutations<
       unsafeCast<Partial<Omit<TNew, 'id' | 'createdAt'>>>({ published: false }),
     )
     if (updated === null) {
-      throw new DomainError('NOT_FOUND', `${descriptor.label}不存在或已被删除。`)
+      throw new DomainError(
+        'NOT_FOUND',
+        descriptorFor('content.error.entityNotFound', { entity: descriptor.entityType }),
+      )
     }
     await mutations.afterMutation?.(db, updated, 'unpublish')
     // Unpublishing drops the row from the scheduled set — re-arm.

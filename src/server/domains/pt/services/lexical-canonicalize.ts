@@ -1,6 +1,7 @@
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { extractZodIssues } from '@/server/domains/pt/services/zod-issues'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { prerenderLexicalEditorState } from '@/server/infra/pt/lexical-prerender'
 import { SERVER_FILLED_NODE_FIELDS } from '@/shared/lexical/artifacts'
@@ -20,7 +21,7 @@ export async function canonicalizeLexicalEditorState(input: unknown): Promise<Le
     await prerenderLexicalEditorState(state)
     return state
   } catch (error) {
-    throw new DomainError('BAD_REQUEST', '正文格式不合法。', extractZodIssues(error))
+    throw new DomainError('BAD_REQUEST', descriptorFor('content.error.invalidBody'), extractZodIssues(error))
   }
 }
 

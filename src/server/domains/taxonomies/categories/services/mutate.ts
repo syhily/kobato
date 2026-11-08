@@ -13,6 +13,7 @@ import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
+  taxonomyNotFound,
 } from '@/server/domains/taxonomies/shared'
 import {
   deleteCategory as deleteCategoryRow,
@@ -23,6 +24,7 @@ import {
   reorderCategories as reorderCategoryRows,
   updateCategory,
 } from '@/server/infra/db/operations/category'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { resolveSlug } from '@/server/infra/slug/resolve'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -47,7 +49,7 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
       (slug) => findCategoryBySlug(db, slug),
       input.name,
       slug,
-      '分类',
+      'category',
     )
     const row = await insertCategory(db, {
       name: input.name,
@@ -66,7 +68,7 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
 
   const existing = await findCategoryById(db, input.id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '分类不存在')
+    throw taxonomyNotFound('category')
   }
   await ensureUniqueOnUpdateTaxonomy(
     (name) => findCategoryByName(db, name),
@@ -76,7 +78,7 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
     existing.name,
     slug,
     existing.slug,
-    '分类',
+    'category',
   )
   const updated = await updateCategory(db, input.id, {
     name: input.name,
@@ -87,7 +89,7 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
     ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
   })
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '分类不存在')
+    throw taxonomyNotFound('category')
   }
   invalidateContent(db, { entity: 'category' })
   // Rename/cover change derives a fresh content-hash key — re-warm under it.
@@ -100,19 +102,19 @@ export async function reorderAdminCategories(db: Database, orderedIds: readonly 
   const seen = new Set<string>()
   for (const id of orderedIds) {
     if (seen.has(id)) {
-      throw new DomainError('BAD_REQUEST', '排序请求存在重复的分类 id')
+      throw new DomainError('BAD_REQUEST', descriptorFor('taxonomy.error.duplicateOrderIds'))
     }
     seen.add(id)
   }
 
   const liveRows = await listPublicCategoryRows(db)
   if (liveRows.length !== orderedIds.length) {
-    throw new DomainError('CONFLICT', '排序与最新分类列表不一致，请刷新后重试')
+    throw new DomainError('CONFLICT', descriptorFor('taxonomy.error.orderStale'))
   }
   const liveIds = new Set(liveRows.map((row) => String(row.id)))
   for (const id of orderedIds) {
     if (!liveIds.has(id)) {
-      throw new DomainError('CONFLICT', '排序与最新分类列表不一致，请刷新后重试')
+      throw new DomainError('CONFLICT', descriptorFor('taxonomy.error.orderStale'))
     }
   }
 
@@ -128,7 +130,7 @@ export async function reorderAdminCategories(db: Database, orderedIds: readonly 
 }
 
 export async function deleteAdminCategory(db: Database, id: number): Promise<boolean> {
-  const result = await deleteAdminTaxonomy(id, '分类', {
+  const result = await deleteAdminTaxonomy(id, 'category', {
     findById: (id) => findCategoryById(db, id),
     deleteRow: (id) => deleteCategoryRow(db, id),
     listPostTitles: (row) => listPostTitlesByCategoryId(db, row.id),

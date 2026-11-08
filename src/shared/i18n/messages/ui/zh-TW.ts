@@ -2549,4 +2549,52 @@ export const uiMessagesZhTW = {
   'admin.settings.errors.notInstalled': '站點尚未完成安裝。',
   'admin.settings.errors.incompleteSections':
     '設定資料不完整，缺少以下 section：{sections}。安裝流程本應寫入所有設定列，因此這通常意味著某列被手動刪除。請重新執行安裝流程或從備份還原。',
+  'admin.settings.comments.error.mirrorInvalid': '鏡像位址必須是已知的 Gravatar 鏡像 HTTPS URL',
+  'admin.settings.comments.error.duplicateSource': '頭像來源不能重複',
+  'admin.settings.socials.error.fixedType': '「{network}」固定使用 `{type}` 顯示方式',
+  'admin.settings.socials.error.duplicateNetwork': '「{network}」已經新增過，請直接編輯既有那條',
+  'admin.settings.cache.error.prefixFormat': '前綴只能包含字母 / 數字 / `_` / `-`，且必須以 `:` 結尾',
+  'admin.settings.cache.error.prefixOverlap':
+    '「{right}」的前綴 `{rightPrefix}` 與「{left}」的前綴 `{leftPrefix}` 衝突，會讓前綴掃描互相誤傷',
+  'admin.settings.cache.error.reservedPrefix':
+    '`{prefix}` 與系統保留前綴 `{reserved}` 衝突（session / rate-limit / 固定快取不可被管理面板清空）',
+  'admin.settings.backup.error.dayOfWeekRequired': '請選擇星期幾',
+  'admin.settings.backup.error.dayOfMonthRequired': '請選擇每月日期',
+  'admin.settings.backup.error.encryptionPasswordRequired': '啟用備份加密需要設定密碼',
+  'admin.settings.backup.error.encryptionPasswordTooShort': '備份加密密碼至少 {min} 位',
+  'admin.settings.sidebar.error.customQuotesTooFew': '自訂一言至少需要 {min} 條，或清空後使用內建一言庫',
+  'admin.settings.mail.error.hostnameInvalid':
+    '請填寫主機名稱或網域（只能包含字母 / 數字 / `-` / `.`），不能帶通訊協定、連接埠、路徑或 IP 位址',
+  'admin.settings.fonts.error.familyInvalid': 'font-family 不能包含引號、反斜線或大括號',
+  'content.error.entityNotFound': '{entity, select, post {文章} page {頁面} other {內容}}不存在或已被刪除。',
+  'content.error.entityNotDeleted': '{entity, select, post {文章} page {頁面} other {內容}}不存在或未被刪除。',
+  'content.error.categoryNotFound': '分類不存在',
+  'content.error.invalidBody': '正文格式不合法。',
+  'content.error.slugConflict': 'slug「{slug}」已被占用。',
+  'content.warning.imageSyncFailed': '圖片庫同步失敗，部分圖片可能無法正常顯示。',
+  'content.warning.projectionFailed': '正文投影生成失敗，請重新儲存以重試。',
+  'content.warning.searchIndexFailed': '搜尋索引更新失敗，該文章可能不會出現在搜尋結果中。',
+  'content.warning.publishHookFailed': '發布後的擴充處理（如 Webmention 傳送入列）失敗，不影響文章本身。',
+  'content.warning.slugTakenOnRestore':
+    'slug「{slug}」已被另一個{occupant, select, post {文章} page {頁面} other {內容}}占用，還原後該 URL 不會指向此{target, select, post {文章} page {頁面} other {內容}}。請修改 slug 或先處理佔用方。',
+  'content.warning.slugStolenOnRestore':
+    'slug「{slug}」在還原過程中被其他內容占用，URL 不會指向此{target, select, post {文章} page {頁面} other {內容}}。',
+  'taxonomy.error.nameTaken': '已存在同名{entity, select, category {分類} tag {標籤} other {分類項}}「{name}」',
+  'taxonomy.error.slugTaken': '已存在相同 slug「{slug}」',
+  'taxonomy.error.nameTakenIssue': '名稱已被占用',
+  'taxonomy.error.slugTakenIssue': 'Slug 已被占用',
+  'taxonomy.error.notFound': '{entity, select, category {分類} tag {標籤} other {分類項}}不存在',
+  'taxonomy.error.blockedByPosts':
+    '{entity, select, category {分類} tag {標籤} other {分類項}}「{name}」仍被 {count, plural, other {# 篇文章}}引用：{preview}。請先在引用文章中修改後再刪除。',
+  'taxonomy.error.duplicateOrderIds': '排序請求存在重複的分類 id',
+  'taxonomy.error.orderStale': '排序與最新分類列表不一致，請重新整理後再試',
+  'content.error.slugTakenByEntity':
+    'slug「{slug}」已被其它{entity, select, post {文章} page {頁面} other {內容}}占用。',
+  'content.error.slugFormat':
+    '{entity, select, post {文章} page {頁面} taxonomy {Slug} other {Slug}} slug 格式不合法（僅允許小寫字母、數字、`-`）。',
+  'content.error.slugTooLong':
+    '{entity, select, post {文章} page {頁面} taxonomy {Slug} other {Slug}} slug 長度不得超過 {max} 個字元。',
+  'content.error.slugReserved': 'slug「{slug}」是站點保留路徑。',
+  'content.error.slugUnderivable':
+    '無法從{source, select, title {標題} name {名稱} other {輸入}}推導出 slug，請手動填寫。',
 } satisfies UiMessages

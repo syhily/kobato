@@ -216,11 +216,11 @@ describe('settings/sections/mail', () => {
       }
     })
 
-    it('surfaces a user-facing Chinese message', () => {
+    it('surfaces the typed hostname message id', () => {
       const result = parse({ mailgunDomain: 'https://mg.example.com' })
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues[0]?.message).toContain('不能带协议、端口、路径或 IP 地址')
+        expect(result.error.issues[0]?.message).toBe('admin.settings.mail.error.hostnameInvalid')
       }
     })
   })

@@ -1,12 +1,16 @@
 import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('posts.publish-hooks')
 
-export const POST_PUBLISH_HOOK_WARNING = '发布后的扩展处理（如 Webmention 发送入队）失败，不影响文章本身。'
+export const POST_PUBLISH_HOOK_WARNING = {
+  messageKey: 'content.warning.publishHookFailed',
+  fallbackMessage: 'Post-publish processing (e.g. queueing Webmentions) failed; the post itself is unaffected.',
+} as const satisfies ErrorMessageDescriptor
 
 /**
  * Post-publish extension seam: the owning domain wires the hook at import
@@ -16,7 +20,7 @@ export type PostPublishHook = (
   db: Database,
   meta: PostMetaRow,
   body: LexicalEditorState,
-  warnings: string[],
+  warnings: ErrorMessageDescriptor[],
 ) => Promise<void>
 
 let impl: PostPublishHook | null = null
@@ -31,7 +35,7 @@ export async function runPostPublishHooks(
   db: Database,
   meta: PostMetaRow,
   body: LexicalEditorState,
-  warnings: string[],
+  warnings: ErrorMessageDescriptor[],
 ): Promise<void> {
   if (impl === null) {
     return

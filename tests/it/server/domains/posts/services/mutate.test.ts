@@ -104,9 +104,9 @@ describe('posts/services/mutate — createPost', () => {
     await expect(createPost(db, { slug: 'hello', title: 'Hello' }, 1)).rejects.toMatchObject({
       code: 'CONFLICT',
     })
-    await expect(createPost(db, { slug: 'hello', title: 'Hello' }, 1)).rejects.toThrow(
-      'slug "hello" 已被其它文章占用。',
-    )
+    await expect(createPost(db, { slug: 'hello', title: 'Hello' }, 1)).rejects.toMatchObject({
+      descriptor: { messageKey: 'content.error.slugTakenByEntity', params: { slug: 'hello', entity: 'post' } },
+    })
   })
 
   it('throws CONFLICT when a page already holds the slug in the registry', async () => {
@@ -116,9 +116,9 @@ describe('posts/services/mutate — createPost', () => {
     await expect(createPost(db, { slug: 'cross', title: 'Cross' }, 1)).rejects.toMatchObject({
       code: 'CONFLICT',
     })
-    await expect(createPost(db, { slug: 'cross', title: 'Cross' }, 1)).rejects.toThrow(
-      'slug "cross" 已被其它页面占用。',
-    )
+    await expect(createPost(db, { slug: 'cross', title: 'Cross' }, 1)).rejects.toMatchObject({
+      descriptor: { messageKey: 'content.error.slugTakenByEntity', params: { slug: 'cross', entity: 'page' } },
+    })
   })
 
   it('throws CONFLICT when a stale registry row owns the slug (the registry constraint leg)', async () => {
@@ -128,7 +128,10 @@ describe('posts/services/mutate — createPost', () => {
     await expect(createPost(db, { slug: 'stale', title: 'Stale' }, 1)).rejects.toMatchObject({
       code: 'CONFLICT',
     })
-    await expect(createPost(db, { slug: 'stale', title: 'Stale' }, 1)).rejects.toThrow('slug "stale" 已被占用。')
+    await expect(createPost(db, { slug: 'stale', title: 'Stale' }, 1)).rejects.toMatchObject({
+      code: 'CONFLICT',
+      descriptor: { messageKey: 'content.error.slugConflict', params: { slug: 'stale' } },
+    })
   })
 })
 
@@ -319,7 +322,12 @@ describe('posts/services/mutate — restorePost', () => {
     const result = await restorePost(db, postId)
 
     expect(result.restored).toBe(true)
-    expect(result.warning).toBe('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
+    expect(result.warningDescriptors).toEqual([
+      {
+        messageKey: 'content.warning.searchIndexFailed',
+        fallbackMessage: 'The search index update failed; this post may not appear in search results.',
+      },
+    ])
   })
 
   it('warns when the restored slug is now owned by a page', async () => {
@@ -331,9 +339,10 @@ describe('posts/services/mutate — restorePost', () => {
     const result = await restorePost(db, postId)
 
     expect(result.restored).toBe(true)
-    expect(result.warning).toBe(
-      'slug "hello" 已被另一个页面占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。',
-    )
+    expect(result.warningDescriptors?.[0]).toMatchObject({
+      messageKey: 'content.warning.slugTakenOnRestore',
+      params: { slug: 'hello', occupant: 'page', target: 'post' },
+    })
     const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
     expect(registry[0]?.entityType).toBe('page')
   })
@@ -347,8 +356,9 @@ describe('posts/services/mutate — restorePost', () => {
 
     const result = await restorePost(db, postId)
 
-    expect(result.warning).toBe(
-      'slug "hello" 已被另一个页面占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。 搜索索引更新失败，该文章可能不会出现在搜索结果中。',
-    )
+    expect(result.warningDescriptors?.map((d) => d.messageKey)).toEqual([
+      'content.warning.slugTakenOnRestore',
+      'content.warning.searchIndexFailed',
+    ])
   })
 })

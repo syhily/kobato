@@ -107,6 +107,21 @@ const SCAN_ROOTS = [
   'src/server/http/controllers/account.controller.ts',
   'src/server/http/controllers/admin/users-sessions.controller.ts',
   'src/server/http/controllers/admin/settings.controller.ts',
+  // Step 5a-iii: settings sections, taxonomies, the content lifecycle and the
+  // posts/pages controllers (entity nouns are machine kinds → ICU select).
+  'src/server/domains/settings/sections',
+  'src/server/domains/taxonomies',
+  'src/server/domains/content',
+  'src/server/domains/posts',
+  'src/server/domains/pages',
+  'src/server/domains/pt/services/lexical-canonicalize.ts',
+  'src/server/infra/slug/resolve.ts',
+  'src/server/infra/slug/reservation.ts',
+  'src/server/http/controllers/admin/posts.controller.ts',
+  'src/server/http/controllers/admin/pages.controller.ts',
+  'src/server/http/controllers/admin/categories.controller.ts',
+  'src/server/http/controllers/admin/tags.controller.ts',
+  'src/server/http/controllers/admin/revision-router.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -161,6 +176,14 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/client/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
   { path: 'src/ui/admin/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
   { path: 'src/ui/admin/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
+  // Step 5a-iii: technical/developer invariants, never user copy. These files'
+  // only DomainError literals are internal diagnostics (a missing meta row, a
+  // missing id on a developer-only entry point, registry-default drift), so the
+  // rule may be exempted per file.
+  { path: 'src/server/domains/content/repos/mutate.ts', rules: ['domain-error'] },
+  { path: 'src/server/domains/posts/services/mutate.ts', rules: ['domain-error'] },
+  { path: 'src/server/domains/pages/services/mutate.ts', rules: ['domain-error'] },
+  { path: 'src/server/domains/settings/sections/registry.ts', rules: ['domain-error'] },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -206,6 +229,10 @@ describe('production sources', () => {
         'src/client/editor/inkling-labels.ts',
         'src/ui/admin/editor-shell/RevisionsDrawer.tsx',
         'src/ui/admin/editor/pickers/ImageLibraryPicker.tsx',
+        'src/server/domains/content/repos/mutate.ts',
+        'src/server/domains/posts/services/mutate.ts',
+        'src/server/domains/pages/services/mutate.ts',
+        'src/server/domains/settings/sections/registry.ts',
       ]),
     )
   })
@@ -268,6 +295,21 @@ describe('production sources', () => {
         'src/server/http/middlewares/csrf.ts',
         'src/server/http/localized-http-exception.ts',
         'src/server/http/controllers/admin/settings.controller.ts',
+        // Step 5a-iii slice: settings sections, taxonomies, content lifecycle.
+        'src/server/domains/settings/sections/assets.ts',
+        'src/server/domains/settings/sections/comments.ts',
+        'src/server/domains/settings/sections/security.ts',
+        'src/server/domains/settings/sections/backup.ts',
+        'src/server/domains/taxonomies/shared.ts',
+        'src/server/domains/taxonomies/categories/services/mutate.ts',
+        'src/server/domains/content/lifecycle.ts',
+        'src/server/domains/content/slug-reclaim.ts',
+        'src/server/domains/posts/descriptor.ts',
+        'src/server/domains/pages/services/shared.ts',
+        'src/server/domains/pt/services/lexical-canonicalize.ts',
+        'src/server/infra/slug/resolve.ts',
+        'src/server/infra/slug/reservation.ts',
+        'src/server/http/controllers/admin/revision-router.ts',
       ]),
     )
   })

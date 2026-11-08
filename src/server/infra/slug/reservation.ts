@@ -1,6 +1,7 @@
 import type { Database } from '@/server/infra/db/database'
 
 import { findSlugRegistryBySlugForUpdate } from '@/server/infra/db/operations/slug-registry'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 export type EntityType = 'post' | 'page'
@@ -34,11 +35,13 @@ export function reserveSlugInTransaction(
 ): void {
   const ownMeta = deps.findOwnMetaBySlugForUpdate(tx, slug)
   if (ownMeta !== null && ownMeta.id !== ownEntityId) {
-    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它${entityType === 'post' ? '文章' : '页面'}占用。`)
+    throw new DomainError('CONFLICT', descriptorFor('content.error.slugTakenByEntity', { slug, entity: entityType }))
   }
   const crossCollision = findSlugRegistryBySlugForUpdate(tx, slug)
   if (crossCollision !== null && crossCollision.entityType !== entityType) {
-    const otherEntity = crossCollision.entityType === 'post' ? '文章' : '页面'
-    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它${otherEntity}占用。`)
+    throw new DomainError(
+      'CONFLICT',
+      descriptorFor('content.error.slugTakenByEntity', { slug, entity: crossCollision.entityType }),
+    )
   }
 }
