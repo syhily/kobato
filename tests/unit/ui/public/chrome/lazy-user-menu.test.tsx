@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
 import { diffHtmlStructures } from '#/_helpers/dom-structure'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 
 vi.mock('@/client/hooks/use-logout', () => ({
   useLogout: () => vi.fn(),
@@ -25,9 +26,11 @@ const defaultProps = {
 
 function renderLazy(unreadCount: number | null = 0) {
   return render(
-    <MemoryRouter initialEntries={['/']}>
-      <LazyUserMenu {...defaultProps} unreadCount={unreadCount} />
-    </MemoryRouter>,
+    wrapWithI18n(
+      <MemoryRouter initialEntries={['/']}>
+        <LazyUserMenu {...defaultProps} unreadCount={unreadCount} />
+      </MemoryRouter>,
+    ),
   )
 }
 
@@ -80,9 +83,11 @@ describe('ui/public/chrome/LazyUserMenu', () => {
   it('keeps the placeholder trigger markup-identical to the real trigger', () => {
     const placeholder = renderLazy(2)
     const real = render(
-      <MemoryRouter initialEntries={['/']}>
-        <UserMenu {...defaultProps} unreadCount={2} />
-      </MemoryRouter>,
+      wrapWithI18n(
+        <MemoryRouter initialEntries={['/']}>
+          <UserMenu {...defaultProps} unreadCount={2} />
+        </MemoryRouter>,
+      ),
     )
     const diffs = diffHtmlStructures(
       within(real.container as HTMLElement).getByLabelText('用户菜单，2 条未读消息').outerHTML,

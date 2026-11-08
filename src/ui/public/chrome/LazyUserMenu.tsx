@@ -5,6 +5,7 @@ import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The dropdown chrome (Base UI menu, logout, notification entries) rides a
 // lazy chunk so anonymous visitors never download logged-in-only JS. The
@@ -60,6 +61,7 @@ interface UserMenuTriggerProps {
  *  aria-label) without the dropdown wiring, so the swap on mount is visually
  *  invisible. `aria-expanded="false"` mirrors the closed menu that follows. */
 function UserMenuTrigger({ currentUser, unreadCount, onClick }: UserMenuTriggerProps) {
+  const { t } = useI18n()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()
   const badgeCount = unreadCount ?? 0
   return (
@@ -67,7 +69,9 @@ function UserMenuTrigger({ currentUser, unreadCount, onClick }: UserMenuTriggerP
       variant="ghost"
       size="icon"
       className="relative size-9 rounded-full"
-      aria-label={badgeCount > 0 ? `用户菜单，${badgeCount} 条未读消息` : '用户菜单'}
+      aria-label={
+        badgeCount > 0 ? t('public.chrome.userMenuUnread', { count: badgeCount }) : t('public.chrome.userMenu')
+      }
       aria-haspopup="menu"
       aria-expanded={false}
       onClick={onClick}
