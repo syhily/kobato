@@ -20,7 +20,9 @@ export function honeypotField<const TName extends string>(name: TName) {
       if (value[name].trim().length > 0) {
         ctx.addIssue({
           code: 'custom',
-          message: '输入数据无效。',
+          // Typed validation id: the server maps it to a descriptor and the
+          // client resolves it through `localizeMessage`.
+          message: 'validation.form.invalidInput',
           path: [name],
         })
       }

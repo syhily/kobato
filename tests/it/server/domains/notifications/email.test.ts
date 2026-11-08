@@ -328,7 +328,7 @@ describe('notifications email — site locale at send time', () => {
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
     const body = sentMessage(0)
-    expect(body.get('subject')).toBe(`You received a new direct message on【${title}】`)
+    expect(body.get('subject')).toBe(`You received a new direct message on ${title}`)
     const html = body.get('html') as string
     expect(html).toContain('New direct message')
     expect(html).toContain('Title:')
@@ -350,12 +350,13 @@ describe('notifications email — site locale at send time', () => {
 
     const body = sentMessage(0)
     const expectedTitle = EN_NOTICE.format('notification.mail.zeaburCleanup.title')
-    expect(body.get('subject')).toBe(`【${title}】System alert: ${expectedTitle}`)
+    expect(body.get('subject')).toBe(`${title}: System alert: ${expectedTitle}`)
     const html = body.get('html') as string
     expect(html).toContain('Open the admin panel')
     expect(html).toContain('href="https://example.com/admin"')
     expect(html).toContain(expectedTitle)
-    expect(html).toContain(EN_NOTICE.format('notification.mail.zeaburCleanup.body'))
+    // HTML text escapes `>` (`Settings &gt; Mail`); the copy itself is plain text.
+    expect(html).toContain(EN_NOTICE.format('notification.mail.zeaburCleanup.body').replaceAll('>', '&gt;'))
   })
 })
 
@@ -449,5 +450,31 @@ describe('notifications email — descriptor resolution', () => {
     const html = body.get('html') as string
     expect(html).toContain('Removed system notice')
     expect(html).toContain('This row outlived its catalog key.')
+  })
+
+  it('encodes HTML-shaped params verbatim and escapes them in the email HTML', async () => {
+    setSiteLocale('en-US')
+    await seedUser('admin', 'admin')
+
+    // `Unexpected token '<'` is ordinary job-error text. Encoding used to throw
+    // and swallow the notification; the row and its email must both exist.
+    const row = notifyAdmins(db, {
+      titleKey: 'notification.job.failed.title',
+      titleParams: { taskKey: '<script>alert(1)</script>' },
+      bodyKey: 'notification.job.failed.body',
+      bodyParams: { taskKey: 'backup', hasError: 'yes', error: "Unexpected token '<'" },
+    })!
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    expect(row.title).toBe('Background task failed: <script>alert(1)</script>')
+    const body = sentMessage(0)
+    expect(body.get('subject')).toBe(`${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}: System alert: ${row.title}`)
+
+    const html = body.get('html') as string
+    // Plain-text params are escaped by React: the mailbox never sees live markup.
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(html).not.toContain('<script>alert(1)</script>')
+    expect(html).toContain('Unexpected token')
+    expect(html).toContain('&lt;')
   })
 })

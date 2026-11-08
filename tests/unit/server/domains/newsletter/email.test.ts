@@ -56,9 +56,9 @@ describe('newsletter/email — sendConfirmSubscription', () => {
 
       const { subject, html } = lastMail()
       const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
-      expect(subject).toBe(`【${title}】Please confirm your email subscription`)
+      expect(subject).toBe(`${title}: Please confirm your email subscription`)
       expect(html).toContain('Confirm your subscription')
-      expect(html).toContain(`updates from「${title}」`)
+      expect(html).toContain(`updates from ${title}`)
       expect(html).toContain('valid for 24 hours')
       expect(html).toContain('Confirm subscription')
       expect(html).toContain(`href="${CONFIRM_LINK}"`)

@@ -2,7 +2,7 @@ import type { ServerMessages } from '@/shared/i18n/messages/server/en-US'
 
 export const serverMessagesZhCN = {
   'email.common.automaticNotice': '本邮件由系统自动发出，无法回复。',
-  'email.common.copyright': '{siteTitle} © {year}',
+  'email.common.copyright': '<siteLink>{siteTitle}</siteLink> © {year}',
   'email.common.greeting': '你好，{receiver}',
   'email.common.commentHistoryNote': '想要查看与管理你的所有历史评论？通过此链接重置密码登录即可：',
   'email.adminNotification.subject': '您的网站【{siteTitle}】{subject}',

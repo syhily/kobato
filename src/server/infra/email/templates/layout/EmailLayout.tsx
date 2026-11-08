@@ -2,7 +2,7 @@ import { TZDate } from '@date-fns/tz'
 import { getYear } from 'date-fns'
 import { useState } from 'react'
 
-import type { ServerTranslator } from '@/server/infra/i18n'
+import type { RichTextTag, ServerTranslator } from '@/server/infra/i18n'
 
 import { Body, Container, Html, Link, Section, Text } from '@/server/infra/email/render'
 import { light } from '@/server/infra/email/templates/styles/tokens'
@@ -14,6 +14,35 @@ interface Props {
   receiver: string
   preview?: string
   children: React.ReactNode
+}
+
+interface FooterSiteLinkProps {
+  href: string
+  children: React.ReactNode
+}
+
+/** Footer copyright link: only the site name is linked; the © year stays plain text. */
+function FooterSiteLink({ href, children }: FooterSiteLinkProps) {
+  return (
+    <Link
+      href={href}
+      style={{
+        color: light.textMuted,
+        textDecoration: 'underline',
+        fontSize: 11,
+      }}
+      className="dark-text-muted"
+      target="_blank"
+      rel="noreferrer"
+    >
+      {children}
+    </Link>
+  )
+}
+
+/** Bind the site URL into the ICU `<siteLink>` tag renderer. */
+function siteLinkRenderer(href: string): RichTextTag {
+  return (chunks) => <FooterSiteLink href={href}>{chunks}</FooterSiteLink>
 }
 
 export function EmailLayout({ t, receiver, preview, children }: Props) {
@@ -120,19 +149,11 @@ export function EmailLayout({ t, receiver, preview, children }: Props) {
               }}
               className="dark-text-muted"
             >
-              <Link
-                href={siteIdentity.website}
-                style={{
-                  color: light.textMuted,
-                  textDecoration: 'underline',
-                  fontSize: 11,
-                }}
-                className="dark-text-muted"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t.format('email.common.copyright', { siteTitle: siteIdentity.title, year })}
-              </Link>
+              {t.formatRich('email.common.copyright', {
+                siteTitle: siteIdentity.title,
+                year,
+                siteLink: siteLinkRenderer(siteIdentity.website),
+              })}
             </Text>
           </Section>
         </Container>

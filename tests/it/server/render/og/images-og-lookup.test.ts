@@ -4,10 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 
 // OG slug resolution against the real engine (slim public-meta lookups +
 // live gate). Only mock: the canvas renderer, whose stub echoes the title
@@ -80,10 +82,22 @@ async function seedPage(opts: { slug: string; title?: string; publishedAt?: Date
 // 10s hookTimeout; the hoisted vi.mock calls still apply.
 import { imagesRouter } from '@/server/http/resources/images'
 
-// Stub covers the consulted fields: rate-limit `.clientAddress`, handler `.db`.
+// Stub covers the consulted fields: rate-limit `.clientAddress`, handler
+// `.db`, plus the pinned settings/localization the OG key + renderer read.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
-  c.set('requestContext', { clientAddress: '127.0.0.1', db } as unknown as Env['Variables']['requestContext'])
+  c.set('requestContext', {
+    clientAddress: '127.0.0.1',
+    db,
+    settings: TEST_BLOG_SETTINGS_BUNDLE,
+    localization: {
+      locale: 'zh-CN',
+      timeZone: 'Asia/Shanghai',
+      timeFormat: null,
+      revision: 'test-boot:0000000001',
+      revisions: representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE),
+    },
+  } as unknown as Env['Variables']['requestContext'])
   await next()
 })
 app.route('/', imagesRouter)

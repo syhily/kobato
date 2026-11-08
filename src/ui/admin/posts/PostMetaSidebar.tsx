@@ -10,6 +10,7 @@ import type {
 
 import { POST_META_TOGGLE_FIELDS } from '@/shared/types/posts'
 import { BasicInfoCard } from '@/ui/admin/editor-shared/BasicInfoCard'
+import { ContentLanguageField } from '@/ui/admin/editor-shared/ContentLanguageField'
 import { CoverOgCard } from '@/ui/admin/editor-shared/CoverOgCard'
 import { ToggleOptionsCard } from '@/ui/admin/editor-shared/ToggleOptionsCard'
 import { futureLocalInputValueOrEmpty } from '@/ui/admin/editor-shell/editor-datetime'
@@ -29,6 +30,7 @@ export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {
     webmentionsEnabled: post.webmentionsEnabled,
     showToc: post.showToc,
     showUpdated: post.showUpdated,
+    contentLanguage: post.contentLanguage ?? '',
     visible: post.visible,
     pinned: post.pinnedAt !== null,
     categoryId: post.categoryId ?? '',
@@ -76,6 +78,12 @@ export function PostMetaSidebar({
         onChangePublishedAt={(value) => set('publishedAt', value)}
         disabled={disabled}
       >
+        <ContentLanguageField
+          id="post-content-language"
+          value={draft.contentLanguage}
+          onChange={(value) => set('contentLanguage', value)}
+          disabled={disabled}
+        />
         <CategoryField value={draft.categoryId} onChange={(value) => set('categoryId', value)} disabled={disabled} />
         <TagsField values={draft.tags} onChange={(values) => set('tags', values)} disabled={disabled} />
         <AliasField values={draft.alias} onChange={(values) => set('alias', values)} disabled={disabled} />

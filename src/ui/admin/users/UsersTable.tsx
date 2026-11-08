@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
+import { useChromeClock } from '@/ui/public/chrome/use-chrome-clock'
 
 const DATE_FORMAT = 'yyyy-LL-dd'
 
@@ -30,6 +31,10 @@ interface UsersTableProps {
 
 export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableProps) {
   const { t } = useI18n()
+  // One clock for the whole table so the relative "registered" dates share the
+  // render instant: the root loader's `nowIso` during SSR + hydration, the live
+  // clock after mount (a midnight rollover would otherwise mismatch).
+  const now = useChromeClock()
   return (
     <Table>
       <TableHeader>
@@ -68,10 +73,10 @@ export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableP
           rows.map((user, index) =>
             index === rows.length - 1 ? (
               <Fragment key={user.id} ref={sentinelRef}>
-                <UserRow user={user} config={config} />
+                <UserRow user={user} config={config} now={now} />
               </Fragment>
             ) : (
-              <UserRow key={user.id} user={user} config={config} />
+              <UserRow key={user.id} user={user} config={config} now={now} />
             ),
           )
         )}
@@ -83,9 +88,11 @@ export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableP
 interface UserRowProps {
   user: AdminUserDto
   config: SiteIdentitySettings
+  /** Stable render clock (root `nowIso` on SSR/hydration) for the relative date. */
+  now: Date
 }
 
-const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
+const UserRow = memo(function UserRow({ user, config, now }: UserRowProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
@@ -140,7 +147,7 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
       <TableCell className="px-4 py-4">
         <div>
           <div className="text-sm">{formatLocalDate(createdDate, DATE_FORMAT, config)}</div>
-          <div className="text-xs text-muted-foreground">{formatShowDate(createdDate, config)}</div>
+          <div className="text-xs text-muted-foreground">{formatShowDate(createdDate, config, now)}</div>
         </div>
       </TableCell>
     </TableRow>

@@ -82,6 +82,7 @@ export function PostDetailBody({
                 draftMarker={draftMarker}
                 postContentRef={postContentRef}
                 bodyHtml={bodyHtml}
+                contentLanguage={post.contentLanguage}
                 metaClassName="mt-4 mb-3"
                 metaExtra={
                   visibleTags.length > 0 ? (

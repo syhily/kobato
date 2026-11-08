@@ -9,6 +9,10 @@
 //
 // `notification.*` keys are append-only: a row may outlive the code that wrote
 // it, so a renamed/deleted key is treated exactly like a missing one.
+//
+// Param values are plain text/JSON, not markup: an error message such as
+// `Unexpected token '<'` is legitimate data. Every read path escapes it at
+// render time; write-time validation only enforces JSON semantics.
 
 import type { NotificationRow } from '@/server/infra/db/types'
 import type { MessageParams, ServerTranslator } from '@/server/infra/i18n'
@@ -24,7 +28,11 @@ const log = getLogger('notifications.message')
 /** Every persisted `notification.*` key starts with this prefix (append-only namespace). */
 export const NOTIFICATION_KEY_PREFIX = 'notification.'
 
-/** JSON-serializable ICU argument values — no HTML, no non-finite numbers. */
+/**
+ * JSON-serializable ICU argument values. A string is PLAIN TEXT: the reader
+ * (inbox, thread, email) renders it as text, so HTML-shaped content such as
+ * `Unexpected token '<'` or `<script>` is legitimate data, never markup.
+ */
 export type NotificationParamValue =
   | string
   | number
@@ -58,9 +66,6 @@ export interface EncodedNotificationDescriptor {
   bodyParams: string | null
 }
 
-/** Raw HTML in a persisted param would be a producer bug — the reader renders plain text. */
-const HTML_MARKUP = /<[a-zA-Z!/?]/
-
 /**
  * ICU only consumes scalar arguments; nested stored params are inert at
  * format time. Narrowing here (instead of casting) keeps the formatter's
@@ -73,20 +78,27 @@ function toMessageParams(params: Record<string, unknown> | undefined): MessagePa
   const scalar: MessageParams = {}
   for (const [key, value] of Object.entries(params)) {
     if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      scalar[key] = value
+      // `defineProperty` keeps an own `__proto__` key a data property instead
+      // of running the prototype setter.
+      Object.defineProperty(scalar, key, { value, enumerable: true, configurable: true, writable: true })
     }
   }
   return scalar
 }
 
-function assertParamValue(value: unknown, path: string): void {
-  if (value === null || typeof value === 'boolean') {
-    return
-  }
-  if (typeof value === 'string') {
-    if (HTML_MARKUP.test(value)) {
-      throw new TypeError(`Notification param ${path} must not contain HTML markup`)
-    }
+function isPlainJsonObject(value: object): boolean {
+  const prototype: unknown = Object.getPrototypeOf(value)
+  return prototype === Object.prototype || prototype === null
+}
+
+/**
+ * Enforce JSON semantics only — the values themselves stay opaque text.
+ * Rejects non-finite numbers, `undefined`/functions/symbols/bigints, class
+ * instances (a `Date`/`Map` would not survive the JSON round-trip) and
+ * circular structures (which would otherwise overflow the stack).
+ */
+function assertParamValue(value: unknown, path: string, seen: WeakSet<object>): void {
+  if (value === null || typeof value === 'boolean' || typeof value === 'string') {
     return
   }
   if (typeof value === 'number') {
@@ -95,20 +107,28 @@ function assertParamValue(value: unknown, path: string): void {
     }
     return
   }
+  if (typeof value !== 'object') {
+    throw new TypeError(`Notification param ${path} is not JSON-serializable`)
+  }
+  if (seen.has(value)) {
+    throw new TypeError(`Notification param ${path} is not JSON-serializable (circular reference)`)
+  }
+  seen.add(value)
   if (Array.isArray(value)) {
-    value.forEach((entry, index) => assertParamValue(entry, `${path}[${index}]`))
-    return
-  }
-  if (isRecord(value)) {
+    value.forEach((entry, index) => assertParamValue(entry, `${path}[${index}]`, seen))
+  } else if (isPlainJsonObject(value)) {
     for (const [key, entry] of Object.entries(value)) {
-      assertParamValue(entry, `${path}.${key}`)
+      assertParamValue(entry, `${path}.${key}`, seen)
     }
-    return
+  } else {
+    throw new TypeError(`Notification param ${path} is not a plain JSON object`)
   }
-  throw new Error(`Notification param ${path} is not JSON-serializable`)
+  // Shared (non-circular) references are legal JSON output — only active
+  // ancestors count as a cycle.
+  seen.delete(value)
 }
 
-/** Throw on an unregistered/wrong-namespace key or unsafe params (producer bugs, never user input). */
+/** Throw on an unregistered/wrong-namespace key or invalid params (producer bugs, never user input). */
 function assertNotificationKey(key: string, field: string): asserts key is ServerMessageId {
   if (!isServerMessageId(key)) {
     throw new Error(`Notification ${field} key is not registered in the server catalog: ${key}`)
@@ -122,7 +142,7 @@ function encodeParams(params: NotificationParams | undefined, field: string): st
   if (params === undefined) {
     return null
   }
-  assertParamValue(params, field)
+  assertParamValue(params, field, new WeakSet())
   const encoded = JSON.stringify(params)
   // Defensive: a round-trip proves serializability (and never stores `undefined`).
   if (typeof encoded !== 'string') {

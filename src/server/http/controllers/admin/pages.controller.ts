@@ -126,6 +126,7 @@ const upsertMeta = adminProc
       webmentionsEnabled: input.webmentionsEnabled,
       showToc: input.showToc,
       showUpdated: input.showUpdated,
+      contentLanguage: input.contentLanguage,
       showFriends: input.showFriends,
       publishedAt:
         input.publishedAt === undefined || input.publishedAt === null ? input.publishedAt : new Date(input.publishedAt),

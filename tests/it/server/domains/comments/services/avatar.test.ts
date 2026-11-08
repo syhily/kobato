@@ -27,7 +27,7 @@ import { user } from '@/server/infra/db/schema/user'
 import { imageWidth } from '@/server/infra/image/compress'
 // Only fetch is stubbed; the engine, kv cache registry, and sharp are real.
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
-import { GRAVATAR_MIRROR_PRESETS } from '@/shared/utils/safe-url'
+import { GRAVATAR_MIRROR_URLS } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
 
 const db = getTestDb()
@@ -853,7 +853,7 @@ describe('domains/comments/services/avatar — probeAvatarMirrors', () => {
 
     const results = await probeAvatarMirrors()
 
-    expect(results.map((r) => r.url)).toEqual(GRAVATAR_MIRROR_PRESETS.map((p) => p.value))
+    expect(results.map((r) => r.url)).toEqual([...GRAVATAR_MIRROR_URLS])
     const byUrl = new Map(results.map((r) => [r.url, r]))
     expect(byUrl.get('https://gravatar.loli.net/avatar')).toMatchObject({ reachable: true })
     expect(byUrl.get('https://gravatar.webp.se/avatar')).toMatchObject({ reachable: true })
@@ -862,7 +862,7 @@ describe('domains/comments/services/avatar — probeAvatarMirrors', () => {
       expect(result.latencyMs).toBeGreaterThanOrEqual(1)
     }
     // Every preset got exactly one probe request, at the d=404 probe URL.
-    expect(fetchFn).toHaveBeenCalledTimes(GRAVATAR_MIRROR_PRESETS.length)
+    expect(fetchFn).toHaveBeenCalledTimes(GRAVATAR_MIRROR_URLS.length)
     expect(String(fetchFn.mock.calls[0]![0])).toMatch(/\/d41d8cd98f00b204e9800998ecf8427e\?s=32&d=404$/)
   })
 })

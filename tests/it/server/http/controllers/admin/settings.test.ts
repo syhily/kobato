@@ -45,7 +45,7 @@ function adminCtx() {
 
 /** Pin the request locale so the translated message is deterministic. */
 function withLocale<T extends ReturnType<typeof adminCtx>>(context: T, locale: AppLocale): T {
-  return { ...context, localization: { locale, timeZone: 'UTC' } }
+  return { ...context, localization: { locale, timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' } }
 }
 
 beforeEach(async () => {

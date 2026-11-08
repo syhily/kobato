@@ -234,6 +234,35 @@ describe('services/seo/meta — routeMeta', () => {
     expect(tagEntries.map((entry) => entry.content)).toEqual(['typescript', 'react'])
   })
 
+  it('omits article:section when an uncategorized post has no category', () => {
+    const meta = routeMeta({
+      title: 'Hello',
+      variant: {
+        kind: 'post',
+        article: {
+          date: new Date('2024-01-02T03:04:05.000Z'),
+          category: '',
+          tags: [],
+        },
+      },
+    }) as MetaEntry[]
+
+    // An empty content="..." descriptor is not a section — omit the tag entirely.
+    expect(findByProperty(meta, 'article:section')).toBeUndefined()
+  })
+
+  it('still emits article:section for a categorized post', () => {
+    const meta = routeMeta({
+      title: 'Hello',
+      variant: {
+        kind: 'post',
+        article: { date: new Date('2024-01-02T03:04:05.000Z'), category: '默认分类', tags: [] },
+      },
+    }) as MetaEntry[]
+
+    expect(findByProperty(meta, 'article:section')?.content).toBe('默认分类')
+  })
+
   it('emits canonical/prev/next links only when requested', () => {
     const meta = routeMeta({
       pageUrl: '/posts/hello',

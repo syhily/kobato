@@ -5,6 +5,7 @@ import type { StorageMigrationStatus } from '@/shared/contracts/storage'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { JOB_RUN_ERROR_PROCESS_RESTART } from '@/shared/contracts/jobs'
 import { RunHistoryRow, RunHistorySheet } from '@/ui/admin/tasks/RunHistorySheet'
 import { TaskCard } from '@/ui/admin/tasks/TaskCard'
 import { TasksView } from '@/ui/admin/tasks/TasksView'
@@ -14,11 +15,11 @@ const queryMocks = mockTanstackQuery()
 function makeTask(overrides: Partial<JobSummaryDto> = {}): JobSummaryDto {
   return {
     taskKey: 'backup',
-    label: '定时备份',
-    description: '按备份设置打包数据库并写入存储后端',
+    label: 'admin.tasks.task.backup.label',
+    description: 'admin.tasks.task.backup.description',
     kind: 'scheduled',
     group: 'system',
-    scheduleHint: '按备份设置（站点时区）',
+    scheduleHint: 'admin.tasks.task.backup.schedule',
     liveState: { suspended: false, nextRunAt: '2026-08-20T20:00:00.000Z', running: false },
     lastRun: null,
     queue: null,
@@ -64,52 +65,52 @@ function makeJobsList(overrides: Partial<JobsListDto> = {}): JobsListDto {
       makeTask({ lastRun: makeRun() }),
       makeTask({
         taskKey: 'audit-archive',
-        label: '审计日志归档',
+        label: 'admin.tasks.task.auditArchive.label',
         kind: 'scheduled',
-        scheduleHint: '每日 04:00（站点时区）',
+        scheduleHint: 'admin.tasks.task.auditArchive.schedule',
         liveState: { suspended: true, nextRunAt: null, running: false },
         lastRun: makeRun({ id: 2, taskKey: 'audit-archive', status: 'failed', error: 'S3 连接超时' }),
       }),
       makeTask({
         taskKey: 'storage-migration',
-        label: '存储迁移',
+        label: 'admin.tasks.task.storageMigration.label',
         kind: 'on-demand',
-        scheduleHint: '手动发起',
+        scheduleHint: 'admin.tasks.task.storageMigration.schedule',
         liveState: null,
       }),
       // 内容
       makeTask({
         taskKey: 'scheduled-publish',
-        label: '定时文章发布',
+        label: 'admin.tasks.task.scheduledPublish.label',
         group: 'content',
-        scheduleHint: '最近一篇定时内容的发布时间',
+        scheduleHint: 'admin.tasks.task.scheduledPublish.schedule',
         // No scheduled content → nextDelayMs() returns null → suspended.
         liveState: { suspended: true, nextRunAt: null, running: false },
       }),
       makeTask({
         taskKey: 'webmention-outbox',
-        label: 'Webmention 发送队列',
+        label: 'admin.tasks.task.webmentionOutbox.label',
         kind: 'queue',
         group: 'content',
-        scheduleHint: '队列驱动',
+        scheduleHint: 'admin.tasks.task.webmentionOutbox.schedule',
         liveState: { suspended: false, nextRunAt: '2026-08-19T20:05:00.000Z', running: true },
         queue: { depth: 3, nextDueAt: '2026-08-19T20:05:00.000Z', attentionCount: 1 },
       }),
       makeTask({
         taskKey: 'webmention-inbox',
-        label: 'Webmention 接收验证队列',
+        label: 'admin.tasks.task.webmentionInbox.label',
         kind: 'queue',
         group: 'content',
-        scheduleHint: '队列驱动',
+        scheduleHint: 'admin.tasks.task.webmentionOutbox.schedule',
         liveState: { suspended: true, nextRunAt: null, running: false },
         queue: { depth: 0, nextDueAt: null, attentionCount: 0 },
       }),
       // 维护
       makeTask({
         taskKey: 'token-purge',
-        label: '验证令牌清理',
+        label: 'admin.tasks.task.tokenPurge.label',
         group: 'maintenance',
-        scheduleHint: '每日 04:30（站点时区）',
+        scheduleHint: 'admin.tasks.task.tokenPurge.schedule',
         lastRun: makeRun({ id: 3, taskKey: 'token-purge' }),
       }),
     ],
@@ -188,9 +189,9 @@ describe('snapshot: TasksView', () => {
 describe('snapshot: TaskCard migration phases', () => {
   const migrationTask = makeTask({
     taskKey: 'storage-migration',
-    label: '存储迁移',
+    label: 'admin.tasks.task.storageMigration.label',
     kind: 'on-demand',
-    scheduleHint: '手动发起',
+    scheduleHint: 'admin.tasks.task.storageMigration.schedule',
     liveState: null,
   })
 
@@ -241,6 +242,18 @@ describe('snapshot: RunHistoryRow', () => {
     expect(html).toContain('定时触发')
     expect(html).toContain('2026-08-20 04:00:00')
     expect(html).toContain('耗时 1.2秒钟')
+  })
+
+  it('translates the process-restart machine code and keeps legacy errors raw', () => {
+    const coded = stableHtml(
+      renderToHtml(<RunHistoryRow run={makeRun({ status: 'failed', error: JOB_RUN_ERROR_PROCESS_RESTART })} />),
+    )
+    expect(coded).toContain('进程重启中断')
+
+    const legacy = stableHtml(
+      renderToHtml(<RunHistoryRow run={makeRun({ status: 'failed', error: '备份单飞冲突' })} />),
+    )
+    expect(legacy).toContain('备份单飞冲突')
   })
 
   it('renders a failed manual run with its error', () => {

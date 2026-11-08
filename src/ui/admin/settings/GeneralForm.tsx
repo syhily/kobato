@@ -16,10 +16,12 @@ import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlush
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { useLocaleSwitch } from '@/ui/admin/settings/use-locale-switch'
 import { Button } from '@/ui/components/button'
 import { ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { useI18n } from '@/ui/lib/I18nProvider'
+import { useLocaleSyncPublish } from '@/ui/lib/LocaleSyncProvider'
 
 interface TimeZoneItem {
   value: string
@@ -357,10 +359,8 @@ function GeneralTimeZoneCard({
   timeZones: readonly string[]
 }) {
   const { t } = useI18n()
-  const { flushAllAndWait } = useSettingsFlushContext()
-  // A locale switch reloads exactly once, and only after the locale commit
-  // actually changed the stored language.
-  const reloadRequestedRef = useRef(false)
+  const { flushAllAndWait, runTransaction } = useSettingsFlushContext()
+  const localeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const { form, settingGroupProps, flushOnBlur, save } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
@@ -372,13 +372,31 @@ function GeneralTimeZoneCard({
       // `null` is the "follow the locale" state, never a blank override.
       timeFormat: values.timeFormat === null ? null : values.timeFormat.trim(),
     }),
-    onSaved: (savedSection) => {
-      if (reloadRequestedRef.current || savedSection.locale === siteIdentity.locale) {
-        return
-      }
-      reloadRequestedRef.current = true
-      window.location.reload()
+  })
+
+  // Cross-tab half of the switch: the announcement is handled once at the root
+  // (`LocaleSyncProvider`), so every open document — settings, editor,
+  // analytics — follows it. This card only publishes; it never subscribes.
+  const publishLocaleChange = useLocaleSyncPublish()
+
+  // The locale switch always flushes every dirty card first, then commits the
+  // locale field itself, then reloads once. It owns the commit, so its guard
+  // returns `SETTINGS_SKIP_COMMIT` and `SettingsSelect` never double-saves.
+  // `runTransaction` makes the whole settings workspace inert for that window
+  // (see SettingsPanel) so no other card can be edited before the reload; the
+  // trigger ref is the focus anchor because the picked option lives in a
+  // portal and unmounts when the popup closes.
+  const { isSwitching, requestChange } = useLocaleSwitch<AppLocale>({
+    loadedLocale: siteIdentity.locale,
+    runTransaction,
+    focusAnchor: () => localeTriggerRef.current,
+    flushAll: flushAllAndWait,
+    change: (locale) => {
+      form.setValue('locale', locale, { shouldDirty: true, shouldValidate: true })
     },
+    commit: () => save('locale'),
+    broadcast: publishLocaleChange,
+    reload: () => window.location.reload(),
   })
 
   const timeZoneItems = useMemo<TimeZoneItem[]>(
@@ -421,24 +439,16 @@ function GeneralTimeZoneCard({
                   name={field.name}
                   value={field.value}
                   save={save}
-                  onValueChange={async (value) => {
-                    if (value === null) {
-                      return
-                    }
-                    // Strict order: every dirty card saves first. Any failure
-                    // (validation / commit / throw) vetoes the switch entirely —
-                    // no field change, no locale save, no reload, and the
-                    // admin's unsaved input stays on screen.
-                    const flushed = await flushAllAndWait()
-                    if (!flushed) {
-                      return
-                    }
-                    field.onChange(value)
-                    // SettingsSelect awaits this upstream handler, then awaits
-                    // save('locale') itself.
-                  }}
+                  disabled={isSwitching}
+                  onValueChange={requestChange}
                 >
-                  <SelectTrigger id="general-locale" className="w-full">
+                  <SelectTrigger
+                    ref={localeTriggerRef}
+                    id="general-locale"
+                    className="w-full"
+                    aria-busy={isSwitching ? true : undefined}
+                    aria-disabled={isSwitching ? true : undefined}
+                  >
                     <SelectValue>{(value: AppLocale | null) => (value ? LOCALE_DISPLAY_NAMES[value] : '')}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>

@@ -4,6 +4,7 @@ import { createCanvas } from '@napi-rs/canvas'
 import { getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { AppLocale } from '@/shared/i18n/locales'
 
 import { compressImage } from '@/server/infra/image/compress'
@@ -18,8 +19,8 @@ const WIDTH = 600
 const HEIGHT = 880
 
 // Font registration lives in canvas-fonts.ts, shared with the OG renderer.
-function ensureFonts(): Promise<FontSlot | null> {
-  return ensureCanvasFont('calendar')
+function ensureFonts(settings?: BlogSettingsBundle | null): Promise<FontSlot | null> {
+  return ensureCanvasFont('calendar', settings)
 }
 
 function monthLabel(locale: AppLocale, date: Date): string {
@@ -66,10 +67,21 @@ function auspiciousTextFor(locale: AppLocale, date: Date): string | null {
 
 export type CalendarTheme = 'light' | 'dark'
 
-export async function renderCalendar(date: Date, theme: CalendarTheme, locale: AppLocale): Promise<Buffer> {
-  const calendarFontSlot = await ensureFonts()
+/**
+ * `settings` is the caller's pinned snapshot (request capture / background
+ * send-time resolve); omitted = the current process snapshot. The calendar
+ * resource always passes it so the daily quote matches the cache key's
+ * `settingsRevision`.
+ */
+export async function renderCalendar(
+  date: Date,
+  theme: CalendarTheme,
+  locale: AppLocale,
+  settings?: BlogSettingsBundle | null,
+): Promise<Buffer> {
+  const calendarFontSlot = await ensureFonts(settings)
 
-  const quote = await getDailyQuote(date)
+  const quote = await getDailyQuote(date, settings)
   const monthText = monthLabel(locale, date)
   const lunarText = lunarTextFor(locale, date)
   const weekday = weekdayLabel(locale, date)

@@ -2,6 +2,7 @@ import { redirect } from 'react-router'
 
 import type { AuditContext } from '@/server/domains/audit/types'
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { ListingPageLoaderData } from '@/shared/types/listing'
 
@@ -23,13 +24,15 @@ export interface SearchLoaderOptions {
   num: string | undefined
   /** Request UI locale — the result-page title is rendered server-side. */
   locale: AppLocale
+  /** Request-pinned settings bundle — the same capture the caller renders with. */
+  settings: BlogSettingsBundle | null
   forceNoindex?: boolean
   /** Canonical request facts; when present, a `search` audit event is recorded. */
   auditContext?: AuditContext
 }
 export async function searchLoader(
   db: Database,
-  { keyword, num, locale, forceNoindex = true, auditContext }: SearchLoaderOptions,
+  { keyword, num, locale, settings, forceNoindex = true, auditContext }: SearchLoaderOptions,
 ): Promise<ListingPageLoaderData> {
   const listingNowIso = new Date().toISOString()
   const query = keyword?.trim() ?? ''
@@ -38,7 +41,7 @@ export async function searchLoader(
   }
   const rootPath = searchRootPath(query)
   const pageNum = parseListingPage(num, rootPath)
-  const pageSize = requireBlogSettingsSection('content').pagination.search
+  const pageSize = requireBlogSettingsSection('content', settings).pagination.search
   // Only live posts are searchable — the gate is defined once and passed
   // down, keeping the search infra free of business rules.
   const liveWhere = livePostWhere()
@@ -74,6 +77,7 @@ export async function searchLoader(
     pageNum: page,
     totalPage: totalPages,
     rootPath,
+    locale,
     forceNoindex,
   })
   return {

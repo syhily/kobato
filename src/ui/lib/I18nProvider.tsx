@@ -29,6 +29,33 @@ export type I18nMessageParams = Record<
   string | number | Date | null | undefined | ReactNode | ((chunks: ReactNode[]) => ReactNode)
 >
 
+/**
+ * Params for `localizeMessage` — the scalar set a validation issue or an
+ * error descriptor carries (Zod `too_small`/`too_big` numeric bounds AND the
+ * explicit `params` bag of a custom issue: `{ label }`, `{ limit }` …).
+ * `boolean` is here because the wire's `ErrorMessageParams` allows it;
+ * react-intl cannot format a boolean, so the seam stringifies it. `null` is an
+ * explicit empty value (react-intl renders nothing); `undefined` means the
+ * caller could not supply it and counts as a missing param.
+ */
+export type I18nPlainMessageParams = Record<string, string | number | boolean | null | undefined>
+
+/** Generic validation copy a failed `localizeMessage` degrades to. */
+const LOCALIZE_FALLBACK_ID: UiMessageId = 'error.api.badRequest'
+/** Last resort when even the generic catalog entry is absent (no English map on the client). */
+const LOCALIZE_FALLBACK_TEXT = 'Invalid input'
+
+function toIcuValues(params?: I18nPlainMessageParams): Record<string, string | number | null> {
+  const values: Record<string, string | number | null> = {}
+  for (const [key, param] of Object.entries(params ?? {})) {
+    if (param === undefined) {
+      continue
+    }
+    values[key] = typeof param === 'boolean' ? String(param) : param
+  }
+  return values
+}
+
 export interface I18nValue {
   locale: AppLocale
   /** Format one UI message id; `params` fill the ICU placeholders. Plain string result. */
@@ -43,10 +70,15 @@ export interface I18nValue {
    * Translate a message-id STRING when it is a registered catalog key; return
    * any other string unchanged. The seam for values whose typing is lost at
    * runtime (Zod issue messages): raw ids never reach the UI, and Zod's own
-   * default messages pass through. `params` fill an id's ICU placeholders (the
-   * shared validation schemas attach `{min}` / `{max}` bounds that way).
+   * default messages pass through. `params` fill an id's placeholders — the
+   * shared validation schemas attach `{min}` / `{max}` bounds that way, and a
+   * custom issue's `params` bag (`{label}`) travels through the same channel.
+   *
+   * Formatting always goes through react-intl. A missing param or an
+   * unformattable template logs and degrades to a generic localized validation
+   * sentence — never a token name, the raw ICU template, or the message id.
    */
-  localizeMessage: (value: string, params?: I18nMessageParams) => string
+  localizeMessage: (value: string, params?: I18nPlainMessageParams) => string
 }
 
 const LocaleContext = createContext<AppLocale | null>(null)
@@ -105,7 +137,7 @@ export function useI18n(): I18nValue {
   if (locale === null) {
     throw new Error('useI18n() requires the root <I18nProvider> (see src/root.tsx).')
   }
-  const localizeMessage = (value: string, params?: I18nMessageParams): string => {
+  const localizeMessage = (value: string, params?: I18nPlainMessageParams): string => {
     // react-intl types `messages` as raw strings or pre-parsed ASTs depending on the
     // provider; we only ever feed it string catalogs, so narrow structurally.
     const messages: Record<string, unknown> = intl.messages
@@ -113,12 +145,36 @@ export function useI18n(): I18nValue {
     if (typeof candidate !== 'string') {
       return value
     }
-    if (params === undefined) {
-      // Most validation messages carry no arguments; skip the ICU parse when they don't.
+    // No braces at all: nothing to interpolate and nothing to leak — skip the
+    // ICU parse (most validation messages are static sentences).
+    if (!candidate.includes('{')) {
       return candidate
     }
-    const formatted = intl.formatMessage({ id: value }, params)
-    return typeof formatted === 'string' ? formatted : value
+    const values = toIcuValues(params)
+    // react-intl is the ONE formatter; missing params make it report an error
+    // and answer the raw template (or the id), which must never reach the UI.
+    try {
+      const formatted = intl.formatMessage({ id: value }, values)
+      if (typeof formatted === 'string' && formatted !== value && formatted !== candidate) {
+        return formatted
+      }
+    } catch {
+      // Formatting threw instead of reporting through onError — same fallback.
+    }
+    log.warn('localizeMessage: missing params or unformattable message; using fallback', {
+      locale,
+      id: value,
+      paramKeys: Object.keys(values),
+    })
+    try {
+      const generic = intl.formatMessage({ id: LOCALIZE_FALLBACK_ID })
+      if (typeof generic === 'string' && generic !== LOCALIZE_FALLBACK_ID) {
+        return generic
+      }
+    } catch {
+      // The provider may carry only the minimal FallbackMessages subset.
+    }
+    return LOCALIZE_FALLBACK_TEXT
   }
   return { locale, t, tRich, localizeMessage }
 }

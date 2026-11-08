@@ -45,7 +45,7 @@ export async function checkForUpdate(db: Database): Promise<UpdateCheckResult> {
     htmlUrl: release.htmlUrl,
     updateAvailable: isNewerVersion(release.tagName, APP_VERSION),
     canSelfUpdate: gate.canSelfUpdate,
-    reasons: gate.reasons,
+    reasons: gate.reasonDescriptors,
   }
 }
 
@@ -56,7 +56,9 @@ export async function applyUpdate(db: Database): Promise<{ fromVersion: string; 
     throw new DomainError('CONFLICT', descriptorFor('update.error.alreadyLatest'))
   }
   if (!check.canSelfUpdate) {
-    throw new DomainError('FORBIDDEN', check.reasons.join('；'))
+    // The summary stays one typed message; each refusal rides `issues` so the
+    // transport folds in the locale's own separator and wording.
+    throw new DomainError('FORBIDDEN', descriptorFor('update.error.gateBlocked'), check.reasons)
   }
   startUpdateJob(check.tagName)
   return { fromVersion: check.currentVersion, toVersion: check.latestVersion }

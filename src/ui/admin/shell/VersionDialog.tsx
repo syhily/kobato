@@ -315,9 +315,9 @@ function UpdateStatus({
           checkResult.reasons.length > 0 && (
             <ul className="flex flex-col gap-0.5 text-muted-foreground">
               {checkResult.reasons.map((reason) => (
-                <li key={reason} className="flex items-center gap-1.5">
+                <li key={reason.messageKey} className="flex items-center gap-1.5">
                   <AlertCircleIcon className="size-3.5 shrink-0" />
-                  {reason}
+                  {t(reason.messageKey)}
                 </li>
               ))}
             </ul>

@@ -25,7 +25,7 @@ const listSessions = adminProc
     return rows.map((row) => ({
       sid: row.sid,
       userId: row.userId,
-      label: formatUaLabel(row.userAgent, row.platformHint),
+      label: formatUaLabel(row.userAgent, row.platformHint, translator.format('auth.sessions.unknownDevice')),
       ip: row.ip,
       loginAt: row.loginAt,
       lastActiveAt: row.lastActiveAt,

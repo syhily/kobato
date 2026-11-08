@@ -1,4 +1,6 @@
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { AppLocale } from '@/shared/i18n/locales'
 import type { FeedLinkOptions } from '@/shared/seo/meta'
 import type { ListingPostCard } from '@/shared/types/catalog'
 import type { ListingExtraArgs, ListingPageLoaderData } from '@/shared/types/listing'
@@ -54,6 +56,8 @@ export async function listingLoader<TExtra = undefined>(
     rootPath,
     title,
     description,
+    locale,
+    settings,
     pageSize,
     mergeTailWhenLessThan,
     forceNoindex,
@@ -71,6 +75,10 @@ export async function listingLoader<TExtra = undefined>(
     rootPath: string
     title?: string
     description?: string
+    /** Request UI locale — pagination copy is resolved from it. */
+    locale: AppLocale
+    /** Request-pinned settings bundle — the same capture the caller renders with. */
+    settings: BlogSettingsBundle | null
     pageSize?: number
     /** Tail-merge guard: an orphan last page (< M posts) is absorbed into its predecessor. */
     mergeTailWhenLessThan?: number
@@ -91,7 +99,7 @@ export async function listingLoader<TExtra = undefined>(
 ): Promise<ListingPageLoaderData<TExtra>> {
   const listingNowIso = new Date().toISOString()
   const pageNum = parseListingPage(rawNum, rootPath)
-  const effectivePageSize = pageSize ?? requireBlogSettingsSection('content').pagination.posts
+  const effectivePageSize = pageSize ?? requireBlogSettingsSection('content', settings).pagination.posts
   const totalPage = calculateTotalPages(totalPosts, effectivePageSize, mergeTailWhenLessThan ?? 0)
 
   redirectListingOverflow(rawNum, pageNum, totalPage, rootPath, allowEmpty)
@@ -124,6 +132,7 @@ export async function listingLoader<TExtra = undefined>(
           pageNum,
           totalPage,
           rootPath,
+          locale,
           forceNoindex,
           feedLinks,
           ogImageUrl,

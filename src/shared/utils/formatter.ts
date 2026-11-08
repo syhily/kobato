@@ -2,13 +2,16 @@
 // Built on date-fns + @date-fns/tz: `TZDate` carries the site-configured
 // time zone (runtime DB-backed config), so callers thread it in.
 //
-// Byte sizes and durations live in `@/shared/i18n/format` (explicit locale);
-// this module only owns the site-zone date/relative-time primitives.
+// Display formatting (relative-time buckets, numbers, byte sizes, durations)
+// lives in `@/shared/i18n/format` (explicit locale); this module keeps the
+// site-zone date primitives and the `formatShowDate` compatibility wrapper.
 
 import { TZDate } from '@date-fns/tz'
 import { format as formatZonedDate } from 'date-fns'
 
-import { dateFnsLocaleFor, formatRelativeValue } from '@/shared/i18n/format'
+import type { SiteDateParts } from '@/shared/i18n/format'
+
+import { dateFnsLocaleFor, formatRecentDate, siteDateParts } from '@/shared/i18n/format'
 import { normalizeAppLocale } from '@/shared/i18n/locales'
 import { createBoundedMap } from '@/shared/utils/memo'
 
@@ -27,15 +30,6 @@ function pickLocale(config: FormatterLocale): {
   return config
 }
 
-interface LocalDateParts {
-  year: number
-  month: number
-  day: number
-  hour: number
-  minute: number
-  second: number
-}
-
 // Invalid input must keep the previous Intl.DateTimeFormat garbage-in
 // behavior: a RangeError('Invalid time value'), never NaN-filled output.
 function requireValidZonedDate(source: Date, timeZone: string): TZDate {
@@ -48,57 +42,22 @@ function requireValidZonedDate(source: Date, timeZone: string): TZDate {
 
 // Exported for calendar grouping (archives buckets) that must agree with the
 // displayed dates — both derive from the site-configured time zone.
-export function localDateParts(source: Date, locale: string, timeZone: string): LocalDateParts {
+export function localDateParts(source: Date, locale: string, timeZone: string): SiteDateParts {
   void locale // Kept for signature stability; zone math is locale-independent.
-  const zoned = requireValidZonedDate(source, timeZone)
-  return {
-    year: zoned.getFullYear(),
-    month: zoned.getMonth() + 1,
-    day: zoned.getDate(),
-    hour: zoned.getHours(),
-    minute: zoned.getMinutes(),
-    second: zoned.getSeconds(),
-  }
-}
-
-function dayNumber(parts: Pick<LocalDateParts, 'year' | 'month' | 'day'>): number {
-  return Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / 86_400_000)
-}
-
-function weekStartDay(parts: Pick<LocalDateParts, 'year' | 'month' | 'day'>): number {
-  const day = dayNumber(parts)
-  const weekday = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()
-  return day - ((weekday + 6) % 7)
+  return siteDateParts(source, timeZone)
 }
 
 /**
- * Post-list display date: localized relative buckets for the recent past, the
- * configured date pattern beyond them. `now` defaults to the runtime clock;
- * pass an ISO string from the route loader so SSR and hydration agree.
+ * Compatibility wrapper for the post-list/user-table date column. The relative
+ * bucket policy (today/yesterday, 2/7/30/210-day thresholds) lives in
+ * `formatRecentDate`; only the configured-pattern fallback is site-local.
+ * `now` defaults to the runtime clock; pass an ISO string from the route
+ * loader so SSR and hydration agree.
  */
-export function formatShowDate(date: Date, config: FormatterLocale, now?: Date | string) {
-  const { timeZone } = pickLocale(config)
-  const locale = normalizeAppLocale(pickLocale(config).locale)
-  const source = localDateParts(date, locale, timeZone)
-  const nowInstant = now === undefined ? new Date() : new Date(now)
-  const nowParts = localDateParts(nowInstant, locale, timeZone)
-  const deltaDays = dayNumber(nowParts) - dayNumber(source)
-
-  if (deltaDays < 1) {
-    // `numeric: 'auto'` is what makes 0 days read as 今天/today, -1 as 昨天/yesterday.
-    return formatRelativeValue(0, 'day', locale, { numeric: 'auto' })
-  } else if (deltaDays < 2) {
-    return formatRelativeValue(-1, 'day', locale, { numeric: 'auto' })
-  } else if (deltaDays < 7) {
-    return formatRelativeValue(-deltaDays, 'day', locale)
-  } else if (deltaDays < 30) {
-    const weeks = Math.floor((weekStartDay(nowParts) - weekStartDay(source)) / 7)
-    return formatRelativeValue(-weeks, 'week', locale)
-  } else if (deltaDays < 210) {
-    const months = (nowParts.year - source.year) * 12 + nowParts.month - source.month
-    return formatRelativeValue(-months, 'month', locale)
-  }
-  return formatLocalDate(date, undefined, config)
+export function formatShowDate(date: Date, config: FormatterLocale, now?: Date | string): string {
+  const { locale, timeZone } = pickLocale(config)
+  const relative = formatRecentDate(date, { locale: normalizeAppLocale(locale), timeZone, now })
+  return relative ?? formatLocalDate(date, undefined, config)
 }
 
 export function formatLocalDate(source: string | Date, format: string | undefined, config: FormatterLocale): string {
@@ -111,46 +70,85 @@ export function formatLocalDate(source: string | Date, format: string | undefine
     return zonedDateFormatter(locale, timeZone).format(zoned)
   }
   // The format string is USER-SUPPLIED (stored in settings): only the nine
-  // documented tokens are substituted, so it never reaches date-fns — every
-  // other character renders verbatim. One fixed canonical pattern computes all
-  // nine values (the dayPeriod needs the locale, everything else does not).
+  // documented tokens are substituted, and only inside maximal ASCII letter
+  // runs (punctuation, whitespace and non-ASCII letters delimit them), so it
+  // never reaches date-fns — every other character renders verbatim. One fixed
+  // canonical pattern computes all nine values (the dayPeriod needs the locale,
+  // everything else does not).
   const canonical = formatZonedDate(zoned, 'yyyy MM dd HH hh mm ss a', { locale: dateFnsLocaleFor(locale) })
   const [year, month, day, hour24, hour12, minute, second, dayPeriod] = canonical.split(' ')
-  return pattern.replace(DATE_TOKEN_PATTERN, (token, offset: number) => {
-    switch (token) {
-      case 'yyyy':
-        return year!
-      case 'LL':
-      case 'MM':
-        return month!
-      case 'dd':
-        return day!
-      case 'HH':
-        return hour24!
-      case 'hh':
-        return hour12!
-      case 'mm':
-        return minute!
-      case 'ss':
-        return second!
-      case 'a': {
-        // `a` is a single letter: only a STANDALONE one is a token, so literal
-        // words such as `day` in a custom pattern survive verbatim.
-        return isAsciiLetter(pattern[offset - 1]) || isAsciiLetter(pattern[offset + 1]) ? token : dayPeriod!
+  const values = {
+    yyyy: year!,
+    LL: month!,
+    MM: month!,
+    dd: day!,
+    HH: hour24!,
+    hh: hour12!,
+    mm: minute!,
+    ss: second!,
+    a: dayPeriod!,
+  } satisfies Record<DateToken, string>
+  return pattern.replace(ASCII_LETTER_RUN, (run) => formatLetterRun(run, values))
+}
+
+type DateToken = 'yyyy' | 'LL' | 'MM' | 'dd' | 'HH' | 'hh' | 'mm' | 'ss' | 'a'
+
+type MultiCharacterToken = Exclude<DateToken, 'a'>
+
+// Longest first (`yyyy` before the two-letter tokens). The two-letter tokens
+// all have distinct first letters, so at most one can match at a position.
+const MULTI_CHARACTER_TOKENS = [
+  'yyyy',
+  'LL',
+  'MM',
+  'dd',
+  'HH',
+  'hh',
+  'mm',
+  'ss',
+] as const satisfies readonly MultiCharacterToken[]
+
+function matchTokenAt(run: string, index: number): MultiCharacterToken | undefined {
+  return MULTI_CHARACTER_TOKENS.find((token) => run.startsWith(token, index))
+}
+
+/**
+ * Substitution inside one maximal `[A-Za-z]+` run.
+ *
+ * A run is parsed greedily from its first character. `a` is a token only when
+ * the WHOLE run is `a`; the other tokens are matched longest-first at the
+ * current position. Runs that do not begin with a token are literal words
+ * (`add`, `summary`, `ALLOW`, `class`) and stay verbatim. After at least one
+ * token, an unmatched character is emitted verbatim and scanning continues:
+ * fully adjacent runs substitute every token (`yyyyMMdd`, `HHmm`, `ssLL`) and
+ * a literal letter inside a compact run does not stop it (`ddTHH` → day + `T` +
+ * hour, as in `yyyy-MM-ddTHH:mm`).
+ */
+function formatLetterRun(run: string, values: Record<DateToken, string>): string {
+  if (run === 'a') {
+    return values.a
+  }
+  let output = ''
+  let matchedToken = false
+  let index = 0
+  while (index < run.length) {
+    const token = matchTokenAt(run, index)
+    if (token === undefined) {
+      if (!matchedToken) {
+        return run
       }
-      default:
-        return token
+      output += run[index]
+      index += 1
+      continue
     }
-  })
+    output += values[token]
+    matchedToken = true
+    index += token.length
+  }
+  return output
 }
 
-function isAsciiLetter(char: string | undefined): boolean {
-  return char !== undefined && /[A-Za-z]/.test(char)
-}
-
-// Single pass, multi-character tokens first: a substituted value is never
-// re-scanned as another token.
-const DATE_TOKEN_PATTERN = /yyyy|LL|MM|dd|HH|hh|mm|ss|a/g
+const ASCII_LETTER_RUN = /[A-Za-z]+/g
 
 // Construction reads locale data, so it is cached per immutable
 // (locale, timeZone) pair rather than rebuilt for every list row. FIFO-evict

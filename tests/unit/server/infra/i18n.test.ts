@@ -1,3 +1,5 @@
+import { createElement, Fragment } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import type { MessageId } from '@/server/infra/i18n'
@@ -15,9 +17,22 @@ describe('server/infra/i18n', () => {
   it('formats server-only messages, which the UI catalog does not carry', () => {
     expect(createServerTranslator('en-US').format('email.common.greeting', { receiver: 'Ada' })).toBe('Hello Ada,')
     expect(createServerTranslator('zh-CN').format('email.common.greeting', { receiver: '雨帆' })).toBe('你好，雨帆')
-    expect(
-      createServerTranslator('zh-TW').format('email.common.copyright', { siteTitle: '且听书吟', year: 2026 }),
-    ).toBe('且听书吟 © 2026')
+    expect(createServerTranslator('zh-TW').format('notification.mail.zeaburCleanup.title')).toBe('郵件服務已自動關閉')
+  })
+
+  it('formats a rich-text message through the caller-supplied tag renderer', () => {
+    const rendered = renderToStaticMarkup(
+      createElement(
+        Fragment,
+        null,
+        createServerTranslator('zh-TW').formatRich('email.common.copyright', {
+          siteTitle: '且听书吟',
+          year: 2026,
+          siteLink: (chunks) => createElement('strong', null, chunks),
+        }),
+      ),
+    )
+    expect(rendered).toBe('<strong>且听书吟</strong> © 2026')
   })
 
   it('applies ICU interpolation', () => {

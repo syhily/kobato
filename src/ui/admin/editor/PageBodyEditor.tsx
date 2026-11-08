@@ -89,8 +89,12 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
 }
 
 function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, header }: PageBodyEditorProps) {
-  const { t } = useI18n()
-  const cardConfig = useMemo(() => makePageEditorCardConfig(t), [t])
+  const { t, localizeMessage } = useI18n()
+  // `localizeMessage` closes over the same `intl` instance as `t`, so the
+  // translator identity is the correct (and stable) memo key — keying on the
+  // callback itself would rebuild the card config on every provider render.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  const cardConfig = useMemo(() => makePageEditorCardConfig(t, localizeMessage), [t])
   const [focusMode, toggleFocusMode] = useFocusModePreference()
   const { editorInstance, registerAPI, mountedInitialState, handleChange } = useEditorSurface({
     initialBody,

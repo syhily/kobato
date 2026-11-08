@@ -9,6 +9,8 @@
 // the English catalogs with an error log: `shared/` cannot log, so this
 // boundary owns the catch.
 
+import type { ReactNode } from 'react'
+
 import { createIntl, createIntlCache } from 'react-intl'
 
 import type { AppLocale } from '@/shared/i18n/locales'
@@ -33,6 +35,12 @@ export type MessageId = UiMessageId | ServerMessageId
 
 export type MessageParams = Record<string, string | number | boolean | Date | null | undefined>
 
+/** Renders one rich-text tag's chunks — a rich message's `<tag>…</tag>` placeholder. */
+export type RichTextTag = (chunks: ReactNode[]) => ReactNode
+
+/** ICU values for a rich message: plain interpolation values plus tag renderers. */
+export type RichMessageParams = Record<string, string | number | boolean | Date | null | undefined | RichTextTag>
+
 type MergedMessages = UiMessages & ServerMessages
 
 export interface ServerTranslator {
@@ -40,6 +48,13 @@ export interface ServerTranslator {
   readonly locale: AppLocale
   readonly messages: MergedMessages
   format(id: MessageId, params?: MessageParams): string
+  /**
+   * Format a message that contains `<tag>…</tag>` placeholders. The caller
+   * supplies one renderer per tag name, so a single translated sentence can
+   * embed a link (e.g. the email footer's site-name link) without concatenating
+   * translated fragments in JSX.
+   */
+  formatRich(id: MessageId, params?: RichMessageParams): ReactNode
 }
 
 const intlCache = createIntlCache()
@@ -85,18 +100,31 @@ export function createServerTranslator(locale: AppLocale): ServerTranslator {
     locale: resolvedLocale,
     messages,
     format(id, params) {
-      const message = messages[id]
-      if (message === undefined) {
-        // The catalog types make this unreachable; a dynamic legacy key that
-        // still arrives here is a bug worth stopping in dev and test.
-        if (NODE_ENV !== 'production') {
-          throw new Error(`Unknown i18n message id: ${id}`)
-        }
-        log.warn('Unknown i18n message id', { locale: resolvedLocale, id })
-        return id
-      }
-      return intl.formatMessage({ id, defaultMessage: message }, params)
+      return intl.formatMessage({ id, defaultMessage: requireMessage(id) }, params)
     },
+    formatRich(id, params) {
+      const message = requireMessage(id)
+      // react-intl turns the tag functions into React nodes (`toKeyedReactNodeArray`).
+      const formatted = intl.formatMessage(
+        { id, defaultMessage: message },
+        params as Parameters<typeof intl.formatMessage>[1],
+      )
+      return formatted as ReactNode
+    },
+  }
+
+  function requireMessage(id: MessageId): string {
+    const message = messages[id]
+    if (message === undefined) {
+      // The catalog types make this unreachable; a dynamic legacy key that
+      // still arrives here is a bug worth stopping in dev and test.
+      if (NODE_ENV !== 'production') {
+        throw new Error(`Unknown i18n message id: ${id}`)
+      }
+      log.warn('Unknown i18n message id', { locale: resolvedLocale, id })
+      return id
+    }
+    return message
   }
 
   translators.set(locale, translator)

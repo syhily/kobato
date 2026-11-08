@@ -1,4 +1,5 @@
 import type { AdminPostDetailDto, AdminPostDto } from '@/shared/contracts/posts'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -43,6 +44,11 @@ export interface UpsertPostMetaInput {
   showToc?: boolean
   /** Toggle the「修改于 XXXX」secondary timestamp; defaults `false` on create. */
   showUpdated?: boolean
+  /**
+   * Author-declared BCP 47 language of the prose (any well-formed tag).
+   * `null` clears it; omitted leaves the stored value untouched.
+   */
+  contentLanguage?: string | null
   visible?: boolean
   /** ISO to set; `null` cancels a pending schedule; omitted = leave untouched. */
   publishedAt?: string | null
@@ -68,6 +74,8 @@ export interface PostMetaDraft {
   webmentionsEnabled: boolean
   showToc: boolean
   showUpdated: boolean
+  /** Empty string = unset (renders no `lang`); the server canonicalizes valid tags. */
+  contentLanguage: string
   visible: boolean
   pinned: boolean
   categoryId: string
@@ -88,6 +96,7 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   webmentionsEnabled: true,
   showToc: false,
   showUpdated: false,
+  contentLanguage: '',
   visible: true,
   pinned: false,
   categoryId: '',
@@ -150,8 +159,9 @@ export type PostMetaToggleKey =
 export interface PostMetaToggleField {
   key: PostMetaToggleKey
   id: string
-  label: string
-  description: string
+  /** UI message ids — `ToggleOptionsCard` resolves them with the active locale. */
+  labelId: UiMessageId
+  descriptionId: UiMessageId
   /** When set, the toggle is only rendered if the feature flag is enabled. */
   featureGate?: 'featurePosts'
 }
@@ -160,38 +170,38 @@ export const POST_META_TOGGLE_FIELDS: ReadonlyArray<PostMetaToggleField> = [
   {
     key: 'commentsEnabled',
     id: 'post-comments',
-    label: '开启评论',
-    description: '关闭后文章底部不再渲染评论区。',
+    labelId: 'admin.editor.toggle.post.comments.label',
+    descriptionId: 'admin.editor.toggle.post.comments.description',
   },
   {
     key: 'webmentionsEnabled',
     id: 'post-webmentions',
-    label: '显示 Webmention',
-    description: '关闭后文章底部不再渲染「引用与回应」区块（全局开关关闭时亦不渲染）。',
+    labelId: 'admin.editor.toggle.post.webmentions.label',
+    descriptionId: 'admin.editor.toggle.post.webmentions.description',
   },
   {
     key: 'showToc',
     id: 'post-toc',
-    label: '显示目录',
-    description: '启用后右侧会渲染基于二级标题的 TOC。',
+    labelId: 'admin.editor.toggle.post.toc.label',
+    descriptionId: 'admin.editor.toggle.post.toc.description',
   },
   {
     key: 'showUpdated',
     id: 'post-show-updated',
-    label: '显示修改时间',
-    description: '启用后文章正文上方会展示「修改于 XXXX」，否则只展示首次发布时间。',
+    labelId: 'admin.editor.toggle.post.updated.label',
+    descriptionId: 'admin.editor.toggle.post.updated.description',
   },
   {
     key: 'visible',
     id: 'post-visible',
-    label: '文章可见',
-    description: '关闭后文章不在首页和随机文章组件中展示，但仍可通过链接访问。',
+    labelId: 'admin.editor.toggle.post.visible.label',
+    descriptionId: 'admin.editor.toggle.post.visible.description',
   },
   {
     key: 'pinned',
     id: 'post-pinned',
-    label: '置顶到首页',
-    description: '置顶的文章会出现在首页精选区，最多展示 3 篇。',
+    labelId: 'admin.editor.toggle.post.pinned.label',
+    descriptionId: 'admin.editor.toggle.post.pinned.description',
     featureGate: 'featurePosts',
   },
 ]

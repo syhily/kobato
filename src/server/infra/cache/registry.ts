@@ -27,16 +27,22 @@ const log = getLogger('cache')
  */
 
 interface CacheParamsMap {
-  og: { slug: string; title: string; summary: string; cover: string }
-  calendar: { date: string; theme: 'light' | 'dark'; locale: AppLocale; version: string }
+  og: { slug: string; title: string; summary: string; cover: string; settingsRevision: string }
+  calendar: {
+    date: string
+    theme: 'light' | 'dark'
+    locale: AppLocale
+    version: string
+    settingsRevision: string
+  }
   avatar: { size: number; email: string }
   imageMeta: { storagePath: string }
   searchResult: { generation: number; parts: readonly string[] }
-  feed: { scope: string; locale: AppLocale; version: string }
-  sitemap: Record<string, never>
+  feed: { scope: string; locale: AppLocale; version: string; settingsRevision: string }
+  sitemap: { settingsRevision: string }
   categories: Record<string, never>
   tags: Record<string, never>
-  comments: Record<string, never>
+  comments: { settingsRevision: string; limit: number }
   githubRelease: { owner: string; repo: string; endpoint: string }
   githubAvatar: Record<string, never>
 }
@@ -106,18 +112,23 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   og: {
     kind: 'binary',
     devBypass: true,
-    // Hash of every render input — an edit produces a fresh entry, never a stale render.
-    key: ({ slug, title, summary, cover }) =>
-      `${slug}-${createHash('sha1').update(`${title}\u0001${summary}\u0001${cover}`).digest('hex').slice(0, 16)}`,
+    // Hash of every render input AND the settings generation: the OG card embeds
+    // site title/summary/logo/SEO dimensions from the request-pinned snapshot,
+    // so a settings save must land on a fresh key, never a stale render.
+    key: ({ slug, title, summary, cover, settingsRevision }) =>
+      `${settingsRevision}:${slug}-${createHash('sha1').update(`${title}\u0001${summary}\u0001${cover}`).digest('hex').slice(0, 16)}`,
   },
   calendar: {
     kind: 'binary',
     devBypass: true,
-    // Locale + representation version are part of the key: the same date has a
-    // different PNG per language, and a release (translation/renderer change)
-    // must never serve the previous representation. The `-dark` suffix keeps
-    // the two themes from clobbering each other.
-    key: ({ date, theme, locale, version }) => `${locale}:${version}:${date}${theme === 'dark' ? '-dark' : ''}`,
+    // Locale + representation version + settings generation are part of the
+    // key: the same date has a different PNG per language, a release
+    // (translation/renderer change) must never serve the previous
+    // representation, and a settings save (quote bank, identity) orphans the
+    // previous generation's entry. The `-dark` suffix keeps the two themes
+    // from clobbering each other.
+    key: ({ date, theme, locale, version, settingsRevision }) =>
+      `${locale}:${version}:${settingsRevision}:${date}${theme === 'dark' ? '-dark' : ''}`,
   },
   // Size is part of the key — a cached entry must never serve a different `?s=` request.
   avatar: {
@@ -140,13 +151,17 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   },
   feed: {
     kind: 'json',
-    // Locale + version keyed: the RSS/Atom body is localized (`language` /
-    // `xml:lang`) and a release ships new renderers/translations.
-    key: ({ scope, locale, version }) => `${locale}:${version}:${scope}`,
+    // Locale + version + settings generation keyed: the RSS/Atom body is
+    // localized (`language` / `xml:lang`), a release ships new renderers /
+    // translations, and a settings save (feed size, branding, identity)
+    // produces a new representation under a new key.
+    key: ({ scope, locale, version, settingsRevision }) => `${locale}:${version}:${settingsRevision}:${scope}`,
   },
   sitemap: {
     kind: 'json',
-    key: () => '',
+    // Every <loc> embeds the site origin: a general-settings save lands on a
+    // fresh key instead of serving the previous domain until max-age expires.
+    key: ({ settingsRevision }) => settingsRevision,
   },
   categories: {
     kind: 'json',
@@ -158,7 +173,9 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   },
   comments: {
     kind: 'json',
-    key: () => 'latest',
+    // Comments-scope generation + the sidebar's configured count: either moves
+    // the key, so a settings save can never serve the previous digest.
+    key: ({ settingsRevision, limit }) => `${settingsRevision}:${limit}`,
   },
   // Key carries the full request target — a repo or endpoint change can't serve a stale hit.
   githubRelease: {
@@ -330,13 +347,43 @@ export async function remove<K extends CacheBucketId>(db: Database, id: K, param
   }
 }
 
-/** Whole-bucket delete — one bucket-column DELETE, no prefix scan (best-effort). */
-// Sync (node:sqlite): called inside entity transactions via `invalidateContent`.
+/** Whole-bucket delete — one bucket-column DELETE, no prefix scan. Sync (node:sqlite); throws on failure. */
+function deleteBucket(db: Database, id: CacheBucketId): void {
+  db.delete(kvCache).where(eq(kvCache.bucket, id)).run()
+}
+
+/** Best-effort whole-bucket delete for ordinary content invalidation. */
 export function clear(db: Database, id: CacheBucketId): void {
   try {
-    db.delete(kvCache).where(eq(kvCache.bucket, id)).run()
+    deleteBucket(db, id)
   } catch (error) {
     log.warn('cache bucket clear failed', { bucket: id, error })
+  }
+}
+
+/**
+ * Reclaim the storage behind the settings-derived render products (`feed`,
+ * `calendar`, `og`) after a settings save. Strict (a failure reaches the
+ * section-change warning channel), synchronous, and deliberately non-blocking.
+ *
+ * Correctness NEVER depends on this delete: every successful settings refresh
+ * advances the snapshot revision (`shared/config/snapshot`), so the previous
+ * generation's keys are already unreachable and an in-flight render started
+ * before the save can only write its own old-revision key. This is purely
+ * storage reclamation — no locale/version generation counter is involved.
+ */
+export function clearLocalizedOutputs(db: Database): void {
+  let failure: unknown
+  for (const id of ['feed', 'calendar', 'og', 'comments', 'sitemap'] as const) {
+    try {
+      deleteBucket(db, id)
+    } catch (error) {
+      // Attempt BOTH buckets — a feed failure must not strand the calendar rows.
+      failure ??= error
+    }
+  }
+  if (failure !== undefined) {
+    throw failure
   }
 }
 

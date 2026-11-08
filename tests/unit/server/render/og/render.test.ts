@@ -2,6 +2,9 @@ import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { BlogSettingsBundle } from '@/shared/config/types'
+
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { drawOpenGraph } from '@/server/render/og/render'
 
 // We don't pin a byte-for-byte PNG hash because that would break on every
@@ -85,6 +88,37 @@ describe('services/images/og — drawOpenGraph', () => {
     await expect(drawOpenGraph({ title: 't', summary: 's', cover: 'file:///etc/passwd' })).rejects.toThrow(
       /OG cover is not/,
     )
+  })
+
+  it('renders from the pinned settings snapshot (title + SEO dimensions)', { timeout: 30_000 }, async () => {
+    const cover = await makeCoverBuffer()
+    const coverRef = `data:image/png;base64,${cover.toString('base64')}`
+    const bundled = (title: string, width: number, height: number): BlogSettingsBundle => ({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title },
+      seo: { ...TEST_BLOG_SETTINGS_BUNDLE.seo!, og: { width, height } },
+    })
+
+    const alpha = await drawOpenGraph(
+      { title: 'Card', summary: 'summary', cover: coverRef },
+      bundled('Alpha Site', 1200, 630),
+    )
+    const zulu = await drawOpenGraph(
+      { title: 'Card', summary: 'summary', cover: coverRef },
+      bundled('Zulu Site', 1200, 630),
+    )
+
+    // Same card inputs, different pinned site identity → different bytes.
+    expect(alpha.equals(zulu)).toBe(false)
+
+    // The pinned seo.og dimensions drive the canvas, not the global snapshot.
+    const square = await drawOpenGraph(
+      { title: 'Card', summary: 'summary', cover: coverRef },
+      bundled('Alpha Site', 1200, 1200),
+    )
+    const meta = await sharp(square).metadata()
+    expect(meta.width).toBe(1200)
+    expect(meta.height).toBe(1200)
   })
 
   it('trims summaries longer than 80 chars without crashing', { timeout: 30_000 }, async () => {

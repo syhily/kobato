@@ -53,7 +53,7 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     expect(isSaving).toBe(false)
   })
 
-  it('commits the fromState patch verbatim (the server owns the merge)', async () => {
+  it('posts only the owned fields that moved since the acknowledged baseline', async () => {
     const source: Source = { title: 'Hello', description: 'World' }
     const { form, save } = renderHook(makeHook(source))
     form.setValue('title', 'Updated')
@@ -61,7 +61,7 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     await vi.waitFor(() => expect(commit).toHaveBeenCalledOnce())
     const [section, payload] = commit.mock.calls[0]!
     expect(section).toBe('general')
-    // Honest Section patch: only the fields this card owns.
+    // Honest sparse Section patch: only the fields this card owns AND changed.
     expect(payload).toEqual({ title: 'Updated' })
   })
 

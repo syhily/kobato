@@ -26,8 +26,10 @@ const update = adminProc
     }),
   )
   // The response is authoritative: the merged, validated section in the admin display shape.
-  // The client adopts it as its new baseline — a save must never refetch the document out
-  // from under the user's hands. The REAL runtime gate lives in `projectSectionForAdmin`.
+  // The client adopts it for DISPLAY — a save must never refetch the document out from under the
+  // user's hands — while its form baseline advances to the submitted values (patches are sparse,
+  // so the response also carries fields this card never sent). The REAL runtime gate lives in
+  // `projectSectionForAdmin`.
   .output(z.object({ section: z.unknown(), warnings: z.array(z.string()) }))
   .handler(async ({ input, context }) => {
     const editorId = safeBigInt(context.viewer.id)

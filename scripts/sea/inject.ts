@@ -12,16 +12,37 @@ import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir } from './p
 /**
  * Official Node.js builds carry the SEA sentinel fuse; shared-library builds
  * (Homebrew, some distro packages) do not. Fail early with a pointer
- * instead of surfacing the injector's raw "sentinel not found" error.
+ * instead of surfacing the injector's raw "sentinel not found" error. A
+ * universal/multi-architecture binary carries one sentinel per slice, which
+ * `--build-sea` also rejects ("found more than one occurrence") — point at
+ * the single-architecture official dist instead of failing mid-inject.
  */
 async function ensureSentinelFuse() {
   const binary = await readFile(process.execPath)
-  if (!binary.includes(SEA_SENTINEL_FUSE)) {
+  let occurrences = 0
+  for (
+    let index = binary.indexOf(SEA_SENTINEL_FUSE);
+    index !== -1;
+    index = binary.indexOf(SEA_SENTINEL_FUSE, index + 1)
+  ) {
+    occurrences += 1
+  }
+  if (occurrences === 0) {
     fail(
       [
         `The Node.js executable at ${process.execPath} does not contain the SEA sentinel fuse.`,
         'Single-executable builds require an official Node.js distribution (nodejs.org or',
         'actions/setup-node). Homebrew and other shared-library builds are not supported.',
+      ].join('\n'),
+    )
+  }
+  if (occurrences > 1) {
+    fail(
+      [
+        `The Node.js executable at ${process.execPath} contains ${occurrences} SEA sentinel fuses.`,
+        'node --build-sea accepts exactly one — a universal/multi-architecture binary carries one',
+        'per slice. Run the build with a single-architecture official Node.js distribution',
+        '(for example node-v26.13.0-darwin-x64/bin/node on an Intel Mac).',
       ].join('\n'),
     )
   }

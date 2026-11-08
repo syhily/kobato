@@ -27,6 +27,7 @@ const populatedDraft: PostMetaDraft = {
   webmentionsEnabled: true,
   showToc: true,
   showUpdated: false,
+  contentLanguage: 'zh-Hant-TW',
   visible: true,
   pinned: true,
   categoryId: '1',
@@ -49,6 +50,10 @@ describe('snapshot: PostMetaSidebar', () => {
     )
     expect(html).toContain('基本信息')
     expect(html).toContain('A populated summary for the post.')
+    // Optional content language — author metadata, not a UI locale switch.
+    expect(html).toContain('id="post-content-language"')
+    expect(html).toContain('内容语言（可选）')
+    expect(html).toContain('value="zh-Hant-TW"')
     expect(html).toContain('封面 / OG 图')
     expect(html).toContain('/images/cover.png')
     expect(html).toContain('/images/og.png')

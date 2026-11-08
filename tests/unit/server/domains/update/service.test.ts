@@ -30,7 +30,11 @@ function release(tagName: string) {
 describe('update/service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    gateMocks.evaluateSelfUpdateGate.mockReturnValue({ canSelfUpdate: true, reasons: [] })
+    gateMocks.evaluateSelfUpdateGate.mockReturnValue({
+      canSelfUpdate: true,
+      reasons: [],
+      reasonDescriptors: [],
+    })
     releaseMocks.fetchLatestRelease.mockResolvedValue(release('v6.5.0'))
   })
 
@@ -53,14 +57,19 @@ describe('update/service', () => {
     expect(result.updateAvailable).toBe(false)
   })
 
-  it('passes gate refusal reasons through to the check result', async () => {
+  it('passes the gate refusal descriptors through to the check result', async () => {
+    const descriptor = {
+      messageKey: 'update.gate.containerized',
+      fallbackMessage: 'Docker deployments must pull a new image to upgrade.',
+    }
     gateMocks.evaluateSelfUpdateGate.mockReturnValue({
       canSelfUpdate: false,
-      reasons: ['Docker 部署请拉取新镜像升级'],
+      reasons: [descriptor.fallbackMessage],
+      reasonDescriptors: [descriptor],
     })
     const result = await checkForUpdate(db)
     expect(result.canSelfUpdate).toBe(false)
-    expect(result.reasons).toEqual(['Docker 部署请拉取新镜像升级'])
+    expect(result.reasons).toEqual([descriptor])
   })
 
   it('apply starts the job and returns the from/to versions', async () => {
@@ -76,14 +85,29 @@ describe('update/service', () => {
     expect(jobMocks.startUpdateJob).not.toHaveBeenCalled()
   })
 
-  it('apply re-checks the gate and refuses with the joined reasons', async () => {
+  it('apply re-checks the gate and refuses with a descriptor summary + one issue per reason', async () => {
+    const descriptors = [
+      {
+        messageKey: 'update.gate.containerized',
+        fallbackMessage: 'Docker deployments must pull a new image to upgrade.',
+      },
+      {
+        messageKey: 'update.gate.unwritable',
+        fallbackMessage: 'The directory containing the binary is not writable, so the executable cannot be replaced.',
+      },
+    ]
     gateMocks.evaluateSelfUpdateGate.mockReturnValue({
       canSelfUpdate: false,
-      reasons: ['Docker 部署请拉取新镜像升级', '二进制所在目录不可写，无法替换程序文件'],
+      reasons: descriptors.map((descriptor) => descriptor.fallbackMessage),
+      reasonDescriptors: descriptors,
     })
+    // No locale-flavored punctuation is assembled here: the summary is one
+    // typed message and the reasons ride `issues` for the transport to fold.
     await expect(applyUpdate(db)).rejects.toMatchObject({
       code: 'FORBIDDEN',
-      message: 'Docker 部署请拉取新镜像升级；二进制所在目录不可写，无法替换程序文件',
+      message: 'This deployment cannot self-update.',
+      descriptor: { messageKey: 'update.error.gateBlocked' },
+      issues: descriptors,
     })
     expect(jobMocks.startUpdateJob).not.toHaveBeenCalled()
   })

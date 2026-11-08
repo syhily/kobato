@@ -25,9 +25,10 @@ export type ToastTranslator = (id: UiMessageId, params?: ToastMessageParams) => 
  * client/lib (not ui/lib) so client hooks can use it without breaking the
  * boundaries contract.
  *
- * ORPCError messages arrive pre-enriched: the link interceptor in
- * `@/client/api/client` folds a rejection's zod-issue list into
- * `error.message`, so the failing field is named here for free.
+ * ORPCError messages carry the server's localized copy verbatim. The server
+ * folds a descriptor error's issue summary into `error.message` (and ships the
+ * structured `{ descriptor, issues }` in `data`); a legacy bare-array rejection
+ * keeps its server message as-is. The client never re-composes issue text.
  */
 export function toastApiError(
   err: unknown,

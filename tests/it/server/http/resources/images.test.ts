@@ -191,7 +191,12 @@ describe('images resource', () => {
       const res = await requestImages('http://localhost/images/calendar/dark/2026/0424.png')
       expect(res.status).toBe(200)
       expect(res.headers.get('Content-Language')).toBe('zh-TW')
-      expect(renderCalendar).toHaveBeenCalledWith(expect.any(Date), 'dark', 'zh-TW')
+      expect(renderCalendar).toHaveBeenCalledWith(
+        expect.any(Date),
+        'dark',
+        'zh-TW',
+        expect.objectContaining({ siteIdentity: expect.objectContaining({ locale: 'zh-TW' }) }),
+      )
     } finally {
       setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
     }

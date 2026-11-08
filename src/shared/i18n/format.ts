@@ -159,26 +159,85 @@ export interface RelativeTimeOptions {
   unit?: Intl.RelativeTimeFormatUnit
 }
 
-interface LocalParts {
+export interface SiteDateParts {
   year: number
   month: number
   day: number
+  hour: number
+  minute: number
+  second: number
 }
 
-function localParts(date: Date, timeZone: string): LocalParts {
-  const zoned = new TZDate(date, timeZone)
+/**
+ * Calendar fields of an instant in the SITE time zone. The one extraction the
+ * date facade and `shared/utils/formatter`'s primitives share; invalid input
+ * keeps Intl's garbage-in behavior (a RangeError).
+ */
+export function siteDateParts(value: Date | string, timeZone: string): SiteDateParts {
+  const zoned = new TZDate(toDate(value), timeZone)
   if (Number.isNaN(zoned.getTime())) {
     throw new RangeError('Invalid time value')
   }
-  return { year: zoned.getFullYear(), month: zoned.getMonth() + 1, day: zoned.getDate() }
+  return {
+    year: zoned.getFullYear(),
+    month: zoned.getMonth() + 1,
+    day: zoned.getDate(),
+    hour: zoned.getHours(),
+    minute: zoned.getMinutes(),
+    second: zoned.getSeconds(),
+  }
 }
 
-function dayNumber(parts: LocalParts): number {
+function dayNumber(parts: SiteDateParts): number {
   return Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / 86_400_000)
 }
 
-function monthsBetween(from: LocalParts, to: LocalParts): number {
-  return (to.year - from.year) * 12 + (to.month - from.month)
+/**
+ * Monday-based week start as a day number — the ONE week-bucket anchor, so
+ * "N weeks" reads the same everywhere it is rendered.
+ */
+function weekStartDay(parts: SiteDateParts): number {
+  const day = dayNumber(parts)
+  const weekday = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()
+  return day - ((weekday + 6) % 7)
+}
+
+function daysInMonth(year: number, month: number): number {
+  // Day 0 of the following month is the last day of `month` (1-based).
+  return new Date(Date.UTC(year, month, 0)).getUTCDate()
+}
+
+/**
+ * Whole calendar months from `from` to `to`, signed. A month only counts once
+ * the day-of-month is reached (`Jan 30 → Mar 1` is ONE month, not two), and the
+ * anchor day clamps at month end (`Jan 31 → Feb 28` is one month even though
+ * February has no 31st). Year boundaries fall out of the month arithmetic.
+ */
+function monthsBetween(from: SiteDateParts, to: SiteDateParts): number {
+  const months = (to.year - from.year) * 12 + (to.month - from.month)
+  if (months === 0) {
+    return 0
+  }
+  if (months > 0) {
+    const anchorDay = Math.min(from.day, daysInMonth(to.year, to.month))
+    return to.day < anchorDay ? months - 1 : months
+  }
+  const anchorDay = Math.min(to.day, daysInMonth(from.year, from.month))
+  return from.day < anchorDay ? months + 1 : months
+}
+
+/**
+ * Signed whole months for a DISPLAY label. Unlike the exact `monthsBetween`, a
+ * date in another calendar month never rounds to zero: `0 months` would render
+ * as "this month" for a date that is last/next month. Same-month values stay 0
+ * (numeric-auto's "this month" is correct there).
+ */
+function displayMonthsBetween(from: SiteDateParts, to: SiteDateParts): number {
+  const calendarMonths = (to.year - from.year) * 12 + (to.month - from.month)
+  if (calendarMonths === 0) {
+    return 0
+  }
+  return Math.sign(calendarMonths) * Math.max(1, Math.abs(monthsBetween(from, to)))
 }
 
 export interface RelativeValueOptions {
@@ -226,8 +285,8 @@ export function formatRelativeTime(value: Date | string, options: RelativeTimeOp
     return rtf.format(Math.round(elapsedMs / 60_000), 'minute')
   }
 
-  const targetParts = localParts(target, timeZone)
-  const referenceParts = localParts(reference, timeZone)
+  const targetParts = siteDateParts(target, timeZone)
+  const referenceParts = siteDateParts(reference, timeZone)
   const days = dayNumber(referenceParts) - dayNumber(targetParts)
   if (Math.abs(days) < 7) {
     return rtf.format(-days, 'day')
@@ -236,9 +295,63 @@ export function formatRelativeTime(value: Date | string, options: RelativeTimeOp
     return rtf.format(-Math.floor(days / 7), 'week')
   }
   if (Math.abs(days) < 365) {
-    return rtf.format(-monthsBetween(targetParts, referenceParts), 'month')
+    return rtf.format(-displayMonthsBetween(targetParts, referenceParts), 'month')
   }
   return rtf.format(targetParts.year - referenceParts.year, 'year')
+}
+
+/** Calendar days past which a date is no longer labelled relatively. */
+const RECENT_WINDOW_DAYS = 210
+
+export interface RecentDateOptions {
+  locale: AppLocale
+  /** The site time zone used for calendar-day and week-start math. */
+  timeZone: string
+  /** Reference instant; pass the loader's `nowIso` so SSR and hydration agree. */
+  now?: Date | string
+}
+
+/**
+ * Display label for a calendar date. Past values (the post-list case) read
+ * `today` / `yesterday`, then `N days` (2–6), Monday-start-aligned weeks
+ * (7–29) and whole calendar months (30–209); `null` past 210 days lets the
+ * caller render an absolute date in its configured pattern. Future values —
+ * scheduled posts — use `formatRelativeTime`'s forward semantics instead
+ * (`tomorrow`, `in 3 days`, `in 2 weeks`, …), except that a date later the
+ * SAME calendar day is still `today` rather than `N hours from now`.
+ */
+export function formatRecentDate(value: Date | string, options: RecentDateOptions): string | null {
+  const { locale, timeZone, now } = options
+  const reference = now === undefined ? new Date() : toDate(now)
+  const targetParts = siteDateParts(value, timeZone)
+  const referenceParts = siteDateParts(reference, timeZone)
+  const days = dayNumber(referenceParts) - dayNumber(targetParts)
+
+  if (days === 0) {
+    return formatRelativeValue(0, 'day', locale, { numeric: 'auto' })
+  }
+  if (days < 0) {
+    // Future: one definition of forward bucketing (sub-hour apart from today's
+    // same-day case above), so a scheduled date never reads as past `today`.
+    return formatRelativeTime(value, { locale, timeZone, now: reference })
+  }
+  if (days < 2) {
+    return formatRelativeValue(-1, 'day', locale, { numeric: 'auto' })
+  }
+  if (days < 7) {
+    return formatRelativeValue(-days, 'day', locale)
+  }
+  if (days < 30) {
+    const weeks = Math.floor((weekStartDay(referenceParts) - weekStartDay(targetParts)) / 7)
+    return formatRelativeValue(-weeks, 'week', locale)
+  }
+  if (days < RECENT_WINDOW_DAYS) {
+    // The 30-day threshold is fixed, but an unaligned day-of-month can leave
+    // zero whole months at that point; the bucket never reads `0 months`.
+    const months = Math.max(1, displayMonthsBetween(targetParts, referenceParts))
+    return formatRelativeValue(-months, 'month', locale)
+  }
+  return null
 }
 
 type SingularUnit = 'year' | 'quarter' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second'
@@ -265,8 +378,8 @@ const SINGULAR_UNITS = {
 
 function forcedUnitValue(target: Date, reference: Date, unit: Intl.RelativeTimeFormatUnit, timeZone: string): number {
   const elapsedMs = target.getTime() - reference.getTime()
-  const targetParts = localParts(target, timeZone)
-  const referenceParts = localParts(reference, timeZone)
+  const targetParts = siteDateParts(target, timeZone)
+  const referenceParts = siteDateParts(reference, timeZone)
   const days = dayNumber(referenceParts) - dayNumber(targetParts)
   switch (SINGULAR_UNITS[unit]) {
     case 'second':
@@ -280,7 +393,7 @@ function forcedUnitValue(target: Date, reference: Date, unit: Intl.RelativeTimeF
     case 'week':
       return -Math.floor(days / 7)
     case 'month':
-      return -monthsBetween(targetParts, referenceParts)
+      return -displayMonthsBetween(targetParts, referenceParts)
     case 'quarter':
       return -Math.round(monthsBetween(targetParts, referenceParts) / 3)
     case 'year':

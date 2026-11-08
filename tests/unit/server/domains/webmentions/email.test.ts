@@ -88,7 +88,7 @@ describe('webmentions/email — site locale at send time', () => {
       const fresh = lastCall()
       expect(fresh.subject).toBe('New Webmention received')
       expect(fresh.props.title).toBe('New Webmention')
-      expect(fresh.props.preview).toBe('《目标文章标题》received a new Webmention')
+      expect(fresh.props.preview).toBe('"目标文章标题" received a new Webmention')
       expect(fresh.props.contextLine).toEqual({
         label: 'Target post:',
         link: { text: '目标文章标题', href: 'https://example.com/posts/target/' },

@@ -76,6 +76,7 @@ export function PageDetailBody({
             draftMarker={draftMarker}
             postContentRef={postContentRef}
             bodyHtml={bodyHtml}
+            contentLanguage={page.contentLanguage}
             metaClassName="mt-3 mb-4"
             contentWrapperClassName="mt-4 xl:mt-6"
           >

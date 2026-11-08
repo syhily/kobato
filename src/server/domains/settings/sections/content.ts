@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { coerceBoolean, sortOrderSchema } from '@/server/domains/settings/sections/shared'
+import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@/shared/utils/footnotes-section-title'
 
 export const contentSchema = z.object({
   pagination: z.object({
@@ -22,14 +23,14 @@ export const contentSchema = z.object({
     .object({
       sectionTitle: z.string().trim().min(1).max(120),
     })
-    .default({ sectionTitle: '尾声礼记' }),
+    .default({ sectionTitle: DEFAULT_FOOTNOTES_SECTION_TITLE }),
 })
 
 export const contentDefaults = {
   pagination: { posts: 10, category: 10, tags: 10, search: 10 },
   feed: { full: false, size: 20 },
   post: { sort: 'desc' as const, sortBy: 'publishedAt' as const, featureEnabled: false },
-  footnotes: { sectionTitle: '尾声礼记' },
+  footnotes: { sectionTitle: DEFAULT_FOOTNOTES_SECTION_TITLE },
 } as const
 
 export const contentSection = {

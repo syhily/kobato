@@ -25,7 +25,12 @@ function makeApp(options: { role: Role | null; locale?: AppLocale }): Hono {
       makeRequestContext({
         session,
         user,
-        localization: { locale: options.locale ?? 'zh-CN', timeZone: 'UTC' },
+        localization: {
+          locale: options.locale ?? 'zh-CN',
+          timeZone: 'UTC',
+          timeFormat: null,
+          revision: 'boot-test:0000000000',
+        },
       }) as never,
     )
     await next()
@@ -79,7 +84,9 @@ describe('server/http/middlewares/hono-rbac — localized perimeter errors', () 
     app.use('*', async (c, next) => {
       c.set(
         'requestContext' as never,
-        makeRequestContext({ localization: { locale: 'en-US', timeZone: 'UTC' } }) as never,
+        makeRequestContext({
+          localization: { locale: 'en-US', timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' },
+        }) as never,
       )
       c.set('requestId' as never, 'req-legacy' as never)
       await next()

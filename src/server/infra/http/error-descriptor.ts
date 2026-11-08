@@ -12,13 +12,14 @@
 
 import type { z } from 'zod'
 
+import type { ServerTranslator } from '@/server/infra/i18n'
 import type { ErrorIssueWire, ErrorMessageDescriptor, ErrorMessageParams } from '@/shared/contracts/api-error'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { createServerTranslator } from '@/server/infra/i18n'
 import { BASE_LOCALE } from '@/shared/i18n/locales'
 import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
-import { zodIssueBounds } from '@/shared/utils/zod-issue-bounds'
+import { zodIssueParams } from '@/shared/utils/zod-issue-bounds'
 
 /** The passthrough catalog key wrapping a legacy raw message. */
 export const RAW_MESSAGE_KEY = 'error.api.rawMessage'
@@ -61,8 +62,7 @@ export function descriptorFor(messageKey: UiMessageId, params?: ErrorMessagePara
   }
 }
 
-/**
- * Descriptor for a value that MAY be a catalog id: customs Zod messages carry
+/** Descriptor for a value that MAY be a catalog id: customs Zod messages carry
  * ids, while Zod's own default prose stays raw English (documented fallback —
  * standard schema prose is not translated).
  */
@@ -71,38 +71,36 @@ export function messageDescriptor(message: string, params?: ErrorMessageParams):
 }
 
 /**
- * The ICU params a Zod issue carries: numeric `minimum`/`maximum` bounds
- * (`too_small`/`too_big`) and an explicit `params` bag on custom issues
- * (e.g. the password byte ceiling). Scalars only — the wire params are
- * `string | number | boolean | null`.
+ * Resolve a descriptor's display text for one request. An absent translator
+ * (domain-internal construction) answers the English `fallbackMessage`; a
+ * translator answers the request-locale sentence. A key the running catalog
+ * does not know (an old descriptor on a newer build) also falls back — the
+ * message id itself must never reach the wire or the UI.
  */
-function zodIssueParams(issue: z.core.$ZodIssue): ErrorMessageParams | undefined {
-  const bounds = zodIssueBounds(issue)
-  if (bounds !== undefined) {
-    return bounds
+export function descriptorMessage(descriptor: ErrorMessageDescriptor, translator?: ServerTranslator): string {
+  if (translator === undefined || !Object.hasOwn(translator.messages, descriptor.messageKey)) {
+    return descriptor.fallbackMessage
   }
-  if (!('params' in issue) || typeof issue.params !== 'object' || issue.params === null) {
-    return undefined
-  }
-  const params: ErrorMessageParams = {}
-  for (const [key, value] of Object.entries(issue.params)) {
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      params[key] = value
-    }
-  }
-  return Object.keys(params).length === 0 ? undefined : params
+  return translator.format(descriptor.messageKey, descriptor.params)
 }
 
-/** One Zod issue → the wire issue (descriptor + producer code + field path). */
-export function zodIssueToWire(issue: z.core.$ZodIssue): ErrorIssueWire {
+/**
+ * One Zod issue → the wire issue (localized text + descriptor + producer code
+ * + field path). The ICU params (numeric bounds merged with a custom issue's
+ * `params` bag) come from the shared `zodIssueParams`, the same extractor the
+ * client form hook uses.
+ */
+export function zodIssueToWire(issue: z.core.$ZodIssue, translator?: ServerTranslator): ErrorIssueWire {
   const path = issue.path.map(String)
+  const descriptor = messageDescriptor(issue.message, zodIssueParams(issue))
   return {
-    ...messageDescriptor(issue.message, zodIssueParams(issue)),
+    ...descriptor,
+    message: descriptorMessage(descriptor, translator),
     code: issue.code,
     ...(path.length === 0 ? {} : { path }),
   }
 }
 
-export function zodIssuesToWire(issues: readonly z.core.$ZodIssue[]): ErrorIssueWire[] {
-  return issues.map(zodIssueToWire)
+export function zodIssuesToWire(issues: readonly z.core.$ZodIssue[], translator?: ServerTranslator): ErrorIssueWire[] {
+  return issues.map((issue) => zodIssueToWire(issue, translator))
 }

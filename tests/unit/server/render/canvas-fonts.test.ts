@@ -148,6 +148,44 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     expect(mocks.fontsRegister).toHaveBeenCalledWith(newBuffer, 'OPPO Sans')
   })
 
+  it('does not join an in-flight load from a different pinned settings generation', async () => {
+    seedFontFamilies({ og: 'OPPO Sans' })
+    // Hold the OLD generation's read so the newer request arrives mid-flight.
+    let releaseOld!: (buffer: Buffer) => void
+    mocks.readFile.mockImplementationOnce(
+      () =>
+        new Promise<Buffer>((resolve) => {
+          releaseOld = resolve
+        }),
+    )
+
+    const pendingOld = ensureCanvasFont('og')
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(mocks.readFile).toHaveBeenCalledTimes(1)
+
+    // A request pinned to a newer snapshot (different font family) arrives.
+    const newer = {
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      fonts: { ...TEST_BLOG_SETTINGS_BUNDLE.fonts!, og: { family: 'OPPO Serif' } },
+    }
+    const serifBuffer = Buffer.from('serif-ttf')
+    mocks.readFile.mockResolvedValueOnce(serifBuffer)
+    const pendingNew = ensureCanvasFont('og', newer)
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(mocks.readFile).toHaveBeenCalledTimes(2)
+
+    releaseOld(TTF_BUFFER)
+    // The abandoned generation must not commit (its render keeps the fallback).
+    await expect(pendingOld).resolves.toBeNull()
+    await expect(pendingNew).resolves.toEqual({ buffer: serifBuffer, family: 'OPPO Serif' })
+    expect(mocks.fontsRegister).toHaveBeenCalledTimes(1)
+    expect(mocks.fontsRegister).toHaveBeenCalledWith(serifBuffer, 'OPPO Serif')
+
+    // The new family is the live slot for later requests on that generation.
+    mocks.fontsHas.mockImplementation((family) => family === 'OPPO Serif')
+    await expect(ensureCanvasFont('og', newer)).resolves.toEqual({ buffer: serifBuffer, family: 'OPPO Serif' })
+  })
+
   it('resetCanvasFont(slot) clears only that slot', async () => {
     seedFontFamilies({ og: 'OPPO Sans', calendar: 'OPPO Serif' })
     mocks.fontsHas.mockReturnValue(true)

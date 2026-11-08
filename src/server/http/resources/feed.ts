@@ -23,7 +23,7 @@ interface FeedScope {
   tag?: string
 }
 
-// Cache keys are namespaced because category and tag slugs share one slug namespace, and a category slugged `all` would otherwise collide with the site-wide feed. The scope segment is composed with the locale/version inside the registry declaration.
+// Cache keys are namespaced because category and tag slugs share one slug namespace, and a category slugged `all` would otherwise collide with the site-wide feed. The scope segment is composed with locale/version/settings-revision inside the registry declaration.
 function cacheKeyFor(scope: FeedScope): string {
   if (scope.category !== undefined) {
     return `cat:${scope.category}`
@@ -35,15 +35,15 @@ function cacheKeyFor(scope: FeedScope): string {
 }
 
 async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope: FeedScope = {}) {
-  // The request locale is passed EXPLICITLY into the renderer (it drives
-  // `<language>` / `xml:lang`) and into the cache params — never inferred from
-  // whatever the generator happens to read.
-  const locale = c.var.requestContext.localization.locale
+  // ONE lazy capture pins the settings bundle, the locale and the settings
+  // revision: the renderer's inputs and the cache key can never disagree.
+  const { db, settings, localization } = c.var.requestContext
+  const { locale, revisions } = localization
   const feed = await through(
-    c.var.requestContext.db,
+    db,
     'feed',
-    { scope: cacheKeyFor(scope), locale, version: APP_VERSION },
-    () => generateFeeds(c.var.requestContext.db, { ...scope, locale }),
+    { scope: cacheKeyFor(scope), locale, version: APP_VERSION, settingsRevision: revisions.feed },
+    () => generateFeeds(db, { ...scope, locale, settings }),
   )
   const body = kind === 'rss' ? feed.rss : feed.atom
   // ETag over the SERVED bytes: the cached body carries its own `updated`

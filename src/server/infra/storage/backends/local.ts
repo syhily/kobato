@@ -42,12 +42,12 @@ function metaFromStat(key: string, st: { size: number; mtimeMs: number; mtime: D
  */
 export function resolveLocalPath(key: string): string {
   if (key === '' || key.startsWith('/') || UNSAFE_KEY_CHARS.test(key)) {
-    throw new ActionFailure(400, `非法的存储路径: ${key}`)
+    throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
   }
   // `path.resolve` normalises `..` — hence the `isPathInside` re-check.
   const abs = path.resolve(STORAGE_DIR, key)
   if (!isPathInside(abs, STORAGE_DIR)) {
-    throw new ActionFailure(400, `非法的存储路径: ${key}`)
+    throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
   }
   return abs
 }

@@ -1,4 +1,6 @@
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { AdminPageDetailDto, AdminPageDto } from '@/shared/contracts/pages'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -44,6 +46,11 @@ export interface UpsertPageMetaInput {
   showToc?: boolean
   /** Toggle the "Updated on XXXX" secondary timestamp on the public detail page. */
   showUpdated?: boolean
+  /**
+   * Author-declared BCP 47 language of the prose (any well-formed tag).
+   * `null` clears it; omitted leaves the stored value untouched.
+   */
+  contentLanguage?: string | null
   /** Toggle the page-bottom friends grid. */
   showFriends?: boolean
   /** ISO-8601 string; admin date-picker sets this on a re-publish. `null` cancels a pending schedule. */
@@ -66,6 +73,7 @@ export interface PageMetaDraft {
   webmentionsEnabled: boolean
   showToc: boolean
   showUpdated: boolean
+  contentLanguage: string
   showFriends: boolean
   /** `<input type="datetime-local">` value (no timezone). Empty = leave server publishedAt alone. */
   publishedAt: string
@@ -82,6 +90,7 @@ export const EMPTY_PAGE_META_DRAFT: PageMetaDraft = {
   webmentionsEnabled: true,
   showToc: false,
   showUpdated: false,
+  contentLanguage: '',
   showFriends: false,
   publishedAt: '',
 }
@@ -102,40 +111,41 @@ export type PageMetaToggleKey = 'commentsEnabled' | 'webmentionsEnabled' | 'show
 export interface PageMetaToggleField {
   key: PageMetaToggleKey
   id: string
-  label: string
-  description: string
+  /** UI message ids — `ToggleOptionsCard` resolves them with the active locale. */
+  labelId: UiMessageId
+  descriptionId: UiMessageId
 }
 
 export const PAGE_META_TOGGLE_FIELDS: ReadonlyArray<PageMetaToggleField> = [
   {
     key: 'commentsEnabled',
     id: 'page-comments',
-    label: '开启评论',
-    description: '关闭后页面底部不再渲染评论区。',
+    labelId: 'admin.editor.toggle.page.comments.label',
+    descriptionId: 'admin.editor.toggle.page.comments.description',
   },
   {
     key: 'webmentionsEnabled',
     id: 'page-webmentions',
-    label: '显示 Webmention',
-    description: '关闭后页面底部不再渲染「引用与回应」区块（全局开关关闭时亦不渲染）。',
+    labelId: 'admin.editor.toggle.page.webmentions.label',
+    descriptionId: 'admin.editor.toggle.page.webmentions.description',
   },
   {
     key: 'showToc',
     id: 'page-toc',
-    label: '显示目录',
-    description: '启用后右侧会渲染基于二级标题的 TOC。',
+    labelId: 'admin.editor.toggle.page.toc.label',
+    descriptionId: 'admin.editor.toggle.page.toc.description',
   },
   {
     key: 'showUpdated',
     id: 'page-show-updated',
-    label: '显示修改时间',
-    description: '启用后页面正文上方会展示「修改于 XXXX」，否则只展示首次发布时间。',
+    labelId: 'admin.editor.toggle.page.updated.label',
+    descriptionId: 'admin.editor.toggle.page.updated.description',
   },
   {
     key: 'showFriends',
     id: 'page-friends',
-    label: '开启友链',
-    description: '启用后页面正文末尾会追加全站友链网格。',
+    labelId: 'admin.editor.toggle.page.friends.label',
+    descriptionId: 'admin.editor.toggle.page.friends.description',
   },
 ]
 
@@ -179,6 +189,10 @@ export interface RenderMathInput {
 export interface RenderMathOutput {
   /** KaTeX-rendered MathML, or an empty string when KaTeX threw. */
   mathml: string
-  /** Server-side error message when KaTeX refused to render the input. */
-  error: string | null
+  /**
+   * Failure descriptor: `admin.editor.math.renderFailed` for the non-Error
+   * fallback, `error.api.rawMessage` carrying KaTeX's own technical text.
+   * The client's render-math adapter resolves it with the active locale.
+   */
+  error: ErrorMessageDescriptor | null
 }

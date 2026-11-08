@@ -9,6 +9,7 @@ import path from 'node:path'
 import { createGzip } from 'node:zlib'
 
 import type { Database } from '@/server/infra/db/database'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { BackupFileDto } from '@/shared/types/backup'
 
 import { createBackupCipher } from '@/server/domains/backup/services/crypto'
@@ -24,7 +25,7 @@ import {
   listBackupRows,
   listBackupStoragePaths,
 } from '@/server/infra/db/operations/backup'
-import { descriptorFor } from '@/server/infra/http/error-descriptor'
+import { descriptorFor, rawMessageDescriptor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend, allBackends, backendFor } from '@/server/infra/storage/registry'
@@ -147,8 +148,13 @@ export function resetBackupEncryption(): void {
  *  schema rejected that state). The create path lets it propagate; the
  *  restore path declines into the password prompt instead. */
 export class BackupEncryptionMisconfiguredError extends Error {
-  constructor(message: string) {
-    super(message)
+  /** User-facing descriptor; `message` stays the English technical fallback. */
+  readonly descriptor: ErrorMessageDescriptor
+
+  constructor(descriptor: ErrorMessageDescriptor | string) {
+    const resolved = typeof descriptor === 'string' ? rawMessageDescriptor(descriptor) : descriptor
+    super(resolved.fallbackMessage)
+    this.descriptor = resolved
     this.name = 'BackupEncryptionMisconfiguredError'
   }
 }

@@ -51,7 +51,7 @@ describe('update/gate evaluateSelfUpdateGate', () => {
 
   it('allows the happy path (SEA, linux x64, bare metal, writable, release build)', () => {
     const gate = evaluateSelfUpdateGate()
-    expect(gate).toEqual({ canSelfUpdate: true, reasons: [] })
+    expect(gate).toEqual({ canSelfUpdate: true, reasons: [], reasonDescriptors: [] })
   })
 
   it('allows linux arm64', () => {
@@ -71,6 +71,10 @@ describe('update/gate evaluateSelfUpdateGate', () => {
     const gate = evaluateSelfUpdateGate()
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasons.join()).toContain('Linux')
+    expect(gate.reasonDescriptors.map((reason) => reason.messageKey)).toEqual(['update.gate.platform'])
+    expect(gate.reasonDescriptors[0]!.fallbackMessage).toBe(
+      'Self-update is only available for Linux (x64/arm64) binaries.',
+    )
   })
 
   it('refuses unsupported linux arches', () => {
@@ -82,14 +86,15 @@ describe('update/gate evaluateSelfUpdateGate', () => {
     fsMocks.existsSync.mockImplementation((path: string) => path === '/.dockerenv')
     const gate = evaluateSelfUpdateGate()
     expect(gate.canSelfUpdate).toBe(false)
-    expect(gate.reasons).toContain('Docker 部署请拉取新镜像升级')
+    expect(gate.reasons).toEqual(['Docker deployments must pull a new image to upgrade.'])
+    expect(gate.reasonDescriptors[0]!.messageKey).toBe('update.gate.containerized')
   })
 
   it('refuses containerized deployments detected via /proc/1/cgroup', () => {
     fsMocks.readFileSync.mockReturnValue('12:devices:/kubepods/burstable/pod123/abc')
     const gate = evaluateSelfUpdateGate()
     expect(gate.canSelfUpdate).toBe(false)
-    expect(gate.reasons).toContain('Docker 部署请拉取新镜像升级')
+    expect(gate.reasonDescriptors.map((reason) => reason.messageKey)).toEqual(['update.gate.containerized'])
   })
 
   it('treats an unreadable cgroup as not containerized', () => {
@@ -105,14 +110,16 @@ describe('update/gate evaluateSelfUpdateGate', () => {
     })
     const gate = evaluateSelfUpdateGate()
     expect(gate.canSelfUpdate).toBe(false)
-    expect(gate.reasons.join()).toContain('不可写')
+    expect(gate.reasons.join()).toContain('not writable')
+    expect(gate.reasonDescriptors[0]!.messageKey).toBe('update.gate.unwritable')
   })
 
   it('refuses dev builds', () => {
     versionState.value = '6.4.4-dev'
     const gate = evaluateSelfUpdateGate()
     expect(gate.canSelfUpdate).toBe(false)
-    expect(gate.reasons.join()).toContain('开发版本')
+    expect(gate.reasons.join()).toContain('Development builds')
+    expect(gate.reasonDescriptors[0]!.messageKey).toBe('update.gate.devBuild')
   })
 
   it('accumulates every failed check as a reason', () => {
@@ -122,5 +129,23 @@ describe('update/gate evaluateSelfUpdateGate', () => {
     const gate = evaluateSelfUpdateGate()
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasons.length).toBeGreaterThanOrEqual(3)
+    expect(gate.reasonDescriptors.map((reason) => reason.messageKey)).toEqual([
+      'update.gate.notSea',
+      'update.gate.platform',
+      'update.gate.devBuild',
+    ])
+    // Every descriptor keeps an English technical fallback for doctor/logs.
+    for (const reason of gate.reasonDescriptors) {
+      expect(reason.fallbackMessage).toMatch(/[A-Za-z]/)
+    }
+  })
+
+  it('keeps the non-SEA reason in English while the descriptor carries the message id', () => {
+    seaMocks.isSea.mockReturnValue(false)
+    const gate = evaluateSelfUpdateGate()
+    expect(gate.reasons).toEqual([
+      'This deployment is not a single-file SEA binary; upgrade through the package manager or a container image.',
+    ])
+    expect(gate.reasonDescriptors[0]).toMatchObject({ messageKey: 'update.gate.notSea' })
   })
 })

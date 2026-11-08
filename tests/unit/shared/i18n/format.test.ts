@@ -9,8 +9,10 @@ import {
   formatDisplayName,
   formatDuration,
   formatNumber,
+  formatRecentDate,
   formatRelativeTime,
   formatRelativeValue,
+  siteDateParts,
 } from '@/shared/i18n/format'
 
 const INSTANT = '2024-03-05T06:07:08Z'
@@ -77,6 +79,26 @@ describe('shared/i18n/format — relative time', () => {
     expect(formatRelativeTime('2022-06-15T01:00:00+08:00', options)).toBe('2年前')
   })
 
+  it('counts whole months only after the day-of-month is reached', () => {
+    // 30 days, unaligned: one whole month, not the raw two-month difference.
+    expect(formatRelativeTime('2026-01-30T12:00:00+08:00', { ...options, now: '2026-03-01T12:00:00+08:00' })).toBe(
+      '上个月',
+    )
+    // Month-end clamps: Jan 31 + 3 months is Apr 30 (April has no 31st).
+    expect(formatRelativeTime('2026-01-31T12:00:00+08:00', { ...options, now: '2026-04-30T12:00:00+08:00' })).toBe(
+      '3个月前',
+    )
+    // A 30-day gap that has not completed a calendar month is still "last
+    // month", never numeric-auto's "this month".
+    expect(formatRelativeTime('2024-05-16T12:00:00+08:00', options)).toBe('上个月')
+    // …while a gap inside ONE calendar month keeps numeric-auto's "this month".
+    expect(formatRelativeTime('2026-01-01T12:00:00+08:00', { ...options, now: '2026-01-31T12:00:00+08:00' })).toBe(
+      '本月',
+    )
+    // The same day alignment applies forward.
+    expect(formatRelativeTime('2024-07-30T12:00:00+08:00', options)).toBe('下个月')
+  })
+
   it('supports an explicit unit and relative value', () => {
     expect(formatRelativeValue(-3, 'week', 'zh-CN')).toBe('3周前')
     expect(formatRelativeValue(0, 'day', 'en-US', { numeric: 'auto' })).toBe('today')
@@ -111,6 +133,103 @@ describe('shared/i18n/format — relative time', () => {
     // 2024-06-14T23:30Z is already 2024-06-15 07:30 in Shanghai (today).
     expect(formatRelativeTime('2024-06-14T23:30:00Z', options)).toBe('今天')
     expect(formatRelativeTime('2024-06-14T23:30:00Z', { ...options, timeZone: 'UTC' })).toBe('昨天')
+  })
+})
+
+describe('shared/i18n/format — recent-date labels', () => {
+  const reference = '2024-06-15T12:00:00+08:00'
+  const options = { locale: 'zh-CN' as const, timeZone: SHANGHAI, now: reference }
+  const daysAgo = (days: number) => new Date(new Date(reference).getTime() - days * 86_400_000)
+  const daysAhead = (days: number) => new Date(new Date(reference).getTime() + days * 86_400_000)
+
+  it('renders today/yesterday and day counts through the day window', () => {
+    expect(formatRecentDate(daysAgo(0), options)).toBe('今天')
+    expect(formatRecentDate(daysAgo(1), options)).toBe('昨天')
+    expect(formatRecentDate(daysAgo(2), options)).toBe('2天前')
+    expect(formatRecentDate(daysAgo(6), options)).toBe('6天前')
+  })
+
+  it('aligns weeks to Monday starts', () => {
+    expect(formatRecentDate(daysAgo(7), options)).toBe('1周前')
+    expect(formatRecentDate(daysAgo(13), options)).toBe('2周前')
+    expect(formatRecentDate(daysAgo(29), options)).toBe('4周前')
+  })
+
+  it('switches to calendar months at 30 days and stops at 210', () => {
+    expect(formatRecentDate(daysAgo(30), options)).toBe('1个月前')
+    expect(formatRecentDate(daysAgo(209), options)).toBe('6个月前')
+    // Past the window the facade returns null — the caller owns the fallback.
+    expect(formatRecentDate(daysAgo(210), options)).toBeNull()
+    expect(formatRecentDate(daysAgo(2 * 365), options)).toBeNull()
+  })
+
+  it('counts whole months only once the day-of-month is reached', () => {
+    const at = (now: string) => ({ ...options, now })
+    // 30 days, but March 30 has not arrived on March 1 → ONE month, not two.
+    expect(formatRecentDate('2026-01-30T12:00:00+08:00', at('2026-03-01T12:00:00+08:00'))).toBe('1个月前')
+    // The same rule across a year boundary.
+    expect(formatRecentDate('2025-12-31T12:00:00+08:00', at('2026-03-01T12:00:00+08:00'))).toBe('2个月前')
+    // Month-end clamping: Jan 31 + 3 months is Apr 30 (no 31st in April).
+    expect(formatRecentDate('2026-01-31T12:00:00+08:00', at('2026-04-30T12:00:00+08:00'))).toBe('3个月前')
+    // Exactly 30 days with an unaligned day-of-month still reads as one month.
+    expect(formatRecentDate('2024-05-16T12:00:00+08:00', at('2024-06-15T12:00:00+08:00'))).toBe('1个月前')
+    // …and the month bucket never reads "0 months" inside a single 31-day month.
+    expect(formatRecentDate('2026-01-01T12:00:00+08:00', at('2026-01-31T12:00:00+08:00'))).toBe('1个月前')
+  })
+
+  it('labels future (scheduled) dates with forward relative semantics', () => {
+    expect(formatRecentDate(daysAhead(0), options)).toBe('今天')
+    // Later the SAME calendar day stays today — no hour/minute drift.
+    expect(formatRecentDate('2024-06-15T20:00:00+08:00', options)).toBe('今天')
+    expect(formatRecentDate('2024-06-15T12:30:00+08:00', options)).toBe('今天')
+    expect(formatRecentDate(daysAhead(1), options)).toBe('明天')
+    expect(formatRecentDate(daysAhead(3), options)).toBe('3天后')
+    expect(formatRecentDate(daysAhead(7), options)).toBe('下周')
+    expect(formatRecentDate(daysAhead(14), options)).toBe('2周后')
+    expect(formatRecentDate(daysAhead(45), options)).toBe('下个月')
+    expect(formatRecentDate(daysAhead(70), options)).toBe('2个月后')
+    // Forward month alignment: Jan 30 → Mar 1 is one month, not two.
+    expect(formatRecentDate('2026-03-01T12:00:00+08:00', { ...options, now: '2026-01-30T12:00:00+08:00' })).toBe(
+      '下个月',
+    )
+    // Cross-year forward month math.
+    expect(formatRecentDate('2025-01-30T12:00:00+08:00', { ...options, now: '2024-12-15T12:00:00+08:00' })).toBe(
+      '下个月',
+    )
+  })
+
+  it('localizes the labels per locale', () => {
+    expect(formatRecentDate(daysAgo(0), { ...options, locale: 'en-US' })).toBe('today')
+    expect(formatRecentDate(daysAgo(1), { ...options, locale: 'en-US' })).toBe('yesterday')
+    expect(formatRecentDate(daysAgo(0), { ...options, locale: 'zh-HK' })).toBe('今日')
+    expect(formatRecentDate(daysAgo(1), { ...options, locale: 'zh-TW' })).toBe('昨天')
+  })
+
+  it('does calendar-day math in the site zone, not the host zone', () => {
+    // 2024-06-14T23:30Z is already 2024-06-15 07:30 in Shanghai (today).
+    expect(formatRecentDate('2024-06-14T23:30:00Z', options)).toBe('今天')
+    expect(formatRecentDate('2024-06-14T23:30:00Z', { ...options, timeZone: 'UTC' })).toBe('昨天')
+  })
+
+  it('throws RangeError on invalid input', () => {
+    expect(() => formatRecentDate('not-a-date', options)).toThrow(RangeError)
+  })
+})
+
+describe('shared/i18n/format — site date parts', () => {
+  it('extracts calendar fields in the site time zone', () => {
+    expect(siteDateParts('2024-03-05T06:07:08Z', SHANGHAI)).toEqual({
+      year: 2024,
+      month: 3,
+      day: 5,
+      hour: 14,
+      minute: 7,
+      second: 8,
+    })
+  })
+
+  it('throws RangeError on invalid input', () => {
+    expect(() => siteDateParts('not-a-date', SHANGHAI)).toThrow(RangeError)
   })
 })
 

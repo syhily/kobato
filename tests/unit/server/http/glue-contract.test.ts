@@ -101,6 +101,7 @@ describe('glue contract / oRPC bridge projection', () => {
       'requestFacts',
       'responseHeaders',
       'session',
+      'settings',
       'viewer',
     ])
     // The dirty-marking channel must never leak into the oRPC surface (ADR-0003).
@@ -119,6 +120,7 @@ describe('glue contract / request-context projections', () => {
       'markSessionDirty',
       'requestFacts',
       'session',
+      'settings',
       'url',
       'viewer',
     ])

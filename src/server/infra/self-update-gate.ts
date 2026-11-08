@@ -1,14 +1,32 @@
-// Self-update gate — each failed check appends a Chinese admin-facing reason.
+// Self-update gate — each failed check appends one English technical reason
+// (doctor/log output) plus its typed admin-facing descriptor.
 
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { isSea } from '@/server/infra/sea'
 import { APP_VERSION } from '@/shared/config/version'
+import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
+
+export const SELF_UPDATE_GATE_REASON_KEYS = [
+  'update.gate.notSea',
+  'update.gate.platform',
+  'update.gate.containerized',
+  'update.gate.unwritable',
+  'update.gate.devBuild',
+] as const satisfies readonly UiMessageId[]
+
+export type SelfUpdateGateReasonKey = (typeof SELF_UPDATE_GATE_REASON_KEYS)[number]
 
 export interface SelfUpdateGateResult {
   canSelfUpdate: boolean
+  /** English technical text — `kobato doctor`, logs and diagnostics. */
   reasons: string[]
+  /** Typed admin-facing descriptors, resolved by the VersionDialog per locale. */
+  reasonDescriptors: ErrorMessageDescriptor[]
 }
 
 const SUPPORTED_ARCHES = new Set(['x64', 'arm64'])
@@ -27,25 +45,36 @@ function isContainerized(): boolean {
 }
 
 export function evaluateSelfUpdateGate(): SelfUpdateGateResult {
-  const reasons: string[] = []
+  const reasonDescriptors: ErrorMessageDescriptor[] = []
+  const add = (messageKey: SelfUpdateGateReasonKey): void => {
+    // These five keys carry no ICU arguments, so the English baseline value IS
+    // the fallback. Reading the catalog directly keeps this module free of the
+    // server translator/config graph — `sea-cli --version/--help` imports the
+    // gate through `doctor` and must stay side-effect free.
+    reasonDescriptors.push({ messageKey, fallbackMessage: uiMessagesEnUS[messageKey] })
+  }
 
   if (!isSea()) {
-    reasons.push('当前不是单文件二进制（SEA）部署，请通过包管理或容器镜像升级')
+    add('update.gate.notSea')
   }
   if (process.platform !== 'linux' || !SUPPORTED_ARCHES.has(process.arch)) {
-    reasons.push('仅支持 Linux（x64/arm64）平台的二进制自更新')
+    add('update.gate.platform')
   }
   if (isContainerized()) {
-    reasons.push('Docker 部署请拉取新镜像升级')
+    add('update.gate.containerized')
   }
   try {
     accessSync(dirname(process.execPath), constants.W_OK)
   } catch {
-    reasons.push('二进制所在目录不可写，无法替换程序文件')
+    add('update.gate.unwritable')
   }
   if (APP_VERSION.includes('-dev')) {
-    reasons.push('当前为开发版本，不支持自更新')
+    add('update.gate.devBuild')
   }
 
-  return { canSelfUpdate: reasons.length === 0, reasons }
+  return {
+    canSelfUpdate: reasonDescriptors.length === 0,
+    reasons: reasonDescriptors.map((reason) => reason.fallbackMessage),
+    reasonDescriptors,
+  }
 }

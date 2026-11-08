@@ -188,9 +188,10 @@ function checkVfs(binaryPath: string) {
 }
 
 /**
- * `--smoke-intl` is a pure probe: it imports only the locale contract, so it
- * reads no configuration and touches no database. Run it on the bare binary in
- * both managed and service-free modes.
+ * `--smoke-intl` is a pure probe: it imports the locale contract and the
+ * shared display formatter (for the real `formatDuration` output), so it reads
+ * no configuration and touches no database. Run it on the bare binary in both
+ * managed and service-free modes.
  */
 function checkIntl(binaryPath: string) {
   const expected = 'SEA Intl smoke passed: en-US, zh-HK, zh-TW, zh-CN'

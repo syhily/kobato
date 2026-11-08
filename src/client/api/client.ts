@@ -5,8 +5,6 @@ import { RPCLink } from '@orpc/client/fetch'
 
 import type { ApiRouter } from '@/server/http/api-router'
 
-import { enrichApiErrorMessage } from '@/shared/utils/api-error'
-
 const csrfStore = { token: null as string | null }
 
 export function setCsrfToken(token: string) {
@@ -16,6 +14,11 @@ export function setCsrfToken(token: string) {
 /**
  * Typed oRPC client: every `apiRouter` procedure is a strongly-typed async
  * function; errors normalize as `ORPCError`.
+ *
+ * Error copy is folded SERVER-side: a domain error's localized issue summary is
+ * already part of `ORPCError.message` (and the structured descriptor rides
+ * `data`). The client therefore installs no rejection interceptor — re-appending
+ * issues here would duplicate the text and drop the request locale.
  */
 const link = new RPCLink({
   // RPCLink's `new URL(baseUrl)` throws on relative inputs, so resolve `/rpc`
@@ -28,19 +31,6 @@ const link = new RPCLink({
     }
     return h
   },
-  // Validation rejections carry their zod-issue list (`[{ message, path }]`)
-  // in ORPCError.data — fold it into the message here, once, so every
-  // consumer (toasts, error views, logs) names the failing field.
-  interceptors: [
-    async (options) => {
-      try {
-        return await options.next()
-      } catch (error) {
-        enrichApiErrorMessage(error)
-        throw error
-      }
-    },
-  ],
 })
 
 export const orpc: RouterClient<ApiRouter> = createORPCClient(link)

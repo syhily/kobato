@@ -26,6 +26,7 @@ function metaRow(overrides: Partial<PageMetaRow> = {}): PageMetaRow {
     webmentionsEnabled: overrides.webmentionsEnabled ?? true,
     showToc: overrides.showToc ?? false,
     showUpdated: overrides.showUpdated ?? false,
+    contentLanguage: overrides.contentLanguage ?? null,
     showFriends: overrides.showFriends ?? false,
     publishedAt: overrides.publishedAt ?? now,
     publishedRevisionId: overrides.publishedRevisionId ?? null,

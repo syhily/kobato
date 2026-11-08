@@ -1,8 +1,10 @@
 import type { HandlerContext } from '@/server/http/orpc-base'
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { AppLocalization } from '@/shared/i18n/app-localization'
 
 import { extractRequestFacts } from '@/server/http/utils/request-facts'
-import { createLazyAppLocalization } from '@/shared/i18n/app-localization'
+import { createLazyAppSnapshot } from '@/shared/i18n/app-localization'
 
 // Builders for the oRPC `context` argument. Authed procedures gate on
 // `context.viewer` via requireAuth/requireRole; this seeds both the
@@ -19,7 +21,15 @@ export interface MockCtxOptions {
   /** CSRF token the session stub answers for the `csrfToken` key. */
   csrfToken?: string
   db?: Database
+  /** Explicit request-localization projection (partial: missing fields come from the lazy capture). */
+  localization?: LocalizationOverride
+  /** Explicit pinned settings bundle; omitted means the lazy snapshot capture. */
+  settings?: BlogSettingsBundle | null
 }
+
+/** Test-only partial projection: missing representation fields come from the lazy capture. */
+type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
+  Partial<Pick<AppLocalization, 'timeFormat' | 'revision' | 'revisions'>>
 
 function makeSessionStub(user: { id: string; role: string } | undefined, sessionId: string, csrfToken?: string) {
   // Minimal `BlogSession` surface — only the methods orpc-base actually calls.
@@ -49,7 +59,7 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
   )
   // Lazy pair: a HandlerContext built before the snapshot hydrates must not
   // pin the pre-hydration defaults.
-  const lazyLocalization = createLazyAppLocalization()
+  const lazySnapshot = createLazyAppSnapshot()
   return {
     request,
     requestFacts: extractRequestFacts(request),
@@ -58,8 +68,21 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
     db: opts.db ?? ({} as Database),
+    get settings() {
+      return opts.settings === undefined ? lazySnapshot().settings : opts.settings
+    },
     get localization() {
-      return lazyLocalization()
+      if (opts.localization === undefined) {
+        return lazySnapshot().localization
+      }
+      const captured = lazySnapshot().localization
+      return {
+        locale: opts.localization.locale,
+        timeZone: opts.localization.timeZone,
+        timeFormat: opts.localization.timeFormat ?? null,
+        revision: opts.localization.revision ?? captured.revision,
+        revisions: opts.localization.revisions ?? captured.revisions,
+      }
     },
   }
 }
@@ -69,7 +92,7 @@ export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
     opts.url ?? 'http://localhost/rpc',
     opts.cookie === undefined ? undefined : { headers: { Cookie: opts.cookie } },
   )
-  const lazyLocalization = createLazyAppLocalization()
+  const lazySnapshot = createLazyAppSnapshot()
   return {
     request,
     requestFacts: extractRequestFacts(request),
@@ -78,8 +101,21 @@ export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
     db: opts.db ?? ({} as Database),
+    get settings() {
+      return opts.settings === undefined ? lazySnapshot().settings : opts.settings
+    },
     get localization() {
-      return lazyLocalization()
+      if (opts.localization === undefined) {
+        return lazySnapshot().localization
+      }
+      const captured = lazySnapshot().localization
+      return {
+        locale: opts.localization.locale,
+        timeZone: opts.localization.timeZone,
+        timeFormat: opts.localization.timeFormat ?? null,
+        revision: opts.localization.revision ?? captured.revision,
+        revisions: opts.localization.revisions ?? captured.revisions,
+      }
     },
   }
 }

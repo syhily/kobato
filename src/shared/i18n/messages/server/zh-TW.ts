@@ -2,7 +2,7 @@ import type { ServerMessages } from '@/shared/i18n/messages/server/en-US'
 
 export const serverMessagesZhTW = {
   'email.common.automaticNotice': '本郵件由系統自動寄出，無法回覆。',
-  'email.common.copyright': '{siteTitle} © {year}',
+  'email.common.copyright': '<siteLink>{siteTitle}</siteLink> © {year}',
   'email.common.greeting': '你好，{receiver}',
   'email.common.commentHistoryNote': '想要檢視與管理你的所有歷史評論？透過此連結重設密碼登入即可：',
   'email.adminNotification.subject': '您的網站【{siteTitle}】{subject}',

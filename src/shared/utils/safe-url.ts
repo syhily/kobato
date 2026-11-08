@@ -363,41 +363,34 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
 ])
 
 /**
- * Preset mirror options for the admin settings dropdown — full avatar base
- * URLs on allowlisted hosts. The allowlist above stays the superset: a
- * configured mirror outside these presets remains valid and is appended to
- * the dropdown as a custom option by the form.
+ * Preset mirror base URLs — full avatar URLs on allowlisted hosts.
+ *
+ * URLs ONLY: the admin dropdown's labels live in the admin settings layer
+ * (`@/ui/admin/settings/gravatar-mirror-presets`), because this module is part
+ * of the public avatar graph and must not carry workspace catalog ids. The
+ * allowlist above stays the superset: a configured mirror outside these presets
+ * remains valid and is appended to the dropdown as a custom option by the form.
  */
-export const GRAVATAR_MIRROR_PRESETS: ReadonlyArray<{ value: string; labelKey: UiMessageId }> = [
-  {
-    value: 'https://www.gravatar.com/avatar',
-    labelKey: 'admin.settings.comments.avatar.mirrorPreset.gravatarOfficial',
-  },
-  { value: 'https://cn.gravatar.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.gravatarCn' },
-  {
-    value: 'https://secure.gravatar.com/avatar',
-    labelKey: 'admin.settings.comments.avatar.mirrorPreset.gravatarSecure',
-  },
-  { value: 'https://gravatar.loli.net/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.loliNet' },
-  { value: 'https://sdn.geekzu.org/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.geekzu' },
-  { value: 'https://cdn.v2ex.com/gravatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.v2ex' },
-  { value: 'https://cravatar.cn/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.cravatarCn' },
-  { value: 'https://cravatar.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.cravatar' },
-  {
-    value: 'https://seccdn.libravatar.org/gravatarproxy',
-    labelKey: 'admin.settings.comments.avatar.mirrorPreset.libravatarProxy',
-  },
-  { value: 'https://weavatar.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.weavatar' },
-  { value: 'https://gravatar.webp.se/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.webpSe' },
-  { value: 'https://gravatar.zeruns.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.zeruns' },
-  {
-    value: 'https://gravatar.zeruns.tech/avatar',
-    labelKey: 'admin.settings.comments.avatar.mirrorPreset.zerunsTech',
-  },
-  { value: 'https://cdn.sep.cc/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.sepCc' },
-  { value: 'https://gravatar.w3tt.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.w3tt' },
-  { value: 'https://use.sevencdn.com/avatar', labelKey: 'admin.settings.comments.avatar.mirrorPreset.sevenCdn' },
-]
+export const GRAVATAR_MIRROR_URLS = [
+  'https://www.gravatar.com/avatar',
+  'https://cn.gravatar.com/avatar',
+  'https://secure.gravatar.com/avatar',
+  'https://gravatar.loli.net/avatar',
+  'https://sdn.geekzu.org/avatar',
+  'https://cdn.v2ex.com/gravatar',
+  'https://cravatar.cn/avatar',
+  'https://cravatar.com/avatar',
+  'https://seccdn.libravatar.org/gravatarproxy',
+  'https://weavatar.com/avatar',
+  'https://gravatar.webp.se/avatar',
+  'https://gravatar.zeruns.com/avatar',
+  'https://gravatar.zeruns.tech/avatar',
+  'https://cdn.sep.cc/avatar',
+  'https://gravatar.w3tt.com/avatar',
+  'https://use.sevencdn.com/avatar',
+] as const
+
+export type GravatarMirrorUrl = (typeof GRAVATAR_MIRROR_URLS)[number]
 
 /** HTTPS on a known mirror host that is not private — a DNS rebinding
  *  of an allowed name to an internal IP must not slip through. */

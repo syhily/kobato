@@ -36,7 +36,7 @@ export const socialsSchema = z
           code: 'custom',
           path: ['socials', index, 'type'],
           message: socialsValidationMessages.fixedType,
-          params: { network: SOCIAL_NETWORK_META[row.network].label, type: expectedType },
+          params: { network: SOCIAL_NETWORK_META[row.network].brandName, type: expectedType },
         })
       }
       if (seen.has(row.network)) {
@@ -44,7 +44,7 @@ export const socialsSchema = z
           code: 'custom',
           path: ['socials', index, 'network'],
           message: socialsValidationMessages.duplicateNetwork,
-          params: { network: SOCIAL_NETWORK_META[row.network].label },
+          params: { network: SOCIAL_NETWORK_META[row.network].brandName },
         })
       } else {
         seen.add(row.network)

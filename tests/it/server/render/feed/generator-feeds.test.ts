@@ -210,4 +210,45 @@ describe('render/feed/generator — generateFeeds', () => {
     expect(itemCount(result.rss)).toBe(0)
     expect(result.rss).not.toContain('Hello')
   })
+
+  it('renders a different representation when the feed size changes', async () => {
+    for (let i = 0; i < 2; i++) {
+      await seedPost({ slug: `post-${i}`, title: `Post ${i}` })
+    }
+    const withFeedSize = (size: number) => ({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      content: { ...TEST_BLOG_SETTINGS_BUNDLE.content!, feed: { full: false, size } },
+    })
+
+    const small = await generateFeeds(db, { locale: 'zh-CN', settings: withFeedSize(1) })
+    const large = await generateFeeds(db, { locale: 'zh-CN', settings: withFeedSize(2) })
+
+    expect(itemCount(small.rss)).toBe(1)
+    expect(itemCount(large.rss)).toBe(2)
+    expect(small.rss).not.toBe(large.rss)
+  })
+
+  it('renders a different representation when branding changes', async () => {
+    const before = await generateFeeds(db, { locale: 'zh-CN', settings: TEST_BLOG_SETTINGS_BUNDLE })
+    const branded = {
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      assets: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+        branding: {
+          logoSvg: {
+            etag: 'logo-etag',
+            contentType: 'image/svg+xml',
+            size: 42,
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            driver: 'local' as const,
+          },
+        },
+      },
+    }
+
+    const after = await generateFeeds(db, { locale: 'zh-CN', settings: branded })
+
+    expect(after.rss).not.toBe(before.rss)
+    expect(after.rss).toContain(`/logo.svg?v=${Date.parse('2026-01-01T00:00:00.000Z')}`)
+  })
 })

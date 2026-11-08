@@ -69,6 +69,13 @@ jobs:
       # only — the e2e suite needs no services but the extra minutes buy
       # nothing the darwin/win32 smokes don't already cover.
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}"
+      # Real-Chromium journeys (dirty-card flush veto, cross-tab sync, public
+      # composer/hydration). CI uses Playwright's bundled Chromium; local runs
+      # default to the system Chrome channel (see tests/browser/playwright.config.ts).
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run sea:browser "dist-sea/kobato-${{ matrix.target }}"
+        env:
+          KOBATO_BROWSER_CHANNEL: chromium
       # Two checksums ship per target: one over the archive (verified
       # pre-extraction) and one over the raw binary (verified on the
       # extracted file) — the self-update pipeline checks both, so a
@@ -223,6 +230,11 @@ jobs:
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato
       - run: pnpm run sea:e2e dist-sea/kobato
+      # Real-Chromium journeys against the same binary (bundled Chromium on CI).
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run sea:browser dist-sea/kobato
+        env:
+          KOBATO_BROWSER_CHANNEL: chromium
       # deploy-cn reuses THIS binary (push events only; PRs upload nothing).
       - name: Build deb package (deploy artifact)
         if: github.event_name == 'push'

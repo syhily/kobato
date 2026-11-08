@@ -15,13 +15,14 @@ export const handle: RouteHandle = { postFonts: true }
 export const headers = detailHeaders
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller, analyticsEventId } = createSsrCaller({ request, context })
+  const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
 
   const result = await unwrapDetail(
     caller.content.posts.bySlug({
       slug: params.slug,
       ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
     }),
+    localization,
   )
 
   // Comments and webmentions chain off the critical's comment key — known
@@ -40,7 +41,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       draftMarker: result.payload.draftMarker,
       eid: analyticsEventId,
     },
-    { headers: { ETag: result.etag } },
+    { headers: result.etag === null ? undefined : { ETag: result.etag } },
   )
 }
 

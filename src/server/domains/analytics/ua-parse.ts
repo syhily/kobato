@@ -115,6 +115,9 @@ function normalizePlatformHint(hint: string | null | undefined): string | null {
   return unquoted === '' ? null : unquoted
 }
 
+/** English technical fallback; callers with a request locale pass the catalog's label. */
+export const UNKNOWN_UA_LABEL = 'Unknown device'
+
 /**
  * Short session-list label, rendered server-side because the full
  * node-device-detector dataset must never enter the browser bundle. Shares
@@ -124,10 +127,14 @@ function normalizePlatformHint(hint: string | null | undefined): string | null {
  * Browser/OS names run through the same normalization maps as the analytics
  * dimensions so both surfaces spell them identically.
  */
-export function formatUaLabel(ua: string | null | undefined, platformHint?: string | null): string {
+export function formatUaLabel(
+  ua: string | null | undefined,
+  platformHint?: string | null,
+  unknownLabel: string = UNKNOWN_UA_LABEL,
+): string {
   const platform = normalizePlatformHint(platformHint)
   if (!ua) {
-    return platform ?? '未知设备'
+    return platform ?? unknownLabel
   }
 
   const result = detector.detect(ua, {})

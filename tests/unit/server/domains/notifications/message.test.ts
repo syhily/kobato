@@ -181,13 +181,17 @@ describe('notification message — write-time validation', () => {
     ).toThrow(/notification\. namespace/)
   })
 
-  it('rejects HTML in params (the reader renders plain text)', () => {
-    expect(() =>
-      encodeNotificationDescriptor({
-        ...valid,
-        titleParams: { taskKey: '<script>alert(1)</script>' },
-      }),
-    ).toThrow(/must not contain HTML/)
+  it('accepts HTML-shaped plain text in params and persists it verbatim', () => {
+    const encoded = encodeNotificationDescriptor({
+      ...valid,
+      titleParams: { taskKey: '<script>alert(1)</script>' },
+      bodyParams: { message: "Unexpected token '<'" },
+    })
+
+    // Params are opaque text values, not markup: the guard is JSON semantics.
+    expect(encoded.title).toBe('Mail sending was turned off automatically')
+    expect(JSON.parse(encoded.titleParams!)).toEqual({ taskKey: '<script>alert(1)</script>' })
+    expect(JSON.parse(encoded.bodyParams!)).toEqual({ message: "Unexpected token '<'" })
   })
 
   it('rejects a non-finite number and non-JSON values', () => {
@@ -197,11 +201,69 @@ describe('notification message — write-time validation', () => {
     expect(() =>
       encodeNotificationDescriptor({ ...valid, bodyParams: { nested: { fn: (() => 1) as never } } }),
     ).toThrow(/JSON-serializable/)
+    expect(() => encodeNotificationDescriptor({ ...valid, bodyParams: { missing: undefined as never } })).toThrow(
+      /JSON-serializable/,
+    )
   })
 
-  it('accepts nested JSON params', () => {
+  it('rejects class instances and circular structures', () => {
+    expect(() => encodeNotificationDescriptor({ ...valid, titleParams: { when: new Date(0) as never } })).toThrow(
+      /plain JSON object/,
+    )
+
+    const circular: Record<string, unknown> = {}
+    circular.self = circular
+    expect(() => encodeNotificationDescriptor({ ...valid, titleParams: circular as never })).toThrow(
+      /circular reference/,
+    )
+  })
+
+  it('accepts nested JSON params and shared (non-circular) references', () => {
+    const shared = { ok: 1 }
     expect(() =>
-      encodeNotificationDescriptor({ ...valid, bodyParams: { list: [1, 'two', true, null], nested: { ok: 1 } } }),
+      encodeNotificationDescriptor({ ...valid, bodyParams: { list: [1, 'two', true, null], a: shared, b: shared } }),
     ).not.toThrow()
+  })
+})
+
+describe('notification message — HTML-shaped params render as plain text', () => {
+  // A production job error such as `Unexpected token '<'` used to throw inside
+  // notifyAdmins and swallow the whole failure notification. Encoding must
+  // accept it, and every read path must return it literally.
+  const SCRIPT = '<script>alert(1)</script>'
+  const SYNTAX_ERROR = "Unexpected token '<'"
+
+  function encodedRow(): NotificationRow {
+    const descriptor = encodeNotificationDescriptor({
+      titleKey: 'notification.job.failed.title',
+      titleParams: { taskKey: SCRIPT },
+      bodyKey: 'notification.job.failed.body',
+      bodyParams: { taskKey: 'backup', hasError: 'yes', error: SYNTAX_ERROR },
+    })
+    return row({
+      title: descriptor.title,
+      body: descriptor.body,
+      titleKey: descriptor.titleKey,
+      titleParams: descriptor.titleParams,
+      bodyKey: descriptor.bodyKey,
+      bodyParams: descriptor.bodyParams,
+    })
+  }
+
+  it.each(SUPPORTED_LOCALES)('round-trips the literal text through the reader resolver in %s', (locale: AppLocale) => {
+    const stored = encodedRow()
+    const resolved = resolveNotificationMessage(stored, createServerTranslator(locale))
+
+    expect(resolved.title).toContain(SCRIPT)
+    expect(resolved.body).toContain(SYNTAX_ERROR)
+    // The full result (detail view) and its inbox preview share one string.
+    expect(resolved.body.slice(0, 200)).toBe(resolved.body)
+    expect(resolved.body).not.toContain('&lt;')
+  })
+
+  it('keeps the stored English fallback besides the descriptor', () => {
+    const stored = encodedRow()
+    expect(stored.title).toBe(`Background task failed: ${SCRIPT}`)
+    expect(stored.body).toContain(SYNTAX_ERROR)
   })
 })

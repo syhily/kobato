@@ -3,6 +3,7 @@ import { Controller } from 'react-hook-form'
 import type { ContentSettings } from '@/shared/config/types'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
+import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@/shared/utils/footnotes-section-title'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -280,10 +281,10 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
     section: 'content',
     source: content,
     toState: (source) => ({
-      footnotesSectionTitle: source.footnotes?.sectionTitle ?? '尾声礼记',
+      footnotesSectionTitle: source.footnotes?.sectionTitle ?? DEFAULT_FOOTNOTES_SECTION_TITLE,
     }),
     fromState: (state) => ({
-      footnotes: { sectionTitle: state.footnotesSectionTitle.trim() || '尾声礼记' },
+      footnotes: { sectionTitle: state.footnotesSectionTitle.trim() || DEFAULT_FOOTNOTES_SECTION_TITLE },
     }),
   })
 

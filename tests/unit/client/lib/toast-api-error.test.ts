@@ -97,18 +97,35 @@ describe('toastApiError', () => {
     expect(toastMock.error).toHaveBeenCalledWith('Save failed', { description: '保存失败' })
   })
 
-  it('toasts an ORPCError message verbatim — issue folding happens at the link layer', () => {
-    // Real rejections reach the toast with the zod-issue detail already
-    // folded into the message by the link interceptor in
-    // `@/client/api/client`; the toast never inspects `data` itself.
+  it('toasts a descriptor ORPCError message verbatim — issues are folded server-side', () => {
+    // Descriptor rejections ship a request-locale message with the issue
+    // summary already folded in by the server; the toast never inspects `data`.
     const err = new ORPCError('BAD_REQUEST', {
       message: '设置数据无效：resource.maxAttempts：最大尝试次数不能超过 1000',
-      data: [{ message: '最大尝试次数不能超过 1000', path: ['resource', 'maxAttempts'] }],
+      data: {
+        descriptor: { messageKey: 'admin.settings.errors.invalid', fallbackMessage: 'The settings data is invalid' },
+        issues: [
+          {
+            messageKey: 'admin.settings.rateLimit.error.maxAttempts',
+            fallbackMessage: 'The maximum attempts must not exceed 1000',
+            path: ['resource', 'maxAttempts'],
+          },
+        ],
+      },
     })
     toastApiError(err, 'admin.toast.saveFailed', tZhCN)
     expect(toastMock.error).toHaveBeenCalledWith('保存失败', {
       description: '设置数据无效：resource.maxAttempts：最大尝试次数不能超过 1000',
     })
+  })
+
+  it('uses a legacy bare-array rejection’s server message as-is (no client folding)', () => {
+    const err = new ORPCError('BAD_REQUEST', {
+      message: '设置数据无效',
+      data: [{ message: '最大尝试次数不能超过 1000', path: ['resource', 'maxAttempts'] }],
+    })
+    toastApiError(err, 'admin.toast.saveFailed', tZhCN)
+    expect(toastMock.error).toHaveBeenCalledWith('保存失败', { description: '设置数据无效' })
   })
 
   it('ignores non-issue data payloads', () => {

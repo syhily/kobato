@@ -4,46 +4,34 @@ import type { DetailPostShell, DraftMarker, Post } from '@/shared/types/catalog'
 
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
-import { findPostBySlug, findPostEtagInputBySlug } from '@/server/domains/posts/services/single'
-import { etagHeaderMatches, notModifiedResponse, postEtag } from '@/server/infra/http/etag'
+import { findPostBySlug } from '@/server/domains/posts/services/single'
 import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
 import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
 import { canonicalPostPath } from '@/shared/utils/paths'
 
 export interface PostPreviewResult {
-  /** The full post row — the controller needs `bodyHtml`/`bodyState`. */
+  /** The full post row — the controller needs `bodyHtml`/`bodyState` and the published revision. */
   sourcePost: Post
   post: DetailPostShell
-  etag: string
   draftMarker: DraftMarker
 }
 
 // Post-detail pipeline for `content.posts.bySlug`: plain HTTP facts in,
 // thrown Responses out (translated by the controller). Branch order:
-// ETag probe 304 → draft fallback → 404 → alias 301 → full ETag re-check.
+// draft fallback → 404 → alias 301. Revalidation happens in the controller
+// AFTER the payload is assembled — a slim published_at probe cannot know
+// whether the sidebar, tags or likes changed.
 export async function loadPostPreview({
   db,
   slug,
   viewer,
-  ifNoneMatch,
 }: {
   db: Database
   slug: string
   /** Viewer identity for the draft-preview gate (`undefined`/`null` = anonymous). */
   viewer: ViewerIdentity | null | undefined
-  ifNoneMatch: string | null | undefined
 }): Promise<PostPreviewResult> {
-  // Slim ETag probe answers repeat requests before the full load; alias
-  // hits fall through so the canonical 301 still fires.
-  const etagInput = await findPostEtagInputBySlug(db, slug)
-  if (etagInput?.slug === slug) {
-    const probeEtag = postEtag(etagInput.id, etagInput.publishedAt)
-    if (etagHeaderMatches(ifNoneMatch, probeEtag)) {
-      throw notModifiedResponse(probeEtag)
-    }
-  }
-
   let sourcePost = (await findPostBySlug(db, slug)) ?? undefined
   let draftMarker: DraftMarker = null
 
@@ -67,14 +55,5 @@ export async function loadPostPreview({
     redirectPermanent(canonical)
   }
 
-  const post = toDetailPostShell(clientPost)
-
-  // Same builder as the early probe above (id + publishedAt) — probe and
-  // full share `postEtag`, so repeat visits keep hitting the same 304.
-  const etag = postEtag(clientPost.id, post.updated)
-  if (etagHeaderMatches(ifNoneMatch, etag)) {
-    throw notModifiedResponse(etag)
-  }
-
-  return { sourcePost, post, etag, draftMarker }
+  return { sourcePost, post: toDetailPostShell(clientPost), draftMarker }
 }

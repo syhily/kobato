@@ -10,7 +10,7 @@ describe('honeypotField', () => {
 
     expect(schema.parse({})).toEqual({ subtitle: '' })
     expect(schema.safeParse({ subtitle: 'spam' }).error?.issues).toEqual([
-      expect.objectContaining({ path: ['subtitle'], message: '输入数据无效。' }),
+      expect.objectContaining({ path: ['subtitle'], message: 'validation.form.invalidInput' }),
     ])
   })
 

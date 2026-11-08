@@ -181,14 +181,14 @@ export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?:
     <Card className="gap-4 py-5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          {task.label}
+          {t(task.label)}
           <Badge variant={meta.variant}>{t(meta.labelId)}</Badge>
         </CardTitle>
-        <p className="text-sm text-muted-foreground">{task.description}</p>
+        <p className="text-sm text-muted-foreground">{t(task.description)}</p>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-        <p>{t('admin.tasks.schedule', { hint: task.scheduleHint })}</p>
+        <p>{t('admin.tasks.schedule', { hint: t(task.scheduleHint) })}</p>
 
         {task.kind === 'scheduled' && task.liveState !== null && (
           <p>
@@ -225,7 +225,7 @@ export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?:
             render={<Link to={capabilities.link.to}>{t(capabilities.link.labelId)}</Link>}
           />
         )}
-        {task.kind !== 'queue' && <RunHistorySheet taskKey={task.taskKey} taskLabel={task.label} />}
+        {task.kind !== 'queue' && <RunHistorySheet taskKey={task.taskKey} taskLabel={t(task.label)} />}
       </CardFooter>
     </Card>
   )

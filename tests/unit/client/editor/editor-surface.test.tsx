@@ -9,6 +9,7 @@
 // @vitest-environment happy-dom
 
 import { act, render, renderHook } from '@testing-library/react'
+import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { InklingComposerProps } from '@/inkling'
@@ -22,16 +23,14 @@ import {
   type EditorSurfaceComposerProps,
   useEditorSurface,
 } from '@/client/editor/editor-surface'
-import { kobatoInklingLabels } from '@/client/editor/inkling-labels'
+import { inklingLabelsFor } from '@/shared/i18n/inkling-labels'
 import { THEME_COOKIE } from '@/shared/utils/theme-cookie'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 const composerProps: { current: InklingComposerProps | null } = { current: null }
 
 vi.mock('@/inkling', () => ({
-  // The labels baseline module reads DEFAULT_LABELS off the barrel; the mock
-  // keeps the key shape without loading the real editor island.
-  DEFAULT_LABELS: new Proxy({}, { get: (_target, key) => `en:${String(key)}` }),
+  // The composer is the observable boundary; the real editor island stays out.
   InklingComposer: vi.fn((props: InklingComposerProps) => {
     composerProps.current = props
     return props.children
@@ -48,30 +47,39 @@ type ComposerDeltas = Omit<EditorSurfaceComposerProps, 'nodes' | 'initialEditorS
 function renderComposer(deltas: ComposerDeltas = {}, locale: AppLocale = 'zh-CN') {
   const nodes = [] as EditorSurfaceComposerProps['nodes']
   const seed = emptyLexicalBody()
-  render(
-    wrapWithI18n(
-      <ThemeProvider>
-        <EditorSurfaceComposer nodes={nodes} initialEditorState={seed} {...deltas}>
-          <div data-testid="surface-child" />
-        </EditorSurfaceComposer>
-      </ThemeProvider>,
-      { locale },
-    ),
-  )
+  const routes: RouteObject[] = [
+    {
+      id: 'root',
+      path: '*',
+      element: wrapWithI18n(
+        <ThemeProvider>
+          <EditorSurfaceComposer nodes={nodes} initialEditorState={seed} {...deltas}>
+            <div data-testid="surface-child" />
+          </EditorSurfaceComposer>
+        </ThemeProvider>,
+        { locale },
+      ),
+    },
+  ]
+  // The labels ride the root loader's i18n payload (one locale, as data).
+  const router = createMemoryRouter(routes, {
+    hydrationData: { loaderData: { root: { i18n: { locale, inklingLabels: inklingLabelsFor(locale) } } } },
+  })
+  render(<RouterProvider router={router} />)
   return { nodes, seed }
 }
 
 describe('client/editor/EditorSurfaceComposer — host constants', () => {
   it('injects the active locale labels, word-count language and theme-driven darkMode', () => {
     renderComposer()
-    expect(composerProps.current?.labels).toBe(kobatoInklingLabels('zh-CN'))
+    expect(composerProps.current?.labels).toBe(inklingLabelsFor('zh-CN'))
     expect(composerProps.current?.wordCountLanguage).toBe('zh-CN')
     expect(composerProps.current?.darkMode).toBe(false)
   })
 
   it('switches the labels and the word-count language with the locale', () => {
     renderComposer({}, 'en-US')
-    expect(composerProps.current?.labels).toBe(kobatoInklingLabels('en-US'))
+    expect(composerProps.current?.labels).toBe(inklingLabelsFor('en-US'))
     expect(composerProps.current?.wordCountLanguage).toBe('en-US')
   })
 

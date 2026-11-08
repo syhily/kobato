@@ -5,56 +5,41 @@ import type { DetailPageShell, DraftMarker, Page } from '@/shared/types/catalog'
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { isLive } from '@/server/domains/content/schemas/live-gate'
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
-import { findPageBySlug, findPageEtagInputBySlug } from '@/server/domains/pages/services/public-query'
+import { findPageBySlug } from '@/server/domains/pages/services/public-query'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
-import { etagHeaderMatches, notModifiedResponse, pageEtag } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
 
 export interface PagePreviewResult {
   page: DetailPageShell
-  /** The full page row — the controller needs `bodyHtml`/`bodyState` and friends. */
+  /** The full page row — the controller needs `bodyHtml`/`bodyState` and the published revision. */
   sourcePage: Page
   showFriends: boolean
   draftMarker: DraftMarker
-  publicEtag: string | null
 }
 
 // Page-detail pipeline for `content.pages.bySlug`: plain HTTP facts in,
-// thrown Responses out (translated by the controller).
+// thrown Responses out (translated by the controller). Revalidation happens
+// in the controller AFTER the payload is assembled; draft previews never
+// carry a published ETag at all.
 export async function loadPagePreview({
   db,
   slug,
   wantsDraftPreview,
   viewer,
-  ifNoneMatch,
 }: {
   db: Database
   slug: string
   wantsDraftPreview: boolean
   /** Viewer identity for the draft-preview gate (`undefined`/`null` = anonymous). */
   viewer: ViewerIdentity | null | undefined
-  ifNoneMatch: string | null | undefined
 }): Promise<PagePreviewResult> {
-  // findPublicPostMetaBySlug is sync (node:sqlite); the probe and
-  // findPageBySlug stay async — no Promise.all needed.
+  // findPublicPostMetaBySlug is sync (node:sqlite); findPageBySlug stays async.
   const postMeta = findPublicPostMetaBySlug(db, slug)
 
   // Live post slug → canonical 301 (only live posts appear in the catalog).
   if (postMeta !== null && isLive(postMeta)) {
     redirectPermanent(`/posts/${slug}`)
-  }
-
-  // Slim ETag probe answers repeat requests before the full load; draft
-  // previews skip it — the published ETag must not 304 a swapped body.
-  if (!wantsDraftPreview) {
-    const etagInput = await findPageEtagInputBySlug(db, slug)
-    if (etagInput !== null) {
-      const probeEtag = pageEtag(etagInput.id, etagInput.publishedRevisionId, etagInput.publishedAt)
-      if (etagHeaderMatches(ifNoneMatch, probeEtag)) {
-        throw notModifiedResponse(probeEtag)
-      }
-    }
   }
 
   const page = await findPageBySlug(db, slug)
@@ -88,13 +73,6 @@ export async function loadPagePreview({
     notFound()
   }
 
-  // Same builder as the early probe — repeat visits keep hitting the same 304.
-  const publicEtag =
-    draftMarker === null ? pageEtag(sourcePage.id, sourcePage.publishedRevisionId, sourcePage.updated) : null
-  if (publicEtag !== null && etagHeaderMatches(ifNoneMatch, publicEtag)) {
-    throw notModifiedResponse(publicEtag)
-  }
-
   const pageProjection: DetailPageShell = {
     id: sourcePage.id,
     slug: sourcePage.slug,
@@ -111,6 +89,7 @@ export async function loadPagePreview({
     comments: sourcePage.comments,
     toc: sourcePage.toc,
     showUpdated: sourcePage.showUpdated,
+    contentLanguage: sourcePage.contentLanguage,
     headings: sourcePage.headings,
   }
 
@@ -119,6 +98,5 @@ export async function loadPagePreview({
     sourcePage,
     showFriends: sourcePage.showFriends,
     draftMarker,
-    publicEtag,
   }
 }

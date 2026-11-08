@@ -9,7 +9,9 @@
  *
  * `SCAN_ROOTS` is the FINAL scope: the whole production tree (`src/**`, one
  * root). Every exemption is an exact file/rule (+ snippet where the file holds
- * more than one finding) entry with a written reason.
+ * more than one finding) entry with a written reason. Whole-file data libraries
+ * (the vendored quote bank, the emergency fallback catalog) are not allowlisted
+ * at all — they are excluded before the parser runs.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -29,7 +31,8 @@ const SCAN_ROOTS = ['src'] as const
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   // The locale module names every supported tag and alias by design — it IS
   // the single source of truth the rule checks against.
-  { path: 'src/shared/i18n/locales.ts', rules: ['hardcoded-locale'] },
+  // Endonyms are deliberately each locale's own script, never translated.
+  { path: 'src/shared/i18n/locales.ts', rules: ['hardcoded-locale', 'han-literal'] },
   // The catalog aggregator keys its per-locale maps and its English fallback
   // by tag; those literals are the catalog identity, not UI copy.
   { path: 'src/shared/i18n/catalog.ts', rules: ['hardcoded-locale'] },
@@ -72,9 +75,14 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/ui/admin/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'K' },
   { path: 'src/ui/admin/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
   { path: 'src/ui/admin/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
-  // Step 4f: the editor slices' technical tokens. `inkling-labels.ts` maps each
-  // app locale onto its label table — the tags ARE that mapping's identity. The
+  // Step 4f: the editor slices' technical tokens. The locale→table aggregator
+  // keys its map by locale tag — the tags ARE that mapping's identity. The
+  // label tables themselves are a copy store (the editor chrome's catalog; the
+  // scanner exempts `inkling-labels/` from han-literal by design). The
   // revision-number sigil and the image-dimension separator are glyphs, not copy.
+  { path: 'src/shared/i18n/inkling-labels.ts', rules: ['hardcoded-locale'] },
+  // The client's dynamic `locale → label-table import` map: the tags are the
+  // mapping's identity (the counterpart of the aggregator above), not copy.
   { path: 'src/client/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
   { path: 'src/ui/admin/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
   { path: 'src/ui/admin/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
@@ -94,7 +102,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/server/domains/webmentions/verify.ts', rules: ['domain-error'] },
   // Step 5c: these maps ARE the locale identity (calendar copy / default font
   // chains) — the exact tags are their contract, not UI copy to translate.
-  { path: 'src/server/render/calendar/locale.ts', rules: ['hardcoded-locale'] },
+  { path: 'src/server/render/calendar/locale.ts', rules: ['hardcoded-locale', 'han-literal'] },
   { path: 'src/shared/config/font-stacks.ts', rules: ['hardcoded-locale'] },
   // Producer guard: both a category AND a tag filter is a programming error,
   // never reachable from the public feed URLs. Technical diagnostic, kept raw.
@@ -136,18 +144,47 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/shared/slug-char-map.ts', rules: ['hardcoded-locale'] },
   // The SEA Intl probe's expectation table is KEYED by the locale identity — the
   // tags are the probe's index and the expected ICU output is technical data.
-  { path: 'src/server/infra/intl-probe.ts', rules: ['hardcoded-locale'] },
+  { path: 'src/server/infra/intl-probe.ts', rules: ['hardcoded-locale', 'han-literal'] },
+  // CLI stderr/doctor output: operator-facing technical diagnostics, never a
+  // browser string (the command-line tool keeps its historical Chinese text).
+  { path: 'src/server/infra/config.ts', rules: ['han-literal'] },
+  { path: 'src/server/infra/binary-rollback.ts', rules: ['han-literal'] },
+  // Slash-menu search aliases: match keys, never rendered as interface copy.
+  { path: 'src/shared/lexical/cards/menu-matches.ts', rules: ['han-literal'] },
+  // Default content seeds and the content projection are spec'd as
+  // untranslatable (they are stored/rendered content, not app chrome).
+  { path: 'src/shared/lexical/cards/solution.ts', rules: ['han-literal'], text: '解：' },
+  {
+    path: 'src/shared/lexical/projection-state.ts',
+    rules: ['han-literal'],
+    text: '🎵 此文章包含音乐播放器，请访问原文收听。',
+  },
+  { path: 'src/shared/utils/footnotes-section-title.ts', rules: ['han-literal'], text: '尾声礼记' },
+  // Social rows seed user-editable content: the pre-i18n names stay verbatim
+  // (the UI labels are `labelId`; `brandName` carries the locale-neutral form).
+  { path: 'src/shared/config/socials.ts', rules: ['han-literal'], text: '微博' },
+  { path: 'src/shared/config/socials.ts', rules: ['han-literal'], text: '微信' },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
   return scanSourceForI18nLiterals(source, file).map((violation) => violation.rule)
 }
 
+// Parsing the whole tree is the expensive part; both full-tree assertions read
+// the SAME result (the second only needs `scannedFiles`).
+let productionScan: ReturnType<typeof scanI18nLiterals> | null = null
+function scanProduction(): ReturnType<typeof scanI18nLiterals> {
+  productionScan ??= scanI18nLiterals({ roots: SCAN_ROOTS, allowlist: ALLOWLIST })
+  return productionScan
+}
+
 describe('production sources', () => {
-  it('carry no hardcoded UI copy anywhere in the production tree', () => {
-    const result = scanI18nLiterals({ roots: SCAN_ROOTS, allowlist: ALLOWLIST })
+  it('carry no hardcoded UI copy anywhere in the production tree', { timeout: 300_000 }, () => {
+    const result = scanProduction()
 
     expect(result.scannedFiles.length).toBeGreaterThan(0)
+    // Every rule — including the residual-audit `han-literal` — covers the
+    // WHOLE production tree; the only escapes are the exact entries below.
     expect(result.violations).toEqual([])
     // The allowlist is exact: each entry names the file, the rule and (where a
     // file carries several findings) the exact snippet — see ALLOWLIST.
@@ -179,7 +216,8 @@ describe('production sources', () => {
         'src/ui/admin/shared/SearchShortcutHint.tsx',
         'src/ui/admin/users/UserDetailView.tsx',
         'src/ui/admin/users/UserEditForm.tsx',
-        // Step 4f slice: the locale→label-table map and the two glyph sites.
+        // Step 4f slice: the locale→label-table maps and the two glyph sites.
+        'src/shared/i18n/inkling-labels.ts',
         'src/client/editor/inkling-labels.ts',
         'src/ui/admin/editor-shell/RevisionsDrawer.tsx',
         'src/ui/admin/editor/pickers/ImageLibraryPicker.tsx',
@@ -204,12 +242,32 @@ describe('production sources', () => {
         'src/server/domains/settings/services/admin-projection.ts',
         'src/shared/slug-char-map.ts',
         'src/server/infra/intl-probe.ts',
+        'src/server/infra/config.ts',
+        'src/server/infra/binary-rollback.ts',
+        'src/shared/lexical/cards/menu-matches.ts',
+        'src/shared/lexical/cards/solution.ts',
+        'src/shared/lexical/projection-state.ts',
+        'src/shared/utils/footnotes-section-title.ts',
+        'src/shared/config/socials.ts',
       ]),
     )
   })
 
-  it('reaches every file under the roots, including nested catalogs', () => {
-    const { scannedFiles } = scanI18nLiterals({ roots: SCAN_ROOTS })
+  it('excludes whole-file content libraries before reading or parsing them', () => {
+    const { skippedFiles, scannedFiles } = scanProduction()
+
+    // The vendored quote bank and the emergency fallback catalog are data, not
+    // chrome: they are reached under the roots but never parsed, so neither
+    // needs an allowlist entry.
+    expect(skippedFiles).toEqual(['src/server/render/calendar/local-quotes.ts', 'src/shared/i18n/fallback-messages.ts'])
+    // Skipped means not scanned: the quote bank never reaches the parser, so
+    // its thousands of quotes need no allowlist exemption either.
+    expect(scannedFiles).not.toContain('src/server/render/calendar/local-quotes.ts')
+    expect(scannedFiles).not.toContain('src/shared/i18n/fallback-messages.ts')
+  })
+
+  it('reaches every file under the roots, including nested catalogs', { timeout: 120_000 }, () => {
+    const { scannedFiles } = scanProduction()
 
     expect(scannedFiles).toContain('src/shared/i18n/locales.ts')
     expect(scannedFiles).toContain('src/shared/i18n/messages/ui/en-US.ts')
@@ -449,6 +507,58 @@ describe('scanner rules', () => {
 
     expect(violation?.line).toBe(2)
     expect(violation?.column).toBeGreaterThan(1)
+  })
+
+  it('reports the exact line and column of every hit', () => {
+    const source = [
+      'type A = 1',
+      '',
+      'export const tag = "zh-CN"', // opening quote at column 20
+      'export const other = `zh-TW`', // opening backtick at column 22
+      "'zh-HK'", // a hit at the very start of a line
+      '',
+      'export function C() {',
+      '  return <p>保存</p>', // JSX text at column 13
+      '}',
+    ].join('\n')
+
+    expect(scanSourceForI18nLiterals(source, 'fixture.tsx')).toEqual([
+      { rule: 'hardcoded-locale', file: 'fixture.tsx', line: 3, column: 20, text: 'zh-CN' },
+      { rule: 'hardcoded-locale', file: 'fixture.tsx', line: 4, column: 22, text: 'zh-TW' },
+      { rule: 'hardcoded-locale', file: 'fixture.tsx', line: 5, column: 1, text: 'zh-HK' },
+      { rule: 'jsx-text', file: 'fixture.tsx', line: 8, column: 13, text: '保存' },
+    ])
+  })
+
+  it('skips a content store before the parser sees it', () => {
+    // Invalid syntax would throw in `parseAst`; a content store must never
+    // reach it, so the same text is silently (and deliberately) not scanned.
+    const invalid = 'this is not valid TypeScript {{{'
+    expect(() => scanSourceForI18nLiterals(invalid, 'src/not-a-content-store.ts')).toThrow()
+    expect(scanSourceForI18nLiterals(invalid, 'src/server/render/calendar/local-quotes.ts')).toEqual([])
+    expect(scanSourceForI18nLiterals(invalid, 'src/shared/i18n/fallback-messages.ts')).toEqual([])
+  })
+
+  // No wall-clock assertion: the fixture is big enough (thousands of hits late
+  // in a multi-megabyte file) that the old per-hit rescan from offset 0 would
+  // take quadratic time and time out, while the binary-searched line index
+  // stays linear. Correctness of every position is asserted instead.
+  it('stays fast on a large file with thousands of late hits', { timeout: 60_000 }, () => {
+    const lineCount = 10_000
+    const padding = 'x'.repeat(180)
+    const lines = Array.from({ length: lineCount }, (_, index) => `export const v${index} = 'en' // ${padding}`)
+    const violations = scanSourceForI18nLiterals(lines.join('\n'), 'fixture.ts')
+
+    expect(violations).toHaveLength(lineCount)
+    for (const index of [0, 1, lineCount / 2, lineCount - 1]) {
+      expect(violations[index]).toEqual({
+        rule: 'hardcoded-locale',
+        file: 'fixture.ts',
+        line: index + 1,
+        column: lines[index].indexOf("'en'") + 1,
+        text: 'en',
+      })
+    }
   })
 })
 

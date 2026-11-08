@@ -5,6 +5,7 @@ import { createContext } from 'react-router'
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { Role } from '@/shared/utils/roles'
 
@@ -26,7 +27,15 @@ export interface RequestContext {
   db: Database
   cspNonce: string
   /**
-   * UI locale + site time zone, resolved from the settings snapshot.
+   * The request's PINNED settings bundle — captured together with
+   * `localization` on the first access of either getter, then frozen for the
+   * rest of the request. Renderers take their inputs from here so the bytes
+   * they produce match the `revision` in the cache key.
+   */
+  readonly settings: BlogSettingsBundle | null
+  /**
+   * UI locale + site time zone (+ `timeFormat` and the settings `revision`),
+   * resolved from the same pinned snapshot as `settings`.
    *
    * Lazily memoized: this context is derived BEFORE `buildLoadContext` awaits
    * `hydrateBlogSettings`, and only loaders/controllers read it — so first

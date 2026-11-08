@@ -1,4 +1,4 @@
-import type { JobRunStatus, JobSummaryDto, TaskGroup } from '@/shared/contracts/jobs'
+import type { JobRunErrorCode, JobRunStatus, JobSummaryDto, TaskGroup } from '@/shared/contracts/jobs'
 import type { StorageMigrationStatus } from '@/shared/contracts/storage'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { BadgeProps } from '@/ui/components/badge'
@@ -57,6 +57,21 @@ export const STATUS_META: Record<TaskStatus, StatusMeta> = {
 export const RUN_STATUS_META: Record<JobRunStatus, StatusMeta> = {
   ...SHARED_STATUS_META,
   success: { labelId: 'admin.tasks.status.success', variant: 'secondary' },
+}
+
+// System-generated `job_run.error` machine codes → UI labels. Any other error
+// string is a stored technical message (including pre-code Chinese rows) and
+// renders verbatim, so a known code is the ONLY thing the UI translates.
+export const JOB_RUN_ERROR_LABEL_IDS: Record<JobRunErrorCode, UiMessageId> = {
+  'process-restart': 'admin.tasks.history.error.processRestart',
+}
+
+function isJobRunErrorCode(value: string): value is JobRunErrorCode {
+  return Object.hasOwn(JOB_RUN_ERROR_LABEL_IDS, value)
+}
+
+export function jobRunErrorLabelId(error: string | null): UiMessageId | null {
+  return error !== null && isJobRunErrorCode(error) ? JOB_RUN_ERROR_LABEL_IDS[error] : null
 }
 
 // Migration phase → badge status + progress copy, single lookup table.

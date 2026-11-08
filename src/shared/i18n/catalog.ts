@@ -13,13 +13,20 @@
 //   · every select covers the baseline's option values.
 // A violation throws {@link CatalogValidationError}; `shared/` has no logger,
 // so the root-loader / server-translator boundaries catch, log, and degrade.
+//
+// Scope: `content.bootstrap` ships `uiMessagesForScope(locale, scope)` — the
+// workspace catalog for /admin + /editor, and the `admin.*`-free public subset
+// everywhere else (see `catalog-scope`). Every returned catalog is memoized per
+// `locale:scope` and frozen, so callers share one object and cannot mutate it.
 
 import { TYPE, parse, type MessageFormatElement } from '@formatjs/icu-messageformat-parser'
 
+import type { CatalogScope } from '@/shared/i18n/catalog-scope'
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { ServerMessages } from '@/shared/i18n/messages/server/en-US'
 import type { UiMessages } from '@/shared/i18n/messages/ui/en-US'
 
+import { isPublicMessageKey } from '@/shared/i18n/catalog-scope'
 import { BASE_LOCALE, SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 import { serverMessagesEnUS } from '@/shared/i18n/messages/server/en-US'
 import { serverMessagesZhCN } from '@/shared/i18n/messages/server/zh-CN'
@@ -54,15 +61,49 @@ const SERVER_CATALOGS = {
 } as const satisfies Record<AppLocale, ServerMessages>
 
 /**
- * The locale's UI catalog merged over the English baseline. The type already
- * proves completeness; the merge is the runtime safety net for a catalog
- * patched outside the type system.
+ * The UI messages one document can render: the full catalog for the workspace,
+ * the allowlisted public namespaces for every other pathname. Readonly — every
+ * caller shares the frozen memoized object and must never mutate it.
+ */
+export type ScopedUiMessages = Readonly<Record<string, string>>
+
+/**
+ * The locale's UI catalog merged over the English baseline, restricted to the
+ * messages a document scope actually renders. Memoized per `locale:scope`: the
+ * payload the root loader serializes is the SAME frozen object on every
+ * request, and a caller that tried to patch it would throw instead of leaking
+ * one request's edit into the next.
+ */
+const SCOPE_CACHED_UI_CATALOGS = new Map<string, ScopedUiMessages>()
+
+/** The workspace scope always names the complete catalog. */
+export function uiMessagesForScope(locale: AppLocale, scope: 'workspace'): UiMessages
+export function uiMessagesForScope(locale: AppLocale, scope: CatalogScope): ScopedUiMessages
+export function uiMessagesForScope(locale: AppLocale, scope: CatalogScope): ScopedUiMessages {
+  const cacheKey = `${locale}:${scope}`
+  const cached = SCOPE_CACHED_UI_CATALOGS.get(cacheKey)
+  if (cached !== undefined) {
+    return cached
+  }
+  // The baseline itself stays the shared module object (workspace default), and
+  // the merged zh catalogs are the cheap spread every caller already did.
+  const full: Record<string, string> =
+    locale === BASE_LOCALE ? uiMessagesEnUS : { ...uiMessagesEnUS, ...UI_CATALOGS[locale] }
+  const value: Record<string, string> =
+    scope === 'public' ? Object.fromEntries(Object.entries(full).filter(([key]) => isPublicMessageKey(key))) : full
+  Object.freeze(value)
+  SCOPE_CACHED_UI_CATALOGS.set(cacheKey, value)
+  return value
+}
+
+/**
+ * The locale's complete UI catalog merged over the English baseline. The type
+ * already proves completeness; the merge is the runtime safety net for a
+ * catalog patched outside the type system. Frozen and memoized — callers share
+ * the object and must not modify it.
  */
 export function uiMessagesFor(locale: AppLocale): UiMessages {
-  if (locale === BASE_LOCALE) {
-    return uiMessagesEnUS
-  }
-  return { ...uiMessagesEnUS, ...UI_CATALOGS[locale] }
+  return uiMessagesForScope(locale, 'workspace')
 }
 
 export function serverMessagesFor(locale: AppLocale): ServerMessages {

@@ -1,9 +1,11 @@
 import { ORPCError } from '@orpc/server'
 
 import type { AuditContext } from '@/server/domains/audit/types'
+import type { HandlerContext } from '@/server/http/orpc-base'
 import type { Database } from '@/server/infra/db/database'
-import type { RequestFacts } from '@/server/infra/http/request-facts'
-import type { ContentRedirectSignal } from '@/shared/contracts/content'
+import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { ContentNotModifiedSignal, ContentRedirectSignal } from '@/shared/contracts/content'
+import type { AppLocale } from '@/shared/i18n/locales'
 
 import { trackPageView } from '@/server/domains/analytics/track'
 import {
@@ -19,8 +21,11 @@ import { loadHomeData } from '@/server/http/loaders/home'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { searchLoader } from '@/server/http/loaders/search'
 import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import { etagHeaderMatches, listingCalendarDay, listingEtag, listingRepresentation } from '@/server/infra/http/etag'
 import {
+  contentArchivesInputSchema,
   contentArchivesOutputSchema,
+  contentCategoriesListInputSchema,
   contentCategoriesListOutputSchema,
   contentHomeInputSchema,
   contentHomeOutputSchema,
@@ -31,14 +36,72 @@ import {
 } from '@/shared/contracts/content'
 import { toListingPostCard } from '@/shared/types/catalog'
 
+type ListingOutput<T> = ContentRedirectSignal | ContentNotModifiedSignal | { kind: 'ok'; etag: string; listing: T }
+type PayloadOutput<T> = ContentNotModifiedSignal | { kind: 'ok'; etag: string; payload: T }
+
+/**
+ * Fingerprint the fully assembled listing payload. The listing representation
+ * revision + APP_VERSION + the site calendar day (relative-date bucket) ride
+ * alongside the payload, so a matching `If-None-Match` proves the document is
+ * byte-identical before any 304 is emitted. The calendar day comes from the
+ * payload's own `listingNowIso` so the tag and the rendered relative dates can
+ * never disagree across a site-zone midnight.
+ */
+function listingEtagFor(context: HandlerContext, payload: unknown): string {
+  const localization = context.localization
+  return listingEtag({
+    representation: listingRepresentation(localization),
+    payload,
+    calendarDay: listingCalendarDay(payload, localization),
+  })
+}
+
+/** A rendered listing counts one view; a redirect or a 304 never does. */
+function trackListingPageView(context: HandlerContext): void {
+  trackPageView(context.requestFacts, null, {
+    isAdmin: context.viewer?.role === 'admin',
+    clientAddress: context.clientAddress,
+  })
+}
+
 // Every listing procedure answers pagination redirects through the same
-// thrown-`Response` → union translation — wrap the try/translate once.
-async function runListing<T>(load: () => Promise<T>): Promise<ContentRedirectSignal | { kind: 'ok'; listing: T }> {
+// thrown-`Response` → union translation — wrap the revalidation once.
+async function runListing<T>(
+  context: HandlerContext,
+  ifNoneMatch: string | undefined,
+  load: () => Promise<T>,
+): Promise<ListingOutput<T>> {
+  let listing: T
   try {
-    return { kind: 'ok' as const, listing: await load() }
+    listing = await load()
   } catch (error) {
     return translateThrownResponse(error, 'redirect-only')
   }
+
+  const etag = listingEtagFor(context, listing)
+  if (etagHeaderMatches(ifNoneMatch, etag)) {
+    return { kind: 'not-modified' as const, etag }
+  }
+
+  trackListingPageView(context)
+  return { kind: 'ok' as const, etag, listing }
+}
+
+// Archives/categories ship a flat payload rather than a paginated listing —
+// same revalidation contract, different payload slot.
+async function runListingPayload<T>(
+  context: HandlerContext,
+  ifNoneMatch: string | undefined,
+  load: () => Promise<T>,
+): Promise<PayloadOutput<T>> {
+  const payload = await load()
+  const etag = listingEtagFor(context, payload)
+  if (etagHeaderMatches(ifNoneMatch, etag)) {
+    return { kind: 'not-modified' as const, etag }
+  }
+
+  trackListingPageView(context)
+  return { kind: 'ok' as const, etag, payload }
 }
 
 // The tag/category scoped listings differ only in their taxonomy lookup and
@@ -50,10 +113,9 @@ async function scopedPostsListing({
   rootPath,
   title,
   description,
+  locale,
+  settings,
   ogImageUrl,
-  requestFacts,
-  isAdmin,
-  clientAddress,
 }: {
   db: Database
   num: string | undefined
@@ -61,15 +123,12 @@ async function scopedPostsListing({
   rootPath: string
   title: string
   description?: string
+  /** Request UI locale — pagination copy is system text. */
+  locale: AppLocale
+  /** Request-pinned settings bundle — page size comes from THIS capture. */
+  settings: BlogSettingsBundle | null
   ogImageUrl?: string
-  requestFacts: RequestFacts
-  isAdmin: boolean
-  clientAddress: string
 }) {
-  // Every public listing document counts one page view; the gate lives in
-  // `trackPageView`. Slug misses 404 before reaching this point.
-  trackPageView(requestFacts, null, { isAdmin, clientAddress })
-
   return listingLoader(db, {
     rawNum: num,
     totalPosts: await countPublicPosts(db, filters),
@@ -78,6 +137,8 @@ async function scopedPostsListing({
     metadata: { likes: true, views: true, comments: false },
     title,
     description,
+    locale,
+    settings,
     ogImageUrl,
     extra: undefined,
   })
@@ -90,14 +151,15 @@ const home = publicProc
   .input(contentHomeInputSchema)
   .output(contentHomeOutputSchema)
   .handler(async ({ input, context }) => {
-    return runListing(() =>
+    return runListing(context, input.ifNoneMatch, () =>
       loadHomeData({
         db: context.db,
         session: context.session,
-        viewer: context.viewer,
-        requestFacts: context.requestFacts,
-        clientAddress: context.clientAddress,
         num: input.num,
+        locale: context.localization.locale,
+        settings: context.settings,
+        revision: context.localization.revisions.listing,
+        commentsRevision: context.localization.revisions.comments,
       }),
     )
   })
@@ -116,17 +178,16 @@ const postsList = publicProc
         throw new ORPCError('NOT_FOUND', { message: 'Not Found' })
       }
 
-      return runListing(() =>
+      return runListing(context, input.ifNoneMatch, () =>
         scopedPostsListing({
           db,
           num: input.num,
           filters: { includeHidden: true, includeScheduled: false, tag: tag.name },
           rootPath: `/tags/${tag.slug}`,
           title: tag.name,
+          locale: context.localization.locale,
+          settings: context.settings,
           ogImageUrl: tag.ogImage || undefined,
-          requestFacts: context.requestFacts,
-          isAdmin: context.viewer?.role === 'admin',
-          clientAddress: context.clientAddress,
         }),
       )
     }
@@ -136,7 +197,7 @@ const postsList = publicProc
       throw new ORPCError('NOT_FOUND', { message: 'Not Found' })
     }
 
-    return runListing(() =>
+    return runListing(context, input.ifNoneMatch, () =>
       scopedPostsListing({
         db,
         num: input.num,
@@ -144,10 +205,9 @@ const postsList = publicProc
         rootPath: `/cats/${category.slug}`,
         title: category.name,
         description: category.description,
+        locale: context.localization.locale,
+        settings: context.settings,
         ogImageUrl: category.og ?? `/images/og/cats/${category.slug}.png`,
-        requestFacts: context.requestFacts,
-        isAdmin: context.viewer?.role === 'admin',
-        clientAddress: context.clientAddress,
       }),
     )
   })
@@ -168,56 +228,49 @@ const search = publicProc
       clientAddress: context.clientAddress,
       requestFacts: context.requestFacts,
     }
-    return runListing(async () => {
-      const listing = await searchLoader(context.db, {
+    return runListing(context, input.ifNoneMatch, () =>
+      searchLoader(context.db, {
         keyword: input.keyword,
         num: input.num,
         locale: context.localization.locale,
+        settings: context.settings,
         auditContext,
-      })
-      // Only a rendered result page counts — the blank/overflow 302s throw above.
-      trackPageView(context.requestFacts, null, {
-        isAdmin: context.viewer?.role === 'admin',
-        clientAddress: context.clientAddress,
-      })
-      return listing
-    })
+      }),
+    )
   })
 
 const categoriesList = publicProc
   .route({ method: 'GET', path: '/content/categories/list' })
+  .input(contentCategoriesListInputSchema)
   .output(contentCategoriesListOutputSchema)
-  .handler(async ({ context }) => {
-    trackPageView(context.requestFacts, null, {
-      isAdmin: context.viewer?.role === 'admin',
-      clientAddress: context.clientAddress,
-    })
-    return { categories: await listAllCategories(context.db) }
+  .handler(async ({ input, context }) => {
+    return runListingPayload(context, input.ifNoneMatch, async () => ({
+      categories: await listAllCategories(context.db),
+    }))
   })
 
 // The archives payload (up to 10k posts + 4 metadata statements) is a
 // deliberate full-corpus fan-out — throttle it like the other expensive reads.
 const archives = publicProc
   .route({ method: 'GET', path: '/content/archives' })
+  .input(contentArchivesInputSchema)
   .output(contentArchivesOutputSchema)
   .use(resourceRateLimit)
-  .handler(async ({ context }) => {
-    trackPageView(context.requestFacts, null, {
-      isAdmin: context.viewer?.role === 'admin',
-      clientAddress: context.clientAddress,
+  .handler(async ({ input, context }) => {
+    return runListingPayload(context, input.ifNoneMatch, async () => {
+      const db = context.db
+      const listingNowIso = new Date().toISOString()
+      // Archives promise completeness — explicit 10k bound (helper defaults to 200);
+      // revisit via year-grouped pagination past ~2,000 live posts (P1-22).
+      const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
+      const posts = rawPosts.map(toListingPostCard)
+      const resolvedPosts = await getClientPostsWithMetadata(db, posts, {
+        likes: true,
+        views: true,
+        comments: false,
+      })
+      return { resolvedPosts, listingNowIso }
     })
-    const db = context.db
-    const listingNowIso = new Date().toISOString()
-    // Archives promise completeness — explicit 10k bound (helper defaults to 200);
-    // revisit via year-grouped pagination past ~2,000 live posts (P1-22).
-    const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
-    const posts = rawPosts.map(toListingPostCard)
-    const resolvedPosts = await getClientPostsWithMetadata(db, posts, {
-      likes: true,
-      views: true,
-      comments: false,
-    })
-    return { resolvedPosts, listingNowIso }
   })
 
 export const contentListingsRouter = {

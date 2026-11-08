@@ -3,6 +3,7 @@ import { ORPCError, os } from '@orpc/server'
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { ErrorMessageDescriptor, ErrorMessageParams } from '@/shared/contracts/api-error'
 import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
@@ -28,7 +29,9 @@ export interface HandlerContext {
   clientAddress: string
   responseHeaders: Headers
   db: Database
-  /** UI locale + site time zone, projected from the canonical RequestContext. */
+  /** The request's pinned settings bundle (same capture as `localization`). */
+  settings: BlogSettingsBundle | null
+  /** UI locale + site time zone + time format + settings revision, projected from the canonical RequestContext. */
   localization: AppLocalization
 }
 

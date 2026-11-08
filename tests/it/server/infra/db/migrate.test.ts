@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-sqlite/migrator'
+import { readFileSync } from 'node:fs'
 import { afterAll, describe, expect, it } from 'vitest'
 
 import type { Database, DatabaseHandle } from '@/server/infra/db/database'
@@ -88,6 +89,27 @@ describe('folder migrations (sqlite)', () => {
       body_key: 0,
       body_params: 0,
     })
+  })
+
+  it('adds the nullable content-language columns with no backfill', () => {
+    const handle = openDatabase(':memory:')
+    handles.push(handle)
+    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+
+    for (const table of ['post', 'page']) {
+      const column = handle.db
+        .all<{ name: string; notnull: number; dflt_value: string | null }>(sql`PRAGMA table_info(${sql.raw(table)})`)
+        .find((entry) => entry.name === 'content_language')
+      // Nullable with no default: a pre-migration row keeps meaning "unset"
+      // (inherit the document language) without any data rewrite.
+      expect(column).toMatchObject({ name: 'content_language', notnull: 0, dflt_value: null })
+    }
+
+    // The migration is additive only: two ALTERs, no UPDATE / DEFAULT rewrite.
+    const migrationSql = readFileSync('drizzle/20261108113858_content_language/migration.sql', 'utf8')
+    expect(migrationSql).toContain('ALTER TABLE `page` ADD `content_language` text')
+    expect(migrationSql).toContain('ALTER TABLE `post` ADD `content_language` text')
+    expect(migrationSql).not.toMatch(/UPDATE|DEFAULT/i)
   })
 
   it('applies the pragma set the runtime relies on', () => {

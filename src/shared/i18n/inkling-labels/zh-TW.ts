@@ -2,7 +2,7 @@
 // Taiwan Traditional Chinese — written and reviewed on its own, never produced
 // by converting the Simplified table.
 
-import type { KobatoInklingLabelKey } from '@/client/editor/inkling-labels/en-US'
+import type { KobatoInklingLabelKey } from '@/shared/i18n/inkling-labels/en-US'
 
 export const kobatoInklingLabelsZhTW = {
   'placeholder.editor': '開始撰寫內容…',

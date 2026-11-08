@@ -13,7 +13,7 @@ function CaptureContext({ onContext }: { onContext: (ctx: ReturnType<typeof useS
 }
 
 describe('ui/admin/settings/shell/SettingsFlushProvider', () => {
-  it('exposes registerFlush, flushAll, flushSection through context', () => {
+  it('exposes the flush registry and the transaction surface through context', () => {
     let captured: ReturnType<typeof useSettingsFlushContext> | null = null
     renderToHtml(
       <SettingsFlushProvider>
@@ -29,6 +29,8 @@ describe('ui/admin/settings/shell/SettingsFlushProvider', () => {
     expect(typeof captured!.flushAll).toBe('function')
     expect(typeof captured!.flushSection).toBe('function')
     expect(typeof captured!.flushAllAndWait).toBe('function')
+    expect(typeof captured!.runTransaction).toBe('function')
+    expect(captured!.isTransactionPending).toBe(false)
   })
 
   it('default context (no provider) is inert — flushAll/flushSection are no-ops', () => {

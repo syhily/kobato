@@ -180,6 +180,24 @@ const failingRouter = {
     .handler(() => {
       throw new DomainError('NOT_FOUND', { messageKey: 'error.api.notFound', fallbackMessage: 'Resource not found.' })
     }),
+  descriptorIssueDomainError: publicProc
+    .route({ method: 'POST', path: '/fail/descriptor-issue' })
+    .input(z.object({}))
+    .output(z.object({ ok: z.boolean() }))
+    .handler(() => {
+      throw new DomainError(
+        'BAD_REQUEST',
+        { messageKey: 'admin.settings.errors.invalid', fallbackMessage: 'The settings data is invalid' },
+        [
+          {
+            messageKey: 'admin.settings.rateLimit.error.windowMin',
+            params: { min: 60 },
+            fallbackMessage: 'The time window must be at least 60 seconds',
+            path: ['signIn', 'windowSeconds'],
+          },
+        ],
+      )
+    }),
 }
 
 describe('domainErrorGuard translation', () => {
@@ -201,6 +219,7 @@ describe('domainErrorGuard translation', () => {
             messageKey: 'error.api.rawMessage',
             params: { message: 'dup' },
             fallbackMessage: 'dup',
+            message: 'dup',
           },
         ],
       },
@@ -216,7 +235,9 @@ describe('domainErrorGuard translation', () => {
       message: 'bad patch：seo：unknown key',
       data: {
         descriptor: { messageKey: 'error.api.rawMessage', fallbackMessage: 'bad patch' },
-        issues: [{ messageKey: 'error.api.rawMessage', fallbackMessage: 'unknown key', path: ['seo'] }],
+        issues: [
+          { messageKey: 'error.api.rawMessage', fallbackMessage: 'unknown key', message: 'unknown key', path: ['seo'] },
+        ],
       },
     })
   })
@@ -237,6 +258,27 @@ describe('domainErrorGuard translation', () => {
     } finally {
       resetBlogSettingsForTests()
     }
+  })
+
+  it('carries each issue’s localized message next to its descriptor', async () => {
+    const ctx = makePublicCtx()
+    await expect(call(failingRouter.descriptorIssueDomainError, {}, { context: ctx })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      status: 400,
+      message: '设置数据无效：signIn.windowSeconds：时间窗口不能小于 60 秒',
+      data: {
+        descriptor: { messageKey: 'admin.settings.errors.invalid' },
+        issues: [
+          {
+            messageKey: 'admin.settings.rateLimit.error.windowMin',
+            params: { min: 60 },
+            fallbackMessage: 'The time window must be at least 60 seconds',
+            message: '时间窗口不能小于 60 秒',
+            path: ['signIn', 'windowSeconds'],
+          },
+        ],
+      },
+    })
   })
 })
 

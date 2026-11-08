@@ -14,10 +14,21 @@
 //                     `undefined`, `void 0`, `[]`)
 //   hardcoded-locale  exact literals naming a supported locale or one of its
 //                     aliases (interpolated templates never match)
+//   han-literal       any plain/template literal containing Han characters —
+//                     the blind spot of registries and ordinary template
+//                     strings (`label: '保存'`, `` `第 ${n} 页` ``). JSX
+//                     positions stay owned by jsx-text/jsx-attribute so copy is
+//                     never reported twice.
 //
 // Template literals are inspected with each interpolation replaced by a marker,
 // so `保存 ${name}` is still copy; a `=== 'admin'` comparison operand is not.
 // Exemptions are file/rule/snippet exact — never a blanket directory skip.
+//
+// Positions are computed from a per-file line-start index with a binary search,
+// so reporting thousands of hits stays O(hits · log lines) instead of rescanning
+// the source from offset 0 for every hit. Whole-file content libraries (the
+// vendored quote bank, the emergency fallback catalog) are excluded before the
+// file is read or parsed — their strings are data, not UI chrome.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
@@ -33,6 +44,7 @@ export type ScanRule =
   | 'domain-error'
   | 'to-locale'
   | 'hardcoded-locale'
+  | 'han-literal'
 
 export interface ScanViolation {
   rule: ScanRule
@@ -62,11 +74,44 @@ export interface ScanResult {
   violations: ScanViolation[]
   allowlisted: ScanViolation[]
   scannedFiles: string[]
+  /** Content-store files reached under the roots but never read or parsed. */
+  skippedFiles: string[]
 }
 
 /** Latin letters, accented Latin, Greek/Cyrillic, Han, Kana, Hangul. */
 const COPY_TEXT =
   /[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF]/
+
+const HAN_TEXT = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
+
+/**
+ * Copy stores: their string values ARE the localized catalog (four shipped
+ * locales or an Inkling label table per locale). Their directory prefixes stay
+ * in the parse set — they also hold keys and identifiers the other rules must
+ * see — but `han-literal` is off by design rather than by allowlist.
+ */
+const COPY_STORE_PREFIXES = [
+  'src/shared/i18n/messages/',
+  'src/shared/i18n/inkling-labels/',
+  'src/client/editor/inkling-labels/',
+]
+
+/**
+ * Whole-file content libraries: every string is data (the vendored quote bank,
+ * the client's emergency fallback catalog), so the scanner skips them BEFORE
+ * reading or parsing — a 1.3 MB quote bank must not cost an AST walk or
+ * thousands of findings an allowlist would then have to exempt.
+ */
+const COPY_STORE_FILES = new Set(['src/shared/i18n/fallback-messages.ts', 'src/server/render/calendar/local-quotes.ts'])
+
+/** Whether `file` is a whole-file content library the scanner never parses. */
+export function isContentStoreFile(file: string): boolean {
+  return COPY_STORE_FILES.has(file)
+}
+
+function isHanCopyStore(file: string): boolean {
+  return COPY_STORE_PREFIXES.some((prefix) => file.startsWith(prefix))
+}
 
 const COPY_ATTRIBUTES = new Set(['aria-label', 'placeholder', 'title', 'alt'])
 
@@ -84,16 +129,30 @@ function isNode(value: unknown): value is AstNode {
   return value !== null && typeof value === 'object' && typeof (value as AstNode).type === 'string'
 }
 
-function positionAt(source: string, offset: number): { line: number; column: number } {
-  let line = 1
-  let lineStart = 0
-  for (let index = 0; index < offset && index < source.length; index += 1) {
-    if (source[index] === '\n') {
-      line += 1
-      lineStart = index + 1
+/** Offsets of every line start: index 0 is line 1, index i is line i + 1. */
+function lineStartOffsets(source: string): number[] {
+  const starts = [0]
+  let newline = source.indexOf('\n')
+  while (newline !== -1) {
+    starts.push(newline + 1)
+    newline = source.indexOf('\n', newline + 1)
+  }
+  return starts
+}
+
+/** 1-based line/column from the line-start index — O(log lines), not O(offset). */
+function positionAt(starts: readonly number[], offset: number): { line: number; column: number } {
+  let low = 0
+  let high = starts.length - 1
+  while (low < high) {
+    const mid = (low + high + 1) >> 1
+    if (starts[mid] <= offset) {
+      low = mid
+    } else {
+      high = mid - 1
     }
   }
-  return { line, column: offset - lineStart + 1 }
+  return { line: low + 1, column: offset - starts[low] + 1 }
 }
 
 function identifierName(node: unknown): string | null {
@@ -239,26 +298,32 @@ function callArguments(node: AstNode): unknown[] {
   return Array.isArray(args) ? args : []
 }
 
-function report(
-  violations: ScanViolation[],
-  source: string,
-  file: string,
-  rule: ScanRule,
-  node: AstNode,
-  text: string,
-): void {
-  const { line, column } = positionAt(source, node.start)
-  violations.push({ rule, file, line, column, text })
+function report(ctx: VisitContext, rule: ScanRule, node: AstNode, text: string): void {
+  const { line, column } = positionAt(ctx.lineStarts, node.start)
+  ctx.violations.push({ rule, file: ctx.file, line, column, text })
 }
 
-function visit(node: AstNode, ctx: { source: string; file: string; violations: ScanViolation[] }): void {
-  const { source, file, violations } = ctx
+interface VisitContext {
+  /** Per-file line-start offsets: positions are binary-searched, never rescanned. */
+  lineStarts: readonly number[]
+  file: string
+  violations: ScanViolation[]
+  /** Set while descending into a JSX position already covered by jsx-text/jsx-attribute. */
+  jsxCopyCovered?: boolean
+  /** Nodes already reported by a position-specific rule (toast/DomainError/titleMeta). */
+  hanCoveredNodes: WeakSet<object>
+  /** The file is a copy-store prefix — `han-literal` does not apply. */
+  hanCopyStore: boolean
+}
+
+function visit(node: AstNode, ctx: VisitContext): void {
+  const { hanCopyStore } = ctx
 
   switch (node.type) {
     case 'JSXText': {
       const value = typeof node.value === 'string' ? node.value : ''
       if (value.trim() !== '' && COPY_TEXT.test(value)) {
-        report(violations, source, file, 'jsx-text', node, value.trim())
+        report(ctx, 'jsx-text', node, value.trim())
       }
       break
     }
@@ -272,7 +337,7 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
         for (const child of children) {
           if (isNode(child) && child.type === 'JSXExpressionContainer') {
             for (const text of expressionCopyTexts(child.expression)) {
-              report(violations, source, file, 'jsx-text', child, text)
+              report(ctx, 'jsx-text', child, text)
             }
           }
         }
@@ -289,7 +354,7 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
       const value = node.value
       const expression = isNode(value) && value.type === 'JSXExpressionContainer' ? value.expression : value
       for (const text of expressionCopyTexts(expression)) {
-        report(violations, source, file, 'jsx-attribute', node, text)
+        report(ctx, 'jsx-attribute', node, text)
       }
       break
     }
@@ -302,7 +367,10 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
         // other literal is unlocalized copy.
         const text = literalText(args[0])
         if (text !== null && !MESSAGE_ID.test(text.trim())) {
-          report(violations, source, file, 'title-meta', node, text)
+          report(ctx, 'title-meta', node, text)
+          if (isNode(args[0])) {
+            ctx.hanCoveredNodes.add(args[0])
+          }
         }
       }
       if (isNode(callee) && callee.type === 'MemberExpression') {
@@ -311,27 +379,42 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
         if (objectName === 'toast') {
           const text = literalText(args[0])
           if (text !== null && COPY_TEXT.test(text)) {
-            report(violations, source, file, 'toast', node, text)
+            report(ctx, 'toast', node, text)
+            if (isNode(args[0])) {
+              ctx.hanCoveredNodes.add(args[0])
+            }
           }
         }
         if (propertyName !== null && propertyName.startsWith('toLocale') && isAbsentLocaleArgument(args[0])) {
-          report(violations, source, file, 'to-locale', node, `${objectName ?? '…'}.${propertyName}()`)
+          report(ctx, 'to-locale', node, `${objectName ?? '…'}.${propertyName}()`)
         }
       }
       break
     }
     case 'NewExpression': {
       if (identifierName(node.callee) === 'DomainError') {
-        const text = literalText(callArguments(node)[1])
+        const messageArg = callArguments(node)[1]
+        const text = literalText(messageArg)
         if (text !== null && COPY_TEXT.test(text)) {
-          report(violations, source, file, 'domain-error', node, text)
+          report(ctx, 'domain-error', node, text)
+          if (isNode(messageArg)) {
+            ctx.hanCoveredNodes.add(messageArg)
+          }
         }
       }
       break
     }
     case 'Literal': {
-      if (typeof node.value === 'string' && isKnownLocaleValue(node.value) && node.value.trim() !== '') {
-        report(violations, source, file, 'hardcoded-locale', node, node.value)
+      if (typeof node.value !== 'string') {
+        break
+      }
+      if (isKnownLocaleValue(node.value) && node.value.trim() !== '') {
+        report(ctx, 'hardcoded-locale', node, node.value)
+      }
+      // JSX copy is reported by the JSX rules above; this catches registries,
+      // Zod messages, error text and any other plain string literal.
+      if (!hanCopyStore && ctx.jsxCopyCovered !== true && !ctx.hanCoveredNodes.has(node) && HAN_TEXT.test(node.value)) {
+        report(ctx, 'han-literal', node, node.value)
       }
       break
     }
@@ -339,12 +422,31 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
       // Only an interpolation-free template is an exact locale literal.
       const text = exactText(node)
       if (text !== null && text.trim() !== '' && isKnownLocaleValue(text)) {
-        report(violations, source, file, 'hardcoded-locale', node, text)
+        report(ctx, 'hardcoded-locale', node, text)
+      }
+      // Interpolated templates are the classic blind spot: `第 ${n} 页` is
+      // still interface copy, so inspect the quasi text (interpolations become
+      // one marker) rather than requiring an exact literal.
+      const rendered = templateQuasis(node)?.text ?? null
+      if (
+        !hanCopyStore &&
+        ctx.jsxCopyCovered !== true &&
+        !ctx.hanCoveredNodes.has(node) &&
+        rendered !== null &&
+        HAN_TEXT.test(rendered)
+      ) {
+        report(ctx, 'han-literal', node, rendered)
       }
       break
     }
   }
 
+  // Everything under a JSX element/attribute is already covered by the JSX
+  // rules; marking the subtree keeps han-literal from double-reporting.
+  const childCtx: VisitContext =
+    node.type === 'JSXElement' || node.type === 'JSXFragment' || node.type === 'JSXAttribute'
+      ? { ...ctx, jsxCopyCovered: true }
+      : ctx
   for (const [key, value] of Object.entries(node)) {
     if (key === 'type' || key === 'start' || key === 'end' || key === 'loc') {
       continue
@@ -352,22 +454,35 @@ function visit(node: AstNode, ctx: { source: string; file: string; violations: S
     if (Array.isArray(value)) {
       for (const item of value) {
         if (isNode(item)) {
-          visit(item, ctx)
+          visit(item, childCtx)
         }
       }
     } else if (isNode(value)) {
-      visit(value, ctx)
+      visit(value, childCtx)
     }
   }
 }
 
-/** Scan one source text. `file` only affects the parser dialect and reported paths. */
+/**
+ * Scan one source text. `file` selects the parser dialect, the reported path
+ * and the content-store skip. Content stores return `[]` BEFORE the parser
+ * runs — they are data libraries, and a parse would be pure cost.
+ */
 export function scanSourceForI18nLiterals(source: string, file: string): ScanViolation[] {
+  if (isContentStoreFile(file)) {
+    return []
+  }
   const violations: ScanViolation[] = []
   // `parseAst` throws on a syntax error — a scan that silently skipped a file
   // would be worse than no scan at all.
   const program = parseAst(source, { lang: file.endsWith('.tsx') ? 'tsx' : 'ts' }, file)
-  visit(program as unknown as AstNode, { source, file, violations })
+  visit(program as unknown as AstNode, {
+    lineStarts: lineStartOffsets(source),
+    file,
+    violations,
+    hanCoveredNodes: new WeakSet(),
+    hanCopyStore: isHanCopyStore(file),
+  })
   return violations
 }
 
@@ -427,11 +542,15 @@ function collectFiles(root: string, cwd: string): string[] {
 /** Scan every production source file under `roots`. */
 export function scanI18nLiterals(options: ScanOptions): ScanResult {
   const cwd = process.cwd()
-  const scannedFiles = [...new Set(options.roots.flatMap((root) => collectFiles(root, cwd)))].sort()
+  const discovered = [...new Set(options.roots.flatMap((root) => collectFiles(root, cwd)))].sort()
+  // Content stores are split off before the read: a multi-megabyte data file
+  // costs no I/O and produces no findings the allowlist would have to excuse.
+  const skippedFiles = discovered.filter((file) => isContentStoreFile(file))
+  const scannedFiles = discovered.filter((file) => !isContentStoreFile(file))
   const violations: ScanViolation[] = []
   for (const file of scannedFiles) {
     violations.push(...scanSourceForI18nLiterals(readFileSync(join(cwd, file), 'utf8'), file))
   }
   const filtered = applyAllowlist(violations, options.allowlist ?? [])
-  return { violations: filtered.violations, allowlisted: filtered.allowlisted, scannedFiles }
+  return { violations: filtered.violations, allowlisted: filtered.allowlisted, scannedFiles, skippedFiles }
 }

@@ -17,7 +17,7 @@ export const handle: RouteHandle = { footer: false, postFonts: true }
 export const headers = detailHeaders
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller, analyticsEventId } = createSsrCaller({ request, context })
+  const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
   const wantsDraftPreview = new URL(request.url).searchParams.get('draft') === 'true'
 
   const result = await unwrapDetail(
@@ -26,6 +26,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       draft: wantsDraftPreview,
       ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
     }),
+    localization,
   )
 
   // Comments and webmentions chain off the critical's comment key — known

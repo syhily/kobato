@@ -8,6 +8,7 @@ import type { AppLocale } from '@/shared/i18n/locales'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { onErrorHandler } from '@/server/http/errors'
 import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { rateLimitBucketMessages } from '@/shared/config/rate-limit-bucket'
 
 interface ErrorBody {
   error: {
@@ -15,6 +16,7 @@ interface ErrorBody {
     message: string
     descriptor: { messageKey: string; params?: Record<string, unknown>; fallbackMessage: string }
     issues?: {
+      message: string
       messageKey: string
       params?: Record<string, unknown>
       fallbackMessage: string
@@ -40,7 +42,14 @@ async function run(
     // unit shapes set it explicitly so the locale is deterministic.
     c.set(
       'requestContext' as never,
-      makeRequestContext({ localization: { locale: options.locale ?? 'zh-CN', timeZone: 'UTC' } }) as never,
+      makeRequestContext({
+        localization: {
+          locale: options.locale ?? 'zh-CN',
+          timeZone: 'UTC',
+          timeFormat: null,
+          revision: 'boot-test:0000000000',
+        },
+      }) as never,
     )
     await next()
   })
@@ -55,6 +64,17 @@ async function run(
     requestIdHeader: res.headers.get('X-Request-Id'),
     header: (name) => res.headers.get(name),
   }
+}
+
+/** A Zod failure whose issue message is a catalog id (typed validation copy). */
+function zodErrorOf(): z.ZodError {
+  const schema = z.object({ windowSeconds: z.coerce.number().min(60, rateLimitBucketMessages.windowMin) })
+  try {
+    schema.parse({ windowSeconds: 59 })
+  } catch (error) {
+    return error as z.ZodError
+  }
+  throw new Error('expected a ZodError')
 }
 
 describe('server/http/errors — onErrorHandler', () => {
@@ -81,6 +101,7 @@ describe('server/http/errors — onErrorHandler', () => {
       messageKey: 'error.api.rawMessage',
       params: { message: 'invalid' },
       fallbackMessage: 'invalid',
+      message: 'invalid',
     })
     // The server folds the localized issues into the top-level message.
     expect(res.body.error.message).toBe('bad：invalid')
@@ -95,6 +116,7 @@ describe('server/http/errors — onErrorHandler', () => {
     expect(res.body.error.issues?.[0]).toMatchObject({
       messageKey: 'error.api.rawMessage',
       fallbackMessage: 'dup',
+      message: 'dup',
       path: ['a'],
     })
   })
@@ -136,6 +158,7 @@ describe('server/http/errors — onErrorHandler', () => {
       messageKey: 'admin.settings.rateLimit.error.windowMin',
       params: { min: 60 },
       fallbackMessage: 'The time window must be at least 60 seconds',
+      message: '时间窗口不能小于 60 秒',
       code: 'too_small',
       path: ['signIn', 'windowSeconds'],
     })
@@ -164,9 +187,26 @@ describe('server/http/errors — onErrorHandler', () => {
     expect(res.body.error.issues?.[0]).toMatchObject({
       messageKey: 'error.api.rawMessage',
       fallbackMessage: 'Invalid input: expected string, received undefined',
+      message: 'Invalid input: expected string, received undefined',
       code: 'invalid_type',
       path: ['name'],
     })
+  })
+
+  it('localizes Zod issue messages in all four request locales', async () => {
+    const expected: Record<AppLocale, string> = {
+      'en-US': 'The time window must be at least 60 seconds',
+      'zh-CN': '时间窗口不能小于 60 秒',
+      'zh-TW': '時間視窗不能小於 60 秒',
+      'zh-HK': '時間視窗不能小於 60 秒',
+    }
+    for (const [locale, message] of Object.entries(expected)) {
+      const res = await run(zodErrorOf(), { locale: locale as AppLocale })
+      const issue = res.body.error.issues?.[0]
+      expect(issue?.message).toBe(message)
+      expect(issue?.messageKey).toBe('admin.settings.rateLimit.error.windowMin')
+      expect(issue?.fallbackMessage).toBe(expected['en-US'])
+    }
   })
 
   it('falls back to 500 INTERNAL_SERVER_ERROR for unknown errors', async () => {

@@ -217,46 +217,42 @@ describe('client bundle guard', () => {
   })
 })
 
-// --- i18n bundle boundary -------------------------------------------------
+// --- server-only locale data boundary -------------------------------------
 
-// `@/shared/i18n/messages/**` are the four catalogs (they also TYPE the message
-// ids, so `import type` is fine); `catalog` aggregates them; `server/infra/i18n`
-// is the server translator. All three must stay out of the client static graph.
-const I18N_SERVER_ONLY_SPECIFIERS = [
-  /^@\/shared\/i18n\/catalog$/,
-  /^@\/shared\/i18n\/messages\//,
-  /^@\/server\/infra\/i18n$/,
-]
-
-/** The aggregator itself may import the per-locale catalogs — that is its job. */
-const I18N_CATALOG_OWNER = 'src/shared/i18n/catalog.ts'
-
-const I18N_SCANNED_ROOTS = ['src/ui', 'src/client', 'src/routes', 'src/shared']
-/** Root route module: part of the client bundle, so it must not pin the catalogs. */
-const I18N_SCANNED_ROOT_FILES = ['src/root.tsx']
-
-function isI18nServerOnlySpecifier(specifier: string): boolean {
-  return I18N_SERVER_ONLY_SPECIFIERS.some((pattern) => pattern.test(specifier))
+/**
+ * One server-only module family: client layers must not value-import anything
+ * matching `patterns`, and the listed `owners` are the modules whose JOB is to
+ * aggregate that family (they are the only files allowed to import it).
+ */
+interface ServerOnlyImportRule {
+  /** Sentence fragment used in the violation line. */
+  label: string
+  patterns: readonly RegExp[]
+  owners: readonly string[]
 }
 
-function collectI18nViolations(filePaths: readonly string[]): string[] {
+function collectServerOnlyImportViolations(filePaths: readonly string[], rule: ServerOnlyImportRule): string[] {
   const violations: string[] = []
   for (const filePath of filePaths) {
     const rel = relativePath(filePath)
-    if (rel === I18N_CATALOG_OWNER) {
+    if (rule.owners.includes(rel)) {
       continue
     }
     const source = readFileSync(filePath, 'utf-8')
     for (const specifier of getValueSpecifiers(source)) {
-      if (isI18nServerOnlySpecifier(specifier)) {
-        violations.push(`${rel} value-imports server-only i18n module '${specifier}'`)
+      if (rule.patterns.some((pattern) => pattern.test(specifier))) {
+        violations.push(`${rel} value-imports ${rule.label} '${specifier}'`)
       }
     }
   }
   return violations.sort()
 }
 
-function collectI18nFiles(): string[] {
+const I18N_SCANNED_ROOTS = ['src/ui', 'src/client', 'src/routes', 'src/shared']
+/** Root route module: part of the client bundle, so it must not pin the catalogs. */
+const I18N_SCANNED_ROOT_FILES = ['src/root.tsx']
+
+function collectScannedFiles(): string[] {
   const files: string[] = []
   for (const root of I18N_SCANNED_ROOTS) {
     walk(join(PROJECT_ROOT, root), (filePath) => files.push(filePath))
@@ -267,9 +263,25 @@ function collectI18nFiles(): string[] {
   return files
 }
 
+// --- i18n bundle boundary -------------------------------------------------
+
+// `@/shared/i18n/messages/**` are the four catalogs (they also TYPE the message
+// ids, so `import type` is fine); `catalog` aggregates them; `server/infra/i18n`
+// is the server translator. All three must stay out of the client static graph.
+const I18N_CATALOG_RULE: ServerOnlyImportRule = {
+  label: 'server-only i18n module',
+  patterns: [/^@\/shared\/i18n\/catalog$/, /^@\/shared\/i18n\/messages\//, /^@\/server\/infra\/i18n$/],
+  /** The aggregator itself may import the per-locale catalogs — that is its job. */
+  owners: ['src/shared/i18n/catalog.ts'],
+}
+
+function collectI18nViolations(filePaths: readonly string[]): string[] {
+  return collectServerOnlyImportViolations(filePaths, I18N_CATALOG_RULE)
+}
+
 describe('i18n bundle boundary', () => {
   it('client layers and the root route never value-import the catalogs or the server translator', () => {
-    expect(collectI18nViolations(collectI18nFiles())).toEqual([])
+    expect(collectI18nViolations(collectScannedFiles())).toEqual([])
   })
 
   it('tripwire: reports catalog/translator value imports and ignores type-only ones', () => {
@@ -296,6 +308,93 @@ describe('i18n bundle boundary', () => {
       const violations = collectI18nViolations([leak, typesOnly])
       expect(violations).toHaveLength(4)
       for (const specifier of ['@/shared/i18n/catalog', '@/shared/i18n/messages/ui/zh-CN', '@/server/infra/i18n']) {
+        expect(
+          violations.some((v) => v.includes('leak.ts') && v.includes(`'${specifier}'`)),
+          `expected a violation naming leak.ts and '${specifier}'`,
+        ).toBe(true)
+      }
+      expect(violations.some((v) => v.includes('types-only.ts'))).toBe(false)
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true })
+    }
+  })
+})
+
+// --- inkling label bundle boundary ----------------------------------------
+
+// The four Kobato Inkling label tables are ~22 KB together and the comment
+// composer is a PUBLIC chunk. Workspace documents get ONLY the active locale's
+// table as root-loader data (`content.bootstrap` → `i18n.inklingLabels`); a
+// public document loads one table on demand through the client resolver's
+// per-locale dynamic imports. No other module may value-import a table or the
+// locale→table aggregator (static OR dynamic), so a stray import cannot pull
+// all four locales into a chunk.
+const INKLING_LABEL_RULE: ServerOnlyImportRule = {
+  label: 'server-only Inkling label module',
+  patterns: [
+    /^@\/shared\/i18n\/inkling-labels$/,
+    /^@\/shared\/i18n\/inkling-labels\//,
+    // The pre-payload table home — banned so the four-table import cannot return.
+    /^@\/client\/editor\/inkling-labels\//,
+  ],
+  owners: [
+    'src/shared/i18n/inkling-labels.ts',
+    // The client seam owns the ONE sanctioned dynamic per-locale load for
+    // public documents (each locale is its own chunk).
+    'src/client/editor/inkling-labels.ts',
+  ],
+}
+
+const INKLING_LABEL_RESOLVER = 'src/client/editor/inkling-labels.ts'
+
+describe('inkling label bundle boundary', () => {
+  it('client layers and the root route never value-import an Inkling label table', () => {
+    expect(collectServerOnlyImportViolations(collectScannedFiles(), INKLING_LABEL_RULE)).toEqual([])
+  })
+
+  it('the client resolver reads the active locale from the root payload', () => {
+    const source = readFileSync(join(PROJECT_ROOT, INKLING_LABEL_RESOLVER), 'utf-8')
+    expect(source).toContain("from 'react-router'")
+    expect(source).toContain('useRouteLoaderData')
+    // No STATIC table import — the public fallback is one dynamic import per
+    // locale (four chunks; a visitor downloads only the active one).
+    expect(source).not.toMatch(/^import (?!type\b).*inkling-labels\//m)
+    for (const locale of ['en-US', 'zh-CN', 'zh-HK', 'zh-TW']) {
+      expect(source).toContain(`import('@/shared/i18n/inkling-labels/${locale}')`)
+    }
+  })
+
+  it('tripwire: reports a table import and ignores the type-only key import', () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), 'client-bundle-inkling-labels-'))
+    try {
+      const leak = join(fixtureRoot, 'leak.ts')
+      const typesOnly = join(fixtureRoot, 'types-only.ts')
+      writeFileSync(
+        leak,
+        [
+          "import { kobatoInklingLabelsZhTW } from '@/shared/i18n/inkling-labels/zh-TW'",
+          "import { inklingLabelsFor } from '@/shared/i18n/inkling-labels'",
+          "import { kobatoInklingLabelsZhCN } from '@/client/editor/inkling-labels/zh-CN'",
+          'export const load = () => import("@/shared/i18n/inkling-labels/zh-HK")',
+          'export const label = () => [kobatoInklingLabelsZhTW, inklingLabelsFor, kobatoInklingLabelsZhCN]',
+        ].join('\n'),
+      )
+      writeFileSync(
+        typesOnly,
+        [
+          "import type { KobatoInklingLabelKey } from '@/shared/i18n/inkling-labels/en-US'",
+          'export type Key = KobatoInklingLabelKey',
+        ].join('\n'),
+      )
+
+      const violations = collectServerOnlyImportViolations([leak, typesOnly], INKLING_LABEL_RULE)
+      expect(violations).toHaveLength(4)
+      for (const specifier of [
+        '@/shared/i18n/inkling-labels/zh-TW',
+        '@/shared/i18n/inkling-labels',
+        '@/client/editor/inkling-labels/zh-CN',
+        '@/shared/i18n/inkling-labels/zh-HK',
+      ]) {
         expect(
           violations.some((v) => v.includes('leak.ts') && v.includes(`'${specifier}'`)),
           `expected a violation naming leak.ts and '${specifier}'`,

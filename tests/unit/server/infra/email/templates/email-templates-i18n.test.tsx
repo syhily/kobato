@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { render } from '@/server/infra/email/render'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
@@ -12,6 +14,7 @@ import { PasswordReset } from '@/server/infra/email/templates/PasswordReset'
 import { SignInLink } from '@/server/infra/email/templates/SignInLink'
 import { SignInOtp } from '@/server/infra/email/templates/SignInOtp'
 import { createServerTranslator } from '@/server/infra/i18n'
+import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
 // End-to-end template renders per family: the copy inside the HTML comes from
 // the SERVER catalog, keyed by the explicit translator prop. en-US and zh-TW
@@ -77,6 +80,26 @@ describe('email templates — layout', () => {
   })
 })
 
+describe('email templates — footer copyright (one rich-text sentence)', () => {
+  it.each(SUPPORTED_LOCALES)('links only the site title and leaves the year plain in %s', (locale: AppLocale) => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale, title: 'Kobato' },
+    })
+    const html = render(
+      <EmailLayout t={createServerTranslator(locale)} receiver="Bob">
+        <p>body</p>
+      </EmailLayout>,
+    )
+
+    // One catalog sentence: `<siteLink>{siteTitle}</siteLink> © {year}`.
+    expect(html).toMatch(/<a [^>]*>Kobato<\/a> © \d{4}/)
+    // The copyright year must never be part of the anchor.
+    expect(html).not.toMatch(/© \d{4}<\/a>/)
+    expect(html).not.toMatch(/<a [^>]*>Kobato © \d{4}<\/a>/)
+  })
+})
+
 describe('email templates — auth family', () => {
   const link = 'https://example.com/admin/signin?token=abc'
 
@@ -134,7 +157,7 @@ describe('email templates — auth family', () => {
         expiresHours: 24,
       }),
     )
-    expect(english).toContain('updates from「Kobato」')
+    expect(english).toContain('updates from Kobato')
     expect(english).toContain('valid for 24 hours')
     expect(english).toContain('Confirm subscription')
 
@@ -165,9 +188,9 @@ describe('email templates — comment family', () => {
         replyLink: 'https://example.com/posts/hello/#comment-2',
       }),
     )
-    expect(html).toContain('Your comment in《')
+    expect(html).toContain('Your comment in &quot;')
     expect(html).toContain('Hello World')
-    expect(html).toContain('》received a new reply')
+    expect(html).toContain('&quot; received a new reply')
     expect(html).toContain('Your comment:')
     expect(html).toContain('Reply:')
     expect(html).toContain('View reply')

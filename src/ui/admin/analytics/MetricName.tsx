@@ -84,6 +84,7 @@ import type { MetricType } from '@/shared/contracts/analytics'
 import type { AppLocale } from '@/shared/i18n/locales'
 
 import { formatDisplayName } from '@/shared/i18n/format'
+import { metricValueLabelId } from '@/ui/admin/analytics/metric-labels'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Brand-icon map ported from Slite's `metrics/name/Icon.vue`
@@ -259,6 +260,13 @@ export function MetricName({ name, type }: MetricNameProps) {
         {type === 'referer' ? t('admin.analytics.direct') : t('admin.analytics.metrics.unknown')}
       </span>
     )
+  }
+
+  // Env bucket tokens (`other`, `none`, `1-5`, …) are machine values; the row
+  // renders the catalog label while the filter keeps sending the token.
+  const valueLabelId = metricValueLabelId(type, name)
+  if (valueLabelId !== null) {
+    return <span className="min-w-0 break-all">{t(valueLabelId)}</span>
   }
 
   if (type === 'country') {

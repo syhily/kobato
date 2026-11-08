@@ -1,17 +1,22 @@
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { RequestContext } from '@/server/http/request-context'
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { AppLocalization } from '@/shared/i18n/app-localization'
 
 import { regularSession } from '#/_helpers/session'
 import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
-import { createLazyAppLocalization } from '@/shared/i18n/app-localization'
+import { createLazyAppSnapshot } from '@/shared/i18n/app-localization'
 
 // Stand-in for the canonical `RequestContext` — the suite's single
 // factory; never hand-roll `{ session, viewer, … }` literals.
 // No runtime edge to `@/server/http/request-context` (types only) so vi.mock
 // factories stay acyclic; `resolveAppLocalization` reads the shared snapshot
 // leaf, which is safe inside a mocked-module factory.
+/** Test-only partial projection: missing representation fields come from the lazy capture. */
+type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
+  Partial<Pick<AppLocalization, 'timeFormat' | 'revision' | 'revisions'>>
+
 export interface MakeRequestContextOptions {
   request?: Request
   session?: BlogSession
@@ -21,7 +26,9 @@ export interface MakeRequestContextOptions {
   db?: Database
   cspNonce?: string
   /** Explicit override; omitted means the lazy settings-snapshot pair (like production). */
-  localization?: AppLocalization
+  localization?: LocalizationOverride
+  /** Explicit override; omitted means the lazy settings-snapshot bundle (like production). */
+  settings?: BlogSettingsBundle | null
   markSessionDirty?: () => void
 }
 
@@ -33,12 +40,13 @@ export function makeRequestContext({
   db,
   cspNonce = 'test-csp-nonce',
   localization,
+  settings,
   markSessionDirty = () => {},
 }: MakeRequestContextOptions = {}): RequestContext {
   const resolvedUser = user === undefined ? ((session?.data?.user as SessionUser | undefined) ?? null) : user
   // Lazy by default: mirrors the real context, where the snapshot hydrates
   // after derivation — a pre-hydration capture would mask cold-boot bugs.
-  const lazyLocalization = createLazyAppLocalization()
+  const lazySnapshot = createLazyAppSnapshot()
   return {
     session,
     viewer: resolvedUser,
@@ -47,8 +55,21 @@ export function makeRequestContext({
     requestFacts: extractRequestFacts(request),
     db: (db ?? {}) as Database,
     cspNonce,
+    get settings() {
+      return settings === undefined ? lazySnapshot().settings : settings
+    },
     get localization() {
-      return localization ?? lazyLocalization()
+      if (localization === undefined) {
+        return lazySnapshot().localization
+      }
+      const captured = lazySnapshot().localization
+      return {
+        locale: localization.locale,
+        timeZone: localization.timeZone,
+        timeFormat: localization.timeFormat ?? null,
+        revision: localization.revision ?? captured.revision,
+        revisions: localization.revisions ?? captured.revisions,
+      }
     },
     markSessionDirty,
   }

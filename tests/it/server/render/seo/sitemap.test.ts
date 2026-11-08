@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
@@ -67,7 +68,7 @@ async function seedPage(opts: { slug: string; firstPublishedAt?: Date | null; pu
 
 describe('buildSitemapXml', () => {
   it('emits a valid xml preamble + urlset shell when there are no posts or pages', async () => {
-    const xml = await buildSitemapXml(db)
+    const xml = await buildSitemapXml(db, TEST_BLOG_SETTINGS_BUNDLE)
 
     expect(xml).toBe(
       [
@@ -83,7 +84,7 @@ describe('buildSitemapXml', () => {
     const published = new Date('2024-06-01T00:00:00.000Z')
     await seedPost({ slug: 'hello-world', firstPublishedAt: published, publishedAt: published })
 
-    const xml = await buildSitemapXml(db)
+    const xml = await buildSitemapXml(db, TEST_BLOG_SETTINGS_BUNDLE)
 
     expect(xml).toContain(
       `  <url><loc>https://example.com/posts/hello-world</loc><lastmod>${published.toISOString()}</lastmod></url>`,
@@ -94,7 +95,7 @@ describe('buildSitemapXml', () => {
     const publishedAt = new Date('2024-07-15T12:00:00.000Z')
     await seedPost({ slug: 'no-first', firstPublishedAt: null, publishedAt })
 
-    const xml = await buildSitemapXml(db)
+    const xml = await buildSitemapXml(db, TEST_BLOG_SETTINGS_BUNDLE)
 
     expect(xml).toContain(
       `  <url><loc>https://example.com/posts/no-first</loc><lastmod>${publishedAt.toISOString()}</lastmod></url>`,
@@ -105,7 +106,7 @@ describe('buildSitemapXml', () => {
     const date = new Date('2024-08-01T00:00:00.000Z')
     await seedPage({ slug: 'about', firstPublishedAt: date, publishedAt: date })
 
-    const xml = await buildSitemapXml(db)
+    const xml = await buildSitemapXml(db, TEST_BLOG_SETTINGS_BUNDLE)
 
     expect(xml).toContain(`  <url><loc>https://example.com/about</loc><lastmod>${date.toISOString()}</lastmod></url>`)
     expect(xml).not.toContain('https://example.com/posts/about')
@@ -119,10 +120,25 @@ describe('buildSitemapXml', () => {
     // Published with a revision but dated in the future — the `publishedAt <= now` leg drops it.
     await seedPost({ slug: 'scheduled-post', publishedAt: new Date('2099-01-01') })
 
-    const xml = await buildSitemapXml(db)
+    const xml = await buildSitemapXml(db, TEST_BLOG_SETTINGS_BUNDLE)
 
     const postUrls = xml.match(/<loc>https:\/\/example\.com\/posts\/[^<]+<\/loc>/g) ?? []
     expect(postUrls).toEqual(['<loc>https://example.com/posts/only-published</loc>'])
+  })
+
+  it('builds every <loc> from the PINNED bundle, not the process snapshot', async () => {
+    const date = new Date('2024-11-01T00:00:00.000Z')
+    await seedPage({ slug: 'pinned', firstPublishedAt: date, publishedAt: date })
+    const pinned = {
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: 'https://pinned.example.com' },
+    }
+
+    const xml = await buildSitemapXml(db, pinned)
+
+    expect(xml).toContain('<loc>https://pinned.example.com/</loc>')
+    expect(xml).toContain('<loc>https://pinned.example.com/pinned</loc>')
+    expect(xml).not.toContain('https://example.com/pinned')
   })
 
   it('escapes special XML characters in loc', async () => {
@@ -130,7 +146,7 @@ describe('buildSitemapXml', () => {
     const date = new Date('2024-10-01T00:00:00.000Z')
     await seedPost({ slug: 'a&b<c>', firstPublishedAt: date, publishedAt: date })
 
-    const xml = await buildSitemapXml(db)
+    const xml = await buildSitemapXml(db, TEST_BLOG_SETTINGS_BUNDLE)
 
     expect(xml).toContain('<loc>https://example.com/posts/a&amp;b&lt;c&gt;</loc>')
     expect(xml).not.toContain('posts/a&b<c>')

@@ -496,16 +496,16 @@ describe('infra/email/sender — site-locale subjects', () => {
     const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
 
     await sendAuthorInvite({ name: 'Bob', email: 'bob@x.com' }, 'https://link', 'Alice')
-    expect(lastSubject()).toBe(`【${title}】Author invitation`)
+    expect(lastSubject()).toBe(`${title}: Author invitation`)
 
     await sendPasswordReset({ name: 'Bob', email: 'bob@x.com' }, 'https://link')
-    expect(lastSubject()).toBe(`【${title}】Password reset`)
+    expect(lastSubject()).toBe(`${title}: Password reset`)
 
     await sendSignInOtp({ name: 'Bob', email: 'bob@x.com' }, '123456')
-    expect(lastSubject()).toBe(`【${title}】Sign-in verification code`)
+    expect(lastSubject()).toBe(`${title}: Sign-in verification code`)
 
     await sendSignInLink({ name: 'Bob', email: 'bob@x.com' }, 'https://link')
-    expect(lastSubject()).toBe(`【${title}】Sign-in link`)
+    expect(lastSubject()).toBe(`${title}: Sign-in link`)
   })
 
   it('renders the test-mail subject and body in the site locale (en-US)', async () => {
@@ -515,7 +515,7 @@ describe('infra/email/sender — site-locale subjects', () => {
     await sendTestMail('to@x.com')
 
     const payload = transportSendMock.mock.calls[0]![0] as { subject: string; html: string }
-    expect(payload.subject).toBe(`【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】Admin mail test`)
+    expect(payload.subject).toBe(`${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}: Admin mail test`)
     expect(payload.html).toContain('This is a mail delivery test from the')
     expect(payload.html).toContain('the mail service is configured correctly')
     expect(payload.html).toContain('Site:')

@@ -10,6 +10,7 @@ import { wrapWithI18n } from '#/_helpers/i18n-render'
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
+import { useWatch } from 'react-hook-form'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
@@ -81,7 +82,7 @@ describe('useSettingsCard — schema-aware save baseline', () => {
     expect(commit).toHaveBeenCalledOnce()
   })
 
-  it('rolls the control back and toasts a visible error when validation rejects a save', async () => {
+  it('keeps the invalid input and its error when validation rejects a whole-card save', async () => {
     function Harness({ source }: { source: Source }) {
       const { form, save } = useSettingsCard<Source, State>(
         makeCardProps(source, z.object({ title: z.string().min(1, '请填写站点标题') })),
@@ -89,6 +90,7 @@ describe('useSettingsCard — schema-aware save baseline', () => {
       return (
         <div>
           <input aria-label="title" {...form.register('title')} />
+          <span data-testid="error">{form.formState.errors.title?.message ?? ''}</span>
           <button
             type="button"
             onClick={() => {
@@ -109,8 +111,80 @@ describe('useSettingsCard — schema-aware save baseline', () => {
 
     await waitFor(() => expect(toastMock.error).toHaveBeenCalledOnce())
     expect(toastMock.error.mock.calls[0]).toEqual(['设置未保存', { description: '请填写站点标题' }])
-    await waitFor(() => expect(input).toHaveValue('Hello'))
     expect(commit).not.toHaveBeenCalled()
+    // A failed save never discards what the admin typed — the value and the
+    // field error stay on screen so the failure is actionable.
+    expect(input).toHaveValue('')
+    expect(screen.getByTestId('error')).toHaveTextContent('请填写站点标题')
+  })
+
+  it('keeps the invalid input and its error through a blur-triggered flush', async () => {
+    function Harness({ source }: { source: Source }) {
+      const { form, flushOnBlur } = useSettingsCard<Source, State>(
+        makeCardProps(source, z.object({ title: z.string().min(2, '太短') })),
+      )
+      return (
+        <div>
+          <input aria-label="title" {...form.register('title')} onBlur={flushOnBlur} />
+          <span data-testid="error">{form.formState.errors.title?.message ?? ''}</span>
+        </div>
+      )
+    }
+
+    renderUi(<Harness source={{ title: 'Hello' }} />)
+    const input = screen.getByRole('textbox', { name: 'title' })
+
+    fireEvent.change(input, { target: { value: 'A' } })
+    fireEvent.blur(input)
+
+    await waitFor(() => expect(toastMock.error).toHaveBeenCalledOnce())
+    expect(commit).not.toHaveBeenCalled()
+    // Blur is how a locale pick starts (focus leaves the input first) — it must
+    // not silently reset the invalid draft back to the committed baseline.
+    expect(input).toHaveValue('A')
+    expect(screen.getByTestId('error')).toHaveTextContent('太短')
+  })
+
+  it('localizes a custom issue through its own params bag ({label})', async () => {
+    const schema = z.object({
+      title: z.string().superRefine((value, ctx) => {
+        if (value === 'bad') {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'admin.settings.assets.error.s3FieldRequired',
+            params: { label: 'Bucket' },
+          })
+        }
+      }),
+    })
+    function Harness({ source }: { source: Source }) {
+      const { form, save } = useSettingsCard<Source, State>(makeCardProps(source, schema))
+      return (
+        <div>
+          <input aria-label="title" {...form.register('title')} />
+          <button
+            type="button"
+            onClick={() => {
+              void save()
+            }}
+          >
+            save
+          </button>
+        </div>
+      )
+    }
+
+    renderUi(<Harness source={{ title: 'Hello' }} />)
+    const input = screen.getByRole('textbox', { name: 'title' })
+
+    fireEvent.change(input, { target: { value: 'bad' } })
+    fireEvent.click(screen.getByRole('button', { name: 'save' }))
+
+    await waitFor(() => expect(toastMock.error).toHaveBeenCalledOnce())
+    // The issue's `params` bag reaches localizeMessage — never the token name
+    // and never the raw ICU template.
+    expect(toastMock.error.mock.calls[0]).toEqual(['设置未保存', { description: '开启 S3 上传时「Bucket」必填' }])
+    expect(input).toHaveValue('bad')
   })
 })
 
@@ -171,7 +245,9 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
 
     fireEvent.blur(input)
     await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
-    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Half typed', enabled: true })
+    // The switch's field commit already advanced `enabled`, so the whole-card
+    // flush posts the text edit alone — never a full fromState re-send.
+    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Half typed' })
   })
 
   it('a rejected field save rolls back only the trigger field and preserves sibling edits', async () => {
@@ -207,6 +283,89 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
     expect(toastMock.error.mock.calls[0]).toEqual(['设置未保存', { description: '当前不允许开启' }])
     expect(commit).not.toHaveBeenCalled()
     expect(input).toHaveValue('Half typed')
+  })
+
+  it('rolls a server-rejected field commit back to the committed value, and a later flush never re-posts it', async () => {
+    function Harness({ source }: { source: ToggleSource }) {
+      const { form, save, flushOnBlur } = useSettingsCard<ToggleSource, ToggleState>(makeToggleProps(source))
+      const enabled = useWatch({ control: form.control, name: 'enabled' })
+      return (
+        <div>
+          <input aria-label="title" {...form.register('title')} onBlur={flushOnBlur} />
+          <output data-testid="enabled">{String(enabled)}</output>
+          <button
+            type="button"
+            onClick={() => {
+              form.setValue('enabled', true)
+              void save('enabled')
+            }}
+          >
+            toggle
+          </button>
+        </div>
+      )
+    }
+
+    commit.mockResolvedValueOnce({ ok: false })
+    renderUi(<Harness source={{ title: 'Hello', enabled: false }} />)
+    const input = screen.getByRole('textbox', { name: 'title' })
+
+    fireEvent.change(input, { target: { value: 'Half typed' } })
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }))
+
+    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    expect(commit.mock.calls[0]![1]).toEqual({ enabled: true })
+    // The rejected value must never keep rendering as if it were persisted.
+    await waitFor(() => expect(screen.getByTestId('enabled')).toHaveTextContent('false'))
+    expect(input).toHaveValue('Half typed')
+
+    // The next whole-card flush posts only what still differs from the
+    // baseline: the rolled-back `enabled` equals it, so it is left out entirely.
+    commit.mockResolvedValueOnce({ ok: true, section: {} })
+    fireEvent.blur(input)
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
+    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Half typed' })
+  })
+
+  it('does not clobber a newer edit when the in-flight field commit is rejected', async () => {
+    const gate = deferred<{ ok: false }>()
+    function Harness({ source }: { source: ToggleSource }) {
+      const { form, save } = useSettingsCard<ToggleSource, ToggleState>(makeToggleProps(source))
+      const enabled = useWatch({ control: form.control, name: 'enabled' })
+      return (
+        <div>
+          <output data-testid="enabled">{String(enabled)}</output>
+          <button
+            type="button"
+            onClick={() => {
+              form.setValue('enabled', true)
+              void save('enabled')
+            }}
+          >
+            toggle
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              form.setValue('enabled', false)
+            }}
+          >
+            re-edit
+          </button>
+        </div>
+      )
+    }
+
+    commit.mockReturnValueOnce(gate.promise)
+    renderUi(<Harness source={{ title: 'Hello', enabled: false }} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }))
+    await waitFor(() => expect(commit).toHaveBeenCalledOnce())
+    // The admin flips the control back while the rejected request is in flight.
+    fireEvent.click(screen.getByRole('button', { name: 're-edit' }))
+    gate.resolve({ ok: false })
+    await settleSaveChains()
+    expect(screen.getByTestId('enabled')).toHaveTextContent('false')
   })
 
   it('a control that fired without moving its value commits nothing', async () => {
@@ -348,7 +507,8 @@ describe('useSettingsCard — awaitable flush + per-card serialization', () => {
 
     gate.resolve({ ok: true, section: {} })
     await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
-    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Typed', other: 'scoped-value' })
+    // Only the field that still differs from the baseline is posted.
+    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Typed' })
     commit.mockResolvedValue({ ok: true, section: {} })
     await waitFor(() => expect(results).toEqual([true]))
   })
@@ -370,8 +530,9 @@ describe('useSettingsCard — awaitable flush + per-card serialization', () => {
     commit.mockResolvedValue({ ok: true, section: {} })
 
     await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
-    expect(commit.mock.calls[0]![1]).toEqual({ title: 'First', other: 'x' })
-    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Second', other: 'x' })
+    // Each POST carries only what moved since the acknowledged baseline.
+    expect(commit.mock.calls[0]![1]).toEqual({ title: 'First' })
+    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Second' })
     await waitFor(() => expect(results).toEqual([true]))
   })
 
@@ -405,7 +566,7 @@ describe('useSettingsCard — awaitable flush + per-card serialization', () => {
     fireEvent.click(screen.getByRole('button', { name: 'flush' }))
     await waitFor(() => expect(results).toEqual([false, true]))
     expect(commit).toHaveBeenCalledTimes(2)
-    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Retry me', other: 'x' })
+    expect(commit.mock.calls[1]![1]).toEqual({ title: 'Retry me' })
   })
 
   it('reports false when the commit throws (no unhandled rejection)', async () => {

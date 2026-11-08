@@ -2,7 +2,7 @@ import type { MetaDescriptor } from 'react-router'
 
 import type { BlogSettingsBundle, SiteAssetBranding } from '@/shared/config/types'
 import type { AppLocale } from '@/shared/i18n/locales'
-import type { UiMessageId, UiMessages } from '@/shared/i18n/messages/ui/en-US'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 // Isomorphic by construction: route `meta()` exports pull this module
 // into the browser bundle, so it may only import `@/shared/*`. In particular it
@@ -24,7 +24,12 @@ import { joinUrl } from '@/shared/utils/urls'
  */
 export interface SeoI18n {
   locale: AppLocale
-  messages: UiMessages
+  /**
+   * The document-scope UI catalog (the root payload's public subset or the
+   * full workspace catalog). Only title-key lookups read it, and those keys are
+   * never admin-only.
+   */
+  messages: Readonly<Record<string, string>>
 }
 
 interface ArticleSeo {
@@ -229,15 +234,16 @@ function articleTags(variant: SeoVariant, authorName: string, i18n?: SeoI18n | n
   meta.push(
     { property: 'article:published_time', content: toIsoString(variant.article.date) },
     { property: 'article:author', content: authorName },
-    {
-      property: 'article:section',
-      // A page's section is system copy (localized); a post's is its category (content).
-      content:
-        variant.kind === 'page'
-          ? (i18n?.messages['meta.section.page'] ?? fallbackMessages['meta.section.page'])
-          : (variant.article.category ?? ''),
-    },
   )
+  // A page's section is system copy (localized); a post's is its category (content).
+  // An uncategorized post has no section — emit nothing rather than content="".
+  const section =
+    variant.kind === 'page'
+      ? (i18n?.messages['meta.section.page'] ?? fallbackMessages['meta.section.page'])
+      : variant.article.category
+  if (section !== undefined && section !== '') {
+    meta.push({ property: 'article:section', content: section })
+  }
   if (variant.kind === 'post') {
     for (const tag of variant.article.tags ?? []) {
       meta.push({ property: 'article:tag', content: tag })
@@ -479,7 +485,7 @@ export function i18nFromMatches(matches: readonly unknown[]): SeoI18n | null {
       return null
     }
   }
-  return { locale, messages: unsafeCast<UiMessages>(messages) }
+  return { locale, messages: unsafeCast<Readonly<Record<string, string>>>(messages) }
 }
 
 export function metaWithFallback({

@@ -1,7 +1,7 @@
 import type { ServerTranslator } from '@/server/infra/i18n'
 import type { ApiErrorData, ErrorIssueWire, ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
-import { rawMessageDescriptor } from '@/server/infra/http/error-descriptor'
+import { descriptorMessage, rawMessageDescriptor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure, DomainError, domainStatus, type DomainErrorIssue } from '@/server/infra/http/errors'
 
 /** Single translation shared by the Hono and oRPC adapters so status, code,
@@ -27,12 +27,13 @@ export interface ApiErrorInput {
   headers?: HeadersInit
 }
 
-function issueToWire(issue: DomainErrorIssue): ErrorIssueWire {
-  if ('messageKey' in issue) {
-    return issue
-  }
+function issueToWire(issue: DomainErrorIssue, translator?: ServerTranslator): ErrorIssueWire {
+  const descriptor: ErrorMessageDescriptor = 'messageKey' in issue ? issue : rawMessageDescriptor(issue.message)
   return {
-    ...rawMessageDescriptor(issue.message),
+    messageKey: descriptor.messageKey,
+    ...(descriptor.params === undefined ? {} : { params: descriptor.params }),
+    fallbackMessage: descriptor.fallbackMessage,
+    message: descriptorMessage(descriptor, translator),
     ...(issue.code === undefined ? {} : { code: issue.code }),
     ...(issue.path === undefined ? {} : { path: issue.path }),
   }
@@ -46,9 +47,8 @@ function issueToWire(issue: DomainErrorIssue): ErrorIssueWire {
  */
 export function translateApiError(input: ApiErrorInput, translator?: ServerTranslator): TranslatedDomainError {
   const descriptor = typeof input.message === 'string' ? rawMessageDescriptor(input.message) : input.message
-  const message =
-    translator === undefined ? descriptor.fallbackMessage : translator.format(descriptor.messageKey, descriptor.params)
-  const issues = input.issues?.map(issueToWire)
+  const message = descriptorMessage(descriptor, translator)
+  const issues = input.issues?.map((issue) => issueToWire(issue, translator))
   return {
     status: input.status,
     code: input.code,
@@ -89,7 +89,8 @@ export function summarizeApiError(translated: TranslatedDomainError, translator:
   }
   const separator = translator.format('error.api.issueSeparator')
   const parts = issues.map((issue) => {
-    const text = translator.format(issue.messageKey, issue.params)
+    // The wire already resolved the issue text for this request locale.
+    const text = issue.message
     const path = issue.path?.join('.')
     return path === undefined || path === ''
       ? text

@@ -87,7 +87,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                   <Icon />
                 </span>
                 <div className="flex flex-col leading-tight">
-                  <span className="text-sm font-medium">{meta.label}</span>
+                  <span className="text-sm font-medium">{t(meta.labelId)}</span>
                   <span className="text-xs text-muted-foreground">
                     {meta.type === 'qrcode'
                       ? t('admin.settings.socials.qrcodeHint')
@@ -107,7 +107,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                 />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor={`social-link-${row.network}`}>{meta.linkLabel}</Label>
+                <Label htmlFor={`social-link-${row.network}`}>{t(meta.linkLabelId)}</Label>
                 <SettingsInput
                   flushOnBlur={flushOnBlur}
                   id={`social-link-${row.network}`}
@@ -125,7 +125,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                     value={row.title}
                     onChange={(e) => patch(index, { title: e.target.value })}
                     maxLength={120}
-                    placeholder={t('admin.settings.socials.qrcodePlaceholder', { label: meta.label })}
+                    placeholder={t('admin.settings.socials.qrcodePlaceholder', { label: t(meta.labelId) })}
                   />
                 </div>
               ) : null}

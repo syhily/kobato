@@ -285,14 +285,16 @@ function SortableFooterNavRow({
                   {(value: string | null) =>
                     value === null
                       ? t('admin.settings.navigation.select')
-                      : (SOCIAL_NETWORK_META[asSocialNetwork(value)]?.label ?? value)
+                      : SOCIAL_NETWORK_META[asSocialNetwork(value)]
+                        ? t(SOCIAL_NETWORK_META[asSocialNetwork(value)].labelId)
+                        : value
                   }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {SOCIAL_NETWORKS.map((network) => (
                   <SelectItem key={network} value={network}>
-                    {SOCIAL_NETWORK_META[network].label}
+                    {t(SOCIAL_NETWORK_META[network].labelId)}
                   </SelectItem>
                 ))}
               </SelectContent>

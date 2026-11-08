@@ -4,6 +4,7 @@ import type { RouteHandle } from '@/root'
 
 import { useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useDeviceEnvBeacon } from '@/client/hooks/use-device-env-beacon'
+import { documentHeaders } from '@/server/infra/http/headers'
 import { isRecord } from '@/shared/utils/type-guards'
 import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
@@ -55,6 +56,12 @@ export default function PublicLayoutRoute() {
     </BaseLayout>
   )
 }
+
+// This layout is the nearest error boundary for public routes, so RR hands
+// loader-thrown 304 headers here as `errorHeaders`; without this export the
+// document 304 loses ETag/Content-Language/Cache-Control (entry.server never
+// runs for a no-body status).
+export const headers = documentHeaders
 
 // `ErrorBoundary` lives on this layout so 404s still render INSIDE
 // `<BaseLayout>` synchronously — the root boundary would need a lazy chunk

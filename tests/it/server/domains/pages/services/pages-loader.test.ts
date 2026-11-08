@@ -98,13 +98,12 @@ async function seedPage(opts: {
 }
 
 function makeArgs(slug: string, viewer: SessionUser | null = null) {
-  // Draft-preview gate inputs arrive as plain values (viewer + raw If-None-Match), not a request context.
+  // Draft-preview gate inputs arrive as plain values (viewer + the draft flag), not a request context.
   return {
     db,
     slug,
     wantsDraftPreview: false,
     viewer,
-    ifNoneMatch: null,
   }
 }
 

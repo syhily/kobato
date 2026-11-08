@@ -93,7 +93,7 @@ describe('ui/admin/settings/CommentsForm — avatar card', () => {
     })
   })
 
-  it('carries the full sources order in a blur-flush full patch', async () => {
+  it('posts only the fields that changed in a blur flush (token alone)', async () => {
     commit.mockResolvedValue({ ok: true, section: baseComments })
 
     renderCommentsForm(baseComments)
@@ -102,16 +102,15 @@ describe('ui/admin/settings/CommentsForm — avatar card', () => {
     fireEvent.change(tokenInput, { target: { value: 'ghp_new_token' } })
     fireEvent.blur(tokenInput)
 
-    // The blur flush posts fromState in full — a fromState that dropped
-    // `sources` would make drag reorders un-persistable.
+    // Sparse whole-card commit: the mirror and the sources order equal their
+    // acknowledged baseline, so they stay out of the patch (a full re-send would
+    // write this tab's stale copy over a peer tab's edit). A reorder still rides
+    // the next flush — pinned by tests/unit/ui/admin/settings/shell/
+    // use-settings-card-sparse.test.tsx, since drag gestures need real layout.
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
     expect(commit.mock.calls[0]![0]).toBe('comments')
     expect(commit.mock.calls[0]![1]).toEqual({
       comments: {
-        avatar: {
-          mirror: baseComments.comments.avatar.mirror,
-          sources: baseComments.comments.avatar.sources,
-        },
         githubToken: 'ghp_new_token',
       },
     })

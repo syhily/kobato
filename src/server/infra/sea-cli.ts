@@ -6,8 +6,9 @@
 // env-validated graph (config loads only behind the probe's dynamic import).
 // --smoke-worker dispatches the embedded bundle via new Worker(code, { eval: true })
 // — worker threads cannot start from VFS paths, so eval is the only way.
-// --smoke-intl is a PURE Intl probe: it imports only the locale contract, reads
-// no configuration and touches no database (`src/server/infra/intl-probe.ts`).
+// --smoke-intl is a PURE Intl probe: it imports the locale contract and the
+// shared display formatter (for the real `formatDuration` output), reads no
+// configuration and touches no database (`src/server/infra/intl-probe.ts`).
 
 import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
@@ -57,8 +58,10 @@ Usage:
   kobato --smoke-intl      Verify the bundled ICU data on all four UI
                            locales: supportedLocalesOf plus real
                            DateTimeFormat / RelativeTimeFormat /
-                           DisplayNames / PluralRules output. No config,
-                           no database. Exits 1 on failure.
+                           DisplayNames / PluralRules / ListFormat /
+                           Collator output and the production
+                           formatDuration result. No config, no
+                           database. Exits 1 on failure.
   kobato rollback          Restore the previous release: swaps the
                            <binary>.bak sibling left by the last
                            self-update back into place. Restart the

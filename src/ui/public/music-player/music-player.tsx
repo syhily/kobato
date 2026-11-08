@@ -119,7 +119,7 @@ export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: Mu
               )}
             >
               <ScrubBar
-                ariaLabel="音量"
+                ariaLabel={t('public.music.volume')}
                 className="w-20 pr-2"
                 value={playback.muted ? 0 : playback.volume}
                 onScrub={playback.setVolume}
@@ -133,7 +133,7 @@ export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: Mu
       <div className="flex items-center gap-2 px-3 pb-1 text-xs text-ink-4 tabular-nums">
         <span className="w-9 shrink-0 whitespace-nowrap">{formatAudioDuration(playback.currentTime)}</span>
         <ScrubBar
-          ariaLabel="播放进度"
+          ariaLabel={t('public.music.progress')}
           className="flex-1"
           value={progress}
           onSeek={(value) => playback.seek(value * playback.duration)}

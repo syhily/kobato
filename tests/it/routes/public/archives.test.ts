@@ -1,10 +1,18 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { makeLoaderArgs } from '#/_helpers/context'
+import type { ListingPostCardWithMetadata } from '@/shared/types/catalog'
+
+import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
+
+type ArchivesPayload = {
+  resolvedPosts: ListingPostCardWithMetadata[]
+  listingNowIso: string
+  eid: string | null
+}
 
 // Archives promises completeness: every live post, including hidden ones.
 // Real engine: hidden inclusion and scheduled exclusion fall out of the shared live gate.
@@ -43,6 +51,35 @@ async function seedPost(opts: {
 
 const { loader } = await import('@/routes/public/archives')
 
+function loaderEtag(result: unknown): string | null {
+  const init = (result as { init?: { headers?: Record<string, string> } }).init
+  return init?.headers?.ETag ?? null
+}
+
+describe('routes/archives loader — listing revalidation', () => {
+  it('stamps the listing ETag and answers a 304 on a repeat request', async () => {
+    await seedPost({ slug: 'archived', firstPublishedAt: new Date('2024-01-01') })
+
+    const first = await loader(makeLoaderArgs({ request: new Request('http://localhost/archives'), db }))
+    const etag = loaderEtag(first)
+    expect(etag).toMatch(/^W\//)
+
+    const second = await loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/archives', { headers: { 'If-None-Match': etag! } }),
+        db,
+      }),
+    ).then(
+      () => null,
+      (response: unknown) => response,
+    )
+
+    expect(second).toMatchObject({ status: 304 })
+    expect((second as Response).headers.get('ETag')).toBe(etag)
+    expect((second as Response).headers.get('Cache-Control')).toBe('private, no-cache')
+  })
+})
+
 describe('routes/archives loader', () => {
   it('includes visible=false posts while still excluding scheduled posts', async () => {
     await seedPost({ slug: 'visible-post', firstPublishedAt: new Date('2024-01-02') })
@@ -54,7 +91,9 @@ describe('routes/archives loader', () => {
       publishedAt: new Date('2099-01-01'),
     })
 
-    const result = await loader(makeLoaderArgs({ request: new Request('http://localhost/archives'), db }))
+    const result = unwrapLoaderData<ArchivesPayload>(
+      await loader(makeLoaderArgs({ request: new Request('http://localhost/archives'), db })),
+    )
 
     // firstPublishedAt desc.
     expect(result.resolvedPosts.map((post) => post.slug)).toEqual(['visible-post', 'hidden-post'])

@@ -3,9 +3,10 @@ import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import { Canvas, loadImage } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 
+import type { BlogSettingsBundle } from '@/shared/config/types'
+
 import { compressImage } from '@/server/infra/image/compress'
 import { safeFetch } from '@/server/infra/safe-fetch'
-import { getGeneralWebsite } from '@/server/infra/storage/public-url'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
 import { logoDark } from '@/server/render/og/assets'
 import { layoutCanvasLines } from '@/server/render/pretext-layout'
@@ -22,9 +23,8 @@ const COVER_MAX_BYTES = 8 * 1024 * 1024
 /** Cover reference → absolute URL. Site-owned refs (`/storage/…`,
  *  `/images/…`) resolve against the site origin; anything else must already
  *  be http(s). Null means "not fetchable" — never hand it to `loadImage`. */
-function resolveCoverUrl(cover: string): string | null {
+function resolveCoverUrl(cover: string, website: string): string | null {
   if (cover.startsWith('/') && !cover.startsWith('//')) {
-    const website = getGeneralWebsite()
     return website === '' ? null : `${website}${cover}`
   }
   return isHttpUrl(cover) ? cover : null
@@ -33,12 +33,12 @@ function resolveCoverUrl(cover: string): string | null {
 /** `@napi-rs/canvas`'s `loadImage` does its own unbounded HTTP GET (20
  *  redirects, no timeout, no size cap, no SSRF guard), so cover bytes are
  *  fetched through `safeFetch` and decoded from the buffer. */
-async function loadCover(cover: string): Promise<Image> {
+async function loadCover(cover: string, website: string): Promise<Image> {
   // Inline images decode locally — no network, so no guard applies.
   if (/^\s*data:/i.test(cover)) {
     return loadImage(cover)
   }
-  const url = resolveCoverUrl(cover)
+  const url = resolveCoverUrl(cover, website)
   if (url === null) {
     throw new Error(`OG cover is not a site-owned path or http(s) URL: ${cover}`)
   }
@@ -123,16 +123,24 @@ export interface OpenGraphProps {
 
 // Font registration lives in `render/canvas-fonts.ts` (`ensureCanvasFont`) —
 // one single-flight per slot, shared with the calendar renderer.
-function ensureFonts(): Promise<FontSlot | null> {
-  return ensureCanvasFont('og')
+function ensureFonts(settings?: BlogSettingsBundle | null): Promise<FontSlot | null> {
+  return ensureCanvasFont('og', settings)
 }
 
-export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): Promise<Buffer> {
-  const ogFontSlot = await ensureFonts()
-  const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const seo = requireBlogSettingsSection('seo')
+/**
+ * `settings` is the caller's PINNED snapshot (the OG resource passes the same
+ * request capture whose revision keys the cache entry); omitted = the current
+ * process snapshot for background/test callers.
+ */
+export async function drawOpenGraph(
+  { title, summary, cover }: OpenGraphProps,
+  settings?: BlogSettingsBundle | null,
+): Promise<Buffer> {
+  const ogFontSlot = await ensureFonts(settings)
+  const siteIdentity = requireBlogSettingsSection('siteIdentity', settings)
+  const seo = requireBlogSettingsSection('seo', settings)
 
-  const [coverImage, logoBuffer] = await Promise.all([loadCover(cover), logoDark()])
+  const [coverImage, logoBuffer] = await Promise.all([loadCover(cover, siteIdentity.website), logoDark()])
   const logoImage = await loadImage(logoBuffer)
 
   const description = summary.replace(/<[^>]+>/g, '').trim()

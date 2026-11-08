@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -8,8 +9,10 @@ import {
   messageCatalogsFor,
   serverMessagesFor,
   uiMessagesFor,
+  uiMessagesForScope,
   type MessageCatalogSource,
 } from '@/shared/i18n/catalog'
+import { catalogScopeForPathname, isPublicMessageKey, isWorkspacePath } from '@/shared/i18n/catalog-scope'
 import { SUPPORTED_LOCALES, type AppLocale } from '@/shared/i18n/locales'
 import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
 
@@ -177,5 +180,106 @@ describe('shared/i18n/catalog', () => {
     expect(error.name).toBe('CatalogValidationError')
     expect(error.message).toContain('2 issues')
     expect(error.issues).toHaveLength(2)
+  })
+})
+
+describe('shared/i18n/catalog-scope', () => {
+  it('classifies workspace paths, including the auth/setup pages', () => {
+    for (const path of [
+      '/admin',
+      '/admin/',
+      '/admin/settings',
+      '/admin/signin',
+      '/admin/setup',
+      '/editor',
+      '/editor/post/new',
+    ]) {
+      expect(isWorkspacePath(path), path).toBe(true)
+      expect(catalogScopeForPathname(path), path).toBe('workspace')
+    }
+    for (const path of ['/', '/posts/hello', '/administrator', '/editors', '/adminx']) {
+      expect(isWorkspacePath(path), path).toBe(false)
+      expect(catalogScopeForPathname(path), path).toBe('public')
+    }
+  })
+
+  it('ships exactly the public namespace allowlist', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const full = uiMessagesFor(locale)
+      const publicCatalog = uiMessagesForScope(locale, 'public')
+
+      const expectedKeys = Object.keys(full)
+        .filter((key) => isPublicMessageKey(key))
+        .sort()
+      expect(Object.keys(publicCatalog).sort(), locale).toEqual(expectedKeys)
+      // Values are the same translations, not a re-merged English fallback.
+      expect(publicCatalog['common.action.save'], locale).toBe(full['common.action.save'])
+      // The shared notifications drawer (mounted on public pages) keeps its
+      // admin action toasts; no other admin namespace may leak.
+      expect(publicCatalog['admin.toast.operationFailed'], locale).toBe(full['admin.toast.operationFailed'])
+    }
+  })
+
+  it('never ships a workspace-only family on the public wire', () => {
+    // The exact families the old "drop admin.*" filter left behind.
+    const WORKSPACE_ONLY_PREFIXES = [
+      'admin.settings.',
+      'admin.editor.',
+      'backup.',
+      'storage.',
+      'update.',
+      'images.',
+      'content.',
+      'users.',
+      'fonts.',
+      'analytics.',
+      'taxonomy.',
+      'assets.',
+      'newsletter.',
+      'webmentions.',
+      'maxmind.',
+      'audit.',
+      'branding.',
+    ] as const
+
+    for (const locale of SUPPORTED_LOCALES) {
+      const publicCatalog = uiMessagesForScope(locale, 'public')
+      const leaked = Object.keys(publicCatalog).filter((key) =>
+        WORKSPACE_ONLY_PREFIXES.some((prefix) => key.startsWith(prefix)),
+      )
+      expect(leaked, locale).toEqual([])
+    }
+  })
+
+  it('memoizes one frozen object per locale + scope', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const workspace = uiMessagesForScope(locale, 'workspace')
+      const publicCatalog = uiMessagesForScope(locale, 'public')
+
+      expect(uiMessagesForScope(locale, 'workspace'), locale).toBe(workspace)
+      expect(uiMessagesForScope(locale, 'public'), locale).toBe(publicCatalog)
+      expect(uiMessagesFor(locale), locale).toBe(workspace)
+      expect(Object.isFrozen(workspace), locale).toBe(true)
+      expect(Object.isFrozen(publicCatalog), locale).toBe(true)
+    }
+  })
+
+  it('keeps the public wire payload materially smaller (gzip regression)', () => {
+    const gzipBytes = (catalog: Record<string, string>): number => gzipSync(JSON.stringify(catalog)).length
+    // Actual values at the allowlist's introduction: ~8.5 KB public vs ~48–52 KB
+    // workspace over the wire. Both bounds are deliberately loose — a copy edit
+    // must not fail the suite, while re-leaking a workspace family (ratio → 1)
+    // or a second catalog riding along (public > 2× today) does.
+    const PUBLIC_GZIP_CEILING = 12_000
+    const PUBLIC_SHARE_CEILING = 0.3
+
+    for (const locale of SUPPORTED_LOCALES) {
+      const workspaceBytes = gzipBytes(uiMessagesForScope(locale, 'workspace'))
+      const publicBytes = gzipBytes(uiMessagesForScope(locale, 'public'))
+
+      expect(publicBytes, locale).toBeLessThan(workspaceBytes)
+      expect(publicBytes, locale).toBeLessThan(PUBLIC_GZIP_CEILING)
+      expect(publicBytes / workspaceBytes, locale).toBeLessThan(PUBLIC_SHARE_CEILING)
+    }
   })
 })

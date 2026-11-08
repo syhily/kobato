@@ -3,12 +3,23 @@ import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { BlogSettingsBundle, CustomQuote } from '@/shared/config/types'
+
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { renderCalendar } from '@/server/render/calendar/render'
 
 // `renderCalendar` mixes the Shanbay quote API, lunar conversion, and canvas drawing —
 // mock fetch and assert the PNG structural invariants.
 
 const originalFetch = globalThis.fetch
+
+function bundleWithQuoteBank(bank: CustomQuote[]): BlogSettingsBundle {
+  const sidebar = TEST_BLOG_SETTINGS_BUNDLE.sidebar!
+  return {
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    sidebar: { sidebar: { ...sidebar.sidebar, dailyQuote: { source: 'custom', customQuotes: bank } } },
+  }
+}
 
 beforeEach(() => {
   globalThis.fetch = vi.fn(async (url: unknown) => {
@@ -90,5 +101,23 @@ describe('services/images/calendar — renderCalendar', () => {
     const meta = await sharp(buffer).metadata()
     expect(meta.width).toBe(600)
     expect(meta.height).toBe(880)
+  })
+
+  it('renders a different image when the daily-quote setting changes', { timeout: 30_000 }, async () => {
+    const firstBank: CustomQuote[] = Array.from({ length: 12 }, (_, i) => ({
+      content: `Alpha quote ${i + 1}`,
+      author: 'Author A',
+    }))
+    const secondBank: CustomQuote[] = Array.from({ length: 12 }, (_, i) => ({
+      content: `Zulu quote ${i + 1}`,
+      author: 'Author Z',
+    }))
+
+    const first = await renderCalendar(parseISO('2024-04-24'), 'light', 'zh-CN', bundleWithQuoteBank(firstBank))
+    const second = await renderCalendar(parseISO('2024-04-24'), 'light', 'zh-CN', bundleWithQuoteBank(secondBank))
+
+    expect(first[0]).toBe(0x89)
+    expect(second[0]).toBe(0x89)
+    expect(first.equals(second)).toBe(false)
   })
 })

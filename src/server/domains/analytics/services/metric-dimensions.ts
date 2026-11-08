@@ -33,6 +33,10 @@ const env = (column: string) => sql.ref(`device_env_client.${column}`)
 
 const events = (column: string): EventsDimension => ({ source: 'events', column })
 
+// Bucket values are LOCALE-NEUTRAL machine tokens (never copy): the admin UI
+// resolves them through `admin.analytics.metrics.value.*`, and the filter
+// predicate compares the SAME expression, so a clicked row round-trips exactly.
+
 /**
  * Screen resolution is session-static (ADR-0006): only `has_static = true`
  * rows carry it, so this dimension aggregates over the beacon-covered
@@ -66,7 +70,7 @@ const dpr: EnvDimension = {
     WHEN ${env('dpr')} = 2 THEN '2x'
     WHEN ${env('dpr')} = 2.5 THEN '2.5x'
     WHEN ${env('dpr')} = 3 THEN '3x'
-    ELSE '其他'
+    ELSE 'other'
   END`,
 }
 
@@ -74,10 +78,10 @@ const touch: EnvDimension = {
   source: 'env',
   select: sql<string>`CASE
     WHEN ${env('touch_points')} IS NULL THEN NULL
-    WHEN ${env('touch_points')} = 0 THEN '无触控'
-    WHEN ${env('touch_points')} <= 5 THEN '1–5 点'
-    WHEN ${env('touch_points')} <= 10 THEN '6–10 点'
-    ELSE '超过 10 点'
+    WHEN ${env('touch_points')} = 0 THEN 'none'
+    WHEN ${env('touch_points')} <= 5 THEN '1-5'
+    WHEN ${env('touch_points')} <= 10 THEN '6-10'
+    ELSE 'many'
   END`,
 }
 

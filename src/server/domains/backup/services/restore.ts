@@ -96,7 +96,7 @@ export class EncryptedBackupPasswordRequired extends Error {
     readonly dir: string,
     readonly uploadPath: string,
   ) {
-    super('该备份已加密，需要输入备份密码')
+    super('This backup is encrypted; a backup password is required')
     this.name = 'EncryptedBackupPasswordRequired'
   }
 }

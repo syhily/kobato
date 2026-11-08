@@ -95,6 +95,43 @@ describe('shared/utils/formatter — formatLocalDate token substitution', () => 
     expect(out).toBe('day=05 month=03 year=2024')
   })
 
+  it('substitutes all nine documented tokens when they stand alone', () => {
+    const out = formatLocalDate('2024-03-05T06:07:08Z', 'yyyy|LL|MM|dd|HH|hh|mm|ss|a', SETTINGS)
+    // Asia/Shanghai is UTC+8 → 14:07:08, so `HH` is 14 and `hh` is 02 (下午).
+    expect(out).toBe('2024|03|03|05|14|02|07|08|下午')
+  })
+
+  it('leaves literal words alone (a run must START with a token to substitute)', () => {
+    // `dd` inside `add` is a word, not the day token; the trailing, delimited
+    // `dd` still substitutes.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'add dd', SETTINGS)).toBe('add 05')
+
+    // Each run below begins with a character that cannot start a token, so the
+    // WHOLE run stays literal even when a token sequence appears later
+    // (`myyyyword` contains `yyyy`).
+    const words = 'summary myyyyword ALLOW class day date month year'
+    expect(formatLocalDate('2024-03-05T06:07:08Z', words, SETTINGS)).toBe(words)
+
+    // A standalone token next to those words still substitutes.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', `${words} dd`, SETTINGS)).toBe(`${words} 05`)
+  })
+
+  it('substitutes runs of adjacent tokens (no separators needed)', () => {
+    const iso = '2024-03-05T06:07:08Z'
+    expect(formatLocalDate(iso, 'yyyyMMdd', SETTINGS)).toBe('20240305')
+    expect(formatLocalDate(iso, 'yyyyLLdd', SETTINGS)).toBe('20240305')
+    expect(formatLocalDate(iso, 'HHmmss', SETTINGS)).toBe('140708')
+    expect(formatLocalDate(iso, 'HHmm', SETTINGS)).toBe('1407')
+    expect(formatLocalDate(iso, 'ssLL', SETTINGS)).toBe('0803')
+  })
+
+  it('keeps substituting after a literal letter inside a compact run', () => {
+    // The `T` is emitted verbatim; the HH that follows is still a token. This
+    // is the ISO-ish admin pattern that must keep working.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'yyyy-MM-ddTHH:mm', SETTINGS)).toBe('2024-03-05T14:07')
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'ddTHH', SETTINGS)).toBe('05T14')
+  })
+
   it('throws RangeError on invalid date input (garbage-in parity with Intl)', () => {
     expect(() => formatLocalDate('not-a-date', 'yyyy-LL-dd', SETTINGS)).toThrow(RangeError)
     expect(() => formatLocalDate('not-a-date', 'yyyy-LL-dd', SETTINGS)).toThrow('Invalid time value')

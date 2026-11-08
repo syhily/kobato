@@ -1,6 +1,6 @@
 import type { ContentSettings } from '@/shared/config/types'
 
-const DEFAULT_FOOTNOTES_SECTION_TITLE = '尾声礼记'
+export const DEFAULT_FOOTNOTES_SECTION_TITLE = '尾声礼记'
 
 /** Visible `<h3>` above the Portable Text footnotes list (`blog.content.footnotes.sectionTitle`). */
 export function resolveFootnotesSectionTitle(content: ContentSettings): string {

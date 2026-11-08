@@ -2,6 +2,7 @@ import { format, isValid, parse } from 'date-fns'
 import { HTTPException } from 'hono/http-exception'
 
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { AppLocale } from '@/shared/i18n/locales'
 
 import { through } from '@/server/infra/cache/registry'
@@ -32,6 +33,10 @@ export interface CalendarRequestOptions {
   theme: CalendarTheme
   /** The request's AppLocale — explicit, never inferred from the cache key. */
   locale: AppLocale
+  /** The pinned settings generation — part of the cache key, not of the renderer input. */
+  settingsRevision: string
+  /** The request's pinned settings bundle (daily-quote source & custom bank). */
+  settings: BlogSettingsBundle | null
   ifNoneMatch: string | null
 }
 
@@ -58,12 +63,12 @@ export async function serveCalendar(
     httpNotFound()
   }
 
-  const { theme, locale, ifNoneMatch } = options
+  const { theme, locale, settingsRevision, settings, ifNoneMatch } = options
   const buffer = await through(
     db,
     'calendar',
-    { date: format(date, 'yyyy-MM-dd'), theme, locale, version: APP_VERSION },
-    () => renderCalendar(date, theme, locale),
+    { date: format(date, 'yyyy-MM-dd'), theme, locale, version: APP_VERSION, settingsRevision },
+    () => renderCalendar(date, theme, locale, settings),
   )
 
   // ETag over the exact PNG bytes: a cache hit reuses the same buffer, so the

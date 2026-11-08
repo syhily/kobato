@@ -34,7 +34,7 @@ import { registerSectionChangeHandler } from '@/server/domains/settings/services
 import { runZeaburMailCleanupAtBoot } from '@/server/domains/settings/services/zeabur-mail-cleanup'
 import { wireS3Migration } from '@/server/domains/storage/s3-migration'
 import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
-import { clear } from '@/server/infra/cache/registry'
+import { clearLocalizedOutputs } from '@/server/infra/cache/registry'
 import { isVitest } from '@/server/infra/config'
 import {
   flushAllBatchers,
@@ -53,6 +53,7 @@ import { sweepOrphanedJobRuns, wireJobFailureNotifier, wireJobRunRecorder } from
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { startQueryDiagnostics } from '@/server/infra/db/query-diagnostics'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { setJobHandleGetter } from '@/server/infra/job-registry'
 import { closeHttpServer, setRestartGetDb, setRestartRefreshSettings, setServerPhase } from '@/server/infra/lifecycle'
 // Load-bearing: each batcher module self-registers on the registry at import time.
@@ -126,9 +127,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
       }
       const password = encryption.password?.trim()
       if (password === undefined || password === '') {
-        throw new BackupEncryptionMisconfiguredError(
-          '备份加密已启用但未设置密码 — 请在设置中填写备份加密密码或关闭加密',
-        )
+        throw new BackupEncryptionMisconfiguredError(descriptorFor('backup.error.encryptionMisconfigured'))
       }
       return password
     },
@@ -207,14 +206,21 @@ wireRestoreMachine({
 })
 
 // Composition root: section-change side effects register here, keeping the registry module inert.
-// General owns the site language and identity: the localized feed/calendar
-// representations are keyed by locale, so every variant must be dropped. The
-// bucket clear covers all locale/version keys (no generation counter).
-registerSectionChangeHandler('general', () => {
-  const db = getDb()
-  clear(db, 'feed')
-  clear(db, 'calendar')
-})
+// Every settings save advances the snapshot revision, so the previous
+// feed/calendar generation is unreachable by construction. These handlers only
+// RECLAIM the now-orphaned rows (whole-bucket DELETE, every locale/version/
+// revision variation); a delete failure reaches the section-change warning
+// channel. Sections listed here are the ones whose values feed those renders:
+// identity/locale (general), feed size (content), branding URLs (assets),
+// daily-quote source/bank (sidebar), canvas fonts (fonts) and the comments
+// digest (comments).
+const reclaimLocalizedOutputs = () => clearLocalizedOutputs(getDb())
+registerSectionChangeHandler('general', reclaimLocalizedOutputs)
+registerSectionChangeHandler('content', reclaimLocalizedOutputs)
+registerSectionChangeHandler('assets', reclaimLocalizedOutputs)
+registerSectionChangeHandler('sidebar', reclaimLocalizedOutputs)
+registerSectionChangeHandler('fonts', reclaimLocalizedOutputs)
+registerSectionChangeHandler('comments', reclaimLocalizedOutputs)
 registerSectionChangeHandler('backup', rescheduleBackup)
 registerSectionChangeHandler('limits', rescheduleArchive)
 registerSectionChangeHandler('mail', invalidateMailTransportCache)

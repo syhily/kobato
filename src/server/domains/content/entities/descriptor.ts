@@ -26,6 +26,8 @@ export interface MetaRowBase {
   webmentionsEnabled: boolean
   showToc: boolean
   showUpdated: boolean
+  /** Canonical BCP 47 tag of the prose; `null` = inherit the document language. */
+  contentLanguage: string | null
   publishedAt: Date
   publishedRevisionId: number | null
   firstPublishedAt: Date | null
@@ -48,6 +50,8 @@ export interface UpsertMetaInputBase {
   webmentionsEnabled?: boolean
   showToc?: boolean
   showUpdated?: boolean
+  /** `null` clears the content language; omitted = leave untouched. */
+  contentLanguage?: string | null
   /** `null` cancels a pending schedule (drops back to unpublished); omitted = leave untouched. */
   publishedAt?: Date | null
 }

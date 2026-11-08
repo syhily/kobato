@@ -3,12 +3,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { onErrorHandler } from '@/server/http/errors'
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
+
+const REVISIONS = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE)
 
 function createTestApp() {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('requestContext', { clientAddress: '127.0.0.1', db: {} } as never)
+    c.set('requestContext', {
+      clientAddress: '127.0.0.1',
+      db: {},
+      settings: TEST_BLOG_SETTINGS_BUNDLE,
+      localization: {
+        locale: 'zh-CN',
+        timeZone: 'Asia/Shanghai',
+        timeFormat: null,
+        revision: 'boot-test:0000000001',
+        revisions: REVISIONS,
+      },
+    } as never)
     await next()
   })
   app.onError(onErrorHandler)
@@ -40,11 +55,13 @@ describe('sitemapRouter', () => {
     const res = await app.request('/sitemap.xml')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('application/xml; charset=utf-8')
-    expect(res.headers.get('Cache-Control')).toBe('public, max-age=3600')
+    // Revalidated, not max-age: a domain change must not be shadowed.
+    expect(res.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(res.headers.get('ETag')).toMatch(/^"[0-9a-f]{32}"$/)
     await expect(res.text()).resolves.toBe(cached)
   })
 
-  it('builds sitemap on cache miss', async () => {
+  it('builds sitemap on cache miss from the pinned settings + sitemap revision', async () => {
     const built = '<urlset><url><loc>/hello</loc></url></urlset>'
     const through = vi.fn((_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader())
     vi.doMock('@/server/infra/cache/registry', () => ({ through }))
@@ -52,9 +69,8 @@ describe('sitemapRouter', () => {
       readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
       tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
     }))
-    vi.doMock('@/server/render/seo/sitemap', () => ({
-      buildSitemapXml: vi.fn().mockResolvedValue(built),
-    }))
+    const buildSitemapXml = vi.fn().mockResolvedValue(built)
+    vi.doMock('@/server/render/seo/sitemap', () => ({ buildSitemapXml }))
 
     const { sitemapRouter } = await import('@/server/http/resources/sitemap')
     const app = createTestApp()
@@ -63,7 +79,32 @@ describe('sitemapRouter', () => {
     const res = await app.request('/sitemap.xml')
     expect(res.status).toBe(200)
     await expect(res.text()).resolves.toBe(built)
-    expect(through).toHaveBeenCalledWith({}, 'sitemap', {}, expect.any(Function))
+    expect(through).toHaveBeenCalledWith({}, 'sitemap', { settingsRevision: REVISIONS.sitemap }, expect.any(Function))
+    expect(buildSitemapXml).toHaveBeenCalledWith({}, TEST_BLOG_SETTINGS_BUNDLE)
+  })
+
+  it('answers 304 on a matching If-None-Match without a body', async () => {
+    const cached = '<urlset></urlset>'
+    vi.doMock('@/server/infra/cache/registry', () => ({
+      through: vi.fn().mockResolvedValue(cached),
+    }))
+    vi.doMock('@/server/infra/rate-limit', () => ({
+      readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
+      tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
+    }))
+
+    const { sitemapRouter } = await import('@/server/http/resources/sitemap')
+    const app = createTestApp()
+    app.route('/', sitemapRouter)
+
+    const first = await app.request('/sitemap.xml')
+    const etag = first.headers.get('ETag')!
+    const cachedRes = await app.request('/sitemap.xml', { headers: { 'if-none-match': etag } })
+
+    expect(cachedRes.status).toBe(304)
+    expect(cachedRes.headers.get('ETag')).toBe(etag)
+    expect(cachedRes.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(await cachedRes.text()).toBe('')
   })
 
   it('returns 429 when rate limit exceeded', async () => {

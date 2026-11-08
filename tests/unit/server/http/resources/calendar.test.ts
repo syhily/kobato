@@ -2,8 +2,10 @@ import { HTTPException } from 'hono/http-exception'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { AppLocale } from '@/shared/i18n/locales'
 
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 import { APP_VERSION } from '@/shared/config/version'
 
 // The db handle is only forwarded to the mocked cache module — a stand-in
@@ -12,8 +14,23 @@ const db = {} as Database
 
 const PNG = Buffer.from('png-bytes')
 
-function options(overrides: Partial<{ theme: 'light' | 'dark'; locale: AppLocale; ifNoneMatch: string | null }> = {}) {
-  return { theme: 'light' as const, locale: 'zh-CN' as AppLocale, ifNoneMatch: null, ...overrides }
+function options(
+  overrides: Partial<{
+    theme: 'light' | 'dark'
+    locale: AppLocale
+    settingsRevision: string
+    settings: BlogSettingsBundle | null
+    ifNoneMatch: string | null
+  }> = {},
+) {
+  return {
+    theme: 'light' as const,
+    locale: 'zh-CN' as AppLocale,
+    settingsRevision: representationRevisionsFor(null).calendar,
+    settings: null,
+    ifNoneMatch: null,
+    ...overrides,
+  }
 }
 
 describe('serveCalendar', () => {
@@ -51,20 +68,40 @@ describe('serveCalendar', () => {
     expect(res.headers.get('ETag')).toMatch(/^"[0-9a-f]{32}"$/)
   })
 
-  it('caches by date + theme + locale + representation version, and passes the locale to the renderer', async () => {
+  it('caches by date + theme + locale + version + settings revision, and passes the pinned bundle to the renderer', async () => {
     const serveCalendar = await importServeCalendar()
-    await serveCalendar(db, { year: '2026', time: '0617' }, options({ theme: 'dark', locale: 'zh-TW' }))
+    const settings = { siteIdentity: null } as unknown as BlogSettingsBundle
+    await serveCalendar(db, { year: '2026', time: '0617' }, options({ theme: 'dark', locale: 'zh-TW', settings }))
 
     expect(through).toHaveBeenCalledWith(
       db,
       'calendar',
-      { date: '2026-06-17', theme: 'dark', locale: 'zh-TW', version: APP_VERSION },
+      {
+        date: '2026-06-17',
+        theme: 'dark',
+        locale: 'zh-TW',
+        version: APP_VERSION,
+        settingsRevision: expect.any(String) as string,
+      },
       expect.any(Function),
     )
-    // The loader closure is what calls the renderer — invoke it to prove the locale is threaded.
+    // The loader closure is what calls the renderer — invoke it to prove the
+    // locale AND the settings snapshot are threaded.
     const loader = through.mock.calls[0]![3] as () => Promise<Buffer>
     await loader()
-    expect(renderCalendar).toHaveBeenCalledWith(expect.any(Date), 'dark', 'zh-TW')
+    expect(renderCalendar).toHaveBeenCalledWith(expect.any(Date), 'dark', 'zh-TW', settings)
+  })
+
+  it('moves the key when the settings revision advances', async () => {
+    const serveCalendar = await importServeCalendar()
+    await serveCalendar(db, { year: '2026', time: '0617' }, options({ settingsRevision: 'boot-test:0000000010' }))
+    await serveCalendar(db, { year: '2026', time: '0617' }, options({ settingsRevision: 'boot-test:0000000011' }))
+
+    const first = through.mock.calls[0]![2] as { settingsRevision: string }
+    const second = through.mock.calls[1]![2] as { settingsRevision: string }
+    expect(first.settingsRevision).toBe('boot-test:0000000010')
+    expect(second.settingsRevision).toBe('boot-test:0000000011')
+    expect(first).not.toEqual(second)
   })
 
   it.each(['en-US', 'zh-CN', 'zh-TW', 'zh-HK'] as const)(

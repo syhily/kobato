@@ -79,7 +79,7 @@ describe('friends/email — site locale at send time', () => {
       const { subject, props } = lastCall()
       expect(subject).toBe('New friend-link application')
       expect(props.title).toBe('New friend-link application')
-      expect(props.preview).toBe('「小鱼的博客」applied for a friend link')
+      expect(props.preview).toBe('"小鱼的博客" applied for a friend link')
       expect(props.mutedNote).toBe('The application is awaiting review; it appears publicly only after approval')
       expect(props.rows).toEqual([
         { label: 'Site:', value: '小鱼的博客' },

@@ -93,7 +93,7 @@ const IDLE_STATUS: StorageMigrationStatus = {
 
 class MigrationCancelled extends Error {
   constructor() {
-    super('迁移已取消')
+    super('Migration cancelled')
     this.name = 'MigrationCancelled'
   }
 }

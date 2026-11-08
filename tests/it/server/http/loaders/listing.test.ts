@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { listPublicPostCardsPaginated } from '@/server/domains/posts/services/public-query'
 import { listingLoader } from '@/server/http/loaders/listing'
@@ -49,11 +50,35 @@ describe('listingLoader', () => {
       mergeTailWhenLessThan: 4,
       fetchPage,
       rootPath: '/example',
+      locale: 'zh-CN',
+      settings: TEST_BLOG_SETTINGS_BUNDLE,
       extra: undefined,
     })
 
     expect(fetchPage).toHaveBeenCalledOnce()
     expect(fetchPage).toHaveBeenCalledWith({ pageNum: 2, limit: 8, offset: 5 })
+  })
+
+  it('reads the page size from the pinned settings capture, not the global snapshot', async () => {
+    await seedLivePosts(13)
+    const content = TEST_BLOG_SETTINGS_BUNDLE.content!
+    const pinned = {
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      content: { ...content, pagination: { ...content.pagination, posts: 4 } },
+    }
+
+    const result = await listingLoader(db, {
+      rawNum: undefined,
+      totalPosts: 13,
+      fetchPage: async () => [],
+      rootPath: '/example',
+      locale: 'zh-CN',
+      settings: pinned,
+      extra: undefined,
+    })
+
+    // Global page size is 6 → 3 pages; the pinned capture says 4 → 4 pages.
+    expect(result.totalPage).toBe(4)
   })
 
   it('serves the merged tail as real rows through the paginated query', async () => {
@@ -68,6 +93,8 @@ describe('listingLoader', () => {
       fetchPage: ({ pageNum, limit, offset }) =>
         listPublicPostCardsPaginated(db, pageNum, limit, { includeHidden: false, includeScheduled: false, offset }),
       rootPath: '/example',
+      locale: 'zh-CN',
+      settings: TEST_BLOG_SETTINGS_BUNDLE,
       extra: undefined,
     })
 

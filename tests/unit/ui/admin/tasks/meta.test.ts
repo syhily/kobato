@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { makeTranslator } from '#/_helpers/i18n'
 import {
   GROUP_META,
+  JOB_RUN_ERROR_LABEL_IDS,
   MIGRATION_PHASE_META,
   RUN_STATUS_META,
   STATUS_META,
   TASK_CAPABILITIES,
+  jobRunErrorLabelId,
 } from '@/ui/admin/tasks/meta'
 
 const tZhCN = makeTranslator('zh-CN')
@@ -29,6 +31,14 @@ describe('ui/admin/tasks/meta — message-id registries', () => {
     expect(tZhCN(MIGRATION_PHASE_META['catching-up'].labelId)).toBe('正在追补新对象')
     expect(tEnUS(MIGRATION_PHASE_META['catching-up'].labelId)).toBe('Catching up on new objects')
     expect(MIGRATION_PHASE_META['catching-up'].status).toBe('running')
+  })
+
+  it('maps the process-restart machine code but leaves legacy errors raw', () => {
+    expect(jobRunErrorLabelId('process-restart')).toBe('admin.tasks.history.error.processRestart')
+    expect(jobRunErrorLabelId('备份单飞冲突')).toBeNull()
+    expect(jobRunErrorLabelId(null)).toBeNull()
+    expect(tZhCN(JOB_RUN_ERROR_LABEL_IDS['process-restart'])).toBe('进程重启中断')
+    expect(tEnUS(JOB_RUN_ERROR_LABEL_IDS['process-restart'])).toBe('Interrupted by a process restart')
   })
 
   it('resolves group labels/descriptions and footer links', () => {

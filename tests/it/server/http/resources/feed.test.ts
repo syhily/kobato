@@ -8,6 +8,8 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 import { APP_VERSION } from '@/shared/config/version'
 
 vi.mock('@/server/render/feed/generator', () => ({
@@ -40,14 +42,18 @@ function requestFeed(url: string, headers?: Record<string, string>) {
   return app.request(url, { headers })
 }
 
-function feedKey(scope: string, locale = 'zh-CN'): string {
-  return `${resolveCacheSlot('feed').prefix}${locale}:${APP_VERSION}:${scope}`
+function feedKey(
+  scope: string,
+  locale = 'zh-CN',
+  settingsRevision = representationRevisionsFor(getBlogSettingsBundleSync()).feed,
+): string {
+  return `${resolveCacheSlot('feed').prefix}${locale}:${APP_VERSION}:${settingsRevision}:${scope}`
 }
 
 async function cachedFeedScopes(): Promise<string[]> {
   const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
   const prefix = resolveCacheSlot('feed').prefix
-  const localeVersion = `zh-CN:${APP_VERSION}:`
+  const localeVersion = `zh-CN:${APP_VERSION}:${representationRevisionsFor(getBlogSettingsBundleSync()).feed}:`
   return rows.map((row) => row.key.slice(prefix.length + localeVersion.length)).sort()
 }
 
@@ -238,5 +244,64 @@ describe('feed resource — conditional requests and locale variants', () => {
     } finally {
       setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
     }
+  })
+
+  it('keys by the pinned settings revision and renders from the same captured bundle', async () => {
+    await requestFeed('http://localhost/feed')
+
+    const [, options] = (generateFeeds as ReturnType<typeof vi.fn>).mock.calls[0] as [unknown, { settings: unknown }]
+    expect(options.settings).toBe(getBlogSettingsBundleSync())
+
+    const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
+    expect(rows.map((row) => row.key)).toEqual([feedKey('all')])
+  })
+
+  it('keeps the warm entry across an UNRELATED (security) settings save', async () => {
+    const first = await requestFeed('http://localhost/feed')
+    await first.text()
+    expect(generateFeeds).toHaveBeenCalledTimes(1)
+
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      security: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.security!,
+        csrf: { enabled: false, exemptPaths: [] },
+      },
+    })
+
+    const second = await requestFeed('http://localhost/feed')
+    expect(second.status).toBe(200)
+    await expect(second.text()).resolves.toBe(BUILT.rss)
+    // The feed scope does not list security → same key, cache hit.
+    expect(generateFeeds).toHaveBeenCalledTimes(1)
+  })
+
+  it('serves a new generation after a settings save instead of the previous feed', async () => {
+    const first = await requestFeed('http://localhost/feed')
+    expect(first.status).toBe(200)
+    await first.text()
+    expect(generateFeeds).toHaveBeenCalledTimes(1)
+
+    // Any section save advances the revision; the old key is unreachable.
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Renamed Blog' },
+    })
+    ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(REBUILT)
+
+    const second = await requestFeed('http://localhost/feed')
+    expect(generateFeeds).toHaveBeenCalledTimes(2)
+    await expect(second.text()).resolves.toBe(REBUILT.rss)
+
+    const [, options] = (generateFeeds as ReturnType<typeof vi.fn>).mock.calls[1] as [
+      unknown,
+      { settings: { siteIdentity?: { title?: string } } | null },
+    ]
+    expect(options.settings?.siteIdentity?.title).toBe('Renamed Blog')
+
+    // Both generations are on disk; only the new one is addressable.
+    const keys = (await db.select({ key: kvCache.key }).from(kvCache)).map((row) => row.key)
+    expect(keys).toContain(feedKey('all'))
+    expect(keys).toHaveLength(2)
   })
 })

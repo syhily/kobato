@@ -4,8 +4,9 @@
 // The server translates; the client displays. A producer states WHAT failed as
 // a typed message id plus its params, and keeps an English `fallbackMessage`
 // for logs, old clients and diagnostics. The Hono/oRPC boundaries resolve the
-// descriptor against `context.localization.locale`; the wire carries the
-// structured descriptor so a consumer can still map issues back to fields.
+// descriptor against `context.localization.locale`; each wire issue carries
+// BOTH the resolved `message` for display and the structured descriptor so a
+// consumer can still map issues back to fields / re-localize on its own.
 
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
@@ -20,8 +21,15 @@ export interface ErrorMessageDescriptor {
   fallbackMessage: string
 }
 
-/** One validation issue: the descriptor plus the field it belongs to. */
+/** One validation issue: the descriptor, its localized text and the field it belongs to. */
 export interface ErrorIssueWire extends ErrorMessageDescriptor {
+  /**
+   * The issue's complete user-readable text in the REQUEST locale. A consumer
+   * that only reads `message` (the pre-descriptor shape) shows this verbatim;
+   * the key itself never rides this field. The descriptor fields stay for
+   * consumers that localize themselves or map issues back to fields.
+   */
+  message: string
   /** Producer code (a Zod issue code, or a domain-specific tag). */
   code?: string
   /** Field path, outermost first (`['rateLimit', 'signIn', 'maxAttempts']`). */

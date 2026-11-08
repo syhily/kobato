@@ -3,6 +3,7 @@ import { type ReactNode, Suspense, useMemo } from 'react'
 import { Await, Link } from 'react-router'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { CommentFormUser, DraftMarker } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
 import type { MarkdownHeading } from '@/shared/utils/toc'
@@ -21,11 +22,17 @@ import { TableOfContents } from '@/ui/public/post/TableOfContents'
 // a `fallback={null}` boundary would drop it and mismatch on re-render (#418).
 // The streamed Comments boundary is safe: its SSR fallback is a real placeholder.
 
-const DRAFT_MARKER_LABELS: Record<Exclude<DraftMarker, null>, { sr: string; visible: string }> = {
-  draft: { sr: '未发布草稿：', visible: '【草稿】' },
-  'unpublished-draft': { sr: '未发布的草稿：', visible: '【未发布的草稿】' },
-  'published-draft': { sr: '已发布的草稿：', visible: '【已发布的草稿】' },
-}
+const DRAFT_MARKER_LABEL_IDS = {
+  draft: { sr: 'public.posts.draftPrefix', visible: 'public.posts.draftBadge' },
+  'unpublished-draft': {
+    sr: 'public.posts.unpublishedDraftPrefix',
+    visible: 'public.posts.unpublishedDraftBadge',
+  },
+  'published-draft': {
+    sr: 'public.posts.publishedDraftPrefix',
+    visible: 'public.posts.publishedDraftBadge',
+  },
+} as const satisfies Record<Exclude<DraftMarker, null>, { sr: UiMessageId; visible: UiMessageId }>
 
 export interface DetailBodyChromeProps {
   siteIdentity: SiteIdentitySettings
@@ -51,6 +58,15 @@ export interface DetailBodyChromeProps {
   afterLikeButton?: ReactNode
   /** Saved `body_html` projection — sanitized with the 'body' preset at this render boundary. */
   bodyHtml: string
+  /**
+   * Author-declared language of the prose (canonical BCP 47). Stamped as the
+   * body container's `lang`; absent/null leaves the container inheriting the
+   * document's UI locale. Never selects a catalog or changes any copy. A set
+   * value also stamps `dir="auto"` on the body only — the browser picks the
+   * paragraph direction from the content (Arabic/Hebrew/Persian render RTL)
+   * without flipping the UI chrome.
+   */
+  contentLanguage?: string | null
   /** Trailing slot rendered after the body container (page friends grid). */
   children?: ReactNode
   postContentRef: React.RefObject<HTMLDivElement | null>
@@ -79,13 +95,17 @@ export function DetailBodyChrome({
   metaExtra,
   afterLikeButton,
   bodyHtml,
+  contentLanguage,
   children,
   postContentRef,
   contentWrapperClassName,
   metaClassName,
 }: DetailBodyChromeProps) {
   const { t } = useI18n()
-  const markerLabel = draftMarker !== null ? DRAFT_MARKER_LABELS[draftMarker] : null
+  const markerLabel =
+    draftMarker === null
+      ? null
+      : { sr: t(DRAFT_MARKER_LABEL_IDS[draftMarker].sr), visible: t(DRAFT_MARKER_LABEL_IDS[draftMarker].visible) }
   const publishedIso = date.toISOString()
   const updatedAt = updated ?? date
   const updatedIso = updatedAt.toISOString()
@@ -137,6 +157,8 @@ export function DetailBodyChrome({
         <div
           ref={postContentRef}
           className={cn('post-content', 'typeset typeset-post')}
+          lang={contentLanguage ?? undefined}
+          dir={contentLanguage === null || contentLanguage === undefined || contentLanguage === '' ? undefined : 'auto'}
           dangerouslySetInnerHTML={{ __html: cleanBodyHtml }}
         />
         {children}

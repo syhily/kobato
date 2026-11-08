@@ -1,3 +1,4 @@
+import { createCanvas, loadImage } from '@napi-rs/canvas'
 import { describe, expect, it } from 'vitest'
 
 import { E2eClient, e2eEnv, getAdminCsrfToken, loginAdmin } from '#/_helpers/e2e-client'
@@ -6,9 +7,11 @@ import { callE2eRpc } from '#/_helpers/e2e-rpc'
 const env = e2eEnv()
 
 // Real-HTTP four-locale journey: switch the site language through the admin
-// settings RPC and verify every public representation follows — HTML,
-// RSS/Atom, manifest and the calendar PNG — plus the conditional-request
-// semantics (a stale tag must NEVER answer 304 with an old language).
+// settings RPC and verify every public representation follows — HTML (chrome
+// copy and the localized 404), RSS/Atom, manifest, an actual calendar PNG
+// paint, and the conditional-request semantics (a stale tag must NEVER answer
+// 304 with an old language). Every expected string is a literal from the
+// catalog, never computed with the same Intl call the implementation uses.
 const LOCALES = ['en-US', 'zh-HK', 'zh-TW', 'zh-CN'] as const
 type Locale = (typeof LOCALES)[number]
 
@@ -19,8 +22,40 @@ const OG_LOCALE: Record<Locale, string> = {
   'zh-CN': 'zh_CN',
 }
 
+/** Catalog literals rendered by BaseLayout / ErrorView on every public page. */
+const UI_COPY: Record<
+  Locale,
+  { skipToContent: string; themeToDark: string; notFoundTitle: string; notFoundDescription: string }
+> = {
+  'en-US': {
+    skipToContent: 'Skip to main content',
+    themeToDark: 'Switch to dark mode',
+    notFoundTitle: 'Page not found',
+    notFoundDescription: 'Sorry, we could not find what you were looking for.',
+  },
+  'zh-HK': {
+    skipToContent: '跳至主要內容',
+    themeToDark: '切換至深色模式',
+    notFoundTitle: '找不到頁面',
+    notFoundDescription: '抱歉，找不到你要的內容…',
+  },
+  'zh-TW': {
+    skipToContent: '跳至主要內容',
+    themeToDark: '切換至深色模式',
+    notFoundTitle: '找不到頁面',
+    notFoundDescription: '抱歉，找不到你要找的內容…',
+  },
+  'zh-CN': {
+    skipToContent: '跳转到主要内容',
+    themeToDark: '切换到暗色模式',
+    notFoundTitle: '未找到页面',
+    notFoundDescription: '抱歉，没有你要找的内容…',
+  },
+}
+
 // Fixed date in the supported window; the URL contract is unchanged by i18n.
 const CALENDAR_PATH = '/images/calendar/2026/0102.png'
+const MISSING_PATH = '/i18n-e2e-missing-page'
 
 async function setLocale(admin: E2eClient, csrfToken: string, locale: Locale): Promise<void> {
   const result = await callE2eRpc<{ section: unknown }>(
@@ -42,6 +77,37 @@ function expectHtmlLanguage(html: string, locale: Locale): void {
   expect(html).toMatch(new RegExp(`<meta[^>]*property="og:locale"[^>]*content="${OG_LOCALE[locale]}"`))
 }
 
+/**
+ * Count pixels that actually differ between two rendered calendars. This is
+ * the locale-dependent visible output: en-US drops the lunar line and the 宜
+ * line and writes Latin month/weekday names, so the two PNGs cannot coincide.
+ */
+async function countDifferingPixels(left: Uint8Array, right: Uint8Array): Promise<number> {
+  const [leftImage, rightImage] = await Promise.all([loadImage(Buffer.from(left)), loadImage(Buffer.from(right))])
+  expect([rightImage.width, rightImage.height]).toEqual([leftImage.width, leftImage.height])
+
+  const read = (image: Awaited<ReturnType<typeof loadImage>>) => {
+    const canvas = createCanvas(image.width, image.height)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(image, 0, 0)
+    return ctx.getImageData(0, 0, image.width, image.height).data
+  }
+  const [leftPixels, rightPixels] = [read(leftImage), read(rightImage)]
+
+  let differing = 0
+  for (let offset = 0; offset < leftPixels.length; offset += 4) {
+    if (
+      leftPixels[offset] !== rightPixels[offset] ||
+      leftPixels[offset + 1] !== rightPixels[offset + 1] ||
+      leftPixels[offset + 2] !== rightPixels[offset + 2] ||
+      leftPixels[offset + 3] !== rightPixels[offset + 3]
+    ) {
+      differing += 1
+    }
+  }
+  return differing
+}
+
 describe('four-locale public representations (HTTP e2e)', () => {
   it('switches the language and every surface follows, then restores zh-CN', async () => {
     const admin = new E2eClient(env.baseUrl)
@@ -60,26 +126,45 @@ describe('four-locale public representations (HTTP e2e)', () => {
     // zh-HK and zh-TW share the hand-reviewed traditional copy, so their
     // calendar bytes may legitimately match; English must differ.
     const calendarTags = new Map<Locale, string>()
+    const calendarPngs = new Map<Locale, Uint8Array>()
+    const feedTags = new Map<Locale, string>()
+    const manifestTags = new Map<Locale, string>()
 
     try {
       for (const locale of LOCALES) {
         await setLocale(admin, csrfToken, locale)
+        const copy = UI_COPY[locale]
 
-        // 1. HTML document: lang, Content-Language, og:locale.
+        // 1. HTML document: lang, Content-Language, og:locale, and real chrome
+        //    copy rendered through the UI catalog (never a fallback catalog).
         const home = await anon.get('/')
         expect(home.status).toBe(200)
         expect(home.headers.get('content-language')).toBe(locale)
-        expectHtmlLanguage(await home.text(), locale)
+        const homeHtml = await home.text()
+        expectHtmlLanguage(homeHtml, locale)
+        expect(homeHtml).toContain(copy.skipToContent)
+        expect(homeHtml).toContain(copy.themeToDark)
 
-        // 2. RSS: language element + header + ETag.
+        // 1b. The localized 404 body — a whole page rendered from the catalog.
+        const missing = await anon.get(MISSING_PATH)
+        expect(missing.status).toBe(404)
+        const missingHtml = await missing.text()
+        expect(missingHtml).toContain(copy.notFoundTitle)
+        expect(missingHtml).toContain(copy.notFoundDescription)
+
+        // 2. RSS: language element + header + ETag. `<language>` is the
+        //    feed's locale-bearing field; titles/descriptions are site-authored
+        //    content and deliberately never translated.
         const feed = await anon.get('/feed')
         expect(feed.status).toBe(200)
         expect(feed.headers.get('content-language')).toBe(locale)
-        expect(await feed.text()).toContain(`<language>${locale}</language>`)
+        const feedBody = await feed.text()
+        expect(feedBody).toContain(`<language>${locale}</language>`)
         const currentTag = feed.headers.get('etag')
         // The compression middleware weakens an entity tag on a compressed
         // response (`W/"…"`); the bytes are still what the server hashed.
         expect(currentTag).toMatch(/^(?:W\/)?"[0-9a-f]{32}"$/)
+        feedTags.set(locale, currentTag!)
 
         // 3. Conditional requests: a tag from the PREVIOUS locale must be a
         //    miss (200 + current language), the current tag a 304 that still
@@ -103,11 +188,19 @@ describe('four-locale public representations (HTTP e2e)', () => {
         expect(atom.headers.get('content-language')).toBe(locale)
         expect(await atom.text()).toContain(`xml:lang="${locale}"`)
 
-        // 5. Manifest: `lang` field + header.
+        // 5. Manifest: the full body — `lang` is its locale-bearing field,
+        //    name/short_name stay the site's authored title.
         const manifest = await anon.get('/manifest.webmanifest')
         expect(manifest.status).toBe(200)
         expect(manifest.headers.get('content-language')).toBe(locale)
-        expect((await manifest.json()) as { lang: string }).toMatchObject({ lang: locale })
+        const manifestBody = await manifest.text()
+        expect(JSON.parse(manifestBody)).toMatchObject({
+          name: 'Kobato Smoke',
+          short_name: 'Kobato Smoke',
+          lang: locale,
+          display: 'standalone',
+        })
+        manifestTags.set(locale, manifest.headers.get('etag')!)
 
         // 6. Calendar PNG: real locale-specific render, current language
         //    header, byte ETag.
@@ -120,9 +213,18 @@ describe('four-locale public representations (HTTP e2e)', () => {
         calendarTags.set(locale, calendarTag!)
         const png = new Uint8Array(await calendar.arrayBuffer())
         expect([...png.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47])
+        calendarPngs.set(locale, png)
       }
 
+      // Each body changes with the language: four distinct representation tags.
+      expect(new Set(feedTags.values()).size).toBe(LOCALES.length)
+      expect(new Set(manifestTags.values()).size).toBe(LOCALES.length)
       expect(calendarTags.get('en-US')).not.toBe(calendarTags.get('zh-CN'))
+
+      // The calendar paint itself is localized, not just its headers: en-US
+      // omits the lunar + 宜 lines and writes English month/weekday names.
+      const differing = await countDifferingPixels(calendarPngs.get('en-US')!, calendarPngs.get('zh-CN')!)
+      expect(differing).toBeGreaterThan(10_000)
     } finally {
       // Never leak another language into the shared instance's other journeys.
       await setLocale(admin, csrfToken, 'zh-CN')

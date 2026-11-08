@@ -16,7 +16,7 @@ import { drawOpenGraph } from '@/server/render/og/render'
 // Side-effect: wires render-layer warmup into the content domain's slot
 // (this module owns the OG/calendar request path it mirrors).
 import '@/server/render/warmup/content-cache'
-import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@/shared/config/getters'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { brandingVersionSuffix } from '@/shared/config/utils'
 import { joinUrl } from '@/shared/utils/urls'
 
@@ -32,8 +32,12 @@ function respondPng(c: Context<Env>, buffer: Uint8Array, headers: Readonly<Recor
 }
 
 function ogFallback(c: Context<Env>) {
-  const suffix = brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.openGraph)
-  return c.redirect(joinUrl(requireBlogSettingsSection('siteIdentity').website, `/images/open-graph.png${suffix}`))
+  // Pinned request snapshot — never the global one.
+  const { settings } = c.var.requestContext
+  const suffix = brandingVersionSuffix(settings?.assets?.branding?.openGraph)
+  return c.redirect(
+    joinUrl(requireBlogSettingsSection('siteIdentity', settings).website, `/images/open-graph.png${suffix}`),
+  )
 }
 
 interface OgEntity {
@@ -55,6 +59,7 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
       return ogFallback(c)
     }
 
+    const { db, settings, localization } = c.var.requestContext
     const entities = await Promise.all(adapters.map((adapter) => adapter.resolve(c, slug)))
     const selectedIndex = entities.findIndex((entity) => entity !== null)
     const entity = entities[selectedIndex]
@@ -64,12 +69,21 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
     }
 
     const summary =
-      entity.summary || (adapter.useSiteSummaryFallback ? requireBlogSettingsSection('siteIdentity').description : '')
+      entity.summary ||
+      (adapter.useSiteSummaryFallback ? requireBlogSettingsSection('siteIdentity', settings).description : '')
+    // The key carries the pinned settings generation AND the renderer gets the
+    // same bundle, so the card's title/logo/SEO dimensions match the key.
     const buffer = await through(
-      c.var.requestContext.db,
+      db,
       'og',
-      { slug: `${adapter.cacheKeyPrefix}${slug}`, title: entity.title, summary, cover: entity.cover },
-      () => drawOpenGraph({ title: entity.title, summary, cover: entity.cover }),
+      {
+        slug: `${adapter.cacheKeyPrefix}${slug}`,
+        title: entity.title,
+        summary,
+        cover: entity.cover,
+        settingsRevision: localization.revisions.og,
+      },
+      () => drawOpenGraph({ title: entity.title, summary, cover: entity.cover }, settings),
     )
     return respondPng(c, buffer, OG_HEADERS)
   }
@@ -122,28 +136,34 @@ const imagesRateLimit = rateLimitByIp('images', 'resource')
 export const imagesRouter = new Hono<Env>()
   .get('/images/og/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([postOgAdapter, pageOgAdapter]))
   .get('/images/og/cats/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([categoryOgAdapter]))
-  .get('/images/calendar/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) =>
-    serveCalendar(
-      c.var.requestContext.db,
+  .get('/images/calendar/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) => {
+    const { db, settings, localization } = c.var.requestContext
+    return serveCalendar(
+      db,
       { year: c.req.param('year'), time: stripPng(c.req.param('filename')) },
       {
         theme: 'light',
-        locale: c.var.requestContext.localization.locale,
+        locale: localization.locale,
+        settingsRevision: localization.revisions.calendar,
+        settings,
         ifNoneMatch: c.req.header('if-none-match') ?? null,
       },
-    ),
-  )
-  .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) =>
-    serveCalendar(
-      c.var.requestContext.db,
+    )
+  })
+  .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) => {
+    const { db, settings, localization } = c.var.requestContext
+    return serveCalendar(
+      db,
       { year: c.req.param('year'), time: stripPng(c.req.param('filename')) },
       {
         theme: 'dark',
-        locale: c.var.requestContext.localization.locale,
+        locale: localization.locale,
+        settingsRevision: localization.revisions.calendar,
+        settings,
         ifNoneMatch: c.req.header('if-none-match') ?? null,
       },
-    ),
-  )
+    )
+  })
   .get(
     '/images/avatar/:filename{[^/]+\\.png}',
     imagesRateLimit,

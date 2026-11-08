@@ -19,6 +19,7 @@ import { revokeOwnSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { getAccountProfile, updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
 import { authedProc, localizedOrpcError, passkeyGuard } from '@/server/http/orpc-base'
 import { findSafeUserById } from '@/server/infra/db/operations/user'
+import { createServerTranslator } from '@/server/infra/i18n'
 import {
   tryPasskeyDeleteRateLimit,
   tryPasskeyRegisterBeginRateLimit,
@@ -102,10 +103,11 @@ const sessions = authedProc
   .output(accountSessionsOutputSchema)
   .handler(async ({ context }) => {
     const rows = await listSessionsByUser(context.db, idFromString(context.viewer.id))
+    const translator = createServerTranslator(context.localization.locale)
     return rows.map((row) => ({
       sid: row.sid,
       userId: row.userId,
-      label: formatUaLabel(row.userAgent, row.platformHint),
+      label: formatUaLabel(row.userAgent, row.platformHint, translator.format('auth.sessions.unknownDevice')),
       ip: row.ip,
       loginAt: row.loginAt,
       lastActiveAt: row.lastActiveAt,

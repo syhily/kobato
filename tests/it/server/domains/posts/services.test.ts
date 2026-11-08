@@ -1,6 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { SidebarSelection } from '@/server/domains/posts/services/featured'
+import type { SidebarSettings } from '@/shared/config/types'
+
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '#/_helpers/lexical'
 import { adminUser } from '#/_helpers/session'
@@ -11,6 +15,24 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
 const db = getTestDb()
+
+/** A sidebar section with the recent-posts widget at `count`. */
+function sidebarWithRecentPosts(count: number): SidebarSettings {
+  const sidebar = TEST_BLOG_SETTINGS_BUNDLE.sidebar!
+  return {
+    sidebar: {
+      ...sidebar.sidebar,
+      widgets: sidebar.sidebar.widgets.map((widget) =>
+        widget.type === 'recentPosts' ? Object.assign({}, widget, { count }) : widget,
+      ),
+    },
+  }
+}
+
+/** The seeded selection the controller builds from (scope, day, revision). */
+function sidebarSelection(seed = 'post:1|2026-11-08|1', count = 5): SidebarSelection {
+  return { settings: sidebarWithRecentPosts(count), seed }
+}
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -530,14 +552,16 @@ describe('posts/services/featured — selectFeaturePosts', () => {
 })
 
 describe('posts/services/featured — selectSidebarPosts', () => {
-  it('returns [] for count=0', async () => {
+  it('returns [] when the recent-posts widget is disabled or its count is zero', async () => {
+    await seedPost({ slug: 'side', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
     const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
-    expect(await selectSidebarPosts(db, 0)).toEqual([])
+    expect(await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 0))).toEqual([])
   })
+
   it('returns posts when published + revision exists', async () => {
     await seedPost({ slug: 'side', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
     const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
-    const rows = await selectSidebarPosts(db, 5)
+    const rows = await selectSidebarPosts(db, sidebarSelection())
     expect(rows[0]?.slug).toBe('side')
   })
 
@@ -547,30 +571,63 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     await seedPost({ slug: 's3', publishedRevisionId: 3, publishedAt: new Date('2020-01-03') })
     const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
 
-    const two = await selectSidebarPosts(db, 2)
+    const two = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 2))
     expect(two).toHaveLength(2)
     expect(new Set(two.map((r) => r.slug)).size).toBe(2)
     for (const row of two) {
       expect(['s1', 's2', 's3']).toContain(row.slug)
     }
 
-    const all = await selectSidebarPosts(db, 10)
+    const all = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 10))
     expect(all).toHaveLength(3)
   })
 
-  it('randomises the pick across calls (no seed degradation)', async () => {
-    await seedPost({ slug: 'r1', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
-    await seedPost({ slug: 'r2', publishedRevisionId: 2, publishedAt: new Date('2020-01-02') })
+  it('is stable for the same representation (scope + day + revision)', async () => {
+    for (let i = 0; i < 8; i++) {
+      await seedPost({ slug: `p-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
+    }
     const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
 
-    const seen = new Set<string>()
-    for (let i = 0; i < 30 && seen.size < 2; i++) {
-      const [row] = await selectSidebarPosts(db, 1)
-      if (row) {
-        seen.add(row.slug)
-      }
+    const first = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 3))
+    const second = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 3))
+
+    expect(second.map((row) => row.slug)).toEqual(first.map((row) => row.slug))
+    expect(second).not.toBe(first)
+  })
+
+  it('rotates when the calendar day / scope / settings revision changes', async () => {
+    for (let i = 0; i < 8; i++) {
+      await seedPost({ slug: `p-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
     }
-    expect(seen).toEqual(new Set(['r1', 'r2']))
+    const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
+
+    const selections = new Set<string>()
+    for (const seed of [
+      'post:1|2026-11-08|1',
+      'post:1|2026-11-09|1',
+      'post:1|2026-11-10|1',
+      'post:1|2026-11-11|1',
+      'post:2|2026-11-08|1',
+      'post:1|2026-11-08|2',
+    ]) {
+      const rows = await selectSidebarPosts(db, sidebarSelection(seed, 3))
+      selections.add(rows.map((row) => row.slug).join(','))
+    }
+    expect(selections.size).toBeGreaterThan(1)
+  })
+
+  it('re-picks when the candidate set changes (same day/scope/revision)', async () => {
+    // Six candidates → a fifth post enters the pool between the two calls.
+    for (let i = 0; i < 6; i++) {
+      await seedPost({ slug: `c-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
+    }
+    const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
+    const before = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 3))
+
+    await seedPost({ slug: 'c-new', publishedRevisionId: 7, publishedAt: new Date('2020-01-01') })
+    const after = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 3))
+
+    expect(after.map((row) => row.slug).join(',')).not.toBe(before.map((row) => row.slug).join(','))
   })
 
   it('reads the post table a constant number of times regardless of count', async () => {
@@ -586,7 +643,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     })
     const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
 
-    const rows = await selectSidebarPosts(counting, 5)
+    const rows = await selectSidebarPosts(counting, sidebarSelection('post:1|2026-11-08|1', 5))
 
     expect(rows).toHaveLength(5)
     expect(new Set(rows.map((r) => r.slug)).size).toBe(5)

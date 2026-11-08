@@ -27,6 +27,17 @@ function resolveMaxBodySize(): number {
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
+  // Hydrate BEFORE the body-limit resolver and the CSRF guard run: both read
+  // settings (the live request-size limit; the localized CSRF error copy), and
+  // a cold process must not answer with pre-hydration defaults (zh-CN + the
+  // built-in 10 MB cap). Single-flight — the bridge projection below reuses the
+  // memoized snapshot. Pure `/rpc/*` requests never pass through
+  // `buildLoadContext`, so this is their only pre-projection hydration point.
+  app.use('/rpc/*', async (c, next) => {
+    await hydrateBlogSettings(c.var.requestContext.db)
+    await next()
+  })
+
   // Live settings snapshot per request — admin changes apply on the next request.
   app.use(
     dynamicBodyLimit({
@@ -40,13 +51,9 @@ export function createApiApp(): Hono<Env> {
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
     const rc = c.var.requestContext
-    // Pure `/rpc/*` requests never pass through `buildLoadContext`, so hydrate
-    // here BEFORE projecting `rc.localization` — otherwise a cold process
-    // memoizes the pre-hydration default pair (settings hydration is a
-    // single-flight over the process snapshot, so this is cheap after the
-    // first call and reuses the RR path's snapshot).
-    await hydrateBlogSettings(rc.db)
-    // Pure projection — no re-derivation; `markSessionDirty` deliberately
+    // Settings are already hydrated by the pre-limit middleware above; the
+    // projection below pins `context.settings` and `context.localization` from
+    // ONE lazy capture. No re-derivation; `markSessionDirty` deliberately
     // omitted (procedures get a read-only session).
     const context: HandlerContext = {
       request: c.req.raw,
@@ -56,6 +63,7 @@ export function createApiApp(): Hono<Env> {
       clientAddress: rc.clientAddress,
       responseHeaders,
       db: rc.db,
+      settings: rc.settings,
       localization: rc.localization,
     }
     const result = await handler.handle(c.req.raw, { prefix: '/rpc', context })

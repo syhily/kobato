@@ -7,6 +7,7 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { sendNewComment } from '@/server/domains/comments/services/email'
 import { post } from '@/server/infra/db/schema/post'
 import { sendTestMail } from '@/server/infra/email/sender'
+import { createServerTranslator } from '@/server/infra/i18n'
 
 // `sendNewComment` against the real engine: the slug/title lookup and the
 // saved `content`-projection email body are real; only `fetch` (Mailgun)
@@ -47,6 +48,16 @@ async function seedTargetPost(): Promise<number> {
 }
 
 const fetchMock = vi.fn<typeof fetch>()
+
+/** React's text-node escaping (renderToStaticMarkup) — catalog copy may include quotes. */
+function htmlText(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#x27;')
+}
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -343,9 +354,17 @@ describe('comments email — site locale at send time', () => {
     expect(result.ok).toBe(true)
     const [, init] = fetchMock.mock.calls[0]
     const body = init?.body as FormData
-    expect(body.get('subject')).toBe(`Your site【${title}】New comment`)
+    // Derive the expected copy from the real catalog: the English templates
+    // are ASCII (`{siteTitle}: {subject}`, `A new comment in "{title}"`).
+    const t = createServerTranslator('en-US')
+    expect(body.get('subject')).toBe(
+      t.format('email.adminNotification.subject', {
+        siteTitle: title,
+        subject: t.format('email.newComment.subjectSuffix'),
+      }),
+    )
     const html = body.get('html') as string
-    expect(html).toContain('A new comment in《Hi》')
+    expect(html).toContain(htmlText(t.format('email.newComment.preview', { title: 'Hi' })))
     expect(html).toContain('Post:')
     expect(html).toContain('This comment needs review')
     expect(html).toContain('View comment')

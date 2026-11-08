@@ -156,9 +156,18 @@ _Avoid_: site language (suggests the posts' language), i18n locale, language
 code (the stored value is a tag, canonicalized from legacy aliases)
 
 **Content language**:
-The language an author wrote a post, page, comment or site title in. Author
-input, never rewritten by the UI locale, and out of scope for translation.
-_Avoid_: confusing it with UI locale
+`post.contentLanguage` / `page.contentLanguage` — an optional BCP 47 tag the
+author declares for the prose of one post or page. Author input, never rewritten
+by the UI locale, never auto-detected and never translated. The write API
+accepts ANY well-formed tag (not a closed set — `ja`, `pt-BR`, `zh-Hant-TW` are
+all legal), stores its canonical spelling (`Intl.getCanonicalLocales`), and
+`null` / blank clears it; a malformed tag rejects the write with the
+`admin.editor.contentLanguage.error` descriptor and the `contentLanguage` field
+path. The public detail body container stamps it as `lang`; unset means the
+container inherits the document's UI locale. It changes no copy, no title, no
+body bytes and no feed URL.
+_Avoid_: confusing it with UI locale, using it to select a message catalog,
+treating it as an enum of the four UI locales
 
 **Message catalog**:
 One typed ICU module per locale per namespace — `messages/ui/<locale>` (client
@@ -202,12 +211,24 @@ _Avoid_: hand-rolled cache-aside at call sites, ad-hoc key strings
 outside the behavior plane
 
 **Locale representation**:
-Localized server output whose cache key includes the reader dimension: the
-`feed` and `calendar` buckets key on `locale:APP_VERSION:<content key>` (the
-calendar adds the theme), and their HTTP responses (plus `manifest.webmanifest`)
-are `Cache-Control: public, no-cache` with a strong ETag over the exact served
-bytes, so a language switch can never be served from a stale representation.
-Saving the General section clears both buckets entirely — no counter.
+Localized server output whose cache key includes the reader dimension AND the
+settings generation: the `feed`/`calendar` buckets key on
+`locale:APP_VERSION:settingsRevision:<content key>` (the calendar adds the
+theme), the `og` bucket on `settingsRevision:<slug>-<input hash>`, the
+`comments` bucket on `<commentsRevision>:<limit>`, the `sitemap` bucket on its
+site-origin generation, and their HTTP responses (plus
+`manifest.webmanifest`) are `Cache-Control: public, no-cache` with a strong
+ETag over the exact served bytes, so a language switch can never be served
+from a stale representation. `settingsRevision` is the SECTION-SCOPED,
+content-addressed generation (`shared/config/representation-scopes`): one hash
+per `detail`/`listing`/`feed`/`calendar`/`og`/`manifest`/`comments` over exactly
+the sections that surface renders (encrypted secrets excluded), so the same
+settings reuse keys across restarts and an UNRELATED save
+(security/backup/mail/limits) or a credential rotation moves nothing.
+The boot-unique `revision` is request identity / locale sync only. The
+`general`/`content`/`assets`/`sidebar`/`fonts`/`comments` handlers additionally
+delete the feed/calendar/og/comments buckets to reclaim the orphaned rows —
+correctness never depends on that delete or on waiting for in-flight renders.
 _Avoid_: locale-less feed/calendar keys, `max-age` on localized
 representations, generation counters for those buckets
 
@@ -232,9 +253,11 @@ projected — never re-derived — onto the three context surfaces: Hono
 React Router `RouterContextProvider` key. It carries the session, the
 viewer, the proxy-aware client address, the normalized document URL
 (`.data` / `_routes` / `index` stripped), the request facts, the
-db/pool handles, the CSP nonce, and the per-request `localization` pair
-(`locale` + site `timeZone`, resolved from the settings snapshot on first
-access). Same-session mutations call
+db/pool handles, the CSP nonce, and the request's PINNED settings bundle plus
+the `localization` projection (`locale`, site `timeZone`, `timeFormat`, and
+the snapshot `revision`). The bundle and the projection come from ONE lazy
+snapshot capture (`createLazyAppSnapshot`), so the bytes a renderer produces
+always belong to the revision in its cache key. Same-session mutations call
 `markSessionDirty()` and the middleware commits — the only Set-Cookie
 commit point; sid-changing flows (login rotation) keep their explicit
 Set-Cookie channel.

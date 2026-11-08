@@ -7,7 +7,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { formatDuration } from '@/shared/i18n/format'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
-import { RUN_STATUS_META, useFormatAdminDate } from '@/ui/admin/tasks/meta'
+import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@/ui/admin/tasks/meta'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyTitle } from '@/ui/components/empty'
@@ -26,6 +26,7 @@ export function RunHistoryRow({ run }: { run: JobRunDto }) {
   const date = useFormatAdminDate()
   const { locale, t } = useI18n()
   const meta = RUN_STATUS_META[run.status]
+  const errorLabelId = jobRunErrorLabelId(run.error)
   return (
     <div className="flex flex-col gap-1 py-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -40,7 +41,9 @@ export function RunHistoryRow({ run }: { run: JobRunDto }) {
           {run.durationMs !== null &&
             t('admin.tasks.history.duration', { duration: formatDuration(run.durationMs, { locale }) })}
           {run.status === 'running' && t('admin.tasks.history.running')}
-          {run.error !== null && <span className="text-status-error-fg">{run.error}</span>}
+          {run.error !== null && (
+            <span className="text-status-error-fg">{errorLabelId === null ? run.error : t(errorLabelId)}</span>
+          )}
         </p>
       )}
     </div>

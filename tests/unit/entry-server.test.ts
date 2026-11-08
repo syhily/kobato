@@ -20,10 +20,10 @@ vi.mock('@react-router/node', () => ({
 
 const { default: handleRequest } = await import('@/entry.server')
 
-function routerContext(): unknown {
+function routerContext(rootLoaderData?: unknown): unknown {
   return {
     staticHandlerContext: {
-      loaderData: {},
+      loaderData: rootLoaderData === undefined ? {} : { root: rootLoaderData },
       actionData: null,
       errors: null,
       statusCode: 200,
@@ -56,7 +56,9 @@ describe('entry.server.tsx / handleRequest', () => {
       const loadContext = {
         get: (context: unknown) =>
           context === requestContext
-            ? makeRequestContext({ localization: { locale, timeZone: 'Asia/Shanghai' } })
+            ? makeRequestContext({
+                localization: { locale, timeZone: 'Asia/Shanghai', timeFormat: null, revision: 'boot-test:0000000000' },
+              })
             : undefined,
       }
 
@@ -64,7 +66,7 @@ describe('entry.server.tsx / handleRequest', () => {
         new Request('http://localhost/'),
         200,
         responseHeaders,
-        routerContext() as never,
+        routerContext({ i18n: { locale, messages: {} } }) as never,
         loadContext as never,
       )
 
@@ -72,12 +74,64 @@ describe('entry.server.tsx / handleRequest', () => {
     },
   )
 
+  it('uses the root loader i18n locale (the one <html lang> renders) over the request locale', () => {
+    const responseHeaders = new Headers()
+    const loadContext = {
+      get: (context: unknown) =>
+        context === requestContext
+          ? makeRequestContext({
+              localization: {
+                locale: 'zh-CN',
+                timeZone: 'Asia/Shanghai',
+                timeFormat: null,
+                revision: 'boot-test:0000000000',
+              },
+            })
+          : undefined,
+    }
+
+    void handleRequest(
+      new Request('http://localhost/'),
+      200,
+      responseHeaders,
+      routerContext({ i18n: { locale: 'en-US', messages: {} } }) as never,
+      loadContext as never,
+    )
+
+    expect(responseHeaders.get('Content-Language')).toBe('en-US')
+  })
+
+  it('falls back to DEFAULT_LOCALE when the root loader failed (no i18n payload)', () => {
+    const responseHeaders = new Headers()
+    const loadContext = {
+      get: (context: unknown) =>
+        context === requestContext
+          ? makeRequestContext({
+              localization: { locale: 'en-US', timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' },
+            })
+          : undefined,
+    }
+
+    void handleRequest(
+      new Request('http://localhost/'),
+      200,
+      responseHeaders,
+      routerContext() as never,
+      loadContext as never,
+    )
+
+    // The Layout renders DEFAULT_LOCALE without loader data — the header must agree.
+    expect(responseHeaders.get('Content-Language')).toBe('zh-CN')
+  })
+
   it('sets Content-Language on a HEAD response too', () => {
     const responseHeaders = new Headers()
     const loadContext = {
       get: (context: unknown) =>
         context === requestContext
-          ? makeRequestContext({ localization: { locale: 'en-US', timeZone: 'UTC' } })
+          ? makeRequestContext({
+              localization: { locale: 'en-US', timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' },
+            })
           : undefined,
     }
 
@@ -85,7 +139,7 @@ describe('entry.server.tsx / handleRequest', () => {
       new Request('http://localhost/', { method: 'HEAD' }),
       200,
       responseHeaders,
-      routerContext() as never,
+      routerContext({ i18n: { locale: 'en-US', messages: {} } }) as never,
       loadContext as never,
     )
 

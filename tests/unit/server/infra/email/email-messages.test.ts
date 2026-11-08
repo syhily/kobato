@@ -1,3 +1,5 @@
+import { createElement, Fragment } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import type { AppLocale } from '@/shared/i18n/locales'
@@ -13,7 +15,26 @@ import { serverMessagesEnUS } from '@/shared/i18n/messages/server/en-US'
 interface Case {
   key: ServerMessageId
   params?: Record<string, string | number>
+  /** Rich-text message: tags are rendered as their plain chunks (text comparison only). */
+  rich?: boolean
   messages: Record<AppLocale, string>
+}
+
+function formatCase(entry: Case, locale: AppLocale): string {
+  const t = createServerTranslator(locale)
+  if (entry.rich !== true) {
+    return t.format(entry.key, entry.params)
+  }
+  return renderToStaticMarkup(
+    createElement(
+      Fragment,
+      null,
+      t.formatRich(entry.key, {
+        ...entry.params,
+        siteLink: (chunks: React.ReactNode[]) => chunks.join(''),
+      }),
+    ),
+  )
 }
 
 const CASES: Case[] = [
@@ -21,7 +42,7 @@ const CASES: Case[] = [
     key: 'email.adminNotification.subject',
     params: { siteTitle: 'Kobato', subject: 'Subject' },
     messages: {
-      'en-US': 'Your site【Kobato】Subject',
+      'en-US': 'Kobato: Subject',
       'zh-CN': '您的网站【Kobato】Subject',
       'zh-TW': '您的網站【Kobato】Subject',
       'zh-HK': '您的網站【Kobato】Subject',
@@ -78,7 +99,7 @@ const CASES: Case[] = [
     key: 'email.authorInvite.subject',
     params: { siteTitle: 'Kobato' },
     messages: {
-      'en-US': '【Kobato】Author invitation',
+      'en-US': 'Kobato: Author invitation',
       'zh-CN': '【Kobato】作者邀请',
       'zh-TW': '【Kobato】作者邀請',
       'zh-HK': '【Kobato】作者邀請',
@@ -97,7 +118,7 @@ const CASES: Case[] = [
   {
     key: 'email.commentApproved.contextPrefix',
     messages: {
-      'en-US': 'Your comment in《',
+      'en-US': 'Your comment in "',
       'zh-CN': '你在《',
       'zh-TW': '你在《',
       'zh-HK': '你在《',
@@ -106,7 +127,7 @@ const CASES: Case[] = [
   {
     key: 'email.commentApproved.contextSuffix',
     messages: {
-      'en-US': '》has been approved',
+      'en-US': '" has been approved',
       'zh-CN': '》中的留言，已经通过审核',
       'zh-TW': '》中的留言，已經通過審核',
       'zh-HK': '》中的留言，已經通過審核',
@@ -125,7 +146,7 @@ const CASES: Case[] = [
     key: 'email.commentApproved.preview',
     params: { postTitle: 'Hello' },
     messages: {
-      'en-US': 'Your comment in《Hello》has been approved',
+      'en-US': 'Your comment in "Hello" has been approved',
       'zh-CN': '你在《Hello》中的留言已通过审核',
       'zh-TW': '你在《Hello》中的留言已通過審核',
       'zh-HK': '你在《Hello》中的留言已通過審核',
@@ -135,7 +156,7 @@ const CASES: Case[] = [
     key: 'email.commentApproved.subject',
     params: { siteTitle: 'Kobato' },
     messages: {
-      'en-US': 'Your comment on【Kobato】has been approved',
+      'en-US': 'Your comment on Kobato has been approved',
       'zh-CN': '您在【Kobato】的留言已经通过审核',
       'zh-TW': '您在【Kobato】的留言已經通過審核',
       'zh-HK': '您在【Kobato】的留言已經通過審核',
@@ -170,6 +191,7 @@ const CASES: Case[] = [
   },
   {
     key: 'email.common.copyright',
+    rich: true,
     params: { siteTitle: 'Kobato', year: 2026 },
     messages: {
       'en-US': 'Kobato © 2026',
@@ -246,7 +268,7 @@ const CASES: Case[] = [
     key: 'email.friendApplication.preview',
     params: { website: 'blog.example.com' },
     messages: {
-      'en-US': '「blog.example.com」applied for a friend link',
+      'en-US': '"blog.example.com" applied for a friend link',
       'zh-CN': '「blog.example.com」申请交换友链',
       'zh-TW': '「blog.example.com」申請交換友鏈',
       'zh-HK': '「blog.example.com」申請交換友鏈',
@@ -337,7 +359,7 @@ const CASES: Case[] = [
     key: 'email.newComment.preview',
     params: { title: 'Hello' },
     messages: {
-      'en-US': 'A new comment in《Hello》',
+      'en-US': 'A new comment in "Hello"',
       'zh-CN': '在《Hello》中有一条新留言',
       'zh-TW': '在《Hello》中有一條新留言',
       'zh-HK': '在《Hello》中有一條新留言',
@@ -364,7 +386,7 @@ const CASES: Case[] = [
   {
     key: 'email.newReply.contextPrefix',
     messages: {
-      'en-US': 'Your comment in《',
+      'en-US': 'Your comment in "',
       'zh-CN': '你在《',
       'zh-TW': '你在《',
       'zh-HK': '你在《',
@@ -373,7 +395,7 @@ const CASES: Case[] = [
   {
     key: 'email.newReply.contextSuffix',
     messages: {
-      'en-US': '》received a new reply',
+      'en-US': '" received a new reply',
       'zh-CN': '》中的留言，有了新回复',
       'zh-TW': '》中的留言，有了新回覆',
       'zh-HK': '》中的留言，有了新回覆',
@@ -392,7 +414,7 @@ const CASES: Case[] = [
     key: 'email.newReply.preview',
     params: { postTitle: 'Hello' },
     messages: {
-      'en-US': 'Your comment in《Hello》received a new reply',
+      'en-US': 'Your comment in "Hello" received a new reply',
       'zh-CN': '在《Hello》中你的留言有了新回复',
       'zh-TW': '在《Hello》中你的留言有了新回覆',
       'zh-HK': '在《Hello》中你的留言有了新回覆',
@@ -420,7 +442,7 @@ const CASES: Case[] = [
     key: 'email.newReply.subject',
     params: { siteTitle: 'Kobato' },
     messages: {
-      'en-US': 'Your comment on【Kobato】received a new reply',
+      'en-US': 'Your comment on Kobato received a new reply',
       'zh-CN': '您在【Kobato】的留言有了新回复',
       'zh-TW': '您在【Kobato】的留言有了新回覆',
       'zh-HK': '您在【Kobato】的留言有了新回覆',
@@ -439,8 +461,7 @@ const CASES: Case[] = [
     key: 'email.newsletterConfirm.body',
     params: { fromName: 'Kobato', expiresHours: 24 },
     messages: {
-      'en-US':
-        'You asked to subscribe to updates from「Kobato」. Click the button below to confirm (valid for 24 hours):',
+      'en-US': 'You asked to subscribe to updates from Kobato. Click the button below to confirm (valid for 24 hours):',
       'zh-CN': '你请求订阅「Kobato」的邮件更新，请点击下方按钮确认订阅（24 小时内有效）：',
       'zh-TW': '你請求訂閱「Kobato」的郵件更新，請點擊下方按鈕確認訂閱（24 小時內有效）：',
       'zh-HK': '你請求訂閱「Kobato」的郵件更新，請點擊下方按鈕確認訂閱（24 小時內有效）：',
@@ -459,7 +480,7 @@ const CASES: Case[] = [
     key: 'email.newsletterConfirm.ignore',
     messages: {
       'en-US':
-        'If you did not request this subscription, you can ignore this email — you will not receive anything until you confirm.',
+        'If you did not request this subscription, you can ignore this email. You will not receive anything until you confirm.',
       'zh-CN': '如果你并未请求订阅，请忽略此邮件 —— 未确认前你不会收到任何更新。',
       'zh-TW': '如果你並未請求訂閱，請忽略此郵件 —— 未確認前你不會收到任何更新。',
       'zh-HK': '如果你並未請求訂閱，請忽略此郵件 —— 未確認前你不會收到任何更新。',
@@ -469,7 +490,7 @@ const CASES: Case[] = [
     key: 'email.newsletterConfirm.preview',
     params: { fromName: 'Kobato' },
     messages: {
-      'en-US': 'Confirm your subscription to updates from「Kobato」',
+      'en-US': 'Confirm your subscription to updates from Kobato',
       'zh-CN': '确认订阅来自「Kobato」的邮件更新',
       'zh-TW': '確認訂閱來自「Kobato」的郵件更新',
       'zh-HK': '確認訂閱來自「Kobato」的郵件更新',
@@ -479,7 +500,7 @@ const CASES: Case[] = [
     key: 'email.newsletterConfirm.subject',
     params: { subjectPrefix: 'Kobato' },
     messages: {
-      'en-US': '【Kobato】Please confirm your email subscription',
+      'en-US': 'Kobato: Please confirm your email subscription',
       'zh-CN': '【Kobato】请确认你的邮件订阅',
       'zh-TW': '【Kobato】請確認你的郵件訂閱',
       'zh-HK': '【Kobato】請確認你的郵件訂閱',
@@ -507,7 +528,7 @@ const CASES: Case[] = [
     key: 'email.notification.adminSubject',
     params: { siteTitle: 'Kobato', title: 'Hello' },
     messages: {
-      'en-US': '【Kobato】System alert: Hello',
+      'en-US': 'Kobato: System alert: Hello',
       'zh-CN': '【Kobato】系统提醒：Hello',
       'zh-TW': '【Kobato】系統提醒：Hello',
       'zh-HK': '【Kobato】系統提醒：Hello',
@@ -535,7 +556,7 @@ const CASES: Case[] = [
     key: 'email.notification.directSubject',
     params: { siteTitle: 'Kobato' },
     messages: {
-      'en-US': 'You received a new direct message on【Kobato】',
+      'en-US': 'You received a new direct message on Kobato',
       'zh-CN': '您在【Kobato】收到一条新私信',
       'zh-TW': '您在【Kobato】收到一條新私訊',
       'zh-HK': '您在【Kobato】收到一條新私訊',
@@ -554,7 +575,7 @@ const CASES: Case[] = [
     key: 'email.notification.footerNote',
     messages: {
       'en-US':
-        'This email was triggered by a system notification. You can turn notification emails off in「Settings → Mail」.',
+        'This email was triggered by a system notification. You can turn notification emails off in Settings > Mail.',
       'zh-CN': '此邮件由系统通知触发，可在「系统设置 → 邮件」中关闭通知邮件。',
       'zh-TW': '此郵件由系統通知觸發，可在「系統設定 → 郵件」中關閉通知郵件。',
       'zh-HK': '此郵件由系統通知觸發，可在「系統設定 → 郵件」中關閉通知郵件。',
@@ -618,7 +639,7 @@ const CASES: Case[] = [
     key: 'email.passwordReset.subject',
     params: { siteTitle: 'Kobato' },
     messages: {
-      'en-US': '【Kobato】Password reset',
+      'en-US': 'Kobato: Password reset',
       'zh-CN': '【Kobato】密码重置',
       'zh-TW': '【Kobato】密碼重設',
       'zh-HK': '【Kobato】密碼重設',
@@ -675,7 +696,7 @@ const CASES: Case[] = [
     key: 'email.signInLink.subject',
     params: { siteTitle: 'Kobato' },
     messages: {
-      'en-US': '【Kobato】Sign-in link',
+      'en-US': 'Kobato: Sign-in link',
       'zh-CN': '【Kobato】登录链接',
       'zh-TW': '【Kobato】登入連結',
       'zh-HK': '【Kobato】登入連結',
@@ -724,7 +745,7 @@ const CASES: Case[] = [
     key: 'email.signInOtp.subject',
     params: { siteTitle: 'Kobato' },
     messages: {
-      'en-US': '【Kobato】Sign-in verification code',
+      'en-US': 'Kobato: Sign-in verification code',
       'zh-CN': '【Kobato】登录验证码',
       'zh-TW': '【Kobato】登入驗證碼',
       'zh-HK': '【Kobato】登入驗證碼',
@@ -788,7 +809,7 @@ const CASES: Case[] = [
     key: 'email.testMail.subject',
     params: { siteTitle: 'Kobato' },
     messages: {
-      'en-US': '【Kobato】Admin mail test',
+      'en-US': 'Kobato: Admin mail test',
       'zh-CN': '【Kobato】管理员邮件测试',
       'zh-TW': '【Kobato】管理員郵件測試',
       'zh-HK': '【Kobato】管理員郵件測試',
@@ -834,7 +855,7 @@ const CASES: Case[] = [
     key: 'email.webmention.previewNew',
     params: { title: 'Hello' },
     messages: {
-      'en-US': '《Hello》received a new Webmention',
+      'en-US': '"Hello" received a new Webmention',
       'zh-CN': '《Hello》收到一条新的 Webmention',
       'zh-TW': '《Hello》收到一條新的 Webmention',
       'zh-HK': '《Hello》收到一條新的 Webmention',
@@ -844,7 +865,7 @@ const CASES: Case[] = [
     key: 'email.webmention.previewUpdated',
     params: { title: 'Hello' },
     messages: {
-      'en-US': 'A Webmention for《Hello》was updated',
+      'en-US': 'A Webmention for "Hello" was updated',
       'zh-CN': '《Hello》的一条 Webmention 内容已更新',
       'zh-TW': '《Hello》的一條 Webmention 內容已更新',
       'zh-HK': '《Hello》的一條 Webmention 內容已更新',
@@ -913,13 +934,29 @@ describe('server email messages — four locales', () => {
     expect(catalogKeys.filter((key) => !tableKeys.has(key))).toEqual([])
   })
 
-  it.each(CASES)('$key resolves in every locale', ({ key, params, messages }) => {
+  it.each(CASES)('$key resolves in every locale', (entry) => {
     for (const locale of SUPPORTED_LOCALES) {
-      expect(createServerTranslator(locale).format(key, params)).toBe(messages[locale])
+      expect(formatCase(entry, locale)).toBe(entry.messages[locale])
     }
   })
 
-  it.each(CASES)('$key keeps an English fallback with no Han characters', ({ key, params }) => {
-    expect(createServerTranslator('en-US').format(key, params)).not.toMatch(/[\u3400-\u4DBF\u4E00-\u9FFF]/)
+  it.each(CASES)('$key keeps an English fallback with no Han characters', (entry) => {
+    expect(formatCase(entry, 'en-US')).not.toMatch(/[\u3400-\u4DBF\u4E00-\u9FFF]/)
+  })
+})
+
+describe('English server catalog copy', () => {
+  // Catalog TEMPLATES use ASCII punctuation. User-supplied values (site titles,
+  // post titles, error text) legitimately contain any script — this scans the
+  // templates, never a formatted message, so no proper noun is forbidden.
+  // The class covers General Punctuation (em dash), arrows, CJK punctuation
+  // and fullwidth forms; `©` (U+00A9) is not in it.
+  const NON_ASCII_PUNCTUATION = /[\u2010-\u206F\u2190-\u21FF\u3000-\u303F\uFE30-\uFE4F\uFF00-\uFFEF]/gu
+
+  it('uses ASCII punctuation in every server template', () => {
+    const offenders = Object.entries(serverMessagesEnUS)
+      .map(([key, message]) => ({ key, marks: [...new Set(message.match(NON_ASCII_PUNCTUATION) ?? [])] }))
+      .filter((entry) => entry.marks.length > 0)
+    expect(offenders).toEqual([])
   })
 })

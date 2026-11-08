@@ -1,6 +1,7 @@
 import { Feed } from 'feed'
 
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { Page, Post } from '@/shared/types/catalog'
 
@@ -21,6 +22,13 @@ export interface FeedOptions {
   locale: AppLocale
   category?: string
   tag?: string
+  /**
+   * The settings snapshot the caller pinned (request capture / background
+   * send-time resolve). Omitted = the current process snapshot. The feed
+   * resource always passes it, so the rendered bytes match the cache key's
+   * `settingsRevision`.
+   */
+  settings?: BlogSettingsBundle | null
 }
 
 // Allowlist HTML sanitizer for feed output — a thin wrapper over the shared
@@ -54,9 +62,9 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
 }
 
 export async function generateFeeds(db: Database, options: FeedOptions) {
-  const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const content = requireBlogSettingsSection('content')
-  const branding = getBlogSettingsBundleSync()?.assets?.branding
+  const siteIdentity = requireBlogSettingsSection('siteIdentity', options.settings)
+  const content = requireBlogSettingsSection('content', options.settings)
+  const branding = (options.settings === undefined ? getBlogSettingsBundleSync() : options.settings)?.assets?.branding
   const { category, tag, locale } = options
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')

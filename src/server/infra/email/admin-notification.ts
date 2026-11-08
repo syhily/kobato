@@ -9,7 +9,8 @@ import { emailTranslator } from '@/server/infra/email/translator'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Single seam for admin notifications (new comment, webmention, …): recipient
-// is always the site author, subject is `您的网站【title】` + the caller's suffix.
+// is always the site author, subject is `{siteTitle}: {subject}` (localized via
+// `email.adminNotification.subject`).
 export async function sendAdminNotification({
   subject,
   element,

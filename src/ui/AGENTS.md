@@ -66,7 +66,21 @@ parent.
 - `ui/icons/` — static-export icon library. Named imports only — no `<Icon name="..." />` string
   lookups. Import directly from `lucide-react`; the build tree-shakes unused icons.
 - `ui/lib/` — UI utilities (`cn`, `code-languages`, `I18nProvider` (react-intl
-  provider + typed `useI18n()`; messages arrive as root-loader data),
+  provider + typed `useI18n()`; messages arrive as root-loader data; `localizeMessage`
+  formats only catalog ids through the same ICU engine and degrades a missing param /
+  unformattable template to a generic localized sentence — logged, never a token name,
+  raw template or id),
+  `LocaleSyncProvider` (the ROOT cross-tab locale-sync loop mounted by `src/root.tsx`:
+  subscribes once per document, publishes a committed locale with its bootstrap
+  `revision` token, and applies a peer announcement according to the document's
+  capability. A registered settings workspace runs its transaction — flush every
+  dirty card then one automatic reload — and only a successful flush reloads. Every
+  other document (editor, comment composer, setup, analytics, public) is NEVER
+  reloaded automatically: it shows a localized `role="alert"` notice with an explicit
+  Reload action so unsaved input survives. A failed flush offers Retry + Reload and
+  consumes no revision token; the token is consumed only immediately before a reload
+  attempt. Settings cards use `useLocaleSyncPublish`; `SettingsFlushProvider`
+  registers the flush host),
   `ThemeProvider`,
   `use-media-query`). shadcn's `aliases.lib` is pinned here. No `src/lib/` parallel.
 
@@ -181,8 +195,10 @@ unrelated concerns.
   skeleton shared with the comment surface (`@/client/editor/editor-surface` — the
   registerAPI/body-reset wiring + the composer shell with labels/darkMode applied). The
   composer surface (floating format toolbar, slash menu, drag reorder, card chrome) comes from the
-  layer; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring, the per-locale label
-  tables) lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
+  layer; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring) lives in
+  `@/client/editor/` (see `src/client/AGENTS.md`) — the active locale's Inkling label table arrives
+  as root-loader data (`i18n.inklingLabels`), it is not imported by any UI module. Kobato inserts
+  reach the composer
   through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
   `src/styles/inkling-editor.css`.
 - Editor copy is translated like the rest of the admin surface: every string lives in the
@@ -199,7 +215,14 @@ unrelated concerns.
   graph stays editor-free. The always-visible reply form is interaction-gated
   (isomorphic placeholder → pointerdown/focus activates, hover prefetches the chunk,
   focus is handed to the contenteditable after mount); the inline edit forms and admin
-  dialogs pass `eager`, since the click that opened them was already the interaction. The trimmed
+  dialogs pass `eager`, since the click that opened them was already the interaction.
+  Labels: a workspace document's root payload (`i18n.inklingLabels`) supplies the table;
+  a PUBLIC document has none, so hover/focus intent prefetches exactly the active
+  locale's table chunk (`@/client/editor/inkling-labels::loadInklingLabels`)
+  alongside the composer chunk, and the composer mounts only after it resolves
+  (falling back to Inkling's English defaults on a chunk failure). The SSR
+  placeholder is identical with or without a payload.
+  The trimmed
   node set (`@/client/editor/comment-editor-nodes`: no headings, asides,
   tables, images, host cards, or math cards — the code block stays, and a
   ```math fence is the formula path, rendered to KaTeX MathML by

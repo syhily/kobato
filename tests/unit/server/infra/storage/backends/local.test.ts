@@ -39,6 +39,18 @@ describe('storage/local — resolveLocalPath (security)', () => {
   ])('rejects %s keys', (_label, key) => {
     expect(() => resolveLocalPath(key)).toThrow(ActionFailure)
   })
+
+  it('carries a typed invalid-path descriptor instead of prose', () => {
+    try {
+      resolveLocalPath('../secret')
+    } catch (error) {
+      expect(error).toMatchObject({
+        descriptor: { messageKey: 'storage.error.invalidPath', params: { key: '../secret' } },
+      })
+      return
+    }
+    throw new Error('resolveLocalPath unexpectedly accepted a traversal key')
+  })
 })
 
 describe('storage/local — put/get round-trip', () => {
@@ -76,7 +88,10 @@ describe('storage/local — put/get round-trip', () => {
   it('StorageObjectNotFound still maps to a 404 at the HTTP perimeter', async () => {
     // The typed error extends ActionFailure(404) so an uncaught miss keeps
     // the local adapter's long-standing status contract.
-    await expect(localBackend.get('nope.jpg')).rejects.toMatchObject({ status: 404 })
+    await expect(localBackend.get('nope.jpg')).rejects.toMatchObject({
+      status: 404,
+      descriptor: { messageKey: 'storage.error.objectNotFound', params: { key: 'nope.jpg' } },
+    })
   })
 
   it('exists() reflects presence', async () => {

@@ -9,7 +9,7 @@ import {
   translateDomainError,
   type ApiErrorInput,
 } from '@/server/http/translate-domain-error'
-import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { ActionFailure, DomainError, ErrorMessages, type DomainErrorIssue } from '@/server/infra/http/errors'
 import { createServerTranslator } from '@/server/infra/i18n'
 
 describe('server/http/translate-domain-error — translateDomainError', () => {
@@ -99,6 +99,7 @@ describe('server/http/translate-domain-error — translateDomainError', () => {
         messageKey: 'error.api.rawMessage',
         params: { message: 'dup' },
         fallbackMessage: 'dup',
+        message: 'dup',
         code: 'custom',
       },
     ])
@@ -111,25 +112,63 @@ describe('server/http/translate-domain-error — translateDomainError', () => {
     expect(translated.headers).toBeUndefined()
   })
 
-  it('keeps descriptor issues structured (messageKey/params/code/path)', () => {
-    const translated = translateDomainError(
-      new DomainError('BAD_REQUEST', ErrorMessages.INVALID_INPUT, [
-        {
-          messageKey: 'admin.settings.rateLimit.error.attemptsMax',
-          params: { max: 1000 },
-          fallbackMessage: 'The maximum attempts must not exceed 1000',
-          code: 'too_big',
-          path: ['like', 'maxAttempts'],
-        },
-      ]),
-      createServerTranslator('en-US'),
-    )
-    expect(translated.issues?.[0]).toEqual({
+  it('keeps descriptor issues structured and adds the request-locale message', () => {
+    const issue: DomainErrorIssue = {
       messageKey: 'admin.settings.rateLimit.error.attemptsMax',
       params: { max: 1000 },
       fallbackMessage: 'The maximum attempts must not exceed 1000',
       code: 'too_big',
       path: ['like', 'maxAttempts'],
+    }
+    const en = translateDomainError(
+      new DomainError('BAD_REQUEST', ErrorMessages.INVALID_INPUT, [issue]),
+      createServerTranslator('en-US'),
+    )
+    expect(en.issues?.[0]).toEqual({
+      messageKey: 'admin.settings.rateLimit.error.attemptsMax',
+      params: { max: 1000 },
+      fallbackMessage: 'The maximum attempts must not exceed 1000',
+      message: 'The maximum attempts must not exceed 1000',
+      code: 'too_big',
+      path: ['like', 'maxAttempts'],
+    })
+
+    const expected: Record<AppLocale, string> = {
+      'en-US': 'The maximum attempts must not exceed 1000',
+      'zh-CN': '最大尝试次数不能超过 1000',
+      'zh-TW': '最大嘗試次數不能超過 1000',
+      'zh-HK': '最大嘗試次數不能超過 1000',
+    }
+    for (const [locale, message] of Object.entries(expected)) {
+      const translated = translateDomainError(
+        new DomainError('BAD_REQUEST', ErrorMessages.INVALID_INPUT, [issue]),
+        createServerTranslator(locale as AppLocale),
+      )
+      const wire = translated.issues![0]!
+      expect(wire.message).toBe(message)
+      // Old consumers read `message`; the descriptor stays for new consumers.
+      expect(wire.messageKey).toBe('admin.settings.rateLimit.error.attemptsMax')
+      expect(wire.params).toEqual({ max: 1000 })
+      expect(wire.fallbackMessage).toBe(expected['en-US'])
+      expect(wire.message).not.toBe(wire.messageKey)
+    }
+  })
+
+  it('never puts a retired catalog key on the wire as the issue message', () => {
+    const retired = {
+      messageKey: 'retired.catalog.key',
+      fallbackMessage: 'Retired English copy.',
+      path: ['field'],
+    } as unknown as DomainErrorIssue
+    const translated = translateDomainError(
+      new DomainError('BAD_REQUEST', ErrorMessages.INVALID_INPUT, [retired]),
+      createServerTranslator('zh-CN'),
+    )
+    expect(translated.issues?.[0]).toMatchObject({
+      messageKey: 'retired.catalog.key',
+      fallbackMessage: 'Retired English copy.',
+      message: 'Retired English copy.',
+      path: ['field'],
     })
   })
 })
@@ -197,7 +236,14 @@ describe('server/http/translate-domain-error — apiErrorData', () => {
     })
     expect(apiErrorData(issued)).toEqual({
       descriptor: { messageKey: 'error.api.rawMessage', params: { message: 'bad' }, fallbackMessage: 'bad' },
-      issues: [{ messageKey: 'error.api.rawMessage', params: { message: 'dup' }, fallbackMessage: 'dup' }],
+      issues: [
+        {
+          messageKey: 'error.api.rawMessage',
+          params: { message: 'dup' },
+          fallbackMessage: 'dup',
+          message: 'dup',
+        },
+      ],
     })
   })
 })

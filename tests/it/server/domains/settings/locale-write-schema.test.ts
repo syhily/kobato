@@ -51,6 +51,7 @@ describe('general section — locale write/read schema split', () => {
       {
         messageKey: 'admin.settings.general.localeInvalid',
         fallbackMessage: 'Choose a supported site language',
+        message: 'Choose a supported site language',
         code: 'invalid_value',
         path: ['locale'],
       },

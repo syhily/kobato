@@ -3,6 +3,7 @@ import type { Readable } from 'node:stream'
 import type { ObjectVisibility } from '@/server/infra/storage/key-policy'
 import type { StorageDriver } from '@/shared/config/types'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 export interface StoredObjectMeta {
@@ -84,7 +85,7 @@ export interface StorageBackend {
  */
 export class StorageObjectNotFound extends ActionFailure {
   constructor(readonly key: string) {
-    super(404, `存储对象不存在: ${key}`)
+    super(404, descriptorFor('storage.error.objectNotFound', { key }))
     this.name = 'StorageObjectNotFound'
   }
 }

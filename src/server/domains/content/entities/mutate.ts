@@ -8,6 +8,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
 import { rescheduleScheduledPublish } from '@/server/domains/content/scheduled-publish'
+import { resolveContentLanguage } from '@/server/domains/content/schemas/meta-fields'
 import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
 import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import {
@@ -64,6 +65,7 @@ export function makeEntityMutations<
     viewer?: ViewerIdentity,
   ): Promise<TAdminDto> {
     const resolvedAuthorId = mutations.resolveAuthorId?.(authorId, viewer) ?? authorId
+    const contentLanguage = resolveContentLanguage(input.contentLanguage)
     const slug = resolveSlug(input.slug, input.title, { entity: descriptor.entityType })
     await mutations.preflightUpsert?.(db, input)
     const now = new Date()
@@ -87,6 +89,7 @@ export function makeEntityMutations<
             webmentionsEnabled: input.webmentionsEnabled ?? true,
             showToc: input.showToc ?? false,
             showUpdated: input.showUpdated ?? false,
+            contentLanguage: contentLanguage ?? null,
             publishedAt: input.publishedAt ?? now,
             authorId: resolvedAuthorId,
             ...mutations.insertExtras(input),
@@ -106,6 +109,7 @@ export function makeEntityMutations<
 
   async function update(db: Database, input: TInput & { id: number }, viewer?: ViewerIdentity): Promise<TAdminDto> {
     const id = input.id
+    const contentLanguage = resolveContentLanguage(input.contentLanguage)
     const slug = resolveSlug(input.slug, input.title, { entity: descriptor.entityType })
     const existing = repos.findMetaById(db, id)
     descriptor.access.assertAccess(existing, viewer)
@@ -128,6 +132,8 @@ export function makeEntityMutations<
           webmentionsEnabled: input.webmentionsEnabled ?? existing.webmentionsEnabled,
           showToc: input.showToc ?? existing.showToc,
           showUpdated: input.showUpdated ?? existing.showUpdated,
+          // `null` clears it; omitted keeps whatever the row carries.
+          contentLanguage: contentLanguage === undefined ? existing.contentLanguage : contentLanguage,
           // `null` cancels the schedule — drop the timestamp, flip back to unpublished.
           publishedAt: input.publishedAt === undefined ? existing.publishedAt : (input.publishedAt ?? now),
           ...(input.publishedAt === null ? { published: false } : {}),

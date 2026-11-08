@@ -59,6 +59,18 @@ describe('ui/admin/analytics/MetricName icon selection', () => {
   })
 })
 
+describe('ui/admin/analytics/MetricName bucket tokens', () => {
+  it('translates the locale-neutral env bucket tokens while the filter keeps the token', () => {
+    expect(renderMetric(<MetricName name="other" type="dpr" />)).toContain('其他')
+    expect(renderMetric(<MetricName name="none" type="touch" />)).toContain('无触控')
+    expect(renderMetric(<MetricName name="1-5" type="touch" />)).toContain('1–5 点')
+    expect(renderMetric(<MetricName name="6-10" type="touch" />)).toContain('6–10 点')
+    expect(renderMetric(<MetricName name="many" type="touch" />)).toContain('超过 10 点')
+    // A real DPR bucket still renders verbatim (it is already locale-neutral).
+    expect(renderMetric(<MetricName name="1.5x" type="dpr" />)).toContain('1.5x')
+  })
+})
+
 describe('ui/admin/analytics/MetricName rendering', () => {
   it('country rows carry the flag and the localized name', () => {
     const html = renderMetric(<MetricName name="JP" type="country" />)

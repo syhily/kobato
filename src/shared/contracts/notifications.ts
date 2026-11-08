@@ -85,9 +85,11 @@ export const notificationThreadOutput = z.object({
   canReply: z.boolean(),
 })
 
+// Validation messages are UI message IDS (never prose): the client renders them
+// through `localizeMessage`, the server maps them with `messageDescriptor`.
 export const replyNotificationInput = z.object({
   threadId: idString,
-  body: z.string().trim().min(1, '回复内容不能为空').max(5000),
+  body: z.string().trim().min(1, 'notifications.validation.replyBody').max(5000),
 })
 
 export const replyNotificationOutput = z.object({
@@ -100,13 +102,13 @@ export const replyNotificationOutput = z.object({
 
 export const adminSendDirectInput = z.object({
   userId: idString,
-  title: z.string().trim().min(1, '标题不能为空').max(120),
-  body: z.string().trim().min(1, '内容不能为空').max(5000),
+  title: z.string().trim().min(1, 'notifications.validation.title').max(120),
+  body: z.string().trim().min(1, 'notifications.validation.body').max(5000),
 })
 
 export const adminSendBroadcastInput = z.object({
-  title: z.string().trim().min(1, '标题不能为空').max(120),
-  body: z.string().trim().min(1, '内容不能为空').max(5000),
+  title: z.string().trim().min(1, 'notifications.validation.title').max(120),
+  body: z.string().trim().min(1, 'notifications.validation.body').max(5000),
   replyable: z.boolean().default(false),
 })
 

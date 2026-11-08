@@ -1,3 +1,5 @@
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { ToggleRow } from '@/ui/admin/editor-shared/ToggleRow'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { useI18n } from '@/ui/lib/I18nProvider'
@@ -6,8 +8,8 @@ import { useI18n } from '@/ui/lib/I18nProvider'
 export interface ToggleField {
   key: string
   id: string
-  label: string
-  description: string
+  labelId: UiMessageId
+  descriptionId: UiMessageId
 }
 
 export interface ToggleOptionsCardProps<TField extends ToggleField> {
@@ -39,8 +41,8 @@ export function ToggleOptionsCard<TField extends ToggleField>({
           <ToggleRow
             key={field.key}
             id={field.id}
-            label={field.label}
-            description={field.description}
+            label={t(field.labelId)}
+            description={t(field.descriptionId)}
             checked={value(field.key)}
             onCheckedChange={(next) => onToggle(field.key, next)}
             disabled={disabled}

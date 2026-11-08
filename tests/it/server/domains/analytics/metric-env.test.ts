@@ -80,7 +80,7 @@ describe('analytics/metric — environment dimensions', () => {
     })
   })
 
-  it('buckets DPR values and lumps unknown ratios into 其他', async () => {
+  it('buckets DPR values and lumps unknown ratios into the other token', async () => {
     const ratios = [1, 1.5, 2, 2.5, 3, 1.25, null]
     for (const [index, dpr] of ratios.entries()) {
       await seedPair(`00000000-0000-4000-8000-0000000002${index.toString(16).padStart(2, '0')}`, { dpr })
@@ -92,7 +92,7 @@ describe('analytics/metric — environment dimensions', () => {
       '2x': 1,
       '2.5x': 1,
       '3x': 1,
-      其他: 1,
+      other: 1,
     })
   })
 
@@ -102,11 +102,12 @@ describe('analytics/metric — environment dimensions', () => {
       await seedPair(`00000000-0000-4000-8000-0000000003${index.toString(16).padStart(2, '0')}`, { touchPoints })
     }
 
+    // Locale-neutral tokens: the admin UI maps them to catalog labels.
     expect(visitsByName(await queryMetric(handle.reader, { range: RANGE }, 'touch'))).toEqual({
-      无触控: 1,
-      '1–5 点': 2,
-      '6–10 点': 2,
-      '超过 10 点': 1,
+      none: 1,
+      '1-5': 2,
+      '6-10': 2,
+      many: 1,
     })
   })
 

@@ -16,9 +16,13 @@ describe('contract: cache-control on derived assets', () => {
     expect(source).not.toContain('604800, immutable')
   })
 
-  it('sitemap.xml stays cacheable for 1 hour', () => {
+  it('sitemap.xml is revalidated, not max-age: a domain change must not be shadowed', () => {
     const source = read('src/server/http/resources/sitemap.ts')
-    expect(source).toContain("'public, max-age=3600'")
+    expect(source).toContain("'public, no-cache'")
+    expect(source).not.toContain('public, max-age=3600')
+    // Strong ETag over the exact XML keeps conditional 304s.
+    expect(source).toContain('contentEtag')
+    expect(source).toContain('etagHeaderMatches')
   })
 
   it('avatar route emits a cache-control header (not a cache-busting default)', () => {

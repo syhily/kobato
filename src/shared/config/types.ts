@@ -66,7 +66,7 @@ export interface ContentSettings {
     sortBy: 'publishedAt' | 'updatedAt'
     featureEnabled: boolean
   }
-  /** Filled by the schema's `.default({ sectionTitle: '尾声礼记' })` on every read, so always present post-hydration. */
+  /** Filled by the schema's default (`DEFAULT_FOOTNOTES_SECTION_TITLE`) on every read, so always present post-hydration. */
   footnotes: {
     sectionTitle: string
   }

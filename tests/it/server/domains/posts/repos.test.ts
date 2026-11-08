@@ -146,6 +146,7 @@ describe('posts/repos/shared — toClientPostFromMeta', () => {
       webmentionsEnabled: true,
       showToc: false,
       showUpdated: false,
+      contentLanguage: null,
       visible: true,
       publishedAt: new Date('2026-02-01'),
       publishedRevisionId: 1,

@@ -152,7 +152,7 @@ function setContext(
       db,
       request: new Request(url),
       markSessionDirty,
-      localization: { locale, timeZone: 'UTC' },
+      localization: { locale, timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' },
     }),
   )
   return url

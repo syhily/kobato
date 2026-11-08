@@ -1,19 +1,24 @@
 // @vitest-environment happy-dom
 
-// The four per-locale Kobato Inkling overlays. The compile-time guarantee is
-// `satisfies` (en table -> InklingLabelsInput; the other three ->
-// Record<KobatoInklingLabelKey, string>); this suite pins the RUNTIME contract
-// that the types cannot: the used-key set, the interpolation tokens, and the
-// locale selection.
+// The four per-locale Kobato Inkling overlays. The tables live in `shared` so
+// the server can ship ONE of them through the root i18n payload; the compile-
+// time key guarantee (every key legal for Inkling) is pinned in
+// `@/client/editor/inkling-labels`, the only layer allowed to import `@/inkling`
+// types. This suite pins the RUNTIME contract the types cannot: the used-key
+// set, the interpolation tokens, and the locale selection.
 
 import { describe, expect, it } from 'vitest'
 
-import { kobatoInklingLabels } from '@/client/editor/inkling-labels'
-import { kobatoInklingLabelsEnUS, type KobatoInklingLabelKey } from '@/client/editor/inkling-labels/en-US'
-import { kobatoInklingLabelsZhCN } from '@/client/editor/inkling-labels/zh-CN'
-import { kobatoInklingLabelsZhHK } from '@/client/editor/inkling-labels/zh-HK'
-import { kobatoInklingLabelsZhTW } from '@/client/editor/inkling-labels/zh-TW'
 import { DEFAULT_LABELS } from '@/inkling'
+import { inklingLabelsFor } from '@/shared/i18n/inkling-labels'
+import {
+  kobatoInklingLabelsEnUS,
+  type KobatoInklingLabelKey,
+  type KobatoInklingLabelTable,
+} from '@/shared/i18n/inkling-labels/en-US'
+import { kobatoInklingLabelsZhCN } from '@/shared/i18n/inkling-labels/zh-CN'
+import { kobatoInklingLabelsZhHK } from '@/shared/i18n/inkling-labels/zh-HK'
+import { kobatoInklingLabelsZhTW } from '@/shared/i18n/inkling-labels/zh-TW'
 
 const EN_KEYS = Object.keys(kobatoInklingLabelsEnUS).sort() as KobatoInklingLabelKey[]
 
@@ -22,7 +27,7 @@ const TABLES = {
   'zh-CN': kobatoInklingLabelsZhCN,
   'zh-TW': kobatoInklingLabelsZhTW,
   'zh-HK': kobatoInklingLabelsZhHK,
-} as const
+} as const satisfies Record<string, KobatoInklingLabelTable>
 
 const HOST_MENU_KEYS = [
   'menu.host.solution.label',
@@ -39,7 +44,7 @@ function tokensIn(text: string): string[] {
   return [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]!).sort()
 }
 
-describe('client/editor/inkling-labels — used-key parity', () => {
+describe('shared/i18n/inkling-labels — used-key parity', () => {
   it('covers exactly the 157 mounted keys', () => {
     // 156 + `image.altToggle` (the caption editor's alt toggle, Step 6b).
     expect(EN_KEYS).toHaveLength(157)
@@ -59,7 +64,9 @@ describe('client/editor/inkling-labels — used-key parity', () => {
     }
   })
 
-  it('sources every built-in English value from Inkling DEFAULT_LABELS', () => {
+  it('keeps every built-in English value byte-identical to Inkling DEFAULT_LABELS', () => {
+    // The English table is data (server-shipped), not an Inkling import — this
+    // parity check is the drift gate when an Inkling default changes.
     for (const key of EN_KEYS) {
       if ((HOST_MENU_KEYS as readonly string[]).includes(key)) {
         continue
@@ -77,7 +84,7 @@ describe('client/editor/inkling-labels — used-key parity', () => {
   })
 })
 
-describe('client/editor/inkling-labels — interpolation tokens', () => {
+describe('shared/i18n/inkling-labels — interpolation tokens', () => {
   it('preserves every {token} of the English text per locale', () => {
     for (const key of EN_KEYS) {
       const expected = tokensIn(kobatoInklingLabelsEnUS[key])
@@ -102,12 +109,12 @@ describe('client/editor/inkling-labels — interpolation tokens', () => {
   })
 })
 
-describe('client/editor/inkling-labels — locale selection', () => {
+describe('shared/i18n/inkling-labels — locale selection', () => {
   it('returns the matching table for each supported locale', () => {
-    expect(kobatoInklingLabels('en-US')).toBe(kobatoInklingLabelsEnUS)
-    expect(kobatoInklingLabels('zh-CN')).toBe(kobatoInklingLabelsZhCN)
-    expect(kobatoInklingLabels('zh-TW')).toBe(kobatoInklingLabelsZhTW)
-    expect(kobatoInklingLabels('zh-HK')).toBe(kobatoInklingLabelsZhHK)
+    expect(inklingLabelsFor('en-US')).toBe(kobatoInklingLabelsEnUS)
+    expect(inklingLabelsFor('zh-CN')).toBe(kobatoInklingLabelsZhCN)
+    expect(inklingLabelsFor('zh-TW')).toBe(kobatoInklingLabelsZhTW)
+    expect(inklingLabelsFor('zh-HK')).toBe(kobatoInklingLabelsZhHK)
   })
 
   it('keeps the pre-i18n zh-CN copy stable', () => {

@@ -25,7 +25,7 @@ import type { I18nValue } from '@/ui/lib/I18nProvider'
 
 import { orpc } from '@/client/api/client'
 import { toSiteOwnedImageSrc } from '@/client/editor/image-insert-override'
-import { makeRenderMath } from '@/client/editor/render-math'
+import { makeRenderMath, resolveMathError } from '@/client/editor/render-math'
 
 async function searchLibraryImages(query: string): Promise<LibraryImageItem[] | undefined> {
   const trimmed = query.trim()
@@ -45,10 +45,13 @@ async function searchLibraryImages(query: string): Promise<LibraryImageItem[] | 
   }))
 }
 
-export function makePageEditorCardConfig(t: I18nValue['t']): CardConfig {
+export function makePageEditorCardConfig(t: I18nValue['t'], localizeMessage: I18nValue['localizeMessage']): CardConfig {
   return {
     image: { allowedWidths: ['regular'] },
     imageLibrary: { search: searchLibraryImages },
-    renderMath: makeRenderMath(t('admin.editor.math.renderFailed')),
+    renderMath: makeRenderMath(
+      (descriptor) => resolveMathError(descriptor, localizeMessage),
+      t('admin.editor.math.renderFailed'),
+    ),
   }
 }

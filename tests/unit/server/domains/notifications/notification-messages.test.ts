@@ -73,7 +73,7 @@ const CASES: Case[] = [
     key: 'notification.mail.zeaburCleanup.body',
     messages: {
       'en-US':
-        'The Zeabur mail service is gone. This site still used it, so sending was turned off automatically. Reconfigure SMTP or Mailgun under「Settings → Mail」and turn it back on.',
+        'The Zeabur mail service is gone. This site still used it, so sending was turned off automatically. Reconfigure SMTP or Mailgun under Settings > Mail and turn it back on.',
       'zh-CN':
         'Zeabur 邮件服务已下线，系统检测到站点仍在使用它，已自动关闭邮件发送。请到「系统设置 → 邮件」重新配置 SMTP 或 Mailgun 后重新启用。',
       'zh-TW':

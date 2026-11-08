@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 
-import type { CustomQuote, DailyQuoteSource } from '@/shared/config/types'
+import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@/shared/config/types'
 
 import { getLogger } from '@/server/infra/logger'
 import { safeFetch } from '@/server/infra/safe-fetch'
@@ -108,8 +108,14 @@ const REMOTE_PROVIDERS: Record<Exclude<DailyQuoteSource, 'custom' | 'local'>, (d
   hitokoto: fetchHitokoto,
 }
 
-export async function getDailyQuote(date: Date): Promise<DailyQuote> {
-  const { dailyQuote } = requireBlogSettingsSection('sidebar').sidebar
+/**
+ * Resolve today's quote from the caller's pinned settings snapshot (omitted =
+ * the current process snapshot — the background send-time resolve). The quote
+ * bank is a rendering input: the calendar resource passes the same bundle whose
+ * revision keys the cache entry.
+ */
+export async function getDailyQuote(date: Date, settings?: BlogSettingsBundle | null): Promise<DailyQuote> {
+  const { dailyQuote } = requireBlogSettingsSection('sidebar', settings).sidebar
   if (dailyQuote.source === 'local') {
     return pickForDate(LOCAL_QUOTES, date)
   }
@@ -121,7 +127,7 @@ export async function getDailyQuote(date: Date): Promise<DailyQuote> {
   try {
     return await REMOTE_PROVIDERS[source](date)
   } catch (err) {
-    log.warn('每日一言远程接口失败，回退到内置一言库', {
+    log.warn('Daily quote fetch failed; falling back to the built-in quote library', {
       provider: source,
       reason: err instanceof Error ? err.message : String(err),
     })

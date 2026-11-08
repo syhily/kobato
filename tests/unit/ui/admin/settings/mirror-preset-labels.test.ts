@@ -6,7 +6,7 @@ import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
-import { GRAVATAR_MIRROR_PRESETS } from '@/shared/utils/safe-url'
+import { GRAVATAR_MIRROR_PRESETS } from '@/ui/admin/settings/gravatar-mirror-presets'
 
 // The admin mirror dropdown's options are catalog ids, not display prose:
 // `CommentsForm` renders `t(option.labelKey)`, so every locale (and any future

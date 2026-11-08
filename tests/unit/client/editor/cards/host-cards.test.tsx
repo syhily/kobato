@@ -47,10 +47,10 @@ import {
   TwoColumnPaneView,
   twoColumnCard,
 } from '@/client/editor/cards/two-column'
-import { kobatoInklingLabels } from '@/client/editor/inkling-labels'
 import { createHeadlessEditor } from '@/inkling'
 import { lookupLabel, resolveLabels } from '@/inkling/labels/inkling-labels'
 import { getHostCard } from '@/inkling/nodes/cards/host-card-registry'
+import { inklingLabelsFor } from '@/shared/i18n/inkling-labels'
 import { MUSIC_PLAYER_META_KEYS } from '@/shared/lexical/artifacts'
 import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@/shared/lexical/cards/card-html'
 import {
@@ -446,8 +446,8 @@ describe('host card menu copy', () => {
   ] as const
 
   it('keeps the English fallback in the spec and localizes through labelKey', () => {
-    const zh = resolveLabels(kobatoInklingLabels('zh-CN'))
-    const en = resolveLabels(kobatoInklingLabels('en-US'))
+    const zh = resolveLabels(inklingLabelsFor('zh-CN'))
+    const en = resolveLabels(inklingLabelsFor('en-US'))
 
     for (const card of CARDS) {
       const entry = getHostCard(card.nodeType)?.spec.menu?.[0]

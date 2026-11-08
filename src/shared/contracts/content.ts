@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
-import type { UiMessages } from '@/shared/i18n/messages/ui/en-US'
+import type { KobatoInklingLabelTable } from '@/shared/i18n/inkling-labels/en-US'
 import type {
   Category,
   ClientTag,
@@ -45,14 +45,23 @@ export type ContentSignal = ContentRedirectSignal | ContentNotModifiedSignal
 // The root loader's data segment. No input: the theme is parsed from
 // the cookie inside the procedure so the route never touches cookie names.
 //
-// `i18n` carries the CURRENT locale's merged UI catalog only — the server
-// catalog and the catalog modules themselves never enter the client graph.
-// `messages` is typed rather than re-validated here: its id set is a
-// compile-time catalog type, and importing the catalog into this module would
-// defeat that boundary (the sanctioned `z.custom<T>()` exception, see above).
+// `i18n` carries the request's representation token (`revision` — the settings
+// snapshot generation, the same token cache keys and ETags use), the CURRENT
+// locale's UI catalog for the document's SCOPE, and — on workspace paths
+// only — the current locale's Inkling label overlay. Public documents never
+// receive the `admin.*` namespace or an editor label table; `/admin` and
+// `/editor` receive both. `messages` / `inklingLabels` are typed rather than
+// re-validated here: their shapes are compile-time catalog types, and importing
+// a catalog module into this module would defeat that boundary (the sanctioned
+// `z.custom<T>()` exception, see above).
 export const contentBootstrapI18nSchema = z.object({
   locale: z.enum(SUPPORTED_LOCALES),
-  messages: z.custom<UiMessages>(),
+  /** Opaque settings-snapshot token; consumers only compare it (dedupe / cache keys). */
+  revision: z.string(),
+  /** Full workspace catalog, or the public subset without `admin.*`. */
+  messages: z.custom<Readonly<Record<string, string>>>(),
+  /** Present on workspace paths only; public documents load the active locale's table on demand. */
+  inklingLabels: z.custom<KobatoInklingLabelTable>().optional(),
 })
 export type ContentBootstrapI18n = z.infer<typeof contentBootstrapI18nSchema>
 
@@ -81,22 +90,35 @@ export interface HomeExtra {
 
 export const contentHomeInputSchema = z.object({
   num: z.string().optional(),
+  /** Raw `If-None-Match` — the procedure owns listing revalidation. */
+  ifNoneMatch: z.string().optional(),
 })
 
 export const contentHomeOutputSchema = z.union([
   contentRedirectSignalSchema,
-  z.object({ kind: z.literal('ok'), listing: z.custom<ListingPageLoaderData<HomeExtra>>() }),
+  contentNotModifiedSignalSchema,
+  z.object({
+    kind: z.literal('ok'),
+    etag: z.string(),
+    listing: z.custom<ListingPageLoaderData<HomeExtra>>(),
+  }),
 ])
 export type ContentHomeOutput = z.infer<typeof contentHomeOutputSchema>
 
 export const contentPostsListInputSchema = z.object({
   scope: z.object({ type: z.enum(['tag', 'category']), slug: z.string() }),
   num: z.string().optional(),
+  ifNoneMatch: z.string().optional(),
 })
 
 export const contentPostsListOutputSchema = z.union([
   contentRedirectSignalSchema,
-  z.object({ kind: z.literal('ok'), listing: z.custom<ListingPageLoaderData>() }),
+  contentNotModifiedSignalSchema,
+  z.object({
+    kind: z.literal('ok'),
+    etag: z.string(),
+    listing: z.custom<ListingPageLoaderData>(),
+  }),
 ])
 export type ContentPostsListOutput = z.infer<typeof contentPostsListOutputSchema>
 
@@ -112,8 +134,9 @@ export interface DetailCriticalPayload {
   recentComments: LatestComment[]
 }
 
-// `ifNoneMatch` carries the raw If-None-Match header value; the
-// procedure owns both ETag probes and answers `not-modified`.
+// `ifNoneMatch` carries the raw If-None-Match header value. Revalidation
+// happens in the procedure AFTER the full payload (shell + body + tags +
+// sidebar + critical) is fingerprinted; draft previews never carry a tag.
 export const contentPostBySlugInputSchema = z.object({
   slug: z.string(),
   ifNoneMatch: z.string().optional(),
@@ -133,12 +156,14 @@ export interface PostDetailPayload {
 export const contentPostBySlugOutputSchema = z.union([
   contentRedirectSignalSchema,
   contentNotModifiedSignalSchema,
-  z.object({ kind: z.literal('ok'), etag: z.string(), payload: z.custom<PostDetailPayload>() }),
+  // Draft previews carry no public ETag (null) — the route stamps the header
+  // only when one exists. Same contract as the page variant.
+  z.object({ kind: z.literal('ok'), etag: z.string().nullable(), payload: z.custom<PostDetailPayload>() }),
 ])
 export type ContentPostBySlugOutput = z.infer<typeof contentPostBySlugOutputSchema>
 
-// `draft` mirrors the `?draft=true` query flag: an admin's draft
-// preview may swap the body, so it also skips the published-ETag probe.
+// `draft` mirrors the `?draft=true` query flag: an admin's draft preview may
+// swap the body, so it never carries (or honours) the published ETag.
 export const contentPageBySlugInputSchema = z.object({
   slug: z.string(),
   draft: z.boolean().optional(),
@@ -181,21 +206,47 @@ export const SEARCH_KEYWORD_MAX_LENGTH = 200
 export const contentSearchInputSchema = z.object({
   keyword: z.string().trim().max(SEARCH_KEYWORD_MAX_LENGTH).optional(),
   num: z.string().optional(),
+  ifNoneMatch: z.string().optional(),
 })
 
 export const contentSearchOutputSchema = z.union([
   contentRedirectSignalSchema,
-  z.object({ kind: z.literal('ok'), listing: z.custom<ListingPageLoaderData>() }),
+  contentNotModifiedSignalSchema,
+  z.object({
+    kind: z.literal('ok'),
+    etag: z.string(),
+    listing: z.custom<ListingPageLoaderData>(),
+  }),
 ])
 export type ContentSearchOutput = z.infer<typeof contentSearchOutputSchema>
 
-export const contentCategoriesListOutputSchema = z.object({
-  categories: z.custom<Category[]>(),
+export const contentCategoriesListInputSchema = z.object({
+  ifNoneMatch: z.string().optional(),
 })
+
+export const contentCategoriesListOutputSchema = z.union([
+  contentNotModifiedSignalSchema,
+  z.object({
+    kind: z.literal('ok'),
+    etag: z.string(),
+    payload: z.object({ categories: z.custom<Category[]>() }),
+  }),
+])
 export type ContentCategoriesListOutput = z.infer<typeof contentCategoriesListOutputSchema>
 
-export const contentArchivesOutputSchema = z.object({
-  resolvedPosts: z.custom<ListingPostCardWithMetadata[]>(),
-  listingNowIso: z.string(),
+export const contentArchivesInputSchema = z.object({
+  ifNoneMatch: z.string().optional(),
 })
+
+export const contentArchivesOutputSchema = z.union([
+  contentNotModifiedSignalSchema,
+  z.object({
+    kind: z.literal('ok'),
+    etag: z.string(),
+    payload: z.object({
+      resolvedPosts: z.custom<ListingPostCardWithMetadata[]>(),
+      listingNowIso: z.string(),
+    }),
+  }),
+])
 export type ContentArchivesOutput = z.infer<typeof contentArchivesOutputSchema>

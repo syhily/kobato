@@ -15,6 +15,7 @@ import {
   wireJobFailureNotifier,
 } from '@/server/infra/db/job-run-recorder'
 import { jobRun } from '@/server/infra/db/schema/job-run'
+import { JOB_RUN_ERROR_PROCESS_RESTART } from '@/shared/contracts/jobs'
 
 // The recorder is wired to the lifecycle-global :memory: db at import time
 // (db-lifecycle), so these tests exercise the real write path.
@@ -149,7 +150,7 @@ describe('job-run-recorder — orphan sweep', () => {
 
     const row = db.select().from(jobRun).where(eq(jobRun.id, id)).get()!
     expect(row.status).toBe('failed')
-    expect(row.error).toBe('进程重启中断')
+    expect(row.error).toBe(JOB_RUN_ERROR_PROCESS_RESTART)
     expect(row.finishedAt).toBeInstanceOf(Date)
   })
 })

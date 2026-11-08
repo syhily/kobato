@@ -16,9 +16,11 @@ import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { defaultTransition } from '@/client/lib/motion'
 import { createSsrCaller } from '@/server/http/ssr-caller'
+import { documentHeaders } from '@/server/infra/http/headers'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
 import { defaultFontStackFor } from '@/shared/config/font-stacks'
 import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/config/getters'
+import { catalogScopeForPathname } from '@/shared/i18n/catalog-scope'
 import { fallbackMessages } from '@/shared/i18n/fallback-messages'
 import { DEFAULT_LOCALE, type AppLocale } from '@/shared/i18n/locales'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
@@ -26,6 +28,7 @@ import { bundleFromMatches, i18nFromMatches, routeMeta } from '@/shared/seo/meta
 import { isRecord } from '@/shared/utils/type-guards'
 import { LazyMotionConfig } from '@/ui/components/lazy-motion'
 import { I18nProvider } from '@/ui/lib/I18nProvider'
+import { LocaleSyncProvider } from '@/ui/lib/LocaleSyncProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
@@ -67,6 +70,10 @@ function collectTier2Chunks(
 
 export const middleware: MiddlewareFunction<Response>[] = []
 
+// Root is the nearest error boundary for loader-thrown 304s; this passes the
+// thrown Response's representation headers through RR's header rebuild.
+export const headers = documentHeaders
+
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   return routeMeta(
     undefined,
@@ -104,11 +111,30 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 }
 
-export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
-  if (formAction && (formAction.startsWith('/admin/signin') || formAction.startsWith('/admin/setup'))) {
+/**
+ * The root payload carries the document-scope message catalog (`public` vs
+ * `workspace`) and the current locale's settings revision, so the payload must
+ * be refreshed in exactly two situations:
+ *
+ *  · a form action — it can change the settings the payload is derived from
+ *    (locale, theme cookie, session identity), so the default policy applies;
+ *  · a navigation crossing the public ↔ workspace boundary — the next document
+ *    needs a different namespace (and, into the workspace, the Inkling label
+ *    table). Without this, a client-side navigation would keep the previous
+ *    scope's catalog and render missing admin messages.
+ *
+ * Same-scope navigations keep the payload (no messages/fonts/theme churn).
+ */
+export function shouldRevalidate({
+  currentUrl,
+  nextUrl,
+  formAction,
+  defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs) {
+  if (formAction) {
     return defaultShouldRevalidate
   }
-  return false
+  return catalogScopeForPathname(currentUrl.pathname) !== catalogScopeForPathname(nextUrl.pathname)
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -250,14 +276,20 @@ export default function App({ loaderData }: Route.ComponentProps) {
   useIosNoZoomOnFocus()
   useChunkErrorRecovery()
   const [queryClient] = useState(() => makeQueryClient())
+  // `i18n` is required by the loader contract; the fallback keeps a hand-built
+  // loaderData (tests, error-recovery remounts) from crashing the provider.
+  const i18n = loaderData.i18n
+  const locale = i18n?.locale ?? DEFAULT_LOCALE
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
         <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
           <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
-            <NavigationSplash />
-            <Outlet />
+            <LocaleSyncProvider locale={locale} revision={i18n?.revision}>
+              <NavigationSplash />
+              <Outlet />
+            </LocaleSyncProvider>
           </LazyMotionConfig>
         </BlogSettingsProvider>
       </ThemeProvider>

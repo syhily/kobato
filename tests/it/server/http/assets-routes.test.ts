@@ -1,10 +1,33 @@
+import { Hono } from 'hono'
 import { describe, expect, it } from 'vitest'
 
+import type { Env } from '@/server/http/context'
 import type { BrandingObjectRef } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { getTestDb } from '#/_helpers/integration-db'
+import { makeRequestContext } from '#/_helpers/request-context'
 
 const { assetsRouter } = await import('@/server/http/resources/assets')
+
+// The manifest/robots handlers read the REQUEST capture; mount the router
+// behind the same projection the perimeter provides.
+async function requestAssets(path: string, init?: RequestInit): Promise<Response> {
+  const db = getTestDb()
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set(
+      'requestContext',
+      makeRequestContext({
+        request: new Request(`http://localhost${path}`, init),
+        db,
+      }) as unknown as Env['Variables']['requestContext'],
+    )
+    await next()
+  })
+  app.route('/', assetsRouter)
+  return app.request(path, init)
+}
 
 function ref(etag: string, contentType: string): BrandingObjectRef {
   // 'local': the real local backend misses the branding key in the test
@@ -16,7 +39,7 @@ function ref(etag: string, contentType: string): BrandingObjectRef {
 describe('assetsRouter static paths', () => {
   it('returns 200 for /favicon.svg with ETag + revalidate cache headers', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/favicon.svg')
+    const res = await requestAssets('/favicon.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
     expect(res.headers.get('Cache-Control')).toBe('public, max-age=3600, must-revalidate')
@@ -25,9 +48,9 @@ describe('assetsRouter static paths', () => {
 
   it('returns 304 when If-None-Match matches', async () => {
     setBlogSettingsBundleForTests(null)
-    const first = await assetsRouter.request('/favicon.svg')
+    const first = await requestAssets('/favicon.svg')
     const etag = first.headers.get('ETag')!
-    const second = await assetsRouter.request('/favicon.svg', { headers: { 'If-None-Match': etag } })
+    const second = await requestAssets('/favicon.svg', { headers: { 'If-None-Match': etag } })
     expect(second.status).toBe(304)
     expect(second.headers.get('ETag')).toBe(etag)
     expect(await second.text()).toBe('')
@@ -35,42 +58,42 @@ describe('assetsRouter static paths', () => {
 
   it('returns 200 for /favicon.ico (bundled default)', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/favicon.ico')
+    const res = await requestAssets('/favicon.ico')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/x-icon')
   })
 
   it('returns 200 for /apple-touch-icon.png', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/apple-touch-icon.png')
+    const res = await requestAssets('/apple-touch-icon.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
 
   it('returns 200 for /logo.svg', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/logo.svg')
+    const res = await requestAssets('/logo.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
   })
 
   it('returns 200 for /logo-dark.svg', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/logo-dark.svg')
+    const res = await requestAssets('/logo-dark.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
   })
 
   it('returns 200 for /images/icon-192.png', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/images/icon-192.png')
+    const res = await requestAssets('/images/icon-192.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
 
   it('returns 200 for /images/icon-512.png', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/images/icon-512.png')
+    const res = await requestAssets('/images/icon-512.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
@@ -83,7 +106,7 @@ describe('assetsRouter static paths', () => {
         branding: { faviconSvg: ref('cafe', 'image/svg+xml') },
       },
     })
-    const res = await assetsRouter.request('/favicon.svg')
+    const res = await requestAssets('/favicon.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
     // fetchBrandingObject returns null (object missing on the local
@@ -94,7 +117,7 @@ describe('assetsRouter static paths', () => {
 
   it('returns 404 for unregistered paths', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/images/unknown.png')
+    const res = await requestAssets('/images/unknown.png')
     expect(res.status).toBe(404)
   })
 })
@@ -105,7 +128,7 @@ describe('assetsRouter manifest', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Test Blog' },
     })
-    const res = await assetsRouter.request('/manifest.webmanifest')
+    const res = await requestAssets('/manifest.webmanifest')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toContain('application/json')
     expect(res.headers.get('Cache-Control')).toBe('public, no-cache')
@@ -122,7 +145,7 @@ describe('assetsRouter manifest', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Test Blog' },
     })
-    const res = await assetsRouter.request('/manifest.webmanifest')
+    const res = await requestAssets('/manifest.webmanifest')
     const body = await res.text()
 
     // Recompute over the received bytes — not a re-serialized object.
@@ -134,11 +157,11 @@ describe('assetsRouter manifest', () => {
 
   it('answers 304 on a matching If-None-Match with the current language heads', async () => {
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-    const first = await assetsRouter.request('/manifest.webmanifest')
+    const first = await requestAssets('/manifest.webmanifest')
     const etag = first.headers.get('ETag')!
     await first.text()
 
-    const cached = await assetsRouter.request('/manifest.webmanifest', {
+    const cached = await requestAssets('/manifest.webmanifest', {
       headers: { 'If-None-Match': etag },
     })
 
@@ -157,7 +180,7 @@ describe('assetsRouter manifest', () => {
         siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale },
       })
       try {
-        const res = await assetsRouter.request('/manifest.webmanifest')
+        const res = await requestAssets('/manifest.webmanifest')
         expect(res.headers.get('Content-Language')).toBe(locale)
         const json = await res.json()
         expect(json.lang).toBe(locale)
@@ -170,7 +193,7 @@ describe('assetsRouter manifest', () => {
 
   it('falls back to a default name when the bundle is null (early boot)', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/manifest.webmanifest')
+    const res = await requestAssets('/manifest.webmanifest')
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.name).toBe('Site')
@@ -185,7 +208,7 @@ describe('assetsRouter robots.txt', () => {
       assets: { ...TEST_BLOG_SETTINGS_BUNDLE.assets!, branding: {} },
     })
 
-    const res = await assetsRouter.request('/robots.txt')
+    const res = await requestAssets('/robots.txt')
     expect(res.status).toBe(200)
     const text = await res.text()
     expect(text).toContain('User-agent: *')
@@ -201,7 +224,7 @@ describe('assetsRouter robots.txt', () => {
       },
     })
 
-    const res = await assetsRouter.request('/robots.txt')
+    const res = await requestAssets('/robots.txt')
     expect(res.status).toBe(200)
     const text = await res.text()
     expect(text).toBe('User-agent: *\nDisallow: /')
@@ -209,7 +232,7 @@ describe('assetsRouter robots.txt', () => {
 
   it('falls back to a safe minimum when the bundle is null', async () => {
     setBlogSettingsBundleForTests(null)
-    const res = await assetsRouter.request('/robots.txt')
+    const res = await requestAssets('/robots.txt')
     expect(res.status).toBe(200)
     const text = await res.text()
     expect(text).toBe('User-agent: *\nAllow: /\n')

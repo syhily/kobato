@@ -103,11 +103,23 @@ describe('ui/admin/shell/VersionDialog', () => {
   })
 
   it('shows the gate reasons instead of 立即更新 when self-update is refused', async () => {
-    orpcMocks.check.mockResolvedValue(checkResult({ canSelfUpdate: false, reasons: ['Docker 部署请拉取新镜像升级'] }))
+    orpcMocks.check.mockResolvedValue(
+      checkResult({
+        canSelfUpdate: false,
+        reasons: [
+          {
+            messageKey: 'update.gate.containerized',
+            fallbackMessage: 'Docker deployments must pull a new image to upgrade.',
+          },
+        ],
+      }),
+    )
     renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
-    await waitFor(() => expect(screen.getByText('Docker 部署请拉取新镜像升级')).toBeInTheDocument())
+    // The descriptor's messageKey is resolved through the active locale — the
+    // English fallback is never rendered.
+    await waitFor(() => expect(screen.getByText('Docker 部署请拉取新镜像升级。')).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: /立即更新/ })).not.toBeInTheDocument()
   })
 

@@ -117,7 +117,7 @@ export function CommentReplyForm({
   const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (isCommentEditorStateBlank(body)) {
-      setSubmitError('请输入评论内容。')
+      setSubmitError(t('public.comments.submitEmpty'))
       return
     }
     const form = event.currentTarget

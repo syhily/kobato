@@ -4,9 +4,7 @@ import type { Env } from '@/server/http/context'
 
 import { ASSET_ROUTES, resolveSiteAsset } from '@/server/domains/assets/services/routes'
 import { contentEtag, etagHeaderMatches } from '@/server/infra/http/etag'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { brandingVersionSuffix } from '@/shared/config/utils'
-import { resolveAppLocalization } from '@/shared/i18n/app-localization'
 
 export const assetsRouter = new Hono<Env>()
 
@@ -41,11 +39,13 @@ for (const path of Object.keys(ASSET_ROUTES)) {
 const DEFAULT_MANIFEST_NAME = 'Site'
 
 assetsRouter.get('/manifest.webmanifest', async (c) => {
-  const bundle = getBlogSettingsBundleSync()
+  // Request-pinned snapshot: the manifest name/icons and its language come from
+  // ONE capture, the same one the ETag/locale decision describes.
+  const { settings: bundle, localization } = c.var.requestContext
   const siteIdentity = bundle?.siteIdentity
   const name = siteIdentity?.title || DEFAULT_MANIFEST_NAME
   const branding = bundle?.assets?.branding
-  const locale = resolveAppLocalization().locale
+  const locale = localization.locale
   // Hand-built bytes: the ETag must hash the EXACT body we send — hashing the
   // object and re-serializing would drift on key order / spacing.
   const body = JSON.stringify({
@@ -80,7 +80,7 @@ assetsRouter.get('/manifest.webmanifest', async (c) => {
 })
 
 assetsRouter.get('/robots.txt', async (c) => {
-  const bundle = getBlogSettingsBundleSync()
+  const bundle = c.var.requestContext.settings
   const custom = bundle?.assets?.branding?.robotsTxt
   let body: string
   if (typeof custom === 'string' && custom.length > 0) {

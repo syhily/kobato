@@ -44,6 +44,7 @@ catalog:
   '@orpc/client': ^1.16.2
   '@orpc/react-query': ^1.16.2
   '@orpc/server': ^1.16.2
+  '@playwright/test': 1.65.0
   '@prettier/sync': 0.6.1
   '@react-router/dev': ^8.5.1
   '@react-router/node': ^8.5.1

@@ -6,7 +6,7 @@ import { enqueueWebmention } from '@/server/domains/webmentions/inbox-enqueue'
 import { webmentionReceiveSchema } from '@/server/domains/webmentions/schema'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
-import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/config/getters'
+import { isWebmentionReceiveEnabled } from '@/shared/config/getters'
 
 // Form bodies carry exactly two URLs — anything larger is junk. dynamicBodyLimit
 // caps declared lengths up front and byte-counts chunked bodies too.
@@ -25,7 +25,7 @@ export const webmentionRouter = new Hono<Env>().post(
   async (c) => {
     // OFF → 410, checked after the rate limit + body cap so those guards keep
     // absorbing junk; same predicate as the discovery surfaces (R10).
-    if (!isWebmentionReceiveEnabled(getBlogSettingsBundleSync())) {
+    if (!isWebmentionReceiveEnabled(c.var.requestContext.settings)) {
       return c.json({ error: { message: 'This endpoint no longer accepts webmentions' } }, 410)
     }
 

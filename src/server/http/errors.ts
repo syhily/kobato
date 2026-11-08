@@ -160,7 +160,7 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
           status: 400,
           code: 'BAD_REQUEST',
           message: ErrorMessages.INVALID_INPUT,
-          issues: zodIssuesToWire(err.issues),
+          issues: zodIssuesToWire(err.issues, translator),
         },
         translator,
       ),

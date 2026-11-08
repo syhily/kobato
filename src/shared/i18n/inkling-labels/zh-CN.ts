@@ -3,7 +3,7 @@
 // move. Sibling tables (`zh-TW` / `zh-HK`) are written independently, never
 // produced by converting this one.
 
-import type { KobatoInklingLabelKey } from '@/client/editor/inkling-labels/en-US'
+import type { KobatoInklingLabelKey } from '@/shared/i18n/inkling-labels/en-US'
 
 export const kobatoInklingLabelsZhCN = {
   'placeholder.editor': '开始撰写内容…',
