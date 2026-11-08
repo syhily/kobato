@@ -202,6 +202,11 @@ const SCAN_ROOTS = [
   'src/server/domains/notifications/email.ts',
   'src/server/http/controllers/admin/mail.controller.ts',
   'scripts/generate-emails.ts',
+  // Step 5b-ii: persisted system-notification descriptors + their producers.
+  // Message copy lives in the server catalog; user-authored titles/bodies stay raw.
+  'src/server/domains/notifications',
+  'src/server/bootstrap/db-lifecycle.ts',
+  'src/server/domains/settings/services/zeabur-mail-cleanup.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -454,6 +459,12 @@ describe('production sources', () => {
         'src/server/domains/notifications/email.ts',
         'src/server/domains/webmentions/email.ts',
         'scripts/generate-emails.ts',
+        // Step 5b-ii slice: the notification descriptor resolver + producers.
+        'src/server/domains/notifications/message.ts',
+        'src/server/domains/notifications/email.ts',
+        'src/server/domains/notifications/service.ts',
+        'src/server/bootstrap/db-lifecycle.ts',
+        'src/server/domains/settings/services/zeabur-mail-cleanup.ts',
       ]),
     )
   })

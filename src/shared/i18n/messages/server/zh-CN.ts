@@ -97,4 +97,10 @@ export const serverMessagesZhCN = {
   'email.error.smtpUnconfigured': 'SMTP 服务尚未配置完整（缺少服务器地址 / 用户名 / 密码 / 发件人）',
   'email.error.mailgunUnconfigured': 'Mailgun 服务尚未配置完整（缺少 Domain / API Key / 发件人）',
   'email.error.targetMissing': '评论目标已不存在',
+  'notification.job.failed.title': '后台任务失败：{taskKey}',
+  'notification.job.failed.body':
+    '任务「{taskKey}」最近一次执行失败{hasError, select, yes {：{error}} other {。}}请到「任务」页面查看详情。',
+  'notification.mail.zeaburCleanup.title': '邮件服务已自动关闭',
+  'notification.mail.zeaburCleanup.body':
+    'Zeabur 邮件服务已下线，系统检测到站点仍在使用它，已自动关闭邮件发送。请到「系统设置 → 邮件」重新配置 SMTP 或 Mailgun 后重新启用。',
 } satisfies ServerMessages

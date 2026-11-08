@@ -55,7 +55,16 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
   producers only (`notifyAdmins`, `sendDirectMessage`, both `replyToThread` branches) through
   `email.ts::queueNotificationEmail`: it resolves recipient emails
   (`findUserEmailsByIds`), renders the shared `AdminNotificationEmail` family and sends one
-  message per recipient sequentially. The gate is `mail.enabled` AND `mail.notificationEmails`
+  message per recipient sequentially. **System-notification i18n (plan 001, 5b-ii):** an
+  `admin`-kind row stores the creation-time ENGLISH fallback in `title`/`body` plus a nullable
+  descriptor (`title_key`/`title_params`, `body_key`/`body_params`); `notifyAdmins` takes typed
+  `notification.*` keys (persisted keys are append-only — never rename/delete, keep params
+  backward-compatible) and validates them at write time. Every read path — inbox preview
+  (truncated from the SAME resolved body at 200 chars), thread detail and notification email —
+  resolves through `domains/notifications/message.ts` with the reader/send locale and falls back
+  to the stored English text (once-logged warning) when the key is gone or its params are
+  malformed. `direct`/`broadcast` rows keep the user's original text and NULL descriptor columns.
+  Old rows are never backfilled. The gate is `mail.enabled` AND `mail.notificationEmails`
   (default ON); broadcasts never email, producers keep their synchronous
   signatures, and a transport failure only reaches the server log. Retention (ADR-0010): the
   daily maintenance job prunes READ recipient rows and orphan roots once the message is 180 days

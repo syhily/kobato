@@ -67,6 +67,29 @@ describe('folder migrations (sqlite)', () => {
     expect(readDbShape(handle.db)).toEqual(before)
   })
 
+  it('adds the nullable notification i18n descriptor columns', () => {
+    const handle = openDatabase(':memory:')
+    handles.push(handle)
+    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+
+    const columns = Object.fromEntries(
+      handle.db
+        .all<{ name: string; notnull: number }>(sql`PRAGMA table_info(notification)`)
+        .map((column) => [column.name, column.notnull]),
+    )
+
+    // Plan 001, 5b-ii: the English fallback stays in title/body; the descriptor
+    // columns are nullable so legacy direct/broadcast rows need no backfill.
+    expect(columns).toMatchObject({
+      title: 1,
+      body: 1,
+      title_key: 0,
+      title_params: 0,
+      body_key: 0,
+      body_params: 0,
+    })
+  })
+
   it('applies the pragma set the runtime relies on', () => {
     // journal_mode=wal only exists on a real file — use the file variant.
     const handle = createTestDatabaseFile()

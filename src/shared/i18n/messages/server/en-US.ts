@@ -111,6 +111,12 @@ export const serverMessagesEnUS = {
     'The SMTP service is not fully configured (missing server address / username / password / sender)',
   'email.error.mailgunUnconfigured': 'The Mailgun service is not fully configured (missing domain / API key / sender)',
   'email.error.targetMissing': 'The comment target no longer exists',
+  'notification.job.failed.title': 'Background task failed: {taskKey}',
+  'notification.job.failed.body':
+    'Task {taskKey} failed on its most recent run{hasError, select, yes {: {error}} other {.}} Open the Tasks page for details.',
+  'notification.mail.zeaburCleanup.title': 'Mail sending was turned off automatically',
+  'notification.mail.zeaburCleanup.body':
+    'The Zeabur mail service is gone. This site still used it, so sending was turned off automatically. Reconfigure SMTP or Mailgun under「Settings → Mail」and turn it back on.',
 } as const
 
 export type ServerMessageId = keyof typeof serverMessagesEnUS

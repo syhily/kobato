@@ -19,8 +19,14 @@ import { NODE_ENV } from '@/server/infra/config'
 import { getLogger } from '@/server/infra/logger'
 import { assertCatalogsValid, serverMessagesFor, uiMessagesFor } from '@/shared/i18n/catalog'
 import { BASE_LOCALE } from '@/shared/i18n/locales'
+import { serverMessagesEnUS } from '@/shared/i18n/messages/server/en-US'
 
 const log = getLogger('i18n')
+
+/** Runtime membership test against the SERVER catalog (email / notification keys). */
+export function isServerMessageId(value: string): value is ServerMessageId {
+  return Object.hasOwn(serverMessagesEnUS, value)
+}
 
 /** Every message id a server surface may format (UI catalog + server catalog). */
 export type MessageId = UiMessageId | ServerMessageId

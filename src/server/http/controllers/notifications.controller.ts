@@ -28,6 +28,7 @@ const list = authedProc
       tab: input.tab,
       cursor: input.cursor !== undefined ? Number(input.cursor) : undefined,
       limit: input.limit,
+      locale: context.localization.locale,
     }),
   )
 
@@ -68,7 +69,9 @@ const thread = authedProc
   .route({ method: 'GET', path: '/notifications/thread' })
   .input(notificationThreadInput)
   .output(notificationThreadOutput)
-  .handler(({ input, context }) => getThread(context.db, context.viewer, Number(input.threadId)))
+  .handler(({ input, context }) =>
+    getThread(context.db, context.viewer, Number(input.threadId), context.localization.locale),
+  )
 
 // Replies write to other users' inboxes AND mail the admin team — gate the
 // per-IP resource bucket and a per-user bucket.

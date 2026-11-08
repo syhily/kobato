@@ -97,4 +97,10 @@ export const serverMessagesZhTW = {
   'email.error.smtpUnconfigured': 'SMTP 服務尚未設定完整（缺少伺服器位址 / 使用者名稱 / 密碼 / 寄件人）',
   'email.error.mailgunUnconfigured': 'Mailgun 服務尚未設定完整（缺少 Domain / API Key / 寄件人）',
   'email.error.targetMissing': '評論目標已不存在',
+  'notification.job.failed.title': '後台任務失敗：{taskKey}',
+  'notification.job.failed.body':
+    '任務「{taskKey}」最近一次執行失敗{hasError, select, yes {：{error}} other {。}}請到「任務」頁面檢視詳情。',
+  'notification.mail.zeaburCleanup.title': '郵件服務已自動關閉',
+  'notification.mail.zeaburCleanup.body':
+    'Zeabur 郵件服務已下線，系統偵測到站點仍在使用它，已自動關閉郵件傳送。請到「系統設定 → 郵件」重新設定 SMTP 或 Mailgun 後重新啟用。',
 } satisfies ServerMessages

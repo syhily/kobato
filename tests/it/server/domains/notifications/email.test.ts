@@ -34,6 +34,14 @@ vi.mock('@/server/infra/logger', async (importOriginal) => {
 
 const db = getTestDb()
 
+const SYSTEM_NOTICE = {
+  titleKey: 'notification.mail.zeaburCleanup.title',
+  bodyKey: 'notification.mail.zeaburCleanup.body',
+  source: 'zeabur-mail-cleanup',
+} as const
+const ZH_NOTICE = createServerTranslator('zh-CN')
+const EN_NOTICE = createServerTranslator('en-US')
+
 // The opt-out footer is a server-catalog message rendered in the site locale
 // (the fixture's zh-CN).
 const NOTIFICATION_EMAIL_FOOTER = createServerTranslator('zh-CN').format('email.notification.footerNote')
@@ -45,6 +53,14 @@ const mailgunConfigured = {
   mailgunDomain: 'mg.example.com',
   mailgunApiKey: 'SECRET',
   sender: 'noreply@example.com',
+}
+
+function setSiteLocale(locale: 'en-US' | 'zh-CN' | 'zh-TW' | 'zh-HK'): void {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale },
+    mail: { mail: { ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail, ...mailgunConfigured } },
+  })
 }
 
 function setMail(overrides: Partial<typeof mailgunConfigured> = {}): void {
@@ -152,7 +168,7 @@ describe('notifications email — direct and admin kinds', () => {
     const secondAdminId = await seedUser('admin', 'admin2')
     const authorId = await seedUser('author', 'author')
 
-    const row = notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件', source: 'zeabur-mail-cleanup' })
+    const row = notifyAdmins(db, SYSTEM_NOTICE)
     expect(row).not.toBeNull()
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
 
@@ -163,11 +179,12 @@ describe('notifications email — direct and admin kinds', () => {
     expect(recipients).not.toContain('author-3@example.com')
 
     const html = sentMessage(0).get('html') as string
+    const expectedTitle = ZH_NOTICE.format('notification.mail.zeaburCleanup.title')
     expect(sentMessage(0).get('subject')).toBe(
-      `【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】系统提醒：Zeabur 下线`,
+      `【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】系统提醒：${expectedTitle}`,
     )
-    expect(html).toContain('Zeabur 下线')
-    expect(html).toContain('请重新配置邮件')
+    expect(html).toContain(expectedTitle)
+    expect(html).toContain(ZH_NOTICE.format('notification.mail.zeaburCleanup.body'))
     expect(html).toContain('href="https://example.com/admin"')
     expect(html).toContain(NOTIFICATION_EMAIL_FOOTER)
     // Both admins were resolved as recipients; the author was not.
@@ -249,7 +266,7 @@ describe('notifications email — failure isolation', () => {
     // Only the FIRST send rejects; the rest of the fan-out is healthy.
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
 
-    notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件', source: 'zeabur-mail-cleanup' })
+    notifyAdmins(db, SYSTEM_NOTICE)
 
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     const attempted = fetchMock.mock.calls.map((_, index) => String(sentMessage(index).get('to')))
@@ -277,7 +294,7 @@ describe('notifications email — failure isolation', () => {
     const rejectOnce = vi.spyOn(senderModule, 'sendEmail').mockRejectedValueOnce(new Error('bad address'))
 
     try {
-      notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件', source: 'zeabur-mail-cleanup' })
+      notifyAdmins(db, SYSTEM_NOTICE)
 
       await vi.waitFor(() => expect(logError).toHaveBeenCalledTimes(1))
       expect(logError.mock.calls[0]![0]).toBe('failed to send notification email')
@@ -327,14 +344,75 @@ describe('notifications email — site locale at send time', () => {
     await seedUser('admin', 'admin')
     const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
 
-    notifyAdmins(db, { title: 'Zeabur offline', body: 'Reconfigure mail', source: 'zeabur-mail-cleanup' })
+    notifyAdmins(db, SYSTEM_NOTICE)
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
     const body = sentMessage(0)
-    expect(body.get('subject')).toBe(`【${title}】System alert: Zeabur offline`)
+    const expectedTitle = EN_NOTICE.format('notification.mail.zeaburCleanup.title')
+    expect(body.get('subject')).toBe(`【${title}】System alert: ${expectedTitle}`)
     const html = body.get('html') as string
     expect(html).toContain('Open the admin panel')
     expect(html).toContain('href="https://example.com/admin"')
-    expect(html).toContain('Zeabur offline')
+    expect(html).toContain(expectedTitle)
+    expect(html).toContain(EN_NOTICE.format('notification.mail.zeaburCleanup.body'))
+  })
+})
+
+describe('notifications email — descriptor resolution', () => {
+  it('renders the reader-locale message, never the stored English fallback', async () => {
+    setSiteLocale('zh-TW')
+    await seedUser('admin', 'admin')
+    const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+
+    const row = notifyAdmins(db, {
+      titleKey: 'notification.job.failed.title',
+      titleParams: { taskKey: 'backup' },
+      bodyKey: 'notification.job.failed.body',
+      bodyParams: { taskKey: 'backup', hasError: 'yes', error: 'DISK FULL' },
+    })!
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    // The row persists the English fallback; the email resolves the keys.
+    expect(row.title).toBe('Background task failed: backup')
+    const body = sentMessage(0)
+    expect(body.get('subject')).toBe(`【${title}】系統提醒：後台任務失敗：backup`)
+    const html = body.get('html') as string
+    expect(html).toContain('後台任務失敗：backup')
+    expect(html).toContain('任務「backup」最近一次執行失敗：DISK FULL請到「任務」頁面檢視詳情。')
+    expect(html).not.toContain('Background task failed: backup')
+  })
+
+  it('falls back to the stored English message when the descriptor key is gone', async () => {
+    setSiteLocale('zh-TW')
+    await seedUser('admin', 'admin')
+    const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+    const { createNotificationWithRecipients } = await import('@/server/infra/db/operations/notification')
+    const { sendNotificationEmail } = await import('@/server/domains/notifications/email')
+    const adminRows = db.select().from(user).all()
+
+    const row = createNotificationWithRecipients(
+      db,
+      {
+        kind: 'admin',
+        senderId: null,
+        title: 'Removed system notice',
+        body: 'This row outlived its catalog key.',
+        titleKey: 'notification.removed.key',
+        bodyKey: 'notification.removed.key',
+        replyable: false,
+      },
+      adminRows.map((entry) => entry.id),
+    )
+    await sendNotificationEmail(
+      db,
+      row,
+      adminRows.map((entry) => entry.id),
+    )
+
+    const body = sentMessage(0)
+    expect(body.get('subject')).toBe(`【${title}】系統提醒：Removed system notice`)
+    const html = body.get('html') as string
+    expect(html).toContain('Removed system notice')
+    expect(html).toContain('This row outlived its catalog key.')
   })
 })

@@ -18,8 +18,14 @@ const FAN_OUT_CHUNK_SIZE = 500
 export interface NewNotificationRow {
   kind: NotificationKind
   senderId: number | null
+  /** English fallback (`titleKey` resolves at read time) or the user's original text. */
   title: string
   body: string
+  /** System-notification descriptor; NULL for direct/broadcast rows. */
+  titleKey?: string | null
+  titleParams?: string | null
+  bodyKey?: string | null
+  bodyParams?: string | null
   replyable: boolean
   source?: string | null
   actionUrl?: string | null
@@ -47,6 +53,10 @@ export function createNotificationWithRecipients(
         senderId: data.senderId,
         title: data.title,
         body: data.body,
+        titleKey: data.titleKey ?? null,
+        titleParams: data.titleParams ?? null,
+        bodyKey: data.bodyKey ?? null,
+        bodyParams: data.bodyParams ?? null,
         replyable: data.replyable,
         source: data.source ?? null,
         actionUrl: data.actionUrl ?? null,

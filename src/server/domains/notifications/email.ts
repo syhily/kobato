@@ -1,10 +1,12 @@
 import { createElement } from 'react'
 
+import type { ResolvedNotificationMessage } from '@/server/domains/notifications/message'
 import type { Database } from '@/server/infra/db/database'
 import type { NotificationRow } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
 import type { ServerTranslator } from '@/server/infra/i18n'
 
+import { resolveNotificationMessage } from '@/server/domains/notifications/message'
 import { findUserEmailsByIds, findUserNamesByIds } from '@/server/infra/db/operations/notification'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { render } from '@/server/infra/email/render'
@@ -27,10 +29,10 @@ function notificationEmailsEnabled(): boolean {
   return mail?.enabled === true && mail.notificationEmails !== false
 }
 
-function notificationEmailSubject(row: NotificationRow, siteTitle: string, t: ServerTranslator): string {
+function notificationEmailSubject(row: NotificationRow, siteTitle: string, t: ServerTranslator, title: string): string {
   return t.format(row.kind === 'admin' ? 'email.notification.adminSubject' : 'email.notification.directSubject', {
     siteTitle,
-    title: row.title,
+    title,
   })
 }
 
@@ -39,18 +41,19 @@ function renderNotificationEmail(
   site: { title: string; website: string },
   receiver: string,
   t: ServerTranslator,
+  message: ResolvedNotificationMessage,
 ): string {
   const isAdminAlert = row.kind === 'admin'
   return render(
     createElement(AdminNotificationEmail, {
       t,
       receiver,
-      preview: row.title,
+      preview: message.title,
       title: t.format(isAdminAlert ? 'email.notification.adminTitle' : 'email.notification.directTitle'),
-      // Notification title/body are plain text — React escapes them at render.
+      // The resolver's output is plain text — React escapes it at render.
       rows: [
-        { label: t.format('email.notification.rowTitle'), value: row.title },
-        { label: t.format('email.notification.rowBody'), value: row.body },
+        { label: t.format('email.notification.rowTitle'), value: message.title },
+        { label: t.format('email.notification.rowBody'), value: message.body },
       ],
       cta: isAdminAlert
         ? {
@@ -91,10 +94,13 @@ export async function sendNotificationEmail(
   const names = findUserNamesByIds(db, [...emails.keys()])
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const t = emailTranslator()
-  const subject = notificationEmailSubject(row, siteIdentity.title, t)
+  // One resolver call per row: the subject and the body always agree, and the
+  // same function feeds the inbox/thread read paths.
+  const message = resolveNotificationMessage(row, t)
+  const subject = notificationEmailSubject(row, siteIdentity.title, t, message.title)
   for (const [userId, email] of emails) {
     try {
-      const html = renderNotificationEmail(row, siteIdentity, names.get(userId) ?? siteIdentity.author.name, t)
+      const html = renderNotificationEmail(row, siteIdentity, names.get(userId) ?? siteIdentity.author.name, t, message)
       const result = await sendEmail(email, subject, html)
       logSendResult(row.id, userId, result)
     } catch (error) {

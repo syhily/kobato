@@ -99,8 +99,10 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   // pre-install boot stays quiet.
   wireJobFailureNotifier(({ taskKey, error }) => {
     notifyAdmins(getDb(), {
-      title: `后台任务失败：${taskKey}`,
-      body: `任务「${taskKey}」最近一次执行失败${error ? `：${error}` : '。'}请到「任务」页面查看详情。`,
+      titleKey: 'notification.job.failed.title',
+      titleParams: { taskKey },
+      bodyKey: 'notification.job.failed.body',
+      bodyParams: { taskKey, hasError: error !== null ? 'yes' : 'no', error: error ?? '' },
       source: JOB_RUN_SOURCE,
       actionUrl: '/admin/tasks',
     })
