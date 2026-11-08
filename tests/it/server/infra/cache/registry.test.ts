@@ -14,6 +14,7 @@ import {
   throughMany,
 } from '@/server/infra/cache/registry'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { APP_VERSION } from '@/shared/config/version'
 
 const db = getTestDb()
 
@@ -32,14 +33,14 @@ describe('cache registry (integration)', () => {
   it('through round-trips a json entry: miss → loader, then hit', async () => {
     const loader = vi.fn().mockResolvedValue({ rss: '<rss/>', atom: '<atom/>' })
 
-    const first = await through(db, 'feed', { scope: 'all' }, loader)
-    const second = await through(db, 'feed', { scope: 'all' }, loader)
+    const first = await through(db, 'feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION }, loader)
+    const second = await through(db, 'feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION }, loader)
 
     expect(first).toEqual({ rss: '<rss/>', atom: '<atom/>' })
     expect(second).toEqual(first)
     expect(loader).toHaveBeenCalledTimes(1)
 
-    const row = await findRow('feed:xml:all')
+    const row = await findRow(`feed:xml:zh-CN:${APP_VERSION}:all`)
     expect(row?.bucket).toBe('feed')
     expect(row?.expiresAt).not.toBeNull()
   })
@@ -72,12 +73,12 @@ describe('cache registry (integration)', () => {
   })
 
   it('clear deletes only the targeted bucket', async () => {
-    await through(db, 'feed', { scope: 'all' }, async () => 'feed-xml')
+    await through(db, 'feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION }, async () => 'feed-xml')
     await through(db, 'tags', {}, async () => ['tag'])
 
     await clear(db, 'feed')
 
-    expect(await findRow('feed:xml:all')).toBeNull()
+    expect(await findRow(`feed:xml:zh-CN:${APP_VERSION}:all`)).toBeNull()
     expect(await findRow('tags:all')).not.toBeNull()
   })
 

@@ -3,42 +3,60 @@ import type { Context } from 'hono'
 import { Hono } from 'hono'
 
 import type { Env } from '@/server/http/context'
-import type { FeedOptions } from '@/server/render/feed/generator'
 
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { through } from '@/server/infra/cache/registry'
+import { contentEtag, etagHeaderMatches } from '@/server/infra/http/etag'
 import { generateFeeds } from '@/server/render/feed/generator'
+import { APP_VERSION } from '@/shared/config/version'
 
 const CONTENT_TYPES = {
   rss: 'application/xml; charset=utf-8',
   atom: 'application/atom+xml; charset=utf-8',
 } as const
 
-// One cache policy for all six feed URLs.
-function feedHeaders(kind: 'rss' | 'atom'): HeadersInit {
-  return {
-    'Content-Type': CONTENT_TYPES[kind],
-    'Cache-Control': 'public, max-age=1800',
-  }
+/** Stored but revalidated before every reuse: a locale switch must never serve the old language. */
+export const FEED_CACHE_CONTROL = 'public, no-cache'
+
+interface FeedScope {
+  category?: string
+  tag?: string
 }
 
-// Cache keys are namespaced because category and tag slugs share one slug namespace, and a category slugged `all` would otherwise collide with the site-wide feed.
-function cacheKeyFor(scope?: FeedOptions): string {
-  if (scope?.category !== undefined) {
+// Cache keys are namespaced because category and tag slugs share one slug namespace, and a category slugged `all` would otherwise collide with the site-wide feed. The scope segment is composed with the locale/version inside the registry declaration.
+function cacheKeyFor(scope: FeedScope): string {
+  if (scope.category !== undefined) {
     return `cat:${scope.category}`
   }
-  if (scope?.tag !== undefined) {
+  if (scope.tag !== undefined) {
     return `tag:${scope.tag}`
   }
   return 'all'
 }
 
-async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: FeedOptions) {
-  const feed = await through(c.var.requestContext.db, 'feed', { scope: cacheKeyFor(scope) }, () =>
-    generateFeeds(c.var.requestContext.db, scope ?? {}),
+async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope: FeedScope = {}) {
+  // The request locale is passed EXPLICITLY into the renderer (it drives
+  // `<language>` / `xml:lang`) and into the cache params — never inferred from
+  // whatever the generator happens to read.
+  const locale = c.var.requestContext.localization.locale
+  const feed = await through(
+    c.var.requestContext.db,
+    'feed',
+    { scope: cacheKeyFor(scope), locale, version: APP_VERSION },
+    () => generateFeeds(c.var.requestContext.db, { ...scope, locale }),
   )
-  new Headers(feedHeaders(kind)).forEach((value, name) => c.header(name, value))
-  return c.body(kind === 'rss' ? feed.rss : feed.atom)
+  const body = kind === 'rss' ? feed.rss : feed.atom
+  // ETag over the SERVED bytes: the cached body carries its own `updated`
+  // timestamp, so hashing the buffer (not the inputs) stays stable on a hit.
+  const etag = contentEtag(body)
+  c.header('Content-Type', CONTENT_TYPES[kind])
+  c.header('Cache-Control', FEED_CACHE_CONTROL)
+  c.header('Content-Language', locale)
+  c.header('ETag', etag)
+  if (etagHeaderMatches(c.req.header('if-none-match'), etag)) {
+    return c.body(null, 304)
+  }
+  return c.body(body)
 }
 
 // Scope is known at compile time per handler; the per-IP resource limiter

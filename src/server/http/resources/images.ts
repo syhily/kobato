@@ -122,20 +122,28 @@ const imagesRateLimit = rateLimitByIp('images', 'resource')
 export const imagesRouter = new Hono<Env>()
   .get('/images/og/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([postOgAdapter, pageOgAdapter]))
   .get('/images/og/cats/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([categoryOgAdapter]))
-  .get('/images/calendar/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) => {
-    const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
-    const headers = { 'Cache-Control': 'public, max-age=86400' }
-    const res = await serveCalendar(c.var.requestContext.db, params, 'light', headers)
-    res.headers.forEach((v, k) => c.header(k, v))
-    return c.body(await res.arrayBuffer())
-  })
-  .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) => {
-    const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
-    const headers = { 'Cache-Control': 'public, max-age=86400' }
-    const res = await serveCalendar(c.var.requestContext.db, params, 'dark', headers)
-    res.headers.forEach((v, k) => c.header(k, v))
-    return c.body(await res.arrayBuffer())
-  })
+  .get('/images/calendar/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) =>
+    serveCalendar(
+      c.var.requestContext.db,
+      { year: c.req.param('year'), time: stripPng(c.req.param('filename')) },
+      {
+        theme: 'light',
+        locale: c.var.requestContext.localization.locale,
+        ifNoneMatch: c.req.header('if-none-match') ?? null,
+      },
+    ),
+  )
+  .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) =>
+    serveCalendar(
+      c.var.requestContext.db,
+      { year: c.req.param('year'), time: stripPng(c.req.param('filename')) },
+      {
+        theme: 'dark',
+        locale: c.var.requestContext.localization.locale,
+        ifNoneMatch: c.req.header('if-none-match') ?? null,
+      },
+    ),
+  )
   .get(
     '/images/avatar/:filename{[^/]+\\.png}',
     imagesRateLimit,

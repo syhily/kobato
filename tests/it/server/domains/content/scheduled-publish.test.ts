@@ -15,6 +15,7 @@ import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { scheduleRegisteredJob } from '@/server/infra/job-registry'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
+import { APP_VERSION } from '@/shared/config/version'
 
 // The job against the real engine: real rows drive next-due and the effect
 // is real kv_cache invalidation; only scheduleRegisteredJob('content.scheduled-publish') is called.
@@ -54,7 +55,7 @@ async function seedScheduledPage(publishedAt: Date): Promise<number> {
 }
 
 function warmFeed(): Promise<void> {
-  return set(db, 'feed', { scope: 'all' }, ['stale'])
+  return set(db, 'feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION }, ['stale'])
 }
 
 /** TTL expiry only makes `get` miss; only the bucket clear DELETES the row. */

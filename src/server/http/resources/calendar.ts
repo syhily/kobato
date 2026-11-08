@@ -2,10 +2,16 @@ import { format, isValid, parse } from 'date-fns'
 import { HTTPException } from 'hono/http-exception'
 
 import type { Database } from '@/server/infra/db/database'
+import type { AppLocale } from '@/shared/i18n/locales'
 
 import { through } from '@/server/infra/cache/registry'
+import { contentEtag, etagHeaderMatches } from '@/server/infra/http/etag'
 import { pngResponse } from '@/server/infra/http/status'
 import { type CalendarTheme, renderCalendar } from '@/server/render/calendar/render'
+import { APP_VERSION } from '@/shared/config/version'
+
+/** Stored, revalidated on every reuse — a locale switch must never serve the old language. */
+export const CALENDAR_CACHE_CONTROL = 'public, no-cache'
 
 const timeRegex = /^\d{4}$/
 
@@ -22,11 +28,17 @@ function httpNotFound(): never {
   throw new HTTPException(404, { message: 'Not Found' })
 }
 
+export interface CalendarRequestOptions {
+  theme: CalendarTheme
+  /** The request's AppLocale — explicit, never inferred from the cache key. */
+  locale: AppLocale
+  ifNoneMatch: string | null
+}
+
 export async function serveCalendar(
   db: Database,
   params: { year?: string; time?: string },
-  theme: CalendarTheme,
-  responseHeaders: HeadersInit,
+  options: CalendarRequestOptions,
 ): Promise<Response> {
   const { year, time } = params
   if (year === undefined || !timeRegex.test(year) || time === undefined || !timeRegex.test(time)) {
@@ -46,9 +58,26 @@ export async function serveCalendar(
     httpNotFound()
   }
 
-  const buffer = await through(db, 'calendar', { date: format(date, 'yyyy-MM-dd'), theme }, () =>
-    renderCalendar(date, theme),
+  const { theme, locale, ifNoneMatch } = options
+  const buffer = await through(
+    db,
+    'calendar',
+    { date: format(date, 'yyyy-MM-dd'), theme, locale, version: APP_VERSION },
+    () => renderCalendar(date, theme, locale),
   )
 
-  return pngResponse(buffer, responseHeaders)
+  // ETag over the exact PNG bytes: a cache hit reuses the same buffer, so the
+  // tag is stable without regenerating the localized render.
+  const etag = contentEtag(buffer)
+  const headers = new Headers({
+    'Cache-Control': CALENDAR_CACHE_CONTROL,
+    'Content-Language': locale,
+    ETag: etag,
+  })
+  if (etagHeaderMatches(ifNoneMatch, etag)) {
+    // 304: the same headers advertise the representation just validated — no
+    // body, no render, no stale language.
+    return new Response(null, { status: 304, headers })
+  }
+  return pngResponse(buffer, headers)
 }

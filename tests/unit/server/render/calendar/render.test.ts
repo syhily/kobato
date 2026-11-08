@@ -29,8 +29,22 @@ afterEach(() => {
 })
 
 describe('services/images/calendar — renderCalendar', () => {
+  it.each(['en-US', 'zh-CN', 'zh-TW', 'zh-HK'] as const)(
+    'renders a 600×880 PNG for %s',
+    { timeout: 30_000 },
+    async (locale) => {
+      const buffer = await renderCalendar(parseISO('2024-04-24'), 'dark', locale)
+
+      expect(Buffer.isBuffer(buffer)).toBe(true)
+      expect(buffer[0]).toBe(0x89)
+      const meta = await sharp(buffer).metadata()
+      expect(meta.width).toBe(600)
+      expect(meta.height).toBe(880)
+    },
+  )
+
   it('returns a 600×880 PNG buffer for an arbitrary date', { timeout: 30_000 }, async () => {
-    const buffer = await renderCalendar(parseISO('2024-04-24'))
+    const buffer = await renderCalendar(parseISO('2024-04-24'), 'light', 'zh-CN')
 
     expect(Buffer.isBuffer(buffer)).toBe(true)
     // PNG magic bytes
@@ -45,7 +59,7 @@ describe('services/images/calendar — renderCalendar', () => {
   it('still renders a valid PNG when the quote API fails (local fallback)', { timeout: 30_000 }, async () => {
     globalThis.fetch = vi.fn(async () => new Response('nope', { status: 500 }))
 
-    const buffer = await renderCalendar(parseISO('2024-04-24'))
+    const buffer = await renderCalendar(parseISO('2024-04-24'), 'light', 'zh-CN')
 
     expect(Buffer.isBuffer(buffer)).toBe(true)
     expect(buffer[0]).toBe(0x89)
@@ -57,7 +71,7 @@ describe('services/images/calendar — renderCalendar', () => {
 
   it('encodes lunar dates for traditional Chinese New Year correctly', { timeout: 30_000 }, async () => {
     // 2024-02-09 converts to Lunar New Year's eve in Asia/Shanghai — exercises the Solar→Lunar branch.
-    const buffer = await renderCalendar(parseISO('2024-02-09'))
+    const buffer = await renderCalendar(parseISO('2024-02-09'), 'light', 'zh-CN')
     expect(buffer.byteLength).toBeGreaterThan(0)
   })
 
@@ -70,7 +84,7 @@ describe('services/images/calendar — renderCalendar', () => {
         }),
     )
 
-    const buffer = await renderCalendar(parseISO('2024-04-24'))
+    const buffer = await renderCalendar(parseISO('2024-04-24'), 'light', 'zh-CN')
 
     expect(buffer[0]).toBe(0x89)
     const meta = await sharp(buffer).metadata()

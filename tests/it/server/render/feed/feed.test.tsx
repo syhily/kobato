@@ -59,7 +59,7 @@ function itemCount(rss: string): number {
 
 describe('services/feed — generateFeeds (channel envelope)', () => {
   it('produces both rss + atom strings even when there are zero posts', async () => {
-    const feeds = await generateFeeds(db)
+    const feeds = await generateFeeds(db, { locale: 'zh-CN' })
 
     expect(feeds.rss).toContain('<?xml version=')
     expect(feeds.atom).toContain('<?xml version=')
@@ -68,13 +68,26 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
   })
 
   it('declares zh-CN language on both feeds', async () => {
-    const feeds = await generateFeeds(db)
+    const feeds = await generateFeeds(db, { locale: 'zh-CN' })
     expect(feeds.rss).toContain('<language>zh-CN</language>')
     expect(feeds.atom).toContain('xml:lang="zh-CN"')
   })
 
+  it.each(['en-US', 'zh-CN', 'zh-TW', 'zh-HK'] as const)(
+    'uses the EXPLICIT %s locale, not the settings snapshot',
+    async (locale) => {
+      // The fixture snapshot is zh-CN; a different argument must win.
+      const feeds = await generateFeeds(db, { locale })
+      expect(feeds.rss).toContain(`<language>${locale}</language>`)
+      expect(feeds.atom).toContain(`xml:lang="${locale}"`)
+      if (locale !== 'zh-CN') {
+        expect(feeds.rss).not.toContain('<language>zh-CN</language>')
+      }
+    },
+  )
+
   it('does not set a custom generator string (uses the feed library default)', async () => {
-    const feeds = await generateFeeds(db)
+    const feeds = await generateFeeds(db, { locale: 'zh-CN' })
     expect(feeds.rss).not.toContain('<generator>WordPress 3.2.1</generator>')
   })
 
@@ -87,7 +100,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
     await seedPost({ slug: 'first', title: 'First' })
     await seedPost({ slug: 'second', title: 'Second' })
 
-    const feeds = await generateFeeds(db)
+    const feeds = await generateFeeds(db, { locale: 'zh-CN' })
     expect(itemCount(feeds.rss)).toBe(1)
   })
 
@@ -98,11 +111,11 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
     const tagged = await seedPost({ slug: 'tagged-react', title: 'Tagged React' })
     await linkTag(tagged, tagId)
 
-    const byCategory = await generateFeeds(db, { category: 'tech' })
+    const byCategory = await generateFeeds(db, { locale: 'zh-CN', category: 'tech' })
     expect(itemCount(byCategory.rss)).toBe(1)
     expect(byCategory.rss).toContain('In Tech')
 
-    const byTag = await generateFeeds(db, { tag: 'react' })
+    const byTag = await generateFeeds(db, { locale: 'zh-CN', tag: 'react' })
     expect(itemCount(byTag.rss)).toBe(1)
     expect(byTag.rss).toContain('Tagged React')
     expect(byTag.rss).not.toContain('In Tech')
@@ -118,17 +131,17 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
     const tagged = await seedPost({ slug: 'tagged-react', title: 'Tagged React' })
     await linkTag(tagged, tagId)
 
-    const byCategoryName = await generateFeeds(db, { category: '技术' })
+    const byCategoryName = await generateFeeds(db, { locale: 'zh-CN', category: '技术' })
     expect(itemCount(byCategoryName.rss)).toBe(1)
     expect(byCategoryName.rss).toContain('In Tech')
 
-    const byTagName = await generateFeeds(db, { tag: 'React' })
+    const byTagName = await generateFeeds(db, { locale: 'zh-CN', tag: 'React' })
     expect(itemCount(byTagName.rss)).toBe(1)
     expect(byTagName.rss).toContain('Tagged React')
   })
 
   it('does not emit `xml-stylesheet` (client XSLT is deprecated in browsers)', async () => {
-    const feeds = await generateFeeds(db)
+    const feeds = await generateFeeds(db, { locale: 'zh-CN' })
     expect(feeds.rss).not.toMatch(/xml-stylesheet/i)
     expect(feeds.atom).not.toMatch(/xml-stylesheet/i)
   })
@@ -137,24 +150,26 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
     await seedCategory('技术', 'tech')
     await seedCategory('杂谈', 'misc')
 
-    const feeds = await generateFeeds(db)
+    const feeds = await generateFeeds(db, { locale: 'zh-CN' })
     expect(feeds.rss).toContain('<category>技术</category>')
     expect(feeds.rss).toContain('<category>杂谈</category>')
   })
 
   it('uses /cats/<slug>/feed and /cats/<slug>/feed/atom URLs when scoped to a category', async () => {
-    const feeds = await generateFeeds(db, { category: 'tech' })
+    const feeds = await generateFeeds(db, { locale: 'zh-CN', category: 'tech' })
     // The feedLinks self-references appear in the channel header.
     expect(feeds.atom).toContain('/cats/tech/feed')
   })
 
   it('uses /tags/<slug>/feed and /tags/<slug>/feed/atom URLs when scoped to a tag', async () => {
-    const feeds = await generateFeeds(db, { tag: 'react' })
+    const feeds = await generateFeeds(db, { locale: 'zh-CN', tag: 'react' })
     // The feedLinks self-references appear in the channel header.
     expect(feeds.atom).toContain('/tags/react/feed')
   })
 
   it('rejects calls that pass both category and tag', async () => {
-    await expect(generateFeeds(db, { category: 'tech', tag: 'react' })).rejects.toThrow(/at the same time/)
+    await expect(generateFeeds(db, { locale: 'zh-CN', category: 'tech', tag: 'react' })).rejects.toThrow(
+      /at the same time/,
+    )
   })
 })

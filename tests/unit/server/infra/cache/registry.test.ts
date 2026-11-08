@@ -26,6 +26,7 @@ import {
   through,
   throughMany,
 } from '@/server/infra/cache/registry'
+import { APP_VERSION } from '@/shared/config/version'
 
 // The db handle is only forwarded to the mocked kv-store (and to the
 // delete/execute chains, which get their own stand-ins below) — a plain
@@ -58,10 +59,10 @@ describe('cache registry — through', () => {
     const loader = vi.fn()
     const onHit = vi.fn()
 
-    const value = await through(db, 'feed', { scope: 'all' }, loader, { onHit })
+    const value = await through(db, 'feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION }, loader, { onHit })
 
     expect(value).toEqual({ rss: '<rss/>', atom: '<atom/>' })
-    expect(kvStoreMock.getItem).toHaveBeenCalledWith(db, 'feed:xml:all')
+    expect(kvStoreMock.getItem).toHaveBeenCalledWith(db, `feed:xml:zh-CN:${APP_VERSION}:all`)
     expect(loader).not.toHaveBeenCalled()
     expect(onHit).toHaveBeenCalledWith({ rss: '<rss/>', atom: '<atom/>' })
     expect(kvStoreMock.setItem).not.toHaveBeenCalled()
@@ -153,7 +154,12 @@ describe('cache registry — devBypass', () => {
     kvStoreMock.getItemRaw.mockResolvedValue(Buffer.from('cached-png'))
     const loader = vi.fn()
 
-    const value = await through(db, 'calendar', { date: '2026-06-17', theme: 'light' }, loader)
+    const value = await through(
+      db,
+      'calendar',
+      { date: '2026-06-17', theme: 'light', locale: 'zh-CN', version: APP_VERSION },
+      loader,
+    )
 
     expect(value).toEqual(Buffer.from('cached-png'))
     expect(loader).not.toHaveBeenCalled()
@@ -173,11 +179,21 @@ describe('cache registry — key shapes', () => {
   })
 
   it('suffixes the dark calendar variant', async () => {
-    await set(db, 'calendar', { date: '2026-06-17', theme: 'dark' }, Buffer.from('png'))
-    await set(db, 'calendar', { date: '2026-06-17', theme: 'light' }, Buffer.from('png'))
+    await set(
+      db,
+      'calendar',
+      { date: '2026-06-17', theme: 'dark', locale: 'zh-CN', version: APP_VERSION },
+      Buffer.from('png'),
+    )
+    await set(
+      db,
+      'calendar',
+      { date: '2026-06-17', theme: 'light', locale: 'zh-CN', version: APP_VERSION },
+      Buffer.from('png'),
+    )
 
-    expect(kvStoreMock.setItemRaw.mock.calls[0]?.[1]).toBe('calendar:2026-06-17-dark')
-    expect(kvStoreMock.setItemRaw.mock.calls[1]?.[1]).toBe('calendar:2026-06-17')
+    expect(kvStoreMock.setItemRaw.mock.calls[0]?.[1]).toBe(`calendar:zh-CN:${APP_VERSION}:2026-06-17-dark`)
+    expect(kvStoreMock.setItemRaw.mock.calls[1]?.[1]).toBe(`calendar:zh-CN:${APP_VERSION}:2026-06-17`)
   })
 
   it('carries the fetch size in the avatar key', async () => {

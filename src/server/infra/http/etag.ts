@@ -76,15 +76,38 @@ export function pageEtag(
   return weakEtag(['page', String(id), publishedRevisionId, publishedAt, ...representationParts(representation)])
 }
 
-// The oRPC wire has no header channel, so the If-None-Match string arrives as an input field.
+/**
+ * Strong ETag over the exact response bytes. Used by representations whose
+ * body is generated (feed XML, calendar PNG, manifest JSON): hashing the bytes
+ * that are actually served keeps the tag stable across a cache hit even when
+ * the renderer embeds a timestamp, and changes whenever the output does.
+ */
+export function contentEtag(content: string | Uint8Array): string {
+  const hash = createHash('sha1')
+  hash.update(content)
+  return `"${hash.digest('hex').slice(0, 32)}"`
+}
+
+/**
+ * `If-None-Match` comparison. The header is a LIST (`*` allowed), so a
+ * single-value equality check would miss stored tags; the comparison is WEAK
+ * (`W/"x"` matches `"x"`), which is what RFC 9110 prescribes for this header.
+ * The oRPC wire has no header channel, so the same string may arrive as an
+ * input field on the HTML detail paths.
+ */
 export function etagHeaderMatches(header: string | null | undefined, etag: string): boolean {
   if (header === null || header === undefined) {
     return false
   }
-  return header
-    .split(',')
-    .map((s) => s.trim())
-    .includes(etag)
+  const target = weakComparable(etag)
+  return header.split(',').some((raw) => {
+    const candidate = raw.trim()
+    return candidate === '*' || (candidate !== '' && weakComparable(candidate) === target)
+  })
+}
+
+function weakComparable(tag: string): string {
+  return tag.startsWith('W/') ? tag.slice(2) : tag
 }
 
 export function notModifiedResponse(etag: string): Response {

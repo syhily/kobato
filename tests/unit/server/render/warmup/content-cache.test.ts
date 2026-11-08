@@ -55,8 +55,11 @@ describe('render/warmup/content-cache (through the domain seam)', () => {
     const themes = renderCalendarMock.mock.calls.map(([, theme]) => theme)
     expect(themes).toContain('light')
     expect(themes).toContain('dark')
-    for (const [date] of renderCalendarMock.mock.calls) {
+    for (const [date, , locale] of renderCalendarMock.mock.calls) {
       expect(date).toBeInstanceOf(Date)
+      // The site locale is threaded EXPLICITLY; the warm never relies on the
+      // cache key to happen to match the renderer's language.
+      expect(locale).toBe('zh-CN')
     }
   })
 

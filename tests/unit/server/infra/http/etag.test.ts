@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import {
   type RepresentationFingerprint,
+  contentEtag,
   currentRepresentation,
+  etagHeaderMatches,
   notModifiedResponse,
   pageEtag,
   postEtag,
@@ -96,5 +98,33 @@ describe('server/infra/http/etag — representation fingerprint', () => {
   it('includes the app version (translations ship with the release)', () => {
     expect(currentRepresentation().version.length).toBeGreaterThan(0)
     expect(postEtag(7, publishedAt, { ...BASE, version: '2.0.0' })).not.toBe(postEtag(7, publishedAt, BASE))
+  })
+})
+
+describe('server/infra/http/etag — contentEtag', () => {
+  it('is a strong tag over the exact bytes and is stable for the same bytes', () => {
+    const tag = contentEtag('<rss>same</rss>')
+    expect(tag).toMatch(/^"[0-9a-f]{32}"$/)
+    expect(contentEtag('<rss>same</rss>')).toBe(tag)
+    expect(contentEtag(Buffer.from('<rss>same</rss>'))).toBe(tag)
+    expect(contentEtag('<rss>other</rss>')).not.toBe(tag)
+  })
+})
+
+describe('server/infra/http/etag — etagHeaderMatches', () => {
+  const tag = contentEtag('body')
+
+  it('matches an exact tag and a comma-separated list', () => {
+    expect(etagHeaderMatches(tag, tag)).toBe(true)
+    expect(etagHeaderMatches(`"other", ${tag}`, tag)).toBe(true)
+    expect(etagHeaderMatches(`"other"`, tag)).toBe(false)
+    expect(etagHeaderMatches(null, tag)).toBe(false)
+    expect(etagHeaderMatches('', tag)).toBe(false)
+  })
+
+  it('accepts the wildcard and performs the weak comparison RFC 9110 specifies', () => {
+    expect(etagHeaderMatches('*', tag)).toBe(true)
+    expect(etagHeaderMatches(`W/${tag}`, tag)).toBe(true)
+    expect(etagHeaderMatches(tag, `W/${tag}`)).toBe(true)
   })
 })

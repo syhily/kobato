@@ -7,6 +7,8 @@ import { through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
 import { renderCalendar } from '@/server/render/calendar/render'
 import { drawOpenGraph } from '@/server/render/og/render'
+import { APP_VERSION } from '@/shared/config/version'
+import { resolveAppLocalization } from '@/shared/i18n/app-localization'
 
 const log = getLogger('render.warmup')
 
@@ -24,9 +26,14 @@ function warmContentCaches(db: Database, og: OgWarmTarget): void {
   })
 
   const today = new Date()
+  // The request path keys by the REQUEST locale; the warmup has no request, so
+  // it warms the site's current locale variant explicitly.
+  const locale = resolveAppLocalization().locale
   for (const theme of ['light', 'dark'] as const) {
     const date = format(today, 'yyyy-MM-dd')
-    void through(db, 'calendar', { date, theme }, () => renderCalendar(today, theme)).catch((err: unknown) => {
+    void through(db, 'calendar', { date, theme, locale, version: APP_VERSION }, () =>
+      renderCalendar(today, theme, locale),
+    ).catch((err: unknown) => {
       log.warn('calendar render warmup failed', {
         date,
         theme,

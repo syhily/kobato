@@ -4,8 +4,11 @@ import { createCanvas } from '@napi-rs/canvas'
 import { getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+
 import { compressImage } from '@/server/infra/image/compress'
 import { getDailyQuote } from '@/server/render/calendar/daily-quote'
+import { auspiciousLabel, calendarCopyFor, lunarLabel } from '@/server/render/calendar/locale'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
 import { layoutCanvasLines } from '@/server/render/pretext-layout'
 
@@ -19,45 +22,58 @@ function ensureFonts(): Promise<FontSlot | null> {
   return ensureCanvasFont('calendar')
 }
 
-function getMonthLabel(date: Date) {
-  const months = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
+function monthLabel(locale: AppLocale, date: Date): string {
   // `date-fns` `getMonth` is 0-indexed, so the array index is `getMonth(date)` directly.
-  return months[getMonth(date)]
+  return calendarCopyFor(locale).months[getMonth(date)] ?? ''
 }
 
-function getWeekdayLabel(date: Date) {
-  const weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+function weekdayLabel(locale: AppLocale, date: Date): string {
   // ISO day-of-week: 1 = Monday … 7 = Sunday, hence the `- 1` offset.
-  return weekdays[getISODay(date) - 1]
+  return calendarCopyFor(locale).weekdays[getISODay(date) - 1] ?? ''
 }
 
-function getLunarLabel(date: Date) {
-  const solar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date))
-  const lunar = solar.getLunar()
-  return `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`
-}
-
-function getDailyAuspiciousLabel(date: Date) {
-  const solar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date))
-  const lunar = solar.getLunar()
-  const auspicious = lunar.getDayYi()
-  // Defensive guard (audit P2-25): an empty list would render "宜undefined".
-  if (auspicious.length === 0) {
-    return ''
+/** Lunar line, or `null` for a locale that does not render it (en-US). */
+function lunarTextFor(locale: AppLocale, date: Date): string | null {
+  const copy = calendarCopyFor(locale)
+  if (copy.lunar === null) {
+    return null
   }
-  return `宜${auspicious[Math.floor(getDate(date) % auspicious.length)]}`
+  const lunar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date)).getLunar()
+  return lunarLabel(copy, {
+    yearGanZhi: lunar.getYearInGanZhi(),
+    month: lunar.getMonth(),
+    day: lunar.getDay(),
+  })
+}
+
+/**
+ * The 宜 line, or `null` for a locale that does not render it (en-US) or a
+ * traditional term missing from the hand-reviewed table (never transliterated).
+ */
+function auspiciousTextFor(locale: AppLocale, date: Date): string | null {
+  const copy = calendarCopyFor(locale)
+  if (copy.auspicious === null) {
+    return null
+  }
+  const lunar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date)).getLunar()
+  const auspicious = lunar.getDayYi()
+  // Defensive guard (audit P2-25): an empty list must never render "宜undefined".
+  if (auspicious.length === 0) {
+    return null
+  }
+  return auspiciousLabel(copy, auspicious[Math.floor(getDate(date) % auspicious.length)] ?? '')
 }
 
 export type CalendarTheme = 'light' | 'dark'
 
-export async function renderCalendar(date: Date, theme: CalendarTheme = 'light'): Promise<Buffer> {
+export async function renderCalendar(date: Date, theme: CalendarTheme, locale: AppLocale): Promise<Buffer> {
   const calendarFontSlot = await ensureFonts()
 
   const quote = await getDailyQuote(date)
-  const monthText = getMonthLabel(date)
-  const lunarText = getLunarLabel(date)
-  const weekday = getWeekdayLabel(date)
-  const dailyAuspicious = getDailyAuspiciousLabel(date)
+  const monthText = monthLabel(locale, date)
+  const lunarText = lunarTextFor(locale, date)
+  const weekday = weekdayLabel(locale, date)
+  const dailyAuspicious = auspiciousTextFor(locale, date)
 
   const canvas = createCanvas(WIDTH, HEIGHT)
   const ctx = canvas.getContext('2d')
@@ -82,8 +98,10 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
 
   ctx.fillText(monthText, 36, 50)
 
-  ctx.textAlign = 'center'
-  ctx.fillText(lunarText, WIDTH / 2, 50)
+  if (lunarText !== null) {
+    ctx.textAlign = 'center'
+    ctx.fillText(lunarText, WIDTH / 2, 50)
+  }
 
   ctx.textAlign = 'right'
   ctx.fillText(weekday, WIDTH - 36, 50)
@@ -100,11 +118,15 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   const dayY = 320
   ctx.fillText(String(getDate(date)), WIDTH / 2, dayY)
 
-  ctx.font = `50px ${calFont}`
-  const auspiciousY = dayY + 220
-  ctx.fillText(dailyAuspicious, WIDTH / 2, auspiciousY)
+  // The 宜 line is optional (en-US never renders it; a traditional locale may
+  // omit an unmapped term). Without it the quote block moves up instead of
+  // leaving the 220px gap empty.
+  if (dailyAuspicious !== null) {
+    ctx.font = `50px ${calFont}`
+    ctx.fillText(dailyAuspicious, WIDTH / 2, dayY + 220)
+  }
 
-  const quoteStartY = auspiciousY + 60
+  const quoteStartY = dailyAuspicious !== null ? dayY + 280 : dayY + 120
   ctx.beginPath()
   ctx.moveTo(36, quoteStartY)
   ctx.lineTo(WIDTH - 36, quoteStartY)

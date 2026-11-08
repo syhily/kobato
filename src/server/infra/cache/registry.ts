@@ -5,6 +5,7 @@ import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 
 import type { Database } from '@/server/infra/db/database'
+import type { AppLocale } from '@/shared/i18n/locales'
 import type { CacheBucketId } from '@/shared/types/cache'
 import type { JsonValue } from '@/shared/utils/json-value'
 
@@ -27,11 +28,11 @@ const log = getLogger('cache')
 
 interface CacheParamsMap {
   og: { slug: string; title: string; summary: string; cover: string }
-  calendar: { date: string; theme: 'light' | 'dark' }
+  calendar: { date: string; theme: 'light' | 'dark'; locale: AppLocale; version: string }
   avatar: { size: number; email: string }
   imageMeta: { storagePath: string }
   searchResult: { generation: number; parts: readonly string[] }
-  feed: { scope: string }
+  feed: { scope: string; locale: AppLocale; version: string }
   sitemap: Record<string, never>
   categories: Record<string, never>
   tags: Record<string, never>
@@ -112,8 +113,11 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   calendar: {
     kind: 'binary',
     devBypass: true,
-    // `-dark` suffix keeps the two themes from clobbering each other.
-    key: ({ date, theme }) => `${date}${theme === 'dark' ? '-dark' : ''}`,
+    // Locale + representation version are part of the key: the same date has a
+    // different PNG per language, and a release (translation/renderer change)
+    // must never serve the previous representation. The `-dark` suffix keeps
+    // the two themes from clobbering each other.
+    key: ({ date, theme, locale, version }) => `${locale}:${version}:${date}${theme === 'dark' ? '-dark' : ''}`,
   },
   // Size is part of the key — a cached entry must never serve a different `?s=` request.
   avatar: {
@@ -136,7 +140,9 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   },
   feed: {
     kind: 'json',
-    key: ({ scope }) => scope,
+    // Locale + version keyed: the RSS/Atom body is localized (`language` /
+    // `xml:lang`) and a release ships new renderers/translations.
+    key: ({ scope, locale, version }) => `${locale}:${version}:${scope}`,
   },
   sitemap: {
     kind: 'json',
