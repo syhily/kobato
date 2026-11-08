@@ -2820,4 +2820,5 @@ export const uiMessagesZhHK = {
   'admin.settings.comments.avatar.mirrorPreset.sepCc': 'sep.cc（cdn.sep.cc）',
   'admin.settings.comments.avatar.mirrorPreset.w3tt': 'w3tt（gravatar.w3tt.com）',
   'admin.settings.comments.avatar.mirrorPreset.sevenCdn': 'SevenCDN（use.sevencdn.com）',
+  'admin.cache.error.unknownGroup': '未知的快取分組：{target}',
 } satisfies UiMessages

@@ -131,8 +131,15 @@ describe('service: cache admin', () => {
     expect(sessionBucket?.keyCount).toBe(1)
   })
 
-  it('rejects unknown bucket targets with DomainError', async () => {
-    await expect(clearAdminCache(db, 'nope' as unknown as ClearCacheTarget)).rejects.toThrow('未知的缓存分组')
+  it('rejects unknown bucket targets with a typed descriptor', async () => {
+    await expect(clearAdminCache(db, 'nope' as unknown as ClearCacheTarget)).rejects.toMatchObject({
+      name: 'DomainError',
+      code: 'BAD_REQUEST',
+      descriptor: {
+        messageKey: 'admin.cache.error.unknownGroup',
+        params: { target: 'nope' },
+      },
+    })
   })
 
   it('returns 0 deletions when the bucket is already empty', async () => {
