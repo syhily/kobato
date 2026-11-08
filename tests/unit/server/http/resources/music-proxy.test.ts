@@ -159,7 +159,13 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, re
 
     const res = await app.request(`/admin/music/proxy/${route}?source=netease&sourceId=123`)
     expect(res.status).toBe(401)
-    expect(await res.json()).toMatchObject({ error: { code: 'UNAUTHORIZED', message: '未登录' } })
+    expect(await res.json()).toMatchObject({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: '需要登录后再操作。',
+        descriptor: { messageKey: 'error.api.unauthorized' },
+      },
+    })
     expect(getProvider).not.toHaveBeenCalled()
   })
 
@@ -173,7 +179,13 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, re
 
     const res = await app.request(`/admin/music/proxy/${route}?source=netease&sourceId=123`)
     expect(res.status).toBe(403)
-    expect(await res.json()).toMatchObject({ error: { code: 'FORBIDDEN', message: '权限不足' } })
+    expect(await res.json()).toMatchObject({
+      error: {
+        code: 'FORBIDDEN',
+        message: '权限不足',
+        descriptor: { messageKey: 'error.api.insufficientPermissions' },
+      },
+    })
     expect(getProvider).not.toHaveBeenCalled()
   })
 })

@@ -2,6 +2,7 @@ import { data, redirect, useNavigation } from 'react-router'
 
 import type { AuthFlowResult } from '@/server/domains/auth/services/shared'
 import type { AppLocale } from '@/shared/i18n/locales'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signInWithPasskey } from '@/server/domains/auth/passkey/signin'
@@ -10,7 +11,7 @@ import { handleIdentify } from '@/server/domains/auth/services/identify'
 import { handleMagicLinkConsume } from '@/server/domains/auth/services/magic-link'
 import { handleOtpCancel, handleOtpResend, handleOtpVerify } from '@/server/domains/auth/services/otp'
 import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/services/password-reset'
-import { authFlowMessage } from '@/server/domains/auth/services/shared'
+import { authFlowError, authFlowMessage, authFlowSuccess } from '@/server/domains/auth/services/shared'
 import { hasApprovedComments } from '@/server/domains/comments/services/public-query'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
 import { handleSigninLogout, loadSigninData } from '@/server/http/loaders/signin'
@@ -23,6 +24,7 @@ import { LostPasswordForm } from '@/ui/admin/auth/LostPasswordForm'
 import { MagicLinkConfirmForm } from '@/ui/admin/auth/MagicLinkConfirmForm'
 import { OtpForm } from '@/ui/admin/auth/OtpForm'
 import { ResetPasswordForm } from '@/ui/admin/auth/ResetPasswordForm'
+import { useI18n, type I18nValue } from '@/ui/lib/I18nProvider'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/signin'
@@ -95,7 +97,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData()
 
   if (!validateCsrfForAction(session, request, formData)) {
-    return data({ error: '安全校验失败，请刷新页面后重试。' })
+    return toActionResult(authFlowError('error.api.csrfFailed'), locale)
   }
 
   if (action === 'logout') {
@@ -142,9 +144,16 @@ export async function action({ request, context }: Route.ActionArgs) {
         return data({ method: 'password' as const })
       case 'magic-link-sent':
         // Deliberately generic — never reveals whether the mailbox is registered.
-        return data({ message: '如果该邮箱已注册，登录链接已发送，请查收邮箱。' })
+        return toActionResult(authFlowSuccess('auth.signin.magicLinkSent'), locale)
       case 'error':
-        return data({ error: result.message })
+        return toActionResult(
+          {
+            type: 'error',
+            message: result.message,
+            ...(result.descriptor === undefined ? {} : { descriptor: result.descriptor }),
+          },
+          locale,
+        )
     }
   }
 
@@ -157,17 +166,22 @@ export async function action({ request, context }: Route.ActionArgs) {
 
 export const meta = titleMeta('meta.title.auth.signin')
 
-function localizeAuthError(error: string | null): string | null {
+// Stable query-string codes → catalog ids. Unknown codes keep the legacy raw
+// rendering (external callers may pass their own diagnostic text).
+const AUTH_ERROR_MESSAGE_IDS: Record<string, UiMessageId> = {
+  invalid_credentials: 'auth.signin.error.invalidCredentials',
+}
+
+function authErrorText(error: string | null, t: I18nValue['t']): string | null {
   if (error === null) {
     return null
   }
-  if (error === 'invalid_credentials') {
-    return '用户名或密码不正确。'
-  }
-  return error
+  const messageId = AUTH_ERROR_MESSAGE_IDS[error]
+  return messageId === undefined ? error : t(messageId)
 }
 
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
+  const { t } = useI18n()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const csrfToken = loaderData.csrfToken
@@ -187,7 +201,7 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
           ) : null}
           {loaderData.authError ? (
             <p role="alert" aria-live="polite" className="text-destructive">
-              {localizeAuthError(loaderData.authError)}
+              {authErrorText(loaderData.authError, t)}
             </p>
           ) : null}
           {hasMessage(actionData) ? (

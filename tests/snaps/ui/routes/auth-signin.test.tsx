@@ -255,7 +255,7 @@ describe('routes/auth/signin — Component SSR branches', () => {
           '/signin?error=invalid_credentials',
         ),
       )
-      // localizeAuthError maps `invalid_credentials` → 用户名或密码不正确。
+      // The route maps the stable `invalid_credentials` code to its catalog message.
       expect(html).toContain('用户名或密码不正确。')
     })
 

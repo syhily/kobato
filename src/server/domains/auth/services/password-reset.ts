@@ -4,26 +4,25 @@
 
 import bcrypt from 'bcryptjs'
 
-import type { AuthFlowResult, SigninFlowContext } from '@/server/domains/auth/services/shared'
 import type { Database } from '@/server/infra/db/database'
 import type { User } from '@/server/infra/db/types'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { deleteAllCredentials } from '@/server/domains/auth/passkey/service'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
+import { MAX_PASSWORD_BYTES, PASSWORD_COMPLEXITY_RE, passwordWithinBcryptLimit } from '@/server/domains/auth/schema'
 import {
-  PASSWORD_BYTE_LIMIT_MESSAGE,
-  PASSWORD_COMPLEXITY_RE,
-  passwordWithinBcryptLimit,
-} from '@/server/domains/auth/schema'
+  authFlowError,
+  authFlowSuccess,
+  type AuthFlowResult,
+  type SigninFlowContext,
+} from '@/server/domains/auth/services/shared'
 import { consumeToken, issueResetToken, revokeTokensFor } from '@/server/domains/auth/verification-tokens'
 import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
 import { sendPasswordReset } from '@/server/infra/email/sender'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/infra/rate-limit'
 import { resolveSiteOrigin } from '@/shared/config/site-origin'
 import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
-
-const GENERIC_RESET_MESSAGE = '如果该邮箱存在且符合要求，重置邮件已发送。'
 
 /**
  * Cross-domain dependency wired by the caller: the claim path needs the
@@ -78,7 +77,7 @@ export async function requestPasswordReset(
     emailStr ? tryPasswordResetByEmailRateLimit(emailStr) : Promise.resolve(null),
   ])
   if (ipLimit.exceeded || emailLimit?.exceeded) {
-    return { type: 'success', message: GENERIC_RESET_MESSAGE }
+    return authFlowSuccess('auth.passwordReset.sent')
   }
   if (emailStr) {
     const u = await findUserByEmail(db, emailStr)
@@ -92,7 +91,7 @@ export async function requestPasswordReset(
       }
     }
   }
-  return { type: 'success', message: GENERIC_RESET_MESSAGE }
+  return authFlowSuccess('auth.passwordReset.sent')
 }
 
 /**
@@ -114,18 +113,18 @@ export async function resetPasswordWithToken(
   const newPasswordStr = typeof newPassword === 'string' ? newPassword : ''
 
   if (!newPasswordStr || newPasswordStr.length < MIN_PASSWORD_LENGTH) {
-    return { type: 'error', message: `密码长度至少 ${MIN_PASSWORD_LENGTH} 位。` }
+    return authFlowError('auth.passwordReset.error.passwordTooShort', { min: MIN_PASSWORD_LENGTH })
   }
   if (!passwordWithinBcryptLimit(newPasswordStr)) {
-    return { type: 'error', message: PASSWORD_BYTE_LIMIT_MESSAGE }
+    return authFlowError('auth.passwordReset.error.passwordTooLong', { max: MAX_PASSWORD_BYTES })
   }
   if (!PASSWORD_COMPLEXITY_RE.test(newPasswordStr)) {
-    return { type: 'error', message: '密码必须包含至少一个大写字母、一个小写字母和一个数字。' }
+    return authFlowError('auth.passwordReset.error.passwordComplexity')
   }
 
   const result = await consumeToken(db, rawTokenStr, purpose)
   if (result === null) {
-    return { type: 'error', message: '链接无效或已过期。' }
+    return authFlowError('auth.signin.error.invalidToken')
   }
 
   const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
@@ -145,7 +144,7 @@ export async function resetPasswordWithToken(
 
   const dbUser = await findUserById(db, result.userId)
   if (!dbUser?.role || dbUser.deletedAt) {
-    return { type: 'error', message: '账户状态异常，无法登录。' }
+    return authFlowError('auth.signin.error.accountCannotSignIn')
   }
   // Use the returned `setCookie` — a later `commitSession` would mint a
   // second sid and orphan the one just written.

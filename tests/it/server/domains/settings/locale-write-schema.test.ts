@@ -16,7 +16,7 @@ const INPUT = { title: 'Test Blog', name: 'Admin', email: 'admin@example.com', h
 function installPayload(): Record<string, unknown> {
   const built = buildInstallSectionRows(INPUT)
   if (!built.ok) {
-    throw new Error(`expected ok rows, got: ${built.message}`)
+    throw new Error(`expected ok rows, got: ${built.descriptor.fallbackMessage}`)
   }
   return built.rows[0]?.payload ?? {}
 }
@@ -24,7 +24,7 @@ function installPayload(): Record<string, unknown> {
 function seedInstalledSite(): void {
   const built = buildInstallSectionRows(INPUT)
   if (!built.ok) {
-    throw new Error(`expected ok rows, got: ${built.message}`)
+    throw new Error(`expected ok rows, got: ${built.descriptor.fallbackMessage}`)
   }
   db.transaction((tx) => {
     seedInstallSections(tx, built.rows, null)

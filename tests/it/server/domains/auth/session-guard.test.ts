@@ -12,7 +12,6 @@ import {
 } from '@/server/domains/auth/session-guard'
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'
-import { DomainError } from '@/server/infra/http/errors'
 
 // Guard policy branches against the real session/user tables; the
 // admin-scope happy paths live in ./auth-coverage.test.ts. This file
@@ -73,9 +72,10 @@ describe('auth/session-guard — revokeOwnSessionWithGuard (own scope)', () => {
     const other = await seedUser('visitor', 'other@example.com')
     await seedLiveSession('sid-other', other.id)
 
-    await expect(revokeOwnSessionWithGuard(db, 'sid-other', actor(999, 'admin'))).rejects.toThrow(
-      new DomainError('FORBIDDEN', '无权操作该会话。'),
-    )
+    await expect(revokeOwnSessionWithGuard(db, 'sid-other', actor(999, 'admin'))).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      descriptor: { messageKey: 'auth.sessions.error.forbidden' },
+    })
     expect(await sessionRowExists('sid-other')).toBe(true)
   })
 })
@@ -132,9 +132,10 @@ describe('auth/session-guard — revokeAllSessionsWithGuard (bulk scope)', () =>
     const bob = await seedUser('admin', 'bulk-bob@example.com')
     await seedLiveSession('sid-bob', bob.id)
 
-    await expect(revokeAllSessionsWithGuard(db, bob.id, actor(alice.id))).rejects.toThrow(
-      new DomainError('FORBIDDEN', '无权撤销其他管理员的全部会话。'),
-    )
+    await expect(revokeAllSessionsWithGuard(db, bob.id, actor(alice.id))).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      descriptor: { messageKey: 'auth.sessions.error.forbiddenRevokeAll' },
+    })
     expect(await sessionRowExists('sid-bob')).toBe(true)
   })
 
@@ -143,9 +144,10 @@ describe('auth/session-guard — revokeAllSessionsWithGuard (bulk scope)', () =>
     const deletedBob = await seedUser('admin', 'bulk-bob2@example.com', { deletedAt: new Date() })
     await seedLiveSession('sid-bob2', deletedBob.id)
 
-    await expect(revokeAllSessionsWithGuard(db, deletedBob.id, actor(alice.id))).rejects.toThrow(
-      '无权撤销其他管理员的全部会话。',
-    )
+    await expect(revokeAllSessionsWithGuard(db, deletedBob.id, actor(alice.id))).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      descriptor: { messageKey: 'auth.sessions.error.forbiddenRevokeAll' },
+    })
     expect(await sessionRowExists('sid-bob2')).toBe(true)
   })
 

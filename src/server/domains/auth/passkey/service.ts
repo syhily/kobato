@@ -22,6 +22,7 @@ import { findSafeUserById, findUserByEmail } from '@/server/infra/db/operations/
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsBundle } from '@/shared/config/getters'
@@ -41,7 +42,7 @@ function rpConfig() {
   const title = bundle.siteIdentity?.title ?? 'Kobato'
   const url = tryParseUrl(website)
   if (!url || !isValidPasskeyDomain(website)) {
-    throw new DomainError('BAD_REQUEST', 'Passkey 需要公开可访问的 HTTPS 域名，不能使用 localhost 或私有地址。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.httpsRequired'))
   }
   return { rpID: url.hostname, rpName: title, origin: website }
 }
@@ -142,10 +143,10 @@ export async function verifyRegistrationResponse(
 
   const challengeData = await consumeChallenge(db, REG_CHALLENGE_PREFIX, input.challenge)
   if (!challengeData) {
-    throw new DomainError('BAD_REQUEST', '注册挑战已过期或无效，请重试。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.registrationChallengeExpired'))
   }
   if (challengeData.userId !== String(dbUser.id)) {
-    throw new DomainError('BAD_REQUEST', '注册挑战与当前用户不匹配。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.registrationChallengeMismatch'))
   }
 
   const verification = await swaVerifyRegistrationResponse({
@@ -156,7 +157,7 @@ export async function verifyRegistrationResponse(
   })
 
   if (!verification.verified || !verification.registrationInfo) {
-    throw new DomainError('BAD_REQUEST', 'Passkey 注册验证失败。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.registrationFailed'))
   }
 
   const { credential } = verification.registrationInfo
@@ -176,15 +177,15 @@ export async function verifyRegistrationResponse(
       .returning()
 
     if (!inserted) {
-      throw new DomainError('INTERNAL', '保存 Passkey 凭据失败。')
+      throw new DomainError('INTERNAL', descriptorFor('auth.passkey.error.saveFailed'))
     }
     return inserted
   } catch (err) {
     if (isUniqueConstraintError(err)) {
-      throw new DomainError('CONFLICT', '该 Passkey 凭据已注册。')
+      throw new DomainError('CONFLICT', descriptorFor('auth.passkey.error.alreadyRegistered'))
     }
     log.error('passkey registration insert failed', { err: err instanceof Error ? err.message : String(err) })
-    throw new DomainError('INTERNAL', '保存 Passkey 凭据失败。')
+    throw new DomainError('INTERNAL', descriptorFor('auth.passkey.error.saveFailed'))
   }
 }
 
@@ -237,7 +238,7 @@ export async function verifyAuthenticationResponse(
 
   const challengeData = await consumeChallenge(db, AUTH_CHALLENGE_PREFIX, challenge)
   if (!challengeData) {
-    throw new DomainError('BAD_REQUEST', '登录挑战已过期或无效，请重试。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.loginChallengeExpired'))
   }
 
   const credentialId = response.id
@@ -248,7 +249,7 @@ export async function verifyAuthenticationResponse(
     .limit(1)
 
   if (!cred) {
-    throw new DomainError('BAD_REQUEST', 'Passkey 凭据不存在。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.credentialNotFound'))
   }
 
   const verification = await swaVerifyAuthenticationResponse({
@@ -266,13 +267,13 @@ export async function verifyAuthenticationResponse(
   })
 
   if (!verification.verified) {
-    throw new DomainError('BAD_REQUEST', 'Passkey 验证失败。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.verifyFailedGeneric'))
   }
 
   // Verify user state BEFORE mutating the credential counter.
   const dbUser = await findSafeUserById(db, cred.userId)
   if (!dbUser?.role || dbUser.deletedAt) {
-    throw new DomainError('BAD_REQUEST', '账户状态异常，无法登录。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('auth.signin.error.accountCannotSignIn'))
   }
 
   await db
@@ -356,7 +357,7 @@ export async function setLoginMethod(db: Database, userId: number, method: Login
       .where(eq(passkeyCredential.userId, userId))
       .limit(1)
     if (credentials.length === 0) {
-      throw new DomainError('BAD_REQUEST', '必须至少注册一个 Passkey 才能选择 Passkey 登陆。')
+      throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.requireOne'))
     }
   }
   await db.update(user).set({ loginMethod: method }).where(eq(user.id, userId))

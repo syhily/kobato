@@ -1,9 +1,8 @@
 import type { MiddlewareHandler } from 'hono'
 
-import { HTTPException } from 'hono/http-exception'
-
 import type { Env } from '@/server/http/context'
 
+import { localizedHttpException } from '@/server/http/localized-http-exception'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Per-request deadline: an `AbortController` merged with the client
@@ -59,7 +58,7 @@ export function requestTimeout(
     } catch (err) {
       // Only the timeout (not a client disconnect) emits the 503.
       if (controller.signal.aborted && !clientSignal.aborted) {
-        throw new HTTPException(503, { message: '请求超时，请稍后再试。' })
+        throw localizedHttpException(503, 'error.api.timeout')
       }
       throw err
     } finally {

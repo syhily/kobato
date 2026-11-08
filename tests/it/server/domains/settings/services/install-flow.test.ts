@@ -19,7 +19,7 @@ const INPUT = { title: 'My Blog', name: 'Admin', email: 'admin@example.com', hos
 function builtRows() {
   const result = buildInstallSectionRows(INPUT)
   if (!result.ok) {
-    throw new Error(`expected ok rows, got: ${result.message}`)
+    throw new Error(`expected ok rows, got: ${result.descriptor.fallbackMessage}`)
   }
   return result.rows
 }
@@ -63,7 +63,8 @@ describe('server/domains/settings/services/install-flow', () => {
       if (result.ok) {
         return
       }
-      expect(result.message).toContain('blog.general 校验失败（title）')
+      expect(result.descriptor.messageKey).toBe('auth.setup.error.seedInvalid')
+      expect(result.descriptor.fallbackMessage).toContain('blog.general failed validation (title)')
     })
 
     it('rethrows the shared DomainError when a registry default drifted from its schema', () => {

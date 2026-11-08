@@ -72,9 +72,10 @@ describe('rateLimitByIp middleware', () => {
 
     const res = await app.request('/ping')
 
-    // Hono's default handler renders the HTTPException as plain text.
+    // No perimeter onError here → Hono's default handler renders the
+    // exception's English fallback as plain text.
     expect(res.status).toBe(429)
-    await expect(res.text()).resolves.toBe('请求过于频繁，请稍后再试。')
+    await expect(res.text()).resolves.toBe('Too many requests. Please try again later.')
   })
 
   it('accepts an explicit bucket object that governs instead of the settings snapshot', async () => {

@@ -132,7 +132,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
 
     expect(result.type).toBe('error')
     if (result.type === 'error') {
-      expect(result.message).toContain('管理员账号已存在')
+      expect(result.descriptor).toMatchObject({ messageKey: 'auth.setup.error.adminExists' })
     }
     expect(await db.select().from(userTable)).toHaveLength(1)
     expect(await settingRows()).toHaveLength(0)

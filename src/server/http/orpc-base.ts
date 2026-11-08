@@ -3,14 +3,15 @@ import { ORPCError, os } from '@orpc/server'
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
-import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
+import type { ErrorMessageParams } from '@/shared/contracts/api-error'
 import type { AppLocalization } from '@/shared/i18n/app-localization'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { apiErrorData, summarizeApiError, translateDomainError } from '@/server/http/translate-domain-error'
 import { descriptorFor } from '@/server/infra/http/error-descriptor'
-import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { tryCommentPostRateLimit, tryNotificationReplyRateLimit, tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
@@ -38,18 +39,27 @@ export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
 
 const root = os.$context<HandlerContext>()
 
-type OrpcErrorCode = 'UNAUTHORIZED' | 'FORBIDDEN' | 'TOO_MANY_REQUESTS'
+export type OrpcErrorCode =
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'TOO_MANY_REQUESTS'
+  | 'BAD_REQUEST'
+  | 'NOT_FOUND'
+  | 'INTERNAL_SERVER_ERROR'
+  | 'SERVICE_UNAVAILABLE'
 
 /**
- * A middleware gate's localized `ORPCError`: the message is formatted for the
- * request locale and the structured descriptor rides `data`, so the client
- * never has to know the copy (the plan's "server translates, client displays").
+ * A localized `ORPCError` for gates and controllers that bypass the domain
+ * guard: the message is formatted for the request locale and the structured
+ * descriptor rides `data`, so the client never has to know the copy.
  */
-function descriptorError(
+export function localizedOrpcError(
   context: HandlerContext,
   code: OrpcErrorCode,
-  descriptor: ErrorMessageDescriptor,
+  messageKey: UiMessageId,
+  params?: ErrorMessageParams,
 ): ORPCError<OrpcErrorCode, unknown> {
+  const descriptor = descriptorFor(messageKey, params)
   const translator = createServerTranslator(context.localization.locale)
   return new ORPCError(code, {
     message: translator.format(descriptor.messageKey, descriptor.params),
@@ -85,7 +95,7 @@ const domainErrorGuard = root.middleware(async ({ context, next }) => {
 
 function ensureViewer(context: HandlerContext): SessionUser {
   if (!context.viewer) {
-    throw descriptorError(context, 'UNAUTHORIZED', ErrorMessages.UNAUTHORIZED)
+    throw localizedOrpcError(context, 'UNAUTHORIZED', 'error.api.unauthorized')
   }
   return context.viewer
 }
@@ -106,7 +116,7 @@ function requireRole(role: Role) {
   return root.middleware(({ context, next }) => {
     const viewer = ensureViewer(context)
     if (!hasAtLeast(viewer.role, role)) {
-      throw descriptorError(context, 'FORBIDDEN', ErrorMessages.INSUFFICIENT_PERMISSIONS)
+      throw localizedOrpcError(context, 'FORBIDDEN', 'error.api.insufficientPermissions')
     }
     return next({
       context: {
@@ -121,7 +131,7 @@ function requireRole(role: Role) {
 export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   const { exceeded } = await tryResourceRateLimit(context.clientAddress)
   if (exceeded) {
-    throw descriptorError(context, 'TOO_MANY_REQUESTS', descriptorFor('error.api.rateLimited'))
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'error.api.rateLimited')
   }
   return next({})
 })
@@ -139,7 +149,7 @@ export const commentPostRateLimit = root.middleware(async ({ context, next }) =>
   }
   const { exceeded } = await tryCommentPostRateLimit(context.clientAddress)
   if (exceeded) {
-    throw descriptorError(context, 'TOO_MANY_REQUESTS', descriptorFor('error.api.rateLimited'))
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'error.api.rateLimited')
   }
   return next({})
 })
@@ -156,7 +166,7 @@ export const notificationReplyRateLimit = root.middleware(async ({ context, next
   }
   const { exceeded } = await tryNotificationReplyRateLimit(context.viewer!.id)
   if (exceeded) {
-    throw descriptorError(context, 'TOO_MANY_REQUESTS', descriptorFor('error.api.replyRateLimited'))
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'error.api.replyRateLimited')
   }
   return next({})
 })

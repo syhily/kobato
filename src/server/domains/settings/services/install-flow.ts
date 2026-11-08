@@ -5,10 +5,12 @@
 import type { Database } from '@/server/infra/db/database'
 import type { SettingsSection } from '@/shared/config/sections'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/types'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
 import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@/server/domains/settings/sections/assets'
 import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
+import { descriptorFor, messageDescriptor } from '@/server/infra/http/error-descriptor'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface InstallSeedInput {
@@ -24,7 +26,9 @@ export interface InstallSectionRow {
   payload: Record<string, unknown>
 }
 
-export type InstallSectionRowsResult = { ok: true; rows: InstallSectionRow[] } | { ok: false; message: string }
+export type InstallSectionRowsResult =
+  | { ok: true; rows: InstallSectionRow[] }
+  | { ok: false; descriptor: ErrorMessageDescriptor }
 
 /**
  * Build and validate all 17 section rows for a fresh install. The first validation
@@ -65,9 +69,18 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
     const meta = SECTION_REGISTRY[section]
     const check = meta.schema.safeParse(payload)
     if (!check.success) {
+      // Registry-drift diagnostic: interpolate the offending path and the
+      // issue's English fallback (never a raw catalog id) into the copy.
       const first = check.error.issues[0]
       const path = first ? first.path.join('.') : '<unknown>'
-      return { ok: false, message: `${meta.scope} 校验失败（${path}）：${first?.message ?? '未知错误'}` }
+      return {
+        ok: false,
+        descriptor: descriptorFor('auth.setup.error.seedInvalid', {
+          scope: meta.scope,
+          path,
+          message: first === undefined ? '' : messageDescriptor(first.message).fallbackMessage,
+        }),
+      }
     }
     rows.push({ scope: meta.scope, payload: unsafeCast<Record<string, unknown>>(check.data) })
   }

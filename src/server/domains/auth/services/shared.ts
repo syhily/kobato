@@ -4,12 +4,19 @@
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
-import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@/shared/contracts/api-error'
 import type { AppLocale } from '@/shared/i18n/locales'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { checkMailReady } from '@/server/infra/email/sender'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+
+/** A flow error whose copy the sign-in route translates for the request locale. */
+export type AuthFlowError = Extract<AuthFlowResult, { type: 'error' }>
+/** A flow success notice (same descriptor discipline as errors). */
+export type AuthFlowSuccess = Extract<AuthFlowResult, { type: 'success' }>
 
 /**
  * A flow outcome's copy. `message` is the log/technical fallback; `descriptor`
@@ -35,6 +42,18 @@ export function authFlowMessage(
     return message
   }
   return createServerTranslator(locale).format(descriptor.messageKey, descriptor.params)
+}
+
+/** Descriptor-backed error outcome; `message` keeps the English fallback for logs. */
+export function authFlowError(messageKey: UiMessageId, params?: ErrorMessageParams): AuthFlowError {
+  const descriptor = descriptorFor(messageKey, params)
+  return { type: 'error', message: descriptor.fallbackMessage, descriptor }
+}
+
+/** Descriptor-backed success outcome (enumeration-safe notices). */
+export function authFlowSuccess(messageKey: UiMessageId, params?: ErrorMessageParams): AuthFlowSuccess {
+  const descriptor = descriptorFor(messageKey, params)
+  return { type: 'success', message: descriptor.fallbackMessage, descriptor }
 }
 
 /**

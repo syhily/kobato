@@ -51,9 +51,27 @@ export function messageDescriptor(message: string, params?: ErrorMessageParams):
   return isUiMessageId(message) ? descriptorFor(message, params) : rawMessageDescriptor(message)
 }
 
-/** The numeric bounds Zod attaches to `too_small` / `too_big`, shaped for ICU. */
+/**
+ * The ICU params a Zod issue carries: numeric `minimum`/`maximum` bounds
+ * (`too_small`/`too_big`) and an explicit `params` bag on custom issues
+ * (e.g. the password byte ceiling). Scalars only — the wire params are
+ * `string | number | boolean | null`.
+ */
 function zodIssueParams(issue: z.core.$ZodIssue): ErrorMessageParams | undefined {
-  return zodIssueBounds(issue)
+  const bounds = zodIssueBounds(issue)
+  if (bounds !== undefined) {
+    return bounds
+  }
+  if (!('params' in issue) || typeof issue.params !== 'object' || issue.params === null) {
+    return undefined
+  }
+  const params: ErrorMessageParams = {}
+  for (const [key, value] of Object.entries(issue.params)) {
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      params[key] = value
+    }
+  }
+  return Object.keys(params).length === 0 ? undefined : params
 }
 
 /** One Zod issue → the wire issue (descriptor + producer code + field path). */

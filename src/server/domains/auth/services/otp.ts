@@ -4,11 +4,16 @@
 
 import type { BlogSession, PendingOtpUser } from '@/server/domains/auth/session-storage'
 import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
-import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
-import { formFieldString, type AuthFlowResult, type SigninFlowContext } from '@/server/domains/auth/services/shared'
+import {
+  authFlowError,
+  authFlowSuccess,
+  formFieldString,
+  type AuthFlowResult,
+  type SigninFlowContext,
+} from '@/server/domains/auth/services/shared'
 import { issueOtpToken, verifyOtpToken } from '@/server/domains/auth/verification-tokens'
 import { findUserById } from '@/server/infra/db/operations/user'
 import { sendSignInOtp } from '@/server/infra/email/sender'
@@ -23,20 +28,6 @@ import {
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('auth.signin')
-
-/**
- * User-facing OTP outcome: the typed descriptor drives the route's
- * translation, and the English fallback stays the log/diagnostic text.
- */
-function flowError(messageKey: UiMessageId): AuthFlowResult {
-  const descriptor = descriptorFor(messageKey)
-  return { type: 'error', message: descriptor.fallbackMessage, descriptor }
-}
-
-function flowSuccess(messageKey: UiMessageId): AuthFlowResult {
-  const descriptor = descriptorFor(messageKey)
-  return { type: 'success', message: descriptor.fallbackMessage, descriptor }
-}
 
 /**
  * Loader-facing projection of the OTP pending state; clears both keys
@@ -106,7 +97,7 @@ async function issueAndSendOtp(
     tryOtpSendByEmailRateLimit(dbUser.email),
   ])
   if (ipLimit.exceeded || emailLimit.exceeded) {
-    return flowError('auth.otp.error.sendTooFrequent')
+    return authFlowError('auth.otp.error.sendTooFrequent')
   }
 
   const { otpCode, expiresAt } = await issueOtpToken(db, dbUser.id)
@@ -170,7 +161,7 @@ export async function handleOtpVerify(
   const { db, session, clientAddress } = ctx
   const pendingOtpUser = session.get('pendingOtpUser')
   if (!pendingOtpUser) {
-    return flowError('auth.otp.error.notStarted')
+    return authFlowError('auth.otp.error.notStarted')
   }
 
   const [ipLimit, emailLimit] = await Promise.all([
@@ -178,12 +169,12 @@ export async function handleOtpVerify(
     tryOtpVerifyByEmailRateLimit(pendingOtpUser.email),
   ])
   if (ipLimit.exceeded || emailLimit.exceeded) {
-    return flowError('auth.otp.error.verifyTooFrequent')
+    return authFlowError('auth.otp.error.verifyTooFrequent')
   }
 
   const userId = parsePendingUserId(ctx, pendingOtpUser)
   if (userId === null) {
-    return flowError('auth.otp.error.stateInvalid')
+    return authFlowError('auth.otp.error.stateInvalid')
   }
 
   const otpCode = formFieldString(formData, 'otp_code')
@@ -204,7 +195,7 @@ export async function handleOtpVerify(
         userAgent: request.headers.get('User-Agent'),
         details: { email: pendingOtpUser.email, failCount, lockedOut: true },
       })
-      return flowError('auth.otp.error.lockedOut')
+      return authFlowError('auth.otp.error.lockedOut')
     }
     recordAuditEvent({
       action: 'otp_failed',
@@ -215,14 +206,14 @@ export async function handleOtpVerify(
       userAgent: request.headers.get('User-Agent'),
       details: { email: pendingOtpUser.email, failCount },
     })
-    return flowError('auth.otp.error.invalid')
+    return authFlowError('auth.otp.error.invalid')
   }
 
   clearPendingOtp(ctx)
 
   const dbUser = await findUserById(db, userId)
   if (!dbUser?.role || dbUser.deletedAt) {
-    return flowError('auth.otp.error.accountCannotSignIn')
+    return authFlowError('auth.otp.error.accountCannotSignIn')
   }
 
   const established = await establishLoginSession(db, session, dbUser, request, clientAddress, {
@@ -235,22 +226,22 @@ export async function handleOtpResend(ctx: SigninFlowContext, request: Request):
   const { db, session } = ctx
   const pendingOtpUser = session.get('pendingOtpUser')
   if (!pendingOtpUser) {
-    return flowError('auth.otp.error.notStarted')
+    return authFlowError('auth.otp.error.notStarted')
   }
 
   const userId = parsePendingUserId(ctx, pendingOtpUser)
   if (userId === null) {
-    return flowError('auth.otp.error.stateInvalid')
+    return authFlowError('auth.otp.error.stateInvalid')
   }
 
   const dbUser = await findUserById(db, userId)
   if (!dbUser?.role || dbUser.deletedAt) {
-    return flowError('auth.otp.error.accountInvalid')
+    return authFlowError('auth.otp.error.accountInvalid')
   }
 
   const failure = await issueAndSendOtp(ctx, request, dbUser, { resend: true })
   if (failure) {
     return failure
   }
-  return flowSuccess('auth.otp.success.resent')
+  return authFlowSuccess('auth.otp.success.resent')
 }

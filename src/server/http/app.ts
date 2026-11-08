@@ -6,6 +6,7 @@ import type { HandlerContext } from '@/server/http/orpc-base'
 
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { apiRouter } from '@/server/http/api-router'
+import { errorJsonResponse } from '@/server/http/errors'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -30,7 +31,7 @@ export function createApiApp(): Hono<Env> {
   app.use(
     dynamicBodyLimit({
       maxSize: resolveMaxBodySize,
-      onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
+      onError: (c) => errorJsonResponse(c, 413, 'error.api.payloadTooLarge'),
     }),
   )
 

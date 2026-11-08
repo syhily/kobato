@@ -444,7 +444,10 @@ describe('auth/session-guard — revokeSessionWithGuard', () => {
     await seedSessionRow(sid, bob.id)
     await recordSessionLogin(db, { sid, userId: bob.id, userAgent: 'ua', ip: '1.1.1.1' })
 
-    await expect(revokeSessionWithGuard(db, sid, { id: String(alice.id), role: 'admin' })).rejects.toThrow(/无权/)
+    await expect(revokeSessionWithGuard(db, sid, { id: String(alice.id), role: 'admin' })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      descriptor: { messageKey: 'auth.sessions.error.forbiddenRevoke' },
+    })
   })
 
   it("allows an admin to revoke a non-admin's session", async () => {
@@ -555,7 +558,7 @@ describe('auth/otp-flow — handleCredentialLogin', () => {
     )
     expect(result.type).toBe('error')
     if (result.type === 'error') {
-      expect(result.message).toContain('邮箱')
+      expect(result.descriptor).toMatchObject({ messageKey: 'auth.signin.error.credentialsRequired' })
     }
     // Error results carry no mutation — no dirty mark, no setCookie.
     expect(markSessionDirty).not.toHaveBeenCalled()

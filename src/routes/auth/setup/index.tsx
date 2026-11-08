@@ -1,8 +1,12 @@
 import { data, redirect, useNavigation } from 'react-router'
 
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/services/setup'
+import { authFlowError, authFlowMessage, type AuthFlowError } from '@/server/domains/auth/services/shared'
 import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@/server/domains/auth/setup-token'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { getRequestContext } from '@/server/http/request-context'
@@ -51,25 +55,39 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData()
   const intent = formData.get('intent')
 
+  // Server translates, client displays: resolve the flow descriptor for this
+  // request's locale and carry the key for stable client-side branching.
+  const fail = (messageKey: UiMessageId, status?: number) => {
+    const flow: AuthFlowError = authFlowError(messageKey)
+    const payload: {
+      error: string
+      errorDescriptor?: ErrorMessageDescriptor
+    } = {
+      error: authFlowMessage(flow.message, flow.descriptor, rc.localization.locale),
+      ...(flow.descriptor === undefined ? {} : { errorDescriptor: flow.descriptor }),
+    }
+    return status === undefined ? data(payload) : data(payload, { status })
+  }
+
   if (intent === 'verify-token') {
     if (!validateCsrfForAction(session, request, formData)) {
-      return data({ error: '安全校验失败，请刷新页面后重试。' })
+      return fail('error.api.csrfFailed')
     }
 
     // Rate-limit before any token comparison to slow down automated scanners.
     const { exceeded } = await tryKeyedRateLimit(`rate-limit:setup-verify:${clientAddress}`, SETUP_VERIFY_BUCKET)
     if (exceeded) {
-      return data({ error: '请求过于频繁，请稍后再试。' }, { status: 429 })
+      return fail('auth.setup.error.rateLimited', 429)
     }
 
     const token = formData.get('setup_token')
     if (typeof token !== 'string' || !token) {
-      return data({ error: '请输入 Setup Token。' })
+      return fail('auth.setup.error.tokenRequired')
     }
 
     const isValid = await verifySetupToken(db, token)
     if (!isValid) {
-      return data({ error: 'Setup Token 错误，请查看服务器控制台输出。' })
+      return fail('auth.setup.error.tokenInvalid')
     }
 
     session.set('setupTokenVerified', true)
@@ -82,16 +100,16 @@ export async function action({ request, context }: Route.ActionArgs) {
   // Intent: install (null intent kept for backward compat).
   if (intent === 'install' || intent === null) {
     if (session.get('setupTokenVerified') !== true) {
-      return data({ error: '请先验证 Setup Token。' })
+      return fail('auth.setup.error.tokenNotVerified')
     }
 
     // Defense in depth: a stale session flag must not bypass an expired or invalidated token.
     if (!(await isSetupTokenActive(db))) {
-      return data({ error: 'Setup Token 已过期或失效，请重新验证。' })
+      return fail('auth.setup.error.tokenExpired')
     }
 
     if (!validateCsrfForAction(session, request, formData)) {
-      return data({ error: '安全校验失败，请刷新页面后重试。' })
+      return fail('error.api.csrfFailed')
     }
 
     const values: Record<string, FormDataEntryValue | null> = {}
@@ -101,7 +119,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     const parsed = signUpAdminSchema.safeParse(values)
     if (!parsed.success) {
-      return data({ error: '请填写完整的管理员账号信息。' })
+      return fail('auth.setup.error.formIncomplete')
     }
 
     const result = await signUpInitialAdminWithSession(db, {
@@ -112,7 +130,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     })
 
     if (result.type === 'error') {
-      return data({ error: result.message })
+      return data({
+        error: authFlowMessage(result.message, result.descriptor, rc.localization.locale),
+        ...(result.descriptor === undefined ? {} : { errorDescriptor: result.descriptor }),
+      })
     }
 
     if (result.type === 'redirect') {
@@ -124,10 +145,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     // signUpInitialAdminWithSession never returns 'success'; this is defensive.
-    return data({ error: '未知错误' })
+    return fail('auth.setup.error.unknown')
   }
 
-  return data({ error: '未知操作。' })
+  return fail('auth.setup.error.unknownAction')
 }
 
 export const meta = titleMeta('meta.title.auth.setup')

@@ -107,8 +107,16 @@ The shared `loaders/*` helpers are the orchestration layer the content controlle
   Un-migrated domains still pass a raw string — it rides the `error.api.rawMessage` passthrough key
   and renders unchanged. Client-side validation schemas put a typed `UiMessageId` in `message`
   (never raw copy) and the server maps Zod issues with
-  `server/infra/http/error-descriptor` (`zodIssuesToWire`: id → descriptor + `{min}/{max}` params +
-  English fallback, producer code, path; standard Zod prose stays an English passthrough).
+  `server/infra/http/error-descriptor` (`zodIssuesToWire`: id → descriptor + `{min}/{max}`/custom
+  `params` + English fallback, producer code, path; standard Zod prose stays an English
+  passthrough). Perimeter middlewares (RBAC, rate limit, timeout, CSRF, body limit) have no
+  `DomainError` channel: they throw `LocalizedHttpException` (`localized-http-exception.ts`) and the
+  same handler translates it; responder-style hooks use `errorJsonResponse`. Controllers that throw
+  `ORPCError` directly use `localizedOrpcError(context, code, messageKey)` from `orpc-base` so the
+  message and descriptor stay in step. Auth flows return `AuthFlowResult` with a descriptor
+  (`authFlowError`/`authFlowSuccess`); `routes/auth` resolves it through `authFlowMessage` (the
+  route import whitelist). Settings strict patches reject unknown keys with `unrecognizedKeys`
+  (one issue per key, full key list in `params.keys`, field path preserved).
 - No ad-hoc Hono RPC routes bypassing `apiRouter`; non-JSON routes belong in `resources/`.
 - Procedure inputs are a single flat object — no `{ body, query, params }` buckets.
 

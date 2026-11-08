@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { formatUaLabel } from '@/server/domains/analytics/ua-parse'
@@ -6,7 +5,8 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/services/rec
 import { listAllSessions } from '@/server/domains/auth/services/sessions'
 import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } from '@/server/domains/comments/services/moderate'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { adminUsersListSessionsOutputSchema } from '@/shared/contracts/admin'
 import { idFromString } from '@/shared/utils/id'
 
@@ -21,6 +21,7 @@ const listSessions = adminProc
   .output(adminUsersListSessionsOutputSchema)
   .handler(async ({ context }) => {
     const rows = await listAllSessions(context.db)
+    const translator = createServerTranslator(context.localization.locale)
     return rows.map((row) => ({
       sid: row.sid,
       userId: row.userId,
@@ -29,7 +30,8 @@ const listSessions = adminProc
       loginAt: row.loginAt,
       lastActiveAt: row.lastActiveAt,
       expiresAt: row.expiresAt,
-      userName: row.userName,
+      // The auth service returns '' when the user row is gone; localize the placeholder here.
+      userName: row.userName === '' ? translator.format('auth.sessions.deletedUser') : row.userName,
       userEmail: row.userEmail,
       userRole: row.userRole,
     }))
@@ -60,7 +62,7 @@ const revokeAllSessions = adminProc
     try {
       targetId = idFromString(input.userId)
     } catch {
-      throw new ORPCError('BAD_REQUEST', { message: '用户 ID 无效。' })
+      throw localizedOrpcError(context, 'BAD_REQUEST', 'account.error.invalidUserId')
     }
     await revokeAllSessionsWithGuard(context.db, targetId, context.viewer)
     recordAuditEventFromContext(context, {

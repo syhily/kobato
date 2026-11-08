@@ -32,7 +32,7 @@ function seedInstalledSite(overrides: { locale: 'zh-TW'; timeZone: string }): vo
     hostname: 'localhost',
   })
   if (!built.ok) {
-    throw new Error(`expected ok rows, got: ${built.message}`)
+    throw new Error(`expected ok rows, got: ${built.descriptor.fallbackMessage}`)
   }
   const rows = built.rows.map((row) =>
     row.scope === 'blog.general' ? { scope: row.scope, payload: Object.assign({}, row.payload, overrides) } : row,

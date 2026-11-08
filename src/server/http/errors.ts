@@ -7,7 +7,9 @@ import type { Env } from '@/server/http/context'
 import type { RequestContext } from '@/server/http/request-context'
 import type { DomainErrorIssue } from '@/server/infra/http/errors'
 import type { ServerTranslator } from '@/server/infra/i18n'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
+import { carriesErrorMessageDescriptor } from '@/server/http/localized-http-exception'
 import {
   apiErrorData,
   codeForStatus,
@@ -16,7 +18,7 @@ import {
   translateDomainError,
   type TranslatedDomainError,
 } from '@/server/http/translate-domain-error'
-import { zodIssuesToWire } from '@/server/infra/http/error-descriptor'
+import { descriptorFor, zodIssuesToWire } from '@/server/infra/http/error-descriptor'
 import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { getLogger } from '@/server/infra/logger'
@@ -76,11 +78,34 @@ function causeIssues(cause: unknown): DomainErrorIssue[] | undefined {
   return issues.length === 0 ? undefined : issues
 }
 
+/**
+ * The JSON error body for responder-style middleware (`onError` hooks, the
+ * install gate) that returns a Response instead of throwing. Same shape and
+ * localization as the thrown path.
+ */
+export function errorJsonResponse(c: Context<Env>, status: number, messageKey: UiMessageId): Response {
+  const descriptor = descriptorFor(messageKey)
+  const translator = requestTranslator(c)
+  c.header('X-Request-Id', c.var.requestId)
+  return c.json(
+    {
+      error: {
+        code: codeForStatus(status),
+        message: translator.format(descriptor.messageKey, descriptor.params),
+        descriptor,
+      },
+    },
+    unsafeCast<HttpStatus>(status),
+  )
+}
+
 export function onErrorHandler(err: Error, c: Context<Env>): Response {
   const requestId = c.var.requestId
   const translator = requestTranslator(c)
 
   if (err instanceof HTTPException) {
+    // Perimeter middlewares throw `LocalizedHttpException`; everything else
+    // (third-party throws, custom responses) keeps its raw message.
     return respond(
       c,
       err.status,
@@ -88,7 +113,7 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
         {
           status: err.status,
           code: codeForStatus(err.status),
-          message: err.message,
+          message: carriesErrorMessageDescriptor(err) ? err.descriptor : err.message,
           issues: causeIssues(err.cause),
         },
         translator,

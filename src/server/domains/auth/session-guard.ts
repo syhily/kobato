@@ -8,6 +8,7 @@ import type { Database } from '@/server/infra/db/database'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { findSafeUserById } from '@/server/infra/db/operations/user'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 /** Outcome of a single-session revocation: the session owner, or null when the meta was already gone (no-op). */
@@ -29,7 +30,7 @@ export async function revokeOwnSessionWithGuard(
     return { targetUserId: null }
   }
   if (meta.userId.toString() !== actor.id) {
-    throw new DomainError('FORBIDDEN', '无权操作该会话。')
+    throw new DomainError('FORBIDDEN', descriptorFor('auth.sessions.error.forbidden'))
   }
   await revokeSessionById(db, sessionId, meta.userId)
   return { targetUserId: meta.userId }
@@ -52,7 +53,7 @@ export async function revokeSessionWithGuard(
   if (actor.role === 'admin' && meta.userId.toString() !== actor.id) {
     const targetUser = await findSafeUserById(db, meta.userId)
     if (targetUser && !targetUser.deletedAt && targetUser.role === 'admin') {
-      throw new DomainError('FORBIDDEN', '无权撤销其他管理员的会话。')
+      throw new DomainError('FORBIDDEN', descriptorFor('auth.sessions.error.forbiddenRevoke'))
     }
   }
   await revokeSessionById(db, sessionId, meta.userId)
@@ -70,7 +71,7 @@ export async function revokeAllSessionsWithGuard(
 ): Promise<void> {
   const targetUser = await findSafeUserById(db, targetUserId)
   if (targetUser?.role === 'admin' && targetUserId.toString() !== actor.id) {
-    throw new DomainError('FORBIDDEN', '无权撤销其他管理员的全部会话。')
+    throw new DomainError('FORBIDDEN', descriptorFor('auth.sessions.error.forbiddenRevokeAll'))
   }
   await revokeAllSessionsOfUser(db, targetUserId)
 }
