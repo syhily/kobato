@@ -1,3 +1,5 @@
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Hr, Link, Text } from '@/server/infra/email/render'
 import { RawEmailHtml } from '@/server/infra/email/safe-html'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
@@ -9,6 +11,8 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 export type AdminNotificationRow = { label?: string; value: string } | { html: string }
 
 interface Props {
+  /** Explicit site-locale translator (see `emailTranslator`). */
+  t: ServerTranslator
   /** Greeting name; defaults to the site author (the other callers are admin alerts). */
   receiver?: string
   /** Inbox preheader line, e.g. `在《…》中有一条新留言`. */
@@ -29,6 +33,7 @@ interface Props {
 // The single layout all admin notification emails render through — a new
 // notification type is one data-mapping function, not a new template.
 export function AdminNotificationEmail({
+  t,
   receiver,
   preview,
   title,
@@ -40,7 +45,7 @@ export function AdminNotificationEmail({
 }: Props) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   return (
-    <EmailLayout receiver={receiver ?? siteIdentity.author.name} preview={preview}>
+    <EmailLayout t={t} receiver={receiver ?? siteIdentity.author.name} preview={preview}>
       <Text
         style={{
           fontSize: 26,

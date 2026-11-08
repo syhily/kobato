@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { WebmentionRow } from '@/server/infra/db/types'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
 
 // Capture the seam call instead of rendering/sending: these tests pin
@@ -73,5 +74,42 @@ describe('webmentions/email — sendNewWebmention', () => {
     expect(props.title).toBe('Webmention 已更新')
     expect(props.preview).toBe('《目标文章标题》的一条 Webmention 内容已更新')
     expect(props.mutedNote).toBe('该提及的内容已更新，已通过来源校验，等待重新审核')
+  })
+})
+
+describe('webmentions/email — site locale at send time', () => {
+  it('renders the English mapping (new and updated) when the site locale is en-US', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+    })
+    try {
+      await sendNewWebmention(mention, target)
+      const fresh = lastCall()
+      expect(fresh.subject).toBe('New Webmention received')
+      expect(fresh.props.title).toBe('New Webmention')
+      expect(fresh.props.preview).toBe('《目标文章标题》received a new Webmention')
+      expect(fresh.props.contextLine).toEqual({
+        label: 'Target post:',
+        link: { text: '目标文章标题', href: 'https://example.com/posts/target/' },
+      })
+      expect(fresh.props.mutedNote).toBe('The mention passed source verification and is awaiting review')
+      expect(fresh.props.rows).toEqual([
+        { label: 'Source:', value: '提及了你的文章' },
+        { label: 'Author:', value: 'Jane Doe' },
+        { value: '一段摘要。' },
+      ])
+      expect(fresh.props.cta).toEqual({ label: 'View source', href: 'https://sender.example/mentioning-post' })
+
+      await sendNewWebmention(mention, target, { updated: true })
+      const updated = lastCall()
+      expect(updated.subject).toBe('Webmention content updated; awaiting re-review')
+      expect(updated.props.title).toBe('Webmention updated')
+      expect(updated.props.mutedNote).toBe(
+        'The mention was updated and already passed source verification; it is awaiting re-review',
+      )
+    } finally {
+      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    }
   })
 })

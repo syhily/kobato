@@ -192,6 +192,16 @@ const SCAN_ROOTS = [
   'src/server/domains/analytics/geoip-update.ts',
   'src/server/domains/update/pipeline.ts',
   'src/shared/utils/safe-url.ts',
+  // Step 5b-i: every system email template/sender (server catalog copy only;
+  // user-authored bodies, titles and site names stay raw).
+  'src/server/infra/email',
+  'src/server/domains/comments/services/email.ts',
+  'src/server/domains/webmentions/email.ts',
+  'src/server/domains/friends/email.ts',
+  'src/server/domains/newsletter/email.ts',
+  'src/server/domains/notifications/email.ts',
+  'src/server/http/controllers/admin/mail.controller.ts',
+  'scripts/generate-emails.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -433,6 +443,17 @@ describe('production sources', () => {
         'src/shared/utils/safe-url.ts',
         // Step 5a-vi slice: the Gravatar mirror preset labels render through `t()`.
         'src/ui/admin/settings/CommentsForm.tsx',
+        // Step 5b-i slice: email templates/senders render server-catalog copy.
+        'src/server/infra/email/sender.ts',
+        'src/server/infra/email/templates/layout/EmailLayout.tsx',
+        'src/server/infra/email/templates/AdminNotificationEmail.tsx',
+        'src/server/infra/email/templates/NewReply.tsx',
+        'src/server/domains/comments/services/email.ts',
+        'src/server/domains/friends/email.ts',
+        'src/server/domains/newsletter/email.ts',
+        'src/server/domains/notifications/email.ts',
+        'src/server/domains/webmentions/email.ts',
+        'scripts/generate-emails.ts',
       ]),
     )
   })

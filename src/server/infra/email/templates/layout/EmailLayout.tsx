@@ -2,24 +2,28 @@ import { TZDate } from '@date-fns/tz'
 import { getYear } from 'date-fns'
 import { useState } from 'react'
 
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Body, Container, Html, Link, Section, Text } from '@/server/infra/email/render'
 import { light } from '@/server/infra/email/templates/styles/tokens'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 interface Props {
+  /** Explicit site-locale translator (see `emailTranslator`). */
+  t: ServerTranslator
   receiver: string
   preview?: string
   children: React.ReactNode
 }
 
-export function EmailLayout({ receiver, preview, children }: Props) {
+export function EmailLayout({ t, receiver, preview, children }: Props) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const [year] = useState(() => getYear(new TZDate(Date.now(), siteIdentity.timeZone)))
 
   const fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 
   return (
-    <Html lang={siteIdentity.locale}>
+    <Html lang={t.locale}>
       <Body
         style={{
           margin: 0,
@@ -87,7 +91,7 @@ export function EmailLayout({ receiver, preview, children }: Props) {
               }}
               className="dark-text-primary"
             >
-              你好，{receiver}
+              {t.format('email.common.greeting', { receiver })}
             </Text>
           </Section>
 
@@ -105,7 +109,7 @@ export function EmailLayout({ receiver, preview, children }: Props) {
               }}
               className="dark-text-muted"
             >
-              本邮件为系统自动发出，无法回复。
+              {t.format('email.common.automaticNotice')}
             </Text>
             <Text
               style={{
@@ -127,9 +131,8 @@ export function EmailLayout({ receiver, preview, children }: Props) {
                 target="_blank"
                 rel="noreferrer"
               >
-                {siteIdentity.title}
-              </Link>{' '}
-              © {year}
+                {t.format('email.common.copyright', { siteTitle: siteIdentity.title, year })}
+              </Link>
             </Text>
           </Section>
         </Container>

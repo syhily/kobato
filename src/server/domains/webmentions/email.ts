@@ -6,6 +6,7 @@ import type { SendResult } from '@/server/infra/email/types'
 
 import { sendAdminNotification } from '@/server/infra/email/admin-notification'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
+import { emailTranslator } from '@/server/infra/email/translator'
 
 /** Fire-and-forget admin notification when a mention lands in pending; a
  *  mail hiccup must never fail the mention. `updated` marks the demote case. */
@@ -15,22 +16,29 @@ export async function sendNewWebmention(
   options?: { updated?: boolean },
 ): Promise<SendResult> {
   const updated = options?.updated === true
+  const t = emailTranslator()
   const rows: AdminNotificationRow[] = [
-    { label: '来源：', value: mention.title ?? mention.sourceUrl },
-    ...(mention.authorName !== null ? [{ label: '作者：', value: mention.authorName }] : []),
+    { label: t.format('email.webmention.rowSource'), value: mention.title ?? mention.sourceUrl },
+    ...(mention.authorName !== null
+      ? [{ label: t.format('email.webmention.rowAuthor'), value: mention.authorName }]
+      : []),
     ...(mention.summary !== null ? [{ value: mention.summary }] : []),
   ]
   return sendAdminNotification({
-    subject: updated ? 'Webmention 内容已更新，等待重新审核' : '收到了新的 Webmention',
+    subject: t.format(updated ? 'email.webmention.subjectSuffixUpdated' : 'email.webmention.subjectSuffixNew'),
     element: createElement(AdminNotificationEmail, {
-      preview: updated
-        ? `《${target.title}》的一条 Webmention 内容已更新`
-        : `《${target.title}》收到一条新的 Webmention`,
-      title: updated ? 'Webmention 已更新' : '新 Webmention',
-      contextLine: { label: '目标文章：', link: { text: target.title, href: target.canonicalUrl } },
-      mutedNote: updated ? '该提及的内容已更新，已通过来源校验，等待重新审核' : '该提及已通过来源校验，等待审核',
+      t,
+      preview: t.format(updated ? 'email.webmention.previewUpdated' : 'email.webmention.previewNew', {
+        title: target.title,
+      }),
+      title: t.format(updated ? 'email.webmention.titleUpdated' : 'email.webmention.titleNew'),
+      contextLine: {
+        label: t.format('email.webmention.contextLabel'),
+        link: { text: target.title, href: target.canonicalUrl },
+      },
+      mutedNote: t.format(updated ? 'email.webmention.mutedNoteUpdated' : 'email.webmention.mutedNoteNew'),
       rows,
-      cta: { label: '查看来源', href: mention.sourceUrl },
+      cta: { label: t.format('email.webmention.cta'), href: mention.sourceUrl },
     }),
   })
 }

@@ -1,12 +1,14 @@
 import { createHash } from 'node:crypto'
 
 import type { MailTransport, SendOptions, SendResult } from '@/server/infra/email/types'
+import type { ServerMessageId } from '@/shared/i18n/messages/server/en-US'
 
 import { render } from '@/server/infra/email/render'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
 import SignInLink from '@/server/infra/email/templates/SignInLink'
 import SignInOtp from '@/server/infra/email/templates/SignInOtp'
+import { emailTranslator } from '@/server/infra/email/translator'
 import { MailgunTransport } from '@/server/infra/email/transports/mailgun'
 import { SmtpTransport } from '@/server/infra/email/transports/smtp'
 import { getLogger } from '@/server/infra/logger'
@@ -55,14 +57,15 @@ interface BuildTransportOptions {
 // Adding a transport = one entry here + its `MailTransport` class.
 interface TransportRegistryEntry {
   isReady(mail: MailConfig): boolean
-  unconfiguredMessage: string
+  /** Catalog key for the "missing fields" readiness message (site locale). */
+  unconfiguredKey: ServerMessageId
   build(mail: MailConfig, opts?: BuildTransportOptions): MailTransport
 }
 
 const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry> = {
   smtp: {
     isReady: (mail) => Boolean(mail.smtpHost && mail.smtpUser && mail.smtpPass && mail.sender),
-    unconfiguredMessage: 'SMTP 服务尚未配置完整（缺少服务器地址 / 用户名 / 密码 / 发件人）',
+    unconfiguredKey: 'email.error.smtpUnconfigured',
     build: (mail, opts) =>
       new SmtpTransport({
         enabled: opts?.forceEnabled ?? mail.enabled,
@@ -78,7 +81,7 @@ const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry
   },
   mailgun: {
     isReady: (mail) => Boolean(mail.mailgunDomain && mail.mailgunApiKey && mail.sender),
-    unconfiguredMessage: 'Mailgun 服务尚未配置完整（缺少 Domain / API Key / 发件人）',
+    unconfiguredKey: 'email.error.mailgunUnconfigured',
     build: (mail, opts) =>
       new MailgunTransport({
         enabled: opts?.forceEnabled ?? mail.enabled,
@@ -105,12 +108,13 @@ export function checkMailReady(
   mail: MailConfig,
   options: CheckMailReadyOptions = {},
 ): { ready: true } | { ready: false; reason: 'disabled' | 'unconfigured'; message: string } {
+  const t = emailTranslator()
   if (!options.ignoreEnabled && !mail.enabled) {
-    return { ready: false, reason: 'disabled', message: '邮件发送已在管理面板中关闭' }
+    return { ready: false, reason: 'disabled', message: t.format('email.error.disabled') }
   }
   const entry = resolveTransportEntry(mail)
   if (!entry.isReady(mail)) {
-    return { ready: false, reason: 'unconfigured', message: entry.unconfiguredMessage }
+    return { ready: false, reason: 'unconfigured', message: t.format(entry.unconfiguredKey) }
   }
   return { ready: true }
 }
@@ -182,51 +186,59 @@ export async function sendAuthorInvite(
   inviterEmail?: string,
 ): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const t = emailTranslator()
   const html = render(
     AuthorInvite({
+      t,
       receiver: user.name,
       inviter: inviterName,
       link,
     }),
   )
-  return sendEmail(user.email, `【${siteIdentity.title}】作者邀请`, html, {
+  return sendEmail(user.email, t.format('email.authorInvite.subject', { siteTitle: siteIdentity.title }), html, {
     bcc: inviterEmail ? [inviterEmail] : undefined,
   })
 }
 
 export async function sendPasswordReset(user: { name: string; email: string }, link: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const t = emailTranslator()
   const html = render(
     PasswordReset({
+      t,
       receiver: user.name,
       link,
     }),
   )
-  return sendEmail(user.email, `【${siteIdentity.title}】密码重置`, html)
+  return sendEmail(user.email, t.format('email.passwordReset.subject', { siteTitle: siteIdentity.title }), html)
 }
 
 export async function sendSignInOtp(user: { name: string; email: string }, otpCode: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const t = emailTranslator()
   const html = render(
     SignInOtp({
+      t,
       receiver: user.name,
       otpCode,
       expiresMinutes: OTP_TTL_MINUTES,
     }),
   )
-  return sendEmail(user.email, `【${siteIdentity.title}】登录验证码`, html)
+  return sendEmail(user.email, t.format('email.signInOtp.subject', { siteTitle: siteIdentity.title }), html)
 }
 
 export async function sendSignInLink(user: { name: string; email: string }, link: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const t = emailTranslator()
   const html = render(
     SignInLink({
+      t,
       receiver: user.name,
       link,
       expiresMinutes: SIGNIN_LINK_TTL_MINUTES,
     }),
   )
-  return sendEmail(user.email, `【${siteIdentity.title}】登录链接`, html)
+  return sendEmail(user.email, t.format('email.signInLink.subject', { siteTitle: siteIdentity.title }), html)
 }
 
 // Test sends still respect the `unconfigured` guard.
@@ -239,16 +251,17 @@ export async function sendTestMail(to: string): Promise<SendResult> {
   }
 
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const subject = `【${siteIdentity.title}】管理员邮件测试`
+  const t = emailTranslator()
+  const subject = t.format('email.testMail.subject', { siteTitle: siteIdentity.title })
   const sentAt = new Date().toISOString()
   // Plain body (no template render) — failures then isolate the transport.
   const html = [
-    `<p>这是一封来自 <strong>${escapeHtml(siteIdentity.title)}</strong> 后台的邮件发送测试。</p>`,
-    `<p>如果你收到了这封邮件，说明邮件服务配置工作正常。</p>`,
+    `<p>${t.format('email.testMail.introPrefix')}<strong>${escapeHtml(siteIdentity.title)}</strong>${t.format('email.testMail.introSuffix')}</p>`,
+    `<p>${t.format('email.testMail.bodyOk')}</p>`,
     `<ul>`,
-    `<li>站点：${escapeHtml(siteIdentity.website)}</li>`,
-    `<li>发件人：${escapeHtml(mail.sender)}</li>`,
-    `<li>触发时间（UTC）：${sentAt}</li>`,
+    `<li>${t.format('email.testMail.labelSite')}${escapeHtml(siteIdentity.website)}</li>`,
+    `<li>${t.format('email.testMail.labelSender')}${escapeHtml(mail.sender)}</li>`,
+    `<li>${t.format('email.testMail.labelTriggered')}${sentAt}</li>`,
     `</ul>`,
   ].join('\n')
 

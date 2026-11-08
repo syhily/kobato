@@ -2,13 +2,15 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 
 import { renderToStaticMarkup } from 'react-dom/server'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+
 type StyledProps = { style?: CSSProperties; className?: string; children?: ReactNode }
 
 export function render(element: ReactElement): string {
   return `<!DOCTYPE html>${renderToStaticMarkup(element)}`
 }
 
-export function Html({ lang = 'en', children }: { lang?: string; children?: ReactNode }) {
+export function Html({ lang, children }: { lang: AppLocale; children?: ReactNode }) {
   return (
     <html lang={lang}>
       <head>

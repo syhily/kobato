@@ -5,7 +5,6 @@ import type { Role } from '@/shared/utils/roles'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { NOTIFICATION_EMAIL_FOOTER } from '@/server/domains/notifications/email'
 import {
   notifyAdmins,
   replyToThread,
@@ -14,6 +13,7 @@ import {
   unreadCount,
 } from '@/server/domains/notifications/service'
 import { user } from '@/server/infra/db/schema/user'
+import { createServerTranslator } from '@/server/infra/i18n'
 
 // ADR-0008 delivery: real in-app fan-out + real notification rows; only the
 // Mailgun `fetch` edge is stubbed (same seam as comments/services/email.test.ts).
@@ -33,6 +33,10 @@ vi.mock('@/server/infra/logger', async (importOriginal) => {
 })
 
 const db = getTestDb()
+
+// The opt-out footer is a server-catalog message rendered in the site locale
+// (the fixture's zh-CN).
+const NOTIFICATION_EMAIL_FOOTER = createServerTranslator('zh-CN').format('email.notification.footerNote')
 
 const mailgunConfigured = {
   enabled: true,
@@ -284,5 +288,53 @@ describe('notifications email — failure isolation', () => {
     } finally {
       rejectOnce.mockRestore()
     }
+  })
+})
+
+describe('notifications email — site locale at send time', () => {
+  function setEnglishSite(): void {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+      mail: { mail: { ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail, ...mailgunConfigured } },
+    })
+  }
+
+  it('renders the English direct-message subject, labels, CTA and opt-out footer', async () => {
+    setEnglishSite()
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+
+    sendDirectMessage(db, adminId, visitorId, { title: 'DM title', body: 'hello there' })
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    const body = sentMessage(0)
+    expect(body.get('subject')).toBe(`You received a new direct message on【${title}】`)
+    const html = body.get('html') as string
+    expect(html).toContain('New direct message')
+    expect(html).toContain('Title:')
+    expect(html).toContain('Content:')
+    expect(html).toContain('Visit the site')
+    expect(html).toContain('This email was triggered by a system notification. You can turn notification emails off')
+    // User-authored notification title/body remain raw.
+    expect(html).toContain('DM title')
+    expect(html).toContain('hello there')
+  })
+
+  it('renders the English admin-alert subject and admin CTA', async () => {
+    setEnglishSite()
+    await seedUser('admin', 'admin')
+    const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+
+    notifyAdmins(db, { title: 'Zeabur offline', body: 'Reconfigure mail', source: 'zeabur-mail-cleanup' })
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    const body = sentMessage(0)
+    expect(body.get('subject')).toBe(`【${title}】System alert: Zeabur offline`)
+    const html = body.get('html') as string
+    expect(html).toContain('Open the admin panel')
+    expect(html).toContain('href="https://example.com/admin"')
+    expect(html).toContain('Zeabur offline')
   })
 })

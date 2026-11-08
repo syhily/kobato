@@ -1,16 +1,19 @@
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Text } from '@/server/infra/email/render'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { light } from '@/server/infra/email/templates/styles/tokens'
 
 interface Props {
+  t: ServerTranslator
   receiver: string
   otpCode: string
   expiresMinutes: number
 }
 
-export function SignInOtp({ receiver, otpCode, expiresMinutes }: Props) {
+export function SignInOtp({ t, receiver, otpCode, expiresMinutes }: Props) {
   return (
-    <EmailLayout receiver={receiver} preview={`你的登录验证码是 ${otpCode}，${expiresMinutes} 分钟内有效`}>
+    <EmailLayout t={t} receiver={receiver} preview={t.format('email.signInOtp.preview', { otpCode, expiresMinutes })}>
       <Text
         style={{
           fontSize: 16,
@@ -20,7 +23,7 @@ export function SignInOtp({ receiver, otpCode, expiresMinutes }: Props) {
         }}
         className="dark-text-secondary"
       >
-        你正在尝试登录后台管理，请输入以下验证码完成登录：
+        {t.format('email.signInOtp.body')}
       </Text>
 
       <div
@@ -49,7 +52,7 @@ export function SignInOtp({ receiver, otpCode, expiresMinutes }: Props) {
         }}
         className="dark-text-muted"
       >
-        验证码 {expiresMinutes} 分钟内有效，请勿将验证码告知他人。如非本人操作，请忽略此邮件。
+        {t.format('email.signInOtp.note', { expiresMinutes })}
       </Text>
     </EmailLayout>
   )

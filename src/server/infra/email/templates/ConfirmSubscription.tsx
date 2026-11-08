@@ -1,17 +1,20 @@
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Link, Text } from '@/server/infra/email/render'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { light } from '@/server/infra/email/templates/styles/tokens'
 
 interface Props {
+  t: ServerTranslator
   receiver: string
   fromName: string
   confirmLink: string
   expiresHours: number
 }
 
-export function ConfirmSubscription({ receiver, fromName, confirmLink, expiresHours }: Props) {
+export function ConfirmSubscription({ t, receiver, fromName, confirmLink, expiresHours }: Props) {
   return (
-    <EmailLayout receiver={receiver} preview={`确认订阅来自「${fromName}」的邮件更新`}>
+    <EmailLayout t={t} receiver={receiver} preview={t.format('email.newsletterConfirm.preview', { fromName })}>
       <Text
         style={{
           fontSize: 26,
@@ -22,7 +25,7 @@ export function ConfirmSubscription({ receiver, fromName, confirmLink, expiresHo
         }}
         className="dark-text-primary"
       >
-        确认你的订阅
+        {t.format('email.newsletterConfirm.title')}
       </Text>
 
       <Text
@@ -34,7 +37,7 @@ export function ConfirmSubscription({ receiver, fromName, confirmLink, expiresHo
         }}
         className="dark-text-secondary"
       >
-        你请求订阅「{fromName}」的邮件更新，请点击下方按钮确认订阅（{expiresHours} 小时内有效）：
+        {t.format('email.newsletterConfirm.body', { fromName, expiresHours })}
       </Text>
 
       <div style={{ paddingTop: 12, paddingBottom: 12 }}>
@@ -53,7 +56,7 @@ export function ConfirmSubscription({ receiver, fromName, confirmLink, expiresHo
           }}
           className="dark-cta"
         >
-          确认订阅
+          {t.format('email.newsletterConfirm.cta')}
         </Link>
       </div>
 
@@ -79,7 +82,7 @@ export function ConfirmSubscription({ receiver, fromName, confirmLink, expiresHo
         }}
         className="dark-text-muted"
       >
-        如果你并未请求订阅，请忽略此邮件 —— 未确认前你不会收到任何更新。
+        {t.format('email.newsletterConfirm.ignore')}
       </Text>
     </EmailLayout>
   )

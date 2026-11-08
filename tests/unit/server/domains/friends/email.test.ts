@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { FriendRow } from '@/server/infra/db/types'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
 
 // Capture the seam call instead of rendering/sending: these tests pin
@@ -63,5 +64,32 @@ describe('friends/email — sendNewFriendApplication', () => {
       { label: '站名：', value: '小鱼的博客' },
       { label: '主页：', value: 'https://blog.example.com' },
     ])
+  })
+})
+
+describe('friends/email — site locale at send time', () => {
+  it('renders the English mapping when the site locale is en-US', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+    })
+    try {
+      await sendNewFriendApplication(friend)
+
+      const { subject, props } = lastCall()
+      expect(subject).toBe('New friend-link application')
+      expect(props.title).toBe('New friend-link application')
+      expect(props.preview).toBe('「小鱼的博客」applied for a friend link')
+      expect(props.mutedNote).toBe('The application is awaiting review; it appears publicly only after approval')
+      expect(props.rows).toEqual([
+        { label: 'Site:', value: '小鱼的博客' },
+        { label: 'Homepage:', value: 'https://blog.example.com' },
+        { label: 'Description:', value: '记录前端与生活' },
+        { label: 'RSS:', value: 'https://blog.example.com/feed.xml' },
+      ])
+      expect(props.cta).toEqual({ label: 'Review it', href: 'https://example.com/admin/taxonomy/friends' })
+    } finally {
+      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    }
   })
 })

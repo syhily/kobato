@@ -10,6 +10,7 @@ import {
   updateUserRoleWithGuard,
 } from '@/server/domains/users/services/admin'
 import { adminProc, localizedOrpcError, passkeyGuard } from '@/server/http/orpc-base'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/infra/rate-limit'
 import { resolveSiteOrigin } from '@/shared/config/site-origin'
 import { adminUserDto } from '@/shared/contracts/users'
@@ -64,7 +65,11 @@ const inviteAuthor = adminProc
     }
 
     const origin = resolveSiteOrigin(context.request)
-    const inviterName = context.viewer.name ?? '管理员'
+    // No display name on the account: the invite email greets the recipient in
+    // the request locale instead of a hardcoded Chinese literal.
+    const inviterName =
+      context.viewer.name ??
+      createServerTranslator(context.localization.locale).format('email.authorInvite.defaultInviter')
 
     const result = await inviteAuthorWithRollback(
       context.db,

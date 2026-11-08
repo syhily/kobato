@@ -5,6 +5,7 @@ import type { Logger } from '@/server/infra/logger'
 
 import { render } from '@/server/infra/email/render'
 import { sendEmail } from '@/server/infra/email/sender'
+import { emailTranslator } from '@/server/infra/email/translator'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Single seam for admin notifications (new comment, webmention, …): recipient
@@ -18,7 +19,12 @@ export async function sendAdminNotification({
 }): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const html = render(element)
-  return sendEmail(siteIdentity.author.email, `您的网站【${siteIdentity.title}】${subject}`, html)
+  const t = emailTranslator()
+  return sendEmail(
+    siteIdentity.author.email,
+    t.format('email.adminNotification.subject', { siteTitle: siteIdentity.title, subject }),
+    html,
+  )
 }
 
 // Fire-and-forget: a mail hiccup must never fail the triggering action.
