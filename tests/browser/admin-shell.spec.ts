@@ -13,14 +13,37 @@ test('aligns the sidebar brand, search trigger, and active menu edges', async ({
   await expect(search).toBeVisible()
   await expect(activeMenu).toBeVisible()
 
-  const [logoBox, searchBox, activeMenuBox] = await Promise.all([
-    logo.boundingBox(),
-    search.boundingBox(),
-    activeMenu.boundingBox(),
-  ])
-  if (logoBox === null || searchBox === null || activeMenuBox === null) {
-    throw new Error('sidebar alignment requires visible logo, search, and active menu rectangles')
-  }
+  // Measure in-page in one shot and poll until all three boxes are visible:
+  // the post-hydration re-render can replace the SSR sidebar nodes in the gap
+  // between Playwright's visibility check and a locator boundingBox() call,
+  // which then comes back null (see replaceInput's comment in support/journey).
+  const boxesHandle = await adminPage.waitForFunction(
+    () => {
+      const rect = (element: Element | null | undefined) => {
+        if (!element) {
+          return null
+        }
+        const box = element.getBoundingClientRect()
+        if (box.width === 0 || box.height === 0 || getComputedStyle(element).visibility === 'hidden') {
+          return null
+        }
+        return { x: box.x, y: box.y, width: box.width, height: box.height }
+      }
+      const header = document.querySelector('[data-slot="sidebar-header"]')
+      const logoBox = rect(header?.querySelector('img'))
+      const searchBox = rect(header?.querySelector('button[aria-haspopup="dialog"]'))
+      const activeMenuBox = rect(document.querySelector('[data-slot="sidebar-menu-button"][data-active="true"]'))
+      return logoBox !== null && searchBox !== null && activeMenuBox !== null
+        ? { logoBox, searchBox, activeMenuBox }
+        : null
+    },
+    undefined,
+    { timeout: 10_000 },
+  )
+  // waitForFunction resolves only on a truthy value, so the null poll is gone here.
+  const { logoBox, searchBox, activeMenuBox } = (await boxesHandle.jsonValue()) as NonNullable<
+    Awaited<ReturnType<typeof boxesHandle.jsonValue>>
+  >
 
   expect({
     logoLeft: logoBox.x,
