@@ -17,6 +17,7 @@ import {
   updateFriend,
 } from '@/server/infra/db/operations/friend'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
@@ -103,8 +104,8 @@ export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs)
   if (input.id === undefined) {
     const dup = await findFriendByHomepage(db, input.homepage)
     if (dup !== null) {
-      throw new DomainError('CONFLICT', '已存在相同主页 URL 的友链', [
-        { message: '主页 URL 已存在', path: ['homepage'] },
+      throw new DomainError('CONFLICT', descriptorFor('friends.error.duplicateHomepage'), [
+        { ...descriptorFor('friends.error.homepageTaken'), path: ['homepage'] },
       ])
     }
     const row = await insertFriend(db, {
@@ -120,14 +121,14 @@ export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs)
 
   const existing = await findFriendById(db, input.id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '友链不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('friends.error.notFound'))
   }
   // Reject the URL only when another row already owns it.
   if (existing.homepage !== input.homepage) {
     const dup = await findFriendByHomepage(db, input.homepage)
     if (dup !== null && dup.id !== input.id) {
-      throw new DomainError('CONFLICT', '已存在相同主页 URL 的友链', [
-        { message: '主页 URL 已存在', path: ['homepage'] },
+      throw new DomainError('CONFLICT', descriptorFor('friends.error.duplicateHomepage'), [
+        { ...descriptorFor('friends.error.homepageTaken'), path: ['homepage'] },
       ])
     }
   }
@@ -140,7 +141,7 @@ export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs)
     visible: input.visible,
   })
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '友链不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('friends.error.notFound'))
   }
   return toAdminFriendDto(updated)
 }
@@ -162,8 +163,8 @@ export interface ApplyFriendInputs {
 export async function applyFriend(db: Database, input: ApplyFriendInputs): Promise<void> {
   const dup = await findFriendByHomepage(db, input.homepage)
   if (dup !== null) {
-    throw new DomainError('CONFLICT', '该主页已经提交过友链申请，请勿重复提交。', [
-      { message: '主页 URL 已提交过', path: ['homepage'] },
+    throw new DomainError('CONFLICT', descriptorFor('friends.error.alreadyApplied'), [
+      { ...descriptorFor('friends.error.homepageSubmitted'), path: ['homepage'] },
     ])
   }
   const row = await insertFriend(db, {

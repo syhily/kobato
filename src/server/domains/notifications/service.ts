@@ -27,6 +27,7 @@ import {
   recallNotification,
   type NewNotificationRow,
 } from '@/server/infra/db/operations/notification'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 // ---------------------------------------------------------------------------
@@ -77,7 +78,7 @@ function createAndFanOut(
 ): NotificationRow {
   // A message with zero recipients would be invisible forever — a producer bug.
   if (recipientIds.length === 0) {
-    throw new DomainError('INTERNAL', '通知没有可投递的收件人')
+    throw new DomainError('INTERNAL', descriptorFor('notifications.error.noRecipients'))
   }
   return createNotificationWithRecipients(db, data, [...new Set(recipientIds)], options)
 }
@@ -115,10 +116,10 @@ export function sendDirectMessage(
   input: { title: string; body: string },
 ): NotificationRow {
   if (recipientId === senderId) {
-    throw new DomainError('BAD_REQUEST', '不能给自己发送私信')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.selfDirect'))
   }
   if (!isActiveUserId(db, recipientId)) {
-    throw new DomainError('NOT_FOUND', '目标用户不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.targetNotFound'))
   }
   const row = createAndFanOut(db, { kind: 'direct', senderId, replyable: true, title: input.title, body: input.body }, [
     recipientId,
@@ -141,7 +142,7 @@ export function sendBroadcast(
 ): NotificationRow {
   const userIds = listRecipientUserIds(db, { adminsOnly: false })
   if (userIds.every((id) => id === senderId)) {
-    throw new DomainError('BAD_REQUEST', '站点内还没有其他用户，公告无人可接收')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.noAudience'))
   }
   return createAndFanOut(
     db,
@@ -167,14 +168,14 @@ export interface RecalledMessage {
 export function recallMessage(db: Database, id: number): RecalledMessage {
   const existing = findNotificationById(db, id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
   if (existing.kind === 'direct') {
-    throw new DomainError('BAD_REQUEST', '私信不支持撤回')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.recallDirect'))
   }
   const result = recallNotification(db, id)
   if (result === null) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
   return {
     id: result.row.id,
@@ -249,14 +250,14 @@ export function markUnread(db: Database, userId: number, ids: readonly number[])
 async function loadThread(db: Database, threadId: number): Promise<NotificationRow[]> {
   const messages = await listThreadNotifications(db, threadId)
   if (messages.length === 0) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
   return messages
 }
 
 function assertParticipant(db: Database, threadId: number, userId: number): void {
   if (!isThreadParticipant(db, threadId, userId)) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
 }
 
@@ -290,7 +291,7 @@ export async function getThread(db: Database, viewer: SessionUser, threadId: num
   // A recalled thread answers exactly like a missing one — existence is not
   // leaked to recipients, admins, or outsiders (ADR-0007).
   if (root.recalledAt !== null) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
   assertParticipant(db, threadId, userId)
   const senders = senderDtosByIds(
@@ -329,13 +330,13 @@ export async function replyToThread(
   const root = messages[0]!
   assertParticipant(db, input.threadId, userId)
   if (!canReplyInThread(root, viewer)) {
-    throw new DomainError('BAD_REQUEST', '该消息不支持回复')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.notReplyable'))
   }
   if (root.kind === 'broadcast') {
     // The role gate upstream refuses admins, so the replier is never in the list.
     const recipients = listRecipientUserIds(db, { adminsOnly: true })
     if (recipients.length === 0) {
-      throw new DomainError('BAD_REQUEST', '当前没有管理员可以接收回复')
+      throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.noAdminRecipients'))
     }
     const row = createAndFanOut(
       db,
@@ -360,7 +361,7 @@ export async function replyToThread(
   }
   const recipients = listThreadParticipantIds(db, input.threadId).filter((id) => id !== userId)
   if (recipients.length === 0) {
-    throw new DomainError('BAD_REQUEST', '该线程没有可接收回复的对象')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.noThreadRecipients'))
   }
   const row = createAndFanOut(
     db,

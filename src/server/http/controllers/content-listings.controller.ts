@@ -169,7 +169,12 @@ const search = publicProc
       requestFacts: context.requestFacts,
     }
     return runListing(async () => {
-      const listing = await searchLoader(context.db, { keyword: input.keyword, num: input.num, auditContext })
+      const listing = await searchLoader(context.db, {
+        keyword: input.keyword,
+        num: input.num,
+        locale: context.localization.locale,
+        auditContext,
+      })
       // Only a rendered result page counts — the blank/overflow 302s throw above.
       trackPageView(context.requestFacts, null, {
         isAdmin: context.viewer?.role === 'admin',

@@ -64,6 +64,24 @@ const CASES: Case[] = [
       'zh-HK': '上傳工作階段已過期，請重新上傳備份檔案。',
     },
   },
+  {
+    key: 'backup.error.weeklyDayRequired',
+    messages: {
+      'en-US': 'Weekly backups must specify a weekday from 1 to 7.',
+      'zh-CN': '每周备份必须指定 1–7 的星期几。',
+      'zh-TW': '每週備份必須指定 1–7 的星期幾。',
+      'zh-HK': '每週備份必須指定 1–7 的星期幾。',
+    },
+  },
+  {
+    key: 'backup.error.monthlyDayRequired',
+    messages: {
+      'en-US': 'Monthly backups must specify a day of month from 1 to 31.',
+      'zh-CN': '每月备份必须指定 1–31 的日期。',
+      'zh-TW': '每月備份必須指定 1–31 的日期。',
+      'zh-HK': '每月備份必須指定 1–31 的日期。',
+    },
+  },
 ]
 
 describe('backup messages — four locales', () => {

@@ -87,7 +87,7 @@ describe('notifications / producers', () => {
       const error = captureError(() => sendDirectMessage(db, adminId, targetId, { title: 't', body: 'b' }))
       expect(error).toBeInstanceOf(DomainError)
       expect((error as DomainError).code).toBe('NOT_FOUND')
-      expect((error as DomainError).message).toBe('目标用户不存在')
+      expect((error as DomainError).descriptor).toMatchObject({ messageKey: 'notifications.error.targetNotFound' })
     }
   })
 
@@ -134,13 +134,19 @@ describe('notifications / producers', () => {
   it('rejects a broadcast on a single-admin site with an honest 400', async () => {
     const adminId = await seedUser('admin', 'admin')
     expect(() => sendBroadcast(db, adminId, { title: 't', body: 'b', replyable: false })).toThrow(
-      '站点内还没有其他用户，公告无人可接收',
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.noAudience' }),
+      }),
     )
   })
 
   it('rejects a direct message to oneself', async () => {
     const adminId = await seedUser('admin', 'admin')
-    expect(() => sendDirectMessage(db, adminId, adminId, { title: 't', body: 'b' })).toThrow('不能给自己发送私信')
+    expect(() => sendDirectMessage(db, adminId, adminId, { title: 't', body: 'b' })).toThrow(
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.selfDirect' }),
+      }),
+    )
   })
 })
 
@@ -298,7 +304,7 @@ describe('notifications / threads & replies', () => {
     // not a silent send into the void.
     await expect(
       replyToThread(db, viewer(adminId, 'admin'), { threadId: root.threadId, body: '还在吗' }),
-    ).rejects.toThrow('该线程没有可接收回复的对象')
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'notifications.error.noThreadRecipients' } })
     expect(unreadCount(db, visitorId)).toBe(1)
   })
 
@@ -465,8 +471,12 @@ describe('notifications / recall (ADR-0007)', () => {
 
     recallMessage(db, root.id)
 
-    await expect(getThread(db, viewer(visitorId, 'visitor'), root.threadId)).rejects.toThrow('消息不存在')
-    await expect(getThread(db, viewer(adminId, 'admin'), root.threadId)).rejects.toThrow('消息不存在')
+    await expect(getThread(db, viewer(visitorId, 'visitor'), root.threadId)).rejects.toMatchObject({
+      descriptor: { messageKey: 'notifications.error.messageNotFound' },
+    })
+    await expect(getThread(db, viewer(adminId, 'admin'), root.threadId)).rejects.toMatchObject({
+      descriptor: { messageKey: 'notifications.error.messageNotFound' },
+    })
   })
 
   it('refuses new replies on a recalled replyable broadcast', async () => {
@@ -478,7 +488,7 @@ describe('notifications / recall (ADR-0007)', () => {
 
     await expect(
       replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: 'x' }),
-    ).rejects.toThrow('该消息不支持回复')
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'notifications.error.notReplyable' } })
   })
 
   it('leaves existing fork threads readable and replyable after the root is recalled', async () => {
@@ -551,20 +561,30 @@ describe('notifications / recall (ADR-0007)', () => {
     const visitorId = await seedUser('visitor', 'visitor')
     const direct = sendDirectMessage(db, adminId, visitorId, { title: '私信', body: 'hello' })
 
-    expect(() => recallMessage(db, direct.id)).toThrow('私信不支持撤回')
+    expect(() => recallMessage(db, direct.id)).toThrow(
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.recallDirect' }),
+      }),
+    )
     const inbox = await listInbox(db, visitorId, { tab: 'direct', limit: 10 })
     expect(inbox.items).toHaveLength(1)
     expect(inbox.items[0]!.title).toBe('私信')
   })
 
   it('rejects recalling a missing message', async () => {
-    expect(() => recallMessage(db, 9999)).toThrow('消息不存在')
+    expect(() => recallMessage(db, 9999)).toThrow(
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.messageNotFound' }),
+      }),
+    )
   })
 
   it('refuses a broadcast when the author is the only user, creating no rows', async () => {
     const adminId = await seedUser('admin', 'admin')
     expect(() => sendBroadcast(db, adminId, { title: 't', body: 'b', replyable: false })).toThrow(
-      '站点内还没有其他用户，公告无人可接收',
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.noAudience' }),
+      }),
     )
     expect((await listInbox(db, adminId, { tab: 'all', limit: 10 })).items).toHaveLength(0)
     expect(unreadCount(db, adminId)).toBe(0)

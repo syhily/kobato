@@ -11,6 +11,7 @@ import {
   insertSubscriber,
   updateSubscriber,
 } from '@/server/infra/db/operations/newsletter'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -22,8 +23,8 @@ const log = getLogger('newsletter.service')
 const CONFIRM_TTL_MS = 24 * 60 * 60 * 1000
 const CONFIRM_TTL_HOURS = CONFIRM_TTL_MS / (60 * 60 * 1000)
 
-const INVALID_CONFIRM_MESSAGE = '确认链接无效或已过期，请重新订阅。'
-const INVALID_UNSUBSCRIBE_MESSAGE = '退订链接无效。'
+const INVALID_CONFIRM_DESCRIPTOR = descriptorFor('newsletter.error.invalidConfirm')
+const INVALID_UNSUBSCRIBE_DESCRIPTOR = descriptorFor('newsletter.error.invalidUnsubscribe')
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
@@ -35,7 +36,7 @@ function newsletterEnabled(): boolean {
 
 function requireNewsletterEnabled(): void {
   if (!newsletterEnabled()) {
-    throw new DomainError('BAD_REQUEST', '站点暂未开放邮件订阅。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('newsletter.error.disabled'))
   }
 }
 
@@ -84,21 +85,21 @@ export async function subscribe(db: Database, rawEmail: string): Promise<void> {
   if (!sent.ok) {
     // Keep the pending row — a re-subscribe rotates the token and retries.
     log.warn('Confirm email not sent', { email, reason: sent.reason })
-    throw new DomainError('INTERNAL', '确认邮件发送失败，请稍后再试。')
+    throw new DomainError('INTERNAL', descriptorFor('newsletter.error.confirmMailFailed'))
   }
 }
 
 export async function confirm(db: Database, rawToken: string): Promise<NewsletterSubscriberRow> {
   requireNewsletterEnabled()
   if (!TOKEN_LEN_RE.test(rawToken)) {
-    throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_MESSAGE)
+    throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_DESCRIPTOR)
   }
   const row = await findSubscriberByConfirmTokenHash(db, sha256(rawToken))
   if (row?.status !== 'pending') {
-    throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_MESSAGE)
+    throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_DESCRIPTOR)
   }
   if (row.confirmTokenExpiresAt === null || row.confirmTokenExpiresAt.getTime() < Date.now()) {
-    throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_MESSAGE)
+    throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_DESCRIPTOR)
   }
   const updated = await updateSubscriber(db, row.id, {
     status: 'confirmed',
@@ -108,7 +109,7 @@ export async function confirm(db: Database, rawToken: string): Promise<Newslette
     unsubscribedAt: null,
   })
   if (updated === null) {
-    throw new DomainError('INTERNAL', '订阅确认失败，请稍后再试。')
+    throw new DomainError('INTERNAL', descriptorFor('newsletter.error.confirmFailed'))
   }
   return updated
 }
@@ -124,7 +125,7 @@ export async function unsubscribe(db: Database, id: number, signature: string): 
     return
   }
   if (!verifyUnsubscribeSignature(row.id, signature)) {
-    throw new DomainError('BAD_REQUEST', INVALID_UNSUBSCRIBE_MESSAGE)
+    throw new DomainError('BAD_REQUEST', INVALID_UNSUBSCRIBE_DESCRIPTOR)
   }
   if (row.status === 'unsubscribed') {
     return

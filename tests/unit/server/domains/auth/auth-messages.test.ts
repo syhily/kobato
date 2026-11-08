@@ -164,6 +164,15 @@ const CASES: Case[] = [
       'zh-HK': '無權撤銷其他管理員的工作階段。',
     },
   },
+  {
+    key: 'auth.passkey.error.rateLimited',
+    messages: {
+      'en-US': 'Too many attempts. Please try again later.',
+      'zh-CN': '操作过于频繁，请稍后再试。',
+      'zh-TW': '操作過於頻繁，請稍後再試。',
+      'zh-HK': '操作過於頻繁，請稍後再試。',
+    },
+  },
 ]
 
 describe('auth flow and perimeter messages — four-locale parity', () => {

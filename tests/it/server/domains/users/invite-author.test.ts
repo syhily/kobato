@@ -98,7 +98,7 @@ describe('integration / inviteAuthorWithRollback', () => {
 
     await expect(
       inviteAuthorWithRollback(db, 'Jane Author', 'jane@example.com', 'https://blog.example.com', 'Admin'),
-    ).rejects.toThrow(/邮件发送失败/)
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'users.error.mailFailedRolledBack' } })
 
     // The user row exists but is soft-deleted by the compensating call.
     const row = await findUserRow('jane@example.com')
@@ -119,7 +119,7 @@ describe('integration / inviteAuthorWithRollback', () => {
     // Second invitation: CONFLICT — no second user row, no second token.
     await expect(
       inviteAuthorWithRollback(db, 'Second Author', 'dup@example.com', 'https://blog.example.com', 'Admin'),
-    ).rejects.toThrow(/已被注册/)
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'users.error.emailTaken' } })
 
     const row = await findUserRow('dup@example.com')
     expect(row).not.toBeNull()

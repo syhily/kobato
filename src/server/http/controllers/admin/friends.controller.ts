@@ -1,10 +1,9 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { friendIdSchema, listFriendsSchema, upsertFriendSchema } from '@/server/domains/friends/schema'
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/domains/friends/service'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
 import { adminFriendDto } from '@/shared/contracts/friends'
 import { idFromString } from '@/shared/utils/id'
 
@@ -51,7 +50,7 @@ const remove = adminProc
   .handler(async ({ input, context }) => {
     const ok = await deleteAdminFriend(context.db, idFromString(input.id))
     if (!ok) {
-      throw new ORPCError('NOT_FOUND', { message: '友链不存在' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'friends.error.notFound')
     }
     recordAuditEventFromContext(context, {
       action: 'friend_deleted',

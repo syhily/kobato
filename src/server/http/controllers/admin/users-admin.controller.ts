@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
@@ -10,7 +9,7 @@ import {
   sendPasswordResetToUser,
   updateUserRoleWithGuard,
 } from '@/server/domains/users/services/admin'
-import { adminProc, passkeyGuard } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError, passkeyGuard } from '@/server/http/orpc-base'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/infra/rate-limit'
 import { resolveSiteOrigin } from '@/shared/config/site-origin'
 import { adminUserDto } from '@/shared/contracts/users'
@@ -61,7 +60,7 @@ const inviteAuthor = adminProc
       tryInviteByEmailRateLimit(idFromString(context.viewer.id), input.email),
     ])
     if (ipLimit.exceeded || emailLimit.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '邀请发送过于频繁，请稍后再试。' })
+      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'users.error.inviteTooFrequent')
     }
 
     const origin = resolveSiteOrigin(context.request)
@@ -110,7 +109,7 @@ const clearPasskeys = adminProc
     await deleteAllCredentials(context.db, targetId)
     const dto = await fetchAdminUserDto(context.db, targetId)
     if (!dto) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'users.error.notFound')
     }
     recordAuditEventFromContext(context, {
       action: 'passkeys_cleared',

@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process'
 import type { UpdateJobStatus } from '@/shared/contracts/update'
 
 import { runSelfUpdate } from '@/server/domains/update/pipeline'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { closeHttpServer, requestShutdown, restartServer } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
@@ -72,7 +73,7 @@ export interface StartUpdateJobOptions {
 
 export function startUpdateJob(tagName: string, options: StartUpdateJobOptions = {}): void {
   if (isBusy()) {
-    throw new DomainError('CONFLICT', '已有更新任务正在进行中')
+    throw new DomainError('CONFLICT', descriptorFor('update.error.jobRunning'))
   }
   current = { state: 'downloading', targetVersion: tagName }
   const restart = options.restart ?? scheduleSelfRestart

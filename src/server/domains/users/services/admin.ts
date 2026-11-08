@@ -25,6 +25,7 @@ import {
 } from '@/server/infra/db/operations/user'
 import { user } from '@/server/infra/db/schema/user'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/infra/email/sender'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { tryPasswordResetByTargetRateLimit } from '@/server/infra/rate-limit'
@@ -90,11 +91,11 @@ export async function fetchAdminUserDto(db: Database, id: number): Promise<Admin
 export async function muteUser(db: Database, id: number, muted: boolean): Promise<AdminUserDto> {
   const updated = await setUserMuted(db, id, muted)
   if (!updated) {
-    throw new DomainError('NOT_FOUND', '用户不存在或为管理员（管理员不可禁言）')
+    throw new DomainError('NOT_FOUND', descriptorFor('users.error.muteTargetNotFound'))
   }
   const dto = await fetchAdminUserDto(db, updated.id)
   if (!dto) {
-    throw new DomainError('NOT_FOUND', '用户不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('users.error.notFound'))
   }
   return dto
 }
@@ -132,18 +133,18 @@ export async function updateUserRoleWithGuard(
   actorId: string,
 ): Promise<RoleUpdateResult | null> {
   if (actorId === String(targetId)) {
-    throw new DomainError('FORBIDDEN', '不能修改自己的角色。')
+    throw new DomainError('FORBIDDEN', descriptorFor('users.error.cannotChangeOwnRole'))
   }
   // Last-admin check and role write share one sync transaction (node:sqlite).
   const result = db.transaction((tx) => {
     const target = findUserByIdForUpdate(tx, targetId)
     if (!target) {
-      throw new DomainError('NOT_FOUND', '用户不存在。')
+      throw new DomainError('NOT_FOUND', descriptorFor('users.error.notFound'))
     }
     if (target.role === 'admin' && newRole !== 'admin') {
       const adminCount = countAdmins(tx)
       if (adminCount <= 1) {
-        throw new DomainError('CONFLICT', '不能降级唯一的管理员。')
+        throw new DomainError('CONFLICT', descriptorFor('users.error.cannotDemoteSoleAdmin'))
       }
     }
     const updated = updateUserRole(tx, targetId, newRole)
@@ -170,14 +171,14 @@ export async function inviteAuthorWithRollback(
 ): Promise<InviteAuthorResult> {
   const existing = await findUserByEmail(db, email)
   if (existing !== null) {
-    throw new DomainError('CONFLICT', '该邮箱已被注册。')
+    throw new DomainError('CONFLICT', descriptorFor('users.error.emailTaken'))
   }
 
   // `insertAuthor` + `issueSetupToken` in one sync transaction (node:sqlite); a failure rolls back both.
   const { user, token } = db.transaction((tx) => {
     const [inserted] = insertAuthor(tx, name, email)
     if (!inserted) {
-      throw new DomainError('INTERNAL', '创建作者账户失败。')
+      throw new DomainError('INTERNAL', descriptorFor('users.error.createAuthorFailed'))
     }
     const { token } = issueSetupToken(tx, inserted.id)
     return { user: inserted, token }
@@ -195,14 +196,14 @@ export async function inviteAuthorWithRollback(
         email,
         cleanupErr,
       })
-      throw new DomainError('INTERNAL', '邮件发送失败，且账户清理失败。该邮箱已被占用，请手动处理。')
+      throw new DomainError('INTERNAL', descriptorFor('users.error.mailFailedCleanupFailed'))
     }
     log.error('author invite email failed — user soft-deleted', {
       email,
       reason: sendResult.reason,
       message: sendResult.message,
     })
-    throw new DomainError('INTERNAL', '邮件发送失败，已回滚账户创建。')
+    throw new DomainError('INTERNAL', descriptorFor('users.error.mailFailedRolledBack'))
   }
 
   return { success: true, userId: user.id }
@@ -215,11 +216,11 @@ export async function sendPasswordResetToUser(
 ): Promise<{ userId: number }> {
   const user = await findUserByEmail(db, email)
   if (!user || user.deletedAt) {
-    throw new DomainError('NOT_FOUND', '用户不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('users.error.notFound'))
   }
   const limit = await tryPasswordResetByTargetRateLimit(user.id)
   if (limit.exceeded) {
-    throw new DomainError('RATE_LIMITED', '该用户的重置邮件发送过于频繁，请稍后再试。')
+    throw new DomainError('RATE_LIMITED', descriptorFor('users.error.resetMailTooFrequent'))
   }
   const { token } = issueResetToken(db, user.id)
   const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
@@ -233,23 +234,23 @@ export async function softDeleteUserWithGuard(
   actorId: string,
 ): Promise<{ previousRole: 'admin' | 'author' | 'visitor' | null }> {
   if (actorId === String(targetId)) {
-    throw new DomainError('FORBIDDEN', '不能删除自己。')
+    throw new DomainError('FORBIDDEN', descriptorFor('users.error.cannotDeleteSelf'))
   }
   // Count check and delete are atomic, so concurrent deletes can't zero the admin set.
   const result = db.transaction((tx) => {
     const target = findUserByIdForUpdate(tx, targetId)
     if (!target) {
-      throw new DomainError('NOT_FOUND', '用户不存在')
+      throw new DomainError('NOT_FOUND', descriptorFor('users.error.notFound'))
     }
     if (target.role === 'admin') {
       const adminCount = countAdmins(tx)
       if (adminCount <= 1) {
-        throw new DomainError('CONFLICT', '不能删除唯一的管理员。')
+        throw new DomainError('CONFLICT', descriptorFor('users.error.cannotDeleteSoleAdmin'))
       }
     }
     const ok = softDeleteUserById(tx, targetId)
     if (!ok) {
-      throw new DomainError('NOT_FOUND', '用户不存在或已被删除')
+      throw new DomainError('NOT_FOUND', descriptorFor('users.error.deleteNotFound'))
     }
     return { previousRole: target.role }
   })
