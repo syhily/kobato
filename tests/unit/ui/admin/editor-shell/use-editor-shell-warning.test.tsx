@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 
-import { act, renderHook } from '@testing-library/react'
+import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+
+import { renderHookWithI18n } from '#/_helpers/i18n-render'
 
 // Save-warning surfacing (plan 058): the shell must surface a save
 // warning instead of swallowing it. Mutation slots follow persist call
@@ -63,6 +65,9 @@ import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/edit
 
 import { emptyLexicalBody } from '#/_helpers/lexical'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
+
+// The editor shell hooks call `useI18n()`, so every render needs the provider.
+const renderHook = renderHookWithI18n
 
 const WARNING = '图片库同步失败，部分图片可能无法正常显示。'
 

@@ -53,7 +53,7 @@ function makeConfig(
 ) {
   const config: EditorAdapterConfig<TestMeta, TestEntity, TestDetail, TestUpsertInput, { entity: TestEntity }> = {
     entityKind: 'post',
-    entityLabel: '文章',
+    entityLabelId: 'admin.editor.entity.post',
     listPath: '/admin/tests',
     bannerBasePath: '/tests',
     publicPath: (slug) => `/tests/${slug}`,
@@ -188,7 +188,7 @@ describe('ui/admin/editor-shell/makeEditorAdapter', () => {
     const detail: TestDetail = { entity: ENTITY, latestRevision: null, publishedRevision: null }
 
     expect(adapter.entityKind).toBe('post')
-    expect(adapter.entityLabel).toBe('文章')
+    expect(adapter.entityLabelId).toBe('admin.editor.entity.post')
     expect(adapter.listPath).toBe('/admin/tests')
     expect(adapter.publicPath('hello')).toBe('/tests/hello')
     expect(adapter.getEntity(detail)).toBe(ENTITY)

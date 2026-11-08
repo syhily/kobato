@@ -3,6 +3,8 @@ import type { NavigateFunction } from 'react-router'
 
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { EditorRouteError } from '@/ui/admin/editor-shared/EditorRouteError'
 import { EditorRouteSkeleton } from '@/ui/admin/editor-shared/EditorRouteSkeleton'
 
@@ -14,8 +16,8 @@ type EditorShellComponent<TDetail> = ComponentType<{
 }>
 
 export interface EditorRouteLoaderProps<TDetail, TError extends Error = Error> {
-  /** Display noun for the error state (`文章` / `页面`). */
-  entityLabel: string
+  /** Display-noun message id for the error state (`admin.editor.entity.*`). */
+  entityLabelId: UiMessageId
   /** Admin list path the error state's back button returns to. */
   listPath: string
   /** oRPC detail query (`orpcQuery.admin.<posts|pages>.get.queryOptions`). */
@@ -27,7 +29,7 @@ export interface EditorRouteLoaderProps<TDetail, TError extends Error = Error> {
 
 /** Wrapper owning the detail-fetch lifecycle; kept separate so the shells stay plain-props. */
 export function EditorRouteLoader<TDetail, TError extends Error = Error>({
-  entityLabel,
+  entityLabelId,
   listPath,
   queryOptions,
   shell: Shell,
@@ -36,7 +38,7 @@ export function EditorRouteLoader<TDetail, TError extends Error = Error>({
   const detailQuery = useQuery(queryOptions)
 
   if (detailQuery.error) {
-    return <EditorRouteError message={detailQuery.error.message} entityLabel={entityLabel} listPath={listPath} />
+    return <EditorRouteError message={detailQuery.error.message} entityLabelId={entityLabelId} listPath={listPath} />
   }
   if (detailQuery.isPending || detailQuery.data === undefined) {
     return <EditorRouteSkeleton />

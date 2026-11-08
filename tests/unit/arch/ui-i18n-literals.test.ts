@@ -76,6 +76,14 @@ const SCAN_ROOTS = [
   'src/client/lib',
   'src/client/components',
   'src/client/api',
+  // Step 4f: the editor slices — routes, the admin editor families and the
+  // client host glue. The six post/page integration files are already covered
+  // by the `src/ui/admin/posts` / `src/ui/admin/pages` roots above.
+  'src/routes/editor',
+  'src/ui/admin/editor',
+  'src/ui/admin/editor-shell',
+  'src/ui/admin/editor-shared',
+  'src/client/editor',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -124,6 +132,12 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/ui/admin/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'K' },
   { path: 'src/ui/admin/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
   { path: 'src/ui/admin/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  // Step 4f: the editor slices' technical tokens. `inkling-labels.ts` maps each
+  // app locale onto its label table — the tags ARE that mapping's identity. The
+  // revision-number sigil and the image-dimension separator are glyphs, not copy.
+  { path: 'src/client/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
+  { path: 'src/ui/admin/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
+  { path: 'src/ui/admin/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -165,6 +179,10 @@ describe('production sources', () => {
         'src/ui/admin/shared/SearchShortcutHint.tsx',
         'src/ui/admin/users/UserDetailView.tsx',
         'src/ui/admin/users/UserEditForm.tsx',
+        // Step 4f slice: the locale→label-table map and the two glyph sites.
+        'src/client/editor/inkling-labels.ts',
+        'src/ui/admin/editor-shell/RevisionsDrawer.tsx',
+        'src/ui/admin/editor/pickers/ImageLibraryPicker.tsx',
       ]),
     )
   })
@@ -196,6 +214,14 @@ describe('production sources', () => {
         'src/routes/admin/layout.tsx',
         'src/ui/components/pagination.tsx',
         'src/ui/components/combobox.tsx',
+        // Step 4f slice: the editor routes, admin editor families and client glue.
+        'src/routes/editor/layout.tsx',
+        'src/routes/editor/post/analytics.tsx',
+        'src/ui/admin/editor/PageBodyEditor.tsx',
+        'src/ui/admin/editor-shell/EditorToolbar.tsx',
+        'src/ui/admin/editor-shared/BasicInfoCard.tsx',
+        'src/client/editor/cards/music-player.tsx',
+        'src/client/editor/page-editor-card-config.ts',
       ]),
     )
   })

@@ -34,7 +34,7 @@ const PAGE_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
   UpsertPageMetaOutput
 > = {
   entityKind: 'page',
-  entityLabel: '页面',
+  entityLabelId: 'admin.editor.entity.page',
   listPath: '/admin/pages',
   bannerBasePath: '',
   publicPath: (slug) => `/${slug}`,

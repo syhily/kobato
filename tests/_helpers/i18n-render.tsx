@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react'
 
-import { render } from '@testing-library/react'
+import { render, renderHook, type RenderHookOptions, type RenderHookResult } from '@testing-library/react'
 
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { UiMessages } from '@/shared/i18n/messages/ui/en-US'
@@ -35,4 +35,20 @@ export function wrapWithI18n(node: ReactNode, options: I18nTestOptions = {}): Re
 
 export function renderWithI18n(ui: ReactElement, options: I18nTestOptions = {}) {
   return render(wrapWithI18n(ui, options))
+}
+
+export interface RenderHookWithI18nOptions<Props> extends Omit<RenderHookOptions<Props>, 'wrapper'> {
+  locale?: AppLocale
+}
+
+/** `renderHook` under a catalog provider (zh-CN unless `locale` says otherwise). */
+export function renderHookWithI18n<Result, Props>(
+  callback: (initialProps: Props) => Result,
+  options: RenderHookWithI18nOptions<Props> = {},
+): RenderHookResult<Result, Props> {
+  const { locale, ...rest } = options
+  return renderHook(callback, {
+    ...rest,
+    wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children, { locale }),
+  })
 }

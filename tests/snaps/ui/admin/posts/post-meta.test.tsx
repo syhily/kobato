@@ -282,7 +282,7 @@ function renderMetaPanel(entity: { id: string; slug: string; title: string; dele
     renderInRouter(
       <EditorMetaPanel
         entityKind="post"
-        entityLabel="文章"
+        entityLabelId="admin.editor.entity.post"
         entity={entity}
         metaOpen={true}
         setMetaOpen={noop}
@@ -329,7 +329,7 @@ describe('snapshot: EditorMetaPanel (sheet)', () => {
       renderInRouter(
         <EditorMetaPanel
           entityKind="post"
-          entityLabel="文章"
+          entityLabelId="admin.editor.entity.post"
           entity={{ id: post.id, slug: post.slug, title: post.title, deletedAt: post.deletedAt }}
           metaOpen={false}
           setMetaOpen={noop}

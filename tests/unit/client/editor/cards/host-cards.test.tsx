@@ -30,6 +30,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MusicPickerDialogProps } from '@/ui/admin/editor/pickers/MusicPickerDialog'
 
 import { makeAdminMusic } from '#/_helpers/catalog'
+import { tZhCN, makeTranslator } from '#/_helpers/i18n'
 import { wrapWithI18n } from '#/_helpers/i18n-render'
 import {
   BaseMusicPlayerNode,
@@ -46,7 +47,10 @@ import {
   TwoColumnPaneView,
   twoColumnCard,
 } from '@/client/editor/cards/two-column'
+import { kobatoInklingLabels } from '@/client/editor/inkling-labels'
 import { createHeadlessEditor } from '@/inkling'
+import { lookupLabel, resolveLabels } from '@/inkling/labels/inkling-labels'
+import { getHostCard } from '@/inkling/nodes/cards/host-card-registry'
 import { MUSIC_PLAYER_META_KEYS } from '@/shared/lexical/artifacts'
 import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@/shared/lexical/cards/card-html'
 import {
@@ -237,6 +241,19 @@ describe('host card parity — music-player', () => {
     expect(canvas).not.toContain('aria-label="播放"')
   })
 
+  it('localizes the pick placeholder', () => {
+    const empty: MusicPlayerCardMeta = { playerId: '', name: '', artist: '', cover: '', audioUrl: '', lyric: '' }
+    const unresolved = renderToStaticMarkup(
+      wrapWithI18n(<MusicPlayerCardComponent meta={empty} nodeKey="test-key" />, { locale: 'en-US' }),
+    )
+    expect(unresolved).toContain('Music player · click to choose a song')
+
+    const pending = renderToStaticMarkup(
+      wrapWithI18n(<MusicPlayerCardComponent meta={{ ...empty, playerId: 'p9' }} nodeKey="test-key" />),
+    )
+    expect(pending).toContain('音乐播放器 · p9（保存时解析）')
+  })
+
   it('keeps the export fallback aligned with the player paused state', () => {
     // The byte-level parity lives in tests/unit/ui/public/music-player —
     // here we only pin that the export fallback still ships the shared
@@ -400,11 +417,59 @@ describe('music-player pick seam', () => {
   })
 })
 
+describe('host card menu copy', () => {
+  // The card specs carry English fallbacks (the label the overlay uses when a
+  // locale table has no override); the active locale's label table supplies the
+  // other languages through `labelKey`. A spec must never bake a locale in.
+  const CARDS = [
+    {
+      nodeType: SOLUTION_NODE_TYPE,
+      label: 'Solution block',
+      desc: 'Q&A / hint (format-rich, same as a quote)',
+      zhLabel: '解答块',
+      zhDesc: '题解 / 提示（内部可排版，与引用块相同）',
+    },
+    {
+      nodeType: TWO_COLUMN_NODE_TYPE,
+      label: 'Two columns',
+      desc: 'Two side-by-side columns, each edited independently',
+      zhLabel: '左右分栏',
+      zhDesc: '两栏并排，每栏内容独立编辑',
+    },
+    {
+      nodeType: MUSIC_PLAYER_NODE_TYPE,
+      label: 'Music player',
+      desc: 'Embed a song from the music library',
+      zhLabel: '音乐播放器',
+      zhDesc: '嵌入一首音乐库中的歌曲',
+    },
+  ] as const
+
+  it('keeps the English fallback in the spec and localizes through labelKey', () => {
+    const zh = resolveLabels(kobatoInklingLabels('zh-CN'))
+    const en = resolveLabels(kobatoInklingLabels('en-US'))
+
+    for (const card of CARDS) {
+      const entry = getHostCard(card.nodeType)?.spec.menu?.[0]
+      expect(entry?.label).toBe(card.label)
+      expect(entry?.desc).toBe(card.desc)
+      expect(entry?.labelKey).toBeDefined()
+
+      // The overlay key exists in both tables: the fallback never renders for
+      // a supported locale.
+      const prefix = `menu.${entry?.labelKey}`
+      expect(lookupLabel(zh, `${prefix}.label`, card.label)).toBe(card.zhLabel)
+      expect(lookupLabel(zh, `${prefix}.desc`, card.desc)).toBe(card.zhDesc)
+      expect(lookupLabel(en, `${prefix}.label`, card.label)).toBe(card.label)
+    }
+  })
+})
+
 describe('music-player editing chrome', () => {
   it('declares replace and remove items wired to the pick seam and card deletion', () => {
     const onReplace = vi.fn()
     const onRemove = vi.fn()
-    const items = musicCardToolbarItems({ onReplace, onRemove })
+    const items = musicCardToolbarItems({ onReplace, onRemove }, tZhCN)
 
     expect(items).toHaveLength(2)
     const [replace, remove] = items
@@ -433,5 +498,11 @@ describe('music-player editing chrome', () => {
       remove.onClick(event)
     }
     expect(onRemove).toHaveBeenCalledTimes(1)
+  })
+
+  it('localizes the replace/remove affordances', () => {
+    const items = musicCardToolbarItems({ onReplace: vi.fn(), onRemove: vi.fn() }, makeTranslator('en-US'))
+
+    expect(items.map((item) => (item.kind === 'custom' ? item.label : ''))).toEqual(['Change song', 'Remove player'])
   })
 })

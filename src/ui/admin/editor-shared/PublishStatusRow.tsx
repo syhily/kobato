@@ -35,6 +35,7 @@ export function PublishStatusRow({
   onChangePublishedAt,
   disabled,
 }: PublishStatusRowProps) {
+  const { t } = useI18n()
   const fieldId = useId()
   const isScheduled = publishedAt !== ''
   const [now] = useState(() => Date.now())
@@ -43,18 +44,24 @@ export function PublishStatusRow({
   return (
     <div className="grid gap-3 rounded-xl border bg-muted/30 p-3">
       <div className="grid gap-1">
-        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布状态</Label>
+        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {t('admin.editor.publishStatus.publishLabel')}
+        </Label>
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <PublishBadge status={status} isFuture={isFuture} />
           <RevisionSummaryInline summary={revisionSummary} />
         </div>
       </div>
       <div className="grid gap-1 border-t border-border/60 pt-3">
-        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">保存状态</Label>
+        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {t('admin.editor.publishStatus.saveLabel')}
+        </Label>
         <SaveStatusLine status={saveStatus} />
       </div>
       <div className="grid gap-2">
-        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布时间</Label>
+        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {t('admin.editor.publishStatus.publishedAt')}
+        </Label>
         <RadioGroup
           value={isScheduled ? 'scheduled' : 'now'}
           onValueChange={(next) => {
@@ -77,15 +84,15 @@ export function PublishStatusRow({
             id={`${fieldId}-now`}
             value="now"
             active={!isScheduled}
-            label="立即发布"
-            description="使用当前时间"
+            label={t('admin.editor.publishStatus.publishNow')}
+            description={t('admin.editor.publishStatus.publishNowDescription')}
           />
           <LabelledRadioCard
             id={`${fieldId}-scheduled`}
             value="scheduled"
             active={isScheduled}
-            label="定时发布"
-            description="到点上线"
+            label={t('admin.editor.publishStatus.publishScheduled')}
+            description={t('admin.editor.publishStatus.publishScheduledDescription')}
           />
         </RadioGroup>
         {isScheduled ? (
@@ -94,9 +101,9 @@ export function PublishStatusRow({
         <p className="text-xs text-muted-foreground">
           {isScheduled
             ? isFuture
-              ? '点击「发布草稿」会按上述时间上线，到时间前公网会返回 404。'
-              : '已选择的时间不在未来，点击「发布草稿」会立刻上线。'
-            : '点击「发布草稿」会立刻上线，并使用当前时间作为对外展示的发布日期。'}
+              ? t('admin.editor.publishStatus.hintFuture')
+              : t('admin.editor.publishStatus.hintPast')
+            : t('admin.editor.publishStatus.hintImmediate')}
         </p>
       </div>
     </div>
@@ -104,56 +111,58 @@ export function PublishStatusRow({
 }
 
 function RevisionSummaryInline({ summary }: { summary: SidebarRevisionSummary | null }) {
+  const { t } = useI18n()
   if (summary === null || summary.kind === 'no-revision') {
-    return <span className="text-xs text-muted-foreground">当前还没有保存的修订</span>
+    return <span className="text-xs text-muted-foreground">{t('admin.editor.publishStatus.noRevision')}</span>
   }
   return null
 }
 
 function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFuture: boolean }) {
+  const { t } = useI18n()
   switch (status) {
     case 'never-saved':
       return (
         <Badge variant="outline" className="border-status-info-border bg-status-info-bg text-status-info-fg">
-          <CircleDashedIcon /> 尚未保存
+          <CircleDashedIcon /> {t('admin.editor.publishStatus.neverSaved')}
         </Badge>
       )
     case 'offline':
       return (
         <Badge variant="outline" className="border-status-error-border bg-status-error-bg text-status-error-fg">
-          <EyeOffIcon /> 已取消发布
+          <EyeOffIcon /> {t('admin.editor.publishStatus.unpublished')}
         </Badge>
       )
     case 'scheduled':
       return (
         <Badge variant="outline" className="border-status-info-border bg-status-info-bg text-status-info-fg">
-          <CalendarClockIcon /> 已计划发布
+          <CalendarClockIcon /> {t('admin.editor.publishStatus.scheduled')}
         </Badge>
       )
     case 'live':
       void isFuture
       return (
         <Badge variant="outline" className="border-status-success-border bg-status-success-bg text-status-success-fg">
-          <CheckCircle2Icon /> 已发布
+          <CheckCircle2Icon /> {t('admin.editor.publishStatus.published')}
         </Badge>
       )
     case 'live-with-draft-ahead':
       return (
         <Badge variant="outline" className="border-status-warn-border bg-status-warn-bg text-status-warn-fg">
-          <CheckCircle2Icon /> 已发布（有未发布草稿）
+          <CheckCircle2Icon /> {t('admin.editor.publishStatus.publishedWithDraft')}
         </Badge>
       )
   }
 }
 
 function SaveStatusLine({ status }: { status: SidebarSaveStatus }) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { timeZone } = useSiteIdentity()
   switch (status.kind) {
     case 'unsaved':
-      return <span className="text-xs text-muted-foreground">未保存</span>
+      return <span className="text-xs text-muted-foreground">{t('admin.editor.publishStatus.unsaved')}</span>
     case 'saving':
-      return <span className="text-xs text-muted-foreground">保存中…</span>
+      return <span className="text-xs text-muted-foreground">{t('admin.editor.publishStatus.saving')}</span>
     case 'saved':
       return (
         <span className="text-xs text-muted-foreground">
@@ -163,7 +172,7 @@ function SaveStatusLine({ status }: { status: SidebarSaveStatus }) {
     case 'error':
       return <span className="text-xs text-destructive">{status.message}</span>
     case 'conflict':
-      return <span className="text-xs text-destructive">检测到云端有更新的修订，请刷新后再保存。</span>
+      return <span className="text-xs text-destructive">{t('admin.editor.publishStatus.cloudAhead')}</span>
     case 'warning':
       return <span className="text-xs text-status-warn-fg">{status.message}</span>
     case 'info':

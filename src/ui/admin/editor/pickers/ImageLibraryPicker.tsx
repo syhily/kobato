@@ -10,6 +10,7 @@ import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Customizable trigger; `onPick` passes the full `AdminImageDto` (publicUrl + storagePath).
 
@@ -23,6 +24,7 @@ export interface ImageLibraryPickerProps {
 }
 
 export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChange }: ImageLibraryPickerProps) {
+  const { t } = useI18n()
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
   const setOpen = (next: boolean) => {
@@ -51,7 +53,7 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
                 trigger
               ) : (
                 <Button variant="outline" type="button">
-                  <ImageIcon /> 选择图片
+                  <ImageIcon /> {t('admin.editor.imagePicker.choose')}
                 </Button>
               )
             }
@@ -59,14 +61,14 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
         ) : null}
         <DialogContent className="max-h-dialog-max-h max-w-3xl">
           <DialogHeader>
-            <DialogTitle>从图片库选择</DialogTitle>
+            <DialogTitle>{t('admin.editor.imagePicker.title')}</DialogTitle>
           </DialogHeader>
           <div className="flex items-center gap-2">
             <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="按文件名 / 备注搜索"
+              placeholder={t('admin.editor.imagePicker.search')}
               className="max-w-md"
             />
             <Button
@@ -79,14 +81,14 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
                 setUploadOpen(true)
               }}
             >
-              <UploadIcon /> 上传图片
+              <UploadIcon /> {t('admin.images.upload')}
             </Button>
           </div>
           <div className="max-h-dialog-max-h-sm overflow-y-auto">
             {listQuery.isPending ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">加载中…</div>
+              <div className="p-8 text-center text-sm text-muted-foreground">{t('common.state.loading')}</div>
             ) : listQuery.data?.images.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">没有匹配的图片</div>
+              <div className="p-8 text-center text-sm text-muted-foreground">{t('admin.editor.imagePicker.empty')}</div>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                 {listQuery.data?.images.map((image: AdminImageDto) => (

@@ -28,9 +28,12 @@
   `openPicker` payload flag so the inkling pick seam opens the library picker), `image-library-pick`
   (the 'image' picker registration through the seam's variant channel, `registerCardPicker`, plus
   the pick→dataset write through the card write seam), `page-editor-upload` (paste/drop/file-dialog
-  uploads through `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (card policy + the
-  debounced server KaTeX preview channel), `inkling-labels` (the four per-locale label tables under
-  `inkling-labels/`, selected by `kobatoInklingLabels(locale)`),
+  uploads through `orpc.admin.images.upload`; the uploader reads `useI18n()` itself and memoizes
+  `upload` on the translator so the composer's identity contract holds), `page-editor-card-config` +
+  `render-math` (card policy + the debounced server KaTeX preview channel — both are factories
+  taking the translator, so `PageBodyEditor` memoizes one card config per `t`),
+  `inkling-labels` (the four per-locale label tables under `inkling-labels/`, selected by
+  `kobatoInklingLabels(locale)`),
   `use-focus-mode` (the writing-focus preference toggle),
   `editor-surface` (the composer skeleton both surfaces share: `useEditorSurface` — the
   registerAPI → editor-instance dance + body mount-snapshot/reseed wiring — and
@@ -48,7 +51,11 @@
   server each assemble their own class from the shared spec — then registers it via top-level
   `defineCard`. The decorate chrome components and the
   exportDOM markup share the spec's class/copy constants; `tests/unit/client/editor/cards/` pins
-  that parity (the WYSIWYG gate).
+  that parity (the WYSIWYG gate). The specs' `menu[].label`/`desc` are English fallbacks, never a
+  hardcoded locale — the composer's slash menu localizes them through `labelKey`
+  (`menu.host.<key>.*` in the `inkling-labels/` tables), and the card chrome's own copy
+  (placeholders, replace/remove affordances, pick placeholders) reads the `admin.editor.cards.*`
+  catalog keys through `useI18n()`.
 - `api/` — oRPC client. All RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@/client/api/client`; server errors arrive as `ORPCError` rejections with the zod-issue detail (`[{ message, path }]` in `data`) already folded into `error.message` by the link interceptor — consumers never inspect `data` themselves. TanStack Query wrappers live in `@/client/api/orpc-query`. Every public-site read flows through oRPC end to end: browser-side interactions use this `/rpc` client, and SSR data (public routes + root loader) goes through the read-only `content.*` group via the in-process caller (`@/server/http/ssr-caller`) — no route talks to domain services directly.
 
 ## Patterns

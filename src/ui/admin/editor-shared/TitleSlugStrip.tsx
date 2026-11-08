@@ -1,7 +1,10 @@
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface TitleSlugStripProps {
-  entityLabel: string
+  entityLabelId: UiMessageId
   title: string
   slug: string
   onTitleChange: (value: string) => void
@@ -10,20 +13,21 @@ interface TitleSlugStripProps {
 }
 
 export function TitleSlugStrip({
-  entityLabel,
+  entityLabelId,
   title,
   slug,
   onTitleChange,
   onSlugChange,
   disabled,
 }: TitleSlugStripProps) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col gap-1">
       <Input
-        aria-label={`${entityLabel}标题`}
+        aria-label={t('admin.editor.titleField', { entity: t(entityLabelId) })}
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
-        placeholder={`${entityLabel}标题`}
+        placeholder={t('admin.editor.titleField', { entity: t(entityLabelId) })}
         maxLength={200}
         disabled={disabled}
         className="h-auto border-0 bg-transparent px-0 text-2xl leading-tight font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-3xl dark:bg-transparent"
@@ -31,10 +35,10 @@ export function TitleSlugStrip({
       <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
         <span>/</span>
         <Input
-          aria-label="URL slug"
+          aria-label={t('admin.editor.slugAria')}
           value={slug}
           onChange={(e) => onSlugChange(e.target.value)}
-          placeholder="留空将根据标题按拼音生成"
+          placeholder={t('admin.editor.slugPlaceholder')}
           maxLength={80}
           disabled={disabled}
           className="h-7 grow border-0 bg-transparent px-0 text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"

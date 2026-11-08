@@ -78,7 +78,7 @@ export function MetaSidebar({
       <CoverOgCard
         coverId="page-cover"
         ogId="page-og"
-        entityLabel="页面"
+        entityLabelId="admin.editor.entity.page"
         cover={draft.cover}
         onCoverChange={(value) => set('cover', value)}
         og={draft.og}

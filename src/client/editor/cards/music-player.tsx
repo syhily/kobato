@@ -44,6 +44,7 @@ import {
 import { MUSIC_PLAYER_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 import { isSafeUrl } from '@/shared/sanitize-url'
 import { MusicPickerDialog } from '@/ui/admin/editor/pickers/MusicPickerDialog'
+import { useI18n, type I18nValue } from '@/ui/lib/I18nProvider'
 import { MusicPlayerCard } from '@/ui/public/music-player/music-player'
 
 export const BaseMusicPlayerNode = class extends generateDecoratorNode({
@@ -127,18 +128,21 @@ export function MusicCardPicker({ nodeKey, close, fromInsert }: CardPickerRender
  * affordance (the shared DELETE_CARD_COMMAND choreography), rendered through
  * the layer's selection-driven `CardActionToolbar` idiom.
  */
-export function musicCardToolbarItems({
-  onReplace,
-  onRemove,
-}: {
-  onReplace: () => void
-  onRemove: () => void
-}): CardToolbarItem[] {
+export function musicCardToolbarItems(
+  {
+    onReplace,
+    onRemove,
+  }: {
+    onReplace: () => void
+    onRemove: () => void
+  },
+  t: I18nValue['t'],
+): CardToolbarItem[] {
   return [
     {
       kind: 'custom',
       icon: 'replace',
-      label: '更换歌曲',
+      label: t('admin.editor.cards.music.replace'),
       dataTestId: 'replace-music-track',
       onClick: (event) => {
         event.stopPropagation()
@@ -148,7 +152,7 @@ export function musicCardToolbarItems({
     {
       kind: 'custom',
       icon: 'trash',
-      label: '删除播放器',
+      label: t('admin.editor.cards.music.remove'),
       dataTestId: 'remove-music-card',
       onClick: (event) => {
         event.stopPropagation()
@@ -167,6 +171,7 @@ export function musicCardToolbarItems({
 // (renderAudioCard reads the getters, AudioNodeComponent gets plain props).
 // Everything the pick seam and the chrome need crosses as the node KEY.
 export function MusicPlayerCardComponent({ meta, nodeKey }: { meta: MusicPlayerCardMeta; nodeKey: string }) {
+  const { t } = useI18n()
   const picker = useCardPicker()
   const { editor } = useCardChrome(nodeKey, isMusicPlayerCardNode)
 
@@ -174,7 +179,10 @@ export function MusicPlayerCardComponent({ meta, nodeKey }: { meta: MusicPlayerC
     // Unresolved card: the placeholder is the pick entry (the picker host is
     // a core plugin on every editable top-level surface, so no per-editor
     // wiring remains).
-    const label = meta.playerId === '' ? '音乐播放器 · 点击选择歌曲' : `音乐播放器 · ${meta.playerId}（保存时解析）`
+    const label =
+      meta.playerId === ''
+        ? t('admin.editor.cards.music.placeholder')
+        : t('admin.editor.cards.music.placeholderResolved', { playerId: meta.playerId })
     return (
       <div className={MUSIC_PLAYER_CARD_CLASSES.wrapper}>
         <button
@@ -207,12 +215,15 @@ export function MusicPlayerCardComponent({ meta, nodeKey }: { meta: MusicPlayerC
       </div>
       <CardActionToolbar
         nodeKey={nodeKey}
-        items={musicCardToolbarItems({
-          onReplace: () => picker.open(nodeKey),
-          onRemove: () => {
-            editor.dispatchCommand(DELETE_CARD_COMMAND, { cardKey: nodeKey })
+        items={musicCardToolbarItems(
+          {
+            onReplace: () => picker.open(nodeKey),
+            onRemove: () => {
+              editor.dispatchCommand(DELETE_CARD_COMMAND, { cardKey: nodeKey })
+            },
           },
-        })}
+          t,
+        )}
       />
     </>
   )
@@ -229,9 +240,11 @@ export const musicPlayerCard = defineCard({
   },
   menu: [
     {
-      label: '音乐播放器',
+      // The menu labels are English fallbacks; the overlay localizes them
+      // through `labelKey` (the inkling label tables).
+      label: 'Music player',
       labelKey: 'host.music-player',
-      desc: '嵌入一首音乐库中的歌曲',
+      desc: 'Embed a song from the music library',
       icon: Music2Icon,
       command: 'insert',
       insertParams: {},

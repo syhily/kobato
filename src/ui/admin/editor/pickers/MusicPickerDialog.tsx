@@ -10,6 +10,7 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Local admin library picker with an inline add flow; new tracks are prepended.
 
@@ -23,6 +24,7 @@ export interface MusicPickerDialogProps {
 }
 
 export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChange }: MusicPickerDialogProps) {
+  const { t } = useI18n()
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
   const setOpen = (next: boolean) => {
@@ -52,7 +54,7 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
                 trigger
               ) : (
                 <Button variant="outline" type="button">
-                  <Music2Icon /> 选择音乐
+                  <Music2Icon /> {t('admin.editor.musicPicker.choose')}
                 </Button>
               )
             }
@@ -60,29 +62,29 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
         ) : null}
         <DialogContent className="max-h-dialog-max-h max-w-2xl">
           <DialogHeader>
-            <DialogTitle>选择音乐</DialogTitle>
+            <DialogTitle>{t('admin.editor.musicPicker.title')}</DialogTitle>
           </DialogHeader>
           <div className="flex items-center gap-2">
             <SearchIcon className="size-4 text-muted-foreground" />
             <Input
               value={qInput}
               onChange={(e) => setQInput(e.target.value)}
-              placeholder="按曲名 / 演唱者搜索"
+              placeholder={t('admin.editor.musicPicker.search')}
               className="max-w-md"
             />
             <div className="flex-1" />
             <Button type="button" variant="outline" size="sm" onClick={() => setAddOpen(true)}>
-              <PlusIcon /> 添加音乐
+              <PlusIcon /> {t('admin.musics.add')}
             </Button>
           </div>
           <div className="max-h-dialog-max-h-sm overflow-y-auto">
             {musics === null ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">加载中…</div>
+              <div className="p-8 text-center text-sm text-muted-foreground">{t('common.state.loading')}</div>
             ) : musics.length === 0 ? (
               <div className="flex flex-col items-center gap-3 p-8 text-center text-sm text-muted-foreground">
-                <p>没有匹配的音乐。</p>
+                <p>{t('admin.editor.musicPicker.empty')}</p>
                 <Button type="button" variant="outline" size="sm" onClick={() => setAddOpen(true)}>
-                  <PlusIcon /> 通过 NetEase 搜索并添加
+                  <PlusIcon /> {t('admin.editor.musicPicker.searchHint')}
                 </Button>
               </div>
             ) : (

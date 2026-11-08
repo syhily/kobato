@@ -3,6 +3,7 @@ import type { NavigateFunction } from 'react-router'
 
 import { Trash2Icon, Undo2Icon } from 'lucide-react'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type {
   EditorSidebarState,
   SidebarPublishStatus,
@@ -15,6 +16,7 @@ import { useEditorDeleteRestore } from '@/ui/admin/editor-shell/use-editor-delet
 import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 /** Props handed to the entity's meta-sidebar render slot. */
 export interface MetaSidebarSlotProps<TMeta> {
@@ -38,8 +40,8 @@ export interface EditorMetaPanelDeleteRestore {
 
 export interface EditorMetaPanelProps<TMeta> {
   entityKind: 'post' | 'page'
-  /** Display noun woven into the Sheet / button copy (`文章` / `页面`). */
-  entityLabel: string
+  /** Display-noun message id woven into the Sheet / button copy (`admin.editor.entity.*`). */
+  entityLabelId: UiMessageId
   /** Edit-mode entity; `undefined` in create mode (extras stay unmounted). */
   entity: { id: string; slug: string; title: string; deletedAt: string | null } | undefined
   metaOpen: boolean
@@ -54,7 +56,7 @@ export interface EditorMetaPanelProps<TMeta> {
  *  elsewhere — a dual mount would run the history query and mutations twice. */
 export function EditorMetaPanel<TMeta>({
   entityKind,
-  entityLabel,
+  entityLabelId,
   entity,
   metaOpen,
   setMetaOpen,
@@ -63,9 +65,11 @@ export function EditorMetaPanel<TMeta>({
   renderSidebar,
   deleteRestore,
 }: EditorMetaPanelProps<TMeta>) {
+  const { t } = useI18n()
+  const entityLabel = t(entityLabelId)
   const { confirm, setConfirm, handleDelete, handleRestore } = useEditorDeleteRestore({
     entity,
-    entityLabel,
+    entityLabelId,
     listPath: deleteRestore.listPath,
     deleteFn: deleteRestore.deleteFn,
     restoreFn: deleteRestore.restoreFn,
@@ -94,7 +98,7 @@ export function EditorMetaPanel<TMeta>({
               type="button"
               onClick={handleRestore}
             >
-              <Undo2Icon /> 恢复{entityLabel}
+              <Undo2Icon /> {t('admin.editor.meta.restore', { entity: entityLabel })}
             </Button>
           ) : (
             <Button
@@ -104,7 +108,7 @@ export function EditorMetaPanel<TMeta>({
               type="button"
               onClick={handleDelete}
             >
-              <Trash2Icon /> 删除{entityLabel}
+              <Trash2Icon /> {t('admin.editor.meta.delete', { entity: entityLabel })}
             </Button>
           )}
         </div>
@@ -130,8 +134,8 @@ export function EditorMetaPanel<TMeta>({
         <Sheet open={metaOpen} onOpenChange={setMetaOpen}>
           <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
             <SheetHeader className="border-b">
-              <SheetTitle>{entityLabel}信息</SheetTitle>
-              <SheetDescription>编辑标题、Slug、SEO、发布时间等元数据。</SheetDescription>
+              <SheetTitle>{t('admin.editor.meta.infoTitle', { entity: entityLabel })}</SheetTitle>
+              <SheetDescription>{t('admin.editor.meta.infoDescription')}</SheetDescription>
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">{sidebarNode}</div>
           </SheetContent>

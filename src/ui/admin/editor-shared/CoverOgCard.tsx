@@ -1,12 +1,15 @@
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { GeneratedOgPreview, ImageField } from '@/ui/admin/editor-shared/ImageField'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface CoverOgCardProps {
   /** Field ids (`post-cover` / `page-cover`, …) — keep the label htmlFor wiring stable. */
   coverId: string
   ogId: string
-  /** Display noun used in the pre-save OG hint (文章 / 页面). */
-  entityLabel: string
+  /** Display-noun message id used in the pre-save OG hint (`admin.editor.entity.*`). */
+  entityLabelId: UiMessageId
   cover: string
   onCoverChange: (value: string) => void
   og: string
@@ -22,7 +25,7 @@ export interface CoverOgCardProps {
 export function CoverOgCard({
   coverId,
   ogId,
-  entityLabel,
+  entityLabelId,
   cover,
   onCoverChange,
   og,
@@ -32,35 +35,35 @@ export function CoverOgCard({
   ogPreviewSlug,
   disabled,
 }: CoverOgCardProps) {
+  const { t } = useI18n()
+  const entity = t(entityLabelId)
   const previewSlug = ogPreviewSlug ?? ''
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">封面 / OG 图</CardTitle>
+        <CardTitle className="text-base">{t('admin.editor.coverOg.title')}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <p className="text-xs text-muted-foreground">
-          两项均为可选。封面用于列表与文章顶部展示；OG 图供社交平台分享卡片使用，留空则回退到默认生成的 OG 卡片。
-        </p>
+        <p className="text-xs text-muted-foreground">{t('admin.editor.coverOg.description')}</p>
         <ImageField
           id={coverId}
-          label="封面图"
+          label={t('admin.editor.coverOg.coverLabel')}
           value={cover}
           onChange={onCoverChange}
           disabled={disabled}
           aspect="aspect-[16/9]"
-          urlPlaceholder="https://… 或从图片库挑选"
-          emptyHint="点击此处上传封面，或粘贴一张图片 URL。"
+          urlPlaceholder={t('admin.editor.coverOg.coverUrlPlaceholder')}
+          emptyHint={t('admin.editor.coverOg.coverEmptyHint')}
         />
         <ImageField
           id={ogId}
-          label="OG 图"
+          label={t('admin.editor.coverOg.ogLabel')}
           value={og}
           onChange={onOgChange}
           disabled={disabled}
           aspect="aspect-[1200/630]"
-          urlPlaceholder="留空则使用默认生成的 OG"
+          urlPlaceholder={t('admin.editor.coverOg.ogUrlPlaceholder')}
           emptyContent={
             previewSlug !== '' ? (
               <GeneratedOgPreview slug={previewSlug} cover={cover} title={title} summary={summary} />
@@ -68,8 +71,8 @@ export function CoverOgCard({
           }
           emptyHint={
             previewSlug !== ''
-              ? '当前展示的是默认生成的 OG。点击图片可上传一张专属 OG 覆盖。'
-              : `${entityLabel}首次保存后，这里会展示默认生成的 OG 预览。也可现在点击上传一张专属 OG。`
+              ? t('admin.editor.coverOg.ogGeneratedHint')
+              : t('admin.editor.coverOg.ogPreSaveHint', { entity })
           }
         />
       </CardContent>

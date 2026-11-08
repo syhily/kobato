@@ -84,7 +84,7 @@ export function PostMetaSidebar({
       <CoverOgCard
         coverId="post-cover"
         ogId="post-og"
-        entityLabel="文章"
+        entityLabelId="admin.editor.entity.post"
         cover={draft.cover}
         onCoverChange={(value) => set('cover', value)}
         og={draft.og}

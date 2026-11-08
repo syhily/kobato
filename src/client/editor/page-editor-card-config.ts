@@ -1,6 +1,7 @@
-// The page editor's `cardConfig` (plan M3): a module-level constant because
-// nothing it carries is reactive — the composer's whole-value transport
-// memoizes per leaf, but a stable identity keeps every channel quiet.
+// The page editor's `cardConfig` (plan M3), built per translator: the
+// composer's whole-value transport memoizes per leaf, so `PageBodyEditor`
+// holds one instance per `t` (`useMemo` on the translator identity) and the
+// channels stay quiet until the locale changes.
 //
 // - `image.allowedWidths: ['regular']`: kobato's image float vocabulary
 //   (left/center/right) rides KobatoImageNode's own `layout` property, so the
@@ -20,10 +21,11 @@
 // cards are not in the page editor's node set.
 
 import type { CardConfig, LibraryImageItem } from '@/inkling'
+import type { I18nValue } from '@/ui/lib/I18nProvider'
 
 import { orpc } from '@/client/api/client'
 import { toSiteOwnedImageSrc } from '@/client/editor/image-insert-override'
-import { renderMath } from '@/client/editor/render-math'
+import { makeRenderMath } from '@/client/editor/render-math'
 
 async function searchLibraryImages(query: string): Promise<LibraryImageItem[] | undefined> {
   const trimmed = query.trim()
@@ -43,8 +45,10 @@ async function searchLibraryImages(query: string): Promise<LibraryImageItem[] | 
   }))
 }
 
-export const pageEditorCardConfig: CardConfig = {
-  image: { allowedWidths: ['regular'] },
-  imageLibrary: { search: searchLibraryImages },
-  renderMath,
+export function makePageEditorCardConfig(t: I18nValue['t']): CardConfig {
+  return {
+    image: { allowedWidths: ['regular'] },
+    imageLibrary: { search: searchLibraryImages },
+    renderMath: makeRenderMath(t('admin.editor.math.renderFailed')),
+  }
 }

@@ -185,6 +185,13 @@ unrelated concerns.
   tables) lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
   through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
   `src/styles/inkling-editor.css`.
+- Editor copy is translated like the rest of the admin surface: every string lives in the
+  `admin.editor.*` catalog namespace and is read through `useI18n()` (`t` / `tRich`). The entity
+  noun ("post" / "page") never crosses a shared boundary as text — `makeEditorAdapter` configs and
+  the `editor-shell`/`editor-shared` component props carry `entityLabelId` (`UiMessageId`, e.g.
+  `admin.editor.entity.post`) and each site resolves it with `t(entityLabelId, { entity })` inside
+  an ICU template. Inkling's host-card `menu[].label`/`desc` stay English fallbacks; the active
+  locale's label table supplies the rendered text through `labelKey` (`menu.host.*`).
 - Comment editor: `@/ui/public/comments/CommentBodyEditor` wraps the inkling composer with
   the trimmed comment node set. Every consumer mounts it through
   `@/ui/public/comments/LazyCommentBodyEditor` — the composer, the inkling island, and

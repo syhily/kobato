@@ -15,6 +15,8 @@ type MathRenderResult = { mathml?: string; error?: string }
 
 interface PendingMathRender {
   timer: ReturnType<typeof setTimeout>
+  /** The first caller's translated fallback; a coalesced retry keeps it. */
+  fallbackMessage: string
   waiters: Array<(result: MathRenderResult) => void>
 }
 
@@ -35,27 +37,30 @@ function fireMathRender(key: string, tex: string, display: boolean): void {
       }
     })
     .catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : '公式渲染失败'
+      const message = error instanceof Error ? error.message : pending.fallbackMessage
       for (const resolve of pending.waiters) {
         resolve({ error: message })
       }
     })
 }
 
-export const renderMath: NonNullable<CardConfig['renderMath']> = ({ tex, display }) => {
-  const key = `${display ? '1' : '0'}${tex}`
-  const existing = pendingMathRenders.get(key)
-  if (existing !== undefined) {
-    clearTimeout(existing.timer)
+export function makeRenderMath(fallbackMessage: string): NonNullable<CardConfig['renderMath']> {
+  return ({ tex, display }) => {
+    const key = `${display ? '1' : '0'}${tex}`
+    const existing = pendingMathRenders.get(key)
+    if (existing !== undefined) {
+      clearTimeout(existing.timer)
+      return new Promise<MathRenderResult>((resolve) => {
+        existing.waiters.push(resolve)
+        existing.timer = setTimeout(() => fireMathRender(key, tex, display), MATH_RENDER_DEBOUNCE_MS)
+      })
+    }
     return new Promise<MathRenderResult>((resolve) => {
-      existing.waiters.push(resolve)
-      existing.timer = setTimeout(() => fireMathRender(key, tex, display), MATH_RENDER_DEBOUNCE_MS)
+      pendingMathRenders.set(key, {
+        waiters: [resolve],
+        fallbackMessage,
+        timer: setTimeout(() => fireMathRender(key, tex, display), MATH_RENDER_DEBOUNCE_MS),
+      })
     })
   }
-  return new Promise<MathRenderResult>((resolve) => {
-    pendingMathRenders.set(key, {
-      waiters: [resolve],
-      timer: setTimeout(() => fireMathRender(key, tex, display), MATH_RENDER_DEBOUNCE_MS),
-    })
-  })
 }

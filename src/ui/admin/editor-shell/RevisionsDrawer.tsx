@@ -86,7 +86,7 @@ export function RevisionHistoryDrawer({
       <SheetTrigger
         render={
           <Button variant="ghost" size="sm" className="w-full justify-start" type="button">
-            <HistoryIcon /> 历史版本
+            <HistoryIcon /> {t('admin.editor.revisions.title')}
           </Button>
         }
       />
@@ -99,17 +99,17 @@ export function RevisionHistoryDrawer({
                   variant="ghost"
                   size="icon"
                   onClick={() => setSelectedId(null)}
-                  title="返回列表"
-                  aria-label="返回列表"
+                  title={t('admin.editor.backToList')}
+                  aria-label={t('admin.editor.backToList')}
                 >
                   <ArrowLeftIcon />
                 </Button>
-                <span>R{selectedRevision.revisionNo} · 与当前正文对比</span>
+                <span>{t('admin.editor.revisions.compareTitle', { revision: selectedRevision.revisionNo })}</span>
               </>
             ) : (
               <>
                 <HistoryIcon className="size-4" />
-                <span>历史版本</span>
+                <span>{t('admin.editor.revisions.title')}</span>
               </>
             )}
           </SheetTitle>
@@ -160,14 +160,17 @@ interface RevisionListViewProps {
 }
 
 function RevisionListView({ revisions, currentToken, isFetching, onSelect, onRefresh }: RevisionListViewProps) {
+  const { t } = useI18n()
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between p-4 pt-0">
         <span className="text-xs text-muted-foreground">
-          {revisions !== null ? `${revisions.length} 个修订` : '加载中…'}
+          {revisions !== null
+            ? t('admin.editor.revisions.count', { count: revisions.length })
+            : t('common.state.loading')}
         </span>
         <Button variant="outline" size="sm" className="border-ink-4" onClick={onRefresh} disabled={isFetching}>
-          <RefreshCcwIcon /> 刷新
+          <RefreshCcwIcon /> {t('common.action.reload')}
         </Button>
       </div>
       <ol className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-4">
@@ -180,7 +183,9 @@ function RevisionListView({ revisions, currentToken, isFetching, onSelect, onRef
           />
         ))}
         {revisions !== null && revisions.length === 0 ? (
-          <li className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">暂无历史</li>
+          <li className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">
+            {t('admin.editor.revisions.empty')}
+          </li>
         ) : null}
       </ol>
     </div>
@@ -194,7 +199,7 @@ interface RevisionRowProps {
 }
 
 function RevisionRow({ revision, isCurrent, onClick }: RevisionRowProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { timeZone } = useSiteIdentity()
   return (
     <li>
@@ -210,19 +215,29 @@ function RevisionRow({ revision, isCurrent, onClick }: RevisionRowProps) {
       >
         <div className="flex items-center gap-2">
           <Badge variant={revision.status === 'published' ? 'default' : 'secondary'}>
-            R{revision.revisionNo} · {revision.status === 'published' ? '已发布' : '草稿'}
+            R{revision.revisionNo} ·{' '}
+            {revision.status === 'published'
+              ? t('admin.editor.revisions.statusPublished')
+              : t('admin.editor.revisions.statusDraft')}
           </Badge>
-          {isCurrent ? <Badge variant="outline">当前</Badge> : null}
+          {isCurrent ? <Badge variant="outline">{t('admin.editor.revisions.current')}</Badge> : null}
         </div>
         <div className="mt-2 text-xs text-muted-foreground">
-          创建于 {formatDateTime(new Date(revision.createdAt), { locale, timeZone })}
+          {t('admin.editor.revisions.createdAt', {
+            time: formatDateTime(new Date(revision.createdAt), { locale, timeZone }),
+          })}
         </div>
         <div className="text-xs text-muted-foreground">
-          更新于 {formatDateTime(new Date(revision.updatedAt), { locale, timeZone })}
+          {t('admin.editor.revisions.updatedAt', {
+            time: formatDateTime(new Date(revision.updatedAt), { locale, timeZone }),
+          })}
         </div>
         {revision.headings.length > 0 || revision.imageSources.length > 0 ? (
           <div className="mt-2 text-xs text-muted-foreground">
-            {revision.headings.length} 个标题 · {revision.imageSources.length} 张图片
+            {t('admin.editor.revisions.stats', {
+              headings: revision.headings.length,
+              images: revision.imageSources.length,
+            })}
           </div>
         ) : null}
       </button>
@@ -238,7 +253,7 @@ interface RevisionDetailViewProps {
 }
 
 function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: RevisionDetailViewProps) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { timeZone } = useSiteIdentity()
   const revisionBody = revision.body
   const diff = useMemo(() => diffBodies(revisionBody, currentBody), [revisionBody, currentBody])
@@ -248,19 +263,34 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
     <div className="flex min-h-0 grow flex-col gap-3 overflow-hidden px-4 pb-4">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <Badge variant={revision.status === 'published' ? 'default' : 'secondary'}>
-          R{revision.revisionNo} · {revision.status === 'published' ? '已发布' : '草稿'}
+          R{revision.revisionNo} ·{' '}
+          {revision.status === 'published'
+            ? t('admin.editor.revisions.statusPublished')
+            : t('admin.editor.revisions.statusDraft')}
         </Badge>
-        <span>更新于 {formatDateTime(new Date(revision.updatedAt), { locale, timeZone })}</span>
-        <span className="ml-auto">{changedCount === 0 ? '与当前一致' : `${changedCount} 处差异`}</span>
+        <span>
+          {t('admin.editor.revisions.updatedAt', {
+            time: formatDateTime(new Date(revision.updatedAt), { locale, timeZone }),
+          })}
+        </span>
+        <span className="ml-auto">
+          {changedCount === 0
+            ? t('admin.editor.revisions.same')
+            : t('admin.editor.revisions.diffCount', { count: changedCount })}
+        </span>
       </div>
       <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-xl border bg-card">
         {/* key-remount: switching revisions rebuilds both panes, which resets their scroll positions */}
         <RevisionPanes key={revision.id} diff={diff} />
       </div>
       <div className="flex items-center justify-between gap-2 rounded-xl border bg-card p-3 text-xs text-muted-foreground">
-        <span>选择此版本会用历史正文替换编辑器内容；更改不会立刻保存到服务器，需要再点一次「保存」或「发布」。</span>
-        <Button onClick={onAdopt} disabled={isCurrent} title={isCurrent ? '当前正在编辑此版本' : '使用此版本'}>
-          <CheckIcon /> {isCurrent ? '当前' : '选择此版本'}
+        <span>{t('admin.editor.revisions.adoptHint')}</span>
+        <Button
+          onClick={onAdopt}
+          disabled={isCurrent}
+          title={isCurrent ? t('admin.editor.revisions.adoptCurrentTitle') : t('admin.editor.revisions.adoptTitle')}
+        >
+          <CheckIcon /> {isCurrent ? t('admin.editor.revisions.current') : t('admin.editor.revisions.adopt')}
         </Button>
       </div>
     </div>
@@ -269,6 +299,7 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
 
 /** The two scroll-synced diff panes. Remounted per revision (key) so scroll starts at the top. */
 function RevisionPanes({ diff }: { diff: ReturnType<typeof diffBodies> }) {
+  const { t } = useI18n()
   const leftScrollRef = useRef<HTMLDivElement>(null)
   const rightScrollRef = useRef<HTMLDivElement>(null)
   const syncScrollLockRef = useRef(false)
@@ -309,13 +340,17 @@ function RevisionPanes({ diff }: { diff: ReturnType<typeof diffBodies> }) {
   return (
     <>
       <div className="flex min-h-0 flex-col border-r">
-        <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">历史版本</div>
+        <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">
+          {t('admin.editor.revisions.paneOld')}
+        </div>
         <div ref={leftScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
           <DiffPanel diff={diff} side="left" />
         </div>
       </div>
       <div className="flex min-h-0 flex-col">
-        <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">当前正文</div>
+        <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">
+          {t('admin.editor.revisions.paneCurrent')}
+        </div>
         <div ref={rightScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
           <DiffPanel diff={diff} side="right" />
         </div>

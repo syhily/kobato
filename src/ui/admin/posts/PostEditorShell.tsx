@@ -35,7 +35,7 @@ const POST_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
   UpsertPostMetaOutput
 > = {
   entityKind: 'post',
-  entityLabel: '文章',
+  entityLabelId: 'admin.editor.entity.post',
   listPath: '/admin/posts',
   bannerBasePath: '/posts',
   publicPath: (slug) => `/posts/${slug}`,

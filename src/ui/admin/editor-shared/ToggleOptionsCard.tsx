@@ -1,5 +1,6 @@
 import { ToggleRow } from '@/ui/admin/editor-shared/ToggleRow'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 /** Shape shared by `POST_META_TOGGLE_FIELDS` / `PAGE_META_TOGGLE_FIELDS` rows. */
 export interface ToggleField {
@@ -25,12 +26,13 @@ export function ToggleOptionsCard<TField extends ToggleField>({
   onToggle,
   disabled,
 }: ToggleOptionsCardProps<TField>) {
+  const { t } = useI18n()
   const visibleFields = fieldVisible === undefined ? fields : fields.filter(fieldVisible)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">展示选项</CardTitle>
+        <CardTitle className="text-base">{t('admin.editor.toggleOptions')}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-3">
         {visibleFields.map((field) => (

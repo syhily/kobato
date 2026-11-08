@@ -7,6 +7,7 @@ import { titleMeta } from '@/shared/seo/title-meta'
 import { idFromString } from '@/shared/utils/id'
 import { PostAnalyticsHeader, PostAnalyticsView } from '@/ui/admin/analytics/PostAnalyticsView'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 import type { Route } from './+types/analytics'
 
@@ -29,6 +30,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export const meta = titleMeta('meta.title.admin.postAnalytics')
 
 export default function EditorPostAnalyticsPage({ loaderData }: Route.ComponentProps) {
+  const { t } = useI18n()
   const { post, counters, initialMetrics } = loaderData
   const state = useAnalyticsState()
 
@@ -40,7 +42,7 @@ export default function EditorPostAnalyticsPage({ loaderData }: Route.ComponentP
           to={`/editor/post/${post.id}`}
           className="inline-flex items-center gap-1 rounded-md border bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
         >
-          返回编辑器
+          {t('admin.editor.analytics.back')}
         </Link>
       </div>
 
@@ -49,13 +51,13 @@ export default function EditorPostAnalyticsPage({ loaderData }: Route.ComponentP
           to={`/editor/post/${post.id}`}
           className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
-          编辑
+          {t('admin.editor.analytics.edit')}
         </Link>
         <Link
           to={`/editor/post/${post.id}/analytics`}
           className="border-b-2 border-foreground px-4 py-2 text-sm font-medium text-foreground"
         >
-          分析
+          {t('admin.editor.analytics.analytics')}
         </Link>
       </div>
 

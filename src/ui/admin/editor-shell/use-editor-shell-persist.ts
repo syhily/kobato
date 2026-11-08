@@ -47,6 +47,7 @@ import { useActionBanner } from '@/ui/admin/editor-shell/use-action-banner'
 import { useEditorShellPersistConflict } from '@/ui/admin/editor-shell/use-editor-shell-persist-conflict'
 import { useEditorShellPersistMutations } from '@/ui/admin/editor-shell/use-editor-shell-persist-mutations'
 import { useEditorShellPersistRace } from '@/ui/admin/editor-shell/use-editor-shell-persist-race'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 /** Live draft snapshot the persist flows read (autosave + the four persist handlers). */
 export interface EditorShellPersistDraft<TMeta> {
@@ -111,6 +112,7 @@ export function useEditorShellPersist<
   TEntity extends EntityLike,
   TUpsertMetaInput = Record<string, unknown>,
 >(args: UseEditorShellPersistArgs<TMeta, TEntity, TUpsertMetaInput>) {
+  const { t } = useI18n()
   const { detail, draft, localDraftConfig, mutations, metaDraftFromEntity, notifications, routing, createDraft } = args
   const { meta, body, initialBody } = draft
   const { upsertMetaFn, saveDraftFn, publishFn, unpublishFn, buildUpsertMetaPayload, directSaveDraft } = mutations
@@ -205,10 +207,12 @@ export function useEditorShellPersist<
         handleBodySavedRef.current(result)
         return verdictBodySave(result).kind === 'conflict' ? 'conflict' : 'saved'
       } catch (error) {
-        throw new Error(error instanceof Error ? error.message : '保存失败', { cause: error })
+        throw new Error(error instanceof Error ? error.message : t('admin.editor.persist.saveFailed'), {
+          cause: error,
+        })
       }
     },
-    [isEditing, detail, expectedToken, directSaveDraft],
+    [isEditing, detail, expectedToken, directSaveDraft, t],
   )
 
   // Opening-body baseline seed, captured once at mount (audit P1-1): the
@@ -288,7 +292,10 @@ export function useEditorShellPersist<
     try {
       savedEntity = await upsertMetaMutation.mutateAsync(buildUpsertMetaPayload({ meta, publishedAt }))
     } catch (error) {
-      setStatus({ kind: 'error', message: error instanceof Error ? error.message : '保存失败' })
+      setStatus({
+        kind: 'error',
+        message: error instanceof Error ? error.message : t('admin.editor.persist.saveFailed'),
+      })
       setIsCreating(false)
       return
     }
@@ -303,7 +310,7 @@ export function useEditorShellPersist<
     } catch (error) {
       setStatus({
         kind: 'error',
-        message: error instanceof Error ? error.message : '保存正文失败',
+        message: error instanceof Error ? error.message : t('admin.editor.persist.saveBodyFailed'),
       })
       setIsCreating(false)
       void navigate(editPath(savedEntity.id), { replace: true })
@@ -338,6 +345,7 @@ export function useEditorShellPersist<
     noteServerConflict,
     editPath,
     navigate,
+    t,
   ])
 
   const persistSave = useCallback(() => {
@@ -378,7 +386,7 @@ export function useEditorShellPersist<
 
   const persistPublish = useCallback(() => {
     if (!isEditing || !detail) {
-      setStatus({ kind: 'error', message: '请先保存基本信息再发布。' })
+      setStatus({ kind: 'error', message: t('admin.editor.persist.saveMetaFirst') })
       return
     }
     setStatus({ kind: 'saving' })
@@ -402,6 +410,7 @@ export function useEditorShellPersist<
     serverPublishedAtIso,
     publishMutation,
     beginActionBanner,
+    t,
   ])
 
   const persistUnpublish = useCallback(() => {
@@ -432,9 +441,12 @@ export function useEditorShellPersist<
         setBaseline(conflict.localBody)
       }
     } catch (error) {
-      setStatus({ kind: 'error', message: error instanceof Error ? error.message : '保存失败' })
+      setStatus({
+        kind: 'error',
+        message: error instanceof Error ? error.message : t('admin.editor.persist.saveFailed'),
+      })
     }
-  }, [conflict, isEditing, detail, expectedToken, directSaveDraft, setBaseline, replaceBody, resolveConflict])
+  }, [conflict, isEditing, detail, expectedToken, directSaveDraft, setBaseline, replaceBody, resolveConflict, t])
 
   const adoptServerVersion = useCallback(() => {
     replaceBody(initialBody, `${detail?.entity.id ?? 'new'}:adopt-server:${Date.now()}`)
@@ -449,9 +461,12 @@ export function useEditorShellPersist<
         return
       }
       replaceBody(revision.body, `${detail.entity.id}:adopt-revision:${revision.revisionNo}:${Date.now()}`)
-      setStatus({ kind: 'info', message: `已载入 R${revision.revisionNo}，记得保存或发布以生效。` })
+      setStatus({
+        kind: 'info',
+        message: t('admin.editor.persist.revisionLoaded', { revision: revision.revisionNo }),
+      })
     },
-    [isEditing, detail, replaceBody],
+    [isEditing, detail, replaceBody, t],
   )
 
   const isPending = isSubmittingAny || isCreating

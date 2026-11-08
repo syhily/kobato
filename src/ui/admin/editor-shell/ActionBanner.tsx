@@ -2,6 +2,7 @@ import { ExternalLinkIcon, XIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface ActionBannerProps {
   kind: 'draft' | 'published'
@@ -12,11 +13,9 @@ export interface ActionBannerProps {
 
 // Post-save banner — manually dismissed; a follow-up successful action replaces it in place.
 export function ActionBanner({ kind, slug, basePath, onClose }: ActionBannerProps) {
+  const { t } = useI18n()
   const href = kind === 'draft' ? `${basePath}/${slug}?draft=true` : `${basePath}/${slug}`
-  const message =
-    kind === 'draft'
-      ? '草稿已保存，可通过下方链接预览最新内容（仅管理员可见草稿）：'
-      : '草稿已发布，可通过下方链接访问最新内容：'
+  const message = kind === 'draft' ? t('admin.editor.banner.draft') : t('admin.editor.banner.published')
   const themeClass =
     kind === 'draft'
       ? 'border-status-warn-border/30 bg-status-warn-bg text-status-warn-fg'
@@ -35,12 +34,12 @@ export function ActionBanner({ kind, slug, basePath, onClose }: ActionBannerProp
       <button
         type="button"
         onClick={onClose}
-        aria-label="关闭提示"
-        title="关闭提示"
+        aria-label={t('admin.editor.banner.closeAria')}
+        title={t('admin.editor.banner.closeAria')}
         className={cn('ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5', closeBtnClass)}
       >
         <XIcon className="size-3.5" />
-        <span>关闭</span>
+        <span>{t('common.action.close')}</span>
       </button>
     </output>
   )

@@ -37,19 +37,20 @@
 
 import '@/styles/inkling-editor.css'
 import { FocusIcon } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { blockQuoteAsideCycle } from '@/client/editor/block-quote-aside-cycle'
 import { EditorSurfaceComposer, useEditorSurface } from '@/client/editor/editor-surface'
 import { registerKobatoImageInsertCommands } from '@/client/editor/image-insert-override'
-import { pageEditorCardConfig } from '@/client/editor/page-editor-card-config'
+import { makePageEditorCardConfig } from '@/client/editor/page-editor-card-config'
 import { PAGE_EDITOR_NODES } from '@/client/editor/page-editor-nodes'
 import { pageEditorFileUploader } from '@/client/editor/page-editor-upload'
 import { useFocusModePreference } from '@/client/editor/use-focus-mode'
 import { InklingEditor } from '@/inkling'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 
 export interface PageBodyEditorProps {
@@ -68,6 +69,7 @@ export interface PageBodyEditorProps {
 }
 
 export function PageBodyEditor(props: PageBodyEditorProps) {
+  const { t } = useI18n()
   const hydrated = useHydrated()
   if (!hydrated) {
     // SSR/hydration placeholder: same shell + scroll container as the hydrated
@@ -77,7 +79,7 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
         <div data-kobato-editor-scroll="" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           {props.header}
           <div className="flex items-center justify-center p-4 py-24 text-sm text-muted-foreground">
-            编辑器正在加载…
+            {t('admin.editor.body.loading')}
           </div>
         </div>
       </div>
@@ -87,6 +89,8 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
 }
 
 function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, header }: PageBodyEditorProps) {
+  const { t } = useI18n()
+  const cardConfig = useMemo(() => makePageEditorCardConfig(t), [t])
   const [focusMode, toggleFocusMode] = useFocusModePreference()
   const { editorInstance, registerAPI, mountedInitialState, handleChange } = useEditorSurface({
     initialBody,
@@ -115,7 +119,7 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
           nodes={PAGE_EDITOR_NODES}
           initialEditorState={mountedInitialState}
           fileUploader={pageEditorFileUploader}
-          cardConfig={pageEditorCardConfig}
+          cardConfig={cardConfig}
           dragScrollContainerSelector="[data-kobato-editor-scroll]"
         >
           <InklingEditor
@@ -123,7 +127,7 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
             focusMode={focusMode}
             registerAPI={registerAPI}
             onChange={handleChange}
-            placeholderText="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
+            placeholderText={t('admin.editor.body.placeholder')}
             placeholderClassName="kobato-page-placeholder"
             contentEditableClassName="typeset typeset-post"
           />
@@ -134,7 +138,7 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
           type="button"
           variant={focusMode ? 'secondary' : 'outline'}
           size="icon"
-          title={focusMode ? '关闭书写聚焦' : '开启书写聚焦'}
+          title={focusMode ? t('admin.editor.focus.off') : t('admin.editor.focus.on')}
           aria-pressed={focusMode}
           onClick={toggleFocusMode}
         >

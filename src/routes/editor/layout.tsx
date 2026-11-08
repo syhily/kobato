@@ -25,7 +25,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return data({
     currentUser: {
       id: user?.id ?? '',
-      name: user?.name ?? '管理员',
+      name: user?.name ?? '',
       email: user?.email ?? '',
       role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,
     },
