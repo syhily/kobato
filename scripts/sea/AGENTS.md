@@ -47,7 +47,7 @@ Dynamic libraries + one datafile. Extraction writes exactly 5 files (7 on win32)
 
 ## Delivery targets
 
-linux-x64 / linux-arm64 / darwin-arm64 / win32-x64 / win32-arm64 via `.github/workflows/sea.yml`; every matrix job runs the full managed smoke, the Linux jobs also `sea:e2e` and (after `pnpm exec playwright install --with-deps chromium`) `sea:browser`. develop pushes and PRs run only `build-develop` (linux-x64 build + smoke + e2e + browser). `.github/workflows/ci.yml` additionally gates **pull requests**: its `build` job runs `sea:build` + bundled Chromium + `sea:browser` (plain pushes there keep the non-SEA production build).
+linux-x64 / linux-arm64 / darwin-arm64 / win32-x64 / win32-arm64 via `.github/workflows/sea.yml`; every matrix job runs the full managed smoke, the Linux jobs also `sea:e2e` and (after `pnpm exec playwright install --with-deps chromium`) `sea:browser`. The linux-x64 release artifact also packages the tested binary as `kobato_<version>_amd64.deb` + `.sha256`; `release-upload` attaches both to the GitHub Release before publishing the draft. develop pushes and PRs run only `build-develop` (linux-x64 build + smoke + e2e + browser), whose push-only CI-versioned deb remains a separate short-lived deployment artifact. `.github/workflows/ci.yml` additionally gates **pull requests**: its `build` job runs `sea:build` + bundled Chromium + `sea:browser` (plain pushes there keep the non-SEA production build).
 
 **Windows:** the binary is `kobato.exe`; the build spawns through cmd (`shell: true`); the natives cache defaults to `%LOCALAPPDATA%\kobato`; no SIGTERM — shutdown relies on SIGINT/SIGHUP/SIGBREAK (`src/server/infra/lifecycle.ts`), so service deployments wrap the binary with WinSW/NSSM (stop = Ctrl+C).
 

@@ -61,6 +61,21 @@ describe('release chain: the draft-release flow stays triggerable', () => {
     expect(sea).toMatch(/gh release upload "\$\{\{ github\.ref_name \}\}"/)
   })
 
+  it('ships the tested Ubuntu x64 deb and its checksum as release assets', () => {
+    const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
+    const build = jobBlocks.find((block) => block.startsWith('build:'))
+    const releaseUpload = jobBlocks.find((block) => block.startsWith('release-upload:'))
+
+    expect(build).toMatch(
+      /Package Ubuntu x64 deb with checksum[\s\S]*?if: matrix\.target == 'linux-x64'[\s\S]*?build-deb\.sh/,
+    )
+    expect(build).toMatch(/dist-sea\/kobato_\*_amd64\.deb\n/)
+    expect(build).toMatch(/dist-sea\/kobato_\*_amd64\.deb\.sha256\n/)
+    expect(releaseUpload).toMatch(
+      /gh release upload "\$\{\{ github\.ref_name \}\}"[^\n]*dist-sea\/kobato-\*[^\n]*dist-sea\/kobato_\*_amd64\.deb[^\n]*dist-sea\/kobato_\*_amd64\.deb\.sha256[^\n]*--clobber/,
+    )
+  })
+
   it('no workflow consumes the `published` release event — the chain ends at release-upload (M2: the ghcr chain is gone)', () => {
     // The retired docker.yml rode `release: [published]`; a workflow
     // re-adding that trigger silently forks the release chain again.

@@ -89,6 +89,15 @@ jobs:
           sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
           sha256sum -c "$BIN.tar.gz.sha256"
           sha256sum "$BIN" > "$BIN.sha256"
+      # The release deb reuses the exact linux-x64 binary that passed the
+      # managed smoke, HTTP e2e and real-browser journeys above.
+      - name: Package Ubuntu x64 deb with checksum
+        if: matrix.target == 'linux-x64'
+        run: |
+          version="$(node -p "require('./package.json').version" | tr '-' '~')"
+          bash scripts/deploy/build-deb.sh dist-sea/kobato-linux-x64 "$version" "dist-sea/kobato_${version}_amd64.deb"
+          (cd dist-sea && sha256sum "kobato_${version}_amd64.deb" > "kobato_${version}_amd64.deb.sha256")
+          (cd dist-sea && sha256sum -c "kobato_${version}_amd64.deb.sha256")
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
@@ -97,6 +106,8 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
             dist-sea/kobato-${{ matrix.target }}.sha256
+            dist-sea/kobato_*_amd64.deb
+            dist-sea/kobato_*_amd64.deb.sha256
 
   # macOS targets: separate job for the runner image only. The smoke is
   # the FULL managed lifecycle — the embedded databases need no service
@@ -349,11 +360,11 @@ jobs:
           merge-multiple: true
       # `github.ref_name` is the tag on both tag-push and release events
       # (`github.event.release` is null on tag pushes).
-      - name: Upload binaries to the GitHub Release
+      - name: Upload packages to the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ github.ref_name }}" dist-sea/kobato-* --clobber
+        run: gh release upload "${{ github.ref_name }}" dist-sea/kobato-* dist-sea/kobato_*_amd64.deb dist-sea/kobato_*_amd64.deb.sha256 --clobber
       # Publish only now: while the release is a draft, users cannot see or
       # download it, so the async upload above can never expose a partial
       # release. If any build or the upload failed, this step never runs
