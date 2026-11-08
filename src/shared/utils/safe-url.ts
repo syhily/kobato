@@ -1,6 +1,13 @@
 import { z } from 'zod'
 
-const HTTP_URL_MESSAGE = '请输入 http(s) URL'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
+/**
+ * Typed catalog id for the shared http(s)-URL rule. The server maps Zod issue
+ * messages through `zodIssuesToWire`, so every schema reusing this rule emits
+ * the same descriptor and no raw prose — or bare key — reaches a reader.
+ */
+export const HTTP_URL_MESSAGE = 'common.error.httpUrlRequired' satisfies UiMessageId
 
 // Control characters in a redirect target are never legitimate: the URL
 // parser silently strips some (tab/newline) and percent-encodes others, so

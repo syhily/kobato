@@ -1,8 +1,6 @@
 import { z } from 'zod'
 
-import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
-
-import { isHttpUrl } from '@/shared/utils/safe-url'
+import { HTTP_URL_MESSAGE, isHttpUrl } from '@/shared/utils/safe-url'
 import { honeypotField } from '@/shared/utils/schema'
 
 // Trim; blank or null → `undefined` so optional fields never store ''. Null
@@ -48,16 +46,10 @@ export const upsertFriendSchema = z.object({
 
 const friendApplyHoneypot = honeypotField('contact')
 
-// Typed catalog ids, never prose: the boundary maps them into wire descriptors
-// (`zodIssuesToWire`).
-const friendsValidationMessages = {
-  httpUrl: 'friends.error.httpUrlRequired',
-} as const satisfies Record<string, UiMessageId>
-
 // Optional http(s) URL; blank → undefined, mirroring `upsertFriendSchema`.
 const optionalHttpUrl = () =>
   z
-    .union([z.url().max(500).refine(isHttpUrl, { message: friendsValidationMessages.httpUrl }), z.literal('')])
+    .union([z.url().max(500).refine(isHttpUrl, { message: HTTP_URL_MESSAGE }), z.literal('')])
     .optional()
     .transform((value) => (value === undefined || value === '' ? undefined : value))
 
@@ -67,7 +59,7 @@ const optionalHttpUrl = () =>
 export const applyFriendSchema = z
   .object({
     website: z.string().trim().min(1).max(80),
-    homepage: z.url().max(500).refine(isHttpUrl, { message: friendsValidationMessages.httpUrl }),
+    homepage: z.url().max(500).refine(isHttpUrl, { message: HTTP_URL_MESSAGE }),
     description: optionalText(999),
     poster: optionalHttpUrl(),
     rssUrl: optionalHttpUrl(),

@@ -10,7 +10,6 @@ import type { ServerTranslator } from '@/server/infra/i18n'
 import type { ErrorMessageParams } from '@/shared/contracts/api-error'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
-import { carriesErrorMessageDescriptor } from '@/server/http/localized-http-exception'
 import {
   apiErrorData,
   codeForStatus,
@@ -19,7 +18,7 @@ import {
   translateDomainError,
   type TranslatedDomainError,
 } from '@/server/http/translate-domain-error'
-import { descriptorFor, zodIssuesToWire } from '@/server/infra/http/error-descriptor'
+import { carriesErrorMessageDescriptor, descriptorFor, zodIssuesToWire } from '@/server/infra/http/error-descriptor'
 import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { getLogger } from '@/server/infra/logger'

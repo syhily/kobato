@@ -6,7 +6,9 @@ import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { parseSha256Sidecar, runSelfUpdate } from '@/server/domains/update/pipeline'
+import { assertDownloadSize, parseSha256Sidecar, runSelfUpdate } from '@/server/domains/update/pipeline'
+import { DomainError } from '@/server/infra/http/errors'
+import { createServerTranslator } from '@/server/infra/i18n'
 
 // Interface test for the self-update pipeline: real tmpdir, real fs — only
 // `fetch` is mocked. Exercises stage → download → verify → extract → chmod →
@@ -23,7 +25,7 @@ function sha256(data: Buffer): string {
 
 // Builds the same archive shape sea.yml produces: a gzipped tar holding the
 // single bare binary as its only entry.
-function makeTarGz(name: string, payload: string): Buffer {
+function makeTarGz(name: string, payload: string, typeFlag = '0'): Buffer {
   const data = Buffer.from(payload)
   const header = Buffer.alloc(512)
   header.write(name, 0, 'latin1')
@@ -33,7 +35,7 @@ function makeTarGz(name: string, payload: string): Buffer {
   header.write(`${data.length.toString(8).padStart(11, '0')}\0`, 124, 'latin1')
   header.write('00000000000\0', 136, 'latin1') // mtime
   header.write('        ', 148, 'latin1') // chksum field counts as spaces
-  header.write('0', 156, 'latin1') // regular file
+  header.write(typeFlag, 156, 'latin1') // regular file ('0') or directory ('5')
   header.write('ustar\0', 257, 'latin1')
   let sum = 0
   for (const byte of header) {
@@ -103,7 +105,9 @@ describe('update/pipeline', () => {
   it('aborts on sha256 mismatch without touching the live binary', async () => {
     serveUpdate(NEW_BINARY, { archiveShaText: `${'0'.repeat(64)}  kobato-linux-${process.arch}.tar.gz\n` })
 
-    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toThrow('校验失败')
+    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toMatchObject({
+      descriptor: { messageKey: 'update.error.archiveHashMismatch' },
+    })
 
     expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
     await expect(stat(`${execPath}.bak`)).rejects.toThrow()
@@ -115,7 +119,9 @@ describe('update/pipeline', () => {
     // binary sidecar can catch a defective/tampered extraction.
     serveUpdate(NEW_BINARY, { binaryShaText: `${'1'.repeat(64)}  kobato-linux-${process.arch}\n` })
 
-    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toThrow('内容校验失败')
+    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toMatchObject({
+      descriptor: { messageKey: 'update.error.binaryHashMismatch' },
+    })
 
     expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
     await expect(stat(`${execPath}.bak`)).rejects.toThrow()
@@ -127,7 +133,9 @@ describe('update/pipeline', () => {
     // surface at extraction time, after verification.
     serveUpdate(Buffer.from('not-a-gzip-archive'))
 
-    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toThrow('解压失败')
+    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toMatchObject({
+      descriptor: { messageKey: 'update.error.extractFailed' },
+    })
 
     expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
     await expect(stat(`${execPath}.bak`)).rejects.toThrow()
@@ -137,7 +145,19 @@ describe('update/pipeline', () => {
   it('aborts on download HTTP failure without touching the live binary', async () => {
     fetchMock.mockResolvedValue(new Response('not found', { status: 404 }))
 
-    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toThrow('下载更新包失败')
+    const error = await runSelfUpdate({ tagName: 'v9.9.9', execPath }).catch((err: unknown) => err)
+    expect(error).toBeInstanceOf(DomainError)
+    expect((error as DomainError).code).toBe('INTERNAL')
+    expect((error as DomainError).descriptor).toEqual(
+      expect.objectContaining({
+        messageKey: 'update.error.downloadFailed',
+        params: { status: 404 },
+        fallbackMessage: 'Downloading the update package failed (HTTP 404)',
+      }),
+    )
+    // Logs, old clients and diagnostics read the finished English sentence.
+    expect((error as DomainError).message).toBe('Downloading the update package failed (HTTP 404)')
+    expect((error as DomainError).message).not.toMatch(/[\u3400-\u4DBF\u4E00-\u9FFF]/)
 
     expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
     await expect(stat(`${execPath}.bak`)).rejects.toThrow()
@@ -179,7 +199,76 @@ describe('update/pipeline', () => {
   })
 
   it('rejects malformed sha256 sidecars', () => {
-    expect(() => parseSha256Sidecar('not-a-hash  kobato')).toThrow('校验文件格式无效')
-    expect(() => parseSha256Sidecar('')).toThrow('校验文件格式无效')
+    expect(() => parseSha256Sidecar('not-a-hash  kobato')).toThrow(
+      expect.objectContaining({ descriptor: expect.objectContaining({ messageKey: 'update.error.sidecarInvalid' }) }),
+    )
+    expect(() => parseSha256Sidecar('')).toThrow(
+      expect.objectContaining({ descriptor: expect.objectContaining({ messageKey: 'update.error.sidecarInvalid' }) }),
+    )
+  })
+
+  it('reports a served sidecar that does not parse as a descriptor, not raw prose', async () => {
+    serveUpdate(NEW_BINARY, { archiveShaText: 'garbage\n' })
+
+    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toMatchObject({
+      descriptor: { messageKey: 'update.error.sidecarInvalid' },
+    })
+    expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
+  })
+
+  it('reports a sidecar download HTTP failure with its status', async () => {
+    serveUpdate(NEW_BINARY)
+    const serve = fetchMock.getMockImplementation()!
+    fetchMock.mockImplementation(async (input: unknown) => {
+      if (String(input).endsWith('.tar.gz.sha256')) {
+        return new Response('nope', { status: 502 })
+      }
+      return serve(input)
+    })
+
+    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toMatchObject({
+      descriptor: { messageKey: 'update.error.sidecarDownloadFailed', params: { status: 502 } },
+    })
+    expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
+  })
+
+  it('reports a missing executable inside a well-formed archive', async () => {
+    // A directory-only archive: the container hash verifies, extraction finds
+    // no regular file, and the specific failure must survive (not become the
+    // generic extraction error).
+    serveUpdate(makeTarGz(`kobato-linux-${process.arch}/`, '', '5'))
+
+    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toMatchObject({
+      descriptor: { messageKey: 'update.error.binaryMissing' },
+    })
+    expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
+    await expect(stat(`${execPath}.bak`)).rejects.toThrow()
+  })
+
+  it('size cap: reports the descriptor with the formatted ceiling', () => {
+    expect(() => assertDownloadSize(101, 100)).toThrow(
+      expect.objectContaining({
+        descriptor: expect.objectContaining({
+          messageKey: 'update.error.packageTooLarge',
+          params: { max: '100 bytes' },
+        }),
+      }),
+    )
+    expect(() => assertDownloadSize(4 * 1024 * 1024, 4 * 1024 * 1024)).not.toThrow()
+    // The shipped ceiling stays 512 MB and the descriptor label follows it.
+    try {
+      assertDownloadSize(512 * 1024 * 1024 + 1)
+      expect.unreachable()
+    } catch (error) {
+      expect(error).toBeInstanceOf(DomainError)
+      expect((error as DomainError).descriptor).toMatchObject({
+        messageKey: 'update.error.packageTooLarge',
+        params: { max: '512 MB' },
+      })
+      expect((error as DomainError).message).toBe(
+        createServerTranslator('en-US').format('update.error.packageTooLarge', { max: '512 MB' }),
+      )
+      expect((error as DomainError).message).not.toMatch(/[\u3400-\u4DBF\u4E00-\u9FFF]/)
+    }
   })
 })

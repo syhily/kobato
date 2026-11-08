@@ -14,8 +14,13 @@ import { createGunzip } from 'node:zlib'
 
 import type { UpdateJobState } from '@/shared/contracts/update'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
+import { DomainError } from '@/server/infra/http/errors'
+import { getLogger } from '@/server/infra/logger'
 import { APP_REPOSITORY } from '@/shared/config/version'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
+const log = getLogger('update.pipeline')
 
 const MAX_DOWNLOAD_BYTES = 512 * 1024 * 1024
 const DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000
@@ -41,10 +46,26 @@ function binaryHashAssetName(): string {
   return assetName().replace(/\.tar\.gz$/, '.sha256')
 }
 
+/** Byte-ceiling label for the descriptor param — unit abbreviations stay untranslated. */
+function byteLimitLabel(bytes: number): string {
+  const mebibytes = bytes / (1024 * 1024)
+  return mebibytes >= 1 ? `${Number(mebibytes.toFixed(1))} MB` : `${bytes} bytes`
+}
+
+/**
+ * Size-cap guard, exported so the 512 MB branch is unit-testable without
+ * streaming half a gigabyte through the pipeline.
+ */
+export function assertDownloadSize(received: number, maxBytes: number = MAX_DOWNLOAD_BYTES): void {
+  if (received > maxBytes) {
+    throw new DomainError('INTERNAL', descriptorFor('update.error.packageTooLarge', { max: byteLimitLabel(maxBytes) }))
+  }
+}
+
 async function downloadToFile(url: string, dest: string): Promise<void> {
   const res = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) })
   if (!res.ok || res.body === null) {
-    throw new Error(`下载更新包失败（HTTP ${res.status}）`)
+    throw new DomainError('INTERNAL', descriptorFor('update.error.downloadFailed', { status: res.status }))
   }
   let received = 0
   await pipeline(
@@ -52,9 +73,7 @@ async function downloadToFile(url: string, dest: string): Promise<void> {
     async function* (source: AsyncIterable<Uint8Array>) {
       for await (const chunk of source) {
         received += chunk.byteLength
-        if (received > MAX_DOWNLOAD_BYTES) {
-          throw new Error('更新包超过 512 MB 大小限制')
-        }
+        assertDownloadSize(received)
         yield chunk
       }
     },
@@ -83,7 +102,7 @@ async function extractBinaryFromTarGz(archivePath: string, destPath: string): Pr
     for (;;) {
       const { bytesRead } = await fh.read(header, 0, TAR_BLOCK_SIZE, offset)
       if (bytesRead < TAR_BLOCK_SIZE || header.every((byte) => byte === 0)) {
-        throw new Error('更新包内未找到可执行文件')
+        throw new DomainError('INTERNAL', descriptorFor('update.error.binaryMissing'))
       }
       const typeFlag = header[156]
       const size = Number.parseInt(header.toString('latin1', 124, 136), 8) || 0
@@ -109,7 +128,7 @@ async function extractBinaryFromTarGz(archivePath: string, destPath: string): Pr
 export function parseSha256Sidecar(text: string): string {
   const hash = text.trim().split(/\s+/)[0] ?? ''
   if (!/^[0-9a-f]{64}$/i.test(hash)) {
-    throw new Error('更新校验文件格式无效')
+    throw new DomainError('INTERNAL', descriptorFor('update.error.sidecarInvalid'))
   }
   return hash.toLowerCase()
 }
@@ -138,23 +157,29 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
     ])
     if (!shaRes.ok || !binShaRes.ok) {
       const status = shaRes.ok ? binShaRes.status : shaRes.status
-      throw new Error(`下载校验文件失败（HTTP ${status}）`)
+      throw new DomainError('INTERNAL', descriptorFor('update.error.sidecarDownloadFailed', { status }))
     }
     const expected = parseSha256Sidecar(await shaRes.text())
     const expectedBinary = parseSha256Sidecar(await binShaRes.text())
     const actual = await sha256File(stagedArchivePath)
     if (actual !== expected) {
-      throw new Error('更新包校验失败，已中止')
+      throw new DomainError('INTERNAL', descriptorFor('update.error.archiveHashMismatch'))
     }
     try {
       await extractBinaryFromTarGz(stagedArchivePath, stagedPath)
     } catch (err) {
-      throw new Error('更新包解压失败，已中止', { cause: err })
+      // The specific "no executable" failure already carries its descriptor;
+      // everything else is an opaque extraction failure (logged with detail).
+      if (err instanceof DomainError) {
+        throw err
+      }
+      log.error('update package extraction failed', { err: err instanceof Error ? err.message : String(err) })
+      throw new DomainError('INTERNAL', descriptorFor('update.error.extractFailed'))
     }
     // The archive hash covers only the container; this check authenticates the extracted bytes.
     const actualBinary = await sha256File(stagedPath)
     if (actualBinary !== expectedBinary) {
-      throw new Error('更新包内容校验失败，已中止')
+      throw new DomainError('INTERNAL', descriptorFor('update.error.binaryHashMismatch'))
     }
     await chmod(stagedPath, 0o755)
 

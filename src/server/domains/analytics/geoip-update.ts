@@ -15,6 +15,7 @@ import { createGunzip } from 'node:zlib'
 import { z } from 'zod'
 
 import { resetGeoReader } from '@/server/domains/analytics/geoip'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '@/server/infra/paths'
@@ -118,16 +119,16 @@ export async function fetchLatestGeoipVersion(): Promise<string> {
     res = await fetch(GEOIP_VERSION_URL, { signal: AbortSignal.timeout(VERSION_TIMEOUT_MS) })
   } catch (err) {
     if (isTimeoutError(err)) {
-      throw new DomainError('INTERNAL', 'GeoIP 版本检测超时，请稍后再试')
+      throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipVersionTimeout'))
     }
-    throw new DomainError('INTERNAL', '无法连接 GeoIP 更新源，请检查网络后重试')
+    throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipVersionConnect'))
   }
   if (!res.ok) {
-    throw new DomainError('INTERNAL', `GeoIP 版本检测失败（HTTP ${res.status}）`)
+    throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipVersionStatus', { status: res.status }))
   }
   const parsed = packageSchema.safeParse(await res.json().catch(() => null))
   if (!parsed.success) {
-    throw new DomainError('INTERNAL', 'GeoIP 更新源返回了无效的版本信息')
+    throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipVersionInvalid'))
   }
   return parsed.data.version
 }
@@ -138,12 +139,12 @@ async function installRemoteDb(version: string): Promise<void> {
     res = await fetch(geoipDownloadUrl(version), { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) })
   } catch (err) {
     if (isTimeoutError(err)) {
-      throw new DomainError('INTERNAL', 'GeoIP 数据库下载超时，请稍后再试')
+      throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipDownloadTimeout'))
     }
-    throw new DomainError('INTERNAL', '无法连接 GeoIP 下载源，请检查网络后重试')
+    throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipDownloadConnect'))
   }
   if (!res.ok || res.body === null) {
-    throw new DomainError('INTERNAL', `下载 GeoIP 数据库失败（HTTP ${res.status}）`)
+    throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipDownloadStatus', { status: res.status }))
   }
 
   await mkdir(path.dirname(MAXMIND_DB_PATH), { recursive: true })
@@ -159,7 +160,10 @@ async function installRemoteDb(version: string): Promise<void> {
           if (received > MAX_DB_BYTES) {
             // DomainError, not a bare Error — the oRPC guard would
             // otherwise surface a generic 500 instead of the size message.
-            throw new DomainError('INTERNAL', 'GeoIP 数据库超过 100 MB 大小限制')
+            throw new DomainError(
+              'INTERNAL',
+              descriptorFor('analytics.error.geoipTooLarge', { max: `${MAX_DB_BYTES / (1024 * 1024)} MB` }),
+            )
           }
           yield chunk
         }
@@ -170,7 +174,7 @@ async function installRemoteDb(version: string): Promise<void> {
     try {
       await Reader.open(tmpPath)
     } catch {
-      throw new DomainError('INTERNAL', '下载的 GeoIP 数据库无效，已中止')
+      throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipInvalid'))
     }
     await rename(tmpPath, MAXMIND_DB_PATH)
   } catch (err) {
@@ -178,7 +182,7 @@ async function installRemoteDb(version: string): Promise<void> {
     if (isTimeoutError(err)) {
       // An abort mid-stream rejects `pipeline()` instead of the fetch
       // await — same TimeoutError, translated here.
-      throw new DomainError('INTERNAL', 'GeoIP 数据库下载超时，请稍后再试')
+      throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipDownloadTimeout'))
     }
     throw err
   }

@@ -186,6 +186,12 @@ const SCAN_ROOTS = [
   'src/server/http/controllers/admin/update.controller.ts',
   'src/server/http/loaders/search.ts',
   'src/server/infra/scheduler-utils.ts',
+  // Step 5a-v: the last user-facing raw groups — GeoIP remote updates, the
+  // self-update pipeline's failure copy, and the shared http(s)-URL rule
+  // (which states a typed id, never prose).
+  'src/server/domains/analytics/geoip-update.ts',
+  'src/server/domains/update/pipeline.ts',
+  'src/shared/utils/safe-url.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -421,6 +427,10 @@ describe('production sources', () => {
         'src/server/http/controllers/admin/audit.controller.ts',
         'src/server/http/controllers/admin/users-admin.controller.ts',
         'src/server/http/loaders/search.ts',
+        // Step 5a-v slice: GeoIP updates, the self-update pipeline, safe-url ids.
+        'src/server/domains/analytics/geoip-update.ts',
+        'src/server/domains/update/pipeline.ts',
+        'src/shared/utils/safe-url.ts',
       ]),
     )
   })

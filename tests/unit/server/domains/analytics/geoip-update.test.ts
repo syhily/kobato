@@ -99,7 +99,7 @@ describe('analytics/geoip-update', () => {
       const { fetchLatestGeoipVersion } = await import('@/server/domains/analytics/geoip-update')
       await expect(fetchLatestGeoipVersion()).rejects.toMatchObject({
         name: 'DomainError',
-        message: 'GeoIP 版本检测超时，请稍后再试',
+        descriptor: { messageKey: 'analytics.error.geoipVersionTimeout' },
       })
     })
   })
@@ -174,7 +174,7 @@ describe('analytics/geoip-update', () => {
 
       await expect(runRemoteGeoipUpdate()).rejects.toMatchObject({
         name: 'DomainError',
-        message: 'GeoIP 数据库下载超时，请稍后再试',
+        descriptor: { messageKey: 'analytics.error.geoipDownloadTimeout' },
       })
     })
 
@@ -189,7 +189,7 @@ describe('analytics/geoip-update', () => {
 
       await expect(runRemoteGeoipUpdate()).rejects.toMatchObject({
         name: 'DomainError',
-        message: 'GeoIP 数据库下载超时，请稍后再试',
+        descriptor: { messageKey: 'analytics.error.geoipDownloadTimeout' },
       })
       // The staged file is still cleaned up.
       expect(fsPromiseMocks.rm).toHaveBeenCalledWith(`${DB_PATH}.download`, { force: true })
@@ -198,7 +198,8 @@ describe('analytics/geoip-update', () => {
     it('propagates the size-guard DomainError from the stream and cleans the staged file', async () => {
       knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
       // The size-guard DomainError must propagate unmodified and the staged file be dropped.
-      const sizeError = new DomainError('INTERNAL', 'GeoIP 数据库超过 100 MB 大小限制')
+      const { descriptorFor } = await import('@/server/infra/http/error-descriptor')
+      const sizeError = new DomainError('INTERNAL', descriptorFor('analytics.error.geoipTooLarge', { max: '100 MB' }))
       pipelineMock.mockRejectedValueOnce(sizeError)
       vi.stubGlobal(
         'fetch',

@@ -2900,7 +2900,6 @@ export const uiMessagesEnUS = {
   'friends.error.alreadyApplied':
     'A friend-link application for this homepage has already been submitted; do not submit it again.',
   'friends.error.homepageSubmitted': 'This homepage URL has already been submitted',
-  'friends.error.httpUrlRequired': 'Enter an http(s) URL',
   'newsletter.error.disabled': 'Email subscriptions are not open on this site yet.',
   'newsletter.error.invalidConfirm': 'The confirmation link is invalid or has expired; subscribe again.',
   'newsletter.error.invalidUnsubscribe': 'The unsubscribe link is invalid.',
@@ -2927,6 +2926,26 @@ export const uiMessagesEnUS = {
   'public.search.resultTitle': 'Search results for "{query}"',
   'backup.error.weeklyDayRequired': 'Weekly backups must specify a weekday from 1 to 7.',
   'backup.error.monthlyDayRequired': 'Monthly backups must specify a day of month from 1 to 31.',
+  'analytics.error.geoipVersionTimeout': 'The GeoIP version check timed out. Please try again later.',
+  'analytics.error.geoipVersionConnect':
+    'Could not connect to the GeoIP update source; check the network and try again.',
+  'analytics.error.geoipVersionStatus': 'GeoIP version check failed (HTTP {status})',
+  'analytics.error.geoipVersionInvalid': 'The GeoIP update source returned invalid version information',
+  'analytics.error.geoipDownloadTimeout': 'The GeoIP database download timed out. Please try again later.',
+  'analytics.error.geoipDownloadConnect':
+    'Could not connect to the GeoIP download source; check the network and try again.',
+  'analytics.error.geoipDownloadStatus': 'Downloading the GeoIP database failed (HTTP {status})',
+  'analytics.error.geoipTooLarge': 'The GeoIP database exceeds the {max} size limit',
+  'analytics.error.geoipInvalid': 'The downloaded GeoIP database is invalid; the update was aborted',
+  'update.error.downloadFailed': 'Downloading the update package failed (HTTP {status})',
+  'update.error.packageTooLarge': 'The update package exceeds the {max} size limit',
+  'update.error.binaryMissing': 'No executable was found inside the update package',
+  'update.error.sidecarInvalid': 'The update checksum file is malformed',
+  'update.error.sidecarDownloadFailed': 'Downloading the update checksums failed (HTTP {status})',
+  'update.error.archiveHashMismatch': 'The update package checksum did not match; the update was aborted',
+  'update.error.extractFailed': 'Extracting the update package failed; the update was aborted',
+  'update.error.binaryHashMismatch': 'The update package contents failed verification; the update was aborted',
+  'common.error.httpUrlRequired': 'Enter an http(s) URL',
 } as const
 
 export type UiMessageId = keyof typeof uiMessagesEnUS

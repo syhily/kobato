@@ -123,6 +123,9 @@ The shared `loaders/*` helpers are the orchestration layer the content controlle
   (`infra/image/process-worker.ts`) carrying the same plain-JSON descriptor, which rides
   `DomainErrorWire` through the structured clone and rehydrates on the main thread via
   `domainErrorFromWire` — the descriptor, not the fallback text, is what gets localized.
+  Ordinary `Error` is reserved for CLI-only/technical output; a user-visible background failure
+  carries a descriptor instead, and its status boundary localizes it (the self-update job keeps the
+  pipeline's descriptor and `update.status` formats it per request for the VersionDialog).
   Save-result side-effect warnings are descriptors too — the revision router localizes them into the
   wire `warning` string (`formatWarningDescriptors`). Auth flows return `AuthFlowResult` with a descriptor
   (`authFlowError`/`authFlowSuccess`); `routes/auth` resolves it through `authFlowMessage` (the

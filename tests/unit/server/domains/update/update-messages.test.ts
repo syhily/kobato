@@ -8,7 +8,8 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Self-update job/service errors across all four locales (pipeline diagnostics stay raw).
+// Self-update job/service/pipeline errors across all four locales. The status
+// boundary localizes the stored descriptor; the dialog never prints a key.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams
@@ -26,12 +27,87 @@ const CASES: Case[] = [
     },
   },
   {
+    key: 'update.error.archiveHashMismatch',
+    messages: {
+      'en-US': 'The update package checksum did not match; the update was aborted',
+      'zh-CN': '更新包校验失败，已中止',
+      'zh-TW': '更新套件校驗失敗，已中止',
+      'zh-HK': '更新套件校驗失敗，已中止',
+    },
+  },
+  {
+    key: 'update.error.binaryHashMismatch',
+    messages: {
+      'en-US': 'The update package contents failed verification; the update was aborted',
+      'zh-CN': '更新包内容校验失败，已中止',
+      'zh-TW': '更新套件內容校驗失敗，已中止',
+      'zh-HK': '更新套件內容校驗失敗，已中止',
+    },
+  },
+  {
+    key: 'update.error.binaryMissing',
+    messages: {
+      'en-US': 'No executable was found inside the update package',
+      'zh-CN': '更新包内未找到可执行文件',
+      'zh-TW': '更新套件內未找到可執行檔',
+      'zh-HK': '更新套件內未找到可執行檔',
+    },
+  },
+  {
+    key: 'update.error.downloadFailed',
+    params: { status: 404 },
+    messages: {
+      'en-US': 'Downloading the update package failed (HTTP 404)',
+      'zh-CN': '下载更新包失败（HTTP 404）',
+      'zh-TW': '下載更新套件失敗（HTTP 404）',
+      'zh-HK': '下載更新套件失敗（HTTP 404）',
+    },
+  },
+  {
+    key: 'update.error.extractFailed',
+    messages: {
+      'en-US': 'Extracting the update package failed; the update was aborted',
+      'zh-CN': '更新包解压失败，已中止',
+      'zh-TW': '更新套件解壓縮失敗，已中止',
+      'zh-HK': '更新套件解壓縮失敗，已中止',
+    },
+  },
+  {
     key: 'update.error.jobRunning',
     messages: {
       'en-US': 'An update task is already running',
       'zh-CN': '已有更新任务正在进行中',
       'zh-TW': '已有更新任務正在進行中',
       'zh-HK': '已有更新任務正在進行中',
+    },
+  },
+  {
+    key: 'update.error.packageTooLarge',
+    params: { max: '512 MB' },
+    messages: {
+      'en-US': 'The update package exceeds the 512 MB size limit',
+      'zh-CN': '更新包超过 512 MB 大小限制',
+      'zh-TW': '更新套件超過 512 MB 大小限制',
+      'zh-HK': '更新套件超過 512 MB 大小限制',
+    },
+  },
+  {
+    key: 'update.error.sidecarDownloadFailed',
+    params: { status: 502 },
+    messages: {
+      'en-US': 'Downloading the update checksums failed (HTTP 502)',
+      'zh-CN': '下载校验文件失败（HTTP 502）',
+      'zh-TW': '下載校驗檔案失敗（HTTP 502）',
+      'zh-HK': '下載校驗檔案失敗（HTTP 502）',
+    },
+  },
+  {
+    key: 'update.error.sidecarInvalid',
+    messages: {
+      'en-US': 'The update checksum file is malformed',
+      'zh-CN': '更新校验文件格式无效',
+      'zh-TW': '更新校驗檔案格式無效',
+      'zh-HK': '更新校驗檔案格式無效',
     },
   },
 ]

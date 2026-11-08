@@ -53,15 +53,6 @@ const CASES: Case[] = [
     },
   },
   {
-    key: 'friends.error.httpUrlRequired',
-    messages: {
-      'en-US': 'Enter an http(s) URL',
-      'zh-CN': '请输入 http(s) URL',
-      'zh-TW': '請輸入 http(s) URL',
-      'zh-HK': '請輸入 http(s) URL',
-    },
-  },
-  {
     key: 'friends.error.notFound',
     messages: {
       'en-US': 'The friend link does not exist',
