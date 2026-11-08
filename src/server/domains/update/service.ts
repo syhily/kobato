@@ -6,6 +6,7 @@ import type { UpdateCheckResult } from '@/shared/contracts/update'
 
 import { startUpdateJob } from '@/server/domains/update/job'
 import { fetchLatestRelease } from '@/server/domains/update/release'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { evaluateSelfUpdateGate } from '@/server/infra/self-update-gate'
 import { APP_VERSION } from '@/shared/config/version'
@@ -44,7 +45,7 @@ export async function checkForUpdate(db: Database): Promise<UpdateCheckResult> {
     htmlUrl: release.htmlUrl,
     updateAvailable: isNewerVersion(release.tagName, APP_VERSION),
     canSelfUpdate: gate.canSelfUpdate,
-    reasons: gate.reasons,
+    reasons: gate.reasonDescriptors,
   }
 }
 
@@ -52,10 +53,12 @@ export async function applyUpdate(db: Database): Promise<{ fromVersion: string; 
   // Re-check at apply time: the UI's earlier `check` result may be stale.
   const check = await checkForUpdate(db)
   if (!check.updateAvailable) {
-    throw new DomainError('CONFLICT', '当前已是最新版本')
+    throw new DomainError('CONFLICT', descriptorFor('update.error.alreadyLatest'))
   }
   if (!check.canSelfUpdate) {
-    throw new DomainError('FORBIDDEN', check.reasons.join('；'))
+    // The summary stays one typed message; each refusal rides `issues` so the
+    // transport folds in the locale's own separator and wording.
+    throw new DomainError('FORBIDDEN', descriptorFor('update.error.gateBlocked'), check.reasons)
   }
   startUpdateJob(check.tagName)
   return { fromVersion: check.currentVersion, toVersion: check.latestVersion }

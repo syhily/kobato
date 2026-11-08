@@ -28,6 +28,7 @@ import {
 import { safeResolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@/server/infra/db/operations/user'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -58,7 +59,7 @@ async function validateSubmission(
 ): Promise<ValidatedSubmission> {
   const target = await safeResolveMetricTarget(db, commentReq.page_key)
   if (target === null) {
-    throw new DomainError('NOT_FOUND', '系统错误，评论的目标页面不存在。')
+    throw new DomainError('NOT_FOUND', descriptorFor('comments.error.targetPageMissing'))
   }
 
   // Registered-account fence: anonymous-only, must run before `insertCommentUser`.
@@ -66,17 +67,17 @@ async function validateSubmission(
   const emailRegistered = loginUser === undefined ? await hasRegisteredAccount(db, commentReq.email) : false
   const emailFailure = decideEmailGate(loginUser, emailRegistered)
   if (emailFailure) {
-    throw new DomainError(emailFailure.code, emailFailure.message)
+    throw new DomainError(emailFailure.code, emailFailure.descriptor)
   }
 
   const u = await insertCommentUser(db, commentReq.name, commentReq.email, commentReq.link || '')
   if (u === null) {
-    throw new DomainError('INTERNAL', '系统错误，用户创建失败。')
+    throw new DomainError('INTERNAL', descriptorFor('comments.error.userCreateFailed'))
   }
 
   const commenterFailure = decideCommenterGate(loginUser, u)
   if (commenterFailure) {
-    throw new DomainError(commenterFailure.code, commenterFailure.message)
+    throw new DomainError(commenterFailure.code, commenterFailure.descriptor)
   }
 
   const { body: canonicalBody, content: contentSnapshot } = await canonicalizeCommentBody(commentReq.body)
@@ -95,7 +96,7 @@ async function validateSubmission(
     recentContentHashes,
   })
   if (contentFailure) {
-    throw new DomainError(contentFailure.code, contentFailure.message)
+    throw new DomainError(contentFailure.code, contentFailure.descriptor)
   }
 
   await updateLastLogin(db, u.id, clientAddress, facts.userAgent)
@@ -143,7 +144,7 @@ async function persistComment(
     }
     const cr = insertComment(tx, newComment)
     if (cr === null) {
-      throw new DomainError('INTERNAL', '系统错误，评论创建失败。')
+      throw new DomainError('INTERNAL', descriptorFor('comments.error.createFailed'))
     }
 
     const { createdAt, deletedAt, ...commentRest } = cr

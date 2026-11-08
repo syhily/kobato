@@ -37,8 +37,8 @@ function createApp() {
     adminUploadRoute({
       path: '/upload',
       maxSize: 1024,
-      tooLargeMessage: 'too large',
-      missingFileMessage: 'missing file',
+      tooLarge: { messageKey: 'common.error.uploadTooLarge' },
+      missingFile: 'common.error.uploadMissing',
       logScope: 'test.upload',
       logMessage: 'Uploaded test file',
       validateBody: (body, c) =>
@@ -113,6 +113,8 @@ describe('adminUploadRoute', () => {
     valid.append('kind', 'avatar')
     const missingFile = await upload(valid)
     expect(missingFile.status).toBe(400)
-    await expect(missingFile.json()).resolves.toEqual({ error: { message: 'missing file' } })
+    await expect(missingFile.json()).resolves.toMatchObject({
+      error: { code: 'BAD_REQUEST', message: '请上传文件', descriptor: { messageKey: 'common.error.uploadMissing' } },
+    })
   })
 })

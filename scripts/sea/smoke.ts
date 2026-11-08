@@ -188,6 +188,33 @@ function checkVfs(binaryPath: string) {
 }
 
 /**
+ * `--smoke-intl` is a pure probe: it imports the locale contract and the
+ * shared display formatter (for the real `formatDuration` output), so it reads
+ * no configuration and touches no database. Run it on the bare binary in both
+ * managed and service-free modes.
+ */
+function checkIntl(binaryPath: string) {
+  const expected = 'SEA Intl smoke passed: en-US, zh-HK, zh-TW, zh-CN'
+  const result = spawnSync(binaryPath, ['--smoke-intl'], {
+    encoding: 'utf-8',
+    timeout: VERSION_TIMEOUT_MS,
+    env: scrubbedParentEnv(),
+  })
+  if (result.error) {
+    throw new Error(`spawn failed: ${result.error.message}`)
+  }
+  const output = `${result.stdout}\n${result.stderr}`.trim()
+  if (result.status !== 0) {
+    throw new Error(`exit code ${result.status ?? 'unknown'}:\n${tailLines(output, 20)}`)
+  }
+  if (!output.includes(expected)) {
+    throw new Error(`missing "${expected}" in the output:\n${tailLines(output, 20)}`)
+  }
+  const rendered = output.split('\n').filter((line) => line.trim().startsWith('zh-') || line.trim().startsWith('en-US'))
+  return `${rendered.length} locale render lines + success`
+}
+
+/**
  * `--smoke-worker` validates the full server config at import time but never
  * connects. `--config` points into the temp cache dir so env loading never
  * persists a config next to the binary.
@@ -426,6 +453,7 @@ async function runManaged(binaryPath: string) {
     await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
     await check('kobato --version', () => checkVersion(binaryPath))
     await check('kobato --smoke-vfs (mounted asset VFS)', () => checkVfs(binaryPath))
+    await check('kobato --smoke-intl (four-locale ICU data)', () => checkIntl(binaryPath))
     await check('kobato --smoke-natives (sharp + canvas + duckdb)', () => checkNatives(binaryPath, dirs.cache))
     await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
 
@@ -555,6 +583,7 @@ async function runBinaryOnly(binaryPath: string) {
   await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
   await check('kobato --version', () => checkVersion(binaryPath))
   await check('kobato --smoke-vfs (mounted asset VFS)', () => checkVfs(binaryPath))
+  await check('kobato --smoke-intl (four-locale ICU data)', () => checkIntl(binaryPath))
   await check('kobato --smoke-natives (sharp + canvas + duckdb)', () => checkNatives(binaryPath, dirs.cache))
   await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
   await check('kobato --smoke-worker (sharp worker pool)', () =>

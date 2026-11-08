@@ -17,7 +17,9 @@ parent.
 - **`ui/shared/`** — feature components consumed by BOTH the public chrome and the admin shell
   (today: `notifications/` — the global right-side message drawer, opened from two entries: the
   admin sidebar's 「消息通知」nav item and the public user menu; `notification-meta.ts` owns the
-  kind/source → icon/label mapping). Anything only one side uses stays in its own tier.
+  kind/source → icon mapping plus `kindLabelId` message ids and `formatNotificationTime`, which
+  takes explicit `{ locale, timeZone, now }` — the consumer resolves the id with its own `t`).
+  Anything only one side uses stays in its own tier.
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`, `categories`, `comments`, `editor`,
   `editor-shell`, `editor-shared`, `fonts`, `friends`, `images`, `library`, `musics`, `my`, `pages`,
   `posts`, `sessions`, `settings`, `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).
@@ -63,7 +65,23 @@ parent.
   editor's node whitelist admits no media/headings — pinned by the sanitize strategy tests).
 - `ui/icons/` — static-export icon library. Named imports only — no `<Icon name="..." />` string
   lookups. Import directly from `lucide-react`; the build tree-shakes unused icons.
-- `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
+- `ui/lib/` — UI utilities (`cn`, `code-languages`, `I18nProvider` (react-intl
+  provider + typed `useI18n()`; messages arrive as root-loader data; `localizeMessage`
+  formats only catalog ids through the same ICU engine and degrades a missing param /
+  unformattable template to a generic localized sentence — logged, never a token name,
+  raw template or id),
+  `LocaleSyncProvider` (the ROOT cross-tab locale-sync loop mounted by `src/root.tsx`:
+  subscribes once per document, publishes a committed locale with its bootstrap
+  `revision` token, and applies a peer announcement according to the document's
+  capability. A registered settings workspace runs its transaction — flush every
+  dirty card then one automatic reload — and only a successful flush reloads. Every
+  other document (editor, comment composer, setup, analytics, public) is NEVER
+  reloaded automatically: it shows a localized `role="alert"` notice with an explicit
+  Reload action so unsaved input survives. A failed flush offers Retry + Reload and
+  consumes no revision token; the token is consumed only immediately before a reload
+  attempt. Settings cards use `useLocaleSyncPublish`; `SettingsFlushProvider`
+  registers the flush host),
+  `ThemeProvider`,
   `use-media-query`). shadcn's `aliases.lib` is pinned here. No `src/lib/` parallel.
 
 ## Merge-engine tokens
@@ -134,6 +152,9 @@ state.
 - Conditional classNames go through `cn()` from `@/ui/lib/cn`. A new `--<namespace>-<name>` token in
   `tailwind.css` MUST pair with an entry in `cn.ts`'s per-namespace list — enforced by
   `tests/unit/contract/tailwind-tokens.test.ts`.
+- Interface copy is a UI message id resolved through `useI18n()` — including the accessible
+  labels inside `ui/components/` primitives (`common.*` in the UI catalog). Any test that renders
+  one of those primitives directly must mount `I18nProvider` (`#/_helpers/i18n-render`).
 - Animation is Motion Only: JS-driven animation uses the `@/ui/components/lazy-motion` facade
   (`LazyMotion*` / `LazyAnimatePresence`) with shared constants from `@/client/lib/motion` — never
   React `<ViewTransition>` or `document.startViewTransition` (the root AGENTS.md defensive
@@ -174,10 +195,19 @@ unrelated concerns.
   skeleton shared with the comment surface (`@/client/editor/editor-surface` — the
   registerAPI/body-reset wiring + the composer shell with labels/darkMode applied). The
   composer surface (floating format toolbar, slash menu, drag reorder, card chrome) comes from the
-  layer; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring, zh-CN labels)
-  lives in `@/client/editor/` (see `src/client/AGENTS.md`). Kobato inserts reach the composer
+  layer; the kobato glue (host cards, `KobatoImageNode`, upload/picker wiring) lives in
+  `@/client/editor/` (see `src/client/AGENTS.md`) — the active locale's Inkling label table arrives
+  as root-loader data (`i18n.inklingLabels`), it is not imported by any UI module. Kobato inserts
+  reach the composer
   through `INSERT_CARD_COMMAND`; host styling hooks are scoped under `.kobato-page-editor` in
   `src/styles/inkling-editor.css`.
+- Editor copy is translated like the rest of the admin surface: every string lives in the
+  `admin.editor.*` catalog namespace and is read through `useI18n()` (`t` / `tRich`). The entity
+  noun ("post" / "page") never crosses a shared boundary as text — `makeEditorAdapter` configs and
+  the `editor-shell`/`editor-shared` component props carry `entityLabelId` (`UiMessageId`, e.g.
+  `admin.editor.entity.post`) and each site resolves it with `t(entityLabelId, { entity })` inside
+  an ICU template. Inkling's host-card `menu[].label`/`desc` stay English fallbacks; the active
+  locale's label table supplies the rendered text through `labelKey` (`menu.host.*`).
 - Comment editor: `@/ui/public/comments/CommentBodyEditor` wraps the inkling composer with
   the trimmed comment node set. Every consumer mounts it through
   `@/ui/public/comments/LazyCommentBodyEditor` — the composer, the inkling island, and
@@ -185,7 +215,14 @@ unrelated concerns.
   graph stays editor-free. The always-visible reply form is interaction-gated
   (isomorphic placeholder → pointerdown/focus activates, hover prefetches the chunk,
   focus is handed to the contenteditable after mount); the inline edit forms and admin
-  dialogs pass `eager`, since the click that opened them was already the interaction. The trimmed
+  dialogs pass `eager`, since the click that opened them was already the interaction.
+  Labels: a workspace document's root payload (`i18n.inklingLabels`) supplies the table;
+  a PUBLIC document has none, so hover/focus intent prefetches exactly the active
+  locale's table chunk (`@/client/editor/inkling-labels::loadInklingLabels`)
+  alongside the composer chunk, and the composer mounts only after it resolves
+  (falling back to Inkling's English defaults on a chunk failure). The SSR
+  placeholder is identical with or without a payload.
+  The trimmed
   node set (`@/client/editor/comment-editor-nodes`: no headings, asides,
   tables, images, host cards, or math cards — the code block stays, and a
   ```math fence is the formula path, rendered to KaTeX MathML by

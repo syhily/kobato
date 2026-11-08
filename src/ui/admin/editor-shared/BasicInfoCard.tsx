@@ -10,6 +10,7 @@ import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface BasicInfoCardProps {
   /** `<Textarea>` id + label htmlFor (`post-summary` / `page-summary`). */
@@ -38,10 +39,11 @@ export function BasicInfoCard({
   disabled,
   children,
 }: BasicInfoCardProps) {
+  const { t } = useI18n()
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">基本信息</CardTitle>
+        <CardTitle className="text-base">{t('admin.editor.basicInfo')}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
         <PublishStatusRow
@@ -53,7 +55,7 @@ export function BasicInfoCard({
           disabled={disabled}
         />
         <div className="grid gap-2">
-          <Label htmlFor={summaryId}>摘要</Label>
+          <Label htmlFor={summaryId}>{t('admin.editor.summary')}</Label>
           <Textarea
             id={summaryId}
             value={summary}
@@ -61,7 +63,7 @@ export function BasicInfoCard({
             rows={3}
             maxLength={500}
             disabled={disabled}
-            placeholder="可选，用于列表与社交分享卡片。"
+            placeholder={t('admin.editor.summaryPlaceholder')}
           />
         </div>
         {children}

@@ -19,6 +19,7 @@ import { getClientAddress } from '@/server/http/utils/client-address'
 import { isExempt as isCookieExemptPath } from '@/server/http/utils/cookie-exempt'
 import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
 import { serverConfig } from '@/server/infra/config'
+import { createLazyAppSnapshot } from '@/shared/i18n/app-localization'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
@@ -83,6 +84,12 @@ export async function deriveRequestContext(input: {
   }
 
   const rawUrl = new URL(request.url)
+  // Lazy + memoized: the settings snapshot is hydrated by `buildLoadContext`
+  // (RR loaders) and by the `/rpc/*` bridge, both AFTER this context exists —
+  // every reader therefore resolves it post-hydration. ONE capture pins the
+  // bundle and the localization (and its revision) together, so a settings
+  // save mid-request can never split the rendered bytes from their cache key.
+  const appSnapshot = createLazyAppSnapshot()
   const requestContext: RequestContext = {
     session: sessionCtx.session,
     viewer: sessionCtx.user ?? null,
@@ -91,6 +98,12 @@ export async function deriveRequestContext(input: {
     requestFacts: extractRequestFacts(request),
     db,
     cspNonce: randomBytes(16).toString('base64'),
+    get settings() {
+      return appSnapshot().settings
+    },
+    get localization() {
+      return appSnapshot().localization
+    },
     markSessionDirty() {
       dirty = true
     },

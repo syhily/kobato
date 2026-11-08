@@ -1,6 +1,8 @@
 // Admin dashboard wire contracts: the route loader projects recent
 // drafts / published posts into `DraftSummary` and picks the empty-state
-// line server-side. Isomorphic so route chunk + server share one shape.
+// line id server-side. Isomorphic so route chunk + server share one shape.
+
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 export interface DraftSummary {
   id: string
@@ -8,14 +10,15 @@ export interface DraftSummary {
   updatedAtIso: string
 }
 
-export const EMPTY_STATE_LINES: ReadonlyArray<string> = [
-  '审核台空空如也，今日得清闲。',
-  '万事妥帖，可以安心写新东西了。',
-  '一切井然有序，去泡杯茶吧。',
-  '评审区一片清净，灵感时间到了。',
-  '都处理完啦，去看看星辰大海。',
+export const EMPTY_STATE_LINE_IDS: ReadonlyArray<UiMessageId> = [
+  'admin.welcome.empty.line1',
+  'admin.welcome.empty.line2',
+  'admin.welcome.empty.line3',
+  'admin.welcome.empty.line4',
+  'admin.welcome.empty.line5',
 ]
 
-export function pickEmptyStateLine(): string {
-  return EMPTY_STATE_LINES[Math.floor(Math.random() * EMPTY_STATE_LINES.length)] ?? EMPTY_STATE_LINES[0]!
+/** Picked by the loader (stable across SSR + hydration) and resolved by the panel's `t`. */
+export function pickEmptyStateLineId(): UiMessageId {
+  return EMPTY_STATE_LINE_IDS[Math.floor(Math.random() * EMPTY_STATE_LINE_IDS.length)] ?? EMPTY_STATE_LINE_IDS[0]!
 }

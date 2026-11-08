@@ -14,8 +14,10 @@ import {
 import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps, display, save } = useSettingsCard<
     MailLoaderShape,
     {
@@ -53,28 +55,37 @@ export function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
   })
 
   const smtpPassField = secretFieldStrings({
+    t,
     mask: display.mail.smtpPassMask,
-    keepLabel: '保留现有密码',
-    emptyHint: '尚未配置。',
-    emptyPlaceholder: '输入 SMTP 密码',
+    keepLabel: t('admin.settings.mail.smtp.keepPass'),
+    emptyHint: t('admin.settings.mail.smtp.passHintEmpty'),
+    emptyPlaceholder: t('admin.settings.mail.smtp.passPlaceholder'),
   })
   return (
     <SettingGroup
-      title="SMTP 配置"
-      description="配置 SMTP 服务器地址、端口和认证信息。修改后立即生效。"
+      title={t('admin.settings.mail.smtp.title')}
+      description={t('admin.settings.mail.smtp.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="服务器地址" htmlFor="mail-smtp-host" hint="例如 smtp.example.com。">
+        <SettingsRow
+          label={t('admin.settings.mail.smtp.host')}
+          htmlFor="mail-smtp-host"
+          hint={t('admin.settings.mail.smtp.hostHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="mail-smtp-host"
-            placeholder="smtp.example.com"
+            placeholder={t('admin.settings.mail.smtp.hostPlaceholder')}
             maxLength={253}
             {...form.register('smtpHost')}
           />
         </SettingsRow>
-        <SettingsRow label="端口" htmlFor="mail-smtp-port" hint="常见端口：25、587、465。">
+        <SettingsRow
+          label={t('admin.settings.mail.smtp.port')}
+          htmlFor="mail-smtp-port"
+          hint={t('admin.settings.mail.smtp.portHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="mail-smtp-port"
@@ -84,17 +95,21 @@ export function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
             {...form.register('smtpPort', { valueAsNumber: true })}
           />
         </SettingsRow>
-        <SettingsRow label="用户名" htmlFor="mail-smtp-user" hint="SMTP 登录账号，通常是一个邮箱地址。">
+        <SettingsRow
+          label={t('admin.settings.mail.smtp.user')}
+          htmlFor="mail-smtp-user"
+          hint={t('admin.settings.mail.smtp.userHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="mail-smtp-user"
             type="text"
-            placeholder="postmaster@example.com"
+            placeholder={t('admin.settings.mail.smtp.userPlaceholder')}
             maxLength={512}
             {...form.register('smtpUser')}
           />
         </SettingsRow>
-        <SettingsRow label="密码" htmlFor="mail-smtp-pass" hint={smtpPassField.hint}>
+        <SettingsRow label={t('admin.settings.mail.smtp.pass')} htmlFor="mail-smtp-pass" hint={smtpPassField.hint}>
           <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="mail-smtp-pass"
@@ -102,7 +117,7 @@ export function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
             {...form.register('smtpPass')}
           />
         </SettingsRow>
-        <SettingsRow label="使用 TLS" hint="465 端口通常需要开启，587 端口视服务器配置而定。">
+        <SettingsRow label={t('admin.settings.mail.smtp.secure')} hint={t('admin.settings.mail.smtp.secureHint')}>
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -118,11 +133,14 @@ export function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               )}
             />
             <FieldLabel htmlFor="mail-smtp-secure" className="font-normal">
-              启用 TLS（SSL）
+              {t('admin.settings.mail.smtp.secureLabel')}
             </FieldLabel>
           </div>
         </SettingsRow>
-        <SettingsRow label="要求 TLS" hint="强制 STARTTLS，拒绝明文发送。建议保持开启。">
+        <SettingsRow
+          label={t('admin.settings.mail.smtp.requireTls')}
+          hint={t('admin.settings.mail.smtp.requireTlsHint')}
+        >
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -138,14 +156,11 @@ export function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               )}
             />
             <FieldLabel htmlFor="mail-smtp-require-tls" className="font-normal">
-              强制 TLS（requireTLS）
+              {t('admin.settings.mail.smtp.requireTlsLabel')}
             </FieldLabel>
           </div>
         </SettingsRow>
-        <SettingsRow
-          label="验证证书"
-          hint="验证 SMTP 服务器 TLS 证书。关闭后可能遭受中间人攻击，仅用于自签名证书调试。"
-        >
+        <SettingsRow label={t('admin.settings.mail.smtp.verify')} hint={t('admin.settings.mail.smtp.verifyHint')}>
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -161,7 +176,7 @@ export function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               )}
             />
             <FieldLabel htmlFor="mail-smtp-reject-unauthorized" className="font-normal">
-              验证 TLS 证书
+              {t('admin.settings.mail.smtp.verifyLabel')}
             </FieldLabel>
           </div>
         </SettingsRow>

@@ -7,7 +7,7 @@ import { FontsView } from '@/ui/admin/fonts/FontsView'
 // revalidate). Data is fetched client-side via oRPC.
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('网站字体')
+export const meta = titleMeta('meta.title.admin.fonts')
 
 export default function AdminLibraryFontsRoute() {
   return <FontsView />

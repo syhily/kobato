@@ -9,6 +9,7 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const TRANSPORT_OPTIONS: { value: MailLoaderShape['mail']['transport']; label: string }[] = [
   { value: 'smtp', label: 'SMTP' },
@@ -22,6 +23,7 @@ export function ProviderSelectCard({
   mail: MailLoaderShape
   onTransportSaved: (transport: MailLoaderShape['mail']['transport']) => void
 }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, save } = useSettingsCard<
     MailLoaderShape,
     { transport: MailLoaderShape['mail']['transport'] }
@@ -37,12 +39,16 @@ export function ProviderSelectCard({
 
   return (
     <SettingGroup
-      title="邮件服务提供商"
-      description="选择发送邮件所用的服务商。切换后下方的配置项会相应变化。"
+      title={t('admin.settings.mail.provider.title')}
+      description={t('admin.settings.mail.provider.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="提供商" htmlFor="mail-transport" hint="SMTP 适合自有邮件服务器，Mailgun 适合托管邮件服务。">
+        <SettingsRow
+          label={t('admin.settings.mail.provider.label')}
+          htmlFor="mail-transport"
+          hint={t('admin.settings.mail.provider.hint')}
+        >
           <Controller
             control={form.control}
             name="transport"
@@ -58,7 +64,7 @@ export function ProviderSelectCard({
                 }}
               >
                 <SelectTrigger id="mail-transport" className="w-full sm:w-56">
-                  <SelectValue placeholder="选择提供商">
+                  <SelectValue placeholder={t('admin.settings.mail.provider.placeholder')}>
                     {(value: MailLoaderShape['mail']['transport'] | null) =>
                       TRANSPORT_OPTIONS.find((option) => option.value === value)?.label ?? value ?? ''
                     }

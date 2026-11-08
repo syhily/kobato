@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
 import type { SaveBodyInput, SaveBodyOutput } from '@/shared/contracts/revision'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type { EntityLike, RevisionLike, UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { MetaSidebarSlotProps } from '@/ui/admin/editor-shell/EditorMetaPanel'
@@ -33,8 +34,8 @@ export interface EditorScreenAdapter<
   TUpsertMetaInput,
 > {
   entityKind: 'post' | 'page'
-  /** Display noun woven into toolbar / panel / dialog copy (`文章` / `页面`). */
-  entityLabel: string
+  /** Display-noun message id woven into toolbar / panel / dialog copy (`admin.editor.entity.*`). */
+  entityLabelId: UiMessageId
   /** Admin list route (back button, delete navigation). */
   listPath: string
   /** Public URL prefix for the post-save preview banner (`/posts` / ``). */
@@ -135,7 +136,7 @@ export function EditorScreen<
     <div className="flex min-h-admin-content-min flex-col gap-0 p-2 md:gap-4 md:p-4">
       <EditorToolbar
         mode={mode}
-        entityLabel={adapter.entityLabel}
+        entityLabelId={adapter.entityLabelId}
         listPath={adapter.listPath}
         publicPath={entity !== undefined ? adapter.publicPath(entity.slug) : null}
         analyticsPath={
@@ -162,7 +163,7 @@ export function EditorScreen<
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
           {mode === 'create' ? (
-            <CreateModeBanner entityLabel={adapter.entityLabel} draftSavedAt={state.createDraftSavedAt} />
+            <CreateModeBanner entityLabelId={adapter.entityLabelId} draftSavedAt={state.createDraftSavedAt} />
           ) : null}
           <PageBodyEditor
             initialBody={state.initialBody}
@@ -172,7 +173,7 @@ export function EditorScreen<
             header={
               <div className="mx-auto w-full max-w-editor-article px-4 pt-8">
                 <TitleSlugStrip
-                  entityLabel={adapter.entityLabel}
+                  entityLabelId={adapter.entityLabelId}
                   title={state.meta.title}
                   slug={state.meta.slug}
                   onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
@@ -185,7 +186,7 @@ export function EditorScreen<
         </div>
         <EditorMetaPanel
           entityKind={adapter.entityKind}
-          entityLabel={adapter.entityLabel}
+          entityLabelId={adapter.entityLabelId}
           entity={entity}
           metaOpen={state.metaOpen}
           setMetaOpen={state.setMetaOpen}

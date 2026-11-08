@@ -15,7 +15,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 }
 
-export const meta = titleMeta('审计日志')
+export const meta = titleMeta('meta.title.admin.auditLog')
 
 export default function AuditLogPage({ loaderData }: Route.ComponentProps) {
   return <AuditLogView retentionDays={loaderData.retentionDays} />

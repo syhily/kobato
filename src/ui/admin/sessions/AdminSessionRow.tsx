@@ -6,11 +6,12 @@ import type { AdminSessionItem } from '@/routes/admin/security/sessions'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { ROLE_LEVELS, roleLabel, type Role } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS, ROLE_LEVELS, type Role } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { maskIp } from '@/ui/lib/mask'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -38,6 +39,7 @@ function roleBadgeClasses(role: Role): string {
 }
 
 export function AdminSessionRow({ item, submitting, onRevoke, config }: AdminSessionRowProps) {
+  const { t } = useI18n()
   const label = item.label
   const initial = (item.userName || item.userEmail || '?').slice(0, 1).toUpperCase()
 
@@ -59,11 +61,13 @@ export function AdminSessionRow({ item, submitting, onRevoke, config }: AdminSes
             <span className="text-xs text-muted-foreground">{item.userEmail}</span>
             {!!item.userRole && isKnownRole(item.userRole) && (
               <Badge variant="secondary" className={roleBadgeClasses(item.userRole)}>
-                {roleLabel(item.userRole)}
+                {t(ROLE_LABEL_KEYS[item.userRole])}
               </Badge>
             )}
             {item.isCurrent && (
-              <Badge className="bg-status-success-bg text-status-success-fg hover:bg-status-success-bg">当前会话</Badge>
+              <Badge className="bg-status-success-bg text-status-success-fg hover:bg-status-success-bg">
+                {t('admin.sessions.current')}
+              </Badge>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -73,17 +77,17 @@ export function AdminSessionRow({ item, submitting, onRevoke, config }: AdminSes
             <span className="break-all">{maskIp(item.ip) || '—'}</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            登录 {formatLocalDate(new Date(item.loginAtIso), DATE_FORMAT, config)}
+            {t('admin.sessions.login')} {formatLocalDate(new Date(item.loginAtIso), DATE_FORMAT, config)}
             <span className="mx-1.5 text-muted-foreground/60">·</span>
-            活跃 {formatLocalDate(new Date(item.lastActiveAtIso), DATE_FORMAT, config)}
+            {t('admin.sessions.active')} {formatLocalDate(new Date(item.lastActiveAtIso), DATE_FORMAT, config)}
             <span className="mx-1.5 text-muted-foreground/60">·</span>
-            过期 {formatLocalDate(new Date(item.expiresAtIso), DATE_FORMAT, config)}
+            {t('admin.sessions.expires')} {formatLocalDate(new Date(item.expiresAtIso), DATE_FORMAT, config)}
           </p>
         </div>
       </div>
       <div className="flex shrink-0 items-center self-center">
         <Button type="button" variant="outline" size="sm" disabled={submitting} onClick={() => onRevoke(item)}>
-          <LogOutIcon data-icon="inline-start" /> 注销
+          <LogOutIcon data-icon="inline-start" /> {t('admin.sessions.revoke')}
         </Button>
       </div>
     </div>

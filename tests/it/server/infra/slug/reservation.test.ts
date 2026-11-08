@@ -59,7 +59,7 @@ describe('infra/slug/reservation — reserveSlugInTransaction', () => {
       reserveSlugInTransaction(db, 'post', 'hello', 999, {
         findOwnMetaBySlugForUpdate: findPostMetaBySlugForUpdate,
       }),
-    ).toThrow('slug "hello" 已被其它文章占用。')
+    ).toThrow('slug "hello" is already used by another post.')
   })
 
   it('throws CONFLICT when a different entity type holds the slug', async () => {
@@ -70,7 +70,7 @@ describe('infra/slug/reservation — reserveSlugInTransaction', () => {
       reserveSlugInTransaction(db, 'post', 'hello', undefined, {
         findOwnMetaBySlugForUpdate: findPostMetaBySlugForUpdate,
       }),
-    ).toThrow('slug "hello" 已被其它页面占用。')
+    ).toThrow('slug "hello" is already used by another page.')
   })
 
   it('allows updating the same entity with its existing slug', async () => {
@@ -91,6 +91,6 @@ describe('infra/slug/reservation — reserveSlugInTransaction', () => {
       reserveSlugInTransaction(db, 'page', 'about', 999, {
         findOwnMetaBySlugForUpdate: findPageMetaBySlugForUpdate,
       }),
-    ).toThrow('slug "about" 已被其它页面占用。')
+    ).toThrow('slug "about" is already used by another page.')
   })
 })

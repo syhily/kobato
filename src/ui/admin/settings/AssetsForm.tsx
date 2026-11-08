@@ -8,6 +8,7 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { SettingsInput, SettingsTextarea } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { StorageCards } from '@/ui/admin/settings/StorageCards'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface AssetsFormProps {
   assets: AssetsLoaderShape
@@ -15,6 +16,7 @@ interface AssetsFormProps {
 
 // Upload limits: 资源域名 / S3 存储 / 存储迁移 live in `StorageCards` above.
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
     AssetsLoaderShape,
     { maxBytes: number; jpegQuality: number }
@@ -32,15 +34,15 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
 
   return (
     <SettingGroup
-      title="上传参数"
-      description="影响后台「图片管理」上传时的体积上限与 JPEG 重编码画质。"
+      title={t('admin.settings.assets.upload.title')}
+      description={t('admin.settings.assets.upload.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="最大上传体积（字节）"
+          label={t('admin.settings.assets.upload.maxBytes')}
           htmlFor="assets-max-bytes"
-          hint="默认建议 8 MiB（8388608）。最大 50 MiB。"
+          hint={t('admin.settings.assets.upload.maxBytesHint')}
         >
           <SettingsInput
             flushOnBlur={flushOnBlur}
@@ -51,7 +53,11 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
             {...form.register('maxBytes', { valueAsNumber: true })}
           />
         </SettingsRow>
-        <SettingsRow label="默认 JPEG 质量" htmlFor="assets-jpeg-quality" hint="40-100 之间。">
+        <SettingsRow
+          label={t('admin.settings.assets.upload.jpegQuality')}
+          htmlFor="assets-jpeg-quality"
+          hint={t('admin.settings.assets.upload.jpegQualityHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="assets-jpeg-quality"
@@ -68,6 +74,7 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
 
 // `robots.txt` is plain config text, so it stays on the settings PATCH; brand assets live elsewhere.
 function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { robotsTxt: string }>({
     section: 'assets',
     source: assets,
@@ -80,20 +87,20 @@ function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
 
   return (
     <SettingGroup
-      title="robots.txt"
-      description="爬虫规则。留空时由网站地址自动生成包含 Sitemap 行的默认值。"
+      title={t('admin.settings.assets.robots.title')}
+      description={t('admin.settings.assets.robots.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="robots.txt 内容" htmlFor="assets-robots-txt">
+        <SettingsRow label={t('admin.settings.assets.robots.content')} htmlFor="assets-robots-txt">
           <SettingsTextarea
             flushOnBlur={flushOnBlur}
             id="assets-robots-txt"
-            aria-label="robots.txt 内容"
+            aria-label={t('admin.settings.assets.robots.content')}
             rows={6}
             value={robotsTxt}
             onChange={(e) => form.setValue('robotsTxt', e.target.value, { shouldDirty: true })}
-            placeholder="留空则使用默认规则"
+            placeholder={t('admin.settings.assets.robots.placeholder')}
           />
         </SettingsRow>
       </SettingGroupContent>

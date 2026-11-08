@@ -11,6 +11,7 @@ import { buildAnalyticsInput, type AnalyticsScope } from '@/ui/admin/analytics/u
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 
 // Country choropleth world map (Slite's `metrics/Locations.vue`) behind the
@@ -30,6 +31,7 @@ export interface LocationsMapProps {
 }
 
 export function LocationsMap({ initial, className, scope }: LocationsMapProps) {
+  const { t } = useI18n()
   const state = useAnalyticsDashboardState()
   const query = useQuery(
     orpcQuery.analytics.metrics.queryOptions({
@@ -43,7 +45,7 @@ export function LocationsMap({ initial, className, scope }: LocationsMapProps) {
   return (
     <Card className={cn('flex flex-col gap-2 shadow-none lg:h-[500px]', className)}>
       <CardHeader>
-        <CardTitle className="text-sm font-semibold">地理位置</CardTitle>
+        <CardTitle className="text-sm font-semibold">{t('admin.analytics.locations.title')}</CardTitle>
         <CardAction>
           <a
             href="https://db-ip.com"
@@ -78,9 +80,10 @@ export function LocationsMap({ initial, className, scope }: LocationsMapProps) {
 // Static pre-map placeholder — byte-identical between SSR, the first client
 // render, and the lazy-boundary fallback (React #418 rule).
 function LocationsMapSkeleton() {
+  const { t } = useI18n()
   return (
     <div className="absolute inset-0 overflow-hidden" role="status" aria-busy="true">
-      <span className="sr-only">加载中</span>
+      <span className="sr-only">{t('common.state.loading')}</span>
       <Skeleton aria-hidden className="size-full rounded-none" />
     </div>
   )

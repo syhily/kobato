@@ -4,7 +4,7 @@ import { MusicsView } from '@/ui/admin/musics/MusicsView'
 
 export const loader = guardOnlyLoader('author')
 
-export const meta = titleMeta('音乐管理')
+export const meta = titleMeta('meta.title.admin.music')
 
 export default function WpAdminMusicsRoute() {
   return <MusicsView />

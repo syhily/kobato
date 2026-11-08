@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
@@ -17,7 +18,7 @@ describe('ui/post/toc/TableOfContents', () => {
     const previous = getBlogSettingsBundleSync()
     setBlogSettingsBundleForTests(null)
     try {
-      const html = renderToStaticMarkup(<TableOfContents headings={headings} toc="enabled" />)
+      const html = renderToStaticMarkup(wrapWithI18n(<TableOfContents headings={headings} toc="enabled" />))
       expect(html).toContain('href="#intro"')
       expect(html).not.toContain('href="#deep"')
     } finally {
@@ -26,7 +27,7 @@ describe('ui/post/toc/TableOfContents', () => {
   })
 
   it('marks the closed drawer as inert and removes its links from the tab order', () => {
-    const html = renderToStaticMarkup(<TableOfContents headings={headings} toc="enabled" />)
+    const html = renderToStaticMarkup(wrapWithI18n(<TableOfContents headings={headings} toc="enabled" />))
     expect(html).toContain('inert')
     expect(html).toContain('aria-hidden="true"')
     expect(html).toContain('tabindex="-1"')

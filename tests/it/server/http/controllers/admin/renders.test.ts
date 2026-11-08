@@ -1,6 +1,7 @@
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import katex from 'katex'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
@@ -79,12 +80,29 @@ describe('adminRendersRouter.math', () => {
     expect(res.mathml).toContain('<math')
   })
 
-  it('returns the KaTeX error instead of throwing for invalid tex', async () => {
+  it('returns the KaTeX error as a raw-text descriptor instead of throwing', async () => {
     const ctx = makeAuthedCtx({ db })
     const res = await call(adminRendersRouter.math, { tex: '\\frac{1' }, { context: ctx })
     expect(res.mathml).toBe('')
-    expect(typeof res.error).toBe('string')
-    expect(res.error!.length).toBeGreaterThan(0)
+    expect(res.error).toMatchObject({
+      messageKey: 'error.api.rawMessage',
+      params: { message: expect.stringContaining('KaTeX') },
+    })
+  })
+
+  it('uses the typed render-failed descriptor for a non-Error throw', async () => {
+    const ctx = makeAuthedCtx({ db })
+    // A non-Error throw takes the typed fallback branch. The variable keeps
+    // the intentional non-Error value out of the throw-literal lint rule.
+    const nonError: unknown = { reason: 'katex blew up without an Error' }
+    vi.spyOn(katex, 'renderToString').mockImplementationOnce(() => {
+      throw nonError
+    })
+    const res = await call(adminRendersRouter.math, { tex: 'x^2' }, { context: ctx })
+    expect(res.error).toEqual({
+      messageKey: 'admin.editor.math.renderFailed',
+      fallbackMessage: 'Could not render the formula',
+    })
   })
 })
 

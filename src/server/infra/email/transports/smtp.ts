@@ -12,6 +12,7 @@ import type {
   SendResult,
 } from '@/server/infra/email/types'
 
+import { emailTranslator } from '@/server/infra/email/translator'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('email')
@@ -46,17 +47,18 @@ export class SmtpTransport implements MailTransport {
 
   async send(message: EmailMessage, options: SendOptions = {}): Promise<SendResult> {
     const { enabled, host, user, pass, sender } = this.config
+    const t = emailTranslator()
 
     if (!enabled) {
       log.debug('SMTP mail send skipped: disabled', { to: message.to, subject: message.subject })
-      return { ok: false, reason: 'disabled', message: '邮件发送已在管理面板中关闭' }
+      return { ok: false, reason: 'disabled', message: t.format('email.error.disabled') }
     }
     if (!host || !user || !pass || !sender) {
       log.warn('SMTP mail send skipped: unconfigured', { to: message.to, subject: message.subject })
       return {
         ok: false,
         reason: 'unconfigured',
-        message: 'SMTP 服务尚未配置完整（缺少 Host / 用户名 / 密码 / 发件人）',
+        message: t.format('email.error.smtpUnconfigured'),
       }
     }
 

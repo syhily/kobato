@@ -33,6 +33,7 @@ import {
   SOLUTION_NESTED_EDITOR,
 } from '@/shared/lexical/cards/solution'
 import { SOLUTION_NODE_TYPE } from '@/shared/lexical/node-whitelist'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The card's nested-editor spec (CONTEXT.md: "card spec"), const-asserted so
 // the literal name survives into the derived field maps — the same array
@@ -78,6 +79,7 @@ export function SolutionCardView({ children }: { children?: ReactNode }) {
 }
 
 function SolutionCardComponent({ node }: { node: SolutionCardNode }) {
+  const { t } = useI18n()
   // Null only when a base instance without the nested-editor spec renders —
   // the assembled class always has the editor (the toggle-card invariant).
   if (!node.__contentEditor) {
@@ -95,7 +97,7 @@ function SolutionCardComponent({ node }: { node: SolutionCardNode }) {
           inheritStyles={true}
           isDragEnabled={false}
           markdownTransformers={BASIC_TRANSFORMERS}
-          placeholderText="在此处填写解答步骤"
+          placeholderText={t('admin.editor.cards.solution.placeholder')}
         />
       </InklingNestedComposer>
     </SolutionCardView>
@@ -110,9 +112,11 @@ export const solutionCard = defineCard({
   insert: { openInEditMode: true },
   menu: [
     {
-      label: '解答块',
+      // The menu labels are English fallbacks; the overlay localizes them
+      // through `labelKey` (the inkling label tables).
+      label: 'Solution block',
       labelKey: 'host.solution',
-      desc: '题解 / 提示（内部可排版，与引用块相同）',
+      desc: 'Q&A / hint (format-rich, same as a quote)',
       icon: ListTreeIcon,
       command: 'insert',
       insertParams: {},

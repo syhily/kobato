@@ -2,6 +2,8 @@ import { GlobalFonts } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 import { access, readFile } from 'node:fs/promises'
 
+import type { BlogSettingsBundle } from '@/shared/config/types'
+
 import { getLogger } from '@/server/infra/logger'
 import { FONT_DIR } from '@/server/infra/paths'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -52,9 +54,7 @@ interface LoadedFont extends FontSlot {
   path: string
 }
 
-async function loadFontSlot(slot: 'og' | 'calendar'): Promise<LoadedFont | null> {
-  const fonts = requireBlogSettingsSection('fonts')
-  const family = fonts[slot].family
+async function loadFontSlot(slot: 'og' | 'calendar', family: string): Promise<LoadedFont | null> {
   if (family === '') {
     if (!loggedEmpty.has(slot)) {
       log.info('Canvas font slot has no family configured; using fallback system font', { slot })
@@ -108,12 +108,25 @@ const canvasFontFlights: Record<'og' | 'calendar', Promise<FontSlot | null> | nu
 }
 // Generation per slot (audit P1-18): a flight started before the bump must not commit its stale result.
 const canvasFontGenerations: Record<'og' | 'calendar', number> = { og: 0, calendar: 0 }
+// The family each in-flight load is resolving — a caller pinned to a different
+// settings generation must not join (and render with) that family.
+const canvasFontFlightFamily: Record<'og' | 'calendar', string | null> = { og: null, calendar: null }
 
-export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
+/**
+ * `settings` is the caller's PINNED snapshot (request capture / send-time
+ * resolve); omitted = the current process snapshot. The family check uses the
+ * same bundle the caller renders with, so a settings save mid-request can
+ * never swap the font behind an already-keyed representation.
+ */
+export function ensureCanvasFont(
+  slot: 'og' | 'calendar',
+  settings?: BlogSettingsBundle | null,
+): Promise<FontSlot | null> {
+  const family = requireBlogSettingsSection('fonts', settings)[slot].family
   const cached = canvasFontSlots[slot]
   if (cached !== null) {
     // Cheap sync recheck — a family edit makes the cached slot stale.
-    if (requireBlogSettingsSection('fonts')[slot].family !== cached.family) {
+    if (cached.family !== family) {
       resetCanvasFont(slot)
     } else if (GlobalFonts.has(cached.family)) {
       // Fast path: font already registered.
@@ -121,11 +134,23 @@ export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | nu
     }
   }
   let flight = canvasFontFlights[slot]
+  if (flight !== null && canvasFontFlightFamily[slot] !== family) {
+    // A flight for a different settings generation is in progress — abandon it
+    // (the generation guard below keeps its result from committing).
+    resetCanvasFont(slot)
+    flight = null
+  }
   if (flight === null) {
+    canvasFontFlightFamily[slot] = family
     const generation = canvasFontGenerations[slot]
     flight = (async () => {
-      const loaded = await loadFontSlot(slot)
-      if (loaded !== null && canvasFontGenerations[slot] === generation) {
+      const loaded = await loadFontSlot(slot, family)
+      if (canvasFontGenerations[slot] !== generation) {
+        // Abandoned generation: never adopt a newer generation's slot — the
+        // caller renders with the fallback font its own key describes.
+        return null
+      }
+      if (loaded !== null) {
         inProcessByPath.set(loaded.path, loaded.buffer)
         if (!GlobalFonts.has(loaded.family)) {
           GlobalFonts.register(loaded.buffer, loaded.family)
@@ -138,6 +163,7 @@ export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | nu
         // Only the current generation may clear its own flight.
         if (canvasFontGenerations[slot] === generation) {
           canvasFontFlights[slot] = null
+          canvasFontFlightFamily[slot] = null
         }
         throw err
       })
@@ -150,6 +176,7 @@ export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | nu
         // Not registered (null slot, snapshot race): drop the flight so the next render retries.
         if (s === null || !GlobalFonts.has(s.family)) {
           canvasFontFlights[slot] = null
+          canvasFontFlightFamily[slot] = null
         }
       })
     canvasFontFlights[slot] = flight
@@ -164,11 +191,14 @@ export function resetCanvasFont(slot?: 'og' | 'calendar'): void {
     canvasFontSlots.calendar = null
     canvasFontFlights.og = null
     canvasFontFlights.calendar = null
+    canvasFontFlightFamily.og = null
+    canvasFontFlightFamily.calendar = null
     canvasFontGenerations.og += 1
     canvasFontGenerations.calendar += 1
     return
   }
   canvasFontSlots[slot] = null
   canvasFontFlights[slot] = null
+  canvasFontFlightFamily[slot] = null
   canvasFontGenerations[slot] += 1
 }

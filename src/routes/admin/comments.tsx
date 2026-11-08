@@ -4,20 +4,22 @@ import { guardOnlyLoader } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
 import { parseCommentFiltersFromSearchParams } from '@/ui/admin/comments/useCommentsController'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The parse helper lives next to the controller's write-back so both URL directions stay in sync.
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('评论管理')
+export const meta = titleMeta('meta.title.admin.comments')
 
 export default function WpAdminCommentsRoute() {
   const { currentUser } = useOutletContext<{
     currentUser: { id: string; name: string; email: string }
   }>()
+  const { t } = useI18n()
   const [searchParams] = useSearchParams()
 
-  const initialFilters = parseCommentFiltersFromSearchParams(searchParams)
+  const initialFilters = parseCommentFiltersFromSearchParams(searchParams, t)
 
   return (
     <CommentsView

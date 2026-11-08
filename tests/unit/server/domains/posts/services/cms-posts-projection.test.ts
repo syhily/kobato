@@ -23,6 +23,7 @@ function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
     webmentionsEnabled: overrides.webmentionsEnabled ?? true,
     showToc: overrides.showToc ?? false,
     showUpdated: overrides.showUpdated ?? false,
+    contentLanguage: overrides.contentLanguage ?? null,
     visible: overrides.visible ?? true,
     publishedAt: overrides.publishedAt ?? now,
     publishedRevisionId: overrides.publishedRevisionId ?? null,

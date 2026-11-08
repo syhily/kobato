@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { computePageWindow } from '@/shared/utils/pagination'
 import { chipActive, chipBase, chipResting } from '@/ui/components/pagination'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface PaginationProps {
   current: number
@@ -12,12 +13,17 @@ export interface PaginationProps {
 }
 
 export function Pagination({ current, total, rootPath }: PaginationProps) {
+  const { t } = useI18n()
   const items = computePageWindow({ current, total })
   if (items.length === 0) {
     return null
   }
   return (
-    <nav aria-label="文章" data-slot="pagination" className="navigation mx-auto flex w-full justify-center">
+    <nav
+      aria-label={t('public.posts.paginationLabel')}
+      data-slot="pagination"
+      className="navigation mx-auto flex w-full justify-center"
+    >
       <ul data-slot="pagination-content" className="flex flex-row flex-wrap items-center justify-center gap-2">
         {items.map((item, i) => {
           // Key ellipsis slots by neighbouring page numbers so the key is stable across list lengths.
@@ -36,6 +42,7 @@ export function Pagination({ current, total, rootPath }: PaginationProps) {
 }
 
 function Ellipsis() {
+  const { t } = useI18n()
   return (
     <li data-slot="pagination-item">
       <span
@@ -44,7 +51,7 @@ function Ellipsis() {
         className={cn(chipBase, chipResting, 'cursor-default hover:bg-chip-hover-bg hover:text-chip-hover-fg')}
       >
         <MoreHorizontalIcon className="size-4" aria-hidden />
-        <span className="sr-only">更多</span>
+        <span className="sr-only">{t('public.posts.more')}</span>
       </span>
     </li>
   )

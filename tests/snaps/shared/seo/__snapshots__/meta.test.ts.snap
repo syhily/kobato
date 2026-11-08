@@ -80,7 +80,7 @@ exports[`snapshot: SEO meta head > default (home / website) head 1`] = `
     "property": "og:type",
   },
   {
-    "content": "zh-CN",
+    "content": "zh_CN",
     "property": "og:locale",
   },
   {
@@ -222,7 +222,7 @@ exports[`snapshot: SEO meta head > listing head with paging links + noindex 1`] 
     "property": "og:type",
   },
   {
-    "content": "zh-CN",
+    "content": "zh_CN",
     "property": "og:locale",
   },
   {
@@ -379,7 +379,7 @@ exports[`snapshot: SEO meta head > post detail head includes article:tag entries
     "property": "og:type",
   },
   {
-    "content": "zh-CN",
+    "content": "zh_CN",
     "property": "og:locale",
   },
   {

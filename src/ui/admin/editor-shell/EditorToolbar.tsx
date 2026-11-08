@@ -10,15 +10,17 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { EditorToolbarState } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface EditorToolbarProps {
   mode: 'create' | 'edit'
-  /** Display noun woven into button copy (`文章` / `页面`). */
-  entityLabel: string
+  /** Display-noun message id woven into button copy (`admin.editor.entity.*`). */
+  entityLabelId: UiMessageId
   /** Admin list route for the back button. */
   listPath: string
   /** Public detail URL for the entity being edited; `null` in create mode. */
@@ -28,7 +30,9 @@ export interface EditorToolbarProps {
   state: EditorToolbarState
 }
 
-export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyticsPath, state }: EditorToolbarProps) {
+export function EditorToolbar({ mode, entityLabelId, listPath, publicPath, analyticsPath, state }: EditorToolbarProps) {
+  const { t } = useI18n()
+  const entity = t(entityLabelId)
   return (
     <header className="flex flex-wrap items-center gap-2 text-sm">
       <div className="flex min-w-0 items-center gap-2">
@@ -38,7 +42,7 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
           render={
             <Link to={listPath}>
               <ArrowLeftIcon />
-              <span className="sr-only lg:not-sr-only">返回列表</span>
+              <span className="sr-only lg:not-sr-only">{t('admin.editor.toolbar.back')}</span>
             </Link>
           }
         />
@@ -49,7 +53,7 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
             render={
               <Link to={publicPath} target="_blank" rel="noreferrer">
                 <ExternalLinkIcon />
-                <span className="sr-only lg:not-sr-only">公开预览</span>
+                <span className="sr-only lg:not-sr-only">{t('admin.editor.toolbar.preview')}</span>
               </Link>
             }
           />
@@ -61,7 +65,7 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
             render={
               <Link to={analyticsPath}>
                 <ChartLineIcon />
-                <span className="sr-only lg:not-sr-only">分析</span>
+                <span className="sr-only lg:not-sr-only">{t('admin.editor.toolbar.analytics')}</span>
               </Link>
             }
           />
@@ -75,10 +79,14 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
               void state.persistCreate()
             }}
             disabled={state.isPending || !state.canPersistMeta}
-            title={`保存${entityLabel}信息并上传当前正文`}
+            title={t('admin.editor.toolbar.createHint', { entity })}
           >
             {state.isCreating ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
-            <span className="sr-only sm:not-sr-only">{state.isCreating ? '创建中…' : `创建${entityLabel}`}</span>
+            <span className="sr-only sm:not-sr-only">
+              {state.isCreating
+                ? t('admin.editor.toolbar.createInProgress')
+                : t('admin.editor.toolbar.create', { entity })}
+            </span>
           </Button>
         ) : (
           <>
@@ -87,10 +95,12 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
               size="sm"
               onClick={state.persistSave}
               disabled={state.isPending || !state.canPersistMeta}
-              title={`保存${entityLabel}信息（立即生效），并在正文与最新版本不一致时另存为新草稿 (Cmd/Ctrl+S)`}
+              title={t('admin.editor.toolbar.saveMetaHint', { entity })}
             >
               {state.isSavingDraft ? <Loader2Icon className="animate-spin" /> : <SaveIcon />}
-              <span className="sr-only sm:not-sr-only">{state.isSavingDraft ? '保存中…' : '保存草稿'}</span>
+              <span className="sr-only sm:not-sr-only">
+                {state.isSavingDraft ? t('admin.editor.toolbar.savingDraft') : t('admin.editor.toolbar.saveDraft')}
+              </span>
             </Button>
             <Button
               size="sm"
@@ -99,14 +109,18 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
               title={
                 state.canPublish
                   ? state.publishStatus === 'scheduled'
-                    ? '将最新草稿按计划时间上线 (Cmd/Ctrl+Shift+P)'
-                    : '将最新草稿发布到线上 (Cmd/Ctrl+Shift+P)'
-                  : '当前没有待发布的草稿'
+                    ? t('admin.editor.toolbar.publishScheduledHint')
+                    : t('admin.editor.toolbar.publishHint')
+                  : t('admin.editor.toolbar.publishDisabledHint')
               }
             >
               {state.isPublishing ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
               <span className="sr-only sm:not-sr-only">
-                {state.isPublishing ? '发布中…' : state.publishStatus === 'scheduled' ? '计划发布' : '发布草稿'}
+                {state.isPublishing
+                  ? t('admin.editor.toolbar.publishing')
+                  : state.publishStatus === 'scheduled'
+                    ? t('admin.editor.toolbar.publishScheduled')
+                    : t('admin.editor.toolbar.publish')}
               </span>
             </Button>
             {state.published ? (
@@ -115,10 +129,12 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
                 size="sm"
                 onClick={state.persistUnpublish}
                 disabled={state.isPending}
-                title={`将${entityLabel}下线，公开访问会返回 404；正文不会丢失，再次发布草稿即可恢复`}
+                title={t('admin.editor.toolbar.unpublishHint', { entity })}
               >
                 {state.isUnpublishing ? <Loader2Icon className="animate-spin" /> : <EyeOffIcon />}
-                <span className="sr-only sm:not-sr-only">{state.isUnpublishing ? '取消中…' : '取消发布'}</span>
+                <span className="sr-only sm:not-sr-only">
+                  {state.isUnpublishing ? t('admin.editor.toolbar.unpublishing') : t('admin.editor.toolbar.unpublish')}
+                </span>
               </Button>
             ) : null}
           </>
@@ -127,13 +143,17 @@ export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyti
           variant={state.metaOpen ? 'secondary' : 'outline'}
           size="sm"
           onClick={() => state.setMetaOpen((open) => !open)}
-          title={state.metaOpen ? `隐藏${entityLabel}信息面板` : `展开${entityLabel}信息面板`}
+          title={
+            state.metaOpen
+              ? t('admin.editor.toolbar.metaHideHint', { entity })
+              : t('admin.editor.toolbar.metaShowHint', { entity })
+          }
           aria-pressed={state.metaOpen}
-          aria-label={`切换${entityLabel}信息面板`}
+          aria-label={t('admin.editor.toolbar.metaToggleAria', { entity })}
           className={cn(state.metaOpen && 'border border-transparent')}
         >
           <SlidersHorizontalIcon />
-          <span className="sr-only sm:not-sr-only">元数据</span>
+          <span className="sr-only sm:not-sr-only">{t('admin.editor.toolbar.metadata')}</span>
         </Button>
       </div>
     </header>

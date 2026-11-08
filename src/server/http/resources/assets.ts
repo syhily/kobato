@@ -3,12 +3,14 @@ import { Hono } from 'hono'
 import type { Env } from '@/server/http/context'
 
 import { ASSET_ROUTES, resolveSiteAsset } from '@/server/domains/assets/services/routes'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { contentEtag, etagHeaderMatches } from '@/server/infra/http/etag'
 import { brandingVersionSuffix } from '@/shared/config/utils'
 
 export const assetsRouter = new Hono<Env>()
 
 const ASSET_CACHE_CONTROL = 'public, max-age=3600, must-revalidate'
+/** The manifest embeds the UI language — stored but revalidated on every reuse. */
+export const MANIFEST_CACHE_CONTROL = 'public, no-cache'
 
 // Branding bytes change on re-upload — no `immutable`; ETag (sha256) +
 // `must-revalidate` gives conditional 304s with no body/S3 fetch on the hot path.
@@ -37,14 +39,19 @@ for (const path of Object.keys(ASSET_ROUTES)) {
 const DEFAULT_MANIFEST_NAME = 'Site'
 
 assetsRouter.get('/manifest.webmanifest', async (c) => {
-  const bundle = getBlogSettingsBundleSync()
+  // Request-pinned snapshot: the manifest name/icons and its language come from
+  // ONE capture, the same one the ETag/locale decision describes.
+  const { settings: bundle, localization } = c.var.requestContext
   const siteIdentity = bundle?.siteIdentity
   const name = siteIdentity?.title || DEFAULT_MANIFEST_NAME
   const branding = bundle?.assets?.branding
-  c.header('Cache-Control', ASSET_CACHE_CONTROL)
-  return c.json({
+  const locale = localization.locale
+  // Hand-built bytes: the ETag must hash the EXACT body we send — hashing the
+  // object and re-serializing would drift on key order / spacing.
+  const body = JSON.stringify({
     name,
     short_name: name,
+    lang: locale,
     icons: [
       {
         src: `/images/icon-192.png${brandingVersionSuffix(branding?.icon192)}`,
@@ -61,10 +68,19 @@ assetsRouter.get('/manifest.webmanifest', async (c) => {
     theme_color: '#ffffff',
     background_color: '#ffffff',
   })
+  const etag = contentEtag(body)
+  c.header('Content-Type', 'application/json; charset=utf-8')
+  c.header('Cache-Control', MANIFEST_CACHE_CONTROL)
+  c.header('Content-Language', locale)
+  c.header('ETag', etag)
+  if (etagHeaderMatches(c.req.header('if-none-match'), etag)) {
+    return c.body(null, 304)
+  }
+  return c.body(body)
 })
 
 assetsRouter.get('/robots.txt', async (c) => {
-  const bundle = getBlogSettingsBundleSync()
+  const bundle = c.var.requestContext.settings
   const custom = bundle?.assets?.branding?.robotsTxt
   let body: string
   if (typeof custom === 'string' && custom.length > 0) {

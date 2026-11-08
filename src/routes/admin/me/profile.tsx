@@ -7,7 +7,7 @@ import { MyProfileView } from '@/ui/admin/my/MyProfileView'
 
 import type { Route } from './+types/profile'
 
-export const meta = titleMeta('个人信息')
+export const meta = titleMeta('meta.title.admin.profile')
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })

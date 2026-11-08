@@ -21,6 +21,12 @@ vi.mock('@/server/http/api-router', () => ({
   apiRouter: { mock: true },
 }))
 
+// The bridge hydrates settings before projecting `localization`; the stub db
+// below cannot answer a real hydrate query.
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
+  hydrateBlogSettings: vi.fn(async () => null),
+}))
+
 vi.mock('@/server/http/middlewares/csrf', () => ({
   csrfGuard: vi.fn(async (_c: any, next: () => Promise<void>) => next()),
 }))

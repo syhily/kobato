@@ -1,12 +1,17 @@
 // Pure comment-policy decisions — no I/O, no clock; services pass facts in.
-// Each gate returns `null` to allow or a `GateFailure`. Codes and messages
-// are part of the wire contract — do not reword.
+// Each gate returns `null` to allow or a `GateFailure`. The failure carries a
+// typed descriptor (never prose): the transports localize it per request.
 
 import type { DomainErrorCode } from '@/server/infra/http/errors'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
 export interface GateFailure {
   code: DomainErrorCode
-  message: string
+  descriptor: ErrorMessageDescriptor
+}
+
+function failure(code: DomainErrorCode, descriptor: ErrorMessageDescriptor): GateFailure {
+  return { code, descriptor }
 }
 
 export const OWN_EDIT_GRACE_MS = 30 * 60 * 1000
@@ -32,7 +37,10 @@ export function decideEmailGate(
   emailRegistered: boolean,
 ): GateFailure | null {
   if (loginUser === undefined && emailRegistered) {
-    return { code: 'UNAUTHORIZED', message: '该邮箱已经注册，请登录后再进行评论留言。' }
+    return failure('UNAUTHORIZED', {
+      messageKey: 'comments.error.emailRegistered',
+      fallbackMessage: 'This email is already registered; sign in before commenting.',
+    })
   }
   return null
 }
@@ -43,13 +51,23 @@ export function decideCommenterGate(
 ): GateFailure | null {
   if (commenter.role === 'admin') {
     if (loginUser === undefined) {
-      return { code: 'UNAUTHORIZED', message: '管理员账号需要登陆才能评论。' }
+      return failure('UNAUTHORIZED', {
+        messageKey: 'comments.error.adminLoginRequired',
+        fallbackMessage: 'Administrator accounts must sign in before commenting.',
+      })
     }
   } else if (loginUser !== undefined && loginUser.email !== commenter.email) {
-    return { code: 'FORBIDDEN', message: '评论邮箱与登陆账号不相符。' }
+    return failure('FORBIDDEN', {
+      messageKey: 'comments.error.emailMismatch',
+      fallbackMessage: 'The comment email does not match the signed-in account.',
+    })
   }
   if (commenter.isMuted) {
-    return { code: 'FORBIDDEN', message: '您的评论功能已被管理员禁用，如有疑问请联系站长。' }
+    return failure('FORBIDDEN', {
+      messageKey: 'comments.error.muted',
+      fallbackMessage:
+        'Your commenting has been disabled by the administrator. Contact the site owner if you have questions.',
+    })
   }
   return null
 }
@@ -61,7 +79,11 @@ export function decideCommenterGate(
  */
 export function decideContentLengthGate(contentLength: number): GateFailure | null {
   if (contentLength > MAX_COMMENT_LENGTH) {
-    return { code: 'BAD_REQUEST', message: `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。` }
+    return failure('BAD_REQUEST', {
+      messageKey: 'comments.error.contentTooLong',
+      fallbackMessage: `The comment is too long (at most ${MAX_COMMENT_LENGTH} characters).`,
+      params: { max: MAX_COMMENT_LENGTH },
+    })
   }
   return null
 }
@@ -79,10 +101,11 @@ export function decideContentGate(input: {
     return lengthFailure
   }
   if (input.role !== 'admin' && input.recentContentHashes.includes(input.contentHash)) {
-    return {
-      code: 'CONFLICT',
-      message: '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。',
-    }
+    return failure('CONFLICT', {
+      messageKey: 'comments.error.duplicate',
+      fallbackMessage:
+        'Duplicate comment: you already posted the same message. If it is not visible, it is waiting for moderation.',
+    })
   }
   return null
 }

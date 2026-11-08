@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  enrichApiErrorMessage,
-  extractApiErrorMessage,
-  formatApiErrorIssues,
-  isApiAccepted,
-} from '@/shared/utils/api-error'
+import { apiErrorDescriptorKey, extractApiErrorMessage, isApiAccepted } from '@/shared/utils/api-error'
 
 describe('extractApiErrorMessage', () => {
   it('returns undefined for non-object inputs', () => {
@@ -28,6 +23,41 @@ describe('extractApiErrorMessage', () => {
 
   it('returns the message when present', () => {
     expect(extractApiErrorMessage({ error: { message: 'Something went wrong' } })).toBe('Something went wrong')
+  })
+
+  it('keeps the legacy message-only response readable', () => {
+    // A pre-descriptor server answered `{ error: { code, message } }` with no
+    // issues and no descriptor; the top-level message stays the display copy.
+    expect(extractApiErrorMessage({ error: { code: 'INTERNAL_SERVER_ERROR', message: '旧服务器消息' } })).toBe(
+      '旧服务器消息',
+    )
+    // Legacy issues without a `message` field do not disturb the reader.
+    expect(
+      extractApiErrorMessage({
+        error: { message: 'bad', issues: [{ messageKey: 'error.api.rawMessage', fallbackMessage: 'bad' }] },
+      }),
+    ).toBe('bad')
+  })
+
+  it('reads the folded message from the current descriptor wire shape', () => {
+    expect(
+      extractApiErrorMessage({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'The settings data is invalid: signIn.windowSeconds: The time window must be at least 60 seconds',
+          descriptor: { messageKey: 'admin.settings.errors.invalid', fallbackMessage: 'The settings data is invalid' },
+          issues: [
+            {
+              messageKey: 'admin.settings.rateLimit.error.windowMin',
+              params: { min: 60 },
+              fallbackMessage: 'The time window must be at least 60 seconds',
+              message: 'The time window must be at least 60 seconds',
+              path: ['signIn', 'windowSeconds'],
+            },
+          ],
+        },
+      }),
+    ).toContain('The time window must be at least 60 seconds')
   })
 
   it('ignores non-string messages', () => {
@@ -53,53 +83,23 @@ describe('isApiAccepted', () => {
   })
 })
 
-describe('formatApiErrorIssues', () => {
-  it('returns undefined for non-object inputs and missing data', () => {
-    expect(formatApiErrorIssues('error')).toBeUndefined()
-    expect(formatApiErrorIssues(null)).toBeUndefined()
-    expect(formatApiErrorIssues(new Error('boom'))).toBeUndefined()
-  })
-
-  it('returns undefined when data is not an array or holds no issues', () => {
-    expect(formatApiErrorIssues({ data: { retry: true } })).toBeUndefined()
-    expect(formatApiErrorIssues({ data: [] })).toBeUndefined()
-    expect(formatApiErrorIssues({ data: [{ code: 'E123' }, { message: '' }] })).toBeUndefined()
-  })
-
-  it('formats a single issue with its dotted path', () => {
-    // The settings save path: DomainError('BAD_REQUEST', '设置数据无效', issues)
-    // rides the ORPCError data channel as [{ message, path }].
-    const err = Object.assign(new Error('设置数据无效'), {
-      data: [{ message: '最大尝试次数不能超过 1000', path: ['resource', 'maxAttempts'] }],
+describe('apiErrorDescriptorKey', () => {
+  it('reads the stable message key from a descriptor rejection (backup password flow)', () => {
+    const error = Object.assign(new Error('The backup password is incorrect or the file is corrupted.'), {
+      data: {
+        descriptor: {
+          messageKey: 'backup.error.passwordWrong',
+          fallbackMessage: 'The backup password is incorrect or the file is corrupted.',
+        },
+      },
     })
-    expect(formatApiErrorIssues(err)).toBe('resource.maxAttempts：最大尝试次数不能超过 1000')
+    expect(apiErrorDescriptorKey(error)).toBe('backup.error.passwordWrong')
   })
 
-  it('joins multiple issues, tolerates a missing path, and drops malformed entries', () => {
-    const err = Object.assign(new Error('设置数据无效'), {
-      data: [
-        { message: '时间窗口不能小于 60 秒', path: ['signIn', 'windowSeconds'] },
-        { message: '格式错误' },
-        { message: '路径被忽略', path: 'not-an-array' },
-      ],
-    })
-    expect(formatApiErrorIssues(err)).toBe('signIn.windowSeconds：时间窗口不能小于 60 秒；格式错误')
-  })
-})
-
-describe('enrichApiErrorMessage', () => {
-  it('appends the issue detail to the message of an Error carrying issues', () => {
-    const err = Object.assign(new Error('设置数据无效'), {
-      data: [{ message: '最大尝试次数不能超过 1000', path: ['resource', 'maxAttempts'] }],
-    })
-    enrichApiErrorMessage(err)
-    expect(err.message).toBe('设置数据无效：resource.maxAttempts：最大尝试次数不能超过 1000')
-  })
-
-  it('leaves non-Error inputs and issue-less errors untouched', () => {
-    expect(() => enrichApiErrorMessage('boom')).not.toThrow()
-    const plain = new Error('存储迁移进行中')
-    enrichApiErrorMessage(plain)
-    expect(plain.message).toBe('存储迁移进行中')
+  it('returns undefined for legacy raw/array-data rejections', () => {
+    expect(apiErrorDescriptorKey(Object.assign(new Error('legacy'), { data: [{ message: 'x' }] }))).toBeUndefined()
+    expect(apiErrorDescriptorKey(new Error('legacy'))).toBeUndefined()
+    expect(apiErrorDescriptorKey('nope')).toBeUndefined()
+    expect(apiErrorDescriptorKey(Object.assign(new Error('x'), { data: { issues: [] } }))).toBeUndefined()
   })
 })

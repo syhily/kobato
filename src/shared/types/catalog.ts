@@ -45,6 +45,8 @@ export interface ClientPage {
   toc: boolean
   /** When true the public detail route renders the 「修改于 XXXX」 timestamp next to the first-publish date; flipped from the editor without re-publishing. */
   showUpdated: boolean
+  /** Author-declared BCP 47 language of the prose; `null` = inherit the document UI language. Never used to pick a UI catalog. */
+  contentLanguage: string | null
   /** When true the public detail route appends the global friends grid below the body (the body format has no friends block). */
   showFriends: boolean
   slug: string
@@ -71,6 +73,8 @@ export interface ClientPost {
   toc: boolean
   /** See `ClientPage.showUpdated`. Toggles "Updated on XXXX" on the public detail. */
   showUpdated: boolean
+  /** See `ClientPage.contentLanguage`. */
+  contentLanguage: string | null
   slug: string
   permalink: string
   headings: MarkdownHeading[]
@@ -135,6 +139,8 @@ export interface DetailPostShell {
   toc: boolean
   /** See `ClientPost.showUpdated`. */
   showUpdated: boolean
+  /** See `ClientPage.contentLanguage`. */
+  contentLanguage: string | null
   headings: MarkdownHeading[]
 }
 
@@ -157,6 +163,8 @@ export interface DetailPageShell {
   toc: boolean
   /** See `ClientPage.showUpdated`. */
   showUpdated: boolean
+  /** See `ClientPage.contentLanguage`. */
+  contentLanguage: string | null
   headings: MarkdownHeading[]
 }
 
@@ -250,6 +258,7 @@ export function toDetailPostShell(post: ClientPost): DetailPostShell {
     comments: post.comments,
     toc: post.toc,
     showUpdated: post.showUpdated,
+    contentLanguage: post.contentLanguage,
     headings: post.headings,
   }
 }
@@ -271,6 +280,7 @@ export function toDetailPageShell(page: ClientPage): DetailPageShell {
     comments: page.comments,
     toc: page.toc,
     showUpdated: page.showUpdated,
+    contentLanguage: page.contentLanguage,
     headings: page.headings,
   }
 }

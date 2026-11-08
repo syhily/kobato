@@ -1,33 +1,44 @@
+import type { ReactNode } from 'react'
+
 import { ArrowRightIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { DraftSummary } from '@/shared/contracts/dashboard'
 
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
+
+/** tRich chunks renderer for the "write one" link (module scope — stable). */
+function renderNewPostLink(chunks: ReactNode[]): ReactNode {
+  return (
+    <Link to="/admin/posts/new" className="text-brand hover:underline">
+      {chunks}
+    </Link>
+  )
+}
 
 export function RecentPublishedCard({ posts }: { posts: DraftSummary[] }) {
+  const { t, tRich } = useI18n()
   return (
     <div className="rounded-xl border bg-card p-6">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-medium">最近发布</h2>
+        <h2 className="text-base font-medium">{t('admin.dashboard.published.title')}</h2>
         <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/posts?status=published" />}>
-          <span className="hidden sm:inline">全部文章</span> <ArrowRightIcon data-icon />
+          <span className="hidden sm:inline">{t('admin.dashboard.published.all')}</span> <ArrowRightIcon data-icon />
         </Button>
       </div>
       {posts.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
-          暂无已发布文章，去{' '}
-          <Link to="/admin/posts/new" className="text-brand hover:underline">
-            写一篇
-          </Link>{' '}
-          吧。
+          {tRich('admin.dashboard.published.empty', {
+            link: renderNewPostLink,
+          })}
         </p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2 text-sm">
           {posts.map((post) => (
             <li key={post.id} className="flex items-center justify-between gap-3">
               <Link to={`/editor/post/${post.id}`} className="truncate text-foreground hover:underline">
-                {post.title || '(未命名)'}
+                {post.title || t('admin.dashboard.published.untitled')}
               </Link>
               <time
                 dateTime={post.updatedAtIso}

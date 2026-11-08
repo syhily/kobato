@@ -2,12 +2,15 @@ import { redirect } from 'react-router'
 
 import type { AuditContext } from '@/server/domains/audit/types'
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { AppLocale } from '@/shared/i18n/locales'
 import type { ListingPageLoaderData } from '@/shared/types/listing'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { livePostWhere } from '@/server/domains/posts/live-gate'
 import { getClientPostsWithMetadata, getPostsBySlugs } from '@/server/domains/posts/services/public-query'
 import { parseListingPage } from '@/server/http/loaders/pagination'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { searchPostOptions } from '@/server/infra/search/options'
 import { searchPosts } from '@/server/infra/search/search'
 import { listingSeo } from '@/server/render/seo/listing-seo'
@@ -19,13 +22,17 @@ import { pagePath, searchRootPath } from '@/shared/utils/paths'
 export interface SearchLoaderOptions {
   keyword: string | undefined
   num: string | undefined
+  /** Request UI locale — the result-page title is rendered server-side. */
+  locale: AppLocale
+  /** Request-pinned settings bundle — the same capture the caller renders with. */
+  settings: BlogSettingsBundle | null
   forceNoindex?: boolean
   /** Canonical request facts; when present, a `search` audit event is recorded. */
   auditContext?: AuditContext
 }
 export async function searchLoader(
   db: Database,
-  { keyword, num, forceNoindex = true, auditContext }: SearchLoaderOptions,
+  { keyword, num, locale, settings, forceNoindex = true, auditContext }: SearchLoaderOptions,
 ): Promise<ListingPageLoaderData> {
   const listingNowIso = new Date().toISOString()
   const query = keyword?.trim() ?? ''
@@ -34,7 +41,7 @@ export async function searchLoader(
   }
   const rootPath = searchRootPath(query)
   const pageNum = parseListingPage(num, rootPath)
-  const pageSize = requireBlogSettingsSection('content').pagination.search
+  const pageSize = requireBlogSettingsSection('content', settings).pagination.search
   // Only live posts are searchable — the gate is defined once and passed
   // down, keeping the search infra free of business rules.
   const liveWhere = livePostWhere()
@@ -64,12 +71,13 @@ export async function searchLoader(
     views: true,
     comments: false,
   })
-  const title = `【${query}】搜索结果`
+  const title = createServerTranslator(locale).format('public.search.resultTitle', { query })
   const seo = listingSeo({
     title,
     pageNum: page,
     totalPage: totalPages,
     rootPath,
+    locale,
     forceNoindex,
   })
   return {

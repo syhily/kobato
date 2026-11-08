@@ -37,6 +37,12 @@ export const post = sqliteTable(
     alias: text('alias', { mode: 'json' })
       .notNull()
       .$defaultFn(() => []),
+    /**
+     * Author-declared BCP 47 language of the prose (any well-formed tag, not
+     * limited to the four UI locales). Rendered as the detail body container's
+     * `lang`; NULL means "inherit the document language". Never auto-detected.
+     */
+    contentLanguage: text('content_language'),
     /** When set, the post is pinned to the home feature area. */
     pinnedAt: integer('pinned_at', { mode: 'timestamp_ms' }),
   },

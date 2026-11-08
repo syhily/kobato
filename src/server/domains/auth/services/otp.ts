@@ -3,13 +3,21 @@
 // read and written ONLY by this module.
 
 import type { BlogSession, PendingOtpUser } from '@/server/domains/auth/session-storage'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
-import { formFieldString, type AuthFlowResult, type SigninFlowContext } from '@/server/domains/auth/services/shared'
+import {
+  authFlowError,
+  authFlowSuccess,
+  formFieldString,
+  type AuthFlowResult,
+  type SigninFlowContext,
+} from '@/server/domains/auth/services/shared'
 import { issueOtpToken, verifyOtpToken } from '@/server/domains/auth/verification-tokens'
 import { findUserById } from '@/server/infra/db/operations/user'
 import { sendSignInOtp } from '@/server/infra/email/sender'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { getLogger } from '@/server/infra/logger'
 import {
   tryOtpSendByEmailRateLimit,
@@ -60,16 +68,16 @@ function parsePendingUserId(ctx: SigninFlowContext, pendingOtpUser: PendingOtpUs
 async function sendOtpSafely(
   user: { name: string; email: string },
   otpCode: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true } | { ok: false; error: ErrorMessageDescriptor }> {
   try {
     const result = await sendSignInOtp(user, otpCode)
     if (!result.ok) {
-      return { ok: false, error: '验证码发送失败，请稍后重试。' }
+      return { ok: false, error: descriptorFor('auth.otp.error.sendFailed') }
     }
     return { ok: true }
   } catch (error) {
     log.error('OTP send failed unexpectedly', { email: user.email, error })
-    return { ok: false, error: '验证码发送失败，请稍后重试。' }
+    return { ok: false, error: descriptorFor('auth.otp.error.sendFailed') }
   }
 }
 
@@ -89,16 +97,13 @@ async function issueAndSendOtp(
     tryOtpSendByEmailRateLimit(dbUser.email),
   ])
   if (ipLimit.exceeded || emailLimit.exceeded) {
-    return {
-      type: 'error',
-      message: '发送过于频繁，请稍后再试。',
-    }
+    return authFlowError('auth.otp.error.sendTooFrequent')
   }
 
   const { otpCode, expiresAt } = await issueOtpToken(db, dbUser.id)
   const sendResult = await sendOtpSafely(dbUser, otpCode)
   if (!sendResult.ok) {
-    return { type: 'error', message: sendResult.error }
+    return { type: 'error', message: sendResult.error.fallbackMessage, descriptor: sendResult.error }
   }
 
   session.set('pendingOtpUser', {
@@ -156,7 +161,7 @@ export async function handleOtpVerify(
   const { db, session, clientAddress } = ctx
   const pendingOtpUser = session.get('pendingOtpUser')
   if (!pendingOtpUser) {
-    return { type: 'error', message: '请先完成登录。' }
+    return authFlowError('auth.otp.error.notStarted')
   }
 
   const [ipLimit, emailLimit] = await Promise.all([
@@ -164,18 +169,12 @@ export async function handleOtpVerify(
     tryOtpVerifyByEmailRateLimit(pendingOtpUser.email),
   ])
   if (ipLimit.exceeded || emailLimit.exceeded) {
-    return {
-      type: 'error',
-      message: '操作过于频繁，请稍后再试。',
-    }
+    return authFlowError('auth.otp.error.verifyTooFrequent')
   }
 
   const userId = parsePendingUserId(ctx, pendingOtpUser)
   if (userId === null) {
-    return {
-      type: 'error',
-      message: '登录状态异常，请重新登录。',
-    }
+    return authFlowError('auth.otp.error.stateInvalid')
   }
 
   const otpCode = formFieldString(formData, 'otp_code')
@@ -196,10 +195,7 @@ export async function handleOtpVerify(
         userAgent: request.headers.get('User-Agent'),
         details: { email: pendingOtpUser.email, failCount, lockedOut: true },
       })
-      return {
-        type: 'error',
-        message: '验证失败次数过多，请重新登录。',
-      }
+      return authFlowError('auth.otp.error.lockedOut')
     }
     recordAuditEvent({
       action: 'otp_failed',
@@ -210,20 +206,14 @@ export async function handleOtpVerify(
       userAgent: request.headers.get('User-Agent'),
       details: { email: pendingOtpUser.email, failCount },
     })
-    return {
-      type: 'error',
-      message: '验证码无效或已过期。',
-    }
+    return authFlowError('auth.otp.error.invalid')
   }
 
   clearPendingOtp(ctx)
 
   const dbUser = await findUserById(db, userId)
   if (!dbUser?.role || dbUser.deletedAt) {
-    return {
-      type: 'error',
-      message: '账户状态异常，无法登录。',
-    }
+    return authFlowError('auth.otp.error.accountCannotSignIn')
   }
 
   const established = await establishLoginSession(db, session, dbUser, request, clientAddress, {
@@ -236,28 +226,22 @@ export async function handleOtpResend(ctx: SigninFlowContext, request: Request):
   const { db, session } = ctx
   const pendingOtpUser = session.get('pendingOtpUser')
   if (!pendingOtpUser) {
-    return { type: 'error', message: '请先完成登录。' }
+    return authFlowError('auth.otp.error.notStarted')
   }
 
   const userId = parsePendingUserId(ctx, pendingOtpUser)
   if (userId === null) {
-    return {
-      type: 'error',
-      message: '登录状态异常，请重新登录。',
-    }
+    return authFlowError('auth.otp.error.stateInvalid')
   }
 
   const dbUser = await findUserById(db, userId)
   if (!dbUser?.role || dbUser.deletedAt) {
-    return { type: 'error', message: '账户状态异常。' }
+    return authFlowError('auth.otp.error.accountInvalid')
   }
 
   const failure = await issueAndSendOtp(ctx, request, dbUser, { resend: true })
   if (failure) {
     return failure
   }
-  return {
-    type: 'success',
-    message: '验证码已重新发送。',
-  }
+  return authFlowSuccess('auth.otp.success.resent')
 }

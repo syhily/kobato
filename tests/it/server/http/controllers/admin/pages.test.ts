@@ -204,6 +204,7 @@ describe('adminPagesRouter.saveDraft', () => {
     vi.mocked(saveBody).mockResolvedValueOnce({
       status: 'saved',
       revision: revisionStub,
+      warningDescriptors: [],
     })
     const res = await call(
       adminPagesRouter.saveDraft,
@@ -223,6 +224,7 @@ describe('adminPagesRouter.saveDraft', () => {
       status: 'conflict',
       latest: revisionStub,
       expectedToken: '11111111-1111-4000-8000-000000000000',
+      warningDescriptors: [],
     })
     const res = await call(
       adminPagesRouter.saveDraft,
@@ -241,6 +243,7 @@ describe('adminPagesRouter.publishLatest', () => {
     vi.mocked(saveBody).mockResolvedValueOnce({
       status: 'saved',
       revision: revisionStub,
+      warningDescriptors: [],
     })
     const res = await call(
       adminPagesRouter.publishLatest,

@@ -49,7 +49,7 @@ describe('snapshot: AdminListPage', () => {
         </AdminListPage>,
       ),
     )
-    expect(html).toContain('aria-label="pagination"')
+    expect(html).toContain('aria-label="分页"')
     expect(html).toContain('3')
   })
 })

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { compileAnalyticsQuery, createAnalyticsQuery } from '@/server/domains/analytics/services/analytics-sql'
+import {
+  compileAnalyticsQuery,
+  createAnalyticsQuery,
+  createEnvMetricQuery,
+} from '@/server/domains/analytics/services/analytics-sql'
 import { METRIC_DIMENSIONS, dimensionWhere } from '@/server/domains/analytics/services/metric-dimensions'
 import { METRIC_TYPES } from '@/shared/contracts/analytics'
 
@@ -9,6 +13,14 @@ import { METRIC_TYPES } from '@/shared/contracts/analytics'
 // without one), and user values always bind as parameters.
 
 const ENV_DIMENSIONS = ['screen', 'viewport', 'dpr', 'touch', 'colorScheme', 'netEffectiveType']
+
+function envDimensionSql(type: 'dpr' | 'touch'): string {
+  const dimension = METRIC_DIMENSIONS[type]
+  if (dimension.source !== 'env') {
+    throw new Error(`${type} is not an env dimension`)
+  }
+  return compileAnalyticsQuery(createEnvMetricQuery().select([dimension.select.as('bucket')])).sql
+}
 
 describe('METRIC_DIMENSIONS registry', () => {
   it('has exactly one definition per metric type', () => {
@@ -37,9 +49,21 @@ describe('METRIC_DIMENSIONS registry', () => {
     )
 
     expect(compiled.sql).toContain('device_env_client')
-    // The bucket labels are server-owned CASE literals; the filter values bind.
+    // The bucket tokens are server-owned CASE literals; the filter values bind.
     expect(compiled.sql).toMatch(/in \(\?, \?\)/)
     expect(compiled.parameters).toEqual(['≤480', '≤768'])
+  })
+
+  it('emits locale-neutral bucket tokens (the UI owns their labels)', () => {
+    const dpr = envDimensionSql('dpr')
+    expect(dpr).toContain("'other'")
+    expect(dpr).not.toMatch(/[\u4e00-\u9fff]/)
+
+    const touch = envDimensionSql('touch')
+    for (const token of ["'none'", "'1-5'", "'6-10'", "'many'"]) {
+      expect(touch).toContain(token)
+    }
+    expect(touch).not.toMatch(/[\u4e00-\u9fff]/)
   })
 
   it('targets the blob column for a blob dimension filter', () => {

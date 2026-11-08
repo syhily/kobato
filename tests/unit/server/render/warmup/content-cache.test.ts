@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+
 // The renderers are the only heavy seam — canvas/font/quote work is
 // covered by their own suites. `through` runs for real: with the
 // dev-bypass buckets it always runs the loader, and the write into the
@@ -42,7 +44,7 @@ describe('render/warmup/content-cache (through the domain seam)', () => {
     warmContentRenderCaches(db, og)
 
     await vi.waitFor(() => {
-      expect(drawOpenGraphMock).toHaveBeenCalledWith(og)
+      expect(drawOpenGraphMock).toHaveBeenCalledWith(og, TEST_BLOG_SETTINGS_BUNDLE)
     })
   })
 
@@ -55,8 +57,11 @@ describe('render/warmup/content-cache (through the domain seam)', () => {
     const themes = renderCalendarMock.mock.calls.map(([, theme]) => theme)
     expect(themes).toContain('light')
     expect(themes).toContain('dark')
-    for (const [date] of renderCalendarMock.mock.calls) {
+    for (const [date, , locale] of renderCalendarMock.mock.calls) {
       expect(date).toBeInstanceOf(Date)
+      // The site locale is threaded EXPLICITLY; the warm never relies on the
+      // cache key to happen to match the renderer's language.
+      expect(locale).toBe('zh-CN')
     }
   })
 

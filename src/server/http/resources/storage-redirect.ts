@@ -1,3 +1,8 @@
+import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { AppLocale } from '@/shared/i18n/locales'
+
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
 import { isS3Primary } from '@/server/infra/storage/registry'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -50,13 +55,13 @@ const MAX_TRANSFORM_QUALITY = 100
  * is clamped to `MAX_TRANSFORM_QUALITY`). The transform params are consumed;
  * everything else (e.g. `?v=`) survives.
  */
-function buildRedirectLocation(objectUrl: string, search: string): string {
+function buildRedirectLocation(objectUrl: string, search: string, settings: BlogSettingsBundle | null): string {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
   let location = objectUrl
 
   const width = parseTransformParam(params.get('w'), MAX_TRANSFORM_DIMENSION)
   const height = parseTransformParam(params.get('h'), MAX_TRANSFORM_DIMENSION)
-  const template = width !== null && height !== null ? readUrlTemplate() : ''
+  const template = width !== null && height !== null ? readUrlTemplate(settings) : ''
   if (template !== '') {
     const quality = parseTransformParam(params.get('q'), MAX_TRANSFORM_QUALITY) ?? 100
     location = template
@@ -77,18 +82,19 @@ function buildRedirectLocation(objectUrl: string, search: string): string {
   return location
 }
 
-/** The configured template, or `''` when unset / settings not yet hydrated. */
-function readUrlTemplate(): string {
+/** The configured template from the request-pinned bundle, or `''` when unset / not hydrated. */
+function readUrlTemplate(settings: BlogSettingsBundle | null): string {
   try {
-    return requireBlogSettingsSection('assets').storage.urlTemplate.trim()
+    return requireBlogSettingsSection('assets', settings).storage.urlTemplate.trim()
   } catch {
-    // Settings snapshot not hydrated yet — serve the plain object URL.
+    // Settings not hydrated yet — serve the plain object URL.
     return ''
   }
 }
 
-function serviceUnavailable(): Response {
-  return new Response('存储服务暂不可用，请稍后再试。', {
+function serviceUnavailable(locale: AppLocale): Response {
+  const descriptor = descriptorFor('storage.error.unavailable')
+  return new Response(createServerTranslator(locale).format(descriptor.messageKey, descriptor.params), {
     status: 503,
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   })
@@ -113,18 +119,23 @@ function encodeKeyForUrl(key: string): string {
  * it is re-encoded per segment for the Location header. A missing public base
  * while S3 is active is a config error, not a crash.
  */
-export function s3StorageRedirect(key: string, search: string): Response | null {
+export function s3StorageRedirect(
+  key: string,
+  search: string,
+  locale: AppLocale,
+  settings: BlogSettingsBundle | null,
+): Response | null {
   if (!isS3Primary()) {
     return null
   }
   const base = getPublicBaseUrl()
   if (base === null) {
-    return serviceUnavailable()
+    return serviceUnavailable(locale)
   }
   return new Response(null, {
     status: 302,
     headers: {
-      Location: buildRedirectLocation(`${base}/${encodeKeyForUrl(key)}`, search),
+      Location: buildRedirectLocation(`${base}/${encodeKeyForUrl(key)}`, search, settings),
       'Cache-Control': STORAGE_REDIRECT_CACHE_CONTROL,
     },
   })

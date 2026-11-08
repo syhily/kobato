@@ -36,7 +36,7 @@ const passthroughRandomBytes = randomBytesMock.getMockImplementation()!
 // isAvailable() === true makes the mem backend S3-active, so uploads record driver 's3'.
 const mem = makeMemoryBackend()
 
-const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
+const { checkImageUpload, uploadImage } = await import('@/server/domains/images/services/upload')
 const { upsertImageByStoragePath, insertImage } = await import('@/server/infra/db/operations/image')
 const upsertImageByStoragePathMock = vi.mocked(upsertImageByStoragePath)
 const insertImageMock = vi.mocked(insertImage)
@@ -102,7 +102,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           jpegQuality: 80,
           uploader: null,
         }),
-      ).rejects.toThrow(/不支持的图片格式/)
+      ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.unsupportedFormat' } })
     })
 
     it('throws when the magic bytes match no known format', async () => {
@@ -115,7 +115,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           jpegQuality: 80,
           uploader: null,
         }),
-      ).rejects.toThrow(/不支持的图片格式/)
+      ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.unsupportedFormat' } })
     })
 
     it('throws when the AVIF ftyp brand is neither avif nor avis', async () => {
@@ -129,7 +129,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           jpegQuality: 80,
           uploader: null,
         }),
-      ).rejects.toThrow(/不支持的图片格式/)
+      ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.unsupportedFormat' } })
     })
 
     it('throws when ftyp appears but is too close to the buffer end', async () => {
@@ -144,7 +144,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           jpegQuality: 80,
           uploader: null,
         }),
-      ).rejects.toThrow(/不支持的图片格式/)
+      ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.unsupportedFormat' } })
     })
   })
 
@@ -181,7 +181,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           jpegQuality: 80,
           uploader: null,
         }),
-      ).rejects.toThrow(/图片体积超过上限/)
+      ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.tooLarge' } })
       expect(processImageBufferMock).not.toHaveBeenCalled()
     })
 
@@ -202,7 +202,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           jpegQuality: 80,
           uploader: null,
         }),
-      ).rejects.toThrow(/重编码后体积超过上限/)
+      ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.reencodedTooLarge' } })
       expect(mem.store.size).toBe(0)
       expect(await allImageRows()).toHaveLength(0)
     })
@@ -249,7 +249,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
             jpegQuality: 80,
             uploader: null,
           }),
-        ).rejects.toThrow(/图片元数据写入失败/)
+        ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.metadataWriteFailed' } })
         expect(await allImageRows()).toHaveLength(1)
         // The pre-existing row claims the key, so the rollback must NOT delete the uploaded object.
         expect(mem.putKeys).toContain(key)
@@ -272,7 +272,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           jpegQuality: 80,
           uploader: null,
         }),
-      ).rejects.toThrow(/图片元数据写入失败/)
+      ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.metadataWriteFailed' } })
       expect(await allImageRows()).toHaveLength(0)
       expect(mem.putKeys).toHaveLength(1)
       expect(mem.deletedKeys).toContain(mem.putKeys[0])
@@ -289,7 +289,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           jpegQuality: 80,
           uploader: null,
         }),
-      ).rejects.toThrow(/图片元数据写入失败/)
+      ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.metadataWriteFailed' } })
       const key = 'images/categories/rollback.jpg'
       // The put landed before the failure, so the rollback deletes it again.
       expect(mem.putKeys).toContain(key)
@@ -417,45 +417,37 @@ describe('images/services/upload — pure validation + mime detection', () => {
   })
 })
 
-describe('assertImageUploadAllowed — declared-envelope validation (sunk from the controller)', () => {
-  // oRPC errors keep the 400/413 split: the declared-size pre-check reports 413, in-buffer checks 400.
+describe('checkImageUpload — declared-envelope validation (sunk from the controller)', () => {
+  // The controller raises the rejection as a localized ORPCError: 400 for a bad
+  // declared type, 413 for an over-size envelope.
   it('rejects a declared MIME type outside the allowlist with BAD_REQUEST', () => {
-    expect(() => assertImageUploadAllowed({ type: 'image/tiff', size: 10 }, 1000)).toThrow(
-      /不支持的图片格式，请上传 JPEG、PNG、WebP、AVIF 或 GIF 格式的图片/,
-    )
-    try {
-      assertImageUploadAllowed({ type: 'image/tiff', size: 10 }, 1000)
-      expect.unreachable()
-    } catch (err) {
-      expect(err).toMatchObject({ code: 'BAD_REQUEST' })
-    }
+    expect(checkImageUpload({ type: 'image/tiff', size: 10 }, 1000)).toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'images.error.unsupportedFormat' },
+    })
   })
 
   it('accepts every declared MIME type in the allowlist', () => {
     for (const type of ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']) {
-      expect(() => assertImageUploadAllowed({ type, size: 10 }, 1000)).not.toThrow()
+      expect(checkImageUpload({ type, size: 10 }, 1000)).toBeNull()
     }
   })
 
   it('rejects a declared size over maxBytes with PAYLOAD_TOO_LARGE', () => {
-    try {
-      assertImageUploadAllowed({ type: 'image/png', size: 2 * 1024 * 1024 }, 1024 * 1024)
-      expect.unreachable()
-    } catch (err) {
-      expect(err).toMatchObject({ code: 'PAYLOAD_TOO_LARGE', message: '图片体积超过上限（1.0 MB）' })
-    }
+    expect(checkImageUpload({ type: 'image/png', size: 2 * 1024 * 1024 }, 1024 * 1024)).toMatchObject({
+      code: 'PAYLOAD_TOO_LARGE',
+      descriptor: { messageKey: 'images.error.tooLarge', params: { max: '1.0 MB' } },
+    })
   })
 
   it('accepts a declared size exactly at maxBytes', () => {
-    expect(() => assertImageUploadAllowed({ type: 'image/png', size: 1000 }, 1000)).not.toThrow()
+    expect(checkImageUpload({ type: 'image/png', size: 1000 }, 1000)).toBeNull()
   })
 
   it('checks the MIME type before the size (a bad type reports the format error even when oversize)', () => {
-    try {
-      assertImageUploadAllowed({ type: 'text/plain', size: Number.MAX_SAFE_INTEGER }, 1)
-      expect.unreachable()
-    } catch (err) {
-      expect(err).toMatchObject({ code: 'BAD_REQUEST' })
-    }
+    expect(checkImageUpload({ type: 'text/plain', size: Number.MAX_SAFE_INTEGER }, 1)).toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'images.error.unsupportedFormat' },
+    })
   })
 })

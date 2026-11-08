@@ -27,6 +27,7 @@ const populatedDraft: PostMetaDraft = {
   webmentionsEnabled: true,
   showToc: true,
   showUpdated: false,
+  contentLanguage: 'zh-Hant-TW',
   visible: true,
   pinned: true,
   categoryId: '1',
@@ -49,6 +50,10 @@ describe('snapshot: PostMetaSidebar', () => {
     )
     expect(html).toContain('基本信息')
     expect(html).toContain('A populated summary for the post.')
+    // Optional content language — author metadata, not a UI locale switch.
+    expect(html).toContain('id="post-content-language"')
+    expect(html).toContain('内容语言（可选）')
+    expect(html).toContain('value="zh-Hant-TW"')
     expect(html).toContain('封面 / OG 图')
     expect(html).toContain('/images/cover.png')
     expect(html).toContain('/images/og.png')
@@ -110,9 +115,9 @@ describe('snapshot: PostMetaSidebar', () => {
     )
     expect(html).toContain('已计划发布')
     // DateTimePicker renders the chosen instant as a localized string.
-    expect(html).toContain('2099年6月1日')
-    // Saved-at hint from the saveStatus.
-    expect(html).toMatch(/2023年\d+月\d+日/u)
+    expect(html).toContain('2099/6/1 09:00')
+    // Saved-at hint from the saveStatus — site-zone + locale via the facade.
+    expect(html).toContain('2023/11/15 06:13')
   })
 
   it('renders the live-with-draft-ahead status and revision summary', () => {
@@ -282,7 +287,7 @@ function renderMetaPanel(entity: { id: string; slug: string; title: string; dele
     renderInRouter(
       <EditorMetaPanel
         entityKind="post"
-        entityLabel="文章"
+        entityLabelId="admin.editor.entity.post"
         entity={entity}
         metaOpen={true}
         setMetaOpen={noop}
@@ -329,7 +334,7 @@ describe('snapshot: EditorMetaPanel (sheet)', () => {
       renderInRouter(
         <EditorMetaPanel
           entityKind="post"
-          entityLabel="文章"
+          entityLabelId="admin.editor.entity.post"
           entity={{ id: post.id, slug: post.slug, title: post.title, deletedAt: post.deletedAt }}
           metaOpen={false}
           setMetaOpen={noop}

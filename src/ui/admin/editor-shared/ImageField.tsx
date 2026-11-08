@@ -11,6 +11,7 @@ import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface ImageFieldProps {
   id: string
@@ -36,6 +37,7 @@ export function ImageField({
   emptyContent,
   emptyHint,
 }: ImageFieldProps) {
+  const { t } = useI18n()
   const [showUrl, setShowUrl] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [dragActive, setDragActive] = useState(false)
@@ -78,15 +80,19 @@ export function ImageField({
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-2">
         <Label>
-          {label} <span className="text-xs font-normal text-muted-foreground">（可选）</span>
+          {label} <span className="text-xs font-normal text-muted-foreground">{t('admin.editor.image.optional')}</span>
         </Label>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             type="button"
-            title={showUrl ? '收起 URL 输入' : '粘贴 URL'}
-            aria-label={showUrl ? `收起 ${label} 的 URL 输入` : `粘贴 ${label} 的 URL`}
+            title={showUrl ? t('admin.editor.image.collapseUrl') : t('admin.editor.image.pasteUrl')}
+            aria-label={
+              showUrl
+                ? t('admin.editor.image.collapseUrlAria', { label })
+                : t('admin.editor.image.pasteUrlAria', { label })
+            }
             aria-pressed={showUrl}
             onClick={() => setShowUrl((prev) => !prev)}
             disabled={disabled}
@@ -98,8 +104,8 @@ export function ImageField({
               variant="ghost"
               size="icon"
               type="button"
-              title="清空"
-              aria-label={`清空 ${label}`}
+              title={t('admin.shared.cover.clear')}
+              aria-label={t('admin.shared.cover.clearLabel', { label })}
               onClick={() => onChange('')}
               disabled={disabled}
             >
@@ -113,7 +119,9 @@ export function ImageField({
           <button
             type="button"
             disabled={disabled}
-            aria-label={hasValue ? `替换 ${label}` : `选择 ${label}`}
+            aria-label={
+              hasValue ? t('admin.editor.image.replaceAria', { label }) : t('admin.editor.image.chooseAria', { label })
+            }
             onDragOver={handleDragOver}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
@@ -131,7 +139,7 @@ export function ImageField({
             {hasValue && !previewBroken ? (
               <img
                 src={value}
-                alt={`${label} 预览`}
+                alt={t('admin.editor.image.previewAlt', { label })}
                 loading="lazy"
                 decoding="async"
                 className="size-full object-cover"
@@ -140,14 +148,14 @@ export function ImageField({
             ) : previewBroken ? (
               <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                 <ImageOffIcon className="size-6" />
-                <span className="text-xs">图片加载失败</span>
+                <span className="text-xs">{t('admin.editor.image.loadFailed')}</span>
               </span>
             ) : emptyContent !== undefined ? (
               emptyContent
             ) : (
               <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                 <ImagePlusIcon className="size-6" />
-                <span className="text-xs">点击选择 / 上传</span>
+                <span className="text-xs">{t('admin.editor.image.chooseOrUpload')}</span>
               </span>
             )}
             <span
@@ -156,7 +164,7 @@ export function ImageField({
                 'group-hover:opacity-100 group-focus-visible:opacity-100',
               )}
             >
-              {hasValue ? '点击替换' : '点击选择'}
+              {hasValue ? t('admin.editor.image.clickReplace') : t('admin.editor.image.clickChoose')}
             </span>
           </button>
         }
@@ -207,6 +215,7 @@ export interface GeneratedOgPreviewProps {
 }
 
 export function GeneratedOgPreview({ slug, cover, title, summary }: GeneratedOgPreviewProps) {
+  const { t } = useI18n()
   const buster = djb2Short(`${title}${summary}${cover}`)
   const src = `/images/og/${encodeURIComponent(slug)}.png?_=${buster}`
   const [previewBroken, markPreviewErrored] = useErroredSrc(src)
@@ -215,7 +224,7 @@ export function GeneratedOgPreview({ slug, cover, title, summary }: GeneratedOgP
       {!previewBroken ? (
         <img
           src={src}
-          alt="默认生成的 OG 预览"
+          alt={t('admin.editor.coverOg.ogPreviewAlt')}
           loading="lazy"
           decoding="async"
           className="size-full object-cover"
@@ -223,7 +232,7 @@ export function GeneratedOgPreview({ slug, cover, title, summary }: GeneratedOgP
         />
       ) : null}
       <Badge variant="secondary" className="pointer-events-none absolute top-1.5 left-1.5 gap-1">
-        <SparklesIcon className="size-3" /> 默认生成
+        <SparklesIcon className="size-3" /> {t('admin.editor.coverOg.ogGeneratedBadge')}
       </Badge>
     </>
   )

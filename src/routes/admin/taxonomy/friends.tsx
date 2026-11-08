@@ -4,7 +4,7 @@ import { FriendsView } from '@/ui/admin/friends/FriendsView'
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('友链管理')
+export const meta = titleMeta('meta.title.admin.friends')
 
 export default function WpAdminFriendsRoute() {
   return <FriendsView />

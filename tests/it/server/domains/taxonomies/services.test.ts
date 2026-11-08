@@ -59,17 +59,43 @@ async function seedPublishedPost(
   return rows[0]!.id
 }
 
-describe('taxonomies/shared — formatBlockMessage', () => {
-  it('lists up to 5 titles then summarises', async () => {
-    const { formatBlockMessage } = await import('@/server/domains/taxonomies/shared')
-    const msg = formatBlockMessage('标签', 'React', ['a', 'b', 'c', 'd', 'e', 'f'])
-    expect(msg).toContain('6 篇文章')
-    expect(msg).toContain('标签')
+describe('taxonomies/shared — blocked-delete descriptor', () => {
+  it('lists up to 5 titles with an ellipsis and the machine entity kind', async () => {
+    const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
+    let error: unknown
+    try {
+      await deleteAdminTaxonomy(1, 'tag', {
+        findById: async () => ({ id: 1, name: 'React' }),
+        deleteRow: async () => true,
+        listPostTitles: async () => ['a', 'b', 'c', 'd', 'e', 'f'],
+      })
+    } catch (e) {
+      error = e
+    }
+    expect(error).toMatchObject({
+      code: 'CONFLICT',
+      descriptor: {
+        messageKey: 'taxonomy.error.blockedByPosts',
+        params: { entity: 'tag', name: 'React', count: 6, preview: 'a, b, c, d, e…' },
+      },
+    })
   })
-  it('uses the "N 篇文章" suffix when fewer than 5', async () => {
-    const { formatBlockMessage } = await import('@/server/domains/taxonomies/shared')
-    const msg = formatBlockMessage('分类', 'Tech', ['a', 'b'])
-    expect(msg).toContain('2 篇文章')
+
+  it('keeps the preview list unterminated when five or fewer titles reference it', async () => {
+    const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
+    let error: unknown
+    try {
+      await deleteAdminTaxonomy(1, 'category', {
+        findById: async () => ({ id: 1, name: 'Tech' }),
+        deleteRow: async () => true,
+        listPostTitles: async () => ['a', 'b'],
+      })
+    } catch (e) {
+      error = e
+    }
+    expect(error).toMatchObject({
+      descriptor: { params: { entity: 'category', count: 2, preview: 'a, b' } },
+    })
   })
 })
 
@@ -78,7 +104,7 @@ describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
     const { ensureUniqueOnCreateTaxonomy } = await import('@/server/domains/taxonomies/shared')
     const dupName = async () => ({ id: 1, name: 'X' }) as never
     const noSlug = async () => null
-    await expect(ensureUniqueOnCreateTaxonomy(dupName, noSlug, 'X', 'x', '标签')).rejects.toMatchObject({
+    await expect(ensureUniqueOnCreateTaxonomy(dupName, noSlug, 'X', 'x', 'tag')).rejects.toMatchObject({
       code: 'CONFLICT',
     })
   })
@@ -86,14 +112,14 @@ describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
     const { ensureUniqueOnCreateTaxonomy } = await import('@/server/domains/taxonomies/shared')
     const noName = async () => null
     const dupSlug = async () => ({ id: 1, name: 'X' }) as never
-    await expect(ensureUniqueOnCreateTaxonomy(noName, dupSlug, 'X', 'x', '标签')).rejects.toMatchObject({
+    await expect(ensureUniqueOnCreateTaxonomy(noName, dupSlug, 'X', 'x', 'tag')).rejects.toMatchObject({
       code: 'CONFLICT',
     })
   })
   it('passes when both name and slug are free', async () => {
     const { ensureUniqueOnCreateTaxonomy } = await import('@/server/domains/taxonomies/shared')
     const none = async () => null
-    await expect(ensureUniqueOnCreateTaxonomy(none, none, 'X', 'x', '标签')).resolves.toBeUndefined()
+    await expect(ensureUniqueOnCreateTaxonomy(none, none, 'X', 'x', 'tag')).resolves.toBeUndefined()
   })
 })
 
@@ -102,7 +128,7 @@ describe('taxonomies/shared — ensureUniqueOnUpdateTaxonomy', () => {
     const { ensureUniqueOnUpdateTaxonomy } = await import('@/server/domains/taxonomies/shared')
     const dupName = async () => ({ id: 2, name: 'X' }) as never
     const none = async () => null
-    await expect(ensureUniqueOnUpdateTaxonomy(dupName, none, 1, 'X', 'Old', 'x', 'x', '标签')).rejects.toMatchObject({
+    await expect(ensureUniqueOnUpdateTaxonomy(dupName, none, 1, 'X', 'Old', 'x', 'x', 'tag')).rejects.toMatchObject({
       code: 'CONFLICT',
     })
   })
@@ -110,7 +136,7 @@ describe('taxonomies/shared — ensureUniqueOnUpdateTaxonomy', () => {
     const { ensureUniqueOnUpdateTaxonomy } = await import('@/server/domains/taxonomies/shared')
     const dup = async () => ({ id: 2 }) as never
     await expect(
-      ensureUniqueOnUpdateTaxonomy(dup, dup, 1, 'Same', 'Same', 'same', 'same', '标签'),
+      ensureUniqueOnUpdateTaxonomy(dup, dup, 1, 'Same', 'Same', 'same', 'same', 'tag'),
     ).resolves.toBeUndefined()
   })
 })
@@ -118,7 +144,7 @@ describe('taxonomies/shared — ensureUniqueOnUpdateTaxonomy', () => {
 describe('taxonomies/shared — deleteAdminTaxonomy', () => {
   it('returns false when the row does not exist', async () => {
     const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
-    const r = await deleteAdminTaxonomy(9999, '标签', {
+    const r = await deleteAdminTaxonomy(9999, 'tag', {
       findById: async () => null,
       deleteRow: async () => false,
       listPostTitles: async () => [],
@@ -128,7 +154,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
   it('throws CONFLICT when posts still reference the taxonomy', async () => {
     const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
     await expect(
-      deleteAdminTaxonomy(1, '标签', {
+      deleteAdminTaxonomy(1, 'tag', {
         findById: async () => ({ id: 1, name: 'X' }),
         deleteRow: async () => true,
         listPostTitles: async () => ['Post A'],
@@ -138,7 +164,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
   it('deletes when no posts reference it', async () => {
     const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
     let deleted = false
-    const r = await deleteAdminTaxonomy(1, '标签', {
+    const r = await deleteAdminTaxonomy(1, 'tag', {
       findById: async () => ({ id: 1, name: 'X' }),
       deleteRow: async () => {
         deleted = true

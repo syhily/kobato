@@ -5,8 +5,10 @@ import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export function SenderFieldCard({ mail }: { mail: MailLoaderShape }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<MailLoaderShape, { sender: string }>({
     section: 'mail',
     source: mail,
@@ -18,17 +20,21 @@ export function SenderFieldCard({ mail }: { mail: MailLoaderShape }) {
 
   return (
     <SettingGroup
-      title="发件人邮箱"
-      description="收件人看到的 From 地址。对所有服务商通用，独立保存，不会因切换提供商而丢失。"
+      title={t('admin.settings.mail.sender.title')}
+      description={t('admin.settings.mail.sender.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="发件人邮箱" htmlFor="mail-sender" hint="必须是当前服务商已验证过的发件域。">
+        <SettingsRow
+          label={t('admin.settings.mail.sender.label')}
+          htmlFor="mail-sender"
+          hint={t('admin.settings.mail.sender.hint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="mail-sender"
             type="email"
-            placeholder="noreply@example.com"
+            placeholder={t('admin.settings.mail.sender.placeholder')}
             maxLength={253}
             {...form.register('sender')}
           />

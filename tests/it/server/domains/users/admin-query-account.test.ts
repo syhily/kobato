@@ -256,12 +256,16 @@ describe('infra/db/operations/user — setUserMuted', () => {
 
 describe('users/services/admin — muteUser', () => {
   it('throws NOT_FOUND for an unknown target', async () => {
-    await expect(admin.muteUser(db, 9999, true)).rejects.toThrow(/用户不存在或为管理员/)
+    await expect(admin.muteUser(db, 9999, true)).rejects.toMatchObject({
+      descriptor: { messageKey: 'users.error.muteTargetNotFound' },
+    })
   })
 
   it('throws NOT_FOUND when targeting an admin (admins cannot be muted)', async () => {
     const u = await seedUser({ name: 'Admin', email: 'admin-mute@example.com', role: 'admin' })
-    await expect(admin.muteUser(db, u.id, true)).rejects.toThrow(/管理员不可禁言/)
+    await expect(admin.muteUser(db, u.id, true)).rejects.toMatchObject({
+      descriptor: { messageKey: 'users.error.muteTargetNotFound' },
+    })
   })
 
   it('mutes a user and returns the aggregated admin DTO', async () => {
@@ -280,16 +284,22 @@ describe('users/services/admin — muteUser', () => {
 describe('users/services/admin — updateUserRoleWithGuard', () => {
   it('throws FORBIDDEN when the actor modifies their own role', async () => {
     const u = await seedUser({ name: 'Self', email: 'self@example.com', role: 'admin' })
-    await expect(admin.updateUserRoleWithGuard(db, u.id, 'author', String(u.id))).rejects.toThrow(/不能修改自己的角色/)
+    await expect(admin.updateUserRoleWithGuard(db, u.id, 'author', String(u.id))).rejects.toMatchObject({
+      descriptor: { messageKey: 'users.error.cannotChangeOwnRole' },
+    })
   })
 
   it('throws NOT_FOUND for unknown target', async () => {
-    await expect(admin.updateUserRoleWithGuard(db, 9999, 'author', '1')).rejects.toThrow(/用户不存在/)
+    await expect(admin.updateUserRoleWithGuard(db, 9999, 'author', '1')).rejects.toMatchObject({
+      descriptor: { messageKey: 'users.error.notFound' },
+    })
   })
 
   it('throws CONFLICT when demoting the only admin', async () => {
     const u = await seedUser({ name: 'Solo', email: 'solo@example.com', role: 'admin' })
-    await expect(admin.updateUserRoleWithGuard(db, u.id, 'author', 'other')).rejects.toThrow(/不能降级唯一的管理员/)
+    await expect(admin.updateUserRoleWithGuard(db, u.id, 'author', 'other')).rejects.toMatchObject({
+      descriptor: { messageKey: 'users.error.cannotDemoteSoleAdmin' },
+    })
   })
 
   it('updates role when guard passes and reports the previous role', async () => {
@@ -313,7 +323,9 @@ describe('users/services/admin — updateUserRoleWithGuard', () => {
     const rejected = results.filter((r) => r.status === 'rejected')
     expect(fulfilled).toHaveLength(1)
     expect(rejected).toHaveLength(1)
-    expect(((rejected[0] as PromiseRejectedResult).reason as Error).message).toMatch(/不能降级唯一的管理员/)
+    expect(
+      ((rejected[0] as PromiseRejectedResult).reason as { descriptor?: { messageKey?: string } }).descriptor,
+    ).toMatchObject({ messageKey: 'users.error.cannotDemoteSoleAdmin' })
     expect(userOps.countAdmins(db)).toBe(1)
   })
 })
@@ -321,12 +333,16 @@ describe('users/services/admin — updateUserRoleWithGuard', () => {
 describe('users/services/admin — softDeleteUserWithGuard', () => {
   it('throws FORBIDDEN when actor deletes self', async () => {
     const u = await seedUser({ name: 'Self', email: 's@example.com' })
-    await expect(admin.softDeleteUserWithGuard(db, u.id, String(u.id))).rejects.toThrow(/不能删除自己/)
+    await expect(admin.softDeleteUserWithGuard(db, u.id, String(u.id))).rejects.toMatchObject({
+      descriptor: { messageKey: 'users.error.cannotDeleteSelf' },
+    })
   })
 
   it('throws CONFLICT when deleting the only admin', async () => {
     const u = await seedUser({ name: 'Solo', email: 'solo@example.com', role: 'admin' })
-    await expect(admin.softDeleteUserWithGuard(db, u.id, 'other')).rejects.toThrow(/不能删除唯一的管理员/)
+    await expect(admin.softDeleteUserWithGuard(db, u.id, 'other')).rejects.toMatchObject({
+      descriptor: { messageKey: 'users.error.cannotDeleteSoleAdmin' },
+    })
   })
 
   it('deletes a user and returns previousRole', async () => {
@@ -349,7 +365,9 @@ describe('users/services/admin — softDeleteUserWithGuard', () => {
     const rejected = results.filter((r) => r.status === 'rejected')
     expect(fulfilled).toHaveLength(1)
     expect(rejected).toHaveLength(1)
-    expect(((rejected[0] as PromiseRejectedResult).reason as Error).message).toMatch(/不能删除唯一的管理员/)
+    expect(
+      ((rejected[0] as PromiseRejectedResult).reason as { descriptor?: { messageKey?: string } }).descriptor,
+    ).toMatchObject({ messageKey: 'users.error.cannotDeleteSoleAdmin' })
     expect(userOps.countAdmins(db)).toBe(1)
   })
 })
@@ -376,7 +394,7 @@ describe('users/services/admin — inviteAuthorWithRollback', () => {
     await seedUser({ name: 'Existing', email: 'dup@example.com' })
     await expect(
       admin.inviteAuthorWithRollback(db, 'Jane', 'dup@example.com', 'https://blog.example.com', 'Admin'),
-    ).rejects.toThrow(/已被注册/)
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'users.error.emailTaken' } })
   })
 
   it('soft-deletes the author when email send fails', async () => {
@@ -384,7 +402,7 @@ describe('users/services/admin — inviteAuthorWithRollback', () => {
 
     await expect(
       admin.inviteAuthorWithRollback(db, 'Jane', 'jane@example.com', 'https://blog.example.com', 'Admin'),
-    ).rejects.toThrow(/邮件发送失败/)
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'users.error.mailFailedRolledBack' } })
 
     const rows = await db.select().from(user).where(eq(user.email, 'jane@example.com'))
     expect(rows).toHaveLength(1)
@@ -394,16 +412,16 @@ describe('users/services/admin — inviteAuthorWithRollback', () => {
 
 describe('users/services/admin — sendPasswordResetToUser', () => {
   it('throws NOT_FOUND when the user does not exist', async () => {
-    await expect(admin.sendPasswordResetToUser(db, 'nobody@example.com', 'https://blog.example.com')).rejects.toThrow(
-      /用户不存在/,
-    )
+    await expect(
+      admin.sendPasswordResetToUser(db, 'nobody@example.com', 'https://blog.example.com'),
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'users.error.notFound' } })
   })
 
   it('throws NOT_FOUND when the user is soft-deleted', async () => {
     await seedUser({ name: 'Del', email: 'del@example.com', deletedAt: new Date() })
-    await expect(admin.sendPasswordResetToUser(db, 'del@example.com', 'https://blog.example.com')).rejects.toThrow(
-      /用户不存在/,
-    )
+    await expect(
+      admin.sendPasswordResetToUser(db, 'del@example.com', 'https://blog.example.com'),
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'users.error.notFound' } })
   })
 
   it('issues a reset token and sends the email', async () => {
@@ -437,12 +455,16 @@ describe('infra/db/operations/user — updateUserById', () => {
 
 describe('users/services/account — updateAccountProfile', () => {
   it('throws NOT_FOUND when user does not exist', async () => {
-    await expect(account.updateAccountProfile(db, 9999, {}, 'admin')).rejects.toThrow(/用户不存在/)
+    await expect(account.updateAccountProfile(db, 9999, {}, 'admin')).rejects.toMatchObject({
+      descriptor: { messageKey: 'account.error.userNotFound' },
+    })
   })
 
   it('throws NOT_FOUND when user is soft-deleted', async () => {
     const u = await seedUser({ name: 'Del', email: 'd@example.com', deletedAt: new Date() })
-    await expect(account.updateAccountProfile(db, u.id, {}, 'admin')).rejects.toThrow(/用户不存在/)
+    await expect(account.updateAccountProfile(db, u.id, {}, 'admin')).rejects.toMatchObject({
+      descriptor: { messageKey: 'account.error.userNotFound' },
+    })
   })
 
   it('updates name and link', async () => {
@@ -480,7 +502,9 @@ describe('users/services/account — updateAccountProfile', () => {
 
 describe('users/services/account — updateAccountPassword', () => {
   it('throws NOT_FOUND when user does not exist', async () => {
-    await expect(account.updateAccountPassword(db, 9999, 'old', 'new')).rejects.toThrow(/用户不存在/)
+    await expect(account.updateAccountPassword(db, 9999, 'old', 'new')).rejects.toMatchObject({
+      descriptor: { messageKey: 'account.error.userNotFound' },
+    })
   })
 
   it('throws FORBIDDEN when old password is wrong', async () => {
@@ -488,7 +512,9 @@ describe('users/services/account — updateAccountPassword', () => {
     const hashed = await bcrypt.hash('correct', 4)
     const u = await seedUser({ name: 'P', email: 'p@example.com', password: hashed })
 
-    await expect(account.updateAccountPassword(db, u.id, 'wrong', 'new')).rejects.toThrow(/原密码错误/)
+    await expect(account.updateAccountPassword(db, u.id, 'wrong', 'new')).rejects.toMatchObject({
+      descriptor: { messageKey: 'account.error.passwordWrong' },
+    })
   })
 
   it('updates password when old password matches', async () => {

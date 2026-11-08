@@ -5,6 +5,7 @@ import type { PostFilterFieldKey } from '@/ui/admin/posts/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { makeAdminPost } from '#/_helpers/catalog'
+import { tZhCN } from '#/_helpers/i18n'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PostsView } from '@/ui/admin/posts/PostsView'
@@ -56,7 +57,7 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
       dateSingle: () => null,
       dateRange: () => null,
       bar: {
-        fields: buildPostFilterFields(mocks.sources),
+        fields: buildPostFilterFields(mocks.sources, tZhCN),
         filters: mocks.filters,
         search: {},
         onAddFilter: vi.fn(),

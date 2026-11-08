@@ -43,7 +43,10 @@ jobs:
   build:
     name: production build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # PRs also build the SEA binary and run the real-browser journeys; the
+    # production build alone (push) is much cheaper. Keep room for
+    # react-router + 3 SEA bundles + native injection + Playwright.
+    timeout-minutes: 30
     needs: check
     steps:
       - uses: actions/checkout@v7
@@ -53,4 +56,21 @@ jobs:
           node-version: 26.13.0
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      # Pushes only need the production build. PRs build the SEA binary for the
+      # real-browser journeys; `sea:build` runs `pnpm run build` itself, so the
+      # two paths never build twice.
       - run: pnpm run build
+        if: github.event_name != 'pull_request'
+      - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
+        if: github.event_name == 'pull_request'
+      - run: pnpm run sea:build
+        if: github.event_name == 'pull_request'
+      # Real-Chromium journeys (tests/browser). CI uses Playwright's bundled
+      # Chromium; `sea:browser` forces the built binary, so a missing
+      # dist-sea/kobato fails the step instead of silently skipping.
+      - run: pnpm exec playwright install --with-deps chromium
+        if: github.event_name == 'pull_request'
+      - run: pnpm run sea:browser dist-sea/kobato
+        if: github.event_name == 'pull_request'
+        env:
+          KOBATO_BROWSER_CHANNEL: chromium

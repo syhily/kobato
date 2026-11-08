@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import type { SettingsSection } from '@/shared/config/sections'
@@ -11,7 +10,8 @@ import { backfillSettingsSections, hydrateBlogSettings } from '@/server/domains/
 import { computeSecretMasks, redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { isStorageMigrationActive } from '@/server/domains/storage/s3-migration'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { adminSettingsBootstrapOutputSchema } from '@/shared/contracts/admin'
 import { safeBigInt } from '@/shared/utils/tools'
@@ -26,8 +26,10 @@ const update = adminProc
     }),
   )
   // The response is authoritative: the merged, validated section in the admin display shape.
-  // The client adopts it as its new baseline — a save must never refetch the document out
-  // from under the user's hands. The REAL runtime gate lives in `projectSectionForAdmin`.
+  // The client adopts it for DISPLAY — a save must never refetch the document out from under the
+  // user's hands — while its form baseline advances to the submitted values (patches are sparse,
+  // so the response also carries fields this card never sent). The REAL runtime gate lives in
+  // `projectSectionForAdmin`.
   .output(z.object({ section: z.unknown(), warnings: z.array(z.string()) }))
   .handler(async ({ input, context }) => {
     const editorId = safeBigInt(context.viewer.id)
@@ -44,10 +46,16 @@ const update = adminProc
       details: { section: input.section },
     })
     if (bundle === null) {
-      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: '设置保存后无法读取最新配置。' })
+      throw localizedOrpcError(context, 'INTERNAL_SERVER_ERROR', 'admin.settings.errors.saveReadFailed')
     }
     const masks = computeSecretMasks(bundle)
-    return { section: projectSectionForAdmin(input.section, bundle, masks), warnings }
+    // Warnings are descriptors in the domain; the wire keeps the client's
+    // string contract with server-localized copy.
+    const translator = createServerTranslator(context.localization.locale)
+    return {
+      section: projectSectionForAdmin(input.section, bundle, masks),
+      warnings: warnings.map((warning) => translator.format(warning.messageKey, warning.params)),
+    }
   })
 
 // Settings layout loader data behind `/admin/settings`: hydrate → eager
@@ -59,7 +67,7 @@ const bootstrap = adminProc
     const { db } = context
     const bundle = await hydrateBlogSettings(db)
     if (bundle === null) {
-      throw new ORPCError('SERVICE_UNAVAILABLE', { message: '站点尚未完成安装。' })
+      throw localizedOrpcError(context, 'SERVICE_UNAVAILABLE', 'admin.settings.errors.notInstalled')
     }
     // Eager backfill: any section that is null but carries registry
     // defaults gets written to DB and populated in the bundle copy before
@@ -69,10 +77,8 @@ const bootstrap = adminProc
       .filter(([, value]) => value === null)
       .map(([key]) => key)
     if (missing.length > 0) {
-      throw new ORPCError('SERVICE_UNAVAILABLE', {
-        message:
-          `设置数据不完整，缺少以下 section：${missing.join('、')}。` +
-          '安装流程本应写入所有设置行，因此这通常意味着某行被手动删除。请重新运行安装流程或从备份还原。',
+      throw localizedOrpcError(context, 'SERVICE_UNAVAILABLE', 'admin.settings.errors.incompleteSections', {
+        sections: missing.join(', '),
       })
     }
     const masks = computeSecretMasks(unsafeCast<BlogSettingsBundle>(mutable))

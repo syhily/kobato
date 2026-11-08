@@ -39,6 +39,7 @@ function makePageDetail(overrides: Partial<AdminPageDetailDto> = {}): AdminPageD
     webmentionsEnabled: true,
     showToc: false,
     showUpdated: false,
+    contentLanguage: null,
     showFriends: false,
     publishedAt: '2024-01-01T00:00:00.000Z',
     publishedRevisionId: 'rev-1',
@@ -68,11 +69,22 @@ const EMPTY_META_DRAFT: PageMetaDraft = {
   webmentionsEnabled: true,
   showToc: false,
   showUpdated: false,
+  contentLanguage: '',
   showFriends: false,
   publishedAt: '',
 }
 
 describe('snapshot: MetaSidebar', () => {
+  it('renders the content-language field alongside the basic info', () => {
+    const html = stableHtml(
+      renderToHtml(
+        <MetaSidebar draft={EMPTY_META_DRAFT} onChange={() => undefined} saveStatus={{ kind: 'unsaved' }} />,
+      ),
+    )
+    expect(html).toContain('id="page-content-language"')
+    expect(html).toContain('内容语言（可选）')
+  })
+
   it('renders sidebar fields', () => {
     const html = stableHtml(
       renderToHtml(

@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
@@ -17,7 +16,9 @@ import {
   updatePageMeta,
 } from '@/server/domains/pages/services/mutate'
 import { makeRevisionRouter } from '@/server/http/controllers/admin/revision-router'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
+import { formatWarningDescriptors } from '@/server/http/translate-domain-error'
+import { createServerTranslator } from '@/server/infra/i18n'
 import {
   adminPageDetailDto,
   adminPageDto,
@@ -49,7 +50,7 @@ const remove = adminProc
   .handler(async ({ input, context }) => {
     const result = await deletePage(context.db, idFromString(input.id))
     if (!result.deleted) {
-      throw new ORPCError('NOT_FOUND', { message: '页面不存在或已被删除。' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'content.error.entityNotFound', { entity: 'page' })
     }
     recordAuditEventFromContext(context, {
       action: 'page_deleted',
@@ -65,14 +66,20 @@ const restore = adminProc
   .handler(async ({ input, context }) => {
     const result = await restorePage(context.db, idFromString(input.id))
     if (!result.restored) {
-      throw new ORPCError('NOT_FOUND', { message: '页面不存在或未被删除。' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'content.error.entityNotDeleted', { entity: 'page' })
     }
     recordAuditEventFromContext(context, {
       action: 'page_restored',
       resourceType: 'page',
       resourceId: input.id,
     })
-    return { success: true, warning: result.warning }
+    return {
+      success: true,
+      warning: formatWarningDescriptors(
+        result.warningDescriptors ?? [],
+        createServerTranslator(context.localization.locale),
+      ),
+    }
   })
 
 const unpublish = adminProc
@@ -119,6 +126,7 @@ const upsertMeta = adminProc
       webmentionsEnabled: input.webmentionsEnabled,
       showToc: input.showToc,
       showUpdated: input.showUpdated,
+      contentLanguage: input.contentLanguage,
       showFriends: input.showFriends,
       publishedAt:
         input.publishedAt === undefined || input.publishedAt === null ? input.publishedAt : new Date(input.publishedAt),

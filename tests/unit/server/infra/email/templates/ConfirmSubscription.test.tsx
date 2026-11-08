@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 
 import { render } from '@/server/infra/email/render'
 import ConfirmSubscription from '@/server/infra/email/templates/ConfirmSubscription'
+import { createServerTranslator } from '@/server/infra/i18n'
 
 function renderTemplate(props: { fromName?: string; confirmLink?: string; expiresHours?: number } = {}): string {
   return render(
     createElement(ConfirmSubscription, {
+      t: createServerTranslator('zh-CN'),
       receiver: 'reader@example.com',
       fromName: props.fromName ?? '且听书吟',
       confirmLink: props.confirmLink ?? 'https://example.com/newsletter/confirm?token=abc123',

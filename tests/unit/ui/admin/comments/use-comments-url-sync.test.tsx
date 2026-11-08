@@ -1,10 +1,15 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement, ReactNode } from 'react'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render } from '@testing-library/react'
+import { act, render as rtlRender } from '@testing-library/react'
 import { useState } from 'react'
 import { createMemoryRouter, RouterProvider, useSearchParams } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { tZhCN } from '#/_helpers/i18n'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 
 // The controller's list query and the pills' autocomplete queries hit the
 // oRPC client; mocked at the same seam use-comments-actions.test.tsx uses.
@@ -32,9 +37,11 @@ vi.mock('@/client/api/client', () => ({
   },
 }))
 
-import { COMMENT_FILTER_FIELDS, type CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
+import { buildCommentFilterFields, type CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
 import { parseCommentFiltersFromSearchParams, useCommentsController } from '@/ui/admin/comments/useCommentsController'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
+
+const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
 type Pills = ReturnType<typeof useFilterPills<CommentFilterFieldKey>>
 type Controller = ReturnType<typeof useCommentsController>
@@ -46,7 +53,7 @@ type Sink = { current: { pills: Pills; controller: Controller } | null }
 function Harness({ sink }: { sink: Sink }) {
   // Mirror the route's mount seed: parse the shared URL once per mount.
   const [searchParams] = useSearchParams()
-  const [initial] = useState(() => parseCommentFiltersFromSearchParams(searchParams))
+  const [initial] = useState(() => parseCommentFiltersFromSearchParams(searchParams, tZhCN))
   const pills = useFilterPills({ fields: COMMENT_FILTER_FIELDS, initial })
   const controller = useCommentsController({
     filters: pills.filters,
@@ -66,6 +73,9 @@ function setup(initialPath: string) {
   const router = createMemoryRouter([{ path: '*', element: <Harness sink={sink} /> }], {
     initialEntries: [initialPath],
   })
+  // The controller reads `useI18n()`; the provider is mounted as a render wrapper.
+  const render = (ui: ReactElement) =>
+    rtlRender(ui, { wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children) })
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

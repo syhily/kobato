@@ -29,6 +29,7 @@ import {
   TWO_COLUMN_NESTED_EDITORS,
 } from '@/shared/lexical/cards/two-column'
 import { TWO_COLUMN_NODE_TYPE } from '@/shared/lexical/node-whitelist'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The card's nested-editor spec (CONTEXT.md: "card spec"), const-asserted so
 // the literal names survive into the derived field maps — the same array
@@ -109,6 +110,7 @@ export function TwoColumnCardView({ left, right }: { left?: ReactNode; right?: R
 }
 
 function TwoColumnCardComponent({ node }: { node: TwoColumnCardNode }) {
+  const { t } = useI18n()
   if (!node.__leftEditor || !node.__rightEditor) {
     return null
   }
@@ -118,7 +120,7 @@ function TwoColumnCardComponent({ node }: { node: TwoColumnCardNode }) {
         <TwoColumnPane
           editor={node.__leftEditor}
           initialState={node.__leftEditorInitialState}
-          placeholder="左栏内容"
+          placeholder={t('admin.editor.cards.twoColumn.left')}
           side="left"
         />
       }
@@ -126,7 +128,7 @@ function TwoColumnCardComponent({ node }: { node: TwoColumnCardNode }) {
         <TwoColumnPane
           editor={node.__rightEditor}
           initialState={node.__rightEditorInitialState}
-          placeholder="右栏内容"
+          placeholder={t('admin.editor.cards.twoColumn.right')}
           side="right"
         />
       }
@@ -142,9 +144,11 @@ export const twoColumnCard = defineCard({
   insert: { openInEditMode: true },
   menu: [
     {
-      label: '左右分栏',
+      // The menu labels are English fallbacks; the overlay localizes them
+      // through `labelKey` (the inkling label tables).
+      label: 'Two columns',
       labelKey: 'host.two-column',
-      desc: '两栏并排，每栏内容独立编辑',
+      desc: 'Two side-by-side columns, each edited independently',
       icon: Columns2Icon,
       command: 'insert',
       insertParams: {},

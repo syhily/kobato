@@ -19,6 +19,7 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 
@@ -29,13 +30,14 @@ export interface EditUserDialogProps {
 }
 
 export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProps) {
+  const { t } = useI18n()
   const mutation = useMutation({
     mutationFn: (payload: Record<string, string | null>) => {
       const { id, ...body } = payload
       return orpc.admin.users.update({ id: id!, ...body })
     },
     onSuccess: () => onSaved(),
-    onError: onMutationError('保存用户信息失败'),
+    onError: onMutationError('admin.toast.userSaveFailed', t),
   })
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
   const [name, setName] = useState(comment?.name ?? '')
@@ -65,8 +67,8 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>编辑评论用户</DialogTitle>
-          <DialogDescription>修改用户名、邮箱、链接以及徽章信息。</DialogDescription>
+          <DialogTitle>{t('admin.comments.editUser.title')}</DialogTitle>
+          <DialogDescription>{t('admin.comments.editUser.description')}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -96,11 +98,11 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
           className="grid gap-4 sm:grid-cols-2"
         >
           <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="edit-user-name">用户名</Label>
+            <Label htmlFor="edit-user-name">{t('admin.users.edit.name')}</Label>
             <Input id="edit-user-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="edit-user-email">邮箱</Label>
+            <Label htmlFor="edit-user-email">{t('admin.users.edit.email')}</Label>
             <Input
               id="edit-user-email"
               type="email"
@@ -110,7 +112,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor="edit-user-link">网站链接</Label>
+            <Label htmlFor="edit-user-link">{t('admin.users.edit.link')}</Label>
             <Input
               id="edit-user-link"
               type="url"
@@ -120,17 +122,17 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="edit-user-badge-name">徽章名称</Label>
+            <Label htmlFor="edit-user-badge-name">{t('admin.users.edit.badgeName')}</Label>
             <Input
               id="edit-user-badge-name"
               type="text"
               value={badgeName}
               onChange={(e) => setBadgeName(e.target.value)}
-              placeholder="MOD / VIP"
+              placeholder={t('admin.comments.editUser.badgePlaceholder')}
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="edit-user-badge-color">徽章颜色</Label>
+            <Label htmlFor="edit-user-badge-color">{t('admin.users.edit.badgeColor')}</Label>
             <Input
               id="edit-user-badge-color"
               type="color"
@@ -151,9 +153,9 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
                 onCheckedChange={(next) => setUseTextOverride(next === true)}
               />
               <Label htmlFor="edit-user-badge-text-toggle" className="cursor-pointer font-normal">
-                自定义徽章字体颜色
+                {t('admin.users.edit.customTextColor')}
               </Label>
-              <span className="text-xs text-muted-foreground">未勾选时按背景自动选择黑/白对比色</span>
+              <span className="text-xs text-muted-foreground">{t('admin.users.edit.textColorHint')}</span>
             </div>
             {useTextOverride && (
               <div className="flex items-center gap-3">
@@ -168,17 +170,17 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
                   className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                   style={{ backgroundColor: badgeColor || '#007a82', color: badgeTextColor }}
                 >
-                  {badgeName || '预览'}
+                  {badgeName || t('admin.users.edit.preview')}
                 </span>
               </div>
             )}
           </div>
           <DialogFooter className="sm:col-span-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={submitting}>
-              <SaveIcon data-icon /> {submitting ? '保存中…' : '保存'}
+              <SaveIcon data-icon /> {submitting ? t('admin.users.edit.saving') : t('common.action.save')}
             </Button>
           </DialogFooter>
         </form>

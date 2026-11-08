@@ -5,7 +5,7 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 import type { LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 
 import { orpc } from '@/client/api/client'
-import { formatBytes } from '@/shared/utils/formatter'
+import { formatBytes } from '@/shared/i18n/format'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -17,6 +17,7 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { type I18nValue, useI18n } from '@/ui/lib/I18nProvider'
 
 const ImageEditorCanvas = lazy(() =>
   import('@/ui/admin/shared/ImageEditorCanvas').then((m) => ({ default: m.ImageEditorCanvas })),
@@ -35,6 +36,7 @@ export interface UploadImageDialogProps {
 const LOCKED_ASPECT: LockedAspect = { width: 1280, height: 425 }
 
 export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile }: UploadImageDialogProps) {
+  const { locale, t } = useI18n()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const [file, setFile] = useState<File | null>(null)
@@ -112,11 +114,11 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
 
   const performUpload = useCallback(async () => {
     if (file === null) {
-      setErrorMessage('请先选择图片')
+      setErrorMessage(t('admin.shared.upload.selectFirst'))
       return
     }
     if (encoderRef.current === null) {
-      setErrorMessage('图片尚未准备好，请稍候再试')
+      setErrorMessage(t('admin.shared.upload.notReady'))
       return
     }
     setErrorMessage(null)
@@ -141,11 +143,11 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
       const data = await orpc.admin.images.upload({ file: encoded.blob, metadata })
       onUploaded(data.image)
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : '上传失败')
+      setErrorMessage(err instanceof Error ? err.message : t('admin.toast.uploadFailed'))
     }
     // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
     setIsPending(false)
-  }, [file, kind, note, onUploaded])
+  }, [file, kind, note, onUploaded, t])
 
   const onSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
@@ -165,25 +167,23 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
       <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden sm:max-w-3xl">
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>{titleFor(kind)}</DialogTitle>
-            <DialogDescription>
-              选择本地图片，调整裁剪、旋转、画质，点击「上传」后将转换为 JPEG 并保存到 S3。
-            </DialogDescription>
+            <DialogTitle>{titleFor(kind, t)}</DialogTitle>
+            <DialogDescription>{t('admin.shared.upload.description')}</DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
             {file === null ? (
               <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-8">
                 <UploadIcon className="size-8 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">点击下方按钮选择本地图片</p>
+                <p className="text-sm text-muted-foreground">{t('admin.shared.upload.selectHint')}</p>
                 <Button type="button" onClick={() => fileInputRef.current?.click()}>
-                  <UploadIcon data-icon /> 选择图片
+                  <UploadIcon data-icon /> {t('admin.shared.upload.selectImage')}
                 </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   hidden
-                  aria-label="选择图片文件"
+                  aria-label={t('admin.shared.upload.selectFileAria')}
                   onChange={onSelectFile}
                 />
               </div>
@@ -192,7 +192,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{file.name}</span>
-                    <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
+                    <span className="text-xs text-muted-foreground">{formatBytes(file.size, { locale })}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -209,22 +209,24 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                         })
                       }
                     >
-                      <RotateCwIcon data-icon /> 旋转 90°
+                      <RotateCwIcon data-icon /> {t('admin.shared.upload.rotate')}
                     </Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                      <UploadIcon data-icon /> 重新选择
+                      <UploadIcon data-icon /> {t('admin.shared.upload.reselect')}
                     </Button>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       hidden
-                      aria-label="选择图片文件"
+                      aria-label={t('admin.shared.upload.selectFileAria')}
                       onChange={onSelectFile}
                     />
                   </div>
                 </div>
-                <Suspense fallback={<p className="text-sm text-muted-foreground">正在加载图片编辑器…</p>}>
+                <Suspense
+                  fallback={<p className="text-sm text-muted-foreground">{t('admin.shared.upload.editorLoading')}</p>}
+                >
                   <ImageEditorCanvas
                     file={file}
                     rotation={rotation}
@@ -237,7 +239,9 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                 </Suspense>
                 {kind.kind === 'generic' && cropWidth !== null ? (
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="upload-target-width">输出宽度（像素，最大 {cropWidth}）</Label>
+                    <Label htmlFor="upload-target-width">
+                      {t('admin.shared.upload.outputWidth', { max: cropWidth })}
+                    </Label>
                     <Input
                       id="upload-target-width"
                       type="number"
@@ -256,15 +260,13 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                           }
                         }
                       }}
-                      placeholder={`留空则使用裁剪宽度 ${cropWidth}`}
+                      placeholder={t('admin.shared.upload.outputWidthPlaceholder', { width: cropWidth })}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      留空则按裁剪后的原始宽度导出；填入数值会按比例缩放，不能超过裁剪宽度。
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('admin.shared.upload.outputWidthHint')}</p>
                   </div>
                 ) : null}
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="upload-quality">JPEG 质量 ({jpegQuality})</Label>
+                  <Label htmlFor="upload-quality">{t('admin.shared.upload.quality', { quality: jpegQuality })}</Label>
                   <input
                     id="upload-quality"
                     type="range"
@@ -274,21 +276,19 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                     value={jpegQuality}
                     onChange={(event) => setJpegQuality(Number(event.target.value))}
                     className="w-full"
-                    aria-label="JPEG 质量"
+                    aria-label={t('admin.shared.upload.qualityAria')}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    越高越清晰、文件越大。常规图建议 80-85，封面/海报建议 82-90。
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('admin.shared.upload.qualityHint')}</p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="upload-note">备注（可选）</Label>
+                  <Label htmlFor="upload-note">{t('admin.shared.upload.note')}</Label>
                   <Input
                     id="upload-note"
                     type="text"
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
                     maxLength={200}
-                    placeholder="便于后台搜索（如「2024 年终总结题图」）"
+                    placeholder={t('admin.shared.upload.notePlaceholder')}
                   />
                 </div>
               </>
@@ -297,10 +297,10 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={isPending || file === null}>
-              <SaveIcon data-icon /> {isPending ? '上传中…' : '上传'}
+              <SaveIcon data-icon /> {isPending ? t('admin.shared.upload.uploading') : t('admin.shared.upload.submit')}
             </Button>
           </DialogFooter>
         </form>
@@ -309,13 +309,13 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
   )
 }
 
-function titleFor(kind: UploadKind): string {
+function titleFor(kind: UploadKind, t: I18nValue['t']): string {
   switch (kind.kind) {
     case 'category':
-      return `上传分类封面 · ${kind.slug}`
+      return t('admin.shared.upload.categoryTitle', { slug: kind.slug })
     case 'friend':
-      return `上传友链海报 · ${kind.host}`
+      return t('admin.shared.upload.friendTitle', { host: kind.host })
     case 'generic':
-      return '上传图片'
+      return t('admin.shared.upload.genericTitle')
   }
 }

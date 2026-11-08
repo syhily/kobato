@@ -33,25 +33,8 @@ export async function findLivePageBySlug(db: Database, slug: string): Promise<{ 
 }
 
 /**
- * ETag probe — returns exactly the weak-ETag inputs of the page detail route; exact-slug match suffices (no slug aliases).
+ * Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`.
  */
-export async function findPageEtagInputBySlug(
-  db: Database,
-  slug: string,
-): Promise<{ id: number; publishedRevisionId: number | null; publishedAt: Date } | null> {
-  const rows = await db
-    .select({
-      id: pageMetaTable.id,
-      publishedRevisionId: pageMetaTable.publishedRevisionId,
-      publishedAt: pageMetaTable.publishedAt,
-    })
-    .from(pageMetaTable)
-    .where(and(eq(pageMetaTable.slug, slug), livePageWhere()))
-    .limit(1)
-  return rows[0] ?? null
-}
-
-/** Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`. */
 interface SitemapPageRow {
   slug: string
   firstPublishedAt: Date | null

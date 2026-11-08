@@ -1,19 +1,27 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { AVATAR_SOURCES } from '@/shared/utils/avatar'
 import { isAllowedMirrorUrl } from '@/shared/utils/safe-url'
+
+/** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */
+export const commentsValidationMessages = {
+  mirrorInvalid: 'admin.settings.comments.error.mirrorInvalid',
+  duplicateSource: 'admin.settings.comments.error.duplicateSource',
+} as const satisfies Record<string, UiMessageId>
 
 export const commentsSchema = z.object({
   comments: z.object({
     size: z.coerce.number().int().min(1).max(100),
     avatar: z.object({
-      mirror: z.url().refine(isAllowedMirrorUrl, '镜像地址必须是已知的 Gravatar 镜像 HTTPS URL'),
+      mirror: z.url().refine(isAllowedMirrorUrl, commentsValidationMessages.mirrorInvalid),
       // Upstream fetch order; replace semantics on patch (the form always
       // submits the full permutation). Empty/duplicated chains are rejected.
       sources: z
         .array(z.enum(AVATAR_SOURCES))
         .min(1)
-        .refine((sources) => new Set(sources).size === sources.length, '头像来源不能重复')
+        .refine((sources) => new Set(sources).size === sources.length, commentsValidationMessages.duplicateSource)
         .default(['qq', 'github', 'gravatar']),
     }),
     // GitHub PAT for the Search API email lookup; encrypted at rest via

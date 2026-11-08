@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 
-import { act, renderHook } from '@testing-library/react'
+import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+
+import { renderHookWithI18n } from '#/_helpers/i18n-render'
 
 // Merged autosave freeze end-to-end: both sources merge into the single
 // `draft.freeze` gate. Mock seam — slot order matches useMutation call
@@ -64,6 +66,9 @@ import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/edit
 import { emptyLexicalBody } from '#/_helpers/lexical'
 import { useAutosave } from '@/client/hooks/use-autosave'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
+
+// The editor shell hooks call `useI18n()`, so every render needs the provider.
+const renderHook = renderHookWithI18n
 
 const useAutosaveMock = vi.mocked(useAutosave)
 

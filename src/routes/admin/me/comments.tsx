@@ -11,7 +11,7 @@ import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 import type { Route } from './+types/comments'
 
-export const meta = titleMeta('我的评论')
+export const meta = titleMeta('meta.title.admin.myComments')
 
 export interface MyCommentItem {
   id: string

@@ -1,11 +1,22 @@
 // @vitest-environment happy-dom
 
-import { act, render, screen } from '@testing-library/react'
+import type { ReactElement, ReactNode } from 'react'
+
+import { act, render as rtlRender, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 
 const control = mockTanstackQuery()
+
+// The drawer reads `useI18n()`; the provider is mounted as a render wrapper
+// (a wrapper, not inline JSX, so `rerender` keeps the locale mounted).
+function render(ui: ReactElement) {
+  return rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
+  })
+}
 
 const { LazyNotificationsDrawer } = await import('@/ui/shared/notifications/LazyNotificationsDrawer')
 

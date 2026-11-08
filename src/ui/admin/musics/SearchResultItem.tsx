@@ -4,6 +4,7 @@ import type { MetingSearchHit } from '@/shared/contracts/music'
 
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface SearchResultItemProps {
@@ -16,6 +17,7 @@ export interface SearchResultItemProps {
 }
 
 export function SearchResultItem({ hit, previewActive, adding, added, onPreview, onAdd }: SearchResultItemProps) {
+  const { t } = useI18n()
   return (
     <div className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2">
       {hit.coverUrl !== '' ? (
@@ -49,13 +51,17 @@ export function SearchResultItem({ hit, previewActive, adding, added, onPreview,
               : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
             (hit.previewUrl === undefined || hit.previewUrl === '') && 'cursor-not-allowed opacity-40',
           )}
-          aria-label={previewActive ? '停止' : '试听'}
+          aria-label={previewActive ? t('music.previewStop') : t('music.preview')}
         >
           {previewActive ? <Pause className="size-4 fill-current" /> : <Play className="size-4 fill-current" />}
         </button>
         <Button type="button" size="sm" onClick={() => onAdd(hit)} disabled={adding || added}>
           {adding ? <Loader2Icon className="animate-spin" /> : <PlusIcon />}
-          {added ? '已添加' : adding ? '添加中' : '添加'}
+          {added
+            ? t('admin.musics.search.added')
+            : adding
+              ? t('admin.musics.search.adding')
+              : t('admin.musics.search.add')}
         </Button>
       </div>
     </div>

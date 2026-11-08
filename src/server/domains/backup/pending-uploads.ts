@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { rmSync } from 'node:fs'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { registerJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
@@ -86,7 +87,7 @@ export function parkEncryptedUpload(entry: { dir: string; uploadPath: string; fi
     if (oldest === null) {
       // Every parked upload is mid-decrypt (vanishingly unlikely on an
       // admin-only surface) — refuse the park instead of killing one.
-      throw new ActionFailure(429, '待解密的备份过多，请稍后再试。')
+      throw new ActionFailure(429, descriptorFor('backup.error.decryptQueueFull'))
     }
     dropEntry(oldest.token)
     log.info('Pending encrypted upload evicted (cap reached)', { fileName: oldest.fileName })

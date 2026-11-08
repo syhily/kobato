@@ -2,29 +2,40 @@ import type { DateRange as DayPickerRange } from 'react-day-picker'
 
 import { useState } from 'react'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { type DateRange, type PresetKey, PRESET_KEYS } from '@/shared/contracts/analytics'
+import { formatDate } from '@/shared/i18n/format'
+import { getClientTimezone } from '@/ui/admin/analytics/use-analytics-state'
 import { Button } from '@/ui/components/button'
 import { Calendar } from '@/ui/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Preset chip row for the seven canonical ranges plus a 自定义 chip that
 // opens a two-month range-calendar popover (the shared admin range-picker
 // idiom) writing ?startAt&endAt. While a custom range is active
 // (preset === null) the chip shows the formatted range.
 
-const PRESET_LABEL: Record<PresetKey, string> = {
-  'last-1h': '最近 1 小时',
-  today: '今天',
-  yesterday: '昨天',
-  'last-7d': '最近 7 天',
-  'last-30d': '最近 30 天',
-  'last-90d': '最近 90 天',
-  'last-365d': '最近 365 天',
+const PRESET_LABEL_IDS: Record<PresetKey, UiMessageId> = {
+  'last-1h': 'admin.analytics.preset.last1h',
+  today: 'admin.analytics.preset.today',
+  yesterday: 'admin.analytics.preset.yesterday',
+  'last-7d': 'admin.analytics.preset.last7d',
+  'last-30d': 'admin.analytics.preset.last30d',
+  'last-90d': 'admin.analytics.preset.last90d',
+  'last-365d': 'admin.analytics.preset.last365d',
 }
 
-function shortDate(unixSec: number): string {
-  return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short' }).format(unixSec * 1000)
+function shortDate(unixSec: number, options: { locale: AppLocale; timeZone: string }): string {
+  // Analytics dates stay BROWSER-zoned; the formatting locale follows the UI.
+  return formatDate(new Date(unixSec * 1000), {
+    locale: options.locale,
+    timeZone: options.timeZone,
+    dateStyle: 'short',
+  })
 }
 
 /** Local midnight at the start of the given day, in unix seconds. */
@@ -46,6 +57,8 @@ export interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ preset, range, onSelect, onSelectRange, className }: DateRangePickerProps) {
+  const { locale, t } = useI18n()
+  const timeZone = getClientTimezone()
   const [customOpen, setCustomOpen] = useState(false)
   // The calendar is fully controlled, so the first click's start-only
   // selection must be fed back as `selected` — otherwise the second click
@@ -61,7 +74,7 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
   }
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-1', className)} aria-label="时间范围">
+    <div className={cn('flex flex-wrap items-center gap-1', className)} aria-label={t('admin.analytics.preset.aria')}>
       {PRESET_KEYS.map((p) => {
         const active = preset === p
         return (
@@ -74,7 +87,7 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
             onClick={() => onSelect(p)}
             className={cn('h-8 px-3 text-xs font-medium', !active && 'bg-transparent')}
           >
-            {PRESET_LABEL[p]}
+            {t(PRESET_LABEL_IDS[p])}
           </Button>
         )
       })}
@@ -88,7 +101,9 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
               aria-pressed={customActive}
               className={cn('h-8 px-3 text-xs font-medium', !customActive && 'bg-transparent')}
             >
-              {customActive ? `${shortDate(range.startAt)} – ${shortDate(range.endAt)}` : '自定义'}
+              {customActive
+                ? `${shortDate(range.startAt, { locale, timeZone })} – ${shortDate(range.endAt, { locale, timeZone })}`
+                : t('admin.analytics.preset.custom')}
             </Button>
           }
         />

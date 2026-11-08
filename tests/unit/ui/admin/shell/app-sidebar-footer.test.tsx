@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 
 vi.mock('@/client/hooks/use-logout', () => ({
@@ -16,12 +17,16 @@ mockTanstackQuery()
 
 const { AppSidebarFooter } = await import('@/ui/admin/shell/AppSidebarFooter')
 
-function renderFooter(unreadCount = 0) {
-  return render(
+function footer(unreadCount = 0) {
+  return (
     <MemoryRouter initialEntries={['/admin']}>
       <AppSidebarFooter id="1" name="管理员" email="admin@example.com" unreadCount={unreadCount} />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
+}
+
+function renderFooter(unreadCount = 0) {
+  return render(wrapWithI18n(footer(unreadCount)))
 }
 
 describe('ui/admin/shell/AppSidebarFooter', () => {
@@ -29,11 +34,7 @@ describe('ui/admin/shell/AppSidebarFooter', () => {
     const { container, rerender } = renderFooter(5)
     expect(container.querySelector('.bg-destructive')).not.toBeNull()
 
-    rerender(
-      <MemoryRouter initialEntries={['/admin']}>
-        <AppSidebarFooter id="1" name="管理员" email="admin@example.com" unreadCount={0} />
-      </MemoryRouter>,
-    )
+    rerender(wrapWithI18n(footer(0)))
     expect(container.querySelector('.bg-destructive')).toBeNull()
   })
 

@@ -5,7 +5,7 @@
 // kobato glue lives under `@/client/editor/`: the node set, the markdown
 // shortcuts (`comment-markdown-transformers` — bold/italic/quote/list/link
 // and the ``` fence; ```math is the formula path, rendered to KaTeX MathML
-// by the server-side comment projection), the zh-CN labels, and the legacy
+// by the server-side comment projection), the active locale's labels, and the legacy
 // math-card seed downgrade (`comment-legacy-math`), plus the skeleton shared
 // with the page surface (`editor-surface` — the registerAPI/body-reset
 // wiring + the composer shell; `block-quote-aside-cycle` on the shell div).
@@ -32,6 +32,7 @@
 import '@/styles/inkling-comment-editor.css'
 import { useCallback } from 'react'
 
+import type { InklingLabelsInput } from '@/inkling'
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { blockQuoteAsideCycle } from '@/client/editor/block-quote-aside-cycle'
@@ -55,6 +56,12 @@ export interface CommentBodyEditorProps {
   disabled?: boolean
   /** Extra Tailwind classes applied to the editor shell. */
   className?: string
+  /**
+   * Label overlay for the composer. Workspace documents omit it (the root
+   * payload supplies the active locale's table); the public path passes the
+   * table `LazyCommentBodyEditor` loaded for the active locale.
+   */
+  labels?: InklingLabelsInput
 }
 
 /** Rows stored before the Lexical switch still read back as PortableText
@@ -67,7 +74,14 @@ function safeInitialState(body: CommentEditorState): CommentEditorState {
   return result.ok ? downgradeLegacyCommentMath(result.state) : EMPTY_COMMENT_EDITOR_STATE
 }
 
-export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled, className }: CommentBodyEditorProps) {
+export function CommentBodyEditor({
+  initialBody,
+  bodyKey,
+  onBodyChange,
+  disabled,
+  className,
+  labels,
+}: CommentBodyEditorProps) {
   const { editorInstance, registerAPI, mountedInitialState, handleChange } = useEditorSurface({
     initialBody,
     bodyKey,
@@ -107,6 +121,7 @@ export function CommentBodyEditor({ initialBody, bodyKey, onBodyChange, disabled
       <EditorSurfaceComposer
         nodes={COMMENT_EDITOR_NODES}
         initialEditorState={mountedInitialState}
+        labels={labels}
         isEmojiEnabled={false}
         codeEditor="plain"
       >

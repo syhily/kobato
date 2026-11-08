@@ -1,9 +1,12 @@
 // @vitest-environment happy-dom
 
+import type { ReactNode } from 'react'
+
 import { renderHook as renderDomHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderHook } from '#/_helpers/hook'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { DEFAULT_RETRY_DELAYS_MS, useAutosave } from '@/client/hooks/use-autosave'
 
 // The SSR harness renders synchronously once (effects never fire), so
@@ -13,6 +16,8 @@ const sampleBody = [
   { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'hi' }] },
 ]
 
+const i18nWrapper = ({ children }: { children: ReactNode }) => wrapWithI18n(children)
+
 describe('useAutosave — disabled / no-op paths', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -20,12 +25,14 @@ describe('useAutosave — disabled / no-op paths', () => {
 
   it('forceFlush resolves without invoking flush when disabled', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: false,
-        flush: flush as never,
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: false,
+          flush: flush as never,
+        }),
+      { wrapper: i18nWrapper },
     )
     await result.forceFlush()
     expect(flush).not.toHaveBeenCalled()
@@ -33,12 +40,14 @@ describe('useAutosave — disabled / no-op paths', () => {
 
   it('forceFlush does not call flush when the body has not changed since the last persist', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+        }),
+      { wrapper: i18nWrapper },
     )
     await result.forceFlush()
     expect(flush).toHaveBeenCalledTimes(1)
@@ -55,13 +64,15 @@ describe('useAutosave — saving lifecycle', () => {
   it('emits saving then saved on a successful flush', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
     const statuses: string[] = []
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-        onStatusChange: (s) => statuses.push(s.kind),
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+          onStatusChange: (s) => statuses.push(s.kind),
+        }),
+      { wrapper: i18nWrapper },
     )
     await result.forceFlush()
     expect(flush).toHaveBeenCalledTimes(1)
@@ -70,12 +81,14 @@ describe('useAutosave — saving lifecycle', () => {
 
   it('does not invoke onStatusChange when no callback is supplied (defensive branch)', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+        }),
+      { wrapper: i18nWrapper },
     )
     await expect(result.forceFlush()).resolves.toBeUndefined()
     expect(flush).toHaveBeenCalledTimes(1)
@@ -90,13 +103,15 @@ describe('useAutosave — conflict outcome', () => {
   it('emits no saved tick and does not advance the baseline on a conflict flush', async () => {
     const flush = vi.fn<(body: unknown) => Promise<'saved' | 'conflict'>>().mockResolvedValue('conflict')
     const statuses: string[] = []
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-        onStatusChange: (s) => statuses.push(s.kind),
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+          onStatusChange: (s) => statuses.push(s.kind),
+        }),
+      { wrapper: i18nWrapper },
     )
 
     await result.forceFlush()
@@ -117,12 +132,14 @@ describe('useAutosave — setBaseline', () => {
 
   it('advances the baseline so the next tick short-circuits instead of re-flushing the same body', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+        }),
+      { wrapper: i18nWrapper },
     )
     result.setBaseline(sampleBody as never)
     await result.forceFlush()
@@ -131,12 +148,14 @@ describe('useAutosave — setBaseline', () => {
 
   it('still flushes a body that changed after setBaseline', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+        }),
+      { wrapper: i18nWrapper },
     )
     result.setBaseline([{ _type: 'block', _key: 'old' }] as never)
     await result.forceFlush()
@@ -152,13 +171,15 @@ describe('useAutosave — initialBaseline seed', () => {
 
   it('starts with the seed as the persisted baseline so the first tick is a no-op', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-        initialBaseline: sampleBody as never,
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+          initialBaseline: sampleBody as never,
+        }),
+      { wrapper: i18nWrapper },
     )
     await result.forceFlush()
     expect(flush).not.toHaveBeenCalled()
@@ -177,7 +198,7 @@ describe('useAutosave — initialBaseline seed', () => {
           flush: flush as never,
           initialBaseline: props.seed as never,
         }),
-      { initialProps: { seed: sampleBody } },
+      { initialProps: { seed: sampleBody }, wrapper: i18nWrapper },
     )
     rerender({ seed: otherBody })
     await result.current.forceFlush()
@@ -199,14 +220,16 @@ describe('useAutosave — retry kick-off', () => {
     const cause = new Error('network down')
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockRejectedValue(cause)
     const statuses: Array<{ kind: string; attempt?: number; message?: string }> = []
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-        retryDelaysMs: [10, 20, 30],
-        onStatusChange: (s) => statuses.push(s),
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+          retryDelaysMs: [10, 20, 30],
+          onStatusChange: (s) => statuses.push(s),
+        }),
+      { wrapper: i18nWrapper },
     )
 
     await result.forceFlush()
@@ -220,14 +243,16 @@ describe('useAutosave — retry kick-off', () => {
   it('wraps a non-Error cause with the generic 保存失败 message', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockRejectedValue('boom-string')
     const statuses: Array<{ kind: string; message?: string }> = []
-    const result = renderHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-        retryDelaysMs: [5],
-        onStatusChange: (s) => statuses.push(s),
-      }),
+    const result = renderHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+          retryDelaysMs: [5],
+          onStatusChange: (s) => statuses.push(s),
+        }),
+      { wrapper: i18nWrapper },
     )
 
     await result.forceFlush()
@@ -242,14 +267,16 @@ describe('useAutosave — retry kick-off', () => {
       .mockRejectedValueOnce(new Error('network down'))
       .mockResolvedValueOnce(undefined)
     const statuses: Array<{ kind: string; attempt?: number; message?: string }> = []
-    const { result } = renderDomHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-        retryDelaysMs: [10, 20, 30],
-        onStatusChange: (s) => statuses.push(s),
-      }),
+    const { result } = renderDomHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+          retryDelaysMs: [10, 20, 30],
+          onStatusChange: (s) => statuses.push(s),
+        }),
+      { wrapper: i18nWrapper },
     )
 
     await result.current.forceFlush()
@@ -281,12 +308,14 @@ describe('useAutosave — overlapping in-flight triggers (V3-02)', () => {
     const flush = vi
       .fn<(body: unknown) => Promise<void>>()
       .mockImplementation(() => new Promise<void>((resolve) => (resolveFlush = resolve)))
-    const { result } = renderDomHook(() =>
-      useAutosave({
-        body: sampleBody as never,
-        enabled: true,
-        flush: flush as never,
-      }),
+    const { result } = renderDomHook(
+      () =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+        }),
+      { wrapper: i18nWrapper },
     )
 
     const first = result.current.forceFlush()

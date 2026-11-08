@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
+import { rootMatchesWithI18n, tZhCN } from '#/_helpers/i18n'
 import { meta } from '@/routes/admin/comments'
-import { parseCommentFiltersFromSearchParams } from '@/ui/admin/comments/useCommentsController'
+import { parseCommentFiltersFromSearchParams as parseCommentFilters } from '@/ui/admin/comments/useCommentsController'
+
+const parseCommentFiltersFromSearchParams = (params: URLSearchParams) => parseCommentFilters(params, tZhCN)
 
 describe('route: admin/comments', () => {
   describe('meta', () => {
     it('returns meta tags with the page title', () => {
-      const result = meta({ matches: [] } as never)
+      const result = meta({ matches: rootMatchesWithI18n() } as never)
       expect(Array.isArray(result)).toBe(true)
       expect(result).toContainEqual({ title: '评论管理 - 且听书吟' })
     })

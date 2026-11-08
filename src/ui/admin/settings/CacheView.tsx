@@ -14,6 +14,7 @@ import { CacheStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
 import { ConfirmClearDialog } from '@/ui/admin/settings/cache/ConfirmClearDialog'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 type CacheSlice = CacheSettings['cache']
 
@@ -22,6 +23,7 @@ interface CacheViewProps {
 }
 
 export function CacheView({ cache }: CacheViewProps) {
+  const { t } = useI18n()
   const [status, setStatus] = useState<ClearStatus>(idleClearStatus)
   const [confirmTarget, setConfirmTarget] = useState<ClearCacheTarget | null>(null)
 
@@ -40,14 +42,17 @@ export function CacheView({ cache }: CacheViewProps) {
       setStatus((prev) => ({
         state: 'error',
         target: prev.target,
-        message: error.message || '操作失败',
+        message: error.message || t('admin.settings.cache.view.operationFailed'),
       }))
     },
     onSuccess: (result) => {
       const summary =
         result.cleared.length === 1
-          ? `已清空「${result.cleared[0]?.label ?? ''}」缓存（${result.cleared[0]?.removed ?? 0} 项）`
-          : `已清空全部缓存（${result.total} 项）`
+          ? t('admin.settings.cache.view.clearedOne', {
+              label: result.cleared[0]?.label ?? '',
+              count: result.cleared[0]?.removed ?? 0,
+            })
+          : t('admin.settings.cache.view.clearedAll', { count: result.total })
       setStatus((prev) => ({ state: 'success', target: prev.target, message: summary }))
     },
   })
@@ -67,18 +72,16 @@ export function CacheView({ cache }: CacheViewProps) {
     <div className="flex flex-col gap-6">
       <div className="relative">
         <SettingGroup
-          title="一键清空"
+          title={t('admin.settings.cache.view.clearAllTitle')}
           description={
             statsLoading
-              ? '正在读取缓存统计…'
+              ? t('admin.settings.cache.view.loadingStats')
               : statsError
-                ? '读取缓存统计失败'
-                : `删除数据库缓存表中所有已注册分组的记录。当前共 ${totalKeys} 条缓存。`
+                ? t('admin.settings.cache.view.statsFailed')
+                : t('admin.settings.cache.view.clearAllDescription', { count: totalKeys })
           }
         >
-          <p className="text-sm text-muted-foreground">
-            清空后下一次访问会触发对应资源（OG 图、头像、日历）的重新生成 / 拉取。Session 与限流计数不会受影响。
-          </p>
+          <p className="text-sm text-muted-foreground">{t('admin.settings.cache.view.clearAllNote')}</p>
           <div className="sm:pr-44">
             {stats ? <CacheStatusLine status={status} target="all" generatedAt={stats.generatedAt} /> : null}
           </div>
@@ -89,7 +92,10 @@ export function CacheView({ cache }: CacheViewProps) {
               disabled={isClearPending || totalKeys === 0}
               onClick={() => setConfirmTarget('all')}
             >
-              <Trash2Icon data-icon /> {isClearPending && status.target === 'all' ? '清空中…' : '清空全部缓存'}
+              <Trash2Icon data-icon />{' '}
+              {isClearPending && status.target === 'all'
+                ? t('admin.settings.cache.view.clearing')
+                : t('admin.settings.cache.view.clearAll')}
             </Button>
           </div>
         </SettingGroup>
@@ -100,7 +106,10 @@ export function CacheView({ cache }: CacheViewProps) {
           onClick={() => setConfirmTarget('all')}
           className="absolute right-6 bottom-6 hidden sm:inline-flex"
         >
-          <Trash2Icon data-icon /> {isClearPending && status.target === 'all' ? '清空中…' : '清空全部缓存'}
+          <Trash2Icon data-icon />{' '}
+          {isClearPending && status.target === 'all'
+            ? t('admin.settings.cache.view.clearing')
+            : t('admin.settings.cache.view.clearAll')}
         </Button>
       </div>
 
@@ -135,10 +144,11 @@ export function CacheView({ cache }: CacheViewProps) {
 }
 
 function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketStats[] }) {
+  const { t } = useI18n()
   return (
     <SettingGroup
-      title="受保护的缓存（只读）"
-      description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过数据库 SQL 或重启服务进行。"
+      title={t('admin.settings.cache.view.reservedTitle')}
+      description={t('admin.settings.cache.view.reservedDescription')}
     >
       <div className="grid gap-3 sm:grid-cols-2">
         {reserved.map((bucket) => (
@@ -148,7 +158,7 @@ function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketSta
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{bucket.description}</p>
             <p className="mt-3 text-xs">
-              <span className="text-muted-foreground">当前键数：</span>
+              <span className="text-muted-foreground">{t('admin.settings.cache.view.keyCount')}</span>
               <span className="font-medium">{bucket.keyCount}</span>
             </p>
           </div>

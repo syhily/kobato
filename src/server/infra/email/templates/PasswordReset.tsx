@@ -1,15 +1,18 @@
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Link, Text } from '@/server/infra/email/render'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { light } from '@/server/infra/email/templates/styles/tokens'
 
 interface Props {
+  t: ServerTranslator
   receiver: string
   link: string
 }
 
-export function PasswordReset({ receiver, link }: Props) {
+export function PasswordReset({ t, receiver, link }: Props) {
   return (
-    <EmailLayout receiver={receiver} preview="你请求重置登录密码，15 分钟内有效">
+    <EmailLayout t={t} receiver={receiver} preview={t.format('email.passwordReset.preview')}>
       <Text
         style={{
           fontSize: 26,
@@ -20,7 +23,7 @@ export function PasswordReset({ receiver, link }: Props) {
         }}
         className="dark-text-primary"
       >
-        重置你的密码
+        {t.format('email.passwordReset.title')}
       </Text>
 
       <Text
@@ -32,7 +35,7 @@ export function PasswordReset({ receiver, link }: Props) {
         }}
         className="dark-text-secondary"
       >
-        你请求重置登录密码，请点击下方按钮重置密码（15 分钟内有效）：
+        {t.format('email.passwordReset.body')}
       </Text>
 
       <div style={{ paddingTop: 12, paddingBottom: 12 }}>
@@ -51,7 +54,7 @@ export function PasswordReset({ receiver, link }: Props) {
           }}
           className="dark-cta"
         >
-          重置密码
+          {t.format('email.passwordReset.cta')}
         </Link>
       </div>
 
@@ -77,7 +80,7 @@ export function PasswordReset({ receiver, link }: Props) {
         }}
         className="dark-text-muted"
       >
-        如果你并未请求重置密码，请忽略此邮件。
+        {t.format('email.passwordReset.ignore')}
       </Text>
     </EmailLayout>
   )

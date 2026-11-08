@@ -183,6 +183,12 @@ describe('maxmindRouter', () => {
       headers: { 'Content-Length': String(101 * 1024 * 1024) },
     })
     expect(res.status).toBe(413)
-    await expect(res.json()).resolves.toEqual({ error: { message: '上传文件过大' } })
+    await expect(res.json()).resolves.toMatchObject({
+      error: {
+        code: 'PAYLOAD_TOO_LARGE',
+        message: '上传文件过大',
+        descriptor: { messageKey: 'common.error.uploadTooLarge' },
+      },
+    })
   })
 })

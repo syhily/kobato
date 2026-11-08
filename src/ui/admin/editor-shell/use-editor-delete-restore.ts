@@ -4,13 +4,16 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface UseEditorDeleteRestoreArgs {
   /** Edit-mode entity; `undefined` in create mode (buttons stay unmounted). */
   entity: { id: string; title: string } | undefined
-  /** Display noun woven into the confirm / toast copy (`文章` / `页面`). */
-  entityLabel: string
+  /** Display-noun message id woven into the confirm / toast copy (`admin.editor.entity.*`). */
+  entityLabelId: UiMessageId
   /** Admin list route to return to after a successful delete. */
   listPath: string
   deleteFn: (id: string) => Promise<unknown>
@@ -23,27 +26,29 @@ export interface UseEditorDeleteRestoreArgs {
 /** Shared soft-delete / restore flow; callers render the returned `confirm` state. */
 export function useEditorDeleteRestore({
   entity,
-  entityLabel,
+  entityLabelId,
   listPath,
   deleteFn,
   restoreFn,
   invalidateList,
   navigate,
 }: UseEditorDeleteRestoreArgs) {
+  const { t } = useI18n()
+  const entityLabel = t(entityLabelId)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const deleteApi = useMutation({
     mutationFn: deleteFn,
     onSuccess: () => {
-      toast.success(`${entityLabel}已删除`)
+      toast.success(t('admin.editor.delete.deleted', { entity: entityLabel }))
       invalidateList()
       void navigate(listPath)
     },
     onError: (error) => {
       setConfirm({
-        title: '删除失败',
+        title: t('admin.editor.delete.failed'),
         description: error.message,
-        actionLabel: '我知道了',
+        actionLabel: t('admin.categories.acknowledge'),
         destructive: false,
         onConfirm: () => undefined,
       })
@@ -53,15 +58,15 @@ export function useEditorDeleteRestore({
   const restoreApi = useMutation({
     mutationFn: restoreFn,
     onSuccess: () => {
-      toast.success(`${entityLabel}已恢复`)
+      toast.success(t('admin.editor.delete.restored', { entity: entityLabel }))
       invalidateList()
       void navigate(0) // full reload to refetch
     },
     onError: (error) => {
       setConfirm({
-        title: '恢复失败',
+        title: t('admin.editor.delete.restoreFailed'),
         description: error.message,
-        actionLabel: '我知道了',
+        actionLabel: t('admin.categories.acknowledge'),
         destructive: false,
         onConfirm: () => undefined,
       })
@@ -71,9 +76,9 @@ export function useEditorDeleteRestore({
   const handleDelete = entity
     ? () =>
         setConfirm({
-          title: `删除${entityLabel}「${entity.title}」？`,
-          description: `${entityLabel}会被软删除（30 天内可恢复）。已发布的链接将立即返回 404。`,
-          actionLabel: '删除',
+          title: t('admin.editor.delete.title', { entity: entityLabel, title: entity.title }),
+          description: t('admin.editor.delete.body', { entity: entityLabel }),
+          actionLabel: t('common.action.delete'),
           destructive: true,
           onConfirm: () => deleteApi.mutate(entity.id),
         })

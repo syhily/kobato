@@ -4,7 +4,7 @@ import { AddMusicView } from '@/ui/admin/musics/AddMusicView'
 
 export const loader = guardOnlyLoader('author')
 
-export const meta = titleMeta('添加音乐')
+export const meta = titleMeta('meta.title.admin.musicAdd')
 
 export default function AdminMusicAddRoute() {
   return <AddMusicView />

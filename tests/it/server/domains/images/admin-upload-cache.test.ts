@@ -153,7 +153,9 @@ describe('images/services/admin-read — toAdminImageDto', () => {
 
 describe('images/services/admin-mutate — updateImageNote', () => {
   it('throws NOT_FOUND for unknown id', async () => {
-    await expect(adminMutate.updateImageNote(db, 9999, 'x')).rejects.toThrow(/图片不存在/)
+    await expect(adminMutate.updateImageNote(db, 9999, 'x')).rejects.toMatchObject({
+      descriptor: { messageKey: 'images.error.notFound' },
+    })
   })
 
   it('updates the note and returns the dto', async () => {
@@ -171,7 +173,9 @@ describe('images/services/admin-mutate — updateImageNote', () => {
 
 describe('images/services/admin-mutate — deleteImage', () => {
   it('throws NOT_FOUND for unknown id', async () => {
-    await expect(adminMutate.deleteImage(db, 9999)).rejects.toThrow(/图片不存在/)
+    await expect(adminMutate.deleteImage(db, 9999)).rejects.toMatchObject({
+      descriptor: { messageKey: 'images.error.notFound' },
+    })
   })
 
   it('soft-deletes the image', async () => {
@@ -193,7 +197,7 @@ describe('images/services/upload — uploadImage', () => {
         jpegQuality: 80,
         uploader: null,
       }),
-    ).rejects.toThrow(/图片体积超过上限/)
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.tooLarge' } })
   })
 
   it('throws BAD_REQUEST when mime type is unsupported', async () => {
@@ -206,7 +210,7 @@ describe('images/services/upload — uploadImage', () => {
         jpegQuality: 80,
         uploader: null,
       }),
-    ).rejects.toThrow(/不支持的图片格式/)
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.unsupportedFormat' } })
   })
 })
 

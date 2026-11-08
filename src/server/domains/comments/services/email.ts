@@ -16,6 +16,7 @@ import { sendEmail } from '@/server/infra/email/sender'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
 import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
+import { emailTranslator } from '@/server/infra/email/translator'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { bodyToPlainText } from '@/shared/pt/utils'
@@ -74,19 +75,21 @@ export async function sendNewComment(
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
   const commentHtml = commentBodyEmailHtml(commentInfo)
+  const t = emailTranslator()
   if (entity === null) {
     log.warn('Skipping new-comment email: target entity not found', { target })
-    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
+    return { ok: false, reason: 'unconfigured', message: t.format('email.error.targetMissing') }
   }
   return sendAdminNotification({
-    subject: '有了新评论',
+    subject: t.format('email.newComment.subjectSuffix'),
     element: createElement(AdminNotificationEmail, {
-      preview: `在《${entity.title}》中有一条新留言`,
-      title: '新留言',
-      contextLine: { label: '留言文章：', link: { text: entity.title, href: entity.url } },
-      mutedNote: commentInfo.isPending === true ? '该留言需要审核' : undefined,
+      t,
+      preview: t.format('email.newComment.preview', { title: entity.title }),
+      title: t.format('email.newComment.title'),
+      contextLine: { label: t.format('email.newComment.contextLabel'), link: { text: entity.title, href: entity.url } },
+      mutedNote: commentInfo.isPending === true ? t.format('email.newComment.pendingNote') : undefined,
       rows: [{ html: commentHtml }],
-      cta: { label: '查看留言', href: `${entity.url}#user-comment-${commentInfo.id}` },
+      cta: { label: t.format('email.newComment.cta'), href: `${entity.url}#user-comment-${commentInfo.id}` },
     }),
   })
 }
@@ -101,12 +104,14 @@ export async function sendNewReply(
   const entity = await resolveEntity(db, target)
   const sourceHtml = commentBodyEmailHtml(source)
   const replyHtml = commentBodyEmailHtml(reply)
+  const t = emailTranslator()
   if (entity === null) {
     log.warn('Skipping reply email: target entity not found', { target })
-    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
+    return { ok: false, reason: 'unconfigured', message: t.format('email.error.targetMissing') }
   }
   const html = render(
     createElement(NewReply, {
+      t,
       receiver: sourceUser.name,
       postTitle: entity.title,
       postLink: entity.url,
@@ -117,7 +122,7 @@ export async function sendNewReply(
   )
   return sendEmail(
     sourceUser.email,
-    `您在【${requireBlogSettingsSection('siteIdentity').title}】的留言有了新回复`,
+    t.format('email.newReply.subject', { siteTitle: requireBlogSettingsSection('siteIdentity').title }),
     html,
   )
 }
@@ -130,12 +135,14 @@ export async function sendApprovedComment(
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
   const commentHtml = commentBodyEmailHtml(comment)
+  const t = emailTranslator()
   if (entity === null) {
     log.warn('Skipping approval email: target entity not found', { target })
-    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
+    return { ok: false, reason: 'unconfigured', message: t.format('email.error.targetMissing') }
   }
   const html = render(
     createElement(ApprovedComment, {
+      t,
       receiver: user.name,
       postTitle: entity.title,
       postLink: entity.url,
@@ -143,5 +150,9 @@ export async function sendApprovedComment(
       commentLink: `${entity.url}#user-comment-${comment.id}`,
     }),
   )
-  return sendEmail(user.email, `您在【${requireBlogSettingsSection('siteIdentity').title}】的留言已经通过审核`, html)
+  return sendEmail(
+    user.email,
+    t.format('email.commentApproved.subject', { siteTitle: requireBlogSettingsSection('siteIdentity').title }),
+    html,
+  )
 }

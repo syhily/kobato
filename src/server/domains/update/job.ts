@@ -3,16 +3,30 @@
 
 import { spawn } from 'node:child_process'
 
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { UpdateJobStatus } from '@/shared/contracts/update'
+import type { AppLocale } from '@/shared/i18n/locales'
 
 import { runSelfUpdate } from '@/server/domains/update/pipeline'
+import { carriesErrorMessageDescriptor, descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { closeHttpServer, requestShutdown, restartServer } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales'
 
 const log = getLogger('update.job')
 
 let current: UpdateJobStatus = { state: 'idle' }
+// The pipeline's failures carry a descriptor; the status boundary localizes it
+// per request (the VersionDialog renders the string, never a key).
+let currentErrorDescriptor: ErrorMessageDescriptor | undefined
+
+function errorDescriptorOf(err: unknown): ErrorMessageDescriptor | undefined {
+  // Structural, not `instanceof DomainError`: the descriptor is the contract,
+  // and a re-imported errors module must not defeat the lookup.
+  return carriesErrorMessageDescriptor(err) ? err.descriptor : undefined
+}
 
 // Busy is derived: any state other than idle/failed holds the single-job
 // slot. After success the state stays 'restarting' (the process restarts),
@@ -21,8 +35,12 @@ function isBusy(): boolean {
   return current.state !== 'idle' && current.state !== 'failed'
 }
 
-export function getUpdateJobStatus(): UpdateJobStatus {
-  return current
+export function getUpdateJobStatus(locale: AppLocale = DEFAULT_LOCALE): UpdateJobStatus {
+  if (current.state !== 'failed' || currentErrorDescriptor === undefined) {
+    return current
+  }
+  const { messageKey, params } = currentErrorDescriptor
+  return { ...current, error: createServerTranslator(locale).format(messageKey, params) }
 }
 
 // Self-restart after a successful binary swap (plan 090). The listen socket
@@ -44,6 +62,7 @@ function scheduleSelfRestart(): void {
           err: restartErr instanceof Error ? restartErr.message : String(restartErr),
         })
       }
+      currentErrorDescriptor = undefined
       current = { ...current, state: 'failed', error: message }
     }
     try {
@@ -72,8 +91,9 @@ export interface StartUpdateJobOptions {
 
 export function startUpdateJob(tagName: string, options: StartUpdateJobOptions = {}): void {
   if (isBusy()) {
-    throw new DomainError('CONFLICT', '已有更新任务正在进行中')
+    throw new DomainError('CONFLICT', descriptorFor('update.error.jobRunning'))
   }
+  currentErrorDescriptor = undefined
   current = { state: 'downloading', targetVersion: tagName }
   const restart = options.restart ?? scheduleSelfRestart
 
@@ -93,6 +113,7 @@ export function startUpdateJob(tagName: string, options: StartUpdateJobOptions =
         targetVersion: tagName,
         err: err instanceof Error ? err.message : String(err),
       })
+      currentErrorDescriptor = errorDescriptorOf(err)
       current = {
         state: 'failed',
         error: err instanceof Error ? err.message : String(err),

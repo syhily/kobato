@@ -11,6 +11,7 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface FontsFormProps {
   fonts: FontsSettings
@@ -18,15 +19,23 @@ interface FontsFormProps {
 
 function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label: string; family: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { t } = useI18n()
   const { upload, pending } = useFileUpload({
     endpoint: '/api/admin/fonts/upload',
+    t,
     fields: { slot },
     accept: ['.ttf', '.otf'],
     maxBytes: 60 * 1024 * 1024,
     messages: {
-      invalidType: { title: '文件类型错误', description: '仅支持 .ttf 或 .otf 字体文件' },
-      tooLarge: () => ({ title: '文件过大', description: '字体文件大小上限为 60 MB' }),
-      success: `${label} 已上传`,
+      invalidType: {
+        title: t('admin.settings.fonts.upload.invalidTypeTitle'),
+        description: t('admin.settings.fonts.upload.invalidTypeDescription'),
+      },
+      tooLarge: () => ({
+        title: t('admin.settings.fonts.upload.tooLargeTitle'),
+        description: t('admin.settings.fonts.upload.tooLargeDescription'),
+      }),
+      success: t('admin.settings.fonts.upload.success', { label }),
     },
   })
 
@@ -37,7 +46,7 @@ function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label
         type="file"
         accept=".ttf,.otf"
         hidden
-        aria-label={`选择 ${label} 文件`}
+        aria-label={t('admin.settings.fonts.upload.chooseAria', { label })}
         onChange={(e) => {
           const f = e.target.files?.[0]
           if (f) {
@@ -54,14 +63,19 @@ function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label
         onClick={() => fileInputRef.current?.click()}
       >
         <UploadIcon data-icon="sm" />
-        {pending ? '上传中…' : '上传字体'}
+        {pending ? t('admin.settings.fonts.upload.uploading') : t('admin.settings.fonts.upload.upload')}
       </Button>
-      <span className="text-sm text-muted-foreground">{family ? `已配置族名：${family}` : '未配置族名'}</span>
+      <span className="text-sm text-muted-foreground">
+        {family
+          ? t('admin.settings.fonts.upload.configuredFamily', { family })
+          : t('admin.settings.fonts.upload.noFamily')}
+      </span>
     </div>
   )
 }
 
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, display, flushOnBlur } = useSettingsCard<
     FontsSettings,
     { ogFamily: string; calendarFamily: string }
@@ -80,31 +94,35 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
 
   return (
     <SettingGroup
-      title="Canvas 字体"
-      description="服务端渲染 OG 图与日历图时使用的本地 TTF/OTF 字体文件。上传字体后配置族名，留空时降级使用系统中文字体。"
+      title={t('admin.settings.fonts.canvas.title')}
+      description={t('admin.settings.fonts.canvas.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="OG 图字体" htmlFor="fonts-og-family">
+        <SettingsRow label={t('admin.settings.fonts.canvas.og')} htmlFor="fonts-og-family">
           <div className="flex flex-col gap-2">
-            <FontUploadRow slot="og" label="OG 图字体" family={display.og.family} />
+            <FontUploadRow slot="og" label={t('admin.settings.fonts.canvas.og')} family={display.og.family} />
             <SettingsInput
               id="fonts-og-family"
               type="text"
-              placeholder="族名，例如 OPPOSans"
+              placeholder={t('admin.settings.fonts.canvas.ogPlaceholder')}
               maxLength={100}
               flushOnBlur={flushOnBlur}
               {...form.register('ogFamily')}
             />
           </div>
         </SettingsRow>
-        <SettingsRow label="日历图字体" htmlFor="fonts-calendar-family">
+        <SettingsRow label={t('admin.settings.fonts.canvas.calendar')} htmlFor="fonts-calendar-family">
           <div className="flex flex-col gap-2">
-            <FontUploadRow slot="calendar" label="日历图字体" family={display.calendar.family} />
+            <FontUploadRow
+              slot="calendar"
+              label={t('admin.settings.fonts.canvas.calendar')}
+              family={display.calendar.family}
+            />
             <SettingsInput
               id="fonts-calendar-family"
               type="text"
-              placeholder="族名，例如 OPPOSerif"
+              placeholder={t('admin.settings.fonts.canvas.calendarPlaceholder')}
               maxLength={100}
               flushOnBlur={flushOnBlur}
               {...form.register('calendarFamily')}
@@ -117,17 +135,18 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsWebFontNoticeCard() {
+  const { t } = useI18n()
   return (
     <SettingGroup
-      title="网页字体"
-      description="网站字体与槽位分配。前往字体库上传 TTF/OTF 自动分包，拖拽分配到全站 / 文章 / 代码槽位。"
+      title={t('admin.settings.fonts.webFont.title')}
+      description={t('admin.settings.fonts.webFont.description')}
     >
       <SettingGroupContent>
         <Link
           to="/admin/library/fonts"
           className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
         >
-          打开字体库 →
+          {t('admin.settings.fonts.webFont.open')}
         </Link>
       </SettingGroupContent>
     </SettingGroup>

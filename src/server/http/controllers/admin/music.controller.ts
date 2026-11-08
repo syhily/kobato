@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
@@ -7,7 +6,7 @@ import { searchMusic } from '@/server/domains/music/services/search'
 import { addMusic } from '@/server/domains/music/services/write/add'
 import { deleteMusic } from '@/server/domains/music/services/write/delete'
 import { updateMusicMetadata } from '@/server/domains/music/services/write/metadata'
-import { authorProc } from '@/server/http/orpc-base'
+import { authorProc, localizedOrpcError } from '@/server/http/orpc-base'
 import {
   addMusicOutputDto,
   getMusicOutputDto,
@@ -117,7 +116,7 @@ const get = authorProc
   .handler(async ({ input, context }) => {
     const music = await findMusicDtoById(context.db, idFromString(input.id))
     if (music === null) {
-      throw new ORPCError('NOT_FOUND', { message: '音乐不存在或已删除' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'music.error.notFoundOrDeleted')
     }
     return { music }
   })

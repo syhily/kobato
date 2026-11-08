@@ -21,7 +21,10 @@ vi.mock('sonner', () => ({ toast: toastMock }))
 
 const fetchMock = vi.hoisted(() => vi.fn())
 
+import { makeTranslator } from '#/_helpers/i18n'
 import { useFileUpload, type UseFileUploadOptions } from '@/client/hooks/use-file-upload'
+
+const t = makeTranslator('zh-CN')
 
 function makeFile(name: string, size: number): File {
   return new File([new Uint8Array(size)], name)
@@ -47,6 +50,7 @@ beforeEach(() => {
 
 describe('useFileUpload — guards', () => {
   const options: UseFileUploadOptions = {
+    t,
     endpoint: '/api/admin/example/upload',
     accept: ['.svg'],
     maxBytes: 100,
@@ -135,6 +139,7 @@ describe('useFileUpload — request', () => {
     const file = makeFile('icon.svg', 10)
     const { result } = renderHook(() =>
       useFileUpload({
+        t,
         endpoint: '/api/admin/branding/upload',
         fields: { slot: 'faviconSvg' },
         messages: { success: 'Favicon SVG 已上传' },
@@ -160,7 +165,12 @@ describe('useFileUpload — request', () => {
   it('omits the CSRF header when the root loader has no token', async () => {
     routerState.csrfToken = undefined
     fetchMock.mockResolvedValue(jsonResponse({}))
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/admin/example/upload' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/admin/example/upload',
+      }),
+    )
     await act(async () => {
       await result.current.upload(makeFile('a.bin', 1))
     })
@@ -169,7 +179,13 @@ describe('useFileUpload — request', () => {
 
   it('forwards the credentials mode when set', async () => {
     fetchMock.mockResolvedValue(jsonResponse({}))
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/setup/restore', credentials: 'include' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/setup/restore',
+        credentials: 'include',
+      }),
+    )
     await act(async () => {
       await result.current.upload(new FormData())
     })
@@ -184,7 +200,12 @@ describe('useFileUpload — request', () => {
           resolveFetch = resolve
         }),
     )
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/admin/example/upload' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/admin/example/upload',
+      }),
+    )
     expect(result.current.pending).toBe(false)
     let ok!: boolean
     let promise!: Promise<boolean>
@@ -202,7 +223,12 @@ describe('useFileUpload — request', () => {
 
   it('clears pending after a failure too', async () => {
     fetchMock.mockResolvedValue(jsonResponse({}, 500))
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/admin/example/upload' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/admin/example/upload',
+      }),
+    )
     await act(async () => {
       await result.current.upload(makeFile('a.bin', 1))
     })
@@ -219,6 +245,7 @@ describe('useFileUpload — success handling', () => {
     })
     const { result } = renderHook(() =>
       useFileUpload({
+        t,
         endpoint: '/api/admin/example/upload',
         messages: { success: '已上传' },
         onSuccess: async () => {
@@ -236,6 +263,7 @@ describe('useFileUpload — success handling', () => {
     fetchMock.mockResolvedValue(jsonResponse({}))
     const { result } = renderHook(() =>
       useFileUpload({
+        t,
         endpoint: '/api/admin/example/upload',
         onSuccess: () => {
           throw new Error('revalidate blew up')
@@ -253,7 +281,14 @@ describe('useFileUpload — success handling', () => {
   it('passes the parsed body to onSuccess when parseJson is set', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ accepted: true }))
     const onSuccess = vi.fn()
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/setup/restore', parseJson: true, onSuccess }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/setup/restore',
+        parseJson: true,
+        onSuccess,
+      }),
+    )
     await act(async () => {
       await result.current.upload(new FormData())
     })
@@ -265,7 +300,12 @@ describe('useFileUpload — success handling', () => {
 describe('useFileUpload — failure handling', () => {
   it('unwraps the server error envelope and toasts its message', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ error: { message: '存储后端不可用' } }, 502))
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/admin/example/upload' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/admin/example/upload',
+      }),
+    )
     let ok!: boolean
     await act(async () => {
       ok = await result.current.upload(makeFile('a.bin', 1))
@@ -277,7 +317,12 @@ describe('useFileUpload — failure handling', () => {
 
   it('falls back to 上传失败 (<status>) when the error body has no message', async () => {
     fetchMock.mockResolvedValue(jsonResponse({}, 413))
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/admin/example/upload' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/admin/example/upload',
+      }),
+    )
     await act(async () => {
       await result.current.upload(makeFile('a.bin', 1))
     })
@@ -286,7 +331,12 @@ describe('useFileUpload — failure handling', () => {
 
   it('falls back when the error body is not JSON at all', async () => {
     fetchMock.mockResolvedValue(new Response('<html>bad gateway</html>', { status: 502 }))
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/admin/example/upload' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/admin/example/upload',
+      }),
+    )
     await act(async () => {
       await result.current.upload(makeFile('a.bin', 1))
     })
@@ -296,7 +346,14 @@ describe('useFileUpload — failure handling', () => {
   it('routes HTTP failures to onError when the channel is set', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ error: { message: '恢复失败，请检查备份文件后重试。' } }, 400))
     const onError = vi.fn()
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/setup/restore', parseJson: true, onError }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/setup/restore',
+        parseJson: true,
+        onError,
+      }),
+    )
     let ok!: boolean
     await act(async () => {
       ok = await result.current.upload(new FormData())
@@ -311,6 +368,7 @@ describe('useFileUpload — failure handling', () => {
     const onError = vi.fn()
     const { result } = renderHook(() =>
       useFileUpload({
+        t,
         endpoint: '/api/setup/restore',
         parseJson: true,
         messages: { httpFailure: () => '恢复失败，请检查备份文件后重试。' },
@@ -325,7 +383,12 @@ describe('useFileUpload — failure handling', () => {
 
   it('toasts the transport error message when fetch rejects', async () => {
     fetchMock.mockRejectedValue(new Error('Failed to fetch'))
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/admin/example/upload' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/admin/example/upload',
+      }),
+    )
     let ok!: boolean
     await act(async () => {
       ok = await result.current.upload(makeFile('a.bin', 1))
@@ -336,7 +399,12 @@ describe('useFileUpload — failure handling', () => {
 
   it('toasts the failure fallback for non-Error throws', async () => {
     fetchMock.mockRejectedValue('boom')
-    const { result } = renderHook(() => useFileUpload({ endpoint: '/api/admin/example/upload' }))
+    const { result } = renderHook(() =>
+      useFileUpload({
+        t,
+        endpoint: '/api/admin/example/upload',
+      }),
+    )
     await act(async () => {
       await result.current.upload(makeFile('a.bin', 1))
     })
@@ -348,8 +416,9 @@ describe('useFileUpload — failure handling', () => {
     const onError = vi.fn()
     const { result } = renderHook(() =>
       useFileUpload({
+        t,
         endpoint: '/api/setup/restore',
-        messages: { failure: '网络错误，请稍后重试。' },
+        messages: { failure: 'admin.toast.uploadFailed' },
         onError,
       }),
     )
@@ -358,7 +427,7 @@ describe('useFileUpload — failure handling', () => {
       ok = await result.current.upload(new FormData())
     })
     expect(ok).toBe(false)
-    expect(onError).toHaveBeenCalledWith('网络错误，请稍后重试。')
+    expect(onError).toHaveBeenCalledWith('上传失败')
   })
 
   it('treats a malformed JSON body as a transport failure when parseJson is set', async () => {
@@ -366,9 +435,10 @@ describe('useFileUpload — failure handling', () => {
     const onError = vi.fn()
     const { result } = renderHook(() =>
       useFileUpload({
+        t,
         endpoint: '/api/setup/restore',
         parseJson: true,
-        messages: { httpFailure: () => '恢复失败，请检查备份文件后重试。', failure: '网络错误，请稍后重试。' },
+        messages: { httpFailure: () => '恢复失败，请检查备份文件后重试。', failure: 'admin.toast.uploadFailed' },
         onError,
       }),
     )
@@ -377,6 +447,36 @@ describe('useFileUpload — failure handling', () => {
       ok = await result.current.upload(new FormData())
     })
     expect(ok).toBe(false)
-    expect(onError).toHaveBeenCalledWith('网络错误，请稍后重试。')
+    expect(onError).toHaveBeenCalledWith('上传失败')
+  })
+})
+
+describe('useFileUpload — default copy follows the active locale', () => {
+  const tEn = makeTranslator('en-US')
+
+  it('translates the type and size guards', async () => {
+    const { result } = renderHook(() =>
+      useFileUpload({ t: tEn, endpoint: '/api/admin/example/upload', accept: ['.svg'], maxBytes: 10 }),
+    )
+
+    await act(async () => {
+      await result.current.upload(makeFile('icon.png', 1))
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('Wrong file type', { description: undefined })
+
+    await act(async () => {
+      await result.current.upload(makeFile('icon.svg', 100))
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('File too large', { description: undefined })
+  })
+
+  it('translates the status fallback when the error body carries no message', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({}, 413))
+    const { result } = renderHook(() => useFileUpload({ t: tEn, endpoint: '/api/admin/example/upload' }))
+
+    await act(async () => {
+      await result.current.upload(makeFile('a.bin', 1))
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('Upload failed', { description: 'Upload failed (413)' })
   })
 })

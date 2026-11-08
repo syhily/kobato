@@ -68,21 +68,29 @@ describe('music/write/shared — generateUniquePlayerId', () => {
       call += 1
       return Buffer.alloc(16, call) // 1..5 — all seeded above
     })
-    await expect(generateUniquePlayerId(db)).rejects.toThrow(/playerId 生成失败/)
+    await expect(generateUniquePlayerId(db)).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.playerIdConflict' },
+    })
   })
 })
 
 describe('music/write/shared — downloadBinary URL validation', () => {
   it('rejects an unparseable audio URL', async () => {
-    await expect(downloadBinary('not-a-url', 1000, 'audio')).rejects.toThrow(/音频地址无效/)
+    await expect(downloadBinary('not-a-url', 1000, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetInvalidUrl', params: { asset: 'audio' } },
+    })
   })
 
   it('rejects an unparseable cover URL with the cover message', async () => {
-    await expect(downloadBinary(':::bad', 1000, 'cover')).rejects.toThrow(/封面地址无效/)
+    await expect(downloadBinary(':::bad', 1000, 'cover')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetInvalidUrl', params: { asset: 'cover' } },
+    })
   })
 
   it('rejects a non-http(s) protocol', async () => {
-    await expect(downloadBinary('ftp://example.com/x.mp3', 1000, 'audio')).rejects.toThrow(/协议不被支持/)
+    await expect(downloadBinary('ftp://example.com/x.mp3', 1000, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetBadProtocol', params: { asset: 'audio' } },
+    })
   })
 
   it('rejects a javascript: scheme URL', async () => {
@@ -90,11 +98,15 @@ describe('music/write/shared — downloadBinary URL validation', () => {
   })
 
   it('rejects a private/loopback host', async () => {
-    await expect(downloadBinary('http://127.0.0.1/x.mp3', 1000, 'audio')).rejects.toThrow(/内网或本机/)
+    await expect(downloadBinary('http://127.0.0.1/x.mp3', 1000, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetBlockedHost', params: { asset: 'audio' } },
+    })
   })
 
   it('rejects a 169.254 link-local host', async () => {
-    await expect(downloadBinary('http://169.254.169.254/x', 1000, 'cover')).rejects.toThrow(/内网或本机/)
+    await expect(downloadBinary('http://169.254.169.254/x', 1000, 'cover')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetBlockedHost', params: { asset: 'cover' } },
+    })
   })
 })
 
@@ -116,14 +128,16 @@ describe('music/write/shared — downloadBinary fetch + redirect branches', () =
 
   it('throws INTERNAL on a network failure', async () => {
     fakeFetchHandler(() => Promise.reject(new Error('econnreset')))
-    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toThrow(
-      /下载音频失败，请稍后再试/,
-    )
+    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.downloadFailed', params: { asset: 'audio' } },
+    })
   })
 
   it('throws INTERNAL on a non-2xx status', async () => {
     fakeFetchHandler(() => new Response('nope', { status: 503 }))
-    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toThrow(/下载音频失败：503/)
+    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.downloadFailedStatus', params: { asset: 'audio', status: 503 } },
+    })
   })
 
   it('follows a Location redirect to a final 2xx', async () => {
@@ -144,21 +158,23 @@ describe('music/write/shared — downloadBinary fetch + redirect branches', () =
 
   it('throws INTERNAL when a 3xx carries no Location header', async () => {
     fakeFetchHandler(() => new Response(null, { status: 302 }))
-    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toThrow(
-      /下载音频失败，请稍后再试/,
-    )
+    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.downloadFailed', params: { asset: 'audio' } },
+    })
   })
 
   it('throws BAD_REQUEST when redirects exceed MAX_REDIRECTS', async () => {
     fakeFetchHandler((url) => new Response(null, { status: 302, headers: { Location: `${url}?hop` } }))
-    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toThrow(
-      /音频地址重定向次数过多/,
-    )
+    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetTooManyRedirects', params: { asset: 'audio' } },
+    })
   })
 
   it('re-validates the redirect target and rejects a redirect to an internal host', async () => {
     fakeFetchHandler(() => new Response(null, { status: 302, headers: { Location: 'http://127.0.0.1/steal' } }))
-    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toThrow(/内网或本机/)
+    await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetBlockedHost', params: { asset: 'audio' } },
+    })
   })
 })
 
@@ -171,9 +187,9 @@ describe('music/write/shared — downloadBinary size enforcement', () => {
           headers: { 'content-length': String(MAX_AUDIO_BYTES + 1) },
         }),
     ) as typeof globalThis.fetch
-    await expect(downloadBinary('https://cdn.example.com/a.mp3', MAX_AUDIO_BYTES, 'audio')).rejects.toThrow(
-      /音频体积超过上限/,
-    )
+    await expect(downloadBinary('https://cdn.example.com/a.mp3', MAX_AUDIO_BYTES, 'audio')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetTooLarge', params: { asset: 'audio' } },
+    })
   })
 
   it('does not reject on an oversized content-length when it is not a finite number', async () => {
@@ -198,9 +214,9 @@ describe('music/write/shared — downloadBinary size enforcement', () => {
           headers: { 'content-length': '1' },
         }),
     ) as typeof globalThis.fetch
-    await expect(downloadBinary('https://cdn.example.com/c.jpg', MAX_COVER_BYTES, 'cover')).rejects.toThrow(
-      /封面体积超过上限/,
-    )
+    await expect(downloadBinary('https://cdn.example.com/c.jpg', MAX_COVER_BYTES, 'cover')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetTooLarge', params: { asset: 'cover' } },
+    })
   })
 
   it('omits the content-length pre-check when the header is absent', async () => {

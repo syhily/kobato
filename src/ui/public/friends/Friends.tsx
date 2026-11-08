@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import type { Friend } from '@/shared/types/catalog'
 
 import { shuffle } from '@/shared/utils/tools'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface FriendsProps {
@@ -10,6 +11,7 @@ export interface FriendsProps {
 }
 
 export function Friends({ friends }: FriendsProps) {
+  const { t } = useI18n()
   const list = useMemo(
     () => shuffle([...friends], `friends:${friends.map((friend) => `${friend.website}:${friend.homepage}`).join('|')}`),
     [friends],
@@ -19,7 +21,7 @@ export function Friends({ friends }: FriendsProps) {
     return (
       <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
         <div className="my-auto">
-          <div>还没有友链呢...😭</div>
+          <div>{t('public.friends.empty')}</div>
         </div>
       </div>
     )
@@ -28,7 +30,8 @@ export function Friends({ friends }: FriendsProps) {
   return (
     <div className="not-typeset mt-10 px-4 md:mt-8 md:px-0">
       <h2 className="mb-6 text-xl text-ink-4 md:mb-4 md:text-2xl">
-        左邻右舍 <span className="mb-6 text-sm text-brand md:mb-4">排名不分前后</span>
+        {t('public.friends.title')}{' '}
+        <span className="mb-6 text-sm text-brand md:mb-4">{t('public.friends.subtitle')}</span>
       </h2>
       <div className="-mx-2 -mt-4 flex flex-wrap md:-mx-3 md:-mt-6">
         {list.map((friend) => (
@@ -63,7 +66,7 @@ export function Friends({ friends }: FriendsProps) {
                 target="_blank"
                 rel="nofollow noreferrer"
                 className="absolute inset-0 z-1 size-full"
-                aria-label={`访问 ${friend.website}`}
+                aria-label={t('public.friends.visit', { site: friend.website })}
               />
             </div>
           </div>

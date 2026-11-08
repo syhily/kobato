@@ -133,7 +133,7 @@ describe('server/domains/friends/schema — applyFriendSchema', () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       const issue = result.error.issues.find((i) => i.path.includes('contact'))
-      expect(issue?.message).toBe('输入数据无效。')
+      expect(issue?.message).toBe('validation.form.invalidInput')
     }
   })
 

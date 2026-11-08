@@ -2,6 +2,7 @@ import { TZDate } from '@date-fns/tz'
 import { addDays, addMonths, isAfter } from 'date-fns'
 
 import { finishJobRun, startJobRun } from '@/server/infra/db/job-run-recorder'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
@@ -39,7 +40,7 @@ export function computeNextRun(
 
   if (settings.frequency === 'weekly') {
     if (typeof settings.dayOfWeek !== 'number' || settings.dayOfWeek < 1 || settings.dayOfWeek > 7) {
-      throw new DomainError('BAD_REQUEST', '每周备份必须指定 1–7 的星期几。')
+      throw new DomainError('BAD_REQUEST', descriptorFor('backup.error.weeklyDayRequired'))
     }
     const jsDay = settings.dayOfWeek === 7 ? 0 : settings.dayOfWeek
     let candidate = new TZDate(
@@ -63,7 +64,7 @@ export function computeNextRun(
 
   // monthly
   if (typeof settings.dayOfMonth !== 'number' || settings.dayOfMonth < 1 || settings.dayOfMonth > 31) {
-    throw new DomainError('BAD_REQUEST', '每月备份必须指定 1–31 的日期。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('backup.error.monthlyDayRequired'))
   }
   let candidate = new TZDate(
     tzNow.getFullYear(),

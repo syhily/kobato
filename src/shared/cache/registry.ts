@@ -1,14 +1,21 @@
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 // Cache declaration registry — the metadata plane of the cache layer.
 // One declaration per `kv_cache` bucket; every derived enumeration reads
 // from this table, so adding a cache never requires editing a second
 // list. The `id` doubles as the `kv_cache.bucket` value.
+//
+// Labels and key-shape descriptions are UI MESSAGE IDS, not copy: the admin
+// surface resolves them through its translator (`{prefix}` is the live bucket
+// prefix). The registry itself stays neutral so it can be imported from both
+// bundles without dragging a locale in.
 export interface CacheDeclaration {
   /** Stable discriminator — also the `kv_cache.bucket` value. */
   readonly id: string
-  /** Admin panel copy (Chinese, matching the settings UI). */
-  readonly label: string
-  /** Key-shape description, interpolated with the live prefix at render time. */
-  readonly description: (prefix: string) => string
+  /** Admin panel label message id. */
+  readonly labelId: UiMessageId
+  /** Key-shape description message id, interpolated with `{ prefix }` at render time. */
+  readonly descriptionId: UiMessageId
   /** Prefix used until an admin renames it (tunable) or forever. */
   readonly defaultPrefix: string
   /** TTL used until an admin tunes it (tunable) or forever. */
@@ -20,61 +27,56 @@ export interface CacheDeclaration {
 export const CACHE_DECLARATIONS = [
   {
     id: 'og',
-    label: 'OG 图缓存',
-    description: (prefix) =>
-      `/images/og/:slug.png 的渲染结果，键形如 ${prefix}<slug>-<hash>。修改 OG 尺寸或文章封面 / 摘要后清理。`,
+    labelId: 'admin.cache.og.label',
+    descriptionId: 'admin.cache.og.description',
     defaultPrefix: 'og:',
     defaultTtlSeconds: 60 * 60 * 24,
     tunable: true,
   },
   {
     id: 'calendar',
-    label: '侧边栏日历缓存',
-    description: (prefix) => `/images/calendar/:date.png 的渲染结果，键形如 ${prefix}<yyyy-MM-dd>。一天后会自动失效。`,
+    labelId: 'admin.cache.calendar.label',
+    descriptionId: 'admin.cache.calendar.description',
     defaultPrefix: 'calendar:',
     defaultTtlSeconds: 60 * 60 * 24,
     tunable: true,
   },
   {
     id: 'avatar',
-    label: 'Gravatar 头像缓存',
-    description: (prefix) =>
-      `/images/avatar/:hash.png 缓存的头像字节，键形如 ${prefix}<size>:<hash>（size 为请求 ?s= 参数的尺寸，默认 120）。用户更换头像后清理可让访客立即看到新头像。`,
+    labelId: 'admin.cache.avatar.label',
+    descriptionId: 'admin.cache.avatar.description',
     defaultPrefix: 'avatar:',
     defaultTtlSeconds: 60 * 60 * 24,
     tunable: true,
   },
   {
     id: 'imageMeta',
-    label: '图片元数据缓存',
-    description: (prefix) =>
-      `SSR 渲染时 storagePath → image 行的查询结果（宽 / 高 / thumbhash），键形如 ${prefix}<storagePath>。在图片库批量上传或导入旧站数据后清理一次即可。`,
+    labelId: 'admin.cache.imageMeta.label',
+    descriptionId: 'admin.cache.imageMeta.description',
     defaultPrefix: 'image-meta:',
     defaultTtlSeconds: 60 * 60,
     tunable: true,
   },
   {
     id: 'searchResult',
-    label: '搜索结果缓存',
-    description: (prefix) =>
-      `搜索查询返回的文章 slug 列表，键形如 ${prefix}<generation>:<sha256(query)>。分页时直接命中缓存，避免重复查询数据库。`,
+    labelId: 'admin.cache.searchResult.label',
+    descriptionId: 'admin.cache.searchResult.description',
     defaultPrefix: 'search-result:',
     defaultTtlSeconds: 60 * 60,
     tunable: true,
   },
   {
     id: 'feed',
-    label: 'Feed 缓存',
-    description: (prefix) =>
-      `/feed 系列端点的 RSS / Atom XML，键形如 ${prefix}all、${prefix}cat:<slug>、${prefix}tag:<slug>。发布或删除文章后自动清空。`,
+    labelId: 'admin.cache.feed.label',
+    descriptionId: 'admin.cache.feed.description',
     defaultPrefix: 'feed:xml:',
     defaultTtlSeconds: 300,
     tunable: false,
   },
   {
     id: 'sitemap',
-    label: '站点地图缓存',
-    description: (prefix) => `/sitemap.xml 的生成结果，缓存键为 ${prefix}。发布或删除文章 / 页面后自动清空。`,
+    labelId: 'admin.cache.sitemap.label',
+    descriptionId: 'admin.cache.sitemap.description',
     defaultPrefix: 'sitemap:xml',
     defaultTtlSeconds: 300,
     tunable: false,
@@ -83,42 +85,40 @@ export const CACHE_DECLARATIONS = [
   // mutations clear these via `invalidateContent` (audit P1-24).
   {
     id: 'categories',
-    label: '分类列表缓存',
-    description: (prefix) => `公开侧全部分类（含文章计数）的查询结果，键形如 ${prefix}all。分类或文章变更后自动清空。`,
+    labelId: 'admin.cache.categories.label',
+    descriptionId: 'admin.cache.categories.description',
     defaultPrefix: 'categories:',
     defaultTtlSeconds: 300,
     tunable: false,
   },
   {
     id: 'tags',
-    label: '标签列表缓存',
-    description: (prefix) => `公开侧全部标签（含文章计数）的查询结果，键形如 ${prefix}all。标签或文章变更后自动清空。`,
+    labelId: 'admin.cache.tags.label',
+    descriptionId: 'admin.cache.tags.description',
     defaultPrefix: 'tags:',
     defaultTtlSeconds: 300,
     tunable: false,
   },
   {
     id: 'comments',
-    label: '最新评论缓存',
-    description: (prefix) => `侧边栏「最新评论」列表的查询结果，键形如 ${prefix}latest。评论增删或审核后自动清空。`,
+    labelId: 'admin.cache.comments.label',
+    descriptionId: 'admin.cache.comments.description',
     defaultPrefix: 'comments:',
     defaultTtlSeconds: 30,
     tunable: false,
   },
   {
     id: 'githubRelease',
-    label: 'GitHub 版本缓存',
-    description: (prefix) =>
-      `GitHub Releases API 的查询结果，键形如 ${prefix}<owner>/<repo>/<endpoint>。短 TTL 仅用于削减重复外呼，到期后自动重新请求。`,
+    labelId: 'admin.cache.githubRelease.label',
+    descriptionId: 'admin.cache.githubRelease.description',
     defaultPrefix: 'github-release:',
     defaultTtlSeconds: 15 * 60,
     tunable: false,
   },
   {
     id: 'githubAvatar',
-    label: 'GitHub 头像缓存',
-    description: (prefix) =>
-      `站长 GitHub 头像的 data URL，缓存键为 ${prefix}。短 TTL 仅用于削减重复外呼（每次新会话的 30s 直连超时），到期后自动重新请求。`,
+    labelId: 'admin.cache.githubAvatar.label',
+    descriptionId: 'admin.cache.githubAvatar.description',
     defaultPrefix: 'github-avatar:',
     defaultTtlSeconds: 15 * 60,
     tunable: false,

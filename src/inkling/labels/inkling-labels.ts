@@ -213,6 +213,9 @@ export interface InklingLabels {
   'header.backgroundSize.contain': string
   'header.backgroundSize.cover': string
 
+  /* Image-caption editor: the alt-text toggle button */
+  'image.altToggle': string
+
   /* Image alt texts ({progress} interpolates the upload percentage) */
   'alt.audioThumbnail': string
   'alt.videoThumbnail': string
@@ -404,6 +407,7 @@ export const DEFAULT_LABELS: InklingLabels = {
 
   'header.backgroundSize.contain': 'Contain',
   'header.backgroundSize.cover': 'Cover',
+  'image.altToggle': 'Alt',
 
   'alt.audioThumbnail': 'Audio thumbnail',
   'alt.videoThumbnail': 'Video thumbnail',

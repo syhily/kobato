@@ -35,6 +35,7 @@ import {
   stageBackup,
 } from '@/server/domains/backup/services/restore'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { errorJsonResponse, failureJsonResponse } from '@/server/http/errors'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
@@ -69,7 +70,7 @@ async function stageUploadForRestore(
         // No two-step prompt on this surface (setup flow) — the password
         // must ride along as a form field.
         rmSync(error.dir, { recursive: true, force: true })
-        return c.json({ error: { message: '该备份已加密，请同时提供备份密码。' } }, 400)
+        return errorJsonResponse(c, 400, 'backup.error.passwordMissingUpload')
       }
       // The staged dir survives (parked) — the decrypt endpoint resumes from it.
       try {
@@ -80,15 +81,15 @@ async function stageUploadForRestore(
         // staged dir is ours again; sweep it before surfacing the error.
         rmSync(error.dir, { recursive: true, force: true })
         if (parkError instanceof ActionFailure) {
-          return c.json({ error: { message: parkError.message } }, 429)
+          return failureJsonResponse(c, parkError, 429)
         }
         throw parkError
       }
     }
     if (error instanceof ActionFailure) {
-      return c.json({ error: { message: error.message } }, 400)
+      return failureJsonResponse(c, error, 400)
     }
-    return c.json({ error: { message: '备份文件无效或已损坏。' } }, 400)
+    return errorJsonResponse(c, 400, 'backup.error.invalidFile')
   } finally {
     if (progressOwned) {
       endStagingProgress()
@@ -100,7 +101,7 @@ async function stageUploadForRestore(
       await assertStagedBackupContainsAdmin(staged)
     } catch {
       rmSync(staged.dir, { recursive: true, force: true })
-      return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
+      return errorJsonResponse(c, 400, 'backup.error.invalidFileNoAdmin')
     }
   }
   return staged
@@ -109,7 +110,7 @@ async function stageUploadForRestore(
 /** Slot contention: the staged upload is dropped, the caller retries later. */
 function busyRestoreResponse(c: Context<Env>, staged: StagedBackup): Response {
   rmSync(staged.dir, { recursive: true, force: true })
-  return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+  return errorJsonResponse(c, 409, 'backup.error.restoreRunning')
 }
 
 /** Shared tail for both upload entry points: claim the slot and start the
@@ -159,24 +160,24 @@ async function claimAndStartRestore(
  *  so anonymous/CSRF-failing requests never burn the 5/hour budget. */
 const setupRestoreGate = createMiddleware<Env>(async (c, next) => {
   if (await hasAdmin(c.var.requestContext.db)) {
-    return c.json({ error: { message: '站点已安装，请直接登录后通过后台还原备份。' } }, 409)
+    return errorJsonResponse(c, 409, 'backup.error.siteInstalled')
   }
 
   // Require a verified session to prove console access.
   const setupTokenVerified = c.var.requestContext.session.get('setupTokenVerified')
   if (!setupTokenVerified) {
-    return c.json({ error: { message: 'Setup Token 验证已过期或未完成，请先返回安装页面完成验证。' } }, 403)
+    return errorJsonResponse(c, 403, 'backup.error.setupTokenIncomplete')
   }
 
   // Session flag may be stale after token expiry — re-check the token.
   if (!(await isSetupTokenActive(c.var.requestContext.db))) {
-    return c.json({ error: { message: 'Setup Token 已过期或失效，请重新验证。' } }, 403)
+    return errorJsonResponse(c, 403, 'auth.setup.error.tokenExpired')
   }
 
   // CSRF: restore rides the setup session cookie — require the CSRF header.
   const csrfToken = c.req.header(CSRF_HEADER)
   if (!validateCsrfToken(c.var.requestContext.session, csrfToken)) {
-    return c.json({ error: { message: '安全校验失败，请刷新页面后重试。' } }, 403)
+    return errorJsonResponse(c, 403, 'error.api.csrfFailed')
   }
 
   await next()
@@ -195,7 +196,7 @@ export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/download/:timestamp{[^/]+}', requireRoleMw('admin'), async (c) => {
     const timestamp = c.req.param('timestamp')
     if (!isValidBackupKey(timestamp)) {
-      return c.json({ error: { message: '无效的备份标识。' } }, 400)
+      return errorJsonResponse(c, 400, 'backup.error.invalidKey')
     }
     // Streamed: backups exceed the 100MB buffered-read cap, buffering would 413.
     const { stream, byteSize, encrypted, fileName } = await getBackupStream(c.var.requestContext.db, timestamp)
@@ -226,13 +227,13 @@ export const backupRouter = new Hono<Env>()
     rateLimitByIp('backupRestoreUpload', { windowSeconds: 3600, maxAttempts: 30 }),
     bodyLimit({
       maxSize: MAX_BACKUP_FILE_SIZE,
-      onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
+      onError: (c: Context<Env>) => errorJsonResponse(c, 413, 'backup.error.uploadTooLarge'),
     }),
     async (c) => {
       const body = await c.req.parseBody({ all: false })
       const file = body.file
       if (!(file instanceof File)) {
-        return c.json({ error: { message: '请上传文件' } }, 400)
+        return errorJsonResponse(c, 400, 'backup.error.uploadMissing')
       }
 
       // Stage + pre-validate before claiming the slot (see the helper).
@@ -253,22 +254,22 @@ export const backupRouter = new Hono<Env>()
     rateLimitByIp('backupRestoreDecrypt', { windowSeconds: 3600, maxAttempts: 30 }),
     bodyLimit({
       maxSize: 64 * 1024,
-      onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
+      onError: (c: Context<Env>) => errorJsonResponse(c, 413, 'error.api.payloadTooLarge'),
     }),
     async (c) => {
       // Follow-up to an `{encrypted: true, token}` upload-restore response:
       // the parked upload is staged again WITH the password.
       const body: unknown = await c.req.json().catch(() => null)
       if (typeof body !== 'object' || body === null) {
-        return c.json({ error: { message: '请求格式无效' } }, 400)
+        return errorJsonResponse(c, 400, 'backup.error.requestInvalid')
       }
       const token = 'token' in body && typeof body.token === 'string' ? body.token : ''
       const password = 'password' in body && typeof body.password === 'string' ? body.password : ''
       if (token === '' || password === '') {
-        return c.json({ error: { message: '请提供备份密码' } }, 400)
+        return errorJsonResponse(c, 400, 'backup.error.passwordMissing')
       }
       if (password.length > 512) {
-        return c.json({ error: { message: '备份密码过长' } }, 400)
+        return errorJsonResponse(c, 400, 'backup.error.passwordTooLong')
       }
 
       // Atomic claim: a concurrent decrypt of the SAME token would race this
@@ -276,11 +277,11 @@ export const backupRouter = new Hono<Env>()
       const claim = claimEncryptedUploadForDecrypt(token)
       if (!claim.ok) {
         if (claim.reason === 'in-flight') {
-          return c.json({ error: { message: '该上传正在解密中，请稍后重试。' } }, 409)
+          return errorJsonResponse(c, 409, 'backup.error.decryptInProgress')
         }
         // 410 (distinct from a wrong-password 400): the token is dead —
         // the client must re-upload, retrying the password is pointless.
-        return c.json({ error: { message: '上传会话已过期，请重新上传备份文件。' } }, 410)
+        return errorJsonResponse(c, 410, 'backup.error.uploadExpired')
       }
       const parked = claim.entry
 
@@ -306,12 +307,12 @@ export const backupRouter = new Hono<Env>()
           // to the upload step instead of retrying the password prompt.
           if (error instanceof BackupPasswordError) {
             fate = 'keep'
-            return c.json({ error: { message: error.message } }, 400)
+            return failureJsonResponse(c, error, 400)
           }
           if (error instanceof ActionFailure) {
-            return c.json({ error: { message: error.message } }, 410)
+            return failureJsonResponse(c, error, 410)
           }
-          return c.json({ error: { message: '备份文件无效或已损坏，请重新上传。' } }, 410)
+          return errorJsonResponse(c, 410, 'backup.error.invalidFileReupload')
         } finally {
           if (progressOwned) {
             endStagingProgress()
@@ -322,7 +323,7 @@ export const backupRouter = new Hono<Env>()
           await assertStagedBackupContainsAdmin(staged)
         } catch {
           rmSync(staged.dir, { recursive: true, force: true })
-          return c.json({ error: { message: '备份文件无效或不包含管理员账号，请重新上传。' } }, 410)
+          return errorJsonResponse(c, 410, 'backup.error.invalidFileNoAdminReupload')
         }
 
         const res = await claimAndStartRestore(c, staged, parked.fileName, {})
@@ -347,20 +348,20 @@ export const backupRouter = new Hono<Env>()
     rateLimitByIp('setupRestore', { windowSeconds: 3600, maxAttempts: 5 }),
     bodyLimit({
       maxSize: MAX_BACKUP_FILE_SIZE,
-      onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
+      onError: (c: Context<Env>) => errorJsonResponse(c, 413, 'backup.error.uploadTooLarge'),
     }),
     async (c) => {
       const body = await c.req.parseBody({ all: false })
       const file = body.file
       if (!(file instanceof File)) {
-        return c.json({ error: { message: '请上传文件' } }, 400)
+        return errorJsonResponse(c, 400, 'backup.error.uploadMissing')
       }
       // Encrypted backups carry their password as a plain form field here —
       // the setup flow has no two-step password prompt. Trim like the
       // create path does, so both sides derive the same key.
       const rawPassword = typeof body.password === 'string' ? body.password.trim() : ''
       if (rawPassword.length > 512) {
-        return c.json({ error: { message: '备份密码过长' } }, 400)
+        return errorJsonResponse(c, 400, 'backup.error.passwordTooLong')
       }
       const password = rawPassword !== '' ? rawPassword : undefined
 

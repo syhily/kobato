@@ -4,6 +4,7 @@ import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/contracts/audit
 import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { tZhCN } from '#/_helpers/i18n'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
@@ -163,7 +164,7 @@ describe('snapshot: AuditLogRow', () => {
 
 describe('snapshot: AuditLogFilterPill', () => {
   it('renders an action-type pill with the resolved option label', () => {
-    const fields = buildAuditFilterFields(ACTORS)
+    const fields = buildAuditFilterFields(ACTORS, tZhCN)
     const filter: ActiveFilter<AuditLogFilterFieldKey> = { field: 'action', value: 'login', label: '登录' }
     const html = stableHtml(
       renderToHtml(
@@ -185,7 +186,7 @@ describe('snapshot: AuditLogFilterPill', () => {
   })
 
   it('renders an ip-type pill with a text input editor', () => {
-    const fields = buildAuditFilterFields(ACTORS)
+    const fields = buildAuditFilterFields(ACTORS, tZhCN)
     const filter: ActiveFilter<AuditLogFilterFieldKey> = { field: 'ip', value: '203.0.113', label: 'IP' }
     const html = stableHtml(
       renderToHtml(
@@ -204,7 +205,7 @@ describe('snapshot: AuditLogFilterPill', () => {
   })
 
   it('renders a resource-type pill with the resource label', () => {
-    const fields = buildAuditFilterFields(ACTORS)
+    const fields = buildAuditFilterFields(ACTORS, tZhCN)
     const filter: ActiveFilter<AuditLogFilterFieldKey> = { field: 'resourceType', value: 'post', label: '文章' }
     const html = stableHtml(
       renderToHtml(
@@ -226,7 +227,12 @@ describe('snapshot: AuditLogFilterAddButton', () => {
   it('renders the bare "筛选" trigger when no filters are active', () => {
     const html = stableHtml(
       renderToHtml(
-        <FilterAddButton fields={buildAuditFilterFields(ACTORS)} filters={[]} search={{}} onAddFilter={() => {}} />,
+        <FilterAddButton
+          fields={buildAuditFilterFields(ACTORS, tZhCN)}
+          filters={[]}
+          search={{}}
+          onAddFilter={() => {}}
+        />,
       ),
     )
     // Empty-state label is "筛选" — "添加筛选" only appears once a
@@ -242,7 +248,7 @@ describe('snapshot: AuditLogFilterAddButton', () => {
     const html = stableHtml(
       renderToHtml(
         <FilterAddButton
-          fields={buildAuditFilterFields(ACTORS)}
+          fields={buildAuditFilterFields(ACTORS, tZhCN)}
           filters={filters}
           search={{}}
           onAddFilter={() => {}}

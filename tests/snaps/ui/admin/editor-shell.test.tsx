@@ -34,19 +34,15 @@ describe('snapshot: DateTimePicker', () => {
   it('renders a localized date + time label when a value is set', () => {
     // A future date so the local-input parse is deterministic regardless of TZ.
     const html = stableHtml(renderToHtml(<DateTimePicker value="2099-06-15T14:30" onChange={noop} />))
-    // The display string formats the date in zh-CN and picks 上午/下午 from the hour.
-    expect(html).toMatch(/2099年6月\d+日/u)
-    // 14:30 is PM in 12h => 下午, hour 2.
-    expect(html).toContain('下午')
-    expect(html).toContain('02:30')
+    // Locale-appropriate short format in an explicit wall-clock zone (zh-CN 24h).
+    expect(html).toContain('2099/6/15 14:30')
     // Not empty => the muted styling flag is off.
     expect(html).toContain('data-empty="false"')
   })
 
-  it('renders the 上午 (AM) label for a morning time', () => {
+  it('renders a morning time without shifting the wall clock', () => {
     const html = stableHtml(renderToHtml(<DateTimePicker value="2099-06-15T09:05" onChange={noop} />))
-    expect(html).toContain('上午')
-    expect(html).toContain('09:05')
+    expect(html).toContain('2099/6/15 09:05')
   })
 
   it('renders a disabled trigger when the disabled prop is set', () => {

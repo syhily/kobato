@@ -3,6 +3,7 @@ import { CheckCheckIcon, SquarePenIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import type { NotificationDto, NotificationTab } from '@/shared/contracts/notifications'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInvalidateNotifications, usePatchNotificationReadState } from '@/client/hooks/use-notifications'
@@ -10,6 +11,7 @@ import { onMutationError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/ui/components/sheet'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { ComposeNotificationDialog } from '@/ui/shared/notifications/ComposeNotificationDialog'
 import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 import { NotificationDetailPane } from '@/ui/shared/notifications/NotificationDetailPane'
@@ -25,20 +27,23 @@ interface NotificationsDrawerProps {
   unreadCount: number | null
 }
 
-const TAB_LABELS: Array<{ value: NotificationTab; label: string }> = [
-  { value: 'all', label: '全部' },
-  { value: 'unread', label: '未读' },
-  { value: 'direct', label: '私信' },
-  { value: 'announce', label: '公告' },
-]
+const TAB_VALUES: readonly NotificationTab[] = ['all', 'unread', 'direct', 'announce']
+
+const TAB_LABEL_IDS: Record<NotificationTab, UiMessageId> = {
+  all: 'notifications.tab.all',
+  unread: 'notifications.tab.unread',
+  direct: 'notifications.tab.direct',
+  announce: 'notifications.tab.announce',
+}
 
 function isNotificationTab(value: unknown): value is NotificationTab {
-  return TAB_LABELS.some(({ value: tab }) => tab === value)
+  return TAB_VALUES.some((tab) => tab === value)
 }
 
 // The global right-side drawer behind every「消息通知」entry: list ↔ detail
 // panes, mark-read actions, and the admin compose dialog.
 export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }: NotificationsDrawerProps) {
+  const { t } = useI18n()
   const [tab, setTab] = useState<NotificationTab>('all')
   const [selected, setSelected] = useState<NotificationDto | null>(null)
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
@@ -54,7 +59,7 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
         patchReadState([], true, data.count)
         void invalidate()
       },
-      onError: onMutationError('操作失败'),
+      onError: onMutationError('admin.toast.operationFailed', t),
     }),
   )
 
@@ -80,11 +85,16 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
           <>
             <SheetHeader className="flex-row items-center gap-2 border-b pr-12">
               <SheetTitle className="flex-1 text-base">
-                消息通知
+                {t('public.chrome.notifications')}
                 <NotificationBadge count={unreadCount ?? 0} className="ml-2" />
               </SheetTitle>
               {isAdmin ? (
-                <Button variant="ghost" size="iconSm" onClick={() => setComposeOpen(true)} aria-label="写消息">
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={() => setComposeOpen(true)}
+                  aria-label={t('notifications.compose.title')}
+                >
                   <SquarePenIcon className="size-4" />
                 </Button>
               ) : null}
@@ -93,7 +103,7 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
                 size="iconSm"
                 onClick={() => markAllRead.mutate({})}
                 disabled={unreadCount === 0 || markAllRead.isPending}
-                aria-label="全部标为已读"
+                aria-label={t('notifications.markAllRead')}
               >
                 <CheckCheckIcon className="size-4" />
               </Button>
@@ -110,9 +120,9 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
                 }}
               >
                 <TabsList className="w-full">
-                  {TAB_LABELS.map(({ value, label }) => (
+                  {TAB_VALUES.map((value) => (
                     <TabsTrigger key={value} value={value} className="flex-1">
-                      {label}
+                      {t(TAB_LABEL_IDS[value])}
                     </TabsTrigger>
                   ))}
                 </TabsList>

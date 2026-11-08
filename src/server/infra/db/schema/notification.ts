@@ -20,6 +20,17 @@ export const notification = sqliteTable(
     senderId: integer('sender_id'),
     title: text('title').notNull(),
     body: text('body').notNull(),
+    // System-notification i18n descriptor (plan 001, 5b-ii): `title`/`body`
+    // store the ENGLISH fallback computed at creation; these nullable
+    // key/params columns let every read path translate the full message into
+    // the reader's locale. User-authored kinds (direct/broadcast) keep NULL
+    // descriptor columns and show their original text. Params are JSON text
+    // (never `{ mode: 'json' }`: a corrupt legacy value must fall back, not
+    // throw while mapping the row). `notification.*` keys are append-only.
+    titleKey: text('title_key'),
+    titleParams: text('title_params'),
+    bodyKey: text('body_key'),
+    bodyParams: text('body_params'),
     replyable: integer('replyable', { mode: 'boolean' }).default(false).notNull(),
     source: text('source'),
     actionUrl: text('action_url'),

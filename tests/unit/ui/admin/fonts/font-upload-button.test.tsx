@@ -34,6 +34,7 @@ vi.mock('@/client/api/orpc-query', () => ({
   orpcQuery: { admin: { fonts: { list: { key: () => ['admin', 'fonts', 'list'] } } } },
 }))
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { FontUploadButton } from '@/ui/admin/fonts/FontUploadButton'
 
 function makeWrapper() {
@@ -41,7 +42,7 @@ function makeWrapper() {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    return <QueryClientProvider client={client}>{wrapWithI18n(children)}</QueryClientProvider>
   }
 }
 
@@ -84,7 +85,8 @@ describe('FontUploadButton', () => {
       title: '字体文件大小上限为 60 MB',
     })
     expect(opts.messages?.httpFailure?.(502)).toBe('服务器错误 (502)')
-    expect(opts.messages?.failure).toBe('未知错误，请稍后重试')
+    expect(opts.messages?.failure).toBe('admin.toast.unknownErrorRetry')
+    expect(opts.t('admin.toast.unknownErrorRetry')).toBe('未知错误，请稍后重试')
     // No success toast — the success phase is the feedback.
     expect(opts.messages?.success).toBeUndefined()
 

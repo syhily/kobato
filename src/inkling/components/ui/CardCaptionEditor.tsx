@@ -4,6 +4,7 @@ import React from 'react'
 
 import InklingCaptionEditor from '@/inkling/components/InklingCaptionEditor'
 import { TextInput } from '@/inkling/components/ui/TextInput'
+import { useInklingLabels } from '@/inkling/hooks/useInklingLabels'
 import { isEditorEmpty } from '@/inkling/utils/isEditorEmpty'
 
 interface CaptionInputProps {
@@ -59,6 +60,7 @@ interface AltToggleButtonProps {
 }
 
 function AltToggleButton({ isEditingAlt, onClick }: AltToggleButtonProps) {
+  const labels = useInklingLabels()
   return (
     <button
       className={`absolute right-0 bottom-0 m-2 cursor-pointer rounded-md border px-1 font-sans text-[1.3rem] leading-7 font-normal tracking-wide transition-all duration-100 ${isEditingAlt ? 'border-green bg-green text-white' : 'border-grey text-grey'} `}
@@ -67,7 +69,7 @@ function AltToggleButton({ isEditingAlt, onClick }: AltToggleButtonProps) {
       type="button"
       onClick={onClick}
     >
-      Alt
+      {labels['image.altToggle']}
     </button>
   )
 }

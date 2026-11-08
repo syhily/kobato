@@ -1,6 +1,13 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { honeypotField } from '@/shared/utils/schema'
+
+// Typed catalog id (never prose): the boundary maps it into a wire descriptor.
+const newsletterValidationMessages = {
+  invalidId: 'newsletter.error.invalidId',
+} as const satisfies Record<string, UiMessageId>
 
 const newsletterHoneypot = honeypotField('subtitle')
 
@@ -22,7 +29,7 @@ export type NewsletterConfirmInput = z.infer<typeof newsletterConfirmSchema>
 // `id` arrives stringified — bigint ids never cross the JSON boundary. `sig`
 // is the HMAC-SHA256 hex signature from the unsubscribe link.
 export const newsletterUnsubscribeSchema = z.object({
-  id: z.string().regex(/^\d+$/, { message: '订阅 ID 必须是数字' }),
+  id: z.string().regex(/^\d+$/, { message: newsletterValidationMessages.invalidId }),
   sig: z.string().min(1).max(128),
 })
 export type NewsletterUnsubscribeInput = z.infer<typeof newsletterUnsubscribeSchema>

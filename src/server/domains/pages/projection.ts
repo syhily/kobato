@@ -33,6 +33,7 @@ export function toCmsPage(
     summary: meta.summary,
     toc: meta.showToc,
     showUpdated: meta.showUpdated,
+    contentLanguage: meta.contentLanguage,
     showFriends: meta.showFriends,
     slug: meta.slug,
     permalink: `/${meta.slug}`,

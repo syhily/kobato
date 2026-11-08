@@ -2,9 +2,11 @@ import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
+import { formatWallClockDateTime } from '@/ui/admin/editor-shell/wall-clock'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/lexical-body-diff'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface DraftConflictDialogProps {
   open: boolean
@@ -31,6 +33,7 @@ export function DraftConflictDialog({
   onChooseLocal,
   onChooseServer,
 }: DraftConflictDialogProps) {
+  const { t } = useI18n()
   const diff = diffBodies(serverBody, localBody)
 
   return (
@@ -39,22 +42,20 @@ export function DraftConflictDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ArrowRightLeftIcon className="size-4" />
-            检测到本地草稿与云端不一致
+            {t('admin.editor.conflict.title')}
           </DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          两份内容都存在，但内容不一致。请选择保留哪一份继续编辑。被舍弃的一份会被永久丢弃。
-        </p>
+        <p className="text-sm text-muted-foreground">{t('admin.editor.conflict.description')}</p>
         <div className="grid gap-3 lg:grid-cols-2">
           <DraftPanel
-            title="云端版本"
+            title={t('admin.editor.conflict.cloud')}
             icon={<ServerIcon className="size-4" />}
             timestamp={serverUpdatedAt}
             side="left"
             diff={diff}
           />
           <DraftPanel
-            title="本地草稿"
+            title={t('admin.editor.conflict.local')}
             icon={<MonitorIcon className="size-4" />}
             timestamp={localSavedAt}
             side="right"
@@ -63,10 +64,10 @@ export function DraftConflictDialog({
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button variant="outline" onClick={onChooseServer}>
-            <ServerIcon /> 使用云端版本
+            <ServerIcon /> {t('admin.editor.conflict.useCloud')}
           </Button>
           <Button onClick={onChooseLocal}>
-            <MonitorIcon /> 使用本地草稿
+            <MonitorIcon /> {t('admin.editor.conflict.useLocal')}
           </Button>
         </div>
       </DialogContent>
@@ -83,13 +84,16 @@ interface DraftPanelProps {
 }
 
 function DraftPanel({ title, icon, timestamp, side, diff }: DraftPanelProps) {
+  const { locale } = useI18n()
   return (
     <div className="flex min-h-0 flex-col rounded-xl border bg-card">
       <div className="flex items-center gap-2 border-b px-3 py-2 text-sm font-medium">
         {icon}
         {title}
         {timestamp !== null ? (
-          <span className="ml-auto text-xs text-muted-foreground">{new Date(timestamp).toLocaleString('zh-CN')}</span>
+          <span className="ml-auto text-xs text-muted-foreground">
+            {formatWallClockDateTime(new Date(timestamp), locale)}
+          </span>
         ) : null}
       </div>
       <div className="max-h-(--spacing-editor-min) overflow-y-auto p-3">

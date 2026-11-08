@@ -24,7 +24,8 @@ export const commentReplySchema = z
 export type CommentReplyInput = z.infer<typeof commentReplySchema>
 
 export const commentRidSchema = z.object({
-  rid: z.string().regex(/^\d+$/, { message: '评论 ID 必须是数字' }),
+  // Typed catalog id: the input-validation issue carries it (no prose).
+  rid: z.string().regex(/^\d+$/, { message: 'comments.error.idInvalid' as const }),
 })
 export type CommentRidInput = z.infer<typeof commentRidSchema>
 

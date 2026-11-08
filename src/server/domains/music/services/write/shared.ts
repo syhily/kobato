@@ -4,6 +4,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { SafeFetchFailure } from '@/server/infra/safe-fetch'
 
 import { findMusicByPlayerId } from '@/server/infra/db/operations/music'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { safeFetch } from '@/server/infra/safe-fetch'
@@ -41,43 +42,44 @@ export async function generateUniquePlayerId(db: Database): Promise<string> {
     }
     log.warn('playerId collision; retrying', { candidate, attempt })
   }
-  throw new DomainError('INTERNAL', 'playerId 生成失败：连续 5 次冲突')
+  throw new DomainError('INTERNAL', descriptorFor('music.error.playerIdConflict'))
 }
 
-// Map the safe-fetch failure union onto the pinned DomainError variants (codes/messages covered by the write tests).
+// Map the safe-fetch failure union onto the pinned DomainError variants (codes/keys covered by the write tests).
 function downloadError(result: SafeFetchFailure, originalUrl: string, what: 'audio' | 'cover'): DomainError {
-  const asset = what === 'audio' ? '音频' : '封面'
-  const action = what === 'audio' ? '下载音频' : '下载封面'
   switch (result.reason) {
     case 'invalid-url':
-      return new DomainError('BAD_REQUEST', `${asset}地址无效`)
+      return new DomainError('BAD_REQUEST', descriptorFor('music.error.assetInvalidUrl', { asset: what }))
     case 'bad-protocol':
-      return new DomainError('BAD_REQUEST', `${asset}地址协议不被支持`)
+      return new DomainError('BAD_REQUEST', descriptorFor('music.error.assetBadProtocol', { asset: what }))
     case 'bad-port':
-      return new DomainError('BAD_REQUEST', `${asset}地址端口不被支持`)
+      return new DomainError('BAD_REQUEST', descriptorFor('music.error.assetBadPort', { asset: what }))
     case 'blocked-host':
-      return new DomainError('BAD_REQUEST', `${asset}地址指向了内网或本机`)
+      return new DomainError('BAD_REQUEST', descriptorFor('music.error.assetBlockedHost', { asset: what }))
     case 'too-many-redirects':
-      return new DomainError('BAD_REQUEST', `${asset}地址重定向次数过多`)
+      return new DomainError('BAD_REQUEST', descriptorFor('music.error.assetTooManyRedirects', { asset: what }))
     case 'too-large':
-      return new DomainError('BAD_REQUEST', `${asset}体积超过上限`)
+      return new DomainError('BAD_REQUEST', descriptorFor('music.error.assetTooLarge', { asset: what }))
     case 'http-error':
       log.error('Music asset fetch returned non-2xx', {
         url: redactUrlForLog(originalUrl),
         what,
         status: result.status,
       })
-      return new DomainError('INTERNAL', `${action}失败：${result.status}`)
+      return new DomainError(
+        'INTERNAL',
+        descriptorFor('music.error.downloadFailedStatus', { asset: what, status: result.status }),
+      )
     case 'dns-failure':
       log.error('Music asset DNS resolution failed', { url: redactUrlForLog(result.url), what, error: result.error })
-      return new DomainError('INTERNAL', `${action}失败，请稍后再试`)
+      return new DomainError('INTERNAL', descriptorFor('music.error.downloadFailed', { asset: what }))
     case 'timeout':
     case 'fetch-failed':
       log.error('Music asset fetch failed', { url: redactUrlForLog(result.url), what, error: result.error })
-      return new DomainError('INTERNAL', `${action}失败，请稍后再试`)
+      return new DomainError('INTERNAL', descriptorFor('music.error.downloadFailed', { asset: what }))
     case 'missing-redirect-location':
     case 'redirect-vetoed':
-      return new DomainError('INTERNAL', `${action}失败，请稍后再试`)
+      return new DomainError('INTERNAL', descriptorFor('music.error.downloadFailed', { asset: what }))
   }
 }
 

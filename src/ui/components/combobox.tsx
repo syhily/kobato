@@ -4,6 +4,7 @@ import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function Combobox<Value>(props: ComponentProps<typeof BaseCombobox.Root<Value, false>>) {
   return <BaseCombobox.Root data-slot="combobox" {...props} />
@@ -50,10 +51,13 @@ function ComboboxContent<Item>({
   children,
   align = 'start',
   sideOffset,
-  inputPlaceholder = '搜索…',
-  emptyMessage = '无匹配结果',
+  inputPlaceholder,
+  emptyMessage,
   ...props
 }: ComboboxContentProps<Item>) {
+  const { t } = useI18n()
+  const placeholder = inputPlaceholder ?? t('common.combobox.placeholder')
+  const empty = emptyMessage ?? t('common.combobox.empty')
   return (
     <BaseCombobox.Portal>
       <BaseCombobox.Positioner align={align} sideOffset={sideOffset ?? 4} className="z-(--z-modal)">
@@ -68,7 +72,7 @@ function ComboboxContent<Item>({
           <div className="flex items-center gap-2 border-b px-3 py-2">
             <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
             <BaseCombobox.Input
-              placeholder={inputPlaceholder}
+              placeholder={placeholder}
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
@@ -78,7 +82,7 @@ function ComboboxContent<Item>({
            * behind the `empty:` variant, which applies when Base UI hands it null children.
            */}
           <BaseCombobox.Empty className="text-center text-sm text-muted-foreground not-empty:px-3 not-empty:py-6">
-            {emptyMessage}
+            {empty}
           </BaseCombobox.Empty>
           <BaseCombobox.List className="flex max-h-[min(var(--available-height),20rem)] flex-col gap-0.5 overflow-y-auto p-1">
             {children}

@@ -7,6 +7,7 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { sendNewComment } from '@/server/domains/comments/services/email'
 import { post } from '@/server/infra/db/schema/post'
 import { sendTestMail } from '@/server/infra/email/sender'
+import { createServerTranslator } from '@/server/infra/i18n'
 
 // `sendNewComment` against the real engine: the slug/title lookup and the
 // saved `content`-projection email body are real; only `fetch` (Mailgun)
@@ -47,6 +48,16 @@ async function seedTargetPost(): Promise<number> {
 }
 
 const fetchMock = vi.fn<typeof fetch>()
+
+/** React's text-node escaping (renderToStaticMarkup) — catalog copy may include quotes. */
+function htmlText(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#x27;')
+}
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -316,5 +327,48 @@ describe('email/sender — sendTestMail', () => {
     } else {
       throw new Error('expected reason=upstream')
     }
+  })
+})
+
+describe('comments email — site locale at send time', () => {
+  const commentInfo = {
+    id: 11,
+    body: { root: { type: 'root', version: 1, direction: 'ltr', format: '', indent: 0, children: [] } },
+    content: '<p>hello in english</p>',
+    isPending: true,
+    user: { id: 1, name: 'visitor', email: 'visitor@example.com' },
+  } as unknown as CommentAndUser
+
+  it('renders the English subject, labels, note and CTA for an en-US site', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+      mail: { mail: { ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail, ...mailgunConfigured } },
+    })
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
+    const ownerId = await seedTargetPost()
+    const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+
+    const result = await sendNewComment(db, commentInfo, { type: 'post', ownerId })
+
+    expect(result.ok).toBe(true)
+    const [, init] = fetchMock.mock.calls[0]
+    const body = init?.body as FormData
+    // Derive the expected copy from the real catalog: the English templates
+    // are ASCII (`{siteTitle}: {subject}`, `A new comment in "{title}"`).
+    const t = createServerTranslator('en-US')
+    expect(body.get('subject')).toBe(
+      t.format('email.adminNotification.subject', {
+        siteTitle: title,
+        subject: t.format('email.newComment.subjectSuffix'),
+      }),
+    )
+    const html = body.get('html') as string
+    expect(html).toContain(htmlText(t.format('email.newComment.preview', { title: 'Hi' })))
+    expect(html).toContain('Post:')
+    expect(html).toContain('This comment needs review')
+    expect(html).toContain('View comment')
+    // User-authored comment body stays raw, whatever the locale.
+    expect(html).toContain('<p>hello in english</p>')
   })
 })

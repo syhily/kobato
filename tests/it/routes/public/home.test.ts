@@ -1,7 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { makeLoaderArgs } from '#/_helpers/context'
+import type { HomeExtra } from '@/shared/contracts/content'
+import type { PublicListingLoaderData } from '@/shared/types/listing'
+
+import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -67,6 +70,57 @@ async function seedCatalog(count: number, slugPrefix: string, categoryId?: numbe
 
 const { loader } = await import('@/routes/public/home')
 
+function loaderEtag(result: unknown): string | null {
+  const init = (result as { init?: { headers?: Record<string, string> } }).init
+  return init?.headers?.ETag ?? null
+}
+
+describe('routes/home loader — listing revalidation', () => {
+  it('stamps the listing ETag and answers a 304 on a repeat request', async () => {
+    await seedCatalog(3, 'etag')
+
+    const first = await loader(makeLoaderArgs({ request: new Request('http://localhost/'), session, db, params: {} }))
+    const etag = loaderEtag(first)
+    expect(etag).toMatch(/^W\/"[0-9a-f]{16}"$/)
+
+    const second = await loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/', { headers: { 'If-None-Match': etag! } }),
+        session,
+        db,
+        params: {},
+      }),
+    ).then(
+      () => null,
+      (response: unknown) => response,
+    )
+
+    expect(second).toMatchObject({ status: 304 })
+    const headers = (second as Response).headers
+    expect(headers.get('ETag')).toBe(etag)
+    expect(headers.get('Content-Language')).toBe('zh-CN')
+    expect(headers.get('Cache-Control')).toBe('private, no-cache')
+    expect(headers.get('Vary')).toBe('Cookie')
+  })
+
+  it('keeps a 200 and a fresh tag after the catalogue changes', async () => {
+    await seedCatalog(3, 'first')
+    const first = await loader(makeLoaderArgs({ request: new Request('http://localhost/'), session, db, params: {} }))
+
+    await seedCatalog(1, 'later')
+
+    const second = await loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/', { headers: { 'If-None-Match': loaderEtag(first)! } }),
+        session,
+        db,
+        params: {},
+      }),
+    )
+    expect(loaderEtag(second)).not.toBe(loaderEtag(first))
+  })
+})
+
 describe('routes/home loader', () => {
   it('/page/1 collapses to / (canonical) via 30x redirect', async () => {
     await expect(
@@ -87,13 +141,15 @@ describe('routes/home loader', () => {
     // 10 posts → 6 + 4; a tail of exactly 4 meets the strict threshold, so /page/2 renders.
     await seedCatalog(10, 'post', categoryId)
 
-    const result = await loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/'),
-        session,
-        db,
-        params: {},
-      }),
+    const result = unwrapLoaderData<PublicListingLoaderData<HomeExtra>>(
+      await loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/'),
+          session,
+          db,
+          params: {},
+        }),
+      ),
     )
 
     expect(result.pageNum).toBe(1)
@@ -112,13 +168,15 @@ describe('routes/home loader', () => {
   it('returns the deep-paginated payload (with seo populated) on /page/N', async () => {
     await seedCatalog(10, 'post')
 
-    const result = await loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/page/2'),
-        session,
-        db,
-        params: { num: '2' },
-      }),
+    const result = unwrapLoaderData<PublicListingLoaderData<HomeExtra>>(
+      await loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/page/2'),
+          session,
+          db,
+          params: { num: '2' },
+        }),
+      ),
     )
 
     expect(result.pageNum).toBe(2)
@@ -177,13 +235,15 @@ describe('routes/home loader — tail-merge guard', () => {
   it('returns all posts on / when the merge collapses the full catalogue into one page', async () => {
     await seedCatalog(7, 'short')
 
-    const result = await loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/'),
-        session,
-        db,
-        params: {},
-      }),
+    const result = unwrapLoaderData<PublicListingLoaderData<HomeExtra>>(
+      await loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/'),
+          session,
+          db,
+          params: {},
+        }),
+      ),
     )
 
     expect(result.totalPage).toBe(1)

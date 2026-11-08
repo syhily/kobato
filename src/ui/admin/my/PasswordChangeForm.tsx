@@ -7,12 +7,14 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export function PasswordChangeForm() {
+  const { t } = useI18n()
   const passwordMutation = useMutation({
     ...orpcQuery.account.updatePassword.mutationOptions(),
     onSuccess: () => {
-      setPasswordMessage('密码已更新；其他设备的会话已注销。')
+      setPasswordMessage(t('admin.my.password.updated'))
       setOldPassword('')
       setNewPassword('')
     },
@@ -29,8 +31,8 @@ export function PasswordChangeForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>修改密码</CardTitle>
-        <CardDescription>修改密码后，你在其他设备的会话将被强制注销。</CardDescription>
+        <CardTitle>{t('admin.my.password.title')}</CardTitle>
+        <CardDescription>{t('admin.my.password.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form
@@ -42,7 +44,7 @@ export function PasswordChangeForm() {
           className="grid gap-4 sm:grid-cols-2"
         >
           <div className="flex flex-col gap-2">
-            <Label htmlFor="profile-old-pw">原密码</Label>
+            <Label htmlFor="profile-old-pw">{t('admin.my.password.old')}</Label>
             <div className="relative">
               <Input
                 id="profile-old-pw"
@@ -56,14 +58,14 @@ export function PasswordChangeForm() {
                 type="button"
                 onClick={() => setShowOldPassword((v) => !v)}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                aria-label={showOldPassword ? '隐藏密码' : '显示密码'}
+                aria-label={showOldPassword ? t('admin.my.password.hide') : t('admin.my.password.show')}
               >
                 {showOldPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
               </button>
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="profile-new-pw">新密码</Label>
+            <Label htmlFor="profile-new-pw">{t('admin.my.password.new')}</Label>
             <div className="relative">
               <Input
                 id="profile-new-pw"
@@ -78,7 +80,7 @@ export function PasswordChangeForm() {
                 type="button"
                 onClick={() => setShowNewPassword((v) => !v)}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                aria-label={showNewPassword ? '隐藏密码' : '显示密码'}
+                aria-label={showNewPassword ? t('admin.my.password.hide') : t('admin.my.password.show')}
               >
                 {showNewPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
               </button>
@@ -96,7 +98,8 @@ export function PasswordChangeForm() {
           )}
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="submit" variant="outline" disabled={passwordMutation.isPending}>
-              <KeyRoundIcon data-icon /> {passwordMutation.isPending ? '更新中…' : '修改密码'}
+              <KeyRoundIcon data-icon />{' '}
+              {passwordMutation.isPending ? t('admin.my.password.updating') : t('admin.my.password.submit')}
             </Button>
           </div>
         </form>

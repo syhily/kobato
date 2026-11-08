@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UpdateCheckResult, UpdateJobStatus } from '@/shared/contracts/update'
+
+import { renderWithI18n, wrapWithI18n } from '#/_helpers/i18n-render'
 
 const orpcMocks = vi.hoisted(() => ({
   check: vi.fn(),
@@ -68,7 +70,7 @@ describe('ui/admin/shell/VersionDialog', () => {
   })
 
   it('renders the idle prompt before any check', () => {
-    render(<VersionDialog open={true} onOpenChange={noop} />)
+    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
     expect(screen.getByText('点击上方按钮检查是否有新版本')).toBeInTheDocument()
   })
 
@@ -76,7 +78,7 @@ describe('ui/admin/shell/VersionDialog', () => {
     orpcMocks.check.mockResolvedValue(
       checkResult({ updateAvailable: false, latestVersion: '6.4.0', tagName: 'v6.4.0' }),
     )
-    render(<VersionDialog open={true} onOpenChange={noop} />)
+    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByText('当前已是最新版本')).toBeInTheDocument())
@@ -84,7 +86,7 @@ describe('ui/admin/shell/VersionDialog', () => {
 
   it('shows an error when the check fails', async () => {
     orpcMocks.check.mockRejectedValue(new Error('network down'))
-    render(<VersionDialog open={true} onOpenChange={noop} />)
+    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByText('检查失败，请稍后重试')).toBeInTheDocument())
@@ -92,7 +94,7 @@ describe('ui/admin/shell/VersionDialog', () => {
 
   it('offers 立即更新 with the confirm line when the deployment can self-update', async () => {
     orpcMocks.check.mockResolvedValue(checkResult())
-    render(<VersionDialog open={true} onOpenChange={noop} />)
+    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByText('发现新版本：')).toBeInTheDocument())
@@ -101,18 +103,30 @@ describe('ui/admin/shell/VersionDialog', () => {
   })
 
   it('shows the gate reasons instead of 立即更新 when self-update is refused', async () => {
-    orpcMocks.check.mockResolvedValue(checkResult({ canSelfUpdate: false, reasons: ['Docker 部署请拉取新镜像升级'] }))
-    render(<VersionDialog open={true} onOpenChange={noop} />)
+    orpcMocks.check.mockResolvedValue(
+      checkResult({
+        canSelfUpdate: false,
+        reasons: [
+          {
+            messageKey: 'update.gate.containerized',
+            fallbackMessage: 'Docker deployments must pull a new image to upgrade.',
+          },
+        ],
+      }),
+    )
+    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
-    await waitFor(() => expect(screen.getByText('Docker 部署请拉取新镜像升级')).toBeInTheDocument())
+    // The descriptor's messageKey is resolved through the active locale — the
+    // English fallback is never rendered.
+    await waitFor(() => expect(screen.getByText('Docker 部署请拉取新镜像升级。')).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: /立即更新/ })).not.toBeInTheDocument()
   })
 
   it('runs the apply flow and renders every job state', async () => {
     orpcMocks.check.mockResolvedValue(checkResult())
     orpcMocks.apply.mockResolvedValue({ fromVersion: '6.4.0', toVersion: '6.5.0' })
-    const view = render(<VersionDialog open={true} onOpenChange={noop} />)
+    const view = renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByRole('button', { name: /立即更新/ })).toBeInTheDocument())
@@ -125,7 +139,7 @@ describe('ui/admin/shell/VersionDialog', () => {
 
     const setJob = (status: UpdateJobStatus) => {
       queryState.status.data = status
-      view.rerender(<VersionDialog open={true} onOpenChange={noop} />)
+      view.rerender(wrapWithI18n(<VersionDialog open={true} onOpenChange={noop} />))
     }
 
     setJob({ state: 'verifying', targetVersion: 'v6.5.0' })
@@ -144,7 +158,7 @@ describe('ui/admin/shell/VersionDialog', () => {
   it('shows an apply error when the job cannot start', async () => {
     orpcMocks.check.mockResolvedValue(checkResult())
     orpcMocks.apply.mockRejectedValue(new Error('已有更新任务正在进行中'))
-    render(<VersionDialog open={true} onOpenChange={noop} />)
+    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByRole('button', { name: /立即更新/ })).toBeInTheDocument())

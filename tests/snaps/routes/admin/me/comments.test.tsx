@@ -9,7 +9,9 @@ import { describe, expect, it } from 'vitest'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { asRoute } from '#/_helpers/route-test-utils'
 import MyCommentsRoute from '@/routes/admin/me/comments'
+import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
+import { I18nProvider } from '@/ui/lib/I18nProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }
@@ -31,7 +33,9 @@ function renderWithOutlet(node: ReactNode, initialPath: string): string {
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,

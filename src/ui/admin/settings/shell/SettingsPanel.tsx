@@ -1,9 +1,28 @@
 import type { ReactNode } from 'react'
 
+import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
+
 interface SettingsPanelProps {
   children: ReactNode
 }
 
+/**
+ * The settings workspace. A cross-card transaction (the locale switch: flush →
+ * locale commit → reload) marks the WHOLE panel `inert` and `aria-busy`: no
+ * pointer or keyboard edit can land during the window, so the reload cannot
+ * drop input typed on another card. The provider owns the flag (and restores
+ * focus afterwards); this component only reflects it.
+ */
 export function SettingsPanel({ children }: SettingsPanelProps) {
-  return <div className="fixed inset-0 z-50 flex size-full bg-background">{children}</div>
+  const { isTransactionPending } = useSettingsFlushContext()
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex size-full bg-background"
+      inert={isTransactionPending || undefined}
+      aria-busy={isTransactionPending || undefined}
+    >
+      {children}
+    </div>
+  )
 }

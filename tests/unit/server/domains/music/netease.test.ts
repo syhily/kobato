@@ -174,18 +174,18 @@ describe('neteaseProvider resolveAudioUrl', () => {
   it('throws ActionFailure when no URL available', async () => {
     mockFetch({ data: [{ url: '', size: 0, br: 0 }] })
 
-    await expect(neteaseProvider.resolveAudioUrl(makeTrack({ urlId: '505' }))).rejects.toThrow(
-      '上游未返回可用的音频地址',
-    )
+    await expect(neteaseProvider.resolveAudioUrl(makeTrack({ urlId: '505' }))).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.upstreamNoAudio' },
+    })
     vi.unstubAllGlobals()
   })
 
   it('throws ActionFailure when data is absent', async () => {
     mockFetch({})
 
-    await expect(neteaseProvider.resolveAudioUrl(makeTrack({ urlId: '505' }))).rejects.toThrow(
-      '上游未返回可用的音频地址',
-    )
+    await expect(neteaseProvider.resolveAudioUrl(makeTrack({ urlId: '505' }))).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.upstreamNoAudio' },
+    })
     vi.unstubAllGlobals()
   })
 })

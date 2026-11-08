@@ -64,6 +64,29 @@ describe('services/backup — encryption resolver (fail closed on misconfigurati
     expect(resolveStoredEncryptionPassword()).toBeNull()
   })
 
+  it('keeps the technical message and carries the localized descriptor', () => {
+    const error = new BackupEncryptionMisconfiguredError({
+      messageKey: 'backup.error.encryptionMisconfigured',
+      fallbackMessage: 'Backup encryption is enabled but no password is stored.',
+    })
+    expect(error.name).toBe('BackupEncryptionMisconfiguredError')
+    expect(error.message).toBe('Backup encryption is enabled but no password is stored.')
+    expect(error.descriptor).toEqual({
+      messageKey: 'backup.error.encryptionMisconfigured',
+      fallbackMessage: 'Backup encryption is enabled but no password is stored.',
+    })
+
+    // Legacy string construction (tests/other callers) stays a raw technical
+    // message wrapped in the passthrough descriptor.
+    const legacy = new BackupEncryptionMisconfiguredError('enabled but passwordless')
+    expect(legacy.message).toBe('enabled but passwordless')
+    expect(legacy.descriptor).toEqual({
+      messageKey: 'error.api.rawMessage',
+      params: { message: 'enabled but passwordless' },
+      fallbackMessage: 'enabled but passwordless',
+    })
+  })
+
   it('does not swallow unrelated resolver failures', () => {
     wireBackupEncryption({
       resolveEncryptionPassword: () => {

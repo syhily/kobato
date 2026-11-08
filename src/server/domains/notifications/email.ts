@@ -1,21 +1,22 @@
 import { createElement } from 'react'
 
+import type { ResolvedNotificationMessage } from '@/server/domains/notifications/message'
 import type { Database } from '@/server/infra/db/database'
 import type { NotificationRow } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
+import type { ServerTranslator } from '@/server/infra/i18n'
 
+import { resolveNotificationMessage } from '@/server/domains/notifications/message'
 import { findUserEmailsByIds, findUserNamesByIds } from '@/server/infra/db/operations/notification'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { render } from '@/server/infra/email/render'
 import { sendEmail } from '@/server/infra/email/sender'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
+import { emailTranslator } from '@/server/infra/email/translator'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@/shared/config/getters'
 
 const log = getLogger('notifications.email')
-
-/** ADR-0008 opt-out copy — the settings path the reader can follow to turn this class off. */
-export const NOTIFICATION_EMAIL_FOOTER = '此邮件由系统通知触发，可在「系统设置 → 邮件」中关闭通知邮件。'
 
 /**
  * The email side effect is ON only when mail itself is enabled (the master
@@ -28,30 +29,39 @@ function notificationEmailsEnabled(): boolean {
   return mail?.enabled === true && mail.notificationEmails !== false
 }
 
-function notificationEmailSubject(row: NotificationRow, siteTitle: string): string {
-  return row.kind === 'admin' ? `【${siteTitle}】系统提醒：${row.title}` : `您在【${siteTitle}】收到一条新私信`
+function notificationEmailSubject(row: NotificationRow, siteTitle: string, t: ServerTranslator, title: string): string {
+  return t.format(row.kind === 'admin' ? 'email.notification.adminSubject' : 'email.notification.directSubject', {
+    siteTitle,
+    title,
+  })
 }
 
 function renderNotificationEmail(
   row: NotificationRow,
   site: { title: string; website: string },
   receiver: string,
+  t: ServerTranslator,
+  message: ResolvedNotificationMessage,
 ): string {
   const isAdminAlert = row.kind === 'admin'
   return render(
     createElement(AdminNotificationEmail, {
+      t,
       receiver,
-      preview: row.title,
-      title: isAdminAlert ? '系统提醒' : '新私信',
-      // Notification title/body are plain text — React escapes them at render.
+      preview: message.title,
+      title: t.format(isAdminAlert ? 'email.notification.adminTitle' : 'email.notification.directTitle'),
+      // The resolver's output is plain text — React escapes it at render.
       rows: [
-        { label: '标题：', value: row.title },
-        { label: '内容：', value: row.body },
+        { label: t.format('email.notification.rowTitle'), value: message.title },
+        { label: t.format('email.notification.rowBody'), value: message.body },
       ],
       cta: isAdminAlert
-        ? { label: '前往管理后台', href: `${site.website.replace(/\/+$/, '')}/admin` }
-        : { label: '访问站点', href: site.website },
-      footerNote: NOTIFICATION_EMAIL_FOOTER,
+        ? {
+            label: t.format('email.notification.adminCta'),
+            href: `${site.website.replace(/\/+$/, '')}/admin`,
+          }
+        : { label: t.format('email.notification.directCta'), href: site.website },
+      footerNote: t.format('email.notification.footerNote'),
     }),
   )
 }
@@ -83,10 +93,14 @@ export async function sendNotificationEmail(
   }
   const names = findUserNamesByIds(db, [...emails.keys()])
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const subject = notificationEmailSubject(row, siteIdentity.title)
+  const t = emailTranslator()
+  // One resolver call per row: the subject and the body always agree, and the
+  // same function feeds the inbox/thread read paths.
+  const message = resolveNotificationMessage(row, t)
+  const subject = notificationEmailSubject(row, siteIdentity.title, t, message.title)
   for (const [userId, email] of emails) {
     try {
-      const html = renderNotificationEmail(row, siteIdentity, names.get(userId) ?? siteIdentity.author.name)
+      const html = renderNotificationEmail(row, siteIdentity, names.get(userId) ?? siteIdentity.author.name, t, message)
       const result = await sendEmail(email, subject, html)
       logSendResult(row.id, userId, result)
     } catch (error) {

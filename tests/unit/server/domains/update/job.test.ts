@@ -103,4 +103,35 @@ describe('update/job startUpdateJob', () => {
     expect(job.getUpdateJobStatus()).toEqual({ state: 'downloading', targetVersion: 'v9.9.10' })
     retry.resolve(undefined)
   })
+
+  it('localizes a pipeline descriptor on the failed status per request locale', async () => {
+    const job = await loadJob()
+    const { descriptorFor } = await import('@/server/infra/http/error-descriptor')
+    const { DomainError } = await import('@/server/infra/http/errors')
+    const gate = deferred<undefined>()
+    pipelineMocks.runSelfUpdate.mockReturnValue(gate.promise)
+
+    job.startUpdateJob('v9.9.9', { restart })
+    gate.reject(new DomainError('INTERNAL', descriptorFor('update.error.archiveHashMismatch')))
+
+    await vi.waitFor(() => {
+      expect(job.getUpdateJobStatus().state).toBe('failed')
+    })
+
+    // The status boundary localizes the stored descriptor; the default is the
+    // site locale, and the VersionDialog renders the finished sentence.
+    expect(job.getUpdateJobStatus().error).toBe('更新包校验失败，已中止')
+    expect(job.getUpdateJobStatus('en-US').error).toBe(
+      'The update package checksum did not match; the update was aborted',
+    )
+    expect(job.getUpdateJobStatus('zh-TW').error).toBe('更新套件校驗失敗，已中止')
+    expect(job.getUpdateJobStatus('en-US').error).not.toContain('update.error.')
+
+    // A retry drops the stale failure (and its descriptor).
+    const retry = deferred<undefined>()
+    pipelineMocks.runSelfUpdate.mockReturnValue(retry.promise)
+    job.startUpdateJob('v9.9.10', { restart })
+    expect(job.getUpdateJobStatus()).toEqual({ state: 'downloading', targetVersion: 'v9.9.10' })
+    retry.resolve(undefined)
+  })
 })

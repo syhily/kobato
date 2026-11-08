@@ -1,10 +1,13 @@
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 export type SessionSortField = 'lastActive' | 'loginTime' | 'userName'
 export type MySessionSortField = 'lastActive' | 'loginTime'
 export type SessionSortDirection = 'asc' | 'desc'
 
 export interface SessionSortOption<T extends string = SessionSortField> {
   value: T
-  label: string
+  /** Display label message id — the select resolves it through the UI translator. */
+  labelId: UiMessageId
   defaultDirection: SessionSortDirection
 }
 
@@ -17,14 +20,14 @@ export const DEFAULT_ADMIN_SORT: SessionSortField = 'lastActive'
 export const DEFAULT_MY_SORT: MySessionSortField = 'lastActive'
 
 export const SESSION_SORT_OPTIONS: SessionSortOption[] = [
-  { value: 'lastActive', label: '最近活跃', defaultDirection: 'desc' },
-  { value: 'loginTime', label: '登录时间', defaultDirection: 'desc' },
-  { value: 'userName', label: '用户名', defaultDirection: 'asc' },
+  { value: 'lastActive', labelId: 'common.sort.lastActive', defaultDirection: 'desc' },
+  { value: 'loginTime', labelId: 'common.sort.loginTime', defaultDirection: 'desc' },
+  { value: 'userName', labelId: 'common.sort.userName', defaultDirection: 'asc' },
 ]
 
 export const MY_SESSION_SORT_OPTIONS: SessionSortOption<MySessionSortField>[] = [
-  { value: 'lastActive', label: '最近活跃', defaultDirection: 'desc' },
-  { value: 'loginTime', label: '登录时间', defaultDirection: 'desc' },
+  { value: 'lastActive', labelId: 'common.sort.lastActive', defaultDirection: 'desc' },
+  { value: 'loginTime', labelId: 'common.sort.loginTime', defaultDirection: 'desc' },
 ]
 
 export function parseSessionSort<T extends string>(

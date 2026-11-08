@@ -7,6 +7,7 @@ import { formatLocalDate } from '@/shared/utils/formatter'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { maskIp } from '@/ui/lib/mask'
 
 interface MySessionRowProps {
@@ -18,6 +19,7 @@ interface MySessionRowProps {
 }
 
 export function MySessionRow({ item, submitting, onRevoke, dateFormat, config }: MySessionRowProps) {
+  const { t } = useI18n()
   const label = item.label
 
   return (
@@ -30,18 +32,20 @@ export function MySessionRow({ item, submitting, onRevoke, dateFormat, config }:
           <MonitorIcon className="size-4 text-muted-foreground" />
           <span className="text-sm font-medium">{label}</span>
           {item.isCurrent && (
-            <Badge className="bg-status-success-bg text-status-success-fg hover:bg-status-success-bg">当前会话</Badge>
+            <Badge className="bg-status-success-bg text-status-success-fg hover:bg-status-success-bg">
+              {t('admin.sessions.current')}
+            </Badge>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="break-all text-muted-foreground">{maskIp(item.ip) || '—'}</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          登录 {formatLocalDate(new Date(item.loginAtIso), dateFormat, config)}
+          {t('admin.sessions.login')} {formatLocalDate(new Date(item.loginAtIso), dateFormat, config)}
           <span className="mx-1.5 text-muted-foreground/60">·</span>
-          活跃 {formatLocalDate(new Date(item.lastActiveAtIso), dateFormat, config)}
+          {t('admin.sessions.active')} {formatLocalDate(new Date(item.lastActiveAtIso), dateFormat, config)}
           <span className="mx-1.5 text-muted-foreground/60">·</span>
-          过期 {formatLocalDate(new Date(item.expiresAtIso), dateFormat, config)}
+          {t('admin.sessions.expires')} {formatLocalDate(new Date(item.expiresAtIso), dateFormat, config)}
         </p>
       </div>
       <div className="flex shrink-0 items-center self-center">
@@ -52,7 +56,7 @@ export function MySessionRow({ item, submitting, onRevoke, dateFormat, config }:
           disabled={submitting}
           onClick={() => onRevoke(item.sid, item.isCurrent)}
         >
-          <LogOutIcon data-icon="inline-start" /> 注销
+          <LogOutIcon data-icon="inline-start" /> {t('admin.sessions.revoke')}
         </Button>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 
@@ -16,7 +18,16 @@ export const MAX_PASSWORD_LENGTH = 128
  */
 export const MAX_PASSWORD_BYTES = 72
 
-export const PASSWORD_BYTE_LIMIT_MESSAGE = `密码过长（最多 ${MAX_PASSWORD_BYTES} 字节）`
+/**
+ * Custom password-rule messages are typed UI-catalog ids (never prose): the
+ * server maps them into wire descriptors at the boundary (`zodIssuesToWire`),
+ * and the `{max}` bound rides the custom issue's `params`.
+ */
+export const authValidationMessages = {
+  passwordTooLong: 'auth.validation.passwordTooLong',
+  passwordComplexity: 'auth.validation.passwordComplexity',
+  updateFieldRequired: 'auth.validation.updateFieldRequired',
+} as const satisfies Record<string, UiMessageId>
 
 export function passwordWithinBcryptLimit(value: string): boolean {
   return new TextEncoder().encode(value).byteLength <= MAX_PASSWORD_BYTES
@@ -25,12 +36,26 @@ export function passwordWithinBcryptLimit(value: string): boolean {
 /** Password complexity regex, applied on top of the minimum length. */
 export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 
-function passwordSchema() {
+/**
+ * The one new-password rule set (bcrypt byte ceiling + complexity), shared by
+ * the setup form, the reset flow and the account password change.
+ */
+export function newPasswordSchema() {
   return z
     .string()
     .min(MIN_PASSWORD_LENGTH)
-    .refine(passwordWithinBcryptLimit, PASSWORD_BYTE_LIMIT_MESSAGE)
-    .regex(PASSWORD_COMPLEXITY_RE, '密码必须包含至少一个大写字母、一个小写字母和一个数字')
+    .superRefine((value, ctx) => {
+      if (!passwordWithinBcryptLimit(value)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: authValidationMessages.passwordTooLong,
+          params: { max: MAX_PASSWORD_BYTES },
+        })
+      }
+      if (!PASSWORD_COMPLEXITY_RE.test(value)) {
+        ctx.addIssue({ code: 'custom', message: authValidationMessages.passwordComplexity })
+      }
+    })
 }
 
 export const signInSchema = z.object({
@@ -43,7 +68,7 @@ export const signUpAdminSchema = z.object({
   title: z.string().min(1),
   name: z.string().min(1),
   email: z.email(),
-  password: passwordSchema(),
+  password: newPasswordSchema(),
 })
 export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
 
@@ -63,6 +88,6 @@ export const updateUserSchema = z
       .transform((value) => (value === undefined ? undefined : value && value.trim() !== '' ? value : null)),
   })
   .refine(({ userId: _userId, ...patch }) => Object.values(patch).some((value) => value !== undefined), {
-    message: '至少需要提供一个更新字段',
+    message: authValidationMessages.updateFieldRequired,
   })
 export type UpdateUserInput = z.infer<typeof updateUserSchema>

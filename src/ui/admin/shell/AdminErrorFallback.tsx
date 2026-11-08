@@ -1,15 +1,18 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router'
 
+import { useI18n } from '@/ui/lib/I18nProvider'
+
 export function AdminErrorFallback() {
+  const { t } = useI18n()
   const error = useRouteError()
-  const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : '出错了'
+  const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : t('admin.shell.error.title')
   const message = isRouteErrorResponse(error)
     ? typeof error.data === 'string'
       ? error.data
       : error.statusText
     : error instanceof Error
       ? error.message
-      : '未知错误'
+      : t('admin.shell.error.unknown')
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">

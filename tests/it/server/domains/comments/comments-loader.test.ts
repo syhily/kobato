@@ -1,13 +1,19 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, regularSession } from '#/_helpers/session'
 import { latestComments, loadComments } from '@/server/domains/comments/services/public-query'
 import { findMetricByTarget } from '@/server/infra/db/operations/metric'
 import { comment } from '@/server/infra/db/schema/comment'
+import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
+
+const COMMENTS_REVISION = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE).comments
 
 // Everything runs against the real in-memory engine; only the settings
 // snapshot (sidebar recentComments = 5) comes from the it-project setup.
@@ -149,7 +155,7 @@ describe('services/comments/loader — latestComments', () => {
     const bobComment = await seedComment({ userId: bob, ownerId: pidB })
     await seedComment({ userId: admin, ownerId: pidA })
 
-    const list = await latestComments(db)
+    const list = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
 
     expect(list).toHaveLength(2)
     expect(list.some((c) => c.author === 'Admin')).toBe(false)
@@ -161,6 +167,19 @@ describe('services/comments/loader — latestComments', () => {
     expect(fromBob?.title).toBe('B')
   })
 
+  it('keys the bucket by the caller-supplied comments revision + configured count', async () => {
+    const pid = await seedPost('rev', 'Rev')
+    const uid = await seedUser({ name: 'Rev', email: 'rev@example.com' })
+    await seedComment({ userId: uid, ownerId: pid })
+
+    await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, 'caller-comments-revision')
+
+    const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'comments'))
+    expect(rows).toHaveLength(1)
+    // No recompute: the exact caller token is in the key, plus the count.
+    expect(rows[0]!.key).toBe('comments:caller-comments-revision:5')
+  })
+
   it('latestComments caps the pool at the configured sidebar count', async () => {
     // The seeded settings bundle configures recentComments count = 5.
     const pid = await seedPost('c', 'C')
@@ -169,7 +188,7 @@ describe('services/comments/loader — latestComments', () => {
       await seedComment({ userId: uid, ownerId: pid })
     }
 
-    const list = await latestComments(db)
+    const list = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
 
     expect(list).toHaveLength(5)
   })

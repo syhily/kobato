@@ -1,29 +1,33 @@
+import type { AppLocale } from '@/shared/i18n/locales'
+
+import { formatDateTime, formatNumber } from '@/shared/i18n/format'
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@/ui/admin/settings/cache/cache-constants'
 
-// Render the stored TTL in the most readable unit — sub-hour values keep their own units.
-export function formatTtl(seconds: number): string {
+// Render the stored TTL in the most readable unit — sub-hour values keep their
+// own units. The unit label comes from Intl (`30分钟` / `30 minutes`), never
+// from concatenated copy.
+export function formatTtl(seconds: number, options: { locale: AppLocale }): string {
+  const { locale } = options
   if (seconds < SECONDS_PER_HOUR) {
     if (seconds % 60 === 0) {
-      return `${seconds / 60} 分钟`
+      return formatNumber(seconds / 60, { locale, style: 'unit', unit: 'minute', unitDisplay: 'long' })
     }
-    return `${seconds} 秒`
+    return formatNumber(seconds, { locale, style: 'unit', unit: 'second', unitDisplay: 'long' })
   }
   const totalHours = Math.round(seconds / SECONDS_PER_HOUR)
   if (totalHours >= 24 && totalHours % 24 === 0) {
-    const days = totalHours / 24
-    return `${days} 天`
+    return formatNumber(totalHours / 24, { locale, style: 'unit', unit: 'day', unitDisplay: 'long' })
   }
-  return `${totalHours} 小时`
+  return formatNumber(totalHours, { locale, style: 'unit', unit: 'hour', unitDisplay: 'long' })
 }
 
-// Format on the client only to avoid an SSR / hydration mismatch on locales / time zones.
-export function formatTimestamp(iso: string): string {
-  try {
-    const date = new Date(iso)
-    return date.toLocaleString()
-  } catch {
+/** Format an absolute instant in the SITE time zone + active locale (explicit on both axes). */
+export function formatTimestamp(iso: string, options: { locale: AppLocale; timeZone: string }): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) {
     return iso
   }
+  return formatDateTime(date, { locale: options.locale, timeZone: options.timeZone })
 }
 
 export function hoursToSeconds(hours: number): number {

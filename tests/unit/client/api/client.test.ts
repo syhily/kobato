@@ -69,31 +69,64 @@ describe('client/api/client', () => {
   })
 })
 
-describe('client/api/client — error interceptor', () => {
+describe('client/api/client — error handling', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     vi.resetModules()
     await import('@/client/api/client')
   })
 
-  it('folds a rejection’s zod-issue list into the error message', async () => {
+  /** Run a rejection through whatever interceptors the link registers (none today). */
+  async function rejectThroughLink(error: unknown): Promise<unknown> {
+    const chain = [...lastInterceptors.current]
+    const run = async (index: number): Promise<unknown> => {
+      const interceptor = chain[index]
+      if (interceptor === undefined) {
+        throw error
+      }
+      return interceptor({ next: () => run(index + 1) })
+    }
+    return run(0)
+  }
+
+  it('installs no rejection interceptor — the server owns error copy', () => {
+    // A client-side fold would re-run per locale-less request, duplicate the
+    // server's issue summary and drop the request locale.
+    expect(lastInterceptors.current).toEqual([])
+  })
+
+  it('leaves a descriptor rejection’s server-folded message untouched (never re-appends issues)', async () => {
+    const message = '设置数据无效：signIn.windowSeconds：时间窗口不能小于 60 秒'
+    const err = Object.assign(new Error(message), {
+      data: {
+        descriptor: { messageKey: 'admin.settings.errors.invalid', fallbackMessage: 'The settings data is invalid' },
+        issues: [
+          {
+            messageKey: 'admin.settings.rateLimit.error.windowMin',
+            fallbackMessage: 'The time window must be at least 60 seconds',
+            path: ['signIn', 'windowSeconds'],
+          },
+        ],
+      },
+    })
+
+    await expect(rejectThroughLink(err)).rejects.toBe(err)
+    expect(err.message).toBe(message)
+  })
+
+  it('keeps a legacy bare-array rejection’s server message as-is', async () => {
     const err = Object.assign(new Error('设置数据无效'), {
       data: [{ message: '最大尝试次数不能超过 1000', path: ['resource', 'maxAttempts'] }],
     })
-    const interceptor = lastInterceptors.current[0]!
-    await expect(interceptor({ next: () => Promise.reject(err) })).rejects.toBe(err)
-    expect(err.message).toBe('设置数据无效：resource.maxAttempts：最大尝试次数不能超过 1000')
+
+    await expect(rejectThroughLink(err)).rejects.toBe(err)
+    // No client-side folding: the server message is the fallback.
+    expect(err.message).toBe('设置数据无效')
   })
 
   it('rethrows issue-less errors untouched', async () => {
     const err = new Error('请求过于频繁，请稍后再试。')
-    const interceptor = lastInterceptors.current[0]!
-    await expect(interceptor({ next: () => Promise.reject(err) })).rejects.toBe(err)
+    await expect(rejectThroughLink(err)).rejects.toBe(err)
     expect(err.message).toBe('请求过于频繁，请稍后再试。')
-  })
-
-  it('passes a successful call through', async () => {
-    const interceptor = lastInterceptors.current[0]!
-    await expect(interceptor({ next: () => Promise.resolve({ ok: true }) })).resolves.toEqual({ ok: true })
   })
 })

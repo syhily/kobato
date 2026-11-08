@@ -5,7 +5,7 @@ import type { RouteHandle } from '@/root'
 
 import { detailHeaders } from '@/server/http/loaders/route-exports'
 import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@/server/http/ssr-caller'
-import { bundleFromMatches, routeMeta, seoForPage } from '@/shared/seo/meta'
+import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPage } from '@/shared/seo/meta'
 import { FriendApplyForm } from '@/ui/public/friends/FriendApplyForm'
 import { Friends } from '@/ui/public/friends/Friends'
 import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
@@ -17,7 +17,7 @@ export const handle: RouteHandle = { footer: false, postFonts: true }
 export const headers = detailHeaders
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller, analyticsEventId } = createSsrCaller({ request, context })
+  const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
   const wantsDraftPreview = new URL(request.url).searchParams.get('draft') === 'true'
 
   const result = await unwrapDetail(
@@ -26,6 +26,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       draft: wantsDraftPreview,
       ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
     }),
+    localization,
   )
 
   // Comments and webmentions chain off the critical's comment key — known
@@ -50,10 +51,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   const bundle = bundleFromMatches(matches)
+  const i18n = i18nFromMatches(matches)
   if (!loaderData) {
-    return routeMeta(undefined, bundle)
+    return routeMeta(undefined, bundle, i18n)
   }
-  return routeMeta(seoForPage(loaderData.page), bundle)
+  return routeMeta(seoForPage(loaderData.page), bundle, i18n)
 }
 
 export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {

@@ -21,6 +21,7 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface EditTagDialogProps {
   tag: AdminTagDto | null | undefined
@@ -35,6 +36,7 @@ const EMPTY_DRAFT = {
 }
 
 export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -45,7 +47,7 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
   const upsertMutation = useMutation({
     ...orpcQuery.admin.tags.upsert.mutationOptions(),
     onSuccess: (payload) => {
-      toast.success('标签已保存')
+      toast.success(t('admin.tags.form.saved'))
       setErrorMessage(null)
       // The list lives in the TanStack cache — invalidate the namespace instead of patching a local mirror.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.tags.list.key() })
@@ -81,11 +83,9 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-fit">
         <DialogHeader>
-          <DialogTitle>{isEditing ? '编辑标签' : '新增标签'}</DialogTitle>
+          <DialogTitle>{isEditing ? t('admin.tags.form.editTitle') : t('admin.tags.form.newTitle')}</DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? '修改标签的展示信息；文章通过 id 关联标签，重命名后所有引用自动生效。'
-              : '填写新标签的名称、URL slug 与 OG 图。'}
+            {isEditing ? t('admin.tags.form.editDescription') : t('admin.tags.form.newDescription')}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -104,7 +104,7 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
         >
           <div className="flex w-full flex-col gap-4 md:w-64">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="tag-name">名称</Label>
+              <Label htmlFor="tag-name">{t('admin.tags.form.name')}</Label>
               <Input
                 id="tag-name"
                 type="text"
@@ -112,30 +112,28 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
                 onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
                 maxLength={20}
                 required
-                placeholder="例：编程"
+                placeholder={t('admin.tags.form.namePlaceholder')}
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="tag-slug">URL slug</Label>
+              <Label htmlFor="tag-slug">{t('admin.tags.form.slug')}</Label>
               <Input
                 id="tag-slug"
                 type="text"
                 value={draft.slug}
                 onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
                 maxLength={80}
-                placeholder="留空将从名称推导（拼音）"
+                placeholder={t('admin.tags.form.slugPlaceholder')}
                 pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
               />
-              <p className="text-xs text-muted-foreground">
-                仅允许小写字母、数字、短横线；留空时按拼音从名称自动生成。
-              </p>
+              <p className="text-xs text-muted-foreground">{t('admin.tags.form.slugHint')}</p>
             </div>
           </div>
           <div className="flex w-full flex-col gap-2 md:w-64">
             <CoverInputRow
-              label="OG 图"
+              label={t('admin.tags.form.og')}
               htmlFor="tag-og-image"
-              description="留空则使用站点默认 OG 图。"
+              description={t('admin.tags.form.ogHint')}
               value={draft.ogImage}
               onChange={(value) => setDraft((prev) => ({ ...prev, ogImage: value }))}
               uploadKind={{ kind: 'generic' }}
@@ -146,10 +144,15 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
           {errorMessage ? <p className="text-sm text-destructive md:col-span-2">{errorMessage}</p> : null}
           <DialogFooter className="md:col-span-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={isPending}>
-              <SaveIcon data-icon /> {isPending ? '保存中…' : isEditing ? '保存' : '创建'}
+              <SaveIcon data-icon />{' '}
+              {isPending
+                ? t('admin.tags.form.saving')
+                : isEditing
+                  ? t('common.action.save')
+                  : t('admin.tags.form.create')}
             </Button>
           </DialogFooter>
         </form>

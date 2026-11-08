@@ -17,6 +17,9 @@ let analyticsHandle: AnalyticsHandle
 import { extractBackupFile, unpackBackupPayload } from '#/_helpers/backup-buffer'
 import { createBackup, getBackupBuffer, wireBackupSnapshots } from '@/server/domains/backup/services/backup'
 import { findBackupByTimestamp } from '@/server/infra/db/operations/backup'
+import { createNotificationWithRecipients } from '@/server/infra/db/operations/notification'
+import { notification } from '@/server/infra/db/schema/notification'
+import { post } from '@/server/infra/db/schema/post'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
@@ -56,6 +59,32 @@ describe('backup and restore integration', () => {
       { ts: new Date(), path: '/one', visitorHash: 'v1' },
       { ts: new Date(), path: '/two', visitorHash: 'v2' },
     ])
+    // A post carries its author-declared content language into the archive.
+    await db
+      .insert(post)
+      .values({
+        slug: 'backup-post',
+        title: 'バックアップ',
+        contentLanguage: 'ja',
+        publishedAt: new Date(),
+      })
+      .run()
+    // A system notification carries its i18n descriptor columns into the archive.
+    createNotificationWithRecipients(
+      db,
+      {
+        kind: 'admin',
+        senderId: null,
+        title: 'Background task failed: backup',
+        body: 'Task backup failed on its most recent run. Open the Tasks page for details.',
+        titleKey: 'notification.job.failed.title',
+        titleParams: JSON.stringify({ taskKey: 'backup' }),
+        bodyKey: 'notification.job.failed.body',
+        bodyParams: JSON.stringify({ taskKey: 'backup', hasError: 'no', error: '' }),
+        replyable: false,
+      },
+      [],
+    )
 
     const { fileName, size, timestamp } = await createBackup(db)
 
@@ -88,6 +117,23 @@ describe('backup and restore integration', () => {
       const rows = restored.db.select().from(category).where(eq(category.slug, 'backup-cat')).all()
       expect(rows).toHaveLength(1)
       expect(rows[0]!.name).toBe('BackupCat')
+
+      // Content language survives restore — no schema-only field is dropped.
+      const restoredPosts = restored.db.select().from(post).where(eq(post.slug, 'backup-post')).all()
+      expect(restoredPosts).toHaveLength(1)
+      expect(restoredPosts[0]!.contentLanguage).toBe('ja')
+      expect(restoredPosts[0]!.title).toBe('バックアップ')
+
+      // The restored DB keeps the English fallback AND the readable descriptor.
+      const notices = restored.db.select().from(notification).all()
+      expect(notices).toHaveLength(1)
+      expect(notices[0]).toMatchObject({
+        title: 'Background task failed: backup',
+        titleKey: 'notification.job.failed.title',
+        bodyKey: 'notification.job.failed.body',
+      })
+      expect(JSON.parse(notices[0]!.titleParams!)).toEqual({ taskKey: 'backup' })
+      expect(JSON.parse(notices[0]!.bodyParams!)).toEqual({ taskKey: 'backup', hasError: 'no', error: '' })
     } finally {
       closeDatabase(restored)
     }

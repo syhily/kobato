@@ -1,5 +1,11 @@
 // Isomorphic API error-shape helpers shared by the upload hook and the
 // admin views (can't live in ui/lib — boundaries contract).
+//
+// Error copy is NOT translated or composed here: the server folds a domain
+// error's issue summary into `ORPCError.message` (per request locale) and ships
+// the structured `{ descriptor, issues }` in `data`. The client consumes the
+// message verbatim; legacy bare-array rejections fall back to their server
+// message unchanged.
 
 export function extractApiErrorMessage(data: unknown): string | undefined {
   if (typeof data !== 'object' || data === null) {
@@ -22,54 +28,26 @@ export function isApiAccepted(data: unknown): boolean {
   return typeof data === 'object' && data !== null && 'accepted' in data && data.accepted === true
 }
 
-interface IssueLike {
-  message: string
-  path?: PropertyKey[]
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-function isUnknownArray(value: unknown): value is unknown[] {
-  return Array.isArray(value)
-}
-
-function isIssueLike(value: unknown): value is IssueLike {
-  if (!isRecord(value) || typeof value.message !== 'string' || value.message === '') {
-    return false
-  }
-  return value.path === undefined || Array.isArray(value.path)
-}
-
-/** Format an ORPCError `data` zod-issue list (`[{ message, path }]`) as one readable line. */
-export function formatApiErrorIssues(error: unknown): string | undefined {
-  if (!isRecord(error) || !isUnknownArray(error.data)) {
+/**
+ * The stable `messageKey` of a rejection carrying the descriptor payload
+ * (`error.data = { descriptor, issues? }`) — client branches compare THIS, never
+ * localized prose. `undefined` for legacy/raw errors.
+ */
+export function apiErrorDescriptorKey(error: unknown): string | undefined {
+  if (!isRecord(error)) {
     return undefined
   }
-  const issues = error.data.filter(isIssueLike)
-  if (issues.length === 0) {
+  const data = error.data
+  if (!isRecord(data) || !('descriptor' in data)) {
     return undefined
   }
-  return issues
-    .map((issue) => {
-      const path = issue.path === undefined ? '' : issue.path.map(String).join('.')
-      return path === '' ? issue.message : `${path}：${issue.message}`
-    })
-    .join('；')
-}
-
-/** Fold the zod-issue detail into an Error's message in place, so every
- *  downstream consumer (toasts, error views, logs) names the failing field
- *  instead of showing a bare "设置数据无效". Applied once per rejection by
- *  the oRPC link interceptor (`@/client/api/client`). */
-export function enrichApiErrorMessage(error: unknown): void {
-  if (!(error instanceof Error)) {
-    return
+  const descriptor = data.descriptor
+  if (!isRecord(descriptor) || typeof descriptor.messageKey !== 'string') {
+    return undefined
   }
-  const issues = formatApiErrorIssues(error)
-  if (issues === undefined) {
-    return
-  }
-  error.message = error.message === '' ? issues : `${error.message}：${issues}`
+  return descriptor.messageKey
 }

@@ -36,7 +36,10 @@ describe('pt/services/lexical-canonicalize — canonicalizeLexicalEditorState', 
   it('rejects non-state input with a BAD_REQUEST DomainError', async () => {
     const error = await canonicalizeLexicalEditorState(42).catch((e: unknown) => e)
     expect(error).toBeInstanceOf(DomainError)
-    expect(error).toMatchObject({ code: 'BAD_REQUEST', message: '正文格式不合法。' })
+    expect(error).toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'content.error.invalidBody' },
+    })
   })
 
   it('rejects a PortableText body (the pre-R9a wire shape)', async () => {
@@ -55,7 +58,7 @@ describe('pt/services/lexical-canonicalize — canonicalizeLexicalEditorState', 
     const { issues } = error as DomainError
     expect(Array.isArray(issues)).toBe(true)
     for (const issue of issues ?? []) {
-      expect(typeof issue.message).toBe('string')
+      expect('message' in issue && typeof issue.message === 'string').toBe(true)
       expect(issue.path === undefined || issue.path.every((segment) => typeof segment === 'string')).toBe(true)
     }
   })

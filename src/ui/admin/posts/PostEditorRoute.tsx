@@ -12,7 +12,7 @@ export interface PostEditorRouteProps {
 export function PostEditorRoute({ postId, navigate }: PostEditorRouteProps) {
   return (
     <EditorRouteLoader
-      entityLabel="文章"
+      entityLabelId="admin.editor.entity.post"
       listPath="/admin/posts"
       queryOptions={orpcQuery.admin.posts.get.queryOptions({ input: { id: postId } })}
       shell={PostEditorShell}

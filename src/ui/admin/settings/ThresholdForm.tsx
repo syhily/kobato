@@ -21,6 +21,7 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Client-side mirror of the server section schema, composed from the same
 // shared bucket schema: blur commits validate BEFORE the POST so an
@@ -45,6 +46,7 @@ function WindowEditCell({
   form: UseFormReturn<RateLimitSettings>
   flushOnBlur: () => void
 }) {
+  const { t } = useI18n()
   const meta = BUCKET_META[bucketKey]
   const fieldName = `${bucketKey}.windowSeconds` as const
   // useWatch, not form.watch: render-time watch() results get memoized by the
@@ -68,7 +70,11 @@ function WindowEditCell({
           'focus-visible:border-ring focus-visible:shadow-focus',
         )}
       >
-        <span className="min-w-[3ch]">{matchedOption?.label ?? `${currentValue}秒`}</span>
+        <span className="min-w-[3ch]">
+          {matchedOption === undefined
+            ? t('admin.settings.rateLimit.seconds', { seconds: currentValue })
+            : t(matchedOption.labelId)}
+        </span>
         <ChevronDownIcon className="size-3.5 shrink-0 opacity-50" />
       </PopoverTrigger>
       <PopoverContent className="w-52 p-2" align="start">
@@ -102,7 +108,7 @@ function WindowEditCell({
                 )}
                 onClick={() => applyValue(opt.seconds)}
               >
-                {opt.label}
+                {t(opt.labelId)}
               </button>
             ))}
           </div>
@@ -153,6 +159,7 @@ function BucketRow({
 }) {
   const windowSeconds = useWatch({ control: form.control, name: `${bucketKey}.windowSeconds` })
   const maxAttempts = useWatch({ control: form.control, name: `${bucketKey}.maxAttempts` })
+  const { t } = useI18n()
   const defaults: RateLimitBucket = rateLimitDefaults[bucketKey]
   const isDefault = windowSeconds === defaults.windowSeconds && maxAttempts === defaults.maxAttempts
 
@@ -166,13 +173,13 @@ function BucketRow({
     <TableRow>
       <TableCell>
         <div className="flex items-center gap-2">
-          <span className="font-medium">{BUCKET_META[bucketKey].title}</span>
+          <span className="font-medium">{t(BUCKET_META[bucketKey].titleId)}</span>
           <Popover>
             <PopoverTrigger className="inline-flex cursor-help">
               <InfoIcon className="size-3.5 text-muted-foreground" />
             </PopoverTrigger>
             <PopoverContent side="top" className="w-max max-w-xs px-3 py-2 text-xs">
-              {BUCKET_META[bucketKey].description}
+              {t(BUCKET_META[bucketKey].descriptionId)}
             </PopoverContent>
           </Popover>
         </div>
@@ -189,8 +196,8 @@ function BucketRow({
           onClick={resetToDefaults}
           disabled={isDefault}
           className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-          aria-label={`重置${BUCKET_META[bucketKey].title}为默认值`}
-          title="重置为默认值"
+          aria-label={t('admin.settings.rateLimit.resetAria', { title: t(BUCKET_META[bucketKey].titleId) })}
+          title={t('admin.settings.rateLimit.resetTitle')}
         >
           <RotateCcwIcon className="size-3.5" />
         </button>
@@ -208,13 +215,14 @@ function BucketTable({
   form: UseFormReturn<RateLimitSettings>
   flushOnBlur: () => void
 }) {
+  const { t } = useI18n()
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="min-w-[140px]">场景</TableHead>
-          <TableHead>时间窗口</TableHead>
-          <TableHead className="w-24 text-right">最大尝试次数</TableHead>
+          <TableHead className="min-w-[140px]">{t('admin.settings.rateLimit.table.scenario')}</TableHead>
+          <TableHead>{t('admin.settings.rateLimit.table.window')}</TableHead>
+          <TableHead className="w-24 text-right">{t('admin.settings.rateLimit.table.maxAttempts')}</TableHead>
           <TableHead className="w-10" />
         </TableRow>
       </TableHeader>
@@ -228,6 +236,7 @@ function BucketTable({
 }
 
 export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<RateLimitSettings, RateLimitSettings>({
     section: 'rateLimit',
     source: rateLimit,
@@ -247,8 +256,8 @@ export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
 
   return (
     <SettingGroup
-      title="流控设置"
-      description="各业务场景的限流策略。同一场景的按 IP / 按邮箱计数共用一组配置；时间窗口内超过最大尝试次数的请求将被拒绝。"
+      title={t('admin.settings.section.rateLimit.label')}
+      description={t('admin.settings.rateLimit.description')}
       actions={
         <button
           type="button"
@@ -256,7 +265,7 @@ export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
           className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <RotateCcwIcon className="size-3.5" />
-          全部恢复默认
+          {t('admin.settings.rateLimit.resetAll')}
         </button>
       }
       {...settingGroupProps}
@@ -271,12 +280,14 @@ export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
           className="flex items-center gap-1.5 self-start text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronDownIcon className={cn('size-4 transition-transform', !showAdvanced && '-rotate-90')} />
-          高级选项（{ADVANCED_GROUPS.reduce((count, group) => count + group.keys.length, 0)} 项）
+          {t('admin.settings.rateLimit.advanced', {
+            count: ADVANCED_GROUPS.reduce((total, group) => total + group.keys.length, 0),
+          })}
         </button>
         {showAdvanced &&
           ADVANCED_GROUPS.map((group) => (
-            <div key={group.label} className="flex flex-col gap-2">
-              <h4 className="text-sm font-medium text-muted-foreground">{group.label}</h4>
+            <div key={group.labelId} className="flex flex-col gap-2">
+              <h4 className="text-sm font-medium text-muted-foreground">{t(group.labelId)}</h4>
               <BucketTable keys={group.keys} form={form} flushOnBlur={flushOnBlur} />
             </div>
           ))}

@@ -57,6 +57,10 @@ export interface SearchFilterField<K extends string> extends FilterFieldBase<K> 
 export interface TextFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'text'
   operators: readonly TextFilterOperatorOption[]
+  /** Accessible name for the free-text input; defaults to the field label. */
+  inputAria?: string
+  /** Placeholder for the free-text input; defaults to the field label. */
+  inputPlaceholder?: string
   toQuery: (value: TextFilterValue) => FilterQueryPatch
 }
 

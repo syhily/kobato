@@ -1,24 +1,40 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { rateLimitBounds } from '@/shared/config/defaults'
 
 // One rate-limit bucket's validation schema — the single source shared by the
 // server section schema (`server/domains/settings/sections/rate-limit`) and the
 // admin form's client-side mirror (`ui/admin/settings/ThresholdForm`), so an
-// out-of-range value is rejected with the SAME message on both sides. The
-// messages are user-facing: a server-rejected save surfaces them in the toast
-// through the ORPCError issues channel.
+// out-of-range value is rejected with the SAME reason on both sides.
+//
+// Messages are typed UI-catalog ids, never prose: the client's settings card
+// localizes ids through `useI18n().localizeMessage` (translating prose and
+// interpolating `{min}`/`{max}` from the Zod issue), and the server boundary
+// maps an id into a `ErrorMessageDescriptor` (typed key + params + English
+// fallback) before the issue leaves the process. A raw id must never reach a
+// client that cannot translate it — that is why the server mapping exists.
+export const rateLimitBucketMessages = {
+  windowInteger: 'admin.settings.rateLimit.error.windowInteger',
+  windowMin: 'admin.settings.rateLimit.error.windowMin',
+  windowMax: 'admin.settings.rateLimit.error.windowMax',
+  attemptsInteger: 'admin.settings.rateLimit.error.attemptsInteger',
+  attemptsMin: 'admin.settings.rateLimit.error.attemptsMin',
+  attemptsMax: 'admin.settings.rateLimit.error.attemptsMax',
+} as const satisfies Record<string, UiMessageId>
+
 export const rateLimitBucketSchema = z.object({
   windowSeconds: z.coerce
     .number()
-    .int('时间窗口必须是整数秒')
-    .min(rateLimitBounds.windowSeconds.min, `时间窗口不能小于 ${rateLimitBounds.windowSeconds.min} 秒`)
-    .max(rateLimitBounds.windowSeconds.max, `时间窗口不能超过 ${rateLimitBounds.windowSeconds.max} 秒（24 小时）`),
+    .int(rateLimitBucketMessages.windowInteger)
+    .min(rateLimitBounds.windowSeconds.min, rateLimitBucketMessages.windowMin)
+    .max(rateLimitBounds.windowSeconds.max, rateLimitBucketMessages.windowMax),
   maxAttempts: z.coerce
     .number()
-    .int('最大尝试次数必须是整数')
-    .min(rateLimitBounds.maxAttempts.min, `最大尝试次数不能小于 ${rateLimitBounds.maxAttempts.min}`)
-    .max(rateLimitBounds.maxAttempts.max, `最大尝试次数不能超过 ${rateLimitBounds.maxAttempts.max}`),
+    .int(rateLimitBucketMessages.attemptsInteger)
+    .min(rateLimitBounds.maxAttempts.min, rateLimitBucketMessages.attemptsMin)
+    .max(rateLimitBounds.maxAttempts.max, rateLimitBucketMessages.attemptsMax),
 })
 
 // Legacy per-dimension twins → merged scenario bucket. Rows stored before

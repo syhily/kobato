@@ -1,9 +1,8 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/domains/taxonomies/tags/service'
-import { adminProc, authorProc } from '@/server/http/orpc-base'
+import { adminProc, authorProc, localizedOrpcError } from '@/server/http/orpc-base'
 import { adminTagDto } from '@/shared/contracts/tags'
 import { idFromString } from '@/shared/utils/id'
 
@@ -61,7 +60,7 @@ const remove = adminProc
   .handler(async ({ input, context }) => {
     const ok = await deleteAdminTag(context.db, idFromString(input.id), context.viewer)
     if (!ok) {
-      throw new ORPCError('NOT_FOUND', { message: '标签不存在' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'taxonomy.error.notFound', { entity: 'tag' })
     }
     recordAuditEventFromContext(context, {
       action: 'tag_deleted',

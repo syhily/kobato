@@ -54,7 +54,8 @@ vi.mock('@/server/domains/auth/passkey/service', async (importOriginal) => {
 
 const db = getTestDb()
 const CLIENT = '203.0.113.7'
-const GENERIC = '如果该邮箱存在且符合要求，重置邮件已发送。'
+/** The generic, enumeration-safe reset acknowledgment (never account-specific). */
+const GENERIC_KEY = 'auth.passwordReset.sent'
 
 const hasApprovedComments = vi.fn(async (_db: unknown, _userId: number) => false)
 const resetDeps = { hasApprovedComments }
@@ -148,7 +149,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
 
-    expect(result).toEqual({ type: 'success', message: GENERIC })
+    expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
     // Exactly one token total (from the first, unthrottled call).
     expect(await db.select().from(verification)).toHaveLength(1)
@@ -172,7 +173,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
       resetDeps,
     )
 
-    expect(result).toEqual({ type: 'success', message: GENERIC })
+    expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
     expect(await db.select().from(verification)).toHaveLength(1)
   })
@@ -180,7 +181,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
   it('skips the per-email bucket when the form has no email', async () => {
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({}), resetDeps)
 
-    expect(result).toEqual({ type: 'success', message: GENERIC })
+    expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(__rateLimitKeysForTests().some((key) => key.includes('password-reset-email'))).toBe(false)
     expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
   })
@@ -190,7 +191,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'vis@example.com' }), resetDeps)
 
-    expect(result).toEqual({ type: 'success', message: GENERIC })
+    expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
 
     const row = await resetTokenRow(userId)
     expect(row).toBeDefined()
@@ -237,7 +238,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
       resetDeps,
     )
 
-    expect(result).toEqual({ type: 'success', message: GENERIC })
+    expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(await db.select().from(verification)).toHaveLength(0)
     expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(0)
@@ -248,7 +249,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'gone@example.com' }), resetDeps)
 
-    expect(result).toEqual({ type: 'success', message: GENERIC })
+    expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(await db.select().from(verification)).toHaveLength(0)
     expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
   })
@@ -259,7 +260,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }), resetDeps)
 
-    expect(result).toEqual({ type: 'success', message: GENERIC })
+    expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(hasApprovedComments).toHaveBeenCalledWith(db, userId)
     expect((await userRow(userId))!.role).toBeNull()
     expect(await db.select().from(verification)).toHaveLength(0)
@@ -273,7 +274,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }), resetDeps)
 
-    expect(result).toEqual({ type: 'success', message: GENERIC })
+    expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     // These pin the upgrade-before-issue ordering.
     expect((await userRow(userId))!.role).toBe('visitor')
     expect(await resetTokenRow(userId)).toBeDefined()
@@ -301,7 +302,10 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
 
     expect(result.type).toBe('error')
     if (result.type === 'error') {
-      expect(result.message).toContain('密码长度至少')
+      expect(result.descriptor).toMatchObject({
+        messageKey: 'auth.passwordReset.error.passwordTooShort',
+        params: { min: 10 },
+      })
     }
     // The token is still live — validation ran before the consume.
     expect(await peekToken(db, token, 'password-reset')).toEqual({ userId })
@@ -319,7 +323,10 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       'password-reset',
     )
 
-    expect(result).toEqual({ type: 'error', message: '密码必须包含至少一个大写字母、一个小写字母和一个数字。' })
+    expect(result).toMatchObject({
+      type: 'error',
+      descriptor: { messageKey: 'auth.passwordReset.error.passwordComplexity' },
+    })
     expect(await peekToken(db, token, 'password-reset')).toEqual({ userId })
   })
 
@@ -332,7 +339,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       'password-reset',
     )
 
-    expect(result).toEqual({ type: 'error', message: '链接无效或已过期。' })
+    expect(result).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.signin.error.invalidToken' } })
     expect(await db.select().from(sessionTable)).toHaveLength(0)
   })
 
@@ -363,7 +370,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       'password-reset',
     )
 
-    expect(wrongPurpose).toEqual({ type: 'error', message: '链接无效或已过期。' })
+    expect(wrongPurpose).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.signin.error.invalidToken' } })
     // Single-shot consume: the mismatched attempt already burned the row.
     const retry = await resetPasswordWithToken(
       flowCtx(makeSession({})),
@@ -372,7 +379,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       '/admin',
       'author-invite',
     )
-    expect(retry).toEqual({ type: 'error', message: '链接无效或已过期。' })
+    expect(retry).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.signin.error.invalidToken' } })
   })
 
   it('on success: rehashes, clears passkeys, revokes other sessions, audits, redirects', async () => {
@@ -480,7 +487,10 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
 
     expect(result.type).toBe('error')
     if (result.type === 'error') {
-      expect(result.message).toContain('密码过长')
+      expect(result.descriptor).toMatchObject({
+        messageKey: 'auth.passwordReset.error.passwordTooLong',
+        params: { max: 72 },
+      })
     }
     expect(await peekToken(db, token, 'password-reset')).toEqual({ userId })
   })
@@ -518,7 +528,10 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       'password-reset',
     )
 
-    expect(result).toEqual({ type: 'error', message: '账户状态异常，无法登录。' })
+    expect(result).toMatchObject({
+      type: 'error',
+      descriptor: { messageKey: 'auth.signin.error.accountCannotSignIn' },
+    })
     expect(await db.select().from(sessionTable)).toHaveLength(0)
   })
 })

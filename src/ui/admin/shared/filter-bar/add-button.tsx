@@ -8,6 +8,7 @@ import { DEFAULT_SINGLE_DATE_OPERATOR } from '@/ui/admin/shared/date-filter'
 import { InlineSearchList, SearchableOptionList } from '@/ui/admin/shared/filter-bar/option-list'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The 筛选 / 添加筛选 trigger — text/freetext/date kinds instant-add a default pill,
 // option/search open a picker step; global `f` opens it except on text-entry surfaces.
@@ -19,6 +20,7 @@ interface FilterAddButtonProps<K extends string> {
 }
 
 export function FilterAddButton<K extends string>({ fields, filters, search, onAddFilter }: FilterAddButtonProps<K>) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [selectedField, setSelectedField] = useState<K | null>(null)
 
@@ -93,7 +95,7 @@ export function FilterAddButton<K extends string>({ fields, filters, search, onA
         )}
       >
         {hasFilters ? <FunnelPlusIcon className="size-4" /> : <FunnelIcon className="size-4" />}
-        {hasFilters ? '添加筛选' : '筛选'}
+        {hasFilters ? t('admin.shared.filter.add') : t('admin.shared.filter.trigger')}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 p-0">
         {selectedFieldSpec ? (
@@ -106,7 +108,7 @@ export function FilterAddButton<K extends string>({ fields, filters, search, onA
         ) : (
           <div className="max-h-60 overflow-y-auto p-1">
             {availableFields.length === 0 ? (
-              <p className="px-2 py-1.5 text-sm text-muted-foreground">无匹配字段</p>
+              <p className="px-2 py-1.5 text-sm text-muted-foreground">{t('admin.shared.filter.noFields')}</p>
             ) : (
               availableFields.map((field) => {
                 const Icon = field.icon
@@ -156,6 +158,7 @@ function PickerStep<K extends string>({
   onBack: () => void
   onSelect: (value: string, label: string) => void
 }) {
+  const { t } = useI18n()
   if (field.kind === 'options') {
     return (
       <div className="flex flex-col">
@@ -197,7 +200,7 @@ function PickerStep<K extends string>({
             onSearch={(query) => state?.setQuery(query)}
             onSelect={onSelect}
             placeholder={field.inputPlaceholder}
-            emptyMessage={state?.isPending ? '加载中…' : '无匹配结果'}
+            emptyMessage={state?.isPending ? t('common.state.loading') : t('common.combobox.empty')}
           />
         </div>
       </div>

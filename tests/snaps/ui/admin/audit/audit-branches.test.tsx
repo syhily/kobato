@@ -4,6 +4,7 @@ import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/contracts/audit
 import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { tZhCN } from '#/_helpers/i18n'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
@@ -53,7 +54,7 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
       dateSingle: () => null,
       dateRange: () => null,
       bar: {
-        fields: buildAuditFilterFields(mocks.actors),
+        fields: buildAuditFilterFields(mocks.actors, tZhCN),
         filters: mocks.filters,
         search: {},
         onAddFilter: vi.fn(),

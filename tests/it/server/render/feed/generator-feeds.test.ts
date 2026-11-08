@@ -83,7 +83,7 @@ function itemCount(rss: string): number {
 
 describe('render/feed/generator — generateFeeds', () => {
   it('generates a feed with no posts', async () => {
-    const result = await generateFeeds(db)
+    const result = await generateFeeds(db, { locale: 'zh-CN' })
     expect(result.rss).toContain('<?xml')
     expect(result.atom).toContain('xml:lang="zh-CN"')
     expect(itemCount(result.rss)).toBe(0)
@@ -101,7 +101,7 @@ describe('render/feed/generator — generateFeeds', () => {
     })
     await linkTag(postId, tagId)
 
-    const result = await generateFeeds(db)
+    const result = await generateFeeds(db, { locale: 'zh-CN' })
     expect(result.rss).toContain('Hello')
     expect(result.rss).toContain('body text')
     expect(itemCount(result.rss)).toBe(1)
@@ -124,7 +124,7 @@ describe('render/feed/generator — generateFeeds', () => {
       ]),
     })
 
-    const result = await generateFeeds(db)
+    const result = await generateFeeds(db, { locale: 'zh-CN' })
     expect(itemCount(result.rss)).toBe(1)
     expect(result.rss).toContain('const answer = 42;')
     expect(result.atom).toContain('const answer = 42;')
@@ -152,7 +152,7 @@ describe('render/feed/generator — generateFeeds', () => {
       ]),
     })
 
-    const result = await generateFeeds(db)
+    const result = await generateFeeds(db, { locale: 'zh-CN' })
     expect(itemCount(result.rss)).toBe(1)
     // Math → escaped TeX pre/code, never MathML/SVG.
     expect(result.rss).toContain('E=mc^2')
@@ -167,7 +167,9 @@ describe('render/feed/generator — generateFeeds', () => {
   })
 
   it('throws DomainError when both category and tag are provided', async () => {
-    await expect(generateFeeds(db, { category: 'c', tag: 't' })).rejects.toMatchObject({ name: 'DomainError' })
+    await expect(generateFeeds(db, { locale: 'zh-CN', category: 'c', tag: 't' })).rejects.toMatchObject({
+      name: 'DomainError',
+    })
   })
 
   it('scopes the selection to the category and honors the configured feed size', async () => {
@@ -182,7 +184,7 @@ describe('render/feed/generator — generateFeeds', () => {
     }
     await seedPost({ slug: 'misc-0', title: 'Misc 0', categoryId: miscId })
 
-    const result = await generateFeeds(db, { category: 'tech' })
+    const result = await generateFeeds(db, { locale: 'zh-CN', category: 'tech' })
     expect(itemCount(result.rss)).toBe(2)
     expect(result.rss).toContain('Tech')
     expect(result.rss).not.toContain('Misc 0')
@@ -194,7 +196,7 @@ describe('render/feed/generator — generateFeeds', () => {
     await linkTag(tagged, tagId)
     await seedPost({ slug: 'untagged', title: 'Untagged Post' })
 
-    const result = await generateFeeds(db, { tag: 'react' })
+    const result = await generateFeeds(db, { locale: 'zh-CN', tag: 'react' })
     expect(itemCount(result.rss)).toBe(1)
     expect(result.rss).toContain('Tagged Post')
     expect(result.rss).not.toContain('Untagged Post')
@@ -203,9 +205,50 @@ describe('render/feed/generator — generateFeeds', () => {
   it('renders an empty feed when the scope resolves to nothing', async () => {
     await seedPost({ slug: 'hello', title: 'Hello' })
 
-    const result = await generateFeeds(db, { category: 'missing' })
+    const result = await generateFeeds(db, { locale: 'zh-CN', category: 'missing' })
     expect(result.rss).toContain('<?xml')
     expect(itemCount(result.rss)).toBe(0)
     expect(result.rss).not.toContain('Hello')
+  })
+
+  it('renders a different representation when the feed size changes', async () => {
+    for (let i = 0; i < 2; i++) {
+      await seedPost({ slug: `post-${i}`, title: `Post ${i}` })
+    }
+    const withFeedSize = (size: number) => ({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      content: { ...TEST_BLOG_SETTINGS_BUNDLE.content!, feed: { full: false, size } },
+    })
+
+    const small = await generateFeeds(db, { locale: 'zh-CN', settings: withFeedSize(1) })
+    const large = await generateFeeds(db, { locale: 'zh-CN', settings: withFeedSize(2) })
+
+    expect(itemCount(small.rss)).toBe(1)
+    expect(itemCount(large.rss)).toBe(2)
+    expect(small.rss).not.toBe(large.rss)
+  })
+
+  it('renders a different representation when branding changes', async () => {
+    const before = await generateFeeds(db, { locale: 'zh-CN', settings: TEST_BLOG_SETTINGS_BUNDLE })
+    const branded = {
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      assets: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+        branding: {
+          logoSvg: {
+            etag: 'logo-etag',
+            contentType: 'image/svg+xml',
+            size: 42,
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            driver: 'local' as const,
+          },
+        },
+      },
+    }
+
+    const after = await generateFeeds(db, { locale: 'zh-CN', settings: branded })
+
+    expect(after.rss).not.toBe(before.rss)
+    expect(after.rss).toContain(`/logo.svg?v=${Date.parse('2026-01-01T00:00:00.000Z')}`)
   })
 })

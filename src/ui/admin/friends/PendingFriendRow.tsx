@@ -5,6 +5,7 @@ import type { AdminFriendDto } from '@/shared/contracts/friends'
 
 import { safeHref } from '@/shared/utils/safe-url'
 import { Badge } from '@/ui/components/badge'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface PendingFriendRowProps {
   friend: AdminFriendDto
@@ -24,6 +25,7 @@ export const PendingFriendRow = memo(function PendingFriendRow({
   onEdit,
   onDelete,
 }: PendingFriendRowProps) {
+  const { t } = useI18n()
   const homepageHref = safeHref(friend.homepage)
   const hasPoster = friend.poster.trim() !== ''
 
@@ -40,7 +42,9 @@ export const PendingFriendRow = memo(function PendingFriendRow({
             className="size-full object-contain"
           />
         ) : (
-          <div className="flex size-full items-center justify-center text-xs text-muted-foreground">无封面</div>
+          <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
+            {t('admin.friends.row.noPoster')}
+          </div>
         )}
       </div>
 
@@ -50,7 +54,7 @@ export const PendingFriendRow = memo(function PendingFriendRow({
           type="button"
           onClick={onEdit}
           disabled={disabled}
-          aria-label={`编辑友链 ${friend.website}`}
+          aria-label={t('admin.friends.row.edit', { website: friend.website })}
           className="truncate text-admin-base font-semibold hover:underline disabled:cursor-not-allowed disabled:opacity-50"
         >
           {friend.website}
@@ -81,7 +85,7 @@ export const PendingFriendRow = memo(function PendingFriendRow({
       {/* Status */}
       <div className="hidden w-admin-col-narrow shrink-0 justify-end md:flex">
         <Badge variant="outline" className="gap-1 text-muted-foreground">
-          待审核
+          {t('admin.friends.row.pending')}
         </Badge>
       </div>
 
@@ -90,8 +94,8 @@ export const PendingFriendRow = memo(function PendingFriendRow({
         type="button"
         onClick={onApprove}
         disabled={disabled || approving || !hasPoster}
-        aria-label={`通过友链 ${friend.website}`}
-        title={hasPoster ? '通过' : '缺少封面图，请先编辑补充'}
+        aria-label={t('admin.friends.row.approve', { website: friend.website })}
+        title={hasPoster ? t('admin.friends.row.approveTitle') : t('admin.friends.row.missingPoster')}
         className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
       >
         <CheckIcon className="size-4" />
@@ -103,7 +107,7 @@ export const PendingFriendRow = memo(function PendingFriendRow({
         onClick={onEdit}
         disabled={disabled}
         className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-        title="编辑"
+        title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />
       </button>
@@ -114,8 +118,8 @@ export const PendingFriendRow = memo(function PendingFriendRow({
         onClick={onDelete}
         disabled={disabled}
         className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
-        title="删除"
-        aria-label={`删除友链 ${friend.website}`}
+        title={t('common.action.delete')}
+        aria-label={t('admin.friends.row.delete', { website: friend.website })}
       >
         <Trash2Icon className="size-4" />
       </button>

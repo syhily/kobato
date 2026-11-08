@@ -1,10 +1,10 @@
 import { count, desc, eq, inArray, lt, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
-import type { JobRunStatus, JobRunTrigger } from '@/shared/contracts/jobs'
 
 import { jobRun } from '@/server/infra/db/schema/job-run'
 import { getLogger } from '@/server/infra/logger'
+import { JOB_RUN_ERROR_PROCESS_RESTART, type JobRunStatus, type JobRunTrigger } from '@/shared/contracts/jobs'
 
 // Opt-in execution-history recorder for background jobs. The composition
 // root wires the db getter (`wireJobRunRecorder`); before that every
@@ -89,7 +89,9 @@ export function wireJobRunRecorder(deps: { getDb: () => Database }): void {
 
 /**
  * Crash recovery: rows still `running` at boot belong to a dead process —
- * mark them failed so the UI never shows a phantom "运行中" forever. Called
+ * mark them failed with the stable `process-restart` machine code (the admin
+ * UI maps that code to the active locale; stored technical messages stay raw)
+ * so the UI never shows a phantom "运行中" forever. Called
  * ONCE by the composition root after the first wiring. The restore rewiring
  * must NOT re-run it: this process's in-flight jobs hold legit `running`
  * rows and would be mislabeled. Never throws.
@@ -97,7 +99,7 @@ export function wireJobRunRecorder(deps: { getDb: () => Database }): void {
 export function sweepOrphanedJobRuns(db: Database): void {
   try {
     db.update(jobRun)
-      .set({ status: 'failed', finishedAt: new Date(), error: '进程重启中断' })
+      .set({ status: 'failed', finishedAt: new Date(), error: JOB_RUN_ERROR_PROCESS_RESTART })
       .where(eq(jobRun.status, 'running'))
       .run()
   } catch (error) {

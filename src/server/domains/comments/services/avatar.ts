@@ -12,7 +12,7 @@ import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@/shared/
 import { brandingVersionSuffix } from '@/shared/config/utils'
 import { DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { idFromString } from '@/shared/utils/id'
-import { GRAVATAR_MIRROR_PRESETS, isAllowedMirrorUrl } from '@/shared/utils/safe-url'
+import { GRAVATAR_MIRROR_URLS, isAllowedMirrorUrl } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'
 import { joinUrl } from '@/shared/utils/urls'
@@ -161,7 +161,7 @@ async function probeAvatarMirror(url: string): Promise<AvatarMirrorProbe> {
 
 /** Probe every preset mirror concurrently; the result keeps preset order. */
 export async function probeAvatarMirrors(): Promise<AvatarMirrorProbe[]> {
-  return Promise.all(GRAVATAR_MIRROR_PRESETS.map((preset) => probeAvatarMirror(preset.value)))
+  return Promise.all(GRAVATAR_MIRROR_URLS.map((url) => probeAvatarMirror(url)))
 }
 
 const QQ_EMAIL_RE = /^\d+@qq\.com$/i

@@ -1,6 +1,15 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement } from 'react'
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
+// These forms read `useI18n()`; mount the root provider for every RTL render.
+function renderUi(ui: ReactElement) {
+  return render(wrapWithI18n(ui))
+}
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NavigationSettings } from '@/shared/config/types'
@@ -33,7 +42,7 @@ describe('NavigationEditor', () => {
   })
 
   it('commits side-navigation text edits on blur with the nested payload shape', async () => {
-    render(<NavigationEditor navigation={navigation} socials={[]} />)
+    renderUi(<NavigationEditor navigation={navigation} socials={[]} />)
 
     const input = screen.getByLabelText('显示文本')
     fireEvent.change(input, { target: { value: '文章' } })
@@ -51,7 +60,7 @@ describe('NavigationEditor', () => {
   })
 
   it('commits side-navigation checkbox changes immediately', async () => {
-    render(<NavigationEditor navigation={navigation} socials={[]} />)
+    renderUi(<NavigationEditor navigation={navigation} socials={[]} />)
 
     fireEvent.click(screen.getByRole('checkbox', { name: '新窗口' }))
 

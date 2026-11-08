@@ -8,8 +8,10 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, save } = useSettingsCard<
     MailLoaderShape,
     { enabled: boolean; notificationEmails: boolean }
@@ -27,12 +29,12 @@ export function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
 
   return (
     <SettingGroup
-      title="邮件发送总开关"
-      description="关闭后，所有评论通知 / 回复通知 / 审核通过通知 / 通知邮件都不会再发送（不会报错，仅记录 debug 日志）。"
+      title={t('admin.settings.mail.toggle.title')}
+      description={t('admin.settings.mail.toggle.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="启用邮件发送" hint="生产环境推荐先用「测试发送」确认连接，再打开此开关。">
+        <SettingsRow label={t('admin.settings.mail.toggle.enable')} hint={t('admin.settings.mail.toggle.enableHint')}>
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -48,13 +50,13 @@ export function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
               )}
             />
             <FieldLabel htmlFor="mail-enabled" className="font-normal">
-              发送通知邮件
+              {t('admin.settings.mail.toggle.enableLabel')}
             </FieldLabel>
           </div>
         </SettingsRow>
         <SettingsRow
-          label="通知邮件"
-          hint="私信与系统提醒同时发送邮件。邮件服务启用后默认开启；关闭后这些消息仅站内可见。"
+          label={t('admin.settings.mail.toggle.notifications')}
+          hint={t('admin.settings.mail.toggle.notificationsHint')}
         >
           <div className="flex items-center gap-3">
             <Controller
@@ -71,7 +73,7 @@ export function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
               )}
             />
             <FieldLabel htmlFor="mail-notification-emails" className="font-normal">
-              私信与系统提醒发送邮件
+              {t('admin.settings.mail.toggle.notificationsLabel')}
             </FieldLabel>
           </div>
         </SettingsRow>

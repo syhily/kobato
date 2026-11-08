@@ -1,5 +1,7 @@
 import type { ComponentProps } from 'react'
 
+import type { I18nValue } from '@/ui/lib/I18nProvider'
+
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 
 // Secret-field wrapper for /admin/settings: empty/whitespace input omits
@@ -29,6 +31,8 @@ export function secretFieldPatch<K extends string>(value: string, fieldName: K):
 }
 
 interface SecretFieldStringsOptions {
+  /** The active translator — the configured hint is a catalog message. */
+  t: I18nValue['t']
   /** Server-confirmed mask (`display.<x>Mask`); null when nothing is stored. */
   mask: string | null
   /** The「保留现有…」label — reused as the configured placeholder and inside the hint. */
@@ -40,12 +44,12 @@ interface SecretFieldStringsOptions {
 }
 
 // Hint + placeholder for a secret field's `SettingsRow`; the card supplies only the mask and empty-state strings.
-export function secretFieldStrings({ mask, keepLabel, emptyHint, emptyPlaceholder }: SecretFieldStringsOptions): {
+export function secretFieldStrings({ t, mask, keepLabel, emptyHint, emptyPlaceholder }: SecretFieldStringsOptions): {
   hint: string
   placeholder: string
 } {
   if (mask !== null) {
-    return { hint: `当前已配置（结尾 …${mask}）。留空保存表示${keepLabel}。`, placeholder: keepLabel }
+    return { hint: t('admin.settings.shell.secret.configured', { mask }), placeholder: keepLabel }
   }
   return { hint: emptyHint, placeholder: emptyPlaceholder }
 }

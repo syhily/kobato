@@ -1,6 +1,13 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { coerceBoolean } from '@/server/domains/settings/sections/shared'
+
+/** Custom validation messages: typed ids (mapped to descriptors on write). */
+export const mailValidationMessages = {
+  hostnameInvalid: 'admin.settings.mail.error.hostnameInvalid',
+} as const satisfies Record<string, UiMessageId>
 
 // Mailgun interpolates the domain into `https://api.mailgun.net/v3/<domain>/messages`,
 // so it is a hostname — never a URL, port, path, or IP literal. Empty means
@@ -29,7 +36,7 @@ const mailHostname = z
   .max(253)
   .default('')
   .refine((value) => value === '' || isMailHostname(value), {
-    message: '请填写主机名或域名（只能包含字母 / 数字 / `-` / `.`），不能带协议、端口、路径或 IP 地址',
+    message: mailValidationMessages.hostnameInvalid,
   })
 
 // Mail provider configuration (SMTP / Mailgun). `smtpPass` is optional:

@@ -266,7 +266,10 @@ describe('pages/services/mutate — createPage', () => {
 
   it('rejects duplicate slug with CONFLICT', async () => {
     await mutate.createPage(db, { slug: 'dup', title: 'First' }, null)
-    await expect(mutate.createPage(db, { slug: 'dup', title: 'Second' }, null)).rejects.toThrow(/已被其它页面/)
+    await expect(mutate.createPage(db, { slug: 'dup', title: 'Second' }, null)).rejects.toMatchObject({
+      code: 'CONFLICT',
+      descriptor: { messageKey: 'content.error.slugTakenByEntity', params: { slug: 'dup', entity: 'page' } },
+    })
   })
 
   it('maps a raw page_slug_key violation to CONFLICT', async () => {
@@ -284,7 +287,10 @@ describe('pages/services/mutate — updatePageMeta', () => {
   })
 
   it('throws NOT_FOUND when page missing', async () => {
-    await expect(mutate.updatePageMeta(db, { id: 9999, title: 'X' })).rejects.toThrow(/页面不存在/)
+    await expect(mutate.updatePageMeta(db, { id: 9999, title: 'X' })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      descriptor: { messageKey: 'content.error.entityNotFound', params: { entity: 'page' } },
+    })
   })
 
   it('updates title and slug', async () => {
@@ -297,7 +303,10 @@ describe('pages/services/mutate — updatePageMeta', () => {
   it('throws CONFLICT when renaming to an existing slug', async () => {
     await seedPage({ slug: 'taken', title: 'Taken' })
     const p = await seedPage({ slug: 'orig', title: 'Orig' })
-    await expect(mutate.updatePageMeta(db, { id: p.id, slug: 'taken', title: 'Orig' })).rejects.toThrow(/已被其它页面/)
+    await expect(mutate.updatePageMeta(db, { id: p.id, slug: 'taken', title: 'Orig' })).rejects.toMatchObject({
+      code: 'CONFLICT',
+      descriptor: { messageKey: 'content.error.slugTakenByEntity', params: { slug: 'taken', entity: 'page' } },
+    })
   })
 
   it('maps a raw page_slug_key violation to CONFLICT', async () => {
@@ -330,7 +339,10 @@ describe('pages/services/mutate — deletePage / restorePage', () => {
 
 describe('pages/services/mutate — unpublishPage', () => {
   it('throws NOT_FOUND when missing', async () => {
-    await expect(mutate.unpublishPage(db, 9999)).rejects.toThrow(/页面不存在/)
+    await expect(mutate.unpublishPage(db, 9999)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      descriptor: { messageKey: 'content.error.entityNotFound', params: { entity: 'page' } },
+    })
   })
 
   it('flips published to false', async () => {

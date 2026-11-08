@@ -6,8 +6,9 @@ import { redirect } from 'react-router'
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { ApiRouter } from '@/server/http/api-router'
 import type { HandlerContext } from '@/server/http/orpc-base'
-import type { ContentRedirectSignal, ContentSignal } from '@/shared/contracts/content'
+import type { ContentNotModifiedSignal, ContentRedirectSignal, ContentSignal } from '@/shared/contracts/content'
 import type { PublicWebmentionWire } from '@/shared/contracts/webmentions'
+import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { DetailPageComments } from '@/shared/types/comments'
 
 import { apiRouter } from '@/server/http/api-router'
@@ -39,6 +40,12 @@ export type SsrCallerResult = {
   viewer: SessionUser | null
   /** The canonical session — `isCurrent` projections read `session.id`. */
   session: BlogSession
+  /**
+   * The request's localization projection — `unwrapDetail` stamps a thrown 304
+   * from THIS object (never the global snapshot), so the tag, the language
+   * header and the served body always describe one representation.
+   */
+  localization: AppLocalization
 }
 
 export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
@@ -52,6 +59,8 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
     clientAddress: rc.clientAddress,
     responseHeaders: new Headers(),
     db: rc.db,
+    settings: rc.settings,
+    localization: rc.localization,
   }
   // Nonce derives once here so route modules never call `getRequestContext` themselves.
   return {
@@ -60,6 +69,7 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
     analyticsEventId: rc.requestFacts.analyticsEventId,
     viewer: rc.viewer,
     session: rc.session,
+    localization: rc.localization,
   }
 }
 
@@ -71,10 +81,16 @@ export function isOrpcNotFound(error: unknown): boolean {
 // 30x/304 signals arrive as DATA — the unwrap helpers translate them back
 // into the thrown Responses (301 canonical / 302 pagination / 304 ETag).
 
-type ListingResult<T> = ContentRedirectSignal | { kind: 'ok'; listing: T }
+type ListingResult<T> = ContentRedirectSignal | ContentNotModifiedSignal | { kind: 'ok'; etag: string; listing: T }
 
-/** Listing loaders: NOT_FOUND → 404, `redirect` → the thrown 301/302. */
-export async function unwrapListing<T>(promise: Promise<ListingResult<T>>): Promise<T> {
+type ListingPayloadResult<T> = ContentNotModifiedSignal | { kind: 'ok'; etag: string; payload: T }
+
+/** Listing loaders: NOT_FOUND → 404, `redirect` → the thrown 301/302,
+ *  `not-modified` → a 304 rebuilt from the REQUEST's localization. */
+export async function unwrapListing<T>(
+  promise: Promise<ListingResult<T>>,
+  localization: AppLocalization,
+): Promise<{ etag: string; listing: T }> {
   let result
   try {
     result = await promise
@@ -84,16 +100,42 @@ export async function unwrapListing<T>(promise: Promise<ListingResult<T>>): Prom
     }
     throw error
   }
+  if (result.kind === 'not-modified') {
+    throw notModifiedResponse(result.etag, localization, 'listing')
+  }
   if (result.kind === 'redirect') {
     throw redirect(result.to, { status: result.status })
   }
-  return result.listing
+  return { etag: result.etag, listing: result.listing }
+}
+
+/** Flat listing payloads (archives, categories): same 304 contract as `unwrapListing`. */
+export async function unwrapListingPayload<T>(
+  promise: Promise<ListingPayloadResult<T>>,
+  localization: AppLocalization,
+): Promise<{ etag: string; payload: T }> {
+  let result
+  try {
+    result = await promise
+  } catch (error) {
+    if (isOrpcNotFound(error)) {
+      notFound()
+    }
+    throw error
+  }
+  if (result.kind === 'not-modified') {
+    throw notModifiedResponse(result.etag, localization, 'listing')
+  }
+  return { etag: result.etag, payload: result.payload }
 }
 
 /** Detail loaders: NOT_FOUND → 404, `not-modified` → 304, `redirect` → 301.
- *  The page variant's `etag` is nullable (draft previews carry none). */
+ *  The page variant's `etag` is nullable (draft previews carry none). The 304 is
+ *  rebuilt from the REQUEST's localization so its headers match the body that
+ *  produced the tag. */
 export async function unwrapDetail<T, ETag extends string | null>(
   promise: Promise<ContentSignal | { kind: 'ok'; etag: ETag; payload: T }>,
+  localization: AppLocalization,
 ): Promise<{ etag: ETag; payload: T }> {
   let result
   try {
@@ -105,7 +147,7 @@ export async function unwrapDetail<T, ETag extends string | null>(
     throw error
   }
   if (result.kind === 'not-modified') {
-    throw notModifiedResponse(result.etag)
+    throw notModifiedResponse(result.etag, localization)
   }
   if (result.kind === 'redirect') {
     redirectPermanent(result.to)

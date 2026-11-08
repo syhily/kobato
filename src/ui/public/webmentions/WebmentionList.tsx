@@ -3,6 +3,7 @@ import type { PublicWebmentionWire } from '@/shared/contracts/webmentions'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { tryParseUrl } from '@/shared/utils/safe-url'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 /** Author line falls back to the source hostname when the source page
  *  exposed no author metadata. */
@@ -65,6 +66,7 @@ function CompactGroup({ label, mentions }: { label: string; mentions: PublicWebm
  * cards, likes/reposts as compact rows. Pure props, SSR-only.
  */
 export function WebmentionList({ mentions }: { mentions: PublicWebmentionWire[] }) {
+  const { t } = useI18n()
   if (mentions.length === 0) {
     return null
   }
@@ -72,9 +74,9 @@ export function WebmentionList({ mentions }: { mentions: PublicWebmentionWire[] 
   const likes = mentions.filter((mention) => mention.type === 'like')
   const reposts = mentions.filter((mention) => mention.type === 'repost')
   return (
-    <section id="webmentions" className="pt-12" aria-label="引用与回应">
+    <section id="webmentions" className="pt-12" aria-label={t('public.webmentions.title')}>
       <div className="mb-6 text-xl leading-body font-semibold">
-        引用与回应 <small className="font-theme text-sm">({mentions.length})</small>
+        {t('public.webmentions.title')} <small className="font-theme text-sm">({mentions.length})</small>
       </div>
       {cards.length > 0 && (
         <ul>
@@ -83,8 +85,8 @@ export function WebmentionList({ mentions }: { mentions: PublicWebmentionWire[] 
           ))}
         </ul>
       )}
-      <CompactGroup label="喜欢" mentions={likes} />
-      <CompactGroup label="转发" mentions={reposts} />
+      <CompactGroup label={t('public.webmentions.likes')} mentions={likes} />
+      <CompactGroup label={t('public.webmentions.reposts')} mentions={reposts} />
     </section>
   )
 }

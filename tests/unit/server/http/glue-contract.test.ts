@@ -96,10 +96,12 @@ describe('glue contract / oRPC bridge projection', () => {
     expect(Object.keys(captured!).sort()).toEqual([
       'clientAddress',
       'db',
+      'localization',
       'request',
       'requestFacts',
       'responseHeaders',
       'session',
+      'settings',
       'viewer',
     ])
     // The dirty-marking channel must never leak into the oRPC surface (ADR-0003).
@@ -114,9 +116,11 @@ describe('glue contract / request-context projections', () => {
       'clientAddress',
       'cspNonce',
       'db',
+      'localization',
       'markSessionDirty',
       'requestFacts',
       'session',
+      'settings',
       'url',
       'viewer',
     ])

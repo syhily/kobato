@@ -1,3 +1,7 @@
+import type { AppLocale } from '@/shared/i18n/locales'
+import type { I18nValue } from '@/ui/lib/I18nProvider'
+
+import { formatDuration } from '@/shared/i18n/format'
 import { cn } from '@/ui/lib/cn'
 
 export function asKey(value: number | string): string {
@@ -51,28 +55,23 @@ export const commentFooterButtonClass = cn(
   'transition-[color,background-color,border-color] duration-300 ease-linear',
 )
 
-export function editableHint(expiresAt: number | undefined, isPending: boolean | undefined): string {
+export function editableHint(
+  expiresAt: number | undefined,
+  isPending: boolean | undefined,
+  t: I18nValue['t'],
+  locale: AppLocale,
+): string {
   if (expiresAt === undefined) {
-    return isPending ? '此消息正在等待审核，可编辑。' : '可编辑此消息。'
+    return isPending ? t('public.comments.editablePending') : t('public.comments.editable')
   }
   // `Date.now()` is safe from the SSR/hydration clock rule (audit P2-23):
   // ownership only populates post-mount, so this hint never renders during SSR/hydration.
   const remainingMs = expiresAt - Date.now()
   if (remainingMs <= 0) {
-    return isPending ? '此消息正在等待审核，编辑时间已过期。' : '编辑时间已过期。'
+    return isPending ? t('public.comments.editExpiredPending') : t('public.comments.editExpired')
   }
-  const remainingMinutes = Math.ceil(remainingMs / (60 * 1000))
-  if (remainingMinutes >= 60) {
-    const hours = Math.floor(remainingMinutes / 60)
-    const mins = remainingMinutes % 60
-    const timeStr = mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`
-    return isPending ? `此消息正在等待审核，${timeStr}内可编辑。` : `${timeStr}内可编辑此消息。`
-  }
-  if (remainingMinutes <= 1) {
-    const seconds = Math.ceil(remainingMs / 1000)
-    return isPending ? `此消息正在等待审核，${seconds} 秒内可编辑。` : `${seconds} 秒内可编辑此消息。`
-  }
+  const duration = formatDuration(remainingMs, { locale })
   return isPending
-    ? `此消息正在等待审核，${remainingMinutes} 分钟内可编辑。`
-    : `${remainingMinutes} 分钟内可编辑此消息。`
+    ? t('public.comments.editableForPending', { duration })
+    : t('public.comments.editableFor', { duration })
 }

@@ -1,6 +1,15 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement } from 'react'
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
+// These forms read `useI18n()`; mount the root provider for every RTL render.
+function renderUi(ui: ReactElement) {
+  return render(wrapWithI18n(ui))
+}
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SocialsSettings } from '@/shared/config/types'
@@ -30,7 +39,7 @@ describe('SocialsEditor', () => {
   })
 
   it('commits social-link edits on blur with the section payload shape', async () => {
-    render(<SocialsEditor socials={socials} />)
+    renderUi(<SocialsEditor socials={socials} />)
 
     const input = screen.getByDisplayValue('https://github.com/example')
     fireEvent.change(input, { target: { value: 'https://github.com/updated' } })

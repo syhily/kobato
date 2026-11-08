@@ -1,13 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { orpcQuery } from '@/client/api/orpc-query'
+import { formatNumber } from '@/shared/i18n/format'
 import { useAnalyticsDashboardState } from '@/ui/admin/analytics/analytics-state-context'
 import { AnalyticsQueryState } from '@/ui/admin/analytics/AnalyticsQueryState'
+import { HEATMAP_METRIC_LABEL_IDS } from '@/ui/admin/analytics/metric-labels'
 import { useAnalyticsQueryData } from '@/ui/admin/analytics/use-analytics-query'
 import { buildAnalyticsInput, type AnalyticsScope, type HeatmapMetric } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // 7×24 weekday × hour heatmap (Slite's `analysis/Heatmap.vue`): CSS grid +
 // color-mix intensity, isodow weekdays (Mon-first rows), a visits/visitors
@@ -16,14 +21,17 @@ import { cn } from '@/ui/lib/cn'
 // bucketed in Etc/UTC, so the skeleton stays up until the client-timezone
 // query resolves instead of flashing a grid whose hour columns then shift.
 
-const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const // isodow 1..7
+const WEEKDAY_LABEL_IDS: readonly UiMessageId[] = [
+  'admin.analytics.weekday.mon',
+  'admin.analytics.weekday.tue',
+  'admin.analytics.weekday.wed',
+  'admin.analytics.weekday.thu',
+  'admin.analytics.weekday.fri',
+  'admin.analytics.weekday.sat',
+  'admin.analytics.weekday.sun',
+]
 const WEEKDAY_COUNT = 7
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
-
-const METRIC_LABEL: Record<HeatmapMetric, string> = {
-  visits: '访问量',
-  visitors: '访客数',
-}
 
 export interface HeatmapProps {
   metric: HeatmapMetric
@@ -32,6 +40,7 @@ export interface HeatmapProps {
 }
 
 export function Heatmap({ metric, className, scope }: HeatmapProps) {
+  const { locale, t } = useI18n()
   const state = useAnalyticsDashboardState()
   const query = useQuery(
     orpcQuery.analytics.heatmap.queryOptions({
@@ -65,12 +74,20 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
     return { values: v, maxValue: max, total: sum, peak: peakCell }
   }, [cells, metric])
 
-  const metricLabel = METRIC_LABEL[metric]
-  const summary = `每周访问热力图。${metricLabel}总计 ${total.toLocaleString('zh-CN')}。${
-    peak
-      ? `峰值出现在周${WEEKDAY_LABELS[peak.weekday - 1]} ${peak.hour}:00,${metricLabel} ${peak.value.toLocaleString('zh-CN')}。`
-      : ''
-  }`
+  const metricLabel = t(HEATMAP_METRIC_LABEL_IDS[metric])
+  const weekdayLabels = WEEKDAY_LABEL_IDS.map((id) => t(id))
+  const summary = t('admin.analytics.heatmap.summary', {
+    metric: metricLabel,
+    total: formatNumber(total, { locale }),
+    peak: peak
+      ? t('admin.analytics.heatmap.peak', {
+          weekday: weekdayLabels[peak.weekday - 1] ?? '',
+          hour: peak.hour,
+          metric: metricLabel,
+          value: formatNumber(peak.value, { locale }),
+        })
+      : '',
+  })
 
   const cellColor = (index: number): string => {
     const value = values[index]!
@@ -143,7 +160,7 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
             aria-rowcount={WEEKDAY_COUNT}
             aria-colcount={24}
           >
-            {WEEKDAY_LABELS.map((weekdayLabel, rowIndex) => (
+            {weekdayLabels.map((weekdayLabel, rowIndex) => (
               <div key={weekdayLabel} className="flex flex-1 items-center gap-3" role="row">
                 <div className="w-9 shrink-0 text-right text-[10px] text-muted-foreground" role="rowheader">
                   {weekdayLabel}
@@ -162,8 +179,18 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
                           className="relative block size-full rounded-sm border-0 p-0 transition-[background-color,box-shadow] duration-300 hover:ring-1 hover:ring-foreground/10 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transition-none"
                           style={{ backgroundColor: cellColor(index) }}
                           tabIndex={activeIndex === index ? 0 : -1}
-                          aria-label={`周${weekdayLabel} ${hour}:00。${metricLabel}: ${value.toLocaleString('zh-CN')}。`}
-                          title={`周${weekdayLabel} ${hour}:00 — ${metricLabel} ${value.toLocaleString('zh-CN')}`}
+                          aria-label={t('admin.analytics.heatmap.cellAria', {
+                            weekday: weekdayLabel,
+                            hour,
+                            metric: metricLabel,
+                            value: formatNumber(value, { locale }),
+                          })}
+                          title={t('admin.analytics.heatmap.cellTitle', {
+                            weekday: weekdayLabel,
+                            hour,
+                            metric: metricLabel,
+                            value: formatNumber(value, { locale }),
+                          })}
                           onFocus={() => setActiveIndex(index)}
                           onKeyDown={(event) => handleCellKeydown(event, index)}
                         />
@@ -181,9 +208,10 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
 }
 
 function HeatmapSkeleton({ className }: { className?: string }) {
+  const { t } = useI18n()
   return (
     <div className={cn('aspect-4/1 w-full overflow-x-auto rounded-sm', className)} role="status" aria-busy="true">
-      <span className="sr-only">加载中</span>
+      <span className="sr-only">{t('common.state.loading')}</span>
       <div aria-hidden className="flex h-full min-w-[600px] flex-col">
         <div className="mb-2 ml-12 grid flex-none grid-cols-[repeat(12,minmax(0,1fr))] gap-2">
           {HOURS.slice(0, 12).map((hour) => (
@@ -191,7 +219,7 @@ function HeatmapSkeleton({ className }: { className?: string }) {
           ))}
         </div>
         <div className="flex flex-1 flex-col gap-3">
-          {WEEKDAY_LABELS.map((weekday) => (
+          {WEEKDAY_LABEL_IDS.map((weekday) => (
             <div key={weekday} className="flex flex-1 items-center gap-3">
               <Skeleton className="h-2 w-9 shrink-0 rounded-sm" />
               <Skeleton className="h-full flex-1 rounded-sm" />

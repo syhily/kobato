@@ -147,6 +147,7 @@ describe('adminPostsRouter.saveDraft', () => {
     vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
       status: 'saved',
       revision: revision,
+      warningDescriptors: [],
     })
 
     const res = (await call(

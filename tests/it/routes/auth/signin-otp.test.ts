@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { AppLocale } from '@/shared/i18n/locales'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
@@ -132,7 +133,12 @@ async function seedAdminUser() {
   return inserted
 }
 
-function setContext(action: string | null, redirectTo = '/admin', clientAddress = '127.0.0.1') {
+function setContext(
+  action: string | null,
+  redirectTo = '/admin',
+  clientAddress = '127.0.0.1',
+  locale: AppLocale = 'zh-CN',
+) {
   const params = new URLSearchParams()
   if (action) {
     params.set('action', action)
@@ -140,7 +146,14 @@ function setContext(action: string | null, redirectTo = '/admin', clientAddress 
   params.set('redirect_to', redirectTo)
   const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
   mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({ session: testSession, clientAddress, db, request: new Request(url), markSessionDirty }),
+    makeRequestContext({
+      session: testSession,
+      clientAddress,
+      db,
+      request: new Request(url),
+      markSessionDirty,
+      localization: { locale, timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' },
+    }),
   )
   return url
 }
@@ -150,8 +163,9 @@ async function callAction(
   formData: FormData,
   redirectTo = '/admin',
   clientAddress = '127.0.0.1',
+  locale: AppLocale = 'zh-CN',
 ): Promise<Response & { data?: any }> {
-  const url = setContext(actionName, redirectTo, clientAddress)
+  const url = setContext(actionName, redirectTo, clientAddress, locale)
   const request = new Request('http://localhost/admin/signin', {
     method: 'POST',
     body: formData,
@@ -415,6 +429,34 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(result.data?.error).toBe('发送过于频繁，请稍后再试。')
     expect(markSessionDirty).not.toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
+  })
+
+  it('serves OTP errors and the resend acknowledgment as translated descriptors', async () => {
+    await seedAdminUser()
+    await doLogin()
+
+    // The wrong code carries the typed identity plus the zh-CN sentence.
+    const wrong = await callAction('verifyotp', otpFormData('000000'))
+    expect(wrong.data?.error).toBe('验证码无效或已过期。')
+    expect(wrong.data?.errorDescriptor).toMatchObject({
+      messageKey: 'auth.otp.error.invalid',
+      fallbackMessage: 'The verification code is invalid or has expired.',
+    })
+
+    // en-US renders from the same descriptor.
+    const wrongEn = await callAction('verifyotp', otpFormData('000000'), '/admin', '127.0.0.1', 'en-US')
+    expect(wrongEn.data?.error).toBe('The verification code is invalid or has expired.')
+
+    // The resend acknowledgment exposes the stable key OtpForm branches on.
+    const resent = await callAction('resendotp', withCsrf())
+    expect(resent.data?.message).toBe('验证码已重新发送。')
+    expect(resent.data?.messageDescriptor).toMatchObject({
+      messageKey: 'auth.otp.success.resent',
+      fallbackMessage: 'A new verification code has been sent.',
+    })
+
+    const resentEn = await callAction('resendotp', withCsrf(), '/admin', '127.0.0.1', 'en-US')
+    expect(resentEn.data?.message).toBe('A new verification code has been sent.')
   })
 
   it('cancel clears session state', async () => {

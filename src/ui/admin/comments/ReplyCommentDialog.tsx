@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface ReplyCommentDialogProps {
@@ -31,12 +32,13 @@ export interface ReplyCommentDialogProps {
 }
 
 export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, onReplied }: ReplyCommentDialogProps) {
+  const { t } = useI18n()
   const mutation = useMutation({
     ...orpcQuery.comments.replyComment.mutationOptions(),
     onSuccess: () => {
       onReplied()
     },
-    onError: onMutationError('回复发送失败'),
+    onError: onMutationError('admin.toast.replySendFailed', t),
   })
   const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
@@ -56,9 +58,9 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>回复评论</DialogTitle>
+          <DialogTitle>{t('admin.comments.reply.title')}</DialogTitle>
           <DialogDescription>
-            以管理员身份 ({authorName}) 回复 {comment?.name ?? ''} 的评论。
+            {t('admin.comments.reply.description', { name: authorName, author: comment?.name ?? '' })}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -68,15 +70,15 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
               return
             }
             if (isCommentEditorStateBlank(body)) {
-              toast.error('回复内容不能为空')
+              toast.error(t('admin.comments.reply.empty'))
               return
             }
             if (!authorEmail) {
-              toast.error('无法获取管理员邮箱，请刷新页面重试')
+              toast.error(t('admin.comments.reply.noEmail'))
               return
             }
             if (!comment.pagePublicId) {
-              toast.error('该评论缺少有效的目标页面标识，无法回复')
+              toast.error(t('admin.comments.reply.noPage'))
               return
             }
             mutation.mutate({
@@ -90,7 +92,7 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-2">
-            <Label htmlFor="reply-comment-content">回复内容</Label>
+            <Label htmlFor="reply-comment-content">{t('admin.comments.reply.content')}</Label>
             <LazyCommentBodyEditor
               eager
               initialBody={EMPTY_COMMENT_EDITOR_STATE}
@@ -101,10 +103,10 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={onClose}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={submitting} onMouseDown={(event) => event.preventDefault()}>
-              <SendIcon data-icon /> {submitting ? '发送中…' : '发送回复'}
+              <SendIcon data-icon /> {submitting ? t('admin.comments.reply.sending') : t('admin.comments.reply.send')}
             </Button>
           </DialogFooter>
         </form>

@@ -21,7 +21,16 @@ server or client boundary catch and log it.
 ## Structure
 
 - `config/` — settings sections, defaults, projection, socials
-  (`BlogSettingsBundle`).
+  (`BlogSettingsBundle`), and `snapshot` — the process-wide settings snapshot
+  slot. Its boot-unique `<bootId>:<counter>` `revision` (`crypto.randomUUID`
+  per process; +1 per successful hydrate/refresh, pre-install included) is
+  REQUEST IDENTITY / locale sync ONLY — never a cache generation.
+  `representation-scopes` owns the SINGLE section→scope dependency table
+  (`detail`, `listing`, `feed`, `calendar`, `og`, `manifest`, `sitemap`,
+  `comments`) and the pure stable-serialization + FNV-1a hash deriving one
+  content-addressed generation per scope, memoized by bundle identity with a
+  WeakMap. Same settings → same keys across restarts; unrelated admin saves
+  move nothing.
 - `contracts/` — Zod schemas (the wire format) plus the DTO types derived
   from them.
 - `types/` — Standalone shared types and isomorphic helpers with no
@@ -94,6 +103,75 @@ server or client boundary catch and log it.
   `tests/unit/arch/client-bundle.test.ts`'s jsdom `allowedIn` entry).
 - `seo/` — isomorphic meta-tag builders (`meta`, `title-meta`,
   `og-image`) shared by routes, loaders, and the feed/OG renderers.
+- `i18n/` — the locale contract and message catalogs: `locales` (the four
+  supported tags, alias normalization, `og:locale` spelling, endonym labels),
+  `content-language` (the CONTENT-language contract — any well-formed BCP 47
+  tag via `Intl.getCanonicalLocales`, blank = unset; author metadata for the
+  detail body's `lang`, never a UI-locale selector and never an enum of the
+  four supported locales),
+  `messages/ui/*` and `messages/server/*` (English defines the message-id types,
+  the other three `satisfies` them), `catalog` (aggregation + English fallback
+  merge + ICU validation — SERVER-ONLY value import; the client gets one
+  locale's UI catalog from the root loader), `catalog-scope` (the client-safe
+  `public | workspace` classifier: `/admin` and `/editor` are workspace, every
+  other pathname public), `fallback-messages` (the only
+  message module the client may import directly: the root ErrorBoundary copy
+  plus the no-payload meta fallbacks — pre-install title and page
+  `article:section`), `app-localization` (`resolveAppLocalization` — the single
+  locale + site-time-zone + `timeFormat` + snapshot-`revision` resolver — plus
+  `createLazyAppSnapshot`, the per-request memo that pins the settings bundle
+  AND the localization — including its `revisions` — in one capture), and
+  `feature-flags`
+  (`I18N_SETTINGS_ENABLED` — released ON: the General language selector).
+  `catalog`'s `uiMessagesForScope(locale, scope)` is memoized per
+  `locale:scope` and frozen: the workspace scope is the complete catalog, the
+  public scope is the positive `PUBLIC_MESSAGE_PREFIXES` allowlist in
+  `catalog-scope` (`auth`/`common`/`error`/`meta`/`notifications`/`public`/
+  `validation` plus the shared notifications drawer's `admin.toast.*` action
+  toasts), and callers share the object and must never mutate it. A new admin
+  panel namespace is therefore workspace-only by default; the
+  `tests/unit/arch/public-message-namespaces.test.ts` graph scan proves no
+  public module resolves a key outside the allowlist.
+  `inkling-labels` + `inkling-labels/*` are the editor chrome's own flat tables
+  (English baseline + three translations; every key held to
+  `KobatoInklingLabelKey`): they stay OUT of the ICU catalogs — Inkling's
+  `{max}`/`{cardType}`/`{name}`/`{progress}` tokens are `string.replace`, not
+  ICU — and the aggregator is a SERVER-ONLY value import, the same role
+  `catalog` plays: `content.bootstrap` ships ONLY the active locale's table as
+  `i18n.inklingLabels`, and only to a SIGNED-IN WORKSPACE document (auth/setup
+  pages have no editor; public documents load the active locale's chunk through
+  `@/client/editor/inkling-labels` on interaction). No client module may
+  statically import a table
+  (`tests/unit/arch/client-bundle.test.ts`). `format` is the ONE display-formatting facade
+  (dates in an explicit locale + site zone, numbers, byte sizes, durations,
+  relative time incl. the recent-date buckets, DisplayNames, collation) — UI
+  code never calls `toLocale*`, `Intl.*` formatters or date-fns relative
+  formatting directly, and `utils/formatter` keeps only the site-zone date
+  primitives plus the `formatShowDate` compatibility wrapper (the old
+  `formatBytes`/`formatDurationMs` retired into the facade). Display registries
+  (`config/display`, `cache/registry`, `utils/roles`, `utils/sessions-sort`,
+  `ui/admin/tasks/meta`, `ui/shared/notifications/notification-meta`) hold
+  message ids, never copy; the consumer resolves them with its own `t`. The
+  server translator lives in `server/infra/i18n`; `shared/seo/title-meta` takes
+  message ids and resolves them from the root loader's `i18n` payload via
+  `matches`. The AST guard for hardcoded copy is
+  `tests/_helpers/i18n-literals`.
+- `contracts/api-error` — the transport error contract both adapters and the
+  client share: `ErrorMessageDescriptor` (`messageKey`/`params`/`fallbackMessage`),
+  `ErrorIssueWire` (+ the request-locale `message`, `code`/`path`), `ApiErrorData`
+  (`{ descriptor, issues }`). Producers state a typed id; the server translates per
+  request, so every issue carries BOTH the display `message` (never the key) and the
+  descriptor for new consumers (field mapping / re-localization). `utils/zod-issue-bounds`
+  exposes `zodIssueParams`, the ONE issue-params extractor both sides use: it merges the
+  `{min}`/`{max}` numeric bounds a shared validation schema's issue carries with a custom
+  issue's explicit `params` bag (a password byte ceiling, an S3 field label), keeps only the
+  wire's primitives (`string | number | boolean | null`) and lets an explicit param win over a
+  derived bound. The client interpolates the result through `useI18n().localizeMessage(value,
+  params)` (react-intl only; a missing param logs and degrades to a generic localized sentence,
+  never a token name / raw template / id) and the server puts it on the wire.
+  `utils/api-error` also exposes `apiErrorDescriptorKey` —
+  the stable `messageKey` a client branch compares against (e.g. the backup password prompt),
+  with legacy raw/array-data rejections returning `undefined`.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`,
   `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`,

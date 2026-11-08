@@ -6,7 +6,7 @@ import { TasksView } from '@/ui/admin/tasks/TasksView'
 // the loader is only the role gate.
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('任务管理')
+export const meta = titleMeta('meta.title.admin.tasks')
 
 export default function WpAdminTasksRoute() {
   return <TasksView />

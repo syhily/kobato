@@ -1,130 +1,135 @@
+// Settings navigation metadata — NEUTRAL registry, no UI copy. Every label and
+// description is a UI message id; the settings route resolves them through
+// `useI18n()` so the same registry serves all four locales.
+
 import type { SettingsSection } from '@/shared/config/sections'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 export type SettingsNavGroup = 'site' | 'content' | 'service' | 'system'
 
 export interface SectionDisplayMeta {
-  /** Short Chinese label rendered as the sidebar item title. */
-  label: string
-  /** One-line Chinese description shown beneath the label. */
-  description: string
+  /** Short label message id rendered as the sidebar item title. */
+  labelId: UiMessageId
+  /** One-line description message id shown beneath the label. */
+  descriptionId: UiMessageId
   group: SettingsNavGroup
   /** Lucide icon name (PascalCase, e.g. 'Settings'). */
   icon: string
 }
 
-export const NAV_GROUP_LABEL: Record<SettingsNavGroup, string> = {
-  site: '站点',
-  content: '内容与展示',
-  service: '服务集成',
-  system: '系统运维',
+export const NAV_GROUP_LABEL_KEYS: Record<SettingsNavGroup, UiMessageId> = {
+  site: 'admin.settings.nav.group.site',
+  content: 'admin.settings.nav.group.content',
+  service: 'admin.settings.nav.group.service',
+  system: 'admin.settings.nav.group.system',
 }
 
 export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   general: {
-    label: '基本信息',
-    description: '站点标题、描述、关键词、作者、语言与时区',
+    labelId: 'admin.settings.section.general.label',
+    descriptionId: 'admin.settings.section.general.description',
     group: 'site',
     icon: 'Settings',
   },
   assets: {
-    label: '存储配置',
-    description: '资源/CDN 域名、S3 兼容存储、上传参数、品牌素材',
+    labelId: 'admin.settings.section.assets.label',
+    descriptionId: 'admin.settings.section.assets.description',
     group: 'site',
     icon: 'HardDrive',
   },
   fonts: {
-    label: '字体配置',
-    description: 'OG 图与日历图渲染所用的本地 TTF/OTF 字体相对路径',
+    labelId: 'admin.settings.section.fonts.label',
+    descriptionId: 'admin.settings.section.fonts.description',
     group: 'site',
     icon: 'Type',
   },
   content: {
-    label: '内容与分页',
-    description: '列表分页大小、排序、Feed',
+    labelId: 'admin.settings.section.content.label',
+    descriptionId: 'admin.settings.section.content.description',
     group: 'content',
     icon: 'FileText',
   },
   sidebar: {
-    label: '侧边栏',
-    description: '日历、搜索、推荐数量等开关',
+    labelId: 'admin.settings.section.sidebar.label',
+    descriptionId: 'admin.settings.section.sidebar.description',
     group: 'content',
     icon: 'PanelLeft',
   },
   comments: {
-    label: '评论与头像',
-    description: '评论分页、头像来源顺序与 Gravatar 镜像',
+    labelId: 'admin.settings.section.comments.label',
+    descriptionId: 'admin.settings.section.comments.description',
     group: 'content',
     icon: 'MessageSquare',
   },
   webmentions: {
-    label: 'Webmention',
-    description: 'Webmention 接收开关与文章页展示',
+    labelId: 'admin.settings.section.webmentions.label',
+    descriptionId: 'admin.settings.section.webmentions.description',
     group: 'content',
     icon: 'AtSign',
   },
   seo: {
-    label: 'SEO 与目录',
-    description: 'TOC 标题级别、OG 尺寸',
+    labelId: 'admin.settings.section.seo.label',
+    descriptionId: 'admin.settings.section.seo.description',
     group: 'content',
     icon: 'Search',
   },
   navigation: {
-    label: '导航菜单',
-    description: '顶部导航条目顺序与链接',
+    labelId: 'admin.settings.section.navigation.label',
+    descriptionId: 'admin.settings.section.navigation.description',
     group: 'content',
     icon: 'Navigation',
   },
   socials: {
-    label: '社交链接',
-    description: '社交平台账号与二维码',
+    labelId: 'admin.settings.section.socials.label',
+    descriptionId: 'admin.settings.section.socials.description',
     group: 'content',
     icon: 'Share2',
   },
   mail: {
-    label: '邮件服务',
-    description: 'SMTP 或 Mailgun 配置 / 测试发送',
+    labelId: 'admin.settings.section.mail.label',
+    descriptionId: 'admin.settings.section.mail.description',
     group: 'service',
     icon: 'Mail',
   },
   newsletter: {
-    label: '邮件订阅',
-    description: 'Newsletter 订阅开关、发件人名称与主题前缀',
+    labelId: 'admin.settings.section.newsletter.label',
+    descriptionId: 'admin.settings.section.newsletter.description',
     group: 'service',
     icon: 'Mails',
   },
   cache: {
-    label: '缓存管理',
-    description: 'OG 图 / 头像 / 日历的服务端缓存',
+    labelId: 'admin.settings.section.cache.label',
+    descriptionId: 'admin.settings.section.cache.description',
     group: 'system',
     icon: 'Database',
   },
   rateLimit: {
-    label: '流控设置',
-    description: '登录、评论、点赞按 IP / 邮箱的限流策略',
+    labelId: 'admin.settings.section.rateLimit.label',
+    descriptionId: 'admin.settings.section.rateLimit.description',
     group: 'system',
     icon: 'Shield',
   },
   limits: {
-    label: '运行限制',
-    description: '请求体大小限制、会话有效期等运行时阈值',
+    labelId: 'admin.settings.section.limits.label',
+    descriptionId: 'admin.settings.section.limits.description',
     group: 'system',
     icon: 'SlidersHorizontal',
   },
   backup: {
-    label: '备份与还原',
-    description: '数据库自动备份、手动备份与还原',
+    labelId: 'admin.settings.section.backup.label',
+    descriptionId: 'admin.settings.section.backup.description',
     group: 'system',
     icon: 'Archive',
   },
   analytics: {
-    label: '分析统计',
-    description: '访问日志的采集策略与过滤选项',
+    labelId: 'admin.settings.section.analytics.label',
+    descriptionId: 'admin.settings.section.analytics.description',
     group: 'system',
     icon: 'BarChart3',
   },
   security: {
-    label: '安全设置',
-    description: 'CSRF 防护、路径豁免与 CORS 跨域配置',
+    labelId: 'admin.settings.section.security.label',
+    descriptionId: 'admin.settings.section.security.description',
     group: 'system',
     icon: 'ShieldCheck',
   },

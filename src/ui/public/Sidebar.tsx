@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { Link } from 'react-router'
 
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
@@ -8,6 +10,7 @@ import { formatLocalDate } from '@/shared/utils/formatter'
 import { safeHref } from '@/shared/utils/safe-url'
 import { Tooltip } from '@/ui/components/tooltip'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useChromeClock } from '@/ui/public/chrome/use-chrome-clock'
 import { SearchBar } from '@/ui/public/Search'
 
@@ -89,12 +92,13 @@ interface RandomPostsProps {
 }
 
 function RandomPosts({ posts }: RandomPostsProps) {
+  const { t } = useI18n()
   if (posts.length === 0) {
     return null
   }
   return (
     <div id="recent-posts" className={widgetClass}>
-      <WidgetTitle tooltip="年年岁岁花相似，岁岁年年人不同。">流年拾忆</WidgetTitle>
+      <WidgetTitle tooltip={t('public.sidebar.recentPostsTooltip')}>{t('public.sidebar.recentPosts')}</WidgetTitle>
       <ul className={widgetListClass}>
         {posts.map((post) => (
           <li key={post.slug} className={widgetListItemClass}>
@@ -113,13 +117,16 @@ interface RecentCommentsProps {
 }
 
 function RecentComments({ comments }: RecentCommentsProps) {
+  const { t } = useI18n()
   if (comments.length === 0) {
     return null
   }
 
   return (
     <div id="recent-comments" className={widgetClass}>
-      <WidgetTitle tooltip="欲寄彩笺兼尺素，山长水阔知何处？">雁过留声</WidgetTitle>
+      <WidgetTitle tooltip={t('public.sidebar.recentCommentsTooltip')}>
+        {t('public.sidebar.recentComments')}
+      </WidgetTitle>
       <ul className={widgetListClass}>
         {comments.map((comment) => (
           <CommentLink key={commentKey(comment)} comment={comment} />
@@ -133,8 +140,17 @@ function commentKey(comment: LatestComment): string {
   return `${comment.permalink}|${comment.author}|${comment.title}`
 }
 
+function commentLinkRenderer(permalink: string) {
+  return (chunks: ReactNode[]) => (
+    <Link to={permalink} prefetch="intent" className={widgetCommentLinkClass}>
+      {chunks}
+    </Link>
+  )
+}
+
 function CommentLink({ comment }: { comment: LatestComment }) {
   const authorHref = safeHref(comment.authorLink)
+  const { tRich } = useI18n()
   return (
     <li className={widgetListItemClass}>
       <span className={commentAuthorLinkClass}>
@@ -146,11 +162,10 @@ function CommentLink({ comment }: { comment: LatestComment }) {
           </a>
         )}
       </span>
-      {' 发表在《'}
-      <Link to={comment.permalink} prefetch="intent" className={widgetCommentLinkClass}>
-        {comment.title}
-      </Link>
-      》
+      {tRich('public.sidebar.commentedOn', {
+        title: comment.title,
+        link: commentLinkRenderer(comment.permalink),
+      })}
     </li>
   )
 }
@@ -160,20 +175,21 @@ interface RandomTagsProps {
 }
 
 function RandomTags({ tags }: RandomTagsProps) {
+  const { t } = useI18n()
   if (tags.length === 0) {
     return null
   }
 
   return (
     <div id="tag-cloud" className={widgetClass}>
-      <WidgetTitle tooltip="流水落花春去也，天上人间。">文踪墨迹</WidgetTitle>
+      <WidgetTitle tooltip={t('public.sidebar.tagsTooltip')}>{t('public.sidebar.tags')}</WidgetTitle>
       <div className={tagcloudClass}>
         {tags.map((tag) => (
           <Link
             key={tag.slug}
             to={tag.permalink}
             className={tagcloudLinkClass}
-            title={`${tag.name} (${tag.counts} 篇文章)`}
+            title={t('public.sidebar.tagCount', { name: tag.name, count: tag.counts })}
             prefetch="intent"
           >
             {tag.name}
@@ -198,6 +214,7 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 
 function TodayCalendar() {
   const siteIdentity = useSiteIdentity()
+  const { t } = useI18n()
   // Hydration-safe live clock (see useChromeClock).
   const today = useChromeClock()
   const year = formatLocalDate(today, 'yyyy', siteIdentity)
@@ -206,7 +223,7 @@ function TodayCalendar() {
   const darkImage = `/images/calendar/dark/${year}/${monthDay}.png`
   return (
     <div className={widgetClass}>
-      <WidgetTitle tooltip="时光只解催人老，不信多情，长恨离亭。">时光只言</WidgetTitle>
+      <WidgetTitle tooltip={t('public.sidebar.calendarTooltip')}>{t('public.sidebar.calendar')}</WidgetTitle>
       {/* Light/dark PNG pair — same pattern as `BrandLogo`. */}
       <img
         loading="lazy"
@@ -214,7 +231,7 @@ function TodayCalendar() {
         src={lightImage}
         width={600}
         height={880}
-        alt="今日日历"
+        alt={t('public.sidebar.calendarAlt')}
         className="block dark:hidden"
       />
       <img
@@ -223,7 +240,7 @@ function TodayCalendar() {
         src={darkImage}
         width={600}
         height={880}
-        alt="今日日历"
+        alt={t('public.sidebar.calendarAlt')}
         aria-hidden
         className="hidden dark:block"
       />

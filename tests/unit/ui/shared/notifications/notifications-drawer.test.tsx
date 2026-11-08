@@ -1,13 +1,16 @@
 // @vitest-environment happy-dom
 
-import type { ComponentProps } from 'react'
+import type { ComponentProps, ReactElement, ReactNode } from 'react'
 
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NotificationDto } from '@/shared/contracts/notifications'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
+import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 
 // The「去处理」button renders a Router Link. Render it as a plain anchor and
 // prevent the default like the real Link does, so the suite stays Router-free.
@@ -34,6 +37,16 @@ const control = mockTanstackQuery()
 
 const { NotificationsDrawer } = await import('@/ui/shared/notifications/NotificationsDrawer')
 const { isForkReply } = await import('@/ui/shared/notifications/NotificationDetailPane')
+
+// The drawer reads `useI18n()`; a render wrapper (not inline JSX) keeps the
+// provider mounted across `rerender` calls.
+function render(ui: ReactElement) {
+  return rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{wrapWithI18n(children)}</BlogSettingsProvider>
+    ),
+  })
+}
 
 function makeItem(overrides: Partial<NotificationDto> = {}): NotificationDto {
   return {
@@ -80,6 +93,26 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     }
     // Non-admin: no compose entry.
     expect(screen.queryByLabelText('写消息')).toBeNull()
+  })
+
+  it('renders the en-US tab bar, header and row actions', () => {
+    control.infinite.data = { pages: [{ items: [makeItem({ read: true })], nextCursor: null }] }
+
+    rtlRender(<NotificationsDrawer open onOpenChange={() => {}} isAdmin unreadCount={3} />, {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          {wrapWithI18n(children, { locale: 'en-US' })}
+        </BlogSettingsProvider>
+      ),
+    })
+
+    expect(screen.getByText('Notifications')).toBeTruthy()
+    for (const label of ['All', 'Unread', 'Direct', 'Announcements']) {
+      expect(screen.getByRole('tab', { name: label })).toBeTruthy()
+    }
+    expect(screen.getByLabelText('Mark all as read')).toBeTruthy()
+    expect(screen.getByLabelText('Write a message')).toBeTruthy()
+    expect(screen.getByLabelText('Mark as unread')).toBeTruthy()
   })
 
   it('disables mark-all-read only on a known zero count', () => {

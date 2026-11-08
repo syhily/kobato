@@ -3,6 +3,7 @@ import { MailIcon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { formatNumber } from '@/shared/i18n/format'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
@@ -14,6 +15,7 @@ import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
 import { type UsersFilters, useUsersFilters } from '@/ui/admin/users/useUsersFilters'
 import { Button } from '@/ui/components/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function buildQueryInput(filters: UsersFilters, offset: number) {
   return {
@@ -27,6 +29,7 @@ function buildQueryInput(filters: UsersFilters, offset: number) {
 }
 
 export function UsersView() {
+  const { locale, t } = useI18n()
   const config = useSiteIdentity()
   const { filters, setQ, setRole, setSortBy, setIncludeDeleted } = useUsersFilters()
 
@@ -37,7 +40,7 @@ export function UsersView() {
     pageSize: filters.pageSize,
     buildInput: (offset) => buildQueryInput(filters, offset),
     selectRows: (page) => page.users,
-    noun: '用户',
+    noun: 'admin.list.noun.users',
   })
 
   const [qInput, setQInput] = useDebouncedSearch({
@@ -52,8 +55,10 @@ export function UsersView() {
       <div className="flex flex-col gap-6">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">用户管理</h1>
-            {!isLoading && <span className="text-lg font-normal text-muted-foreground">{total.toLocaleString()}</span>}
+            <h1 className="text-2xl font-semibold tracking-tight">{t('admin.users.title')}</h1>
+            {!isLoading && (
+              <span className="text-lg font-normal text-muted-foreground">{formatNumber(total, { locale })}</span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <InputGroup className="h-9 w-full sm:w-56">
@@ -64,7 +69,7 @@ export function UsersView() {
                 type="search"
                 value={qInput}
                 onChange={(e) => setQInput(e.target.value)}
-                placeholder="搜索用户名或邮箱"
+                placeholder={t('admin.users.searchPlaceholder')}
               />
             </InputGroup>
             <UsersToolbar
@@ -76,7 +81,7 @@ export function UsersView() {
               onIncludeDeletedChange={setIncludeDeleted}
             />
             <Button type="button" variant="default" size="sm" onClick={() => setInviteOpen(true)}>
-              <MailIcon data-icon /> 邀请作者
+              <MailIcon data-icon /> {t('admin.users.invite')}
             </Button>
           </div>
         </header>
@@ -85,7 +90,7 @@ export function UsersView() {
 
         {/* Bottom status */}
         <AdminInfiniteListFooter
-          noun="用户"
+          noun={t('admin.list.noun.users')}
           rowCount={rows.length}
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}

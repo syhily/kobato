@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
@@ -10,7 +9,7 @@ import {
   softDeleteUserWithGuard,
   toAdminUserDto,
 } from '@/server/domains/users/services/admin'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
 import { restoreUserById, updateUserById } from '@/server/infra/db/operations/user'
 import { adminUsersCountOutputSchema, adminUsersPasskeyFlagOutputSchema } from '@/shared/contracts/admin'
 import { adminUserDto } from '@/shared/contracts/users'
@@ -72,7 +71,7 @@ const get = adminProc
   .handler(async ({ input, context }) => {
     const user = await fetchAdminUserDto(context.db, idFromString(input.id))
     if (!user) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'users.error.notFound')
     }
     return { user }
   })
@@ -103,7 +102,7 @@ const update = adminProc
     }
     const updated = await updateUserById(context.db, idFromString(id), patch)
     if (updated === null) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'users.error.notFound')
     }
     recordAuditEventFromContext(context, {
       action: 'user_updated',
@@ -135,7 +134,7 @@ const restore = adminProc
   .handler(async ({ input, context }) => {
     const ok = await restoreUserById(context.db, idFromString(input.id))
     if (!ok) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'users.error.notFound')
     }
     recordAuditEventFromContext(context, {
       action: 'user_restored',

@@ -9,7 +9,7 @@ import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
 import { EditUserDialog } from '@/ui/admin/comments/EditUserDialog'
 import {
-  COMMENT_FILTER_FIELDS,
+  buildCommentFilterFields,
   type CommentFilterFieldKey,
   type CommentsFilterQuery,
 } from '@/ui/admin/comments/filter-fields'
@@ -22,6 +22,7 @@ import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 export interface CommentsViewProps {
@@ -31,13 +32,15 @@ export interface CommentsViewProps {
 }
 
 export function CommentsView({ currentUserName, currentUserEmail, initialFilters }: CommentsViewProps) {
+  const { t } = useI18n()
   // Dialog targets stay view-owned so the row never sees the dialogs.
   const [editTarget, setEditTarget] = useState<AdminComment | null>(null)
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
   const [editUserTarget, setEditUserTarget] = useState<AdminComment | null>(null)
 
   // The pills own the whole filter surface: reducer state, debounced searches, label rehydration, merged query input.
-  const pills = useFilterPills({ fields: COMMENT_FILTER_FIELDS, initial: initialFilters })
+  const fields = useMemo(() => buildCommentFilterFields(t), [t])
+  const pills = useFilterPills({ fields, initial: initialFilters })
 
   const {
     comments,
@@ -70,7 +73,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
   return (
     <>
       <AdminListPage>
-        <AdminListPage.Header title="评论管理" description="审核、回复、编辑站点评论。">
+        <AdminListPage.Header title={t('admin.comments.title')} description={t('admin.comments.description')}>
           {/* Header slot only when no filters are active — body slot below takes over otherwise. */}
           <div className="flex items-center gap-2">{!hasActiveFilters && filterBar}</div>
         </AdminListPage.Header>
@@ -87,7 +90,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
                   <EmptyMedia variant="icon">
                     <SearchIcon />
                   </EmptyMedia>
-                  <EmptyTitle>暂无评论</EmptyTitle>
+                  <EmptyTitle>{t('admin.comments.empty')}</EmptyTitle>
                 </EmptyHeader>
               </Empty>
             ) : (
@@ -110,7 +113,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
 
           {(isFetchingNextPage || (!hasMore && comments.length > 0)) && (
             <AdminInfiniteListFooter
-              noun="评论"
+              noun={t('admin.list.noun.comments')}
               rowCount={comments.length}
               hasNextPage={hasMore}
               isFetchingNextPage={isFetchingNextPage}
@@ -139,7 +142,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
       />
       <ReplyCommentDialog
         comment={replyTarget}
-        authorName={currentUserName || '管理员'}
+        authorName={currentUserName || t('common.role.admin')}
         authorEmail={currentUserEmail}
         onClose={() => setReplyTarget(null)}
         onReplied={() => {

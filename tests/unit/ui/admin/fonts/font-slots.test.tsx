@@ -37,6 +37,7 @@ vi.mock('@/client/api/orpc-query', () => ({
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 vi.mock('sonner', () => ({ toast: toastMock }))
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { type SlotState, slotsReducer, useFontSlotsController } from '@/ui/admin/fonts/font-slots'
 
 function makeFonts(slots: Partial<Pick<FontsSettings, 'global' | 'post' | 'code'>>): FontsSettings {
@@ -124,7 +125,7 @@ describe('useFontSlotsController', () => {
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     })
     return function Wrapper({ children }: { children: ReactNode }) {
-      return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      return <QueryClientProvider client={client}>{wrapWithI18n(children)}</QueryClientProvider>
     }
   }
 

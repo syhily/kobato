@@ -1,17 +1,22 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
+import { randomUUID } from 'node:crypto'
 import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, emptySession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { friend as friendTable } from '@/server/infra/db/schema/friend'
+import { metric as metricTable } from '@/server/infra/db/schema/metric'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
-import { weakEtag } from '@/server/infra/http/etag'
+import { CACHE_PROFILES } from '@/server/infra/http/headers'
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 
 // post/page.detail loaders against the real engine; seams: wrapped probes
 // gating per-test assertions.
@@ -22,7 +27,7 @@ const mocks = vi.hoisted(() => ({
   findPageBySlug: vi.fn(),
   listAllFriends: vi.fn(),
   getTagsByNames: vi.fn(),
-  loadPublicDetailData: vi.fn(),
+  loadDetailCritical: vi.fn(),
   resolveBodyHtml: vi.fn(),
 }))
 
@@ -72,8 +77,8 @@ vi.mock('@/server/domains/taxonomies/tags/service', async () => {
 
 vi.mock('@/server/http/loaders/detail', async () => {
   const actual = await vi.importActual<typeof import('@/server/http/loaders/detail')>('@/server/http/loaders/detail')
-  mocks.loadPublicDetailData.mockImplementation(actual.loadPublicDetailData)
-  return { ...actual, loadPublicDetailData: mocks.loadPublicDetailData }
+  mocks.loadDetailCritical.mockImplementation(actual.loadDetailCritical)
+  return { ...actual, loadDetailCritical: mocks.loadDetailCritical }
 })
 
 // Wrapped: the body_html fallback projection runs in parallel with friends.
@@ -118,10 +123,21 @@ async function seedPost(
   return postId
 }
 
+/** A post with no live row at all: one draft revision, no published pointer. */
+async function seedDraftPost(slug: string, authorId = 1): Promise<number> {
+  const rows = await db
+    .insert(postTable)
+    .values({ slug, title: 'Draft', published: false, visible: false, publishedRevisionId: null, authorId })
+    .returning({ id: postTable.id })
+  const postId = rows[0]!.id
+  await db.insert(contentTable).values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: [] })
+  return postId
+}
+
 async function seedPage(
-  opts: Partial<typeof pageTable.$inferInsert> & { body?: PortableTextBody } = {},
+  opts: Partial<typeof pageTable.$inferInsert> & { body?: PortableTextBody; draftBody?: PortableTextBody } = {},
 ): Promise<number> {
-  const { body, ...meta } = opts
+  const { body, draftBody, ...meta } = opts
   const rows = await db
     .insert(pageTable)
     .values({
@@ -139,6 +155,15 @@ async function seedPage(
     .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: body ?? [] })
     .returning({ id: contentTable.id })
   await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+  if (draftBody !== undefined) {
+    await db.insert(contentTable).values({
+      type: 'page',
+      ownerId: pageId,
+      revisionNo: 2,
+      status: 'draft',
+      body: draftBody,
+    })
+  }
   return pageId
 }
 
@@ -235,6 +260,24 @@ describe('routes/post.detail loader', () => {
     expect(data.bodyHtml).toBe('')
     expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
+
+  it('carries the author content language from the row into the SSR post shell', async () => {
+    await seedPost({ slug: 'zh-post', title: '中文标题', contentLanguage: 'zh-CN' })
+
+    const data = unwrapLoaderData<{ post: { contentLanguage: string | null } }>(
+      await postRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/posts/zh-post'),
+          session,
+          db,
+          params: { slug: 'zh-post' },
+        }),
+      ),
+    )
+
+    // The document UI locale is independent; only the body container stamps this.
+    expect(data.post.contentLanguage).toBe('zh-CN')
+  })
 })
 
 // `data()` keeps status/headers under `.init` — the 200 ETag lives there.
@@ -243,87 +286,192 @@ function loaderEtag(result: unknown): string | null {
   return init?.headers?.ETag ?? null
 }
 
-describe('routes/post.detail loader — ETag probe', () => {
-  it('answers 304 from the slim probe when If-None-Match matches, skipping the full load', async () => {
-    const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
+// The request projection every detail ETag is built from. Tests override one
+// dimension at a time; production threads `context.localization`.
+const LOCALIZATION: AppLocalization = {
+  locale: 'zh-CN',
+  timeZone: 'Asia/Shanghai',
+  timeFormat: 'yyyy-MM-dd',
+  revision: 'test-boot:0000000001',
+  revisions: representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE),
+}
 
-    const first = await postRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/posts/hello'),
-        session,
-        db,
-        params: { slug: 'hello' },
-      }),
-    )
-    const etag = loaderEtag(first)
-    expect(etag).toBe(weakEtag(['post', String(postId), new Date('2024-01-01')]))
+interface DetailCallOptions {
+  ifNoneMatch?: string
+  localization?: AppLocalization
+  session?: ReturnType<typeof regularSession>
+}
 
-    mocks.findPostBySlug.mockClear()
-    const second = await postRoute
-      .loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/hello', { headers: { 'If-None-Match': etag! } }),
-          session,
-          db,
-          params: { slug: 'hello' },
-        }),
-      )
-      .then(
-        () => null,
-        (response: unknown) => response,
-      )
-
-    expect(second).toMatchObject({ status: 304 })
-    expect((second as Response).headers.get('ETag')).toBe(etag)
-    expect(mocks.findPostBySlug).not.toHaveBeenCalled()
-  })
-
-  it('re-runs the full load and stamps a fresh ETag after the post is republished', async () => {
-    const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
-    const staleEtag = weakEtag(['post', String(postId), new Date('2024-01-01')])
-
-    // A republication bumps `published_at` — the ETag input.
-    await db
-      .update(postTable)
-      .set({ publishedAt: new Date('2024-06-01') })
-      .where(eq(postTable.id, postId))
-
-    mocks.findPostBySlug.mockClear()
+async function callPostDetail(
+  slug: string,
+  { ifNoneMatch, localization = LOCALIZATION, session: callerSession = session }: DetailCallOptions = {},
+): Promise<{ etag: string | null; result?: unknown; response?: Response }> {
+  try {
     const result = await postRoute.loader(
       makeLoaderArgs({
-        request: new Request('http://localhost/posts/hello', { headers: { 'If-None-Match': staleEtag } }),
-        session,
+        request: new Request(
+          `http://localhost/posts/${slug}`,
+          ifNoneMatch === undefined ? undefined : { headers: { 'If-None-Match': ifNoneMatch } },
+        ),
+        session: callerSession,
         db,
-        params: { slug: 'hello' },
+        params: { slug },
+        localization,
       }),
     )
+    return { etag: loaderEtag(result), result }
+  } catch (error) {
+    return { etag: null, response: error as Response }
+  }
+}
 
+async function callPageDetail(
+  slug: string,
+  { ifNoneMatch, localization = LOCALIZATION, session: callerSession = session }: DetailCallOptions = {},
+): Promise<{ etag: string | null; result?: unknown; response?: Response }> {
+  try {
+    const result = await pageRoute.loader(
+      makeLoaderArgs({
+        request: new Request(
+          `http://localhost/${slug}`,
+          ifNoneMatch === undefined ? undefined : { headers: { 'If-None-Match': ifNoneMatch } },
+        ),
+        session: callerSession,
+        db,
+        params: { slug },
+        localization,
+      }),
+    )
+    return { etag: loaderEtag(result), result }
+  } catch (error) {
+    return { etag: null, response: error as Response }
+  }
+}
+
+describe('routes/post.detail loader — representation ETag', () => {
+  it('answers 304 for the same representation with request-localized headers', async () => {
+    await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
+
+    const first = await callPostDetail('hello')
+    expect(first.etag).toMatch(/^W\/"/)
+
+    mocks.findPostBySlug.mockClear()
+    const second = await callPostDetail('hello', { ifNoneMatch: first.etag! })
+
+    expect(second.response?.status).toBe(304)
+    const headers = second.response!.headers
+    expect(headers.get('ETag')).toBe(first.etag)
+    expect(headers.get('Content-Language')).toBe('zh-CN')
+    expect(headers.get('Cache-Control')).toBe(CACHE_PROFILES.detail)
+    expect(headers.get('Vary')).toBe('Cookie')
+    // Correctness first: the tag covers the WHOLE payload, so the full load
+    // always runs — there is no published_at probe that can pre-empt it.
     expect(mocks.findPostBySlug).toHaveBeenCalled()
-    const freshEtag = loaderEtag(result)
-    expect(freshEtag).not.toBe(staleEtag)
-    expect(freshEtag).toBe(weakEtag(['post', String(postId), new Date('2024-06-01')]))
+  })
+
+  it.each([
+    ['locale', { locale: 'en-US' as const }],
+    ['site time zone', { timeZone: 'America/New_York' }],
+    ['date display format', { timeFormat: 'yyyy-LL-dd' }],
+    ['settings revision', { revisions: { ...LOCALIZATION.revisions, detail: 'test-boot:0000000002' } }],
+  ])('rejects the old tag when the request %s changes', async (_name, override) => {
+    await seedPost({ slug: 'hello' })
+    const first = await callPostDetail('hello')
+
+    const changed = await callPostDetail('hello', {
+      ifNoneMatch: first.etag!,
+      localization: { ...LOCALIZATION, ...override },
+    })
+
+    expect(changed.response).toBeUndefined()
+    expect(changed.etag).not.toBe(first.etag)
+  })
+
+  it('answers 304 for a 6+ candidate sidebar pool on a repeat request', async () => {
+    await seedPost({ slug: 'hello' })
+    for (let i = 0; i < 6; i++) {
+      await seedPost({ slug: `filler-${i}`, title: `Filler ${i}` })
+    }
+
+    const first = await callPostDetail('hello')
+    const data = unwrapLoaderData<{ sidebarPosts: { permalink: string }[] }>(first.result)
+    // The seeded pick rotates per site day; within the same day it is stable,
+    // so the full-payload ETag still matches on the next request.
+    expect(data.sidebarPosts).toHaveLength(5)
+
+    const second = await callPostDetail('hello', { ifNoneMatch: first.etag! })
+    expect(second.response?.status).toBe(304)
+    expect(second.response?.headers.get('ETag')).toBe(first.etag)
+  })
+
+  it('rejects the old tag when the post is republished (new published revision)', async () => {
+    const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
+    const first = await callPostDetail('hello')
+
+    // Republish without touching `published_at`: only the revision pointer moves.
+    const revisions = await db
+      .insert(contentTable)
+      .values({ type: 'post', ownerId: postId, revisionNo: 2, status: 'published', body: [] })
+      .returning({ id: contentTable.id })
+    await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+
+    const republished = await callPostDetail('hello', { ifNoneMatch: first.etag! })
+    expect(republished.response).toBeUndefined()
+    expect(republished.etag).not.toBe(first.etag)
+  })
+
+  it('rejects the old tag when the sidebar posts change', async () => {
+    await seedPost({ slug: 'hello' })
+    const first = await callPostDetail('hello')
+
+    await seedPost({ slug: 'sidebar-filler', title: 'Sidebar filler' })
+
+    const withNewSidebar = await callPostDetail('hello', { ifNoneMatch: first.etag! })
+    expect(withNewSidebar.response).toBeUndefined()
+    expect(withNewSidebar.etag).not.toBe(first.etag)
+  })
+
+  it('rejects the old tag when likes or the comment key change', async () => {
+    const postId = await seedPost({ slug: 'hello' })
+    const first = await callPostDetail('hello')
+
+    // The critical payload carries likes (metric.vote_up) and the comment key
+    // (metric.public_id); both are part of the served representation. The first
+    // request created the metric row via `ensureCommentPage`.
+    const metricWhere = and(eq(metricTable.type, 'post'), eq(metricTable.ownerId, postId))
+    await db.update(metricTable).set({ voteUp: 3 }).where(metricWhere)
+    const liked = await callPostDetail('hello', { ifNoneMatch: first.etag! })
+    expect(liked.response).toBeUndefined()
+    expect(liked.etag).not.toBe(first.etag)
+
+    await db.update(metricTable).set({ publicId: randomUUID() }).where(metricWhere)
+    const rekeyed = await callPostDetail('hello', { ifNoneMatch: liked.etag! })
+    expect(rekeyed.response).toBeUndefined()
+    expect(rekeyed.etag).not.toBe(liked.etag)
+  })
+
+  it('never stamps or honours a published ETag on a draft preview', async () => {
+    await seedDraftPost('draft-post')
+
+    const first = await callPostDetail('draft-post', { session: adminSession() })
+    expect(first.response).toBeUndefined()
+    expect(first.etag).toBeNull()
+
+    const repeated = await callPostDetail('draft-post', {
+      session: adminSession(),
+      ifNoneMatch: 'W/"anything"',
+    })
+    expect(repeated.response).toBeUndefined()
+    expect(loaderEtag(repeated.result)).toBeNull()
   })
 
   it('does not short-circuit an alias hit — the canonical 301 still fires', async () => {
-    const postId = await seedPost({ slug: 'hello', alias: ['hello-old'], publishedAt: new Date('2024-01-01') })
-    const etag = weakEtag(['post', String(postId), new Date('2024-01-01')])
+    await seedPost({ slug: 'hello', alias: ['hello-old'] })
 
-    const result = await postRoute
-      .loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/hello-old', { headers: { 'If-None-Match': etag } }),
-          session,
-          db,
-          params: { slug: 'hello-old' },
-        }),
-      )
-      .then(
-        () => null,
-        (response: unknown) => response,
-      )
+    const result = await callPostDetail('hello-old', { ifNoneMatch: 'W/"stale"' })
 
-    expect(result).toMatchObject({ status: 301 })
-    expect((result as Response).headers.get('Location')).toBe('/posts/hello')
+    expect(result.response).toMatchObject({ status: 301 })
+    expect(result.response!.headers.get('Location')).toBe('/posts/hello')
   })
 })
 
@@ -343,7 +491,7 @@ describe('routes/post.detail loader — render waterfall', () => {
     )
 
     await vi.waitFor(() => {
-      expect(mocks.loadPublicDetailData).toHaveBeenCalled()
+      expect(mocks.loadDetailCritical).toHaveBeenCalled()
     })
     release()
     await pending
@@ -367,6 +515,23 @@ describe('routes/page.detail loader', () => {
 
     expect(data.page.permalink).toBe('/about')
     expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+  })
+
+  it('carries the author content language from the row into the SSR page shell', async () => {
+    await seedPage({ slug: 'about-lang', title: 'About', contentLanguage: 'fr-CA' })
+
+    const data = unwrapLoaderData<{ page: { contentLanguage: string | null } }>(
+      await pageRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/about-lang'),
+          session,
+          db,
+          params: { slug: 'about-lang' },
+        }),
+      ),
+    )
+
+    expect(data.page.contentLanguage).toBe('fr-CA')
   })
 
   it('throws instead of re-resolving the session when the canonical request context is missing', async () => {
@@ -484,99 +649,87 @@ describe('routes/page.detail loader — render waterfall', () => {
   })
 })
 
-describe('routes/page.detail loader — ETag probe', () => {
-  it('answers 304 from the slim probe when If-None-Match matches, skipping the full load', async () => {
+describe('routes/page.detail loader — representation ETag', () => {
+  it('answers 304 for the same representation with request-localized headers', async () => {
     await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
 
-    const first = await pageRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/about'),
-        session,
-        db,
-        params: { slug: 'about' },
-      }),
-    )
-    const etag = loaderEtag(first)
-    expect(etag).not.toBeNull()
+    const first = await callPageDetail('about')
+    expect(first.etag).toMatch(/^W\/"/)
 
     mocks.findPageBySlug.mockClear()
-    const second = await pageRoute
-      .loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/about', { headers: { 'If-None-Match': etag! } }),
-          session,
-          db,
-          params: { slug: 'about' },
-        }),
-      )
-      .then(
-        () => null,
-        (response: unknown) => response,
-      )
+    const second = await callPageDetail('about', { ifNoneMatch: first.etag! })
 
-    expect(second).toMatchObject({ status: 304 })
-    expect((second as Response).headers.get('ETag')).toBe(etag)
-    expect(mocks.findPageBySlug).not.toHaveBeenCalled()
+    expect(second.response?.status).toBe(304)
+    const headers = second.response!.headers
+    expect(headers.get('ETag')).toBe(first.etag)
+    expect(headers.get('Content-Language')).toBe('zh-CN')
+    expect(headers.get('Cache-Control')).toBe(CACHE_PROFILES.detail)
+    expect(mocks.findPageBySlug).toHaveBeenCalled()
   })
 
-  it('re-runs the full load and stamps a fresh ETag after the page is republished', async () => {
+  it.each([
+    ['locale', { locale: 'zh-TW' as const }],
+    ['settings revision', { revisions: { ...LOCALIZATION.revisions, detail: 'test-boot:0000000002' } }],
+  ])('rejects the old tag when the request %s changes', async (_name, override) => {
+    await seedPage({ slug: 'about' })
+    const first = await callPageDetail('about')
+
+    const changed = await callPageDetail('about', {
+      ifNoneMatch: first.etag!,
+      localization: { ...LOCALIZATION, ...override },
+    })
+
+    expect(changed.response).toBeUndefined()
+    expect(changed.etag).not.toBe(first.etag)
+  })
+
+  it('rejects the old tag when the page is republished', async () => {
     const pageId = await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
+    const first = await callPageDetail('about')
 
-    const first = await pageRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/about'),
-        session,
-        db,
-        params: { slug: 'about' },
-      }),
-    )
-    const staleEtag = loaderEtag(first)
-
-    // A republication bumps `published_at` — one of the ETag inputs.
+    const revisions = await db
+      .insert(contentTable)
+      .values({ type: 'page', ownerId: pageId, revisionNo: 2, status: 'published', body: [] })
+      .returning({ id: contentTable.id })
     await db
       .update(pageTable)
-      .set({ publishedAt: new Date('2024-06-01') })
+      .set({ publishedRevisionId: revisions[0]!.id, publishedAt: new Date('2024-06-01') })
       .where(eq(pageTable.id, pageId))
 
-    mocks.findPageBySlug.mockClear()
-    const result = await pageRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/about', { headers: { 'If-None-Match': staleEtag! } }),
-        session,
-        db,
-        params: { slug: 'about' },
-      }),
-    )
-
-    expect(mocks.findPageBySlug).toHaveBeenCalled()
-    const freshEtag = loaderEtag(result)
-    expect(freshEtag).not.toBe(staleEtag)
+    const republished = await callPageDetail('about', { ifNoneMatch: first.etag! })
+    expect(republished.response).toBeUndefined()
+    expect(republished.etag).not.toBe(first.etag)
   })
 
-  it('never 304s a `?draft=true` preview request from the published-ETag probe', async () => {
-    await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
+  it('never stamps or honours a published ETag on a draft preview', async () => {
+    await seedPage({
+      slug: 'about',
+      title: 'About',
+      publishedAt: new Date('2024-01-01'),
+      draftBody: [],
+    })
 
-    const first = await pageRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/about'),
-        session,
-        db,
-        params: { slug: 'about' },
-      }),
-    )
-    const etag = loaderEtag(first)
-
-    // A draft preview may swap the body, so the published ETag must not short-circuit it.
-    const result = unwrapLoaderData<{ draftMarker: string | null }>(
-      await pageRoute.loader(
+    const load = (ifNoneMatch?: string) =>
+      pageRoute.loader(
         makeLoaderArgs({
-          request: new Request('http://localhost/about?draft=true', { headers: { 'If-None-Match': etag! } }),
+          request: new Request(
+            'http://localhost/about?draft=true',
+            ifNoneMatch === undefined ? undefined : { headers: { 'If-None-Match': ifNoneMatch } },
+          ),
           session: adminSession(),
           db,
           params: { slug: 'about' },
+          localization: LOCALIZATION,
         }),
-      ),
-    )
-    expect(result.draftMarker).toBe('published-draft')
+      )
+
+    const first = await load()
+    expect(loaderEtag(first)).toBeNull()
+    const preview = unwrapLoaderData<{ draftMarker: string | null }>(first)
+    expect(preview.draftMarker).toBe('unpublished-draft')
+
+    // A draft preview may swap the body, so no published tag may short-circuit it.
+    const repeated = unwrapLoaderData<{ draftMarker: string | null }>(await load('W/"anything"'))
+    expect(repeated.draftMarker).toBe('unpublished-draft')
   })
 })

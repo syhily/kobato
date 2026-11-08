@@ -1,6 +1,7 @@
 import type { MetaEntityDescriptor } from '@/server/domains/content/entities/descriptor'
 import type { Database } from '@/server/infra/db/database'
 import type { ContentRow, NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { AdminPostDto } from '@/shared/contracts/posts'
 import type { Post } from '@/shared/types/catalog'
 
@@ -28,6 +29,7 @@ import {
 import { findCategoryById, findCategoryNamesByIds } from '@/server/infra/db/operations/category'
 import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@/server/infra/db/operations/post-tag'
 import { findTagsByNames, seedTagsIfMissing } from '@/server/infra/db/operations/tag'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { computeBodyText } from '@/server/infra/pt/lexical-projection'
@@ -79,7 +81,10 @@ async function resolveCategoryName(db: Database, categoryId: number | null): Pro
   return map.get(categoryId) ?? ''
 }
 
-const INDEX_FAILURE_WARNING = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
+const INDEX_FAILURE_WARNING = {
+  messageKey: 'content.warning.searchIndexFailed',
+  fallbackMessage: 'The search index update failed; this post may not appear in search results.',
+} as const satisfies ErrorMessageDescriptor
 
 /**
  * The post entity: RBAC ownership, author+ draft preview, tag/category
@@ -96,7 +101,6 @@ export const postDescriptor: MetaEntityDescriptor<
   IndexablePostData | null
 > = {
   entityType: 'post',
-  label: '文章',
   repos: {
     findMetaById: findPostMetaById,
     findMetaBySlug: findPostMetaBySlug,
@@ -176,7 +180,7 @@ export const postDescriptor: MetaEntityDescriptor<
     // Pre-flight the category so a stale select 400s instead of tripping the FK mid-transaction.
     async preflightUpsert(db, input) {
       if (input.categoryId != null && (await findCategoryById(db, input.categoryId)) === null) {
-        throw new DomainError('BAD_REQUEST', '分类不存在')
+        throw new DomainError('BAD_REQUEST', descriptorFor('content.error.categoryNotFound'))
       }
     },
     insertExtras: (input) => ({

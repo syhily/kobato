@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { ViewsDto } from '@/shared/contracts/analytics'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
 
@@ -19,9 +20,11 @@ const SUMMARY = { visits: 0, visitors: 0, referers: 0 }
 
 function renderCard(points: ViewsDto['points']) {
   return render(
-    <MemoryRouter initialEntries={['/admin']}>
-      <VisitSummaryCard summary={SUMMARY} weeklyTrend={{ unit: 'day', clientTimezone: 'Etc/UTC', points }} />
-    </MemoryRouter>,
+    wrapWithI18n(
+      <MemoryRouter initialEntries={['/admin']}>
+        <VisitSummaryCard summary={SUMMARY} weeklyTrend={{ unit: 'day', clientTimezone: 'Etc/UTC', points }} />
+      </MemoryRouter>,
+    ),
   )
 }
 
@@ -69,7 +72,7 @@ describe('ui/admin/welcome/VisitSummaryCard trend block', () => {
 
   it('keeps the skeleton until the client query resolves', () => {
     renderCard([{ time: '2024-01-10', visits: 10, visitors: 5 }])
-    expect(screen.getByText('加载中')).toBeTruthy()
+    expect(screen.getByText('加载中…')).toBeTruthy()
     expect(screen.queryByText('最近 7 天趋势')).toBeNull()
   })
 })

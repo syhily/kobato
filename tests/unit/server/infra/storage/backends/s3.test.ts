@@ -514,7 +514,7 @@ describe('storage/backends/s3 — validateS3Config', () => {
     const result = await validate(config)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toContain('存储桶')
+      expect(result.descriptor.messageKey).toBe('storage.error.bucketMissing')
     }
   })
 
@@ -524,7 +524,7 @@ describe('storage/backends/s3 — validateS3Config', () => {
     const result = await validate(config)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toContain('凭证')
+      expect(result.descriptor.messageKey).toBe('storage.error.credentialsInvalid')
     }
     // HeadBucket 403 → ListObjectsV2 fallback probe → also rejected.
     expect(sendMock).toHaveBeenCalledTimes(2)
@@ -544,7 +544,7 @@ describe('storage/backends/s3 — validateS3Config', () => {
     const result = await validate(config)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toContain('无法连接')
+      expect(result.descriptor.messageKey).toBe('storage.error.endpointUnreachable')
     }
   })
 })

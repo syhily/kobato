@@ -7,6 +7,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { Popup } from '@/ui/public/widgets/Popup'
 
 vi.mock('motion/react', () => {
@@ -60,7 +61,7 @@ function getBackdrop(): HTMLElement {
 
 describe('Popup — outside-click dismissal', () => {
   it('closes when the backdrop (outside click) is clicked', () => {
-    render(<Harness />)
+    render(wrapWithI18n(<Harness />))
     fireEvent.click(screen.getByRole('button', { name: 'trigger' }))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
 
@@ -69,7 +70,7 @@ describe('Popup — outside-click dismissal', () => {
   })
 
   it('toggles closed when the trigger is re-clicked', () => {
-    render(<Harness />)
+    render(wrapWithI18n(<Harness />))
     const trigger = screen.getByRole('button', { name: 'trigger' })
 
     fireEvent.click(trigger)
@@ -80,7 +81,7 @@ describe('Popup — outside-click dismissal', () => {
   })
 
   it('stays open when clicking inside the dialog', () => {
-    render(<Harness />)
+    render(wrapWithI18n(<Harness />))
     fireEvent.click(screen.getByRole('button', { name: 'trigger' }))
 
     fireEvent.click(screen.getByText('Popup body'))

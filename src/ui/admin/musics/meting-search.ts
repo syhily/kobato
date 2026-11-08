@@ -1,8 +1,9 @@
 import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
-export const SOURCE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'netease', label: '网易云' },
-  { value: 'tencent', label: 'QQ音乐' },
+export const SOURCE_OPTIONS: { value: string; labelId: UiMessageId }[] = [
+  { value: 'netease', labelId: 'admin.musics.source.netease' },
+  { value: 'tencent', labelId: 'admin.musics.source.tencent' },
 ]
 
 export function hitToPreviewTrack(hit: MetingSearchHit): AdminMusicDto {

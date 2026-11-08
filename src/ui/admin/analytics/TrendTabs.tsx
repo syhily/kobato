@@ -1,25 +1,25 @@
 import { useAnalyticsDashboardState } from '@/ui/admin/analytics/analytics-state-context'
 import { Heatmap } from '@/ui/admin/analytics/Heatmap'
+import { HEATMAP_METRIC_LABEL_IDS } from '@/ui/admin/analytics/metric-labels'
 import { type AnalyticsScope, type HeatmapMetric } from '@/ui/admin/analytics/use-analytics-state'
 import { ViewsChart } from '@/ui/admin/analytics/ViewsChart'
 import { Card, CardContent } from '@/ui/components/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/tabs'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // 趋势 | 每周趋势 tabs (Slite's `analysis/Index.vue`): the view switch is
 // URL-synced (?view=), and the heatmap tab exposes a visits/visitors Select
 // (?metric=) next to the tab list.
 
-const METRIC_OPTIONS: { value: HeatmapMetric; label: string }[] = [
-  { value: 'visits', label: '访问量' },
-  { value: 'visitors', label: '访客数' },
-]
+const METRIC_OPTIONS: readonly HeatmapMetric[] = ['visits', 'visitors']
 
 export interface TrendTabsProps {
   scope?: AnalyticsScope
 }
 
 export function TrendTabs({ scope }: TrendTabsProps) {
+  const { t } = useI18n()
   const state = useAnalyticsDashboardState()
 
   return (
@@ -35,12 +35,12 @@ export function TrendTabs({ scope }: TrendTabsProps) {
         >
           <div className="flex flex-wrap items-center gap-2">
             <TabsList className="h-8">
-              <TabsTrigger value="trend">趋势</TabsTrigger>
-              <TabsTrigger value="heatmap">每周趋势</TabsTrigger>
+              <TabsTrigger value="trend">{t('admin.analytics.tabs.trend')}</TabsTrigger>
+              <TabsTrigger value="heatmap">{t('admin.analytics.tabs.heatmap')}</TabsTrigger>
             </TabsList>
             {state.viewMode === 'heatmap' && (
               <Select
-                items={METRIC_OPTIONS}
+                items={METRIC_OPTIONS.map((value) => ({ value, label: t(HEATMAP_METRIC_LABEL_IDS[value]) }))}
                 value={state.heatmapMetric}
                 onValueChange={(value: string | null) => {
                   if (value === 'visits' || value === 'visitors') {
@@ -48,13 +48,13 @@ export function TrendTabs({ scope }: TrendTabsProps) {
                   }
                 }}
               >
-                <SelectTrigger className="h-8 w-[120px]" aria-label={`每周趋势: 访问量 / 访客数`}>
+                <SelectTrigger className="h-8 w-[120px]" aria-label={t('admin.analytics.tabs.metricAria')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {METRIC_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                  {METRIC_OPTIONS.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {t(HEATMAP_METRIC_LABEL_IDS[value])}
                     </SelectItem>
                   ))}
                 </SelectContent>

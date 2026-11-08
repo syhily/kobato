@@ -8,6 +8,7 @@ import { Sheet, SheetContent } from '@/ui/components/sheet'
 import { Tooltip } from '@/ui/components/tooltip'
 import { cn } from '@/ui/lib/cn'
 import { type VariantProps, cva } from '@/ui/lib/cva'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 interface SidebarContextValue {
@@ -184,6 +185,7 @@ function Sidebar({
 
 function SidebarTrigger({ className, onClick, ref, ...props }: ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar()
+  const { t } = useI18n()
 
   return (
     <Button
@@ -199,7 +201,7 @@ function SidebarTrigger({ className, onClick, ref, ...props }: ComponentProps<ty
       {...props}
     >
       <PanelLeft />
-      <span className="sr-only">切换侧边栏</span>
+      <span className="sr-only">{t('common.sidebar.toggle')}</span>
     </Button>
   )
 }

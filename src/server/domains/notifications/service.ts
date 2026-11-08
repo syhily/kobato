@@ -1,16 +1,19 @@
 import type { SessionUser } from '@/server/domains/auth/session-storage'
+import type { SystemNotificationMessage } from '@/server/domains/notifications/message'
 import type { Database } from '@/server/infra/db/database'
 import type { NotificationRow } from '@/server/infra/db/types'
+import type { ServerTranslator } from '@/server/infra/i18n'
 import type {
   NotificationDto,
   NotificationKind,
   NotificationSenderDto,
-  NotificationSource,
   NotificationTab,
   ThreadMessageDto,
 } from '@/shared/contracts/notifications'
+import type { AppLocale } from '@/shared/i18n/locales'
 
 import { queueNotificationEmail } from '@/server/domains/notifications/email'
+import { encodeNotificationDescriptor, resolveNotificationMessage } from '@/server/domains/notifications/message'
 import {
   countUnreadNotifications,
   createNotificationWithRecipients,
@@ -27,7 +30,10 @@ import {
   recallNotification,
   type NewNotificationRow,
 } from '@/server/infra/db/operations/notification'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
+import { createServerTranslator } from '@/server/infra/i18n'
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales'
 
 // ---------------------------------------------------------------------------
 // DTO mapping
@@ -37,13 +43,20 @@ import { DomainError } from '@/server/infra/http/errors'
 // body from the thread query. Capping keeps the list wire small.
 const LIST_BODY_PREVIEW_LENGTH = 200
 
-function toNotificationDto(row: NotificationRow, sender: NotificationSenderDto | null, read: boolean): NotificationDto {
+function toNotificationDto(
+  row: NotificationRow,
+  sender: NotificationSenderDto | null,
+  read: boolean,
+  t: ServerTranslator,
+): NotificationDto {
+  // Preview and detail share ONE resolved message — the list only truncates it.
+  const resolved = resolveNotificationMessage(row, t)
   return {
     id: String(row.id),
     threadId: String(row.threadId),
     kind: row.kind,
-    title: row.title,
-    body: row.body.slice(0, LIST_BODY_PREVIEW_LENGTH),
+    title: resolved.title,
+    body: resolved.body.slice(0, LIST_BODY_PREVIEW_LENGTH),
     sender,
     replyable: row.replyable,
     source: row.source,
@@ -62,13 +75,6 @@ function senderDtosByIds(db: Database, senderIds: Iterable<number>): Map<number,
 // Producers (system + admin)
 // ---------------------------------------------------------------------------
 
-export interface NotifyMessage {
-  title: string
-  body: string
-  source?: NotificationSource
-  actionUrl?: string
-}
-
 function createAndFanOut(
   db: Database,
   data: NewNotificationRow & { threadId?: number },
@@ -77,27 +83,31 @@ function createAndFanOut(
 ): NotificationRow {
   // A message with zero recipients would be invisible forever — a producer bug.
   if (recipientIds.length === 0) {
-    throw new DomainError('INTERNAL', '通知没有可投递的收件人')
+    throw new DomainError('INTERNAL', descriptorFor('notifications.error.noRecipients'))
   }
   return createNotificationWithRecipients(db, data, [...new Set(recipientIds)], options)
 }
 
-/** System → all current admins (boot cleanups, background-job results). Never replyable. */
-export function notifyAdmins(db: Database, message: NotifyMessage): NotificationRow | null {
+/**
+ * System → all current admins (boot cleanups, background-job results). Never
+ * replyable. Takes an i18n descriptor (never prose): the row stores the English
+ * fallback plus the key/params, and every reader sees its own locale.
+ */
+export function notifyAdmins(db: Database, message: SystemNotificationMessage): NotificationRow | null {
   const adminIds = listRecipientUserIds(db, { adminsOnly: true })
   if (adminIds.length === 0) {
     // Pre-install boot: nobody to notify yet, and no admin ever sees the
     // pre-install state — skipping is honest.
     return null
   }
+  const descriptor = encodeNotificationDescriptor(message)
   const row = createAndFanOut(
     db,
     {
       kind: 'admin',
       senderId: null,
       replyable: false,
-      title: message.title,
-      body: message.body,
+      ...descriptor,
       source: message.source ?? null,
       actionUrl: message.actionUrl ?? null,
     },
@@ -115,10 +125,10 @@ export function sendDirectMessage(
   input: { title: string; body: string },
 ): NotificationRow {
   if (recipientId === senderId) {
-    throw new DomainError('BAD_REQUEST', '不能给自己发送私信')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.selfDirect'))
   }
   if (!isActiveUserId(db, recipientId)) {
-    throw new DomainError('NOT_FOUND', '目标用户不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.targetNotFound'))
   }
   const row = createAndFanOut(db, { kind: 'direct', senderId, replyable: true, title: input.title, body: input.body }, [
     recipientId,
@@ -141,7 +151,7 @@ export function sendBroadcast(
 ): NotificationRow {
   const userIds = listRecipientUserIds(db, { adminsOnly: false })
   if (userIds.every((id) => id === senderId)) {
-    throw new DomainError('BAD_REQUEST', '站点内还没有其他用户，公告无人可接收')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.noAudience'))
   }
   return createAndFanOut(
     db,
@@ -167,14 +177,14 @@ export interface RecalledMessage {
 export function recallMessage(db: Database, id: number): RecalledMessage {
   const existing = findNotificationById(db, id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
   if (existing.kind === 'direct') {
-    throw new DomainError('BAD_REQUEST', '私信不支持撤回')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.recallDirect'))
   }
   const result = recallNotification(db, id)
   if (result === null) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
   return {
     id: result.row.id,
@@ -196,7 +206,7 @@ export interface InboxPage {
 export async function listInbox(
   db: Database,
   userId: number,
-  input: { tab: NotificationTab; cursor?: number; limit: number },
+  input: { tab: NotificationTab; cursor?: number; limit: number; locale?: AppLocale },
 ): Promise<InboxPage> {
   const kinds =
     input.tab === 'direct'
@@ -212,6 +222,7 @@ export async function listInbox(
     limit: input.limit + 1,
   })
   const page = rows.slice(0, input.limit)
+  const t = createServerTranslator(input.locale ?? DEFAULT_LOCALE)
   const senders = senderDtosByIds(
     db,
     page.map((row) => row.message.senderId).filter((id): id is number => id !== null),
@@ -222,6 +233,7 @@ export async function listInbox(
         row.message,
         row.message.senderId !== null ? (senders.get(row.message.senderId) ?? null) : null,
         row.recipient.readAt !== null,
+        t,
       ),
     ),
     nextCursor: rows.length > input.limit ? String(page[page.length - 1]!.message.id) : null,
@@ -249,14 +261,14 @@ export function markUnread(db: Database, userId: number, ids: readonly number[])
 async function loadThread(db: Database, threadId: number): Promise<NotificationRow[]> {
   const messages = await listThreadNotifications(db, threadId)
   if (messages.length === 0) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
   return messages
 }
 
 function assertParticipant(db: Database, threadId: number, userId: number): void {
   if (!isThreadParticipant(db, threadId, userId)) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
 }
 
@@ -283,24 +295,30 @@ export interface ThreadView {
   canReply: boolean
 }
 
-export async function getThread(db: Database, viewer: SessionUser, threadId: number): Promise<ThreadView> {
+export async function getThread(
+  db: Database,
+  viewer: SessionUser,
+  threadId: number,
+  locale: AppLocale = DEFAULT_LOCALE,
+): Promise<ThreadView> {
   const userId = Number(viewer.id)
   const messages = await loadThread(db, threadId)
   const root = messages[0]!
   // A recalled thread answers exactly like a missing one — existence is not
   // leaked to recipients, admins, or outsiders (ADR-0007).
   if (root.recalledAt !== null) {
-    throw new DomainError('NOT_FOUND', '消息不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
   assertParticipant(db, threadId, userId)
   const senders = senderDtosByIds(
     db,
     messages.map((row) => row.senderId).filter((id): id is number => id !== null),
   )
+  const t = createServerTranslator(locale)
   return {
     messages: messages.map((row) => ({
       id: String(row.id),
-      body: row.body,
+      body: resolveNotificationMessage(row, t).body,
       sender: row.senderId !== null ? (senders.get(row.senderId) ?? null) : null,
       mine: row.senderId === userId,
       createdAt: row.createdAt.toISOString(),
@@ -329,13 +347,13 @@ export async function replyToThread(
   const root = messages[0]!
   assertParticipant(db, input.threadId, userId)
   if (!canReplyInThread(root, viewer)) {
-    throw new DomainError('BAD_REQUEST', '该消息不支持回复')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.notReplyable'))
   }
   if (root.kind === 'broadcast') {
     // The role gate upstream refuses admins, so the replier is never in the list.
     const recipients = listRecipientUserIds(db, { adminsOnly: true })
     if (recipients.length === 0) {
-      throw new DomainError('BAD_REQUEST', '当前没有管理员可以接收回复')
+      throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.noAdminRecipients'))
     }
     const row = createAndFanOut(
       db,
@@ -360,7 +378,7 @@ export async function replyToThread(
   }
   const recipients = listThreadParticipantIds(db, input.threadId).filter((id) => id !== userId)
   if (recipients.length === 0) {
-    throw new DomainError('BAD_REQUEST', '该线程没有可接收回复的对象')
+    throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.noThreadRecipients'))
   }
   const row = createAndFanOut(
     db,

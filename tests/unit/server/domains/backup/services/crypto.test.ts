@@ -65,7 +65,7 @@ describe('backup crypto', () => {
     const ciphertext = await encrypt(Buffer.from('sensitive', 'utf8'), 'right-password')
     const error = await decryptError(ciphertext, 'wrong-password')
     expect(error.kind).toBe('auth')
-    expect(error.message).toBe('备份密码错误或文件已损坏')
+    expect(error.message).toBe('The backup password is incorrect or the file is corrupted')
   })
 
   it('rejects a tampered auth tag (auth failure)', async () => {
@@ -80,7 +80,7 @@ describe('backup crypto', () => {
     const ciphertext = await encrypt(Buffer.from('sensitive', 'utf8'), 'secret-password')
     const error = await decryptError(ciphertext.subarray(0, ciphertext.length - 10), 'secret-password')
     expect(error.kind).toBe('format')
-    expect(error.message).toBe('备份密文不完整或已截断')
+    expect(error.message).toBe('Backup ciphertext is incomplete or truncated')
   })
 
   it('round-trips an empty plaintext (header + one empty final record)', async () => {
@@ -121,7 +121,7 @@ describe('backup crypto', () => {
     const appended = Buffer.concat([ciphertext, records[records.length - 1]!])
     const error = await decryptError(appended, 'secret-password')
     expect(error.kind).toBe('format')
-    expect(error.message).toBe('备份密文记录损坏')
+    expect(error.message).toBe('Backup ciphertext record is corrupted')
   })
 
   it('rejects a forged giant record length up front, without buffering it (format failure)', async () => {
@@ -130,7 +130,7 @@ describe('backup crypto', () => {
     ciphertext.writeUInt32BE(0xffffffff, HEADER_BYTES)
     const error = await decryptError(ciphertext, 'secret-password')
     expect(error.kind).toBe('format')
-    expect(error.message).toBe('备份密文记录损坏')
+    expect(error.message).toBe('Backup ciphertext record is corrupted')
   })
 
   it('rejects a header declaring an invalid scrypt cost (format failure)', async () => {
@@ -139,7 +139,7 @@ describe('backup crypto', () => {
     ciphertext.writeUInt32BE(1, 24)
     const error = await decryptError(ciphertext, 'secret-password')
     expect(error.kind).toBe('format')
-    expect(error.message).toBe('备份加密参数无效')
+    expect(error.message).toBe('Invalid backup encryption parameters')
   })
 
   it('rejects a header declaring N above the cap BEFORE running scrypt', async () => {
@@ -153,7 +153,7 @@ describe('backup crypto', () => {
     header.writeUInt32BE(1 << 18, 24)
     const error = await decryptError(header, 'secret-password')
     expect(error.kind).toBe('format')
-    expect(error.message).toBe('备份加密参数无效')
+    expect(error.message).toBe('Invalid backup encryption parameters')
   })
 
   it('rejects a stream whose FINAL record was stripped (format failure)', async () => {
@@ -167,7 +167,7 @@ describe('backup crypto', () => {
     const stripped = Buffer.concat([header, records[0]!])
     const error = await decryptError(stripped, 'secret-password')
     expect(error.kind).toBe('format')
-    expect(error.message).toBe('备份密文不完整或已截断')
+    expect(error.message).toBe('Backup ciphertext is incomplete or truncated')
   }, 30_000)
 
   it('rejects a tampered flags byte: FINAL forgery fails auth, an invalid value fails the format check', async () => {
@@ -180,14 +180,14 @@ describe('backup crypto', () => {
     forgedFinal[HEADER_BYTES + 4] = 1
     const authError = await decryptError(forgedFinal, 'secret-password')
     expect(authError.kind).toBe('auth')
-    expect(authError.message).toBe('备份密码错误或文件已损坏')
+    expect(authError.message).toBe('The backup password is incorrect or the file is corrupted')
 
     // 0 → 2: not a defined flag — rejected by the framing check before decryption.
     const invalidFlags = Buffer.from(ciphertext)
     invalidFlags[HEADER_BYTES + 4] = 2
     const formatError = await decryptError(invalidFlags, 'secret-password')
     expect(formatError.kind).toBe('format')
-    expect(formatError.message).toBe('备份密文记录损坏')
+    expect(formatError.message).toBe('Backup ciphertext record is corrupted')
   }, 30_000)
 
   it('round-trips when the ciphertext arrives split mid-record', async () => {

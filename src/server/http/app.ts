@@ -4,7 +4,9 @@ import { Hono } from 'hono'
 import type { Env } from '@/server/http/context'
 import type { HandlerContext } from '@/server/http/orpc-base'
 
+import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { apiRouter } from '@/server/http/api-router'
+import { errorJsonResponse } from '@/server/http/errors'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -25,11 +27,22 @@ function resolveMaxBodySize(): number {
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
+  // Hydrate BEFORE the body-limit resolver and the CSRF guard run: both read
+  // settings (the live request-size limit; the localized CSRF error copy), and
+  // a cold process must not answer with pre-hydration defaults (zh-CN + the
+  // built-in 10 MB cap). Single-flight — the bridge projection below reuses the
+  // memoized snapshot. Pure `/rpc/*` requests never pass through
+  // `buildLoadContext`, so this is their only pre-projection hydration point.
+  app.use('/rpc/*', async (c, next) => {
+    await hydrateBlogSettings(c.var.requestContext.db)
+    await next()
+  })
+
   // Live settings snapshot per request — admin changes apply on the next request.
   app.use(
     dynamicBodyLimit({
       maxSize: resolveMaxBodySize,
-      onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
+      onError: (c) => errorJsonResponse(c, 413, 'error.api.payloadTooLarge'),
     }),
   )
 
@@ -38,7 +51,9 @@ export function createApiApp(): Hono<Env> {
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
     const rc = c.var.requestContext
-    // Pure projection — no re-derivation; `markSessionDirty` deliberately
+    // Settings are already hydrated by the pre-limit middleware above; the
+    // projection below pins `context.settings` and `context.localization` from
+    // ONE lazy capture. No re-derivation; `markSessionDirty` deliberately
     // omitted (procedures get a read-only session).
     const context: HandlerContext = {
       request: c.req.raw,
@@ -48,6 +63,8 @@ export function createApiApp(): Hono<Env> {
       clientAddress: rc.clientAddress,
       responseHeaders,
       db: rc.db,
+      settings: rc.settings,
+      localization: rc.localization,
     }
     const result = await handler.handle(c.req.raw, { prefix: '/rpc', context })
     if (!result.matched) {

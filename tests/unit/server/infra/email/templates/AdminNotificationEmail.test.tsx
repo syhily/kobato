@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 
 import { render } from '@/server/infra/email/render'
 import AdminNotificationEmail from '@/server/infra/email/templates/AdminNotificationEmail'
+import { createServerTranslator } from '@/server/infra/i18n'
 
 function renderTemplate(props: Partial<Parameters<typeof AdminNotificationEmail>[0]> = {}): string {
   return render(
     createElement(AdminNotificationEmail, {
+      t: createServerTranslator('zh-CN'),
       preview: '在《目标文章》中有一条新留言',
       title: '新留言',
       contextLine: {

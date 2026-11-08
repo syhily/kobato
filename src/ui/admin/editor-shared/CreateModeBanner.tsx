@@ -1,14 +1,25 @@
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
+import { formatWallClockDateTime } from '@/ui/admin/editor-shell/wall-clock'
+import { useI18n } from '@/ui/lib/I18nProvider'
+
 interface CreateModeBannerProps {
-  entityLabel: string
+  entityLabelId: UiMessageId
   draftSavedAt: number | null
 }
 
-export function CreateModeBanner({ entityLabel, draftSavedAt }: CreateModeBannerProps) {
+export function CreateModeBanner({ entityLabelId, draftSavedAt }: CreateModeBannerProps) {
+  const { locale, t } = useI18n()
+  const entity = t(entityLabelId)
   return (
     <div className="flex items-center justify-between rounded-xl border border-destructive/10 bg-destructive/5 px-3 py-2 text-xs text-muted-foreground">
-      <span>{`新${entityLabel}正文仅本地保留，点击「创建${entityLabel}」后才会同步到服务器。`}</span>
+      <span>{t('admin.editor.createBanner', { entity })}</span>
       {draftSavedAt !== null ? (
-        <span className="font-mono">已恢复本地草稿 · {new Date(draftSavedAt).toLocaleTimeString('zh-CN')}</span>
+        <span className="font-mono">
+          {t('admin.editor.createDraftRestored', {
+            time: formatWallClockDateTime(new Date(draftSavedAt), locale),
+          })}
+        </span>
       ) : null}
     </div>
   )

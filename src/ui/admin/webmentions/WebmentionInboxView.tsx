@@ -3,6 +3,7 @@ import { AtSignIcon, CheckIcon, CircleAlertIcon, RefreshCwIcon, XIcon } from 'lu
 import { Fragment, useState } from 'react'
 
 import type { AdminWebmentionWire } from '@/shared/contracts/webmentions'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -18,25 +19,26 @@ import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { Tooltip } from '@/ui/components/tooltip'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 30
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm:ss'
 
 type StatusFilter = 'all' | AdminWebmentionWire['status']
 
-const STATUS_META: Record<AdminWebmentionWire['status'], { label: string; variant: BadgeProps['variant'] }> = {
-  pending: { label: '待审核', variant: 'secondary' },
-  approved: { label: '已批准', variant: 'default' },
-  rejected: { label: '已拒绝', variant: 'destructive' },
-  hidden: { label: '已隐藏', variant: 'outline' },
+const STATUS_META: Record<AdminWebmentionWire['status'], { labelId: UiMessageId; variant: BadgeProps['variant'] }> = {
+  pending: { labelId: 'admin.webmentions.status.pending', variant: 'secondary' },
+  approved: { labelId: 'admin.webmentions.status.approved', variant: 'default' },
+  rejected: { labelId: 'admin.webmentions.status.rejected', variant: 'destructive' },
+  hidden: { labelId: 'admin.webmentions.status.hidden', variant: 'outline' },
 }
 
 // Response-type labels (mf2 classification — presentational only).
-const TYPE_META: Record<AdminWebmentionWire['type'], { label: string }> = {
-  mention: { label: '提及' },
-  reply: { label: '回应' },
-  like: { label: '喜欢' },
-  repost: { label: '转发' },
+const TYPE_META: Record<AdminWebmentionWire['type'], { labelId: UiMessageId }> = {
+  mention: { labelId: 'admin.webmentions.type.mention' },
+  reply: { labelId: 'admin.webmentions.type.reply' },
+  like: { labelId: 'admin.webmentions.type.like' },
+  repost: { labelId: 'admin.webmentions.type.repost' },
 }
 
 function isStatusFilter(value: unknown): value is StatusFilter {
@@ -126,23 +128,25 @@ function authorLabel(mention: AdminWebmentionWire): string {
 /** Verification badge: 已验证 for a clean check; 验证失败 with the last
  *  failure message (+ consecutive-day count) on hover. */
 function VerificationBadge({ mention }: { mention: AdminWebmentionWire }) {
+  const { t } = useI18n()
   if (mention.verificationStatus === 'verified') {
     return (
       <Badge variant="outline">
-        <CheckIcon /> 已验证
+        <CheckIcon /> {t('admin.webmentions.verified')}
       </Badge>
     )
   }
-  const streak = mention.verifyFailStreak > 0 ? ` · 已连续失败 ${mention.verifyFailStreak} 天` : ''
+  const streak =
+    mention.verifyFailStreak > 0 ? t('admin.webmentions.verifyStreak', { days: mention.verifyFailStreak }) : ''
   return (
     <Tooltip>
       <Tooltip.Trigger as="span" className="cursor-help">
         <Badge variant="destructive">
-          <CircleAlertIcon /> 验证失败
+          <CircleAlertIcon /> {t('admin.webmentions.verifyFailed')}
         </Badge>
       </Tooltip.Trigger>
       <Tooltip.Content>
-        {mention.lastError ?? '未知错误'}
+        {mention.lastError ?? t('admin.webmentions.unknownError')}
         {streak}
       </Tooltip.Content>
     </Tooltip>
@@ -158,6 +162,7 @@ interface InboxRowProps {
 }
 
 function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRowProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const meta = STATUS_META[mention.status]
   const busy = isBusy(mention)
@@ -168,9 +173,9 @@ function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRow
   return (
     <div className="flex flex-col gap-1 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={meta.variant}>{meta.label}</Badge>
+        <Badge variant={meta.variant}>{t(meta.labelId)}</Badge>
         <VerificationBadge mention={mention} />
-        <Badge variant="outline">{TYPE_META[mention.type].label}</Badge>
+        <Badge variant="outline">{t(TYPE_META[mention.type].labelId)}</Badge>
         <span className="text-sm font-medium">{authorLabel(mention)}</span>
         <a
           href={mention.sourceUrl}
@@ -184,27 +189,30 @@ function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRow
       {mention.summary !== null && <p className="line-clamp-2 text-sm text-muted-foreground">{mention.summary}</p>}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <p className="text-xs break-all text-muted-foreground">
-          目标 {mention.targetUrl} · 接收于 {formatLocalDate(new Date(mention.createdAt), ADMIN_DATE_FORMAT, config)}
+          {t('admin.webmentions.targetAt', {
+            url: mention.targetUrl,
+            time: formatLocalDate(new Date(mention.createdAt), ADMIN_DATE_FORMAT, config),
+          })}
         </p>
         <span className="ml-auto flex shrink-0 gap-2">
           {showReverify && (
             <Button size="sm" variant="outline" disabled={busy} onClick={() => onReverify(mention)}>
-              <RefreshCwIcon /> 重新验证
+              <RefreshCwIcon /> {t('admin.webmentions.reverify')}
             </Button>
           )}
           {mention.status === 'pending' && (
             <>
               <Button size="sm" variant="outline" disabled={busy} onClick={() => onApprove(mention)}>
-                <CheckIcon /> 批准
+                <CheckIcon /> {t('admin.webmentions.approve')}
               </Button>
               <Button size="sm" variant="destructive" disabled={busy} onClick={() => onReject(mention)}>
-                <XIcon /> 拒绝
+                <XIcon /> {t('admin.webmentions.reject')}
               </Button>
             </>
           )}
           {mention.status === 'hidden' && (
             <Button size="sm" variant="destructive" disabled={busy} onClick={() => onReject(mention)}>
-              <XIcon /> 拒绝
+              <XIcon /> {t('admin.webmentions.reject')}
             </Button>
           )}
         </span>
@@ -217,6 +225,7 @@ function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRow
 // and only reach the public page once approved; rejection is kept (audit trail);
 // 7 consecutive daily verification failures flip an approved row to `hidden`.
 export function WebmentionInboxView() {
+  const { t } = useI18n()
   const [status, setStatus] = useState<StatusFilter>('all')
 
   const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef, patchPages } = useAdminInfiniteList({
@@ -228,25 +237,25 @@ export function WebmentionInboxView() {
       limit: PAGE_SIZE,
     }),
     selectRows: (page) => page.mentions,
-    noun: 'Webmention',
+    noun: 'admin.list.noun.webmentions',
   })
 
   const approveMutation = useMutation({
     ...orpcQuery.admin.webmentions.approve.mutationOptions(),
     onSuccess: (_result, variables) =>
       patchPages((data) => moderateMentionInPages(data, variables.id, 'approved', status)),
-    onError: onMutationError('批准 Webmention 失败'),
+    onError: onMutationError('admin.toast.webmentionApproveFailed', t),
   })
   const rejectMutation = useMutation({
     ...orpcQuery.admin.webmentions.reject.mutationOptions(),
     onSuccess: (_result, variables) =>
       patchPages((data) => moderateMentionInPages(data, variables.id, 'rejected', status)),
-    onError: onMutationError('拒绝 Webmention 失败'),
+    onError: onMutationError('admin.toast.webmentionRejectFailed', t),
   })
   const reverifyMutation = useMutation({
     ...orpcQuery.admin.webmentions.reverify.mutationOptions(),
     onSuccess: (row) => patchPages((data) => applyReverifyToPages(data, row, status)),
-    onError: onMutationError('重新验证失败'),
+    onError: onMutationError('admin.toast.webmentionRevalidateFailed', t),
   })
 
   const isBusy = (mention: AdminWebmentionWire) =>
@@ -266,11 +275,11 @@ export function WebmentionInboxView() {
           }}
         >
           <TabsList>
-            <TabsTrigger value="all">全部</TabsTrigger>
-            <TabsTrigger value="pending">待审核</TabsTrigger>
-            <TabsTrigger value="approved">已批准</TabsTrigger>
-            <TabsTrigger value="rejected">已拒绝</TabsTrigger>
-            <TabsTrigger value="hidden">已隐藏</TabsTrigger>
+            <TabsTrigger value="all">{t('common.filter.all')}</TabsTrigger>
+            <TabsTrigger value="pending">{t('admin.webmentions.status.pending')}</TabsTrigger>
+            <TabsTrigger value="approved">{t('admin.webmentions.status.approved')}</TabsTrigger>
+            <TabsTrigger value="rejected">{t('admin.webmentions.status.rejected')}</TabsTrigger>
+            <TabsTrigger value="hidden">{t('admin.webmentions.status.hidden')}</TabsTrigger>
           </TabsList>
         </Tabs>
       </AdminListPage.Toolbar>
@@ -282,7 +291,7 @@ export function WebmentionInboxView() {
               <EmptyMedia variant="icon">
                 <AtSignIcon />
               </EmptyMedia>
-              <EmptyTitle>暂无收到的 Webmention</EmptyTitle>
+              <EmptyTitle>{t('admin.webmentions.emptyInbox')}</EmptyTitle>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -308,7 +317,7 @@ export function WebmentionInboxView() {
           </div>
         )}
         <AdminInfiniteListFooter
-          noun="条 Webmention"
+          noun={t('admin.list.noun.webmentions')}
           rowCount={total}
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}

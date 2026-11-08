@@ -63,22 +63,52 @@ export interface WorkerErrResponse {
 
 export type WorkerResponse = WorkerOkResponse | WorkerErrResponse
 
+type WorkerErrorDescriptor = NonNullable<DomainErrorWire['descriptor']>
+
 /**
  * `DomainError` stand-in for the worker isolate — `name: 'DomainError'`
  * matches the wire contract. Never import `@/server/infra/http/errors`
- * here (parameter properties break `--experimental-strip-types`).
+ * here (parameter properties break `--experimental-strip-types`); the
+ * descriptor travels as plain JSON and the main thread localizes it.
  */
 export class WorkerDomainError extends Error {
   readonly code: string
   readonly issues?: { message: string; path?: string[] }[]
+  readonly descriptor?: WorkerErrorDescriptor
 
-  constructor(code: string, message: string, issues?: { message: string; path?: string[] }[]) {
+  constructor(
+    code: string,
+    message: string,
+    issues?: { message: string; path?: string[] }[],
+    descriptor?: WorkerErrorDescriptor,
+  ) {
     super(message)
     this.name = 'DomainError'
     this.code = code
     this.issues = issues
+    this.descriptor = descriptor
   }
 }
+
+// Typed ids + English fallbacks: the wire `message` is the fallback, the main
+// thread's `domainErrorFromWire` rehydrates the descriptor for localization.
+const UNREADABLE = {
+  messageKey: 'images.error.worker.unreadable',
+  fallbackMessage: 'Could not parse the image data',
+} as const
+const INVALID_DIMENSIONS = {
+  messageKey: 'images.error.worker.invalidDimensions',
+  fallbackMessage: 'The image dimensions are invalid',
+} as const
+const TOO_LARGE = {
+  messageKey: 'images.error.worker.tooLarge',
+  fallbackMessage: `The image is too large (limit ${MAX_INPUT_PIXELS / 1_000_000} megapixels)`,
+  params: { megapixels: MAX_INPUT_PIXELS / 1_000_000 },
+} as const
+const REENCODE_FAILED = {
+  messageKey: 'images.error.worker.reencodeFailed',
+  fallbackMessage: 'Re-encoding the image failed',
+} as const
 
 /**
  * The pure sharp transform shared by the dev inline path and the worker entry point.
@@ -90,17 +120,20 @@ export async function processImageInWorker(input: ProcessImageInput): Promise<Pr
   try {
     inputMeta = await sharp(input.buffer, { failOn: 'error' }).metadata()
   } catch (error) {
-    throw new WorkerDomainError('BAD_REQUEST', '无法解析图片数据', [
-      { message: error instanceof Error ? error.message : String(error) },
-    ])
+    throw new WorkerDomainError(
+      'BAD_REQUEST',
+      UNREADABLE.fallbackMessage,
+      [{ message: error instanceof Error ? error.message : String(error) }],
+      UNREADABLE,
+    )
   }
   const inputWidth = inputMeta.width ?? 0
   const inputHeight = inputMeta.height ?? 0
   if (!Number.isFinite(inputWidth) || inputWidth <= 0 || !Number.isFinite(inputHeight) || inputHeight <= 0) {
-    throw new WorkerDomainError('BAD_REQUEST', '图片尺寸无效')
+    throw new WorkerDomainError('BAD_REQUEST', INVALID_DIMENSIONS.fallbackMessage, undefined, INVALID_DIMENSIONS)
   }
   if (inputWidth * inputHeight > MAX_INPUT_PIXELS) {
-    throw new WorkerDomainError('BAD_REQUEST', `图片尺寸过大（上限 ${MAX_INPUT_PIXELS / 1_000_000} 百万像素）`)
+    throw new WorkerDomainError('BAD_REQUEST', TOO_LARGE.fallbackMessage, undefined, TOO_LARGE)
   }
 
   let pipeline: Sharp
@@ -111,9 +144,12 @@ export async function processImageInWorker(input: ProcessImageInput): Promise<Pr
       sequentialRead: true,
     }).rotate()
   } catch (error) {
-    throw new WorkerDomainError('BAD_REQUEST', '无法解析图片数据', [
-      { message: error instanceof Error ? error.message : String(error) },
-    ])
+    throw new WorkerDomainError(
+      'BAD_REQUEST',
+      UNREADABLE.fallbackMessage,
+      [{ message: error instanceof Error ? error.message : String(error) }],
+      UNREADABLE,
+    )
   }
 
   let normalisedBuffer: Buffer
@@ -129,16 +165,19 @@ export async function processImageInWorker(input: ProcessImageInput): Promise<Pr
     }
     normalisedBuffer = await staged.jpeg({ quality: input.jpegQuality, mozjpeg: true, progressive: true }).toBuffer()
   } catch (error) {
-    throw new WorkerDomainError('BAD_REQUEST', '图片重新编码失败', [
-      { message: error instanceof Error ? error.message : String(error) },
-    ])
+    throw new WorkerDomainError(
+      'BAD_REQUEST',
+      REENCODE_FAILED.fallbackMessage,
+      [{ message: error instanceof Error ? error.message : String(error) }],
+      REENCODE_FAILED,
+    )
   }
 
   const normalisedMeta = await sharp(normalisedBuffer, { failOn: 'error' }).metadata()
   const width = normalisedMeta.width
   const height = normalisedMeta.height
   if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
-    throw new WorkerDomainError('BAD_REQUEST', '图片尺寸无效')
+    throw new WorkerDomainError('BAD_REQUEST', INVALID_DIMENSIONS.fallbackMessage, undefined, INVALID_DIMENSIONS)
   }
 
   const thumbhash = await computeThumbhash(normalisedBuffer, width, height)
@@ -229,6 +268,7 @@ async function handle(req: WorkerRequest): Promise<WorkerResponse> {
           code: err.code,
           message: err.message,
           issues: err.issues,
+          ...(err.descriptor === undefined ? {} : { descriptor: err.descriptor }),
         },
       } satisfies WorkerErrResponse
     }

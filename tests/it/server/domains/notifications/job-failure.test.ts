@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { Role } from '@/shared/utils/roles'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { listInbox, unreadCount } from '@/server/domains/notifications/service'
+import { getThread, listInbox, unreadCount } from '@/server/domains/notifications/service'
 import { finishJobRun, startJobRun } from '@/server/infra/db/job-run-recorder'
 import { user } from '@/server/infra/db/schema/user'
 
@@ -64,5 +64,29 @@ describe('notifications / job-failure wiring', () => {
     const inbox = await listInbox(db, adminId, { tab: 'all', limit: 10 })
     expect(inbox.items).toHaveLength(1)
     expect(inbox.items[0]!.body).toBe('任务「geoip」最近一次执行失败。请到「任务」页面查看详情。')
+  })
+
+  it('keeps an error message containing "Unexpected token \'<\'" instead of dropping the notice', async () => {
+    const adminId = await seedUser('admin', 'admin')
+
+    // A parser failure is ordinary text, not markup: the descriptor encoder
+    // must accept it, otherwise the thrown TypeError is swallowed by the
+    // notifier and no inbox row exists at all.
+    finishJobRun(startJobRun('audit-archive', 'scheduled'), 'failed', "Unexpected token '<'")
+
+    expect(unreadCount(db, adminId)).toBe(1)
+    const inbox = await listInbox(db, adminId, { tab: 'all', limit: 10 })
+    expect(inbox.items).toHaveLength(1)
+    expect(inbox.items[0]!.body).toContain("Unexpected token '<'")
+
+    // The detail pane resolves the same descriptor — identical literal text.
+    const thread = await getThread(
+      db,
+      { id: String(adminId), name: 'admin', email: 'admin@example.com', website: null, role: 'admin' },
+      Number(inbox.items[0]!.threadId),
+      'en-US',
+    )
+    expect(thread.messages[0]!.body).toContain("Unexpected token '<'")
+    expect(thread.messages[0]!.body).not.toContain('&lt;')
   })
 })

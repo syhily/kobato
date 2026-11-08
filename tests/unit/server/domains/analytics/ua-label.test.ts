@@ -6,10 +6,17 @@ import { formatUaLabel } from '@/server/domains/analytics/ua-parse'
 // with the analytics normalization maps; never parsed in the browser.
 
 describe('ua-parse — formatUaLabel', () => {
-  it('returns the unknown-device label for empty input', () => {
-    expect(formatUaLabel(null)).toBe('未知设备')
-    expect(formatUaLabel(undefined)).toBe('未知设备')
-    expect(formatUaLabel('')).toBe('未知设备')
+  it('returns the English technical label for empty input (no hardcoded Han copy)', () => {
+    expect(formatUaLabel(null)).toBe('Unknown device')
+    expect(formatUaLabel(undefined)).toBe('Unknown device')
+    expect(formatUaLabel('')).toBe('Unknown device')
+  })
+
+  it("accepts the request locale's unknown-device label at the call site", () => {
+    expect(formatUaLabel(null, null, '未知设备')).toBe('未知设备')
+    expect(formatUaLabel('', '', '未知裝置')).toBe('未知裝置')
+    // A platform hint still wins over the placeholder.
+    expect(formatUaLabel(null, 'iOS', '未知设备')).toBe('iOS')
   })
 
   it('falls back to the platform hint when the UA is missing', () => {
@@ -19,7 +26,7 @@ describe('ua-parse — formatUaLabel', () => {
 
   it('strips the structured-header quotes from the platform hint', () => {
     expect(formatUaLabel(null, '"macOS"')).toBe('macOS')
-    expect(formatUaLabel(null, '""')).toBe('未知设备')
+    expect(formatUaLabel(null, '""')).toBe('Unknown device')
   })
 
   it('combines browser and normalized os when both parse', () => {

@@ -2,6 +2,7 @@ import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { WebmentionInboxView } from '@/ui/admin/webmentions/WebmentionInboxView'
 import { WebmentionOutboxView } from '@/ui/admin/webmentions/WebmentionOutboxView'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export type WebmentionTab = 'inbox' | 'outbox'
 
@@ -19,12 +20,10 @@ export function WebmentionsView({
   tab: WebmentionTab
   onTabChange: (tab: WebmentionTab) => void
 }) {
+  const { t } = useI18n()
   return (
     <AdminListPage>
-      <AdminListPage.Header
-        title="Webmention 管理"
-        description="其他站点引用你的内容时会向本站发送 Webmention，审核通过后显示在文章页「引用与回应」区块；发送日志记录本站向外发出的提及。"
-      />
+      <AdminListPage.Header title={t('admin.webmentions.title')} description={t('admin.webmentions.description')} />
 
       <Tabs
         value={tab}
@@ -35,8 +34,8 @@ export function WebmentionsView({
         }}
       >
         <TabsList>
-          <TabsTrigger value="inbox">接收审核</TabsTrigger>
-          <TabsTrigger value="outbox">发送日志</TabsTrigger>
+          <TabsTrigger value="inbox">{t('admin.webmentions.tab.inbox')}</TabsTrigger>
+          <TabsTrigger value="outbox">{t('admin.webmentions.tab.outbox')}</TabsTrigger>
         </TabsList>
       </Tabs>
 

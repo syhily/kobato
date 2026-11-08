@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { FriendApplyForm } from '@/ui/public/friends/FriendApplyForm'
 
 vi.mock('motion/react', () => {
@@ -39,9 +40,11 @@ function renderForm() {
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
   })
   return render(
-    <QueryClientProvider client={client}>
-      <FriendApplyForm />
-    </QueryClientProvider>,
+    wrapWithI18n(
+      <QueryClientProvider client={client}>
+        <FriendApplyForm />
+      </QueryClientProvider>,
+    ),
   )
 }
 

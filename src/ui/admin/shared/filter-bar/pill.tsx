@@ -21,6 +21,7 @@ import {
 } from '@/ui/admin/shared/filter-bar/editors'
 import { parseTextFilterValue, textFilterValueLabel } from '@/ui/admin/shared/filter-bar/text-filter'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // One pill: label + icon, kind-specific value editor, remove button. Values are
 // opaque strings — this component owns decoding (never throws) + re-serialization.
@@ -33,6 +34,7 @@ interface FilterPillProps<K extends string> {
 }
 
 export function FilterPill<K extends string>({ field, filter, search, onRemove, onValueChange }: FilterPillProps<K>) {
+  const { t } = useI18n()
   const fieldLabel = field?.label ?? filter.field
   const FieldIcon = field?.icon
 
@@ -82,7 +84,7 @@ export function FilterPill<K extends string>({ field, filter, search, onRemove, 
           <TextFilterEditor
             field={field}
             value={textValue}
-            onChange={(next) => onValueChange(JSON.stringify(next), textFilterValueLabel(next, field.operators))}
+            onChange={(next) => onValueChange(JSON.stringify(next), textFilterValueLabel(next, field.operators, t))}
           />
         ) : field.kind === 'freetext' ? (
           <FreetextEditor
@@ -97,13 +99,13 @@ export function FilterPill<K extends string>({ field, filter, search, onRemove, 
               if (!next) {
                 return
               }
-              onValueChange(JSON.stringify(next), singleDateFilterLabel(next))
+              onValueChange(JSON.stringify(next), singleDateFilterLabel(next, t))
             }}
           />
         ) : field.kind === 'date-range' && dateRangeValue ? (
           <DateRangeEditor
             value={dateRangeValue}
-            onChange={(next) => onValueChange(JSON.stringify(next), dateFilterLabel(next))}
+            onChange={(next) => onValueChange(JSON.stringify(next), dateFilterLabel(next, t))}
           />
         ) : null}
       </div>

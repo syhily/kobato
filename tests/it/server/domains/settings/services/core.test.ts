@@ -109,7 +109,7 @@ describe('server/domains/settings/services/core', () => {
 
     expect(result.bundle?.limits?.maxRequestBodySize).toBe(2048)
     expect(result.warnings).toHaveLength(1)
-    expect(result.warnings[0]).toContain('设置已保存')
+    expect(result.warnings[0]).toMatchObject({ messageKey: 'admin.settings.warnings.sectionChangeFailed' })
   })
 
   it('reports no warnings when the section change handler succeeds', async () => {
@@ -174,7 +174,10 @@ describe('server/domains/settings/services/core — assets write-path URL rules'
 
     expect(error.code).toBe('BAD_REQUEST')
     expect(error.issues).toContainEqual(
-      expect.objectContaining({ path: ['storage', 'endpoint'], message: expect.stringContaining('HTTPS') }),
+      expect.objectContaining({
+        path: ['storage', 'endpoint'],
+        fallbackMessage: expect.stringContaining('HTTPS'),
+      }),
     )
   })
 

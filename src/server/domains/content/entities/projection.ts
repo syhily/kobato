@@ -23,6 +23,7 @@ export function toAdminMetaDto(
     webmentionsEnabled: row.webmentionsEnabled,
     showToc: row.showToc,
     showUpdated: row.showUpdated,
+    contentLanguage: row.contentLanguage,
     publishedAt: row.publishedAt.toISOString(),
     publishedRevisionId: row.publishedRevisionId === null ? null : String(row.publishedRevisionId),
     createdAt: row.createdAt.toISOString(),

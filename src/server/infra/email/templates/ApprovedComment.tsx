@@ -1,3 +1,5 @@
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Hr, Link, Text } from '@/server/infra/email/render'
 import { RawEmailHtml } from '@/server/infra/email/safe-html'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
@@ -5,6 +7,7 @@ import { light } from '@/server/infra/email/templates/styles/tokens'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 interface Props {
+  t: ServerTranslator
   receiver: string
   postTitle: string
   postLink: string
@@ -12,12 +15,12 @@ interface Props {
   commentLink: string
 }
 
-export function ApprovedComment({ receiver, postTitle, postLink, commentContent, commentLink }: Props) {
+export function ApprovedComment({ t, receiver, postTitle, postLink, commentContent, commentLink }: Props) {
   // Anonymous commenters claim their account via the lostpassword reset; built off `siteIdentity.website` to stay in sync.
   const resetPasswordLink = `${requireBlogSettingsSection('siteIdentity').website}/admin/signin?action=lostpassword`
 
   return (
-    <EmailLayout receiver={receiver} preview={`你在《${postTitle}》中的留言已通过审核`}>
+    <EmailLayout t={t} receiver={receiver} preview={t.format('email.commentApproved.preview', { postTitle })}>
       <Text
         style={{
           fontSize: 26,
@@ -28,7 +31,7 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
         }}
         className="dark-text-primary"
       >
-        你的留言已通过审核
+        {t.format('email.commentApproved.title')}
       </Text>
 
       <Text
@@ -40,7 +43,7 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
         }}
         className="dark-text-secondary"
       >
-        你在《
+        {t.format('email.commentApproved.contextPrefix')}
         <Link
           href={postLink}
           style={{
@@ -52,7 +55,7 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
         >
           {postTitle}
         </Link>
-        》中的留言，已经通过审核
+        {t.format('email.commentApproved.contextSuffix')}
       </Text>
 
       <div
@@ -92,7 +95,7 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
           }}
           className="dark-cta"
         >
-          查看留言
+          {t.format('email.commentApproved.cta')}
         </Link>
       </div>
 
@@ -107,7 +110,7 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
         }}
         className="dark-text-muted"
       >
-        想要查看与管理你的所有历史评论？通过此链接重置密码登录即可：
+        {t.format('email.common.commentHistoryNote')}
       </Text>
       <Link
         href={resetPasswordLink}

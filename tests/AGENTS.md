@@ -4,7 +4,9 @@ Conventions for the `tests/` directory.
 
 ## Layout
 
-Tests are split into four Vitest workspace projects. **The first three mirror the `src/` layout:**
+Tests are split into four Vitest workspace projects plus two live-instance
+suites (HTTP e2e and real-browser Playwright). **The first three mirror the
+`src/` layout:**
 
 - **`tests/unit/`** — Pure logic, no DB, fastest feedback loop.
   If you test `src/shared/utils/paths.ts`, the test lives at `tests/unit/shared/utils/paths.test.ts`.
@@ -31,6 +33,27 @@ Tests are split into four Vitest workspace projects. **The first three mirror th
   leaves the machine: mail-dependent journeys point the `mail` settings
   at the in-process SMTP capture server in `#/_helpers/e2e-mail` and
   extract secrets (OTP code, signin link) from the captured bytes.
+- **`tests/browser/`** — Real-Chromium journeys (Playwright) for behavior
+  jsdom cannot prove: the settings language switch (dirty-card flush veto,
+  Portal focus, cross-tab sparse save), a non-settings document keeping its
+  state on a peer locale change, the public comment composer loading only the
+  active locale's Inkling labels, and a post's `contentLanguage` DOM contract.
+  **Not part of `pnpm test`** and not a Vitest project — run
+  `pnpm run test:browser` (boots a throwaway SEA instance, or targets
+  `KOBATO_BROWSER_BASE_URL` — an external target gets the same staged post +
+  settings baseline, so never point it at production) / `pnpm run sea:browser [binary]` (always boots
+  the built binary). The runner injects
+  `KOBATO_BROWSER_BASE_URL` + `KOBATO_BROWSER_ADMIN_EMAIL` /
+  `KOBATO_BROWSER_ADMIN_PASSWORD` / `KOBATO_BROWSER_POST_SLUG`;
+  `support/global-setup.ts` stages one published post (comments enabled,
+  `contentLanguage: 'ar'`) and resets the general settings baseline through
+  the admin HTTP surface — no real config or secret is read. Local runs
+  default to the system Google Chrome channel; `KOBATO_BROWSER_CHANNEL`
+  overrides it and CI installs/sets `chromium`. One worker, files serial: the
+  journeys share one instance whose settings they mutate and restore.
+  `KOBATO_BROWSER_TEST_GREP` narrows a debugging run. The managed runner exits
+  non-zero when `dist-sea/kobato` is missing — never a silent skip; CI uses
+  `sea:browser`, which always requires the built binary.
 
 Cross-cutting integration tests still live inside `tests/it/` under the primary domain they exercise — there is no `features/` bucket.
 
@@ -73,9 +96,28 @@ npx vitest run --project snaps
 npx vitest run --project inkling
 ```
 
+Real-browser journeys (builds/uses the SEA binary or an external instance):
+
+```bash
+pnpm run test:browser                 # managed throwaway instance by default
+pnpm run sea:browser dist-sea/kobato  # always the SEA binary
+KOBATO_BROWSER_HEADLESS=0 pnpm run test:browser
+```
+
+Artifacts (trace / screenshot / video on failure) and the HTML report land in
+`tmp/browser-results` and `tmp/browser-report` — both under the ignored `tmp/`.
+
 ### CI
 
 GitHub Actions needs no service containers — the suite is self-contained.
+
+Real-browser journeys are separate from `pnpm test`:
+`.github/workflows/ci.yml`'s `build` job runs `sea:build` + bundled Chromium +
+`pnpm run sea:browser` on **pull_request** events only; plain pushes there run
+just the production build. `.github/workflows/sea.yml` also runs the same
+journeys from its `build` / `build-develop` jobs. Both install Chromium with
+`pnpm exec playwright install --with-deps chromium` and set
+`KOBATO_BROWSER_CHANNEL=chromium`.
 
 ### Worker isolation (integration only)
 
@@ -142,6 +184,13 @@ ceremony:
     must stay mutation-proof across tests
   - `#/_helpers/dom-structure` — normalized DOM-tree diff for markup parity
     pins (a rendered React tree vs its hand-written HTML twin)
+  - `#/_helpers/i18n-literals` — the AST scanner behind
+    `tests/unit/arch/ui-i18n-literals.test.ts` (JSX text incl. expression
+    children, copy-bearing JSX attributes, toast / `DomainError` / `titleMeta`
+    strings, locale-less `toLocale*`, exact locale literals) plus its exact
+    file/rule/snippet allowlist; whole-file content libraries (the vendored
+    quote bank, the fallback catalog) are excluded before they are read or
+    parsed, and scan roots grow per migration slice
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/analytics-db` — DuckDB sidecar creation / seeding / teardown
     (analytics integration tests)

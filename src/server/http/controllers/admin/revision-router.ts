@@ -1,9 +1,11 @@
-import type { ContentEntityAdapter } from '@/server/domains/content/lifecycle'
-import type { authorProc } from '@/server/http/orpc-base'
+import type { ContentEntityAdapter, SaveBodyOutcome, SaveBodyResult } from '@/server/domains/content/lifecycle'
+import type { authorProc, HandlerContext } from '@/server/http/orpc-base'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { saveBody } from '@/server/domains/content/lifecycle'
 import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
+import { formatWarningDescriptors } from '@/server/http/translate-domain-error'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { saveBodyInput, saveResultOutput } from '@/shared/contracts/revision'
 import { idFromString } from '@/shared/utils/id'
 
@@ -25,6 +27,13 @@ export interface MakeRevisionRouterOptions<TMeta, TPreview> {
    * can evaluate ownership — posts pass it, pages (admin-only) don't.
    */
   passViewerToSaveBody: boolean
+}
+
+/** Localize the non-fatal side-effect notices for the request locale. */
+function localizeSaveResult(result: SaveBodyOutcome, context: HandlerContext): SaveBodyResult {
+  const { warningDescriptors, ...rest } = result
+  const warning = formatWarningDescriptors(warningDescriptors, createServerTranslator(context.localization.locale))
+  return warning === undefined ? rest : { ...rest, warning }
 }
 
 /** The save-draft / publish-latest pair shared by the posts and pages
@@ -58,7 +67,7 @@ export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterO
           resourceId: input.id,
         })
       }
-      return result
+      return localizeSaveResult(result, context)
     })
 
   const publishLatest = proc
@@ -89,7 +98,7 @@ export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterO
           details: { publishedAt: input.publishedAt },
         })
       }
-      return result
+      return localizeSaveResult(result, context)
     })
 
   return { saveDraft, publishLatest }

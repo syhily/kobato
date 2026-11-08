@@ -9,6 +9,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { tZhCN } from '#/_helpers/i18n'
+
 // The hook drives its search / rehydrate lookups through react-query against
 // the oRPC client, mocked as a plain object so `orpcQuery` derives real
 // query options over the stubbed procedures.
@@ -28,8 +30,10 @@ vi.mock('@/client/api/client', () => ({
   },
 }))
 
-import { COMMENT_FILTER_FIELDS } from '@/ui/admin/comments/filter-fields'
+import { buildCommentFilterFields } from '@/ui/admin/comments/filter-fields'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
+
+const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
 function makeWrapper() {
   const queryClient = new QueryClient({

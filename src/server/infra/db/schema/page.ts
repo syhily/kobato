@@ -32,6 +32,12 @@ export const page = sqliteTable(
     publishedRevisionId: integer('published_revision_id'),
     /** The timestamp of the first publication. Immutable after set. */
     firstPublishedAt: integer('first_published_at', { mode: 'timestamp_ms' }),
+    /**
+     * Author-declared BCP 47 language of the prose (any well-formed tag, not
+     * limited to the four UI locales). Rendered as the detail body container's
+     * `lang`; NULL means "inherit the document language". Never auto-detected.
+     */
+    contentLanguage: text('content_language'),
     /** Author who created the page. NULL for legacy migrated pages. */
     authorId: integer('author_id'),
   },

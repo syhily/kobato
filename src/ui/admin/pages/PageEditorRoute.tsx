@@ -12,7 +12,7 @@ export interface PageEditorRouteProps {
 export function PageEditorRoute({ pageId, navigate }: PageEditorRouteProps) {
   return (
     <EditorRouteLoader
-      entityLabel="页面"
+      entityLabelId="admin.editor.entity.page"
       listPath="/admin/pages"
       queryOptions={orpcQuery.admin.pages.get.queryOptions({ input: { id: pageId } })}
       shell={PageEditorShell}

@@ -1,7 +1,7 @@
 import { parseISO } from 'date-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CustomQuote, DailyQuoteSource } from '@/shared/config/types'
+import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { getDailyQuote, pickForDate } from '@/server/render/calendar/daily-quote'
@@ -138,6 +138,31 @@ describe('render/calendar/daily-quote — local sources', () => {
     content: `自定义一言${i + 1}`,
     author: `作者${i + 1}`,
   }))
+
+  function bundleWithSource(source: DailyQuoteSource, bank: CustomQuote[] = []): BlogSettingsBundle {
+    const baseSidebar = TEST_BLOG_SETTINGS_BUNDLE.sidebar
+    if (baseSidebar === null) {
+      throw new Error('TEST_BLOG_SETTINGS_BUNDLE is missing the sidebar section')
+    }
+    return {
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      sidebar: { sidebar: { ...baseSidebar.sidebar, dailyQuote: { source, customQuotes: bank } } },
+    }
+  }
+
+  it('uses the pinned settings bundle, not the process snapshot', async () => {
+    const otherBank: CustomQuote[] = Array.from({ length: 12 }, (_, i) => ({
+      content: `另一组一言${i + 1}`,
+      author: '另一作者',
+    }))
+    // The process snapshot holds one bank; the request-pinned bundle another.
+    setBlogSettingsBundleForTests(bundleWithSource('custom', customQuotes))
+
+    const quote = await getDailyQuote(DATE, bundleWithSource('custom', otherBank))
+
+    expect(quote).toEqual(pickForDate(otherBank, DATE))
+    expect(quote).not.toEqual(pickForDate(customQuotes, DATE))
+  })
 
   it('picks from the custom bank when source=custom and ≥10 quotes are configured', async () => {
     seedSource('custom', customQuotes)

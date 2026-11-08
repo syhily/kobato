@@ -21,6 +21,7 @@ import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 type CacheSlice = CacheSettings['cache']
 
@@ -37,6 +38,7 @@ interface BucketCardProps {
 }
 
 export function BucketCard({ bucket, settings, allBuckets, isClearPending, clearStatus, onClear }: BucketCardProps) {
+  const { locale, t } = useI18n()
   const editable = settings !== undefined
   // Non-tunable buckets fall back to the stats row — memoized for a stable identity (compared by reference below).
   const effectiveSettings = useMemo(
@@ -106,8 +108,8 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   }, [allBuckets, bucket.id])
 
   const validationError = useMemo(
-    () => (isEditing ? validateBucket(draft, bucket.id, otherBuckets) : null),
-    [isEditing, draft, bucket.id, otherBuckets],
+    () => (isEditing ? validateBucket(draft, bucket.id, otherBuckets, t) : null),
+    [isEditing, draft, bucket.id, otherBuckets, t],
   )
 
   const onSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
@@ -151,17 +153,18 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
       {editable ? (
         isEditing ? (
           <Button type="button" variant="ghost" disabled={isSavePending} onClick={onCancel}>
-            <XIcon data-icon /> 取消
+            <XIcon data-icon /> {t('common.action.cancel')}
           </Button>
         ) : (
           <Button type="button" variant="outline" disabled={isClearPending} onClick={onEdit}>
-            <SquarePenIcon data-icon /> 编辑
+            <SquarePenIcon data-icon /> {t('common.action.edit')}
           </Button>
         )
       ) : null}
       {editable && isEditing ? (
         <Button type="submit" disabled={isSavePending || !isDirty || validationError !== null}>
-          <SaveIcon data-icon /> {isSavePending ? '保存中…' : '保存配置'}
+          <SaveIcon data-icon />{' '}
+          {isSavePending ? t('admin.settings.cache.bucket.saving') : t('admin.settings.cache.bucket.save')}
         </Button>
       ) : null}
       <Button
@@ -170,7 +173,8 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
         disabled={isClearPending || isSavePending || bucket.keyCount === 0}
         onClick={onClear}
       >
-        <Trash2Icon data-icon /> {isClearingSelf ? '清空中…' : '清空该分组'}
+        <Trash2Icon data-icon />{' '}
+        {isClearingSelf ? t('admin.settings.cache.view.clearing') : t('admin.settings.cache.bucket.clear')}
       </Button>
     </>
   )
@@ -186,7 +190,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     <ReadOnlyStatusLine
       clearStatus={clearStatus}
       target={bucket.id}
-      savedHint={saveStatus === 'saved' && !isDirty ? '配置已更新' : undefined}
+      savedHint={saveStatus === 'saved' && !isDirty ? t('admin.settings.cache.bucket.saved') : undefined}
     />
   )
 
@@ -200,18 +204,24 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   return (
     <SettingGroup title={bucket.label} description={bucket.description}>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <BucketField label="缓存条数" value={`${bucket.keyCount}`} />
-        <BucketField label="当前前缀" value={<code className="font-mono text-xs">{bucket.prefix}</code>} />
-        <BucketField label="键匹配模式" value={<code className="font-mono text-xs">{bucket.pattern}</code>} />
-        <BucketField label="当前 TTL" value={formatTtl(bucket.ttlSeconds)} />
+        <BucketField label={t('admin.settings.cache.bucket.keyCount')} value={`${bucket.keyCount}`} />
+        <BucketField
+          label={t('admin.settings.cache.bucket.prefix')}
+          value={<code className="font-mono text-xs">{bucket.prefix}</code>}
+        />
+        <BucketField
+          label={t('admin.settings.cache.bucket.pattern')}
+          value={<code className="font-mono text-xs">{bucket.pattern}</code>}
+        />
+        <BucketField label={t('admin.settings.cache.bucket.ttl')} value={formatTtl(bucket.ttlSeconds, { locale })} />
       </dl>
 
       {editable && isEditing ? (
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <SettingsRow
-            label="键前缀"
+            label={t('admin.settings.cache.bucket.editPrefix')}
             htmlFor={prefixId}
-            hint="必须以 `:` 结尾，作为前缀和后续字段的分隔符。修改后写入端立即用新前缀生成键。"
+            hint={t('admin.settings.cache.bucket.editPrefixHint')}
             error={validationError ?? undefined}
           >
             {(controlProps) => (
@@ -227,9 +237,9 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
             )}
           </SettingsRow>
           <SettingsRow
-            label="TTL（小时）"
+            label={t('admin.settings.cache.bucket.ttlHours')}
             htmlFor={ttlId}
-            hint={`将以 ${draft.ttlHours * SECONDS_PER_HOUR} 秒为有效期写入数据库缓存表（1 小时 ~ 30 天）。`}
+            hint={t('admin.settings.cache.bucket.ttlHint', { seconds: draft.ttlHours * SECONDS_PER_HOUR })}
           >
             <Input
               id={ttlId}

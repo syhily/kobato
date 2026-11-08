@@ -1,4 +1,5 @@
 import type { CacheBucketId } from '@/shared/types/cache'
+import type { I18nValue } from '@/ui/lib/I18nProvider'
 
 import { PREFIX_PATTERN, RESERVED_PREFIXES, SECONDS_PER_HOUR } from '@/ui/admin/settings/cache/cache-constants'
 
@@ -23,6 +24,7 @@ export function validateBucket(
   draft: BucketDraft,
   bucketId: CacheBucketId,
   others: { id: CacheBucketId; prefix: string }[],
+  t: I18nValue['t'],
 ): string | null {
   function collides(a: string, b: string): boolean {
     return a === b || a.startsWith(b) || b.startsWith(a)
@@ -30,14 +32,14 @@ export function validateBucket(
 
   const trimmed = draft.prefix.trim()
   if (trimmed.length === 0) {
-    return '前缀不能为空'
+    return t('admin.settings.cache.validation.prefixRequired')
   }
   if (!PREFIX_PATTERN.test(trimmed)) {
-    return '前缀只能包含字母 / 数字 / `_` / `-`，且必须以 `:` 结尾'
+    return t('admin.settings.cache.validation.prefixPattern')
   }
   const reserved = RESERVED_PREFIXES.find((slot) => collides(trimmed, slot))
   if (reserved !== undefined) {
-    return `与系统保留前缀 \`${reserved}\` 冲突，请换一个名字`
+    return t('admin.settings.cache.validation.reserved', { prefix: reserved })
   }
   // Defensive skip: an "other" entry sharing this card's bucket id shouldn't exist.
   for (const other of others) {
@@ -45,7 +47,7 @@ export function validateBucket(
       continue
     }
     if (collides(trimmed, other.prefix)) {
-      return `与「${other.id}」的前缀 \`${other.prefix}\` 冲突，会让前缀扫描互相误伤`
+      return t('admin.settings.cache.validation.collision', { bucket: other.id, prefix: other.prefix })
     }
   }
   return null

@@ -9,6 +9,7 @@ import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface NewsletterFormProps {
   newsletter: NewsletterSettings
@@ -21,6 +22,7 @@ interface FormState {
 }
 
 export function NewsletterForm({ newsletter }: NewsletterFormProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<NewsletterSettings, FormState>({
     section: 'newsletter',
     source: newsletter,
@@ -37,12 +39,12 @@ export function NewsletterForm({ newsletter }: NewsletterFormProps) {
   return (
     <div className="flex flex-col gap-5">
       <SettingGroup
-        title="邮件订阅"
-        description="开启后访客可通过邮箱订阅更新；订阅需经邮件确认（双重确认）后生效。"
+        title={t('admin.settings.newsletter.title')}
+        description={t('admin.settings.newsletter.description')}
         {...settingGroupProps}
       >
         <SettingGroupContent>
-          <SettingsRow label="启用邮件订阅" hint="开启前请先完成「邮件服务」配置；关闭时订阅接口拒绝新请求。">
+          <SettingsRow label={t('admin.settings.newsletter.enabled')} hint={t('admin.settings.newsletter.enabledHint')}>
             <Controller
               control={form.control}
               name="enabled"
@@ -56,13 +58,17 @@ export function NewsletterForm({ newsletter }: NewsletterFormProps) {
                     save={save}
                   />
                   <FieldLabel htmlFor="newsletter-enabled" className="font-normal">
-                    {field.value ? '已开启' : '已关闭'}
+                    {field.value ? t('admin.settings.shared.toggle.on') : t('admin.settings.shared.toggle.off')}
                   </FieldLabel>
                 </div>
               )}
             />
           </SettingsRow>
-          <SettingsRow label="发件人名称" htmlFor="newsletter-from-name" hint="留空时使用站点标题。">
+          <SettingsRow
+            label={t('admin.settings.newsletter.fromName')}
+            htmlFor="newsletter-from-name"
+            hint={t('admin.settings.newsletter.fromNameHint')}
+          >
             <SettingsInput
               flushOnBlur={flushOnBlur}
               id="newsletter-from-name"
@@ -71,9 +77,9 @@ export function NewsletterForm({ newsletter }: NewsletterFormProps) {
             />
           </SettingsRow>
           <SettingsRow
-            label="主题前缀"
+            label={t('admin.settings.newsletter.subjectPrefix')}
             htmlFor="newsletter-subject-prefix"
-            hint="邮件主题中显示的前缀，留空时使用站点标题。"
+            hint={t('admin.settings.newsletter.subjectPrefixHint')}
           >
             <SettingsInput
               flushOnBlur={flushOnBlur}

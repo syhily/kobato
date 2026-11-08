@@ -5,6 +5,7 @@ import type { FilterOptionItem, FilterOptionRenderer } from '@/ui/admin/shared/f
 
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Two list leaves shared by the add-button picker and the pill editors: static local filter vs async server search.
 interface SearchableOptionListProps {
@@ -20,10 +21,11 @@ export function SearchableOptionList({
   options,
   selectedValue,
   onSelect,
-  placeholder = '搜索…',
-  emptyMessage = '无匹配选项',
+  placeholder,
+  emptyMessage,
   renderOption,
 }: SearchableOptionListProps) {
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
@@ -43,14 +45,16 @@ export function SearchableOptionList({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={placeholder}
+            placeholder={placeholder ?? t('common.combobox.placeholder')}
             className="h-8 pl-8 text-sm"
           />
         </div>
       </div>
       <div className="max-h-60 overflow-y-auto p-1">
         {filtered.length === 0 ? (
-          <p className="px-2 py-3 text-center text-sm text-muted-foreground">{emptyMessage}</p>
+          <p className="px-2 py-3 text-center text-sm text-muted-foreground">
+            {emptyMessage ?? t('admin.shared.filter.noOptions')}
+          </p>
         ) : (
           filtered.map((option) => {
             const isSelected = selectedValue === option.value
@@ -88,6 +92,7 @@ interface InlineSearchListProps {
 }
 
 export function InlineSearchList({ items, onSearch, onSelect, placeholder, emptyMessage }: InlineSearchListProps) {
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
 
   const handleSearch = (value: string) => {
@@ -100,7 +105,7 @@ export function InlineSearchList({ items, onSearch, onSelect, placeholder, empty
       <div className="flex items-center gap-2 border-b px-3 py-2">
         <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
         <input
-          aria-label="搜索"
+          aria-label={t('admin.shared.filter.searchAria')}
           className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           placeholder={placeholder}
           value={query}

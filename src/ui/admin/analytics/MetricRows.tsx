@@ -1,7 +1,9 @@
 import type { MetricRow, MetricType } from '@/shared/contracts/analytics'
 
+import { formatNumber } from '@/shared/i18n/format'
 import { MetricName } from '@/ui/admin/analytics/MetricName'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Pure row list shared by the group card (top 10) and the details dialog
 // (full set): name + count(percent) + a chart-1 progress bar, modeled on
@@ -18,11 +20,16 @@ export interface MetricRowsProps {
 }
 
 export function MetricRows({ rows, total, type, onSelect, className }: MetricRowsProps) {
+  const { locale, t } = useI18n()
   return (
     <div className={cn('w-full text-sm', className)}>
       <div className="flex justify-between border-b leading-[40px]">
-        <div className="px-4 text-left align-middle font-medium text-muted-foreground">名称</div>
-        <div className="px-4 text-right align-middle font-medium text-muted-foreground">数量</div>
+        <div className="px-4 text-left align-middle font-medium text-muted-foreground">
+          {t('admin.analytics.metrics.name')}
+        </div>
+        <div className="px-4 text-right align-middle font-medium text-muted-foreground">
+          {t('admin.analytics.metrics.count')}
+        </div>
       </div>
       <ul>
         {rows.map((row) => {
@@ -46,14 +53,14 @@ export function MetricRows({ rows, total, type, onSelect, className }: MetricRow
                     <MetricName name={row.name} type={type} />
                   </span>
                   <span className="shrink-0 text-right tabular-nums">
-                    {row.visits.toLocaleString()}
+                    {formatNumber(row.visits, { locale })}
                     <span className="text-xs text-muted-foreground"> ({percent}%)</span>
                   </span>
                 </span>
                 <span
                   className="mt-1 block h-2 w-full rounded-full bg-muted"
                   role="progressbar"
-                  aria-label={`数量占比: ${percent}%`}
+                  aria-label={t('admin.analytics.metrics.shareAria', { percent })}
                   aria-valuenow={percent}
                   aria-valuemin={0}
                   aria-valuemax={100}

@@ -5,10 +5,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Controller } from 'react-hook-form'
 
 import type { CommentsLoaderShape } from '@/shared/config/projection'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { AvatarSource } from '@/shared/utils/avatar'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { GRAVATAR_MIRROR_PRESETS } from '@/shared/utils/safe-url'
+import { GRAVATAR_MIRROR_PRESETS } from '@/ui/admin/settings/gravatar-mirror-presets'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -22,6 +23,7 @@ import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { resolveSortableMove, SortableDragHandle, useSortableRow, useSortableSensors } from '@/ui/admin/shared/sortable'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
@@ -30,6 +32,7 @@ interface CommentsFormProps {
 }
 
 function CommentsPaginationCard({ comments }: CommentsFormProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<CommentsLoaderShape, { size: number }>({
     section: 'comments',
     source: comments,
@@ -42,9 +45,17 @@ function CommentsPaginationCard({ comments }: CommentsFormProps) {
   })
 
   return (
-    <SettingGroup title="评论分页" description="控制文章页面下方的评论列表加载行为。" {...settingGroupProps}>
+    <SettingGroup
+      title={t('admin.settings.comments.pagination.title')}
+      description={t('admin.settings.comments.pagination.description')}
+      {...settingGroupProps}
+    >
       <SettingGroupContent>
-        <SettingsRow label="每页评论数" htmlFor="comments-size" hint="客户端「加载更多」每次抓取的根评论数量。">
+        <SettingsRow
+          label={t('admin.settings.comments.pagination.size')}
+          htmlFor="comments-size"
+          hint={t('admin.settings.comments.pagination.sizeHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="comments-size"
@@ -59,13 +70,14 @@ function CommentsPaginationCard({ comments }: CommentsFormProps) {
   )
 }
 
-const AVATAR_SOURCE_LABELS: Record<AvatarSource, string> = {
-  qq: 'QQ 邮箱',
-  github: 'GitHub',
-  gravatar: 'Gravatar',
-}
+const AVATAR_SOURCE_LABEL_IDS = {
+  qq: 'admin.settings.comments.avatar.source.qq',
+  github: 'admin.settings.comments.avatar.source.github',
+  gravatar: 'admin.settings.comments.avatar.source.gravatar',
+} as const satisfies Record<AvatarSource, UiMessageId>
 
 function SortableSourceRow({ source }: { source: AvatarSource }) {
+  const { t } = useI18n()
   const {
     setNodeRef,
     style: rowStyle,
@@ -81,7 +93,7 @@ function SortableSourceRow({ source }: { source: AvatarSource }) {
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
       <SortableDragHandle {...dragHandleProps} />
-      <span className="flex-1 text-sm">{AVATAR_SOURCE_LABELS[source]}</span>
+      <span className="flex-1 text-sm">{t(AVATAR_SOURCE_LABEL_IDS[source])}</span>
     </div>
   )
 }
@@ -93,6 +105,7 @@ interface AvatarCardState {
 }
 
 function CommentsAvatarCard({ comments }: CommentsFormProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, save, display, settingGroupProps } = useSettingsCard<CommentsLoaderShape, AvatarCardState>(
     {
       section: 'comments',
@@ -128,36 +141,49 @@ function CommentsAvatarCard({ comments }: CommentsFormProps) {
   function probeStatus(url: string) {
     const result = probeByUrl.get(url)
     if (result === undefined) {
-      return probe.isFetching ? <span className="text-xs text-muted-foreground">检测中…</span> : null
+      return probe.isFetching ? (
+        <span className="text-xs text-muted-foreground">{t('admin.settings.comments.avatar.probing')}</span>
+      ) : null
     }
     if (!result.reachable) {
-      return <span className="text-xs text-destructive">不可达</span>
+      return <span className="text-xs text-destructive">{t('admin.settings.comments.avatar.unreachable')}</span>
     }
     return <span className="text-xs text-green-600">{result.latencyMs} ms</span>
   }
 
   // A configured mirror outside the presets stays selectable — never strand
-  // an existing (allowlisted but non-preset) value on an unreadable option.
+  // an existing (allowlisted but non-preset) value on an unreadable option;
+  // its only label is the URL itself.
   const current = comments.comments.avatar.mirror
-  const options = GRAVATAR_MIRROR_PRESETS.some((option) => option.value === current)
+  const options: ReadonlyArray<{ value: string; labelKey?: UiMessageId }> = GRAVATAR_MIRROR_PRESETS.some(
+    (option) => option.value === current,
+  )
     ? GRAVATAR_MIRROR_PRESETS
-    : [...GRAVATAR_MIRROR_PRESETS, { value: current, label: current }]
+    : [...GRAVATAR_MIRROR_PRESETS, { value: current }]
+
+  function optionLabel(option: { value: string; labelKey?: UiMessageId }): string {
+    return option.labelKey === undefined ? option.value : t(option.labelKey)
+  }
 
   const githubTokenField = secretFieldStrings({
+    t,
     mask: display.comments.githubTokenMask,
-    keepLabel: '保留现有 Token',
-    emptyHint: '用于 GitHub Search API 按评论者邮箱反查头像；未配置时自动跳过 GitHub 来源。',
-    emptyPlaceholder: '输入 GitHub Personal Access Token',
+    keepLabel: t('admin.settings.comments.avatar.keepToken'),
+    emptyHint: t('admin.settings.comments.avatar.githubTokenHint'),
+    emptyPlaceholder: t('admin.settings.comments.avatar.githubTokenPlaceholder'),
   })
 
   return (
     <SettingGroup
-      title="头像"
-      description="访客头像按顺序从以下来源拉取，全部失败时回退到默认头像。GitHub 来源依赖下方配置的 Token。"
+      title={t('admin.settings.comments.avatar.title')}
+      description={t('admin.settings.comments.avatar.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="获取顺序" hint="拖拽调整优先级；列表靠上的来源优先。排序随下一次保存提交。">
+        <SettingsRow
+          label={t('admin.settings.comments.avatar.order')}
+          hint={t('admin.settings.comments.avatar.orderHint')}
+        >
           <Controller
             control={form.control}
             name="sources"
@@ -190,7 +216,11 @@ function CommentsAvatarCard({ comments }: CommentsFormProps) {
             }}
           />
         </SettingsRow>
-        <SettingsRow label="GitHub Token" htmlFor="comments-avatar-github-token" hint={githubTokenField.hint}>
+        <SettingsRow
+          label={t('admin.settings.comments.avatar.githubToken')}
+          htmlFor="comments-avatar-github-token"
+          hint={githubTokenField.hint}
+        >
           <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="comments-avatar-github-token"
@@ -199,9 +229,9 @@ function CommentsAvatarCard({ comments }: CommentsFormProps) {
           />
         </SettingsRow>
         <SettingsRow
-          label="Gravatar 镜像"
+          label={t('admin.settings.comments.avatar.mirror')}
           htmlFor="comments-avatar-mirror"
-          hint="仅 Gravatar 来源使用；打开下拉框时自动检测各镜像的连通性。"
+          hint={t('admin.settings.comments.avatar.mirrorHint')}
         >
           <Controller
             control={form.control}
@@ -220,14 +250,17 @@ function CommentsAvatarCard({ comments }: CommentsFormProps) {
               >
                 <SelectTrigger id="comments-avatar-mirror" className="w-full">
                   <SelectValue>
-                    {(value: string | null) => options.find((o) => o.value === value)?.label ?? value ?? ''}
+                    {(value: string | null) => {
+                      const option = options.find((entry) => entry.value === value)
+                      return option === undefined ? (value ?? '') : optionLabel(option)
+                    }}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {options.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       <span className="flex flex-1 items-center justify-between gap-4">
-                        <span>{option.label}</span>
+                        <span>{optionLabel(option)}</span>
                         {probeStatus(option.value)}
                       </span>
                     </SelectItem>
@@ -243,6 +276,7 @@ function CommentsAvatarCard({ comments }: CommentsFormProps) {
 }
 
 function CommentsTokenCard({ comments }: CommentsFormProps) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<CommentsLoaderShape, { tokenTtlSeconds: number }>({
     section: 'comments',
     source: comments,
@@ -256,15 +290,15 @@ function CommentsTokenCard({ comments }: CommentsFormProps) {
 
   return (
     <SettingGroup
-      title="匿名评论 Token"
-      description="控制匿名评论者发表后可编辑自己评论的时间窗口。"
+      title={t('admin.settings.comments.token.title')}
+      description={t('admin.settings.comments.token.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="Token 有效期 (秒)"
+          label={t('admin.settings.comments.token.ttl')}
           htmlFor="comments-token-ttl"
-          hint="默认 1800 秒（30 分钟）。范围 60–86400 秒。"
+          hint={t('admin.settings.comments.token.ttlHint')}
         >
           <SettingsInput
             flushOnBlur={flushOnBlur}

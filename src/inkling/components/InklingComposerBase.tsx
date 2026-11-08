@@ -63,6 +63,11 @@ export interface InklingComposerProps {
   /** Surface flag forwarded to `InklingUiPrefsContext`: 'plain' edits code
    * block cards in a static textarea instead of the lazy CodeMirror editor. */
   codeEditor?: 'rich' | 'plain'
+  /** BCP 47 language for Intl.Segmenter word counting — the host's UI locale.
+   * `WordCountPlugin` (host-mounted, as today, or any future composer-owned
+   * mount) uses it as its default language and publishes it on the word-count
+   * handle so nested composers segment in the same language. */
+  wordCountLanguage?: string
   /** Host label overrides — a partial table
    * merged over the English defaults; unknown keys are compile errors. */
   labels?: InklingLabelsInput
@@ -89,6 +94,7 @@ const InklingComposerBase = ({
   isTKEnabled,
   isEmojiEnabled,
   codeEditor,
+  wordCountLanguage,
   labels,
   multiplayerEndpoint,
   multiplayerDebug = true,
@@ -166,11 +172,14 @@ const InklingComposerBase = ({
       isTKEnabled,
       isEmojiEnabled,
       codeEditor,
+      // the host names its UI locale; WordCountPlugin segments with it and
+      // nested composers inherit it through the word-count handle
+      wordCountLanguage,
       // the host's override table merges over the English defaults exactly
       // once, here — every label-reading consumer sees a full table
       labels: resolveLabels(labels),
     }),
-    [darkMode, isTKEnabled, isEmojiEnabled, codeEditor, labels],
+    [darkMode, isTKEnabled, isEmojiEnabled, codeEditor, wordCountLanguage, labels],
   )
 
   return (

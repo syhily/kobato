@@ -6,6 +6,7 @@ import { access, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile }
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { isPathInside, STORAGE_DIR } from '@/server/infra/paths'
@@ -41,12 +42,12 @@ function metaFromStat(key: string, st: { size: number; mtimeMs: number; mtime: D
  */
 export function resolveLocalPath(key: string): string {
   if (key === '' || key.startsWith('/') || UNSAFE_KEY_CHARS.test(key)) {
-    throw new ActionFailure(400, `非法的存储路径: ${key}`)
+    throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
   }
   // `path.resolve` normalises `..` — hence the `isPathInside` re-check.
   const abs = path.resolve(STORAGE_DIR, key)
   if (!isPathInside(abs, STORAGE_DIR)) {
-    throw new ActionFailure(400, `非法的存储路径: ${key}`)
+    throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
   }
   return abs
 }
@@ -143,7 +144,10 @@ export const localBackend: StorageBackend = {
       throw new StorageObjectNotFound(key)
     }
     if (st.size > MAX_OBJECT_BUFFER_SIZE) {
-      throw new ActionFailure(413, `本地文件过大 (${st.size} 字节)，超出 ${MAX_OBJECT_BUFFER_SIZE} 字节限制`)
+      throw new ActionFailure(
+        413,
+        descriptorFor('storage.error.localFileTooLarge', { size: st.size, max: MAX_OBJECT_BUFFER_SIZE }),
+      )
     }
     return readFile(abs)
   },
@@ -205,8 +209,9 @@ export const localBackend: StorageBackend = {
       return []
     }
     // Sort before slicing so `maxKeys` is a deterministic prefix (matches S3's lexicographic order).
+    // Code-unit order on purpose — a locale collation would reorder object keys.
     const walked = await walk(base, STORAGE_DIR)
-    let items = walked.sort((a, b) => a.key.localeCompare(b.key))
+    let items = walked.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
     if (opts?.startAfter !== undefined) {
       const startAfter = opts.startAfter
       items = items.filter((item) => item.key > startAfter)

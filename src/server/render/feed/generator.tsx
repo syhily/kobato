@@ -1,6 +1,8 @@
 import { Feed } from 'feed'
 
 import type { Database } from '@/server/infra/db/database'
+import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { AppLocale } from '@/shared/i18n/locales'
 import type { Page, Post } from '@/shared/types/catalog'
 
 import { resolveBodyHtmlFeed } from '@/server/domains/content/services/body-html'
@@ -16,8 +18,17 @@ import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { joinUrl } from '@/shared/utils/urls'
 
 export interface FeedOptions {
+  /** The request's AppLocale — drives `<language>` / `xml:lang`. Explicit, never inferred. */
+  locale: AppLocale
   category?: string
   tag?: string
+  /**
+   * The settings snapshot the caller pinned (request capture / background
+   * send-time resolve). Omitted = the current process snapshot. The feed
+   * resource always passes it, so the rendered bytes match the cache key's
+   * `settingsRevision`.
+   */
+  settings?: BlogSettingsBundle | null
 }
 
 // Allowlist HTML sanitizer for feed output — a thin wrapper over the shared
@@ -50,11 +61,11 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
   return escapeCdataPayload(sanitizeFeedHtml(html))
 }
 
-export async function generateFeeds(db: Database, options: FeedOptions = {}) {
-  const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const content = requireBlogSettingsSection('content')
-  const branding = getBlogSettingsBundleSync()?.assets?.branding
-  const { category, tag } = options
+export async function generateFeeds(db: Database, options: FeedOptions) {
+  const siteIdentity = requireBlogSettingsSection('siteIdentity', options.settings)
+  const content = requireBlogSettingsSection('content', options.settings)
+  const branding = (options.settings === undefined ? getBlogSettingsBundleSync() : options.settings)?.assets?.branding
+  const { category, tag, locale } = options
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
   }
@@ -70,7 +81,7 @@ export async function generateFeeds(db: Database, options: FeedOptions = {}) {
     description: siteIdentity.description,
     id: siteIdentity.website,
     link: siteIdentity.website,
-    language: 'zh-CN',
+    language: locale,
     image: joinUrl(siteIdentity.website, `/logo.svg${brandingVersionSuffix(branding?.logoSvg)}`),
     favicon: joinUrl(siteIdentity.website, `/favicon.svg${brandingVersionSuffix(branding?.faviconSvg)}`),
     copyright: `All rights reserved ${siteIdentity.initialYear}, ${siteIdentity.author.name}`,
@@ -151,7 +162,7 @@ export async function generateFeeds(db: Database, options: FeedOptions = {}) {
       .atom1()
       .replace(
         '<feed xmlns="http://www.w3.org/2005/Atom">',
-        '<feed xml:lang="zh-CN" xmlns="http://www.w3.org/2005/Atom">',
+        `<feed xml:lang="${locale}" xmlns="http://www.w3.org/2005/Atom">`,
       ),
   }
 }

@@ -1,31 +1,33 @@
 import { ActivityIcon, ChartLineIcon, LinkIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { guardOnlyLoader } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
-export const meta = titleMeta('访问统计')
+export const meta = titleMeta('meta.title.admin.analytics')
 
 // Intentionally thin — the date-range picker + filters live on the child
 // routes so the realtime feed isn't forced to react to range changes.
 export const loader = guardOnlyLoader('admin')
 
-const SUBNAV = [
-  { to: '/admin/analytics', label: '概览', icon: ChartLineIcon, end: true },
-  { to: '/admin/analytics/realtime', label: '实时', icon: ActivityIcon, end: false },
-  { to: '/admin/analytics/mentions', label: '反向链接', icon: LinkIcon, end: false },
+const SUBNAV: readonly { to: string; labelId: UiMessageId; icon: typeof ChartLineIcon; end: boolean }[] = [
+  { to: '/admin/analytics', labelId: 'admin.analytics.nav.overview', icon: ChartLineIcon, end: true },
+  { to: '/admin/analytics/realtime', labelId: 'admin.analytics.nav.realtime', icon: ActivityIcon, end: false },
+  { to: '/admin/analytics/mentions', labelId: 'admin.analytics.nav.mentions', icon: LinkIcon, end: false },
 ]
 
 export default function WpAdminAnalyticsLayout() {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold text-foreground">访问统计</h1>
-        <p className="text-sm text-muted-foreground">
-          基于 access_events 时序事件表的访问、访客、来源、地理与设备分布。
-        </p>
-        <nav aria-label="统计子页" className="flex items-center gap-1 border-b">
+        <h1 className="text-2xl font-semibold text-foreground">{t('admin.analytics.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('admin.analytics.description')}</p>
+        <nav aria-label={t('admin.analytics.subnavAria')} className="flex items-center gap-1 border-b">
           {SUBNAV.map((item) => (
             <NavLink
               key={item.to}
@@ -39,7 +41,7 @@ export default function WpAdminAnalyticsLayout() {
               }
             >
               <item.icon className="size-4" />
-              {item.label}
+              {t(item.labelId)}
             </NavLink>
           ))}
         </nav>

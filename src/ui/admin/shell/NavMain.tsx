@@ -5,12 +5,14 @@ import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
 import { hasAtLeast } from '@/shared/utils/roles'
 import { NavMenuItem } from '@/ui/admin/shell/NavMenuItem'
 import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '@/ui/components/sidebar'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface NavMainProps {
   role: AdminShellProps['currentUser']['role']
 }
 
 export function NavMain({ role }: NavMainProps) {
+  const { t } = useI18n()
   if (!role) {
     return null
   }
@@ -22,7 +24,7 @@ export function NavMain({ role }: NavMainProps) {
           <NavMenuItem>
             <NavMenuItem.Link to="/admin" end>
               <HomeIcon />
-              <NavMenuItem.Label>欢迎页面</NavMenuItem.Label>
+              <NavMenuItem.Label>{t('admin.shell.nav.dashboard')}</NavMenuItem.Label>
             </NavMenuItem.Link>
           </NavMenuItem>
 
@@ -30,7 +32,7 @@ export function NavMain({ role }: NavMainProps) {
             <NavMenuItem>
               <NavMenuItem.Link to="/admin/analytics" activeMatch="subpath">
                 <ChartLineIcon />
-                <NavMenuItem.Label>访问统计</NavMenuItem.Label>
+                <NavMenuItem.Label>{t('meta.title.admin.analytics')}</NavMenuItem.Label>
               </NavMenuItem.Link>
             </NavMenuItem>
           )}
@@ -41,10 +43,10 @@ export function NavMain({ role }: NavMainProps) {
               target="_blank"
               rel="noopener noreferrer"
               isActive={false}
-              aria-label="查看站点（在新标签页打开）"
+              aria-label={t('admin.shell.nav.viewSiteAria')}
             >
               <ExternalLinkIcon />
-              <NavMenuItem.Label>查看站点</NavMenuItem.Label>
+              <NavMenuItem.Label>{t('admin.shell.nav.viewSite')}</NavMenuItem.Label>
             </NavMenuItem.Link>
           </NavMenuItem>
         </SidebarMenu>

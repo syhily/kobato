@@ -4,6 +4,7 @@ import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
 import { lexicalStateToPlainText } from '@/inkling/headless'
 import { decideContentLengthGate } from '@/server/domains/comments/services/policy'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { prerenderLexicalEditorState } from '@/server/infra/pt/lexical-prerender'
 import { computeCommentContentProjection } from '@/server/infra/pt/lexical-projection'
@@ -30,19 +31,19 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
     parsed = commentEditorStateSchema.parse(input)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new DomainError('BAD_REQUEST', '评论内容格式有误。')
+      throw new DomainError('BAD_REQUEST', descriptorFor('comments.error.bodyInvalid'))
     }
     throw error
   }
 
   if (parsed.root.children.length > COMMENT_MAX_BLOCKS) {
-    throw new DomainError('BAD_REQUEST', '评论内容过长，请精简后重试。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('comments.error.tooLongRetry'))
   }
   if (isCommentEditorStateBlank(parsed)) {
-    throw new DomainError('BAD_REQUEST', '评论内容不能为空。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('comments.error.empty'))
   }
   if (countLinks(parsed) > COMMENT_MAX_HTTP_URLS) {
-    throw new DomainError('BAD_REQUEST', `评论中链接过多（最多 ${COMMENT_MAX_HTTP_URLS} 个）。`)
+    throw new DomainError('BAD_REQUEST', descriptorFor('comments.error.tooManyLinks', { max: COMMENT_MAX_HTTP_URLS }))
   }
 
   // Cheap length gate BEFORE the jsdom prerender: a hostile state can carry
@@ -52,7 +53,7 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
   // would also have been rejected there — same code and message.
   const lengthFailure = decideContentLengthGate(commentEditorStateTextLength(parsed))
   if (lengthFailure !== null) {
-    throw new DomainError(lengthFailure.code, lengthFailure.message)
+    throw new DomainError(lengthFailure.code, lengthFailure.descriptor)
   }
 
   // Strip client-supplied pre-rendered fields (stored XSS); server re-generates them.
@@ -61,7 +62,7 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
   const body = await prerenderLexicalEditorState(parsed)
   const revalidated = commentEditorStateSchema.safeParse(body)
   if (!revalidated.success) {
-    throw new DomainError('BAD_REQUEST', '评论预渲染后格式异常。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('comments.error.prerenderInvalid'))
   }
 
   // Dual-column consistency: `content` is projected from the SAME canonical

@@ -5,7 +5,20 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { bundleFromMatches, metaWithFallback, pageTitle, routeMeta, seoForPage, seoForPost } from '@/shared/seo/meta'
+import { fallbackMessages } from '@/shared/i18n/fallback-messages'
+import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
+import { uiMessagesZhTW } from '@/shared/i18n/messages/ui/zh-TW'
+import {
+  bundleFromMatches,
+  i18nFromMatches,
+  metaWithFallback,
+  pageTitle,
+  routeMeta,
+  seoForPage,
+  seoForPost,
+} from '@/shared/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 
 // `routeMeta` and `pageTitle` read the site title / website / OG defaults
 // from the snapshot reader — there is no baked-in `DEFAULT_SETTINGS`, so
@@ -221,6 +234,35 @@ describe('services/seo/meta — routeMeta', () => {
     expect(tagEntries.map((entry) => entry.content)).toEqual(['typescript', 'react'])
   })
 
+  it('omits article:section when an uncategorized post has no category', () => {
+    const meta = routeMeta({
+      title: 'Hello',
+      variant: {
+        kind: 'post',
+        article: {
+          date: new Date('2024-01-02T03:04:05.000Z'),
+          category: '',
+          tags: [],
+        },
+      },
+    }) as MetaEntry[]
+
+    // An empty content="..." descriptor is not a section — omit the tag entirely.
+    expect(findByProperty(meta, 'article:section')).toBeUndefined()
+  })
+
+  it('still emits article:section for a categorized post', () => {
+    const meta = routeMeta({
+      title: 'Hello',
+      variant: {
+        kind: 'post',
+        article: { date: new Date('2024-01-02T03:04:05.000Z'), category: '默认分类', tags: [] },
+      },
+    }) as MetaEntry[]
+
+    expect(findByProperty(meta, 'article:section')?.content).toBe('默认分类')
+  })
+
   it('emits canonical/prev/next links only when requested', () => {
     const meta = routeMeta({
       pageUrl: '/posts/hello',
@@ -243,9 +285,9 @@ describe('services/seo/meta — routeMeta', () => {
 })
 
 describe('services/seo/meta — pageTitle pre-install fallback', () => {
-  it('returns PRE_INSTALL_TITLE when no bundle is hydrated', () => {
+  it('uses the shared fallback module when no bundle is hydrated', () => {
     setBlogSettingsBundleForTests(null)
-    expect(pageTitle()).toBe('正在安装')
+    expect(pageTitle()).toBe(fallbackMessages['meta.preinstall'])
     expect(pageTitle('Custom')).toBe('Custom')
   })
 })
@@ -260,13 +302,47 @@ describe('services/seo/meta — routeMeta pre-install fallback', () => {
 })
 
 describe('services/seo/meta — page variant and feedLinks', () => {
-  it('emits article section "页面" for page variants', () => {
+  it('localizes the page-variant article section from the i18n payload', () => {
+    const meta = routeMeta(
+      { title: 'About', variant: { kind: 'page', article: { date: new Date('2024-01-01') } } },
+      fixture,
+      { locale: 'zh-CN', messages: uiMessagesZhCN },
+    ) as MetaEntry[]
+    expect(findByProperty(meta, 'og:type')?.content).toBe('article')
+    expect(findByProperty(meta, 'article:section')?.content).toBe('页面')
+  })
+
+  it('falls back to the shared fallback module for the page section without a payload', () => {
     const meta = routeMeta({
       title: 'About',
       variant: { kind: 'page', article: { date: new Date('2024-01-01') } },
     }) as MetaEntry[]
-    expect(findByProperty(meta, 'og:type')?.content).toBe('article')
-    expect(findByProperty(meta, 'article:section')?.content).toBe('页面')
+
+    // Never an empty section: the fallback module is the last-resort language source.
+    expect(findByProperty(meta, 'article:section')?.content).toBe(fallbackMessages['meta.section.page'])
+  })
+
+  it('localizes the page section per locale from the matches payload', () => {
+    const meta = routeMeta(
+      {
+        titleKey: 'meta.title.public.categories',
+        variant: { kind: 'page', article: { date: new Date('2024-01-01') } },
+      },
+      fixture,
+      { locale: 'zh-TW', messages: uiMessagesZhTW },
+    ) as MetaEntry[]
+
+    expect(findByProperty(meta, 'article:section')?.content).toBe('頁面')
+  })
+
+  it('maps og:locale to the underscore spelling', () => {
+    expect(findByProperty(routeMeta() as MetaEntry[], 'og:locale')?.content).toBe('zh_CN')
+
+    setBlogSettingsBundleForTests({
+      ...fixture,
+      siteIdentity: { ...fixture.siteIdentity!, locale: 'en-US' },
+    })
+    expect(findByProperty(routeMeta() as MetaEntry[], 'og:locale')?.content).toBe('en_US')
   })
 
   it('emits feed alternate links when feedLinks is supplied', () => {
@@ -393,5 +469,83 @@ describe('services/seo/meta — bundleFromMatches / metaWithFallback', () => {
   it('metaWithFallback falls back to routeMeta when no fallback is given', () => {
     const meta = metaWithFallback({ loaderData: {}, matches: [] }) as MetaEntry[]
     expect(findByName(meta, 'robots')).toBeDefined()
+  })
+})
+
+const rootMatchWithI18n = (locale: 'zh-CN' | 'zh-TW' | 'en-US', bundle: typeof fixture | null = fixture) => [
+  { id: 'root', loaderData: { blogSettings: bundle, i18n: { locale, messages: MESSAGES[locale] } } },
+]
+
+const MESSAGES = {
+  'zh-CN': uiMessagesZhCN,
+  'zh-TW': uiMessagesZhTW,
+  'en-US': uiMessagesEnUS,
+}
+
+describe('services/seo/meta — i18nFromMatches', () => {
+  it('returns the root loader i18n payload', () => {
+    expect(i18nFromMatches(rootMatchWithI18n('zh-TW'))).toMatchObject({ locale: 'zh-TW' })
+  })
+
+  it('returns null without a root match, a payload or a supported locale', () => {
+    expect(i18nFromMatches([])).toBeNull()
+    expect(i18nFromMatches([{ id: 'root' }])).toBeNull()
+    expect(i18nFromMatches([{ id: 'root', loaderData: { i18n: null } }])).toBeNull()
+    expect(i18nFromMatches([{ id: 'root', loaderData: { i18n: { locale: 'fr-FR', messages: {} } } }])).toBeNull()
+    expect(i18nFromMatches([{ id: 'root', loaderData: { i18n: { locale: 'zh-CN', messages: { a: 1 } } } }])).toBeNull()
+  })
+
+  it('never reads the settings snapshot (client navigation has no server section)', () => {
+    setBlogSettingsBundleForTests(null)
+    const i18n = i18nFromMatches(rootMatchWithI18n('en-US'))
+    expect(i18n?.messages['meta.title.admin.dashboard']).toBe('Welcome')
+  })
+})
+
+describe('services/seo/meta — titleKey (static route titles)', () => {
+  it('resolves a static title from the matches payload', () => {
+    const meta = routeMeta({ titleKey: 'meta.title.admin.dashboard' }, fixture, {
+      locale: 'zh-CN',
+      messages: uiMessagesZhCN,
+    }) as MetaEntry[]
+
+    expect(meta[0]?.title).toBe(`欢迎 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('keeps raw content titles untouched and never treats them as keys', () => {
+    const meta = routeMeta({ title: '我的第一篇文章', titleKey: 'meta.title.admin.dashboard' }, fixture, {
+      locale: 'zh-CN',
+      messages: uiMessagesZhCN,
+    }) as MetaEntry[]
+
+    expect(meta[0]?.title).toBe(`我的第一篇文章 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('titleMeta() resolves through matches on client navigation without any snapshot', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.signin')({ matches: rootMatchWithI18n('zh-CN') }) as MetaEntry[]
+
+    expect(meta[0]?.title).toBe(`用户登陆 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('uses the shared fallback module for the pre-install title without matches', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.setup')({ matches: [] }) as MetaEntry[]
+
+    expect(meta[0]).toMatchObject({ title: fallbackMessages['meta.preinstall'] })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
+  })
+
+  it('localizes the pre-install title through matches', () => {
+    // Pre-install: no settings row anywhere — the payload still carries the locale's catalog.
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.setup')({
+      matches: rootMatchWithI18n('zh-TW', null),
+    }) as MetaEntry[]
+
+    // `<title>` + the two noindex robots tags; no site chrome at all.
+    expect(meta).toHaveLength(3)
+    expect(meta[0]).toMatchObject({ title: '建立網站' })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
   })
 })

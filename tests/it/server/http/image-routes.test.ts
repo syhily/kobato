@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Env } from '@/server/http/context'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeRequestContext } from '#/_helpers/request-context'
 import { onErrorHandler } from '@/server/http/errors'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
@@ -30,8 +31,12 @@ vi.mock('@/server/render/og/render', () => ({
 }))
 vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn().mockImplementation(
-    async (_db: unknown, params: { year?: string; time?: string }, theme: string) =>
-      new Response(JSON.stringify({ params, theme }), {
+    async (
+      _db: unknown,
+      params: { year?: string; time?: string },
+      options: { theme: string; locale: string; ifNoneMatch: string | null },
+    ) =>
+      new Response(JSON.stringify({ params, theme: options.theme, locale: options.locale }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       }),
@@ -42,13 +47,10 @@ const db = getTestDb()
 
 const { imagesRouter } = await import('@/server/http/resources/images')
 
-// Stub app provides only `clientAddress` + `db`, the fields the images pipeline reads.
+// The canonical request context: `clientAddress`, `db` and the lazy localization pair.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
-  c.set('requestContext', {
-    clientAddress: '127.0.0.1',
-    db,
-  } as unknown as Env['Variables']['requestContext'])
+  c.set('requestContext', makeRequestContext({ request: new Request(c.req.url), db }))
   await next()
 })
 app.route('/', imagesRouter)
@@ -108,7 +110,9 @@ describe('imagesRouter avatar', () => {
     }
     const res = await app.request('/images/avatar/abcdef0123456789.png')
     expect(res.status).toBe(429)
-    expect(await res.json()).toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
+    expect(await res.json()).toMatchObject({
+      error: { code: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试。' },
+    })
   })
 })
 
@@ -132,16 +136,18 @@ describe('imagesRouter calendar', () => {
   it('extracts year + time from `/images/calendar/<year>/<time>.png`', async () => {
     const res = await app.request('/images/calendar/2024/12-25.png')
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { params: { year: string; time: string }; theme: string }
+    const body = (await res.json()) as { params: { year: string; time: string }; theme: string; locale: string }
     expect(body.params).toEqual({ year: '2024', time: '12-25' })
     expect(body.theme).toBe('light')
+    expect(body.locale).toBe('zh-CN')
   })
 
   it('routes the dark variant to the dark theme', async () => {
     const res = await app.request('/images/calendar/dark/2024/01-01.png')
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { params: { year: string; time: string }; theme: string }
+    const body = (await res.json()) as { params: { year: string; time: string }; theme: string; locale: string }
     expect(body.params).toEqual({ year: '2024', time: '01-01' })
     expect(body.theme).toBe('dark')
+    expect(body.locale).toBe('zh-CN')
   })
 })

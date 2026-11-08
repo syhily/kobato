@@ -7,6 +7,7 @@ import { deleteAllCredentials } from '@/server/domains/auth/passkey/service'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { revokeTokensFor } from '@/server/domains/auth/verification-tokens'
 import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 export interface AccountProfileInput {
@@ -58,7 +59,7 @@ export async function updateAccountProfile(
 ) {
   const dbUser = await findUserById(db, userId)
   if (!dbUser || dbUser.deletedAt) {
-    throw new DomainError('NOT_FOUND', '用户不存在。')
+    throw new DomainError('NOT_FOUND', descriptorFor('account.error.userNotFound'))
   }
 
   const canSetBadge = viewerRole === 'admin' || viewerRole === 'author'
@@ -91,7 +92,7 @@ export async function updateAccountProfile(
 
   const updated = await updateUserById(db, userId, patch)
   if (!updated) {
-    throw new DomainError('NOT_FOUND', '用户不存在。')
+    throw new DomainError('NOT_FOUND', descriptorFor('account.error.userNotFound'))
   }
   return updated
 }
@@ -105,11 +106,11 @@ export async function updateAccountPassword(
 ) {
   const dbUser = await findUserById(db, userId)
   if (!dbUser || dbUser.deletedAt) {
-    throw new DomainError('NOT_FOUND', '用户不存在。')
+    throw new DomainError('NOT_FOUND', descriptorFor('account.error.userNotFound'))
   }
   const ok = await bcrypt.compare(oldPassword, dbUser.password)
   if (!ok) {
-    throw new DomainError('FORBIDDEN', '原密码错误。')
+    throw new DomainError('FORBIDDEN', descriptorFor('account.error.passwordWrong'))
   }
   const hashed = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS)
   // A password change returns the account to password signin and evicts

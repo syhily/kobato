@@ -1,5 +1,6 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
+
+import type { HandlerContext } from '@/server/http/orpc-base'
 
 import { buildAuditLogCsv } from '@/server/domains/audit/export-csv'
 import { highlightAuditLogDetails } from '@/server/domains/audit/highlight'
@@ -11,7 +12,7 @@ import {
   listAuditLogs,
   type AuditLogFilterInput,
 } from '@/server/domains/audit/services/query'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
 import {
   auditLogActorsOutput,
   auditLogExportInput,
@@ -20,14 +21,14 @@ import {
 } from '@/shared/contracts/audit'
 import { idFromString } from '@/shared/utils/id'
 
-function assertValidActorId(actorId: string | undefined): void {
+function assertValidActorId(context: HandlerContext, actorId: string | undefined): void {
   if (!actorId) {
     return
   }
   try {
     idFromString(actorId)
   } catch {
-    throw new ORPCError('BAD_REQUEST', { message: 'actorId 格式无效' })
+    throw localizedOrpcError(context, 'BAD_REQUEST', 'audit.error.invalidActorId')
   }
 }
 
@@ -40,7 +41,7 @@ const list = adminProc
   .handler(async ({ input, context }) => {
     const { db } = context
 
-    assertValidActorId(input.actorId)
+    assertValidActorId(context, input.actorId)
 
     const filters: AuditLogFilterInput = input
     const total = await countAuditLogs(db, filters)
@@ -71,15 +72,13 @@ const exportCsv = adminProc
   .handler(async ({ input, context }) => {
     const { db } = context
 
-    assertValidActorId(input.actorId)
+    assertValidActorId(context, input.actorId)
 
     const filters: AuditLogFilterInput = input
     const total = await countAuditLogs(db, filters)
 
     if (total > EXPORT_MAX_ROWS) {
-      throw new ORPCError('BAD_REQUEST', {
-        message: `导出记录数超过上限 ${EXPORT_MAX_ROWS} 条，请缩小筛选范围后再试。`,
-      })
+      throw localizedOrpcError(context, 'BAD_REQUEST', 'audit.error.exportTooLarge', { max: EXPORT_MAX_ROWS })
     }
 
     const rows = await listAuditLogs(db, filters, 0, EXPORT_MAX_ROWS)

@@ -9,7 +9,6 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
-import { DomainError } from '@/server/infra/http/errors'
 
 const db = getTestDb()
 
@@ -214,7 +213,10 @@ describe('passkey — registration failure branches', () => {
         ...registrationResponse(),
         challenge: 'reg-expired',
       }),
-    ).rejects.toThrow(new DomainError('BAD_REQUEST', '注册挑战已过期或无效，请重试。'))
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'auth.passkey.error.registrationChallengeExpired' },
+    })
   })
 
   it('rejects a challenge that belongs to a different user', async () => {
@@ -239,7 +241,10 @@ describe('passkey — registration failure branches', () => {
         ...registrationResponse(),
         challenge: 'reg-wrong-user',
       }),
-    ).rejects.toThrow(new DomainError('BAD_REQUEST', '注册挑战与当前用户不匹配。'))
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'auth.passkey.error.registrationChallengeMismatch' },
+    })
   })
 
   it('maps a duplicate credential to a CONFLICT DomainError (real unique constraint)', async () => {
@@ -278,7 +283,10 @@ describe('passkey — registration failure branches', () => {
         ...registrationResponse('cred-dup'),
         challenge: 'reg-dup-2',
       }),
-    ).rejects.toThrow(new DomainError('CONFLICT', '该 Passkey 凭据已注册。'))
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      descriptor: { messageKey: 'auth.passkey.error.alreadyRegistered' },
+    })
 
     const creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(1)
@@ -300,7 +308,10 @@ describe('passkey — registration failure branches', () => {
         ...registrationResponse(),
         challenge: 'reg-unverified',
       }),
-    ).rejects.toThrow(new DomainError('BAD_REQUEST', 'Passkey 注册验证失败。'))
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'auth.passkey.error.registrationFailed' },
+    })
 
     const creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(0)
@@ -463,7 +474,10 @@ describe('passkey — authentication failure branches', () => {
 
     await expect(
       passkeyService.verifyAuthenticationResponse(db, authenticationResponse('nonexistent'), 'auth-unknown-cred'),
-    ).rejects.toThrow(new DomainError('BAD_REQUEST', 'Passkey 凭据不存在。'))
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'auth.passkey.error.credentialNotFound' },
+    })
   })
 
   it('rejects when SWA verification returns verified: false and leaves the counter untouched', async () => {
@@ -480,7 +494,10 @@ describe('passkey — authentication failure branches', () => {
 
     await expect(
       passkeyService.verifyAuthenticationResponse(db, authenticationResponse('cred-unverified'), 'auth-unverified'),
-    ).rejects.toThrow(new DomainError('BAD_REQUEST', 'Passkey 验证失败。'))
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'auth.passkey.error.verifyFailedGeneric' },
+    })
 
     const cred = await db
       .select()
@@ -563,9 +580,10 @@ describe('passkey — credential management', () => {
   it('setLoginMethod rejects passkey when no credentials exist', async () => {
     const userId = await seedUser({ email: 'method-none@example.com' })
 
-    await expect(passkeyService.setLoginMethod(db, userId, 'passkey')).rejects.toThrow(
-      new DomainError('BAD_REQUEST', '必须至少注册一个 Passkey 才能选择 Passkey 登陆。'),
-    )
+    await expect(passkeyService.setLoginMethod(db, userId, 'passkey')).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'auth.passkey.error.requireOne' },
+    })
     expect(await loginMethodOf(userId)).toBe('password')
   })
 
@@ -600,9 +618,10 @@ describe('passkey — rpConfig validation', () => {
     setBlogSettingsBundleForTests(bundleWithWebsite(website))
     const dbUser = await freshUser()
 
-    await expect(passkeyService.generateRegistrationOptions(db, dbUser)).rejects.toThrow(
-      new DomainError('BAD_REQUEST', 'Passkey 需要公开可访问的 HTTPS 域名，不能使用 localhost 或私有地址。'),
-    )
+    await expect(passkeyService.generateRegistrationOptions(db, dbUser)).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'auth.passkey.error.httpsRequired' },
+    })
     expect(swaMocks.generateRegistrationOptions).not.toHaveBeenCalled()
   })
 
@@ -644,7 +663,7 @@ describe('passkey — passkey login method blocks password login', () => {
 
     expect(result.type).toBe('error')
     if (result.type === 'error') {
-      expect(result.message).toContain('Passkey')
+      expect(result.descriptor).toMatchObject({ messageKey: 'auth.signin.error.passkeyRequired' })
     }
     // loginMethod='passkey' 是「无 mutation 的错误结果」：既不携带 setCookie，也不标脏会话。
     expect(result.setCookie).toBeUndefined()

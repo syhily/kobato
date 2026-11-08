@@ -15,6 +15,7 @@ import {
   MAX_COVER_BYTES,
 } from '@/server/domains/music/services/write/shared'
 import { findMusicById, findMusicBySourceAndId, insertMusic, restoreMusic } from '@/server/infra/db/operations/music'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
@@ -72,7 +73,7 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
   const provider = getProvider(input.source)
   const track = await provider.getTrack(input.sourceId)
   if (track === null) {
-    throw new DomainError('NOT_FOUND', `上游未找到 sourceId=${input.sourceId} 的歌曲`)
+    throw new DomainError('NOT_FOUND', descriptorFor('music.error.upstreamTrackNotFound', { sourceId: input.sourceId }))
   }
 
   const metadata = mergeMetadata(track, input.prefill)
@@ -158,7 +159,7 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
     await (restoring
       ? deleteRestoredObjectsUnlessClaimed(db, restoring.id, driver, audioStoragePath, coverStoragePath)
       : Promise.allSettled([backendFor(driver).delete(audioStoragePath), backendFor(driver).delete(coverStoragePath)]))
-    throw new DomainError('INTERNAL', '音乐元数据写入失败，请稍后重试')
+    throw new DomainError('INTERNAL', descriptorFor('music.error.metadataWriteFailed'))
   }
 
   return toAdminMusicDto(row, input.uploader?.name ?? null)

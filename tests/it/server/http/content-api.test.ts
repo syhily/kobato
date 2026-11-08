@@ -15,11 +15,25 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { weakEtag } from '@/server/infra/http/etag'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
+import { getBlogSettingsSnapshotSync } from '@/shared/config/getters'
+import { isPublicMessageKey } from '@/shared/i18n/catalog-scope'
+import { kobatoInklingLabelsZhCN } from '@/shared/i18n/inkling-labels/zh-CN'
+import { kobatoInklingLabelsZhTW } from '@/shared/i18n/inkling-labels/zh-TW'
+import { serverMessagesZhCN } from '@/shared/i18n/messages/server/zh-CN'
+import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 
 // The `content.*` read procedures over the real RPCHandler JSON round-trip:
 // union signals (redirect / not-modified), NOT_FOUNDs, and happy-path payloads.
 
 const db = getTestDb()
+
+/** A public document's message ids: the shared public allowlist. */
+function publicUiKeys(catalog: Record<string, string>): string[] {
+  return Object.keys(catalog)
+    .filter((key) => isPublicMessageKey(key))
+    .sort()
+}
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -158,6 +172,126 @@ describe('content.bootstrap', () => {
     expect((await parseRpcJson<{ theme: string | null }>(light)).theme).toBe('light')
   })
 
+  it('ships exactly the public namespace allowlist and the settings revision for a public document', async () => {
+    const res = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const json = await parseRpcJson<{
+      i18n: { locale: string; messages: Record<string, string>; revision: string }
+    }>(res)
+
+    expect(json.i18n.locale).toBe('zh-CN')
+    expect(json.i18n.messages['common.action.save']).toBe('保存')
+    // Workspace-only families stay home — not just `admin.*`:
+    expect(json.i18n.messages['admin.settings.general.title']).toBeUndefined()
+    expect(json.i18n.messages['backup.error.notFound']).toBeUndefined()
+    expect(json.i18n.messages['storage.error.invalidPath']).toBeUndefined()
+    expect(
+      Object.keys(json.i18n.messages).filter((key) => key.startsWith('admin.') && !key.startsWith('admin.toast.')),
+    ).toEqual([])
+    // Exactly the allowlisted public UI subset — email/notification/server keys never cross the wire.
+    expect(Object.keys(json.i18n.messages).sort()).toEqual(publicUiKeys(uiMessagesZhCN))
+    for (const key of Object.keys(serverMessagesZhCN)) {
+      expect(Object.hasOwn(json.i18n.messages, key)).toBe(false)
+    }
+    // The representation token travels with the payload so peers can dedupe.
+    expect(json.i18n.revision).toBe(getBlogSettingsSnapshotSync().revision)
+  })
+
+  it('ships the full catalog and the active locale Inkling labels to a SIGNED-IN workspace document', async () => {
+    for (const path of ['/admin/settings', '/editor/post/new']) {
+      const res = await callRpc(
+        '/content/bootstrap',
+        undefined,
+        makeAuthedCtx({ db, csrfToken: 'test-csrf-token', url: `http://localhost${path}` }),
+      )
+      const json = await parseRpcJson<{
+        i18n: { locale: string; messages: Record<string, string>; inklingLabels: Record<string, string> }
+      }>(res)
+
+      expect(Object.keys(json.i18n.messages).sort(), path).toEqual(Object.keys(uiMessagesZhCN).sort())
+      expect(json.i18n.messages['meta.title.admin.dashboard'], path).toBe('欢迎')
+      expect(json.i18n.messages['backup.error.notFound'], path).toBeDefined()
+      // One complete table for the ACTIVE locale (the editor chrome's own tokens).
+      expect(json.i18n.inklingLabels, path).toEqual(kobatoInklingLabelsZhCN)
+      expect(json.i18n.inklingLabels['placeholder.editor'], path).toBe('开始撰写内容…')
+      expect(json.i18n.inklingLabels['menu.host.solution.label'], path).toBe('解答块')
+      // The other locales' tables never travel with the payload.
+      expect(JSON.stringify(json.i18n.inklingLabels), path).not.toContain('程式碼區塊') // zh-TW
+      expect(JSON.stringify(json.i18n.inklingLabels), path).not.toContain('「開始撰寫內容」')
+    }
+
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'zh-TW' },
+    })
+    const localized = await callRpc(
+      '/content/bootstrap',
+      undefined,
+      makeAuthedCtx({ db, csrfToken: 'test-csrf-token', url: 'http://localhost/admin/settings' }),
+    )
+    const localizedJson = await parseRpcJson<{ i18n: { locale: string; inklingLabels: Record<string, string> } }>(
+      localized,
+    )
+    expect(localizedJson.i18n.locale).toBe('zh-TW')
+    expect(localizedJson.i18n.inklingLabels).toEqual(kobatoInklingLabelsZhTW)
+    expect(JSON.stringify(localizedJson.i18n.inklingLabels)).not.toContain('开始撰写内容…') // zh-CN
+  })
+
+  it('keeps auth/setup on the workspace catalog but without an editor label table', async () => {
+    for (const path of ['/admin/signin', '/admin/setup']) {
+      const res = await callRpc(
+        '/content/bootstrap',
+        undefined,
+        makePublicCtx({ db, csrfToken: 'test-csrf-token', url: `http://localhost${path}` }),
+      )
+      const json = await parseRpcJson<{
+        i18n: { messages: Record<string, string>; inklingLabels?: Record<string, string> }
+      }>(res)
+
+      // Auth copy is workspace-scoped: the whole catalog (sign-in, OTP, setup).
+      expect(Object.keys(json.i18n.messages).sort(), path).toEqual(Object.keys(uiMessagesZhCN).sort())
+      expect(json.i18n.messages['auth.setup.intro'], path).toBeDefined()
+      // No signed-in editor exists on these pages → no label table.
+      expect(json.i18n, path).not.toHaveProperty('inklingLabels')
+    }
+  })
+
+  it('public documents never carry an Inkling label table', async () => {
+    const res = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const json = await parseRpcJson<{ i18n: Record<string, unknown> }>(res)
+
+    expect(json.i18n).not.toHaveProperty('inklingLabels')
+    expect(JSON.stringify(json.i18n)).not.toContain('开始撰写内容…')
+  })
+
+  it('follows the configured locale, and defaults pre-install', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+    })
+    const localized = await callRpc(
+      '/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
+    const localizedJson = await parseRpcJson<{ i18n: { locale: string; messages: Record<string, string> } }>(localized)
+    expect(localizedJson.i18n.locale).toBe('en-US')
+    expect(Object.keys(localizedJson.i18n.messages).sort()).toEqual(publicUiKeys(uiMessagesEnUS))
+    expect(localizedJson.i18n.messages['common.action.save']).toBe('Save')
+
+    // Pre-install: no settings row at all — the default locale still ships a scoped catalog.
+    setBlogSettingsBundleForTests(null)
+    const preinstall = await callRpc(
+      '/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
+    const preinstallJson = await parseRpcJson<{ i18n: { locale: string; messages: Record<string, string> } }>(
+      preinstall,
+    )
+    expect(preinstallJson.i18n.locale).toBe('zh-CN')
+    expect(Object.keys(preinstallJson.i18n.messages).sort()).toEqual(publicUiKeys(uiMessagesZhCN))
+  })
+
   it('answers a null theme when the cookie is absent or invalid', async () => {
     const absent = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
     expect((await parseRpcJson<{ theme: string | null }>(absent)).theme).toBeNull()
@@ -278,7 +412,7 @@ describe('content.posts.list', () => {
 
 describe('content.posts.bySlug', () => {
   it('returns the ok payload and stamps the weak ETag', async () => {
-    const postId = await seedPost({ slug: 'hello', title: 'Hello', publishedAt: new Date('2024-01-01') })
+    await seedPost({ slug: 'hello', title: 'Hello', publishedAt: new Date('2024-01-01') })
 
     const res = await callRpc('/content/posts/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
     expect(res.status).toBe(200)
@@ -293,16 +427,17 @@ describe('content.posts.bySlug', () => {
     }>(res)
 
     expect(json.kind).toBe('ok')
-    expect(json.etag).toBe(weakEtag(['post', String(postId), new Date('2024-01-01')]))
+    expect(json.etag).toMatch(/^W\/"[0-9a-f]{16}"$/)
     expect(json.payload.post.title).toBe('Hello')
     expect(json.payload.post.permalink).toBe('/posts/hello')
     expect(json.payload.draftMarker).toBeNull()
     expect(typeof json.payload.critical.commentKey).toBe('string')
   })
 
-  it('answers not-modified when the carried If-None-Match matches the probe ETag', async () => {
-    const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
-    const etag = weakEtag(['post', String(postId), new Date('2024-01-01')])
+  it('answers not-modified when the carried If-None-Match matches the full-payload ETag', async () => {
+    await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
+    const first = await callRpc('/content/posts/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
+    const { etag } = await parseRpcJson<{ etag: string }>(first)
 
     const res = await callRpc('/content/posts/bySlug', { slug: 'hello', ifNoneMatch: etag }, makePublicCtx({ db }))
     expect(res.status).toBe(200)
@@ -336,10 +471,13 @@ describe('content.posts.bySlug', () => {
 
     const author = await callRpc('/content/posts/bySlug', { slug: 'secret' }, makeAuthedCtx({ role: 'author', db }))
     expect(author.status).toBe(200)
-    const json = await parseRpcJson<{ kind: string; payload: { draftMarker: string | null; post: { title: string } } }>(
-      author,
-    )
+    const json = await parseRpcJson<{
+      kind: string
+      etag: string | null
+      payload: { draftMarker: string | null; post: { title: string } }
+    }>(author)
     expect(json.kind).toBe('ok')
+    expect(json.etag).toBeNull()
     expect(json.payload.draftMarker).toBe('draft')
     expect(json.payload.post.title).toBe('Secret')
   })
@@ -459,14 +597,10 @@ describe('content.pages.bySlug', () => {
     expect(json.payload.bodyHtml).toBe('')
   })
 
-  it('answers not-modified when the carried If-None-Match matches', async () => {
-    const pageId = await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
-    // Page ETag inputs: id + publishedRevisionId + publishedAt.
-    const rows = await db
-      .select({ publishedRevisionId: pageTable.publishedRevisionId })
-      .from(pageTable)
-      .where(eq(pageTable.id, pageId))
-    const etag = weakEtag(['page', String(pageId), rows[0]!.publishedRevisionId, new Date('2024-01-01')])
+  it('answers not-modified when the carried If-None-Match matches the full-payload ETag', async () => {
+    await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
+    const first = await callRpc('/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
+    const { etag } = await parseRpcJson<{ etag: string }>(first)
 
     const res = await callRpc('/content/pages/bySlug', { slug: 'about', ifNoneMatch: etag }, makePublicCtx({ db }))
     const json = await parseRpcJson<{ kind: string; etag: string }>(res)
@@ -512,20 +646,17 @@ describe('content.pages.bySlug', () => {
     expect(json.etag).toBeNull()
   })
 
-  it('skips the published-ETag probe on draft previews (ok even on a matching etag)', async () => {
-    const pageId = await seedPage({
+  it('skips the published ETag on draft previews (ok even on a matching tag)', async () => {
+    await seedPage({
       slug: 'about',
       title: 'About',
       publishedAt: new Date('2024-01-01'),
       draftBody: publishedBody,
     })
-    const rows = await db
-      .select({ publishedRevisionId: pageTable.publishedRevisionId })
-      .from(pageTable)
-      .where(eq(pageTable.id, pageId))
-    const publishedEtag = weakEtag(['page', String(pageId), rows[0]!.publishedRevisionId, new Date('2024-01-01')])
+    const first = await callRpc('/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
+    const publishedEtag = (await parseRpcJson<{ etag: string }>(first)).etag
 
-    // `draft: true` must skip the published-ETag probe, or a match answers `not-modified` and the draft never renders.
+    // `draft: true` must skip revalidation, or a match answers `not-modified` and the draft never renders.
     const res = await callRpc(
       '/content/pages/bySlug',
       { slug: 'about', draft: true, ifNoneMatch: publishedEtag },
@@ -619,11 +750,12 @@ describe('content.categories.list', () => {
   it('returns every category', async () => {
     await seedCategory('general', 'general')
 
-    const res = await callRpc('/content/categories/list', undefined, makePublicCtx({ db }))
+    const res = await callRpc('/content/categories/list', {}, makePublicCtx({ db }))
     expect(res.status).toBe(200)
-    const json = await parseRpcJson<{ categories: { name: string; slug: string }[] }>(res)
+    const json = await parseRpcJson<{ kind: string; payload: { categories: { name: string; slug: string }[] } }>(res)
 
-    expect(json.categories.map((c) => c.slug)).toContain('general')
+    expect(json.kind).toBe('ok')
+    expect(json.payload.categories.map((c) => c.slug)).toContain('general')
   })
 })
 
@@ -646,20 +778,24 @@ describe('content.archives', () => {
       firstPublishedAt: new Date('2024-01-03'),
     })
 
-    const res = await callRpc('/content/archives', undefined, makePublicCtx({ db }))
+    const res = await callRpc('/content/archives', {}, makePublicCtx({ db }))
     expect(res.status).toBe(200)
-    const json = await parseRpcJson<{ resolvedPosts: { slug: string }[]; listingNowIso: string }>(res)
+    const json = await parseRpcJson<{
+      kind: string
+      payload: { resolvedPosts: { slug: string }[]; listingNowIso: string }
+    }>(res)
 
-    expect(json.resolvedPosts.map((p) => p.slug)).toEqual(['visible-post', 'hidden-post'])
-    expect(json.listingNowIso).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(json.kind).toBe('ok')
+    expect(json.payload.resolvedPosts.map((p) => p.slug)).toEqual(['visible-post', 'hidden-post'])
+    expect(json.payload.listingNowIso).toMatch(/^\d{4}-\d{2}-\d{2}T/)
   })
 
   it('throttles the 10k-post fan-out through the shared resource bucket', async () => {
     __resetRateLimitsForTests()
     seedSingleAttemptResourceBucket()
 
-    expect((await callRpc('/content/archives', undefined, makePublicCtx({ db }))).status).toBe(200)
-    const throttled = await callRpc('/content/archives', undefined, makePublicCtx({ db }))
+    expect((await callRpc('/content/archives', {}, makePublicCtx({ db }))).status).toBe(200)
+    const throttled = await callRpc('/content/archives', {}, makePublicCtx({ db }))
     expect(throttled.status).toBe(429)
     await expect(throttled.text()).resolves.toContain('TOO_MANY_REQUESTS')
   })

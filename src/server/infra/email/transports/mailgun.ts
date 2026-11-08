@@ -10,6 +10,7 @@ import type {
   SendResult,
 } from '@/server/infra/email/types'
 
+import { emailTranslator } from '@/server/infra/email/translator'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('email')
@@ -26,17 +27,18 @@ export class MailgunTransport implements MailTransport {
 
   async send(message: EmailMessage, options: SendOptions = {}): Promise<SendResult> {
     const { enabled, domain, apiKey, sender } = this.config
+    const t = emailTranslator()
 
     if (!enabled) {
       log.debug('Mailgun send skipped: disabled', { to: message.to, subject: message.subject })
-      return { ok: false, reason: 'disabled', message: '邮件发送已在管理面板中关闭' }
+      return { ok: false, reason: 'disabled', message: t.format('email.error.disabled') }
     }
     if (!domain || !apiKey || !sender) {
       log.warn('Mailgun send skipped: unconfigured', { to: message.to, subject: message.subject })
       return {
         ok: false,
         reason: 'unconfigured',
-        message: 'Mailgun 服务尚未配置完整（缺少 Domain / API Key / 发件人）',
+        message: t.format('email.error.mailgunUnconfigured'),
       }
     }
 

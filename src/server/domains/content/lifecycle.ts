@@ -3,6 +3,7 @@ import type { ContentType, PublishLatestResult, SaveDraftResult } from '@/server
 import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
@@ -17,6 +18,7 @@ import { rescheduleScheduledPublish } from '@/server/domains/content/scheduled-p
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
 import { snapshotMusicPlayerMeta } from '@/server/domains/pt/lexical-music-snapshot'
 import { canonicalizeLexicalEditorState } from '@/server/domains/pt/services/lexical-canonicalize'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { getLogger, type Logger } from '@/server/infra/logger'
 import { computeBodyProjections, type BodyProjections } from '@/server/infra/pt/lexical-projection'
 import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@/shared/lexical/collect'
@@ -41,7 +43,7 @@ export interface ContentEntityAdapter<TMeta, TPreview> {
   getPublishedRevisionId(meta: TMeta): number | null
   projectPreview(meta: TMeta, revision: ContentRow | null): TPreview
   recordForceOverwrite(entry: ForceOverwriteEntry<TMeta>): void
-  afterPublish(db: Database, meta: TMeta, body: LexicalEditorState, warnings: string[]): Promise<void>
+  afterPublish(db: Database, meta: TMeta, body: LexicalEditorState, warnings: ErrorMessageDescriptor[]): Promise<void>
 }
 
 export interface ForceOverwriteEntry<TMeta> {
@@ -108,19 +110,25 @@ export interface DraftPreviewResult<TPreview> {
   hasNewerDraft: boolean
 }
 
+/**
+ * The save outcome plus its non-fatal side-effect notices as descriptors — the
+ * oRPC boundary localizes them into the wire `warning` string.
+ */
+export type SaveBodyOutcome = SaveBodyResult & { warningDescriptors: ErrorMessageDescriptor[] }
+
 export async function saveBody<TMeta, TPreview>(
   db: Database,
   adapter: ContentEntityAdapter<TMeta, TPreview>,
   input: SaveBodyInput,
   mode: 'draft' | 'publish',
   viewer?: ViewerIdentity,
-): Promise<SaveBodyResult> {
+): Promise<SaveBodyOutcome> {
   const meta = adapter.findMetaById(db, input.entityId)
   adapter.assertAccess(meta, viewer)
   const body = await canonicalizeLexicalEditorState(input.body)
   await snapshotMusicPlayerMeta(body, input.resolveMusicEmbeds)
 
-  const warnings: string[] = []
+  const warnings: ErrorMessageDescriptor[] = []
 
   try {
     await syncLibraryImageBlocks(db, body)
@@ -130,7 +138,7 @@ export async function saveBody<TMeta, TPreview>(
       entityId: input.entityId,
       error: err,
     })
-    warnings.push('图片库同步失败，部分图片可能无法正常显示。')
+    warnings.push(descriptorFor('content.warning.imageSyncFailed'))
   }
 
   const imageSources = collectLexicalImageStoragePaths(body)
@@ -172,7 +180,7 @@ export async function saveBody<TMeta, TPreview>(
         entityId: input.entityId,
         error: err,
       })
-      warnings.push('正文投影生成失败，请重新保存以重试。')
+      warnings.push(descriptorFor('content.warning.projectionFailed'))
     }
   }
 
@@ -209,7 +217,7 @@ export async function saveBody<TMeta, TPreview>(
     // A publish can schedule into the future — re-arm the timer (no-op until started).
     rescheduleScheduledPublish()
   }
-  return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)
+  return { ...projectSaveResult(result), warningDescriptors: warnings }
 }
 
 /**
@@ -236,14 +244,13 @@ export async function loadDraftPreviewBySlug<TMeta, TPreview>(
   return { preview: adapter.projectPreview(meta, revision), hasNewerDraft: draft !== null }
 }
 
-function projectSaveResult(result: SaveDraftResult | PublishLatestResult, warning?: string): SaveBodyResult {
+function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SaveBodyResult {
   if (result.status === 'conflict') {
     return {
       status: 'conflict',
       latest: toAdminRevisionDto(result.latest),
       expectedToken: result.expectedToken,
-      warning,
     }
   }
-  return { status: 'saved', revision: toAdminRevisionDto(result.row), warning }
+  return { status: 'saved', revision: toAdminRevisionDto(result.row) }
 }

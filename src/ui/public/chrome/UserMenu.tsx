@@ -5,7 +5,7 @@ import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
 import { useLogout } from '@/client/hooks/use-logout'
 import { avatarImageUrl } from '@/shared/utils/avatar'
-import { roleLabel } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Button } from '@/ui/components/button'
 import {
@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { warmNotificationsDrawerChunk } from '@/ui/shared/notifications/LazyNotificationsDrawer'
 import { NotificationBadge } from '@/ui/shared/notifications/NotificationBadge'
 
@@ -43,6 +44,7 @@ export function UserMenu({
   defaultOpen = false,
 }: Props) {
   const logout = useLogout()
+  const { t } = useI18n()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()
   const canEnterAdmin = currentUser.role === 'admin' || currentUser.role === 'author'
   // An unknown count renders like zero: no dot, no badge, plain aria label.
@@ -55,7 +57,9 @@ export function UserMenu({
             variant="ghost"
             size="icon"
             className="relative size-9 rounded-full"
-            aria-label={badgeCount > 0 ? `用户菜单，${badgeCount} 条未读消息` : '用户菜单'}
+            aria-label={
+              badgeCount > 0 ? t('public.chrome.userMenuUnread', { count: badgeCount }) : t('public.chrome.userMenu')
+            }
           >
             {' '}
             <Avatar className="size-8">
@@ -74,31 +78,31 @@ export function UserMenu({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel className="flex flex-col gap-0.5">
           <span className="text-sm font-medium">{currentUser.name}</span>
-          <span className="text-xs font-normal text-muted-foreground">{roleLabel(currentUser.role)}</span>
+          <span className="text-xs font-normal text-muted-foreground">{t(ROLE_LABEL_KEYS[currentUser.role])}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onOpenNotifications()} onPointerEnter={warmNotificationsDrawerChunk}>
-          <BellIcon /> 消息通知
+          <BellIcon /> {t('public.chrome.notifications')}
           <NotificationBadge count={badgeCount} className="px-1.5 text-[11px] leading-none" />
         </DropdownMenuItem>
         <DropdownMenuItem
           render={
             <Link to="/admin/me/comments" prefetch="intent">
-              <MessageSquareIcon /> 我的评论
+              <MessageSquareIcon /> {t('public.chrome.myComments')}
             </Link>
           }
         />
         <DropdownMenuItem
           render={
             <Link to="/admin/me/sessions" prefetch="intent">
-              <MonitorIcon /> 登录设备
+              <MonitorIcon /> {t('public.chrome.mySessions')}
             </Link>
           }
         />
         <DropdownMenuItem
           render={
             <Link to="/admin/me/profile" prefetch="intent">
-              <UserIcon /> 个人信息
+              <UserIcon /> {t('public.chrome.profile')}
             </Link>
           }
         />
@@ -106,14 +110,14 @@ export function UserMenu({
           <DropdownMenuItem
             render={
               <Link to="/admin/" prefetch="intent">
-                <SettingsIcon /> 管理后台
+                <SettingsIcon /> {t('public.chrome.admin')}
               </Link>
             }
           />
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => void logout(logoutRedirectTo)}>
-          <LogOutIcon /> 登出
+          <LogOutIcon /> {t('public.chrome.signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

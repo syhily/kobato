@@ -3,6 +3,8 @@ import type { AuthFlowResult, SigninFlowContext } from '@/server/domains/auth/se
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { verifyAuthenticationResponse } from '@/server/domains/auth/passkey/service'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
+import { authFlowError } from '@/server/domains/auth/services/shared'
+import { DomainError } from '@/server/infra/http/errors'
 import { tryPasskeyAuthFinishRateLimit } from '@/server/infra/rate-limit'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -14,22 +16,22 @@ export async function signInWithPasskey(
 ): Promise<AuthFlowResult> {
   const { db, session, clientAddress } = ctx
   if (!isPasskeyEnabled()) {
-    return { type: 'error', message: 'Passkey 登录未启用。' }
+    return authFlowError('auth.passkey.error.disabled')
   }
   const rawResponse = formData.get('passkey_response')
   const rawChallenge = formData.get('passkey_challenge')
   if (!rawResponse || typeof rawResponse !== 'string' || !rawChallenge || typeof rawChallenge !== 'string') {
-    return { type: 'error', message: 'Passkey 响应缺失。' }
+    return authFlowError('auth.passkey.error.responseMissing')
   }
   let response: unknown
   try {
     response = JSON.parse(rawResponse)
   } catch {
-    return { type: 'error', message: 'Passkey 响应格式错误。' }
+    return authFlowError('auth.passkey.error.responseInvalid')
   }
   const limit = await tryPasskeyAuthFinishRateLimit(clientAddress)
   if (limit.exceeded) {
-    return { type: 'error', message: '操作过于频繁，请稍后再试。' }
+    return authFlowError('auth.signin.error.tooFrequent')
   }
   try {
     const result = await verifyAuthenticationResponse(
@@ -43,7 +45,15 @@ export async function signInWithPasskey(
     })
     return { type: 'redirect', to: redirectTo, setCookie: established.setCookie }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Passkey 验证失败，请重试。'
-    return { type: 'error', message }
+    // Domain failures from the passkey service already carry a descriptor; an
+    // upstream non-Error rejection falls back to the generic catalog copy.
+    if (err instanceof DomainError && err.descriptor !== undefined) {
+      return { type: 'error', message: err.message, descriptor: err.descriptor }
+    }
+    if (err instanceof Error) {
+      // Third-party (SimpleWebAuthn) technical message — legacy raw passthrough.
+      return { type: 'error', message: err.message }
+    }
+    return authFlowError('auth.passkey.error.verifyFailed')
   }
 }

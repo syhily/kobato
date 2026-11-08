@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
+
+const COMMENTS_REVISION = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE).comments
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, regularSession } from '#/_helpers/session'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
@@ -37,7 +41,7 @@ beforeEach(async () => {
 
 describe('services/sidebar/load — loadSidebarData', () => {
   it('non-admin session reports admin=false and returns latest comments', async () => {
-    const data = await loadSidebarData(db, regularSession())
+    const data = await loadSidebarData(db, regularSession(), TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
 
     expect(data.admin).toBe(false)
     expect(data.recentComments).toHaveLength(1)
@@ -46,7 +50,7 @@ describe('services/sidebar/load — loadSidebarData', () => {
   })
 
   it('admin session reports admin=true and returns latest comments', async () => {
-    const data = await loadSidebarData(db, adminSession())
+    const data = await loadSidebarData(db, adminSession(), TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
 
     expect(data.admin).toBe(true)
     expect(data.recentComments).toHaveLength(1)

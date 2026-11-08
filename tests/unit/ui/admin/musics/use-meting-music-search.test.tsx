@@ -24,6 +24,7 @@ vi.mock('@/client/api/client', () => ({
   },
 }))
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { dedupeSearchHits, useMetingMusicSearch } from '@/ui/admin/musics/useMetingMusicSearch'
 
 // The hook owns a `useInfiniteQuery` + `useQueryClient`, so tests need a real
@@ -34,7 +35,7 @@ function makeWrapper() {
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
   })
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    return <QueryClientProvider client={queryClient}>{wrapWithI18n(children)}</QueryClientProvider>
   }
 }
 

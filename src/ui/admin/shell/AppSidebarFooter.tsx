@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
 import { SidebarFooter, SidebarMenu, SidebarMenuItem } from '@/ui/components/sidebar'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface AppSidebarFooterProps {
   className?: string
@@ -27,6 +28,7 @@ interface AppSidebarFooterProps {
 }
 
 export function AppSidebarFooter({ className, id, name, email, unreadCount }: AppSidebarFooterProps) {
+  const { t } = useI18n()
   const [versionOpen, setVersionOpen] = useState(false)
   const logout = useLogout()
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
@@ -43,7 +45,11 @@ export function AppSidebarFooter({ className, id, name, email, unreadCount }: Ap
                 <button
                   type="button"
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  aria-label={badgeCount > 0 ? `用户菜单，${badgeCount} 条未读消息` : '用户菜单'}
+                  aria-label={
+                    badgeCount > 0
+                      ? t('public.chrome.userMenuUnread', { count: badgeCount })
+                      : t('public.chrome.userMenu')
+                  }
                 >
                   <span className="relative">
                     <Avatar className="size-8">
@@ -60,7 +66,7 @@ export function AppSidebarFooter({ className, id, name, email, unreadCount }: Ap
                     ) : null}
                   </span>
                   <div className="grid flex-1 text-left leading-tight">
-                    <span className="truncate font-semibold">{name}</span>
+                    <span className="truncate font-semibold">{name || t('common.role.admin')}</span>
                     <span className="truncate text-xs text-muted-foreground">{email}</span>
                   </div>
                   <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" />
@@ -86,7 +92,7 @@ export function AppSidebarFooter({ className, id, name, email, unreadCount }: Ap
                 render={
                   <Link to="/admin/me/profile" prefetch="intent">
                     <UserIcon className="mr-2 size-4" />
-                    个人信息
+                    {t('public.chrome.profile')}
                   </Link>
                 }
               />
@@ -95,7 +101,7 @@ export function AppSidebarFooter({ className, id, name, email, unreadCount }: Ap
                 render={
                   <Link to="/admin/me/comments" prefetch="intent">
                     <MessageSquareIcon className="mr-2 size-4" />
-                    我的评论
+                    {t('public.chrome.myComments')}
                   </Link>
                 }
               />
@@ -104,19 +110,19 @@ export function AppSidebarFooter({ className, id, name, email, unreadCount }: Ap
                 render={
                   <Link to="/admin/me/sessions" prefetch="intent">
                     <MonitorIcon className="mr-2 size-4" />
-                    登录设备
+                    {t('public.chrome.mySessions')}
                   </Link>
                 }
               />
               <DropdownMenuSeparator className="my-2" />
               <DropdownMenuItem className="my-0.5 rounded-xl px-3 py-2 text-sm" onClick={() => setVersionOpen(true)}>
                 <InfoIcon className="mr-2 size-4" />
-                系统版本
+                {t('admin.shell.version.title')}
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-2" />
               <DropdownMenuItem className="my-0.5 rounded-xl px-3 py-2 text-sm" onClick={() => void logout('/')}>
                 <LogOutIcon className="mr-2 size-4" />
-                登出
+                {t('public.chrome.signOut')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

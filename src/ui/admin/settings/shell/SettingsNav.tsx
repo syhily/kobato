@@ -24,10 +24,11 @@ import {
 import type { SettingsNavGroup } from '@/shared/config/display'
 import type { SettingsSection } from '@/shared/config/sections'
 
-import { NAV_GROUP_LABEL } from '@/shared/config/display'
+import { NAV_GROUP_LABEL_KEYS } from '@/shared/config/display'
 import { useScrollSpyContext, useScrollSpyNav } from '@/ui/admin/settings/shell/useSettingsScrollSpy'
 import { useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Settings,
@@ -100,6 +101,7 @@ interface NavGroupProps {
 
 function NavGroup({ group, items }: NavGroupProps) {
   const { checkVisible } = useSettingsSearch()
+  const { t } = useI18n()
   const visibleItems = items.filter((item) => checkVisible(item.keywords))
 
   if (!visibleItems.length) {
@@ -108,7 +110,9 @@ function NavGroup({ group, items }: NavGroupProps) {
 
   return (
     <>
-      <h2 className="mb-4 ml-2 text-base font-semibold tracking-normal text-foreground">{NAV_GROUP_LABEL[group]}</h2>
+      <h2 className="mb-4 ml-2 text-base font-semibold tracking-normal text-foreground">
+        {t(NAV_GROUP_LABEL_KEYS[group])}
+      </h2>
       <ul className="-mt-1 mb-7">
         {visibleItems.map((item) => (
           <SettingsNavItem key={item.id} id={item.id} label={item.label} icon={item.icon} keywords={item.keywords} />
@@ -130,6 +134,7 @@ interface SettingsNavProps {
 }
 
 export function SettingsNav({ items }: SettingsNavProps) {
+  const { t } = useI18n()
   const { noResult } = useSettingsSearch()
 
   const groups = items.reduce<Record<SettingsNavGroup, typeof items>>(
@@ -147,7 +152,7 @@ export function SettingsNav({ items }: SettingsNavProps) {
 
   return (
     <>
-      {noResult && <div className="px-3 py-2 text-sm text-muted-foreground">未找到匹配的设置</div>}
+      {noResult && <div className="px-3 py-2 text-sm text-muted-foreground">{t('admin.settings.shell.noResults')}</div>}
       {groupOrder.map((group) =>
         groups[group]?.length ? <NavGroup key={group} group={group} items={groups[group]} /> : null,
       )}

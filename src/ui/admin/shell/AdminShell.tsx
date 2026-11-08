@@ -9,6 +9,7 @@ import { MobileNavBar } from '@/ui/admin/shell/MobileNavBar'
 import { SidebarInset, SidebarProvider } from '@/ui/components/sidebar'
 import { Toaster } from '@/ui/components/sonner'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface AdminChromeContextValue {
   focused: boolean
@@ -100,6 +101,7 @@ export function AdminShell({
   userCount,
   children,
 }: AdminShellProps) {
+  const { t } = useI18n()
   const [focused, setFocused] = useState(false)
   const [scrollTopLifted, setScrollTopLifted] = useState(false)
   const mainScrollRef = useRef<HTMLElement | null>(null)
@@ -116,7 +118,7 @@ export function AdminShell({
             href="#admin-main-content"
             className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-xl focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
           >
-            跳转到主要内容
+            {t('public.chrome.skipToContent')}
           </a>
           <SidebarProvider>
             <AppSidebar

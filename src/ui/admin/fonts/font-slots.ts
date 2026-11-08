@@ -10,6 +10,7 @@ import type { FontSlot } from '@/shared/contracts/fonts'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { toastApiError } from '@/client/lib/toast-api-error'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Optimistic slot controller: mirrors `blogSettings.fonts`; `seeded` only rewrites from the server while no mutation is in flight.
 export const MAX_SLOT_FONTS = 8
@@ -54,6 +55,7 @@ function emptySlots(): SlotState {
 }
 
 export function useFontSlotsController() {
+  const { t } = useI18n()
   const rootData = useRouteLoaderData<{ blogSettings?: { fonts?: FontsSettings } | null }>('root')
   const serverSlots = rootData?.blogSettings?.fonts
   const revalidator = useRevalidator()
@@ -93,7 +95,7 @@ export function useFontSlotsController() {
     onError: (error) => {
       inFlightRef.current = Math.max(0, inFlightRef.current - 1)
       void revalidator.revalidate()
-      toastApiError(error, '槽位更新失败')
+      toastApiError(error, 'admin.toast.fontSlotUpdateFailed', t)
     },
   })
 
@@ -125,11 +127,11 @@ export function useFontSlotsController() {
 
   const moveToSlot = (fontId: string, targetSlot: FontSlot, targetIndex: number | undefined, fromSlot?: FontSlot) => {
     if (slots[targetSlot].includes(fontId) && fromSlot !== targetSlot) {
-      toast.error('该字体已在目标槽位中')
+      toast.error(t('admin.fonts.slot.alreadyAssigned'))
       return
     }
     if (slots[targetSlot].length >= MAX_SLOT_FONTS && !slots[targetSlot].includes(fontId)) {
-      toast.error(`每个槽位最多 ${MAX_SLOT_FONTS} 个字体`)
+      toast.error(t('admin.fonts.slot.limitReached', { count: MAX_SLOT_FONTS }))
       return
     }
 

@@ -17,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/ui/components/alert-dialog'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { commentFlags } from '@/ui/public/comments/comment-item/comment-flags'
 import { commentFooterButtonClass } from '@/ui/public/comments/comment-item/helpers'
 import { useCommentsActions, useCommentsIdentity } from '@/ui/public/comments/comments-context'
@@ -32,6 +33,7 @@ interface CommentActionsProps {
 
 export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActionsProps) {
   const siteIdentity = useSiteIdentity()
+  const { t } = useI18n()
   const identity = useCommentsIdentity('CommentActions')
   const actions = useCommentsActions('CommentActions')
   const approve = useMutation({
@@ -73,7 +75,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
         onMouseDown={(event) => event.preventDefault()}
         onClick={handleReply}
       >
-        回复
+        {t('public.comments.reply')}
       </button>
       {(identity.admin || flags.isMine) && (
         <button
@@ -82,7 +84,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
           onMouseDown={(event) => event.preventDefault()}
           onClick={onEditAdmin}
         >
-          编辑
+          {t('public.comments.edit')}
         </button>
       )}
       {showOwnAffordances && !flags.hasPendingDelete && (
@@ -93,7 +95,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
           onClick={onEditOwn}
           disabled={ownEditDisabled}
         >
-          修改
+          {t('public.comments.modify')}
         </button>
       )}
       {showOwnAffordances &&
@@ -105,7 +107,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
             onClick={handleCancelDelete}
             disabled={deleteToggleDisabled}
           >
-            撤回删除
+            {t('public.comments.withdrawDelete')}
           </button>
         ) : (
           <AlertDialog>
@@ -117,20 +119,20 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
                   onMouseDown={(event) => event.preventDefault()}
                   disabled={deleteToggleDisabled}
                 >
-                  申请删除
+                  {t('public.comments.requestDelete')}
                 </button>
               }
             />
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>申请删除评论？</AlertDialogTitle>
-                <AlertDialogDescription>
-                  提交删除申请后，管理员将收到通知并进行审核。此操作不可撤销。
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t('public.comments.requestDeleteTitle')}</AlertDialogTitle>
+                <AlertDialogDescription>{t('public.comments.requestDeleteBody')}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
-                <AlertDialogAction onClick={handleRequestDelete}>确认申请</AlertDialogAction>
+                <AlertDialogCancel>{t('common.action.cancel')}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRequestDelete}>
+                  {t('public.comments.confirmRequest')}
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -145,7 +147,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
               onClick={handleApprove}
               disabled={approve.isPending}
             >
-              通过
+              {t('public.comments.approve')}
             </button>
           )}
           <AlertDialog>
@@ -157,18 +159,18 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
                   onMouseDown={(event) => event.preventDefault()}
                   disabled={remove.isPending}
                 >
-                  删除
+                  {t('common.action.delete')}
                 </button>
               }
             />
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>删除评论？</AlertDialogTitle>
-                <AlertDialogDescription>此操作不可恢复，删除后评论将立即从前后台消失。</AlertDialogDescription>
+                <AlertDialogTitle>{t('public.comments.deleteTitle')}</AlertDialogTitle>
+                <AlertDialogDescription>{t('public.comments.deleteBody')}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>删除</AlertDialogAction>
+                <AlertDialogCancel>{t('common.action.cancel')}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>{t('common.action.delete')}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

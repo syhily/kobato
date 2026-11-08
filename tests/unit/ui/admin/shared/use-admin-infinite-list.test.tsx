@@ -6,7 +6,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
+
+// sonner is stubbed locally: the list error path is asserted on toast copy.
+const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
+vi.mock('sonner', () => ({ toast: toastMock }))
 
 interface TestRow {
   id: string
@@ -45,13 +53,14 @@ function makeNamespace<TPage>(fetchPage: (input: TestInput) => Promise<TPage>) {
   }
 }
 
-function makeWrapper() {
+// The hook reads the root `useI18n()` translator, so every render mounts the provider.
+function makeWrapper(locale: AppLocale = 'zh-CN') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   })
   return Object.assign(
     function Wrapper({ children }: { children: ReactNode }) {
-      return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      return <QueryClientProvider client={queryClient}>{wrapWithI18n(children, { locale })}</QueryClientProvider>
     },
     { queryClient },
   )
@@ -71,7 +80,17 @@ function makePager(total: number) {
   return { fetched, fetchPage }
 }
 
-function renderList({ pageSize, fetchPage }: { pageSize: number; fetchPage: (input: TestInput) => Promise<TestPage> }) {
+function renderList({
+  pageSize,
+  fetchPage,
+  locale = 'zh-CN',
+  noun = 'admin.list.noun.tags',
+}: {
+  pageSize: number
+  fetchPage: (input: TestInput) => Promise<TestPage>
+  locale?: AppLocale
+  noun?: UiMessageId
+}) {
   return renderHook(
     () =>
       useAdminInfiniteList({
@@ -79,9 +98,9 @@ function renderList({ pageSize, fetchPage }: { pageSize: number; fetchPage: (inp
         pageSize,
         buildInput: (offset) => ({ offset, limit: pageSize }),
         selectRows: (page) => page.rows,
-        noun: '项目',
+        noun,
       }),
-    { wrapper: makeWrapper() },
+    { wrapper: makeWrapper(locale) },
   )
 }
 
@@ -169,7 +188,7 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
           pageSize: 2,
           buildInput: (offset) => ({ offset, limit: 2 }),
           selectRows: (page) => page.rows,
-          noun: '项目',
+          noun: 'admin.list.noun.tags',
           enabled,
         }),
       { wrapper: makeWrapper(), initialProps: { enabled: false } },
@@ -195,7 +214,7 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
           pageSize: 2,
           buildInput: (offset) => ({ offset, limit: 2 }),
           selectRows: (page) => page.rows,
-          noun: '项目',
+          noun: 'admin.list.noun.tags',
         }),
       { wrapper: makeWrapper() },
     )
@@ -234,7 +253,7 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
           pageSize: 2,
           buildInput: (offset) => ({ offset, limit: 2 }),
           selectRows: (page) => page.rows,
-          noun: '项目',
+          noun: 'admin.list.noun.tags',
         }),
       { wrapper },
     )
@@ -247,5 +266,45 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
     })
     // Reset only drops the cache; the caller re-arms the machine.
     expect(wrapper.queryClient.getQueryData(['test', 'admin-infinite-list'])).toBeUndefined()
+  })
+})
+
+describe('ui/admin/shared/useAdminInfiniteList — list error toast', () => {
+  it('interpolates the translated noun into the zh-CN title', async () => {
+    toastMock.error.mockClear()
+    const fetchPage = vi.fn(() => Promise.reject(new Error('网络中断')))
+    renderList({ pageSize: 2, fetchPage, noun: 'admin.list.noun.tags' })
+
+    await waitFor(() => expect(toastMock.error).toHaveBeenCalledWith('加载标签列表失败', { description: '网络中断' }))
+  })
+
+  it('translates both the title and the noun for en-US', async () => {
+    toastMock.error.mockClear()
+    const fetchPage = vi.fn(() => Promise.reject(new Error('Network down')))
+    renderList({ pageSize: 2, fetchPage, locale: 'en-US', noun: 'admin.list.noun.pages' })
+
+    await waitFor(() =>
+      expect(toastMock.error).toHaveBeenCalledWith('Failed to load the pages list', {
+        description: 'Network down',
+      }),
+    )
+  })
+
+  it('stays silent when the caller surfaces errors inline (no noun)', async () => {
+    toastMock.error.mockClear()
+    const fetchPage = vi.fn(() => Promise.reject<TestPage>(new Error('boom')))
+    const { result } = renderHook(
+      () =>
+        useAdminInfiniteList({
+          namespace: makeNamespace(fetchPage),
+          pageSize: 2,
+          buildInput: (offset) => ({ offset, limit: 2 }),
+          selectRows: (page) => page.rows,
+        }),
+      { wrapper: makeWrapper() },
+    )
+
+    await waitFor(() => expect(result.current.error).not.toBeNull())
+    expect(toastMock.error).not.toHaveBeenCalled()
   })
 })

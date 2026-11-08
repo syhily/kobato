@@ -1,16 +1,19 @@
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Link, Text } from '@/server/infra/email/render'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { light } from '@/server/infra/email/templates/styles/tokens'
 
 interface Props {
+  t: ServerTranslator
   receiver: string
   link: string
   expiresMinutes: number
 }
 
-export function SignInLink({ receiver, link, expiresMinutes }: Props) {
+export function SignInLink({ t, receiver, link, expiresMinutes }: Props) {
   return (
-    <EmailLayout receiver={receiver} preview={`你请求登录账号，链接 ${expiresMinutes} 分钟内有效`}>
+    <EmailLayout t={t} receiver={receiver} preview={t.format('email.signInLink.preview', { expiresMinutes })}>
       <Text
         style={{
           fontSize: 26,
@@ -21,7 +24,7 @@ export function SignInLink({ receiver, link, expiresMinutes }: Props) {
         }}
         className="dark-text-primary"
       >
-        登录你的账号
+        {t.format('email.signInLink.title')}
       </Text>
 
       <Text
@@ -33,7 +36,7 @@ export function SignInLink({ receiver, link, expiresMinutes }: Props) {
         }}
         className="dark-text-secondary"
       >
-        你请求登录账号，请点击下方按钮完成登录（{expiresMinutes} 分钟内有效，仅可使用一次）：
+        {t.format('email.signInLink.body', { expiresMinutes })}
       </Text>
 
       <div style={{ paddingTop: 12, paddingBottom: 12 }}>
@@ -52,7 +55,7 @@ export function SignInLink({ receiver, link, expiresMinutes }: Props) {
           }}
           className="dark-cta"
         >
-          登录
+          {t.format('email.signInLink.cta')}
         </Link>
       </div>
 
@@ -78,7 +81,7 @@ export function SignInLink({ receiver, link, expiresMinutes }: Props) {
         }}
         className="dark-text-muted"
       >
-        如果你并未请求登录，请忽略此邮件。
+        {t.format('email.signInLink.ignore')}
       </Text>
     </EmailLayout>
   )

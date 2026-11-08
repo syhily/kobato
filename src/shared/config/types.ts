@@ -1,6 +1,7 @@
 import type { BundleKey, SECTION_TO_BUNDLE_KEY, SettingsSection } from '@/shared/config/sections'
 import type { SocialNetwork } from '@/shared/config/socials'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
+import type { AppLocale } from '@/shared/i18n/locales'
 import type { CacheBucketSlot, TunableCacheBucketId } from '@/shared/types/cache'
 import type { AvatarSource } from '@/shared/utils/avatar'
 
@@ -14,9 +15,11 @@ export interface SiteIdentitySettings {
   website: string
   keywords: string[]
   author: { name: string; email: string; url: string }
-  locale: string
+  /** The single global UI locale; drives public/admin/auth/editor copy, formatting and server output. */
+  locale: AppLocale
   timeZone: string
-  timeFormat: string
+  /** `null` = follow the locale's `Intl` default; a string is the admin's custom token pattern. */
+  timeFormat: string | null
   initialYear: number
   icpNo?: string
   moeIcpNo?: string
@@ -63,7 +66,7 @@ export interface ContentSettings {
     sortBy: 'publishedAt' | 'updatedAt'
     featureEnabled: boolean
   }
-  /** Filled by the schema's `.default({ sectionTitle: '尾声礼记' })` on every read, so always present post-hydration. */
+  /** Filled by the schema's default (`DEFAULT_FOOTNOTES_SECTION_TITLE`) on every read, so always present post-hydration. */
   footnotes: {
     sectionTitle: string
   }

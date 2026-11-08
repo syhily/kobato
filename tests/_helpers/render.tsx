@@ -6,8 +6,13 @@ import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { uiMessagesFor } from '@/shared/i18n/catalog'
+import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
+import { I18nProvider } from '@/ui/lib/I18nProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 const testQueryClient = new QueryClient({
@@ -23,22 +28,34 @@ export function renderToHtml(element: ReactElement): string {
   return renderToString(
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
-        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            {element}
+          </I18nProvider>
+        </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
   )
 }
 
 // Render under a memory router (catch-all route) so router hooks resolve;
-// BlogSettingsProvider supplies the fixture bundle like production.
-export function renderInRouter(node: ReactNode, initialPath: string = '/'): string {
+// BlogSettingsProvider supplies the fixture bundle like production. The locale
+// defaults to zh-CN; pass `{ locale }` to pin another catalog.
+export function renderInRouter(
+  node: ReactNode,
+  initialPath: string = '/',
+  options: { locale?: AppLocale } = {},
+): string {
+  const locale = options.locale ?? 'zh-CN'
   const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
   return renderToStaticMarkup(
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale={locale} messages={locale === 'zh-CN' ? uiMessagesZhCN : uiMessagesFor(locale)}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
@@ -60,7 +77,9 @@ export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, o
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
@@ -73,7 +92,11 @@ export async function prerenderToHtml(element: ReactNode): Promise<string> {
   const { prelude } = await prerenderToNodeStream(
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
-        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            {element}
+          </I18nProvider>
+        </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
   )
@@ -93,7 +116,9 @@ export async function prerenderInRouter(node: ReactNode, initialPath: string = '
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <RouterProvider router={router} />
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,

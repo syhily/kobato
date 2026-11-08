@@ -17,6 +17,7 @@ import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/ui/components/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Pill value editors — one per field `kind`; the pill owns serialization.
 
@@ -92,6 +93,7 @@ export function SearchComboboxEditor<K extends string>({
   state: SearchFieldState
   onChange: (value: string, label: string) => void
 }) {
+  const { t } = useI18n()
   const [inputValue, setInputValue] = useState('')
 
   return (
@@ -116,7 +118,7 @@ export function SearchComboboxEditor<K extends string>({
       </ComboboxTrigger>
       <ComboboxContent<FilterOptionItem>
         inputPlaceholder={field.inputPlaceholder}
-        emptyMessage={state.isPending ? '加载中…' : (field.emptyMessage ?? '无匹配结果')}
+        emptyMessage={state.isPending ? t('common.state.loading') : (field.emptyMessage ?? t('common.combobox.empty'))}
       >
         {(item) => (
           <ComboboxItem key={item.value} value={item}>
@@ -226,9 +228,9 @@ export function TextFilterEditor<K extends string>({
       <div className="flex flex-1 items-stretch">
         <input
           ref={inputRef}
-          aria-label="搜索评论内容"
+          aria-label={field.inputAria ?? field.label}
           autoComplete="off"
-          placeholder="搜索评论内容…"
+          placeholder={field.inputPlaceholder ?? field.label}
           type="text"
           value={localValue}
           onChange={(e) => setLocalValue(e.target.value)}

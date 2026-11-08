@@ -200,7 +200,7 @@ export function InputUrlSetting({ dataTestId, label, value, onChange }: InputUrl
   }, [fetchAutocompleteLinks])
 
   const filteredSuggestedUrls = listOptions.filter((u) => {
-    return u.label.toLocaleLowerCase().includes(value.toLocaleLowerCase())
+    return u.label.toLowerCase().includes(value.toLowerCase())
   })
 
   return (

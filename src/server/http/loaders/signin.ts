@@ -5,6 +5,7 @@ import { data, redirect } from 'react-router'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { logout } from '@/server/domains/auth/primitives'
 import { readLivePendingOtp } from '@/server/domains/auth/services/otp'
+import { authFlowError, authFlowMessage } from '@/server/domains/auth/services/shared'
 import { destroySession } from '@/server/domains/auth/session-storage'
 import { peekToken } from '@/server/domains/auth/verification-tokens'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
@@ -56,17 +57,20 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
 
   // Surface token errors on the loader so the UI short-circuits before a
   // new password is typed; `peekToken` is read-only — the action consumes it.
+  // Server translates: the descriptor resolves for this request's locale.
+  const invalidToken = authFlowError('auth.signin.error.invalidToken')
+  const invalidTokenText = authFlowMessage(invalidToken.message, invalidToken.descriptor, rc.localization.locale)
   let tokenError: string | null = null
   let resetToken: string | null = null
   if ((action === 'resetpassword' || action === 'accept-invite') && url.searchParams.has('token')) {
     const rawToken = url.searchParams.get('token')
     if (!rawToken) {
-      tokenError = '链接无效或已过期。'
+      tokenError = invalidTokenText
     } else {
       const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
       const result = await peekToken(db, rawToken, purpose)
       if (result === null) {
-        tokenError = '链接无效或已过期。'
+        tokenError = invalidTokenText
       } else {
         resetToken = rawToken
       }
@@ -80,11 +84,11 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
   if (action === 'magiclink') {
     const rawToken = url.searchParams.get('token')
     if (!rawToken) {
-      tokenError = '链接无效或已过期。'
+      tokenError = invalidTokenText
     } else {
       const result = await peekToken(db, rawToken, 'signin-link')
       if (result === null) {
-        tokenError = '链接无效或已过期。'
+        tokenError = invalidTokenText
       } else {
         magicToken = rawToken
       }

@@ -141,7 +141,9 @@ describe('updateOwnComment — persistence edges', () => {
     const fulfilled = results.filter((r) => r.status === 'fulfilled')
     expect(rejected).toHaveLength(1)
     expect((rejected[0] as PromiseRejectedResult).reason).toBeInstanceOf(Error)
-    expect(((rejected[0] as PromiseRejectedResult).reason as Error).message).toMatch(/评论已被修改/)
+    expect(rejected[0]).toMatchObject({
+      reason: { descriptor: { messageKey: 'comments.error.modified' } },
+    })
     expect(fulfilled).toHaveLength(1)
 
     const stored = await readRow(id)

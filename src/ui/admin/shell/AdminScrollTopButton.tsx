@@ -5,6 +5,7 @@ import { ArrowUpIcon } from 'lucide-react'
 import { useShowOnScroll } from '@/client/hooks/use-show-on-scroll'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface AdminScrollTopButtonProps {
   /** When set (live preview / focus mode), depth is read from `<main>` instead of `window`. */
@@ -13,6 +14,7 @@ export interface AdminScrollTopButtonProps {
 }
 
 export function AdminScrollTopButton({ scrollRootRef, lifted = false }: AdminScrollTopButtonProps) {
+  const { t } = useI18n()
   const show = useShowOnScroll(300, scrollRootRef)
 
   return (
@@ -20,7 +22,7 @@ export function AdminScrollTopButton({ scrollRootRef, lifted = false }: AdminScr
       type="button"
       variant="ghost"
       size="icon"
-      aria-label="回到顶部"
+      aria-label={t('public.chrome.scrollTop')}
       onClick={() => {
         const main = scrollRootRef?.current
         if (main) {

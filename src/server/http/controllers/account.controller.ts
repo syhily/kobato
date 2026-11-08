@@ -1,6 +1,5 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { formatUaLabel } from '@/server/domains/analytics/ua-parse'
@@ -13,17 +12,14 @@ import {
   setLoginMethod,
   verifyRegistrationResponse,
 } from '@/server/domains/auth/passkey/service'
-import {
-  PASSWORD_BYTE_LIMIT_MESSAGE,
-  PASSWORD_COMPLEXITY_RE,
-  passwordWithinBcryptLimit,
-} from '@/server/domains/auth/schema'
+import { newPasswordSchema } from '@/server/domains/auth/schema'
 import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
 import { isMailLoginReady } from '@/server/domains/auth/services/shared'
 import { revokeOwnSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { getAccountProfile, updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
-import { authedProc, passkeyGuard } from '@/server/http/orpc-base'
+import { authedProc, localizedOrpcError, passkeyGuard } from '@/server/http/orpc-base'
 import { findSafeUserById } from '@/server/infra/db/operations/user'
+import { createServerTranslator } from '@/server/infra/i18n'
 import {
   tryPasskeyDeleteRateLimit,
   tryPasskeyRegisterBeginRateLimit,
@@ -35,7 +31,6 @@ import { accountProfileOutputSchema, accountSessionsOutputSchema } from '@/share
 import { loginMethodSchema } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 import { optionalHttpUrlSchema } from '@/shared/utils/safe-url'
-import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 import { isRecord } from '@/shared/utils/type-guards'
 
 function isRegistrationResponseJSON(value: unknown): value is RegistrationResponseJSON {
@@ -67,11 +62,7 @@ const updateProfileInput = z.object({
 
 const updatePasswordInput = z.object({
   oldPassword: z.string().min(1),
-  newPassword: z
-    .string()
-    .min(MIN_PASSWORD_LENGTH)
-    .refine(passwordWithinBcryptLimit, PASSWORD_BYTE_LIMIT_MESSAGE)
-    .regex(PASSWORD_COMPLEXITY_RE, '密码必须包含至少一个大写字母、一个小写字母和一个数字'),
+  newPassword: newPasswordSchema(),
 })
 
 const revokeSessionInput = z.object({
@@ -112,10 +103,11 @@ const sessions = authedProc
   .output(accountSessionsOutputSchema)
   .handler(async ({ context }) => {
     const rows = await listSessionsByUser(context.db, idFromString(context.viewer.id))
+    const translator = createServerTranslator(context.localization.locale)
     return rows.map((row) => ({
       sid: row.sid,
       userId: row.userId,
-      label: formatUaLabel(row.userAgent, row.platformHint),
+      label: formatUaLabel(row.userAgent, row.platformHint, translator.format('auth.sessions.unknownDevice')),
       ip: row.ip,
       loginAt: row.loginAt,
       lastActiveAt: row.lastActiveAt,
@@ -154,7 +146,7 @@ const updatePassword = authedProc
 
     const limit = await tryRateLimit(clientAddress)
     if (limit.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
     }
 
     await updateAccountPassword(db, idFromString(viewer.id), input.oldPassword, input.newPassword, session.id)
@@ -222,11 +214,11 @@ const passkeyRegisterBegin = authedProc
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeyRegisterBeginRateLimit(clientAddress)
     if (limit.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
     }
     const dbUser = await findSafeUserById(db, idFromString(viewer.id))
     if (!dbUser) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'account.error.userNotFound')
     }
     const { options } = await generateRegistrationOptions(db, dbUser, input.deviceName)
     return { options }
@@ -247,14 +239,14 @@ const passkeyRegisterFinish = authedProc
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeyRegisterFinishRateLimit(clientAddress)
     if (limit.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
     }
     const dbUser = await findSafeUserById(db, idFromString(viewer.id))
     if (!dbUser) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'account.error.userNotFound')
     }
     if (!isRegistrationResponseJSON(input.response)) {
-      throw new ORPCError('BAD_REQUEST', { message: '无效的 Passkey 响应格式。' })
+      throw localizedOrpcError(context, 'BAD_REQUEST', 'account.error.passkeyResponseInvalid')
     }
     await verifyRegistrationResponse(db, dbUser, {
       response: input.response,
@@ -278,12 +270,12 @@ const passkeyDelete = authedProc
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeyDeleteRateLimit(clientAddress)
     if (limit.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
     }
     const userId = idFromString(viewer.id)
     const ok = await deleteCredential(db, input.credentialId, userId)
     if (!ok) {
-      throw new ORPCError('NOT_FOUND', { message: '凭据不存在。' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'account.error.credentialNotFound')
     }
     recordAuditEventFromContext(context, {
       action: 'passkey_deleted',
@@ -301,13 +293,13 @@ const setLoginMethodProc = authedProc
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeySetForceRateLimit(clientAddress)
     if (limit.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
     }
     if (input.method === 'passkey' && !isPasskeyEnabled()) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
+      throw localizedOrpcError(context, 'BAD_REQUEST', 'auth.passkey.error.disabled')
     }
     if (input.method === 'magic-link' && !isMailLoginReady()) {
-      throw new ORPCError('BAD_REQUEST', { message: '请先在设置中配置邮件服务。' })
+      throw localizedOrpcError(context, 'BAD_REQUEST', 'account.error.mailNotConfigured')
     }
     await setLoginMethod(db, idFromString(viewer.id), input.method)
     recordAuditEventFromContext(context, {

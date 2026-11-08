@@ -5,6 +5,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { resolveSortableMove, SortableDragHandle, sortableIndexOf, useSortableRow } from '@/ui/admin/shared/sortable'
 
 describe('resolveSortableMove', () => {
@@ -60,12 +61,14 @@ function ProbeRow({ id, disabled }: { id: string; disabled?: boolean }) {
 describe('sortable row chrome', () => {
   it('renders the grip handle with the described-by strip applied', () => {
     render(
-      <DndContext>
-        <SortableContext items={['a', 'b']} strategy={verticalListSortingStrategy}>
-          <ProbeRow id="a" />
-          <ProbeRow id="b" />
-        </SortableContext>
-      </DndContext>,
+      wrapWithI18n(
+        <DndContext>
+          <SortableContext items={['a', 'b']} strategy={verticalListSortingStrategy}>
+            <ProbeRow id="a" />
+            <ProbeRow id="b" />
+          </SortableContext>
+        </DndContext>,
+      ),
     )
     const handles = screen.getAllByRole('button', { name: '拖拽排序' })
     expect(handles).toHaveLength(2)
@@ -77,12 +80,14 @@ describe('sortable row chrome', () => {
 
   it('forwards the disabled option to useSortable', () => {
     render(
-      <DndContext>
-        <SortableContext items={['a', 'b']} strategy={verticalListSortingStrategy}>
-          <ProbeRow id="a" disabled />
-          <ProbeRow id="b" />
-        </SortableContext>
-      </DndContext>,
+      wrapWithI18n(
+        <DndContext>
+          <SortableContext items={['a', 'b']} strategy={verticalListSortingStrategy}>
+            <ProbeRow id="a" disabled />
+            <ProbeRow id="b" />
+          </SortableContext>
+        </DndContext>,
+      ),
     )
     const [disabledHandle, enabledHandle] = screen.getAllByRole('button', { name: '拖拽排序' })
     expect(disabledHandle).toHaveAttribute('aria-disabled', 'true')

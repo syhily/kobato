@@ -23,6 +23,7 @@ import { StorageMigrationDialog } from '@/ui/admin/settings/StorageMigrationDial
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface StorageCardsProps {
   assets: AssetsLoaderShape
@@ -61,22 +62,23 @@ function StorageStatusCard({
   s3Primary: boolean
   onOpenWizard: () => void
 }) {
+  const { t } = useI18n()
   const { data: stats } = useQuery(orpcQuery.admin.storage.stats.queryOptions({ input: {} }))
   const localTotal = stats == null ? null : stats.images + stats.music + stats.branding + stats.backups
 
   return (
     <SettingGroup
-      title="当前存储"
-      description="上传的文件写入当前主存储；历史对象按各自记录的驱动读取。更换存储会先把现有对象全部复制过去。"
+      title={t('admin.settings.storage.current.title')}
+      description={t('admin.settings.storage.current.description')}
       actions={
         <Button variant="outline" size="sm" onClick={onOpenWizard}>
           <ArrowRightLeftIcon data-icon />
-          迁移存储…
+          {t('admin.settings.storage.current.migrate')}
         </Button>
       }
     >
       <SettingGroupContent>
-        <SettingsRow label="主存储">
+        <SettingsRow label={t('admin.settings.storage.current.primary')}>
           <p className="text-sm">
             {s3Primary ? (
               <>
@@ -84,15 +86,19 @@ function StorageStatusCard({
                 <span className="ml-2 text-muted-foreground">{assets.storage.endpoint}</span>
               </>
             ) : (
-              '本地文件系统'
+              t('admin.settings.storage.current.local')
             )}
           </p>
         </SettingsRow>
         {localTotal !== null && localTotal > 0 ? (
-          <SettingsRow label="本地存储中的文件">
+          <SettingsRow label={t('admin.settings.storage.current.localFiles')}>
             <p className="text-sm text-muted-foreground">
-              图片 {stats?.images ?? 0} · 音乐 {stats?.music ?? 0} · 品牌素材 {stats?.branding ?? 0} · 备份{' '}
-              {stats?.backups ?? 0}
+              {t('admin.settings.storage.current.localFilesDetail', {
+                images: stats?.images ?? 0,
+                music: stats?.music ?? 0,
+                branding: stats?.branding ?? 0,
+                backups: stats?.backups ?? 0,
+              })}
             </p>
           </SettingsRow>
         ) : null}
@@ -102,6 +108,7 @@ function StorageStatusCard({
 }
 
 function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, save, flushOnBlur } = useSettingsCard<
     AssetsLoaderShape,
     { assetHost: string; assetScheme: 'http' | 'https' }
@@ -119,12 +126,12 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
 
   return (
     <SettingGroup
-      title="资源域名"
-      description="统一的资源域名：`<MusicPlayer>` 音乐块读取音频/歌词，图片公共 URL 也复用这里的 host + scheme。"
+      title={t('admin.settings.storage.domain.title')}
+      description={t('admin.settings.storage.domain.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="协议" htmlFor="assets-asset-scheme">
+        <SettingsRow label={t('admin.settings.storage.domain.scheme')} htmlFor="assets-asset-scheme">
           <Controller
             control={form.control}
             name="assetScheme"
@@ -147,15 +154,15 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
           />
         </SettingsRow>
         <SettingsRow
-          label="域名"
+          label={t('admin.settings.storage.domain.host')}
           htmlFor="assets-asset-host"
-          hint="只能包含字母 / 数字 / `-` / `.`，例如 `cat.example.com`。"
+          hint={t('admin.settings.storage.domain.hostHint')}
         >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="assets-asset-host"
             maxLength={253}
-            placeholder="cat.example.com"
+            placeholder={t('admin.settings.storage.domain.hostPlaceholder')}
             {...form.register('assetHost')}
           />
         </SettingsRow>
@@ -165,6 +172,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function S3ConfigCard({ assets }: { assets: AssetsLoaderShape }) {
+  const { t } = useI18n()
   const locked = assets.storage.enabled
   const { form, settingGroupProps, display, save, flushOnBlur } = useSettingsCard<
     AssetsLoaderShape,
@@ -203,33 +211,40 @@ function S3ConfigCard({ assets }: { assets: AssetsLoaderShape }) {
   })
 
   const secretAccessKeyField = secretFieldStrings({
+    t,
     mask: display.secretAccessKeyMask,
-    keepLabel: '保留现有 Secret',
-    emptyHint: '尚未配置。将以加密形式存入 setting 表。',
-    emptyPlaceholder: '粘贴 Secret Access Key',
+    keepLabel: t('admin.settings.storage.s3.keepSecret'),
+    emptyHint: t('admin.settings.storage.s3.secretHintEmpty'),
+    emptyPlaceholder: t('admin.settings.storage.s3.secretPlaceholder'),
   })
   return (
     <SettingGroup
-      title="S3 兼容存储"
+      title={t('admin.settings.storage.s3.title')}
       description={
-        locked
-          ? 'S3 配置已锁定：仍可更换 Access Key / Secret 或图片地址模板（保存前会做连通性验证）；更换 Bucket 或服务商请点击上方「迁移存储…」。'
-          : '保存前会做连通性验证；填入完整配置后通过「迁移存储…」启用。'
+        locked ? t('admin.settings.storage.s3.descriptionLocked') : t('admin.settings.storage.s3.descriptionUnlocked')
       }
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="Endpoint" htmlFor="assets-endpoint" hint="完整 URL，例如 https://s3.amazonaws.com。">
+        <SettingsRow
+          label={t('admin.settings.storage.s3.endpoint')}
+          htmlFor="assets-endpoint"
+          hint={t('admin.settings.storage.s3.endpointHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="assets-endpoint"
             type="url"
-            placeholder="https://s3.amazonaws.com"
+            placeholder={t('admin.settings.storage.s3.endpointPlaceholder')}
             disabled={locked}
             {...form.register('endpoint')}
           />
         </SettingsRow>
-        <SettingsRow label="Region" htmlFor="assets-region" hint="例：us-east-1 / auto（R2 / B2）。">
+        <SettingsRow
+          label={t('admin.settings.storage.s3.region')}
+          htmlFor="assets-region"
+          hint={t('admin.settings.storage.s3.regionHint')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="assets-region"
@@ -238,7 +253,7 @@ function S3ConfigCard({ assets }: { assets: AssetsLoaderShape }) {
             {...form.register('region')}
           />
         </SettingsRow>
-        <SettingsRow label="Bucket" htmlFor="assets-bucket">
+        <SettingsRow label={t('admin.settings.storage.s3.bucket')} htmlFor="assets-bucket">
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="assets-bucket"
@@ -247,7 +262,7 @@ function S3ConfigCard({ assets }: { assets: AssetsLoaderShape }) {
             {...form.register('bucket')}
           />
         </SettingsRow>
-        <SettingsRow label="Access Key ID" htmlFor="assets-access-key-id">
+        <SettingsRow label={t('admin.settings.storage.s3.accessKey')} htmlFor="assets-access-key-id">
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="assets-access-key-id"
@@ -256,7 +271,11 @@ function S3ConfigCard({ assets }: { assets: AssetsLoaderShape }) {
             {...form.register('accessKeyId')}
           />
         </SettingsRow>
-        <SettingsRow label="Secret Access Key" htmlFor="assets-secret" hint={secretAccessKeyField.hint}>
+        <SettingsRow
+          label={t('admin.settings.storage.s3.secret')}
+          htmlFor="assets-secret"
+          hint={secretAccessKeyField.hint}
+        >
           <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="assets-secret"
@@ -264,7 +283,10 @@ function S3ConfigCard({ assets }: { assets: AssetsLoaderShape }) {
             {...form.register('secretAccessKey')}
           />
         </SettingsRow>
-        <SettingsRow label="Path-style 寻址" hint="部分自托管 S3 兼容服务需要开启；R2 / S3 默认走 virtual-hosted。">
+        <SettingsRow
+          label={t('admin.settings.storage.s3.pathStyle')}
+          hint={t('admin.settings.storage.s3.pathStyleHint')}
+        >
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -281,21 +303,21 @@ function S3ConfigCard({ assets }: { assets: AssetsLoaderShape }) {
               )}
             />
             <FieldLabel htmlFor="assets-force-path-style" className="font-normal">
-              强制使用 path-style URL
+              {t('admin.settings.storage.s3.pathStyleLabel')}
             </FieldLabel>
           </div>
         </SettingsRow>
         <SettingsRow
-          label="图片地址模板（可选）"
+          label={t('admin.settings.storage.s3.urlTemplate')}
           htmlFor="assets-url-template"
-          hint="支持 `{src}`、`{width}`、`{height}`、`{quality}` 占位符。"
+          hint={t('admin.settings.storage.s3.urlTemplateHint')}
         >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="assets-url-template"
             {...form.register('urlTemplate')}
             maxLength={500}
-            placeholder="!upyun520/both/{width}x{height}/format/webp/quality/{quality}/..."
+            placeholder={t('admin.settings.storage.s3.urlTemplatePlaceholder')}
           />
         </SettingsRow>
       </SettingGroupContent>

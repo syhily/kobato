@@ -8,6 +8,7 @@ import { useSortableRow } from '@/ui/admin/shared/sortable'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tooltip } from '@/ui/components/tooltip'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 interface CategoryRowProps {
@@ -18,6 +19,7 @@ interface CategoryRowProps {
 }
 
 export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, onEdit, onDelete }: CategoryRowProps) {
+  const { t } = useI18n()
   const { setNodeRef, style, isDragging, dragHandleProps } = useSortableRow({
     id: category.id,
     disabled: !sortEnabled,
@@ -43,7 +45,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
             ? 'flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing'
             : 'flex size-6 shrink-0 cursor-not-allowed items-center justify-center rounded-sm text-muted-foreground/40'
         }
-        aria-label="拖拽排序"
+        aria-label={t('admin.shared.filter.dragSort')}
       >
         <GripVerticalIcon className="size-4" />
       </button>
@@ -95,7 +97,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         to={`/admin/posts?category=${encodeURIComponent(category.id)}`}
         className="hidden w-(--spacing-admin-col-narrow) shrink-0 justify-end text-(--text-admin-sm) text-muted-foreground tabular-nums hover:text-foreground md:flex"
       >
-        {category.postCount} 篇
+        {t('admin.categories.postCount', { count: category.postCount })}
       </Link>
 
       {/* Edit CTA */}
@@ -103,7 +105,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         type="button"
         onClick={onEdit}
         className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-        title="编辑"
+        title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />
       </button>
@@ -113,7 +115,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         type="button"
         onClick={onDelete}
         className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive"
-        title="删除"
+        title={t('common.action.delete')}
       >
         <Trash2Icon className="size-4" />
       </button>

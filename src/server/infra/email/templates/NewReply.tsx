@@ -1,3 +1,5 @@
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Hr, Link, Text } from '@/server/infra/email/render'
 import { RawEmailHtml } from '@/server/infra/email/safe-html'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
@@ -5,6 +7,7 @@ import { light } from '@/server/infra/email/templates/styles/tokens'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 interface Props {
+  t: ServerTranslator
   receiver: string
   postTitle: string
   postLink: string
@@ -13,12 +16,12 @@ interface Props {
   replyLink: string
 }
 
-export function NewReply({ receiver, postTitle, postLink, sourceContent, replyContent, replyLink }: Props) {
+export function NewReply({ t, receiver, postTitle, postLink, sourceContent, replyContent, replyLink }: Props) {
   // Anonymous commenters claim their account via the lostpassword reset; built off `siteIdentity.website` to stay in sync.
   const resetPasswordLink = `${requireBlogSettingsSection('siteIdentity').website}/admin/signin?action=lostpassword`
 
   return (
-    <EmailLayout receiver={receiver} preview={`在《${postTitle}》中你的留言有了新回复`}>
+    <EmailLayout t={t} receiver={receiver} preview={t.format('email.newReply.preview', { postTitle })}>
       <Text
         style={{
           fontSize: 26,
@@ -29,7 +32,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
         }}
         className="dark-text-primary"
       >
-        你的留言有了新回复
+        {t.format('email.newReply.title')}
       </Text>
 
       <Text
@@ -41,7 +44,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
         }}
         className="dark-text-secondary"
       >
-        你在《
+        {t.format('email.newReply.contextPrefix')}
         <Link
           href={postLink}
           style={{
@@ -53,7 +56,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
         >
           {postTitle}
         </Link>
-        》中的留言，有了新回复
+        {t.format('email.newReply.contextSuffix')}
       </Text>
 
       <Text
@@ -65,7 +68,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
         }}
         className="dark-text-secondary"
       >
-        你的留言：
+        {t.format('email.newReply.sourceLabel')}
       </Text>
       <div
         style={{
@@ -97,7 +100,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
         }}
         className="dark-text-secondary"
       >
-        回复内容：
+        {t.format('email.newReply.replyLabel')}
       </Text>
       <div
         style={{
@@ -136,7 +139,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
           }}
           className="dark-cta"
         >
-          查看回复
+          {t.format('email.newReply.cta')}
         </Link>
       </div>
 
@@ -151,7 +154,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
         }}
         className="dark-text-muted"
       >
-        想要查看与管理你的所有历史评论？通过此链接重置密码登录即可：
+        {t.format('email.common.commentHistoryNote')}
       </Text>
       <Link
         href={resetPasswordLink}

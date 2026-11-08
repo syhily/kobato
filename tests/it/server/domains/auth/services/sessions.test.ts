@@ -94,7 +94,8 @@ describe('auth/services/sessions — listAllSessions', () => {
     const list = await listAllSessions(db)
 
     expect(list).toHaveLength(1)
-    expect(list[0]!.userName).toBe('已删除的用户')
+    // The service leaves the placeholder to the caller (which localizes it).
+    expect(list[0]!.userName).toBe('')
     expect(list[0]!.userEmail).toBe('')
     expect(list[0]!.userRole).toBeNull()
     expect(list[0]!.ip).toBe('3.3.3.3')

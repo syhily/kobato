@@ -1,12 +1,24 @@
 // @vitest-environment happy-dom
 
+import type { ReactElement } from 'react'
+
 import { fireEvent, render, screen } from '@testing-library/react'
+
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+
+// These forms read the UI translator and the site identity; mount both
+// providers for every RTL render.
+function renderUi(ui: ReactElement) {
+  return render(wrapWithI18n(<BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{ui}</BlogSettingsProvider>))
+}
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UseFileUploadOptions } from '@/client/hooks/use-file-upload'
 import type { AnalyticsSettings } from '@/shared/config/types'
 
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
+import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 
 // The GeoIP rows read status / fire mutations through orpc + TanStack Query;
 // the canonical inert hook doubles keep this spec focused on the upload wiring.
@@ -49,7 +61,7 @@ describe('AnalyticsForm MaxMind upload wiring', () => {
   })
 
   it('hands the MaxMind row the shared upload options', () => {
-    render(<AnalyticsForm analytics={analytics} />)
+    renderUi(<AnalyticsForm analytics={analytics} />)
     const opts = options()
     expect(opts.endpoint).toBe('/api/admin/maxmind/upload')
     expect(opts.fields).toBeUndefined()
@@ -67,7 +79,7 @@ describe('AnalyticsForm MaxMind upload wiring', () => {
   })
 
   it('sends the selected file through the choreography', () => {
-    render(<AnalyticsForm analytics={analytics} />)
+    renderUi(<AnalyticsForm analytics={analytics} />)
     const file = new File([new Uint8Array(8)], 'GeoLite2-City.mmdb')
     fireEvent.change(screen.getByLabelText('选择 MaxMind 数据库文件'), { target: { files: [file] } })
     expect(hookMock.upload).toHaveBeenCalledWith(file)
@@ -75,7 +87,7 @@ describe('AnalyticsForm MaxMind upload wiring', () => {
 
   it('disables the button and shows progress copy while pending', () => {
     hookMock.pending = true
-    render(<AnalyticsForm analytics={analytics} />)
+    renderUi(<AnalyticsForm analytics={analytics} />)
     expect(screen.getByRole('button', { name: '上传中…' })).toBeDisabled()
   })
 })

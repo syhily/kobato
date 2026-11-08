@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 // S3 object key generator. Generic keys are unique per upload (always
@@ -13,14 +14,21 @@ export type ImageKindSpec =
 
 const SAFE_PATH_SEGMENT = /^[a-z0-9._-]+$/
 
+type SafeSegmentKind = 'categorySlug' | 'friendHost'
+
 /**
  * Whitelist guard for state-key path segments; rejects `/` (path
  * traversal) and any non-ASCII byte.
  */
-function assertSafePathSegment(value: string, label: string): string {
+function assertSafePathSegment(value: string, segment: SafeSegmentKind): string {
   if (!SAFE_PATH_SEGMENT.test(value)) {
-    throw new DomainError('BAD_REQUEST', `${label}只能使用 ASCII 字母、数字、\`.\`、\`_\`、\`-\``, [
-      { message: `非法${label}: \`${value}\``, path: [label] },
+    throw new DomainError('BAD_REQUEST', descriptorFor('images.error.unsafeSegment', { segment }), [
+      {
+        messageKey: 'images.error.illegalSegmentValue',
+        params: { segment, value },
+        fallbackMessage: `Invalid ${segment}: "${value}"`,
+        path: [segment],
+      },
     ])
   }
   return value
@@ -43,9 +51,9 @@ export function buildObjectKey(spec: ImageKindSpec): string {
       return `images/${yyyy}/${MM}/${yyyy}${MM}${dd}${HH}${mm}${ss}${nn}-${randomBytes(4).toString('hex')}.jpg`
     }
     case 'category':
-      return `images/categories/${assertSafePathSegment(spec.slug, '分类 slug')}.jpg`
+      return `images/categories/${assertSafePathSegment(spec.slug, 'categorySlug')}.jpg`
     case 'friend':
-      return `images/links/${assertSafePathSegment(spec.host, '友链 host')}.jpg`
+      return `images/links/${assertSafePathSegment(spec.host, 'friendHost')}.jpg`
   }
 }
 
@@ -58,14 +66,22 @@ export function extractHostForFriendKey(homepage: string): string {
   try {
     host = new URL(homepage).hostname.toLowerCase()
   } catch {
-    throw new DomainError('BAD_REQUEST', '友链主页 URL 无效，无法提取 host', [
-      { message: '主页 URL 无效', path: ['homepage'] },
+    throw new DomainError('BAD_REQUEST', descriptorFor('images.error.invalidHomepageUrl'), [
+      {
+        messageKey: 'images.error.homepageUrlInvalid',
+        fallbackMessage: 'The homepage URL is invalid',
+        path: ['homepage'],
+      },
     ])
   }
   if (host === '') {
-    throw new DomainError('BAD_REQUEST', '友链主页 URL 无效，无法提取 host', [
-      { message: '主页 URL 无效', path: ['homepage'] },
+    throw new DomainError('BAD_REQUEST', descriptorFor('images.error.invalidHomepageUrl'), [
+      {
+        messageKey: 'images.error.homepageUrlInvalid',
+        fallbackMessage: 'The homepage URL is invalid',
+        path: ['homepage'],
+      },
     ])
   }
-  return assertSafePathSegment(host, '友链 host')
+  return assertSafePathSegment(host, 'friendHost')
 }

@@ -1,3 +1,5 @@
+import { data } from 'react-router'
+
 import type { PublicListingLoaderData } from '@/shared/types/listing'
 
 import { listingHeaders } from '@/server/http/loaders/route-exports'
@@ -8,9 +10,18 @@ import { PostListingBody } from '@/ui/public/post/PostListViews'
 import type { Route } from './+types/list'
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
-  const { caller, analyticsEventId } = createSsrCaller({ request, context })
-  const listing = await unwrapListing(caller.content.search({ keyword: params.keyword, num: params.num }))
-  return { ...listing, eid: analyticsEventId } satisfies PublicListingLoaderData
+  const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
+  const { etag, listing } = await unwrapListing(
+    caller.content.search({
+      keyword: params.keyword,
+      num: params.num,
+      ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
+    }),
+    localization,
+  )
+  return data({ ...listing, eid: analyticsEventId } satisfies PublicListingLoaderData, {
+    headers: { ETag: etag },
+  })
 }
 
 export const headers = listingHeaders

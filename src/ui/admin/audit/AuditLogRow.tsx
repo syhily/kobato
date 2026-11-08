@@ -6,10 +6,11 @@ import type { AuditLogItemDto } from '@/shared/contracts/audit'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { ROLE_LEVELS, roleLabel, type Role } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS, ROLE_LEVELS, type Role } from '@/shared/utils/roles'
 import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@/ui/admin/audit/filter-fields'
 import { Badge } from '@/ui/components/badge'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface AuditLogRowProps {
   row: AuditLogItemDto
@@ -17,7 +18,7 @@ interface AuditLogRowProps {
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm:ss'
 
-const ACTION_LABEL_MAP = new Map(ACTION_OPTIONS.map((o) => [o.value, o.label]))
+const ACTION_LABEL_IDS = new Map(ACTION_OPTIONS.map((o) => [o.value, o.labelId]))
 
 function isKnownRole(value: string): value is Role {
   return value in ROLE_LEVELS
@@ -45,11 +46,14 @@ function hasAuditDetails(row: AuditLogItemDto): boolean {
 }
 
 export function AuditLogRow({ row }: AuditLogRowProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const actionLabel = ACTION_LABEL_MAP.get(row.action) ?? row.action
-  const resourceLabel = RESOURCE_TYPE_OPTIONS.find((o) => o.value === row.resourceType)?.label ?? row.resourceType
+  const actionLabelId = ACTION_LABEL_IDS.get(row.action)
+  const actionLabel = actionLabelId ? t(actionLabelId) : row.action
+  const resourceLabelId = RESOURCE_TYPE_OPTIONS.find((o) => o.value === row.resourceType)?.labelId
+  const resourceLabel = resourceLabelId ? t(resourceLabelId) : row.resourceType
   const canExpand = hasAuditDetails(row)
 
   const toggleExpanded = useCallback(() => {
@@ -84,7 +88,9 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
       role={canExpand ? 'button' : undefined}
       tabIndex={canExpand ? 0 : undefined}
       aria-expanded={canExpand ? isExpanded : undefined}
-      aria-label={canExpand ? (isExpanded ? '收起详情' : '展开详情') : '无详情数据'}
+      aria-label={
+        canExpand ? (isExpanded ? t('admin.audit.collapse') : t('admin.audit.expand')) : t('admin.audit.noDetails')
+      }
     >
       <div className="min-w-0 flex-1">
         {/* Header: action badge + actor + resource */}
@@ -93,13 +99,15 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
           {row.actorName ? (
             <span className="text-sm font-medium">{row.actorName}</span>
           ) : row.actorId ? (
-            <span className="text-xs text-muted-foreground">ID: {row.actorId}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('admin.audit.idLabel')} {row.actorId}
+            </span>
           ) : (
             <span className="text-xs text-muted-foreground">—</span>
           )}
           {row.actorRole && isKnownRole(row.actorRole) && (
             <Badge variant="secondary" className={roleBadgeClasses(row.actorRole)}>
-              {roleLabel(row.actorRole)}
+              {t(ROLE_LABEL_KEYS[row.actorRole])}
             </Badge>
           )}
         </div>
@@ -110,7 +118,9 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
           {row.ipAddressMasked && (
             <>
               {' · '}
-              <span className="tabular-nums">IP: {row.ipAddressMasked}</span>
+              <span className="tabular-nums">
+                {t('admin.audit.ipLabel')} {row.ipAddressMasked}
+              </span>
             </>
           )}
           {' · '}
@@ -141,10 +151,11 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
 }
 
 function JsonDetailPanel({ row }: { row: AuditLogItemDto }) {
+  const { t } = useI18n()
   if (!row.details) {
     return (
       <div className="mt-3 rounded-md border bg-muted/30 px-4 py-3 text-center text-sm text-muted-foreground">
-        无详情数据
+        {t('admin.audit.noDetails')}
       </div>
     )
   }

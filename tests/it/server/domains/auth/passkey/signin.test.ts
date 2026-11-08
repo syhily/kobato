@@ -121,7 +121,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
 
     const result = await signInWithPasskey(ctx(makeSession({})), request(), passkeyForm(), '/admin')
 
-    expect(result).toEqual({ type: 'error', message: 'Passkey 登录未启用。' })
+    expect(result).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.passkey.error.disabled' } })
     expect(swaMocks.verifyAuthenticationResponse).not.toHaveBeenCalled()
     expect(await db.select().from(sessionTable)).toHaveLength(0)
   })
@@ -129,7 +129,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
   it('refuses when the response or challenge field is missing', async () => {
     const result = await signInWithPasskey(ctx(makeSession({})), request(), new FormData(), '/admin')
 
-    expect(result).toEqual({ type: 'error', message: 'Passkey 响应缺失。' })
+    expect(result).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.passkey.error.responseMissing' } })
   })
 
   it('refuses a malformed JSON response', async () => {
@@ -139,7 +139,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
 
     const result = await signInWithPasskey(ctx(makeSession({})), request(), fd, '/admin')
 
-    expect(result).toEqual({ type: 'error', message: 'Passkey 响应格式错误。' })
+    expect(result).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.passkey.error.responseInvalid' } })
     expect(swaMocks.verifyAuthenticationResponse).not.toHaveBeenCalled()
   })
 
@@ -152,7 +152,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
 
     const result = await signInWithPasskey(ctx(makeSession({})), request(), passkeyForm('nope'), '/admin')
 
-    expect(result).toEqual({ type: 'error', message: '操作过于频繁，请稍后再试。' })
+    expect(result).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.signin.error.tooFrequent' } })
   })
 
   it('on success: establishes a real passkey session, touches last-login, audits once, redirects', async () => {
@@ -214,7 +214,10 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
 
     const result = await signInWithPasskey(ctx(makeSession({})), request(), passkeyForm(), '/admin')
 
-    expect(result).toEqual({ type: 'error', message: 'Passkey 验证失败。' })
+    expect(result).toMatchObject({
+      type: 'error',
+      descriptor: { messageKey: 'auth.passkey.error.verifyFailedGeneric' },
+    })
     expect(await db.select().from(sessionTable)).toHaveLength(0)
   })
 
@@ -227,6 +230,6 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
 
     const result = await signInWithPasskey(ctx(makeSession({})), request(), passkeyForm(), '/admin')
 
-    expect(result).toEqual({ type: 'error', message: 'Passkey 验证失败，请重试。' })
+    expect(result).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.passkey.error.verifyFailed' } })
   })
 })

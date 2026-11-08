@@ -1,7 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { makeLoaderArgs } from '#/_helpers/context'
+import type { PublicListingLoaderData } from '@/shared/types/listing'
+
+import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -78,6 +80,46 @@ const categoryRoute = await import('@/routes/public/category/list')
 const tagRoute = await import('@/routes/public/tag/list')
 const searchRoute = await import('@/routes/public/search/list')
 
+function loaderEtag(result: unknown): string | null {
+  const init = (result as { init?: { headers?: Record<string, string> } }).init
+  return init?.headers?.ETag ?? null
+}
+
+describe('routes/category.list loader — listing revalidation', () => {
+  it('answers 304 with the listing headers on a repeat request', async () => {
+    await seedCatalog()
+
+    const first = await categoryRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/cats/general'),
+        db,
+        params: { slug: 'general' },
+      }),
+    )
+    const etag = loaderEtag(first)
+    expect(etag).toMatch(/^W\//)
+
+    const second = await categoryRoute
+      .loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/cats/general', {
+            headers: { 'If-None-Match': etag! },
+          }),
+          db,
+          params: { slug: 'general' },
+        }),
+      )
+      .then(
+        () => null,
+        (response: unknown) => response,
+      )
+
+    expect(second).toMatchObject({ status: 304 })
+    expect((second as Response).headers.get('ETag')).toBe(etag)
+    expect((second as Response).headers.get('Cache-Control')).toBe('private, no-cache')
+  })
+})
+
 describe('routes/category.list loader', () => {
   it("404s when the slug doesn't match a known category", async () => {
     await expect(
@@ -94,12 +136,14 @@ describe('routes/category.list loader', () => {
   it('returns the canonical payload (title/seo) for a real category', async () => {
     await seedCatalog()
 
-    const data = await categoryRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/cats/general'),
-        db,
-        params: { slug: 'general' },
-      }),
+    const data = unwrapLoaderData<PublicListingLoaderData>(
+      await categoryRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/cats/general'),
+          db,
+          params: { slug: 'general' },
+        }),
+      ),
     )
 
     expect(data.title).toBe('general')
@@ -118,13 +162,15 @@ describe('routes/category.list loader', () => {
   it('includes hidden posts for public category visitors', async () => {
     await seedCatalog()
 
-    const data = await categoryRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/cats/general'),
-        session: regularSession(),
-        db,
-        params: { slug: 'general' },
-      }),
+    const data = unwrapLoaderData<PublicListingLoaderData>(
+      await categoryRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/cats/general'),
+          session: regularSession(),
+          db,
+          params: { slug: 'general' },
+        }),
+      ),
     )
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')
@@ -133,13 +179,15 @@ describe('routes/category.list loader', () => {
   it('includes hidden posts for admin category visitors', async () => {
     await seedCatalog()
 
-    const data = await categoryRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/cats/general'),
-        session: adminSession(),
-        db,
-        params: { slug: 'general' },
-      }),
+    const data = unwrapLoaderData<PublicListingLoaderData>(
+      await categoryRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/cats/general'),
+          session: adminSession(),
+          db,
+          params: { slug: 'general' },
+        }),
+      ),
     )
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')
@@ -162,12 +210,14 @@ describe('routes/tag.list loader', () => {
   it('returns the canonical payload for a real tag', async () => {
     await seedCatalog()
 
-    const data = await tagRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/tags/typescript'),
-        db,
-        params: { slug: 'typescript' },
-      }),
+    const data = unwrapLoaderData<PublicListingLoaderData>(
+      await tagRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/tags/typescript'),
+          db,
+          params: { slug: 'typescript' },
+        }),
+      ),
     )
 
     expect(data.title).toContain('typescript')
@@ -177,13 +227,15 @@ describe('routes/tag.list loader', () => {
   it('includes hidden tag posts for public visitors', async () => {
     await seedCatalog()
 
-    const data = await tagRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/tags/typescript'),
-        session: regularSession(),
-        db,
-        params: { slug: 'typescript' },
-      }),
+    const data = unwrapLoaderData<PublicListingLoaderData>(
+      await tagRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/tags/typescript'),
+          session: regularSession(),
+          db,
+          params: { slug: 'typescript' },
+        }),
+      ),
     )
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')
@@ -206,12 +258,14 @@ describe('routes/search.list loader', () => {
   it('returns the search payload with forced noindex SEO for a real query', async () => {
     await seedCatalog()
 
-    const data = await searchRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/search/react'),
-        db,
-        params: { keyword: 'react' },
-      }),
+    const data = unwrapLoaderData<PublicListingLoaderData>(
+      await searchRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/search/react'),
+          db,
+          params: { keyword: 'react' },
+        }),
+      ),
     )
 
     expect(data.title).toContain('react')
@@ -225,13 +279,15 @@ describe('routes/search.list loader', () => {
   it('includes hidden posts in public search results', async () => {
     await seedCatalog()
 
-    const data = await searchRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/search/react'),
-        session: regularSession(),
-        db,
-        params: { keyword: 'react' },
-      }),
+    const data = unwrapLoaderData<PublicListingLoaderData>(
+      await searchRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/search/react'),
+          session: regularSession(),
+          db,
+          params: { keyword: 'react' },
+        }),
+      ),
     )
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')

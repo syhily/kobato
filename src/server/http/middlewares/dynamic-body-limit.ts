@@ -4,7 +4,9 @@ import { HTTPException } from 'hono/http-exception'
 
 import type { Env } from '@/server/http/context'
 
-type OnError = (c: Context) => Response | Promise<Response>
+import { localizedHttpException } from '@/server/http/localized-http-exception'
+
+type OnError = (c: Context<Env>) => Response | Promise<Response>
 
 interface DynamicBodyLimitOptions {
   maxSize: number | (() => number)
@@ -62,7 +64,7 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
           // trickle forever; the catch swallows cancel-on-errored-stream rejections.
           void rawReader.cancel().catch(() => undefined)
           // An `HTTPException` lets Hono's handler emit 413 — a plain Error would 500.
-          controller.error(new HTTPException(413, { message: DEFAULT_ERROR_MESSAGE }))
+          controller.error(localizedHttpException(413, 'error.api.payloadTooLarge'))
           return
         }
         controller.enqueue(value)

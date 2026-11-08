@@ -4,7 +4,7 @@ import { PagesView } from '@/ui/admin/pages/PagesView'
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('页面管理')
+export const meta = titleMeta('meta.title.admin.pages')
 
 export default function WpAdminPagesRoute() {
   return <PagesView />

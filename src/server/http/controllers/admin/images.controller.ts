@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
@@ -6,8 +5,8 @@ import { userSession } from '@/server/domains/auth/primitives'
 import { uploadImageMetadataSchema } from '@/server/domains/images/schema'
 import { deleteImage, recalculateImageThumbhash, updateImageNote } from '@/server/domains/images/services/admin-mutate'
 import { listImagesForAdmin } from '@/server/domains/images/services/admin-read'
-import { assertImageUploadAllowed, uploadImage } from '@/server/domains/images/services/upload'
-import { authorProc } from '@/server/http/orpc-base'
+import { checkImageUpload, uploadImage } from '@/server/domains/images/services/upload'
+import { authorProc, localizedOrpcError, localizedOrpcErrorDescriptor } from '@/server/http/orpc-base'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { adminImageDto, listImagesOutputDto } from '@/shared/contracts/images'
 import { idFromString } from '@/shared/utils/id'
@@ -83,10 +82,13 @@ const upload = authorProc
     const settings = requireBlogSettingsSection('assets')
     // Declared MIME/size validation lives in the images domain (next to
     // the magic-byte sniffing); the kind dispatch below is pure routing.
-    assertImageUploadAllowed(input.file, settings.upload.maxBytes)
+    const rejection = checkImageUpload(input.file, settings.upload.maxBytes)
+    if (rejection !== null) {
+      throw localizedOrpcErrorDescriptor(context, rejection.code, rejection.descriptor)
+    }
     const sessionUser = userSession(context.session)
     if (!sessionUser) {
-      throw new ORPCError('UNAUTHORIZED', { message: '未登录' })
+      throw localizedOrpcError(context, 'UNAUTHORIZED', 'error.api.unauthorized')
     }
     const uploader = { id: idFromString(sessionUser.id), name: sessionUser.name }
     const buffer = Buffer.from(await input.file.arrayBuffer())
@@ -95,7 +97,7 @@ const upload = authorProc
     // author overwriting one would replace (and then own) an admin-managed
     // asset, so those kinds are admin-only.
     if (metadata.kind !== 'generic' && context.viewer.role !== 'admin') {
-      throw new ORPCError('FORBIDDEN', { message: '分类封面与友链海报仅管理员可上传' })
+      throw localizedOrpcError(context, 'FORBIDDEN', 'images.error.adminOnlyKinds')
     }
     const baseArgs = {
       buffer,

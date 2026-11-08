@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
@@ -8,7 +7,7 @@ import {
   upsertAdminCategory,
 } from '@/server/domains/taxonomies/categories/services/mutate'
 import { listCategoriesForAdmin } from '@/server/domains/taxonomies/categories/services/query'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
 import { adminCategoryDto } from '@/shared/contracts/categories'
 import { idFromString } from '@/shared/utils/id'
 
@@ -55,7 +54,7 @@ const remove = adminProc
   .handler(async ({ input, context }) => {
     const ok = await deleteAdminCategory(context.db, idFromString(input.id))
     if (!ok) {
-      throw new ORPCError('NOT_FOUND', { message: '分类不存在' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'taxonomy.error.notFound', { entity: 'category' })
     }
     recordAuditEventFromContext(context, {
       action: 'category_deleted',

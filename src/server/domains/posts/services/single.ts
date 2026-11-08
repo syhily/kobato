@@ -63,38 +63,15 @@ async function findPostWithRevisionBySlug(
   )
 }
 
-/** Slug OR alias match — json_each unpacks the JSON-array alias column in SQL. */
+/**
+ * Slug OR alias match — json_each unpacks the JSON-array alias column in SQL.
+ */
 function whereSlugOrAlias(slug: string): SQL {
   return sql`EXISTS (SELECT 1 FROM json_each(${postMetaTable.alias}) WHERE json_each.value = ${slug})`
 }
 
 function findPostWithRevisionBySlugOrAlias(db: Database, slug: string, extraWhere?: SQL) {
   return findPostWithRevisionWhere(db, extraWhere ? and(whereSlugOrAlias(slug), extraWhere) : whereSlugOrAlias(slug))
-}
-
-/**
- * ETag probe: `id` + `slug` + `publishedAt` only. On an alias hit the
- * returned `slug` differs — caller must skip the early 304 and issue the 301.
- */
-export async function findPostEtagInputBySlug(
-  db: Database,
-  slug: string,
-): Promise<{ id: number; slug: string; publishedAt: Date } | null> {
-  const columns = { id: postMetaTable.id, slug: postMetaTable.slug, publishedAt: postMetaTable.publishedAt }
-  const rows = await db
-    .select(columns)
-    .from(postMetaTable)
-    .where(and(eq(postMetaTable.slug, slug), livePostWhere()))
-    .limit(1)
-  if (rows[0] !== undefined) {
-    return rows[0]
-  }
-  const aliasRows = await db
-    .select(columns)
-    .from(postMetaTable)
-    .where(and(whereSlugOrAlias(slug), livePostWhere()))
-    .limit(1)
-  return aliasRows[0] ?? null
 }
 
 async function resolveCategoryName(db: Database, categoryId: number | null): Promise<string> {

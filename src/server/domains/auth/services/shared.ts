@@ -4,14 +4,57 @@
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@/shared/contracts/api-error'
+import type { AppLocale } from '@/shared/i18n/locales'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { checkMailReady } from '@/server/infra/email/sender'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
+/** A flow error whose copy the sign-in route translates for the request locale. */
+export type AuthFlowError = Extract<AuthFlowResult, { type: 'error' }>
+/** A flow success notice (same descriptor discipline as errors). */
+export type AuthFlowSuccess = Extract<AuthFlowResult, { type: 'success' }>
+
+/**
+ * A flow outcome's copy. `message` is the log/technical fallback; `descriptor`
+ * (when present) is the typed user-facing message translated for the request
+ * locale. Flows still on raw Chinese strings omit it.
+ */
 export type AuthFlowResult =
   | { type: 'redirect'; to: string; setCookie?: string }
-  | { type: 'error'; message: string; setCookie?: string }
-  | { type: 'success'; message: string; setCookie?: string }
+  | { type: 'error'; message: string; descriptor?: ErrorMessageDescriptor; setCookie?: string }
+  | { type: 'success'; message: string; descriptor?: ErrorMessageDescriptor; setCookie?: string }
+
+/**
+ * The route-facing resolution (server translates, client displays): descriptor
+ * → the locale's sentence, legacy raw message → unchanged. Lives in the auth
+ * domain so `routes/auth` stays on its import whitelist.
+ */
+export function authFlowMessage(
+  message: string,
+  descriptor: ErrorMessageDescriptor | undefined,
+  locale: AppLocale,
+): string {
+  if (descriptor === undefined) {
+    return message
+  }
+  return createServerTranslator(locale).format(descriptor.messageKey, descriptor.params)
+}
+
+/** Descriptor-backed error outcome; `message` keeps the English fallback for logs. */
+export function authFlowError(messageKey: UiMessageId, params?: ErrorMessageParams): AuthFlowError {
+  const descriptor = descriptorFor(messageKey, params)
+  return { type: 'error', message: descriptor.fallbackMessage, descriptor }
+}
+
+/** Descriptor-backed success outcome (enumeration-safe notices). */
+export function authFlowSuccess(messageKey: UiMessageId, params?: ErrorMessageParams): AuthFlowSuccess {
+  const descriptor = descriptorFor(messageKey, params)
+  return { type: 'success', message: descriptor.fallbackMessage, descriptor }
+}
 
 /**
  * The slice of the canonical request context the signin flows need.

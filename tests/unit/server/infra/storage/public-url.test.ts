@@ -85,7 +85,7 @@ describe('resolveAssetUrl — missing-origin guard', () => {
     seedSettings({ website: '' })
     expect(() => resolveAssetUrl('images/a.jpg')).toThrow(ActionFailure)
     expect(() => resolveAssetUrl('images/a.jpg')).toThrow(
-      '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）',
+      expect.objectContaining({ descriptor: expect.objectContaining({ messageKey: 'storage.error.siteUrlMissing' }) }),
     )
     expect(safeResolveAssetUrl('images/a.jpg')).toBeNull()
   })

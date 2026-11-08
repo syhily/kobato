@@ -1,6 +1,8 @@
-import { act, renderHook } from '@testing-library/react'
+import { act } from '@testing-library/react'
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { renderHookWithI18n } from '#/_helpers/i18n-render'
 
 // Client-side companion to use-editor-shell-state.test.ts — the SSR
 // harness cannot reproduce render-phase loops. Layout + keyboard
@@ -59,6 +61,9 @@ import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/edit
 
 import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
+
+// The editor shell hooks call `useI18n()`, so every render needs the provider.
+const renderHook = renderHookWithI18n
 
 interface Meta {
   title: string

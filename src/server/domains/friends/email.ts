@@ -6,26 +6,31 @@ import type { SendResult } from '@/server/infra/email/types'
 
 import { sendAdminNotification } from '@/server/infra/email/admin-notification'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
+import { emailTranslator } from '@/server/infra/email/translator'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Sent to the administrator on a friend-link application. Fire-and-forget —
 // a mail-pipeline hiccup must never fail the application.
 export async function sendNewFriendApplication(friend: FriendRow): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const t = emailTranslator()
   const rows: AdminNotificationRow[] = [
-    { label: '站名：', value: friend.website },
-    { label: '主页：', value: friend.homepage },
-    ...(friend.description !== null ? [{ label: '简介：', value: friend.description }] : []),
-    ...(friend.rssUrl !== null ? [{ label: 'RSS：', value: friend.rssUrl }] : []),
+    { label: t.format('email.friendApplication.rowWebsite'), value: friend.website },
+    { label: t.format('email.friendApplication.rowHomepage'), value: friend.homepage },
+    ...(friend.description !== null
+      ? [{ label: t.format('email.friendApplication.rowDescription'), value: friend.description }]
+      : []),
+    ...(friend.rssUrl !== null ? [{ label: t.format('email.friendApplication.rowRss'), value: friend.rssUrl }] : []),
   ]
   return sendAdminNotification({
-    subject: '收到了新的友链申请',
+    subject: t.format('email.friendApplication.subjectSuffix'),
     element: createElement(AdminNotificationEmail, {
-      preview: `「${friend.website}」申请交换友链`,
-      title: '新友链申请',
-      mutedNote: '该申请等待审核，通过后才会在公共页面展示',
+      t,
+      preview: t.format('email.friendApplication.preview', { website: friend.website }),
+      title: t.format('email.friendApplication.title'),
+      mutedNote: t.format('email.friendApplication.mutedNote'),
       rows,
-      cta: { label: '前往审核', href: `${siteIdentity.website}/admin/taxonomy/friends` },
+      cta: { label: t.format('email.friendApplication.cta'), href: `${siteIdentity.website}/admin/taxonomy/friends` },
     }),
   })
 }

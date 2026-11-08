@@ -14,7 +14,7 @@ import { adminSession, authorSession } from '#/_helpers/session'
 import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
 import { comment as commentTable } from '@/server/infra/db/schema/comment'
 import { post as postTable } from '@/server/infra/db/schema/post'
-import { EMPTY_STATE_LINES } from '@/shared/contracts/dashboard'
+import { EMPTY_STATE_LINE_IDS } from '@/shared/contracts/dashboard'
 
 // The dashboard loader against the real engine: real rows + the ADOPTED
 // DuckDB sidecar; admin-only branches are pinned by their real results
@@ -117,7 +117,7 @@ describe('admin dashboard loader (real db + real analytics)', () => {
     expect(data.weeklyTrend).not.toBeNull()
     expect(data.weeklyTrend!.points.length).toBeGreaterThan(0)
     expect(data.weeklyTrend!.points.reduce((sum, point) => sum + point.visits, 0)).toBe(3)
-    expect(EMPTY_STATE_LINES).toContain(data.emptyStateLine)
+    expect(EMPTY_STATE_LINE_IDS).toContain(data.emptyStateLineId)
     expect(data.stats).toEqual({ draftCount: 2, publishedCount: 1, myCommentsTotal: 2, myCommentsPending: 0 })
     // Draft cards sort by updatedAt desc; published cards prefer publishedAt.
     expect(data.recentDrafts).toEqual([

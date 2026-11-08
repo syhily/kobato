@@ -6,6 +6,7 @@ import type { Env } from '@/server/http/context'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeRequestContext } from '#/_helpers/request-context'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
@@ -38,17 +39,17 @@ import { renderCalendar } from '@/server/render/calendar/render'
 
 const db = getTestDb()
 
-function requestImages(url: string) {
+function requestImages(url: string, headers?: Record<string, string>) {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('requestContext', { db, clientAddress: '127.0.0.1' } as never)
+    c.set('requestContext', makeRequestContext({ request: new Request(url), db }))
     await next()
   })
   app.route('/', imagesRouter)
   app.onError(onErrorHandler)
   // Sentinel SSR-style route that must never count against the images bucket.
   app.get('/sitemap.xml', (c) => c.text('sitemap'))
-  return app.request(url)
+  return app.request(url, { headers })
 }
 
 async function seedLivePost(slug: string): Promise<void> {
@@ -137,7 +138,9 @@ describe('images resource', () => {
     expect((await requestImages('http://localhost/images/og/missing.png')).status).toBe(302)
     const res = await requestImages('http://localhost/images/og/missing.png')
     expect(res.status).toBe(429)
-    await expect(res.json()).resolves.toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
+    await expect(res.json()).resolves.toMatchObject({
+      error: { code: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试。' },
+    })
   })
 
   it('renders an OG image for a category', async () => {
@@ -146,9 +149,57 @@ describe('images resource', () => {
     expect(res.status).toBe(200)
   })
 
-  it('serves a calendar image', async () => {
+  it('serves a calendar image with revalidating language headers', async () => {
     const res = await requestImages('http://localhost/images/calendar/2026/0424.png')
     expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('image/png')
+    expect(res.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(res.headers.get('Content-Language')).toBe('zh-CN')
+    expect(res.headers.get('ETag')).toMatch(/^"[0-9a-f]{32}"$/)
+  })
+
+  it('answers 304 for a matching calendar If-None-Match from cache without re-rendering', async () => {
+    // Production cache semantics (the dev bypass re-runs the loader by design).
+    const env = import.meta.env as unknown as Record<string, unknown>
+    const previousProd = env.PROD
+    env.PROD = true
+    try {
+      const first = await requestImages('http://localhost/images/calendar/2026/0424.png')
+      const etag = first.headers.get('ETag')!
+      expect(renderCalendar).toHaveBeenCalledTimes(1)
+
+      const cached = await requestImages('http://localhost/images/calendar/2026/0424.png', {
+        'if-none-match': etag,
+      })
+      expect(cached.status).toBe(304)
+      expect(cached.headers.get('ETag')).toBe(etag)
+      expect(cached.headers.get('Content-Language')).toBe('zh-CN')
+      expect(cached.headers.get('Cache-Control')).toBe('public, no-cache')
+      // The cached bytes carry the tag; no localized re-render happens.
+      expect(renderCalendar).toHaveBeenCalledTimes(1)
+    } finally {
+      env.PROD = previousProd
+    }
+  })
+
+  it('threads the request locale into the renderer and the headers', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'zh-TW' },
+    })
+    try {
+      const res = await requestImages('http://localhost/images/calendar/dark/2026/0424.png')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Language')).toBe('zh-TW')
+      expect(renderCalendar).toHaveBeenCalledWith(
+        expect.any(Date),
+        'dark',
+        'zh-TW',
+        expect.objectContaining({ siteIdentity: expect.objectContaining({ locale: 'zh-TW' }) }),
+      )
+    } finally {
+      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    }
   })
 
   it('serves a dark calendar image', async () => {

@@ -1,6 +1,13 @@
 import { z } from 'zod'
 
-const HTTP_URL_MESSAGE = '请输入 http(s) URL'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
+/**
+ * Typed catalog id for the shared http(s)-URL rule. The server maps Zod issue
+ * messages through `zodIssuesToWire`, so every schema reusing this rule emits
+ * the same descriptor and no raw prose — or bare key — reaches a reader.
+ */
+export const HTTP_URL_MESSAGE = 'common.error.httpUrlRequired' satisfies UiMessageId
 
 // Control characters in a redirect target are never legitimate: the URL
 // parser silently strips some (tab/newline) and percent-encodes others, so
@@ -356,29 +363,34 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
 ])
 
 /**
- * Preset mirror options for the admin settings dropdown — full avatar base
- * URLs on allowlisted hosts. The allowlist above stays the superset: a
- * configured mirror outside these presets remains valid and is appended to
- * the dropdown as a custom option by the form.
+ * Preset mirror base URLs — full avatar URLs on allowlisted hosts.
+ *
+ * URLs ONLY: the admin dropdown's labels live in the admin settings layer
+ * (`@/ui/admin/settings/gravatar-mirror-presets`), because this module is part
+ * of the public avatar graph and must not carry workspace catalog ids. The
+ * allowlist above stays the superset: a configured mirror outside these presets
+ * remains valid and is appended to the dropdown as a custom option by the form.
  */
-export const GRAVATAR_MIRROR_PRESETS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: 'https://www.gravatar.com/avatar', label: 'Gravatar 官方（www.gravatar.com）' },
-  { value: 'https://cn.gravatar.com/avatar', label: 'Gravatar 中国（cn.gravatar.com）' },
-  { value: 'https://secure.gravatar.com/avatar', label: 'Gravatar Secure（secure.gravatar.com）' },
-  { value: 'https://gravatar.loli.net/avatar', label: 'loli.net（gravatar.loli.net）' },
-  { value: 'https://sdn.geekzu.org/avatar', label: '极客族（sdn.geekzu.org）' },
-  { value: 'https://cdn.v2ex.com/gravatar', label: 'V2EX（cdn.v2ex.com）' },
-  { value: 'https://cravatar.cn/avatar', label: 'Cravatar 中国（cravatar.cn）' },
-  { value: 'https://cravatar.com/avatar', label: 'Cravatar（cravatar.com）' },
-  { value: 'https://seccdn.libravatar.org/gravatarproxy', label: 'Libravatar 代理（seccdn.libravatar.org）' },
-  { value: 'https://weavatar.com/avatar', label: 'WeAvatar（weavatar.com）' },
-  { value: 'https://gravatar.webp.se/avatar', label: 'webp.se（gravatar.webp.se）' },
-  { value: 'https://gravatar.zeruns.com/avatar', label: 'Zeruns（gravatar.zeruns.com）' },
-  { value: 'https://gravatar.zeruns.tech/avatar', label: 'Zeruns Tech（gravatar.zeruns.tech）' },
-  { value: 'https://cdn.sep.cc/avatar', label: 'sep.cc（cdn.sep.cc）' },
-  { value: 'https://gravatar.w3tt.com/avatar', label: 'w3tt（gravatar.w3tt.com）' },
-  { value: 'https://use.sevencdn.com/avatar', label: 'SevenCDN（use.sevencdn.com）' },
-]
+export const GRAVATAR_MIRROR_URLS = [
+  'https://www.gravatar.com/avatar',
+  'https://cn.gravatar.com/avatar',
+  'https://secure.gravatar.com/avatar',
+  'https://gravatar.loli.net/avatar',
+  'https://sdn.geekzu.org/avatar',
+  'https://cdn.v2ex.com/gravatar',
+  'https://cravatar.cn/avatar',
+  'https://cravatar.com/avatar',
+  'https://seccdn.libravatar.org/gravatarproxy',
+  'https://weavatar.com/avatar',
+  'https://gravatar.webp.se/avatar',
+  'https://gravatar.zeruns.com/avatar',
+  'https://gravatar.zeruns.tech/avatar',
+  'https://cdn.sep.cc/avatar',
+  'https://gravatar.w3tt.com/avatar',
+  'https://use.sevencdn.com/avatar',
+] as const
+
+export type GravatarMirrorUrl = (typeof GRAVATAR_MIRROR_URLS)[number]
 
 /** HTTPS on a known mirror host that is not private — a DNS rebinding
  *  of an allowed name to an internal IP must not slip through. */

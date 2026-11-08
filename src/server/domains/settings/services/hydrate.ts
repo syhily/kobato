@@ -9,6 +9,7 @@ import {
   sectionFromScope,
   SETTINGS_SCOPE_PREFIX,
 } from '@/server/domains/settings/sections/registry'
+import { migrateLegacySiteIdentityLocale } from '@/server/domains/settings/services/locale-migration'
 import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
 import { getLogger } from '@/server/infra/logger'
@@ -123,6 +124,14 @@ export async function hydrateBlogSettings(db: Database): Promise<BlogSettingsBun
 
   const newPending = (async () => {
     try {
+      // Before the snapshot is built: canonicalize a legacy `siteIdentity.locale`
+      // so every consumer below sees one of the four supported tags. The read
+      // schema normalizes the same aliases, so a failure here still hydrates.
+      try {
+        migrateLegacySiteIdentityLocale(db)
+      } catch (error) {
+        log.error('Failed to normalize legacy siteIdentity.locale', { error })
+      }
       const value = loadSettingsFromDb(db)
       BLOG_SETTINGS_SNAPSHOT_SLOT.write(value)
       return value

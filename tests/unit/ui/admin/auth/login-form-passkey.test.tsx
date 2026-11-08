@@ -25,6 +25,7 @@ vi.mock('@simplewebauthn/browser', () => ({
   WebAuthnAbortService: { cancelCeremony: mocks.cancelCeremony },
 }))
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { LoginForm } from '@/ui/admin/auth/AdminCredentialsForm'
 
 function renderLoginForm(actionData?: { method: 'passkey' | 'password' }) {
@@ -35,7 +36,7 @@ function renderLoginForm(actionData?: { method: 'passkey' | 'password' }) {
     },
   ]
   const router = createMemoryRouter(routes, { initialEntries: ['/admin/signin?action=identify'] })
-  return render(<RouterProvider router={router} />)
+  return render(wrapWithI18n(<RouterProvider router={router} />))
 }
 
 function SigninRoute() {
@@ -52,7 +53,7 @@ function renderLoginRoute() {
     },
   ]
   const router = createMemoryRouter(routes, { initialEntries: ['/admin/signin'] })
-  return render(<RouterProvider router={router} />)
+  return render(wrapWithI18n(<RouterProvider router={router} />))
 }
 
 const verifyButton = () => screen.getByRole('button', { name: /Passkey 登陆/ })

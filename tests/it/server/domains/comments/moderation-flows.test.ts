@@ -132,7 +132,7 @@ describe('editOwnComment — update-own flow with the reply edit lock', () => {
     const ctx = ctxFor(stranger)
     await expect(editOwnComment(db, String(cid), EDITED_BODY, ctx.viewer!, ctx)).rejects.toMatchObject({
       code: 'NOT_FOUND',
-      message: '资源不存在。',
+      descriptor: { messageKey: 'error.api.notFound' },
     })
   })
 
@@ -150,7 +150,7 @@ describe('editOwnComment — update-own flow with the reply edit lock', () => {
     const ctx = ctxFor(u)
     await expect(editOwnComment(db, String(cid), EDITED_BODY, ctx.viewer!, ctx)).rejects.toMatchObject({
       code: 'CONFLICT',
-      message: '已申请删除，无法编辑。',
+      descriptor: { messageKey: 'comments.error.deleteRequested' },
     })
   })
 
@@ -163,7 +163,7 @@ describe('editOwnComment — update-own flow with the reply edit lock', () => {
     const ctx = ctxFor(u)
     await expect(editOwnComment(db, String(cid), EDITED_BODY, ctx.viewer!, ctx)).rejects.toMatchObject({
       code: 'CONFLICT',
-      message: '已有回复，无法再编辑。',
+      descriptor: { messageKey: 'comments.error.hasReplies' },
     })
 
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
@@ -246,7 +246,7 @@ describe('resolveCommentDeleteRequest — admin delete-request state machine', (
     const admin = await seedAdmin()
     await expect(resolveCommentDeleteRequest(db, '424242', true, adminCtxFor(admin))).rejects.toMatchObject({
       code: 'NOT_FOUND',
-      message: '评论不存在。',
+      descriptor: { messageKey: 'comments.error.notFound' },
     })
   })
 
@@ -258,7 +258,7 @@ describe('resolveCommentDeleteRequest — admin delete-request state machine', (
     const admin = await seedAdmin()
     await expect(resolveCommentDeleteRequest(db, String(cid), true, adminCtxFor(admin))).rejects.toMatchObject({
       code: 'CONFLICT',
-      message: '该评论没有待处理的删除申请。',
+      descriptor: { messageKey: 'comments.error.noPendingDelete' },
     })
 
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
@@ -309,7 +309,7 @@ describe('requestOwnCommentDeletion — visitor delete-request flow', () => {
     const ctx = ctxFor(stranger)
     await expect(requestOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)).rejects.toMatchObject({
       code: 'NOT_FOUND',
-      message: '资源不存在。',
+      descriptor: { messageKey: 'error.api.notFound' },
     })
 
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
@@ -347,7 +347,7 @@ describe('cancelOwnCommentDeletion — visitor cancel-delete-request flow', () =
     const ctx = ctxFor(u)
     await expect(cancelOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)).rejects.toMatchObject({
       code: 'CONFLICT',
-      message: '无法撤回删除申请。',
+      descriptor: { messageKey: 'comments.error.withdrawFailed' },
     })
     expect(await auditRowsFor('comment_delete_request_cancelled')).toHaveLength(0)
   })
@@ -367,7 +367,7 @@ describe('cancelOwnCommentDeletion — visitor cancel-delete-request flow', () =
     const ctx = ctxFor(stranger)
     await expect(cancelOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)).rejects.toMatchObject({
       code: 'NOT_FOUND',
-      message: '资源不存在。',
+      descriptor: { messageKey: 'error.api.notFound' },
     })
 
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))

@@ -9,7 +9,7 @@ import type { StorageMigrationStatus } from '@/shared/contracts/storage'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { isStorageMigrationInFlightPhase } from '@/shared/contracts/storage'
-import { formatBytes, formatDurationMs } from '@/shared/utils/formatter'
+import { formatBytes, formatDuration } from '@/shared/i18n/format'
 import {
   MIGRATION_PHASE_META,
   RUN_STATUS_META,
@@ -22,6 +22,7 @@ import { RunHistorySheet } from '@/ui/admin/tasks/RunHistorySheet'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/ui/components/card'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 function taskStatus(task: JobSummaryDto, migration?: StorageMigrationStatus): TaskStatus {
   if (TASK_CAPABILITIES[task.taskKey].usesMigrationStatus && migration !== undefined) {
@@ -50,15 +51,16 @@ function taskStatus(task: JobSummaryDto, migration?: StorageMigrationStatus): Ta
 
 function BackupAction() {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const createMutation = useMutation({
     ...orpcQuery.admin.backup.create.mutationOptions(),
     onSuccess: async (result) => {
-      toast.success('备份已创建', { description: result.fileName })
+      toast.success(t('admin.tasks.backupCreated'), { description: result.fileName })
       // The manual run wrote a `job_run` row and a new backup file — refresh both surfaces.
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.jobs.key() })
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.backup.key() })
     },
-    onError: onMutationError('手动备份失败'),
+    onError: onMutationError('admin.toast.manualBackupFailed', t),
   })
   return (
     <Button
@@ -69,13 +71,14 @@ function BackupAction() {
       onClick={() => createMutation.mutate()}
     >
       {createMutation.isPending && <Loader2Icon data-icon className="animate-spin" />}
-      立即备份
+      {t('admin.tasks.backupNow')}
     </Button>
   )
 }
 
 function MigrationActions({ migration }: { migration: StorageMigrationStatus }) {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.jobs.key() })
     await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.storage.migrationStatus.key() })
@@ -83,12 +86,12 @@ function MigrationActions({ migration }: { migration: StorageMigrationStatus }) 
   const cancelMutation = useMutation({
     ...orpcQuery.admin.storage.cancelMigration.mutationOptions(),
     onSuccess: invalidate,
-    onError: onMutationError('取消迁移失败'),
+    onError: onMutationError('admin.toast.migrationCancelFailed', t),
   })
   const resumeMutation = useMutation({
     ...orpcQuery.admin.storage.resumeMigration.mutationOptions(),
     onSuccess: invalidate,
-    onError: onMutationError('继续迁移失败'),
+    onError: onMutationError('admin.toast.migrationResumeFailed', t),
   })
 
   const inFlight = isStorageMigrationInFlightPhase(migration.phase)
@@ -107,7 +110,7 @@ function MigrationActions({ migration }: { migration: StorageMigrationStatus }) 
           disabled={cancelMutation.isPending}
           onClick={() => cancelMutation.mutate({})}
         >
-          取消迁移
+          {t('admin.settings.storage.migration.cancel')}
         </Button>
       )}
       {resumable && (
@@ -118,38 +121,47 @@ function MigrationActions({ migration }: { migration: StorageMigrationStatus }) 
           disabled={resumeMutation.isPending}
           onClick={() => resumeMutation.mutate({})}
         >
-          从断点继续
+          {t('admin.settings.storage.migration.resume')}
         </Button>
       )}
-      {canStartNew && <Button variant="ghost" size="sm" render={<Link to="/admin/settings">发起新迁移</Link>} />}
+      {canStartNew && (
+        <Button variant="ghost" size="sm" render={<Link to="/admin/settings">{t('admin.tasks.newMigration')}</Link>} />
+      )}
     </>
   )
 }
 
 // Queue depth/attention/due lines for queue-kind tasks.
 function QueueStatsLines({ queue }: { queue: QueueTaskStatsDto }) {
+  const { t } = useI18n()
   const date = useFormatAdminDate()
   return (
     <>
       <p>
-        待处理 {queue.depth} 条
+        {t('admin.tasks.queueDepth', { count: queue.depth })}
         {queue.attentionCount !== null && queue.attentionCount > 0 && (
-          <span className="text-status-error-fg"> · 需关注 {queue.attentionCount} 条</span>
+          <span className="text-status-error-fg">
+            {t('admin.tasks.queueAttention', { count: queue.attentionCount })}
+          </span>
         )}
       </p>
-      {queue.nextDueAt !== null && <p>下一批 {date(queue.nextDueAt)}</p>}
+      {queue.nextDueAt !== null && <p>{t('admin.tasks.nextBatch', { time: date(queue.nextDueAt) })}</p>}
     </>
   )
 }
 
 // Migration phase/progress/error lines for the storage-migration task.
 function MigrationStatusLines({ migration }: { migration: StorageMigrationStatus }) {
+  const { locale, t } = useI18n()
   return (
     <>
-      <p>阶段：{MIGRATION_PHASE_META[migration.phase].label}</p>
+      <p>{t('admin.tasks.phase', { phase: t(MIGRATION_PHASE_META[migration.phase].labelId) })}</p>
       <p>
-        已复制 {migration.copiedObjects} 个对象（{formatBytes(migration.copiedBytes)}），跳过 {migration.skippedObjects}{' '}
-        个
+        {t('admin.settings.storage.migration.copiedSummary', {
+          copied: migration.copiedObjects,
+          bytes: formatBytes(migration.copiedBytes, { locale }),
+          skipped: migration.skippedObjects,
+        })}
       </p>
       {migration.error !== null && <p className="text-status-error-fg">{migration.error}</p>}
     </>
@@ -158,6 +170,7 @@ function MigrationStatusLines({ migration }: { migration: StorageMigrationStatus
 
 export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?: StorageMigrationStatus }) {
   const date = useFormatAdminDate()
+  const { locale, t } = useI18n()
   const capabilities = TASK_CAPABILITIES[task.taskKey]
   const meta = STATUS_META[taskStatus(task, migration)]
 
@@ -168,17 +181,21 @@ export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?:
     <Card className="gap-4 py-5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          {task.label}
-          <Badge variant={meta.variant}>{meta.label}</Badge>
+          {t(task.label)}
+          <Badge variant={meta.variant}>{t(meta.labelId)}</Badge>
         </CardTitle>
-        <p className="text-sm text-muted-foreground">{task.description}</p>
+        <p className="text-sm text-muted-foreground">{t(task.description)}</p>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-        <p>调度：{task.scheduleHint}</p>
+        <p>{t('admin.tasks.schedule', { hint: t(task.scheduleHint) })}</p>
 
         {task.kind === 'scheduled' && task.liveState !== null && (
-          <p>{task.liveState.nextRunAt !== null ? `下次运行 ${date(task.liveState.nextRunAt)}` : '等待调度条件满足'}</p>
+          <p>
+            {task.liveState.nextRunAt !== null
+              ? t('admin.tasks.nextRun', { time: date(task.liveState.nextRunAt) })
+              : t('admin.tasks.waitingForSchedule')}
+          </p>
         )}
 
         {queue !== null && <QueueStatsLines queue={queue} />}
@@ -189,9 +206,10 @@ export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?:
 
         {lastRun !== null && (
           <p>
-            上次运行 {date(lastRun.startedAt)} · {RUN_STATUS_META[lastRun.status].label}
-            {lastRun.durationMs !== null && ` · 耗时 ${formatDurationMs(lastRun.durationMs)}`}
-            {lastRun.trigger === 'manual' && ' · 手动触发'}
+            {t('admin.tasks.lastRun', { time: date(lastRun.startedAt) })} · {t(RUN_STATUS_META[lastRun.status].labelId)}
+            {lastRun.durationMs !== null &&
+              t('admin.tasks.took', { duration: formatDuration(lastRun.durationMs, { locale }) })}
+            {lastRun.trigger === 'manual' && t('admin.tasks.manualTrigger')}
           </p>
         )}
         {lastRun?.error != null && <p className="text-status-error-fg">{lastRun.error}</p>}
@@ -201,9 +219,13 @@ export function TaskCard({ task, migration }: { task: JobSummaryDto; migration?:
         {capabilities.action === 'backup' && <BackupAction />}
         {capabilities.action === 'migration' && migration !== undefined && <MigrationActions migration={migration} />}
         {capabilities.link !== undefined && (
-          <Button variant="ghost" size="sm" render={<Link to={capabilities.link.to}>{capabilities.link.label}</Link>} />
+          <Button
+            variant="ghost"
+            size="sm"
+            render={<Link to={capabilities.link.to}>{t(capabilities.link.labelId)}</Link>}
+          />
         )}
-        {task.kind !== 'queue' && <RunHistorySheet taskKey={task.taskKey} taskLabel={task.label} />}
+        {task.kind !== 'queue' && <RunHistorySheet taskKey={task.taskKey} taskLabel={t(task.label)} />}
       </CardFooter>
     </Card>
   )

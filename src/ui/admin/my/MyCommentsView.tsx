@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { Fragment, useCallback, useMemo, useState } from 'react'
@@ -35,10 +37,20 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
+
+/** tRich chunks renderers (module scope — stable across renders). */
+function renderCommentCount(chunks: ReactNode[]): ReactNode {
+  return <span className="font-medium text-foreground">{chunks}</span>
+}
+
+function renderReplyAuthor(chunks: ReactNode[]): ReactNode {
+  return <span className="underline-offset-2 hover:underline">{chunks}</span>
+}
 const PAGE_SIZE = 20
 
 export interface MyCommentEntityOption {
@@ -57,6 +69,7 @@ export interface MyCommentsViewProps {
 }
 
 export function MyCommentsView({ status, q, entity, entityOptions, currentUser }: MyCommentsViewProps) {
+  const { t, tRich } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
 
@@ -80,8 +93,8 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
   const filtersFromUrl = useMemo<ActiveFilter<MyCommentFilterFieldKey>[]>(() => {
     const filters: ActiveFilter<MyCommentFilterFieldKey>[] = []
     if (status !== 'all') {
-      const label = MY_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status
-      filters.push({ field: 'status', value: status, label })
+      const labelId = MY_STATUS_OPTIONS.find((o) => o.value === status)?.labelId
+      filters.push({ field: 'status', value: status, label: labelId ? t(labelId) : status })
     }
     if (entity) {
       const match = entityOptions.find((o) => o.value === entity)
@@ -89,12 +102,12 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     }
     if (q.trim()) {
       const value: TextFilterValue = { op: DEFAULT_TEXT_OPERATOR, value: q.trim() }
-      filters.push({ field: 'text', value: JSON.stringify(value), label: textFilterLabel(value) })
+      filters.push({ field: 'text', value: JSON.stringify(value), label: textFilterLabel(value, t) })
     }
     return filters
-  }, [status, q, entity, entityOptions])
+  }, [status, q, entity, entityOptions, t])
 
-  const fields = useMemo(() => buildMyCommentFilterFields(entityOptions), [entityOptions])
+  const fields = useMemo(() => buildMyCommentFilterFields(entityOptions, t), [entityOptions, t])
 
   // Pill action → URL patch; an empty text pill maps to q: null and survives locally until the URL re-validates.
   const syncUrl = useCallback(
@@ -149,7 +162,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
       ...(entity ? { entity } : {}),
     }),
     selectRows: (page) => page.items,
-    noun: '评论',
+    noun: 'admin.list.noun.comments',
   })
 
   const invalidateList = useCallback(() => {
@@ -161,14 +174,14 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     onSuccess: () => {
       invalidateList()
     },
-    onError: onMutationError('申请删除失败'),
+    onError: onMutationError('admin.toast.deleteRequestFailed', t),
   })
   const cancelDelete = useMutation({
     ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
     onSuccess: () => {
       invalidateList()
     },
-    onError: onMutationError('撤回删除申请失败'),
+    onError: onMutationError('admin.toast.deleteRequestWithdrawFailed', t),
   })
 
   const submitting = requestDelete.isPending || cancelDelete.isPending
@@ -194,7 +207,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
 
   return (
     <AdminListPage>
-      <AdminListPage.Header title="我的评论" description="查看与管理我发表的全部评论。">
+      <AdminListPage.Header title={t('public.chrome.myComments')} description={t('admin.my.comments.description')}>
         {/* Header slot only when no filters are active — body slot below takes over otherwise. */}
         <div className="flex items-center gap-2">{!hasActiveFilters && filterBar}</div>
       </AdminListPage.Header>
@@ -203,7 +216,10 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
 
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm text-muted-foreground">
-          共 <span className="font-medium text-foreground">{total}</span> 条评论
+          {tRich('admin.my.comments.count', {
+            count: total,
+            num: renderCommentCount,
+          })}
         </div>
       </div>
 
@@ -217,7 +233,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
                 <EmptyMedia variant="icon">
                   <SearchIcon />
                 </EmptyMedia>
-                <EmptyTitle>暂无评论</EmptyTitle>
+                <EmptyTitle>{t('admin.my.comments.empty')}</EmptyTitle>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -245,7 +261,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
 
         {(isFetchingNextPage || (!hasNextPage && items.length > 0)) && (
           <AdminInfiniteListFooter
-            noun="评论"
+            noun={t('admin.list.noun.comments')}
             rowCount={items.length}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
@@ -287,6 +303,7 @@ function MyCommentRow({
   onRequestDelete: (id: string) => void
   onCancelDelete: (id: string) => void
 }) {
+  const { t, tRich } = useI18n()
   const config = useSiteIdentity()
   const isDeleted = item.deletedAtIso !== null
   const hasPendingDelete = item.deleteRequestedAtIso !== null
@@ -308,9 +325,11 @@ function MyCommentRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">{currentUser.name}</span>
-            {item.isPending && <Badge variant="secondary">待审核</Badge>}
-            {hasPendingDelete && !isDeleted && <Badge variant="outline">已申请删除</Badge>}
-            {isDeleted && <Badge variant="secondary">已删除</Badge>}
+            {item.isPending && <Badge variant="secondary">{t('admin.my.comments.pending')}</Badge>}
+            {hasPendingDelete && !isDeleted && (
+              <Badge variant="outline">{t('admin.my.comments.deleteRequested')}</Badge>
+            )}
+            {isDeleted && <Badge variant="secondary">{t('admin.my.comments.deleted')}</Badge>}
           </div>
 
           <p className="mt-0.5 truncate text-admin-sm text-muted-foreground">
@@ -327,9 +346,12 @@ function MyCommentRow({
 
           {item.parent && (
             <p className="mt-1 truncate text-sm text-muted-foreground">
-              回复 <span className="underline-offset-2 hover:underline">{item.parent.name}</span>：
+              {tRich('admin.my.comments.replyTo', {
+                name: item.parent.name,
+                author: renderReplyAuthor,
+              })}
               {item.parent.isDeleted ? (
-                <span className="italic">一条已删除的评论</span>
+                <span className="italic">{t('admin.my.comments.deletedParent')}</span>
               ) : (
                 <span className="text-foreground/70"> “{item.parent.excerpt}”</span>
               )}
@@ -350,11 +372,11 @@ function MyCommentRow({
                   variant="ghost"
                   onClick={onEdit}
                   disabled={submitting}
-                  aria-label="修改评论"
+                  aria-label={t('admin.my.comments.editAria')}
                   className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
                 >
                   <SquarePenIcon data-icon="sm" />
-                  <span className="hidden sm:inline">修改</span>
+                  <span className="hidden sm:inline">{t('admin.my.comments.edit')}</span>
                 </Button>
               )}
               {hasPendingDelete ? (
@@ -364,11 +386,11 @@ function MyCommentRow({
                   variant="ghost"
                   onClick={() => onCancelDelete(item.id)}
                   disabled={submitting}
-                  aria-label="撤回删除"
+                  aria-label={t('admin.my.comments.withdrawAria')}
                   className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
                 >
                   <RotateCcwIcon data-icon="sm" />
-                  <span className="hidden sm:inline">撤回删除</span>
+                  <span className="hidden sm:inline">{t('admin.my.comments.withdraw')}</span>
                 </Button>
               ) : (
                 <Button
@@ -377,11 +399,11 @@ function MyCommentRow({
                   variant="ghost"
                   onClick={() => onRequestDelete(item.id)}
                   disabled={submitting}
-                  aria-label="申请删除"
+                  aria-label={t('admin.my.comments.requestDeleteAria')}
                   className="h-7 px-2.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
                   <Trash2Icon data-icon="sm" />
-                  <span className="hidden sm:inline">申请删除</span>
+                  <span className="hidden sm:inline">{t('admin.my.comments.requestDelete')}</span>
                 </Button>
               )}
             </div>

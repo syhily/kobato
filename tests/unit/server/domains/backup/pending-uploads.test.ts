@@ -115,7 +115,7 @@ describe('pending encrypted uploads', () => {
     })()
     expect(error).toBeInstanceOf(ActionFailure)
     expect((error as ActionFailure).status).toBe(429)
-    expect((error as ActionFailure).message).toBe('待解密的备份过多，请稍后再试。')
+    expect((error as ActionFailure).descriptor).toMatchObject({ messageKey: 'backup.error.decryptQueueFull' })
   })
 })
 

@@ -1,13 +1,23 @@
 // @vitest-environment happy-dom
 
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { ReactElement, ReactNode } from 'react'
+
+import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminUserDto } from '@/shared/contracts/users'
 
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 
 const control = mockTanstackQuery()
+
+// The dialog reads `useI18n()`; the provider is mounted as a render wrapper.
+function render(ui: ReactElement) {
+  return rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
+  })
+}
 
 // The recipient search contract: the typed keyword must reach the query input
 // after the debounce window. The oRPC query-utils module is mocked to capture

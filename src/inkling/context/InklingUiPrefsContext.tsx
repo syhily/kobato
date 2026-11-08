@@ -17,6 +17,10 @@ export interface InklingUiPrefsContextValue {
    * CodeMirror-backed editor; 'plain' is a static auto-sizing textarea that
    * never loads the CodeMirror chunk. */
   codeEditor?: 'rich' | 'plain'
+  /** BCP 47 language for Intl.Segmenter word counting. A host names its UI
+   * locale here; `WordCountPlugin` uses it as its default and publishes it on
+   * the word-count handle so nested composers segment in the same language. */
+  wordCountLanguage?: string
   labels: InklingLabels
 }
 

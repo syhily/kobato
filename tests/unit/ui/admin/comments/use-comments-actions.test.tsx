@@ -10,6 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { makeAdminComment } from '#/_helpers/catalog'
+import { tZhCN } from '#/_helpers/i18n'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 
 // Drives `useCommentsController` at the hook level; the plain-object
 // `orpc` mock covers loadAll and the three comment mutations.
@@ -40,13 +42,15 @@ vi.mock('@/client/api/client', () => ({
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 vi.mock('sonner', () => ({ toast: toastMock }))
 
-import { COMMENT_FILTER_FIELDS } from '@/ui/admin/comments/filter-fields'
+import { buildCommentFilterFields } from '@/ui/admin/comments/filter-fields'
 import {
   useCommentsController,
   type AdminCommentsPage,
   type CommentIntents,
 } from '@/ui/admin/comments/useCommentsController'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
+
+const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
 // Real effects required — unlike the controller's SSR `#/_helpers/hook` suite.
 function makeWrapper() {
@@ -56,7 +60,7 @@ function makeWrapper() {
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>{children}</MemoryRouter>
+        <MemoryRouter>{wrapWithI18n(children)}</MemoryRouter>
       </QueryClientProvider>
     )
   }

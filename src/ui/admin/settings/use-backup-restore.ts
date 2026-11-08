@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import type { ToastTranslator } from '@/client/lib/toast-api-error'
 import type { RestoreProgressDto, RestoreProgressStage } from '@/shared/types/backup'
 import type { RestoreStep } from '@/ui/admin/settings/RestoreProgressPanel'
 
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PROGRESS_POLL_MS = 500
 const READY_POLL_MS = 2000
@@ -23,6 +25,7 @@ function uploadWithProgress(
   csrfToken: string | undefined,
   onProgress: (percent: number) => void,
   xhrRef: { current: XMLHttpRequest | null },
+  errorMessages: { network: string; aborted: string },
 ): Promise<XhrResult> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
@@ -46,11 +49,11 @@ function uploadWithProgress(
     }
     xhr.onerror = () => {
       xhrRef.current = null
-      reject(new Error('网络错误，上传失败'))
+      reject(new Error(errorMessages.network))
     }
     xhr.onabort = () => {
       xhrRef.current = null
-      reject(new DOMException('上传已取消', 'AbortError'))
+      reject(new DOMException(errorMessages.aborted, 'AbortError'))
     }
     const formData = new FormData()
     formData.append('file', file)
@@ -145,7 +148,7 @@ async function probeRestoreMachineActive(signal: AbortSignal): Promise<boolean> 
 
 /** Wait out the server restart, then read the one-shot terminal report and
  *  toast the outcome. Returns false on timeout/abort (caller resets UI). */
-export async function waitForRestartAndReport(signal: AbortSignal): Promise<boolean> {
+export async function waitForRestartAndReport(signal: AbortSignal, t: ToastTranslator): Promise<boolean> {
   for (let attempt = 0; attempt < READY_MAX_ATTEMPTS; attempt++) {
     if (signal.aborted) {
       return false
@@ -166,11 +169,17 @@ export async function waitForRestartAndReport(signal: AbortSignal): Promise<bool
                 if (status.phase === 'completed') {
                   const configApplied =
                     'configApplied' in status && typeof status.configApplied === 'boolean' && status.configApplied
-                  toast.success(configApplied ? '备份已还原；配置文件已替换，将在下次重启后生效' : '备份已还原')
+                  toast.success(
+                    t(
+                      configApplied
+                        ? 'admin.settings.backup.restore.configApplied'
+                        : 'admin.settings.backup.restore.done',
+                    ),
+                  )
                   reported = true
                 } else if (status.phase === 'failed') {
                   const error = 'error' in status && typeof status.error === 'string' ? status.error : undefined
-                  toastApiError(error, '还原失败')
+                  toastApiError(error, 'admin.toast.restoreFailed', t)
                   reported = true
                 }
               }
@@ -188,7 +197,7 @@ export async function waitForRestartAndReport(signal: AbortSignal): Promise<bool
           return false
         }
         if (!reported) {
-          toast('服务已恢复，正在刷新页面')
+          toast(t('admin.settings.backup.restore.serviceRecovered'))
         }
         window.location.reload()
         return true
@@ -199,7 +208,7 @@ export async function waitForRestartAndReport(signal: AbortSignal): Promise<bool
     await new Promise<void>((resolve) => setTimeout(resolve, READY_POLL_MS))
   }
   if (!signal.aborted) {
-    toast.error('等待服务重启超时，请手动刷新页面。')
+    toast.error(t('admin.settings.backup.restore.timeout'))
   }
   return false
 }
@@ -229,6 +238,7 @@ const IDLE_STATE: UploadRestoreState = {
  *  optional password round-trip for encrypted backups (server-reported
  *  decrypt/extract progress) → swap → restart wait → reload. */
 export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | undefined }) {
+  const { t } = useI18n()
   const [state, setState] = useState<UploadRestoreState>(IDLE_STATE)
   const xhrRef = useRef<XMLHttpRequest | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -281,11 +291,11 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
       () => {
         // The poller died silently otherwise — the panel would spin forever.
         if (!controller.signal.aborted) {
-          toast('进度更新中断，还原仍在后台进行', { id: 'backup-progress-stale' })
+          toast(t('admin.settings.backup.restore.progressStale'), { id: 'backup-progress-stale' })
         }
       },
     )
-  }, [stopPolling])
+  }, [stopPolling, t])
 
   const reset = useCallback(() => {
     tokenRef.current = null
@@ -308,12 +318,12 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
       // Give the swap leg a visible beat before the restart wait takes over.
       await new Promise<void>((resolve) => setTimeout(resolve, 2000))
       setState((prev) => (prev.active && prev.step === 'switching' ? { ...prev, step: 'restarting' } : prev))
-      const done = await waitForRestartAndReport(signal)
+      const done = await waitForRestartAndReport(signal, t)
       if (!done) {
         reset()
       }
     })()
-  }, [reset, stopPolling])
+  }, [reset, stopPolling, t])
 
   const startUpload = useCallback(
     (file: File) => {
@@ -328,12 +338,16 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
             csrfToken,
             (percent) => setState((prev) => (prev.active && prev.step === 'uploading' ? { ...prev, percent } : prev)),
             xhrRef,
+            {
+              network: t('admin.settings.backup.restore.networkError'),
+              aborted: t('admin.settings.backup.restore.aborted'),
+            },
           )
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
             return
           }
-          toastApiError(error, '上传还原失败')
+          toastApiError(error, 'admin.toast.restoreUploadFailed', t)
           reset()
           return
         }
@@ -359,11 +373,15 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
             return
           }
         }
-        toastApiError(new Error(extractApiErrorMessage(json) ?? '上传还原失败'), '上传还原失败')
+        toastApiError(
+          new Error(extractApiErrorMessage(json) ?? t('admin.settings.backup.restore.uploadFailed')),
+          'admin.toast.restoreUploadFailed',
+          t,
+        )
         reset()
       })()
     },
-    [csrfToken, enterTail, reset, startPolling, stopPolling],
+    [csrfToken, enterTail, reset, startPolling, stopPolling, t],
   )
 
   const submitPassword = useCallback(
@@ -400,7 +418,7 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
             enterTail()
             return
           }
-          toastApiError(error, '上传还原失败')
+          toastApiError(error, 'admin.toast.restoreUploadFailed', t)
           reset()
           return
         }
@@ -412,16 +430,24 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
         stopPolling()
         if (res.status === 410) {
           // The parked upload expired or was evicted — back to the upload step.
-          toastApiError(new Error(extractApiErrorMessage(json) ?? '备份已过期，请重新上传'), '还原失败')
+          toastApiError(
+            new Error(extractApiErrorMessage(json) ?? t('admin.settings.backup.restore.expired')),
+            'admin.toast.restoreFailed',
+            t,
+          )
           reset()
           return
         }
         // Wrong password (or a transient conflict): stay on the prompt for a retry.
-        toastApiError(new Error(extractApiErrorMessage(json) ?? '还原失败'), '还原失败')
+        toastApiError(
+          new Error(extractApiErrorMessage(json) ?? t('admin.settings.backup.restore.failed')),
+          'admin.toast.restoreFailed',
+          t,
+        )
         setState((current) => (current.active ? { ...current, passwordPending: false } : current))
       })()
     },
-    [csrfToken, enterTail, reset, startPolling, stopPolling],
+    [csrfToken, enterTail, reset, startPolling, stopPolling, t],
   )
 
   /** Give up on the password prompt — the parked upload expires server-side. */

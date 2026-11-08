@@ -13,13 +13,33 @@ import { PassThrough } from 'node:stream'
 import { renderToPipeableStream } from 'react-dom/server'
 import { ServerRouter, isRouteErrorResponse } from 'react-router'
 
+import type { AppLocale } from '@/shared/i18n/locales'
+
 import { requestContext } from '@/server/http/request-context'
 import { getLogger } from '@/server/infra/logger'
+import { DEFAULT_LOCALE, isSupportedLocale } from '@/shared/i18n/locales'
 import { isBot } from '@/shared/utils/is-bot'
+import { isRecord } from '@/shared/utils/type-guards'
 
 export const streamTimeout = 5_000
 
 const log = getLogger('entry.server')
+
+/**
+ * The document language is the one the root Layout actually renders:
+ * `rootData.i18n.locale`, falling back to DEFAULT_LOCALE exactly like Layout.
+ * A failed root loader has no payload — the header must not claim the request
+ * locale while `<html lang>` renders the fallback.
+ */
+function documentLocale(routerContext: EntryContext): AppLocale {
+  const loaderData: unknown = routerContext.staticHandlerContext?.loaderData
+  const root: unknown = isRecord(loaderData) ? loaderData.root : undefined
+  const i18n: unknown = isRecord(root) ? root.i18n : undefined
+  if (isRecord(i18n) && typeof i18n.locale === 'string' && isSupportedLocale(i18n.locale)) {
+    return i18n.locale
+  }
+  return DEFAULT_LOCALE
+}
 
 // Required export — RR would otherwise log errors via bare console.error, bypassing pino.
 // Only non-Response errors route here; post-shell streaming errors go to `onError` below.
@@ -43,6 +63,11 @@ export default function handleRequest(
   routerContext: EntryContext,
   loadContext: RouterContextProvider,
 ) {
+  // One AppLocale drives the document language: `<html lang>`, meta og:locale
+  // and this header all agree. 304 responses never reach this entry (their
+  // headers are rebuilt by RR — see root's `headers` export).
+  responseHeaders.set('Content-Language', documentLocale(routerContext))
+
   // https://httpwg.org/specs/rfc9110.html#HEAD
   if (request.method.toUpperCase() === 'HEAD') {
     return new Response(null, {

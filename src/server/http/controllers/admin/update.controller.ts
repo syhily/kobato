@@ -30,6 +30,6 @@ const status = adminProc
   .route({ method: 'GET', path: '/admin/update/status' })
   .input(z.object({}))
   .output(updateJobStatusDto)
-  .handler(() => getUpdateJobStatus())
+  .handler(({ context }) => getUpdateJobStatus(context.localization.locale))
 
 export const adminUpdateRouter = { check, apply, status }

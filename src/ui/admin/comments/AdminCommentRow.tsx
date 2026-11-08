@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon, XIcon } from 'lucide-react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
@@ -11,11 +13,17 @@ import { idStr } from '@/shared/utils/tools'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { commentBodyPlainText } from '@/ui/public/comments/comment-body-helpers'
 import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 import { Image } from '@/ui/public/widgets/Image'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
+
+/** tRich chunks renderer for the replied-to author name (module scope — stable). */
+function renderReplyAuthor(chunks: ReactNode[]): ReactNode {
+  return <span className="underline-offset-2 hover:underline">{chunks}</span>
+}
 const REPLY_SNIPPET_MAX = 60
 
 export interface AdminCommentRowProps {
@@ -25,6 +33,7 @@ export interface AdminCommentRowProps {
 }
 
 export function AdminCommentRow({ comment, parentLookup, actions }: AdminCommentRowProps) {
+  const { t, tRich } = useI18n()
   const config = useSiteIdentity()
   const authorHref = safeHref(comment.link)
 
@@ -49,7 +58,7 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
             <button
               type="button"
               onClick={() => actions.filterByAuthor(idStr(comment.userId), comment.name)}
-              title={`仅查看 ${comment.name} 的评论`}
+              title={t('admin.comments.row.filterByAuthor', { name: comment.name })}
               className="cursor-pointer truncate text-left font-semibold hover:text-primary focus-visible:text-primary focus-visible:outline-none"
             >
               {comment.name}
@@ -59,7 +68,7 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
                 href={authorHref}
                 target="_blank"
                 rel="nofollow noreferrer"
-                aria-label={`访问 ${comment.name} 的网站`}
+                aria-label={t('admin.comments.row.visitSite', { name: comment.name })}
                 className="text-muted-foreground hover:text-foreground [&_svg]:size-3.5"
               >
                 <LinkIcon />
@@ -78,12 +87,12 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
             )}
             {comment.deleteRequestedAt ? (
               <Badge variant="outline" className="border-destructive/50 text-destructive">
-                申请删除
+                {t('admin.comments.row.deleteRequested')}
               </Badge>
             ) : comment.isPending ? (
-              <Badge variant="secondary">待审核</Badge>
+              <Badge variant="secondary">{t('admin.comments.row.pending')}</Badge>
             ) : (
-              <Badge variant="secondary">已审核</Badge>
+              <Badge variant="secondary">{t('admin.comments.row.approved')}</Badge>
             )}
           </div>
 
@@ -96,7 +105,7 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
                 <button
                   type="button"
                   onClick={() => actions.filterByPage(comment.pagePublicId ?? '', comment.pageTitle ?? '')}
-                  title={`仅查看《${comment.pageTitle}》的评论`}
+                  title={t('admin.comments.row.filterByPage', { title: comment.pageTitle })}
                   className="hover:text-foreground"
                 >
                   {comment.pageTitle}
@@ -109,7 +118,10 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
           {parent && (
             <p className="mt-1 truncate text-sm text-muted-foreground">
               <ReplyIcon className="mr-1 inline size-3 align-[-2px]" />
-              回复 <span className="underline-offset-2 hover:underline">{parent.name}</span>：
+              {tRich('admin.comments.row.repliedTo', {
+                name: parent.name,
+                author: renderReplyAuthor,
+              })}
               <span className="text-foreground/70"> “{snippet(parent.body, REPLY_SNIPPET_MAX)}”</span>
             </p>
           )}
@@ -129,10 +141,10 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
                 variant="outline"
                 disabled={actions.isApproving(comment)}
                 onClick={() => actions.approve(comment)}
-                aria-label="通过评论"
+                aria-label={t('admin.comments.row.approveAria')}
               >
                 <CheckIcon data-icon="sm" />
-                <span className="hidden sm:inline">通过</span>
+                <span className="hidden sm:inline">{t('admin.comments.row.approve')}</span>
               </Button>
             )}
             <Button
@@ -140,33 +152,33 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
               size="sm"
               variant="ghost"
               onClick={() => actions.reply(comment)}
-              aria-label="回复评论"
+              aria-label={t('admin.comments.row.reply')}
               className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
             >
               <ReplyIcon data-icon="sm" />
-              <span className="hidden sm:inline">回复</span>
+              <span className="hidden sm:inline">{t('admin.comments.row.reply')}</span>
             </Button>
             <Button
               type="button"
               size="sm"
               variant="ghost"
               onClick={() => actions.edit(comment)}
-              aria-label="编辑评论"
+              aria-label={t('admin.comments.row.edit')}
               className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
             >
               <SquarePenIcon data-icon="sm" />
-              <span className="hidden sm:inline">编辑评论</span>
+              <span className="hidden sm:inline">{t('admin.comments.row.edit')}</span>
             </Button>
             <Button
               type="button"
               size="sm"
               variant="ghost"
               onClick={() => actions.editUser(comment)}
-              aria-label="编辑用户"
+              aria-label={t('admin.comments.row.editUser')}
               className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
             >
               <UserIcon data-icon="sm" />
-              <span className="hidden sm:inline">编辑用户</span>
+              <span className="hidden sm:inline">{t('admin.comments.row.editUser')}</span>
             </Button>
             {comment.pagePermalink && (
               <Button
@@ -178,13 +190,13 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
                     href={comment.pagePermalink}
                     target="_blank"
                     rel="noreferrer"
-                    aria-label="在新标签页打开对应文章"
+                    aria-label={t('admin.comments.row.viewPage')}
                   />
                 }
                 className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
               >
                 <LinkIcon data-icon="sm" />
-                <span className="hidden sm:inline">查看文章</span>
+                <span className="hidden sm:inline">{t('admin.comments.row.viewPage')}</span>
               </Button>
             )}
             <Button
@@ -193,11 +205,11 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
               variant="ghost"
               disabled={actions.isRemoving(comment)}
               onClick={() => actions.remove(comment)}
-              aria-label="删除评论"
+              aria-label={t('admin.comments.row.delete')}
               className="h-7 px-2.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
               <Trash2Icon data-icon="sm" />
-              <span className="hidden sm:inline">删除评论</span>
+              <span className="hidden sm:inline">{t('admin.comments.row.delete')}</span>
             </Button>
             {comment.deleteRequestedAt && (
               <>
@@ -207,11 +219,11 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
                   variant="outline"
                   disabled={actions.isResolvingDeletion(comment)}
                   onClick={() => actions.rejectDeletion(comment)}
-                  aria-label="拒绝删除申请"
+                  aria-label={t('admin.comments.row.rejectDeletionAria')}
                   className="h-7 px-2.5 text-xs"
                 >
                   <XIcon data-icon="sm" />
-                  <span className="hidden sm:inline">拒绝删除</span>
+                  <span className="hidden sm:inline">{t('admin.comments.row.rejectDeletion')}</span>
                 </Button>
                 <Button
                   type="button"
@@ -219,11 +231,11 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
                   variant="destructive"
                   disabled={actions.isResolvingDeletion(comment)}
                   onClick={() => actions.approveDeletion(comment)}
-                  aria-label="同意删除申请"
+                  aria-label={t('admin.comments.row.approveDeletionAria')}
                   className="h-7 px-2.5 text-xs"
                 >
                   <CheckIcon data-icon="sm" />
-                  <span className="hidden sm:inline">同意删除</span>
+                  <span className="hidden sm:inline">{t('admin.comments.row.approveDeletion')}</span>
                 </Button>
               </>
             )}

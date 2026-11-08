@@ -14,6 +14,7 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface Props {
   open: boolean
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
+  const { t } = useI18n()
   const invite = useMutation({
     ...orpcQuery.admin.users.inviteAuthor.mutationOptions(),
     onSuccess: () => {
@@ -40,8 +42,8 @@ export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>邀请作者</DialogTitle>
-          <DialogDescription>向新作者发送邀请邮件，对方点击链接即可设置密码并登录。</DialogDescription>
+          <DialogTitle>{t('admin.users.invite.title')}</DialogTitle>
+          <DialogDescription>{t('admin.users.invite.description')}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -51,34 +53,34 @@ export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
           className="grid gap-4"
         >
           <div className="flex flex-col gap-2">
-            <Label htmlFor="invite-name">姓名</Label>
+            <Label htmlFor="invite-name">{t('admin.users.invite.name')}</Label>
             <Input
               id="invite-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="作者姓名"
+              placeholder={t('admin.users.invite.namePlaceholder')}
               required
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="invite-email">邮箱</Label>
+            <Label htmlFor="invite-email">{t('admin.users.invite.email')}</Label>
             <Input
               id="invite-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="author@example.com"
+              placeholder={t('admin.users.invite.emailPlaceholder')}
               required
             />
           </div>
           {!!error && <div className="text-sm text-destructive">{error}</div>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={submitting}>
-              <SendIcon data-icon /> {submitting ? '发送中…' : '发送邀请'}
+              <SendIcon data-icon /> {submitting ? t('admin.users.invite.sending') : t('admin.users.invite.send')}
             </Button>
           </DialogFooter>
         </form>

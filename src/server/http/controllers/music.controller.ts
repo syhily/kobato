@@ -1,8 +1,7 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { getMusicMetaForPlayer } from '@/server/domains/music/services/read'
-import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import { localizedOrpcError, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { publicMusicMetaDto } from '@/shared/contracts/music'
 
 const get = publicProc
@@ -22,7 +21,7 @@ const get = publicProc
   .handler(async ({ input, context }) => {
     const meta = await getMusicMetaForPlayer(context.db, input.id)
     if (meta === null) {
-      throw new ORPCError('NOT_FOUND', { message: '音乐不存在或已下线' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'music.error.notFoundOrOffline')
     }
     return { music: meta }
   })

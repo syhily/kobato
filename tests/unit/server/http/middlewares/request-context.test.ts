@@ -84,6 +84,47 @@ describe('requestContextMiddleware', () => {
     expect(captured?.markSessionDirty).toEqual(expect.any(Function))
   })
 
+  it('pins the settings bundle and localization from ONE snapshot capture', async () => {
+    const { app } = await buildApp()
+    // Same module graph as the dynamically imported middleware (resetModules
+    // ran in beforeEach), so these writes reach the real snapshot slot.
+    const { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
+    const { resolveAppLocalization } = await import('@/shared/i18n/app-localization')
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+
+    app.get('/', (c) => {
+      const rc = c.var.requestContext
+      // First read captures the snapshot …
+      const settings = rc.settings
+      const localization = rc.localization
+      // … a settings save lands mid-request …
+      setBlogSettingsBundleForTests({
+        ...TEST_BLOG_SETTINGS_BUNDLE,
+        siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+      })
+      // … and both getters stay pinned to the captured generation.
+      return c.json({
+        settingsLocale: settings?.siteIdentity?.locale,
+        locale: localization.locale,
+        revision: localization.revision,
+        laterLocale: c.var.requestContext.localization.locale,
+        laterRevision: c.var.requestContext.localization.revision,
+        sameBundle: c.var.requestContext.settings === settings,
+      })
+    })
+
+    const res = await app.request('/', { headers: sessionCookie })
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      settingsLocale: 'zh-CN',
+      locale: 'zh-CN',
+      laterLocale: 'zh-CN',
+      sameBundle: true,
+    })
+    // A capture created after the request sees the new generation.
+    expect(resolveAppLocalization().locale).toBe('en-US')
+  })
+
   it('sets Set-Cookie when the handler marks the session dirty', async () => {
     const { app } = await buildApp()
     app.get('/', (c) => {

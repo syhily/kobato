@@ -19,6 +19,7 @@ describe('cms-pages meta shape contract', () => {
       webmentionsEnabled: true,
       showToc: true,
       showUpdated: true,
+      contentLanguage: true,
       showFriends: true,
       publishedAt: true,
     }
@@ -44,6 +45,7 @@ describe('cms-pages meta shape contract', () => {
       webmentionsEnabled: draft.webmentionsEnabled,
       showToc: draft.showToc,
       showUpdated: draft.showUpdated,
+      contentLanguage: draft.contentLanguage === '' ? null : draft.contentLanguage,
       showFriends: draft.showFriends,
       publishedAt: draft.publishedAt === '' ? undefined : draft.publishedAt,
     }

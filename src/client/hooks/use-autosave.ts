@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 
+import { useI18n } from '@/ui/lib/I18nProvider'
+
 // Autosave engine: debounce + hard cap, force-flush on tab hide/pagehide, no-op when the body is unchanged.
 
 export type AutosaveStatus =
@@ -41,6 +43,7 @@ export function useAutosave<TBody>({
   retryDelaysMs = DEFAULT_RETRY_DELAYS_MS,
   onStatusChange,
 }: UseAutosaveOptions<TBody>): { forceFlush: () => Promise<void>; setBaseline: (body: TBody) => void } {
+  const { t } = useI18n()
   const flushRef = useRef(flush)
   const bodyRef = useRef(body)
   const enabledRef = useRef(enabled)
@@ -105,16 +108,16 @@ export function useAutosave<TBody>({
       } catch (cause) {
         const delays = retryDelaysRef.current
         if (attempt >= delays.length) {
-          const message = cause instanceof Error ? cause.message : '保存失败，本地已保留。'
+          const message = cause instanceof Error ? cause.message : t('autosave.failedKept')
           emit({
             kind: 'retrying',
             attempt: delays.length,
             nextAttemptAt: Date.now(),
-            message: `本地已保留：${message}`,
+            message: t('autosave.kept', { message }),
           })
         } else {
           const delay = delays[attempt] ?? delays[delays.length - 1] ?? 1_000
-          const message = cause instanceof Error ? cause.message : '保存失败'
+          const message = cause instanceof Error ? cause.message : t('autosave.failed')
           emit({
             kind: 'retrying',
             attempt: attempt + 1,
@@ -134,7 +137,7 @@ export function useAutosave<TBody>({
         inFlightRef.current = null
       }
     },
-    [emit],
+    [emit, t],
   )
 
   useEffect(() => {

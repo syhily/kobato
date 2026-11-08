@@ -8,6 +8,7 @@ import { findFontByHash, toAdminFontDto } from '@/server/domains/fonts/services/
 import { sliceFont } from '@/server/domains/fonts/slice'
 import { putFont, fontCssKey, type FontPackageFile } from '@/server/domains/fonts/storage'
 import { font } from '@/server/infra/db/schema/font'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 // Upload pipeline: magic-byte validate → hash → dedupe → slice → store →
@@ -34,13 +35,16 @@ export function detectFontKind(buffer: Uint8Array): 'ttf' | 'otf' | null {
 /** Reject fonts whose table directory references data beyond EOF. Throws `DomainError('BAD_REQUEST', …)`. */
 export function validateFontTableBounds(buffer: Uint8Array): void {
   if (buffer.length < 12) {
-    throw new DomainError('BAD_REQUEST', '字体文件不完整：无法读取表目录')
+    throw new DomainError('BAD_REQUEST', descriptorFor('fonts.error.tableDirectory'))
   }
   const numTables = (buffer[4] << 8) | buffer[5]
   for (let i = 0; i < numTables; i++) {
     const off = 12 + i * 16
     if (off + 16 > buffer.length) {
-      throw new DomainError('BAD_REQUEST', `字体文件不完整：表目录被截断（表 ${i + 1}/${numTables}）`)
+      throw new DomainError(
+        'BAD_REQUEST',
+        descriptorFor('fonts.error.tableTruncated', { index: i + 1, total: numTables }),
+      )
     }
     const tag = String.fromCharCode(buffer[off], buffer[off + 1], buffer[off + 2], buffer[off + 3])
     const tableOffset = (buffer[off + 8] << 24) | (buffer[off + 9] << 16) | (buffer[off + 10] << 8) | buffer[off + 11]
@@ -48,7 +52,12 @@ export function validateFontTableBounds(buffer: Uint8Array): void {
     if (tableOffset + tableLength > buffer.length) {
       throw new DomainError(
         'BAD_REQUEST',
-        `字体文件不完整：'${tag}' 表超出文件末尾（偏移 ${tableOffset.toLocaleString()} + 长度 ${tableLength.toLocaleString()} > 文件大小 ${buffer.length.toLocaleString()}），请使用完整的字体文件`,
+        descriptorFor('fonts.error.tableOutOfBounds', {
+          tag,
+          offset: tableOffset,
+          length: tableLength,
+          size: buffer.length,
+        }),
       )
     }
   }
@@ -72,16 +81,16 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
 
   const trimmedFamily = familyName.trim()
   if (trimmedFamily === '') {
-    throw new DomainError('BAD_REQUEST', '字体名称不能为空')
+    throw new DomainError('BAD_REQUEST', descriptorFor('fonts.error.nameRequired'))
   }
   if (buffer.length === 0) {
-    throw new DomainError('BAD_REQUEST', '上传文件为空')
+    throw new DomainError('BAD_REQUEST', descriptorFor('common.error.uploadEmpty'))
   }
   if (buffer.length > FONT_MAX_BYTES) {
-    throw new DomainError('BAD_REQUEST', `字体体积超过上限（${FONT_MAX_BYTES} 字节）`)
+    throw new DomainError('BAD_REQUEST', descriptorFor('fonts.error.tooLarge', { max: FONT_MAX_BYTES }))
   }
   if (!detectFontKind(buffer)) {
-    throw new DomainError('BAD_REQUEST', '仅支持 .ttf 或 .otf 字体文件')
+    throw new DomainError('BAD_REQUEST', descriptorFor('fonts.error.wrongFormat'))
   }
   validateFontTableBounds(buffer)
 

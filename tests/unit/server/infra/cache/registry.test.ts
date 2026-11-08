@@ -14,6 +14,7 @@ const kvStoreMock = vi.hoisted(() => ({
 
 vi.mock('@/server/infra/cache/kv-store', () => kvStoreMock)
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import {
   __resetCacheCountersForTests,
   AvatarStatus,
@@ -26,11 +27,16 @@ import {
   through,
   throughMany,
 } from '@/server/infra/cache/registry'
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
+import { APP_VERSION } from '@/shared/config/version'
 
 // The db handle is only forwarded to the mocked kv-store (and to the
 // delete/execute chains, which get their own stand-ins below) — a plain
 // object is enough for the unit scope.
 const db = {} as Database
+
+// Content-addressed generations for the fixture settings — stable across runs.
+const REVISIONS = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE)
 
 // devBypass caches (og / calendar) skip reads outside production, so pin
 // PROD on by default and flip it off only in the devBypass tests.
@@ -58,10 +64,16 @@ describe('cache registry — through', () => {
     const loader = vi.fn()
     const onHit = vi.fn()
 
-    const value = await through(db, 'feed', { scope: 'all' }, loader, { onHit })
+    const value = await through(
+      db,
+      'feed',
+      { scope: 'all', locale: 'zh-CN', version: APP_VERSION, settingsRevision: REVISIONS.feed },
+      loader,
+      { onHit },
+    )
 
     expect(value).toEqual({ rss: '<rss/>', atom: '<atom/>' })
-    expect(kvStoreMock.getItem).toHaveBeenCalledWith(db, 'feed:xml:all')
+    expect(kvStoreMock.getItem).toHaveBeenCalledWith(db, `feed:xml:zh-CN:${APP_VERSION}:${REVISIONS.feed}:all`)
     expect(loader).not.toHaveBeenCalled()
     expect(onHit).toHaveBeenCalledWith({ rss: '<rss/>', atom: '<atom/>' })
     expect(kvStoreMock.setItem).not.toHaveBeenCalled()
@@ -106,11 +118,11 @@ describe('cache registry — through', () => {
     kvStoreMock.getItem.mockRejectedValue(new Error('db down'))
     const loader = vi.fn().mockResolvedValue('<xml/>')
 
-    const value = await through(db, 'sitemap', {}, loader)
+    const value = await through(db, 'sitemap', { settingsRevision: 'sitemap-rev' }, loader)
 
     expect(value).toBe('<xml/>')
     expect(loader).toHaveBeenCalledTimes(1)
-    expect(kvStoreMock.setItem).toHaveBeenCalledWith(db, 'sitemap:xml', '<xml/>', {
+    expect(kvStoreMock.setItem).toHaveBeenCalledWith(db, 'sitemap:xmlsitemap-rev', '<xml/>', {
       ttlSeconds: 300,
       bucket: 'sitemap',
     })
@@ -120,7 +132,7 @@ describe('cache registry — through', () => {
     kvStoreMock.setItem.mockRejectedValue(new Error('db down'))
     const loader = vi.fn().mockResolvedValue(['c1'])
 
-    const value = await through(db, 'comments', {}, loader)
+    const value = await through(db, 'comments', { settingsRevision: 'comments-rev', limit: 5 }, loader)
 
     expect(value).toEqual(['c1'])
   })
@@ -141,7 +153,12 @@ describe('cache registry — devBypass', () => {
     kvStoreMock.getItemRaw.mockResolvedValue(Buffer.from('stale-png'))
     const loader = vi.fn().mockResolvedValue(Buffer.from('fresh-png'))
 
-    const value = await through(db, 'og', { slug: 'post-x', title: 'T', summary: 'S', cover: '' }, loader)
+    const value = await through(
+      db,
+      'og',
+      { slug: 'post-x', title: 'T', summary: 'S', cover: '', settingsRevision: REVISIONS.og },
+      loader,
+    )
 
     expect(value).toEqual(Buffer.from('fresh-png'))
     expect(kvStoreMock.getItemRaw).not.toHaveBeenCalled()
@@ -153,7 +170,18 @@ describe('cache registry — devBypass', () => {
     kvStoreMock.getItemRaw.mockResolvedValue(Buffer.from('cached-png'))
     const loader = vi.fn()
 
-    const value = await through(db, 'calendar', { date: '2026-06-17', theme: 'light' }, loader)
+    const value = await through(
+      db,
+      'calendar',
+      {
+        date: '2026-06-17',
+        theme: 'light',
+        locale: 'zh-CN',
+        version: APP_VERSION,
+        settingsRevision: REVISIONS.calendar,
+      },
+      loader,
+    )
 
     expect(value).toEqual(Buffer.from('cached-png'))
     expect(loader).not.toHaveBeenCalled()
@@ -161,23 +189,63 @@ describe('cache registry — devBypass', () => {
 })
 
 describe('cache registry — key shapes', () => {
-  it('folds the OG render inputs into a content hash', async () => {
-    await set(db, 'og', { slug: 'post-x', title: 'T', summary: 'S', cover: 'C' }, Buffer.from('png'))
+  it('folds the settings revision and the OG render inputs into the key', async () => {
+    const params = {
+      slug: 'post-x',
+      title: 'T',
+      summary: 'S',
+      cover: 'C',
+      settingsRevision: REVISIONS.og,
+    }
+    await set(db, 'og', params, Buffer.from('png'))
 
     const key = kvStoreMock.setItemRaw.mock.calls[0]?.[1] as string
-    expect(key).toMatch(/^og:post-x-[0-9a-f]{16}$/)
+    expect(key.startsWith(`og:${REVISIONS.og}:post-x-`)).toBe(true)
+    expect(key.slice(`og:${REVISIONS.og}:post-x-`.length)).toMatch(/^[0-9a-f]{16}$/)
 
-    await set(db, 'og', { slug: 'post-x', title: 'T2', summary: 'S', cover: 'C' }, Buffer.from('png'))
+    // A settings save (or any input edit) must move the key.
+    await set(db, 'og', { ...params, title: 'T2' }, Buffer.from('png'))
     const otherKey = kvStoreMock.setItemRaw.mock.calls[1]?.[1] as string
     expect(otherKey).not.toBe(key)
+
+    await set(db, 'og', { ...params, settingsRevision: 'other-boot:0000000001' }, Buffer.from('png'))
+    const nextGeneration = kvStoreMock.setItemRaw.mock.calls[2]?.[1] as string
+    expect(nextGeneration).not.toBe(key)
+    expect(nextGeneration.startsWith('og:other-boot:0000000001:post-x-')).toBe(true)
   })
 
   it('suffixes the dark calendar variant', async () => {
-    await set(db, 'calendar', { date: '2026-06-17', theme: 'dark' }, Buffer.from('png'))
-    await set(db, 'calendar', { date: '2026-06-17', theme: 'light' }, Buffer.from('png'))
+    await set(
+      db,
+      'calendar',
+      {
+        date: '2026-06-17',
+        theme: 'dark',
+        locale: 'zh-CN',
+        version: APP_VERSION,
+        settingsRevision: REVISIONS.calendar,
+      },
+      Buffer.from('png'),
+    )
+    await set(
+      db,
+      'calendar',
+      {
+        date: '2026-06-17',
+        theme: 'light',
+        locale: 'zh-CN',
+        version: APP_VERSION,
+        settingsRevision: REVISIONS.calendar,
+      },
+      Buffer.from('png'),
+    )
 
-    expect(kvStoreMock.setItemRaw.mock.calls[0]?.[1]).toBe('calendar:2026-06-17-dark')
-    expect(kvStoreMock.setItemRaw.mock.calls[1]?.[1]).toBe('calendar:2026-06-17')
+    expect(kvStoreMock.setItemRaw.mock.calls[0]?.[1]).toBe(
+      `calendar:zh-CN:${APP_VERSION}:${REVISIONS.calendar}:2026-06-17-dark`,
+    )
+    expect(kvStoreMock.setItemRaw.mock.calls[1]?.[1]).toBe(
+      `calendar:zh-CN:${APP_VERSION}:${REVISIONS.calendar}:2026-06-17`,
+    )
   })
 
   it('carries the fetch size in the avatar key', async () => {

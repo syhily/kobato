@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { MusicProvider, ProviderSearchResult, ProviderTrack } from '@/server/domains/music/providers/types'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -197,7 +198,7 @@ export const tencentProvider: MusicProvider = {
     const parsed = musicuSearchResponseSchema.safeParse(res)
     if (!parsed.success) {
       log.error('Tencent search response failed schema validation', { issues: parsed.error.issues })
-      throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
+      throw new ActionFailure(502, descriptorFor('music.error.upstreamUnavailable'))
     }
 
     // Support both req_1 (batch key) and music.search.SearchCgiService (service key) response shapes.
@@ -230,7 +231,7 @@ export const tencentProvider: MusicProvider = {
     const parsed = musicuSongDetailResponseSchema.safeParse(res)
     if (!parsed.success) {
       log.error('Tencent song detail response failed schema validation', { issues: parsed.error.issues })
-      throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
+      throw new ActionFailure(502, descriptorFor('music.error.upstreamUnavailable'))
     }
 
     const trackInfo = unsafeCast<RawTencentSong | undefined>(parsed.data.songinfo?.data?.track_info)
@@ -255,7 +256,7 @@ export const tencentProvider: MusicProvider = {
     const songData = unsafeCast<RawTencentSong | undefined>(data?.track_info)
 
     if (!songData?.file?.media_mid) {
-      throw new ActionFailure(404, '上游未返回完整的歌曲文件信息')
+      throw new ActionFailure(404, descriptorFor('music.error.upstreamIncomplete'))
     }
 
     const guid = Math.floor(Math.random() * 1_000_000_000)
@@ -304,7 +305,7 @@ export const tencentProvider: MusicProvider = {
     const sip = unsafeCast<string[] | undefined>(req0Data?.sip)
 
     if (!midurlinfo || !sip) {
-      throw new ActionFailure(404, '上游未返回音频地址（vkey 解析失败）')
+      throw new ActionFailure(404, descriptorFor('music.error.upstreamNoVkey'))
     }
 
     for (let i = 0; i < QUALITY_MAP.length; i++) {
@@ -317,7 +318,7 @@ export const tencentProvider: MusicProvider = {
       }
     }
 
-    throw new ActionFailure(404, '上游未返回可用的音频地址（可能版权受限）')
+    throw new ActionFailure(404, descriptorFor('music.error.upstreamNoAudio'))
   },
 
   async resolveCoverUrl(track: ProviderTrack): Promise<string> {

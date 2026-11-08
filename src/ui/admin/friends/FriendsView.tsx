@@ -21,6 +21,7 @@ import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Input } from '@/ui/components/input'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 30
 
@@ -30,6 +31,7 @@ const PENDING_LIMIT = 50
 type EditTarget = AdminFriendDto | null | undefined
 
 export function FriendsView() {
+  const { t } = useI18n()
   const [q, setQ] = useState('')
   const [includeHidden, setIncludeHidden] = useState(false)
   const queryClient = useQueryClient()
@@ -52,7 +54,7 @@ export function FriendsView() {
       limit: PAGE_SIZE,
     }),
     selectRows: (page) => page.friends,
-    noun: '友链',
+    noun: 'admin.list.noun.friendLinks',
   })
 
   const invalidateList = useCallback(() => {
@@ -63,10 +65,10 @@ export function FriendsView() {
   const deleteMutation = useMutation({
     mutationFn: (input: DeleteFriendInput) => orpc.admin.friends.delete({ id: input.id }),
     onSuccess: () => {
-      toast.success('友链已删除')
+      toast.success(t('admin.friends.deleted'))
       invalidateList()
     },
-    onError: onMutationError('删除友链失败'),
+    onError: onMutationError('admin.toast.friendDeleteFailed', t),
   })
 
   // One-click approve flips `visible` via the existing upsert path; rows without a poster can't pass the schema.
@@ -82,10 +84,10 @@ export function FriendsView() {
         visible: true,
       }),
     onSuccess: () => {
-      toast.success('友链已通过审核')
+      toast.success(t('admin.friends.approved'))
       invalidateList()
     },
-    onError: onMutationError('通过友链失败'),
+    onError: onMutationError('admin.toast.friendApproveFailed', t),
   })
 
   const [qInput, setQInput] = useDebouncedSearch({
@@ -98,14 +100,14 @@ export function FriendsView() {
   const handleDelete = useCallback(
     (row: AdminFriendDto) => {
       setConfirm({
-        title: `删除友链「${row.website}」？`,
-        description: '此操作会从数据库直接删除该友链。如果只是临时下线，请改为编辑后取消「在公共页面显示」。',
-        actionLabel: '删除',
+        title: t('admin.friends.deleteTitle', { website: row.website }),
+        description: t('admin.friends.deleteBody'),
+        actionLabel: t('common.action.delete'),
         destructive: true,
         onConfirm: () => deleteMutation.mutate({ id: row.id }),
       })
     },
-    [deleteMutation],
+    [deleteMutation, t],
   )
 
   return (
@@ -114,10 +116,10 @@ export function FriendsView() {
         <AdminListPage.Header
           title={
             <>
-              友链管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
+              {t('admin.friends.title')} <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
-          description="公共页面以随机顺序展示。"
+          description={t('admin.friends.description')}
         >
           <div className="flex items-center gap-3">
             <div className="relative w-56">
@@ -126,8 +128,8 @@ export function FriendsView() {
                 type="search"
                 value={qInput}
                 onChange={(e) => setQInput(e.target.value)}
-                placeholder="搜索站名、简介或主页 URL…"
-                aria-label="搜索友链"
+                placeholder={t('admin.friends.searchPlaceholder')}
+                aria-label={t('admin.friends.searchAria')}
                 className="pl-9"
               />
             </div>
@@ -138,21 +140,22 @@ export function FriendsView() {
                 onCheckedChange={(value) => setIncludeHidden(value === true)}
               />
               <label htmlFor="friends-include-hidden" className="text-sm select-none">
-                包含已隐藏
+                {t('admin.friends.includeHidden')}
               </label>
             </div>
             <Button type="button" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>
               <PlusIcon />
-              新增友链
+              {t('admin.friends.new')}
             </Button>
           </div>
         </AdminListPage.Header>
 
         <AdminListPage.Body>
           {pendingRows.length > 0 && (
-            <section className="mb-6" aria-label="待审核友链申请">
+            <section className="mb-6" aria-label={t('admin.friends.pendingSectionAria')}>
               <h2 className="mb-3 text-admin-base font-semibold">
-                待审核申请 <span className="text-sm font-normal text-muted-foreground">{pendingRows.length}</span>
+                {t('admin.friends.pendingTitle')}{' '}
+                <span className="text-sm font-normal text-muted-foreground">{pendingRows.length}</span>
               </h2>
               <div className="divide-y rounded-xl border">
                 {pendingRows.map((row) => (
@@ -178,7 +181,7 @@ export function FriendsView() {
                 <EmptyMedia variant="icon">
                   <SearchIcon />
                 </EmptyMedia>
-                <EmptyTitle>未找到友链</EmptyTitle>
+                <EmptyTitle>{t('admin.friends.empty')}</EmptyTitle>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -204,7 +207,7 @@ export function FriendsView() {
           )}
 
           <AdminInfiniteListFooter
-            noun="友链"
+            noun={t('admin.list.noun.friendLinks')}
             rowCount={rows.length}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}

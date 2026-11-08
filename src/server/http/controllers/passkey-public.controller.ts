@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { generateAuthenticationOptions } from '@/server/domains/auth/passkey/service'
 import { passkeyGuard, publicProc } from '@/server/http/orpc-base'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { tryPasskeyAuthBeginRateLimit } from '@/server/infra/rate-limit'
 
@@ -22,7 +23,7 @@ const authBegin = publicProc
   .handler(async ({ input, context }) => {
     const limit = await tryPasskeyAuthBeginRateLimit(context.clientAddress)
     if (limit.exceeded) {
-      throw new DomainError('RATE_LIMITED', '操作过于频繁，请稍后再试。')
+      throw new DomainError('RATE_LIMITED', descriptorFor('auth.passkey.error.rateLimited'))
     }
     const { options } = await generateAuthenticationOptions(context.db, input.email)
     return { options }

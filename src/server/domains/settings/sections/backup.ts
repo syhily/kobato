@@ -1,6 +1,16 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { coerceBoolean } from '@/server/domains/settings/sections/shared'
+
+/** Custom validation messages: typed ids; numeric bounds ride `params`. */
+export const backupValidationMessages = {
+  dayOfWeekRequired: 'admin.settings.backup.error.dayOfWeekRequired',
+  dayOfMonthRequired: 'admin.settings.backup.error.dayOfMonthRequired',
+  encryptionPasswordRequired: 'admin.settings.backup.error.encryptionPasswordRequired',
+  encryptionPasswordTooShort: 'admin.settings.backup.error.encryptionPasswordTooShort',
+} as const satisfies Record<string, UiMessageId>
 
 export const backupSchema = z
   .object({
@@ -32,13 +42,17 @@ export const backupSchema = z
       return
     }
     if (value.scheduled.frequency === 'weekly' && value.scheduled.dayOfWeek === undefined) {
-      ctx.addIssue({ code: 'custom', path: ['scheduled', 'dayOfWeek'], message: '请选择星期几' })
+      ctx.addIssue({
+        code: 'custom',
+        path: ['scheduled', 'dayOfWeek'],
+        message: backupValidationMessages.dayOfWeekRequired,
+      })
     }
     if (value.scheduled.frequency === 'monthly' && value.scheduled.dayOfMonth === undefined) {
       ctx.addIssue({
         code: 'custom',
         path: ['scheduled', 'dayOfMonth'],
-        message: '请选择每月日期',
+        message: backupValidationMessages.dayOfMonthRequired,
       })
     }
   })
@@ -52,11 +66,20 @@ export const backupSchema = z
     // — fail closed instead of degrading.
     const password = value.encryption.password
     if (password === undefined || password.trim() === '') {
-      ctx.addIssue({ code: 'custom', path: ['encryption', 'password'], message: '启用备份加密需要设置密码' })
+      ctx.addIssue({
+        code: 'custom',
+        path: ['encryption', 'password'],
+        message: backupValidationMessages.encryptionPasswordRequired,
+      })
       return
     }
     if (password.length > 0 && password.length < 8) {
-      ctx.addIssue({ code: 'custom', path: ['encryption', 'password'], message: '备份加密密码至少 8 位' })
+      ctx.addIssue({
+        code: 'custom',
+        path: ['encryption', 'password'],
+        message: backupValidationMessages.encryptionPasswordTooShort,
+        params: { min: 8 },
+      })
     }
   })
 

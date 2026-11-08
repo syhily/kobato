@@ -37,6 +37,9 @@ vi.mock('@/server/infra/email/templates/PasswordReset', () => ({
 vi.mock('@/server/infra/email/templates/SignInOtp', () => ({
   default: (props: unknown) => `otp:${JSON.stringify(props)}`,
 }))
+vi.mock('@/server/infra/email/templates/SignInLink', () => ({
+  default: (props: unknown) => `link:${JSON.stringify(props)}`,
+}))
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import {
@@ -45,6 +48,7 @@ import {
   sendAuthorInvite,
   sendEmail,
   sendPasswordReset,
+  sendSignInLink,
   sendSignInOtp,
   sendTestMail,
 } from '@/server/infra/email/sender'
@@ -454,5 +458,91 @@ describe('infra/email/sender — sendTestMail', () => {
     const result = await sendTestMail('to@x.com')
     expect(SmtpCtorMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }))
     expect(result.ok).toBe(true)
+  })
+})
+
+describe('infra/email/sender — site-locale subjects', () => {
+  function setSiteLocale(locale: 'en-US' | 'zh-CN'): void {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale },
+      mail: {
+        mail: {
+          enabled: true,
+          notificationEmails: true,
+          sender: 'noreply@example.com',
+          transport: 'smtp',
+          smtpHost: 'smtp.example.com',
+          smtpPort: 587,
+          smtpUser: 'user',
+          smtpPass: 'pass',
+          smtpSecure: false,
+          smtpRequireTls: true,
+          smtpRejectUnauthorized: true,
+          mailgunDomain: '',
+          mailgunApiKey: '',
+        },
+      },
+    })
+  }
+
+  function lastSubject(): string {
+    const calls = transportSendMock.mock.calls
+    return (calls[calls.length - 1]![0] as { subject: string }).subject
+  }
+
+  it('renders the auth-family subjects in the site locale (en-US)', async () => {
+    setSiteLocale('en-US')
+    const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+
+    await sendAuthorInvite({ name: 'Bob', email: 'bob@x.com' }, 'https://link', 'Alice')
+    expect(lastSubject()).toBe(`${title}: Author invitation`)
+
+    await sendPasswordReset({ name: 'Bob', email: 'bob@x.com' }, 'https://link')
+    expect(lastSubject()).toBe(`${title}: Password reset`)
+
+    await sendSignInOtp({ name: 'Bob', email: 'bob@x.com' }, '123456')
+    expect(lastSubject()).toBe(`${title}: Sign-in verification code`)
+
+    await sendSignInLink({ name: 'Bob', email: 'bob@x.com' }, 'https://link')
+    expect(lastSubject()).toBe(`${title}: Sign-in link`)
+  })
+
+  it('renders the test-mail subject and body in the site locale (en-US)', async () => {
+    setSiteLocale('en-US')
+    transportSendMock.mockResolvedValueOnce({ ok: true })
+
+    await sendTestMail('to@x.com')
+
+    const payload = transportSendMock.mock.calls[0]![0] as { subject: string; html: string }
+    expect(payload.subject).toBe(`${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}: Admin mail test`)
+    expect(payload.html).toContain('This is a mail delivery test from the')
+    expect(payload.html).toContain('the mail service is configured correctly')
+    expect(payload.html).toContain('Site:')
+    expect(payload.html).toContain('Sender:')
+    expect(payload.html).toContain('Triggered at (UTC):')
+    // The site title is user-authored and stays raw in every locale.
+    expect(payload.html).toContain(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title)
+  })
+
+  it('localizes the readiness messages with the site locale', () => {
+    setSiteLocale('en-US')
+    const mail = {
+      ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
+      enabled: false,
+    }
+    const disabled = checkMailReady(mail)
+    expect(disabled).toMatchObject({ ready: false, reason: 'disabled' })
+    if (!disabled.ready) {
+      expect(disabled.message).toBe('Mail sending is turned off in the admin panel')
+    }
+
+    const unconfigured = checkMailReady({ ...mail, enabled: true, smtpHost: '' })
+    expect(unconfigured).toMatchObject({ ready: false, reason: 'unconfigured' })
+    if (!unconfigured.ready) {
+      expect(unconfigured.message).toBe(
+        'The SMTP service is not fully configured (missing server address / username / password / sender)',
+      )
+    }
   })
 })

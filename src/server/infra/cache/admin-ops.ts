@@ -10,6 +10,7 @@ import {
   snapshotAllBuckets,
   snapshotReservedBuckets,
 } from '@/server/infra/cache/buckets'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 export async function getAdminCacheStats(db: Database): Promise<AdminCacheStatsDto> {
@@ -33,7 +34,7 @@ export async function clearAdminCache(db: Database, target: ClearCacheTarget): P
   const bucket = getBucket(target)
   if (!bucket) {
     // Belt-and-braces guard for callers that bypass the API-surface Zod schema.
-    throw new DomainError('BAD_REQUEST', `未知的缓存分组：${target}`)
+    throw new DomainError('BAD_REQUEST', descriptorFor('admin.cache.error.unknownGroup', { target }))
   }
   const removed = await clearBucket(db, bucket)
   return {

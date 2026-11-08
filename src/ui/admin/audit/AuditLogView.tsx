@@ -25,6 +25,7 @@ import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const PAGE_SIZE = 20
@@ -34,9 +35,10 @@ interface AuditLogViewProps {
 }
 
 export function AuditLogView({ retentionDays }: AuditLogViewProps) {
+  const { t } = useI18n()
   const actorsQuery = useQuery(orpcQuery.admin.auditLog.actors.queryOptions())
   const actors = useMemo(() => actorsQuery.data ?? [], [actorsQuery.data])
-  const fields = useMemo(() => buildAuditFilterFields(actors), [actors])
+  const fields = useMemo(() => buildAuditFilterFields(actors, t), [actors, t])
   const pills = useFilterPills({ fields })
 
   // The actors query only feeds the 操作人 filter options — a failure leaves the
@@ -45,9 +47,9 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
   const actorsError = actorsQuery.error
   useEffect(() => {
     if (actorsError) {
-      toastApiError(actorsError, '加载操作人列表失败')
+      toastApiError(actorsError, 'admin.toast.actorListLoadFailed', t)
     }
-  }, [actorsError])
+  }, [actorsError, t])
 
   const [exportOpen, setExportOpen] = useState(false)
   const [includeFullIp, setIncludeFullIp] = useState(false)
@@ -88,9 +90,9 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
       setExportOpen(false)
     } catch (error) {
       // mutateAsync rejects — surface the failure; the dialog stays open for a retry.
-      toastApiError(error, '导出审计日志失败')
+      toastApiError(error, 'admin.toast.auditExportFailed', t)
     }
-  }, [queryInput, exportMutation, includeFullIp])
+  }, [queryInput, exportMutation, includeFullIp, t])
 
   const hasActiveFilters = pills.hasFilters
 
@@ -99,8 +101,8 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
   return (
     <AdminListPage>
       <AdminListPage.Header
-        title="审计日志"
-        description={`查看系统操作审计记录。仅展示最近 ${retentionDays} 天的数据，更早的记录已归档到 S3。`}
+        title={t('admin.audit.title')}
+        description={t('admin.audit.description', { days: retentionDays })}
       >
         <div className="flex items-center gap-2">
           {!hasActiveFilters && filterBar}
@@ -115,7 +117,7 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
             disabled={exportMutation.isPending}
           >
             <DownloadIcon data-icon className="mr-1" />
-            {exportMutation.isPending ? '导出中…' : '导出 CSV'}
+            {exportMutation.isPending ? t('admin.audit.exporting') : t('admin.audit.exportCsv')}
           </Button>
         </div>
       </AdminListPage.Header>
@@ -129,10 +131,10 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
-            <p className="text-lg text-foreground">加载失败</p>
-            <p className="text-sm">{error.message || '请稍后重试'}</p>
+            <p className="text-lg text-foreground">{t('admin.list.loadFailed')}</p>
+            <p className="text-sm">{error.message || t('admin.list.retryHint')}</p>
             <Button type="button" variant="outline" className="mt-4" onClick={reset}>
-              重试
+              {t('common.action.retry')}
             </Button>
           </div>
         ) : rows.length === 0 ? (
@@ -141,7 +143,7 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
               <EmptyMedia variant="icon">
                 <SearchIcon />
               </EmptyMedia>
-              <EmptyTitle>暂无审计日志记录</EmptyTitle>
+              <EmptyTitle>{t('admin.audit.empty')}</EmptyTitle>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -158,7 +160,7 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
               )}
             </div>
             <AdminInfiniteListFooter
-              noun="审计日志"
+              noun={t('admin.list.noun.auditLogs')}
               rowCount={rows.length}
               hasNextPage={hasNextPage}
               isFetchingNextPage={isFetchingNextPage}
@@ -170,8 +172,8 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
       <AlertDialog open={exportOpen} onOpenChange={setExportOpen}>
         <AlertDialogContent className="sm:max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>导出审计日志 CSV</AlertDialogTitle>
-            <AlertDialogDescription>将导出当前筛选条件下的审计日志记录。</AlertDialogDescription>
+            <AlertDialogTitle>{t('admin.audit.exportTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('admin.audit.exportBody')}</AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex items-start gap-2 py-2">
             <Checkbox
@@ -180,13 +182,13 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
               onCheckedChange={(checked) => setIncludeFullIp(checked === true)}
             />
             <label htmlFor="include-full-ip" className="cursor-pointer text-sm leading-tight">
-              导出完整 IP 地址（默认脱敏导出）
+              {t('admin.audit.includeFullIp')}
             </label>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.action.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void handleExport()} disabled={exportMutation.isPending}>
-              {exportMutation.isPending ? '导出中…' : '导出'}
+              {exportMutation.isPending ? t('admin.audit.exporting') : t('admin.audit.export')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

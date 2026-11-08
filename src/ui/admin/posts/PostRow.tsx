@@ -2,8 +2,12 @@ import { ImageIcon, MessageSquareIcon, PinIcon, SquarePenIcon } from 'lucide-rea
 import { Link } from 'react-router'
 
 import type { AdminPostDto } from '@/shared/contracts/posts'
+import type { AppLocale } from '@/shared/i18n/locales'
 
+import { formatDate } from '@/shared/i18n/format'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
+import { type I18nValue, useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 interface PostRowProps {
@@ -13,25 +17,28 @@ interface PostRowProps {
   onFilterCategory?: (categoryId: string, categoryName: string) => void
 }
 
-function formatPostDate(post: AdminPostDto): string {
+function formatPostDate(post: AdminPostDto, options: { locale: AppLocale; timeZone: string }): string {
   const date = post.published ? new Date(post.firstPublishedAt ?? post.publishedAt) : new Date(post.updatedAt)
-  return date.toLocaleDateString('zh-CN', {
+  return formatDate(date, {
+    locale: options.locale,
+    timeZone: options.timeZone,
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   })
 }
 
-function formatPostDateLabel(post: AdminPostDto): string {
-  return post.published ? '发布于' : '更新于'
+function formatPostDateLabel(post: AdminPostDto, t: I18nValue['t']): string {
+  return post.published ? t('admin.content.publishedAt') : t('admin.content.updatedAt')
 }
 
 function PostStatusText({ post }: { post: AdminPostDto }) {
+  const { t } = useI18n()
   if (post.deletedAt !== null) {
     return (
       <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-destructive">
         <span className="size-1.5 rounded-full bg-destructive" />
-        已删除
+        {t('admin.content.status.deleted')}
       </span>
     )
   }
@@ -39,7 +46,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
     return (
       <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-draft-fg">
         <span className="size-1.5 rounded-full bg-status-draft-fg" />
-        草稿
+        {t('admin.content.status.draft')}
       </span>
     )
   }
@@ -47,7 +54,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
     return (
       <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-warn-fg">
         <span className="size-1.5 rounded-full bg-status-warn-fg" />
-        仅草稿
+        {t('admin.content.status.draftOnly')}
       </span>
     )
   }
@@ -55,17 +62,19 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
     return (
       <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-warn-fg">
         <span className="size-1.5 rounded-full bg-status-warn-fg" />
-        不列出
+        {t('admin.content.status.unlisted')}
       </span>
     )
   }
-  return <span className="text-(--text-admin-sm) text-muted-foreground">已发布</span>
+  return <span className="text-(--text-admin-sm) text-muted-foreground">{t('admin.content.status.published')}</span>
 }
 
 export function PostRow({ post, onFilterCategory }: PostRowProps) {
+  const { locale, t, tRich } = useI18n()
+  const { timeZone } = useSiteIdentity()
   const isDeleted = post.deletedAt !== null
 
-  const dateText = `${formatPostDateLabel(post)} ${formatPostDate(post)}`
+  const dateText = `${formatPostDateLabel(post, t)} ${formatPostDate(post, { locale, timeZone })}`
 
   return (
     <div
@@ -101,18 +110,23 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
 
         {/* Meta */}
         <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
-          {post.authorName || '—'} 在{' '}
-          {post.categoryId !== null && onFilterCategory ? (
-            <button
-              type="button"
-              onClick={() => onFilterCategory(post.categoryId!, post.category || post.categoryId!)}
-              className="hover:text-foreground hover:underline"
-            >
-              {post.category}
-            </button>
-          ) : (
-            post.category || '无分类'
-          )}
+          {tRich('admin.posts.row.authorIn', {
+            author: post.authorName || '—',
+            categoryName: post.category || t('admin.posts.row.noCategory'),
+            // oxlint-disable-next-line react/no-unstable-nested-components -- tRich render-prop, not a component definition
+            category: (chunks) =>
+              post.categoryId !== null && onFilterCategory ? (
+                <button
+                  type="button"
+                  onClick={() => onFilterCategory(post.categoryId!, post.category || post.categoryId!)}
+                  className="hover:text-foreground hover:underline"
+                >
+                  {chunks}
+                </button>
+              ) : (
+                <>{chunks}</>
+              ),
+          })}
           {' · '}
           {dateText}
         </p>
@@ -136,7 +150,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       <Link
         to={`/editor/post/${post.id}`}
         className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-        title="编辑"
+        title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />
       </Link>

@@ -1,7 +1,15 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
+
+/** Custom validation messages: typed ids; provider names ride `params`, never translated. */
+export const socialsValidationMessages = {
+  fixedType: 'admin.settings.socials.error.fixedType',
+  duplicateNetwork: 'admin.settings.socials.error.duplicateNetwork',
+} as const satisfies Record<string, UiMessageId>
 
 // Schema-level guard: `type` is forced to the platform's canonical display mode and each
 // platform may appear at most once — a hand-crafted payload could otherwise mix or duplicate rows.
@@ -27,14 +35,16 @@ export const socialsSchema = z
         ctx.addIssue({
           code: 'custom',
           path: ['socials', index, 'type'],
-          message: `「${SOCIAL_NETWORK_META[row.network].label}」固定使用 \`${expectedType}\` 展示方式`,
+          message: socialsValidationMessages.fixedType,
+          params: { network: SOCIAL_NETWORK_META[row.network].brandName, type: expectedType },
         })
       }
       if (seen.has(row.network)) {
         ctx.addIssue({
           code: 'custom',
           path: ['socials', index, 'network'],
-          message: `「${SOCIAL_NETWORK_META[row.network].label}」已经添加过，请直接编辑已有那条`,
+          message: socialsValidationMessages.duplicateNetwork,
+          params: { network: SOCIAL_NETWORK_META[row.network].brandName },
         })
       } else {
         seen.add(row.network)

@@ -24,6 +24,7 @@ import {
   stageBackup,
 } from '@/server/domains/backup/services/restore'
 import { adminProc } from '@/server/http/orpc-base'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { tryBackupRestorePasswordRateLimit } from '@/server/infra/rate-limit'
@@ -61,7 +62,13 @@ const create = adminProc
   // Optional per-backup password override; absent = the settings encryption
   // password. Same floor as the settings schema — a one-off password is
   // never stored, so a weak one only buys an unrestorable archive.
-  .input(z.object({ password: z.string().min(8, '备份加密密码至少 8 位').max(512).optional() }).optional())
+  .input(
+    z
+      .object({
+        password: z.string().min(8, 'admin.settings.backup.error.encryptionPasswordTooShort').max(512).optional(),
+      })
+      .optional(),
+  )
   .output(z.object({ fileName: z.string(), size: z.number(), timestamp: z.string() }))
   .handler(async ({ input, context }) => {
     const result = await createManualBackup(context.db, { passwordOverride: input?.password })
@@ -79,7 +86,7 @@ const delete_ = adminProc
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
     if (!isValidBackupKey(input.key)) {
-      throw new ActionFailure(400, '无效的备份标识。')
+      throw new ActionFailure(400, descriptorFor('backup.error.invalidKey'))
     }
     await deleteBackup(context.db, input.key)
     recordAuditEventFromContext(context, {
@@ -96,7 +103,7 @@ const restore = adminProc
   .output(z.union([z.object({ accepted: z.boolean() }), z.object({ passwordRequired: z.boolean() })]))
   .handler(async ({ input, context }) => {
     if (!isValidBackupKey(input.key)) {
-      throw new ActionFailure(400, '无效的备份标识。')
+      throw new ActionFailure(400, descriptorFor('backup.error.invalidKey'))
     }
     // Resolve the password BEFORE claiming the slot: an encrypted archive
     // without any usable password declines without touching the machine.
@@ -114,7 +121,7 @@ const restore = adminProc
     if (encrypted && explicitPassword !== null) {
       const passwordLimit = await tryBackupRestorePasswordRateLimit(context.viewer.id, input.key)
       if (passwordLimit.exceeded) {
-        throw new ActionFailure(429, '密码尝试次数过多，请稍后再试。')
+        throw new ActionFailure(429, descriptorFor('backup.error.passwordAttempts'))
       }
     }
 
@@ -173,7 +180,7 @@ const restore = adminProc
       }
     })
     if (outcome === 'busy') {
-      throw new ActionFailure(409, '已有还原任务正在进行，请等待完成后再试。')
+      throw new ActionFailure(409, descriptorFor('backup.error.restoreRunning'))
     }
     if (outcome === 'declined') {
       return { passwordRequired: true }

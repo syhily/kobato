@@ -1,6 +1,13 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { coerceBoolean } from '@/server/domains/settings/sections/shared'
+
+/** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */
+export const securityValidationMessages = {
+  dangerousExemptPath: 'admin.settings.security.error.dangerousExemptPath',
+} as const satisfies Record<string, UiMessageId>
 
 // Prefixes an admin must never be able to CSRF-exempt — exempting either silently
 // disables CSRF on state-changing routes (P1-16). Segment-boundary aware,
@@ -23,8 +30,7 @@ export const securitySchema = z.object({
       .max(20)
       .default([])
       .refine((paths: string[]) => !paths.some(isDangerousExemptPath), {
-        message:
-          'Exempt paths cannot blanket-disable CSRF for RPC or API endpoints. Paths starting with /rpc/ or /api/ are not allowed.',
+        message: securityValidationMessages.dangerousExemptPath,
       }),
   }),
   cors: z

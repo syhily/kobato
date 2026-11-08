@@ -22,6 +22,7 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Discriminator: `null` = new friend, a friend = edit, `undefined` = closed.
 export interface EditFriendDialogProps {
@@ -40,6 +41,7 @@ const EMPTY_DRAFT = {
 }
 
 export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogProps) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [lastFriend, setLastFriend] = useState<typeof friend>(friend)
@@ -47,7 +49,7 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   const upsertMutation = useMutation({
     ...orpcQuery.admin.friends.upsert.mutationOptions(),
     onSuccess: (payload) => {
-      toast.success('友链已保存')
+      toast.success(t('admin.friends.form.saved'))
       setErrorMessage(null)
       onSaved(payload.friend)
     },
@@ -88,9 +90,9 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? '编辑友链' : '新增友链'}</DialogTitle>
+          <DialogTitle>{isEditing ? t('admin.friends.form.editTitle') : t('admin.friends.form.newTitle')}</DialogTitle>
           <DialogDescription>
-            {isEditing ? '修改友链信息；隐藏后该友链不再出现在公共页面。' : '填写新友链的展示信息。'}
+            {isEditing ? t('admin.friends.form.editDescription') : t('admin.friends.form.newDescription')}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -116,7 +118,7 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
           className="grid gap-4 sm:grid-cols-2"
         >
           <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="friend-website">站名</Label>
+            <Label htmlFor="friend-website">{t('admin.friends.form.website')}</Label>
             <Input
               id="friend-website"
               type="text"
@@ -127,25 +129,21 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="friend-homepage">主页 URL</Label>
+            <Label htmlFor="friend-homepage">{t('admin.friends.form.homepage')}</Label>
             <Input
               id="friend-homepage"
               type="url"
               value={draft.homepage}
               onChange={(e) => setDraft((prev) => ({ ...prev, homepage: e.target.value }))}
-              placeholder="https://example.com"
+              placeholder={t('admin.friends.form.homepagePlaceholder')}
               required
             />
           </div>
           <div className="sm:col-span-2">
             <CoverInputRow
-              label="封面图 (1280×425)"
+              label={t('admin.friends.form.poster')}
               htmlFor="friend-poster"
-              description={
-                homepageChanged
-                  ? '注意：主页 URL 已修改，新海报会写入新 host 对应的 S3 对象，旧对象会成为孤儿，需要在「图片管理」手动删除。'
-                  : '裁剪、旋转、调整画质后将上传到 images/links/<host>.jpg。'
-              }
+              description={homepageChanged ? t('admin.friends.form.posterChanged') : t('admin.friends.form.posterHint')}
               value={draft.poster}
               onChange={(value) => setDraft((prev) => ({ ...prev, poster: value }))}
               uploadKind={friendHost === null ? null : { kind: 'friend', host: friendHost }}
@@ -154,24 +152,24 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor="friend-description">简介（可选）</Label>
+            <Label htmlFor="friend-description">{t('admin.friends.form.description')}</Label>
             <Textarea
               id="friend-description"
               value={draft.description}
               onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
               maxLength={999}
               rows={2}
-              placeholder="一两句话介绍这位博友"
+              placeholder={t('admin.friends.form.descriptionPlaceholder')}
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor="friend-rss">RSS URL（可选）</Label>
+            <Label htmlFor="friend-rss">{t('admin.friends.form.rss')}</Label>
             <Input
               id="friend-rss"
               type="url"
               value={draft.rssUrl}
               onChange={(e) => setDraft((prev) => ({ ...prev, rssUrl: e.target.value }))}
-              placeholder="https://example.com/rss"
+              placeholder={t('admin.friends.form.rssPlaceholder')}
             />
           </div>
           <div className="flex items-center gap-2 sm:col-span-2">
@@ -181,17 +179,22 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
               onCheckedChange={(value) => setDraft((prev) => ({ ...prev, visible: value === true }))}
             />
             <Label htmlFor="friend-visible" className="cursor-pointer font-normal">
-              在公共页面显示
+              {t('admin.friends.form.visible')}
             </Label>
-            <span className="text-xs text-muted-foreground">取消勾选则临时隐藏，不删除原始数据</span>
+            <span className="text-xs text-muted-foreground">{t('admin.friends.form.visibleHint')}</span>
           </div>
           {errorMessage ? <p className="text-sm text-destructive sm:col-span-2">{errorMessage}</p> : null}
           <DialogFooter className="sm:col-span-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              <XIcon data-icon /> 取消
+              <XIcon data-icon /> {t('common.action.cancel')}
             </Button>
             <Button type="submit" disabled={isPending}>
-              <SaveIcon data-icon /> {isPending ? '保存中…' : isEditing ? '保存' : '创建'}
+              <SaveIcon data-icon />{' '}
+              {isPending
+                ? t('admin.friends.form.saving')
+                : isEditing
+                  ? t('common.action.save')
+                  : t('admin.friends.form.create')}
             </Button>
           </DialogFooter>
         </form>

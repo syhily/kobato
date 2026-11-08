@@ -5,7 +5,11 @@
 ## Structure
 
 - `hooks/` — browser hooks. Admin file uploads go through `useFileUpload` (`@/client/hooks/use-file-upload`): it owns the CSRF read, accept/size guards, FormData POST, error unwrap, and toast choreography. Never hand-roll a fetch upload in a view. `use-device-env-beacon` is the ADR-0006 collector: mounted once by `routes/public/layout.tsx`, it reads the deepest match's `eid`, honors `navigator.doNotTrack === '1'`, and `sendBeacon`s one payload per page view (the static block once per session via the `kobato.env.static` marker; a bounded in-memory sent-id set drops navigation replays) — no fetch fallback.
-- `lib/` — pure browser helpers shared by hooks/components (`logger`, `motion`, `draft-store`, …). `device-env` owns the ADR-0006 field collection (`collectStaticEnv` / `collectDynamicEnv`): every browser API is read defensively and an absent/non-finite value is omitted from the payload, never sent as null.
+- User-facing hook copy is translated, never literal: a hook that only runs under the React tree (e.g.
+  `useAutosave`) reads `useI18n()` itself, while hooks that can be called from non-React entry
+  points (`useFileUpload`) take the caller's `t` explicitly. Both keep English as the catalog
+  baseline and every locale in step.
+- `lib/` — pure browser helpers shared by hooks/components (`logger`, `motion`, `draft-store`, …). `device-env` owns the ADR-0006 field collection (`collectStaticEnv` / `collectDynamicEnv`): every browser API is read defensively and an absent/non-finite value is omitted from the payload, never sent as null. `locale-sync` is the cross-tab settings-locale transport: a `BroadcastChannel` announcement (`publishLocaleChange(locale, origin, revision?)`) plus a subscription (`subscribeLocaleChange(origin, handler)` handing the handler `{ locale, revision? }`). It carries an ANNOUNCEMENT, not state — peers reload from the server after flushing their own dirty cards and never re-publish, and a publisher ignores its own echo by `origin` (a `BroadcastChannel` loops back in-document). The sender's bootstrap settings `revision` rides along as an opaque dedupe token. A missing/blocked API degrades to a no-op, never a throw. The ROOT-level orchestration (`LocaleSyncProvider`, mounted in `src/root.tsx`) owns the subscription so every document — settings, editor, analytics, public — follows it. Only a registered settings workspace flushes and reloads automatically; a document without a flush host (editor, comment composer, setup, public) is never reloaded automatically — unsaved input is invisible to the app — and instead shows a localized notice with an explicit Reload action.
 - `editor/` — host glue for the `src/inkling` editor layer: the page/article composer (R11; consumed by
   `@/ui/admin/editor/PageBodyEditor`) and the comment composer (R12; consumed by
   `@/ui/public/comments/CommentBodyEditor`). `page-editor-nodes` (the composer node set — every mounted
@@ -24,14 +28,31 @@
   `openPicker` payload flag so the inkling pick seam opens the library picker), `image-library-pick`
   (the 'image' picker registration through the seam's variant channel, `registerCardPicker`, plus
   the pick→dataset write through the card write seam), `page-editor-upload` (paste/drop/file-dialog
-  uploads through `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (card policy + the
-  debounced server KaTeX preview channel), `inkling-labels` (the zh-CN labels overlay),
+  uploads through `orpc.admin.images.upload`; the uploader reads `useI18n()` itself and memoizes
+  `upload` on the translator so the composer's identity contract holds), `page-editor-card-config` +
+  `render-math` (card policy + the debounced server KaTeX preview channel — both are factories
+  taking the translator, so `PageBodyEditor` memoizes one card config per `t`; `resolveMathError`
+  turns the server's error descriptor into the single string Inkling accepts, falling back to
+  `fallbackMessage` when the active catalog does not know the key — a raw catalog key never
+  reaches the editor),
+  `inkling-labels` (the client seam for the Inkling label overlay — the four per-locale tables live
+  in `@/shared/i18n/inkling-labels/**` and stay out of the browser's static graph. WORKSPACE
+  documents (`/admin`, `/editor`) read the root loader's `i18n.inklingLabels` payload through
+  `useKobatoInklingLabels()`; a missing payload degrades to Inkling's English defaults. PUBLIC
+  documents carry no table, so `loadInklingLabels(locale)` — the ONE sanctioned dynamic import of a
+  table module — fetches exactly the active locale's chunk. Hover/focus intent prefetches that chunk
+  together with the composer chunk (`warmChunks`), so a touch device's first tap never serializes
+  the label request behind the editor request; the composer still mounts only once the labels
+  resolve. The four locales are four chunks, never one. `LazyCommentBodyEditor` passes the table
+  through `CommentBodyEditor` → `EditorSurfaceComposer`. The module also holds
+  the compile-time pin that every shared table key is legal for Inkling; no static table import is
+  allowed anywhere in the client),
   `use-focus-mode` (the writing-focus preference toggle),
   `editor-surface` (the composer skeleton both surfaces share: `useEditorSurface` — the
   registerAPI → editor-instance dance + body mount-snapshot/reseed wiring — and
-  `EditorSurfaceComposer`, the InklingComposer shell with the zh-CN labels + theme-driven
-  darkMode applied; every delta — node set, fileUploader/cardConfig, ui-prefs flags —
-  passes through, `nodes` stays required),
+  `EditorSurfaceComposer`, the InklingComposer shell with the root payload's active-locale labels,
+  the locale as the word-count language, and theme-driven darkMode applied; every delta — node set,
+  fileUploader/cardConfig, ui-prefs flags — passes through, `nodes` stays required),
   `block-quote-aside-cycle` (the host-side Ctrl+Q capture shared by both surfaces — neither composer
   registers AsideNode), `use-editor-body-reset` (the shared body-lifecycle glue: mount-snapshot seed,
   imperative reseed on `bodyKey` change, stable narrowing `handleChange`), and `base-node-filter`
@@ -43,8 +64,12 @@
   server each assemble their own class from the shared spec — then registers it via top-level
   `defineCard`. The decorate chrome components and the
   exportDOM markup share the spec's class/copy constants; `tests/unit/client/editor/cards/` pins
-  that parity (the WYSIWYG gate).
-- `api/` — oRPC client. All RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@/client/api/client`; server errors arrive as `ORPCError` rejections with the zod-issue detail (`[{ message, path }]` in `data`) already folded into `error.message` by the link interceptor — consumers never inspect `data` themselves. TanStack Query wrappers live in `@/client/api/orpc-query`. Every public-site read flows through oRPC end to end: browser-side interactions use this `/rpc` client, and SSR data (public routes + root loader) goes through the read-only `content.*` group via the in-process caller (`@/server/http/ssr-caller`) — no route talks to domain services directly.
+  that parity (the WYSIWYG gate). The specs' `menu[].label`/`desc` are English fallbacks, never a
+  hardcoded locale — the composer's slash menu localizes them through `labelKey`
+  (`menu.host.<key>.*` in the `inkling-labels/` tables), and the card chrome's own copy
+  (placeholders, replace/remove affordances, pick placeholders) reads the `admin.editor.cards.*`
+  catalog keys through `useI18n()`.
+- `api/` — oRPC client. All RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@/client/api/client`; server errors arrive as `ORPCError` rejections whose `message` already carries the request-locale issue summary for descriptor errors, with the structured `{ descriptor, issues }` in `data` (the client never inspects `data` for copy and installs no rejection interceptor). Every wire issue also carries its own request-locale `message` next to the descriptor (`messageKey`/`params`/`fallbackMessage`), so a consumer that only reads issue text never sees a key; legacy bare-array rejections fall back to their server message unchanged. TanStack Query wrappers live in `@/client/api/orpc-query`. Every public-site read flows through oRPC end to end: browser-side interactions use this `/rpc` client, and SSR data (public routes + root loader) goes through the read-only `content.*` group via the in-process caller (`@/server/http/ssr-caller`) — no route talks to domain services directly.
 
 ## Patterns
 

@@ -40,10 +40,15 @@ describe('infra/doctor-report', () => {
 
   it('treats self-update gate reasons as advisory, not failure', async () => {
     const report = await collectDoctorReport(
-      probes({ evaluateGate: () => ({ canSelfUpdate: false, reasons: ['Docker 部署请拉取新镜像升级'] }) }),
+      probes({
+        evaluateGate: () => ({
+          canSelfUpdate: false,
+          reasons: ['Docker deployments must pull a new image to upgrade.'],
+        }),
+      }),
     )
 
-    expect(report.selfUpdate.reasons).toEqual(['Docker 部署请拉取新镜像升级'])
+    expect(report.selfUpdate.reasons).toEqual(['Docker deployments must pull a new image to upgrade.'])
     expect(doctorOk(report)).toBe(true)
   })
 
@@ -61,14 +66,19 @@ describe('infra/doctor-report', () => {
   it('formats gate reasons and the SEA marker into the text report', async () => {
     const text = formatDoctorText(
       await collectDoctorReport(
-        probes({ evaluateGate: () => ({ canSelfUpdate: false, reasons: ['当前为开发版本，不支持自更新'] }) }),
+        probes({
+          evaluateGate: () => ({
+            canSelfUpdate: false,
+            reasons: ['Development builds do not support self-update.'],
+          }),
+        }),
       ),
     )
 
     expect(text).toContain('(SEA)')
     expect(text).toContain('natives:     ok')
     expect(text).toContain('self-update: unavailable')
-    expect(text).toContain('    - 当前为开发版本，不支持自更新')
+    expect(text).toContain('    - Development builds do not support self-update.')
   })
 
   it('parses probe stderr issue lines and falls back to the whole output', () => {

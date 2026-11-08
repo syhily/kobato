@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import {
@@ -7,7 +6,7 @@ import {
   newsletterUnsubscribeSchema,
 } from '@/server/domains/newsletter/schema'
 import { confirm, subscribe, unsubscribe } from '@/server/domains/newsletter/service'
-import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import { localizedOrpcError, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { tryNewsletterSubscribeByEmailRateLimit } from '@/server/infra/rate-limit'
 import { idFromString } from '@/shared/utils/id'
 
@@ -26,7 +25,7 @@ const subscribeProc = publicProc
     // distributed spray relays unlimited confirmation mail to one victim.
     const byEmail = await tryNewsletterSubscribeByEmailRateLimit(input.email)
     if (byEmail.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'newsletter.error.rateLimited')
     }
     await subscribe(context.db, input.email)
     return { ok: true as const }

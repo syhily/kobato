@@ -7,6 +7,8 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 import type { CardRenderContext } from '@/shared/lexical/cards/card-html'
 
 import { diffHtmlStructures, structureFromHtml } from '#/_helpers/dom-structure'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
+import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
 import {
   MUSIC_PLAYER_CARD_CLASSES,
   type MusicPlayerCardMeta,
@@ -64,7 +66,7 @@ beforeAll(() => {
 
 describe('ui/public/music-player/music-player', () => {
   it('renders name, artist, cover, and the paused initial times', () => {
-    const html = renderToStaticMarkup(<MusicPlayerCard {...base} />)
+    const html = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} />))
     expect(html).toContain('Test Song')
     expect(html).toContain('Test Artist')
     expect(html).toContain('https://example.com/cover.jpg')
@@ -73,34 +75,44 @@ describe('ui/public/music-player/music-player', () => {
   })
 
   it('renders the glyph placeholder when cover is missing', () => {
-    const html = renderToStaticMarkup(<MusicPlayerCard {...base} cover={undefined} />)
+    const html = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} cover={undefined} />))
     expect(html).toContain('🎵')
     expect(html).not.toContain('<img')
   })
 
   it('renders the lyrics toggle only when lrc is present', () => {
-    const withLrc = renderToStaticMarkup(<MusicPlayerCard {...base} />)
+    const withLrc = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} />))
     expect(withLrc).toContain('aria-label="歌词"')
-    const withoutLrc = renderToStaticMarkup(<MusicPlayerCard {...base} lrc={undefined} />)
+    const withoutLrc = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} lrc={undefined} />))
     expect(withoutLrc).not.toContain('aria-label="歌词"')
   })
 
   it('starts playing when the cover button is clicked', () => {
-    const { getByLabelText } = render(<MusicPlayerCard {...base} />)
+    const { getByLabelText } = render(wrapWithI18n(<MusicPlayerCard {...base} />))
     fireEvent.click(getByLabelText('播放'))
     expect(playMock).toHaveBeenCalled()
   })
 
   it('expands the lyrics panel on toggle and seeks on line click', () => {
-    const { getByLabelText, getByText, queryByText } = render(<MusicPlayerCard {...base} />)
+    const { getByLabelText, getByText, queryByText } = render(wrapWithI18n(<MusicPlayerCard {...base} />))
     expect(queryByText('First line')).toBeNull()
 
     fireEvent.click(getByLabelText('歌词'))
     expect(getByText('First line')).not.toBeNull()
   })
 
+  it('localizes its control labels (en-US)', () => {
+    const html = renderToStaticMarkup(
+      wrapWithI18n(<MusicPlayerCard {...base} />, { locale: 'en-US', messages: uiMessagesEnUS }),
+    )
+    expect(html).toContain('aria-label="Play"')
+    expect(html).toContain('aria-label="Lyrics"')
+    expect(html).toContain('aria-label="Mute"')
+    expect(html).not.toContain('aria-label="播放"')
+  })
+
   it('keeps the volume slider collapsed until hover/focus on fine pointers', () => {
-    const html = renderToStaticMarkup(<MusicPlayerCard {...base} />)
+    const html = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} />))
     expect(html).toContain('aria-label="音量"')
     expect(html).toContain('group-hover/volume:w-20')
   })
@@ -117,7 +129,7 @@ describe('ui/public/music-player/music-player', () => {
       dispatchEvent: () => false,
     }))
     try {
-      const { getByLabelText } = render(<MusicPlayerCard {...base} />)
+      const { getByLabelText } = render(wrapWithI18n(<MusicPlayerCard {...base} />))
       const container = getByLabelText('音量').parentElement
       expect(container?.className).toContain('w-20')
       expect(container?.className).not.toContain('w-0')
@@ -135,7 +147,7 @@ describe('ui/public/music-player/music-player', () => {
     })
     __resetProgrammaticVolumeSupportForTests()
     try {
-      const html = renderToStaticMarkup(<MusicPlayerCard {...base} />)
+      const html = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} />))
       expect(html).not.toContain('aria-label="音量"')
       expect(html).toContain('aria-label="静音"')
     } finally {
@@ -147,7 +159,7 @@ describe('ui/public/music-player/music-player', () => {
   })
 
   it('renders a paused initial skeleton structurally identical to the export fallback markup', () => {
-    const playerHtml = renderToStaticMarkup(<MusicPlayerCard {...base} />)
+    const playerHtml = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} />))
     const fallbackHtml = musicPlayerFallbackHtml(baseMeta, (value) => value)
     const diffs = diffHtmlStructures(playerHtml, fallbackHtml, {
       // Interactive chrome only the hydrated player renders — the inert
@@ -180,7 +192,7 @@ describe('ui/public/music-player/music-player', () => {
 
   it('renders the no-cover glyph fallback with the surviving skeleton still aligned', () => {
     const noCoverMeta: MusicPlayerCardMeta = { ...baseMeta, cover: '' }
-    const playerHtml = renderToStaticMarkup(<MusicPlayerCard {...base} cover={undefined} />)
+    const playerHtml = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} cover={undefined} />))
     const fallbackHtml = musicPlayerFallbackHtml(noCoverMeta, escapeText)
     // The glyph branch is not directly comparable under the chrome prune:
     // the hydrated glyph lives inside the pruned cover button while the

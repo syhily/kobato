@@ -6,6 +6,7 @@ import { lexicalNodeFingerprint } from '@/shared/lexical/equivalence'
 import { lexicalNodeTextContent } from '@/shared/lexical/walk'
 import { Badge } from '@/ui/components/badge'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Lexical counterpart of the PT-era `portable-text-diff`: diffs the top-level
 // children of two editor states. Lexical's serialized nodes carry no stable
@@ -169,6 +170,7 @@ export interface DiffPanelProps {
 }
 
 export function DiffPanel({ diff, side }: DiffPanelProps) {
+  const { t } = useI18n()
   return (
     <ol className="flex flex-col gap-2">
       {diff.map((entry, idx) => {
@@ -183,7 +185,7 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
               key={`${idx}-${entry.status}`}
               className="rounded border border-dashed border-muted bg-muted/30 px-2 py-2 text-xs text-muted-foreground"
             >
-              （无）
+              {t('admin.editor.diff.none')}
             </li>
           )
         }
@@ -262,8 +264,9 @@ function NodeInlineDiff({ leftNode, rightNode, side }: NodeInlineDiffProps) {
 }
 
 function NodePreview({ node }: { node: LexicalNodeJson | null }) {
+  const { t } = useI18n()
   if (node === null) {
-    return <span className="text-xs text-muted-foreground">（空）</span>
+    return <span className="text-xs text-muted-foreground">{t('admin.editor.diff.empty')}</span>
   }
   const text = lexicalNodeTextContent(node).trim()
   if (text !== '') {

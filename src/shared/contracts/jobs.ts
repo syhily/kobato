@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { isoDateTime } from '@/shared/contracts/primitives'
 import { storageMigrationStatusDto } from '@/shared/contracts/storage'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -17,116 +19,126 @@ export type JobRunTrigger = (typeof JOB_RUN_TRIGGERS)[number]
 export const JOB_RUN_STATUSES = ['running', 'success', 'failed', 'cancelled'] as const
 export type JobRunStatus = (typeof JOB_RUN_STATUSES)[number]
 
+// Stable machine codes persisted in `job_run.error` for system-generated
+// failures. The UI maps a known code to a catalog label; every other value is
+// a stored technical message (old Chinese/English rows included) and renders
+// verbatim, so this list is append-only.
+export const JOB_RUN_ERROR_PROCESS_RESTART = 'process-restart'
+export const JOB_RUN_ERROR_CODES = [JOB_RUN_ERROR_PROCESS_RESTART] as const
+export type JobRunErrorCode = (typeof JOB_RUN_ERROR_CODES)[number]
+
 export type TaskKind = 'scheduled' | 'queue' | 'on-demand'
 export type TaskGroup = 'content' | 'system' | 'maintenance'
 
 export interface TaskCatalogEntry {
   key: string
-  label: string
-  description: string
+  /** UI message id — the admin task center resolves it with the active locale. */
+  label: UiMessageId
+  /** UI message id. */
+  description: UiMessageId
   kind: TaskKind
   group: TaskGroup
-  /** Pure display copy (e.g. 「每日 04:00（站点时区）」「队列驱动」). */
-  scheduleHint: string
+  /** UI message id for the schedule line (e.g. `Daily at 04:00 (site time zone)`). */
+  scheduleHint: UiMessageId
 }
 
 /** Static metadata for every managed background task. */
 export const TASK_CATALOG: readonly TaskCatalogEntry[] = [
   {
     key: 'backup',
-    label: '定时备份',
-    description: '按备份设置打包数据库并写入存储后端',
+    label: 'admin.tasks.task.backup.label',
+    description: 'admin.tasks.task.backup.description',
     kind: 'scheduled',
     group: 'system',
-    scheduleHint: '按备份设置（站点时区）',
+    scheduleHint: 'admin.tasks.task.backup.schedule',
   },
   {
     key: 'audit-archive',
-    label: '审计日志归档',
-    description: '归档超期审计日志到 S3 并清理本地行',
+    label: 'admin.tasks.task.auditArchive.label',
+    description: 'admin.tasks.task.auditArchive.description',
     kind: 'scheduled',
     group: 'system',
-    scheduleHint: '每日 04:00（站点时区）',
+    scheduleHint: 'admin.tasks.task.auditArchive.schedule',
   },
   {
     key: 'storage-migration',
-    label: '存储迁移',
-    description: '在本地与 S3 存储之间迁移全部对象',
+    label: 'admin.tasks.task.storageMigration.label',
+    description: 'admin.tasks.task.storageMigration.description',
     kind: 'on-demand',
     group: 'system',
-    scheduleHint: '手动发起',
+    scheduleHint: 'admin.tasks.task.storageMigration.schedule',
   },
   {
     key: 'scheduled-publish',
-    label: '定时文章发布',
-    description: '到达发布时间的文章/页面自动上线',
+    label: 'admin.tasks.task.scheduledPublish.label',
+    description: 'admin.tasks.task.scheduledPublish.description',
     kind: 'scheduled',
     group: 'content',
-    scheduleHint: '最近一篇定时内容的发布时间',
+    scheduleHint: 'admin.tasks.task.scheduledPublish.schedule',
   },
   {
     key: 'webmention-outbox',
-    label: 'Webmention 发送队列',
-    description: '向提及的目标站点发送 Webmention',
+    label: 'admin.tasks.task.webmentionOutbox.label',
+    description: 'admin.tasks.task.webmentionOutbox.description',
     kind: 'queue',
     group: 'content',
-    scheduleHint: '队列驱动',
+    scheduleHint: 'admin.tasks.task.webmentionOutbox.schedule',
   },
   {
     key: 'webmention-inbox',
-    label: 'Webmention 接收验证队列',
-    description: '异步验证收到的 Webmention 来源页面',
+    label: 'admin.tasks.task.webmentionInbox.label',
+    description: 'admin.tasks.task.webmentionInbox.description',
     kind: 'queue',
     group: 'content',
-    scheduleHint: '队列驱动',
+    scheduleHint: 'admin.tasks.task.webmentionInbox.schedule',
   },
   {
     key: 'webmention-reverify',
-    label: 'Webmention 定期重验证',
-    description: '周期性复查已通过验证的 Webmention',
+    label: 'admin.tasks.task.webmentionReverify.label',
+    description: 'admin.tasks.task.webmentionReverify.description',
     kind: 'queue',
     group: 'content',
-    scheduleHint: '队列驱动（24 小时水位）',
+    scheduleHint: 'admin.tasks.task.webmentionReverify.schedule',
   },
   {
     key: 'token-purge',
-    label: '验证令牌清理',
-    description: '删除过期超过一天的验证令牌',
+    label: 'admin.tasks.task.tokenPurge.label',
+    description: 'admin.tasks.task.tokenPurge.description',
     kind: 'scheduled',
     group: 'maintenance',
-    scheduleHint: '每日 04:30（站点时区）',
+    scheduleHint: 'admin.tasks.task.tokenPurge.schedule',
   },
   {
     key: 'kv-sweep',
-    label: 'KV 过期清扫',
-    description: '清理过期的 KV 缓存、一次性令牌与会话',
+    label: 'admin.tasks.task.kvSweep.label',
+    description: 'admin.tasks.task.kvSweep.description',
     kind: 'scheduled',
     group: 'maintenance',
-    scheduleHint: '每小时',
+    scheduleHint: 'admin.tasks.task.kvSweep.schedule',
   },
   {
     key: 'db-maintenance',
-    label: '数据库维护',
-    description: 'SQLite 增量整理、优化与历史行修剪',
+    label: 'admin.tasks.task.dbMaintenance.label',
+    description: 'admin.tasks.task.dbMaintenance.description',
     kind: 'scheduled',
     group: 'maintenance',
-    scheduleHint: '每日 04:30（站点时区）',
+    scheduleHint: 'admin.tasks.task.dbMaintenance.schedule',
   },
   {
     key: 'analytics-retention',
-    label: '分析数据清理',
-    description: 'DuckDB 访问日志 180 天留存清理与检查点',
+    label: 'admin.tasks.task.analyticsRetention.label',
+    description: 'admin.tasks.task.analyticsRetention.description',
     kind: 'scheduled',
     group: 'maintenance',
-    scheduleHint: '每日 04:30（站点时区）',
+    scheduleHint: 'admin.tasks.task.analyticsRetention.schedule',
   },
   {
     key: 'geoip-update',
-    label: 'GeoIP 数据更新',
-    description: '按设置自动更新 GeoIP 数据库',
+    label: 'admin.tasks.task.geoipUpdate.label',
+    description: 'admin.tasks.task.geoipUpdate.description',
     kind: 'scheduled',
     group: 'maintenance',
-    scheduleHint: '每日 05:30（站点时区）',
+    scheduleHint: 'admin.tasks.task.geoipUpdate.schedule',
   },
 ]
 
@@ -164,11 +176,12 @@ export type QueueTaskStatsDto = z.infer<typeof queueTaskStatsDto>
 export const jobSummaryDto = z.object({
   // Same enum as `jobHistoryInput.taskKey` — a summary key is always a catalog key.
   taskKey: z.enum(TASK_KEYS),
-  label: z.string(),
-  description: z.string(),
+  // Message ids (not copy): the admin task center resolves them per locale.
+  label: z.custom<UiMessageId>(),
+  description: z.custom<UiMessageId>(),
   kind: z.enum(['scheduled', 'queue', 'on-demand']),
   group: z.enum(['content', 'system', 'maintenance']),
-  scheduleHint: z.string(),
+  scheduleHint: z.custom<UiMessageId>(),
   liveState: taskLiveStateDto.nullable(),
   lastRun: jobRunDto.nullable(),
   queue: queueTaskStatsDto.nullable(),

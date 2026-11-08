@@ -6,6 +6,7 @@ import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { signInSchema } from '@/server/domains/auth/schema'
 import { sendOtpAndStageSession } from '@/server/domains/auth/services/otp'
 import {
+  authFlowError,
   formFieldString,
   isMailLoginReady,
   type AuthFlowResult,
@@ -43,23 +44,17 @@ export async function handleCredentialLogin(
   const { db, clientAddress, session } = ctx
   const input = parseLoginInput(formData)
   if (!input) {
-    return { type: 'error', message: '请填写正确的邮箱和密码。' }
+    return authFlowError('auth.signin.error.credentialsRequired')
   }
 
   const rateLimit = await checkLoginRateLimits(clientAddress, input.email)
   if (rateLimit.exceeded) {
-    return {
-      type: 'error',
-      message: '登录失败次数过多，请稍后再试。',
-    }
+    return authFlowError('auth.signin.error.tooManyAttempts')
   }
 
   const passkeyMethod = await checkPasskeyMethod(db, input.email)
   if (passkeyMethod) {
-    return {
-      type: 'error',
-      message: '该账户已选择 Passkey 登陆，请使用 Passkey 方式登陆。',
-    }
+    return authFlowError('auth.signin.error.passkeyRequired')
   }
 
   const dbUser = await verifyUserPassword(db, input.email, input.password)
@@ -73,15 +68,14 @@ export async function handleCredentialLogin(
       details: { email: input.email, reason: 'invalid_credentials' },
     })
     if (isMailLoginReady()) {
+      // Stable machine code in the query string; the route maps it to a catalog
+      // message (`AUTH_ERROR_MESSAGE_IDS`), never to raw text.
       return {
         type: 'redirect',
         to: `/admin/signin?error=invalid_credentials&redirect_to=${encodeURIComponent(redirectTo)}`,
       }
     }
-    return {
-      type: 'error',
-      message: '请填写正确的邮箱和密码。',
-    }
+    return authFlowError('auth.signin.error.invalidCredentials')
   }
 
   if (isMailLoginReady()) {

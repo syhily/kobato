@@ -1,6 +1,7 @@
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
 
@@ -40,14 +41,20 @@ export async function loadCommentsAndItems(
 
 // Above-the-fold detail data (likes, sidebar, current user); comments are
 // excluded so the route streams them alongside the SSR HTML.
-export async function loadDetailPageCritical(db: Database, session: BlogSession, target: EntityTarget) {
+export async function loadDetailPageCritical(
+  db: Database,
+  session: BlogSession,
+  target: EntityTarget,
+  settings: BlogSettingsBundle | null,
+  commentsRevision: string,
+) {
   const user = userSession(session)
   const currentUser = toCommentFormUser(user)
 
   const [metricRow, likes, sidebar] = await Promise.all([
     ensureCommentPage(db, target),
     queryLikes(db, target),
-    loadSidebarData(db, session),
+    loadSidebarData(db, session, settings, commentsRevision),
   ])
 
   return {

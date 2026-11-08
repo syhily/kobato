@@ -12,6 +12,7 @@ import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
+  taxonomyNotFound,
 } from '@/server/domains/taxonomies/shared'
 import { through } from '@/server/infra/cache/registry'
 import {
@@ -83,7 +84,7 @@ export async function upsertAdminTag(
       (slug) => findTagBySlug(db, slug),
       input.name,
       slug,
-      '标签',
+      'tag',
     )
     const row = await insertTag(db, { name: input.name, slug, ogImage: input.ogImage ?? '' })
     invalidateContent(db, { entity: 'tag' })
@@ -98,7 +99,7 @@ export async function upsertAdminTag(
 
   const existing = await findTagById(db, input.id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '标签不存在')
+    throw taxonomyNotFound('tag')
   }
   await ensureUniqueOnUpdateTaxonomy(
     (name) => findTagByName(db, name),
@@ -108,11 +109,11 @@ export async function upsertAdminTag(
     existing.name,
     slug,
     existing.slug,
-    '标签',
+    'tag',
   )
   const updated = await updateTag(db, input.id, { name: input.name, slug, ogImage: input.ogImage })
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '标签不存在')
+    throw taxonomyNotFound('tag')
   }
   invalidateContent(db, { entity: 'tag' })
   const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: updated.name })
@@ -121,7 +122,7 @@ export async function upsertAdminTag(
 
 // Block-only deletion for every role — a stricter-than-RBAC fence so posts are never orphaned.
 export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerIdentity): Promise<boolean> {
-  const deleted = await deleteAdminTaxonomy(id, '标签', {
+  const deleted = await deleteAdminTaxonomy(id, 'tag', {
     findById: (id) => findTagById(db, id),
     deleteRow: (id) => deleteTagRow(db, id),
     listPostTitles: (row) => listPostTitlesByTaxonomy(db, row.name),

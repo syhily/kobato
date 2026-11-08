@@ -6,6 +6,8 @@ import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
 
+import type { ContentBootstrapI18n } from '@/shared/contracts/content'
+
 import { setCsrfToken } from '@/client/api/client'
 import { makeQueryClient } from '@/client/api/query-client'
 import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
@@ -14,12 +16,19 @@ import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { defaultTransition } from '@/client/lib/motion'
 import { createSsrCaller } from '@/server/http/ssr-caller'
+import { documentHeaders } from '@/server/infra/http/headers'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
+import { defaultFontStackFor } from '@/shared/config/font-stacks'
 import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/config/getters'
+import { catalogScopeForPathname } from '@/shared/i18n/catalog-scope'
+import { fallbackMessages } from '@/shared/i18n/fallback-messages'
+import { DEFAULT_LOCALE, type AppLocale } from '@/shared/i18n/locales'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
-import { bundleFromMatches, routeMeta } from '@/shared/seo/meta'
+import { bundleFromMatches, i18nFromMatches, routeMeta } from '@/shared/seo/meta'
 import { isRecord } from '@/shared/utils/type-guards'
 import { LazyMotionConfig } from '@/ui/components/lazy-motion'
+import { I18nProvider } from '@/ui/lib/I18nProvider'
+import { LocaleSyncProvider } from '@/ui/lib/LocaleSyncProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
@@ -61,8 +70,16 @@ function collectTier2Chunks(
 
 export const middleware: MiddlewareFunction<Response>[] = []
 
+// Root is the nearest error boundary for loader-thrown 304s; this passes the
+// thrown Response's representation headers through RR's header rebuild.
+export const headers = documentHeaders
+
 export function meta({ loaderData, matches }: Route.MetaArgs) {
-  return routeMeta(undefined, loaderData?.blogSettings ?? bundleFromMatches(matches))
+  return routeMeta(
+    undefined,
+    loaderData?.blogSettings ?? bundleFromMatches(matches),
+    loaderData?.i18n ?? i18nFromMatches(matches),
+  )
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -86,6 +103,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     fonts: boot.fonts,
     theme: boot.theme,
     csrfToken: boot.csrfToken,
+    i18n: boot.i18n,
     criticalLinks,
     tier2Chunks,
     cspNonce,
@@ -93,11 +111,30 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 }
 
-export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
-  if (formAction && (formAction.startsWith('/admin/signin') || formAction.startsWith('/admin/setup'))) {
+/**
+ * The root payload carries the document-scope message catalog (`public` vs
+ * `workspace`) and the current locale's settings revision, so the payload must
+ * be refreshed in exactly two situations:
+ *
+ *  · a form action — it can change the settings the payload is derived from
+ *    (locale, theme cookie, session identity), so the default policy applies;
+ *  · a navigation crossing the public ↔ workspace boundary — the next document
+ *    needs a different namespace (and, into the workspace, the Inkling label
+ *    table). Without this, a client-side navigation would keep the previous
+ *    scope's catalog and render missing admin messages.
+ *
+ * Same-scope navigations keep the payload (no messages/fonts/theme churn).
+ */
+export function shouldRevalidate({
+  currentUrl,
+  nextUrl,
+  formAction,
+  defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs) {
+  if (formAction) {
     return defaultShouldRevalidate
   }
-  return false
+  return catalogScopeForPathname(currentUrl.pathname) !== catalogScopeForPathname(nextUrl.pathname)
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -118,6 +155,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     tier2Chunks?: string[]
     csrfToken?: string
     cspNonce?: string
+    i18n?: ContentBootstrapI18n | null
   }>('root')
   const theme = rootData?.theme ?? null
   const assetHost = rootData?.blogSettings?.assets?.asset?.host
@@ -159,25 +197,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const criticalLinks = rootData?.criticalLinks ?? []
   const tier2Chunks = rootData?.tier2Chunks ?? []
 
-  const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
+  // One i18n payload drives both the document language and the provider.
+  // `fallbackMessages` is the ONLY synchronous message module the client may
+  // import directly; the full catalog arrives as loader data.
+  const i18n = rootData?.i18n ?? null
+  const locale: AppLocale = i18n?.locale ?? DEFAULT_LOCALE
+  const messages = i18n?.messages ?? fallbackMessages
 
   // When custom fonts are configured, override the CSS font tokens on <html>
-  // so the slot's stack prepends the existing fallback chain:
+  // so the slot's stack prepends the LOCALE's default fallback chain (the same
+  // map the CSS `:lang()` branches use — no hardcoded CJK tail for en-US):
   //   global → --font-body, post → --font-serif, code → --font-code
   const htmlStyle: Record<string, string> = {}
+  const defaultFonts = defaultFontStackFor(locale)
   if (globalFonts.length > 0) {
     const stack = globalFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-body'] =
-      `${stack}, 'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN', -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti, 'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`
+    htmlStyle['--font-body'] = `${stack}, ${defaultFonts.body}`
   }
   if (activePostFonts.length > 0) {
     const stack = activePostFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-serif'] =
-      `${stack}, 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif`
+    htmlStyle['--font-serif'] = `${stack}, ${defaultFonts.serif}`
   }
   if (activeCodeFonts.length > 0) {
     const stack = activeCodeFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-code'] = `${stack}, 'Iosevka', monospace`
+    htmlStyle['--font-code'] = `${stack}, ${defaultFonts.code}`
   }
 
   return (
@@ -203,11 +246,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ))}
       </head>
       <body>
-        {children}
-        <ChunkReloadOverlay />
-        <ScrollRestoration nonce={rootData?.cspNonce} />
-        <Scripts nonce={rootData?.cspNonce} />
-        <RouteWarmupScript chunks={tier2Chunks} nonce={rootData?.cspNonce} />
+        <I18nProvider locale={locale} messages={messages}>
+          {children}
+          <ChunkReloadOverlay />
+          <ScrollRestoration nonce={rootData?.cspNonce} />
+          <Scripts nonce={rootData?.cspNonce} />
+          <RouteWarmupScript chunks={tier2Chunks} nonce={rootData?.cspNonce} />
+        </I18nProvider>
       </body>
     </html>
   )
@@ -231,14 +276,20 @@ export default function App({ loaderData }: Route.ComponentProps) {
   useIosNoZoomOnFocus()
   useChunkErrorRecovery()
   const [queryClient] = useState(() => makeQueryClient())
+  // `i18n` is required by the loader contract; the fallback keeps a hand-built
+  // loaderData (tests, error-recovery remounts) from crashing the provider.
+  const i18n = loaderData.i18n
+  const locale = i18n?.locale ?? DEFAULT_LOCALE
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
         <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
           <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
-            <NavigationSplash />
-            <Outlet />
+            <LocaleSyncProvider locale={locale} revision={i18n?.revision}>
+              <NavigationSplash />
+              <Outlet />
+            </LocaleSyncProvider>
           </LazyMotionConfig>
         </BlogSettingsProvider>
       </ThemeProvider>
@@ -257,7 +308,10 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
     <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
         <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
-          {blogSettings ? (
+          {/* Full chrome only with a COMPLETE i18n payload: a root-loader failure
+              renders the minimal ErrorView over the fallback messages, never a
+              layout whose chrome still needs catalog copy. */}
+          {loaderData?.i18n ? (
             <Suspense fallback={body}>
               <PublicErrorLayout currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
                 {body}

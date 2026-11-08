@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  formatBytes,
-  formatDurationMs,
-  formatLocalDate,
-  formatShowDate,
-  localDateParts,
-} from '@/shared/utils/formatter'
+import { formatLocalDate, formatShowDate, localDateParts } from '@/shared/utils/formatter'
 
 const SETTINGS = {
   settings: { locale: 'zh-CN', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd HH:mm' },
@@ -16,54 +10,6 @@ const NEW_YORK = {
   settings: { locale: 'en-US', timeZone: 'America/New_York', timeFormat: 'yyyy-LL-dd HH:mm' },
 }
 
-describe('shared/utils/formatter — formatBytes', () => {
-  it('renders bytes below 1 KiB as B', () => {
-    expect(formatBytes(0)).toBe('0 B')
-    expect(formatBytes(512)).toBe('512 B')
-    expect(formatBytes(1023)).toBe('1023 B')
-  })
-
-  it('renders bytes below 1 MiB as KB with one decimal', () => {
-    expect(formatBytes(1024)).toBe('1.0 KB')
-    expect(formatBytes(1536)).toBe('1.5 KB')
-    expect(formatBytes(1024 * 1024 - 1)).toBe('1024.0 KB')
-  })
-
-  it('renders bytes below 1 GiB as MB with one decimal', () => {
-    expect(formatBytes(1024 * 1024)).toBe('1.0 MB')
-    expect(formatBytes(1024 * 1024 * 1.5)).toBe('1.5 MB')
-  })
-
-  it('renders bytes of 1 GiB and above as GB', () => {
-    expect(formatBytes(1024 * 1024 * 1024)).toBe('1.0 GB')
-    expect(formatBytes(1024 * 1024 * 1024 * 2.5)).toBe('2.5 GB')
-  })
-})
-
-describe('shared/utils/formatter — formatDurationMs', () => {
-  it('renders sub-second durations as 毫秒', () => {
-    expect(formatDurationMs(0)).toBe('0 毫秒')
-    expect(formatDurationMs(300)).toBe('300 毫秒')
-    expect(formatDurationMs(999)).toBe('999 毫秒')
-  })
-
-  it('renders sub-minute durations as 秒 with one decimal', () => {
-    expect(formatDurationMs(1000)).toBe('1.0 秒')
-    expect(formatDurationMs(1200)).toBe('1.2 秒')
-    expect(formatDurationMs(59_999)).toBe('60.0 秒')
-  })
-
-  it('renders minute-scale durations as 分 秒', () => {
-    expect(formatDurationMs(60_000)).toBe('1 分 0 秒')
-    expect(formatDurationMs(125_000)).toBe('2 分 5 秒')
-  })
-
-  it('floors the seconds digit instead of rounding up to 60 秒', () => {
-    expect(formatDurationMs(119_500)).toBe('1 分 59 秒')
-    expect(formatDurationMs(119_999)).toBe('1 分 59 秒')
-  })
-})
-
 describe('shared/utils/formatter — formatShowDate far-past branch', () => {
   it('falls through to formatLocalDate when the delta is >= 210 days', () => {
     const past = new Date('2020-01-01T00:00:00Z')
@@ -71,6 +17,22 @@ describe('shared/utils/formatter — formatShowDate far-past branch', () => {
     const out = formatShowDate(past, SETTINGS, now)
     // Falls back to the configured timeFormat template.
     expect(out).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
+  })
+
+  it('localizes the relative buckets per locale (en-US / zh-HK / zh-TW)', () => {
+    const now = new Date('2024-06-15T12:00:00+08:00')
+    const same = new Date('2024-06-15T01:00:00+08:00')
+    const yesterday = new Date('2024-06-14T01:00:00+08:00')
+    const en = { settings: { locale: 'en-US', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd' } }
+    const hk = { settings: { locale: 'zh-HK', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd' } }
+    const tw = { settings: { locale: 'zh-TW', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd' } }
+
+    expect(formatShowDate(same, en, now)).toBe('today')
+    expect(formatShowDate(yesterday, en, now)).toBe('yesterday')
+    expect(formatShowDate(same, hk, now)).toBe('今日')
+    expect(formatShowDate(yesterday, hk, now)).toBe('昨日')
+    expect(formatShowDate(same, tw, now)).toBe('今天')
+    expect(formatShowDate(yesterday, tw, now)).toBe('昨天')
   })
 
   it('uses "今天" when the date is the same day as now', () => {
@@ -105,16 +67,69 @@ describe('shared/utils/formatter — formatLocalDate token substitution', () => 
     expect(out).toBe('2024年03月05日 14时07分08秒')
   })
 
-  it('renders letters that are date-fns tokens as verbatim literals', () => {
-    // The format string is user-supplied: only the six documented tokens are
-    // substituted — `a`, `E`, `p` (and any other letter) must render as-is.
+  it('substitutes the dayPeriod token but leaves other date-fns letters verbatim', () => {
+    // The format string is user-supplied: only the nine documented tokens are
+    // substituted — `E`, `p` (and any other letter) must render as-is.
     const out = formatLocalDate('2024-03-05T06:07:08Z', 'yyyy年LL月dd日 a E p', SETTINGS)
-    expect(out).toBe('2024年03月05日 a E p')
+    expect(out).toBe('2024年03月05日 下午 E p')
+  })
+
+  it('substitutes the 12-hour token and a localized dayPeriod', () => {
+    // 14:07 Asia/Shanghai → 02:07 PM.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'hh:mm a', SETTINGS)).toBe('02:07 下午')
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'HH:mm a', SETTINGS)).toBe('14:07 下午')
+    expect(formatLocalDate('2024-03-05T18:07:08Z', 'hh:mm a', SETTINGS)).toBe('02:07 上午')
+    // March 5 in New York is EST (UTC-5) → 01:07 AM.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'hh:mm a', NEW_YORK)).toBe('01:07 AM')
+  })
+
+  it('only treats a STANDALONE `a` as the dayPeriod token', () => {
+    // `day` is a literal word in the custom pattern, not a token + letters.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'day=dd month=LL year=yyyy', SETTINGS)).toBe(
+      'day=05 month=03 year=2024',
+    )
   })
 
   it('substitutes tokens adjacent to date-fns-token letters without swallowing them', () => {
     const out = formatLocalDate('2024-03-05T06:07:08Z', 'day=dd month=LL year=yyyy', SETTINGS)
     expect(out).toBe('day=05 month=03 year=2024')
+  })
+
+  it('substitutes all nine documented tokens when they stand alone', () => {
+    const out = formatLocalDate('2024-03-05T06:07:08Z', 'yyyy|LL|MM|dd|HH|hh|mm|ss|a', SETTINGS)
+    // Asia/Shanghai is UTC+8 → 14:07:08, so `HH` is 14 and `hh` is 02 (下午).
+    expect(out).toBe('2024|03|03|05|14|02|07|08|下午')
+  })
+
+  it('leaves literal words alone (a run must START with a token to substitute)', () => {
+    // `dd` inside `add` is a word, not the day token; the trailing, delimited
+    // `dd` still substitutes.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'add dd', SETTINGS)).toBe('add 05')
+
+    // Each run below begins with a character that cannot start a token, so the
+    // WHOLE run stays literal even when a token sequence appears later
+    // (`myyyyword` contains `yyyy`).
+    const words = 'summary myyyyword ALLOW class day date month year'
+    expect(formatLocalDate('2024-03-05T06:07:08Z', words, SETTINGS)).toBe(words)
+
+    // A standalone token next to those words still substitutes.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', `${words} dd`, SETTINGS)).toBe(`${words} 05`)
+  })
+
+  it('substitutes runs of adjacent tokens (no separators needed)', () => {
+    const iso = '2024-03-05T06:07:08Z'
+    expect(formatLocalDate(iso, 'yyyyMMdd', SETTINGS)).toBe('20240305')
+    expect(formatLocalDate(iso, 'yyyyLLdd', SETTINGS)).toBe('20240305')
+    expect(formatLocalDate(iso, 'HHmmss', SETTINGS)).toBe('140708')
+    expect(formatLocalDate(iso, 'HHmm', SETTINGS)).toBe('1407')
+    expect(formatLocalDate(iso, 'ssLL', SETTINGS)).toBe('0803')
+  })
+
+  it('keeps substituting after a literal letter inside a compact run', () => {
+    // The `T` is emitted verbatim; the HH that follows is still a token. This
+    // is the ISO-ish admin pattern that must keep working.
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'yyyy-MM-ddTHH:mm', SETTINGS)).toBe('2024-03-05T14:07')
+    expect(formatLocalDate('2024-03-05T06:07:08Z', 'ddTHH', SETTINGS)).toBe('05T14')
   })
 
   it('throws RangeError on invalid date input (garbage-in parity with Intl)', () => {

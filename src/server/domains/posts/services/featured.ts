@@ -1,8 +1,8 @@
 import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
-import { randomInt } from 'node:crypto'
 
 import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
+import type { SidebarSettings } from '@/shared/config/types'
 import type { ClientPost, SidebarPostLink } from '@/shared/types/catalog'
 
 import { livePostWhere } from '@/server/domains/posts/live-gate'
@@ -12,6 +12,7 @@ import { findCategoryNamesByIds } from '@/server/infra/db/operations/category'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { getSidebarWidgetCount } from '@/shared/config/utils'
 import { toSidebarPostLink } from '@/shared/types/catalog'
 import { shuffle } from '@/shared/utils/tools'
 
@@ -109,36 +110,49 @@ export async function selectFeaturePosts(db: Database, seed: string): Promise<Cl
   return result
 }
 
-export async function selectSidebarPosts(db: Database, count: number): Promise<SidebarPostLink[]> {
+/**
+ * The pinned inputs every sidebar selector samples from.
+ *
+ * `seed` is built ONCE per request/representation by the orchestrator
+ * (`http/loaders/sidebar-select::sidebarSelection`): entity/URL scope + the
+ * site calendar date in the request's time zone + the settings revision. The
+ * selectors themselves never read the settings snapshot.
+ */
+export interface SidebarSelection {
+  /** Request-pinned `blog.sidebar` section — never the global snapshot. */
+  settings: SidebarSettings
+  seed: string
+}
+
+export async function selectSidebarPosts(db: Database, selection: SidebarSelection): Promise<SidebarPostLink[]> {
+  const count = getSidebarWidgetCount(selection.settings, 'recentPosts')
   if (count <= 0) {
     return []
   }
   const where = and(livePostWhere(), eq(postMetaTable.visible, true))
-  // Read candidate ids once, pick distinct random positions in JS, fetch via
-  // one IN query; the pick uses a fresh CSPRNG draw each call.
+  // Read candidate ids once (stable id order), pick distinct positions with the
+  // SEEDED shuffle, then fetch via one IN query. The seed rotates per site
+  // calendar day / scope / settings revision, so repeated renders of the same
+  // representation pick the same posts — the detail ETag stays stable — while
+  // the widget keeps its "random" flavor.
   const idRows = await db
     .select({ id: postMetaTable.id })
     .from(postMetaTable)
     .where(where)
-    // A stable key so position addressing is deterministic per pick.
     .orderBy(asc(postMetaTable.id))
   if (idRows.length === 0) {
     return []
   }
-  const pick = Math.min(count, idRows.length)
-  const positions = new Set<number>()
-  while (positions.size < pick) {
-    positions.add(randomInt(idRows.length))
-  }
-  const metas = await db
-    .select()
-    .from(postMetaTable)
-    .where(
-      inArray(
-        postMetaTable.id,
-        [...positions].map((position) => idRows[position]!.id),
-      ),
-    )
-  const posts = await hydratePostList(db, metas, { images: false })
+  const candidateIds = idRows.map((row) => row.id)
+  const picked = shuffle(candidateIds, `${selection.seed}|posts|${candidateIds.length}`).slice(0, count)
+  const metas = await db.select().from(postMetaTable).where(inArray(postMetaTable.id, picked))
+  // Preserve the seeded pick order — the payload (and its ETag) must not depend
+  // on the DB's incidental row order.
+  const metaById = new Map(metas.map((meta) => [meta.id, meta]))
+  const ordered = picked.flatMap((id) => {
+    const meta = metaById.get(id)
+    return meta === undefined ? [] : [meta]
+  })
+  const posts = await hydratePostList(db, ordered, { images: false })
   return posts.map(toSidebarPostLink)
 }

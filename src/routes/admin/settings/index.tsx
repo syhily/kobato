@@ -7,7 +7,7 @@ import type { SecretMasks } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 import { guardOnlyLoader } from '@/server/http/request-context'
-import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
+import { NAV_GROUP_LABEL_KEYS, SECTION_DISPLAY } from '@/shared/config/display'
 import {
   projectAssetsForAdmin,
   projectBackupForAdmin,
@@ -42,9 +42,10 @@ import { SidebarForm } from '@/ui/admin/settings/SidebarForm'
 import { SocialsEditor } from '@/ui/admin/settings/SocialsEditor'
 import { ThresholdForm } from '@/ui/admin/settings/ThresholdForm'
 import { WebmentionsForm } from '@/ui/admin/settings/WebmentionsForm'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 
-export const meta = titleMeta('系统设置')
+export const meta = titleMeta('meta.title.admin.settings')
 
 export const loader = guardOnlyLoader('admin')
 
@@ -234,6 +235,7 @@ function SettingsGroup({ title, children }: SettingsGroupProps) {
 
 function SettingsPageInner() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const { bundle, timeZones, masks } = useOutletContext<SettingsOutletContext>()
   const settings = bundle
   const tz = timeZones
@@ -292,10 +294,10 @@ function SettingsPageInner() {
 
   const navItems = SECTION_CONFIGS.map((s) => ({
     id: s.id,
-    label: SECTION_DISPLAY[s.id].label,
+    label: t(SECTION_DISPLAY[s.id].labelId),
     icon: SECTION_DISPLAY[s.id].icon,
     group: SECTION_DISPLAY[s.id].group,
-    keywords: [SECTION_DISPLAY[s.id].label, SECTION_DISPLAY[s.id].description, s.id],
+    keywords: [t(SECTION_DISPLAY[s.id].labelId), t(SECTION_DISPLAY[s.id].descriptionId), s.id],
   }))
 
   const isSectionVisible = useCallback(
@@ -308,12 +310,12 @@ function SettingsPageInner() {
         return true
       }
       return checkVisible([
-        SECTION_DISPLAY[s.id as keyof typeof SECTION_DISPLAY].label,
-        SECTION_DISPLAY[s.id as keyof typeof SECTION_DISPLAY].description,
+        t(SECTION_DISPLAY[s.id as keyof typeof SECTION_DISPLAY].labelId),
+        t(SECTION_DISPLAY[s.id as keyof typeof SECTION_DISPLAY].descriptionId),
         s.id,
       ])
     },
-    [isMobile, filter, checkVisible],
+    [isMobile, filter, checkVisible, t],
   )
 
   return (
@@ -339,13 +341,13 @@ function SettingsPageInner() {
         <div className="px-8 pt-16 pb-editor-pad-bottom lg:max-w-[760px] lg:px-14 lg:pt-0">
           <div className="flex flex-col gap-16">
             {(['site', 'content', 'service', 'system'] as const).map((group) => (
-              <SettingsGroup key={group} title={NAV_GROUP_LABEL[group]}>
+              <SettingsGroup key={group} title={t(NAV_GROUP_LABEL_KEYS[group])}>
                 {SECTION_CONFIGS.filter((s) => SECTION_DISPLAY[s.id].group === group).map((s) =>
                   isSectionVisible(s.id) ? (
                     <SectionWrapper
                       key={s.id}
                       id={s.id}
-                      title={SECTION_DISPLAY[s.id].label}
+                      title={t(SECTION_DISPLAY[s.id].labelId)}
                       icon={SECTION_DISPLAY[s.id].icon}
                     >
                       {s.render(settings, tz, masks)}

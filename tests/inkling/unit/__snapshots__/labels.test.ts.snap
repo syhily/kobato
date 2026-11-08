@@ -61,6 +61,7 @@ exports[`labels > pins the full key list 1`] = `
   "header.subheading.placeholder",
   "header.subheading.placeholder.split",
   "image.altText.placeholder",
+  "image.altToggle",
   "library.empty",
   "library.error",
   "library.search.placeholder",

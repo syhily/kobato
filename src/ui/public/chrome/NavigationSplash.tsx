@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigation } from 'react-router'
 
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 // Global navigation splash — overlays the page on slow route transitions.
@@ -16,6 +17,7 @@ const VEIL_DURATION_MS = 10_000
 const VEIL_FINISH_MS = 250
 
 export function NavigationSplash() {
+  const { t } = useI18n()
   const navigation = useNavigation()
   const isPending = navigation.state !== 'idle'
 
@@ -106,7 +108,7 @@ export function NavigationSplash() {
   return (
     <output
       aria-live="polite"
-      aria-label="页面加载中"
+      aria-label={t('public.chrome.pageLoading')}
       className={cn(
         'fixed inset-0 flex items-center justify-center',
         'bg-surface-body',

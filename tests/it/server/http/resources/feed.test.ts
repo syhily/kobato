@@ -6,7 +6,11 @@ import type { Env } from '@/server/http/context'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeRequestContext } from '#/_helpers/request-context'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { representationRevisionsFor } from '@/shared/config/representation-scopes'
+import { APP_VERSION } from '@/shared/config/version'
 
 vi.mock('@/server/render/feed/generator', () => ({
   generateFeeds: vi.fn(),
@@ -25,27 +29,32 @@ const db = getTestDb()
 const BUILT = { rss: '<rss version="2.0">built</rss>', atom: '<feed>built</feed>' }
 const REBUILT = { rss: '<rss version="2.0">rebuilt</rss>', atom: '<feed>rebuilt</feed>' }
 
-function requestFeed(url: string) {
+function requestFeed(url: string, headers?: Record<string, string>) {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('requestContext', { db, clientAddress: '127.0.0.1' } as never)
+    c.set('requestContext', makeRequestContext({ request: new Request(url), db }))
     await next()
   })
   app.route('/', feedRouter)
   app.onError(onErrorHandler)
   // Sentinel SSR-style route that must never count against the feed bucket.
   app.get('/sitemap.xml', (c) => c.text('sitemap'))
-  return app.request(url)
+  return app.request(url, { headers })
 }
 
-function feedKey(scope: string): string {
-  return `${resolveCacheSlot('feed').prefix}${scope}`
+function feedKey(
+  scope: string,
+  locale = 'zh-CN',
+  settingsRevision = representationRevisionsFor(getBlogSettingsBundleSync()).feed,
+): string {
+  return `${resolveCacheSlot('feed').prefix}${locale}:${APP_VERSION}:${settingsRevision}:${scope}`
 }
 
 async function cachedFeedScopes(): Promise<string[]> {
   const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
   const prefix = resolveCacheSlot('feed').prefix
-  return rows.map((row) => row.key.slice(prefix.length)).sort()
+  const localeVersion = `zh-CN:${APP_VERSION}:${representationRevisionsFor(getBlogSettingsBundleSync()).feed}:`
+  return rows.map((row) => row.key.slice(prefix.length + localeVersion.length)).sort()
 }
 
 describe('feed resource', () => {
@@ -60,7 +69,9 @@ describe('feed resource', () => {
     const res = await requestFeed('http://localhost/feed')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('application/xml; charset=utf-8')
-    expect(res.headers.get('Cache-Control')).toBe('public, max-age=1800')
+    expect(res.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(res.headers.get('Content-Language')).toBe('zh-CN')
+    expect(res.headers.get('ETag')).toMatch(/^"[0-9a-f]{32}"$/)
     await expect(res.text()).resolves.toBe(BUILT.rss)
   })
 
@@ -94,7 +105,9 @@ describe('feed resource', () => {
 
     const res = await requestFeed('http://localhost/feed')
     expect(res.status).toBe(429)
-    await expect(res.json()).resolves.toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
+    await expect(res.json()).resolves.toMatchObject({
+      error: { code: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试。' },
+    })
   })
 
   it('never counts public non-feed requests against the feed bucket', async () => {
@@ -128,7 +141,9 @@ describe('feed resource', () => {
     expect(res.status).toBe(200)
     expect(generateFeeds).toHaveBeenCalledTimes(1)
     expect(res.headers.get('Content-Type')).toBe('application/xml; charset=utf-8')
-    expect(res.headers.get('Cache-Control')).toBe('public, max-age=1800')
+    expect(res.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(res.headers.get('Content-Language')).toBe('zh-CN')
+    expect(res.headers.get('ETag')).toMatch(/^"[0-9a-f]{32}"$/)
     await expect(res.text()).resolves.toBe(BUILT.rss)
   })
 
@@ -165,5 +180,128 @@ describe('feed resource', () => {
   it('namespaces a category slugged `all` away from the site-wide feed', async () => {
     await requestFeed('http://localhost/cats/all/feed')
     expect(await cachedFeedScopes()).toEqual(['cat:all'])
+  })
+})
+
+describe('feed resource — conditional requests and locale variants', () => {
+  beforeEach(async () => {
+    await clearAllTables(db)
+    vi.clearAllMocks()
+    __resetRateLimitsForTests()
+    ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(BUILT)
+  })
+
+  it('answers 304 on a matching If-None-Match without regenerating the feed', async () => {
+    const first = await requestFeed('http://localhost/feed')
+    const etag = first.headers.get('ETag')!
+    await first.text()
+
+    const cached = await requestFeed('http://localhost/feed', { 'if-none-match': etag })
+
+    expect(cached.status).toBe(304)
+    expect(cached.headers.get('ETag')).toBe(etag)
+    expect(cached.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(cached.headers.get('Content-Language')).toBe('zh-CN')
+    expect(await cached.text()).toBe('')
+    expect(generateFeeds).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the ETag stable across a cache hit (the cached bytes are hashed, not the inputs)', async () => {
+    const first = await requestFeed('http://localhost/feed')
+    const firstTag = first.headers.get('ETag')
+    await first.text()
+
+    // A fresh date inside `generateFeeds` would change a body-derived tag only
+    // when the served body changes; a cache hit serves the same bytes.
+    ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(REBUILT)
+    const second = await requestFeed('http://localhost/feed')
+
+    expect(second.status).toBe(200)
+    expect(second.headers.get('ETag')).toBe(firstTag)
+    expect(generateFeeds).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores a stale If-None-Match and returns 200', async () => {
+    const res = await requestFeed('http://localhost/feed', { 'if-none-match': '"stale"' })
+    expect(res.status).toBe(200)
+    await res.text()
+  })
+
+  it('keys and heads the en-US variant separately from zh-CN', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+    })
+    try {
+      const en = await requestFeed('http://localhost/feed')
+      expect(en.headers.get('Content-Language')).toBe('en-US')
+      await en.text()
+
+      const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
+      const keys = rows.map((row) => row.key)
+      expect(keys).toContain(feedKey('all', 'en-US'))
+      expect(keys).not.toContain(feedKey('all', 'zh-CN'))
+    } finally {
+      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    }
+  })
+
+  it('keys by the pinned settings revision and renders from the same captured bundle', async () => {
+    await requestFeed('http://localhost/feed')
+
+    const [, options] = (generateFeeds as ReturnType<typeof vi.fn>).mock.calls[0] as [unknown, { settings: unknown }]
+    expect(options.settings).toBe(getBlogSettingsBundleSync())
+
+    const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
+    expect(rows.map((row) => row.key)).toEqual([feedKey('all')])
+  })
+
+  it('keeps the warm entry across an UNRELATED (security) settings save', async () => {
+    const first = await requestFeed('http://localhost/feed')
+    await first.text()
+    expect(generateFeeds).toHaveBeenCalledTimes(1)
+
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      security: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.security!,
+        csrf: { enabled: false, exemptPaths: [] },
+      },
+    })
+
+    const second = await requestFeed('http://localhost/feed')
+    expect(second.status).toBe(200)
+    await expect(second.text()).resolves.toBe(BUILT.rss)
+    // The feed scope does not list security → same key, cache hit.
+    expect(generateFeeds).toHaveBeenCalledTimes(1)
+  })
+
+  it('serves a new generation after a settings save instead of the previous feed', async () => {
+    const first = await requestFeed('http://localhost/feed')
+    expect(first.status).toBe(200)
+    await first.text()
+    expect(generateFeeds).toHaveBeenCalledTimes(1)
+
+    // Any section save advances the revision; the old key is unreachable.
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Renamed Blog' },
+    })
+    ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(REBUILT)
+
+    const second = await requestFeed('http://localhost/feed')
+    expect(generateFeeds).toHaveBeenCalledTimes(2)
+    await expect(second.text()).resolves.toBe(REBUILT.rss)
+
+    const [, options] = (generateFeeds as ReturnType<typeof vi.fn>).mock.calls[1] as [
+      unknown,
+      { settings: { siteIdentity?: { title?: string } } | null },
+    ]
+    expect(options.settings?.siteIdentity?.title).toBe('Renamed Blog')
+
+    // Both generations are on disk; only the new one is addressable.
+    const keys = (await db.select({ key: kvCache.key }).from(kvCache)).map((row) => row.key)
+    expect(keys).toContain(feedKey('all'))
+    expect(keys).toHaveLength(2)
   })
 })

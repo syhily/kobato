@@ -5,6 +5,7 @@ import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
+import { messageDescriptor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import {
   assetsLoaderShapeSchema,
@@ -37,7 +38,7 @@ function requireBundleSection<K extends keyof BlogSettingsBundle>(
 ): NonNullable<BlogSettingsBundle[K]> {
   const value = bundle[key]
   if (value === null) {
-    throw new DomainError('INTERNAL', `admin 投影缺少设置区段(${key})`)
+    throw new DomainError('INTERNAL', `admin projection is missing the settings section (${key})`)
   }
   return value
 }
@@ -71,9 +72,13 @@ export function projectSectionForAdmin(
   const schema = SECTION_OUTPUT_SCHEMAS[section] ?? SECTION_REGISTRY[section].schema
   const result = schema.safeParse(projected)
   if (!result.success) {
+    // Technical invariant failure: keep the message English and resolve a
+    // typed issue message to its English fallback (never a raw catalog id).
+    const first = result.error.issues[0]
+    const issueText = first === undefined ? '' : messageDescriptor(first.message).fallbackMessage
     throw new DomainError(
       'INTERNAL',
-      `admin 投影形状校验失败(${section}):${result.error.issues[0]?.path.join('.') ?? '<root>'} ${result.error.issues[0]?.message ?? ''}`,
+      `admin projection shape validation failed (${section}): ${first?.path.join('.') ?? '<root>'} ${issueText}`,
     )
   }
   return result.data

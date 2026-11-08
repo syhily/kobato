@@ -4,7 +4,7 @@ import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 
 export const loader = guardOnlyLoader('admin')
 
-export const meta = titleMeta('分类管理')
+export const meta = titleMeta('meta.title.admin.categories')
 
 export default function WpAdminCategoriesRoute() {
   return <CategoriesView />

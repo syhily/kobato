@@ -1,7 +1,11 @@
+import { Hono } from 'hono'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Env } from '@/server/http/context'
+
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { makeRequestContext } from '#/_helpers/request-context'
 
 // Point the route + `resolveLocalPath` at a fresh temp directory. The mock
 // factory runs before any import of the route, so STORAGE_DIR is set first.
@@ -17,6 +21,16 @@ vi.mock('@/server/infra/paths', async (importOriginal) => {
 })
 
 const { localStorageRouter } = await import('@/server/http/resources/local-storage')
+
+// The route reads the perimeter-derived `requestContext` (locale for the 503
+// branch); a direct `router.request` has no middleware chain, so mirror the
+// production perimeter with the canonical stub.
+const app = new Hono<Env>()
+app.use('*', async (c, next) => {
+  c.set('requestContext', makeRequestContext({ request: c.req.raw }))
+  await next()
+})
+app.route('/', localStorageRouter)
 
 // The default test bundle enables a complete S3 config — override the toggle
 // per suite: OFF streams local bytes, ON exercises the 302 branch.
@@ -62,53 +76,53 @@ describe('local-storage public route — namespace allowlist (local driver)', ()
   })
 
   it('serves allowlisted public namespaces', async () => {
-    const img = await localStorageRouter.request('/storage/images/a.jpg')
+    const img = await app.request('/storage/images/a.jpg')
     expect(img.status).toBe(200)
     expect(img.headers.get('Content-Type')).toBe('image/jpeg')
 
-    const audio = await localStorageRouter.request('/storage/musics/b.mp3')
+    const audio = await app.request('/storage/musics/b.mp3')
     expect(audio.status).toBe(200)
     expect(audio.headers.get('Content-Type')).toBe('audio/mpeg')
 
-    const svg = await localStorageRouter.request('/storage/branding/c.svg')
+    const svg = await app.request('/storage/branding/c.svg')
     expect(svg.status).toBe(200)
     expect(svg.headers.get('Content-Type')).toBe('image/svg+xml')
 
     // Formerly served as octet-stream — the shared key-policy map closed the gap.
-    const flac = await localStorageRouter.request('/storage/musics/t.flac')
+    const flac = await app.request('/storage/musics/t.flac')
     expect(flac.status).toBe(200)
     expect(flac.headers.get('Content-Type')).toBe('audio/flac')
   })
 
   it('refuses to serve a database backup (P0: no unauthenticated dump leak)', async () => {
-    const res = await localStorageRouter.request('/storage/backup/backup-2026-01-01T00-00-00.sql.gz')
+    const res = await app.request('/storage/backup/backup-2026-01-01T00-00-00.sql.gz')
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('')
   })
 
   it('refuses to serve any non-allowlisted / private namespace', async () => {
-    const priv = await localStorageRouter.request('/storage/private/secret.txt')
+    const priv = await app.request('/storage/private/secret.txt')
     expect(priv.status).toBe(404)
 
-    const unknown = await localStorageRouter.request('/storage/unknown/x.txt')
+    const unknown = await app.request('/storage/unknown/x.txt')
     expect(unknown.status).toBe(404)
   })
 
   it('refuses dotfiles and hidden segments even under an allowlisted namespace', async () => {
-    const dotfile = await localStorageRouter.request('/storage/.env')
+    const dotfile = await app.request('/storage/.env')
     expect(dotfile.status).toBe(404)
 
-    const hidden = await localStorageRouter.request('/storage/images/.hidden')
+    const hidden = await app.request('/storage/images/.hidden')
     expect(hidden.status).toBe(404)
   })
 
   it('returns 404 for an empty key', async () => {
-    const res = await localStorageRouter.request('/storage/')
+    const res = await app.request('/storage/')
     expect(res.status).toBe(404)
   })
 
   it('returns 200 with a range body for a valid single-range request', async () => {
-    const res = await localStorageRouter.request('/storage/musics/b.mp3', {
+    const res = await app.request('/storage/musics/b.mp3', {
       headers: { Range: 'bytes=0-1' },
     })
     expect(res.status).toBe(206)
@@ -120,7 +134,7 @@ describe('local-storage public route — namespace allowlist (local driver)', ()
 // Default bundle (S3 enabled + complete) drives the redirect branch.
 describe('local-storage public route — s3 redirect', () => {
   it('302s an allowlisted key to the current public base, preserving the query string', async () => {
-    const res = await localStorageRouter.request('/storage/images/a.jpg?v=123')
+    const res = await app.request('/storage/images/a.jpg?v=123')
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?v=123')
     expect(res.headers.get('Cache-Control')).toBe('public, max-age=300')
@@ -128,21 +142,21 @@ describe('local-storage public route — s3 redirect', () => {
   })
 
   it('keeps the namespace allowlist ahead of the redirect (private keys 404, never redirect)', async () => {
-    const res = await localStorageRouter.request('/storage/backup/backup-2026-01-01T00-00-00.sql.gz?v=1')
+    const res = await app.request('/storage/backup/backup-2026-01-01T00-00-00.sql.gz?v=1')
     expect(res.status).toBe(404)
     expect(res.headers.get('Location')).toBeNull()
   })
 
   it('follows asset host updates immediately', async () => {
     seedStorageEnabled(true, 'cdn2.example.com')
-    const res = await localStorageRouter.request('/storage/musics/b.mp3')
+    const res = await app.request('/storage/musics/b.mp3')
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://cdn2.example.com/musics/b.mp3')
   })
 
   it('answers 503 when S3 is active but the public base is unconfigured', async () => {
     seedStorageEnabled(true, '')
-    const res = await localStorageRouter.request('/storage/images/a.jpg')
+    const res = await app.request('/storage/images/a.jpg')
     expect(res.status).toBe(503)
   })
 })

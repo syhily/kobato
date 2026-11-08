@@ -2,6 +2,9 @@ import { useCallback, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
+import type { ToastTranslator } from '@/client/lib/toast-api-error'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
 
@@ -15,20 +18,22 @@ export interface FileUploadToast {
 }
 
 export interface FileUploadMessages {
-  /** Type-guard failure (`accept` mismatch). Defaults to a bare 文件类型错误 toast. */
+  /** Type-guard failure (`accept` mismatch). Defaults to a bare "wrong file type" toast. */
   invalidType?: FileUploadToast
   /** Size-guard failure. Receives the offending file so the copy can quote its size. */
   tooLarge?: (file: File) => FileUploadToast
   /** Success toast body. Omit to skip the success toast (custom onSuccess UX). */
   success?: string
-  /** Fallback when the server error body carries no extractable message. Defaults to `上传失败 (<status>)`. */
+  /** Fallback when the server error body carries no extractable message. Defaults to the translated `admin.toast.uploadStatusFailed`. */
   httpFailure?: (status: number) => string
-  /** Fallback for transport failures and non-Error throws. Defaults to 上传失败. */
-  failure?: string
+  /** Fallback title message id for transport failures and non-Error throws. Defaults to `admin.toast.uploadFailed`. */
+  failure?: UiMessageId
 }
 
 export interface UseFileUploadOptions {
   endpoint: string
+  /** The caller's `useI18n().t` — resolves the failure title and the inline `onError` copy. */
+  t: ToastTranslator
   /** Extra fields appended to the FormData ahead of the file (File uploads only). */
   fields?: Record<string, string>
   /** Dotted-suffix allowlist matched against the file name (e.g. '.svg', '.sql.gz'); omit to skip the type guard. Guards only run for File inputs. */
@@ -52,9 +57,6 @@ export interface UseFileUploadResult {
   pending: boolean
 }
 
-const defaultHttpFailure = (status: number): string => `上传失败 (${status})`
-const defaultTooLarge = (): FileUploadToast => ({ title: '文件过大' })
-
 export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResult {
   const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
   const csrfToken = rootData?.csrfToken
@@ -62,7 +64,7 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
 
   const upload = useCallback(
     async (input: File | FormData): Promise<boolean> => {
-      const { endpoint, fields, accept, maxBytes, credentials, parseJson, messages, onSuccess, onError } = options
+      const { endpoint, fields, accept, maxBytes, credentials, parseJson, messages, t, onSuccess, onError } = options
 
       const reportGuardFailure = (payload: FileUploadToast): false => {
         if (onError) {
@@ -76,10 +78,13 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
       if (input instanceof File) {
         const lowerName = input.name.toLowerCase()
         if (accept !== undefined && !accept.some((ext) => lowerName.endsWith(ext))) {
-          return reportGuardFailure(messages?.invalidType ?? { title: '文件类型错误' })
+          return reportGuardFailure(messages?.invalidType ?? { title: t('admin.toast.invalidFileType') })
         }
         if (maxBytes !== undefined && input.size > maxBytes) {
-          const payload = messages?.tooLarge === undefined ? defaultTooLarge() : messages.tooLarge(input)
+          const payload =
+            messages?.tooLarge === undefined
+              ? ({ title: t('admin.toast.fileTooLarge') } satisfies FileUploadToast)
+              : messages.tooLarge(input)
           return reportGuardFailure(payload)
         }
       }
@@ -115,7 +120,9 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
         const body: unknown = parseJson === true ? await res.json() : undefined
         if (!res.ok) {
           const data: unknown = parseJson === true ? body : await res.json().catch(() => null)
-          const message = extractApiErrorMessage(data) ?? (messages?.httpFailure ?? defaultHttpFailure)(res.status)
+          const message =
+            extractApiErrorMessage(data) ??
+            (messages?.httpFailure ?? ((status: number) => t('admin.toast.uploadStatusFailed', { status })))(res.status)
           if (onError) {
             onError(message)
           } else {
@@ -134,12 +141,12 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
         failure = err
       }
       if (failed) {
-        const fallback = messages?.failure ?? '上传失败'
+        const failureId = messages?.failure ?? 'admin.toast.uploadFailed'
         if (onError) {
           // Inline-error mode: only transport/parse/onSuccess throws land here — the !res.ok path already reported its message.
-          onError(fallback)
+          onError(t(failureId))
         } else {
-          toastApiError(failure, fallback)
+          toastApiError(failure, failureId, t)
         }
       }
       setPending(false)

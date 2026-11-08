@@ -67,7 +67,7 @@ function deriveKey(password: string, salt: Buffer, n: number): Buffer {
   try {
     return scryptSync(password, salt, KEY_BYTES, { N: n, r: SCRYPT_R, p: SCRYPT_P, maxmem: 256 * 1024 * 1024 })
   } catch (error) {
-    throw new BackupDecryptionError('备份加密参数无效', { cause: error })
+    throw new BackupDecryptionError('Invalid backup encryption parameters', { cause: error })
   }
 }
 
@@ -96,11 +96,11 @@ function encryptRecord(key: Buffer, plaintext: Buffer, seq: number, final: boole
 function decryptRecord(key: Buffer, record: Buffer, expectedSeq: number): { plaintext: Buffer; final: boolean } {
   const length = record.readUInt32BE(0)
   if (length > CHUNK_SIZE || record.length !== RECORD_OVERHEAD + length) {
-    throw new BackupDecryptionError('备份密文记录损坏')
+    throw new BackupDecryptionError('Backup ciphertext record is corrupted')
   }
   const flags = record[4]!
   if (flags !== 0 && flags !== FLAG_FINAL) {
-    throw new BackupDecryptionError('备份密文记录损坏')
+    throw new BackupDecryptionError('Backup ciphertext record is corrupted')
   }
   const decipher = createDecipheriv('aes-256-gcm', key, record.subarray(5, 5 + IV_BYTES))
   decipher.setAAD(recordAad(expectedSeq, flags))
@@ -112,7 +112,10 @@ function decryptRecord(key: Buffer, record: Buffer, expectedSeq: number): { plai
     ])
     return { plaintext, final: flags === FLAG_FINAL }
   } catch (error) {
-    throw new BackupDecryptionError('备份密码错误或文件已损坏', { cause: error, kind: 'auth' })
+    throw new BackupDecryptionError('The backup password is incorrect or the file is corrupted', {
+      cause: error,
+      kind: 'auth',
+    })
   }
 }
 
@@ -206,11 +209,11 @@ export function createBackupDecipher(password: string): Transform {
   function parseHeader(): void {
     const buffer = incoming.peek()
     if (!isEncryptedBackup(buffer)) {
-      throw new BackupDecryptionError('备份加密头无效')
+      throw new BackupDecryptionError('Invalid backup encryption header')
     }
     const n = buffer.readUInt32BE(BACKUP_ENCRYPTION_MAGIC.length + SALT_BYTES)
     if (n < 2 || (n & (n - 1)) !== 0 || n > MAX_SCRYPT_N) {
-      throw new BackupDecryptionError('备份加密参数无效')
+      throw new BackupDecryptionError('Invalid backup encryption parameters')
     }
     key = deriveKey(
       password,
@@ -234,7 +237,7 @@ export function createBackupDecipher(password: string): Transform {
         // Narrowing must survive the closure assignment in parseHeader.
         const derivedKey = key
         if (derivedKey === null) {
-          throw new BackupDecryptionError('备份加密头无效')
+          throw new BackupDecryptionError('Invalid backup encryption header')
         }
         while (incoming.length >= 4) {
           // Pre-check the DECLARED length before waiting for the record to
@@ -243,14 +246,14 @@ export function createBackupDecipher(password: string): Transform {
           const buffer = incoming.peek()
           const declaredLength = buffer.readUInt32BE(0)
           if (declaredLength > CHUNK_SIZE) {
-            throw new BackupDecryptionError('备份密文记录损坏')
+            throw new BackupDecryptionError('Backup ciphertext record is corrupted')
           }
           const recordBytes = RECORD_OVERHEAD + declaredLength
           if (incoming.length < recordBytes) {
             break
           }
           if (sawFinal) {
-            throw new BackupDecryptionError('备份密文记录损坏')
+            throw new BackupDecryptionError('Backup ciphertext record is corrupted')
           }
           const { plaintext, final } = decryptRecord(derivedKey, buffer.subarray(0, recordBytes), expectedSeq)
           expectedSeq += 1
@@ -265,7 +268,7 @@ export function createBackupDecipher(password: string): Transform {
     },
     flush(callback: TransformCallback) {
       if (key === null || incoming.length !== 0 || !sawFinal) {
-        callback(new BackupDecryptionError('备份密文不完整或已截断'))
+        callback(new BackupDecryptionError('Backup ciphertext is incomplete or truncated'))
         return
       }
       callback()

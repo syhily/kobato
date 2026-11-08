@@ -8,6 +8,7 @@ const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
 import type { SocialNetwork } from '@/shared/config/socials'
 import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/config/types'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
@@ -19,6 +20,7 @@ import { Button } from '@/ui/components/button'
 import { Field, FieldLabel } from '@/ui/components/field'
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface NavigationEditorProps {
   navigation: NavigationSettings
@@ -36,11 +38,11 @@ interface FooterNavItemRowState extends FooterNavItem {
   clientId: string
 }
 
-const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
-  social: '社交链接',
-  themeToggle: '主题切换',
-  search: '搜索',
-}
+const TYPE_LABEL_IDS = {
+  social: 'admin.settings.navigation.type.social',
+  themeToggle: 'admin.settings.navigation.type.themeToggle',
+  search: 'admin.settings.navigation.type.search',
+} as const satisfies Record<FooterNavItem['type'], UiMessageId>
 
 // Narrow Select's `string` callback values back to the unions — guards, not casts.
 const FOOTER_NAV_TYPE_SET: ReadonlySet<string> = new Set(['social', 'themeToggle', 'search'])
@@ -74,9 +76,10 @@ function SortableSideNavRow({
   index: number
   form: ReturnType<typeof useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>>['form']
   flushOnBlur: () => void
-  save: () => void
+  save: () => unknown
   onRemove: (index: number) => void
 }) {
+  const { t } = useI18n()
   const { setNodeRef, style: rowStyle, isDragging, dragHandleProps } = useSortableRow({ id: field.clientId })
   const style = { ...rowStyle, opacity: isDragging ? 0.5 : 1 }
 
@@ -85,7 +88,7 @@ function SortableSideNavRow({
       <SortableDragHandle {...dragHandleProps} />
       <div className="flex flex-1 flex-col gap-2 sm:flex-row">
         <div className="flex flex-col gap-1 sm:flex-1">
-          <Label htmlFor={`nav-text-${index}`}>显示文本</Label>
+          <Label htmlFor={`nav-text-${index}`}>{t('admin.settings.navigation.side.text')}</Label>
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id={`nav-text-${index}`}
@@ -94,12 +97,12 @@ function SortableSideNavRow({
           />
         </div>
         <div className="flex flex-col gap-1 sm:flex-1">
-          <Label htmlFor={`nav-link-${index}`}>链接</Label>
+          <Label htmlFor={`nav-link-${index}`}>{t('admin.settings.navigation.side.link')}</Label>
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id={`nav-link-${index}`}
             maxLength={200}
-            placeholder="/about 或 https://example.com"
+            placeholder={t('admin.settings.navigation.side.linkPlaceholder')}
             {...form.register(`sideNavRows.${index}.link`)}
           />
         </div>
@@ -119,7 +122,7 @@ function SortableSideNavRow({
               )}
             />
             <FieldLabel htmlFor={`nav-newtab-${index}`} className="font-normal">
-              新窗口
+              {t('admin.settings.navigation.side.newTab')}
             </FieldLabel>
           </Field>
           <Button
@@ -127,7 +130,7 @@ function SortableSideNavRow({
             variant="destructive-soft"
             size="icon"
             onClick={() => onRemove(index)}
-            aria-label="删除"
+            aria-label={t('common.action.delete')}
           >
             <Trash2Icon data-icon />
           </Button>
@@ -138,6 +141,7 @@ function SortableSideNavRow({
 }
 
 function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<
     NavigationSettings,
     { sideNavRows: SideNavRow[] }
@@ -176,13 +180,13 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
 
   return (
     <SettingGroup
-      title="侧边导航菜单"
-      description="侧边栏导航条目。拖拽调整顺序，标题、链接均可修改。最多 20 个。"
+      title={t('admin.settings.navigation.side.title')}
+      description={t('admin.settings.navigation.side.description')}
       {...settingGroupProps}
     >
       <div className="flex flex-col gap-3">
         {rows.fields.length === 0 ? (
-          <p className="text-sm text-muted-foreground">还没有任何菜单条目，点下方按钮新增一项。</p>
+          <p className="text-sm text-muted-foreground">{t('admin.settings.navigation.side.empty')}</p>
         ) : (
           <DndContext
             sensors={sensors}
@@ -214,7 +218,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
           onClick={() => rows.append({ clientId: crypto.randomUUID(), text: '', link: '/', newTab: false })}
           disabled={rows.fields.length >= 20}
         >
-          <PlusIcon data-icon /> 添加菜单项
+          <PlusIcon data-icon /> {t('admin.settings.navigation.side.add')}
         </Button>
       </div>
     </SettingGroup>
@@ -232,6 +236,7 @@ function SortableFooterNavRow({
   onUpdate: (idx: number, patch: Partial<FooterNavItem>) => void
   onRemove: (idx: number) => void
 }) {
+  const { t } = useI18n()
   const { setNodeRef, style: rowStyle, isDragging, dragHandleProps } = useSortableRow({ id: item.clientId })
   const style = { ...rowStyle, opacity: isDragging ? 0.5 : 1 }
 
@@ -240,7 +245,7 @@ function SortableFooterNavRow({
       <SortableDragHandle {...dragHandleProps} />
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
         <div className="flex flex-1 flex-col gap-1">
-          <Label htmlFor={`footer-item-type-${index}`}>类型</Label>
+          <Label htmlFor={`footer-item-type-${index}`}>{t('admin.settings.navigation.type')}</Label>
           <Select
             value={item.type}
             onValueChange={(value) =>
@@ -252,19 +257,25 @@ function SortableFooterNavRow({
           >
             <SelectTrigger id={`footer-item-type-${index}`}>
               <SelectValue>
-                {(value: string | null) => (value ? (TYPE_LABELS[asFooterNavType(value)] ?? value) : '请选择')}
+                {(value: string | null) =>
+                  value === null
+                    ? t('admin.settings.navigation.select')
+                    : TYPE_LABEL_IDS[asFooterNavType(value)] === undefined
+                      ? value
+                      : t(TYPE_LABEL_IDS[asFooterNavType(value)])
+                }
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="social">{TYPE_LABELS.social}</SelectItem>
-              <SelectItem value="themeToggle">{TYPE_LABELS.themeToggle}</SelectItem>
-              <SelectItem value="search">{TYPE_LABELS.search}</SelectItem>
+              <SelectItem value="social">{t(TYPE_LABEL_IDS.social)}</SelectItem>
+              <SelectItem value="themeToggle">{t(TYPE_LABEL_IDS.themeToggle)}</SelectItem>
+              <SelectItem value="search">{t(TYPE_LABEL_IDS.search)}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         {item.type === 'social' && (
           <div className="flex flex-1 flex-col gap-1">
-            <Label htmlFor={`footer-item-network-${index}`}>平台</Label>
+            <Label htmlFor={`footer-item-network-${index}`}>{t('admin.settings.navigation.platform')}</Label>
             <Select
               value={item.network}
               onValueChange={(value) => onUpdate(index, { network: asSocialNetwork(value) })}
@@ -272,14 +283,18 @@ function SortableFooterNavRow({
               <SelectTrigger id={`footer-item-network-${index}`}>
                 <SelectValue>
                   {(value: string | null) =>
-                    value ? (SOCIAL_NETWORK_META[asSocialNetwork(value)]?.label ?? value) : '请选择'
+                    value === null
+                      ? t('admin.settings.navigation.select')
+                      : SOCIAL_NETWORK_META[asSocialNetwork(value)]
+                        ? t(SOCIAL_NETWORK_META[asSocialNetwork(value)].labelId)
+                        : value
                   }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {SOCIAL_NETWORKS.map((network) => (
                   <SelectItem key={network} value={network}>
-                    {SOCIAL_NETWORK_META[network].label}
+                    {t(SOCIAL_NETWORK_META[network].labelId)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -287,7 +302,13 @@ function SortableFooterNavRow({
           </div>
         )}
       </div>
-      <Button type="button" variant="destructive-soft" size="icon" onClick={() => onRemove(index)} aria-label="删除">
+      <Button
+        type="button"
+        variant="destructive-soft"
+        size="icon"
+        onClick={() => onRemove(index)}
+        aria-label={t('common.action.delete')}
+      >
         <Trash2Icon data-icon />
       </Button>
     </div>
@@ -295,6 +316,7 @@ function SortableFooterNavRow({
 }
 
 function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings; socials: SocialItem[] }) {
+  const { t } = useI18n()
   const { form, settingGroupProps, save } = useSettingsCard<
     NavigationSettings,
     { footerNavItems: FooterNavItemRowState[] }
@@ -328,20 +350,20 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
   function updateFooterItem(index: number, patch: Partial<FooterNavItem>) {
     const current = rows.fields[index]
     rows.update(index, { ...current, ...patch } as FooterNavItemRowState)
-    save('footerNavItems')
+    void save('footerNavItems')
   }
 
   const configuredNetworks = new Set(socials.map((s) => s.network))
 
   return (
     <SettingGroup
-      title="底部导航菜单"
-      description="页脚中显示的快捷按钮。可选择社交链接、主题切换或搜索。最多 5 项，拖拽可调整顺序。"
+      title={t('admin.settings.navigation.footer.title')}
+      description={t('admin.settings.navigation.footer.description')}
       {...settingGroupProps}
     >
       <div className="flex flex-col gap-3">
         {rows.fields.length === 0 ? (
-          <p className="text-sm text-muted-foreground">还没有任何导航条目，点下方按钮新增一项。</p>
+          <p className="text-sm text-muted-foreground">{t('admin.settings.navigation.footer.empty')}</p>
         ) : (
           <DndContext
             sensors={sensors}
@@ -372,11 +394,11 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
             onClick={() => rows.append({ type: 'social', network: 'github', clientId: crypto.randomUUID() })}
             disabled={rows.fields.length >= 5}
           >
-            <PlusIcon data-icon /> 添加导航项
+            <PlusIcon data-icon /> {t('admin.settings.navigation.footer.add')}
           </Button>
           {rows.fields.some(
             (item) => item.type === 'social' && item.network && !configuredNetworks.has(item.network),
-          ) && <span className="text-sm text-destructive">部分社交链接尚未配置，保存后不会在页脚显示。</span>}
+          ) && <span className="text-sm text-destructive">{t('admin.settings.navigation.footer.warning')}</span>}
         </div>
       </div>
     </SettingGroup>

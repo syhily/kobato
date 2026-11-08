@@ -1,19 +1,26 @@
+import type { ServerTranslator } from '@/server/infra/i18n'
+
 import { Link, Text } from '@/server/infra/email/render'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { light } from '@/server/infra/email/templates/styles/tokens'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 interface Props {
+  t: ServerTranslator
   receiver: string
   inviter: string
   link: string
 }
 
-export function AuthorInvite({ receiver, inviter, link }: Props) {
+export function AuthorInvite({ t, receiver, inviter, link }: Props) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
 
   return (
-    <EmailLayout receiver={receiver} preview={`${inviter} 邀请你成为《${siteIdentity.title}》的作者`}>
+    <EmailLayout
+      t={t}
+      receiver={receiver}
+      preview={t.format('email.authorInvite.preview', { inviter, siteTitle: siteIdentity.title })}
+    >
       <Text
         style={{
           fontSize: 26,
@@ -24,7 +31,7 @@ export function AuthorInvite({ receiver, inviter, link }: Props) {
         }}
         className="dark-text-primary"
       >
-        {inviter} 邀请你成为站点作者
+        {t.format('email.authorInvite.title', { inviter })}
       </Text>
 
       <div
@@ -45,7 +52,7 @@ export function AuthorInvite({ receiver, inviter, link }: Props) {
           }}
           className="dark-text-secondary"
         >
-          你将获得作者权限，可以发布和管理文章。请点击下方按钮接受邀请（7 天内有效）。
+          {t.format('email.authorInvite.body')}
         </Text>
       </div>
 
@@ -65,7 +72,7 @@ export function AuthorInvite({ receiver, inviter, link }: Props) {
           }}
           className="dark-cta"
         >
-          接受邀请
+          {t.format('email.authorInvite.cta')}
         </Link>
       </div>
 
@@ -91,7 +98,7 @@ export function AuthorInvite({ receiver, inviter, link }: Props) {
         }}
         className="dark-text-muted"
       >
-        如果你并未收到此邀请，请忽略此邮件。
+        {t.format('email.authorInvite.ignore')}
       </Text>
     </EmailLayout>
   )

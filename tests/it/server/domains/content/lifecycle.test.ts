@@ -152,7 +152,7 @@ describe('content/lifecycle — saveBody degraded sync', () => {
     )
 
     expect(result.status).toBe('saved')
-    expect(result.warning).toBe('图片库同步失败，部分图片可能无法正常显示。')
+    expect(result.warningDescriptors?.map((d) => d.messageKey)).toEqual(['content.warning.imageSyncFailed'])
     // The draft revision was still written despite the degraded sync.
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
@@ -472,7 +472,7 @@ describe('content/lifecycle — body projections (R9b)', () => {
 
     // Best-effort: the save succeeds, the warning surfaces, columns stay NULL.
     expect(result.status).toBe('saved')
-    expect(result.warning).toContain('正文投影生成失败')
+    expect(result.warningDescriptors?.map((d) => d.messageKey)).toEqual(['content.warning.projectionFailed'])
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.bodyHtml).toBeNull()

@@ -52,13 +52,18 @@ Adding a route: pick the area directory, choose a role filename, add the manifes
 - **Public SSR data goes through oRPC** — `routes/public/**` loaders and `src/root.tsx` call the
   `content.*` procedures via `createSsrCaller` (`@/server/http/ssr-caller`), an in-process router
   client bound to the per-request `HandlerContext`. Loaders stay one-liners: `unwrapListing(...)`
-  (home/tag/category/search) and `unwrapDetail(...)` (post/page detail) map the output union back
-  to the URL contract — `redirect` → thrown 301/302, `not-modified` → thrown 304,
-  `ORPCError('NOT_FOUND')` → `notFound()`. Detail loaders fire `content.comments.byKey` and
+  (home/tag/category/search), `unwrapListingPayload(...)` (archives/categories) and
+  `unwrapDetail(...)` (post/page detail) map the output union back to the URL contract —
+  `redirect` → thrown 301/302, `not-modified` → thrown 304, `ORPCError('NOT_FOUND')` →
+  `notFound()`. Every listing loader forwards the request's `if-none-match` and returns
+  `data(payload, { headers: { ETag } })` (the 304 is rebuilt from the request localization with
+  the listing `private, no-cache` profile). Detail loaders fire `content.comments.byKey` and
   `webmention.list` only on the ok branch, chained off the critical payload's `commentKey`
   (un-awaited, so comments/webmentions still stream via `<Await>`; never speculatively — a
   304/301/404 read costs zero comments work). The root loader calls `content.bootstrap()` with no
-  args — the theme cookie is parsed inside the procedure. The exact `@/server/*` import whitelist
+  args — the theme cookie is parsed and the message scope derived (public pathname vs `/admin` +
+  `/editor`) inside the procedure, and `shouldRevalidate` refreshes the root payload on
+  public ↔ workspace navigations and every form action. The exact `@/server/*` import whitelist
   for public routes + root is pinned by the boundaries contract
   test (`ssr-caller`, `loaders/route-exports`, `infra/http/*`, plus `render/warmup/*` for root).
 - **Admin SSR data goes through oRPC too** — `routes/admin/**` and `routes/editor/**` loaders

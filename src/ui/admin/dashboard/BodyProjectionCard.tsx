@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { orpc } from '@/client/api/client'
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ReprojectProgress {
   phase: 'idle' | 'running' | 'success'
@@ -20,6 +21,7 @@ const IDLE: ReprojectProgress = { phase: 'idle', total: 0, processed: 0, rewritt
  *  body_text / body_html_feed columns stale; the save pipeline maintains
  *  them otherwise. */
 export function BodyProjectionCard() {
+  const { t } = useI18n()
   const [reproject, setReproject] = useState<ReprojectProgress>(IDLE)
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export function BodyProjectionCard() {
       setReproject({ phase: 'success', total, processed, rewritten, failed })
     } catch (err) {
       setReproject(IDLE)
-      toastApiError(err, '缓存重建失败')
+      toastApiError(err, 'admin.toast.cacheRebuildFailed', t)
     }
   }
 
@@ -69,10 +71,8 @@ export function BodyProjectionCard() {
     <div className="rounded-xl border bg-card p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-medium">文章缓存</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            渲染修复或编辑器迁移后，可以手动重建正文的 HTML 投影缓存。
-          </p>
+          <h2 className="text-base font-medium">{t('admin.dashboard.bodyProjection.title')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('admin.dashboard.bodyProjection.description')}</p>
         </div>
         <Button
           type="button"
@@ -84,21 +84,30 @@ export function BodyProjectionCard() {
         >
           {reproject.phase === 'running' && <Loader2Icon className="animate-spin" />}
           {reproject.phase === 'success' && <CheckIcon className="text-status-success-fg" />}
-          {reproject.phase === 'idle' && '重建缓存'}
-          {reproject.phase === 'running' && '重建中...'}
-          {reproject.phase === 'success' && '完成'}
+          {reproject.phase === 'idle' && t('admin.dashboard.bodyProjection.build')}
+          {reproject.phase === 'running' && t('admin.dashboard.bodyProjection.running')}
+          {reproject.phase === 'success' && t('common.state.done')}
         </Button>
       </div>
       {reproject.phase === 'running' && (
         <p className="mt-3 text-sm text-muted-foreground">
-          等待 {Math.max(0, reproject.total - reproject.processed - reproject.failed)} / 成功 {reproject.processed}
-          （更新 {reproject.rewritten}）/ 失败 {reproject.failed}（共 {reproject.total}）
+          {t('admin.dashboard.bodyProjection.progress', {
+            pending: Math.max(0, reproject.total - reproject.processed - reproject.failed),
+            processed: reproject.processed,
+            rewritten: reproject.rewritten,
+            failed: reproject.failed,
+            total: reproject.total,
+          })}
         </p>
       )}
       {reproject.phase === 'success' && (
         <p className="mt-3 text-sm text-status-success-fg">
-          缓存重建完成：成功 {reproject.processed}（更新 {reproject.rewritten}）/ 失败 {reproject.failed}（共{' '}
-          {reproject.total}）
+          {t('admin.dashboard.bodyProjection.success', {
+            processed: reproject.processed,
+            rewritten: reproject.rewritten,
+            failed: reproject.failed,
+            total: reproject.total,
+          })}
         </p>
       )}
     </div>

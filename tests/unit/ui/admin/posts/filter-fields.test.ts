@@ -2,13 +2,23 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
+import { tZhCN } from '#/_helpers/i18n'
 import {
-  buildPostFilterFields,
+  buildPostFilterFields as buildPostFilterFieldsBase,
   deriveStatusFields,
   type PostFilterFieldKey,
-  postFiltersFromSearch,
-  syncPostFiltersFromUrl,
+  postFiltersFromSearch as postFiltersFromSearchBase,
+  syncPostFiltersFromUrl as syncPostFiltersFromUrlBase,
 } from '@/ui/admin/posts/filter-fields'
+
+const buildPostFilterFields = (sources: Parameters<typeof buildPostFilterFieldsBase>[0]) =>
+  buildPostFilterFieldsBase(sources, tZhCN)
+const postFiltersFromSearch = (search: string) => postFiltersFromSearchBase(search, tZhCN)
+const syncPostFiltersFromUrl = (
+  filters: Parameters<typeof syncPostFiltersFromUrlBase>[0],
+  dispatch: Parameters<typeof syncPostFiltersFromUrlBase>[1],
+  search: string,
+) => syncPostFiltersFromUrlBase(filters, dispatch, search, tZhCN)
 
 const fields = buildPostFilterFields({
   categories: [{ id: 'c-1', name: '前端' }],

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  GRAVATAR_MIRROR_PRESETS,
+  GRAVATAR_MIRROR_URLS,
   httpUrlOrEmptyStringSchema,
   isAllowedMirrorUrl,
   isBlockedFetchHost,
@@ -307,10 +307,10 @@ describe('client: safe-url utilities', () => {
     })
 
     it('keeps every dropdown preset on the allowlist', () => {
-      // The admin form offers GRAVATAR_MIRROR_PRESETS; a preset rejected by
-      // the SSRF guard would be an unsaveable option.
-      for (const preset of GRAVATAR_MIRROR_PRESETS) {
-        expect(isAllowedMirrorUrl(preset.value), preset.value).toBe(true)
+      // The admin form offers GRAVATAR_MIRROR_URLS; a preset rejected by the
+      // SSRF guard would be an unsaveable option.
+      for (const url of GRAVATAR_MIRROR_URLS) {
+        expect(isAllowedMirrorUrl(url), url).toBe(true)
       }
     })
 

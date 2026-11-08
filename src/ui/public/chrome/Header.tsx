@@ -11,6 +11,7 @@ import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { safeRel } from '@/ui/lib/link'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
@@ -129,6 +130,7 @@ export function Header({
   onOpenNotifications,
 }: HeaderProps) {
   const { title } = useSiteIdentity()
+  const { t } = useI18n()
   const { socials } = useSocialsSettings()
   const assets = useAssetsSettingsOptional()
   const v = brandingVersionSuffix(assets?.branding?.logoDarkSvg)
@@ -184,7 +186,7 @@ export function Header({
         <div className={asideInnerClass}>
           <h1 id={menuLabelId} className={navbarBrandClass}>
             <Link to="/" title={title} className="block" prefetch="intent">
-              <img src={`/logo-dark.svg${v}`} alt="且听书吟" width={60} height={60} className={navbarBrandImgClass} />
+              <img src={`/logo-dark.svg${v}`} alt={title} width={60} height={60} className={navbarBrandImgClass} />
             </Link>
           </h1>
           <nav className={siteMenuClass}>
@@ -255,7 +257,7 @@ export function Header({
         <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
           <div className="flex items-center">
             <Link to="/" title={title} className="block" prefetch="intent">
-              <BrandLogo className={mobileBrandImgClass} />
+              <BrandLogo className={mobileBrandImgClass} alt={title} />
             </Link>
             <div className="flex-1" />
             {currentUser && (
@@ -272,7 +274,7 @@ export function Header({
               ref={triggerRef}
               type="button"
               className={menuTogglerClass}
-              aria-label="打开主菜单"
+              aria-label={t('public.chrome.openMenu')}
               aria-expanded={menuOpen}
               aria-controls={menuLabelId}
               aria-haspopup="dialog"

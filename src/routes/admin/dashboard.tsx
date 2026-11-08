@@ -4,9 +4,9 @@ import { browser } from 'react-dom'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { createSsrCaller } from '@/server/http/ssr-caller'
 import { computeDateRange } from '@/shared/contracts/analytics'
-import { pickEmptyStateLine } from '@/shared/contracts/dashboard'
+import { pickEmptyStateLineId } from '@/shared/contracts/dashboard'
 import { titleMeta } from '@/shared/seo/title-meta'
-import { roleLabel } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS } from '@/shared/utils/roles'
 import { BodyProjectionCard } from '@/ui/admin/dashboard/BodyProjectionCard'
 import { QuickActions } from '@/ui/admin/dashboard/QuickActions'
 import { RecentDraftsCard } from '@/ui/admin/dashboard/RecentDraftsCard'
@@ -15,10 +15,11 @@ import { SearchReindexCard } from '@/ui/admin/dashboard/SearchReindexCard'
 import { StatsGrid } from '@/ui/admin/dashboard/StatsGrid'
 import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
+import { type I18nValue, useI18n } from '@/ui/lib/I18nProvider'
 
 import type { Route } from './+types/dashboard'
 
-export const meta = titleMeta('欢迎')
+export const meta = titleMeta('meta.title.admin.dashboard')
 
 // Keep in lockstep with the `PAGE_SIZE` constant in `PendingModerationPanel.tsx` — the panel's pagination assumes this size.
 const PENDING_PAGE_SIZE = 3
@@ -57,7 +58,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     pendingModeration,
     visitSummary,
     weeklyTrend,
-    emptyStateLine: pickEmptyStateLine(),
+    emptyStateLineId: pickEmptyStateLineId(),
     stats: {
       draftCount: mySummary.draftCount,
       publishedCount: mySummary.publishedCount,
@@ -70,38 +71,40 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 }
 
-function greetingForHour(hour: number): string {
+function greetingForHour(hour: number, t: I18nValue['t']): string {
   if (hour >= 23 || hour < 5) {
-    return '夜深了，还没睡么？记得早点休息'
+    return t('admin.dashboard.greeting.late')
   }
   if (hour < 11) {
-    return '早上好，新的一天开始啦'
+    return t('admin.dashboard.greeting.morning')
   }
   if (hour < 14) {
-    return '中午好，记得吃午饭'
+    return t('admin.dashboard.greeting.noon')
   }
   if (hour < 18) {
-    return '下午好'
+    return t('admin.dashboard.greeting.afternoon')
   }
-  return '晚上好'
+  return t('admin.dashboard.greeting.evening')
 }
 
 function Greeting({ name }: { name: string }) {
   use(browser())
+  const { t } = useI18n()
   // Client-only once the recoverable boundary above resolves, so the hour
   // initializes once from the client clock instead of reading it per render.
   const [hour] = useState(() => new Date().getHours())
-  return <>{`${greetingForHour(hour)}，${name}`}</>
+  return <>{t('admin.dashboard.greeting.line', { greeting: greetingForHour(hour, t), name })}</>
 }
 
 export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
+  const { t } = useI18n()
   const {
     name,
     role,
     pendingModeration,
     visitSummary,
     weeklyTrend,
-    emptyStateLine,
+    emptyStateLineId,
     stats,
     recentDrafts,
     recentPublished,
@@ -117,7 +120,7 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
               <Greeting name={name} />
             </Suspense>
           </h1>
-          <p className="mt-1 text-muted-foreground">当前身份：{roleLabel(role)}</p>
+          <p className="mt-1 text-muted-foreground">{t('admin.dashboard.role', { role: t(ROLE_LABEL_KEYS[role]) })}</p>
         </div>
         <QuickActions />
       </div>
@@ -125,7 +128,7 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <VisitSummaryCard summary={visitSummary} weeklyTrend={weeklyTrend} />
           {pendingModeration !== null && (
-            <PendingModerationPanel initial={pendingModeration} emptyStateLine={emptyStateLine} />
+            <PendingModerationPanel initial={pendingModeration} emptyStateLineId={emptyStateLineId} />
           )}
         </div>
       )}

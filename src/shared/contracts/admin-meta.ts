@@ -22,6 +22,10 @@ export const adminMetaBaseDto = z.object({
   // Opts the entity into rendering「修改于 XXXX」on the public detail
   // page; toggled from the editor meta sidebar, defaults `false`.
   showUpdated: z.boolean(),
+  // Author-declared BCP 47 tag of the prose, CANONICALIZED on write (any
+  // well-formed tag — not limited to the four UI locales). `null` renders no
+  // `lang` on the body container, so it inherits the document language.
+  contentLanguage: z.string().nullable(),
   /** ISO-8601. Editable from the metadata panel. */
   publishedAt: isoDateTime,
   /** `null` while the entity has never been published. */

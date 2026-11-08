@@ -1,10 +1,9 @@
-import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import type { ClientPostWithMetadata } from '@/shared/types/catalog'
 
 import { makePost } from '#/_helpers/catalog'
-import { renderInRouter } from '#/_helpers/render'
+import { renderInRouter, renderToHtml } from '#/_helpers/render'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { Input } from '@/ui/components/input'
 import { Pagination } from '@/ui/public/post/Pagination'
@@ -56,7 +55,7 @@ describe('snapshot: Pagination', () => {
   })
 
   it('returns nothing when total <= 1', () => {
-    const html = renderToStaticMarkup(<Pagination current={1} total={1} rootPath="/archives" />)
+    const html = renderToHtml(<Pagination current={1} total={1} rootPath="/archives" />)
     expect(html).toBe('')
   })
 })
@@ -72,7 +71,7 @@ describe('snapshot: SearchBar widget', () => {
 
 describe('snapshot: SettingsRow', () => {
   it('wires invalid state to the shadcn field and the control', () => {
-    const html = renderToStaticMarkup(
+    const html = renderToHtml(
       <SettingsRow label="缓存前缀" htmlFor="cache-prefix" hint="必须以分隔符结尾。" error="前缀冲突">
         {(controlProps) => <Input id="cache-prefix" {...controlProps} />}
       </SettingsRow>,
@@ -87,7 +86,7 @@ describe('snapshot: SettingsRow', () => {
 
 describe('snapshot: PostListingBody (category/tag/search)', () => {
   it('renders the empty 404 state when no posts', () => {
-    const html = renderToStaticMarkup(
+    const html = renderToHtml(
       <PostListingBody
         title="标签：rust"
         description="描述"

@@ -8,14 +8,15 @@ import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { makeAdminComment, makeCommentBody } from '#/_helpers/catalog'
 import { renderHook } from '#/_helpers/hook'
+import { tZhCN } from '#/_helpers/i18n'
 import { orpcQuery } from '@/client/api/orpc-query'
 import {
   type CommentFilterFieldKey,
-  COMMENT_FILTER_FIELDS,
+  buildCommentFilterFields,
   type CommentsFilterQuery,
   isTextFilterOperator,
   parseTextFilter,
-  textFilterLabel,
+  textFilterLabel as textFilterLabelBase,
   type TextFilterValue,
 } from '@/ui/admin/comments/filter-fields'
 import {
@@ -29,6 +30,9 @@ import {
 } from '@/ui/admin/comments/useCommentsController'
 import { type SingleDateFilterValue } from '@/ui/admin/shared/date-filter'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
+
+const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
+const textFilterLabel = (value: Parameters<typeof textFilterLabelBase>[0]) => textFilterLabelBase(value, tZhCN)
 
 // Hook tests need a real QueryClient above the memory router; no fetch ever
 // fires (SSR hook runner). The wrapper carries it so cache-level assertions

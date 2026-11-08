@@ -98,6 +98,7 @@ export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = [], cat
     visible: meta.visible,
     toc: meta.showToc,
     showUpdated: meta.showUpdated,
+    contentLanguage: meta.contentLanguage,
     slug: meta.slug,
     permalink: `/posts/${meta.slug}`,
     headings: [],

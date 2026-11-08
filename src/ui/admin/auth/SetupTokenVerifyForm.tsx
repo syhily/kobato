@@ -3,6 +3,7 @@ import { Form } from 'react-router'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Shared auth input styling — must match other auth forms.
 const inputClasses =
@@ -15,9 +16,10 @@ export interface SetupTokenVerifyFormProps {
 }
 
 export function SetupTokenVerifyForm({ isSubmitting, csrfToken, actionData }: SetupTokenVerifyFormProps) {
+  const { t } = useI18n()
   return (
     <div className="flex w-full flex-col gap-6">
-      <p className="text-center text-sm text-muted-foreground">请输入服务器控制台中显示的 Setup Token。</p>
+      <p className="text-center text-sm text-muted-foreground">{t('auth.setupToken.hint')}</p>
 
       {actionData?.error ? (
         <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
@@ -37,7 +39,7 @@ export function SetupTokenVerifyForm({ isSubmitting, csrfToken, actionData }: Se
             name="setup_token"
             type="text"
             autoComplete="off"
-            placeholder="例如：a1b2c3d4..."
+            placeholder={t('auth.setupToken.placeholder')}
             required
             disabled={isSubmitting}
             className={inputClasses}
@@ -49,7 +51,7 @@ export function SetupTokenVerifyForm({ isSubmitting, csrfToken, actionData }: Se
           disabled={isSubmitting}
           className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
         >
-          {isSubmitting ? '验证中...' : '验证并继续'}
+          {isSubmitting ? t('auth.setupToken.submitting') : t('auth.setupToken.submit')}
         </Button>
       </Form>
     </div>

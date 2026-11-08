@@ -1,3 +1,5 @@
+import { data } from 'react-router'
+
 import type { HomeExtra } from '@/shared/contracts/content'
 import type { PublicListingLoaderData } from '@/shared/types/listing'
 
@@ -9,9 +11,17 @@ import { HomeLayoutBody } from '@/ui/public/post/PostListViews'
 import type { Route } from './+types/home'
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller, analyticsEventId } = createSsrCaller({ request, context })
-  const listing = await unwrapListing(caller.content.home({ num: params.num }))
-  return { ...listing, eid: analyticsEventId } satisfies PublicListingLoaderData<HomeExtra>
+  const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
+  const { etag, listing } = await unwrapListing(
+    caller.content.home({
+      num: params.num,
+      ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
+    }),
+    localization,
+  )
+  return data({ ...listing, eid: analyticsEventId } satisfies PublicListingLoaderData<HomeExtra>, {
+    headers: { ETag: etag },
+  })
 }
 
 export const headers = listingHeaders

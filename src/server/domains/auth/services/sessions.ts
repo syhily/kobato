@@ -42,7 +42,8 @@ export async function listAllSessions(db: Database): Promise<SessionWithUser[]> 
   return metas.map((meta) => {
     const u = userById.get(meta.userId.toString())
     return Object.assign({}, meta, {
-      userName: u?.name ?? '已删除的用户',
+      // Empty when the user row is gone — the caller localizes the placeholder.
+      userName: u?.name ?? '',
       userEmail: u?.email ?? '',
       userRole: u?.role ?? null,
     })

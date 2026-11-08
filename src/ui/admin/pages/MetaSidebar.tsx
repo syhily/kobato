@@ -10,6 +10,7 @@ import type {
 
 import { PAGE_META_TOGGLE_FIELDS } from '@/shared/types/pages'
 import { BasicInfoCard } from '@/ui/admin/editor-shared/BasicInfoCard'
+import { ContentLanguageField } from '@/ui/admin/editor-shared/ContentLanguageField'
 import { CoverOgCard } from '@/ui/admin/editor-shared/CoverOgCard'
 import { ToggleOptionsCard } from '@/ui/admin/editor-shared/ToggleOptionsCard'
 import { futureLocalInputValueOrEmpty } from '@/ui/admin/editor-shell/editor-datetime'
@@ -26,6 +27,7 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     webmentionsEnabled: page.webmentionsEnabled,
     showToc: page.showToc,
     showUpdated: page.showUpdated,
+    contentLanguage: page.contentLanguage ?? '',
     showFriends: page.showFriends,
     publishedAt: futureLocalInputValueOrEmpty(page.publishedAt),
   }
@@ -73,12 +75,19 @@ export function MetaSidebar({
         publishedAt={draft.publishedAt}
         onChangePublishedAt={(value) => set('publishedAt', value)}
         disabled={disabled}
-      />
+      >
+        <ContentLanguageField
+          id="page-content-language"
+          value={draft.contentLanguage}
+          onChange={(value) => set('contentLanguage', value)}
+          disabled={disabled}
+        />
+      </BasicInfoCard>
 
       <CoverOgCard
         coverId="page-cover"
         ogId="page-og"
-        entityLabel="页面"
+        entityLabelId="admin.editor.entity.page"
         cover={draft.cover}
         onCoverChange={(value) => set('cover', value)}
         og={draft.og}

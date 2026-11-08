@@ -144,6 +144,58 @@ fields one card owns. The server merges it against the stored section
 snapshot; unknown fields are rejected.
 _Avoid_: full-section snapshot, loader shape as write base
 
+### Internationalization
+
+**UI locale**:
+`siteIdentity.locale`, one of the four supported tags (`en-US`, `zh-HK`,
+`zh-TW`, `zh-CN`, `@/shared/i18n/locales`). It drives every system surface —
+public/admin/auth/editor copy, validation and error messages, emails,
+notifications, SEO, feeds and formatting — and is the tag emitted as
+`<html lang>` / `Content-Language`. It is NOT the language of the content.
+_Avoid_: site language (suggests the posts' language), i18n locale, language
+code (the stored value is a tag, canonicalized from legacy aliases)
+
+**Content language**:
+`post.contentLanguage` / `page.contentLanguage` — an optional BCP 47 tag the
+author declares for the prose of one post or page. Author input, never rewritten
+by the UI locale, never auto-detected and never translated. The write API
+accepts ANY well-formed tag (not a closed set — `ja`, `pt-BR`, `zh-Hant-TW` are
+all legal), stores its canonical spelling (`Intl.getCanonicalLocales`), and
+`null` / blank clears it; a malformed tag rejects the write with the
+`admin.editor.contentLanguage.error` descriptor and the `contentLanguage` field
+path. The public detail body container stamps it as `lang`; unset means the
+container inherits the document's UI locale. It changes no copy, no title, no
+body bytes and no feed URL.
+_Avoid_: confusing it with UI locale, using it to select a message catalog,
+treating it as an enum of the four UI locales
+
+**Message catalog**:
+One typed ICU module per locale per namespace — `messages/ui/<locale>` (client
+copy, shipped through the root loader) and `messages/server/<locale>` (email,
+notifications, background jobs). English defines the message-id type; the other
+locales `satisfies` it. `@/shared/i18n/catalog` aggregates them, merges the
+English baseline, and validates the ICU contract (variables, argument kinds,
+plural categories legal for the locale, select coverage). Adding copy means
+adding the key to all four locales — never inlining a string.
+_Avoid_: translations file, messages JSON (the catalogs are TS modules inside
+the SEA bundle), "just the Chinese strings" (English is the baseline)
+
+**Time format**:
+`siteIdentity.timeFormat`: `null` means "follow the UI locale" (Intl's short
+date + short time, in the site time zone); a string is the admin's custom token
+pattern, substituted token-by-token and never handed to date-fns.
+_Avoid_: default date format (there is no separate default — `null` IS it)
+
+**Locale switch**:
+The General settings language flow, the one control that does not save
+immediately: await `flushAllAndWait()` over every dirty settings card → only
+when all report clean, commit `field.onChange(newLocale)` and
+`save('locale')` → reload exactly once when the stored locale actually
+changed. A failed flush/commit vetoes the switch, keeps the unsaved input
+(the panel flush never rolls back a validation failure) and never reloads.
+_Avoid_: saving the locale first (or with dirty cards outstanding), reloading
+on a commit failure, treating a per-field save as "the whole card is clean"
+
 ### Cache
 
 **Cache declaration**:
@@ -157,6 +209,28 @@ and write policy, and every consumer goes through its verbs (`through`,
 through `kv-store` directly.
 _Avoid_: hand-rolled cache-aside at call sites, ad-hoc key strings
 outside the behavior plane
+
+**Locale representation**:
+Localized server output whose cache key includes the reader dimension AND the
+settings generation: the `feed`/`calendar` buckets key on
+`locale:APP_VERSION:settingsRevision:<content key>` (the calendar adds the
+theme), the `og` bucket on `settingsRevision:<slug>-<input hash>`, the
+`comments` bucket on `<commentsRevision>:<limit>`, the `sitemap` bucket on its
+site-origin generation, and their HTTP responses (plus
+`manifest.webmanifest`) are `Cache-Control: public, no-cache` with a strong
+ETag over the exact served bytes, so a language switch can never be served
+from a stale representation. `settingsRevision` is the SECTION-SCOPED,
+content-addressed generation (`shared/config/representation-scopes`): one hash
+per `detail`/`listing`/`feed`/`calendar`/`og`/`manifest`/`comments` over exactly
+the sections that surface renders (encrypted secrets excluded), so the same
+settings reuse keys across restarts and an UNRELATED save
+(security/backup/mail/limits) or a credential rotation moves nothing.
+The boot-unique `revision` is request identity / locale sync only. The
+`general`/`content`/`assets`/`sidebar`/`fonts`/`comments` handlers additionally
+delete the feed/calendar/og/comments buckets to reclaim the orphaned rows —
+correctness never depends on that delete or on waiting for in-flight renders.
+_Avoid_: locale-less feed/calendar keys, `max-age` on localized
+representations, generation counters for those buckets
 
 **Content invalidation**:
 One door — `invalidateContent(db, event)` in
@@ -179,7 +253,11 @@ projected — never re-derived — onto the three context surfaces: Hono
 React Router `RouterContextProvider` key. It carries the session, the
 viewer, the proxy-aware client address, the normalized document URL
 (`.data` / `_routes` / `index` stripped), the request facts, the
-db/pool handles, and the CSP nonce. Same-session mutations call
+db/pool handles, the CSP nonce, and the request's PINNED settings bundle plus
+the `localization` projection (`locale`, site `timeZone`, `timeFormat`, and
+the snapshot `revision`). The bundle and the projection come from ONE lazy
+snapshot capture (`createLazyAppSnapshot`), so the bytes a renderer produces
+always belong to the revision in its cache key. Same-session mutations call
 `markSessionDirty()` and the middleware commits — the only Set-Cookie
 commit point; sid-changing flows (login rotation) keep their explicit
 Set-Cookie channel.

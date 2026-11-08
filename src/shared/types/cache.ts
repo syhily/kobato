@@ -2,6 +2,8 @@
 // the reserved (read-only) bucket metadata all derive from
 // `@/shared/cache/registry` — no second hand-synced enumeration exists.
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { CACHE_DECLARATIONS } from '@/shared/cache/registry'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -58,22 +60,22 @@ export type ReservedCacheBucketId = 'session' | 'rateLimit'
 
 export interface ReservedCacheBucket {
   id: ReservedCacheBucketId
-  label: string
-  description: string
+  /** Label message id — resolved by the admin surface's translator. */
+  labelId: UiMessageId
+  /** Description message id. */
+  descriptionId: UiMessageId
 }
 
 export const RESERVED_CACHE_BUCKETS: readonly ReservedCacheBucket[] = [
   {
     id: 'session',
-    label: '登录会话',
-    description:
-      'Cookie 解析后命中的服务端会话记录，存储于数据库 session 表（行主键即 sid）。承载所有已登录设备的服务端会话；为防止误清空导致全员登出，仅供查看。',
+    labelId: 'admin.cache.reserved.session.label',
+    descriptionId: 'admin.cache.reserved.session.description',
   },
   {
     id: 'rateLimit',
-    label: '限流计数器',
-    description:
-      '登录 / 评论 / 点赞 / 邀请等通道的速率限制窗口计数，保存在进程内存中（进程重启即清零）。清空会让被节流的滥用者立刻可以重试，仅供查看。',
+    labelId: 'admin.cache.reserved.rateLimit.label',
+    descriptionId: 'admin.cache.reserved.rateLimit.description',
   },
 ]
 

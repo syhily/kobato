@@ -9,13 +9,15 @@ import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate, formatShowDate } from '@/shared/utils/formatter'
-import { roleLabel } from '@/shared/utils/roles'
+import { ROLE_LABEL_KEYS } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
+import { useChromeClock } from '@/ui/public/chrome/use-chrome-clock'
 
 const DATE_FORMAT = 'yyyy-LL-dd'
 
@@ -28,21 +30,26 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableProps) {
+  const { t } = useI18n()
+  // One clock for the whole table so the relative "registered" dates share the
+  // render instant: the root loader's `nowIso` during SSR + hydration, the live
+  // clock after mount (a midnight rollover would otherwise mismatch).
+  const now = useChromeClock()
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            用户
+            {t('admin.users.table.user')}
           </TableHead>
           <TableHead className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            角色
+            {t('admin.users.table.role')}
           </TableHead>
           <TableHead className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            状态
+            {t('admin.users.table.status')}
           </TableHead>
           <TableHead className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            注册时间
+            {t('admin.users.table.registered')}
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -57,7 +64,7 @@ export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableP
                   <EmptyMedia variant="icon">
                     <SearchIcon />
                   </EmptyMedia>
-                  <EmptyTitle>未找到用户</EmptyTitle>
+                  <EmptyTitle>{t('admin.users.empty')}</EmptyTitle>
                 </EmptyHeader>
               </Empty>
             </TableCell>
@@ -66,10 +73,10 @@ export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableP
           rows.map((user, index) =>
             index === rows.length - 1 ? (
               <Fragment key={user.id} ref={sentinelRef}>
-                <UserRow user={user} config={config} />
+                <UserRow user={user} config={config} now={now} />
               </Fragment>
             ) : (
-              <UserRow key={user.id} user={user} config={config} />
+              <UserRow key={user.id} user={user} config={config} now={now} />
             ),
           )
         )}
@@ -81,14 +88,21 @@ export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableP
 interface UserRowProps {
   user: AdminUserDto
   config: SiteIdentitySettings
+  /** Stable render clock (root `nowIso` on SSR/hydration) for the relative date. */
+  now: Date
 }
 
-const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
+const UserRow = memo(function UserRow({ user, config, now }: UserRowProps) {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
   const detailPath = `/admin/security/users/${user.id}`
 
-  const statusText = user.deletedAt ? '已删除' : user.isMuted ? '已禁言' : '正常'
+  const statusText = user.deletedAt
+    ? t('admin.users.status.deleted')
+    : user.isMuted
+      ? t('admin.users.status.muted')
+      : t('admin.users.status.normal')
   const statusClass = user.deletedAt ? 'text-muted-foreground' : user.isMuted ? 'text-destructive' : 'text-foreground'
 
   const createdDate = new Date(user.createdAt)
@@ -116,14 +130,16 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
               onClick={(e) => e.stopPropagation()}
               className="block truncate font-medium hover:underline"
             >
-              {user.name || '匿名'}
+              {user.name || t('common.role.anonymous')}
             </Link>
             <div className="truncate text-sm text-muted-foreground">{user.email}</div>
           </div>
         </div>
       </TableCell>
       <TableCell className="px-4 py-4">
-        <span className="text-sm">{user.role === null ? '匿名' : roleLabel(user.role)}</span>
+        <span className="text-sm">
+          {user.role === null ? t('common.role.anonymous') : t(ROLE_LABEL_KEYS[user.role])}
+        </span>
       </TableCell>
       <TableCell className="px-4 py-4">
         <span className={cn('text-sm', statusClass)}>{statusText}</span>
@@ -131,7 +147,7 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
       <TableCell className="px-4 py-4">
         <div>
           <div className="text-sm">{formatLocalDate(createdDate, DATE_FORMAT, config)}</div>
-          <div className="text-xs text-muted-foreground">{formatShowDate(createdDate, config)}</div>
+          <div className="text-xs text-muted-foreground">{formatShowDate(createdDate, config, now)}</div>
         </div>
       </TableCell>
     </TableRow>

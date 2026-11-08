@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
+
 export const updateCheckResultDto = z.object({
   currentVersion: z.string(),
   latestVersion: z.string(),
@@ -7,8 +9,12 @@ export const updateCheckResultDto = z.object({
   htmlUrl: z.string(),
   updateAvailable: z.boolean(),
   canSelfUpdate: z.boolean(),
-  /** Admin-facing refusal reasons (Chinese) when `canSelfUpdate` is false. */
-  reasons: z.array(z.string()),
+  /**
+   * Typed refusal descriptors when `canSelfUpdate` is false: the VersionDialog
+   * resolves each `messageKey` with the active locale. `fallbackMessage` stays
+   * English for logs and old clients.
+   */
+  reasons: z.array(z.custom<ErrorMessageDescriptor>()),
 })
 export type UpdateCheckResult = z.infer<typeof updateCheckResultDto>
 

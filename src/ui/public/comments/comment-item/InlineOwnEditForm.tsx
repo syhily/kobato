@@ -7,6 +7,7 @@ import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { isCommentEditorStateBlank } from '@/shared/lexical/comment-schema'
 import { Button } from '@/ui/components/button'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { useCommentsActions } from '@/ui/public/comments/comments-context'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
@@ -17,6 +18,7 @@ interface InlineOwnEditFormProps {
 }
 
 export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditFormProps) {
+  const { t } = useI18n()
   const actions = useCommentsActions('InlineOwnEditForm')
   const updateOwn = useMutation({
     ...orpcQuery.comments.updateOwn.mutationOptions(),
@@ -57,7 +59,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
           onClick={handleSave}
           disabled={submitting}
         >
-          {submitting ? '保存中…' : '保存'}
+          {submitting ? t('common.state.saving') : t('common.action.save')}
         </Button>
         <Button
           variant="light"
@@ -65,7 +67,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
           onClick={onCancel}
           disabled={submitting}
         >
-          取消
+          {t('common.action.cancel')}
         </Button>
       </div>
     </div>

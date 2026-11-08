@@ -16,6 +16,7 @@ import { useSessionSort } from '@/ui/admin/sessions/useSessionSort'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -24,6 +25,7 @@ export interface MySessionsViewProps {
 }
 
 export function MySessionsView({ items }: MySessionsViewProps) {
+  const { t } = useI18n()
   const config = useSiteIdentity()
   const logout = useLogout()
   const revalidator = useRevalidator()
@@ -32,7 +34,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
     onSuccess: () => {
       void revalidator.revalidate()
     },
-    onError: onMutationError('注销会话失败'),
+    onError: onMutationError('admin.toast.sessionSignOutFailed', t),
   })
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
@@ -45,11 +47,9 @@ export function MySessionsView({ items }: MySessionsViewProps) {
 
   const onRevoke = (sid: string, isCurrent: boolean) => {
     setConfirm({
-      title: isCurrent ? '注销当前会话？' : '注销该登录会话？',
-      description: isCurrent
-        ? '注销后本设备将立即退出登录，并跳转到登录页。'
-        : '该设备会立即退出登录，再次访问需要重新输入密码。',
-      actionLabel: '注销',
+      title: isCurrent ? t('admin.my.sessions.revokeCurrentTitle') : t('admin.my.sessions.revokeTitle'),
+      description: isCurrent ? t('admin.my.sessions.revokeCurrentBody') : t('admin.my.sessions.revokeBody'),
+      actionLabel: t('admin.my.sessions.revoke'),
       destructive: true,
       actionIcon: <LogOutIcon data-icon />,
       onConfirm: () => {
@@ -65,7 +65,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
   return (
     <>
       <AdminListPage>
-        <AdminListPage.Header title="登录设备" description="管理本账户在各设备上的登录会话。">
+        <AdminListPage.Header title={t('public.chrome.mySessions')} description={t('admin.my.sessions.description')}>
           <SessionSortSelect sort={sort} options={MY_SESSION_SORT_OPTIONS} onChange={setSort} />
         </AdminListPage.Header>
 
@@ -77,7 +77,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
                   <EmptyMedia variant="icon">
                     <MonitorIcon />
                   </EmptyMedia>
-                  <EmptyTitle>暂无登录设备</EmptyTitle>
+                  <EmptyTitle>{t('admin.my.sessions.empty')}</EmptyTitle>
                 </EmptyHeader>
               </Empty>
             ) : (

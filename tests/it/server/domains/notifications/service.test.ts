@@ -18,12 +18,24 @@ import {
   sendDirectMessage,
   unreadCount,
 } from '@/server/domains/notifications/service'
-import { listThreadParticipantIds, notificationInboxQuery } from '@/server/infra/db/operations/notification'
-import { notificationRecipient } from '@/server/infra/db/schema/notification'
+import {
+  createNotificationWithRecipients,
+  listThreadParticipantIds,
+  notificationInboxQuery,
+} from '@/server/infra/db/operations/notification'
+import { notification, notificationRecipient } from '@/server/infra/db/schema/notification'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
+import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
 const db = getTestDb()
+
+/** Real system message used wherever a test just needs an admin-kind row. */
+const SYSTEM_NOTICE = {
+  titleKey: 'notification.mail.zeaburCleanup.title',
+  bodyKey: 'notification.mail.zeaburCleanup.body',
+  source: 'zeabur-mail-cleanup',
+} as const
 
 let seq = 0
 async function seedUser(role: Role, name: string): Promise<number> {
@@ -56,12 +68,12 @@ beforeEach(async () => {
 describe('notifications / producers', () => {
   it('notifyAdmins fans out to admins only and returns null pre-install', async () => {
     // Pre-install: no users at all — nothing to deliver, honestly skipped.
-    expect(notifyAdmins(db, { title: 't', body: 'b' })).toBeNull()
+    expect(notifyAdmins(db, SYSTEM_NOTICE)).toBeNull()
 
     const adminId = await seedUser('admin', 'admin')
     const authorId = await seedUser('author', 'author')
 
-    const row = notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件', source: 'zeabur-mail-cleanup' })
+    const row = notifyAdmins(db, SYSTEM_NOTICE)
     expect(row).not.toBeNull()
     expect(row!.kind).toBe('admin')
     expect(row!.senderId).toBeNull()
@@ -87,7 +99,7 @@ describe('notifications / producers', () => {
       const error = captureError(() => sendDirectMessage(db, adminId, targetId, { title: 't', body: 'b' }))
       expect(error).toBeInstanceOf(DomainError)
       expect((error as DomainError).code).toBe('NOT_FOUND')
-      expect((error as DomainError).message).toBe('目标用户不存在')
+      expect((error as DomainError).descriptor).toMatchObject({ messageKey: 'notifications.error.targetNotFound' })
     }
   })
 
@@ -134,13 +146,19 @@ describe('notifications / producers', () => {
   it('rejects a broadcast on a single-admin site with an honest 400', async () => {
     const adminId = await seedUser('admin', 'admin')
     expect(() => sendBroadcast(db, adminId, { title: 't', body: 'b', replyable: false })).toThrow(
-      '站点内还没有其他用户，公告无人可接收',
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.noAudience' }),
+      }),
     )
   })
 
   it('rejects a direct message to oneself', async () => {
     const adminId = await seedUser('admin', 'admin')
-    expect(() => sendDirectMessage(db, adminId, adminId, { title: 't', body: 'b' })).toThrow('不能给自己发送私信')
+    expect(() => sendDirectMessage(db, adminId, adminId, { title: 't', body: 'b' })).toThrow(
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.selfDirect' }),
+      }),
+    )
   })
 })
 
@@ -298,7 +316,7 @@ describe('notifications / threads & replies', () => {
     // not a silent send into the void.
     await expect(
       replyToThread(db, viewer(adminId, 'admin'), { threadId: root.threadId, body: '还在吗' }),
-    ).rejects.toThrow('该线程没有可接收回复的对象')
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'notifications.error.noThreadRecipients' } })
     expect(unreadCount(db, visitorId)).toBe(1)
   })
 
@@ -410,7 +428,7 @@ describe('notifications / threads & replies', () => {
 
   it('rejects replies on system messages and non-replyable broadcasts', async () => {
     const adminId = await seedUser('admin', 'admin')
-    const systemRow = notifyAdmins(db, { title: 'sys', body: 'b' })!
+    const systemRow = notifyAdmins(db, SYSTEM_NOTICE)!
     await expect(
       replyToThread(db, viewer(adminId, 'admin'), { threadId: systemRow.threadId, body: 'x' }),
     ).rejects.toThrow(DomainError)
@@ -465,8 +483,12 @@ describe('notifications / recall (ADR-0007)', () => {
 
     recallMessage(db, root.id)
 
-    await expect(getThread(db, viewer(visitorId, 'visitor'), root.threadId)).rejects.toThrow('消息不存在')
-    await expect(getThread(db, viewer(adminId, 'admin'), root.threadId)).rejects.toThrow('消息不存在')
+    await expect(getThread(db, viewer(visitorId, 'visitor'), root.threadId)).rejects.toMatchObject({
+      descriptor: { messageKey: 'notifications.error.messageNotFound' },
+    })
+    await expect(getThread(db, viewer(adminId, 'admin'), root.threadId)).rejects.toMatchObject({
+      descriptor: { messageKey: 'notifications.error.messageNotFound' },
+    })
   })
 
   it('refuses new replies on a recalled replyable broadcast', async () => {
@@ -478,7 +500,7 @@ describe('notifications / recall (ADR-0007)', () => {
 
     await expect(
       replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: 'x' }),
-    ).rejects.toThrow('该消息不支持回复')
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'notifications.error.notReplyable' } })
   })
 
   it('leaves existing fork threads readable and replyable after the root is recalled', async () => {
@@ -537,7 +559,7 @@ describe('notifications / recall (ADR-0007)', () => {
 
   it('recalls an admin-kind system alert', async () => {
     const adminId = await seedUser('admin', 'admin')
-    const row = notifyAdmins(db, { title: 'Zeabur 下线', body: '请重新配置邮件' })!
+    const row = notifyAdmins(db, SYSTEM_NOTICE)!
     expect(unreadCount(db, adminId)).toBe(1)
 
     const recalled = recallMessage(db, row.id)
@@ -551,22 +573,214 @@ describe('notifications / recall (ADR-0007)', () => {
     const visitorId = await seedUser('visitor', 'visitor')
     const direct = sendDirectMessage(db, adminId, visitorId, { title: '私信', body: 'hello' })
 
-    expect(() => recallMessage(db, direct.id)).toThrow('私信不支持撤回')
+    expect(() => recallMessage(db, direct.id)).toThrow(
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.recallDirect' }),
+      }),
+    )
     const inbox = await listInbox(db, visitorId, { tab: 'direct', limit: 10 })
     expect(inbox.items).toHaveLength(1)
     expect(inbox.items[0]!.title).toBe('私信')
   })
 
   it('rejects recalling a missing message', async () => {
-    expect(() => recallMessage(db, 9999)).toThrow('消息不存在')
+    expect(() => recallMessage(db, 9999)).toThrow(
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.messageNotFound' }),
+      }),
+    )
   })
 
   it('refuses a broadcast when the author is the only user, creating no rows', async () => {
     const adminId = await seedUser('admin', 'admin')
     expect(() => sendBroadcast(db, adminId, { title: 't', body: 'b', replyable: false })).toThrow(
-      '站点内还没有其他用户，公告无人可接收',
+      expect.objectContaining({
+        descriptor: expect.objectContaining({ messageKey: 'notifications.error.noAudience' }),
+      }),
     )
     expect((await listInbox(db, adminId, { tab: 'all', limit: 10 })).items).toHaveLength(0)
     expect(unreadCount(db, adminId)).toBe(0)
+  })
+})
+
+describe('notifications / localized system messages (5b-ii)', () => {
+  const JOB_TITLE = { taskKey: 'backup' }
+  const JOB_BODY = { taskKey: 'backup', hasError: 'no', error: '' }
+
+  function postSystemNotice(): number {
+    const row = notifyAdmins(db, {
+      titleKey: 'notification.job.failed.title',
+      titleParams: JOB_TITLE,
+      bodyKey: 'notification.job.failed.body',
+      bodyParams: JOB_BODY,
+      source: 'job-run',
+      actionUrl: '/admin/tasks',
+    })
+    return row!.id
+  }
+
+  it('stores the English fallback plus the descriptor columns', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const id = postSystemNotice()
+
+    const stored = db.select().from(notification).where(eq(notification.id, id)).all()[0]!
+    expect(stored.title).toBe('Background task failed: backup')
+    expect(stored.body).toBe('Task backup failed on its most recent run. Open the Tasks page for details.')
+    expect(stored.titleKey).toBe('notification.job.failed.title')
+    expect(JSON.parse(stored.titleParams!)).toEqual(JOB_TITLE)
+    expect(stored.bodyKey).toBe('notification.job.failed.body')
+    expect(JSON.parse(stored.bodyParams!)).toEqual(JOB_BODY)
+    expect(adminId).toBeGreaterThan(0)
+  })
+
+  it('translates the inbox row in every locale', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    postSystemNotice()
+
+    const expected = {
+      'en-US': {
+        title: 'Background task failed: backup',
+        body: 'Task backup failed on its most recent run. Open the Tasks page for details.',
+      },
+      'zh-CN': {
+        title: '后台任务失败：backup',
+        body: '任务「backup」最近一次执行失败。请到「任务」页面查看详情。',
+      },
+      'zh-TW': {
+        title: '後台任務失敗：backup',
+        body: '任務「backup」最近一次執行失敗。請到「任務」頁面檢視詳情。',
+      },
+      'zh-HK': {
+        title: '後台任務失敗：backup',
+        body: '任務「backup」最近一次執行失敗。請到「任務」頁面檢視詳情。',
+      },
+    } as const
+
+    for (const [locale, text] of Object.entries(expected)) {
+      const inbox = await listInbox(db, adminId, {
+        tab: 'all',
+        limit: 10,
+        locale: locale as keyof typeof expected,
+      })
+      expect(inbox.items[0]!.title).toBe(text.title)
+      expect(inbox.items[0]!.body).toBe(text.body)
+    }
+  })
+
+  const DETAIL_BY_LOCALE = {
+    'en-US': {
+      title: 'Background task failed: backup',
+      body: 'Task backup failed on its most recent run. Open the Tasks page for details.',
+    },
+    'zh-CN': {
+      title: '后台任务失败：backup',
+      body: '任务「backup」最近一次执行失败。请到「任务」页面查看详情。',
+    },
+    'zh-TW': {
+      title: '後台任務失敗：backup',
+      body: '任務「backup」最近一次執行失敗。請到「任務」頁面檢視詳情。',
+    },
+    'zh-HK': {
+      title: '後台任務失敗：backup',
+      body: '任務「backup」最近一次執行失敗。請到「任務」頁面檢視詳情。',
+    },
+  } as const
+
+  it.each(SUPPORTED_LOCALES)('translates inbox title and thread detail in %s', async (locale) => {
+    const adminId = await seedUser('admin', 'admin')
+    const id = postSystemNotice()
+    const stored = db.select().from(notification).where(eq(notification.id, id)).all()[0]!
+    const expected = DETAIL_BY_LOCALE[locale]
+
+    const inbox = await listInbox(db, adminId, { tab: 'all', limit: 10, locale })
+    expect(inbox.items[0]!.title).toBe(expected.title)
+
+    const thread = await getThread(db, viewer(adminId, 'admin'), stored.threadId, locale)
+    expect(thread.messages[0]!.body).toBe(expected.body)
+
+    // The detail is the TRANSLATED message. English legitimately equals the
+    // stored fallback; every other locale must differ from it.
+    if (locale === 'en-US') {
+      expect(thread.messages[0]!.body).toBe(stored.body)
+    } else {
+      expect(thread.messages[0]!.body).not.toBe(stored.body)
+      expect(thread.messages[0]!.body).not.toBe(DETAIL_BY_LOCALE['en-US'].body)
+    }
+  })
+
+  it('truncates the SAME translated body for the preview; the thread keeps it whole', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const error = 'x'.repeat(300)
+    const row = notifyAdmins(db, {
+      titleKey: 'notification.job.failed.title',
+      titleParams: { taskKey: 'backup' },
+      bodyKey: 'notification.job.failed.body',
+      bodyParams: { taskKey: 'backup', hasError: 'yes', error },
+    })!
+
+    const inbox = await listInbox(db, adminId, { tab: 'all', limit: 10, locale: 'zh-CN' })
+    const full = (await getThread(db, viewer(adminId, 'admin'), row.threadId, 'zh-CN')).messages[0]!.body
+
+    expect(full).toContain(error)
+    expect(full.length).toBeGreaterThan(200)
+    expect(inbox.items[0]!.body).toBe(full.slice(0, 200))
+    expect(inbox.items[0]!.body).toHaveLength(200)
+    expect(full.startsWith(inbox.items[0]!.body)).toBe(true)
+  })
+
+  it('keeps direct and broadcast text raw with null descriptors', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    const visitorId = await seedUser('visitor', 'visitor')
+    const direct = sendDirectMessage(db, adminId, visitorId, { title: '私信', body: '用户原文' })
+    const broadcast = sendBroadcast(db, adminId, { title: '公告', body: '广播原文', replyable: false })
+
+    for (const id of [direct.id, broadcast.id]) {
+      const stored = db.select().from(notification).where(eq(notification.id, id)).all()[0]!
+      expect(stored.titleKey).toBeNull()
+      expect(stored.bodyKey).toBeNull()
+      expect(stored.titleParams).toBeNull()
+      expect(stored.bodyParams).toBeNull()
+    }
+
+    const inbox = await listInbox(db, visitorId, { tab: 'all', limit: 10, locale: 'en-US' })
+    expect(inbox.items.map((item) => item.title)).toEqual(['公告', '私信'])
+    const thread = await getThread(db, viewer(visitorId, 'visitor'), direct.threadId, 'en-US')
+    expect(thread.messages[0]!.body).toBe('用户原文')
+  })
+
+  it('shows a legacy row (no descriptor) unchanged in every locale', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    createNotificationWithRecipients(
+      db,
+      { kind: 'admin', senderId: null, title: '旧通知', body: '旧正文', replyable: false },
+      [adminId],
+    )
+
+    for (const locale of ['en-US', 'zh-CN', 'zh-TW', 'zh-HK'] as const) {
+      const inbox = await listInbox(db, adminId, { tab: 'all', limit: 10, locale })
+      expect(inbox.items[0]!.title).toBe('旧通知')
+      expect(inbox.items[0]!.body).toBe('旧正文')
+    }
+  })
+
+  it('falls back to the stored English text when the key is no longer registered', async () => {
+    const adminId = await seedUser('admin', 'admin')
+    createNotificationWithRecipients(
+      db,
+      {
+        kind: 'admin',
+        senderId: null,
+        title: 'Removed system notice',
+        body: 'This row outlived its catalog key.',
+        titleKey: 'notification.removed.key',
+        bodyKey: 'notification.removed.key',
+        replyable: false,
+      },
+      [adminId],
+    )
+
+    const inbox = await listInbox(db, adminId, { tab: 'all', limit: 10, locale: 'zh-TW' })
+    expect(inbox.items[0]!.title).toBe('Removed system notice')
+    expect(inbox.items[0]!.body).toBe('This row outlived its catalog key.')
   })
 })

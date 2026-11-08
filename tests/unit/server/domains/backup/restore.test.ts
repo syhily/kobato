@@ -125,7 +125,9 @@ describe('services/backup — stageBackup streaming size guard', () => {
   it('aborts a gzip stream whose decompressed size exceeds the cap, without staging it in full', async () => {
     const zipped = await gzipBytes(fakeSqliteFile(4096))
     await expect(stageBackup(Readable.from(zipped), { maxBytes: 1024 })).rejects.toThrow(ActionFailure)
-    await expect(stageBackup(Readable.from(zipped), { maxBytes: 1024 })).rejects.toThrow('备份文件过大')
+    await expect(stageBackup(Readable.from(zipped), { maxBytes: 1024 })).rejects.toMatchObject({
+      descriptor: { messageKey: 'backup.error.fileTooLarge' },
+    })
   })
 
   it('fails decompressedSizeGuard once the byte count trips the cap', async () => {
@@ -151,7 +153,7 @@ describe('services/backup — stageBackup streaming size guard', () => {
           }
         },
       ),
-    ).rejects.toThrow('备份文件过大')
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'backup.error.fileTooLarge' } })
   })
 })
 
@@ -189,7 +191,9 @@ describe('services/backup — stageBackup config entry', () => {
       { name: 'kobato.config.json', data: Buffer.from('not json at all') },
     ])
     await expect(stageBackup(archive)).rejects.toThrow(ActionFailure)
-    await expect(stageBackup(archive)).rejects.toThrow('配置文件不是有效的 JSON')
+    await expect(stageBackup(archive)).rejects.toMatchObject({
+      descriptor: { messageKey: 'backup.error.configNotJson' },
+    })
   })
 
   it('rejects a tar whose config entry is valid JSON but not an object', async () => {
@@ -197,7 +201,9 @@ describe('services/backup — stageBackup config entry', () => {
       { name: 'kobato.db', data: fakeSqliteFile() },
       { name: 'kobato.config.json', data: Buffer.from('[1, 2, 3]') },
     ])
-    await expect(stageBackup(archive)).rejects.toThrow('配置文件格式无效')
+    await expect(stageBackup(archive)).rejects.toMatchObject({
+      descriptor: { messageKey: 'backup.error.configInvalid' },
+    })
   })
 })
 
@@ -221,7 +227,9 @@ describe('services/backup — stageBackup encrypted archives', () => {
   it('rejects a wrong password as a 400 ActionFailure and sweeps the staged dir', async () => {
     const encrypted = await encryptBytes(await gzipBytes(fakeSqliteFile()), 'right-password')
     await expect(stageBackup(encrypted, { password: 'wrong-password' })).rejects.toThrow(ActionFailure)
-    await expect(stageBackup(encrypted, { password: 'wrong-password' })).rejects.toThrow('备份密码错误或文件已损坏')
+    await expect(stageBackup(encrypted, { password: 'wrong-password' })).rejects.toMatchObject({
+      descriptor: { messageKey: 'backup.error.passwordWrong' },
+    })
   })
 
   it('decrypts with the right password and reports decrypt + extract byte progress', async () => {

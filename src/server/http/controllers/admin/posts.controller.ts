@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
@@ -25,8 +24,10 @@ import {
 import { assertOwnPostOr404 } from '@/server/domains/posts/services/shared'
 import { findPostMetaById } from '@/server/domains/posts/services/single'
 import { makeRevisionRouter } from '@/server/http/controllers/admin/revision-router'
-import { authorProc } from '@/server/http/orpc-base'
+import { authorProc, localizedOrpcError } from '@/server/http/orpc-base'
+import { formatWarningDescriptors } from '@/server/http/translate-domain-error'
 import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
+import { createServerTranslator } from '@/server/infra/i18n'
 import {
   adminPostAnalyticsInputSchema,
   adminPostAnalyticsOutputSchema,
@@ -66,7 +67,7 @@ const remove = authorProc
   .handler(async ({ input, context }) => {
     const result = await deletePost(context.db, idFromString(input.id), context.viewer)
     if (!result.deleted) {
-      throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'content.error.entityNotFound', { entity: 'post' })
     }
     recordAuditEventFromContext(context, {
       action: 'post_deleted',
@@ -82,14 +83,20 @@ const restore = authorProc
   .handler(async ({ input, context }) => {
     const result = await restorePost(context.db, idFromString(input.id), context.viewer)
     if (!result.restored) {
-      throw new ORPCError('NOT_FOUND', { message: '文章不存在或未被删除。' })
+      throw localizedOrpcError(context, 'NOT_FOUND', 'content.error.entityNotDeleted', { entity: 'post' })
     }
     recordAuditEventFromContext(context, {
       action: 'post_restored',
       resourceType: 'post',
       resourceId: input.id,
     })
-    return { success: true, warning: result.warning }
+    return {
+      success: true,
+      warning: formatWarningDescriptors(
+        result.warningDescriptors ?? [],
+        createServerTranslator(context.localization.locale),
+      ),
+    }
   })
 
 const unpublish = authorProc
@@ -136,6 +143,7 @@ const upsertMeta = authorProc
       webmentionsEnabled: input.webmentionsEnabled,
       showToc: input.showToc,
       showUpdated: input.showUpdated,
+      contentLanguage: input.contentLanguage,
       visible: input.visible,
       categoryId: input.categoryId,
       tags: input.tags,

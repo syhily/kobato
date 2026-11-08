@@ -1,5 +1,19 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
+/**
+ * Custom validation messages: typed UI-catalog ids (the settings service maps
+ * them into wire descriptors on write). `s3FieldRequired` carries `{label}`.
+ */
+export const assetsValidationMessages = {
+  endpointHttps: 'admin.settings.assets.error.endpointHttps',
+  urlTemplate: 'admin.settings.assets.error.urlTemplate',
+  robotsPrintable: 'admin.settings.assets.error.robotsPrintable',
+  bucketName: 'admin.settings.assets.error.bucketName',
+  s3FieldRequired: 'admin.settings.assets.error.s3FieldRequired',
+} as const satisfies Record<string, UiMessageId>
+
 const coerceBoolean = z
   .union([z.boolean(), z.literal('true'), z.literal('false')])
   .transform((v) => (typeof v === 'boolean' ? v : v === 'true'))
@@ -15,7 +29,7 @@ const robotsTxt = z
   .string()
   .max(2_000)
   .refine((v) => v === '' || ROBOTS_PRINTABLE.test(v), {
-    message: 'robots.txt 只能包含可打印 ASCII 字符',
+    message: assetsValidationMessages.robotsPrintable,
   })
 
 const brandingObjectRef = z.object({
@@ -35,7 +49,7 @@ export const assetsSchema = z
         .trim()
         .min(1)
         .max(253)
-        .regex(/^[a-z0-9.-]+$/i, '只能包含字母 / 数字 / `-` / `.`'),
+        .regex(/^[a-z0-9.-]+$/i, assetsValidationMessages.bucketName),
       scheme: z.enum(['http', 'https']),
     }),
     storage: z.object({
@@ -95,7 +109,8 @@ export const assetsSchema = z
         ctx.addIssue({
           code: 'custom',
           path: ['storage', key as string],
-          message: `开启 S3 上传时「${label}」必填`,
+          message: assetsValidationMessages.s3FieldRequired,
+          params: { label },
         })
       }
     }
@@ -124,9 +139,13 @@ export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
 // would silently fall back to section defaults and disable storage. New
 // writes, however, must not persist a plaintext endpoint (credentials ride
 // every request to it) or an open-redirect-capable CDN template.
-export const STORAGE_ENDPOINT_HTTPS_MESSAGE = 'Endpoint 必须使用 HTTPS（http:// 会在网络上明文传输访问密钥）'
-export const STORAGE_URL_TEMPLATE_MESSAGE =
-  '资源域名模板必须是以 https:// 开头且包含 {src} 的完整 URL，或不含协议的相对后缀'
+/**
+ * Write-path storage-URL rules' custom messages: typed UI-catalog ids. The
+ * settings service maps them into wire descriptors (English fallback + path),
+ * so a rejected save never shows a raw id.
+ */
+export const STORAGE_ENDPOINT_HTTPS_MESSAGE = assetsValidationMessages.endpointHttps
+export const STORAGE_URL_TEMPLATE_MESSAGE = assetsValidationMessages.urlTemplate
 
 export function isSafeStorageEndpoint(endpoint: string): boolean {
   return endpoint === '' || endpoint.toLowerCase().startsWith('https://')

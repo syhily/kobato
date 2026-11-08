@@ -9,6 +9,7 @@ import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export interface OtpFormProps {
   email: string
@@ -26,6 +27,7 @@ function calcInitialCooldown(sentAt: number): number {
 }
 
 export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: OtpFormProps) {
+  const { t } = useI18n()
   const [cooldown, setCooldown] = useState(() => calcInitialCooldown(sentAt))
 
   const shouldTick = cooldown > 0
@@ -42,7 +44,9 @@ export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: 
   const [lastActionData, setLastActionData] = useState(actionData)
   if (actionData !== lastActionData) {
     setLastActionData(actionData)
-    if (actionData?.message === '验证码已重新发送。') {
+    // Branch on the descriptor's stable key, never the localized sentence:
+    // the resend acknowledgment must restart the cooldown in every locale.
+    if (actionData?.messageDescriptor?.messageKey === 'auth.otp.success.resent') {
       setCooldown(RESEND_COOLDOWN_SECONDS)
     }
   }
@@ -50,14 +54,14 @@ export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: 
   return (
     <div className="flex w-full flex-col gap-6">
       <p className="text-center text-sm text-muted-foreground">
-        验证码已发送至 <span className="font-medium text-foreground">{email}</span>，请输入 6 位验证码
+        {t('auth.otp.sent')} <span className="font-medium text-foreground">{email}</span>
       </p>
 
       <Form method="post" action="?action=verifyotp" id="otpForm" className="flex w-full flex-col gap-6">
         {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
         <div className="flex w-full flex-col gap-2">
           <Label htmlFor="otpForm-otp" className="font-semibold text-(--text-admin-base)">
-            验证码
+            {t('auth.otp.code')}
           </Label>
           <Input
             id="otpForm-otp"
@@ -80,10 +84,10 @@ export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: 
           className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
         >
           {isSubmitting ? (
-            '验证中...'
+            t('auth.otp.verifying')
           ) : (
             <>
-              验证并登录 <ArrowRightIcon className="ml-1 inline-block" size={18} />
+              {t('auth.otp.submit')} <ArrowRightIcon className="ml-1 inline-block" size={18} />
             </>
           )}
         </Button>
@@ -98,13 +102,13 @@ export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: 
             className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RotateCcwIcon size={14} />
-            {cooldown > 0 ? `${cooldown} 秒后重新发送` : '重新发送'}
+            {cooldown > 0 ? t('auth.otp.resendIn', { seconds: cooldown }) : t('auth.otp.resend')}
           </button>
         </Form>
         <Form method="post" action="?action=cancelotp" className="inline">
           {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <button type="submit" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            返回登录
+            {t('auth.otp.back')}
           </button>
         </Form>
       </div>

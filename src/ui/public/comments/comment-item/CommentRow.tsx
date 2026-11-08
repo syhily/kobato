@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { commentFlags } from '@/ui/public/comments/comment-item/comment-flags'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
 import { CommentAuthorLine, CommentAvatar } from '@/ui/public/comments/comment-item/CommentAuthorLine'
@@ -28,6 +29,7 @@ interface CommentRowProps {
 }
 
 export function CommentRow({ comment, depth, pending, children }: CommentRowProps) {
+  const { locale, t } = useI18n()
   const [editing, setEditing] = useState<'admin' | 'own' | false>(false)
   const identity = useCommentsIdentity('CommentRow')
   const actions = useCommentsActions('CommentRow')
@@ -45,13 +47,13 @@ export function CommentRow({ comment, depth, pending, children }: CommentRowProp
           <CommentAuthorLine comment={comment} />
           {flags.isMine && (
             <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-status-warn-border/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
-              <span className="flex-1">{editableHint(flags.myExpiresAt, isPending)}</span>
+              <span className="flex-1">{editableHint(flags.myExpiresAt, isPending, t, locale)}</span>
               <button
                 type="button"
                 onClick={() => actions.onDismissMyComment(comment.id)}
                 className="inline-flex shrink-0 items-center justify-center rounded-sm p-0.5 hover:bg-status-warn-border"
-                aria-label="关闭提示"
-                title="关闭提示并移除编辑权限"
+                aria-label={t('public.comments.dismissNotice')}
+                title={t('public.comments.dismissAndRevoke')}
               >
                 <XIcon className="size-3.5" />
               </button>
@@ -59,13 +61,13 @@ export function CommentRow({ comment, depth, pending, children }: CommentRowProp
           )}
           {flags.isOwnedByCurrentUser && flags.hasPendingDelete && (
             <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-status-warn-border/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
-              <span className="flex-1">你已申请删除这条评论，等待管理员处理。</span>
+              <span className="flex-1">{t('public.comments.pendingDelete')}</span>
             </div>
           )}
           {isPending && !flags.isMine && (
             <div className={commentContentClass(depth)}>
               <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-status-warn-border/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
-                <span>您的评论正在等待审核中...</span>
+                <span>{t('public.comments.awaitingModeration')}</span>
               </div>
               <CommentContentHtml content={comment.content} />
             </div>

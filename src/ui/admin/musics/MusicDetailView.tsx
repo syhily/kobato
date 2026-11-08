@@ -19,6 +19,7 @@ import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 import { LazyMotionDiv, LazyMotionH1, LazyMotionP, LazyMotionSpan } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useI18n } from '@/ui/lib/I18nProvider'
 import { Image } from '@/ui/public/widgets/Image'
 
 const DATE_FORMAT = 'yyyy-LL-dd'
@@ -29,6 +30,7 @@ interface MusicDetailViewProps {
 }
 
 export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
   const config = useSiteIdentity()
   const { load, toggle } = useMusicPlayerActions()
@@ -84,10 +86,10 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       queryClient.setQueryData(orpcQuery.admin.music.get.key({ input: { id } }), { music: data.music })
       // The library is cached under both operation types — the procedure-level key matches both.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
-      toast.success('已保存')
+      toast.success(t('admin.musics.detail.saved'))
       setEditing(false)
     },
-    onError: onMutationError('保存失败'),
+    onError: onMutationError('admin.toast.saveFailed', t),
   })
 
   const enterEdit = useCallback(() => {
@@ -136,18 +138,18 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         setTimeout(() => setCopied(false), 1500)
       })
       .catch(() => {
-        toast.error('复制失败')
+        toast.error(t('admin.musics.detail.copyFailed'))
       })
-  }, [music])
+  }, [music, t])
 
   const deleteMutation = useMutation({
     mutationFn: (musicId: string) => orpc.admin.music.delete({ id: musicId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
-      toast.success('已删除')
+      toast.success(t('admin.musics.detail.deleted'))
       void navigate('/admin/library/music')
     },
-    onError: onMutationError('删除失败'),
+    onError: onMutationError('admin.toast.deleteFailed', t),
   })
 
   const handleDelete = useCallback(() => {
@@ -155,16 +157,16 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       return
     }
     setConfirm({
-      title: `删除音乐「${music.name}」？`,
-      description: '此操作会从 S3 移除音频与封面对象，并把元数据标记为软删除。引用该音乐的页面将无法播放。',
-      actionLabel: '删除',
+      title: t('admin.musics.detail.deleteTitle', { name: music.name }),
+      description: t('admin.musics.detail.deleteBody'),
+      actionLabel: t('common.action.delete'),
       destructive: true,
       onConfirm: () => {
         deleteMutation.mutate(music.id)
         setConfirm(null)
       },
     })
-  }, [music, deleteMutation])
+  }, [music, deleteMutation, t])
 
   const isMutating = updateMutation.isPending
 
@@ -175,13 +177,13 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
   if (musicQuery.isError) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-ink-4">
-        <p className="text-lg">加载失败</p>
-        <p className="mt-1 text-sm">{musicQuery.error?.message ?? '请稍后重试'}</p>
+        <p className="text-lg">{t('admin.list.loadFailed')}</p>
+        <p className="mt-1 text-sm">{musicQuery.error?.message ?? t('admin.list.retryHint')}</p>
         <button
           type="button"
           onClick={() => void navigate('/admin/library/music')}
           className="mt-4 flex size-10 items-center justify-center rounded-full bg-surface-dim text-ink-3 transition-colors hover:bg-surface hover:text-ink-1"
-          aria-label="返回"
+          aria-label={t('admin.musics.detail.back')}
         >
           <X className="size-5" />
         </button>
@@ -192,12 +194,12 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
   if (!music) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-ink-4">
-        <p className="text-lg">未找到该歌曲</p>
+        <p className="text-lg">{t('admin.musics.detail.notFound')}</p>
         <button
           type="button"
           onClick={() => void navigate('/admin/library/music')}
           className="mt-4 flex size-10 items-center justify-center rounded-full bg-surface-dim text-ink-3 transition-colors hover:bg-surface hover:text-ink-1"
-          aria-label="返回"
+          aria-label={t('admin.musics.detail.back')}
         >
           <X className="size-5" />
         </button>
@@ -217,7 +219,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         type="button"
         onClick={() => void navigate('/admin/library/music')}
         className="absolute top-2 right-0 z-40 flex size-10 items-center justify-center rounded-full bg-surface-dim/80 text-ink-3 backdrop-blur-sm transition-all hover:scale-110 hover:bg-surface hover:text-ink-1 active:scale-95 lg:top-4"
-        aria-label="关闭"
+        aria-label={t('common.action.close')}
       >
         <X className="size-5" />
       </button>
@@ -262,7 +264,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...transitions.detailFade, delay: 0.1 }}
             >
-              单曲
+              {t('admin.musics.detail.single')}
             </LazyMotionSpan>
 
             {editing ? (
@@ -276,8 +278,8 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
                   type="text"
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
-                  placeholder="歌曲名称"
-                  aria-label="歌曲名称"
+                  placeholder={t('admin.musics.detail.songName')}
+                  aria-label={t('admin.musics.detail.songName')}
                   className="w-full border-b-2 border-line-muted bg-transparent pb-1 text-4xl font-bold tracking-tight text-ink-1 transition-colors outline-none placeholder:text-ink-4/40 focus:border-primary sm:text-5xl lg:text-6xl"
                 />
                 <div className="flex flex-wrap items-center gap-2 text-base text-ink-2">
@@ -285,8 +287,8 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
                     type="text"
                     value={draftArtist}
                     onChange={(e) => setDraftArtist(e.target.value)}
-                    placeholder="艺人（用 / 分隔）"
-                    aria-label="艺人"
+                    placeholder={t('admin.musics.detail.artistPlaceholder')}
+                    aria-label={t('admin.musics.detail.artist')}
                     className="min-w-0 flex-1 border-b-2 border-line-muted bg-transparent pb-1 transition-colors outline-none placeholder:text-ink-4/40 focus:border-primary"
                   />
                   <span className="text-ink-4">·</span>
@@ -294,8 +296,8 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
                     type="text"
                     value={draftAlbum}
                     onChange={(e) => setDraftAlbum(e.target.value)}
-                    placeholder="专辑"
-                    aria-label="专辑"
+                    placeholder={t('admin.musics.detail.album')}
+                    aria-label={t('admin.musics.detail.album')}
                     className="min-w-0 flex-1 border-b-2 border-line-muted bg-transparent pb-1 transition-colors outline-none placeholder:text-ink-4/40 focus:border-primary"
                   />
                 </div>
@@ -345,7 +347,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
               type="button"
               onClick={handlePlay}
               className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105"
-              aria-label={isCurrentPlaying ? '暂停' : '播放'}
+              aria-label={isCurrentPlaying ? t('music.pause') : t('music.play')}
             >
               {isCurrentPlaying ? <Pause className="size-7 fill-current" /> : <Play className="size-7 fill-current" />}
             </button>
@@ -356,7 +358,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
               className="flex items-center gap-2 rounded-full bg-surface-dim px-4 py-2 text-sm text-ink-1 transition-colors hover:bg-surface"
             >
               <Copy className="size-4" />
-              {copied ? '已复制' : '复制 playerId'}
+              {copied ? t('admin.musics.detail.copied') : t('admin.musics.detail.copyId')}
             </button>
 
             <button
@@ -365,7 +367,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
               className="flex items-center gap-2 rounded-full bg-surface-dim px-4 py-2 text-sm text-ink-1 transition-colors hover:bg-surface"
             >
               <Pencil className="size-4" />
-              编辑
+              {t('common.action.edit')}
             </button>
 
             <button
@@ -374,7 +376,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
               className="flex items-center gap-2 rounded-full px-4 py-2 text-sm text-ink-4 transition-colors hover:bg-surface-dim hover:text-red-400"
             >
               <Trash2 className="size-4" />
-              删除
+              {t('common.action.delete')}
             </button>
           </>
         )}
@@ -388,7 +390,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
               className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-105 disabled:opacity-50"
             >
               <Check className="size-4" />
-              {isMutating ? '保存中…' : '保存'}
+              {isMutating ? t('admin.musics.detail.saving') : t('common.action.save')}
             </button>
             <button
               type="button"
@@ -397,7 +399,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
               className="flex items-center gap-2 rounded-full bg-surface-dim px-4 py-2.5 text-sm text-ink-1 transition-colors hover:bg-surface"
             >
               <RotateCcw className="size-4" />
-              取消
+              {t('common.action.cancel')}
             </button>
           </>
         )}
@@ -420,11 +422,11 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
             <span className="font-mono">{music.sourceId}</span>
           </div>
           <div>
-            <span className="block text-xs text-ink-4/70">上传者</span>
+            <span className="block text-xs text-ink-4/70">{t('admin.musics.detail.uploader')}</span>
             <span>{music.uploaderName ?? '—'}</span>
           </div>
           <div>
-            <span className="block text-xs text-ink-4/70">更新时间</span>
+            <span className="block text-xs text-ink-4/70">{t('admin.musics.detail.updated')}</span>
             <span>{formatLocalDate(music.updatedAt, DATE_FORMAT, config)}</span>
           </div>
         </LazyMotionDiv>
@@ -437,13 +439,13 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...transitions.detailFade, delay: 0.4 }}
       >
-        <h2 className="mb-6 text-xl font-bold text-ink-1">歌词</h2>
+        <h2 className="mb-6 text-xl font-bold text-ink-1">{t('admin.musics.detail.lyrics')}</h2>
         {editing ? (
           <textarea
             value={draftLyric}
             onChange={(e) => setDraftLyric(e.target.value)}
-            placeholder="在此粘贴 LRC 格式歌词…"
-            aria-label="歌词"
+            placeholder={t('admin.musics.detail.lyricsPlaceholder')}
+            aria-label={t('admin.musics.detail.lyrics')}
             className="h-96 w-full resize-y rounded-xl bg-surface-dim p-5 font-mono text-sm leading-relaxed text-ink-1 ring-1 ring-line-muted transition-shadow outline-none placeholder:text-ink-4/40 focus:ring-2 focus:ring-primary/30"
           />
         ) : (

@@ -10,8 +10,10 @@ import {
   secretFieldStrings,
 } from '@/ui/admin/settings/shell/SettingsSecretInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 export function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
+  const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps, display } = useSettingsCard<
     MailLoaderShape,
     { mailgunDomain: string; mailgunApiKey: string }
@@ -31,32 +33,37 @@ export function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
   })
 
   const mailgunApiKeyField = secretFieldStrings({
+    t,
     mask: display.mail.mailgunApiKeyMask,
-    keepLabel: '保留现有 Key',
-    emptyHint: '尚未配置。在 Mailgun 控制台「Settings → API Keys」页面生成的私钥（key-... 或 MG_... 形式）。',
-    emptyPlaceholder: '粘贴 Mailgun Private API Key',
+    keepLabel: t('admin.settings.mail.mailgun.keepKey'),
+    emptyHint: t('admin.settings.mail.mailgun.keyHintEmpty'),
+    emptyPlaceholder: t('admin.settings.mail.mailgun.keyPlaceholder'),
   })
   return (
     <SettingGroup
-      title="Mailgun 配置"
-      description="配置 Mailgun 的发送域名和 API Key。修改后立即生效。仅支持美国（US）区域。"
+      title={t('admin.settings.mail.mailgun.title')}
+      description={t('admin.settings.mail.mailgun.description')}
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="发送域名"
+          label={t('admin.settings.mail.mailgun.domain')}
           htmlFor="mail-mailgun-domain"
-          hint="在 Mailgun 控制台已验证的域名，例如 mg.example.com。"
+          hint={t('admin.settings.mail.mailgun.domainHint')}
         >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="mail-mailgun-domain"
-            placeholder="mg.example.com"
+            placeholder={t('admin.settings.mail.mailgun.domainPlaceholder')}
             maxLength={253}
             {...form.register('mailgunDomain')}
           />
         </SettingsRow>
-        <SettingsRow label="API Key" htmlFor="mail-mailgun-api-key" hint={mailgunApiKeyField.hint}>
+        <SettingsRow
+          label={t('admin.settings.mail.mailgun.apiKey')}
+          htmlFor="mail-mailgun-api-key"
+          hint={mailgunApiKeyField.hint}
+        >
           <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="mail-mailgun-api-key"

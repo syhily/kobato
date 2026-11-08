@@ -4,6 +4,7 @@ import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'
 import { findAdminMusicRowById, findMusicById, updateMusic } from '@/server/infra/db/operations/music'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 
 export interface UpdateMusicMetadataInputs {
@@ -26,7 +27,7 @@ export async function updateMusicMetadata(
 ): Promise<AdminMusicDto> {
   const existing = await findMusicById(db, input.id)
   if (existing?.deletedAt !== null) {
-    throw new DomainError('NOT_FOUND', '音乐不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('music.error.notFound'))
   }
   if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.id) {
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
@@ -39,13 +40,13 @@ export async function updateMusicMetadata(
     lyric: input.lyric,
   })
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '音乐不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('music.error.notFound'))
   }
 
   // Re-fetch so the response carries the joined `uploaderName`.
   const projected = await findAdminMusicRowById(db, input.id)
   if (projected === null) {
-    throw new DomainError('NOT_FOUND', '音乐不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('music.error.notFound'))
   }
   return toAdminMusicDto(projected, projected.uploaderName)
 }

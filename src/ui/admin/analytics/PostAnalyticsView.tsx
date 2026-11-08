@@ -6,12 +6,14 @@ import { idFromString } from '@/shared/utils/id'
 import { AnalyticsDashboard, type AnalyticsDashboardData } from '@/ui/admin/analytics/AnalyticsDashboard'
 import { ExportButton } from '@/ui/admin/analytics/ExportButton'
 import { type AnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 // Title + public-link header shared by both shells; each route wraps it in its own chrome.
 export function PostAnalyticsHeader({ post }: { post: AdminPostDto }) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col gap-1">
-      <h1 className="text-lg font-semibold">文章分析</h1>
+      <h1 className="text-lg font-semibold">{t('admin.analytics.post.title')}</h1>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span className="font-medium text-foreground">{post.title}</span>
         <span className="text-border">·</span>

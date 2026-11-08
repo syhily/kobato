@@ -295,7 +295,13 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   exported from the `@/inkling` barrel (single-sourced in `src/inkling/shared-exports.ts`);
   `tests/inkling/unit/labels.test.ts` snapshots the key list. The same seam wires `WordCountPlugin`'s
   `language` prop to `Intl.Segmenter` word counting (`countWords(text, language)`), with `language`
-  published on the word-count handle so nested editors match.
+  published on the word-count handle so nested editors match. A host that never names a language on
+  the plugin itself gets one from the composer: `InklingComposer`'s `wordCountLanguage` prop (the
+  host's UI locale) lands in `InklingUiPrefsContext`, and `WordCountPlugin` resolves
+  `language ?? wordCountLanguage` — when BOTH are absent it stays `undefined` (published as `null`)
+  and `countWords` keeps its original regex path, so hosts that never opt in keep their old counts.
+  Hosts still mount the plugin themselves (the composer does not force word counting on) — the prop
+  only seeds the language.
 
 ## Documented tradeoffs
 

@@ -151,7 +151,7 @@ describe('snapshot: PublishStatusRow (post meta)', () => {
     )
     expect(html).toContain('定时发布')
     // DateTimePicker renders the chosen instant as a localized string.
-    expect(html).toContain('2099年1月1日')
+    expect(html).toContain('2099/1/1 09:00')
     expect(html).toContain('点击「发布草稿」会按上述时间上线')
   })
 

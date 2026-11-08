@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
+/** Custom validation message: typed id (mapped to a descriptor on write). */
+export const fontsValidationMessages = {
+  familyInvalid: 'admin.settings.fonts.error.familyInvalid',
+} as const satisfies Record<string, UiMessageId>
+
 /**
  * Font family name validation: CSS `font-family` values (spaced and Unicode names,
  * plus empty = "use the default font"). Must never break out of the single-quoted
@@ -13,7 +20,7 @@ const fontFamilySchema = z.union([
     .min(1)
     .max(100)
     .regex(/^[^"'\\;{}]+$/u, {
-      message: 'font-family must not contain quotes, backslashes, or braces',
+      message: fontsValidationMessages.familyInvalid,
     }),
 ])
 

@@ -6,7 +6,7 @@ import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
 
 export const loader = guardOnlyLoader('author')
 
-export const meta = titleMeta('新建文章')
+export const meta = titleMeta('meta.title.editor.postNew')
 
 export default function WpAdminPostNewRoute() {
   const navigate = useNavigate()

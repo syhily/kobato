@@ -100,7 +100,7 @@ describe('snapshot: UserOperationsCard', () => {
     const htmlWith = renderOpsCard(withPasskey, 'self-1', true)
     expect(htmlWith).toContain('清除 Passkey')
     // SSR comment markers split the count — use a tolerant regex.
-    expect(htmlWith).toMatch(/清除 Passkey \(<!-- -->2<!-- -->\)/u)
+    expect(htmlWith).toMatch(/清除 Passkey \(2\)/u)
 
     const htmlDisabled = renderOpsCard(withPasskey, 'self-1', false)
     expect(htmlDisabled).not.toContain('清除 Passkey')

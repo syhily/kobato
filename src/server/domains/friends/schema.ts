@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { isHttpUrl } from '@/shared/utils/safe-url'
+import { HTTP_URL_MESSAGE, isHttpUrl } from '@/shared/utils/safe-url'
 import { honeypotField } from '@/shared/utils/schema'
 
 // Trim; blank or null → `undefined` so optional fields never store ''. Null
@@ -45,8 +45,6 @@ export const upsertFriendSchema = z.object({
 })
 
 const friendApplyHoneypot = honeypotField('contact')
-
-const HTTP_URL_MESSAGE = '请输入 http(s) URL'
 
 // Optional http(s) URL; blank → undefined, mirroring `upsertFriendSchema`.
 const optionalHttpUrl = () =>

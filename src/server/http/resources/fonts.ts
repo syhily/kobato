@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
+import { errorJsonResponse } from '@/server/http/errors'
 import { adminUploadRoute } from '@/server/http/resources/admin-upload-route'
 import { FONT_DIR } from '@/server/infra/paths'
 import { resetCanvasFont, resetFontCache } from '@/server/render/canvas-fonts'
@@ -26,26 +27,26 @@ function fontContentType(fileName: string): 'font/ttf' | 'font/otf' | null {
 export const fontsRouter = adminUploadRoute({
   path: '/api/admin/fonts/upload',
   maxSize: FONT_MAX_BYTES,
-  tooLargeMessage: '上传文件过大',
-  missingFileMessage: '请上传文件',
+  tooLarge: { messageKey: 'common.error.uploadTooLarge' },
+  missingFile: 'common.error.uploadMissing',
   logScope: 'fonts.http',
   logMessage: 'Font uploaded',
   validateBody(body, c) {
     const slot = body.slot
     if (!isFontSlot(slot)) {
-      return c.json({ error: { message: '未知的字体槽位' } }, 400)
+      return errorJsonResponse(c, 400, 'fonts.error.unknownSlot')
     }
     return { value: slot }
   },
   async handler({ c, file, validated: slot }) {
     const contentType = fontContentType(file.name)
     if (!contentType) {
-      return c.json({ error: { message: '仅支持 .ttf 或 .otf 字体文件' } }, 400)
+      return errorJsonResponse(c, 400, 'fonts.error.wrongFormat')
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
     if (buffer.length === 0) {
-      return c.json({ error: { message: '上传文件为空' } }, 400)
+      return errorJsonResponse(c, 400, 'common.error.uploadEmpty')
     }
 
     await mkdir(FONT_DIR, { recursive: true })

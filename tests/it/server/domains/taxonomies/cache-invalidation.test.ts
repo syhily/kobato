@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '#/_helpers/lexical'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { getBlogSettingsSnapshotSync } from '@/shared/config/getters'
+import { APP_VERSION } from '@/shared/config/version'
 
 const db = getTestDb()
 
@@ -38,8 +40,14 @@ describe('taxonomy cache invalidation', () => {
     const created = await upsertAdminCategory(db, { name: 'FeedCat', cover: '', description: '' })
 
     // Warm the feed bucket, including the category-scoped key.
-    await set(db, 'feed', { scope: 'all' }, '<xml>all</xml>')
-    await set(db, 'feed', { scope: 'cat:feedcat' }, '<xml>cat</xml>')
+    const settingsRevision = getBlogSettingsSnapshotSync().revision
+    await set(db, 'feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION, settingsRevision }, '<xml>all</xml>')
+    await set(
+      db,
+      'feed',
+      { scope: 'cat:feedcat', locale: 'zh-CN', version: APP_VERSION, settingsRevision },
+      '<xml>cat</xml>',
+    )
     expect(await feedRowCount()).toBe(2)
 
     await upsertAdminCategory(db, { id: Number(created.id), name: 'FeedCatRenamed', cover: '', description: '' })

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import type { AuditLogItemDto } from '@/shared/contracts/audit'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
 
@@ -39,9 +40,11 @@ describe('AuditLogRow details sanitisation', () => {
         '<script>alert(1)</script><img src="x" onerror="alert(2)">',
     })
     render(
-      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-        <AuditLogRow row={row} />
-      </BlogSettingsProvider>,
+      wrapWithI18n(
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <AuditLogRow row={row} />
+        </BlogSettingsProvider>,
+      ),
     )
     fireEvent.click(screen.getByRole('button'))
 
@@ -55,5 +58,34 @@ describe('AuditLogRow details sanitisation', () => {
     expect(panel!.innerHTML).not.toContain('onerror')
     // The shiki strategy allows a bare <img> but strips its attributes.
     expect(panel!.innerHTML).not.toContain('src=')
+  })
+})
+
+describe('AuditLogRow localized vocabulary', () => {
+  function renderRow(locale: 'zh-CN' | 'en-US', row: AuditLogItemDto) {
+    return render(
+      wrapWithI18n(
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <AuditLogRow row={row} />
+        </BlogSettingsProvider>,
+        { locale },
+      ),
+    )
+  }
+
+  it('renders the zh-CN action, resource and expand affordances', () => {
+    renderRow('zh-CN', makeRow({ action: 'post_published', resourceType: 'post' }))
+    expect(screen.getByText('文章发布')).toBeTruthy()
+    expect(screen.getByText('文章')).toBeTruthy()
+    expect(screen.getByLabelText('展开详情')).toBeTruthy()
+    expect(screen.getByText(/IP:\s*203\.0\.113\.\*/)).toBeTruthy()
+  })
+
+  it('renders the en-US action, resource and expand affordances', () => {
+    renderRow('en-US', makeRow({ action: 'post_published', resourceType: 'post' }))
+    expect(screen.getByText('Post published')).toBeTruthy()
+    expect(screen.getByText('Post')).toBeTruthy()
+    expect(screen.getByLabelText('Expand details')).toBeTruthy()
+    expect(screen.getByText(/IP:\s*203\.0\.113\.\*/)).toBeTruthy()
   })
 })

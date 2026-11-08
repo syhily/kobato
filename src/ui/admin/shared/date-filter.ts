@@ -1,3 +1,6 @@
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+import type { I18nValue } from '@/ui/lib/I18nProvider'
+
 import { isRecord } from '@/shared/utils/type-guards'
 
 // Pill-value contract for admin date filters: Range (`{from,to}`) and Single + operator (`{date,op}`), both serialized to a JSON string pill value.
@@ -26,27 +29,34 @@ export function parseDateFilter(value: string | undefined): DateFilterValue | nu
   }
 }
 
-export function dateFilterLabel(value: DateFilterValue): string {
+export function dateFilterLabel(value: DateFilterValue, t: I18nValue['t']): string {
   if (value.from && value.to) {
     return `${value.from} ~ ${value.to}`
   }
   if (value.from) {
-    return `自 ${value.from}`
+    return t('admin.filter.date.from', { from: value.from })
   }
   if (value.to) {
-    return `至 ${value.to}`
+    return t('admin.filter.date.to', { to: value.to })
   }
-  return '时间'
+  return t('admin.filter.date.label')
 }
 
 export type SingleDateFilterOperator = 'is-less' | 'is-or-less' | 'is-greater' | 'is-or-greater'
 
-export const SINGLE_DATE_FILTER_OPERATORS: readonly { value: SingleDateFilterOperator; label: string }[] = [
-  { value: 'is-less', label: '之前' },
-  { value: 'is-or-less', label: '不晚于' },
-  { value: 'is-greater', label: '之后' },
-  { value: 'is-or-greater', label: '不早于' },
+export const SINGLE_DATE_FILTER_OPERATORS: readonly { value: SingleDateFilterOperator }[] = [
+  { value: 'is-less' },
+  { value: 'is-or-less' },
+  { value: 'is-greater' },
+  { value: 'is-or-greater' },
 ] as const
+
+export const SINGLE_DATE_FILTER_OPERATOR_LABEL_IDS: Record<SingleDateFilterOperator, UiMessageId> = {
+  'is-less': 'admin.filter.date.op.isLess',
+  'is-or-less': 'admin.filter.date.op.isOrLess',
+  'is-greater': 'admin.filter.date.op.isGreater',
+  'is-or-greater': 'admin.filter.date.op.isOrGreater',
+}
 
 export const DEFAULT_SINGLE_DATE_OPERATOR: SingleDateFilterOperator = 'is-or-less'
 
@@ -79,9 +89,8 @@ export function parseSingleDateFilter(value: string | undefined): SingleDateFilt
   }
 }
 
-export function singleDateFilterLabel(value: SingleDateFilterValue): string {
-  const opLabel = SINGLE_DATE_FILTER_OPERATORS.find((o) => o.value === value.op)?.label ?? ''
-  return `${opLabel} ${value.date}`
+export function singleDateFilterLabel(value: SingleDateFilterValue, t: I18nValue['t']): string {
+  return t('admin.filter.date.value', { op: t(SINGLE_DATE_FILTER_OPERATOR_LABEL_IDS[value.op]), date: value.date })
 }
 
 export function resolveSingleDateFilterBounds(value: SingleDateFilterValue | null): {

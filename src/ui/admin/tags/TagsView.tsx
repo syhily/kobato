@@ -15,12 +15,14 @@ import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
+import { useI18n } from '@/ui/lib/I18nProvider'
 
 const PAGE_SIZE = 30
 
 type EditTarget = AdminTagDto | null | undefined
 
 export function TagsView() {
+  const { t } = useI18n()
   const [q, setQ] = useState('')
   const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -35,7 +37,7 @@ export function TagsView() {
       limit: PAGE_SIZE,
     }),
     selectRows: (page) => page.tags,
-    noun: '标签',
+    noun: 'admin.list.noun.tags',
   })
 
   // Whole-namespace invalidation, no local mirror; a rejected delete (409) surfaces through the confirm dialog.
@@ -47,9 +49,9 @@ export function TagsView() {
     },
     onError: (error) => {
       setConfirm({
-        title: '无法删除标签',
+        title: t('admin.tags.deleteBlockedTitle'),
         description: error.message,
-        actionLabel: '我知道了',
+        actionLabel: t('admin.categories.acknowledge'),
         destructive: false,
         onConfirm: () => undefined,
       })
@@ -66,17 +68,16 @@ export function TagsView() {
   const handleDelete = useCallback(
     (row: AdminTagDto) => {
       setConfirm({
-        title: `删除标签「${row.name}」？`,
-        description:
-          '此操作会从数据库直接删除该标签。如果仍有文章引用此标签，删除将被阻止；请先在引用文章中修改后再删除。',
-        actionLabel: '删除',
+        title: t('admin.tags.deleteTitle', { name: row.name }),
+        description: t('admin.tags.deleteBody'),
+        actionLabel: t('common.action.delete'),
         destructive: true,
         onConfirm: () => {
           deleteApi.mutate(row.id)
         },
       })
     },
-    [deleteApi],
+    [deleteApi, t],
   )
 
   return (
@@ -85,7 +86,7 @@ export function TagsView() {
         <AdminListPage.Header
           title={
             <>
-              标签管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
+              {t('admin.tags.title')} <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
         >
@@ -96,8 +97,8 @@ export function TagsView() {
                 type="search"
                 value={qInput}
                 onChange={(e) => setQInput(e.target.value)}
-                placeholder="搜索名称或 slug…"
-                aria-label="搜索标签"
+                placeholder={t('admin.tags.searchPlaceholder')}
+                aria-label={t('admin.tags.searchAria')}
                 className="h-9 w-full rounded-xl border border-input bg-transparent py-1 pr-3 pl-9 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:shadow-focus focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
@@ -108,7 +109,7 @@ export function TagsView() {
               className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <PlusIcon className="size-4" />
-              新增标签
+              {t('admin.tags.new')}
             </button>
           </div>
         </AdminListPage.Header>
@@ -117,9 +118,9 @@ export function TagsView() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[28%]">名称</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead className="w-24">文章</TableHead>
+                <TableHead className="w-[28%]">{t('admin.tags.table.name')}</TableHead>
+                <TableHead>{t('admin.tags.table.slug')}</TableHead>
+                <TableHead className="w-24">{t('admin.tags.table.posts')}</TableHead>
                 <TableHead className="w-[60px] pr-4 text-right" />
               </TableRow>
             </TableHeader>
@@ -134,7 +135,7 @@ export function TagsView() {
                         <EmptyMedia variant="icon">
                           <SearchIcon />
                         </EmptyMedia>
-                        <EmptyTitle>未找到标签</EmptyTitle>
+                        <EmptyTitle>{t('admin.tags.empty')}</EmptyTitle>
                       </EmptyHeader>
                     </Empty>
                   </TableCell>
@@ -163,7 +164,7 @@ export function TagsView() {
 
           {/* Bottom status */}
           <AdminInfiniteListFooter
-            noun="标签"
+            noun={t('admin.list.noun.tags')}
             rowCount={rows.length}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}

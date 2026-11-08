@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 
-import { act, renderHook } from '@testing-library/react'
+import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { renderHookWithI18n } from '#/_helpers/i18n-render'
 
 // Integration suite for useEditorShellPersist, crossing the same interface
 // callers do. The wire-payload and status-transition DECISIONS live in the
@@ -65,6 +67,9 @@ import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '#/_helpers/
 import { useAutosave } from '@/client/hooks/use-autosave'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
+
+// The editor shell hooks call `useI18n()`, so every render needs the provider.
+const renderHook = renderHookWithI18n
 
 const useAutosaveMock = vi.mocked(useAutosave)
 const useLocalDraftMock = vi.mocked(useLocalDraft)
@@ -254,6 +259,13 @@ describe('ui/admin/editor-shell/useEditorShellPersist — handler gating', () =>
     act(() => result.current.persistPublish())
     expect(result.current.status).toEqual({ kind: 'error', message: '请先保存基本信息再发布。' })
     expect(slotFor(args.mutations.publishFn).mutate).not.toHaveBeenCalled()
+  })
+
+  it('renders the owned status copy in the active locale', () => {
+    const args = makeArgs()
+    const { result } = renderHook(() => useEditorShellPersist(args), { locale: 'en-US' })
+    act(() => result.current.persistPublish())
+    expect(result.current.status).toEqual({ kind: 'error', message: 'Save the basic info before publishing.' })
   })
 
   it('persistUnpublish is a no-op without detail', () => {
