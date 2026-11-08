@@ -117,7 +117,9 @@ export interface PostDetailPayload {
 export const contentPostBySlugOutputSchema = z.union([
   contentRedirectSignalSchema,
   contentNotModifiedSignalSchema,
-  z.object({ kind: z.literal('ok'), etag: z.string(), payload: z.custom<PostDetailPayload>() }),
+  // Draft previews carry no public ETag (null) — the route stamps the
+  // header only when one exists, mirroring `content.pages.bySlug`.
+  z.object({ kind: z.literal('ok'), etag: z.string().nullable(), payload: z.custom<PostDetailPayload>() }),
 ])
 export type ContentPostBySlugOutput = z.infer<typeof contentPostBySlugOutputSchema>
 

@@ -344,6 +344,58 @@ describe('content.posts.bySlug', () => {
     expect(json.payload.post.title).toBe('Secret')
   })
 
+  it('never 304s a draft preview against the stale published ETag (unpublish keeps published_at)', async () => {
+    // Published once (the browser cached ETag(id, 2024-01-01)), then
+    // unpublished: `published_at` survives, so the old re-check minted the
+    // SAME etag for the swapped draft body and wrongly answered 304.
+    const rows = await db
+      .insert(postTable)
+      .values({
+        slug: 'ghost',
+        title: 'Ghost',
+        published: false,
+        visible: false,
+        publishedRevisionId: null,
+        authorId: 1,
+        publishedAt: new Date('2024-01-01'),
+      })
+      .returning({ id: postTable.id })
+    const postId = rows[0]!.id
+    await db
+      .insert(contentTable)
+      .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: publishedBody })
+
+    const cachedPublishedEtag = weakEtag(['post', String(postId), new Date('2024-01-01')])
+    const res = await callRpc(
+      '/content/posts/bySlug',
+      { slug: 'ghost', ifNoneMatch: cachedPublishedEtag },
+      makeAuthedCtx({ role: 'author', db }),
+    )
+    expect(res.status).toBe(200)
+    const json = await parseRpcJson<{ kind: string; etag: string | null; payload: { draftMarker: string | null } }>(res)
+    expect(json.kind).toBe('ok')
+    expect(json.payload.draftMarker).toBe('draft')
+    expect(json.etag).toBeNull()
+  })
+
+  it('never 304s a first-draft preview (constant etag over null published_at)', async () => {
+    // Never published: `post.updated` is null, so the old etag never moved
+    // between draft edits — a repeat preview revalidated into a stale draft.
+    const postId = await seedDraftPost('fresh', 'Fresh', 1)
+    const firstPreviewEtag = weakEtag(['post', String(postId), undefined])
+
+    const res = await callRpc(
+      '/content/posts/bySlug',
+      { slug: 'fresh', ifNoneMatch: firstPreviewEtag },
+      makeAuthedCtx({ role: 'author', db }),
+    )
+    expect(res.status).toBe(200)
+    const json = await parseRpcJson<{ kind: string; etag: string | null; payload: { draftMarker: string | null } }>(res)
+    expect(json.kind).toBe('ok')
+    expect(json.payload.draftMarker).toBe('draft')
+    expect(json.etag).toBeNull()
+  })
+
   it('serves the saved body_html projection raw — sanitization is the render boundary', async () => {
     // Raw-at-rest invariant: the wire DTO carries the UNSANITIZED projection
     // and the public body renderer owns the 'body'-strategy sanitize pass.

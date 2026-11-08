@@ -40,7 +40,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       draftMarker: result.payload.draftMarker,
       eid: analyticsEventId,
     },
-    { headers: { ETag: result.etag } },
+    { headers: result.etag === null ? undefined : { ETag: result.etag } },
   )
 }
 

@@ -15,13 +15,17 @@ export interface PostPreviewResult {
   /** The full post row — the controller needs `bodyHtml`/`bodyState`. */
   sourcePost: Post
   post: DetailPostShell
-  etag: string
+  /** `null` on draft previews — they must never revalidate against (or
+   *  stamp) the published ETag; see the re-check below. */
+  etag: string | null
   draftMarker: DraftMarker
 }
 
 // Post-detail pipeline for `content.posts.bySlug`: plain HTTP facts in,
 // thrown Responses out (translated by the controller). Branch order:
-// ETag probe 304 → draft fallback → 404 → alias 301 → full ETag re-check.
+// ETag probe 304 → draft fallback → 404 → alias 301 → full ETag re-check
+// (drafts skip both ETag paths — the published ETag must not 304 a swapped
+// body).
 export async function loadPostPreview({
   db,
   slug,
@@ -69,12 +73,19 @@ export async function loadPostPreview({
 
   const post = toDetailPostShell(clientPost)
 
-  // Same builder as the early probe above (id + publishedAt) — probe and
-  // full share `postEtag`, so repeat visits keep hitting the same 304.
-  const etag = postEtag(clientPost.id, post.updated)
-  if (etagHeaderMatches(ifNoneMatch, etag)) {
-    throw notModifiedResponse(etag)
+  // Draft previews carry no public ETag. `post.updated` maps `published_at`
+  // — a stale go-live stamp that survives unpublishing (and is null for
+  // never-published drafts), so revalidating here would answer 304 against
+  // the browser-cached PUBLISHED page (or a constant, never-invalidating
+  // etag for first drafts) and serve the wrong body.
+  if (draftMarker === null) {
+    // Same builder as the early probe above (id + publishedAt) — probe and
+    // full share `postEtag`, so repeat visits keep hitting the same 304.
+    const etag = postEtag(clientPost.id, post.updated)
+    if (etagHeaderMatches(ifNoneMatch, etag)) {
+      throw notModifiedResponse(etag)
+    }
+    return { sourcePost, post, etag, draftMarker }
   }
-
-  return { sourcePost, post, etag, draftMarker }
+  return { sourcePost, post, etag: null, draftMarker }
 }
