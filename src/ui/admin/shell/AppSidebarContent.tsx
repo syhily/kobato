@@ -25,7 +25,7 @@ export function AppSidebarContent({
   userCount,
 }: AppSidebarContentProps) {
   return (
-    <SidebarContent className="justify-between px-3 pt-4">
+    <SidebarContent className="justify-between px-6 pt-4">
       <div className="flex flex-col gap-2">
         <NavMain role={role} />
         <NavContent

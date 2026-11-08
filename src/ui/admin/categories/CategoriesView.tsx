@@ -15,6 +15,7 @@ import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { resolveSortableMove, useSortableSensors } from '@/ui/admin/shared/sortable'
+import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
@@ -126,14 +127,10 @@ export function CategoriesView() {
           }
         >
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setEditTarget(null)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90"
-            >
+            <Button type="button" size="sm" onClick={() => setEditTarget(null)}>
               <PlusIcon className="size-4" />
               {t('admin.categories.new')}
-            </button>
+            </Button>
           </div>
         </AdminListPage.Header>
 

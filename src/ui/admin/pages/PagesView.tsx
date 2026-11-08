@@ -12,6 +12,7 @@ import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
+import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
@@ -52,14 +53,10 @@ export function PagesView() {
             {/* Header slot only when no filters are active — the body slot below takes over otherwise. */}
             {!pills.hasFilters && filterBar}
 
-            {/* New page */}
-            <Link
-              to="/editor/page/new"
-              className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90"
-            >
+            <Button type="button" size="sm" render={<Link to="/editor/page/new" />}>
               <PlusIcon className="size-4" />
               {t('admin.pages.new')}
-            </Link>
+            </Button>
           </div>
         </AdminListPage.Header>
 

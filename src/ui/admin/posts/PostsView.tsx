@@ -17,8 +17,10 @@ import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
+import { Button, buttonVariants } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
 const SORT_OPTIONS = [
@@ -29,9 +31,6 @@ const SORT_OPTIONS = [
 ] as const
 
 const PAGE_SIZE = 10
-
-const pill =
-  'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
 export function PostsView() {
   const { t } = useI18n()
@@ -120,7 +119,7 @@ export function PostsView() {
                 }
               }}
             >
-              <SelectTrigger className={pill}>
+              <SelectTrigger className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -131,13 +130,10 @@ export function PostsView() {
                 ))}
               </SelectContent>
             </Select>
-            <Link
-              to="/editor/post/new"
-              className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90"
-            >
+            <Button type="button" size="sm" render={<Link to="/editor/post/new" />}>
               <PlusIcon className="size-4" />
               {t('admin.posts.new')}
-            </Link>
+            </Button>
           </div>
         </AdminListPage.Header>
 

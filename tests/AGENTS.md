@@ -34,7 +34,8 @@ suites (HTTP e2e and real-browser Playwright). **The first three mirror the
   at the in-process SMTP capture server in `#/_helpers/e2e-mail` and
   extract secrets (OTP code, signin link) from the captured bytes.
 - **`tests/browser/`** — Real-Chromium journeys (Playwright) for behavior
-  jsdom cannot prove: the settings language switch (dirty-card flush veto,
+  jsdom cannot prove: the admin sidebar's logo/search/active-menu edge alignment,
+  consistent toolbar-control sizing, the settings language switch (dirty-card flush veto,
   Portal focus, cross-tab sparse save), a non-settings document keeping its
   state on a peer locale change, the public comment composer loading only the
   active locale's Inkling labels, and a post's `contentLanguage` DOM contract.

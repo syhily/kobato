@@ -6,6 +6,7 @@ import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { DEFAULT_SINGLE_DATE_OPERATOR } from '@/ui/admin/shared/date-filter'
 import { InlineSearchList, SearchableOptionList } from '@/ui/admin/shared/filter-bar/option-list'
+import { buttonVariants } from '@/ui/components/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
@@ -88,12 +89,7 @@ export function FilterAddButton<K extends string>({ fields, filters, search, onA
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger
-        className={cn(
-          'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-sm transition hover:bg-accent',
-          'focus-visible:shadow-focus focus-visible:outline-none',
-        )}
-      >
+      <PopoverTrigger className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
         {hasFilters ? <FunnelPlusIcon className="size-4" /> : <FunnelIcon className="size-4" />}
         {hasFilters ? t('admin.shared.filter.add') : t('admin.shared.filter.trigger')}
       </PopoverTrigger>
