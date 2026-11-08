@@ -125,7 +125,9 @@ server or client boundary catch and log it.
   extracts the `{min}`/`{max}` values a shared validation schema's issue carries so the
   client can interpolate them (`useI18n().localizeMessage(value, params)`) and the server can
   put them on the wire; a custom issue's explicit `params` bag (e.g. a password byte ceiling or an
-  S3 field label) travels the same way.
+  S3 field label) travels the same way. `utils/api-error` also exposes `apiErrorDescriptorKey` —
+  the stable `messageKey` a client branch compares against (e.g. the backup password prompt),
+  with legacy raw/array-data rejections returning `undefined`.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`,
   `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`,

@@ -366,7 +366,7 @@ describe('/api/admin/backup/upload-restore', () => {
           source.on('error', () => {})
           source.destroy()
         }
-        throw new restoreModule.BackupPasswordError('备份密码错误或文件已损坏')
+        throw new restoreModule.BackupPasswordError()
       })
       const wrong = await app.request('/api/admin/backup/upload-restore/decrypt', {
         method: 'POST',

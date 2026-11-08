@@ -131,6 +131,10 @@ const SCAN_ROOTS = [
   'src/server/http/controllers/admin/comments.controller.ts',
   'src/server/http/controllers/admin/webmentions.controller.ts',
   'src/server/http/controllers/webmention-public.controller.ts',
+  // Step 5a-iii: backup/restore validation + the password flow.
+  'src/server/domains/backup',
+  'src/server/http/resources/backup.ts',
+  'src/server/http/controllers/admin/backup.controller.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -335,6 +339,12 @@ describe('production sources', () => {
         'src/server/domains/webmentions/reverify.ts',
         'src/server/http/controllers/comments-public.controller.ts',
         'src/server/http/controllers/admin/webmentions.controller.ts',
+        // Step 5a-iii slice: backup/restore validation + password flow.
+        'src/server/domains/backup/services/restore.ts',
+        'src/server/domains/backup/services/backup.ts',
+        'src/server/domains/backup/pending-uploads.ts',
+        'src/server/http/resources/backup.ts',
+        'src/server/http/controllers/admin/backup.controller.ts',
       ]),
     )
   })

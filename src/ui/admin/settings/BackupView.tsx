@@ -9,6 +9,7 @@ import type { BackupFileDto } from '@/shared/types/backup'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError, toastApiError } from '@/client/lib/toast-api-error'
+import { apiErrorDescriptorKey } from '@/shared/utils/api-error'
 import { BackupEncryptionCard } from '@/ui/admin/settings/BackupEncryptionCard'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'
 import { BackupPasswordDialog } from '@/ui/admin/settings/BackupPasswordDialog'
@@ -143,9 +144,9 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     },
     onError: (error: Error) => {
       toastApiError(error, 'admin.toast.restoreFailed', t)
-      // A wrong password (400) keeps the prompt open for a retry — same
-      // contract as the upload flow; anything else resets the flow.
-      if (error.message.includes('密码') && passwordKey !== null) {
+      // A wrong password (400) keeps the prompt open for a retry — matched by
+      // the stable descriptor key, never localized prose.
+      if (apiErrorDescriptorKey(error) === 'backup.error.passwordWrong' && passwordKey !== null) {
         setRestorePhase('confirm')
         return
       }

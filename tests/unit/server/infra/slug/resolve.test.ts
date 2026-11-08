@@ -52,16 +52,16 @@ describe('resolveSlug — explicit value wins and is validated', () => {
     expect(resolveSlug(exact, '', { entity: 'taxonomy' })).toBe(exact)
   })
 
-  it('labels post/page errors with the entity name', () => {
+  it('labels post/page errors with the machine entity kind', () => {
     const postErr = expectSlugFailure(() => resolveSlug('Hello', 'name', { entity: 'post' }))
-    expect(postErr.message).toContain('文章')
+    expect(postErr.descriptor).toMatchObject({ messageKey: 'content.error.slugFormat', params: { entity: 'post' } })
     const pageErr = expectSlugFailure(() => resolveSlug('Hello', 'name', { entity: 'page' }))
-    expect(pageErr.message).toContain('页面')
+    expect(pageErr.descriptor).toMatchObject({ messageKey: 'content.error.slugFormat', params: { entity: 'page' } })
   })
 
-  it('keeps the generic taxonomy messages', () => {
+  it('keeps the taxonomy kind for the generic messages', () => {
     const err = expectSlugFailure(() => resolveSlug('UPPER CASE', 'name', { entity: 'taxonomy' }))
-    expect(err.message).toContain('slug 格式不合法')
+    expect(err.descriptor).toMatchObject({ messageKey: 'content.error.slugFormat', params: { entity: 'taxonomy' } })
   })
 })
 
@@ -100,8 +100,14 @@ describe('resolveSlug — derivation fallback', () => {
 
   it('throws with field-path issues when the derivation is empty', () => {
     const postErr = expectSlugFailure(() => resolveSlug(undefined, '💯', { entity: 'post' }))
-    expect(postErr.message).toContain('标题')
+    expect(postErr.descriptor).toMatchObject({
+      messageKey: 'content.error.slugUnderivable',
+      params: { source: 'title' },
+    })
     const taxErr = expectSlugFailure(() => resolveSlug(undefined, '!!!', { entity: 'taxonomy' }))
-    expect(taxErr.message).toContain('名称')
+    expect(taxErr.descriptor).toMatchObject({
+      messageKey: 'content.error.slugUnderivable',
+      params: { source: 'name' },
+    })
   })
 })

@@ -42,6 +42,26 @@ function isIssueLike(value: unknown): value is IssueLike {
   return value.path === undefined || Array.isArray(value.path)
 }
 
+/**
+ * The stable `messageKey` of a rejection carrying the descriptor payload
+ * (`error.data = { descriptor, issues? }`) — client branches compare THIS, never
+ * localized prose. `undefined` for legacy/raw errors.
+ */
+export function apiErrorDescriptorKey(error: unknown): string | undefined {
+  if (!isRecord(error)) {
+    return undefined
+  }
+  const data = error.data
+  if (!isRecord(data) || !('descriptor' in data)) {
+    return undefined
+  }
+  const descriptor = data.descriptor
+  if (!isRecord(descriptor) || typeof descriptor.messageKey !== 'string') {
+    return undefined
+  }
+  return descriptor.messageKey
+}
+
 /** The descriptor-based `data` payload (`{descriptor, issues?}`) — the server already folded its summary. */
 function isDescriptorData(value: unknown): boolean {
   return isRecord(value) && 'descriptor' in value

@@ -27,7 +27,10 @@ describe('rethrowSlugConflict', () => {
 
     expect(thrown).toBeInstanceOf(DomainError)
     expect((thrown as DomainError).code).toBe('CONFLICT')
-    expect((thrown as DomainError).message).toBe('slug "hello" 已被占用。')
+    expect((thrown as DomainError).descriptor).toMatchObject({
+      messageKey: 'content.error.slugConflict',
+      params: { slug: 'hello' },
+    })
   })
 
   it.each([{ entityType: 'post' as const }, { entityType: 'page' as const }])(
@@ -37,7 +40,10 @@ describe('rethrowSlugConflict', () => {
 
       expect(thrown).toBeInstanceOf(DomainError)
       expect((thrown as DomainError).code).toBe('CONFLICT')
-      expect((thrown as DomainError).message).toBe('slug "hello" 已被占用。')
+      expect((thrown as DomainError).descriptor).toMatchObject({
+        messageKey: 'content.error.slugConflict',
+        params: { slug: 'hello' },
+      })
     },
   )
 
@@ -48,7 +54,10 @@ describe('rethrowSlugConflict', () => {
 
     expect(thrown).toBeInstanceOf(DomainError)
     expect((thrown as DomainError).code).toBe('CONFLICT')
-    expect((thrown as DomainError).message).toBe('slug "hello" 已被占用。')
+    expect((thrown as DomainError).descriptor).toMatchObject({
+      messageKey: 'content.error.slugConflict',
+      params: { slug: 'hello' },
+    })
   })
 
   it('rethrows a unique violation from a different constraint unchanged', () => {

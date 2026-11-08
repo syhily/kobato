@@ -331,9 +331,7 @@ describe('adminBackupRouter.restore', () => {
       encrypted: true,
       fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
     })
-    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(
-      new restoreService.BackupPasswordError('备份密码错误或文件已损坏'),
-    )
+    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(new restoreService.BackupPasswordError())
     const admin = await seedAdmin()
     await expect(
       call(
@@ -341,7 +339,12 @@ describe('adminBackupRouter.restore', () => {
         { key: '2026-01-01T00-00-00', password: 'wrong-password' },
         { context: adminCtx(admin) },
       ),
-    ).rejects.toThrow(ORPCError)
+    ).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      status: 400,
+      // The stable identity the client matches — never localized prose.
+      data: { descriptor: { messageKey: 'backup.error.passwordWrong' } },
+    })
   })
 
   it('caps explicit-password restore attempts per (admin, backup) — the 11th guess is a 429', async () => {
@@ -355,9 +358,7 @@ describe('adminBackupRouter.restore', () => {
       fileName: 'backup-2026-03-03T00-00-00.db.tar.gz.enc',
     })
     // Every guess fails the GCM tag check.
-    vi.mocked(restoreService.stageBackup).mockRejectedValue(
-      new restoreService.BackupPasswordError('备份密码错误或文件已损坏'),
-    )
+    vi.mocked(restoreService.stageBackup).mockRejectedValue(new restoreService.BackupPasswordError())
     const admin = await seedAdmin()
 
     // Ten guesses all reach the staging path (and burn the hourly budget).
@@ -394,9 +395,7 @@ describe('adminBackupRouter.restore', () => {
       fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
     })
     // The staged decrypt with the stored password fails the GCM tag check.
-    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(
-      new restoreService.BackupPasswordError('备份密码错误或文件已损坏'),
-    )
+    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(new restoreService.BackupPasswordError())
     // The controller resolves the stored password through the composition
     // root's wired resolver — wire the test double here.
     const { wireBackupEncryption, resetBackupEncryption } = backupService

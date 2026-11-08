@@ -2,6 +2,7 @@ import { createReadStream } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 /**
@@ -116,7 +117,7 @@ export async function listTarEntriesInFile(rawPath: string): Promise<TarEntryMet
       const name = readCString(header.subarray(0, 100))
       const size = readOctal(header, 124, 12)
       if (name === '' || Number.isNaN(size) || size < 0) {
-        throw new ActionFailure(400, '备份归档内容损坏')
+        throw new ActionFailure(400, descriptorFor('backup.error.archiveCorrupt'))
       }
       entries.push({ name, offset: offset + BLOCK, size })
       offset += BLOCK + size + tarPaddingSize(size)

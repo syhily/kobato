@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  apiErrorDescriptorKey,
   enrichApiErrorMessage,
   extractApiErrorMessage,
   formatApiErrorIssues,
@@ -120,5 +121,26 @@ describe('enrichApiErrorMessage', () => {
     const plain = new Error('存储迁移进行中')
     enrichApiErrorMessage(plain)
     expect(plain.message).toBe('存储迁移进行中')
+  })
+})
+
+describe('apiErrorDescriptorKey', () => {
+  it('reads the stable message key from a descriptor rejection (backup password flow)', () => {
+    const error = Object.assign(new Error('The backup password is incorrect or the file is corrupted.'), {
+      data: {
+        descriptor: {
+          messageKey: 'backup.error.passwordWrong',
+          fallbackMessage: 'The backup password is incorrect or the file is corrupted.',
+        },
+      },
+    })
+    expect(apiErrorDescriptorKey(error)).toBe('backup.error.passwordWrong')
+  })
+
+  it('returns undefined for legacy raw/array-data rejections', () => {
+    expect(apiErrorDescriptorKey(Object.assign(new Error('legacy'), { data: [{ message: 'x' }] }))).toBeUndefined()
+    expect(apiErrorDescriptorKey(new Error('legacy'))).toBeUndefined()
+    expect(apiErrorDescriptorKey('nope')).toBeUndefined()
+    expect(apiErrorDescriptorKey(Object.assign(new Error('x'), { data: { issues: [] } }))).toBeUndefined()
   })
 })

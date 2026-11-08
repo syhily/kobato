@@ -34,5 +34,7 @@ localizes them before building the RHF error tree (`localizeMessage`, interpolat
 same ids into wire descriptors (`server/infra/http/error-descriptor`). The assets and security
 sections carry their custom messages as `assetsValidationMessages` / `securityValidationMessages`;
 a strict patch with unknown keys rejects with the `admin.settings.errors.unrecognizedKeys`
-descriptor (one issue per key, full key list in `params.keys`, field path preserved). Technical values (protocol names, URLs, paths,
+descriptor (one issue per key, full key list in `params.keys`, field path preserved). The backup
+restore prompt retries on `apiErrorDescriptorKey(error) === 'backup.error.passwordWrong'` — never a
+localized-sentence match. Technical values (protocol names, URLs, paths,
 database column names) stay as-is.

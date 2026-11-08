@@ -24,6 +24,7 @@ import {
   listBackupRows,
   listBackupStoragePaths,
 } from '@/server/infra/db/operations/backup'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend, allBackends, backendFor } from '@/server/infra/storage/registry'
@@ -190,7 +191,7 @@ export async function createBackup(
   options: CreateBackupOptions = {},
 ): Promise<{ fileName: string; size: number; timestamp: string }> {
   if (!tryBeginBackup()) {
-    throw new DomainError('CONFLICT', '已有备份任务正在进行，请等待完成后再试。')
+    throw new DomainError('CONFLICT', descriptorFor('backup.error.taskRunning'))
   }
   try {
     return await createBackupUnchecked(db, createdBy, options)
@@ -353,10 +354,10 @@ function parseOffset(token: string | undefined): number | null {
 export async function getBackupBuffer(db: Database, timestamp: string): Promise<Buffer> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
-    throw new ActionFailure(404, '备份不存在。')
+    throw new ActionFailure(404, descriptorFor('backup.error.notFound'))
   }
   if (!isValidBackupStoragePath(row.storagePath)) {
-    throw new ActionFailure(400, '备份记录的存储路径无效，已拒绝读取。')
+    throw new ActionFailure(400, descriptorFor('backup.error.storagePathRead'))
   }
   return backendFor(row.storageDriver).get(row.storagePath)
 }
@@ -369,13 +370,13 @@ export async function getBackupStream(
 ): Promise<{ stream: Readable; byteSize: number; encrypted: boolean; fileName: string }> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
-    throw new ActionFailure(404, '备份不存在。')
+    throw new ActionFailure(404, descriptorFor('backup.error.notFound'))
   }
   // The URL parameter was validated by the route; the ROW's path rides in from
   // a restored database and is not — never stream an object it names without
   // checking it against the backup key grammar first.
   if (!isValidBackupStoragePath(row.storagePath)) {
-    throw new ActionFailure(400, '备份记录的存储路径无效，已拒绝下载。')
+    throw new ActionFailure(400, descriptorFor('backup.error.storagePathDownload'))
   }
   const stream = await backendFor(row.storageDriver).getStream(row.storagePath)
   return {
@@ -393,7 +394,7 @@ export async function getBackupStream(
 export async function isBackupEncrypted(db: Database, timestamp: string): Promise<boolean> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
-    throw new ActionFailure(404, '备份不存在。')
+    throw new ActionFailure(404, descriptorFor('backup.error.notFound'))
   }
   return isEncryptedBackupKey(row.storagePath)
 }

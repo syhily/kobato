@@ -215,7 +215,9 @@ describe('restore — a config the next boot would reject never reaches the swap
     // A one-char session secret is a boot-time `.strict()` schema failure —
     // letting it land would `process.exit(1)` on the next restart.
     await expect(stageBackup(archive)).rejects.toThrow(ActionFailure)
-    await expect(stageBackup(archive)).rejects.toThrow('备份归档中的配置文件无法通过服务端校验')
+    await expect(stageBackup(archive)).rejects.toMatchObject({
+      descriptor: { messageKey: 'backup.error.configRejected' },
+    })
   })
 
   it('rejects a config with a key the schema does not know', async () => {
@@ -228,7 +230,9 @@ describe('restore — a config the next boot would reject never reaches the swap
     rmSync(staged.dir, { recursive: true, force: true })
 
     const unknown = archiveWithConfig(Buffer.from(JSON.stringify({ totallyUnknown: true })))
-    await expect(stageBackup(unknown)).rejects.toThrow('备份归档中的配置文件无法通过服务端校验')
+    await expect(stageBackup(unknown)).rejects.toMatchObject({
+      descriptor: { messageKey: 'backup.error.configRejected' },
+    })
   })
 
   it('aborts a restore handed a bad staged config directly, before touching any live file', async () => {

@@ -85,12 +85,16 @@ describe('reorderAdminCategories', () => {
   })
 
   it('rejects duplicate ids', async () => {
-    await expect(reorderAdminCategories(db, ['1', '1'])).rejects.toThrow('重复的分类 id')
+    await expect(reorderAdminCategories(db, ['1', '1'])).rejects.toMatchObject({
+      descriptor: { messageKey: 'taxonomy.error.duplicateOrderIds' },
+    })
   })
 
   it('rejects when id count mismatches live rows', async () => {
     await db.insert(category).values({ name: 'Only', slug: 'only', cover: '', description: '', sortOrder: 0 })
-    await expect(reorderAdminCategories(db, ['1', '2'])).rejects.toThrow('不一致')
+    await expect(reorderAdminCategories(db, ['1', '2'])).rejects.toMatchObject({
+      descriptor: { messageKey: 'taxonomy.error.orderStale' },
+    })
   })
 
   it('rejects unknown ids', async () => {
@@ -99,6 +103,8 @@ describe('reorderAdminCategories', () => {
       .values({ name: 'Only', slug: 'only', cover: '', description: '', sortOrder: 0 })
       .returning()
 
-    await expect(reorderAdminCategories(db, [String(inserted[0].id), '999999'])).rejects.toThrow('不一致')
+    await expect(reorderAdminCategories(db, [String(inserted[0].id), '999999'])).rejects.toMatchObject({
+      descriptor: { messageKey: 'taxonomy.error.orderStale' },
+    })
   })
 })

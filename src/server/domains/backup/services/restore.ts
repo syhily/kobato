@@ -31,6 +31,7 @@ import {
   resolveConfigFilePath,
 } from '@/server/infra/config'
 import { isInMemoryPath, resolveDatabasePath } from '@/server/infra/db/database'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
@@ -70,16 +71,16 @@ export function hasDuckdbMagic(buffer: Buffer): boolean {
  * never executed as SQL by the restore path. */
 export function assertSqliteBackup(buffer: Buffer): void {
   if (buffer.length > MAX_BACKUP_FILE_SIZE) {
-    throw new ActionFailure(400, '备份文件过大，请确认文件未损坏。')
+    throw new ActionFailure(400, descriptorFor('backup.error.fileTooLarge'))
   }
   if (!hasSqliteMagic(buffer)) {
-    throw new ActionFailure(400, '备份文件不是有效的 SQLite 数据库文件')
+    throw new ActionFailure(400, descriptorFor('backup.error.notSqlite'))
   }
 }
 
 export function assertDuckdbBackup(buffer: Buffer): void {
   if (!hasDuckdbMagic(buffer)) {
-    throw new ActionFailure(400, '备份归档中的 analytics.duckdb 不是有效的 DuckDB 数据库文件')
+    throw new ActionFailure(400, descriptorFor('backup.error.notDuckdb'))
   }
 }
 
@@ -105,8 +106,8 @@ export class EncryptedBackupPasswordRequired extends Error {
  *  is retryable with a different password, so the decrypt endpoint keeps
  *  the parked upload for it and releases on the rest. */
 export class BackupPasswordError extends ActionFailure {
-  constructor(message: string) {
-    super(400, message)
+  constructor() {
+    super(400, descriptorFor('backup.error.passwordWrong'))
     this.name = 'BackupPasswordError'
   }
 }
@@ -150,7 +151,7 @@ export function decompressedSizeGuard(maxBytes: number): Transform {
     transform(chunk: Buffer, _encoding, callback) {
       total += chunk.length
       if (total > maxBytes) {
-        callback(new ActionFailure(400, '备份文件过大，请确认文件未损坏。'))
+        callback(new ActionFailure(400, descriptorFor('backup.error.fileTooLarge')))
         return
       }
       callback(null, chunk)
@@ -172,12 +173,12 @@ async function assertConfigBackup(configPath: string): Promise<void> {
       throw error
     }
     if (error.kind === 'json') {
-      throw new ActionFailure(400, '备份归档中的配置文件不是有效的 JSON')
+      throw new ActionFailure(400, descriptorFor('backup.error.configNotJson'))
     }
     if (error.kind === 'shape') {
-      throw new ActionFailure(400, '备份归档中的配置文件格式无效')
+      throw new ActionFailure(400, descriptorFor('backup.error.configInvalid'))
     }
-    throw new ActionFailure(400, `备份归档中的配置文件无法通过服务端校验，还原已中止:${error.message}`)
+    throw new ActionFailure(400, descriptorFor('backup.error.configRejected', { message: error.message }))
   }
 }
 
@@ -244,9 +245,11 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
           // different password; format failures (header, framing,
           // truncation) fail identically on every retry.
           if (error.kind === 'auth') {
-            throw new BackupPasswordError(error.message)
+            // Message is the technical detail; the descriptor carries the copy.
+            throw new BackupPasswordError()
           }
-          throw new ActionFailure(400, error.message)
+          log.warn('backup decrypt failed (format)', { error: error.message })
+          throw new ActionFailure(400, descriptorFor('backup.error.archiveCorrupt'))
         }
         throw error
       }
@@ -271,7 +274,7 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
     }
     const { size } = await stat(rawPath)
     if (size > maxBytes) {
-      throw new ActionFailure(400, '备份文件过大，请确认文件未损坏。')
+      throw new ActionFailure(400, descriptorFor('backup.error.fileTooLarge'))
     }
 
     const head = await readPrefix(rawPath, HEAD_BYTES)
@@ -279,7 +282,7 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
       const entries = await listTarEntriesInFile(rawPath)
       const content = entries.find((entry) => entry.name === 'kobato.db')
       if (content === undefined) {
-        throw new ActionFailure(400, '备份归档中缺少内容数据库 kobato.db')
+        throw new ActionFailure(400, descriptorFor('backup.error.missingContentDb'))
       }
       const contentPath = join(dir, 'kobato.db')
       await copyRange(rawPath, content.offset, content.size, contentPath)
@@ -351,7 +354,7 @@ export async function sweepStaleRestoreDirs(): Promise<void> {
  * soft-locks the instance behind the install gate. */
 export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Promise<void> {
   if (staged.content === null) {
-    throw new ActionFailure(400, '备份中不包含管理员账号')
+    throw new ActionFailure(400, descriptorFor('backup.error.noAdmin'))
   }
   const db = new DatabaseSync(staged.content, { readOnly: true })
   try {
@@ -361,7 +364,7 @@ export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Pro
     const admins =
       row !== null && typeof row === 'object' && 'admins' in row && typeof row.admins === 'number' ? row.admins : 0
     if (admins < 1) {
-      throw new ActionFailure(400, '备份中不包含管理员账号')
+      throw new ActionFailure(400, descriptorFor('backup.error.noAdmin'))
     }
   } finally {
     db.close()
@@ -600,7 +603,7 @@ export async function restoreFromStagedBackup(
     if (staged.content !== null) {
       const dbPath = resolveDatabasePath()
       if (isInMemoryPath(dbPath)) {
-        throw new ActionFailure(400, '内存数据库不支持备份还原')
+        throw new ActionFailure(400, descriptorFor('backup.error.memoryDb'))
       }
       await swapStagedFile(staged.content, dbPath)
     }

@@ -109,11 +109,16 @@ The shared `loaders/*` helpers are the orchestration layer the content controlle
   (never raw copy) and the server maps Zod issues with
   `server/infra/http/error-descriptor` (`zodIssuesToWire`: id → descriptor + `{min}/{max}`/custom
   `params` + English fallback, producer code, path; standard Zod prose stays an English
-  passthrough). Perimeter middlewares (RBAC, rate limit, timeout, CSRF, body limit) have no
+  passthrough). An entity noun crosses as a MACHINE kind (`post`/`page`/`category`/`tag`/
+  `taxonomy`) and the catalog's ICU `select` renders it — never a pre-translated label param, no
+  locale choice in the domain. Perimeter middlewares (RBAC, rate limit, timeout, CSRF, body limit) have no
   `DomainError` channel: they throw `LocalizedHttpException` (`localized-http-exception.ts`) and the
   same handler translates it; responder-style hooks use `errorJsonResponse`. Controllers that throw
-  `ORPCError` directly use `localizedOrpcError(context, code, messageKey)` from `orpc-base` so the
-  message and descriptor stay in step. Auth flows return `AuthFlowResult` with a descriptor
+  `ORPCError` directly use `localizedOrpcError(context, code, messageKey, params?)` from `orpc-base`
+  so the message and descriptor stay in step; resource routes that choose their own status from a
+  caught error use `failureJsonResponse(c, error, status?)` / `errorJsonResponse(c, status, key)`.
+  Save-result side-effect warnings are descriptors too — the revision router localizes them into the
+  wire `warning` string (`formatWarningDescriptors`). Auth flows return `AuthFlowResult` with a descriptor
   (`authFlowError`/`authFlowSuccess`); `routes/auth` resolves it through `authFlowMessage` (the
   route import whitelist). Settings strict patches reject unknown keys with `unrecognizedKeys`
   (one issue per key, full key list in `params.keys`, field path preserved).

@@ -99,6 +99,21 @@ export function errorJsonResponse(c: Context<Env>, status: number, messageKey: U
   )
 }
 
+/**
+ * JSON body for a caught `ActionFailure`/`DomainError` in a resource route that
+ * needs its own status decision (410 vs 400). Same localized shape as the
+ * thrown path.
+ */
+export function failureJsonResponse(c: Context<Env>, error: ActionFailure | DomainError, status?: number): Response {
+  const translator = requestTranslator(c)
+  const translated = translateDomainError(error, translator)
+  if (translated.headers) {
+    const headers = new Headers(translated.headers)
+    headers.forEach((value, key) => c.header(key, value, { append: true }))
+  }
+  return respond(c, status ?? translated.status, translated, translator)
+}
+
 export function onErrorHandler(err: Error, c: Context<Env>): Response {
   const requestId = c.var.requestId
   const translator = requestTranslator(c)
