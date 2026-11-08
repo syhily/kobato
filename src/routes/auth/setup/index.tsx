@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { data, redirect, useNavigation } from 'react-router'
 
 import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
@@ -11,15 +12,17 @@ import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@/server/do
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { getRequestContext } from '@/server/http/request-context'
 import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
+import { SetupLocaleSelect } from '@/ui/admin/auth/SetupLocaleSelect'
 import { SetupTokenVerifyForm } from '@/ui/admin/auth/SetupTokenVerifyForm'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/index'
 
-const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password'] as const
+const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password', 'locale'] as const
 
 const SETUP_VERIFY_BUCKET = { windowSeconds: 3600, maxAttempts: 10 }
 
@@ -116,6 +119,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     for (const field of ADMIN_INSTALL_FIELDS) {
       values[field] = formData.get(field)
     }
+    values.locale ??= DEFAULT_LOCALE
 
     const parsed = signUpAdminSchema.safeParse(values)
     if (!parsed.success) {
@@ -158,6 +162,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const csrfToken = loaderData.csrfToken
+  const [locale, setLocale] = useState(DEFAULT_LOCALE)
 
   return (
     <div className="flex flex-col gap-8">
@@ -170,6 +175,8 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
         )}
       </header>
 
+      <SetupLocaleSelect value={locale} onValueChange={setLocale} disabled={isSubmitting} />
+
       {/* Only the install form's action error — SetupTokenVerifyForm renders its own. */}
       {loaderData.setupTokenVerified && actionData && 'error' in actionData && actionData.error ? (
         <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
@@ -180,7 +187,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
       {!loaderData.setupTokenVerified ? (
         <SetupTokenVerifyForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={actionData} />
       ) : (
-        <AdminInstallForm />
+        <AdminInstallForm locale={locale} />
       )}
     </div>
   )

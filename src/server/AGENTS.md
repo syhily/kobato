@@ -181,7 +181,7 @@ Two embedded engines, zero services:
 
 - Source of truth: `setting` table — one plain-JSON row per section, `scope='blog.<section>'`. 18 sections defined in `SECTION_REGISTRY` (`domains/settings/sections/registry.ts`). Adding a section = one new module + one registry line.
 - In-memory: `BlogSettingsBundle` (`@/shared/config/types`). SSR reads slices via `requireBlogSettingsSection('<key>')`; UI uses per-section hooks. New UI MUST NOT read the whole bundle.
-- Install flow: (1) `/admin/setup` creates first admin; (2) sets `blog.general` + `blog.assets`, seeds remaining 16 sections from registry defaults.
+- Install flow: (1) `/admin/setup` creates first admin; (2) sets `blog.general` + `blog.assets`, seeds remaining 16 sections from registry defaults. The shared first-screen locale selector is available before and after Setup Token verification; the install action validates the closed locale set (missing legacy values stay `zh-CN`) and writes the choice into `blog.general.siteIdentity.locale`, so the first signed-in document already uses it.
 - `honoInstallGateMiddleware`: no admin → `/admin/setup`; installed → through. "Has admin" == "installed".
 - Admin saves: each card POSTs a Section patch; server strict-checks keys, deep-merges, validates against `SECTION_REGISTRY[section].writeSchema ?? .schema` (the write schema is the strict one — hydration and the merge base always use the lenient read schema), writes ONLY that row.
 

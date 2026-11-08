@@ -4,6 +4,7 @@ import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
 import { useFileUpload } from '@/client/hooks/use-file-upload'
 import { formatBytes } from '@/shared/i18n/format'
+import { DEFAULT_LOCALE, type AppLocale } from '@/shared/i18n/locales'
 import { isApiAccepted } from '@/shared/utils/api-error'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/ui/components/dialog'
@@ -23,7 +24,7 @@ function useCsrfToken(): string | undefined {
   return rootData?.csrfToken
 }
 
-export function AdminInstallForm() {
+export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { locale?: AppLocale }) {
   const { locale, t } = useI18n()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
@@ -172,6 +173,7 @@ export function AdminInstallForm() {
       {mode === 'install' ? (
         <Form method="post" id="adminInstallForm" className="flex w-full flex-col gap-6">
           <input type="hidden" name="intent" value="install" />
+          <input type="hidden" name="locale" value={selectedLocale} />
           {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="install-title" className="font-semibold text-(--text-admin-base)">

@@ -12,6 +12,7 @@ import { buildInstallSectionRows, seedInstallSections } from '@/server/domains/s
 import { hasAdmin, hashAdminPassword, insertAdmin } from '@/server/infra/db/operations/user'
 import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
+import { DEFAULT_LOCALE, type AppLocale } from '@/shared/i18n/locales'
 import { idFromString } from '@/shared/utils/id'
 
 export interface SignUpAdminSeed {
@@ -19,6 +20,7 @@ export interface SignUpAdminSeed {
   name: string
   email: string
   password: string
+  locale?: AppLocale
 }
 
 export async function signUpInitialAdminWithSession(
@@ -28,6 +30,7 @@ export async function signUpInitialAdminWithSession(
     name,
     email,
     password,
+    locale = DEFAULT_LOCALE,
     session,
     request,
     clientAddress,
@@ -43,7 +46,7 @@ export async function signUpInitialAdminWithSession(
 
   // Settings domain owns the section seed; the admin insert and seed
   // share one transaction so a fresh install commits or rolls back atomically.
-  const seedRows = buildInstallSectionRows({ title, name, email, hostname: new URL(request.url).hostname })
+  const seedRows = buildInstallSectionRows({ title, name, email, locale, hostname: new URL(request.url).hostname })
   if (!seedRows.ok) {
     // Registry-drift diagnostic: the technical seed message rides as the
     // fallback, the structured copy is the setup validation descriptor.

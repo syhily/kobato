@@ -98,6 +98,7 @@ describe('integration: /admin/setup full install flow', () => {
     installFormData.set('name', 'Admin')
     installFormData.set('email', 'admin@example.com')
     installFormData.set('password', 'CorrectHorse1')
+    installFormData.set('locale', 'en-US')
     installFormData.set('csrf_token', CSRF_TOKEN)
 
     const response = (await action({
@@ -154,6 +155,7 @@ describe('integration: /admin/setup full install flow', () => {
     // The real refreshBlogSettings: the in-process snapshot reflects the rows just written.
     const { getBlogSettingsBundleSync } = await import('@/shared/config/getters')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
+    expect(getBlogSettingsBundleSync()?.siteIdentity?.locale).toBe('en-US')
 
     expect(await db.select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))).toHaveLength(0)
 

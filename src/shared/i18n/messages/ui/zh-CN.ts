@@ -152,6 +152,8 @@ export const uiMessagesZhCN = {
   'public.comments.website': '网址',
   'public.comments.withdrawDelete': '撤回删除',
   'auth.setup.intro': '填写以下信息，开启你的创作之旅。',
+  'auth.setup.locale': '站点语言',
+  'auth.setup.localeHint': '选择安装后使用的默认界面语言。',
   'auth.setup.tokenHint': '验证 Setup Token 以继续。',
   'public.categories.title': '分类',
   'public.friends.apply': '申请友链',

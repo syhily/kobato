@@ -162,6 +162,8 @@ export const uiMessagesEnUS = {
   'public.comments.website': 'Website',
   'public.comments.withdrawDelete': 'Withdraw request',
   'auth.setup.intro': 'Fill in the details below to start publishing.',
+  'auth.setup.locale': 'Site language',
+  'auth.setup.localeHint': 'Choose the default interface language after installation.',
   'auth.setup.tokenHint': 'Verify the setup token to continue.',
   'public.categories.title': 'Categories',
   'public.friends.apply': 'Apply for a friend link',

@@ -48,6 +48,15 @@ describe('server/domains/settings/services/install-flow', () => {
       expect(general?.locale).toBe('zh-CN')
     })
 
+    it('uses the selected UI locale in blog.general', () => {
+      const result = buildInstallSectionRows({ ...INPUT, locale: 'zh-TW' })
+      if (!result.ok) {
+        throw new Error('expected the selected locale to validate')
+      }
+
+      expect(result.rows[0]?.payload.locale).toBe('zh-TW')
+    })
+
     it('seeds blog.assets with the request host and the storage upload toggle off', () => {
       const assets = builtRows()[1]?.payload
 

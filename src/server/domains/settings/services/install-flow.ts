@@ -11,7 +11,7 @@ import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@/server/domains/settings/secti
 import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { descriptorFor, messageDescriptor } from '@/server/infra/http/error-descriptor'
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales'
+import { DEFAULT_LOCALE, type AppLocale } from '@/shared/i18n/locales'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface InstallSeedInput {
@@ -19,6 +19,7 @@ export interface InstallSeedInput {
   name: string
   email: string
   hostname: string
+  locale?: AppLocale
 }
 
 /** One validated section row ready to persist: schema-parsed payload. */
@@ -36,7 +37,7 @@ export type InstallSectionRowsResult =
  * failure returns as a user-facing message; registry-default drift keeps its thrown DomainError.
  */
 export function buildInstallSectionRows(input: InstallSeedInput): InstallSectionRowsResult {
-  const { title, name, email, hostname } = input
+  const { title, name, email, hostname, locale = DEFAULT_LOCALE } = input
   const siteIdentity: SiteIdentitySettings = {
     title,
     titleSeparator: '-',
@@ -44,7 +45,7 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
     website: `https://${hostname}`,
     keywords: [],
     author: { name, email, url: `https://${hostname}` },
-    locale: DEFAULT_LOCALE,
+    locale,
     timeZone: 'Asia/Shanghai',
     // Follow the locale's Intl default; admins may pin a custom token pattern later.
     timeFormat: null,

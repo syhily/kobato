@@ -331,6 +331,33 @@ describe('routes/setup', () => {
       expect(data?.error).toBe('请填写完整的管理员账号信息。')
     })
 
+    it('rejects an unsupported locale without calling the install service', async () => {
+      await mintSetupToken()
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      formData.set('password', 'Password1234')
+      formData.set('locale', 'fr-FR')
+
+      const result = await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('请填写完整的管理员账号信息。')
+      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
+    })
+
     it('calls signUpInitialAdminWithSession with parsed data and context', async () => {
       await mintSetupToken()
 
@@ -340,6 +367,7 @@ describe('routes/setup', () => {
       formData.set('name', 'A')
       formData.set('email', 'a@b.com')
       formData.set('password', 'Password1234')
+      formData.set('locale', 'zh-HK')
 
       await action({
         request: new Request('http://localhost/admin/setup', {
@@ -359,6 +387,7 @@ describe('routes/setup', () => {
         name: 'A',
         email: 'a@b.com',
         password: 'Password1234',
+        locale: 'zh-HK',
         session: expect.anything(),
         request: expect.anything(),
         clientAddress: '127.0.0.1',

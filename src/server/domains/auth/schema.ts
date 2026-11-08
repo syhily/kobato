@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 
@@ -69,6 +70,7 @@ export const signUpAdminSchema = z.object({
   name: z.string().min(1),
   email: z.email(),
   password: newPasswordSchema(),
+  locale: z.enum(SUPPORTED_LOCALES).default(DEFAULT_LOCALE),
 })
 export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
 

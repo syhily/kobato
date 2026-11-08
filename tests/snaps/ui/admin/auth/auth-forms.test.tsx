@@ -131,6 +131,7 @@ describe('snapshot: AdminInstallForm', () => {
     expect(html).toContain('从备份恢复')
     expect(html).toContain('站点名称')
     expect(html).toContain('创建账号并开始写作')
+    expect(html).toContain('name="locale" value="zh-CN"')
   })
 
   it('renders restore mode', () => {

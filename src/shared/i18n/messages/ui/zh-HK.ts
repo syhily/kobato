@@ -154,6 +154,8 @@ export const uiMessagesZhHK = {
   'public.comments.website': '網址',
   'public.comments.withdrawDelete': '撤回刪除',
   'auth.setup.intro': '填寫以下資訊，開啟你的創作之旅。',
+  'auth.setup.locale': '網站語言',
+  'auth.setup.localeHint': '選擇安裝後使用的預設介面語言。',
   'auth.setup.tokenHint': '驗證 Setup Token 以繼續。',
   'public.categories.title': '分類',
   'public.friends.apply': '申請友鏈',
