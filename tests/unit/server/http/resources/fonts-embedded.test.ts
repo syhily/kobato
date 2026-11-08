@@ -1,7 +1,11 @@
+import { Hono } from 'hono'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Env } from '@/server/http/context'
+
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { makeRequestContext } from '#/_helpers/request-context'
 
 // Point the route + `resolveLocalPath` at a fresh temp directory. The mock
 // factory runs before any import of the route, so STORAGE_DIR is set first.
@@ -17,6 +21,16 @@ vi.mock('@/server/infra/paths', async (importOriginal) => {
 })
 
 const { fontsEmbeddedRouter } = await import('@/server/http/resources/fonts-embedded')
+
+// The route reads the perimeter-derived `requestContext` (locale for the 503
+// branch); a direct `router.request` has no middleware chain, so mirror the
+// production perimeter with the canonical stub.
+const app = new Hono<Env>()
+app.use('*', async (c, next) => {
+  c.set('requestContext', makeRequestContext({ request: c.req.raw }))
+  await next()
+})
+app.route('/', fontsEmbeddedRouter)
 
 // The default test bundle enables a complete S3 config — override the toggle
 // per suite: OFF streams local bytes, ON exercises the 302 branch.
@@ -54,38 +68,38 @@ describe('fonts-embedded public route (local driver)', () => {
   })
 
   it('serves a published font package file', async () => {
-    const css = await fontsEmbeddedRouter.request(`/fonts/embedded/${HASH}/result.css`)
+    const css = await app.request(`/fonts/embedded/${HASH}/result.css`)
     expect(css.status).toBe(200)
     expect(css.headers.get('Content-Type')).toBe('text/css; charset=utf-8')
 
-    const woff2 = await fontsEmbeddedRouter.request(`/fonts/embedded/${HASH}/chunk-001.woff2`)
+    const woff2 = await app.request(`/fonts/embedded/${HASH}/chunk-001.woff2`)
     expect(woff2.status).toBe(200)
     expect(woff2.headers.get('Content-Type')).toBe('font/woff2')
   })
 
   it('rejects a hash that is not exactly 64 lowercase hex chars', async () => {
-    const short = await fontsEmbeddedRouter.request('/fonts/embedded/abc123/result.css')
+    const short = await app.request('/fonts/embedded/abc123/result.css')
     expect(short.status).toBe(400)
 
-    const upper = await fontsEmbeddedRouter.request(`/fonts/embedded/${'A'.repeat(64)}/result.css`)
+    const upper = await app.request(`/fonts/embedded/${'A'.repeat(64)}/result.css`)
     expect(upper.status).toBe(400)
   })
 
   it('rejects dotfiles and hidden segments under a valid hash', async () => {
-    const dotfile = await fontsEmbeddedRouter.request(`/fonts/embedded/${HASH}/.secret.woff2`)
+    const dotfile = await app.request(`/fonts/embedded/${HASH}/.secret.woff2`)
     expect(dotfile.status).toBe(400)
 
-    const hidden = await fontsEmbeddedRouter.request(`/fonts/embedded/${HASH}/sub/.hidden/x.woff2`)
+    const hidden = await app.request(`/fonts/embedded/${HASH}/sub/.hidden/x.woff2`)
     expect(hidden.status).toBe(400)
   })
 
   it('returns 404 for a well-formed hash with no package on disk', async () => {
-    const res = await fontsEmbeddedRouter.request(`/fonts/embedded/${MISSING_HASH}/result.css`)
+    const res = await app.request(`/fonts/embedded/${MISSING_HASH}/result.css`)
     expect(res.status).toBe(404)
   })
 
   it('returns 206 with a range body for a valid single-range request', async () => {
-    const res = await fontsEmbeddedRouter.request(`/fonts/embedded/${HASH}/chunk-001.woff2`, {
+    const res = await app.request(`/fonts/embedded/${HASH}/chunk-001.woff2`, {
       headers: { Range: 'bytes=0-4' },
     })
     expect(res.status).toBe(206)
@@ -97,14 +111,14 @@ describe('fonts-embedded public route (local driver)', () => {
 // Default bundle (S3 enabled + complete) drives the redirect branch.
 describe('fonts-embedded public route — s3 redirect', () => {
   it('302s to the raw storage key on the current public base, preserving the query string', async () => {
-    const res = await fontsEmbeddedRouter.request(`/fonts/embedded/${HASH}/result.css?v=3735928559`)
+    const res = await app.request(`/fonts/embedded/${HASH}/result.css?v=3735928559`)
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe(`https://assets.example.com/fonts/${HASH}/result.css?v=3735928559`)
     expect(res.headers.get('Cache-Control')).toBe('public, max-age=300')
   })
 
   it('keeps the path-shape gate ahead of the redirect (malformed paths 400, never redirect)', async () => {
-    const res = await fontsEmbeddedRouter.request('/fonts/embedded/abc123/result.css')
+    const res = await app.request('/fonts/embedded/abc123/result.css')
     expect(res.status).toBe(400)
     expect(res.headers.get('Location')).toBeNull()
   })

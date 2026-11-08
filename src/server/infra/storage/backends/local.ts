@@ -6,6 +6,7 @@ import { access, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile }
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { isPathInside, STORAGE_DIR } from '@/server/infra/paths'
@@ -143,7 +144,10 @@ export const localBackend: StorageBackend = {
       throw new StorageObjectNotFound(key)
     }
     if (st.size > MAX_OBJECT_BUFFER_SIZE) {
-      throw new ActionFailure(413, `本地文件过大 (${st.size} 字节)，超出 ${MAX_OBJECT_BUFFER_SIZE} 字节限制`)
+      throw new ActionFailure(
+        413,
+        descriptorFor('storage.error.localFileTooLarge', { size: st.size, max: MAX_OBJECT_BUFFER_SIZE }),
+      )
     }
     return readFile(abs)
   },

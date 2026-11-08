@@ -10,6 +10,7 @@ import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { findSettingByScope } from '@/server/infra/db/operations/setting'
 import { font } from '@/server/infra/db/schema/font'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -51,7 +52,7 @@ export async function deleteFont(db: Database, fontId: string): Promise<FontRow>
   const row = await db.select().from(font).where(eq(font.id, fontId)).limit(1)
   const target = row[0]
   if (!target) {
-    throw new DomainError('NOT_FOUND', '字体不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('fonts.error.notFound'))
   }
   const current = await readCurrentFonts(db)
   const using: string[] = []
@@ -65,10 +66,7 @@ export async function deleteFont(db: Database, fontId: string): Promise<FontRow>
     using.push('code')
   }
   if (using.length > 0) {
-    throw new DomainError(
-      'CONFLICT',
-      `字体仍被以下槽位引用：${using.join('、')}。请先在 /admin/library/fonts 中将其从这些槽位移除。`,
-    )
+    throw new DomainError('CONFLICT', descriptorFor('fonts.error.inUse', { slots: using.join(', ') }))
   }
   await gcFonts(db, [fontId])
   return target

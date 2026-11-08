@@ -11,6 +11,7 @@ import {
   updateImageNoteWithUploader,
   updateImageThumbhashWithUploader,
 } from '@/server/infra/db/operations/image'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
@@ -24,7 +25,7 @@ export type ImageViewerContext = ViewerIdentity
 export async function deleteImage(db: Database, id: number, viewer?: ImageViewerContext): Promise<void> {
   const existing = await findImageById(db, id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '图片不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
   if (viewer && !canEditImage(viewer, existing)) {
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
@@ -43,7 +44,7 @@ export async function deleteImage(db: Database, id: number, viewer?: ImageViewer
 
   const deleted = await softDeleteImage(db, id)
   if (deleted === null) {
-    throw new DomainError('NOT_FOUND', '图片不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
   await invalidateImageEnhanceCacheFor(db, deleted.storagePath)
 }
@@ -56,14 +57,14 @@ export async function updateImageNote(
 ): Promise<AdminImageDto> {
   const existing = await findImageById(db, id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '图片不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
   if (viewer && !canEditImage(viewer, existing)) {
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   const updated = await updateImageNoteWithUploader(db, id, note)
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '图片不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
   return toAdminImageDto(updated, updated.uploaderName)
 }
@@ -75,7 +76,7 @@ export async function recalculateImageThumbhash(
 ): Promise<AdminImageDto> {
   const existing = await findAdminImageRowById(db, id)
   if (existing === null) {
-    throw new DomainError('NOT_FOUND', '图片不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
   if (viewer && !canEditImage(viewer, existing)) {
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
@@ -86,7 +87,7 @@ export async function recalculateImageThumbhash(
     buffer = await backendFor(existing.storageDriver).get(existing.storagePath)
   } catch (error) {
     if (error instanceof StorageObjectNotFound) {
-      throw new DomainError('NOT_FOUND', '存储中未找到该图片对象')
+      throw new DomainError('NOT_FOUND', descriptorFor('images.error.objectMissing'))
     }
     const errorDetail =
       error instanceof Error ? { errorName: error.name, errorMessage: error.message } : { errorRaw: String(error) }
@@ -96,7 +97,7 @@ export async function recalculateImageThumbhash(
       driver: existing.storageDriver,
       ...errorDetail,
     })
-    throw new DomainError('INTERNAL', '从存储获取图片失败，请检查存储配置')
+    throw new DomainError('INTERNAL', descriptorFor('images.error.storageFetchFailed'))
   }
 
   const processed = await processImageBuffer({
@@ -106,7 +107,7 @@ export async function recalculateImageThumbhash(
 
   const updated = await updateImageThumbhashWithUploader(db, id, processed.thumbhash)
   if (updated === null) {
-    throw new DomainError('NOT_FOUND', '图片不存在')
+    throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
 
   await invalidateImageEnhanceCacheFor(db, existing.storagePath)

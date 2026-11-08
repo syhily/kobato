@@ -1,6 +1,7 @@
 import { clearBrandingAsset, uploadBrandingAsset } from '@/server/domains/assets/management'
 import { isBrandingSlot } from '@/server/domains/assets/services/storage'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { errorJsonResponse } from '@/server/http/errors'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { adminUploadRoute } from '@/server/http/resources/admin-upload-route'
@@ -13,14 +14,14 @@ const log = getLogger('branding.http')
 export const brandingRouter = adminUploadRoute({
   path: '/api/admin/branding/upload',
   maxSize: 2 * 1024 * 1024,
-  tooLargeMessage: '上传文件过大',
-  missingFileMessage: '请上传文件',
+  tooLarge: { messageKey: 'common.error.uploadTooLarge' },
+  missingFile: 'common.error.uploadMissing',
   logScope: 'branding.http',
   logMessage: 'Branding uploaded',
   validateBody(body, c) {
     const slot = body.slot
     if (typeof slot !== 'string' || !isBrandingSlot(slot)) {
-      return c.json({ error: { message: '未知的品牌素材槽位' } }, 400)
+      return errorJsonResponse(c, 400, 'branding.error.unknownSlot')
     }
     return { value: slot }
   },
@@ -43,7 +44,7 @@ export const brandingRouter = adminUploadRoute({
   const body = isRecord(parsed) ? parsed : null
   const slot = body?.slot
   if (typeof slot !== 'string' || !isBrandingSlot(slot)) {
-    return c.json({ error: { message: '未知的品牌素材槽位' } }, 400)
+    return errorJsonResponse(c, 400, 'branding.error.unknownSlot')
   }
   await clearBrandingAsset(c.var.requestContext.db, slot)
   recordAuditEventFromContext(c.var.requestContext, {

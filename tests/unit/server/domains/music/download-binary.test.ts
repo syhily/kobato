@@ -28,7 +28,9 @@ describe('downloadBinary', () => {
 
   it('rejects file: URL', async () => {
     await expect(downloadBinary('file:///etc/passwd', 1000, 'cover')).rejects.toThrow(DomainError)
-    await expect(downloadBinary('file:///etc/passwd', 1000, 'cover')).rejects.toThrow('封面地址协议不被支持')
+    await expect(downloadBinary('file:///etc/passwd', 1000, 'cover')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetBadProtocol', params: { asset: 'cover' } },
+    })
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
     await expect(downloadBinary('file:///etc/passwd', 1000, 'cover')).rejects.toThrow()
@@ -74,7 +76,9 @@ describe('downloadBinary', () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
     await expect(downloadBinary('not a url', 1000, 'cover')).rejects.toThrow(DomainError)
-    await expect(downloadBinary('not a url', 1000, 'cover')).rejects.toThrow('封面地址无效')
+    await expect(downloadBinary('not a url', 1000, 'cover')).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.assetInvalidUrl', params: { asset: 'cover' } },
+    })
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 

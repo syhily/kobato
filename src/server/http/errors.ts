@@ -7,6 +7,7 @@ import type { Env } from '@/server/http/context'
 import type { RequestContext } from '@/server/http/request-context'
 import type { DomainErrorIssue } from '@/server/infra/http/errors'
 import type { ServerTranslator } from '@/server/infra/i18n'
+import type { ErrorMessageParams } from '@/shared/contracts/api-error'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { carriesErrorMessageDescriptor } from '@/server/http/localized-http-exception'
@@ -83,8 +84,13 @@ function causeIssues(cause: unknown): DomainErrorIssue[] | undefined {
  * install gate) that returns a Response instead of throwing. Same shape and
  * localization as the thrown path.
  */
-export function errorJsonResponse(c: Context<Env>, status: number, messageKey: UiMessageId): Response {
-  const descriptor = descriptorFor(messageKey)
+export function errorJsonResponse(
+  c: Context<Env>,
+  status: number,
+  messageKey: UiMessageId,
+  params?: ErrorMessageParams,
+): Response {
+  const descriptor = descriptorFor(messageKey, params)
   const translator = requestTranslator(c)
   c.header('X-Request-Id', c.var.requestId)
   return c.json(

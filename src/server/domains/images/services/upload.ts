@@ -1,13 +1,13 @@
-import { ORPCError } from '@orpc/server'
-
 import type { Database } from '@/server/infra/db/database'
 import type { ImageRow } from '@/server/infra/db/types'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { type ImageKindSpec, buildObjectKey } from '@/server/domains/images/key'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { findImagesByStoragePaths, insertImage, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
@@ -44,17 +44,25 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp
  * Pre-read check of the declared envelope; authoritative checks still
  * run in {@link uploadImage}. Messages are the wire contract — do not reword.
  */
-export function assertImageUploadAllowed(file: { type: string; size: number }, maxBytes: number): void {
+/** A declared-envelope rejection: the controller raises it as a localized ORPCError. */
+export type ImageUploadRejection = {
+  code: 'BAD_REQUEST' | 'PAYLOAD_TOO_LARGE'
+  descriptor: ErrorMessageDescriptor
+}
+
+export function checkImageUpload(file: { type: string; size: number }, maxBytes: number): ImageUploadRejection | null {
   if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
-    throw new ORPCError('BAD_REQUEST', {
-      message: '不支持的图片格式，请上传 JPEG、PNG、WebP、AVIF 或 GIF 格式的图片',
-    })
+    return { code: 'BAD_REQUEST', descriptor: descriptorFor('images.error.unsupportedFormat') }
   }
   if (file.size > maxBytes) {
-    throw new ORPCError('PAYLOAD_TOO_LARGE', {
-      message: `图片体积超过上限（${formatBytes(maxBytes, { locale: resolveAppLocalization().locale })}）`,
-    })
+    return {
+      code: 'PAYLOAD_TOO_LARGE',
+      descriptor: descriptorFor('images.error.tooLarge', {
+        max: formatBytes(maxBytes, { locale: resolveAppLocalization().locale }),
+      }),
+    }
   }
+  return null
 }
 
 function getBufferMimeType(buffer: Buffer): string | null {
@@ -115,12 +123,14 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
   if (input.buffer.byteLength > input.maxBytes) {
     throw new DomainError(
       'BAD_REQUEST',
-      `图片体积超过上限（${formatBytes(input.maxBytes, { locale: resolveAppLocalization().locale })}）`,
+      descriptorFor('images.error.tooLarge', {
+        max: formatBytes(input.maxBytes, { locale: resolveAppLocalization().locale }),
+      }),
     )
   }
 
   if (!isValidImageBuffer(input.buffer)) {
-    throw new DomainError('BAD_REQUEST', '不支持的图片格式，请上传 JPEG、PNG、WebP、AVIF 或 GIF 格式的图片')
+    throw new DomainError('BAD_REQUEST', descriptorFor('images.error.unsupportedFormat'))
   }
 
   const processed = await processImageBuffer({
@@ -131,7 +141,9 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
   if (processed.buffer.byteLength > input.maxBytes) {
     throw new DomainError(
       'BAD_REQUEST',
-      `重编码后体积超过上限（${formatBytes(input.maxBytes, { locale: resolveAppLocalization().locale })}）`,
+      descriptorFor('images.error.reencodedTooLarge', {
+        max: formatBytes(input.maxBytes, { locale: resolveAppLocalization().locale }),
+      }),
     )
   }
 
@@ -166,7 +178,7 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
         error,
       })
       await deleteObjectUnlessClaimed(db, backend, objectKey)
-      throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
+      throw new DomainError('INTERNAL', descriptorFor('images.error.metadataWriteFailed'))
     }
   } else {
     try {
@@ -184,7 +196,7 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
     } catch (error) {
       log.error('Image upsert failed; rolling back upload', { objectKey, driver, kind: input.kind.kind, error })
       await deleteObjectUnlessClaimed(db, backend, objectKey)
-      throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
+      throw new DomainError('INTERNAL', descriptorFor('images.error.metadataWriteFailed'))
     }
   }
 

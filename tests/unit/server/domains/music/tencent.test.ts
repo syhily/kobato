@@ -284,7 +284,9 @@ describe('tencent provider resolveAudioUrl', () => {
       urlId: '001ABCDEF',
       lyricId: '001ABCDEF',
     }
-    await expect(tencentProvider.resolveAudioUrl(track)).rejects.toThrow('上游未返回可用的音频地址')
+    await expect(tencentProvider.resolveAudioUrl(track)).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.upstreamNoAudio' },
+    })
 
     vi.unstubAllGlobals()
   })

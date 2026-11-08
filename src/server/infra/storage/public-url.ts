@@ -1,3 +1,4 @@
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@/shared/types/asset-url'
@@ -57,7 +58,7 @@ export interface ResolveAssetUrlOptions {
 export function resolveAssetUrl(storagePath: string, updatedAtMs?: number, options?: ResolveAssetUrlOptions): string {
   const website = getGeneralWebsite()
   if (website === '') {
-    throw new ActionFailure(503, '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）')
+    throw new ActionFailure(503, descriptorFor('storage.error.siteUrlMissing'))
   }
   let key = trimLeadingSlash(storagePath)
   if (options?.stripPrefix !== undefined && key.startsWith(options.stripPrefix)) {

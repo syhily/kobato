@@ -187,14 +187,14 @@ describe('music/services/write/metadata — updateMusicMetadata', () => {
   it('throws NOT_FOUND when music does not exist', async () => {
     await expect(
       metadataMod.updateMusicMetadata(db, { id: 9999, name: 'X', artist: [], album: 'A', lyric: null }),
-    ).rejects.toThrow(/音乐不存在/)
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'music.error.notFound' } })
   })
 
   it('throws NOT_FOUND when the row is soft-deleted', async () => {
     const m = await seedMusic({ deletedAt: new Date() })
     await expect(
       metadataMod.updateMusicMetadata(db, { id: m.id, name: 'X', artist: [], album: 'A', lyric: null }),
-    ).rejects.toThrow(/音乐不存在/)
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'music.error.notFound' } })
   })
 
   it('throws FORBIDDEN when a non-admin viewer is not the uploader', async () => {
@@ -235,7 +235,9 @@ describe('music/services/write/metadata — updateMusicMetadata', () => {
 
 describe('music/services/write/delete — deleteMusic', () => {
   it('throws NOT_FOUND when music does not exist', async () => {
-    await expect(deleteMod.deleteMusic(db, 9999)).rejects.toThrow(/音乐不存在/)
+    await expect(deleteMod.deleteMusic(db, 9999)).rejects.toMatchObject({
+      descriptor: { messageKey: 'music.error.notFound' },
+    })
   })
 
   it('soft-deletes the row', async () => {
@@ -267,8 +269,8 @@ describe('music/services/write/add — addMusic', () => {
       resolveCoverUrl: vi.fn(),
       getLyric: vi.fn(),
     })
-    await expect(addMod.addMusic(db, { source: 'netease', sourceId: 'unknown', uploader: null })).rejects.toThrow(
-      /上游未找到/,
+    await expect(addMod.addMusic(db, { source: 'netease', sourceId: 'unknown', uploader: null })).rejects.toMatchObject(
+      { descriptor: { messageKey: 'music.error.upstreamTrackNotFound' } },
     )
   })
 
@@ -405,9 +407,9 @@ describe('music/services/write/add — addMusic', () => {
       throw new Error('independent database error')
     })
 
-    await expect(addMod.addMusic(db, { source: 'netease', sourceId: 'restore-race', uploader: null })).rejects.toThrow(
-      /音乐元数据写入失败/,
-    )
+    await expect(
+      addMod.addMusic(db, { source: 'netease', sourceId: 'restore-race', uploader: null }),
+    ).rejects.toMatchObject({ descriptor: { messageKey: 'music.error.metadataWriteFailed' } })
 
     expect(s3Memory.store.has('musics/restore-race.mp3')).toBe(true)
     expect(s3Memory.store.has('musics/restore-race.jpg')).toBe(true)

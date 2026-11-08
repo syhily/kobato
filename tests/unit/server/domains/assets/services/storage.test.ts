@@ -20,6 +20,16 @@ const mem = makeMemoryBackend()
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const svgBuffer = Buffer.from('<?xml version="1.0"?><svg></svg>')
 
+/** The `descriptor.messageKey` of the error `fn` throws, or `undefined` when it does not throw. */
+function descriptorKey(fn: () => unknown): string | undefined {
+  try {
+    fn()
+    return undefined
+  } catch (error) {
+    return (error as { descriptor?: { messageKey?: string } }).descriptor?.messageKey
+  }
+}
+
 describe('assets storage', () => {
   beforeEach(() => {
     __setStorageBackendForTests('s3', mem.backend)
@@ -49,12 +59,12 @@ describe('assets storage', () => {
   })
 
   it('rejects a non-svg upload for an SVG slot', () => {
-    expect(() => ensureMatchesSlot('logoSvg', pngHeader)).toThrow('不是有效的 SVG')
+    expect(descriptorKey(() => ensureMatchesSlot('logoSvg', pngHeader))).toBe('assets.error.invalidSvg')
   })
 
   it('rejects an SVG with scripts', () => {
     const bad = Buffer.from('<svg><script>alert(1)</script></svg>')
-    expect(() => ensureMatchesSlot('logoSvg', bad)).toThrow('脚本')
+    expect(descriptorKey(() => ensureMatchesSlot('logoSvg', bad))).toBe('assets.error.svgScript')
   })
 
   it('validates a PNG upload for a binary slot', () => {
@@ -62,12 +72,12 @@ describe('assets storage', () => {
   })
 
   it('rejects an empty upload', () => {
-    expect(() => ensureMatchesSlot('icon192', Buffer.alloc(0))).toThrow('为空')
+    expect(descriptorKey(() => ensureMatchesSlot('icon192', Buffer.alloc(0)))).toBe('common.error.uploadEmpty')
   })
 
   it('rejects an oversized upload', () => {
     const huge = Buffer.alloc(10 * 1024 * 1024)
-    expect(() => ensureMatchesSlot('icon192', huge)).toThrow('超过')
+    expect(descriptorKey(() => ensureMatchesSlot('icon192', huge))).toBe('assets.error.slotTooLarge')
   })
 
   it('uploads a branding object', async () => {

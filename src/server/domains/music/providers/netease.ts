@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import type { MusicProvider, ProviderSearchResult, ProviderTrack } from '@/server/domains/music/providers/types'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
@@ -173,7 +174,7 @@ export const neteaseProvider: MusicProvider = {
       log.error('Netease search response failed schema validation', {
         issues: parsed.error.issues,
       })
-      throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
+      throw new ActionFailure(502, descriptorFor('music.error.upstreamUnavailable'))
     }
 
     const songs = parsed.data.result?.songs ?? []
@@ -193,7 +194,7 @@ export const neteaseProvider: MusicProvider = {
       log.error('Netease song detail response failed schema validation', {
         issues: parsed.error.issues,
       })
-      throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
+      throw new ActionFailure(502, descriptorFor('music.error.upstreamUnavailable'))
     }
 
     const songs = parsed.data.songs ?? []
@@ -212,13 +213,13 @@ export const neteaseProvider: MusicProvider = {
       log.error('Netease stream URL response failed schema validation', {
         issues: parsed.error.issues,
       })
-      throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
+      throw new ActionFailure(502, descriptorFor('music.error.upstreamUnavailable'))
     }
 
     const first = parsed.data.data?.[0]
     const url = first?.url || first?.uf?.url || ''
     if (url.trim() === '') {
-      throw new ActionFailure(404, '上游未返回可用的音频地址（可能版权受限）')
+      throw new ActionFailure(404, descriptorFor('music.error.upstreamNoAudio'))
     }
     return url
   },
@@ -241,7 +242,7 @@ export const neteaseProvider: MusicProvider = {
       log.error('Netease lyric response failed schema validation', {
         issues: parsed.error.issues,
       })
-      throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
+      throw new ActionFailure(502, descriptorFor('music.error.upstreamUnavailable'))
     }
 
     const text = (parsed.data.lrc?.lyric ?? '').trim()

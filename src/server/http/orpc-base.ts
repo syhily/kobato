@@ -3,7 +3,7 @@ import { ORPCError, os } from '@orpc/server'
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
-import type { ErrorMessageParams } from '@/shared/contracts/api-error'
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@/shared/contracts/api-error'
 import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
@@ -46,6 +46,7 @@ export type OrpcErrorCode =
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
   | 'CONFLICT'
+  | 'PAYLOAD_TOO_LARGE'
   | 'INTERNAL_SERVER_ERROR'
   | 'BAD_GATEWAY'
   | 'SERVICE_UNAVAILABLE'
@@ -61,7 +62,15 @@ export function localizedOrpcError(
   messageKey: UiMessageId,
   params?: ErrorMessageParams,
 ): ORPCError<OrpcErrorCode, unknown> {
-  const descriptor = descriptorFor(messageKey, params)
+  return localizedOrpcErrorDescriptor(context, code, descriptorFor(messageKey, params))
+}
+
+/** Variant for callers that already built the descriptor (e.g. a domain helper's result). */
+export function localizedOrpcErrorDescriptor(
+  context: HandlerContext,
+  code: OrpcErrorCode,
+  descriptor: ErrorMessageDescriptor,
+): ORPCError<OrpcErrorCode, unknown> {
   const translator = createServerTranslator(context.localization.locale)
   return new ORPCError(code, {
     message: translator.format(descriptor.messageKey, descriptor.params),

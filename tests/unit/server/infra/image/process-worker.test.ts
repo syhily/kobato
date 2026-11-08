@@ -138,7 +138,7 @@ describe('infra/image/process-worker — processImageInWorker', () => {
   it('rejects decompression bombs whose decoded pixels exceed the cap', async () => {
     // 10000×10000 = 100 MP — a tiny PNG can decode to this.
     sharpMock.fn.__setMock(mockSharp({ width: 10_000, height: 10_000 }))
-    await expect(run()).rejects.toThrow('图片尺寸过大')
+    await expect(run()).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.worker.tooLarge' } })
   })
 
   it('accepts images exactly at the pixel ceiling', async () => {

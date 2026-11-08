@@ -12,7 +12,9 @@ import type {
   StreamWithMeta,
 } from '@/server/infra/storage/backend'
 import type { AssetsSettings } from '@/shared/config/types'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { MAX_OBJECT_BUFFER_SIZE, StorageObjectNotFound } from '@/server/infra/storage/backend'
@@ -92,10 +94,10 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
   const settings = requireBlogSettingsSection('assets')
   const storage = settings.storage
   if (options?.requireEnabled !== false && !storage.enabled) {
-    throw new ActionFailure(503, '图片上传未开启；请到 /admin/settings 完成存储迁移以启用 S3')
+    throw new ActionFailure(503, descriptorFor('storage.error.disabled'))
   }
   if ((storage.secretAccessKey ?? '') === '') {
-    throw new ActionFailure(503, '请先在 /admin/settings 配置 S3 凭据')
+    throw new ActionFailure(503, descriptorFor('storage.error.credentialsMissing'))
   }
 
   const fingerprint = fingerprintFor(storage)
@@ -253,7 +255,7 @@ async function getObjectBuffer(ctx: S3StorageContext, key: string, maxSize = MAX
   }
   const contentLength = response.ContentLength
   if (contentLength !== undefined && contentLength > maxSize) {
-    throw new ActionFailure(413, `S3 对象过大 (${contentLength} 字节)，超出 ${maxSize} 字节限制`)
+    throw new ActionFailure(413, descriptorFor('storage.error.objectTooLarge', { size: contentLength, max: maxSize }))
   }
   const stream = unsafeCast<Readable>(response.Body)
   const chunks: Buffer[] = []
@@ -263,7 +265,7 @@ async function getObjectBuffer(ctx: S3StorageContext, key: string, maxSize = MAX
       received += chunk.length
       if (received > maxSize) {
         stream.destroy()
-        reject(new ActionFailure(413, `S3 对象流超出 ${maxSize} 字节限制`))
+        reject(new ActionFailure(413, descriptorFor('storage.error.objectStreamTooLarge', { max: maxSize })))
         return
       }
       chunks.push(chunk)
@@ -458,7 +460,7 @@ export function createS3BackendFromConfig(storage: S3StorageConfig): StorageBack
   }
 }
 
-export type S3ValidationResult = { ok: true } | { ok: false; message: string }
+export type S3ValidationResult = { ok: true } | { ok: false; descriptor: ErrorMessageDescriptor }
 
 /**
  * Connectivity probe for a candidate S3 config — HeadBucket first, with a
@@ -480,10 +482,10 @@ export async function validateS3Config(storage: S3StorageConfig): Promise<S3Vali
         await client.send(new sdk.ListObjectsV2Command({ Bucket: storage.bucket, MaxKeys: 1 }))
         return { ok: true }
       } catch (fallbackError) {
-        return { ok: false, message: classifyS3ValidationError(fallbackError) }
+        return { ok: false, descriptor: classifyS3ValidationError(fallbackError) }
       }
     }
-    return { ok: false, message: classifyS3ValidationError(error) }
+    return { ok: false, descriptor: classifyS3ValidationError(error) }
   } finally {
     try {
       client.destroy()
@@ -494,11 +496,11 @@ export async function validateS3Config(storage: S3StorageConfig): Promise<S3Vali
 }
 
 /** Exported for unit tests — the error→message classification table. */
-export function classifyS3ValidationError(error: unknown): string {
+export function classifyS3ValidationError(error: unknown): ErrorMessageDescriptor {
   const name = unsafeCast<{ name?: string }>(error).name ?? ''
   const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
   if (statusCode === 404 || name === 'NotFound' || name === 'NoSuchBucket') {
-    return '存储桶不存在或无权访问，请检查 Bucket 名称'
+    return descriptorFor('storage.error.bucketMissing')
   }
   if (
     statusCode === 401 ||
@@ -507,10 +509,10 @@ export function classifyS3ValidationError(error: unknown): string {
     name === 'InvalidAccessKeyId' ||
     name === 'SignatureDoesNotMatch'
   ) {
-    return '凭证无效或权限不足，请检查 Access Key / Secret Key'
+    return descriptorFor('storage.error.credentialsInvalid')
   }
   if (name === 'TimeoutError' || name === 'ECONNREFUSED' || name === 'ENOTFOUND' || name === 'ETIMEDOUT') {
-    return '无法连接到 Endpoint，请检查网络与 Endpoint 地址'
+    return descriptorFor('storage.error.endpointUnreachable')
   }
   const causeCode = unsafeCast<{ cause?: { code?: string } }>(error).cause?.code
   if (
@@ -519,12 +521,12 @@ export function classifyS3ValidationError(error: unknown): string {
     causeCode === 'ETIMEDOUT' ||
     causeCode === 'UND_ERR_CONNECT_TIMEOUT'
   ) {
-    return '无法连接到 Endpoint，请检查网络与 Endpoint 地址'
+    return descriptorFor('storage.error.endpointUnreachable')
   }
   // The raw SDK error can echo the endpoint and internal request details —
   // keep it in the server log, answer the admin with a fixed string.
   log.warn('S3 connectivity probe failed', { error })
-  return 'S3 连通性验证失败，请查看服务器日志'
+  return descriptorFor('storage.error.connectivityFailed')
 }
 
 // URL resolution lives in `public-url.ts` so URL-only SSR paths never load the AWS SDK.

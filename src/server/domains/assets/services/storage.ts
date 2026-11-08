@@ -8,6 +8,7 @@ import { BINARY_SLOTS, SVG_SLOTS } from '@/server/assets/defaults'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { StorageObjectNotFound } from '@/server/infra/storage/backend'
@@ -86,12 +87,12 @@ function looksLikeSvg(buffer: Buffer): boolean {
 
 function validateSvg(buffer: Buffer): void {
   if (!looksLikeSvg(buffer)) {
-    throw new ActionFailure(400, '上传文件不是有效的 SVG')
+    throw new ActionFailure(400, descriptorFor('assets.error.invalidSvg'))
   }
   const text = buffer.toString('utf8')
   for (const pattern of SVG_DANGEROUS) {
     if (pattern.test(text)) {
-      throw new ActionFailure(400, '上传的 SVG 含有脚本或事件处理器，已拒绝')
+      throw new ActionFailure(400, descriptorFor('assets.error.svgScript'))
     }
   }
 }
@@ -121,16 +122,16 @@ function validateBinary(slot: BinarySlot, buffer: Buffer): void {
   const detected = detectBinaryContentType(buffer)
   const expected = SLOT_CONTENT_TYPE[slot]
   if (detected !== expected) {
-    throw new ActionFailure(400, `${slot} 必须是 ${expected} 格式文件`)
+    throw new ActionFailure(400, descriptorFor('assets.error.slotFormat', { slot, type: expected }))
   }
 }
 
 export function ensureMatchesSlot(slot: BrandingSlot, buffer: Buffer): void {
   if (buffer.length === 0) {
-    throw new ActionFailure(400, '上传文件为空')
+    throw new ActionFailure(400, descriptorFor('common.error.uploadEmpty'))
   }
   if (buffer.length > SLOT_MAX_BYTES[slot]) {
-    throw new ActionFailure(400, `${slot} 文件超过 ${SLOT_MAX_BYTES[slot]} 字节上限`)
+    throw new ActionFailure(400, descriptorFor('assets.error.slotTooLarge', { slot, max: SLOT_MAX_BYTES[slot] }))
   }
   if (isSvgSlot(slot)) {
     validateSvg(buffer)

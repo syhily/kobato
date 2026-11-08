@@ -135,6 +135,33 @@ const SCAN_ROOTS = [
   'src/server/domains/backup',
   'src/server/http/resources/backup.ts',
   'src/server/http/controllers/admin/backup.controller.ts',
+  // Step 5a-iv: the remaining asset/storage domains — S3 migration + redirect,
+  // image uploads/key policy + the worker wire, music providers/write, font
+  // services/uploads/resources and branding/maxmind uploads.
+  'src/server/domains/storage',
+  'src/server/domains/images',
+  'src/server/domains/assets',
+  'src/server/domains/music',
+  'src/server/domains/fonts',
+  'src/server/infra/storage',
+  'src/server/infra/image',
+  'src/server/http/resources/admin-upload-route.ts',
+  'src/server/http/resources/assets.ts',
+  'src/server/http/resources/branding.ts',
+  'src/server/http/resources/fonts.ts',
+  'src/server/http/resources/fonts-embedded.ts',
+  'src/server/http/resources/fonts-package.ts',
+  'src/server/http/resources/local-storage.ts',
+  'src/server/http/resources/maxmind.ts',
+  'src/server/http/resources/music-proxy.ts',
+  'src/server/http/resources/serve-local-file.ts',
+  'src/server/http/resources/storage-redirect.ts',
+  'src/server/http/controllers/image.controller.ts',
+  'src/server/http/controllers/music.controller.ts',
+  'src/server/http/controllers/admin/fonts.controller.ts',
+  'src/server/http/controllers/admin/images.controller.ts',
+  'src/server/http/controllers/admin/music.controller.ts',
+  'src/server/http/controllers/admin/storage.controller.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -345,6 +372,18 @@ describe('production sources', () => {
         'src/server/domains/backup/pending-uploads.ts',
         'src/server/http/resources/backup.ts',
         'src/server/http/controllers/admin/backup.controller.ts',
+        // Step 5a-iv slice: storage/image/music/font asset domains + worker wire.
+        'src/server/domains/storage/s3-migration.ts',
+        'src/server/domains/images/services/upload.ts',
+        'src/server/domains/images/key.ts',
+        'src/server/domains/music/services/write/shared.ts',
+        'src/server/domains/fonts/services/upload.ts',
+        'src/server/domains/assets/services/storage.ts',
+        'src/server/infra/storage/backends/s3.ts',
+        'src/server/infra/image/process-worker.ts',
+        'src/server/http/resources/storage-redirect.ts',
+        'src/server/http/resources/admin-upload-route.ts',
+        'src/server/http/controllers/admin/images.controller.ts',
       ]),
     )
   })

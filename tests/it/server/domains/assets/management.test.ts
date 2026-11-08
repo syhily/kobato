@@ -128,7 +128,9 @@ describe('uploadBrandingAsset', () => {
 
   it('rejects an SVG that contains a script tag', async () => {
     const hostile = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', 'utf8')
-    await expect(uploadBrandingAsset(db, 'logoSvg', hostile)).rejects.toThrow(/脚本|事件处理器/)
+    await expect(uploadBrandingAsset(db, 'logoSvg', hostile)).rejects.toMatchObject({
+      descriptor: { messageKey: 'assets.error.svgScript' },
+    })
     expect(mem.store.size).toBe(0)
   })
 })

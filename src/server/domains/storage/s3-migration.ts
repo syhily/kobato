@@ -11,6 +11,7 @@ import { backup as backupTable } from '@/server/infra/db/schema/backup'
 import { font as fontTable } from '@/server/infra/db/schema/font'
 import { image, music } from '@/server/infra/db/schema/media'
 import { storageMigration } from '@/server/infra/db/schema/storage-migration'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import {
@@ -294,7 +295,7 @@ function serializeStorageConfig(config: S3TargetConfig): string {
  */
 export async function startStorageMigration(db: Database, input: StartMigrationInput): Promise<StorageMigrationStatus> {
   if (running !== null) {
-    throw new DomainError('CONFLICT', '已有存储迁移任务正在进行中')
+    throw new DomainError('CONFLICT', descriptorFor('storage.error.migrationRunning'))
   }
   const handle: RunningHandle = { cancelRequested: false, promise: Promise.resolve() }
   running = handle
@@ -305,7 +306,7 @@ export async function startStorageMigration(db: Database, input: StartMigrationI
   try {
     const existing = await readRow(db)
     if (existing !== null && isStorageMigrationInFlightPhase(existing.phase)) {
-      throw new DomainError('CONFLICT', '存在未完成的存储迁移，请从断点继续或取消后再发起')
+      throw new DomainError('CONFLICT', descriptorFor('storage.error.migrationUnfinished'))
     }
 
     const currentStorage = requireBlogSettingsSection('assets').storage
@@ -316,7 +317,7 @@ export async function startStorageMigration(db: Database, input: StartMigrationI
 
     if (input.target === 'local') {
       if (!s3Active) {
-        throw new DomainError('BAD_REQUEST', '当前未启用 S3 存储，无需迁移回本地')
+        throw new DomainError('BAD_REQUEST', descriptorFor('storage.error.s3NotEnabled'))
       }
       direction = 's3-to-local'
     } else {
@@ -324,14 +325,14 @@ export async function startStorageMigration(db: Database, input: StartMigrationI
       if (s3Active) {
         direction = 's3-to-s3'
         if (sameS3Target(currentStorage, candidate)) {
-          throw new DomainError('BAD_REQUEST', '目标 S3 配置与当前配置相同，无需迁移')
+          throw new DomainError('BAD_REQUEST', descriptorFor('storage.error.targetSame'))
         }
       } else {
         direction = 'local-to-s3'
       }
       const validation = await targetValidator(candidate)
       if (!validation.ok) {
-        throw new DomainError('BAD_REQUEST', validation.message)
+        throw new DomainError('BAD_REQUEST', validation.descriptor)
       }
       targetConfig = candidate
     }
@@ -371,7 +372,7 @@ export async function startStorageMigration(db: Database, input: StartMigrationI
 export async function cancelStorageMigration(db: Database): Promise<StorageMigrationStatus> {
   const row = await readRow(db)
   if (row === null || !isStorageMigrationInFlightPhase(row.phase)) {
-    throw new DomainError('BAD_REQUEST', '没有进行中的存储迁移')
+    throw new DomainError('BAD_REQUEST', descriptorFor('storage.error.noActiveMigration'))
   }
   if (running !== null) {
     running.cancelRequested = true
@@ -392,7 +393,7 @@ export async function cancelStorageMigration(db: Database): Promise<StorageMigra
  */
 export async function resumeStorageMigration(db: Database): Promise<StorageMigrationStatus> {
   if (running !== null) {
-    throw new DomainError('CONFLICT', '已有存储迁移任务正在进行中')
+    throw new DomainError('CONFLICT', descriptorFor('storage.error.migrationRunning'))
   }
   const handle: RunningHandle = { cancelRequested: false, promise: Promise.resolve() }
   running = handle
@@ -401,12 +402,12 @@ export async function resumeStorageMigration(db: Database): Promise<StorageMigra
   try {
     const existing = await readRow(db)
     if (existing === null) {
-      throw new DomainError('BAD_REQUEST', '没有可继续的存储迁移')
+      throw new DomainError('BAD_REQUEST', descriptorFor('storage.error.noResumableMigration'))
     }
     const resumable =
       existing.phase === 'failed' || existing.phase === 'cancelled' || isStorageMigrationInFlightPhase(existing.phase)
     if (!resumable) {
-      throw new DomainError('BAD_REQUEST', '当前迁移已完成，无需继续')
+      throw new DomainError('BAD_REQUEST', descriptorFor('storage.error.alreadyComplete'))
     }
     row = existing
 
@@ -485,9 +486,9 @@ type ResolvedEndpoints =
   | { readonly direction: 's3-to-local'; readonly source: StorageBackend; readonly target: StorageBackend }
 
 /** A persisted direction that demands a snapshot the row cannot supply is a corrupt row → fail the run cleanly. */
-function requireSnapshot(config: S3TargetConfig | null, side: '源' | '目标'): S3TargetConfig {
+function requireSnapshot(config: S3TargetConfig | null, side: 'source' | 'target'): S3TargetConfig {
   if (config === null) {
-    throw new DomainError('INTERNAL', `迁移行缺少${side}配置快照，无法继续`)
+    throw new DomainError('INTERNAL', descriptorFor('storage.error.snapshotMissing', { side }))
   }
   return config
 }
@@ -501,12 +502,12 @@ function resolveEndpoints(
   // singleton would re-resolve the NEW bucket after the flip, stranding
   // objects written to the old bucket during the copy/switch window.
   const source =
-    direction === 'local-to-s3' ? backendFor('local') : sourceS3BackendFactory(requireSnapshot(sourceConfig, '源'))
+    direction === 'local-to-s3' ? backendFor('local') : sourceS3BackendFactory(requireSnapshot(sourceConfig, 'source'))
   const target =
-    direction === 's3-to-local' ? backendFor('local') : targetS3BackendFactory(requireSnapshot(targetConfig, '目标'))
+    direction === 's3-to-local' ? backendFor('local') : targetS3BackendFactory(requireSnapshot(targetConfig, 'target'))
   return direction === 's3-to-local'
     ? { direction, source, target }
-    : { direction, source, target, targetConfig: requireSnapshot(targetConfig, '目标') }
+    : { direction, source, target, targetConfig: requireSnapshot(targetConfig, 'target') }
 }
 
 async function runMigration(
@@ -747,7 +748,11 @@ async function copyOne(
   }
   throw new DomainError(
     'INTERNAL',
-    `复制对象失败（已重试 ${COPY_ATTEMPTS} 次）: ${object.key} — ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+    descriptorFor('storage.error.copyFailed', {
+      attempts: COPY_ATTEMPTS,
+      key: object.key,
+      message: lastError instanceof Error ? lastError.message : String(lastError),
+    }),
   )
 }
 

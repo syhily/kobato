@@ -12,6 +12,7 @@ import {
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend } from '@/server/infra/storage/registry'
@@ -75,7 +76,7 @@ export async function clearBrandingAsset(db: Database, slot: BrandingSlot): Prom
 async function readAssetsRow(db: Database): Promise<Record<string, unknown>> {
   const existing = findSettingByScope(db, SECTION_REGISTRY.assets.scope)
   if (!existing) {
-    throw new ActionFailure(409, '尚未安装站点设置，无法上传品牌素材')
+    throw new ActionFailure(409, descriptorFor('assets.error.settingsNotInstalled'))
   }
   return { ...unsafeCast<Record<string, unknown>>(existing.data) }
 }

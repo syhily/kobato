@@ -1,3 +1,7 @@
+import type { AppLocale } from '@/shared/i18n/locales'
+
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
 import { isS3Primary } from '@/server/infra/storage/registry'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -87,8 +91,9 @@ function readUrlTemplate(): string {
   }
 }
 
-function serviceUnavailable(): Response {
-  return new Response('存储服务暂不可用，请稍后再试。', {
+function serviceUnavailable(locale: AppLocale): Response {
+  const descriptor = descriptorFor('storage.error.unavailable')
+  return new Response(createServerTranslator(locale).format(descriptor.messageKey, descriptor.params), {
     status: 503,
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   })
@@ -113,13 +118,13 @@ function encodeKeyForUrl(key: string): string {
  * it is re-encoded per segment for the Location header. A missing public base
  * while S3 is active is a config error, not a crash.
  */
-export function s3StorageRedirect(key: string, search: string): Response | null {
+export function s3StorageRedirect(key: string, search: string, locale: AppLocale): Response | null {
   if (!isS3Primary()) {
     return null
   }
   const base = getPublicBaseUrl()
   if (base === null) {
-    return serviceUnavailable()
+    return serviceUnavailable(locale)
   }
   return new Response(null, {
     status: 302,

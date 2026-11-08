@@ -6,8 +6,11 @@ import { bodyLimit } from 'hono/body-limit'
 
 import type { AuditEventInput } from '@/server/domains/audit/types'
 import type { Env } from '@/server/http/context'
+import type { ErrorMessageParams } from '@/shared/contracts/api-error'
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { errorJsonResponse } from '@/server/http/errors'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
@@ -29,9 +32,9 @@ interface AdminUploadValidation<T> {
 interface AdminUploadRouteOptions<TValidated> {
   path: string
   maxSize: number
-  /** Static copy, or a per-request resolver for locale-aware number formatting. */
-  tooLargeMessage: string | ((c: Context<Env>) => string)
-  missingFileMessage: string
+  /** Typed copy for the body-limit rejection; `params` may resolve per request. */
+  tooLarge: { messageKey: UiMessageId; params?: (c: Context<Env>) => ErrorMessageParams }
+  missingFile: UiMessageId
   logScope: string
   logMessage: string
   validateBody: (
@@ -58,18 +61,10 @@ export function adminUploadRoute<TValidated>(options: AdminUploadRouteOptions<TV
       maxSize: options.maxSize,
       // `bodyLimit` types its context as `Context<any, any, {}>`; the mounted
       // route always runs under `Env`, so the resolver gets that same context.
-      onError: (c) =>
-        c.json(
-          {
-            error: {
-              message:
-                typeof options.tooLargeMessage === 'function'
-                  ? options.tooLargeMessage(unsafeCast<Context<Env>>(c))
-                  : options.tooLargeMessage,
-            },
-          },
-          413,
-        ),
+      onError: (c) => {
+        const env = unsafeCast<Context<Env>>(c)
+        return errorJsonResponse(env, 413, options.tooLarge.messageKey, options.tooLarge.params?.(env))
+      },
     }),
     async (c) => {
       const body = await c.req.parseBody({ all: false })
@@ -80,7 +75,7 @@ export function adminUploadRoute<TValidated>(options: AdminUploadRouteOptions<TV
 
       const file = body.file
       if (!(file instanceof File)) {
-        return c.json({ error: { message: options.missingFileMessage } }, 400)
+        return errorJsonResponse(c, 400, options.missingFile)
       }
 
       const result = await options.handler({ file, body, validated: validation.value, c })

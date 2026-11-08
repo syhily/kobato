@@ -1,3 +1,5 @@
+import type { Context } from 'hono'
+
 import { Reader } from '@maxmind/geoip2-node'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
@@ -9,6 +11,7 @@ import type { Env } from '@/server/http/context'
 import { resetGeoReader } from '@/server/domains/analytics/geoip'
 import { withGeoipWriteLock, writeGeoipMetaBestEffort } from '@/server/domains/analytics/geoip-update'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { errorJsonResponse } from '@/server/http/errors'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
@@ -24,22 +27,22 @@ export const maxmindRouter = new Hono<Env>().post(
   csrfGuard,
   bodyLimit({
     maxSize: MAXMIND_MAX_BYTES,
-    onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
+    onError: (c: Context<Env>) => errorJsonResponse(c, 413, 'common.error.uploadTooLarge'),
   }),
   async (c) => {
     const body = await c.req.parseBody({ all: false })
     const file = body.file
     if (!(file instanceof File)) {
-      return c.json({ error: { message: '请上传文件' } }, 400)
+      return errorJsonResponse(c, 400, 'common.error.uploadMissing')
     }
 
     if (!file.name.toLowerCase().endsWith('.mmdb')) {
-      return c.json({ error: { message: '仅支持 .mmdb 格式的 MaxMind 数据库文件' } }, 400)
+      return errorJsonResponse(c, 400, 'maxmind.error.wrongFormat')
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
     if (buffer.length === 0) {
-      return c.json({ error: { message: '上传文件为空' } }, 400)
+      return errorJsonResponse(c, 400, 'common.error.uploadEmpty')
     }
 
     // Serialize with the remote-update flow; the write is atomic — stage,
@@ -64,7 +67,7 @@ export const maxmindRouter = new Hono<Env>().post(
     })
 
     if (!ok) {
-      return c.json({ error: { message: '上传的文件不是有效的 MaxMind 数据库' } }, 400)
+      return errorJsonResponse(c, 400, 'maxmind.error.invalidDb')
     }
 
     recordAuditEventFromContext(c.var.requestContext, {

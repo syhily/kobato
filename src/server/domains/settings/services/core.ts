@@ -191,7 +191,7 @@ async function assertAssetsStoragePatchAllowed(
   }
   const validation = await validateS3Config(merged)
   if (!validation.ok) {
-    throw new DomainError('BAD_REQUEST', validation.message)
+    throw new DomainError('BAD_REQUEST', validation.descriptor)
   }
 }
 

@@ -44,7 +44,7 @@ localStorageRouter.get('/storage/*', async (c) => {
 
   // S3 primary: the site-owned URL 302s to the current backend (query string
   // preserved) instead of streaming — the local copy may not exist anymore.
-  const redirect = s3StorageRedirect(key, new URL(c.req.url).search)
+  const redirect = s3StorageRedirect(key, new URL(c.req.url).search, c.var.requestContext.localization.locale)
   if (redirect !== null) {
     return redirect
   }

@@ -1,4 +1,5 @@
 import { uploadFont, FONT_MAX_BYTES } from '@/server/domains/fonts/services/upload'
+import { errorJsonResponse } from '@/server/http/errors'
 import { adminUploadRoute } from '@/server/http/resources/admin-upload-route'
 import { resolveAppLocalization } from '@/shared/i18n/app-localization'
 import { formatBytes } from '@/shared/i18n/format'
@@ -11,17 +12,19 @@ import { formatBytes } from '@/shared/i18n/format'
 export const fontsPackageRouter = adminUploadRoute({
   path: '/api/admin/fonts/package/upload',
   maxSize: FONT_MAX_BYTES,
-  // Resolved per request: the size label follows the settings locale, and the
-  // route's bodyLimit rejection happens before any handler runs.
-  tooLargeMessage: () =>
-    `上传文件过大（上限 ${formatBytes(FONT_MAX_BYTES, { locale: resolveAppLocalization().locale })}）`,
-  missingFileMessage: '请上传字体文件',
+  // Params resolve per request: the size label follows the settings locale, and
+  // the route's bodyLimit rejection happens before any handler runs.
+  tooLarge: {
+    messageKey: 'fonts.error.packageTooLarge',
+    params: () => ({ max: formatBytes(FONT_MAX_BYTES, { locale: resolveAppLocalization().locale }) }),
+  },
+  missingFile: 'fonts.error.packageMissing',
   logScope: 'fonts.package.http',
   logMessage: 'Font package uploaded',
   validateBody(body, c) {
     const familyName = body.familyName
     if (typeof familyName !== 'string' || familyName.trim() === '') {
-      return c.json({ error: { message: '字体名称不能为空' } }, 400)
+      return errorJsonResponse(c, 400, 'fonts.error.nameRequired')
     }
     return { value: familyName }
   },
