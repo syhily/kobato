@@ -7,8 +7,9 @@
  * in step. The scanner is an AST walk (see `#/_helpers/i18n-literals`) with an
  * exact file/rule/snippet allowlist — never a blanket directory skip.
  *
- * `SCAN_ROOTS` grows with each migration slice and the final slice covers
- * `src/**`; exemptions are added per finding, with a reason.
+ * `SCAN_ROOTS` is the FINAL scope: the whole production tree (`src/**`, one
+ * root). Every exemption is an exact file/rule (+ snippet where the file holds
+ * more than one finding) entry with a written reason.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -113,9 +114,23 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/inkling/components/ui/EmojiPickerPortal.tsx', rules: ['hardcoded-locale'], text: 'en' },
   // Developer invariants: these DomainError literals guard internal call
   // contracts (a caller passed no role / a projection shape drifted) and never
-  // reach a reader.
-  { path: 'src/server/domains/auth/primitives.ts', rules: ['domain-error'] },
-  { path: 'src/server/domains/settings/services/admin-projection.ts', rules: ['domain-error'] },
+  // reach a reader. Pinned per SNIPPET — a new user-visible DomainError in the
+  // same file must fail this scan instead of riding a file-wide exemption.
+  {
+    path: 'src/server/domains/auth/primitives.ts',
+    rules: ['domain-error'],
+    text: 'establishLoginSession requires a user with a role',
+  },
+  {
+    path: 'src/server/domains/settings/services/admin-projection.ts',
+    rules: ['domain-error'],
+    text: 'admin projection is missing the settings section (…)',
+  },
+  {
+    path: 'src/server/domains/settings/services/admin-projection.ts',
+    rules: ['domain-error'],
+    text: 'admin projection shape validation failed (…): … …',
+  },
   // Transliteration table data: single letters ('Zh', 'zh', 'en', …) are
   // slug-mapping values, not locale choices or copy.
   { path: 'src/shared/slug-char-map.ts', rules: ['hardcoded-locale'] },
@@ -126,12 +141,13 @@ function rules(source: string, file = 'fixture.tsx'): string[] {
 }
 
 describe('production sources', () => {
-  it('carry no hardcoded UI copy inside the migrated roots', () => {
+  it('carry no hardcoded UI copy anywhere in the production tree', () => {
     const result = scanI18nLiterals({ roots: SCAN_ROOTS, allowlist: ALLOWLIST })
 
     expect(result.scannedFiles.length).toBeGreaterThan(0)
     expect(result.violations).toEqual([])
-    // The allowlist is exact: only the tagged rules in the two named files are exempt.
+    // The allowlist is exact: each entry names the file, the rule and (where a
+    // file carries several findings) the exact snippet — see ALLOWLIST.
     expect(result.allowlisted.length).toBeGreaterThan(0)
     // Every exemption below is a documented, exact file/rule/snippet entry.
     expect(new Set(result.allowlisted.map((violation) => violation.file))).toEqual(

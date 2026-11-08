@@ -2,8 +2,8 @@
 
 - Status: accepted
 - Date: 2026-11-08
-- Basis: commit `7c9d8c9c`; plan 001 (`plans/001-i18n-support.md`); released through
-  Step 6b (commit `d54c1d4d` + the Step 6 slices)
+- Basis: commit `7c9d8c9c`; plan 001 (`plans/001-i18n-support.md`), released through
+  Step 6 (Steps 1–6b)
 
 ## Context
 
