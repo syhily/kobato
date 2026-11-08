@@ -82,7 +82,13 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
       expect(error).toBeInstanceOf(DomainError)
       const domainError = error as DomainError
       expect(domainError.code).toBe('BAD_REQUEST')
-      expect(domainError.issues).toContainEqual({ message: 'Unrecognized key: "bogus"', path: ['bogus'] })
+      expect(domainError.issues).toContainEqual({
+        messageKey: 'admin.settings.errors.unrecognizedKeys',
+        params: { keys: 'bogus' },
+        fallbackMessage: 'Unrecognized keys: bogus',
+        code: 'unrecognized_keys',
+        path: ['bogus'],
+      })
     })
 
     it('rejects an unknown key at depth ≥ 1 with the full path', () => {
@@ -103,14 +109,54 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
       expect(error).toBeInstanceOf(DomainError)
       const domainError = error as DomainError
       expect(domainError.issues).toContainEqual({
-        message: 'Unrecognized key: "bogus"',
+        messageKey: 'admin.settings.errors.unrecognizedKeys',
+        params: { keys: 'bogus' },
+        fallbackMessage: 'Unrecognized keys: bogus',
+        code: 'unrecognized_keys',
         path: [nestedKey, 'bogus'],
       })
     })
   })
 
-  it('rejects a non-object payload at the root', () => {
-    expect(() => assertSectionPatchKeys('mail', 'nope')).toThrowError(DomainError)
+  it('rejects a non-object payload at the root with the typed shape descriptor', () => {
+    let error: unknown
+    try {
+      assertSectionPatchKeys('mail', 'nope')
+    } catch (e) {
+      error = e
+    }
+    expect(error).toBeInstanceOf(DomainError)
+    expect((error as DomainError).issues).toContainEqual({
+      messageKey: 'admin.settings.errors.expectedObject',
+      fallbackMessage: 'The settings patch must be an object.',
+      code: 'invalid_type',
+      path: [],
+    })
+  })
+
+  it('lists every offending key once while preserving each field path', () => {
+    const payload = { ...fullPayload('mail'), bogus: 1, mail: { sender: 'a@b.co', other: 2 } }
+
+    let error: unknown
+    try {
+      assertSectionPatchKeys('mail', payload)
+    } catch (e) {
+      error = e
+    }
+
+    expect(error).toBeInstanceOf(DomainError)
+    const issues = (error as DomainError).issues ?? []
+    expect(issues).toHaveLength(2)
+    // One issue per offending key; each carries the full key list and its own path.
+    for (const issue of issues) {
+      expect(issue).toMatchObject({
+        messageKey: 'admin.settings.errors.unrecognizedKeys',
+        params: { keys: 'bogus, other' },
+        fallbackMessage: 'Unrecognized keys: bogus, other',
+        code: 'unrecognized_keys',
+      })
+    }
+    expect(new Set(issues.map((issue) => issue.path?.join('.')))).toEqual(new Set(['bogus', 'mail.other']))
   })
 
   it('rejects mask fields the loader projection attaches', () => {

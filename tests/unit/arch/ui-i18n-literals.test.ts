@@ -92,16 +92,21 @@ const SCAN_ROOTS = [
   'src/server/http/errors.ts',
   'src/server/http/orpc-base.ts',
   'src/server/http/translate-domain-error.ts',
-  // Step 5a-ii: the remaining auth flows and the Hono perimeter middlewares
-  // migrated to typed descriptors.
+  // Step 5a-ii: the remaining auth flows, the Hono perimeter middlewares and
+  // the settings validation boundaries migrated to typed descriptors.
   'src/server/domains/auth/services',
   'src/server/domains/auth/passkey',
   'src/server/domains/auth/session-guard.ts',
   'src/server/domains/auth/schema.ts',
+  'src/server/domains/settings/sections/assets.ts',
+  'src/server/domains/settings/sections/security.ts',
+  'src/server/domains/settings/services/section-patch.ts',
+  'src/server/domains/settings/services/core.ts',
   'src/server/http/middlewares',
   'src/server/http/localized-http-exception.ts',
   'src/server/http/controllers/account.controller.ts',
   'src/server/http/controllers/admin/users-sessions.controller.ts',
+  'src/server/http/controllers/admin/settings.controller.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -246,7 +251,7 @@ describe('production sources', () => {
         'src/server/http/errors.ts',
         'src/server/http/orpc-base.ts',
         'src/server/http/translate-domain-error.ts',
-        // Step 5a-ii slice: auth flows and perimeter middlewares.
+        // Step 5a-ii slice: auth flows, perimeter middlewares, settings boundaries.
         'src/server/domains/auth/services/credential.ts',
         'src/server/domains/auth/services/password-reset.ts',
         'src/server/domains/auth/services/magic-link.ts',
@@ -254,11 +259,15 @@ describe('production sources', () => {
         'src/server/domains/auth/passkey/service.ts',
         'src/server/domains/auth/session-guard.ts',
         'src/server/domains/auth/schema.ts',
+        'src/server/domains/settings/sections/assets.ts',
+        'src/server/domains/settings/sections/security.ts',
+        'src/server/domains/settings/services/section-patch.ts',
         'src/server/http/middlewares/hono-rbac.ts',
         'src/server/http/middlewares/rate-limit.ts',
         'src/server/http/middlewares/request-timeout.ts',
         'src/server/http/middlewares/csrf.ts',
         'src/server/http/localized-http-exception.ts',
+        'src/server/http/controllers/admin/settings.controller.ts',
       ]),
     )
   })

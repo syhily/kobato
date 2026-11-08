@@ -84,7 +84,7 @@ describe('projectSectionForAdmin', () => {
     } catch (e) {
       expect(e).toBeInstanceOf(DomainError)
       expect((e as DomainError).code).toBe('INTERNAL')
-      expect((e as DomainError).message).toContain('admin 投影形状校验失败(limits)')
+      expect((e as DomainError).message).toContain('admin projection shape validation failed (limits)')
     }
   })
 })

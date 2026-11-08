@@ -126,8 +126,10 @@ describe('adminSettingsRouter.update', () => {
         descriptor: { messageKey: 'admin.settings.errors.invalid' },
         issues: [
           {
-            messageKey: 'error.api.rawMessage',
-            fallbackMessage: 'Unrecognized key: "bogus"',
+            messageKey: 'admin.settings.errors.unrecognizedKeys',
+            params: { keys: 'bogus' },
+            fallbackMessage: 'Unrecognized keys: bogus',
+            code: 'unrecognized_keys',
             path: ['mail', 'bogus'],
           },
         ],

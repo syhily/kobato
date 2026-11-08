@@ -3,6 +3,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { Setting } from '@/server/infra/db/types'
 import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
 import { SECTION_REGISTRY, validateSectionDefaults } from '@/server/domains/settings/sections/registry'
 import { securitySection } from '@/server/domains/settings/sections/security'
@@ -15,7 +16,7 @@ import {
   isRecord,
 } from '@/server/domains/settings/services/section-patch'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
-import { zodIssuesToWire } from '@/server/infra/http/error-descriptor'
+import { descriptorFor, zodIssuesToWire } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { validateS3Config } from '@/server/infra/storage/backends/s3'
@@ -29,10 +30,11 @@ const log = getLogger('settings.service')
 export interface SectionUpdateResult {
   bundle: BlogSettingsBundle | null
   /**
-   * Honest side-effect failures: the row IS persisted but a registered change handler
-   * threw, so derived state is stale until the next successful save or restart (P1-5).
+   * Honest side-effect failures: the row IS persisted but a registered change
+   * handler threw, so derived state is stale until the next successful save or
+   * restart (P1-5). Descriptors — the controller localizes them per request.
    */
-  warnings: string[]
+  warnings: ErrorMessageDescriptor[]
 }
 
 export interface SectionUpdateOptions {
@@ -89,13 +91,10 @@ export async function updateBlogSettingsSection(
         const current = getBlogSettingsBundleSync()
         const website = current?.siteIdentity?.website
         if (!website) {
-          throw new DomainError('BAD_REQUEST', '开启 Passkey 前请先配置站点域名（网站信息设置中的「站点地址」）')
+          throw new DomainError('BAD_REQUEST', descriptorFor('admin.settings.security.error.passkeyDomainRequired'))
         }
         if (!isValidPasskeyDomain(website)) {
-          throw new DomainError(
-            'BAD_REQUEST',
-            '开启 Passkey 需要站点使用公开可访问的 HTTPS 域名（不能使用 localhost 或 IP 地址）',
-          )
+          throw new DomainError('BAD_REQUEST', descriptorFor('admin.settings.security.error.passkeyHttpsRequired'))
         }
       }
     }
@@ -109,7 +108,7 @@ export async function updateBlogSettingsSection(
   })
   const bundle = await refreshBlogSettings(db)
 
-  const warnings: string[] = []
+  const warnings: ErrorMessageDescriptor[] = []
   const handler = sectionChangeHandler(section)
   if (handler) {
     try {
@@ -117,7 +116,7 @@ export async function updateBlogSettingsSection(
     } catch (e: unknown) {
       // The write already committed — report the handler failure as an explicit warning, not an error.
       log.error('Section change handler failed', { section, error: String(e) })
-      warnings.push('设置已保存，但关联任务未能重新应用；新设置可能要重启后才会完全生效。')
+      warnings.push(descriptorFor('admin.settings.warnings.sectionChangeFailed'))
     }
   }
 
@@ -146,7 +145,7 @@ async function assertAssetsStoragePatchAllowed(
     return
   }
   if (isMigrationActive !== undefined && (await isMigrationActive())) {
-    throw new DomainError('CONFLICT', '存储迁移进行中，暂不能修改 S3 配置')
+    throw new DomainError('CONFLICT', descriptorFor('admin.settings.assets.error.storageMigrationLocked'))
   }
 
   const current = getBlogSettingsBundleSync()?.assets?.storage
@@ -173,7 +172,7 @@ async function assertAssetsStoragePatchAllowed(
       merged.bucket !== current.bucket ||
       merged.forcePathStyle !== current.forcePathStyle
     if (structuralChange) {
-      throw new DomainError('BAD_REQUEST', 'S3 配置已锁定；如需变更请使用存储迁移功能（系统设置 → 存储配置）')
+      throw new DomainError('BAD_REQUEST', descriptorFor('admin.settings.assets.error.storageConfigLocked'))
     }
     // An enabled config must stay complete — an exempt patch that empties a
     // required field must not slip through unprobed.
@@ -183,7 +182,7 @@ async function assertAssetsStoragePatchAllowed(
       merged.accessKeyId.trim() === '' ||
       merged.secretAccessKey.trim() === ''
     ) {
-      throw new DomainError('BAD_REQUEST', 'S3 配置不完整：Endpoint / Bucket / Access Key / Secret 均不能为空')
+      throw new DomainError('BAD_REQUEST', descriptorFor('admin.settings.assets.error.storageConfigIncomplete'))
     }
   }
   // Only probe a config that looks complete; incomplete patches fall through to schema validation.

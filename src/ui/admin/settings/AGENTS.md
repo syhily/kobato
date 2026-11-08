@@ -30,6 +30,9 @@ literal fallback. `secretFieldStrings({ t, … })` takes the card's translator b
 hint is a catalog message. Shared validation schemas (`shared/config/rate-limit-bucket`, the general
 write schema) put typed `UiMessageId`s in Zod `message` slots, never prose: `useSettingsCard`
 localizes them before building the RHF error tree (`localizeMessage`, interpolating the `{min}` /
-`{max}` bounds from `utils/zod-issue-bounds`), and the server maps the same ids into wire
-descriptors (`server/infra/http/error-descriptor`). Technical values (protocol names, URLs, paths,
+`{max}` bounds from `utils/zod-issue-bounds` or a custom issue's `params`), and the server maps the
+same ids into wire descriptors (`server/infra/http/error-descriptor`). The assets and security
+sections carry their custom messages as `assetsValidationMessages` / `securityValidationMessages`;
+a strict patch with unknown keys rejects with the `admin.settings.errors.unrecognizedKeys`
+descriptor (one issue per key, full key list in `params.keys`, field path preserved). Technical values (protocol names, URLs, paths,
 database column names) stay as-is.

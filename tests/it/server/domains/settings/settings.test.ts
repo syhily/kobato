@@ -900,7 +900,13 @@ describe('services/settings — section patch merge', () => {
     expect(error).toBeInstanceOf(DomainError)
     expect((error as InstanceType<typeof DomainError>).code).toBe('BAD_REQUEST')
     expect((error as InstanceType<typeof DomainError>).issues).toEqual([
-      { message: 'Unrecognized key: "bogus"', path: ['mail', 'bogus'] },
+      {
+        messageKey: 'admin.settings.errors.unrecognizedKeys',
+        params: { keys: 'bogus' },
+        fallbackMessage: 'Unrecognized keys: bogus',
+        code: 'unrecognized_keys',
+        path: ['mail', 'bogus'],
+      },
     ])
     expect(findSettingByScope(db, 'blog.mail')).toBeNull()
   })
@@ -911,7 +917,13 @@ describe('services/settings — section patch merge', () => {
     expect(error).toBeInstanceOf(DomainError)
     expect((error as InstanceType<typeof DomainError>).code).toBe('BAD_REQUEST')
     expect((error as InstanceType<typeof DomainError>).issues).toEqual([
-      { message: 'Unrecognized key: "bogus"', path: ['bogus'] },
+      {
+        messageKey: 'admin.settings.errors.unrecognizedKeys',
+        params: { keys: 'bogus' },
+        fallbackMessage: 'Unrecognized keys: bogus',
+        code: 'unrecognized_keys',
+        path: ['bogus'],
+      },
     ])
     expect(findSettingByScope(db, 'blog.mail')).toBeNull()
   })
