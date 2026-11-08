@@ -24,7 +24,7 @@ Node **26** with **`"useVfs": true`** (26.9): blob assets mount as a read-only V
 No CJS prelude and no filesystem `import()` in the injected script, so the whole server graph is one static import graph evaluated depth-first. The entry shim (`scripts/sea/server-entry.ts`):
 
 0. `zod/compile` — Zod 4.5 global auto-compilation, first so the config-graph schemas compile on first parse (the browser bundle keeps `jitless`; `src/entry.server.tsx` has the same first line).
-1. `src/server/infra/sea-cli.ts` — argv: `--version`/`--help` exit with zero side effects; `--smoke-natives` / `--smoke-worker` / `--smoke-vfs` bootstrap + run + exit. Only `--smoke-worker` needs the full configuration (the pool graph pulls in `@/server/infra/config` — validates, never connects).
+1. `src/server/infra/sea-cli.ts` — argv: `--version`/`--help` exit with zero side effects; `--smoke-natives` / `--smoke-worker` / `--smoke-vfs` / `--smoke-intl` bootstrap + run + exit. Only `--smoke-worker` needs the full configuration (the pool graph pulls in `@/server/infra/config` — validates, never connects). `--smoke-intl` is a PURE Intl probe (`src/server/infra/intl-probe.ts`, imports only the locale contract): it asserts `supportedLocalesOf` plus real `DateTimeFormat` / `RelativeTimeFormat` / `DisplayNames` / `PluralRules` output for all four UI locales, with no config or database.
 2. `src/server/infra/sea-bootstrap.ts` — the fs patch, then natives extraction + `KOBATO_NATIVES_DIR`; MUST complete before step 3 (sharp's platform detection runs at module evaluation).
 3. the server graph (`build/server/index.js`).
 
@@ -39,9 +39,9 @@ Dynamic libraries + one datafile. Extraction writes exactly 5 files (7 on win32)
 ## Commands
 
 - `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`), budgeted at 230 MB. Deliberately NOT UPX-compressed (phdr/sentinel-fuse failures) — do not re-add.
-- `pnpm run sea:smoke [binary]` — deep managed smoke: budget, version, `--smoke-vfs`, natives + flat layout, worker pool, boot + migrations on per-run temp DBs, fresh-install gate, SSR, embedded asset, config-file convergence + a reduced-env restart proving the converged file alone boots, calendar endpoint, page views → DuckDB round-trip, SIGTERM ×2, natives-cache reuse ×2. `--external <url>` runs only the HTTP checks against a live server; `--binary-only` the service-free ones.
+- `pnpm run sea:smoke [binary]` — deep managed smoke: budget, version, `--smoke-vfs`, `--smoke-intl` (four-locale ICU data, config-free), natives + flat layout, worker pool, boot + migrations on per-run temp DBs, fresh-install gate, SSR, embedded asset, config-file convergence + a reduced-env restart proving the converged file alone boots, calendar endpoint, page views → DuckDB round-trip, SIGTERM ×2, natives-cache reuse ×2. `--external <url>` runs only the HTTP checks against a live server; `--binary-only` the service-free ones (`--smoke-intl` included).
 - `pnpm run sea:probe [node-binary]` — systematic VFS capability verification (`scripts/sea/vfs-capabilities.ts`): userland `node:vfs` probes plus a purpose-built `useVfs` mini-SEA asserting the in-binary behavior matrix above. Needs an official Node dist — Homebrew lacks the SEA fuse (preflighted).
-- `pnpm run sea:e2e [binary]` — boots the binary (seeded admin) and runs `tests/e2e` over real HTTP: signin, public pages/feed/sitemap, admin create→render→delete, backup/restore round-trip. Linux CI runs it after `sea:smoke`.
+- `pnpm run sea:e2e [binary]` — boots the binary (seeded admin) and runs `tests/e2e` over real HTTP: signin, public pages/feed/sitemap, the four-locale representation journey (language switch → HTML/feed/Atom/manifest/calendar + conditional ETags), admin create→render→delete, backup/restore round-trip. Linux CI runs it after `sea:smoke`.
 - Injection is single-path (`scripts/sea/inject.ts`): **`--build-sea` is the only injector** — no postject, no codesign on darwin (the build re-signs ad-hoc itself), the binary sanity-checked with `--version`.
 
 ## Delivery targets

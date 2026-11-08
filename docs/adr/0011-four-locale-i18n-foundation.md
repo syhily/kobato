@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-11-08
 - Basis: commit `7c9d8c9c`; plan 001 (`plans/001-i18n-support.md`), released through
-  Step 6 (Steps 1–6b)
+  Step 6 (Steps 1–6c)
 
 ## Context
 
@@ -159,6 +159,15 @@ parameters).
   from hand-reviewed static tables (`render/calendar/locale.ts`; en-US renders
   neither lunar nor 宜), and the default font chains branch through CSS
   `:lang()` with the same map root.tsx prepends custom families to.
+- **Release instrumentation.** `kobato --smoke-intl` (`server/infra/intl-probe.ts`)
+  proves the executable's bundled ICU data: `supportedLocalesOf` on every Intl
+  constructor used, plus real `DateTimeFormat` / `RelativeTimeFormat` /
+  `DisplayNames` / `PluralRules` output for all four locales — run by
+  `sea:smoke` in both managed and service-free modes. The e2e suite adds a
+  real-HTTP four-locale journey: switch the language through the admin RPC,
+  assert HTML/feed/Atom/manifest/calendar representations, prove a stale
+  `If-None-Match` never answers `304` in the old language, and restore `zh-CN`
+  for the shared instance.
 
 ## Alternatives considered
 

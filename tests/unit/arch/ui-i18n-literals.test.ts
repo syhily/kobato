@@ -134,6 +134,9 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   // Transliteration table data: single letters ('Zh', 'zh', 'en', …) are
   // slug-mapping values, not locale choices or copy.
   { path: 'src/shared/slug-char-map.ts', rules: ['hardcoded-locale'] },
+  // The SEA Intl probe's expectation table is KEYED by the locale identity — the
+  // tags are the probe's index and the expected ICU output is technical data.
+  { path: 'src/server/infra/intl-probe.ts', rules: ['hardcoded-locale'] },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -200,6 +203,7 @@ describe('production sources', () => {
         'src/server/domains/auth/primitives.ts',
         'src/server/domains/settings/services/admin-projection.ts',
         'src/shared/slug-char-map.ts',
+        'src/server/infra/intl-probe.ts',
       ]),
     )
   })

@@ -1,11 +1,13 @@
 // SEA command-line surface — evaluates FIRST in the injected server bundle.
 // Flags: --version|-v, --help|-h, --smoke-natives, --smoke-worker, --smoke-vfs,
-// rollback, doctor [--json], hidden --doctor-config-probe; anything else falls
-// through to the server graph.
+// --smoke-intl, rollback, doctor [--json], hidden --doctor-config-probe;
+// anything else falls through to the server graph.
 // --version/--help exit with ZERO side effects; nothing here may touch the
 // env-validated graph (config loads only behind the probe's dynamic import).
 // --smoke-worker dispatches the embedded bundle via new Worker(code, { eval: true })
 // — worker threads cannot start from VFS paths, so eval is the only way.
+// --smoke-intl is a PURE Intl probe: it imports only the locale contract, reads
+// no configuration and touches no database (`src/server/infra/intl-probe.ts`).
 
 import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
@@ -17,6 +19,7 @@ import { Worker } from 'node:worker_threads'
 import { rollbackBinary } from '@/server/infra/binary-rollback'
 import { parseConfigArg } from '@/server/infra/config-arg'
 import { collectDoctorReport, doctorOk, formatDoctorText, parseProbeIssues } from '@/server/infra/doctor-report'
+import { runIntlProbe } from '@/server/infra/intl-probe'
 import { isSea, seaAssetPath, seaVfsRoot } from '@/server/infra/sea'
 import { bootstrapSeaRuntime } from '@/server/infra/sea-natives'
 import { installSeaVfsRuntimePatches } from '@/server/infra/sea-vfs-fs-patch'
@@ -51,6 +54,11 @@ Usage:
                            fail with EROFS), and the writev repair (a
                            buffered WriteStream flush on the real fs).
                            Exits 1 on failure.
+  kobato --smoke-intl      Verify the bundled ICU data on all four UI
+                           locales: supportedLocalesOf plus real
+                           DateTimeFormat / RelativeTimeFormat /
+                           DisplayNames / PluralRules output. No config,
+                           no database. Exits 1 on failure.
   kobato rollback          Restore the previous release: swaps the
                            <binary>.bak sibling left by the last
                            self-update back into place. Restart the
@@ -265,6 +273,9 @@ async function main(args: ReadonlySet<string>): Promise<void> {
   if (args.has('--smoke-vfs')) {
     await smokeVfs()
   }
+  if (args.has('--smoke-intl')) {
+    runIntlProbe()
+  }
   if (args.has('rollback')) {
     const { rolledBackTo, previousVersion } = await rollbackBinary()
     process.stdout.write(
@@ -290,6 +301,7 @@ const isFlagInvocation =
   args.has('--smoke-natives') ||
   args.has('--smoke-worker') ||
   args.has('--smoke-vfs') ||
+  args.has('--smoke-intl') ||
   args.has('rollback') ||
   args.has('doctor') ||
   args.has('--doctor-config-probe')
