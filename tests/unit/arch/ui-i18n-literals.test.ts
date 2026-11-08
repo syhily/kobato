@@ -207,6 +207,22 @@ const SCAN_ROOTS = [
   'src/server/domains/notifications',
   'src/server/bootstrap/db-lifecycle.ts',
   'src/server/domains/settings/services/zeabur-mail-cleanup.ts',
+  // Step 5c: feed/calendar/manifest representations, locale font chains and the
+  // composition-root cache invalidation.
+  'src/server/render/feed/generator.tsx',
+  'src/server/render/calendar/render.ts',
+  'src/server/render/calendar/locale.ts',
+  'src/server/render/calendar/daily-quote.ts',
+  'src/server/render/warmup/content-cache.ts',
+  'src/server/http/resources/feed.ts',
+  'src/server/http/resources/calendar.ts',
+  'src/server/http/resources/images.ts',
+  'src/server/http/resources/assets.ts',
+  'src/server/http/middleware-pipeline.ts',
+  'src/server/infra/cache/admin-ops.ts',
+  'src/shared/config/font-stacks.ts',
+  'src/entry.server.tsx',
+  'src/root.tsx',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -275,6 +291,17 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'src/server/domains/webmentions/receive.ts', rules: ['domain-error'] },
   { path: 'src/server/domains/webmentions/target.ts', rules: ['domain-error'] },
   { path: 'src/server/domains/webmentions/verify.ts', rules: ['domain-error'] },
+  // Step 5c: these maps ARE the locale identity (calendar copy / default font
+  // chains) — the exact tags are their contract, not UI copy to translate.
+  { path: 'src/server/render/calendar/locale.ts', rules: ['hardcoded-locale'] },
+  { path: 'src/shared/config/font-stacks.ts', rules: ['hardcoded-locale'] },
+  // Producer guard: both a category AND a tag filter is a programming error,
+  // never reachable from the public feed URLs. Technical diagnostic, kept raw.
+  {
+    path: 'src/server/render/feed/generator.tsx',
+    rules: ['domain-error'],
+    text: 'Category and tag cannot be specified at the same time',
+  },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -328,6 +355,10 @@ describe('production sources', () => {
         'src/server/domains/webmentions/receive.ts',
         'src/server/domains/webmentions/target.ts',
         'src/server/domains/webmentions/verify.ts',
+        // Step 5c slice: locale-keyed static maps + the feed producer guard.
+        'src/server/render/calendar/locale.ts',
+        'src/shared/config/font-stacks.ts',
+        'src/server/render/feed/generator.tsx',
       ]),
     )
   })
@@ -465,6 +496,18 @@ describe('production sources', () => {
         'src/server/domains/notifications/service.ts',
         'src/server/bootstrap/db-lifecycle.ts',
         'src/server/domains/settings/services/zeabur-mail-cleanup.ts',
+        // Step 5c slice: localized feed/calendar/manifest + locale font chains.
+        'src/server/render/feed/generator.tsx',
+        'src/server/render/calendar/render.ts',
+        'src/server/render/calendar/locale.ts',
+        'src/server/http/resources/feed.ts',
+        'src/server/http/resources/calendar.ts',
+        'src/server/http/resources/images.ts',
+        'src/server/http/resources/assets.ts',
+        'src/server/http/middleware-pipeline.ts',
+        'src/shared/config/font-stacks.ts',
+        'src/entry.server.tsx',
+        'src/root.tsx',
       ]),
     )
   })

@@ -925,6 +925,40 @@ pre.shiki span {
   --font-serif: 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif;
 }
 
+/*
+ * Locale default font chains (plan 001, 5c).
+ *
+ * The `:root` chains above ARE the zh-CN defaults; every other locale
+ * overrides --font-body / --font-serif through the document `lang`
+ * (`<html lang>` is the AppLocale). A configured custom family still wins: it
+ * is set as an inline style on <html> (root.tsx), which outranks these rules.
+ *
+ * These blocks are contract-pinned against `src/shared/config/font-stacks.ts`
+ * (tests/unit/contract/font-stacks.test.ts) — change both or neither.
+ */
+:lang(en-US) {
+  --font-body:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans',
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-serif: Georgia, 'Times New Roman', Times, 'Noto Serif', 'Liberation Serif', serif;
+}
+
+:lang(zh-TW) {
+  --font-body:
+    'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang TC', 'Lantinghei TC', 'Microsoft JhengHei', 'Source Han Sans TW',
+    -apple-system, BlinkMacSystemFont, 'HanHei TC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans CNS', STHeiti,
+    'WenQuanYi Micro Hei', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-serif: 'Source Han Serif TW', 'Noto Serif CJK TC', 'Songti TC', 'PMingLiU', Georgia, Times, serif;
+}
+
+:lang(zh-HK) {
+  --font-body:
+    'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang HK', 'Lantinghei TC', 'Microsoft JhengHei', 'Source Han Sans HK',
+    -apple-system, BlinkMacSystemFont, 'HanHei TC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans CNS', STHeiti,
+    'WenQuanYi Micro Hei', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-serif: 'Source Han Serif HK', 'Noto Serif CJK HK', 'Songti TC', 'PMingLiU', Georgia, Times, serif;
+}
+
 /* Document chrome body font cursors */
 html,
 body {

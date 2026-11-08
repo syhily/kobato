@@ -17,6 +17,7 @@ import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { defaultTransition } from '@/client/lib/motion'
 import { createSsrCaller } from '@/server/http/ssr-caller'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
+import { defaultFontStackFor } from '@/shared/config/font-stacks'
 import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/config/getters'
 import { fallbackMessages } from '@/shared/i18n/fallback-messages'
 import { DEFAULT_LOCALE, type AppLocale } from '@/shared/i18n/locales'
@@ -178,22 +179,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const messages = i18n?.messages ?? fallbackMessages
 
   // When custom fonts are configured, override the CSS font tokens on <html>
-  // so the slot's stack prepends the existing fallback chain:
+  // so the slot's stack prepends the LOCALE's default fallback chain (the same
+  // map the CSS `:lang()` branches use — no hardcoded CJK tail for en-US):
   //   global → --font-body, post → --font-serif, code → --font-code
   const htmlStyle: Record<string, string> = {}
+  const defaultFonts = defaultFontStackFor(locale)
   if (globalFonts.length > 0) {
     const stack = globalFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-body'] =
-      `${stack}, 'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN', -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti, 'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`
+    htmlStyle['--font-body'] = `${stack}, ${defaultFonts.body}`
   }
   if (activePostFonts.length > 0) {
     const stack = activePostFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-serif'] =
-      `${stack}, 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif`
+    htmlStyle['--font-serif'] = `${stack}, ${defaultFonts.serif}`
   }
   if (activeCodeFonts.length > 0) {
     const stack = activeCodeFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-code'] = `${stack}, 'Iosevka', monospace`
+    htmlStyle['--font-code'] = `${stack}, ${defaultFonts.code}`
   }
 
   return (

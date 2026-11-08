@@ -146,6 +146,18 @@ When modifying files in this directory, open and follow these skills first:
 - The contract test in `tests/unit/contract/tailwind-tokens.test.ts`
   guards against drift between `tailwind.css` and `cn.ts`.
 
+## Locale font chains
+
+`tailwind.css` owns the DEFAULT `--font-body` / `--font-serif` chains: `:root`
+carries the zh-CN chain, and `:lang(en-US)` / `:lang(zh-TW)` / `:lang(zh-HK)`
+override it for the other AppLocales (`<html lang>` is the locale). A
+configured custom font still wins: `root.tsx` sets the token as an inline style
+on `<html>`, prepending the configured families to the SAME locale tail.
+
+The CSS branches and `src/shared/config/font-stacks.ts` (`DEFAULT_FONT_STACKS`)
+are one contract — `tests/unit/contract/font-stacks.test.ts` fails when either
+side drifts. Never hardcode a fallback chain in TSX.
+
 ## Shadow tiers
 
 Four shadow utilities, each with a distinct job:
