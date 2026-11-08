@@ -174,7 +174,10 @@ describe('server/domains/settings/services/core — assets write-path URL rules'
 
     expect(error.code).toBe('BAD_REQUEST')
     expect(error.issues).toContainEqual(
-      expect.objectContaining({ path: ['storage', 'endpoint'], message: expect.stringContaining('HTTPS') }),
+      expect.objectContaining({
+        path: ['storage', 'endpoint'],
+        fallbackMessage: expect.stringContaining('HTTPS'),
+      }),
     )
   })
 

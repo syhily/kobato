@@ -1,9 +1,20 @@
 import { z } from 'zod'
 
 import type { SettingsSection } from '@/shared/config/sections'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { DomainError } from '@/server/infra/http/errors'
+
+/**
+ * The one "settings payload rejected" descriptor. Static (no runtime
+ * translation at import): the transports localize it per request from the
+ * typed key, while `fallbackMessage` stays the English/log text.
+ */
+export const INVALID_SETTINGS_DESCRIPTOR = {
+  messageKey: 'admin.settings.errors.invalid',
+  fallbackMessage: 'The settings data is invalid',
+} as const satisfies ErrorMessageDescriptor
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -72,6 +83,6 @@ export function assertSectionPatchKeys(
     collectUnknownKeys(SECTION_REGISTRY[section].schema, payload, [], issues)
   }
   if (issues.length > 0) {
-    throw new DomainError('BAD_REQUEST', '设置数据无效', issues)
+    throw new DomainError('BAD_REQUEST', INVALID_SETTINGS_DESCRIPTOR, issues)
   }
 }

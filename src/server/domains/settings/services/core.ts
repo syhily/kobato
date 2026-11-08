@@ -9,8 +9,13 @@ import { securitySection } from '@/server/domains/settings/sections/security'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { applySectionPatch, encryptSecretsInRow } from '@/server/domains/settings/services/secrets-write'
 import { sectionChangeHandler } from '@/server/domains/settings/services/section-changes'
-import { assertSectionPatchKeys, isRecord } from '@/server/domains/settings/services/section-patch'
+import {
+  assertSectionPatchKeys,
+  INVALID_SETTINGS_DESCRIPTOR,
+  isRecord,
+} from '@/server/domains/settings/services/section-patch'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
+import { zodIssuesToWire } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { validateS3Config } from '@/server/infra/storage/backends/s3'
@@ -75,14 +80,7 @@ export async function updateBlogSettingsSection(
     // schema; hydration and the merge base keep the lenient read schema.
     const parsed = (meta.writeSchema ?? meta.schema).safeParse(merged)
     if (!parsed.success) {
-      throw new DomainError(
-        'BAD_REQUEST',
-        '设置数据无效',
-        parsed.error.issues.map((issue) => ({
-          message: issue.message,
-          path: issue.path.map(String),
-        })),
-      )
+      throw new DomainError('BAD_REQUEST', INVALID_SETTINGS_DESCRIPTOR, zodIssuesToWire(parsed.error.issues))
     }
     if (section === 'security') {
       // Cannot fail — it only recovers the concrete SecuritySettings shape the generic `meta.schema` erases.

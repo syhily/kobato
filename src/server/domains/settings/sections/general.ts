@@ -1,7 +1,17 @@
 import { z } from 'zod'
 
+import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
+
 import { isSupportedTimeZone } from '@/server/domains/settings/timezones'
 import { DEFAULT_LOCALE, normalizeAppLocale, SUPPORTED_LOCALES } from '@/shared/i18n/locales'
+
+// Custom validation messages are typed UI-catalog ids (never prose): the admin
+// form localizes them through `useI18n().localizeMessage`, and the settings
+// service maps them into wire descriptors before they reach a client.
+const generalMessages = {
+  timeZoneInvalid: 'admin.settings.general.timeZoneInvalid',
+  localeInvalid: 'admin.settings.general.localeInvalid',
+} as const satisfies Record<string, UiMessageId>
 
 // `locale` is one of the four supported UI locales; `timeZone` an IANA name;
 // `timeFormat` a small token language consumed by `formatLocalDate`
@@ -40,12 +50,7 @@ export const generalSchema = z.object({
   // failed parse, which hydration would read as "not installed".
   locale: z.string().trim().max(35).catch(DEFAULT_LOCALE).transform(normalizeAppLocale),
   // Perimeter validation: a hand-crafted POST bypassing the picker must not smuggle a bogus zone.
-  timeZone: z
-    .string()
-    .trim()
-    .min(1)
-    .max(64)
-    .refine(isSupportedTimeZone, { message: '必须是 IANA 时区名（如 Asia/Shanghai、UTC）' }),
+  timeZone: z.string().trim().min(1).max(64).refine(isSupportedTimeZone, { message: generalMessages.timeZoneInvalid }),
   timeFormat: timeFormatReadSchema,
   initialYear: z.coerce.number().int().min(1970).max(9999),
   icpNo: z.string().trim().max(60).optional(),
@@ -55,7 +60,7 @@ export const generalSchema = z.object({
 // WRITE schema — the admin form only ever sends the closed locale set, and a
 // custom pattern must be non-empty (blank means `null` = follow the locale).
 export const generalWriteSchema = generalSchema.extend({
-  locale: z.enum(SUPPORTED_LOCALES, { message: '请选择站点语言' }),
+  locale: z.enum(SUPPORTED_LOCALES, { message: generalMessages.localeInvalid }),
   timeFormat: z.string().trim().min(1).max(40).nullable(),
 })
 

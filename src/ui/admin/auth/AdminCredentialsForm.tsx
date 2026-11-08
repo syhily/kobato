@@ -5,6 +5,8 @@ import { ArrowRightIcon, FingerprintIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Form, Link } from 'react-router'
 
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
+
 import { orpc } from '@/client/api/client'
 import { inputClasses, PasswordToggle } from '@/ui/admin/auth/shared'
 import { Button } from '@/ui/components/button'
@@ -16,7 +18,11 @@ import { useI18n } from '@/ui/lib/I18nProvider'
 export interface LoginActionData {
   method?: 'passkey' | 'password'
   message?: string
+  /** The typed identity behind `message` — stable across locales (OtpForm branches on it). */
+  messageDescriptor?: ErrorMessageDescriptor
   error?: string
+  /** The typed identity behind `error`; un-migrated flows omit it. */
+  errorDescriptor?: ErrorMessageDescriptor
 }
 
 export interface LoginFormProps {

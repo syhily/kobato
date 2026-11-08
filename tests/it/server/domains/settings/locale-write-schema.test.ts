@@ -48,7 +48,12 @@ describe('general section — locale write/read schema split', () => {
     expect(error).toBeInstanceOf(DomainError)
     expect((error as InstanceType<typeof DomainError>).code).toBe('BAD_REQUEST')
     expect((error as InstanceType<typeof DomainError>).issues).toEqual([
-      { message: '请选择站点语言', path: ['locale'] },
+      {
+        messageKey: 'admin.settings.general.localeInvalid',
+        fallbackMessage: 'Choose a supported site language',
+        code: 'invalid_value',
+        path: ['locale'],
+      },
     ])
     // Rejected means not persisted.
     expect(findSettingByScope(db, 'blog.general')?.data).toEqual(before?.data)

@@ -1,6 +1,7 @@
 import { data, redirect, useNavigation } from 'react-router'
 
 import type { AuthFlowResult } from '@/server/domains/auth/services/shared'
+import type { AppLocale } from '@/shared/i18n/locales'
 
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signInWithPasskey } from '@/server/domains/auth/passkey/signin'
@@ -9,6 +10,7 @@ import { handleIdentify } from '@/server/domains/auth/services/identify'
 import { handleMagicLinkConsume } from '@/server/domains/auth/services/magic-link'
 import { handleOtpCancel, handleOtpResend, handleOtpVerify } from '@/server/domains/auth/services/otp'
 import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/services/password-reset'
+import { authFlowMessage } from '@/server/domains/auth/services/shared'
 import { hasApprovedComments } from '@/server/domains/comments/services/public-query'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
 import { handleSigninLogout, loadSigninData } from '@/server/http/loaders/signin'
@@ -43,7 +45,7 @@ function hasError(data: unknown): data is { error: string } {
   )
 }
 
-function toActionResult(result: AuthFlowResult, extraData?: Record<string, unknown>) {
+function toActionResult(result: AuthFlowResult, locale: AppLocale, extraData?: Record<string, unknown>) {
   const headers: Record<string, string> = {}
   if (result.setCookie) {
     headers['Set-Cookie'] = result.setCookie
@@ -52,9 +54,25 @@ function toActionResult(result: AuthFlowResult, extraData?: Record<string, unkno
     case 'redirect':
       return redirect(result.to, { headers })
     case 'error':
-      return data({ error: result.message, ...extraData }, { headers })
+      return data(
+        {
+          error: authFlowMessage(result.message, result.descriptor, locale),
+          // The descriptor's key is the stable identity the UI branches on
+          // (OtpForm's resend cooldown), never the localized sentence.
+          ...(result.descriptor === undefined ? {} : { errorDescriptor: result.descriptor }),
+          ...extraData,
+        },
+        { headers },
+      )
     case 'success':
-      return data({ message: result.message, ...extraData }, { headers })
+      return data(
+        {
+          message: authFlowMessage(result.message, result.descriptor, locale),
+          ...(result.descriptor === undefined ? {} : { messageDescriptor: result.descriptor }),
+          ...extraData,
+        },
+        { headers },
+      )
   }
 }
 
@@ -66,6 +84,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   const rc = getRequestContext({ request, context })
+  const locale = rc.localization.locale
   const db = rc.db
   await ensureInstalledOrRedirect(db)
 
@@ -87,28 +106,31 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (action === 'lostpassword') {
     // Wire the comments domain's "established commenter" check in here so the
     // auth domain itself stays free of the comments import.
-    return toActionResult(await requestPasswordReset(db, clientAddress, request, formData, { hasApprovedComments }))
+    return toActionResult(
+      await requestPasswordReset(db, clientAddress, request, formData, { hasApprovedComments }),
+      locale,
+    )
   }
 
   if (action === 'resetpassword' || action === 'accept-invite') {
     const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
-    return toActionResult(await resetPasswordWithToken(rc, request, formData, redirectTo, purpose))
+    return toActionResult(await resetPasswordWithToken(rc, request, formData, redirectTo, purpose), locale)
   }
 
   if (action === 'cancelotp') {
-    return toActionResult(await handleOtpCancel(rc, redirectTo))
+    return toActionResult(await handleOtpCancel(rc, redirectTo), locale)
   }
 
   if (action === 'verifyotp') {
-    return toActionResult(await handleOtpVerify(rc, request, formData, redirectTo))
+    return toActionResult(await handleOtpVerify(rc, request, formData, redirectTo), locale)
   }
 
   if (action === 'resendotp') {
-    return toActionResult(await handleOtpResend(rc, request))
+    return toActionResult(await handleOtpResend(rc, request), locale)
   }
 
   if (action === 'passkey') {
-    return toActionResult(await signInWithPasskey(rc, request, formData, redirectTo))
+    return toActionResult(await signInWithPasskey(rc, request, formData, redirectTo), locale)
   }
 
   if (action === 'identify') {
@@ -127,12 +149,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'magiclink') {
-    return toActionResult(await handleMagicLinkConsume(rc, request, formData, redirectTo))
+    return toActionResult(await handleMagicLinkConsume(rc, request, formData, redirectTo), locale)
   }
 
-  return toActionResult(await handleCredentialLogin(rc, request, formData, redirectTo), {
-    redirectTo,
-  })
+  return toActionResult(await handleCredentialLogin(rc, request, formData, redirectTo), locale, { redirectTo })
 }
 
 export const meta = titleMeta('meta.title.auth.signin')

@@ -27,5 +27,9 @@ Each card POSTs an honest Section patch (owned fields only). The server deep-mer
 Every interface string on this surface — card titles, hints, validation errors, toasts, dialog
 buttons — is a UI message id under `admin.settings.*`, resolved with `useI18n()`; never a Chinese
 literal fallback. `secretFieldStrings({ t, … })` takes the card's translator because its configured
-hint is a catalog message. Technical values (protocol names, URLs, paths, database column names)
-stay as-is.
+hint is a catalog message. Shared validation schemas (`shared/config/rate-limit-bucket`, the general
+write schema) put typed `UiMessageId`s in Zod `message` slots, never prose: `useSettingsCard`
+localizes them before building the RHF error tree (`localizeMessage`, interpolating the `{min}` /
+`{max}` bounds from `utils/zod-issue-bounds`), and the server maps the same ids into wire
+descriptors (`server/infra/http/error-descriptor`). Technical values (protocol names, URLs, paths,
+database column names) stay as-is.
