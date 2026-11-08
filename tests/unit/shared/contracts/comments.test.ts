@@ -103,21 +103,23 @@ describe('removeCommentFromPages', () => {
 })
 
 describe('updateCommentBodyInPages', () => {
-  it('updates the body of the matching comment', () => {
+  it('updates the body and content projection of the matching comment', () => {
     const newBody = makeCommentBody('updated')
     const comments = [mockComment({ id: '1' }), mockComment({ id: '2' })]
     const data = makeData(comments)
 
-    const next = updateCommentBodyInPages(data, '1', newBody)
+    const next = updateCommentBodyInPages(data, '1', newBody, '<p>updated</p>')
     expect(next.pages[0]!.comments[0]!.body).toBe(newBody)
+    expect(next.pages[0]!.comments[0]!.content).toBe('<p>updated</p>')
     expect(next.pages[0]!.comments[1]!.body).toBe(comments[1]!.body)
+    expect(next.pages[0]!.comments[1]!.content).toBe(comments[1]!.content)
   })
 
   it('is a no-op when the id is not found', () => {
     const comments = [mockComment({ id: '1' })]
     const data = makeData(comments)
 
-    const next = updateCommentBodyInPages(data, '999', mockBody)
+    const next = updateCommentBodyInPages(data, '999', mockBody, '<p>updated</p>')
     expect(next.pages[0]!.comments).toEqual(comments)
   })
 })

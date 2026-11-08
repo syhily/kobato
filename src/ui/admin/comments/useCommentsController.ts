@@ -86,12 +86,13 @@ export function updateCommentBodyInPages(
   data: AdminCommentsData,
   id: string,
   body: CommentEditorState,
+  content: string | null,
 ): AdminCommentsData {
   return {
     ...data,
     pages: data.pages.map((page) => ({
       ...page,
-      comments: page.comments.map((comment) => (idStr(comment.id) === id ? { ...comment, body } : comment)),
+      comments: page.comments.map((comment) => (idStr(comment.id) === id ? { ...comment, body, content } : comment)),
     })),
   }
 }
@@ -317,7 +318,8 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     [patchPages],
   )
   const updateCommentBody = useCallback(
-    (id: string, body: CommentEditorState) => patchPages((data) => updateCommentBodyInPages(data, id, body)),
+    (id: string, body: CommentEditorState, content: string | null) =>
+      patchPages((data) => updateCommentBodyInPages(data, id, body, content)),
     [patchPages],
   )
   const clearCommentDeleteRequest = useCallback(

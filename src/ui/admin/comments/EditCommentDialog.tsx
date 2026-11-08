@@ -26,7 +26,7 @@ import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEdito
 export interface EditCommentDialogProps {
   comment: AdminComment | null
   onClose: () => void
-  onSaved: (next: { body: CommentEditorState }) => void
+  onSaved: (next: { body: CommentEditorState; content: string | null }) => void
 }
 
 export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDialogProps) {
@@ -48,7 +48,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
 
   const editMutation = useMutation({
     ...orpcQuery.admin.comments.edit.mutationOptions(),
-    onSuccess: (payload) => onSaved({ body: payload.comment.body }),
+    onSuccess: (payload) => onSaved({ body: payload.comment.body, content: payload.comment.content }),
     onError: onMutationError('admin.toast.commentSaveFailed', t),
   })
 

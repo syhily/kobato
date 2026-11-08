@@ -127,7 +127,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
         onClose={() => setEditTarget(null)}
         onSaved={(c) => {
           if (editTarget) {
-            updateCommentBody(idStr(editTarget.id), c.body)
+            updateCommentBody(idStr(editTarget.id), c.body, c.content)
           }
           setEditTarget(null)
         }}

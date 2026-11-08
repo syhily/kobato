@@ -134,8 +134,9 @@ describe('ui/admin/comments/useCommentsController page patches', () => {
     const comment = makeAdminComment()
     const newBody = makeCommentBody('Updated body')
     const data = makeData(makePage([comment]))
-    const next = updateCommentBodyInPages(data, comment.id, newBody)
+    const next = updateCommentBodyInPages(data, comment.id, newBody, '<p>Updated body</p>')
     expect(next.pages[0]!.comments[0]!.body).toEqual(newBody)
+    expect(next.pages[0]!.comments[0]!.content).toBe('<p>Updated body</p>')
   })
 
   it('clears a delete request and moves the count to pending/approved', () => {
