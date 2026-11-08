@@ -9,9 +9,9 @@ import { useUnreadNotificationCount } from '@/client/hooks/use-notifications'
 import { useNavigationSettings } from '@/shared/lib/blog-config-context'
 import { Footer } from '@/ui/public/chrome/Footer'
 import { Header } from '@/ui/public/chrome/Header'
+import { LazyUserMenu } from '@/ui/public/chrome/LazyUserMenu'
 import { ScrollTopButton } from '@/ui/public/chrome/ScrollTopButton'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
-import { UserMenu } from '@/ui/public/chrome/UserMenu'
 import { LazyNotificationsDrawer } from '@/ui/shared/notifications/LazyNotificationsDrawer'
 // Static import so React Router preloads `public.css` during SSR (no FOUC).
 // Do NOT re-export from `@/root` — that would pin this module in the admin chunk.
@@ -58,7 +58,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
       {currentUser && (
         // Above the detail-page cover image (z-aside-drawer / 1020) so the avatar and dropdown stay reachable.
         <div className="fixed top-4 right-4 z-modal hidden lg:block">
-          <UserMenu
+          <LazyUserMenu
             currentUser={currentUser}
             logoutRedirectTo={logoutRedirectTo}
             unreadCount={unreadCount}

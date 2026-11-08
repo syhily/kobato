@@ -26,18 +26,29 @@ interface Props {
    *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
   onOpenNotifications: () => void
+  /** Mount with the menu open — set by LazyUserMenu when the activating click
+   *  already happened on its placeholder trigger. */
+  defaultOpen?: boolean
 }
 
 // User menu in the public chrome's site-nav; a single avatar-button trigger
-// nests next to the other site-nav links without taking a full row.
-export function UserMenu({ currentUser, logoutRedirectTo, unreadCount, onOpenNotifications }: Props) {
+// nests next to the other site-nav links without taking a full row. Reaches
+// the browser only through LazyUserMenu's interaction-gated lazy chunk —
+// never import statically from the public chrome.
+export function UserMenu({
+  currentUser,
+  logoutRedirectTo,
+  unreadCount,
+  onOpenNotifications,
+  defaultOpen = false,
+}: Props) {
   const logout = useLogout()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()
   const canEnterAdmin = currentUser.role === 'admin' || currentUser.role === 'author'
   // An unknown count renders like zero: no dot, no badge, plain aria label.
   const badgeCount = unreadCount ?? 0
   return (
-    <DropdownMenu>
+    <DropdownMenu defaultOpen={defaultOpen}>
       <DropdownMenuTrigger
         render={
           <Button

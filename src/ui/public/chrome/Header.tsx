@@ -14,8 +14,8 @@ import { cn } from '@/ui/lib/cn'
 import { safeRel } from '@/ui/lib/link'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
+import { LazyUserMenu } from '@/ui/public/chrome/LazyUserMenu'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
-import { UserMenu } from '@/ui/public/chrome/UserMenu'
 import { SearchIconButton } from '@/ui/public/Search'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
 
@@ -260,7 +260,7 @@ export function Header({
             <div className="flex-1" />
             {currentUser && (
               <div className="mr-3">
-                <UserMenu
+                <LazyUserMenu
                   currentUser={currentUser}
                   logoutRedirectTo={logoutRedirectTo}
                   unreadCount={unreadCount}

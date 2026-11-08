@@ -18,7 +18,7 @@ const currentUser: HeaderCurrentUser = {
   role: 'admin',
 }
 
-function renderMenu(unreadCount = 0, onOpenNotifications: () => void = () => {}) {
+function renderMenu(unreadCount = 0, onOpenNotifications: () => void = () => {}, defaultOpen = false) {
   return render(
     <MemoryRouter initialEntries={['/']}>
       <UserMenu
@@ -26,6 +26,7 @@ function renderMenu(unreadCount = 0, onOpenNotifications: () => void = () => {})
         logoutRedirectTo="/"
         unreadCount={unreadCount}
         onOpenNotifications={onOpenNotifications}
+        defaultOpen={defaultOpen}
       />
     </MemoryRouter>,
   )
@@ -55,6 +56,13 @@ describe('ui/public/chrome/UserMenu', () => {
   it('keeps the plain aria-label when nothing is unread', () => {
     renderMenu()
     expect(screen.getByLabelText('用户菜单')).toBeTruthy()
+  })
+
+  it('mounts with the menu already open when defaultOpen is set (LazyUserMenu activation)', async () => {
+    renderMenu(3, () => {}, true)
+
+    expect(await screen.findByText('消息通知')).toBeTruthy()
+    expect(screen.getByText('3')).toBeTruthy()
   })
 
   it('opens the shell-owned drawer from the 消息通知 item', () => {
