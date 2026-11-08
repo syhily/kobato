@@ -1,3 +1,5 @@
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
+
 export const DOMAIN_ERROR_CODES = [
   'BAD_REQUEST',
   'UNAUTHORIZED',
@@ -24,19 +26,43 @@ export function domainStatus(error: DomainError): number {
   return DOMAIN_STATUS[error.code]
 }
 
-const DEFAULT_MESSAGES: Record<DomainErrorCode, string> = {
-  BAD_REQUEST: '请求参数无效。',
-  UNAUTHORIZED: '需要登录后再操作。',
-  FORBIDDEN: '禁止访问。',
-  NOT_FOUND: '资源不存在。',
-  CONFLICT: '操作与当前状态冲突。',
-  RATE_LIMITED: '请求过于频繁，请稍后再试。',
-  INTERNAL: '服务器内部错误。',
-}
+/**
+ * One structured issue. A descriptor (transports localize it) or legacy raw
+ * text (rendered verbatim until the producing domain migrates); `code`/`path`
+ * let API consumers map the issue back to a field.
+ */
+export type DomainErrorIssue =
+  | { message: string; path?: string[]; code?: string }
+  | (ErrorMessageDescriptor & { path?: string[]; code?: string })
 
+// Generic fallback descriptors: English text for logs + typed ids for the
+// transports. Per-domain errors pass their own descriptor.
+const DEFAULT_DESCRIPTORS = {
+  BAD_REQUEST: { messageKey: 'error.api.badRequest', fallbackMessage: 'Invalid request parameters.' },
+  UNAUTHORIZED: { messageKey: 'error.api.unauthorized', fallbackMessage: 'Sign in to continue.' },
+  FORBIDDEN: {
+    messageKey: 'error.api.forbidden',
+    fallbackMessage: 'Insufficient permissions; a higher role is required.',
+  },
+  NOT_FOUND: { messageKey: 'error.api.notFound', fallbackMessage: 'Resource not found.' },
+  CONFLICT: { messageKey: 'error.api.conflict', fallbackMessage: 'The operation conflicts with the current state.' },
+  RATE_LIMITED: { messageKey: 'error.api.rateLimited', fallbackMessage: 'Too many requests. Please try again later.' },
+  INTERNAL: { messageKey: 'error.api.internal', fallbackMessage: 'Internal server error' },
+} as const satisfies Record<DomainErrorCode, ErrorMessageDescriptor>
+
+/**
+ * `message` stays the log/technical fallback: pass a descriptor to state the
+ * user-facing copy (translated at the transport boundary), or a raw string for
+ * a domain that has not migrated yet (rendered unchanged).
+ */
 export class DomainError extends Error {
   readonly code: DomainErrorCode
-  readonly issues?: { message: string; path?: string[] }[]
+  readonly issues?: DomainErrorIssue[]
+  /**
+   * Localizable user-facing copy. Absent on legacy raw-message errors, where
+   * the transports wrap `message` in the passthrough key instead.
+   */
+  readonly descriptor?: ErrorMessageDescriptor
   /**
    * Queue-worker hint: transient, retryable on a backoff waterline; absent
    * means terminal. HTTP mapping never reads it.
@@ -45,27 +71,34 @@ export class DomainError extends Error {
 
   constructor(
     code: DomainErrorCode,
-    message?: string,
-    issues?: { message: string; path?: string[] }[],
+    message?: string | ErrorMessageDescriptor,
+    issues?: DomainErrorIssue[],
     retryable?: boolean,
   ) {
-    super(message ?? DEFAULT_MESSAGES[code])
+    const descriptor = typeof message === 'string' || message === undefined ? undefined : message
+    super(
+      descriptor?.fallbackMessage ??
+        (typeof message === 'string' ? message : DEFAULT_DESCRIPTORS[code].fallbackMessage),
+    )
     this.code = code
     this.issues = issues
     this.retryable = retryable
+    this.descriptor = descriptor ?? (message === undefined ? DEFAULT_DESCRIPTORS[code] : undefined)
     this.name = 'DomainError'
   }
 }
 
 /**
  * `DomainError` flattened for the worker_threads structured-clone boundary;
- * the main thread rehydrates it via `domainErrorFromWire`.
+ * the main thread rehydrates it via `domainErrorFromWire`. Descriptors are
+ * plain objects, so they survive the clone unchanged.
  */
 export interface DomainErrorWire {
   name: string
   code?: string
   message: string
-  issues?: { message: string; path?: string[] }[]
+  descriptor?: ErrorMessageDescriptor
+  issues?: DomainErrorIssue[]
 }
 
 /**
@@ -74,7 +107,7 @@ export interface DomainErrorWire {
  */
 export function domainErrorFromWire(error: DomainErrorWire): DomainError | null {
   if (error.name === 'DomainError' && error.code !== undefined && isDomainErrorCode(error.code)) {
-    return new DomainError(error.code, error.message, error.issues)
+    return new DomainError(error.code, error.descriptor ?? error.message, error.issues)
   }
   return null
 }
@@ -84,25 +117,39 @@ function isDomainErrorCode(code: string): code is DomainErrorCode {
 }
 
 export class ActionFailure extends Error {
+  readonly descriptor?: ErrorMessageDescriptor
   constructor(
     readonly status: number,
-    message: string,
-    readonly issues?: { message: string; path?: string[] }[],
+    message: string | ErrorMessageDescriptor,
+    readonly issues?: DomainErrorIssue[],
     readonly headers?: HeadersInit,
   ) {
-    super(message)
+    const descriptor = typeof message === 'string' ? undefined : message
+    super(typeof message === 'string' ? message : message.fallbackMessage)
+    this.descriptor = descriptor
     this.name = 'ActionFailure'
   }
 }
 
+/**
+ * The generic transport errors (middleware gates, strict-patch/Zod boundaries).
+ * Descriptors, not prose: the Hono/oRPC boundaries localize them per request.
+ * Per-domain copy belongs in its own module as a typed descriptor.
+ */
 export const ErrorMessages = {
-  FORBIDDEN: '权限不足，需要更高角色。',
-  NOT_FOUND: '资源不存在。',
-  UNAUTHORIZED: '需要登录后再操作。',
-  INSUFFICIENT_PERMISSIONS: '权限不足',
-  INVALID_INPUT: '输入数据无效',
-  INTERNAL_SERVER_ERROR: '服务器内部错误',
-} as const
+  FORBIDDEN: {
+    messageKey: 'error.api.forbidden',
+    fallbackMessage: 'Insufficient permissions; a higher role is required.',
+  },
+  NOT_FOUND: { messageKey: 'error.api.notFound', fallbackMessage: 'Resource not found.' },
+  UNAUTHORIZED: { messageKey: 'error.api.unauthorized', fallbackMessage: 'Sign in to continue.' },
+  INSUFFICIENT_PERMISSIONS: {
+    messageKey: 'error.api.insufficientPermissions',
+    fallbackMessage: 'Insufficient permissions',
+  },
+  INVALID_INPUT: { messageKey: 'error.api.invalidInput', fallbackMessage: 'Invalid input data' },
+  INTERNAL_SERVER_ERROR: { messageKey: 'error.api.internal', fallbackMessage: 'Internal server error' },
+} as const satisfies Record<string, ErrorMessageDescriptor>
 
 /**
  * Unique-constraint detection: node:sqlite `errcode` 2067/1555, `constraintName`

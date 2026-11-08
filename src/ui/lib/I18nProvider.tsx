@@ -43,9 +43,10 @@ export interface I18nValue {
    * Translate a message-id STRING when it is a registered catalog key; return
    * any other string unchanged. The seam for values whose typing is lost at
    * runtime (Zod issue messages): raw ids never reach the UI, and Zod's own
-   * default messages pass through.
+   * default messages pass through. `params` fill an id's ICU placeholders (the
+   * shared validation schemas attach `{min}` / `{max}` bounds that way).
    */
-  localizeMessage: (value: string) => string
+  localizeMessage: (value: string, params?: I18nMessageParams) => string
 }
 
 const LocaleContext = createContext<AppLocale | null>(null)
@@ -104,13 +105,20 @@ export function useI18n(): I18nValue {
   if (locale === null) {
     throw new Error('useI18n() requires the root <I18nProvider> (see src/root.tsx).')
   }
-  const localizeMessage = (value: string): string => {
-    // Validation messages carry no ICU arguments, so the catalog value is the answer.
+  const localizeMessage = (value: string, params?: I18nMessageParams): string => {
     // react-intl types `messages` as raw strings or pre-parsed ASTs depending on the
     // provider; we only ever feed it string catalogs, so narrow structurally.
     const messages: Record<string, unknown> = intl.messages
     const candidate = Object.hasOwn(messages, value) ? messages[value] : undefined
-    return typeof candidate === 'string' ? candidate : value
+    if (typeof candidate !== 'string') {
+      return value
+    }
+    if (params === undefined) {
+      // Most validation messages carry no arguments; skip the ICU parse when they don't.
+      return candidate
+    }
+    const formatted = intl.formatMessage({ id: value }, params)
+    return typeof formatted === 'string' ? formatted : value
   }
   return { locale, t, tRich, localizeMessage }
 }

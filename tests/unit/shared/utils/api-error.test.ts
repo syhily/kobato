@@ -75,6 +75,25 @@ describe('formatApiErrorIssues', () => {
     expect(formatApiErrorIssues(err)).toBe('resource.maxAttempts：最大尝试次数不能超过 1000')
   })
 
+  it('ignores the descriptor-based data payload (the server already folded the summary)', () => {
+    const err = Object.assign(new Error('设置数据无效：signIn.windowSeconds：时间窗口不能小于 60 秒'), {
+      data: {
+        descriptor: { messageKey: 'admin.settings.errors.invalid', fallbackMessage: 'The settings data is invalid' },
+        issues: [
+          {
+            messageKey: 'admin.settings.rateLimit.error.windowMin',
+            params: { min: 60 },
+            fallbackMessage: 'The time window must be at least 60 seconds',
+            path: ['signIn', 'windowSeconds'],
+          },
+        ],
+      },
+    })
+    expect(formatApiErrorIssues(err)).toBeUndefined()
+    enrichApiErrorMessage(err)
+    expect(err.message).toBe('设置数据无效：signIn.windowSeconds：时间窗口不能小于 60 秒')
+  })
+
   it('joins multiple issues, tolerates a missing path, and drops malformed entries', () => {
     const err = Object.assign(new Error('设置数据无效'), {
       data: [

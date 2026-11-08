@@ -97,6 +97,18 @@ The shared `loaders/*` helpers are the orchestration layer the content controlle
 
 - No business logic inside procedure handlers.
 - Throw `ORPCError('CODE', { message })`; `onErrorHandler` handles the rest. Services never throw `HTTPException`.
+- **Error copy is a typed descriptor, not prose.** A migrated producer throws `DomainError`/`ActionFailure`
+  with an `ErrorMessageDescriptor` (`{ messageKey, params?, fallbackMessage }` from
+  `@/shared/contracts/api-error`) as its `message`; the domain keeps the English
+  `fallbackMessage` for logs, and the Hono/oRPC boundaries translate both the top-level message and
+  the issues per request (`context.localization.locale` + `server/infra/i18n`). `ORPCError.message`
+  is the localized sentence WITH the localized issue summary folded in, and `ORPCError.data` is
+  `{ descriptor, issues }` (never a bare issue array); Hono mirrors `{ error: { code, message, descriptor, issues } }`.
+  Un-migrated domains still pass a raw string — it rides the `error.api.rawMessage` passthrough key
+  and renders unchanged. Client-side validation schemas put a typed `UiMessageId` in `message`
+  (never raw copy) and the server maps Zod issues with
+  `server/infra/http/error-descriptor` (`zodIssuesToWire`: id → descriptor + `{min}/{max}` params +
+  English fallback, producer code, path; standard Zod prose stays an English passthrough).
 - No ad-hoc Hono RPC routes bypassing `apiRouter`; non-JSON routes belong in `resources/`.
 - Procedure inputs are a single flat object — no `{ body, query, params }` buckets.
 

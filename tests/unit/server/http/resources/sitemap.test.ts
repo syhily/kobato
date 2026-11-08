@@ -78,6 +78,8 @@ describe('sitemapRouter', () => {
 
     const res = await app.request('/sitemap.xml')
     expect(res.status).toBe(429)
-    await expect(res.json()).resolves.toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
+    await expect(res.json()).resolves.toMatchObject({
+      error: { code: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试。' },
+    })
   })
 })

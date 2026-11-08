@@ -84,6 +84,14 @@ const SCAN_ROOTS = [
   'src/ui/admin/editor-shell',
   'src/ui/admin/editor-shared',
   'src/client/editor',
+  // Step 5a: the server error protocol — producers state typed descriptors and
+  // the Hono/oRPC boundaries translate them; no raw DomainError copy may creep
+  // back into these modules.
+  'src/server/infra/http/errors.ts',
+  'src/server/infra/http/error-descriptor.ts',
+  'src/server/http/errors.ts',
+  'src/server/http/orpc-base.ts',
+  'src/server/http/translate-domain-error.ts',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -222,6 +230,12 @@ describe('production sources', () => {
         'src/ui/admin/editor-shared/BasicInfoCard.tsx',
         'src/client/editor/cards/music-player.tsx',
         'src/client/editor/page-editor-card-config.ts',
+        // Step 5a slice: the server error protocol modules.
+        'src/server/infra/http/errors.ts',
+        'src/server/infra/http/error-descriptor.ts',
+        'src/server/http/errors.ts',
+        'src/server/http/orpc-base.ts',
+        'src/server/http/translate-domain-error.ts',
       ]),
     )
   })

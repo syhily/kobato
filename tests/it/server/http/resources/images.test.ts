@@ -137,7 +137,9 @@ describe('images resource', () => {
     expect((await requestImages('http://localhost/images/og/missing.png')).status).toBe(302)
     const res = await requestImages('http://localhost/images/og/missing.png')
     expect(res.status).toBe(429)
-    await expect(res.json()).resolves.toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
+    await expect(res.json()).resolves.toMatchObject({
+      error: { code: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试。' },
+    })
   })
 
   it('renders an OG image for a category', async () => {

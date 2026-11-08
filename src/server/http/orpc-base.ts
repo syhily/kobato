@@ -3,12 +3,15 @@ import { ORPCError, os } from '@orpc/server'
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
+import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
-import { translateDomainError } from '@/server/http/translate-domain-error'
+import { apiErrorData, summarizeApiError, translateDomainError } from '@/server/http/translate-domain-error'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { createServerTranslator } from '@/server/infra/i18n'
 import { tryCommentPostRateLimit, tryNotificationReplyRateLimit, tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
@@ -35,24 +38,45 @@ export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
 
 const root = os.$context<HandlerContext>()
 
+type OrpcErrorCode = 'UNAUTHORIZED' | 'FORBIDDEN' | 'TOO_MANY_REQUESTS'
+
+/**
+ * A middleware gate's localized `ORPCError`: the message is formatted for the
+ * request locale and the structured descriptor rides `data`, so the client
+ * never has to know the copy (the plan's "server translates, client displays").
+ */
+function descriptorError(
+  context: HandlerContext,
+  code: OrpcErrorCode,
+  descriptor: ErrorMessageDescriptor,
+): ORPCError<OrpcErrorCode, unknown> {
+  const translator = createServerTranslator(context.localization.locale)
+  return new ORPCError(code, {
+    message: translator.format(descriptor.messageKey, descriptor.params),
+    data: { descriptor },
+  })
+}
+
 // Translate domain failures to `ORPCError` — foreign exceptions become a generic 500.
 const domainErrorGuard = root.middleware(async ({ context, next }) => {
   try {
     return await next({})
   } catch (error) {
     if (error instanceof DomainError || error instanceof ActionFailure) {
-      const translated = translateDomainError(error)
+      const translator = createServerTranslator(context.localization.locale)
+      const translated = translateDomainError(error, translator)
       // Failure headers (e.g. `Retry-After`) ride the bridge's `responseHeaders` channel.
       if (translated.headers) {
         new Headers(translated.headers).forEach((value, key) => {
           context.responseHeaders.append(key, value)
         })
       }
-      // Forward the issue list so API consumers can map errors back to fields.
+      // The server-localized message names the failing fields; the structured
+      // descriptor + issue paths ride `data` for consumers that map fields.
       throw new ORPCError(error instanceof DomainError ? error.code : 'INTERNAL_SERVER_ERROR', {
         status: translated.status,
-        message: translated.message,
-        ...(translated.issues ? { data: translated.issues } : {}),
+        message: summarizeApiError(translated, translator),
+        data: apiErrorData(translated),
       })
     }
     throw error
@@ -61,7 +85,7 @@ const domainErrorGuard = root.middleware(async ({ context, next }) => {
 
 function ensureViewer(context: HandlerContext): SessionUser {
   if (!context.viewer) {
-    throw new ORPCError('UNAUTHORIZED', { message: ErrorMessages.UNAUTHORIZED })
+    throw descriptorError(context, 'UNAUTHORIZED', ErrorMessages.UNAUTHORIZED)
   }
   return context.viewer
 }
@@ -82,7 +106,7 @@ function requireRole(role: Role) {
   return root.middleware(({ context, next }) => {
     const viewer = ensureViewer(context)
     if (!hasAtLeast(viewer.role, role)) {
-      throw new ORPCError('FORBIDDEN', { message: ErrorMessages.INSUFFICIENT_PERMISSIONS })
+      throw descriptorError(context, 'FORBIDDEN', ErrorMessages.INSUFFICIENT_PERMISSIONS)
     }
     return next({
       context: {
@@ -97,7 +121,7 @@ function requireRole(role: Role) {
 export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   const { exceeded } = await tryResourceRateLimit(context.clientAddress)
   if (exceeded) {
-    throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+    throw descriptorError(context, 'TOO_MANY_REQUESTS', descriptorFor('error.api.rateLimited'))
   }
   return next({})
 })
@@ -115,7 +139,7 @@ export const commentPostRateLimit = root.middleware(async ({ context, next }) =>
   }
   const { exceeded } = await tryCommentPostRateLimit(context.clientAddress)
   if (exceeded) {
-    throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+    throw descriptorError(context, 'TOO_MANY_REQUESTS', descriptorFor('error.api.rateLimited'))
   }
   return next({})
 })
@@ -132,7 +156,7 @@ export const notificationReplyRateLimit = root.middleware(async ({ context, next
   }
   const { exceeded } = await tryNotificationReplyRateLimit(context.viewer!.id)
   if (exceeded) {
-    throw new ORPCError('TOO_MANY_REQUESTS', { message: '回复过于频繁，请稍后再试。' })
+    throw descriptorError(context, 'TOO_MANY_REQUESTS', descriptorFor('error.api.replyRateLimited'))
   }
   return next({})
 })
@@ -140,7 +164,7 @@ export const notificationReplyRateLimit = root.middleware(async ({ context, next
 // Passkey guard: disabled → `DomainError('BAD_REQUEST')`, translated by `domainErrorGuard`.
 export const passkeyGuard = root.middleware(({ next }) => {
   if (!isPasskeyEnabled()) {
-    throw new DomainError('BAD_REQUEST', 'Passkey 登录未启用。')
+    throw new DomainError('BAD_REQUEST', descriptorFor('error.api.passkeyDisabled'))
   }
   return next({})
 })

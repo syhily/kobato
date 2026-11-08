@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
 import { rateLimitBounds } from '@/shared/config/defaults'
-import { rateLimitBucketSchema, upgradeLegacyRateLimitBuckets } from '@/shared/config/rate-limit-bucket'
+import {
+  rateLimitBucketMessages,
+  rateLimitBucketSchema,
+  upgradeLegacyRateLimitBuckets,
+} from '@/shared/config/rate-limit-bucket'
 
 // The server section schema and the admin ThresholdForm both compose this
-// bucket schema — its messages are what the save-failure toast surfaces, so
-// pin them as user-facing Chinese that names the bound.
+// bucket schema — its custom messages are typed UI-catalog ids (the client
+// translates them, the server maps them into descriptors), and the bound
+// travels as the issue's `minimum`/`maximum`, never baked into prose.
 describe('shared/config/rate-limit-bucket', () => {
   it('accepts the boundary values', () => {
     for (const [windowSeconds, maxAttempts] of [
@@ -16,22 +21,33 @@ describe('shared/config/rate-limit-bucket', () => {
     }
   })
 
-  it('rejects an over-bound maxAttempts with the named bound', () => {
+  it('rejects an over-bound maxAttempts with the typed id and the bound', () => {
     const result = rateLimitBucketSchema.safeParse({ windowSeconds: 300, maxAttempts: 1001 })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0]?.message).toBe('最大尝试次数不能超过 1000')
+    expect(result.error?.issues[0]).toMatchObject({
+      message: rateLimitBucketMessages.attemptsMax,
+      path: ['maxAttempts'],
+      maximum: rateLimitBounds.maxAttempts.max,
+    })
   })
 
-  it('rejects an under-bound windowSeconds with the named bound', () => {
+  it('rejects an under-bound windowSeconds with the typed id and the bound', () => {
     const result = rateLimitBucketSchema.safeParse({ windowSeconds: 59, maxAttempts: 5 })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0]?.message).toBe('时间窗口不能小于 60 秒')
+    expect(result.error?.issues[0]).toMatchObject({
+      message: rateLimitBucketMessages.windowMin,
+      path: ['windowSeconds'],
+      minimum: rateLimitBounds.windowSeconds.min,
+    })
   })
 
-  it('rejects non-integer values', () => {
+  it('rejects non-integer values with the typed id', () => {
     const result = rateLimitBucketSchema.safeParse({ windowSeconds: 300.5, maxAttempts: 5 })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0]?.message).toBe('时间窗口必须是整数秒')
+    expect(result.error?.issues[0]).toMatchObject({
+      message: rateLimitBucketMessages.windowInteger,
+      path: ['windowSeconds'],
+    })
   })
 })
 

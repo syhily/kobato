@@ -118,6 +118,13 @@ server or client boundary catch and log it.
   message ids and resolves them from the root loader's `i18n` payload via
   `matches`. The AST guard for hardcoded copy is
   `tests/_helpers/i18n-literals`.
+- `contracts/api-error` — the transport error contract both adapters and the
+  client share: `ErrorMessageDescriptor` (`messageKey`/`params`/`fallbackMessage`),
+  `ErrorIssueWire` (+ `code`/`path`), `ApiErrorData` (`{ descriptor, issues }`).
+  Producers state a typed id; the server translates per request. `utils/zod-issue-bounds`
+  extracts the `{min}`/`{max}` values a shared validation schema's issue carries so the
+  client can interpolate them (`useI18n().localizeMessage(value, params)`) and the server can
+  put them on the wire.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`,
   `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`,

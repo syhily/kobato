@@ -55,7 +55,7 @@ describe('pt/services/lexical-canonicalize — canonicalizeLexicalEditorState', 
     const { issues } = error as DomainError
     expect(Array.isArray(issues)).toBe(true)
     for (const issue of issues ?? []) {
-      expect(typeof issue.message).toBe('string')
+      expect('message' in issue && typeof issue.message === 'string').toBe(true)
       expect(issue.path === undefined || issue.path.every((segment) => typeof segment === 'string')).toBe(true)
     }
   })

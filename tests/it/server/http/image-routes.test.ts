@@ -108,7 +108,9 @@ describe('imagesRouter avatar', () => {
     }
     const res = await app.request('/images/avatar/abcdef0123456789.png')
     expect(res.status).toBe(429)
-    expect(await res.json()).toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
+    expect(await res.json()).toMatchObject({
+      error: { code: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试。' },
+    })
   })
 })
 

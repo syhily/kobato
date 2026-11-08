@@ -3,9 +3,13 @@ import { RPCHandler } from '@orpc/server/fetch'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import {
+  resetBlogSettingsForTests,
+  setBlogSettingsBundleForTests,
+  TEST_BLOG_SETTINGS_BUNDLE,
+} from '#/_helpers/blog-settings'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
-import { commentTokenCookie, passkeyGuard, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import { authedProc, commentTokenCookie, passkeyGuard, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie } from '@/shared/utils/comment-token'
@@ -169,27 +173,88 @@ const failingRouter = {
     .handler(() => {
       throw new DomainError('BAD_REQUEST', 'bad patch', [{ message: 'unknown key', path: ['seo'] }])
     }),
+  descriptorDomainError: publicProc
+    .route({ method: 'POST', path: '/fail/descriptor' })
+    .input(z.object({}))
+    .output(z.object({ ok: z.boolean() }))
+    .handler(() => {
+      throw new DomainError('NOT_FOUND', { messageKey: 'error.api.notFound', fallbackMessage: 'Resource not found.' })
+    }),
 }
 
 describe('domainErrorGuard translation', () => {
-  it('forwards ActionFailure status, message, issues, and headers', async () => {
+  it('forwards ActionFailure status, summarized message, and the descriptor data', async () => {
     const ctx = makePublicCtx()
     await expect(call(failingRouter.actionFailure, {}, { context: ctx })).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
       status: 429,
-      message: 'slow down',
-      data: [{ message: 'dup' }],
+      // The server folds the localized issue summary into the message.
+      message: 'slow down：dup',
+      data: {
+        descriptor: {
+          messageKey: 'error.api.rawMessage',
+          params: { message: 'slow down' },
+          fallbackMessage: 'slow down',
+        },
+        issues: [
+          {
+            messageKey: 'error.api.rawMessage',
+            params: { message: 'dup' },
+            fallbackMessage: 'dup',
+          },
+        ],
+      },
     })
     expect(ctx.responseHeaders.get('Retry-After')).toBe('30')
   })
 
-  it('keeps the DomainError code and forwards its issues', async () => {
+  it('keeps the DomainError code and carries descriptor + issue paths in data', async () => {
     const ctx = makePublicCtx()
     await expect(call(failingRouter.domainError, {}, { context: ctx })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
       status: 400,
-      message: 'bad patch',
-      data: [{ message: 'unknown key', path: ['seo'] }],
+      message: 'bad patch：seo：unknown key',
+      data: {
+        descriptor: { messageKey: 'error.api.rawMessage', fallbackMessage: 'bad patch' },
+        issues: [{ messageKey: 'error.api.rawMessage', fallbackMessage: 'unknown key', path: ['seo'] }],
+      },
+    })
+  })
+
+  it('translates a descriptor-based DomainError for the seeded locale', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
+    })
+    try {
+      const ctx = makePublicCtx()
+      await expect(call(failingRouter.descriptorDomainError, {}, { context: ctx })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+        status: 404,
+        message: 'Resource not found.',
+        data: { descriptor: { messageKey: 'error.api.notFound' } },
+      })
+    } finally {
+      resetBlogSettingsForTests()
+    }
+  })
+})
+
+// Middleware gates translate through the same server translator.
+const gateRouter = {
+  whoami: authedProc
+    .route({ method: 'POST', path: '/whoami' })
+    .input(z.object({}))
+    .handler(({ context }) => ({ id: context.viewer.id })),
+}
+
+describe('localized middleware gates', () => {
+  it('answers 401 with the localized message and its descriptor', async () => {
+    const ctx = makePublicCtx()
+    await expect(call(gateRouter.whoami, {}, { context: ctx })).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+      message: '需要登录后再操作。',
+      data: { descriptor: { messageKey: 'error.api.unauthorized' } },
     })
   })
 })

@@ -18,6 +18,7 @@ import type { SettingsSectionPatch } from '@/shared/config/types'
 
 import { getLogger } from '@/client/lib/logger'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { zodIssueBounds } from '@/shared/utils/zod-issue-bounds'
 import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 import { useI18n } from '@/ui/lib/I18nProvider'
@@ -176,11 +177,15 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   const { commit, isPending, status } = useSettingsMutation()
   const { localizeMessage, t } = useI18n()
   // Zod messages may be catalog ids (typed at the schema call site) or Zod's own
-  // default prose; translate the ids, leave the prose untouched. Runs BEFORE
-  // `buildZodErrors` so a raw id can never reach a field error.
+  // default prose; translate the ids, leave the prose untouched. Numeric bounds
+  // (`{min}` / `{max}`) ride along as ICU params. Runs BEFORE `buildZodErrors` so
+  // a raw id can never reach a field error.
   const localizeIssues = useCallback(
     <Issue extends { message: string }>(issues: Issue[]): Issue[] =>
-      issues.map((issue) => ({ ...issue, message: localizeMessage(issue.message) })),
+      issues.map((issue) => ({
+        ...issue,
+        message: localizeMessage(issue.message, zodIssueBounds(issue)),
+      })),
     [localizeMessage],
   )
   const { registerFlush } = useSettingsFlushContext()

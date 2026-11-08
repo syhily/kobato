@@ -159,7 +159,7 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, re
 
     const res = await app.request(`/admin/music/proxy/${route}?source=netease&sourceId=123`)
     expect(res.status).toBe(401)
-    expect(await res.json()).toEqual({ error: { message: '未登录' } })
+    expect(await res.json()).toMatchObject({ error: { code: 'UNAUTHORIZED', message: '未登录' } })
     expect(getProvider).not.toHaveBeenCalled()
   })
 
@@ -173,7 +173,7 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, re
 
     const res = await app.request(`/admin/music/proxy/${route}?source=netease&sourceId=123`)
     expect(res.status).toBe(403)
-    expect(await res.json()).toEqual({ error: { message: '权限不足' } })
+    expect(await res.json()).toMatchObject({ error: { code: 'FORBIDDEN', message: '权限不足' } })
     expect(getProvider).not.toHaveBeenCalled()
   })
 })

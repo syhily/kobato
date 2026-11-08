@@ -42,9 +42,17 @@ function isIssueLike(value: unknown): value is IssueLike {
   return value.path === undefined || Array.isArray(value.path)
 }
 
-/** Format an ORPCError `data` zod-issue list (`[{ message, path }]`) as one readable line. */
+/** The descriptor-based `data` payload (`{descriptor, issues?}`) — the server already folded its summary. */
+function isDescriptorData(value: unknown): boolean {
+  return isRecord(value) && 'descriptor' in value
+}
+
+/** Format a LEGACY ORPCError `data` zod-issue list (`[{ message, path }]`) as one readable line. */
 export function formatApiErrorIssues(error: unknown): string | undefined {
-  if (!isRecord(error) || !isUnknownArray(error.data)) {
+  if (!isRecord(error) || isDescriptorData(error.data)) {
+    return undefined
+  }
+  if (!isUnknownArray(error.data)) {
     return undefined
   }
   const issues = error.data.filter(isIssueLike)
@@ -62,7 +70,12 @@ export function formatApiErrorIssues(error: unknown): string | undefined {
 /** Fold the zod-issue detail into an Error's message in place, so every
  *  downstream consumer (toasts, error views, logs) names the failing field
  *  instead of showing a bare "设置数据无效". Applied once per rejection by
- *  the oRPC link interceptor (`@/client/api/client`). */
+ *  the oRPC link interceptor (`@/client/api/client`).
+ *
+ *  Descriptor-based responses are skipped: the server already localized the
+ *  top-level message and folded the issue summary into it, so re-appending the
+ *  (now structured) issues would duplicate the text and leak keys. Bare-array
+ *  `data` (oRPC's own validation errors, legacy servers) keeps the old path. */
 export function enrichApiErrorMessage(error: unknown): void {
   if (!(error instanceof Error)) {
     return
