@@ -105,7 +105,7 @@ server or client boundary catch and log it.
   `article:section`), `app-localization` (`resolveAppLocalization` — the single
   locale + site-time-zone resolver — plus `createLazyAppLocalization`, the
   per-request memo the request context projects), and `feature-flags`
-  (`I18N_SETTINGS_ENABLED`). `format` is the ONE display-formatting facade
+  (`I18N_SETTINGS_ENABLED` — released ON: the General language selector). `format` is the ONE display-formatting facade
   (dates in an explicit locale + site zone, numbers, byte sizes, durations,
   relative time, DisplayNames, collation) — UI code never calls `toLocale*`,
   `Intl.*` formatters or date-fns relative formatting directly, and

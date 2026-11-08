@@ -102,6 +102,33 @@ const CASES: Case[] = [
     },
   },
   {
+    key: 'update.error.repositoryInvalid',
+    messages: {
+      'en-US': 'The configured GitHub repository is invalid',
+      'zh-CN': '配置的 GitHub 仓库格式无效',
+      'zh-TW': '設定的 GitHub 儲存庫格式無效',
+      'zh-HK': '設定的 GitHub 儲存庫格式無效',
+    },
+  },
+  {
+    key: 'update.error.releaseFetchFailed',
+    messages: {
+      'en-US': 'Could not fetch the latest release from GitHub. Please try again later.',
+      'zh-CN': '无法从 GitHub 获取最新版本，请稍后再试。',
+      'zh-TW': '無法從 GitHub 取得最新版本，請稍後再試。',
+      'zh-HK': '無法從 GitHub 取得最新版本，請稍後再試。',
+    },
+  },
+  {
+    key: 'update.error.releaseInvalidResponse',
+    messages: {
+      'en-US': 'GitHub returned an unexpected release response',
+      'zh-CN': 'GitHub 返回了无法识别的版本信息',
+      'zh-TW': 'GitHub 傳回了無法辨識的版本資訊',
+      'zh-HK': 'GitHub 傳回了無法辨識的版本資訊',
+    },
+  },
+  {
     key: 'update.error.sidecarInvalid',
     messages: {
       'en-US': 'The update checksum file is malformed',

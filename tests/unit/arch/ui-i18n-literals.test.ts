@@ -20,210 +20,10 @@ import {
   type ScanAllowlistEntry,
 } from '#/_helpers/i18n-literals'
 
-const SCAN_ROOTS = [
-  // The i18n foundation.
-  'src/shared/i18n',
-  'src/server/infra/i18n.ts',
-  // Step 3: common/auth/public surfaces.
-  'src/ui/public',
-  'src/ui/admin/auth',
-  'src/routes/public',
-  'src/routes/auth',
-  // Step 4b: the migrated formatting + registry modules (no JSX copy lives in
-  // these files, so the formatting rules — locale-less `toLocale*`, bare locale
-  // literals — are enforced cleanly here).
-  'src/shared/config/display.ts',
-  'src/shared/cache/registry.ts',
-  'src/shared/types/cache.ts',
-  'src/shared/utils/roles.ts',
-  'src/shared/utils/formatter.ts',
-  'src/ui/admin/analytics/time-labels.ts',
-  'src/ui/admin/editor-shell/wall-clock.ts',
-  'src/ui/admin/settings/cache/cache-formatters.ts',
-  'src/ui/admin/tasks/meta.ts',
-  'src/ui/shared/notifications/notification-meta.ts',
-  // Step 4d: the admin shell, settings surface and the shared UI primitives.
-  'src/ui/admin/shell',
-  'src/ui/admin/settings',
-  'src/routes/admin/settings',
-  'src/routes/admin/layout.tsx',
-  'src/ui/components',
-  // Step 4e: the business admin surface, the notifications drawer and the
-  // remaining user-facing client modules (the editor family is 4f).
-  'src/routes/admin',
-  'src/ui/admin/analytics',
-  'src/ui/admin/audit',
-  'src/ui/admin/categories',
-  'src/ui/admin/comments',
-  'src/ui/admin/dashboard',
-  'src/ui/admin/fonts',
-  'src/ui/admin/friends',
-  'src/ui/admin/images',
-  'src/ui/admin/library',
-  'src/ui/admin/musics',
-  'src/ui/admin/my',
-  'src/ui/admin/pages',
-  'src/ui/admin/posts',
-  'src/ui/admin/sessions',
-  'src/ui/admin/shared',
-  'src/ui/admin/tags',
-  'src/ui/admin/tasks',
-  'src/ui/admin/users',
-  'src/ui/admin/webmentions',
-  'src/ui/admin/welcome',
-  'src/ui/shared',
-  'src/client/hooks',
-  'src/client/lib',
-  'src/client/components',
-  'src/client/api',
-  // Step 4f: the editor slices — routes, the admin editor families and the
-  // client host glue. The six post/page integration files are already covered
-  // by the `src/ui/admin/posts` / `src/ui/admin/pages` roots above.
-  'src/routes/editor',
-  'src/ui/admin/editor',
-  'src/ui/admin/editor-shell',
-  'src/ui/admin/editor-shared',
-  'src/client/editor',
-  // Step 5a: the server error protocol — producers state typed descriptors and
-  // the Hono/oRPC boundaries translate them; no raw DomainError copy may creep
-  // back into these modules.
-  'src/server/infra/http/errors.ts',
-  'src/server/infra/http/error-descriptor.ts',
-  'src/server/http/errors.ts',
-  'src/server/http/orpc-base.ts',
-  'src/server/http/translate-domain-error.ts',
-  // Step 5a-ii: the remaining auth flows, the Hono perimeter middlewares and
-  // the settings validation boundaries migrated to typed descriptors.
-  'src/server/domains/auth/services',
-  'src/server/domains/auth/passkey',
-  'src/server/domains/auth/session-guard.ts',
-  'src/server/domains/auth/schema.ts',
-  'src/server/domains/settings/sections/assets.ts',
-  'src/server/domains/settings/sections/security.ts',
-  'src/server/domains/settings/services/section-patch.ts',
-  'src/server/domains/settings/services/core.ts',
-  'src/server/http/middlewares',
-  'src/server/http/localized-http-exception.ts',
-  'src/server/http/controllers/account.controller.ts',
-  'src/server/http/controllers/admin/users-sessions.controller.ts',
-  'src/server/http/controllers/admin/settings.controller.ts',
-  // Step 5a-iii: settings sections, taxonomies, the content lifecycle and the
-  // posts/pages controllers (entity nouns are machine kinds → ICU select).
-  'src/server/domains/settings/sections',
-  'src/server/domains/taxonomies',
-  'src/server/domains/content',
-  'src/server/domains/posts',
-  'src/server/domains/pages',
-  'src/server/domains/pt/services/lexical-canonicalize.ts',
-  'src/server/infra/slug/resolve.ts',
-  'src/server/infra/slug/reservation.ts',
-  'src/server/http/controllers/admin/posts.controller.ts',
-  'src/server/http/controllers/admin/pages.controller.ts',
-  'src/server/http/controllers/admin/categories.controller.ts',
-  'src/server/http/controllers/admin/tags.controller.ts',
-  'src/server/http/controllers/admin/revision-router.ts',
-  // Step 5a-iii: comments + webmentions (email templates stay server-catalog
-  // work; user comment bodies/source HTML/fetch errors stay raw by design).
-  'src/server/domains/comments',
-  'src/server/domains/webmentions',
-  'src/server/http/controllers/comments-public.controller.ts',
-  'src/server/http/controllers/comments-authed.controller.ts',
-  'src/server/http/controllers/admin/comments.controller.ts',
-  'src/server/http/controllers/admin/webmentions.controller.ts',
-  'src/server/http/controllers/webmention-public.controller.ts',
-  // Step 5a-iii: backup/restore validation + the password flow.
-  'src/server/domains/backup',
-  'src/server/http/resources/backup.ts',
-  'src/server/http/controllers/admin/backup.controller.ts',
-  // Step 5a-iv: the remaining asset/storage domains — S3 migration + redirect,
-  // image uploads/key policy + the worker wire, music providers/write, font
-  // services/uploads/resources and branding/maxmind uploads.
-  'src/server/domains/storage',
-  'src/server/domains/images',
-  'src/server/domains/assets',
-  'src/server/domains/music',
-  'src/server/domains/fonts',
-  'src/server/infra/storage',
-  'src/server/infra/image',
-  'src/server/http/resources/admin-upload-route.ts',
-  'src/server/http/resources/assets.ts',
-  'src/server/http/resources/branding.ts',
-  'src/server/http/resources/fonts.ts',
-  'src/server/http/resources/fonts-embedded.ts',
-  'src/server/http/resources/fonts-package.ts',
-  'src/server/http/resources/local-storage.ts',
-  'src/server/http/resources/maxmind.ts',
-  'src/server/http/resources/music-proxy.ts',
-  'src/server/http/resources/serve-local-file.ts',
-  'src/server/http/resources/storage-redirect.ts',
-  'src/server/http/controllers/image.controller.ts',
-  'src/server/http/controllers/music.controller.ts',
-  'src/server/http/controllers/admin/fonts.controller.ts',
-  'src/server/http/controllers/admin/images.controller.ts',
-  'src/server/http/controllers/admin/music.controller.ts',
-  'src/server/http/controllers/admin/storage.controller.ts',
-  // Step 5a-iv: the remaining user/feature domains — users/account, friends,
-  // newsletter validation, notification service validation, update job state,
-  // likes, audit and the server-rendered search title.
-  'src/server/domains/users',
-  'src/server/domains/friends/service.ts',
-  'src/server/domains/friends/schema.ts',
-  'src/server/domains/newsletter/service.ts',
-  'src/server/domains/newsletter/schema.ts',
-  'src/server/domains/notifications/service.ts',
-  'src/server/domains/update/service.ts',
-  'src/server/domains/update/job.ts',
-  'src/server/http/controllers/likes.controller.ts',
-  'src/server/http/controllers/passkey-public.controller.ts',
-  'src/server/http/controllers/newsletter-public.controller.ts',
-  'src/server/http/controllers/friends-public.controller.ts',
-  'src/server/http/controllers/notifications.controller.ts',
-  'src/server/http/controllers/admin/users-admin.controller.ts',
-  'src/server/http/controllers/admin/users-crud.controller.ts',
-  'src/server/http/controllers/admin/friends.controller.ts',
-  'src/server/http/controllers/admin/audit.controller.ts',
-  'src/server/http/controllers/admin/notifications.controller.ts',
-  'src/server/http/controllers/admin/update.controller.ts',
-  'src/server/http/loaders/search.ts',
-  'src/server/infra/scheduler-utils.ts',
-  // Step 5a-v: the last user-facing raw groups — GeoIP remote updates, the
-  // self-update pipeline's failure copy, and the shared http(s)-URL rule
-  // (which states a typed id, never prose).
-  'src/server/domains/analytics/geoip-update.ts',
-  'src/server/domains/update/pipeline.ts',
-  'src/shared/utils/safe-url.ts',
-  // Step 5b-i: every system email template/sender (server catalog copy only;
-  // user-authored bodies, titles and site names stay raw).
-  'src/server/infra/email',
-  'src/server/domains/comments/services/email.ts',
-  'src/server/domains/webmentions/email.ts',
-  'src/server/domains/friends/email.ts',
-  'src/server/domains/newsletter/email.ts',
-  'src/server/domains/notifications/email.ts',
-  'src/server/http/controllers/admin/mail.controller.ts',
-  'scripts/generate-emails.ts',
-  // Step 5b-ii: persisted system-notification descriptors + their producers.
-  // Message copy lives in the server catalog; user-authored titles/bodies stay raw.
-  'src/server/domains/notifications',
-  'src/server/bootstrap/db-lifecycle.ts',
-  'src/server/domains/settings/services/zeabur-mail-cleanup.ts',
-  // Step 5c: feed/calendar/manifest representations, locale font chains and the
-  // composition-root cache invalidation.
-  'src/server/render/feed/generator.tsx',
-  'src/server/render/calendar/render.ts',
-  'src/server/render/calendar/locale.ts',
-  'src/server/render/calendar/daily-quote.ts',
-  'src/server/render/warmup/content-cache.ts',
-  'src/server/http/resources/feed.ts',
-  'src/server/http/resources/calendar.ts',
-  'src/server/http/resources/images.ts',
-  'src/server/http/resources/assets.ts',
-  'src/server/http/middleware-pipeline.ts',
-  'src/server/infra/cache/admin-ops.ts',
-  'src/shared/config/font-stacks.ts',
-  'src/entry.server.tsx',
-  'src/root.tsx',
-] as const
+// Step 6b: the WHOLE production source tree — one root. Slice-by-slice roots
+// are gone; an allowlist entry is now the only way to skip a finding, and it
+// must name the exact file, rule and (usually) snippet with a written reason.
+const SCAN_ROOTS = ['src'] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   // The locale module names every supported tag and alias by design — it IS
@@ -302,6 +102,23 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     rules: ['domain-error'],
     text: 'Category and tag cannot be specified at the same time',
   },
+  // Step 6b — full-tree scan findings. Inkling is a self-contained editor
+  // layer: its translatable chrome arrives through the label tables, and these
+  // are either glyphs or third-party protocol values.
+  { path: 'src/inkling/components/ui/LibrarySelector.tsx', rules: ['jsx-text'], text: '×' },
+  { path: 'src/inkling/nodes/FootnoteDefinitionNodeComponent.tsx', rules: ['jsx-text'], text: '×' },
+  // Editorial placeholder marker (TK = "to come") — a convention, not copy.
+  { path: 'src/inkling/plugins/TKPlugin.tsx', rules: ['jsx-text'], text: 'TK' },
+  // emoji-mart's own locale id (third-party picker data), never rendered as copy.
+  { path: 'src/inkling/components/ui/EmojiPickerPortal.tsx', rules: ['hardcoded-locale'], text: 'en' },
+  // Developer invariants: these DomainError literals guard internal call
+  // contracts (a caller passed no role / a projection shape drifted) and never
+  // reach a reader.
+  { path: 'src/server/domains/auth/primitives.ts', rules: ['domain-error'] },
+  { path: 'src/server/domains/settings/services/admin-projection.ts', rules: ['domain-error'] },
+  // Transliteration table data: single letters ('Zh', 'zh', 'en', …) are
+  // slug-mapping values, not locale choices or copy.
+  { path: 'src/shared/slug-char-map.ts', rules: ['hardcoded-locale'] },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -359,6 +176,14 @@ describe('production sources', () => {
         'src/server/render/calendar/locale.ts',
         'src/shared/config/font-stacks.ts',
         'src/server/render/feed/generator.tsx',
+        // Step 6b full-tree findings.
+        'src/inkling/components/ui/LibrarySelector.tsx',
+        'src/inkling/nodes/FootnoteDefinitionNodeComponent.tsx',
+        'src/inkling/plugins/TKPlugin.tsx',
+        'src/inkling/components/ui/EmojiPickerPortal.tsx',
+        'src/server/domains/auth/primitives.ts',
+        'src/server/domains/settings/services/admin-projection.ts',
+        'src/shared/slug-char-map.ts',
       ]),
     )
   })
@@ -489,7 +314,6 @@ describe('production sources', () => {
         'src/server/domains/newsletter/email.ts',
         'src/server/domains/notifications/email.ts',
         'src/server/domains/webmentions/email.ts',
-        'scripts/generate-emails.ts',
         // Step 5b-ii slice: the notification descriptor resolver + producers.
         'src/server/domains/notifications/message.ts',
         'src/server/domains/notifications/email.ts',

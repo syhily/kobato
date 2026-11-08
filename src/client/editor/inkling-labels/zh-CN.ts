@@ -156,6 +156,7 @@ export const kobatoInklingLabelsZhCN = {
   'color.image': '图片',
   'header.backgroundSize.contain': '完整显示',
   'header.backgroundSize.cover': '铺满',
+  'image.altToggle': '替代',
   'alt.audioThumbnail': '音频缩略图',
   'alt.videoThumbnail': '视频缩略图',
   'alt.videoCustomThumbnail': '视频自定义缩略图',

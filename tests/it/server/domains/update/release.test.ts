@@ -72,7 +72,9 @@ describe('update/release — fetchLatestRelease cache', () => {
     mockFetch.enqueue(RELEASE_URL, new Response('not found', { status: 404 }))
     mockFetch.enqueue(RELEASE_URL, releasePayload('v6.5.0'))
 
-    await expect(fetchLatestRelease(db)).rejects.toThrow('Failed to fetch release')
+    await expect(fetchLatestRelease(db)).rejects.toMatchObject({
+      descriptor: { messageKey: 'update.error.releaseFetchFailed' },
+    })
     expect(await db.select().from(kvCache).where(eq(kvCache.key, CACHE_KEY))).toHaveLength(0)
 
     const retry = await fetchLatestRelease(db)

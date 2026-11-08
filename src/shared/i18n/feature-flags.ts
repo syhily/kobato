@@ -1,7 +1,8 @@
 /**
- * Release switch for the General settings 语言 selector. It stays `false` until
- * every i18n surface, cache dimension and e2e journey has shipped: flipping it
- * on is the last step, so no half-localized build ever reaches a user's admin.
- * Source-level on purpose — this is not runtime configuration.
+ * Release switch for the General settings language selector. It is ON: every
+ * i18n surface, cache dimension and settings flow has shipped, so the admin can
+ * switch the site language. Kept as a named constant (source-level, not runtime
+ * configuration) so the surface can be gated again by a build if a regression
+ * demands it.
  */
-export const I18N_SETTINGS_ENABLED = false
+export const I18N_SETTINGS_ENABLED = true

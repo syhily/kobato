@@ -2822,4 +2822,7 @@ export const uiMessagesZhTW = {
   'admin.settings.comments.avatar.mirrorPreset.w3tt': 'w3tt（gravatar.w3tt.com）',
   'admin.settings.comments.avatar.mirrorPreset.sevenCdn': 'SevenCDN（use.sevencdn.com）',
   'admin.cache.error.unknownGroup': '未知的快取分組：{target}',
+  'update.error.repositoryInvalid': '設定的 GitHub 儲存庫格式無效',
+  'update.error.releaseFetchFailed': '無法從 GitHub 取得最新版本，請稍後再試。',
+  'update.error.releaseInvalidResponse': 'GitHub 傳回了無法辨識的版本資訊',
 } satisfies UiMessages

@@ -155,6 +155,7 @@ export const kobatoInklingLabelsZhHK = {
   'color.image': '圖片',
   'header.backgroundSize.contain': '完整顯示',
   'header.backgroundSize.cover': '填滿',
+  'image.altToggle': '替代',
   'alt.audioThumbnail': '音訊縮圖',
   'alt.videoThumbnail': '影片縮圖',
   'alt.videoCustomThumbnail': '影片自訂縮圖',

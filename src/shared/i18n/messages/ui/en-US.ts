@@ -2963,6 +2963,9 @@ export const uiMessagesEnUS = {
   'admin.settings.comments.avatar.mirrorPreset.w3tt': 'w3tt (gravatar.w3tt.com)',
   'admin.settings.comments.avatar.mirrorPreset.sevenCdn': 'SevenCDN (use.sevencdn.com)',
   'admin.cache.error.unknownGroup': 'Unknown cache group: {target}',
+  'update.error.repositoryInvalid': 'The configured GitHub repository is invalid',
+  'update.error.releaseFetchFailed': 'Could not fetch the latest release from GitHub. Please try again later.',
+  'update.error.releaseInvalidResponse': 'GitHub returned an unexpected release response',
 } as const
 
 export type UiMessageId = keyof typeof uiMessagesEnUS

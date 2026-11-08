@@ -17,6 +17,8 @@ Framework-level flushes (close, ESC, scroll-away, page hide) call every register
 
 `SettingsSelect` / `SettingsCombobox` AWAIT an async `onValueChange` before `save(name)` — a guard that vetoes the change must not commit anything.
 
+The language selector is released (`I18N_SETTINGS_ENABLED = true`), so this flow is what every admin sees; a new general card must register through `useSettingsCard` (the flush registry) or the switch would reload with its unsaved edits.
+
 ## Adding a settings card
 
 1. Use `useSettingsCard()` — destructure `flushOnBlur` for text inputs, `save` for switches/selects.

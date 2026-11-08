@@ -14,8 +14,6 @@ import { SettingsFlushProvider } from '@/ui/admin/settings/shell/SettingsFlushPr
 // cards + flush provider: dirty cards first, then the locale field, then one
 // reload — and nothing at all when any step fails.
 
-vi.mock('@/shared/i18n/feature-flags', () => ({ I18N_SETTINGS_ENABLED: true }))
-
 const commit = vi.hoisted(() => vi.fn())
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), warning: vi.fn(), success: vi.fn() }))
 

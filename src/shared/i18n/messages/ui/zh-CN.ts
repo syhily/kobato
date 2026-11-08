@@ -2818,4 +2818,7 @@ export const uiMessagesZhCN = {
   'admin.settings.comments.avatar.mirrorPreset.w3tt': 'w3tt（gravatar.w3tt.com）',
   'admin.settings.comments.avatar.mirrorPreset.sevenCdn': 'SevenCDN（use.sevencdn.com）',
   'admin.cache.error.unknownGroup': '未知的缓存分组：{target}',
+  'update.error.repositoryInvalid': '配置的 GitHub 仓库格式无效',
+  'update.error.releaseFetchFailed': '无法从 GitHub 获取最新版本，请稍后再试。',
+  'update.error.releaseInvalidResponse': 'GitHub 返回了无法识别的版本信息',
 } satisfies UiMessages

@@ -4,6 +4,7 @@
 import type { Database } from '@/server/infra/db/database'
 
 import { through } from '@/server/infra/cache/registry'
+import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { APP_REPOSITORY } from '@/shared/config/version'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -40,7 +41,7 @@ function isGitHubRelease(
 export async function fetchLatestRelease(db: Database): Promise<LatestRelease> {
   const parsed = parseRepo(APP_REPOSITORY)
   if (!parsed) {
-    throw new DomainError('INTERNAL', 'Invalid repository format')
+    throw new DomainError('INTERNAL', descriptorFor('update.error.repositoryInvalid'))
   }
   const { owner, repo } = parsed
   // Read-through the short-TTL bucket; failed fetches are never cached.
@@ -49,11 +50,11 @@ export async function fetchLatestRelease(db: Database): Promise<LatestRelease> {
       signal: AbortSignal.timeout(30_000),
     })
     if (!res.ok) {
-      throw new DomainError('INTERNAL', 'Failed to fetch release')
+      throw new DomainError('INTERNAL', descriptorFor('update.error.releaseFetchFailed'))
     }
     const json: unknown = await res.json()
     if (!isGitHubRelease(json)) {
-      throw new DomainError('INTERNAL', 'Unexpected response format from GitHub API')
+      throw new DomainError('INTERNAL', descriptorFor('update.error.releaseInvalidResponse'))
     }
     return {
       tagName: json.tag_name,

@@ -11,6 +11,7 @@ import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@/server/domains/settings/secti
 import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { descriptorFor, messageDescriptor } from '@/server/infra/http/error-descriptor'
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface InstallSeedInput {
@@ -43,7 +44,7 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
     website: `https://${hostname}`,
     keywords: [],
     author: { name, email, url: `https://${hostname}` },
-    locale: 'zh-CN',
+    locale: DEFAULT_LOCALE,
     timeZone: 'Asia/Shanghai',
     // Follow the locale's Intl default; admins may pin a custom token pattern later.
     timeFormat: null,

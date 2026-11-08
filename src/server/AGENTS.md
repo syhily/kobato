@@ -146,7 +146,7 @@ The shared `loaders/*` helpers are the orchestration layer the content controlle
 
 ## render/
 
-SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `pretext-layout.ts` (canvas text line-breaking via `@chenglou/pretext` — kinsoku-aware wrapping + measured ellipsis for `og/` and `calendar/`; its `OffscreenCanvas` global is shimmed onto @napi-rs/canvas), `analytics/`, `warmup/`. Never persists — produces strings, Buffers, or Responses. Caching is the caller's responsibility. The feed generator renders each entry's saved `bodyHtmlFeed` projection (`domains/content/services/body-html.ts::resolveBodyHtmlFeed`, NULL → on-the-fly headless projection) through the `sanitizeFeedHtml` allowlist.
+SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `pretext-layout.ts` (canvas text line-breaking via `@chenglou/pretext` — kinsoku-aware wrapping + measured ellipsis for `og/` and `calendar/`; its `OffscreenCanvas` global is shimmed onto @napi-rs/canvas), `analytics/`, `warmup/`. Never persists — produces strings, Buffers, or Responses. Caching is the caller's responsibility, but the localized products carry two invariants: the `feed` and `calendar` cache keys include the request locale + `APP_VERSION` (`locale:version:content`), and their HTTP resources (feed, calendar, manifest) answer `Cache-Control: public, no-cache` with a byte-derived ETag + `Content-Language`; the `general` settings section change handler clears both buckets (every locale variant), never a counter. The feed generator renders each entry's saved `bodyHtmlFeed` projection (`domains/content/services/body-html.ts::resolveBodyHtmlFeed`, NULL → on-the-fly headless projection) through the `sanitizeFeedHtml` allowlist.
 
 ### Route module prewarming
 

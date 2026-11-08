@@ -171,6 +171,7 @@ export const kobatoInklingLabelsEnUS = {
   'color.image': DEFAULT_LABELS['color.image'],
   'header.backgroundSize.contain': DEFAULT_LABELS['header.backgroundSize.contain'],
   'header.backgroundSize.cover': DEFAULT_LABELS['header.backgroundSize.cover'],
+  'image.altToggle': DEFAULT_LABELS['image.altToggle'],
   'alt.audioThumbnail': DEFAULT_LABELS['alt.audioThumbnail'],
   'alt.videoThumbnail': DEFAULT_LABELS['alt.videoThumbnail'],
   'alt.videoCustomThumbnail': DEFAULT_LABELS['alt.videoCustomThumbnail'],

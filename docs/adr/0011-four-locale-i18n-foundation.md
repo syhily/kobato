@@ -2,7 +2,8 @@
 
 - Status: accepted
 - Date: 2026-11-08
-- Basis: commit `7c9d8c9c`; plan 001 (`plans/001-i18n-support.md`), Step 1
+- Basis: commit `7c9d8c9c`; plan 001 (`plans/001-i18n-support.md`); released through
+  Step 6b (commit `d54c1d4d` + the Step 6 slices)
 
 ## Context
 
@@ -88,16 +89,21 @@ payload (`i18nFromMatches`), never from the server settings snapshot or a
 server translator; raw content titles stay raw strings. `og:locale` maps
 through `toOpenGraphLocale`, and a page's `article:section` is catalog copy.
 
-**Release flag.** `I18N_SETTINGS_ENABLED` (source-level, `false`) hides the
-General locale selector until every surface, cache dimension and e2e journey
-ships. Locale writes are already constrained to the closed set, so the flag
-gates _exposure_, not correctness.
+**Release flag.** `I18N_SETTINGS_ENABLED` is now `true`: the General settings
+card exposes the language selector to every admin. Locale writes were always
+constrained to the closed set, so the switch is a UI exposure, not a data
+migration; changing the language reloads the page once every dirty settings
+card has been saved (see the flush flow under Consequences).
 
 **A scanner, not a grep.** `tests/_helpers/i18n-literals.ts` walks the AST for
 JSX text, `aria-label`/`placeholder`/`title`/`alt`, `titleMeta()` arguments,
 toast and `DomainError` copy, locale-less `toLocale*()` calls and hardcoded
-locale literals. Its allowlist is exact — file, rule, optional snippet — and
-scan roots grow with each migration slice rather than switching on all at once.
+locale literals. Its final scope is the **whole production tree** (`src/**`, one
+root). The allowlist is exact — file, rule and (where applicable) snippet, each
+with a written reason; it covers only non-copy data and protocol values
+(locale identity tables, the pinyin transliteration map, inkling glyphs and the
+emoji-mart locale id, developer invariants, third-party/widget protocol
+parameters).
 
 ## Consequences
 
@@ -119,10 +125,40 @@ scan roots grow with each migration slice rather than switching on all at once.
 - The follow-the-locale default is a **visible change for fresh installs only**
   (`2026-11-08 14:30` → `2026/11/8 14:30` under `zh-CN`); upgraded installs are
   untouched by construction.
-- Formatting surfaces beyond `formatLocalDate` (relative time, numbers,
-  DisplayNames, DayPicker), the error/notification contracts and HTTP cache
-  dimensions are deliberately left to their own slices — this ADR fixes the
-  foundation, not the migration.
+- **Errors are translated server-side.** Production code throws `DomainError` /
+  `ActionFailure` with an `ErrorMessageDescriptor` (`{ messageKey, params,
+  fallbackMessage }`); the Hono/oRPC boundaries translate the top-level message
+  and every issue per request locale, and `ORPCError.data` / the Hono JSON body
+  carry the same descriptor. Raw strings survive only as the documented
+  passthrough for un-migrated technical output.
+- **Notifications persist a descriptor.** A system (`admin`-kind) notification
+  stores its creation-time English fallback plus nullable
+  `title_key`/`title_params` and `body_key`/`body_params`; inbox, thread and the
+  notification email resolve the same message through
+  `domains/notifications/message.ts` with the reader/send locale and fall back
+  to the stored text (one logged warning per key) when a key disappears.
+  `direct`/`broadcast` rows keep the user's original text and no descriptor.
+  `notification.*` keys are append-only.
+- **Feed, calendar and manifest are revalidated representations.** Their cache
+  entries are keyed by `locale:APP_VERSION:<content key>` (the calendar also
+  keeps the theme variant), and their HTTP responses are
+  `Cache-Control: public, no-cache` with an ETag computed over the exact served
+  bytes. A conditional request gets a `304` with the current
+  `Content-Language`/`ETag`, never a stale language. Saving the General section
+  clears the whole `feed` and `calendar` buckets (all locale variants) through
+  the existing `clear(db, bucket)` seam — no generation counters.
+- **The locale switch is a flushed, ordered flow.** The General language
+  Select is the one control that does not save immediately: its upstream
+  handler awaits `flushAllAndWait()` (every registered settings card reports a
+  boolean "clean" result), only then commits `field.onChange(newLocale)` and
+  `save('locale')`, and reloads exactly once when the stored locale actually
+  changed. A failed validation/commit vetoes the switch, preserves the dirty
+  input and never reloads; per-card saves are serialized so a stale response
+  cannot advance a newer baseline.
+- **Calendar and fonts follow the locale.** Month/weekday/lunar/宜 labels come
+  from hand-reviewed static tables (`render/calendar/locale.ts`; en-US renders
+  neither lunar nor 宜), and the default font chains branch through CSS
+  `:lang()` with the same map root.tsx prepends custom families to.
 
 ## Alternatives considered
 

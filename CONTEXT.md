@@ -177,6 +177,16 @@ date + short time, in the site time zone); a string is the admin's custom token
 pattern, substituted token-by-token and never handed to date-fns.
 _Avoid_: default date format (there is no separate default — `null` IS it)
 
+**Locale switch**:
+The General settings language flow, the one control that does not save
+immediately: await `flushAllAndWait()` over every dirty settings card → only
+when all report clean, commit `field.onChange(newLocale)` and
+`save('locale')` → reload exactly once when the stored locale actually
+changed. A failed flush/commit vetoes the switch, keeps the unsaved input
+(the panel flush never rolls back a validation failure) and never reloads.
+_Avoid_: saving the locale first (or with dirty cards outstanding), reloading
+on a commit failure, treating a per-field save as "the whole card is clean"
+
 ### Cache
 
 **Cache declaration**:
@@ -190,6 +200,16 @@ and write policy, and every consumer goes through its verbs (`through`,
 through `kv-store` directly.
 _Avoid_: hand-rolled cache-aside at call sites, ad-hoc key strings
 outside the behavior plane
+
+**Locale representation**:
+Localized server output whose cache key includes the reader dimension: the
+`feed` and `calendar` buckets key on `locale:APP_VERSION:<content key>` (the
+calendar adds the theme), and their HTTP responses (plus `manifest.webmanifest`)
+are `Cache-Control: public, no-cache` with a strong ETag over the exact served
+bytes, so a language switch can never be served from a stale representation.
+Saving the General section clears both buckets entirely — no counter.
+_Avoid_: locale-less feed/calendar keys, `max-age` on localized
+representations, generation counters for those buckets
 
 **Content invalidation**:
 One door — `invalidateContent(db, event)` in
