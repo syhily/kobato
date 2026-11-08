@@ -23,7 +23,6 @@ export default defineConfig({
   },
   // Keep @types/node within the current major line (26.x).
   packageMode: {
-    '@duckdb/node-api': 'next',
     '@types/node': 'minor',
     'drizzle-kit': 'next',
     'drizzle-orm': 'next',

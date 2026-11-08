@@ -55,7 +55,7 @@ describe('ui/public/post/TableOfContents — hydration contract', () => {
 
     document.body.innerHTML = `<div id="probe-root">${html}</div>`
     const errors: unknown[] = []
-    hydrateRoot(
+    const root = hydrateRoot(
       document.getElementById('probe-root')!,
       wrapWithI18n(<TableOfContents headings={headings} toc="enabled" />),
       {
@@ -64,6 +64,13 @@ describe('ui/public/post/TableOfContents — hydration contract', () => {
     )
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    expect(errors.map((e) => (e instanceof Error ? e.message : String(e)))).toEqual([])
+    try {
+      expect(errors.map((e) => (e instanceof Error ? e.message : String(e)))).toEqual([])
+    } finally {
+      // Unmount before the file's happy-dom env is torn down: without it the
+      // React scheduler can fire post-teardown work into a dead `window`
+      // ("window is not defined" as an unhandled error in the full run).
+      root.unmount()
+    }
   })
 })

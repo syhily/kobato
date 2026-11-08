@@ -28,6 +28,16 @@ export function resolveAnalyticsPath(): string {
   return resolveStoragePath(serverConfig.storage.analyticsDatabase, 'analytics.duckdb')
 }
 
+/**
+ * Newly created files stay on the DuckDB 1.5.x storage format so a
+ * `kobato rollback` to a pre-2.0 binary can still open the sidecar —
+ * 2.0's default format is unreadable by every earlier release, and the
+ * sidecar uses no 2.0-only storage feature. Existing files keep the
+ * version they were created with either way. Revisit when the oldest
+ * rollback target ships DuckDB 2.0.
+ */
+const STORAGE_COMPATIBILITY_VERSION = 'v1.5.6'
+
 /** Open the sidecar and apply the caller's DDL statements (idempotent — a
  *  missing file is created empty). DDL is injected: infra owns no analytics schema. */
 export async function openAnalyticsDatabase(analyticsPath: string, ddl: string | string[]): Promise<AnalyticsHandle> {
@@ -36,7 +46,9 @@ export async function openAnalyticsDatabase(analyticsPath: string, ddl: string |
   if (!inMemory) {
     mkdirSync(path.dirname(analyticsPath), { recursive: true })
   }
-  const instance = inMemory ? await DuckDBInstance.create() : await DuckDBInstance.create(analyticsPath)
+  const instance = inMemory
+    ? await DuckDBInstance.create()
+    : await DuckDBInstance.create(analyticsPath, { storage_compatibility_version: STORAGE_COMPATIBILITY_VERSION })
   const writer = await instance.connect()
   const reader = await instance.connect()
   for (const statement of typeof ddl === 'string' ? [ddl] : ddl) {

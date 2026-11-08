@@ -17,11 +17,13 @@
 // `<pre><code class="language-inkling:*">` and imports as a code block card
 // whose language is the fence tag (pinned in
 // test/unit/plugins/MarkdownPastePlugin.test.tsx, "paste dialect coverage").
-import type { Options } from 'markdown-it'
-import type Renderer from 'markdown-it/lib/renderer.mjs'
-import type Token from 'markdown-it/lib/token.mjs'
-
-import MarkdownIt from 'markdown-it'
+import MarkdownIt, {
+  type Env,
+  type MarkdownIt as MarkdownItInstance,
+  type MarkdownItOptions,
+  type Renderer,
+  type Token,
+} from 'markdown-it'
 import markdownItFootnote from 'markdown-it-footnote'
 import markdownItLazyHeaders from 'markdown-it-lazy-headers'
 import markdownItMark from 'markdown-it-mark'
@@ -31,7 +33,7 @@ import markdownItSup from 'markdown-it-sup'
 import { DEFAULT_INKLING_VERSION, isLegacyVersion, slugify } from '@/inkling/utils'
 import { createHeadingIdTracker } from '@/inkling/utils/heading-id-tracker'
 
-const renderers: Partial<Record<'<4.x' | 'latest', MarkdownIt>> = {}
+const renderers: Partial<Record<'<4.x' | 'latest', MarkdownItInstance>> = {}
 
 interface RenderOptions {
   inklingVersion?: string
@@ -46,7 +48,7 @@ function isHeadingIdTracker(value: unknown): value is (base: string) => string {
 }
 
 const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
-  return function (md: MarkdownIt) {
+  return function (md: MarkdownItInstance) {
     const originalHeadingOpen = md.renderer.rules.heading_open
 
     // originally from https://github.com/leff/markdown-it-named-headers
@@ -54,8 +56,8 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
     md.renderer.rules.heading_open = function (
       tokens: Token[],
       idx: number,
-      options: Options,
-      env: Record<string, unknown>,
+      options: Required<MarkdownItOptions>,
+      env: Env | undefined,
       self: Renderer,
     ) {
       // Dedup state must live on the per-render `env` (markdown-it creates a
@@ -64,12 +66,15 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
       // instance, while a fresh tracker per heading would never dedupe. The
       // slot is validated rather than asserted: env is caller-controlled, so
       // a foreign value must reset the tracker instead of corrupting it.
+      // render() always hands its env bag to the rules; a direct rules call
+      // without one gets a throwaway tracker scope.
+      const envBag: Env = env ?? {}
       let trackHeadingId: (base: string) => string
-      if (isHeadingIdTracker(env.headingIdTracker)) {
-        trackHeadingId = env.headingIdTracker
+      if (isHeadingIdTracker(envBag.headingIdTracker)) {
+        trackHeadingId = envBag.headingIdTracker
       } else {
         trackHeadingId = createHeadingIdTracker()
-        env.headingIdTracker = trackHeadingId
+        envBag.headingIdTracker = trackHeadingId
       }
 
       const attrs = tokens[idx].attrs || []
@@ -93,7 +98,7 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
 // markdown-it-image-lazy-loading dependency provided — its image-size /
 // node:path legs pulled Node built-ins into the browser bundle and were
 // never used: the plugin was mounted with no options).
-function lazyLoadingImages(md: MarkdownIt): void {
+function lazyLoadingImages(md: MarkdownItInstance): void {
   const defaultImageRenderer = md.renderer.rules.image
   md.renderer.rules.image = function (tokens, idx, options, env, self) {
     tokens[idx].attrSet('loading', 'lazy')
@@ -103,7 +108,7 @@ function lazyLoadingImages(md: MarkdownIt): void {
   }
 }
 
-const selectRenderer = function (options: RenderOptions): MarkdownIt {
+const selectRenderer = function (options: RenderOptions): MarkdownItInstance {
   // The slug policy is fixed by the version, so one cached engine per policy;
   // `namedHeaders(options)` closes over the per-version slug behaviour.
   const key = isLegacyVersion(options.inklingVersion || DEFAULT_INKLING_VERSION) ? '<4.x' : 'latest'
