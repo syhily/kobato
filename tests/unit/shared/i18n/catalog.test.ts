@@ -67,6 +67,17 @@ describe('shared/i18n/catalog', () => {
     expect(serverMessagesFor('zh-CN')['email.common.greeting']).toBe('你好，{receiver}')
   })
 
+  it('keeps the OTP resend countdown English in the baseline, Chinese in the other locales', () => {
+    // The baseline catalog is the en-US UI: a Chinese value here renders verbatim
+    // for English readers (the exact bug this pins). The other locales keep their text.
+    expect(uiMessagesEnUS['auth.otp.resendIn']).toBe('Resend in {seconds}s')
+    expect(uiMessagesEnUS['auth.otp.resendIn']).not.toMatch(/[\u3400-\u4DBF\u4E00-\u9FFF]/)
+
+    expect(uiMessagesFor('zh-CN')['auth.otp.resendIn']).toBe('{seconds} 秒后重新发送')
+    expect(uiMessagesFor('zh-TW')['auth.otp.resendIn']).toBe('{seconds} 秒後重新傳送')
+    expect(uiMessagesFor('zh-HK')['auth.otp.resendIn']).toBe('{seconds} 秒後重新傳送')
+  })
+
   it('resolves a locale to both catalogs', () => {
     const catalogs = messageCatalogsFor('zh-HK')
 

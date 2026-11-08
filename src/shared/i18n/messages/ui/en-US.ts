@@ -230,7 +230,7 @@ export const uiMessagesEnUS = {
   'auth.otp.back': 'Back to sign-in',
   'auth.otp.code': 'Verification code',
   'auth.otp.resend': 'Resend',
-  'auth.otp.resendIn': '{seconds} 秒后重新发送',
+  'auth.otp.resendIn': 'Resend in {seconds}s',
   'auth.otp.sent': 'Verification code sent to',
   'auth.otp.submit': 'Verify and sign in',
   'auth.otp.verifying': 'Verifying…',
