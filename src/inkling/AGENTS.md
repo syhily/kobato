@@ -27,7 +27,9 @@
   decorators render through `ReactExtension` in this world, so the root extension configures
   `ReactExtension`'s `ErrorBoundary` with `InklingErrorBoundary` (the `RichTextPlugin` prop is inert
   here); every legacy plugin (`HistoryPlugin`, `useLexicalComposerContext`, …) keeps working off the
-  context `ReactExtension` provides.
+  context `ReactExtension` provides. Composer-owned Providers wrap `LexicalExtensionComposer` itself:
+  ReactExtension renders card decorators as siblings of its `children`, so Providers nested under
+  `children` are invisible to cards and their nested editors.
 - Source: `src/inkling/`, tests: `tests/inkling/` (a dedicated vitest project), demo: `demo/` at the
   repo root.
 

@@ -175,15 +175,13 @@ const InklingComposerBase = ({
   )
 
   return (
-    // contentEditable={null}: the RichTextPlugin core entry owns the editable
-    // element — the composer's default ContentEditable would double-bind the
-    // root element
-    <LexicalExtensionComposer extension={rootExtension} contentEditable={null}>
-      <ComposerHandlesProvider>
-        <InklingHostIntegrationProvider value={hostIntegrationValue}>
-          <InklingCollaborationContext.Provider value={collaborationValue}>
-            <InklingUiPrefsContext.Provider value={uiPrefsValue}>
-              <LexicalCollaboration>
+    <ComposerHandlesProvider>
+      <InklingHostIntegrationProvider value={hostIntegrationValue}>
+        <InklingCollaborationContext.Provider value={collaborationValue}>
+          <InklingUiPrefsContext.Provider value={uiPrefsValue}>
+            <LexicalCollaboration>
+              {/* contentEditable={null}: the RichTextPlugin core entry owns the editable element. */}
+              <LexicalExtensionComposer extension={rootExtension} contentEditable={null}>
                 {enableMultiplayer && createWebsocketProvider ? (
                   <CollaborationPlugin
                     id="main"
@@ -194,12 +192,12 @@ const InklingComposerBase = ({
                   />
                 ) : null}
                 {children}
-              </LexicalCollaboration>
-            </InklingUiPrefsContext.Provider>
-          </InklingCollaborationContext.Provider>
-        </InklingHostIntegrationProvider>
-      </ComposerHandlesProvider>
-    </LexicalExtensionComposer>
+              </LexicalExtensionComposer>
+            </LexicalCollaboration>
+          </InklingUiPrefsContext.Provider>
+        </InklingCollaborationContext.Provider>
+      </InklingHostIntegrationProvider>
+    </ComposerHandlesProvider>
   )
 }
 
