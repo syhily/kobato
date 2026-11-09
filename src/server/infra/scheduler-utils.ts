@@ -6,6 +6,7 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { isTraceActive, withSpanAsync } from '@/server/infra/trace/facade'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 export function computeNextRun(
@@ -218,6 +219,21 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
   // instrumentation conditionals.
   const track = options.task === undefined ? noopTracker : createTaskTracker(options.task.key)
   const run = options.task?.recordHistory === true ? wrapWithHistory(options.task.key, options.run) : options.run
+  // One perimeter per scheduled fire. The attributes are the fixed registered
+  // name (and the catalog task key when bound) — never entity ids or payloads.
+  // The span wraps the history recorder too, so nested DB work parents under
+  // the job instead of becoming orphan spans.
+  const traceAttributes =
+    options.task === undefined
+      ? { 'job.name': options.name }
+      : { 'job.name': options.name, 'job.task_key': options.task.key }
+  const execute = (): Promise<void> | void =>
+    isTraceActive()
+      ? withSpanAsync('job.run', { attributes: traceAttributes }, async (span) => {
+          await run()
+          span.setStatus('ok')
+        })
+      : run()
 
   const job: ScheduledJob = {
     reschedule() {
@@ -253,7 +269,7 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
           void (async () => {
             track.started()
             try {
-              await run()
+              await execute()
             } catch (error) {
               log.error('scheduled job run failed', { err: error instanceof Error ? error.message : String(error) })
             } finally {

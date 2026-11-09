@@ -9,12 +9,17 @@ import { apiRouter } from '@/server/http/api-router'
 import { errorJsonResponse } from '@/server/http/errors'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
+import { createOrpcTraceInterceptor } from '@/server/http/orpc-trace'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // Single API mount: `RPCHandler` answers `/rpc/*` behind a Hono perimeter —
 // live-settings body limit, CSRF, and the context projection onto
 // `HandlerContext` (+ `responseHeaders`, merged onto the final Response).
-const handler = new RPCHandler(apiRouter)
+// The client interceptor is the official seam for a span that owns the real
+// procedure invocation (and its stable procedure path).
+const handler = new RPCHandler(apiRouter, {
+  clientInterceptors: [createOrpcTraceInterceptor('http')],
+})
 
 const DEFAULT_MAX_BODY_SIZE = 10 * 1024 * 1024
 

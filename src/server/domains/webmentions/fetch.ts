@@ -54,6 +54,7 @@ export async function fetchSourceHtml(sourceUrl: string): Promise<string> {
   const result = await safeFetch(sourceUrl, {
     maxBytes: MAX_SOURCE_BYTES,
     headers: { 'User-Agent': WEBMENTION_UA, Accept: 'text/html, application/xhtml+xml' },
+    operation: 'webmentions.source',
   })
   if (!result.ok) {
     throw sourceFetchError(result)

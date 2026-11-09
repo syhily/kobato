@@ -47,7 +47,7 @@ function isShanbayPayload(value: unknown): value is { translation: string; autho
 
 async function fetchShanbay(date: Date): Promise<DailyQuote> {
   const url = `https://apiv3.shanbay.com/weapps/dailyquote/quote?date=${format(date, 'yyyy-MM-dd')}`
-  const res = await safeFetch(url, FETCH_OPTIONS)
+  const res = await safeFetch(url, { ...FETCH_OPTIONS, operation: 'calendar.quote.shanbay' })
   if (!res.ok) {
     throw new Error(res.reason)
   }
@@ -74,6 +74,7 @@ async function fetchOne(): Promise<DailyQuote> {
   const res = await safeFetch('http://v3.wufazhuce.com:8000/api/channel/one/0/0', {
     ...FETCH_OPTIONS,
     allowNonStandardPort: true,
+    operation: 'calendar.quote.wufazhuce',
   })
   if (!res.ok) {
     throw new Error(res.reason)
@@ -91,7 +92,7 @@ function isHitokotoPayload(value: unknown): value is { hitokoto: string; from?: 
 }
 
 async function fetchHitokoto(): Promise<DailyQuote> {
-  const res = await safeFetch('https://v1.hitokoto.cn/', FETCH_OPTIONS)
+  const res = await safeFetch('https://v1.hitokoto.cn/', { ...FETCH_OPTIONS, operation: 'calendar.quote.hitokoto' })
   if (!res.ok) {
     throw new Error(res.reason)
   }

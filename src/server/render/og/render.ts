@@ -42,7 +42,11 @@ async function loadCover(cover: string, website: string): Promise<Image> {
   if (url === null) {
     throw new Error(`OG cover is not a site-owned path or http(s) URL: ${cover}`)
   }
-  const result = await safeFetch(url, { timeoutMs: COVER_TIMEOUT_MS, maxBytes: COVER_MAX_BYTES })
+  const result = await safeFetch(url, {
+    timeoutMs: COVER_TIMEOUT_MS,
+    maxBytes: COVER_MAX_BYTES,
+    operation: 'og.cover',
+  })
   if (!result.ok) {
     // A cover URL may carry a signed query string — log the redacted shape.
     throw new Error(`OG cover fetch failed (${result.reason}): ${redactUrlForLog(url)}`)

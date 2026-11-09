@@ -41,6 +41,7 @@ export async function sendWebmention(endpoint: string, sourceUrl: string, target
   const result = await safeFetch(endpoint, {
     method: 'POST',
     maxBytes: MAX_RESPONSE_BYTES,
+    operation: 'webmentions.send',
     headers: {
       'User-Agent': senderUa(),
       'Content-Type': 'application/x-www-form-urlencoded',

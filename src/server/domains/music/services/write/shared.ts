@@ -89,6 +89,7 @@ export async function downloadBinary(url: string, maxBytes: number, what: 'audio
     maxBytes,
     maxRedirects: 5,
     headers: { 'User-Agent': MUSIC_DOWNLOAD_UA },
+    operation: 'music.asset',
   })
   if (!result.ok) {
     throw downloadError(result, url, what)

@@ -100,10 +100,13 @@ export async function recalculateImageThumbhash(
     throw new DomainError('INTERNAL', descriptorFor('images.error.storageFetchFailed'))
   }
 
-  const processed = await processImageBuffer({
-    buffer,
-    jpegQuality: 82,
-  })
+  const processed = await processImageBuffer(
+    {
+      buffer,
+      jpegQuality: 82,
+    },
+    'images.mutate',
+  )
 
   const updated = await updateImageThumbhashWithUploader(db, id, processed.thumbhash)
   if (updated === null) {

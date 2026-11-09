@@ -60,8 +60,8 @@ export async function queryMetric(
   const dimension = METRIC_DIMENSIONS[type]
   const rows =
     dimension.source === 'env'
-      ? await runAnalyticsQuery(reader, shapeMetricQuery(createEnvMetricQuery(), input, type, limit))
-      : await runAnalyticsQuery(reader, shapeMetricQuery(createAnalyticsQuery(), input, type, limit))
+      ? await runAnalyticsQuery(reader, shapeMetricQuery(createEnvMetricQuery(), input, type, limit), 'metric_env')
+      : await runAnalyticsQuery(reader, shapeMetricQuery(createAnalyticsQuery(), input, type, limit), 'metric')
   return rows.map((row) => ({
     name: typeof row.name === 'string' ? row.name : '',
     visits: Number(row.visits),

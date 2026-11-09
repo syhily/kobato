@@ -80,6 +80,7 @@ export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, 
       .where(sql<boolean>`${sql.ref('timestamp')} > to_timestamp(${sinceTs.getTime() / 1000})`)
       .orderBy('timestamp', 'desc')
       .limit(limit),
+    'realtime',
   )
   return rows.map((row) => ({
     ts: new Date(Number(row.ts)).toISOString(),

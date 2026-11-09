@@ -43,6 +43,7 @@ export async function queryExportCsv(reader: AnalyticsReader, input: ResolvedAna
       .orderBy('views', 'desc')
       // The wire schema already clamps `limit` to ≤500.
       .limit(input.limit ?? 500),
+    'export',
   )) as ExportRow[]
 
   const lines = [CSV_COLUMNS.join(',')]

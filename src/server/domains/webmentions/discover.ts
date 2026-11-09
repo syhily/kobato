@@ -84,6 +84,7 @@ export async function discoverEndpoint(targetUrl: string, ua: string): Promise<D
   const result = await safeFetch(targetUrl, {
     maxBytes: MAX_DISCOVERY_BYTES,
     headers: { 'User-Agent': ua, Accept: 'text/html, application/xhtml+xml' },
+    operation: 'webmentions.discover',
   })
   if (!result.ok) {
     return { kind: 'retry', error: formatFetchFailure(result) }

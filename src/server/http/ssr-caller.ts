@@ -12,6 +12,7 @@ import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { DetailPageComments } from '@/shared/types/comments'
 
 import { apiRouter } from '@/server/http/api-router'
+import { createOrpcTraceInterceptor } from '@/server/http/orpc-trace'
 import { getRequestContext } from '@/server/http/request-context'
 import { notModifiedResponse } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
@@ -21,6 +22,12 @@ import { notFound } from '@/server/infra/http/status'
 // through this single transport seam. Zero HTTP, zero serialization: `Date`s
 // and un-awaited `Promise`s pass through untouched (streaming stays intact).
 export type SsrCaller = RouterClient<ApiRouter>
+
+// One interceptor instance for the process: `createRouterClient` invokes it
+// with the matched procedure `path`, so an in-process SSR call is named and
+// parented exactly like a network call — with `in_process` marking the
+// transport so it is never mistaken for an HTTP hop.
+const ssrTraceInterceptor = createOrpcTraceInterceptor('in_process')
 
 type SsrCallerArgs = {
   request: Request
@@ -64,7 +71,7 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
   }
   // Nonce derives once here so route modules never call `getRequestContext` themselves.
   return {
-    caller: createRouterClient(apiRouter, { context }),
+    caller: createRouterClient(apiRouter, { context, interceptors: [ssrTraceInterceptor] }),
     cspNonce: rc.cspNonce,
     analyticsEventId: rc.requestFacts.analyticsEventId,
     viewer: rc.viewer,

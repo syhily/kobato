@@ -10,11 +10,15 @@ import type {
   WorkerRequest,
   WorkerResponse,
 } from '@/server/infra/image/process-worker'
+import type { Span } from '@/server/infra/trace/facade'
+import type { ImageOperation, ImageSizeBucket } from '@/server/infra/trace/sanitize'
 
 import { domainErrorFromWire } from '@/server/infra/http/errors'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { isSea, getEmbeddedAsset, seaAssetPath } from '@/server/infra/sea'
+import { startSpan } from '@/server/infra/trace/facade'
+import { imageSizeBucket, recordImageExecution, recordImageQueue } from '@/server/infra/trace/metrics'
 import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@/shared/sea/assets'
 
 const log = getLogger('image:process-pool')
@@ -43,6 +47,13 @@ interface PendingJob {
   input: ProcessImageInput
   resolve: (value: ProcessedImage) => void
   reject: (error: unknown) => void
+  operation: ImageOperation
+  sizeBucket: ImageSizeBucket
+  span: Span
+  enqueuedAt: number
+  dispatchedAt: number | null
+  queueRecorded: boolean
+  settled: boolean
 }
 
 interface PoolWorker {
@@ -59,7 +70,7 @@ interface PoolWorker {
 export class WorkerPool {
   private readonly workers: PoolWorker[] = []
   private readonly queue: PendingJob[] = []
-  private readonly pending = new Map<number, { resolve: (v: ProcessedImage) => void; reject: (e: unknown) => void }>()
+  private readonly pending = new Map<number, PendingJob>()
   private idCounter = 0
   private started = false
   private starting: Promise<void> | null = null
@@ -103,7 +114,7 @@ export class WorkerPool {
   }
 
   /** Run a single image through the pool; worker errors re-hydrate into a `DomainError` where applicable. */
-  async process(input: ProcessImageInput): Promise<ProcessedImage> {
+  async process(input: ProcessImageInput, operation: ImageOperation = 'unspecified'): Promise<ProcessedImage> {
     if (this.stopped) {
       throw new Error('process pool has been stopped')
     }
@@ -111,19 +122,61 @@ export class WorkerPool {
       await this.start()
     }
     return new Promise<ProcessedImage>((resolve, reject) => {
-      this.enqueueJob(input, resolve, reject)
+      this.enqueueJob(input, operation, resolve, reject)
       this.drain()
     })
   }
 
   private enqueueJob(
     input: ProcessImageInput,
+    operation: ImageOperation,
     resolve: (value: ProcessedImage) => void,
     reject: (error: unknown) => void,
   ): void {
     const id = ++this.idCounter
-    this.queue.push({ id, input, resolve, reject })
-    this.pending.set(id, { resolve, reject })
+    const sizeBucket = imageSizeBucket(input.buffer.byteLength)
+    const span = startSpan('image.worker', {
+      attributes: { 'image.operation': operation, 'image.size_bucket': sizeBucket },
+    })
+    const job: PendingJob = {
+      id,
+      input,
+      resolve,
+      reject,
+      operation,
+      sizeBucket,
+      span,
+      enqueuedAt: performance.now(),
+      dispatchedAt: null,
+      queueRecorded: false,
+      settled: false,
+    }
+    this.queue.push(job)
+    this.pending.set(id, job)
+  }
+
+  /** Queue wait is measured from `process()` entry to worker dispatch. */
+  private recordQueueWait(job: PendingJob): void {
+    if (job.queueRecorded) {
+      return
+    }
+    job.queueRecorded = true
+    recordImageQueue(job.operation, job.sizeBucket, performance.now() - job.enqueuedAt)
+  }
+
+  /** End the job's telemetry exactly once; never masks the HTTP result. */
+  private settleTelemetry(job: PendingJob, outcome: 'success' | 'error'): void {
+    if (job.settled) {
+      return
+    }
+    job.settled = true
+    this.recordQueueWait(job)
+    if (job.dispatchedAt !== null) {
+      recordImageExecution(job.operation, job.sizeBucket, performance.now() - job.dispatchedAt, outcome)
+    }
+    job.span.setAttribute('image.outcome', outcome)
+    job.span.setStatus(outcome === 'success' ? 'ok' : 'error')
+    job.span.end()
   }
 
   private drain(): void {
@@ -143,6 +196,8 @@ export class WorkerPool {
   private dispatch(worker: PoolWorker, job: PendingJob): void {
     worker.busy = true
     worker.currentJobId = job.id
+    job.dispatchedAt = performance.now()
+    this.recordQueueWait(job)
     // Unref'd so an idle pool never keeps the process alive.
     worker.jobTimer = setTimeout(() => this.onJobTimeout(worker, job.id), this.jobTimeoutMs)
     worker.jobTimer.unref()
@@ -179,8 +234,10 @@ export class WorkerPool {
         ...ok.result,
         buffer: Buffer.isBuffer(ok.result.buffer) ? ok.result.buffer : Buffer.from(ok.result.buffer),
       }
+      this.settleTelemetry(entry, 'success')
       entry.resolve(result)
     } else {
+      this.settleTelemetry(entry, 'error')
       entry.reject(rehydrateError(msg as WorkerErrResponse))
     }
     this.drain()
@@ -239,6 +296,7 @@ export class WorkerPool {
       const entry = this.pending.get(worker.currentJobId)
       if (entry !== undefined) {
         this.pending.delete(worker.currentJobId)
+        this.settleTelemetry(entry, 'error')
         entry.reject(err)
       }
     }
@@ -259,12 +317,14 @@ export class WorkerPool {
       const entry = this.pending.get(job.id)
       if (entry !== undefined) {
         this.pending.delete(job.id)
+        this.settleTelemetry(entry, 'error')
         entry.reject(new Error('process pool is shutting down'))
       }
     }
     this.queue.length = 0
     for (const [id, entry] of this.pending) {
       this.pending.delete(id)
+      this.settleTelemetry(entry, 'error')
       entry.reject(new Error('process pool is shutting down'))
     }
     await Promise.all(

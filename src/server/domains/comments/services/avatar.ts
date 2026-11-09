@@ -88,6 +88,7 @@ async function safeFetchAvatar(
     maxRedirects: allowRedirect ? MAX_REDIRECT_HOPS : 0,
     maxBytes: MAX_AVATAR_BYTES,
     headers,
+    operation: 'comments.avatar',
     // A redirect to our own default avatar is the mirror's "no avatar" signal.
     shouldFollowRedirect: (nextUrl) => nextUrl.toString() !== defaultAvatarUrl(),
   })
@@ -154,6 +155,7 @@ async function probeAvatarMirror(url: string): Promise<AvatarMirrorProbe> {
     timeoutMs: MIRROR_PROBE_TIMEOUT_MS,
     maxRedirects: 2,
     maxBytes: 16 * 1024,
+    operation: 'comments.avatar.probe',
   })
   const latencyMs = Math.max(1, Math.round(performance.now() - started))
   return { url, reachable: result.ok || result.reason === 'http-error', latencyMs }
@@ -233,6 +235,7 @@ export async function fetchGithubAvatarImage(email: string, size: number): Promi
     timeoutMs: FETCH_TIMEOUT_MS,
     maxRedirects: 0,
     maxBytes: GITHUB_SEARCH_MAX_BYTES,
+    operation: 'comments.avatar.github',
     headers: {
       Accept: 'application/vnd.github+json',
       Authorization: `Bearer ${token}`,

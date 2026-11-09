@@ -98,11 +98,14 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
 
   let coverProcessed: Buffer
   try {
-    const processed = await processImageBuffer({
-      buffer: coverSrcBuffer,
-      jpegQuality: COVER_JPEG_QUALITY,
-      resize: { width: COVER_SIZE, height: COVER_SIZE, fit: 'cover' },
-    })
+    const processed = await processImageBuffer(
+      {
+        buffer: coverSrcBuffer,
+        jpegQuality: COVER_JPEG_QUALITY,
+        resize: { width: COVER_SIZE, height: COVER_SIZE, fit: 'cover' },
+      },
+      'music.cover',
+    )
     coverProcessed = processed.buffer
   } catch (error) {
     log.error('Cover image processing failed', { sourceId: input.sourceId, error })

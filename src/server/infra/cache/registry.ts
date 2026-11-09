@@ -13,6 +13,8 @@ import { createInflight } from '@/server/infra/cache/inflight'
 import { getItem, getItemRaw, getItems, removeItem, setItem, setItemRaw } from '@/server/infra/cache/kv-store'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { getLogger } from '@/server/infra/logger'
+import { withSpanAsync } from '@/server/infra/trace/facade'
+import { recordCacheLookup } from '@/server/infra/trace/metrics'
 import { CACHE_DECLARATIONS } from '@/shared/cache/registry'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { isTunableCacheBucket } from '@/shared/types/cache'
@@ -290,30 +292,46 @@ export async function through<K extends CacheBucketId, V>(
   const behavior = BEHAVIORS[id]
   const { key, slot } = keyFor(id, params)
   const bypassRead = behavior.devBypass === true && !import.meta.env.PROD
-  if (!bypassRead) {
-    const hit = await readEntry(db, id, key)
-    if (hit !== null) {
-      options.onHit?.(unsafeCast<V>(hit))
-      return unsafeCast<V>(hit)
-    }
-  }
-  return unsafeCast<Promise<V>>(
-    inflight(`${id}:${key}`, async () => {
-      // Double-check: a concurrent request may have warmed the row while we waited.
+  const joinKey = `${id}:${key}`
+  let result: 'hit' | 'miss' = 'miss'
+  let coalesced = false
+
+  return withSpanAsync('cache.lookup', { attributes: { 'cache.bucket': id } }, async (span) => {
+    try {
       if (!bypassRead) {
         const hit = await readEntry(db, id, key)
         if (hit !== null) {
+          result = 'hit'
           options.onHit?.(unsafeCast<V>(hit))
           return unsafeCast<V>(hit)
         }
       }
-      const value = await loader()
-      if (behavior.cacheWhen === undefined || behavior.cacheWhen(value)) {
-        await writeEntry(db, id, key, slot, value)
-      }
-      return value
-    }),
-  )
+      // A join shares another caller's load; the cache is still a miss for
+      // this lookup (the row was absent on this call's direct read).
+      coalesced = inflight.has(joinKey)
+      const value = await inflight(joinKey, async () => {
+        // Double-check: a concurrent request may have warmed the row while we waited.
+        if (!bypassRead) {
+          const hit = await readEntry(db, id, key)
+          if (hit !== null) {
+            result = 'hit'
+            options.onHit?.(unsafeCast<V>(hit))
+            return unsafeCast<V>(hit)
+          }
+        }
+        const loaded = await loader()
+        if (behavior.cacheWhen === undefined || behavior.cacheWhen(loaded)) {
+          await writeEntry(db, id, key, slot, loaded)
+        }
+        return loaded
+      })
+      return unsafeCast<V>(value)
+    } finally {
+      span.setAttributes({ 'cache.result': result, 'cache.coalesced': coalesced })
+      span.setStatus('ok')
+      recordCacheLookup(id, result, coalesced)
+    }
+  })
 }
 
 /** Concurrent reads of the same key coalesce. */
@@ -323,7 +341,21 @@ export async function get<K extends CacheBucketId, V>(
   params: CacheParamsMap[K],
 ): Promise<V | null> {
   const { key } = keyFor(id, params)
-  return unsafeCast<Promise<V | null>>(inflight(`read:${id}:${key}`, () => readEntry(db, id, key)))
+  const joinKey = `read:${id}:${key}`
+  let result: 'hit' | 'miss' = 'miss'
+  const coalesced = inflight.has(joinKey)
+
+  return withSpanAsync('cache.lookup', { attributes: { 'cache.bucket': id } }, async (span) => {
+    try {
+      const value = await inflight(joinKey, () => readEntry(db, id, key))
+      result = value === null ? 'miss' : 'hit'
+      return unsafeCast<V | null>(value)
+    } finally {
+      span.setAttributes({ 'cache.result': result, 'cache.coalesced': coalesced })
+      span.setStatus('ok')
+      recordCacheLookup(id, result, coalesced)
+    }
+  })
 }
 
 /** Direct write (best-effort — failures are logged and swallowed). */
@@ -404,41 +436,51 @@ export async function throughMany<K extends CacheBucketId, V>(
   const slot = resolveCacheSlot(id)
   const keys = paramsList.map((params) => `${slot.prefix}${behavior.key(params)}`)
 
-  let cached: { key: string; value: unknown }[]
-  try {
-    cached = await getItems(db, keys)
-  } catch (error) {
-    log.warn('cache batch read failed; treating every key as a miss', { bucket: id, error })
-    cached = keys.map((key) => ({ key, value: null }))
-  }
+  let result: 'hit' | 'miss' = 'hit'
+  return withSpanAsync('cache.lookup', { attributes: { 'cache.bucket': id } }, async (span) => {
+    try {
+      let cached: { key: string; value: unknown }[]
+      try {
+        cached = await getItems(db, keys)
+      } catch (error) {
+        log.warn('cache batch read failed; treating every key as a miss', { bucket: id, error })
+        cached = keys.map((key) => ({ key, value: null }))
+      }
 
-  const values: (V | null)[] = cached.map((entry) => unsafeCast<V | null>(entry.value))
-  const missingIndexes: number[] = []
-  cached.forEach((entry, index) => {
-    if (entry.value === null) {
-      missingIndexes.push(index)
+      const values: (V | null)[] = cached.map((entry) => unsafeCast<V | null>(entry.value))
+      const missingIndexes: number[] = []
+      cached.forEach((entry, index) => {
+        if (entry.value === null) {
+          missingIndexes.push(index)
+        }
+      })
+
+      if (missingIndexes.length > 0) {
+        result = 'miss'
+        const missing = missingIndexes.map((index) => paramsList[index] as CacheParamsMap[K])
+        const loaded = await loader(missing)
+        // Match loaded values by computed key — the loader may rebuild its params.
+        const loadedByKey = new Map(loaded.map((entry) => [behavior.key(entry.params), entry.value]))
+        await Promise.all(
+          missingIndexes.map(async (index) => {
+            const params = paramsList[index] as CacheParamsMap[K]
+            const value = loadedByKey.get(behavior.key(params))
+            if (value === undefined) {
+              return
+            }
+            values[index] = value
+            await writeEntry(db, id, keys[index] as string, slot, value)
+          }),
+        )
+      }
+
+      return paramsList.map((params, index) => ({ params, value: values[index] ?? null }))
+    } finally {
+      span.setAttributes({ 'cache.result': result, 'cache.coalesced': false })
+      span.setStatus('ok')
+      recordCacheLookup(id, result, false)
     }
   })
-
-  if (missingIndexes.length > 0) {
-    const missing = missingIndexes.map((index) => paramsList[index] as CacheParamsMap[K])
-    const loaded = await loader(missing)
-    // Match loaded values by computed key — the loader may rebuild its params.
-    const loadedByKey = new Map(loaded.map((entry) => [behavior.key(entry.params), entry.value]))
-    await Promise.all(
-      missingIndexes.map(async (index) => {
-        const params = paramsList[index] as CacheParamsMap[K]
-        const value = loadedByKey.get(behavior.key(params))
-        if (value === undefined) {
-          return
-        }
-        values[index] = value
-        await writeEntry(db, id, keys[index] as string, slot, value)
-      }),
-    )
-  }
-
-  return paramsList.map((params, index) => ({ params, value: values[index] ?? null }))
 }
 
 // Generation is read once per process and cached; failed reads fall back to 0 and

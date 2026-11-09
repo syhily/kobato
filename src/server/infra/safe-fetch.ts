@@ -4,6 +4,9 @@ import { lookup } from 'node:dns/promises'
 import { isIP, type LookupFunction } from 'node:net'
 import { Agent } from 'undici'
 
+import type { SafeFetchOperation } from '@/server/infra/trace/sanitize'
+
+import { isTraceActive, withSpanAsync } from '@/server/infra/trace/facade'
 import { isBlockedFetchHost, tryParseUrl } from '@/shared/utils/safe-url'
 
 // SSRF-guarded outbound-fetch for all server-side downloads. Failures
@@ -42,6 +45,9 @@ export interface SafeFetchOptions {
    *  on :8000) — never set it for a user-influenced URL. Applies to the
    *  redirect hops too. */
   allowNonStandardPort?: boolean
+  /** Closed telemetry operation name (ADR-0012). The URL/host/query are never
+   *  recorded; omit and the span uses the fixed `unspecified` label. */
+  operation?: SafeFetchOperation
 }
 
 export type SafeFetchFailureReason =
@@ -311,9 +317,7 @@ async function readCappedBody(
   return { ok: true, body: body.buffer }
 }
 
-export function safeFetch(url: string, options: SafeFetchOptions & { stream: true }): Promise<SafeFetchStreamResult>
-export function safeFetch(url: string, options?: SafeFetchOptions): Promise<SafeFetchResult>
-export async function safeFetch(
+async function performSafeFetch(
   url: string,
   options: SafeFetchOptions = {},
 ): Promise<SafeFetchResult | SafeFetchStreamResult> {
@@ -468,4 +472,47 @@ export async function safeFetch(
       await agent.destroy().catch(() => undefined)
     }
   }
+}
+
+/**
+ * Telemetry wrapper around the SSRF-guarded fetch (ADR-0012). The span only
+ * carries the caller's closed operation name, the request method, and (when
+ * known) the upstream status — never the URL, host, path, or query. Fetch,
+ * redirect, streaming, and SSRF semantics are entirely owned by
+ * `performSafeFetch`; this wrapper only observes the result.
+ */
+export function safeFetch(url: string, options: SafeFetchOptions & { stream: true }): Promise<SafeFetchStreamResult>
+export function safeFetch(url: string, options?: SafeFetchOptions): Promise<SafeFetchResult>
+export async function safeFetch(
+  url: string,
+  options: SafeFetchOptions = {},
+): Promise<SafeFetchResult | SafeFetchStreamResult> {
+  if (!isTraceActive()) {
+    return performSafeFetch(url, options)
+  }
+
+  return withSpanAsync(
+    'http.client',
+    {
+      kind: 'client',
+      attributes: {
+        'http.request.method': options.method ?? 'GET',
+        'http.client.operation': options.operation ?? 'unspecified',
+      },
+    },
+    async (span) => {
+      const result = await performSafeFetch(url, options)
+      if (result.ok) {
+        span.setAttribute('http.response.status_code', result.response.status)
+        span.setStatus('ok')
+        return result
+      }
+      if (result.status !== null) {
+        span.setAttribute('http.response.status_code', result.status)
+      }
+      span.setAttribute('error.category', `http_client_${result.reason.replaceAll('-', '_')}`)
+      span.setStatus('error')
+      return result
+    },
+  )
 }

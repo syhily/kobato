@@ -9,6 +9,7 @@ export async function queryCounters(reader: AnalyticsReader, input: ResolvedAnal
   const rows = await runAnalyticsQuery(
     reader,
     createAnalyticsQuery().select(visitAggregates('visits')).where(buildAnalyticsFilter(input)),
+    'counters',
   )
   const row = rows[0]
   return {

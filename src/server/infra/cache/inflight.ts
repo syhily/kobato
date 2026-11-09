@@ -3,6 +3,8 @@
 export interface Inflight<T> {
   (key: string, run: () => Promise<T>): Promise<T>
   size(): number
+  /** Whether a load for `key` is already in flight (telemetry attribution). */
+  has(key: string): boolean
 }
 
 export function createInflight<T>(): Inflight<T> {
@@ -19,5 +21,6 @@ export function createInflight<T>(): Inflight<T> {
     return pending
   }
   inflight.size = () => requests.size
+  inflight.has = (key: string) => requests.has(key)
   return inflight
 }

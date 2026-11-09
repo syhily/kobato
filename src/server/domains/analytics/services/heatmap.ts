@@ -24,6 +24,7 @@ export async function queryHeatmap(reader: AnalyticsReader, input: ResolvedAnaly
       .groupBy(['weekday', 'hour'])
       .orderBy('weekday')
       .orderBy('hour'),
+    'heatmap',
   )
   return rows.map((row) => ({
     weekday: Number(row.weekday),

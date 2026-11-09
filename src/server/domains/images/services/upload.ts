@@ -133,10 +133,13 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
     throw new DomainError('BAD_REQUEST', descriptorFor('images.error.unsupportedFormat'))
   }
 
-  const processed = await processImageBuffer({
-    buffer: input.buffer,
-    jpegQuality: input.jpegQuality,
-  })
+  const processed = await processImageBuffer(
+    {
+      buffer: input.buffer,
+      jpegQuality: input.jpegQuality,
+    },
+    'images.upload',
+  )
 
   if (processed.buffer.byteLength > input.maxBytes) {
     throw new DomainError(

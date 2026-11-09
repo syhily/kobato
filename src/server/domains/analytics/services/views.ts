@@ -29,6 +29,7 @@ export async function queryViews(reader: AnalyticsReader, input: ResolvedAnalyti
       .where(buildAnalyticsFilter(input))
       .groupBy('time')
       .orderBy('time'),
+    'views',
   )
   const points: ViewsPoint[] = rows.map((row) => ({
     time: typeof row.time === 'string' ? row.time : '',
