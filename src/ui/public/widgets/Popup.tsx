@@ -58,13 +58,22 @@ const backdropVariants = {
 
 const contentVariants = {
   hidden: { opacity: 0, y: 30, scale: 0.92 },
-  visible: { opacity: 1, y: 0, scale: 1 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { ...transitions.popup, delay: transitions.popupFade.duration },
+  },
   exit: { opacity: 0, y: 20, scale: 0.96 },
 }
 
 const closeButtonVariants = {
   hidden: { scale: 0, opacity: 0 },
-  visible: { scale: 1, opacity: 1 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: { ...transitions.popup, delay: transitions.popupFade.duration + 0.1 },
+  },
 }
 
 export function Popup({
