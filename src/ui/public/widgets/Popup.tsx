@@ -16,6 +16,8 @@ export interface PopupProps {
   onClose: () => void
   /** Body max-width preset. Defaults to `sm` (300px / fit-content). */
   size?: PopupSize
+  /** Initial focus target. `dialog` avoids activating a field on open. */
+  initialFocus?: 'control' | 'dialog'
   /** Forwarded to the dialog container for screen reader naming. */
   'aria-label'?: string
   /** Element id whose textContent names the dialog. Takes precedence over aria-label. */
@@ -58,28 +60,20 @@ const backdropVariants = {
 
 const contentVariants = {
   hidden: { opacity: 0, y: 30, scale: 0.92 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { ...transitions.popup, delay: transitions.popupFade.duration },
-  },
+  visible: { opacity: 1, y: 0, scale: 1 },
   exit: { opacity: 0, y: 20, scale: 0.96 },
 }
 
 const closeButtonVariants = {
   hidden: { scale: 0, opacity: 0 },
-  visible: {
-    scale: 1,
-    opacity: 1,
-    transition: { ...transitions.popup, delay: transitions.popupFade.duration + 0.1 },
-  },
+  visible: { scale: 1, opacity: 1 },
 }
 
 export function Popup({
   open,
   onClose,
   size = 'sm',
+  initialFocus = 'control',
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
   children,
@@ -109,7 +103,7 @@ export function Popup({
         return
       }
       const focusables = getFocusable(root)
-      const target = focusables[0] ?? root
+      const target = initialFocus === 'dialog' ? root : (focusables[0] ?? root)
       target.focus({ preventScroll: true })
     })
 
@@ -163,7 +157,7 @@ export function Popup({
       inerted.forEach((child) => child.removeAttribute('inert'))
       previouslyFocusedRef.current?.focus({ preventScroll: true })
     }
-  }, [open, mounted, onClose])
+  }, [open, mounted, onClose, initialFocus])
 
   return createPortal(
     <LazyAnimatePresence>
@@ -218,7 +212,7 @@ export function Popup({
               initial="hidden"
               animate="visible"
               exit="hidden"
-              transition={{ ...transitions.popup, delay: 0.1 }}
+              transition={transitions.popup}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               className={cn(

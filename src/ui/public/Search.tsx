@@ -1,8 +1,5 @@
-import type { RefObject } from 'react'
-
 import { SearchIcon } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
+import { useCallback, useState } from 'react'
 import { Form, useNavigate, type NavigateFunction } from 'react-router'
 
 import { Button } from '@/ui/components/button'
@@ -67,11 +64,7 @@ export function SearchBar() {
 export function SearchIconButton() {
   const [open, setOpen] = useState(false)
   const { t } = useI18n()
-  const popupInputRef = useRef<HTMLInputElement | null>(null)
   const handleClose = useCallback(() => setOpen(false), [])
-  const focusPopupInput = useCallback(() => {
-    popupInputRef.current?.focus({ preventScroll: true })
-  }, [])
 
   return (
     <>
@@ -81,16 +74,13 @@ export function SearchIconButton() {
         shape="circle"
         title={t('public.search.title')}
         aria-label={t('public.search.open')}
-        onClick={() => {
-          flushSync(() => setOpen(true))
-          focusPopupInput()
-        }}
+        onClick={() => setOpen(true)}
       >
         <IconButtonContent>
           <SearchIcon size="1em" aria-hidden className="m-icon-inset" />
         </IconButtonContent>
       </Button>
-      <SearchPopup open={open} onClose={handleClose} inputRef={popupInputRef} />
+      <SearchPopup open={open} onClose={handleClose} />
     </>
   )
 }
@@ -98,14 +88,13 @@ export function SearchIconButton() {
 interface SearchPopupProps {
   open: boolean
   onClose: () => void
-  inputRef: RefObject<HTMLInputElement | null>
 }
 
-function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
+function SearchPopup({ open, onClose }: SearchPopupProps) {
   const navigate = useNavigate()
   const { t } = useI18n()
   return (
-    <Popup open={open} onClose={onClose} size="md" aria-label={t('public.search.popupTitle')}>
+    <Popup open={open} onClose={onClose} size="md" initialFocus="dialog" aria-label={t('public.search.popupTitle')}>
       <Form
         className="text-center"
         method="get"
@@ -121,7 +110,6 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
           <div className="mx-auto max-w-sm">
             <div className="mb-4 md:mb-6">
               <Input
-                ref={inputRef}
                 type="search"
                 name="q"
                 required

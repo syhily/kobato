@@ -18,10 +18,10 @@ export const transitions = {
   stagger: { staggerChildren: 0.05 },
   slowLoop: { repeat: Infinity, duration: 20, ease: 'easeInOut' as const },
   pulseLoop: { repeat: Infinity, duration: 6, ease: 'easeInOut' as const, repeatType: 'reverse' as const },
-  /** Popup content spring — starts after the backdrop fade. */
+  /** Popup content spring — synced with backdrop fade. */
   popup: { type: 'spring' as const, duration: 0.35, bounce: 0.15 },
-  /** Popup backdrop fade — completes before the content enters. */
-  popupFade: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+  /** Popup backdrop fade — synced with content spring. */
+  popupFade: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   dialog: { type: 'spring' as const, duration: 0.3, bounce: 0.15 },
   menu: { type: 'spring' as const, duration: 0.25, bounce: 0.15 },
 }
