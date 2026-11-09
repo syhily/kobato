@@ -130,6 +130,7 @@ describe('snapshot: Avatar primitives', () => {
     )
     expect(html).toContain('data-slot="avatar"')
     expect(html).toContain('data-slot="avatar-fallback"')
+    expect(html).toContain('data-slot="avatar-skeleton"')
     expect(html).toContain('U')
   })
 })

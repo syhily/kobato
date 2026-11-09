@@ -1,8 +1,11 @@
 import type { ComponentProps } from 'react'
 
 import { Avatar as BaseAvatar } from '@base-ui/react/avatar'
+import { useState } from 'react'
 
 import { cn } from '@/ui/lib/cn'
+
+type AvatarLoadingStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
 function Avatar({ className, ...props }: ComponentProps<typeof BaseAvatar.Root>) {
   return (
@@ -14,8 +17,33 @@ function Avatar({ className, ...props }: ComponentProps<typeof BaseAvatar.Root>)
   )
 }
 
-function AvatarImage({ className, ...props }: ComponentProps<typeof BaseAvatar.Image>) {
-  return <BaseAvatar.Image data-slot="avatar-image" className={cn('aspect-square size-full', className)} {...props} />
+function AvatarSkeleton({ className, ...props }: ComponentProps<'span'>) {
+  return (
+    <span
+      data-slot="avatar-skeleton"
+      aria-hidden="true"
+      className={cn('pointer-events-none absolute inset-0 animate-pulse rounded-full bg-accent', className)}
+      {...props}
+    />
+  )
+}
+
+function AvatarImage({ className, onLoadingStatusChange, ...props }: ComponentProps<typeof BaseAvatar.Image>) {
+  const [loadState, setLoadState] = useState<AvatarLoadingStatus>('idle')
+  return (
+    <>
+      <BaseAvatar.Image
+        data-slot="avatar-image"
+        className={cn('aspect-square size-full', className)}
+        onLoadingStatusChange={(next) => {
+          setLoadState(next)
+          onLoadingStatusChange?.(next)
+        }}
+        {...props}
+      />
+      {(loadState === 'idle' || loadState === 'loading') && <AvatarSkeleton />}
+    </>
+  )
 }
 
 function AvatarFallback({ className, 'aria-label': ariaLabel, ...props }: ComponentProps<typeof BaseAvatar.Fallback>) {
@@ -30,4 +58,4 @@ function AvatarFallback({ className, 'aria-label': ariaLabel, ...props }: Compon
   )
 }
 
-export { Avatar, AvatarFallback, AvatarImage }
+export { Avatar, AvatarFallback, AvatarImage, AvatarSkeleton }
