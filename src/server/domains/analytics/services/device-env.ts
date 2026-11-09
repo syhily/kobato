@@ -1,4 +1,17 @@
-import { DuckDBTimestampTZValue, DuckDBUUIDValue, type DuckDBAppender, type DuckDBConnection } from '@duckdb/node-api'
+import {
+  BOOLEAN,
+  DOUBLE,
+  DuckDBDataChunk,
+  DuckDBTimestampTZValue,
+  DuckDBUUIDValue,
+  INTEGER,
+  TIMESTAMPTZ,
+  UUID,
+  VARCHAR,
+  type DuckDBConnection,
+  type DuckDBType,
+  type DuckDBValue,
+} from '@duckdb/node-api'
 
 /**
  * `device_env_server` — the request-side half of ADR-0006's dual-track
@@ -118,99 +131,120 @@ export interface DeviceEnvClientRow {
 
 const uuidToUint128 = (uuid: string): bigint => BigInt(`0x${uuid.replaceAll('-', '')}`)
 
-const appendTimestamp = (appender: DuckDBAppender, timestamp: Date): void => {
-  appender.appendTimestampTZ(new DuckDBTimestampTZValue(BigInt(timestamp.getTime()) * 1000n))
+const timestampMicros = (timestamp: Date): DuckDBTimestampTZValue =>
+  new DuckDBTimestampTZValue(BigInt(timestamp.getTime()) * 1000n)
+
+/** Column types in DDL order — the single source the data chunks are created from. */
+const DEVICE_ENV_SERVER_CHUNK_TYPES: DuckDBType[] = [
+  UUID,
+  TIMESTAMPTZ,
+  VARCHAR,
+  VARCHAR,
+  VARCHAR,
+  VARCHAR,
+  BOOLEAN,
+  VARCHAR,
+  VARCHAR,
+  VARCHAR,
+  VARCHAR,
+  VARCHAR,
+]
+
+const DEVICE_ENV_CLIENT_CHUNK_TYPES: DuckDBType[] = [
+  UUID,
+  TIMESTAMPTZ,
+  INTEGER,
+  INTEGER,
+  INTEGER,
+  INTEGER,
+  INTEGER,
+  INTEGER,
+  DOUBLE,
+  INTEGER,
+  INTEGER,
+  VARCHAR,
+  VARCHAR,
+  VARCHAR,
+  BOOLEAN,
+  VARCHAR,
+  DOUBLE,
+  INTEGER,
+  BOOLEAN,
+  VARCHAR,
+  VARCHAR,
+  INTEGER,
+  DOUBLE,
+  BOOLEAN,
+]
+
+/** Pivot a batch of device_env_server rows into column arrays (DDL order). */
+function deviceEnvServerColumns(rows: DeviceEnvServerRow[]): DuckDBValue[][] {
+  return [
+    rows.map((row) => DuckDBUUIDValue.fromUint128(uuidToUint128(row.eventId))),
+    rows.map((row) => timestampMicros(row.timestamp)),
+    rows.map((row) => row.uaFullVersion),
+    rows.map((row) => row.platform),
+    rows.map((row) => row.platformVersion),
+    rows.map((row) => row.model),
+    rows.map((row) => row.mobile),
+    rows.map((row) => row.brands),
+    rows.map((row) => row.arch),
+    rows.map((row) => row.bitness),
+    rows.map((row) => row.formFactors),
+    rows.map((row) => row.acceptLanguage),
+  ]
 }
 
-const appendNullableInteger = (appender: DuckDBAppender, value: number | null): void => {
-  if (value === null) {
-    appender.appendNull()
-  } else {
-    appender.appendInteger(value)
-  }
-}
-
-const appendNullableDouble = (appender: DuckDBAppender, value: number | null): void => {
-  if (value === null) {
-    appender.appendNull()
-  } else {
-    appender.appendDouble(value)
-  }
-}
-
-const appendNullableBoolean = (appender: DuckDBAppender, value: boolean | null): void => {
-  if (value === null) {
-    appender.appendNull()
-  } else {
-    appender.appendBoolean(value)
-  }
-}
-
-/** Append one device_env_server row — the single owner of the column order. */
-export function appendDeviceEnvServerRow(appender: DuckDBAppender, row: DeviceEnvServerRow): void {
-  appender.appendUUID(DuckDBUUIDValue.fromUint128(uuidToUint128(row.eventId)))
-  appendTimestamp(appender, row.timestamp)
-  appender.appendVarchar(row.uaFullVersion)
-  appender.appendVarchar(row.platform)
-  appender.appendVarchar(row.platformVersion)
-  appender.appendVarchar(row.model)
-  appendNullableBoolean(appender, row.mobile)
-  appender.appendVarchar(row.brands)
-  appender.appendVarchar(row.arch)
-  appender.appendVarchar(row.bitness)
-  appender.appendVarchar(row.formFactors)
-  appender.appendVarchar(row.acceptLanguage)
-}
-
-/** Append one device_env_client row — the single owner of the column order. */
-export function appendDeviceEnvClientRow(appender: DuckDBAppender, row: DeviceEnvClientRow): void {
-  appender.appendUUID(DuckDBUUIDValue.fromUint128(uuidToUint128(row.eventId)))
-  appendTimestamp(appender, row.timestamp)
-  appendNullableInteger(appender, row.screenW)
-  appendNullableInteger(appender, row.screenH)
-  appendNullableInteger(appender, row.availW)
-  appendNullableInteger(appender, row.availH)
-  appendNullableInteger(appender, row.viewportW)
-  appendNullableInteger(appender, row.viewportH)
-  appendNullableDouble(appender, row.dpr)
-  appendNullableInteger(appender, row.colorDepth)
-  appendNullableInteger(appender, row.touchPoints)
-  appender.appendVarchar(row.pointer)
-  appender.appendVarchar(row.hover)
-  appender.appendVarchar(row.colorScheme)
-  appendNullableBoolean(appender, row.reducedMotion)
-  appender.appendVarchar(row.netEffectiveType)
-  appendNullableDouble(appender, row.netDownlink)
-  appendNullableInteger(appender, row.netRtt)
-  appendNullableBoolean(appender, row.netSaveData)
-  appender.appendVarchar(row.locale)
-  appender.appendVarchar(row.timezone)
-  appendNullableInteger(appender, row.hardwareConcurrency)
-  appendNullableDouble(appender, row.deviceMemory)
-  appender.appendBoolean(row.hasStatic)
+/** Pivot a batch of device_env_client rows into column arrays (DDL order). */
+function deviceEnvClientColumns(rows: DeviceEnvClientRow[]): DuckDBValue[][] {
+  return [
+    rows.map((row) => DuckDBUUIDValue.fromUint128(uuidToUint128(row.eventId))),
+    rows.map((row) => timestampMicros(row.timestamp)),
+    rows.map((row) => row.screenW),
+    rows.map((row) => row.screenH),
+    rows.map((row) => row.availW),
+    rows.map((row) => row.availH),
+    rows.map((row) => row.viewportW),
+    rows.map((row) => row.viewportH),
+    rows.map((row) => row.dpr),
+    rows.map((row) => row.colorDepth),
+    rows.map((row) => row.touchPoints),
+    rows.map((row) => row.pointer),
+    rows.map((row) => row.hover),
+    rows.map((row) => row.colorScheme),
+    rows.map((row) => row.reducedMotion),
+    rows.map((row) => row.netEffectiveType),
+    rows.map((row) => row.netDownlink),
+    rows.map((row) => row.netRtt),
+    rows.map((row) => row.netSaveData),
+    rows.map((row) => row.locale),
+    rows.map((row) => row.timezone),
+    rows.map((row) => row.hardwareConcurrency),
+    rows.map((row) => row.deviceMemory),
+    rows.map((row) => row.hasStatic),
+  ]
 }
 
 /**
- * Append a whole batch through the Appender protocol — `endRow()` per
- * row, `flushSync()` per ≤2048-row chunk. At-least-once: a mid-batch
- * failure leaves flushed rows visible while the batch dead-letters.
+ * Append a whole batch as data chunks — one `setColumns` + `appendDataChunk`
+ * per ≤2048-row slice instead of a per-value appender call per cell.
+ * At-least-once: a mid-batch failure leaves flushed chunks visible while the
+ * batch dead-letters.
  */
-async function appendRows<T>(
+async function appendRows(
   writer: DuckDBConnection,
   table: 'device_env_server' | 'device_env_client',
-  rows: T[],
-  appendRow: (appender: DuckDBAppender, row: T) => void,
+  types: DuckDBType[],
+  columns: DuckDBValue[][],
 ): Promise<void> {
   const appender = await writer.createAppender(table)
   try {
-    let count = 0
-    for (const row of rows) {
-      appendRow(appender, row)
-      appender.endRow()
-      count++
-      if (count % 2048 === 0) {
-        appender.flushSync()
-      }
+    const rowCount = columns[0]?.length ?? 0
+    for (let offset = 0; offset < rowCount; offset += 2048) {
+      const chunk = DuckDBDataChunk.create(types)
+      chunk.setColumns(columns.map((column) => column.slice(offset, offset + 2048)))
+      appender.appendDataChunk(chunk)
+      appender.flushSync()
     }
   } finally {
     appender.closeSync()
@@ -218,9 +252,9 @@ async function appendRows<T>(
 }
 
 export async function appendDeviceEnvServerRows(writer: DuckDBConnection, rows: DeviceEnvServerRow[]): Promise<void> {
-  await appendRows(writer, 'device_env_server', rows, appendDeviceEnvServerRow)
+  await appendRows(writer, 'device_env_server', DEVICE_ENV_SERVER_CHUNK_TYPES, deviceEnvServerColumns(rows))
 }
 
 export async function appendDeviceEnvClientRows(writer: DuckDBConnection, rows: DeviceEnvClientRow[]): Promise<void> {
-  await appendRows(writer, 'device_env_client', rows, appendDeviceEnvClientRow)
+  await appendRows(writer, 'device_env_client', DEVICE_ENV_CLIENT_CHUNK_TYPES, deviceEnvClientColumns(rows))
 }

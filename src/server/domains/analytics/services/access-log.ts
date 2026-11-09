@@ -1,4 +1,16 @@
-import { DuckDBTimestampTZValue, DuckDBUUIDValue, type DuckDBAppender, type DuckDBConnection } from '@duckdb/node-api'
+import {
+  BOOLEAN,
+  DOUBLE,
+  DuckDBDataChunk,
+  DuckDBTimestampTZValue,
+  DuckDBUUIDValue,
+  TIMESTAMPTZ,
+  UUID,
+  VARCHAR,
+  type DuckDBConnection,
+  type DuckDBType,
+  type DuckDBValue,
+} from '@duckdb/node-api'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
@@ -69,18 +81,20 @@ const uuidToUint128 = (uuid: string): bigint => BigInt(`0x${uuid.replaceAll('-',
 
 const BLOB_KEYS = unsafeCast<BlobsKey[]>(Object.keys(blobsMap).sort((a, b) => Number(a.slice(4)) - Number(b.slice(4))))
 
-/**
- * Append one event as an access_events row — the single owner of the
- * event → blob-slot mapping. The event id is minted upstream (request
- * facts) so the client beacon can join on it. Callers own the Appender
- * protocol (`endRow`/`flushSync`/`closeSync`).
- */
-export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEvent): void {
-  appender.appendUUID(DuckDBUUIDValue.fromUint128(uuidToUint128(e.eventId)))
-  appender.appendVarchar(index1Of(e.entityType, e.entityId))
-  appender.appendTimestampTZ(new DuckDBTimestampTZValue(BigInt(e.ts.getTime()) * 1000n))
-  appender.appendBoolean(e.isBot)
-  const blobs: Record<Exclude<BlobName, 'reserved'>, string | null> = {
+/** Column types in DDL order — the single source the data chunks are created from. */
+const ACCESS_EVENTS_CHUNK_TYPES: DuckDBType[] = [
+  UUID,
+  VARCHAR,
+  TIMESTAMPTZ,
+  BOOLEAN,
+  ...Array.from({ length: 16 }, () => VARCHAR),
+  DOUBLE,
+  DOUBLE,
+]
+
+/** One event → blob-slot record — the single owner of the event → slot mapping. */
+function eventBlobs(e: EnrichedAccessEvent): Record<Exclude<BlobName, 'reserved'>, string | null> {
+  return {
     path: e.path,
     referer: e.referer,
     refererHost: e.refererHost,
@@ -97,38 +111,39 @@ export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEve
     device: e.device,
     deviceType: e.deviceType,
   }
-  for (const key of BLOB_KEYS) {
-    const name = blobsMap[key]
-    appender.appendVarchar(name === 'reserved' ? '' : (blobs[name] ?? ''))
-  }
-  if (e.latitude === null) {
-    appender.appendNull()
-  } else {
-    appender.appendDouble(e.latitude)
-  }
-  if (e.longitude === null) {
-    appender.appendNull()
-  } else {
-    appender.appendDouble(e.longitude)
-  }
+}
+
+/** Pivot a batch of events into the column arrays of one data chunk (DDL order). */
+function accessEventColumns(events: EnrichedAccessEvent[]): DuckDBValue[][] {
+  const blobRecords = events.map(eventBlobs)
+  return [
+    events.map((e) => DuckDBUUIDValue.fromUint128(uuidToUint128(e.eventId))),
+    events.map((e) => index1Of(e.entityType, e.entityId)),
+    events.map((e) => new DuckDBTimestampTZValue(BigInt(e.ts.getTime()) * 1000n)),
+    events.map((e) => e.isBot),
+    ...BLOB_KEYS.map((key) => {
+      const name = blobsMap[key]
+      return blobRecords.map((record) => (name === 'reserved' ? '' : (record[name] ?? '')))
+    }),
+    events.map((e) => e.latitude),
+    events.map((e) => e.longitude),
+  ]
 }
 
 /**
- * Append a whole batch through the Appender protocol — `endRow()` per
- * row, `flushSync()` per ≤2048-row chunk. At-least-once: a mid-batch
- * failure leaves flushed rows visible while the batch dead-letters.
+ * Append a whole batch as data chunks — one `setColumns` + `appendDataChunk`
+ * per ≤2048-row slice instead of a per-value appender call per cell.
+ * At-least-once: a mid-batch failure leaves flushed chunks visible while the
+ * batch dead-letters.
  */
 export async function appendAccessEvents(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
   const appender = await writer.createAppender('access_events')
   try {
-    let count = 0
-    for (const event of events) {
-      appendAccessEvent(appender, event)
-      appender.endRow()
-      count++
-      if (count % 2048 === 0) {
-        appender.flushSync()
-      }
+    for (let offset = 0; offset < events.length; offset += 2048) {
+      const chunk = DuckDBDataChunk.create(ACCESS_EVENTS_CHUNK_TYPES)
+      chunk.setColumns(accessEventColumns(events.slice(offset, offset + 2048)))
+      appender.appendDataChunk(chunk)
+      appender.flushSync()
     }
   } finally {
     appender.closeSync()
