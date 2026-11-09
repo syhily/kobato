@@ -19,6 +19,11 @@ interface PlayerPosition {
 }
 
 function loadPosition(): PlayerPosition {
+  if (typeof window === 'undefined') {
+    // SSR: reading Node's experimental `localStorage` getter would only emit
+    // an ExperimentalWarning — storage reads belong to the browser.
+    return { x: 0, y: 0 }
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {

@@ -1,4 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+// @vitest-environment happy-dom
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
@@ -148,30 +150,13 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
 
   describe('position persistence (loadPosition / savePosition)', () => {
     // The lazy `useState` position initializer runs during the SSR pass,
-    // reaching both `loadPosition` branches.
+    // reaching both `loadPosition` branches; happy-dom supplies the real
+    // `window` + `localStorage` the browser path reads.
     beforeEach(() => {
       player.state.currentTrack = track
       player.state.playlist = playlist
       player.state.currentIndex = 0
-      const store = new Map<string, string>()
-      vi.stubGlobal('localStorage', {
-        getItem(key: string) {
-          return store.get(key) ?? null
-        },
-        setItem(key: string, value: string) {
-          store.set(key, value)
-        },
-        removeItem(key: string) {
-          store.delete(key)
-        },
-        clear() {
-          store.clear()
-        },
-      } as unknown as Storage)
-    })
-
-    afterEach(() => {
-      vi.unstubAllGlobals()
+      localStorage.clear()
     })
 
     it('falls back to {x:0, y:0} when no stored position exists', async () => {
