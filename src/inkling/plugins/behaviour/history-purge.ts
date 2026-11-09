@@ -1,6 +1,5 @@
 import type { HistoryState } from '@lexical/react/LexicalHistoryPlugin'
-
-import { CAN_REDO_COMMAND, CAN_UNDO_COMMAND, type LexicalEditor } from 'lexical'
+import type { LexicalEditor } from 'lexical'
 
 /**
  * Purges undo/redo entries owned by dead editors from a shared history state.
@@ -20,8 +19,9 @@ import { CAN_REDO_COMMAND, CAN_UNDO_COMMAND, type LexicalEditor } from 'lexical'
  * dropped from both stacks (in place — collab's SharedHistoryExtension may
  * hold the array references). A `current` entry owned by a dead editor is
  * re-pointed at the live editor's present state so the next undo keeps its
- * redo target. CAN_UNDO/CAN_REDO are re-dispatched to keep toolbar state
- * honest.
+ * redo target. Nothing re-dispatches CAN_UNDO/CAN_REDO: no consumer listens
+ * to them (a future HistoryExtension migration would sync its canUndo/canRedo
+ * signals through onHistoryStateChange instead).
  */
 export function purgeDeadEditorHistoryEntries(historyState: HistoryState, liveEditor: LexicalEditor) {
   const filterInPlace = (stack: HistoryState['undoStack']) => {
@@ -39,9 +39,4 @@ export function purgeDeadEditorHistoryEntries(historyState: HistoryState, liveEd
   if (current?.editor.getRootElement() === null) {
     historyState.current = { editor: liveEditor, editorState: liveEditor.getEditorState() }
   }
-
-  // oxlint-disable-next-line typescript/no-deprecated -- the signal replacement lives on HistoryExtension (extension API); the plugin-pattern registerHistory itself still dispatches these commands, so toolbar state syncs through them
-  liveEditor.dispatchCommand(CAN_UNDO_COMMAND, historyState.undoStack.length > 0)
-  // oxlint-disable-next-line typescript/no-deprecated -- see the note above
-  liveEditor.dispatchCommand(CAN_REDO_COMMAND, historyState.redoStack.length > 0)
 }

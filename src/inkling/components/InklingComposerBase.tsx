@@ -1,10 +1,12 @@
 import { LexicalCollaboration } from '@lexical/react/LexicalCollaborationContext'
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
-import { LexicalComposer, type InitialConfigType } from '@lexical/react/LexicalComposer'
+import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer'
+import { type CreateEditorArgs } from 'lexical'
 import React from 'react'
 
 import type { CardConfig, FileUploader, FileUploaderInput } from '@/inkling/context/InklingHostIntegrationContext'
 
+import { buildInklingRootExtension } from '@/inkling/components/inkling-root-extension'
 import { ComposerHandlesProvider } from '@/inkling/context/ComposerHandlesProvider'
 import InklingCollaborationContext, {
   noopWebsocketProviderFactory,
@@ -13,8 +15,6 @@ import { InklingHostIntegrationProvider } from '@/inkling/context/InklingHostInt
 import InklingUiPrefsContext from '@/inkling/context/InklingUiPrefsContext'
 import { useCollaborationProviderFactory } from '@/inkling/hooks/useCollaborationProviderFactory'
 import { resolveLabels, type InklingLabelsInput } from '@/inkling/labels/inkling-labels'
-import { DEFAULT_CONFIG } from '@/inkling/nodes/base'
-import defaultTheme from '@/inkling/themes/default'
 import { setTelemetryHandler } from '@/inkling/utils/analytics'
 import { normalizeFileUploader } from '@/inkling/utils/file-uploader'
 import { type InklingInitialEditorState, normalizeInitialEditorState } from '@/inkling/utils/initial-document'
@@ -31,12 +31,6 @@ function defaultOnError(error: unknown, _info?: React.ErrorInfo) {
   }
 }
 
-const defaultConfig = {
-  namespace: 'InklingEditor',
-  theme: defaultTheme,
-  html: DEFAULT_CONFIG.html,
-}
-
 /**
  * The core composer variant (plan C5): `nodes` is REQUIRED — the host names
  * its node set (MINIMAL_NODES, a subset over EDITOR_BASE_NODES, or its own
@@ -50,7 +44,7 @@ const defaultConfig = {
  */
 export interface InklingComposerProps {
   initialEditorState?: InklingInitialEditorState
-  nodes: InitialConfigType['nodes']
+  nodes: CreateEditorArgs['nodes']
   onError?: (error: unknown, info?: React.ErrorInfo) => void
   fileUploader?: FileUploaderInput
   cardConfig?: CardConfig
@@ -112,19 +106,17 @@ const InklingComposerBase = ({
     [initialEditorState],
   )
 
-  const initialConfig = React.useMemo(
-    () =>
-      ({
-        ...defaultConfig,
-        nodes,
-        // collaboration owns the bootstrap state via the plugin below
-        editorState: enableMultiplayer ? null : normalizedInitialEditorState,
-        // Lexical calls its onError with (Error, LexicalEditor); the public
-        // callback follows the React error-boundary shape, so only the error is
-        // forwarded — the original callback stays in context for the boundary
-        onError: (error: Error) => onError(error),
-      }) satisfies InitialConfigType,
-    [enableMultiplayer, normalizedInitialEditorState, nodes, onError],
+  // Frozen at mount: LexicalExtensionComposer rebuilds the editor (losing its
+  // state) when the extension identity changes, while the legacy composer read
+  // its initialConfig exactly once — the lazy useState initializer is the
+  // mount-scoped equivalent for hosts passing inline props.
+  const [rootExtension] = React.useState(() =>
+    buildInklingRootExtension({
+      nodes,
+      onError: (error: Error) => onError(error),
+      // collaboration owns the bootstrap state via the plugin below
+      initialEditorState: enableMultiplayer ? null : normalizedInitialEditorState,
+    }),
   )
 
   // the five per-composer handles are created and provided by
@@ -183,8 +175,10 @@ const InklingComposerBase = ({
   )
 
   return (
-    // oxlint-disable-next-line typescript/no-deprecated -- the LexicalExtensionComposer migration is a deliberate follow-up: the whole plugin surface (CORE_PLUGINS/DEFAULT_FEATURE_PLUGINS) is built on the legacy plugin pattern, so the composer moves last, not first
-    <LexicalComposer initialConfig={initialConfig}>
+    // contentEditable={null}: the RichTextPlugin core entry owns the editable
+    // element — the composer's default ContentEditable would double-bind the
+    // root element
+    <LexicalExtensionComposer extension={rootExtension} contentEditable={null}>
       <ComposerHandlesProvider>
         <InklingHostIntegrationProvider value={hostIntegrationValue}>
           <InklingCollaborationContext.Provider value={collaborationValue}>
@@ -205,7 +199,7 @@ const InklingComposerBase = ({
           </InklingCollaborationContext.Provider>
         </InklingHostIntegrationProvider>
       </ComposerHandlesProvider>
-    </LexicalComposer>
+    </LexicalExtensionComposer>
   )
 }
 

@@ -1,4 +1,4 @@
-import type { InitialEditorStateType } from '@lexical/react/LexicalComposer'
+import type { InitialEditorStateType } from 'lexical'
 
 import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext'
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'

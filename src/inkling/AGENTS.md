@@ -16,6 +16,18 @@
     surface `server/` and `shared/` may use.
 - The old `/core` entry is gone (it had zero consumers); `InklingComposerBase` remains for card-free
   compositions.
+- The composer builds its editor through the Lexical EXTENSION API, not the deprecated
+  `LexicalComposer`: `InklingComposerBase` mounts `LexicalExtensionComposer` with the root extension
+  assembled by `src/inkling/components/inkling-root-extension.ts` (namespace/theme/html/nodes/onError
+  plus `$initialEditorState` — `null` when collaboration bootstraps, initializer functions keep the
+  legacy `root.isEmpty()` guard). Two invariants there are load-bearing: the extension is frozen per
+  mount through a lazy `useState` initializer (`LexicalExtensionComposer` REBUILDS the editor when the
+  extension identity changes, where the legacy composer read its config once), and the composer gets
+  `contentEditable={null}` because the `RichTextPlugin` core entry owns the editable element. Node
+  decorators render through `ReactExtension` in this world, so the root extension configures
+  `ReactExtension`'s `ErrorBoundary` with `InklingErrorBoundary` (the `RichTextPlugin` prop is inert
+  here); every legacy plugin (`HistoryPlugin`, `useLexicalComposerContext`, …) keeps working off the
+  context `ReactExtension` provides.
 - Source: `src/inkling/`, tests: `tests/inkling/` (a dedicated vitest project), demo: `demo/` at the
   repo root.
 

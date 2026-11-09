@@ -1,7 +1,12 @@
-import type { InitialEditorStateType } from '@lexical/react/LexicalComposer'
-
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { mergeRegister, BLUR_COMMAND, COMMAND_PRIORITY_LOW, FOCUS_COMMAND, type LexicalEditor } from 'lexical'
+import {
+  mergeRegister,
+  BLUR_COMMAND,
+  COMMAND_PRIORITY_LOW,
+  FOCUS_COMMAND,
+  type InitialEditorStateType,
+  type LexicalEditor,
+} from 'lexical'
 import React, { useContext } from 'react'
 
 import InklingComposableEditor from '@/inkling/components/InklingComposableEditor'

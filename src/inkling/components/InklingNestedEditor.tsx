@@ -1,5 +1,4 @@
-import type { InitialEditorStateType } from '@lexical/react/LexicalComposer'
-import type { EditorThemeClasses, LexicalEditor } from 'lexical'
+import type { EditorThemeClasses, InitialEditorStateType, LexicalEditor } from 'lexical'
 
 import React from 'react'
 

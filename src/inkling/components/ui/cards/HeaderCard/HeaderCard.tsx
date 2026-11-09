@@ -1,5 +1,4 @@
-import type { InitialEditorStateType } from '@lexical/react/LexicalComposer'
-import type { LexicalEditor } from 'lexical'
+import type { InitialEditorStateType, LexicalEditor } from 'lexical'
 
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React, { useContext, useEffect, useState } from 'react'

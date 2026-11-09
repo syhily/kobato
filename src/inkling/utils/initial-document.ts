@@ -1,5 +1,4 @@
-import type { InitialEditorStateType } from '@lexical/react/LexicalComposer'
-import type { SerializedEditorState, SerializedParagraphNode } from 'lexical'
+import type { InitialEditorStateType, SerializedEditorState, SerializedParagraphNode } from 'lexical'
 
 import { $createParagraphNode, $getRoot } from 'lexical'
 

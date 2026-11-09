@@ -1,4 +1,4 @@
-import type { InitialConfigType } from '@lexical/react/LexicalComposer'
+import type { CreateEditorArgs } from 'lexical'
 
 import InklingComposerBase, {
   type InklingComposerProps as InklingComposerBaseProps,
@@ -15,7 +15,7 @@ export type { InklingInitialEditorState }
  * `InklingComposer` name with `nodes` required.
  */
 export interface InklingComposerProps extends Omit<InklingComposerBaseProps, 'nodes'> {
-  nodes?: InitialConfigType['nodes']
+  nodes?: CreateEditorArgs['nodes']
 }
 
 const InklingComposer = ({ nodes = [...DEFAULT_NODES], ...props }: InklingComposerProps) => {
