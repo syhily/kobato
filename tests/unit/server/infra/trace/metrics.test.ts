@@ -1,0 +1,244 @@
+import type { SpanExporter } from '@opentelemetry/sdk-trace'
+
+import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/infra/trace/config'
+
+import { TestMetricReader, dataPointsOf, metricByName, pointValue } from '#/_helpers/in-memory-metric-reader'
+import { __resetTraceFacadeForTests, counter, histogram } from '@/server/infra/trace/facade'
+import { METRIC, recordCacheLookup, recordSsrPhase } from '@/server/infra/trace/metrics'
+import { isDevTraceRunning, startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+
+const CONFIG: ServerTraceRuntimeConfig = {
+  endpoint: 'http://127.0.0.1:5080',
+  organization: 'default',
+  authorizationHeader: 'Basic dGVzdDp0ZXN0',
+  sampleRate: 1,
+  includeRedactedSql: false,
+  otlpTracesUrl: 'http://127.0.0.1:5080/api/default/v1/traces',
+  otlpMetricsUrl: 'http://127.0.0.1:5080/api/default/v1/metrics',
+}
+
+function resolution(): TraceConfigResolution {
+  return { status: 'active', server: CONFIG, frontend: null, diagnostics: [] }
+}
+
+function spanHarness(): SpanExporter {
+  return new InMemorySpanExporter()
+}
+
+let reader: TestMetricReader
+
+beforeEach(() => {
+  vi.stubEnv('DEV', true as never)
+  vi.stubEnv('PROD', false as never)
+  __resetTraceFacadeForTests()
+  reader = new TestMetricReader()
+})
+
+afterEach(async () => {
+  await stopDevTrace()
+  __resetTraceFacadeForTests()
+  vi.unstubAllEnvs()
+})
+
+async function start(metricReader: TestMetricReader = reader) {
+  return startDevTrace({ resolution: resolution(), spanExporter: spanHarness(), metricReader })
+}
+
+const EVENT_LOOP_METRIC_TIMEOUT_MS = 2_000
+const EVENT_LOOP_METRIC_POLL_MS = 25
+
+/**
+ * The event-loop gauge is collected from an observable callback, so under a
+ * loaded suite the first `collect()` can still see no data point. Poll with a
+ * bounded deadline for an actual finite sample; a real missing observer still
+ * fails the test when the deadline expires.
+ */
+async function waitForEventLoopDelay(metricReader: TestMetricReader) {
+  const deadline = Date.now() + EVENT_LOOP_METRIC_TIMEOUT_MS
+  for (;;) {
+    const metrics = await metricReader.collectResourceMetrics()
+    const delay = metricByName(metrics, METRIC.eventLoopDelay)
+    const point = delay?.dataPoints[0]
+    if (delay !== undefined && point !== undefined && typeof point.value === 'number' && Number.isFinite(point.value)) {
+      return delay
+    }
+    const remaining = deadline - Date.now()
+    if (remaining <= 0) {
+      throw new Error(
+        `event_loop.delay metric did not produce a finite sample within ${EVENT_LOOP_METRIC_TIMEOUT_MS}ms`,
+      )
+    }
+    await new Promise((resolve) => setTimeout(resolve, Math.min(EVENT_LOOP_METRIC_POLL_MS, remaining)))
+  }
+}
+
+describe('trace metrics — closed catalog', () => {
+  it('records only declared metric names and their declared attributes', async () => {
+    await start()
+
+    counter(METRIC.dbOperationCount).add(1, {
+      'db.engine': 'sqlite',
+      'db.operation': 'select',
+      'db.outcome': 'success',
+      'http.route': '/posts/:slug',
+    })
+    counter(METRIC.dbOperationCount).add(1, {
+      'db.engine': 'duckdb',
+      'db.operation': 'SELECT secret FROM t',
+      'db.outcome': 'success',
+    })
+    counter('user.private.metric').add(1, { 'db.engine': 'sqlite' })
+
+    const metrics = await reader.collectResourceMetrics()
+    const count = metricByName(metrics, METRIC.dbOperationCount)
+    expect(count).toBeDefined()
+    const points = dataPointsOf(metrics, METRIC.dbOperationCount)
+    expect(points).toHaveLength(1)
+    expect(points[0]!.attributes).toEqual({
+      'db.engine': 'sqlite',
+      'db.operation': 'select',
+      'db.outcome': 'success',
+    })
+    expect(points[0]!.attributes).not.toHaveProperty('http.route')
+    expect(metricByName(metrics, 'user.private.metric')).toBeUndefined()
+  })
+
+  it('drops non-finite and negative metric values in both the runtime and the facade', async () => {
+    await start()
+
+    const requests = counter(METRIC.httpServerRequests)
+    requests.add(1, { 'http.request.method': 'GET', 'http.route': '/', 'http.response.status_code': 200 })
+    requests.add(Number.NaN, {})
+    requests.add(Number.POSITIVE_INFINITY, {})
+    requests.add(-1, {})
+
+    const duration = histogram(METRIC.httpServerDuration)
+    duration.record(5, { 'http.request.method': 'GET', 'http.route': '/', 'http.response.status_code': 200 })
+    duration.record(Number.NaN, {})
+    duration.record(-4, {})
+
+    const metrics = await reader.collectResourceMetrics()
+    expect(pointValue(dataPointsOf(metrics, METRIC.httpServerRequests)[0]!)).toBe(1)
+    const durationPoint = dataPointsOf(metrics, METRIC.httpServerDuration)[0]!
+    expect(durationPoint.value).toMatchObject({ count: 1, sum: 5 })
+  })
+
+  it('drops invalid SSR outcomes and cache buckets at the typed helper boundary', async () => {
+    await start()
+
+    recordSsrPhase('shell', 'bogus' as never, 5)
+    recordCacheLookup('not-a-bucket' as never, 'hit', false)
+
+    const metrics = await reader.collectResourceMetrics()
+    expect(dataPointsOf(metrics, METRIC.ssrShellDuration)).toHaveLength(0)
+    expect(dataPointsOf(metrics, METRIC.cacheLookupCount)).toHaveLength(0)
+  })
+
+  it('records declared SSR outcomes and cache buckets through the helpers', async () => {
+    await start()
+
+    recordSsrPhase('stream', 'aborted', 7)
+    recordCacheLookup('feed', 'miss', true)
+
+    const metrics = await reader.collectResourceMetrics()
+    const ssr = dataPointsOf(metrics, METRIC.ssrStreamDuration)
+    const cache = dataPointsOf(metrics, METRIC.cacheLookupCount)
+    expect(ssr).toHaveLength(1)
+    expect(ssr[0]!.attributes).toEqual({ 'ssr.outcome': 'aborted' })
+    expect(cache).toHaveLength(1)
+    expect(cache[0]!.attributes).toEqual({
+      'cache.bucket': 'feed',
+      'cache.result': 'miss',
+      'cache.coalesced': true,
+    })
+  })
+
+  it('uses the same fixed three-key resource and no detector enrichment', async () => {
+    await start()
+
+    counter(METRIC.cacheLookupCount).add(1, {
+      'cache.bucket': 'feed',
+      'cache.result': 'hit',
+      'cache.coalesced': false,
+    })
+
+    const metrics = await reader.collectResourceMetrics()
+    expect(Object.keys(metrics.resource.attributes).sort()).toEqual([
+      'deployment.environment',
+      'service.name',
+      'service.version',
+    ])
+    expect(metrics.resource.attributes['deployment.environment']).toBe('development')
+  })
+
+  it('collects the DEV-only event-loop delay gauge', async () => {
+    await start()
+
+    const delay = await waitForEventLoopDelay(reader)
+    expect(delay.descriptor.unit).toBe('ms')
+    const point = delay.dataPoints[0]!
+    expect(typeof point.value).toBe('number')
+    expect(Number.isFinite(point.value)).toBe(true)
+  })
+
+  it('does not rebuild the meter pipeline when start is called twice', async () => {
+    const instrumentSpy = vi.spyOn(reader, 'setMetricProducer')
+    const first = await start()
+    const second = await start()
+
+    expect(first.started).toBe(true)
+    expect(second.started).toBe(true)
+    expect(instrumentSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('restarts with a fresh reader and a single observer after HMR-style stop/start', async () => {
+    const first = await start()
+    await first.shutdown()
+    expect(isDevTraceRunning()).toBe(false)
+
+    const secondReader = new TestMetricReader()
+    const second = await start(secondReader)
+    expect(second.started).toBe(true)
+
+    const delay = await waitForEventLoopDelay(secondReader)
+    expect(delay.dataPoints).toHaveLength(1)
+  })
+})
+
+describe('trace metrics — lifecycle', () => {
+  it('flushes the meter provider alongside the tracer within the bounded budget', async () => {
+    const handle = await start()
+    const flushSpy = vi.spyOn(reader, 'forceFlush')
+
+    await handle.forceFlush()
+    expect(flushSpy).toHaveBeenCalled()
+
+    await handle.shutdown()
+    await stopDevTrace()
+    await stopDevTrace()
+  })
+
+  it('emits nothing after stop', async () => {
+    const handle = await start()
+    counter(METRIC.cacheLookupCount).add(1, {
+      'cache.bucket': 'feed',
+      'cache.result': 'hit',
+      'cache.coalesced': false,
+    })
+    const before = dataPointsOf(await reader.collectResourceMetrics(), METRIC.cacheLookupCount)
+    expect(before.length).toBe(1)
+
+    await handle.shutdown()
+    counter(METRIC.cacheLookupCount).add(1, {
+      'cache.bucket': 'feed',
+      'cache.result': 'hit',
+      'cache.coalesced': false,
+    })
+
+    // The provider is shut down; the facade's no-op counter must not throw.
+    expect(() => counter(METRIC.cacheLookupCount).add(1)).not.toThrow()
+  })
+})

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { SEA_BUNDLE_DEFINED_GLOBALS, scanBundleText } from '../../../../scripts/sea/check-bundle.ts'
+import {
+  FORBIDDEN_DEV_TELEMETRY_MARKERS,
+  SEA_BUNDLE_DEFINED_GLOBALS,
+  scanBundleText,
+} from '../../../../scripts/sea/check-bundle.ts'
 
 // An `__APP_*__`/`__SEA_*__` identifier missing from the bundle's define
 // table would boot into a bare ReferenceError inside the binary — pin the
@@ -68,5 +72,24 @@ describe('scanBundleText: undefined build-time globals', () => {
   it('does not match identifiers without the full __APP_/__SEA_ wrapper', () => {
     const text = ['const APP_VERSION = "x"', 'const __SEA = 1', 'const __APPS_FOO__ = 2'].join('\n')
     expect(scanBundleText(text, SEA_BUNDLE_DEFINED_GLOBALS)).toEqual([])
+  })
+})
+
+describe('scanBundleText: development-only telemetry exclusion', () => {
+  it('passes a production bundle with no OTel/OpenObserve SDK markers', () => {
+    const text = ['const span = { traceId: "abc" }', 'console.log(span.traceId)'].join('\n')
+    expect(scanBundleText(text, SEA_BUNDLE_DEFINED_GLOBALS)).toEqual([])
+  })
+
+  it.each([...FORBIDDEN_DEV_TELEMETRY_MARKERS])('flags a bundle carrying the %s marker', (marker) => {
+    const text = `const leaked = "${marker}something"`
+
+    expect(scanBundleText(text, SEA_BUNDLE_DEFINED_GLOBALS)).toEqual([
+      `development-only telemetry SDK remains: ${marker}`,
+    ])
+  })
+
+  it('pins the marker set to the packages ADR-0012 confines to DEV', () => {
+    expect([...FORBIDDEN_DEV_TELEMETRY_MARKERS]).toEqual(['@opentelemetry/', '@openobserve/'])
   })
 })

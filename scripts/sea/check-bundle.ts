@@ -29,6 +29,11 @@ export const SEA_BUNDLE_DEFINED_GLOBALS = [
 const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'])
 const allowedRelativeSpecifiers = new Set(['./MyComponent'])
 
+// ADR-0012: the real OpenObserve/OTel SDKs are development-only. A production
+// or SEA bundle must never carry their module paths — if a dynamic DEV entry
+// stops being DCE'd, the marker survives and this check fails the build.
+export const FORBIDDEN_DEV_TELEMETRY_MARKERS = ['@opentelemetry/', '@openobserve/'] as const
+
 function isAllowedSpecifier(specifier: string) {
   return builtins.has(specifier) || specifier.startsWith('node:') || allowedExternalSpecifiers.has(specifier)
 }
@@ -63,6 +68,12 @@ export function scanBundleText(text: string, definedGlobals: readonly string[]) 
 
   if (text.includes('import.meta.env')) {
     errors.push('import.meta.env remains in the bundle')
+  }
+
+  for (const marker of FORBIDDEN_DEV_TELEMETRY_MARKERS) {
+    if (text.includes(marker)) {
+      errors.push(`development-only telemetry SDK remains: ${marker}`)
+    }
   }
 
   const undefinedGlobals = new Set<string>()

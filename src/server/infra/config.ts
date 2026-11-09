@@ -24,6 +24,21 @@ export interface ConfigEntry {
   fileDefault: unknown
 }
 
+// Env values reach `loadServerConfig` as raw strings (and `parseEnvValue`
+// only types the write-back), so booleans need an explicit grammar instead
+// of z.coerce.boolean(), which would read "false" as true.
+const configBoolean = z
+  .union([
+    z.boolean(),
+    z.literal('true'),
+    z.literal('false'),
+    z.literal('1'),
+    z.literal('0'),
+    z.literal(1),
+    z.literal(0),
+  ])
+  .transform((value) => value === true || value === 'true' || value === '1' || value === 1)
+
 export const CONFIG_TABLE = [
   { path: ['server', 'host'], schema: z.string().min(1).default('0.0.0.0'), fileDefault: '0.0.0.0' },
   {
@@ -107,6 +122,25 @@ export const CONFIG_TABLE = [
     schema: z.string().min(1).optional(),
     fileDefault: '',
   },
+  // Development-only OpenObserve tracing (ADR-0012). Structural parsing is
+  // deliberately permissive here; semantic activation — endpoint security,
+  // the organization path grammar, credential completeness, and sampling
+  // ranges — resolves safely at `infra/trace/config.ts` so a bad trace block
+  // can never prevent the development site from starting.
+  { path: ['trace', 'enabled'], schema: configBoolean.default(false), fileDefault: false },
+  { path: ['trace', 'endpoint'], schema: z.string().default(''), fileDefault: '' },
+  { path: ['trace', 'organization'], schema: z.string().default('default'), fileDefault: 'default' },
+  { path: ['trace', 'serverAuthorizationHeader'], schema: z.string().default(''), fileDefault: '' },
+  { path: ['trace', 'sampleRate'], schema: z.coerce.number().default(1), fileDefault: 1 },
+  { path: ['trace', 'includeRedactedSql'], schema: configBoolean.default(false), fileDefault: false },
+  { path: ['trace', 'frontend', 'enabled'], schema: configBoolean.default(false), fileDefault: false },
+  { path: ['trace', 'frontend', 'applicationId'], schema: z.string().default(''), fileDefault: '' },
+  { path: ['trace', 'frontend', 'clientToken'], schema: z.string().default(''), fileDefault: '' },
+  {
+    path: ['trace', 'frontend', 'sessionSampleRate'],
+    schema: z.coerce.number().default(100),
+    fileDefault: 100,
+  },
 ] as const satisfies readonly ConfigEntry[]
 
 /** Process env var name for a table entry — `__` separator convention. */
@@ -131,14 +165,32 @@ export interface ConfigCandidateEnv {
   sea: boolean
   cwd: string
   home: string
+  /**
+   * Explicit config path from `KOBATO_CONFIG_FILE`. Development tooling that
+   * cannot use `--config` (the Vite CLI owns that flag) points the DEV server
+   * at a throwaway config without touching the repository's own file.
+   */
+  configFile?: string
 }
 
-/** Location order: --config/-c > <execDir> (SEA only) > cwd > ~/.config. */
+/**
+ * Location order: --config/-c > KOBATO_CONFIG_FILE > <execDir> (SEA only) >
+ * cwd > ~/.config. The env override is resolved against the process cwd and is
+ * treated as explicit (the path is used even before the file exists).
+ */
 export function configCandidates(argv: string[], env?: ConfigCandidateEnv): string[] {
   const explicit = argvConfigPath(argv)
-  const { sea, cwd, home } = env ?? { sea: isSea(), cwd: process.cwd(), home: homedir() }
+  const resolvedEnv = env ?? {
+    sea: isSea(),
+    cwd: process.cwd(),
+    home: homedir(),
+    configFile: process.env.KOBATO_CONFIG_FILE,
+  }
+  const { sea, cwd, home } = resolvedEnv
+  const envConfig = resolvedEnv.configFile === undefined ? null : resolve(cwd, resolvedEnv.configFile)
   const candidates: (string | null)[] = [
     explicit,
+    envConfig,
     // Non-SEA execPath is the node binary itself — only the SEA binary owns its path.
     sea ? join(dirname(process.execPath), CONFIG_FILE_NAME) : null,
     join(cwd, CONFIG_FILE_NAME),
@@ -450,13 +502,20 @@ export function parseRestorableConfigJson(raw: string): ParsedConfigFile {
  */
 export function resolveConfigFilePath(): string | null {
   const explicit = argvConfigPath(process.argv.slice(2))
-  // Vitest without --config: env-only, zero filesystem access.
-  if (process.env.VITEST === 'true' && explicit === null) {
+  const envConfig = process.env.KOBATO_CONFIG_FILE
+  // Vitest without --config/KOBATO_CONFIG_FILE: env-only, zero filesystem access.
+  if (process.env.VITEST === 'true' && explicit === null && envConfig === undefined) {
     return null
   }
   const candidates = configCandidates(process.argv.slice(2))
-  // An explicit --config is a directive: use it even when the file doesn't exist yet (it is created there).
-  return explicit ?? candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
+  // An explicit --config (or KOBATO_CONFIG_FILE) is a directive: use it even
+  // when the file doesn't exist yet (it is created there).
+  return (
+    explicit ??
+    (envConfig === undefined ? null : resolve(envConfig)) ??
+    candidates.find((candidate) => existsSync(candidate)) ??
+    candidates[0]
+  )
 }
 
 /**
@@ -538,6 +597,24 @@ export function loadConfig(): Record<string, unknown> {
 }
 
 /** The nested, validated configuration every consumer reads. */
+export interface TraceFrontendConfigSection {
+  enabled: boolean
+  applicationId: string
+  clientToken: string
+  sessionSampleRate: number
+}
+
+/** Development-only OpenObserve tracing. Semantics live in `infra/trace/config.ts`. */
+export interface TraceConfigSection {
+  enabled: boolean
+  endpoint: string
+  organization: string
+  serverAuthorizationHeader: string
+  sampleRate: number
+  includeRedactedSql: boolean
+  frontend: TraceFrontendConfigSection
+}
+
 export interface ServerConfig {
   server: {
     host: string
@@ -559,6 +636,7 @@ export interface ServerConfig {
     analyticsDatabase: string
     defaultFont?: string | undefined
   }
+  trace: TraceConfigSection
 }
 
 /**

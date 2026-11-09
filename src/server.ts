@@ -55,6 +55,22 @@ wrapFetchWithLeakedResponseHandler(app)
 
 setRestartApp(app)
 
+// ADR-0012: development-only OpenObserve tracing. The dynamic import is the
+// only path to the real SDK; a production build replaces `import.meta.env.DEV`
+// with `false`, so the provider/exporter never enters the bundle. Disabled or
+// invalid configurations resolve to a no-op handle.
+if (import.meta.env.DEV) {
+  try {
+    const { startDevTrace } = await import('@/server/infra/trace/runtime')
+    await startDevTrace()
+  } catch (err) {
+    root.warn(
+      { err: err instanceof Error ? err.name : typeof err },
+      'Failed to start development tracing; continuing without telemetry',
+    )
+  }
+}
+
 // Migrations and settings hydration must finish before schedulers start — else the "Settings not hydrated" race. Block is HMR-safe via `secretsMigrated`.
 
 if (!hmr?.secretsMigrated) {

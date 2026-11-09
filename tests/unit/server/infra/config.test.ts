@@ -47,6 +47,7 @@ function clearConfigEnv(): void {
   for (const key of ENV_KEYS) {
     vi.stubEnv(key, undefined)
   }
+  vi.stubEnv('KOBATO_CONFIG_FILE', undefined)
 }
 
 describe('infra/config — loadConfig', () => {
@@ -676,17 +677,28 @@ describe('infra/config — CONFIG_TABLE', () => {
 describe('infra/config — configCandidates', () => {
   const seaEnv = { sea: false, cwd: '/work/app', home: '/home/user' }
 
-  it('orders --config > execDir (SEA) > cwd > ~/.config', () => {
-    expect(configCandidates([], seaEnv)).toEqual([
+  it('orders --config > KOBATO_CONFIG_FILE > execDir (SEA) > cwd > ~/.config', () => {
+    expect(configCandidates([], { ...seaEnv, configFile: undefined })).toEqual([
       '/work/app/kobato.config.json',
       '/home/user/.config/kobato.config.json',
     ])
-    expect(configCandidates([], { ...seaEnv, sea: true })).toEqual([
+    expect(configCandidates([], { ...seaEnv, sea: true, configFile: undefined })).toEqual([
       join(dirname(process.execPath), 'kobato.config.json'),
       '/work/app/kobato.config.json',
       '/home/user/.config/kobato.config.json',
     ])
-    expect(configCandidates(['--config', '/tmp/x.json'], seaEnv)[0]).toBe('/tmp/x.json')
+    expect(configCandidates(['--config', '/tmp/x.json'], { ...seaEnv, configFile: undefined })[0]).toBe('/tmp/x.json')
+    expect(configCandidates([], { ...seaEnv, configFile: 'trace/kobato.config.json' })[0]).toBe(
+      '/work/app/trace/kobato.config.json',
+    )
+    expect(
+      configCandidates(['--config', '/tmp/x.json'], { ...seaEnv, configFile: 'trace/kobato.config.json' }),
+    ).toEqual([
+      '/tmp/x.json',
+      '/work/app/trace/kobato.config.json',
+      '/work/app/kobato.config.json',
+      '/home/user/.config/kobato.config.json',
+    ])
   })
 })
 
@@ -706,6 +718,15 @@ describe('infra/config — resolveConfigFilePath', () => {
 
   it('returns null under VITEST without --config (env-only, no filesystem)', () => {
     process.argv = [realArgv[0]!, realArgv[1]!]
+    vi.stubEnv('KOBATO_CONFIG_FILE', undefined)
     expect(resolveConfigFilePath()).toBeNull()
+  })
+
+  it('honours KOBATO_CONFIG_FILE as an explicit path even when the file is absent', () => {
+    const path = configPathIn(makeTmpDir())
+    process.argv = [realArgv[0]!, realArgv[1]!]
+    vi.stubEnv('KOBATO_CONFIG_FILE', path)
+    expect(resolveConfigFilePath()).toBe(path)
+    vi.unstubAllEnvs()
   })
 })
