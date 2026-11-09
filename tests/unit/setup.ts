@@ -21,6 +21,7 @@ import '@date-fns/tz'
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import '#/_helpers/env'
+import { silenceLocalStorageWarning } from '#/_helpers/silence-local-storage-warning'
 
 // Inert stubs; a file-level vi.mock overrides them when a test asserts on them.
 vi.mock('sonner', () => ({
@@ -45,6 +46,7 @@ vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))
 
+silenceLocalStorageWarning()
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 // Auto-reset the snapshot + DOM after every test to prevent isolation leaks.

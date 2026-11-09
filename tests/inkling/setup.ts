@@ -17,11 +17,11 @@ MockIntersectionObserver.prototype.disconnect = () => {}
 MockIntersectionObserver.prototype.takeRecords = () => []
 globalThis.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 
-// Node ≥ 23 ships a built-in `localStorage` global that vitest's jsdom
-// environment refuses to override (getWindowKeys drops jsdom keys already
-// present on the Node global), and Node's own getter returns undefined unless
-// --localstorage-file was passed. Install an in-memory Storage whenever the
-// ambient one is missing or broken so tests see a working implementation.
+// Node ≥ 23 ships a built-in `localStorage` global that warns (and yields
+// undefined) unless --localstorage-file was passed. Vitest 5 wires the jsdom
+// implementation over it, but keep an in-memory Storage fallback for runtimes
+// where the ambient one is missing or broken so tests always see a working
+// implementation.
 class InMemoryStorage implements Storage {
   private readonly store = new Map<string, string>()
   get length() {

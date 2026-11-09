@@ -204,6 +204,10 @@ ceremony:
   - `#/_helpers/context` — `makeRouteContext` / `makeLoaderArgs` wrappers
     that set the stub on a `RouterContextProvider` for direct loader/action
     tests
+  - `#/_helpers/silence-local-storage-warning` — drops Node's experimental
+    `localStorage` getter warning (lib0 probes it at module load inside the
+    inkling composer graph); every other warning still reaches stderr. Called
+    by the unit / it / snaps project setups.
   - `#/_helpers/auth-context-mock` — `createRequestContextMockModule()` for
     `vi.mock('@/server/http/request-context', ...)` when a test invokes a
     handler without a real `RouterContextProvider`

@@ -9,7 +9,9 @@ import { afterEach, vi } from 'vitest'
 
 import '#/_helpers/env'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { silenceLocalStorageWarning } from '#/_helpers/silence-local-storage-warning'
 
+silenceLocalStorageWarning()
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 // `safeFetch` resolves hostnames before dialing; suites stub `fetch`, so DNS

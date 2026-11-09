@@ -7,6 +7,7 @@ import { afterEach, vi } from 'vitest'
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import '#/_helpers/env'
+import { silenceLocalStorageWarning } from '#/_helpers/silence-local-storage-warning'
 
 // Inert global stubs for the noisiest UI seams; setup stubs the noise,
 // `tests/_helpers/` owns the doubles (a file-level vi.mock overrides these).
@@ -25,6 +26,7 @@ vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
   }),
 }))
 
+silenceLocalStorageWarning()
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 // Auto-reset the snapshot after every test to prevent isolation leaks.
