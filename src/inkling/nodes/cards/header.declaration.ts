@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseHeaderNode, headerCardWidth, headerNestedEditors } from '@/inkling/nodes/base/nodes/header/HeaderNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const headerDeclaration = {
+export const headerDeclaration = checkedCardDeclaration({
   nodeType: 'header',
   baseNode: BaseHeaderNode,
   nestedEditors: headerNestedEditors,
@@ -27,4 +26,4 @@ export const headerDeclaration = {
   ],
   toolbarLabel: 'header',
   // No markdown entry: the header card has no markdown representation.
-} satisfies CardDeclaration<'header'>
+} satisfies CardDeclaration<'header', typeof BaseHeaderNode, readonly [], typeof headerNestedEditors>)

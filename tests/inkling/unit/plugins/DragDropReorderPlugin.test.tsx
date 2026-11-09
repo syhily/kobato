@@ -13,8 +13,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { DraggableInfo, DropResolution, DropResult } from '@/inkling/utils/draggable/DragDropContainer'
 
+import { cardDrag, imageDrag } from '#/inkling/utils/draggable-fixtures'
 import { updateEditor } from '#/inkling/utils/test-editor'
-import { $createImageNode, ImageNode } from '@/inkling/nodes/ImageNode'
+import { $createImageNode, $isImageNode, ImageNode } from '@/inkling/nodes/ImageNode'
 import DragDropReorderPlugin from '@/inkling/plugins/DragDropReorderPlugin'
 
 // The plugin's onDrop result mapping, exercised through the real plugin
@@ -26,6 +27,9 @@ import DragDropReorderPlugin from '@/inkling/plugins/DragDropReorderPlugin'
 interface CapturedContainerOptions {
   droppable: {
     onDrop: (draggableInfo: DraggableInfo, dropResolution: DropResolution | null) => DropResult
+  }
+  lifecycle: {
+    onDropEnd: (draggableInfo: DraggableInfo, success: boolean, sourceHandled: boolean) => void
   }
 }
 
@@ -57,21 +61,19 @@ function TestWrapper({ children, editor }: { children: React.ReactNode; editor: 
   return <LexicalComposerContext.Provider value={contextValue}>{children}</LexicalComposerContext.Provider>
 }
 
-function getCapturedOnDrop(): CapturedContainerOptions['droppable']['onDrop'] {
+function captureContainerOptions(): CapturedContainerOptions {
   if (!captured.containerOptions) {
     throw new Error('expected the plugin to have rendered its container options')
   }
-  return captured.containerOptions.droppable.onDrop
+  return captured.containerOptions
 }
 
-function draggableInfo(overrides: Partial<DraggableInfo>): DraggableInfo {
-  return {
-    element: document.createElement('div'),
-    target: null,
-    mousePosition: { x: 0, y: 0 },
-    dataset: {},
-    ...overrides,
-  }
+function getCapturedOnDrop(): CapturedContainerOptions['droppable']['onDrop'] {
+  return captureContainerOptions().droppable.onDrop
+}
+
+function getCapturedOnDropEnd(): CapturedContainerOptions['lifecycle']['onDropEnd'] {
+  return captureContainerOptions().lifecycle.onDropEnd
 }
 
 // the plugin's editor.update is React-hosted, so it commits on a later tick —
@@ -130,7 +132,7 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
     captured.resolveDrop.mockReturnValue({ draggableIndex: -1, droppables: [droppable] })
     const before = readTopLevelKeys()
 
-    const result = getCapturedOnDrop()(draggableInfo({ type: 'image', dataset: { src: '/dragged.png' } }), {
+    const result = getCapturedOnDrop()(imageDrag({ dataset: { src: '/dragged.png' } }), {
       insertIndex: 0,
     })
 
@@ -139,13 +141,40 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
     expect(readTopLevelKeys()).toHaveLength(before.length + 1)
   })
 
+  it('inserts the narrowed image payload with its dataset intact', async () => {
+    const droppable = editor.getElementByKey(imageKey)
+    if (!droppable) {
+      throw new Error('expected a reconciled image element')
+    }
+    captured.resolveDrop.mockReturnValue({ draggableIndex: -1, droppables: [droppable] })
+
+    const result = getCapturedOnDrop()(
+      // the image branch carries ImageNodeDataset directly — the surgery
+      // consumes it without an assertion
+      imageDrag({ dataset: { src: '/dragged.png', width: 320, height: 180 } }),
+      { insertIndex: 0 },
+    )
+
+    expect(result).toBe(true)
+    await settleEditor()
+    editor.getEditorState().read(() => {
+      const inserted = $getRoot()
+        .getChildren()
+        .filter($isImageNode)
+        .map((node) => node.getDataset())
+        .filter((dataset) => dataset.src === '/dragged.png')
+      // the insert surgery constructs the card from exactly the dragged dataset
+      expect(inserted).toEqual([expect.objectContaining({ src: '/dragged.png', width: 320, height: 180 })])
+    })
+  })
+
   it('reports failure and leaves the tree untouched when the image insert resolves no slot', async () => {
     // an empty drop-time scan gives $insertDraggedImage no slot — the drop
     // failed, and reporting failure is what keeps the source node in place
     captured.resolveDrop.mockReturnValue({ draggableIndex: -1, droppables: [] })
     const before = readTopLevelKeys()
 
-    const result = getCapturedOnDrop()(draggableInfo({ type: 'image', dataset: { src: '/dragged.png' } }), {
+    const result = getCapturedOnDrop()(imageDrag({ dataset: { src: '/dragged.png' } }), {
       insertIndex: 0,
     })
 
@@ -160,10 +189,50 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
     captured.resolveDrop.mockReturnValue({ draggableIndex: -1, droppables: [] })
     const before = readTopLevelKeys()
 
-    const result = getCapturedOnDrop()(draggableInfo({ type: 'card', nodeKey: imageKey }), { insertIndex: 0 })
+    const result = getCapturedOnDrop()(cardDrag({ cardName: 'image', nodeKey: imageKey }), { insertIndex: 0 })
 
     expect(result).toBe(false)
     await settleEditor()
     expect(readTopLevelKeys()).toEqual(before)
+  })
+
+  describe('onDropEnd source-removal policy', () => {
+    it('keeps the source for a successful image drag-out (images insert as new nodes)', async () => {
+      const before = readTopLevelKeys()
+
+      getCapturedOnDropEnd()(imageDrag({ dataset: { src: '/dragged.png' } }), true, false)
+      await settleEditor()
+
+      expect(readTopLevelKeys()).toEqual(before)
+      expect(readTopLevelKeys()).toContain(imageKey)
+    })
+
+    it('removes the card source after a successful drop handled elsewhere', async () => {
+      const before = readTopLevelKeys()
+
+      getCapturedOnDropEnd()(cardDrag({ cardName: 'image', nodeKey: imageKey }), true, false)
+      await settleEditor()
+
+      expect(readTopLevelKeys()).not.toContain(imageKey)
+      expect(readTopLevelKeys()).toHaveLength(before.length - 1)
+    })
+
+    it('keeps the card source when the target handled the drop itself (sourceHandled)', async () => {
+      const before = readTopLevelKeys()
+
+      getCapturedOnDropEnd()(cardDrag({ cardName: 'image', nodeKey: imageKey }), true, true)
+      await settleEditor()
+
+      expect(readTopLevelKeys()).toEqual(before)
+    })
+
+    it('keeps the card source when the drop failed', async () => {
+      const before = readTopLevelKeys()
+
+      getCapturedOnDropEnd()(cardDrag({ cardName: 'image', nodeKey: imageKey }), false, false)
+      await settleEditor()
+
+      expect(readTopLevelKeys()).toEqual(before)
+    })
   })
 })

@@ -24,7 +24,10 @@ import type { CardFencePayload } from '@/inkling/nodes/cards/card-markdown-trans
  * (`InklingHostMenuLabelKey`), with the entry's own `label`/`desc` as the
  * fallback when the namespace carries no override.
  */
-export type HostCardMenuEntrySpec = Omit<CardMenuEntrySpec, 'icon' | 'command'> & {
+export type HostCardMenuEntrySpec<Dataset extends Record<string, unknown> = Record<string, unknown>> = Omit<
+  CardMenuEntrySpec<Dataset>,
+  'icon' | 'command'
+> & {
   icon: CardIconId | ComponentType<SVGProps<SVGSVGElement>>
   command: CardMenuCommand | AnyLexicalCommand
 }

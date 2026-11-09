@@ -14,12 +14,13 @@ import { $createParagraphNode, $getRoot } from 'lexical'
  *   import returns this shape so an empty import is indistinguishable from a
  *   real empty-editor export.
  * - `MINIMAL_DOCUMENT_LEGACY_PAYLOAD` — the historical payload dialect,
- *   without the paragraph's `textFormat`/`textStyle`.
- *   `SerializedParagraphNode` declares those fields required, but
- *   `ParagraphNode.importJSON` treats them as optional — so host payloads
- *   that predate them still parse, and the bootstrap/repair paths below keep
- *   emitting this shape so stored payloads stay in the shape hosts already
- *   have.
+ *   without the paragraph's `textFormat`/`textStyle`. This is an in-memory
+ *   bootstrap/repair compatibility dialect, not a stored output: the
+ *   bootstrap/repair paths feed it straight into an editor and nothing relies
+ *   on it preserving a persisted shape, while `MINIMAL_DOCUMENT` remains the
+ *   public empty-import output. `SerializedParagraphNode` declares those
+ *   fields required, but `ParagraphNode.importJSON` treats them as optional,
+ *   so both dialects parse.
  *
  * The two dialects parse to equivalent editor states (importJSON supplies the
  * defaults); they differ in payload shape only. Call sites (HTML import,

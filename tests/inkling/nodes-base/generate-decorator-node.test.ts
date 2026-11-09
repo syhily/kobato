@@ -330,4 +330,66 @@ describe('Utils: generateDecoratorNode', function () {
       ),
     )
   })
+
+  describe('artifact-slot invalidation spec', function () {
+    // The spec-level pins for `invalidates`: the rejection cases below are
+    // about class creation (a typo must not reach a setter), and the one
+    // generic positive pin covers the dimensions the real card suites
+    // (codeblock, math) do not — several declared slots plus a sibling whose
+    // edits must not clear any.
+    const ArtifactNode = generateDecoratorNode({
+      nodeType: 'artifact-slot-test',
+      properties: [
+        { name: 'source', default: '', invalidates: ['highlighted', 'rendered'] },
+        { name: 'other', default: '' },
+        { name: 'highlighted', default: '' },
+        { name: 'rendered', default: '' },
+      ] as const,
+    })
+
+    const createArtifactEditor = () => createHeadlessEditor({ nodes: [ArtifactNode] })
+
+    it('rejects an invalidates reference outside the declared property vocabulary', function () {
+      expect(() =>
+        generateDecoratorNode({
+          nodeType: 'artifact-slot-typo-test',
+          properties: [
+            { name: 'code', default: '', invalidates: ['highlightedHTML'] },
+            { name: 'highlightedHtml', default: '' },
+          ] as const,
+        }),
+      ).toThrow(
+        '[generateDecoratorNode] artifact-slot-typo-test: property "code" invalidates unknown property "highlightedHTML" (declared properties: code, highlightedHtml)',
+      )
+    })
+
+    it('rejects an invalidates reference to a sibling that does not exist', function () {
+      expect(() =>
+        generateDecoratorNode({
+          nodeType: 'artifact-slot-missing-sibling-test',
+          properties: [
+            { name: 'tex', default: '', invalidates: ['mathml', 'svg'] },
+            { name: 'mathml', default: '' },
+          ] as const,
+        }),
+      ).toThrow(
+        '[generateDecoratorNode] artifact-slot-missing-sibling-test: property "tex" invalidates unknown property "svg" (declared properties: tex, mathml)',
+      )
+    })
+
+    it(
+      'clears only the declared slots on an edit, and none on a non-invalidating edit',
+      editorTest(createArtifactEditor, function () {
+        const node = new ArtifactNode({ source: 'a', highlighted: '<b>x</b>', rendered: '<i>y</i>' })
+
+        node.other = 'changed'
+        expect(node.highlighted).toBe('<b>x</b>')
+        expect(node.rendered).toBe('<i>y</i>')
+
+        node.source = 'b'
+        expect(node.highlighted).toBe('')
+        expect(node.rendered).toBe('')
+      }),
+    )
+  })
 })

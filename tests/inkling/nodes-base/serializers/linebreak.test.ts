@@ -6,13 +6,13 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createDocument } from '#/inkling/nodes-base/test-utils/index'
 import { editorTest } from '#/inkling/utils/test-editor'
-import { DEFAULT_CONFIG, DEFAULT_NODES } from '@/inkling/nodes/base/index'
+import { DEFAULT_BASE_NODES, DEFAULT_CONFIG } from '@/inkling/nodes/base/index'
 
 describe('Serializers: linebreak', function () {
   let editor: LexicalEditor
 
   beforeEach(function () {
-    editor = createHeadlessEditor({ nodes: DEFAULT_NODES, html: DEFAULT_CONFIG.html as HTMLConfig })
+    editor = createHeadlessEditor({ nodes: DEFAULT_BASE_NODES, html: DEFAULT_CONFIG.html as HTMLConfig })
   })
 
   describe('import', function () {

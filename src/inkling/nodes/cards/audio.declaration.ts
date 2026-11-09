@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { audioTransientProps, BaseAudioNode } from '@/inkling/nodes/base/nodes/audio/AudioNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const audioDeclaration = {
+export const audioDeclaration = checkedCardDeclaration({
   nodeType: 'audio',
   baseNode: BaseAudioNode,
   transientProps: audioTransientProps,
@@ -25,4 +24,4 @@ export const audioDeclaration = {
   uploadType: 'audio',
   toolbarLabel: 'audio',
   markdown: { kind: 'fence' },
-} satisfies CardDeclaration<'audio'>
+} satisfies CardDeclaration<'audio', typeof BaseAudioNode, typeof audioTransientProps, readonly []>)

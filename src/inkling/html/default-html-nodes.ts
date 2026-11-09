@@ -4,7 +4,7 @@ import { AutoLinkNode, LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 
-import { DEFAULT_NODES } from '@/inkling/nodes/base'
+import { DEFAULT_BASE_NODES } from '@/inkling/nodes/base'
 import { INKLING_TABLE_NODES } from '@/inkling/nodes/table/TableNodes'
 
 /**
@@ -13,7 +13,7 @@ import { INKLING_TABLE_NODES } from '@/inkling/nodes/table/TableNodes'
  * default output from one is always valid default input to the other.
  *
  * Order matters: the five basic Lexical nodes are registered first so the
- * extended-node replacement descriptors in DEFAULT_NODES land after the
+ * extended-node replacement descriptors in DEFAULT_BASE_NODES land after the
  * classes they replace. The table element family appends last — it carries
  * no replacement descriptors, so nothing it follows can shadow it.
  */
@@ -29,7 +29,7 @@ export const DEFAULT_HTML_NODES = [
   QuoteNode,
 
   // Inkling nodes
-  ...DEFAULT_NODES,
+  ...DEFAULT_BASE_NODES,
 
   // table element family (CONTEXT.md — not cards)
   ...INKLING_TABLE_NODES,

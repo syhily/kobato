@@ -5,9 +5,9 @@ import React from 'react'
 
 import type {
   BuildCardMenuResult,
+  CardMenuInsertParams,
   CardMenuSource,
   MenuBuildConfig,
-  ResolvedMenuItem,
 } from '@/inkling/nodes/cards/card-menu-build'
 
 import {
@@ -21,8 +21,6 @@ import { buildCardMenu } from '@/inkling/nodes/cards/card-menu-build'
 import { getEditorCardNodes } from '@/inkling/nodes/cards/editor-card-nodes'
 import { TABLE_MENU_SOURCE } from '@/inkling/nodes/table/table-menu'
 import { $swapTriggerParagraph } from '@/inkling/plugins/behaviour/card-menu-trigger'
-
-export type CardMenuInsertParams = Pick<ResolvedMenuItem, 'insertParams' | 'queryParams'>
 
 export type CardMenuInsert = (insertCommand: AnyLexicalCommand, params?: CardMenuInsertParams) => void
 

@@ -44,13 +44,29 @@ type WidenLiteral<T> = T extends string
         ? U[]
         : T
 /**
- * Validates the required arguments passed to `generateDecoratorNode`
+ * Validates the required arguments passed to `generateDecoratorNode`.
+ *
+ * Every `invalidates` entry must name a property declared on the same node.
+ * An unknown reference is a spec error that must fail at class creation: the
+ * generated setter would otherwise clear a private field no property owns,
+ * silently leaving the stale prerendered artifact (Shiki's `highlightedHtml`,
+ * KaTeX's `mathml`/`svg`) in place after the edit.
+ *
+ * Runtime validation is mandatory even though a const-asserted property array
+ * CAN be checked at the type level (an exact-key conditional type over the
+ * literal sibling names — the Round 2 card-spec machinery proves the idiom):
+ * host cards and pre-widened arrays (e.g. a `readonly DecoratorNodeProperty[]`
+ * returned from a helper) erase those sibling literals, so a type-only check
+ * would be incomplete. The runtime seam covers every array regardless of how
+ * much of its literal type survived.
  */
 function validateArguments(nodeType: string, properties: readonly DecoratorNodeProperty[]) {
   /* c8 ignore start */
   if (!nodeType) {
     throw new Error('[generateDecoratorNode] A unique "nodeType" should be provided')
   }
+
+  const declaredNames = new Set(properties.map((prop) => prop.name))
 
   properties.forEach((prop: DecoratorNodeProperty) => {
     if (!('name' in prop) || !('default' in prop)) {
@@ -64,6 +80,15 @@ function validateArguments(nodeType: string, properties: readonly DecoratorNodeP
     if ('wordCount' in prop && typeof prop.wordCount !== 'boolean') {
       throw new Error('[generateDecoratorNode] "wordCount" should be of boolean type.')
     }
+
+    prop.invalidates?.forEach((reference) => {
+      if (!declaredNames.has(reference)) {
+        throw new Error(
+          `[generateDecoratorNode] ${nodeType}: property "${prop.name}" invalidates unknown property "${reference}" ` +
+            `(declared properties: ${[...declaredNames].join(', ') || 'none'})`,
+        )
+      }
+    })
   })
   /* c8 ignore stop */
 }
@@ -656,9 +681,7 @@ export function generateDecoratorNode<
   internalProps.forEach((prop) => {
     // the artifact slots this property's edits clear, resolved to their
     // private names once (CONTEXT.md "artifact slot": edit-invalidates)
-    const invalidatedSlots = prop.invalidates?.map(
-      (name) => internalProps.find((candidate) => candidate.name === name)?.privateName ?? `__${name}`,
-    )
+    const invalidatedSlots = prop.invalidates?.map((name) => `__${name}`)
 
     defineFieldAccessor(
       GeneratedDecoratorNode.prototype,

@@ -4,6 +4,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContainerDragHandlers, DraggableInfo } from '@/inkling/utils/draggable/DragDropContainer'
 
+import { cardDrag } from '#/inkling/utils/draggable-fixtures'
 import { DragDropHandleContext } from '@/inkling/context/DragDropHandleContext'
 import useDropTarget from '@/inkling/hooks/useDropTarget'
 import { createDragDropHandle } from '@/inkling/plugins/behaviour/dragDropHandle'
@@ -69,7 +70,7 @@ function registeredHandlers(): ContainerDragHandlers {
   return call[1] as ContainerDragHandlers
 }
 
-const draggableInfo = { type: 'card', cardName: 'image' } as unknown as DraggableInfo
+const draggableInfo = cardDrag({ cardName: 'image', nodeKey: 'image-key' })
 
 describe('useDropTarget', () => {
   beforeEach(() => {

@@ -1,9 +1,8 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseImageNode, imageNestedEditors, imageTransientProps } from '@/inkling/nodes/base/nodes/image/ImageNode'
 import { decorateCardWidth } from '@/inkling/nodes/base/utils/card-widths'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const imageDeclaration = {
+export const imageDeclaration = checkedCardDeclaration({
   nodeType: 'image',
   baseNode: BaseImageNode,
   nestedEditors: imageNestedEditors,
@@ -63,4 +62,4 @@ export const imageDeclaration = {
   // syntax via the hand-written IMAGE_CARD_TRANSFORMER
   // (`@/inkling/nodes/cards/card-markdown-transformers`).
   markdown: { kind: 'exempt' },
-} satisfies CardDeclaration<'image'>
+} satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)

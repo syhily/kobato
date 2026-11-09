@@ -1,4 +1,17 @@
-import { $getNodeByKey, $getRoot, $isElementNode, $isRootNode, type LexicalEditor, type LexicalNode } from 'lexical'
+import { mergeRegister } from '@lexical/utils'
+import {
+  $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isRootNode,
+  BLUR_COMMAND,
+  COMMAND_PRIORITY_LOW,
+  FOCUS_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
+} from 'lexical'
 
 import { countWords, throttle } from '@/inkling/utils'
 import { getTopLevelEditor, isNestedEditor } from '@/inkling/utils/lexical-internals'
@@ -8,10 +21,37 @@ import { getTopLevelEditor, isNestedEditor } from '@/inkling/utils/lexical-inter
 // listeners are accumulated and remapped to their root children so a small
 // edit in a long document recomputes one block, with a throttled flush and a
 // full-recompute fallback for nested editors (which don't receive top-level
-// dirty maps). The React adapter is WordCountPlugin (~30 lines): it publishes
-// onChange on the word-count handle and mounts this counter. The throttle is
-// an injected port so tests drive the engine synchronously instead of
-// sleeping on wall-clock timers.
+// dirty maps).
+//
+// The same instance optionally reports the word count of the current
+// selection (`onSelectionChange`). Selection-only surfaces never touch the
+// document pass — the full-document machinery is only built when `onChange`
+// is supplied, and a counter with neither callback attaches no listeners at
+// all.
+//
+// Selection state is coordinated per TOP-LEVEL editor. Every counter instance
+// (main editor + nested caption editors, or two counters on one editor) owns
+// its own entry in a Map keyed by counter identity, so detaching one counter
+// can never delete another's count. Each entry is evaluated independently:
+// only entries whose editor is focused AND editable are eligible, and the
+// newest eligible entry wins. A focused editor whose selection is collapsed
+// therefore emits null instead of falling back to another editor's stale
+// count, a non-editable editor contributes nothing, and a programmatically
+// focused editor wins even when the previous editor's BLUR was missed. A
+// rendered editor's DOM root is the focus authority; the `focusedEditor`
+// ledger is only consulted for rootless headless editors, which keeps tests
+// deterministic. `registerEditableListener` recomputes on read-only flips.
+// Dedup is per CALLBACK (`lastSelectionWordCounts`): every broadcast reaches
+// each registered callback once, the same callback shared by main and nested
+// counters does not re-emit, and a callback whose identity changed has no
+// prior emission entry, so it receives the current value.
+//
+// The React adapter is WordCountPlugin: it runs independent document and
+// selection counters (so a selection callback change never touches the
+// document pass), publishes all channels through one effect, and swaps the
+// language via `setLanguage` on both live counters. The throttle is an
+// injected port so tests drive the engine synchronously instead of sleeping
+// on wall-clock timers.
 
 export const WORD_COUNT_THROTTLE_MS = 200
 
@@ -26,9 +66,29 @@ export type WordCounterThrottle = (fn: () => void, waitMs: number) => WordCounte
 
 const defaultThrottle: WordCounterThrottle = (fn, waitMs) => throttle(fn, waitMs)
 
+type SelectionCountCallback = (count: number | null) => void
+
+interface SelectionCountEntry {
+  editor: LexicalEditor
+  count: number | null
+  updatedAt: number
+  callback: SelectionCountCallback
+}
+
 interface WordCountState {
   nodeWordCounts: Map<string, number>
   lastWordCount: number
+  /** Selection count per counter instance (null = no active selection). */
+  selectionCounts: Map<object, SelectionCountEntry>
+  /**
+   * Focus ledger for rootless (headless) editors only — rendered editors use
+   * their DOM root as the authority, so a missed BLUR cannot veto a newly
+   * focused editor.
+   */
+  focusedEditor: LexicalEditor | null
+  /** Dedup per callback: the last value delivered to that callback. */
+  lastSelectionWordCounts: Map<SelectionCountCallback, number | null>
+  selectionUpdateSequence: number
 }
 
 const editorWordCountStates = new WeakMap<LexicalEditor, WordCountState>()
@@ -36,7 +96,14 @@ const editorWordCountStates = new WeakMap<LexicalEditor, WordCountState>()
 function getWordCountState(topLevelEditor: LexicalEditor): WordCountState {
   let state = editorWordCountStates.get(topLevelEditor)
   if (!state) {
-    state = { nodeWordCounts: new Map<string, number>(), lastWordCount: 0 }
+    state = {
+      nodeWordCounts: new Map<string, number>(),
+      lastWordCount: 0,
+      selectionCounts: new Map<object, SelectionCountEntry>(),
+      focusedEditor: null,
+      lastSelectionWordCounts: new Map<SelectionCountCallback, number | null>(),
+      selectionUpdateSequence: 0,
+    }
     editorWordCountStates.set(topLevelEditor, state)
   }
   return state
@@ -68,154 +135,391 @@ function findRootChild(node: LexicalNode): LexicalNode | null {
   return current
 }
 
+// A Lexical editor keeps its selection when focus moves elsewhere, so the
+// rendered editor's own root (when it has one) is the authority. A rootless
+// editor has no DOM focus to read: its focus comes from the per-composer
+// ledger set by FOCUS_COMMAND/BLUR_COMMAND, which keeps headless tests
+// deterministic instead of "everyone is focused".
+function hasEditorFocus(editor: LexicalEditor, state: WordCountState): boolean {
+  const rootElement = editor.getRootElement()
+  if (rootElement) {
+    return rootElement.ownerDocument.activeElement === rootElement
+  }
+  return state.focusedEditor === editor
+}
+
 interface CreateWordCounterOptions {
   editor: LexicalEditor
-  onChange: (count: number) => void
+  onChange?: (count: number) => void
+  /** Receives the active selection's word count, or null while nothing is selected. */
+  onSelectionChange?: (count: number | null) => void
   language?: string
   throttleMs?: number
   throttleFn?: WordCounterThrottle
 }
 
+function collectDocumentWordCount(state: WordCountState, language?: string): number {
+  const rootNode = $getRoot()
+  const children = rootNode.getChildren()
+  let wordCount = 0
+
+  state.nodeWordCounts.clear()
+  for (const child of children) {
+    const childCount = getNodeWordCount(child, language)
+    state.nodeWordCounts.set(child.getKey(), childCount)
+    wordCount += childCount
+  }
+
+  return wordCount
+}
+
+// Drop dedup entries whose callback no remaining counter owns, so replacement
+// callbacks do not accumulate across a composer's lifetime.
+function pruneSelectionEmissions(state: WordCountState) {
+  const inUse = new Set<SelectionCountCallback>()
+  for (const entry of state.selectionCounts.values()) {
+    inUse.add(entry.callback)
+  }
+  for (const callback of state.lastSelectionWordCounts.keys()) {
+    if (!inUse.has(callback)) {
+      state.lastSelectionWordCounts.delete(callback)
+    }
+  }
+}
+
 export function createWordCounter({
   editor,
   onChange,
-  language,
+  onSelectionChange,
+  language: initialLanguage,
   throttleMs = WORD_COUNT_THROTTLE_MS,
   throttleFn = defaultThrottle,
 }: CreateWordCounterOptions) {
+  // A counter with neither channel has no work to do: no update listener, no
+  // command listener, no throttle. (The no-op lifecycle keeps the public
+  // shape; `setLanguage` stays callable from the React adapter.)
+  if (onChange === undefined && onSelectionChange === undefined) {
+    return {
+      // no callbacks — nothing to attach
+      attach() {
+        /* noop */
+      },
+      // no callbacks — nothing to cancel
+      detach() {
+        /* noop */
+      },
+      // no callbacks — nothing to recount
+      setLanguage() {
+        /* noop */
+      },
+    }
+  }
+
+  const counterToken = {}
+  const countCallback = onChange
+  const selectionCallback = onSelectionChange
+  let currentLanguage = initialLanguage
   let pendingDirtyKeys = new Set<string>()
   let cleanupRegister: (() => void) | null = null
 
-  const emitCount = (count: number) => {
-    const topLevelEditor = getTopLevelEditor(editor)
-    const state = getWordCountState(topLevelEditor)
-    if (count !== state.lastWordCount) {
-      state.lastWordCount = count
-      onChange(count)
+  // One full-document recount path. `forceEmission` drives the initial attach
+  // (always deliver) and the nested-editor full-recompute fallback (preserving
+  // its historical unconditional emission); language swaps and ordinary
+  // recounts dedup against `lastWordCount`.
+  const countDocumentWords = countCallback
+    ? (forceEmission: boolean) => {
+        const topLevelEditor = getTopLevelEditor(editor)
+        const state = getWordCountState(topLevelEditor)
+
+        topLevelEditor.getEditorState().read(() => {
+          // NOTE: we can't use RootNode.getTextContent() here because it will
+          // return cached text content when there are no dirty nodes which is
+          // the case for changes in nested editors
+          const wordCount = collectDocumentWordCount(state, currentLanguage)
+          if (forceEmission || wordCount !== state.lastWordCount) {
+            state.lastWordCount = wordCount
+            countCallback(wordCount)
+          }
+        })
+      }
+    : null
+
+  const flushIncrementalCount = countCallback
+    ? () => {
+        if (pendingDirtyKeys.size === 0) {
+          return
+        }
+
+        const topLevelEditor = getTopLevelEditor(editor)
+        const state = getWordCountState(topLevelEditor)
+        const keysToRecompute = new Set<string>()
+
+        topLevelEditor.getEditorState().read(() => {
+          for (const key of pendingDirtyKeys) {
+            const node = $getNodeByKey(key)
+            if (!node) {
+              continue
+            }
+            const rootChild = findRootChild(node)
+            if (rootChild) {
+              keysToRecompute.add(rootChild.getKey())
+            }
+          }
+          pendingDirtyKeys.clear()
+
+          const rootNode = $getRoot()
+          const children = rootNode.getChildren()
+          const currentKeys = new Set(children.map((child) => child.getKey()))
+
+          let wordCount = state.lastWordCount
+
+          for (const [key, count] of state.nodeWordCounts) {
+            if (!currentKeys.has(key)) {
+              wordCount -= count
+              state.nodeWordCounts.delete(key)
+            }
+          }
+
+          for (const child of children) {
+            const key = child.getKey()
+            if (keysToRecompute.has(key) || !state.nodeWordCounts.has(key)) {
+              wordCount -= state.nodeWordCounts.get(key) ?? 0
+              const childCount = getNodeWordCount(child, currentLanguage)
+              state.nodeWordCounts.set(key, childCount)
+              wordCount += childCount
+            }
+          }
+
+          if (wordCount !== state.lastWordCount) {
+            state.lastWordCount = wordCount
+            countCallback(wordCount)
+          }
+        })
+      }
+    : null
+
+  // Broadcast the count of the newest focused + editable entry to every
+  // registered callback, deduping per callback. Evaluating each entry (rather
+  // than a composer-wide focused editor) means a programmatically focused
+  // editor wins even when the previous editor's BLUR was missed, while a
+  // focused editor with a collapsed selection still emits null.
+  const broadcastSelectionCount = (callbacks: Iterable<SelectionCountCallback>) => {
+    const state = getWordCountState(getTopLevelEditor(editor))
+    let activeEntry: SelectionCountEntry | null = null
+
+    for (const entry of state.selectionCounts.values()) {
+      if (!entry.editor.isEditable()) {
+        continue
+      }
+      if (!hasEditorFocus(entry.editor, state)) {
+        continue
+      }
+      if (activeEntry === null || entry.updatedAt > activeEntry.updatedAt) {
+        activeEntry = entry
+      }
+    }
+
+    const combined = activeEntry?.count ?? null
+
+    for (const callback of new Set(callbacks)) {
+      if (state.lastSelectionWordCounts.has(callback) && state.lastSelectionWordCounts.get(callback) === combined) {
+        continue
+      }
+      state.lastSelectionWordCounts.set(callback, combined)
+      callback(combined)
     }
   }
 
-  const countEditorWords = () => {
-    const topLevelEditor = getTopLevelEditor(editor)
-    const state = getWordCountState(topLevelEditor)
-
-    topLevelEditor.getEditorState().read(() => {
-      // NOTE: we can't use RootNode.getTextContent() here because it will
-      // return cached text content when there are no dirty nodes which is
-      // the case for changes in nested editors
-
-      const rootNode = $getRoot()
-      const children = rootNode.getChildren()
-      let wordCount = 0
-
-      state.nodeWordCounts.clear()
-      for (const child of children) {
-        const childCount = getNodeWordCount(child, language)
-        state.nodeWordCounts.set(child.getKey(), childCount)
-        wordCount += childCount
-      }
-
-      state.lastWordCount = wordCount
-      onChange(wordCount)
-    })
+  const emitSelectionCount = () => {
+    const state = getWordCountState(getTopLevelEditor(editor))
+    broadcastSelectionCount([...state.selectionCounts.values()].map((entry) => entry.callback))
   }
 
-  const flushIncrementalCount = () => {
-    if (pendingDirtyKeys.size === 0) {
-      return
-    }
+  const updateSelectionCount = selectionCallback
+    ? () => {
+        const state = getWordCountState(getTopLevelEditor(editor))
+        const focused = hasEditorFocus(editor, state)
+        const editable = editor.isEditable()
 
-    const topLevelEditor = getTopLevelEditor(editor)
-    const state = getWordCountState(topLevelEditor)
-    const keysToRecompute = new Set<string>()
+        if (focused && editor.getRootElement() === null) {
+          state.focusedEditor = editor
+        }
 
-    topLevelEditor.getEditorState().read(() => {
-      for (const key of pendingDirtyKeys) {
-        const node = $getNodeByKey(key)
-        if (!node) {
-          continue
-        }
-        const rootChild = findRootChild(node)
-        if (rootChild) {
-          keysToRecompute.add(rootChild.getKey())
-        }
+        state.selectionUpdateSequence += 1
+        const updatedAt = state.selectionUpdateSequence
+
+        editor.getEditorState().read(() => {
+          const selection = $getSelection()
+          const count =
+            focused && editable && $isRangeSelection(selection) && !selection.isCollapsed()
+              ? countWords(selection.getTextContent(), currentLanguage)
+              : null
+
+          state.selectionCounts.set(counterToken, {
+            editor,
+            count,
+            updatedAt,
+            callback: selectionCallback,
+          })
+        })
+
+        emitSelectionCount()
       }
-      pendingDirtyKeys.clear()
+    : null
 
-      const rootNode = $getRoot()
-      const children = rootNode.getChildren()
-      const currentKeys = new Set(children.map((child) => child.getKey()))
-
-      let wordCount = state.lastWordCount
-
-      for (const [key, count] of state.nodeWordCounts) {
-        if (!currentKeys.has(key)) {
-          wordCount -= count
-          state.nodeWordCounts.delete(key)
-        }
-      }
-
-      for (const child of children) {
-        const key = child.getKey()
-        if (keysToRecompute.has(key) || !state.nodeWordCounts.has(key)) {
-          wordCount -= state.nodeWordCounts.get(key) ?? 0
-          const childCount = getNodeWordCount(child, language)
-          state.nodeWordCounts.set(key, childCount)
-          wordCount += childCount
-        }
-      }
-
-      emitCount(wordCount)
-    })
-  }
-
-  const throttledCount = throttleFn(countEditorWords, throttleMs)
-  const throttledIncrementalCount = throttleFn(flushIncrementalCount, throttleMs)
+  const throttledCount = countDocumentWords ? throttleFn(() => countDocumentWords(true), throttleMs) : null
+  const throttledIncrementalCount = flushIncrementalCount ? throttleFn(flushIncrementalCount, throttleMs) : null
+  const throttledSelectionCount = updateSelectionCount ? throttleFn(updateSelectionCount, throttleMs) : null
 
   return {
-    /** Run the initial full count and start listening for editor updates. */
+    /** Run the initial counts and start listening for editor updates. */
     attach() {
       if (cleanupRegister) {
         return
       }
 
-      countEditorWords()
+      countDocumentWords?.(true)
+      updateSelectionCount?.()
 
-      cleanupRegister = editor.registerUpdateListener(({ dirtyElements, dirtyLeaves, prevEditorState, tags }) => {
-        if (
-          (dirtyElements.size === 0 && dirtyLeaves.size === 0) ||
-          tags.has('history-merge') ||
-          prevEditorState.isEmpty()
-        ) {
-          return
-        }
+      const registrations: Array<() => void> = [
+        editor.registerUpdateListener(({ dirtyElements, dirtyLeaves, prevEditorState, tags }) => {
+          // Selection-only changes commit with empty dirty maps; the
+          // selection listener must see them, so it is scheduled before the
+          // content-change guard.
+          throttledSelectionCount?.()
 
-        // Nested editors don't receive top-level dirty maps, so fall back to a
-        // full recompute. The shared node count cache keeps subsequent top-level
-        // updates incremental.
-        if (isNestedEditor(editor)) {
-          pendingDirtyKeys.clear()
-          throttledCount()
-          return
-        }
+          if (!throttledIncrementalCount && !throttledCount) {
+            return
+          }
 
-        for (const key of dirtyLeaves) {
-          pendingDirtyKeys.add(key)
-        }
-        for (const key of dirtyElements.keys()) {
-          pendingDirtyKeys.add(key)
-        }
+          if (
+            (dirtyElements.size === 0 && dirtyLeaves.size === 0) ||
+            tags.has('history-merge') ||
+            prevEditorState.isEmpty()
+          ) {
+            return
+          }
 
-        throttledIncrementalCount()
-      })
+          // Nested editors don't receive top-level dirty maps, so fall back to a
+          // full recompute. The shared node count cache keeps subsequent top-level
+          // updates incremental.
+          if (isNestedEditor(editor)) {
+            pendingDirtyKeys.clear()
+            throttledCount?.()
+            return
+          }
+
+          for (const key of dirtyLeaves) {
+            pendingDirtyKeys.add(key)
+          }
+          for (const key of dirtyElements.keys()) {
+            pendingDirtyKeys.add(key)
+          }
+
+          throttledIncrementalCount?.()
+        }),
+      ]
+
+      if (updateSelectionCount && emitSelectionCount && selectionCallback) {
+        registrations.push(
+          editor.registerCommand(
+            BLUR_COMMAND,
+            (_event, fromEditor) => {
+              // Lexical propagates commands up the parent-editor chain; a
+              // nested editor's blur must not clear the parent's ledger
+              if (fromEditor !== editor) {
+                return false
+              }
+
+              // a blurred editor keeps its old selection in editor state even
+              // though the page no longer shows it — drop its count at once
+              throttledSelectionCount?.cancel()
+              const state = getWordCountState(getTopLevelEditor(editor))
+
+              if (editor.getRootElement() === null && state.focusedEditor === editor) {
+                state.focusedEditor = null
+              }
+
+              state.selectionUpdateSequence += 1
+              state.selectionCounts.set(counterToken, {
+                editor,
+                count: null,
+                updatedAt: state.selectionUpdateSequence,
+                callback: selectionCallback,
+              })
+              emitSelectionCount()
+              return false
+            },
+            COMMAND_PRIORITY_LOW,
+          ),
+          editor.registerCommand(
+            FOCUS_COMMAND,
+            (_event, fromEditor) => {
+              if (fromEditor !== editor) {
+                return false
+              }
+
+              const state = getWordCountState(getTopLevelEditor(editor))
+              if (editor.getRootElement() === null) {
+                state.focusedEditor = editor
+              }
+              updateSelectionCount()
+              return false
+            },
+            COMMAND_PRIORITY_LOW,
+          ),
+          // read-only surfaces cannot own a selection; recompute on both
+          // directions of the flip so the count disappears and returns
+          editor.registerEditableListener(() => {
+            updateSelectionCount()
+          }),
+        )
+      }
+
+      cleanupRegister = mergeRegister(...registrations)
     },
 
     /** Cancel pending flushes and stop listening for editor updates. */
     detach() {
-      throttledCount.cancel()
-      throttledIncrementalCount.cancel()
+      throttledCount?.cancel()
+      throttledIncrementalCount?.cancel()
+      throttledSelectionCount?.cancel()
       cleanupRegister?.()
       cleanupRegister = null
+
+      if (selectionCallback) {
+        // an unmounting editor may hold the active selection (e.g. a card
+        // deleted mid-edit), so re-evaluate without its entry
+        const state = getWordCountState(getTopLevelEditor(editor))
+        state.selectionCounts.delete(counterToken)
+
+        if (editor.getRootElement() === null && state.focusedEditor === editor) {
+          const hasRemainingCounter = [...state.selectionCounts.values()].some((entry) => entry.editor === editor)
+          if (!hasRemainingCounter) {
+            state.focusedEditor = null
+          }
+        }
+
+        const callbacks = new Set<SelectionCountCallback>()
+        for (const entry of state.selectionCounts.values()) {
+          callbacks.add(entry.callback)
+        }
+        // the departing consumer still sees the re-evaluated value; shared
+        // callbacks are deduped like any other broadcast
+        callbacks.add(selectionCallback)
+        broadcastSelectionCount(callbacks)
+        pruneSelectionEmissions(state)
+      }
+    },
+
+    /** Swap the Intl.Segmenter language without rebuilding counter identity. */
+    setLanguage(nextLanguage?: string) {
+      if (nextLanguage === currentLanguage) {
+        return
+      }
+      currentLanguage = nextLanguage
+      countDocumentWords?.(false)
+      updateSelectionCount?.()
     },
   }
 }

@@ -2,11 +2,11 @@ import type { SerializedLexicalNode } from 'lexical'
 
 import type {
   CardSpecFieldMapFor,
+  CardSpecNestedEditorDataset,
   DecoratorNodeProperty,
   NestedEditorSpec,
   TransientPropSpec,
 } from '@/inkling/nodes/base/card-specs'
-import type { CaptionEditorDataset } from '@/inkling/types/card-node-datasets'
 
 import { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-node'
 import { parseBookmarkNode } from '@/inkling/nodes/base/nodes/bookmark/bookmark-parser'
@@ -116,7 +116,15 @@ export class BaseBookmarkNode extends generateDecoratorNode<typeof bookmarkPrope
   }
 
   /* override */
-  constructor({ url, metadata, caption, captionEditor }: BookmarkData & CaptionEditorDataset = {}, key?: string) {
+  constructor(
+    {
+      url,
+      metadata,
+      caption,
+      captionEditor,
+    }: BookmarkData & CardSpecNestedEditorDataset<typeof bookmarkNestedEditors> = {},
+    key?: string,
+  ) {
     // Forward the url, metadata, caption, and a passed-in caption editor so
     // the generated constructor can run the nested-editor setup/populate and
     // the transient-prop initialization (`createdWithUrl` reads url/metadata)

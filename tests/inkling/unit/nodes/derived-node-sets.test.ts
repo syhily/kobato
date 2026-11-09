@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import '@/inkling/index'
 import { DEFAULT_HTML_NODES } from '@/inkling/html/default-html-nodes'
 import { CARD_TRANSFORMERS, MARKDOWN_NODES } from '@/inkling/markdown/round-trip'
-import { DEFAULT_NODES as BASE_DEFAULT_NODES } from '@/inkling/nodes/base'
+import { DEFAULT_BASE_NODES } from '@/inkling/nodes/base'
 import DEFAULT_NODES from '@/inkling/nodes/DefaultNodes'
 
 // Node-set entries are either node classes or Lexical replacement descriptors
@@ -97,8 +97,8 @@ describe('derived node sets match the pinned literals', () => {
     ])
   })
 
-  it('@/inkling/nodes/base DEFAULT_NODES (base node set)', () => {
-    expect(nodeSetSnapshot(BASE_DEFAULT_NODES)).toEqual([
+  it('@/inkling/nodes/base DEFAULT_BASE_NODES (base node set)', () => {
+    expect(nodeSetSnapshot(DEFAULT_BASE_NODES)).toEqual([
       'extended-text',
       'replace:text',
       'extended-heading',

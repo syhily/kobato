@@ -12,7 +12,7 @@ import {
 
 import type { BaseImageNode } from '@/inkling/nodes/base/nodes/image/ImageNode'
 import type { ImageNodeDataset } from '@/inkling/nodes/ImageNode'
-import type { DraggableInfo } from '@/inkling/utils/draggable/DragDropContainer'
+import type { CardDraggableInfo, DraggableInfo } from '@/inkling/utils/draggable/DragDropContainer'
 
 import { $isImageNode } from '@/inkling/nodes/base/nodes/image/ImageNode'
 import { getImageFilenameFromSrc } from '@/inkling/nodes/base/utils/content-image-url'
@@ -173,28 +173,33 @@ export function $mergeImagesIntoGallery(
   return true
 }
 
+/** A card drag whose card is the image card — the gallery-merge payload. */
+export type ImageCardDraggableInfo = CardDraggableInfo & { cardName: 'image' }
+
 /**
  * The image-card-onto-image drop allowance (gallery creation): the payload
- * is an image CARD dragged from a different node than the target.
+ * is an image CARD dragged from a different node than the target. The
+ * predicate narrows to the image-card payload, so the merge below reads the
+ * node key and dataset without a second check. Whether the key still
+ * resolves is the surgery's concern — a card deleted mid-drag is a stale
+ * node, not a malformed payload.
  */
-export function isImageCardDropAllowed(draggable: DraggableInfo, targetNodeKey: NodeKey): boolean {
-  return (
-    draggable.type === 'card' &&
-    draggable.cardName === 'image' &&
-    !!draggable.nodeKey &&
-    draggable.nodeKey !== targetNodeKey
-  )
+export function isImageCardDropAllowed(
+  draggable: DraggableInfo,
+  targetNodeKey: NodeKey,
+): draggable is ImageCardDraggableInfo {
+  return draggable.type === 'card' && draggable.cardName === 'image' && draggable.nodeKey !== targetNodeKey
 }
 
 /**
  * Applies the image-card-onto-image drop: merges both cards into a gallery
  * ($mergeImagesIntoGallery — the gallery takes the target's slot). Returns
- * false when the allowance fails or the payload carries no key/dataset. The
- * drop target's `onDrop` returns `undefined` regardless — the merge is its
- * own acknowledgement, matching the historical glue.
+ * without touching the tree when the allowance fails. The drop target's
+ * `onDrop` returns `undefined` regardless — the merge is its own
+ * acknowledgement, matching the historical glue.
  */
 export function applyImageCardDrop(editor: LexicalEditor, targetNodeKey: NodeKey, draggable: DraggableInfo): void {
-  if (!isImageCardDropAllowed(draggable, targetNodeKey) || !draggable.nodeKey || !draggable.dataset) {
+  if (!isImageCardDropAllowed(draggable, targetNodeKey)) {
     return
   }
   const draggedImageKey = draggable.nodeKey
@@ -208,22 +213,19 @@ export function applyImageCardDrop(editor: LexicalEditor, targetNodeKey: NodeKey
  * The source-removal policy for cross-card drops: the dragged card's source
  * node is removed only when the drop succeeded in another container (success
  * without sourceHandled) — a same-container reorder reports sourceHandled,
- * and a failed drop removes nothing.
+ * and a failed drop removes nothing. The payload-kind check lives at the
+ * caller, where the closed drag union narrows to the card branch.
  */
-export function shouldRemoveDropSource(
-  draggableType: string | undefined,
-  success: boolean,
-  sourceHandled: boolean,
-): boolean {
-  return !sourceHandled && success && draggableType === 'card'
+export function shouldRemoveDropSource(success: boolean, sourceHandled: boolean): boolean {
+  return !sourceHandled && success
 }
 
 /**
  * Removes the dragged card's source node after a cross-card drop. Returns
- * false when the key no longer resolves.
+ * false when the key no longer resolves — the card can be deleted mid-drag.
  */
-export function $removeDropSource(nodeKey: NodeKey | undefined): boolean {
-  const cardNode = nodeKey ? $getNodeByKey(nodeKey) : null
+export function $removeDropSource(nodeKey: NodeKey): boolean {
+  const cardNode = $getNodeByKey(nodeKey)
   if (!cardNode) {
     return false
   }

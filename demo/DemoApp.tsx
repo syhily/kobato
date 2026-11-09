@@ -188,10 +188,18 @@ interface DemoEditorProps {
   registerAPI: (api: ExternalControlAPI | null) => void
   cursorDidExitAtTop: () => void
   setWordCount: (count: number) => void
+  setSelectionWordCount: (count: number | null) => void
   setTKCount: (count: number) => void
 }
 
-function DemoEditor({ editorType, registerAPI, cursorDidExitAtTop, setWordCount, setTKCount }: DemoEditorProps) {
+function DemoEditor({
+  editorType,
+  registerAPI,
+  cursorDidExitAtTop,
+  setWordCount,
+  setSelectionWordCount,
+  setTKCount,
+}: DemoEditorProps) {
   if (editorType === 'basic') {
     return (
       <InklingComposableEditor
@@ -199,7 +207,7 @@ function DemoEditor({ editorType, registerAPI, cursorDidExitAtTop, setWordCount,
         markdownTransformers={BASIC_TRANSFORMERS}
         registerAPI={registerAPI}
       >
-        <WordCountPlugin onChange={setWordCount} />
+        <WordCountPlugin onChange={setWordCount} onSelectionChange={setSelectionWordCount} />
       </InklingComposableEditor>
     )
   } else if (editorType === 'minimal') {
@@ -211,14 +219,14 @@ function DemoEditor({ editorType, registerAPI, cursorDidExitAtTop, setWordCount,
         registerAPI={registerAPI}
       >
         <RestrictContentPlugin paragraphs={1} />
-        <WordCountPlugin onChange={setWordCount} />
+        <WordCountPlugin onChange={setWordCount} onSelectionChange={setSelectionWordCount} />
       </InklingComposableEditor>
     )
   }
 
   return (
     <InklingEditor cursorDidExitAtTop={cursorDidExitAtTop} registerAPI={registerAPI}>
-      <WordCountPlugin onChange={setWordCount} />
+      <WordCountPlugin onChange={setWordCount} onSelectionChange={setSelectionWordCount} />
       <TKCountPlugin onChange={setTKCount} />
     </InklingEditor>
   )
@@ -228,10 +236,17 @@ interface DemoComposerProps {
   editorType?: string
   isMultiplayer?: boolean
   setWordCount: (count: number) => void
+  setSelectionWordCount: (count: number | null) => void
   setTKCount: (count: number) => void
 }
 
-function DemoComposer({ editorType, isMultiplayer, setWordCount, setTKCount }: DemoComposerProps) {
+function DemoComposer({
+  editorType,
+  isMultiplayer,
+  setWordCount,
+  setSelectionWordCount,
+  setTKCount,
+}: DemoComposerProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const sidebar = useDemoSidebar()
   const { snippets, createSnippet, deleteSnippet } = useSnippets()
@@ -386,6 +401,7 @@ function DemoComposer({ editorType, isMultiplayer, setWordCount, setTKCount }: D
           cursorDidExitAtTop={focusTitle}
           editorType={editorType}
           registerAPI={handleRegisterAPI}
+          setSelectionWordCount={setSelectionWordCount}
           setTKCount={setTKCount}
           setWordCount={setWordCount}
         />,
@@ -404,6 +420,7 @@ interface DemoAppProps {
 
 function DemoApp({ editorType, isMultiplayer }: DemoAppProps) {
   const [wordCount, setWordCount] = useState(0)
+  const [selectionWordCount, setSelectionWordCount] = useState<number | null>(null)
   const [tkCount, setTKCount] = useState(0)
 
   // used to force a re-initialization of the editor when URL changes, otherwise
@@ -413,11 +430,12 @@ function DemoApp({ editorType, isMultiplayer }: DemoAppProps) {
   return (
     <div key={location.key} className={`inkling-lexical top`}>
       {/* outside of DemoComposer to avoid re-renders and flaky tests when word count changes */}
-      <WordCount tkCount={tkCount} wordCount={wordCount} />
+      <WordCount selectionWordCount={selectionWordCount} tkCount={tkCount} wordCount={wordCount} />
 
       <MemoizedDemoComposer
         editorType={editorType}
         isMultiplayer={isMultiplayer}
+        setSelectionWordCount={setSelectionWordCount}
         setTKCount={setTKCount}
         setWordCount={setWordCount}
       />

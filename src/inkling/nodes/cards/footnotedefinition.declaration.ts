@@ -1,11 +1,10 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import {
   BaseFootnoteDefinitionNode,
   footnoteDefinitionNestedEditors,
 } from '@/inkling/nodes/base/nodes/footnotedefinition/FootnoteDefinitionNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const footnoteDefinitionDeclaration = {
+export const footnoteDefinitionDeclaration = checkedCardDeclaration({
   nodeType: 'footnotedefinition',
   baseNode: BaseFootnoteDefinitionNode,
   nestedEditors: footnoteDefinitionNestedEditors,
@@ -18,4 +17,9 @@ export const footnoteDefinitionDeclaration = {
   toolbarLabel: 'footnote',
   // Not in the markdown round-trip —
   // kobato interop goes through the wire dialect, not public markdown.
-} satisfies CardDeclaration<'footnotedefinition'>
+} satisfies CardDeclaration<
+  'footnotedefinition',
+  typeof BaseFootnoteDefinitionNode,
+  readonly [],
+  typeof footnoteDefinitionNestedEditors
+>)

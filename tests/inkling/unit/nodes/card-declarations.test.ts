@@ -9,7 +9,7 @@ import { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-n
 import { BookmarkNode } from '@/inkling/nodes/BookmarkNode'
 import { ButtonNode } from '@/inkling/nodes/ButtonNode'
 import { CalloutNode } from '@/inkling/nodes/CalloutNode'
-import { CARD_DECLARATIONS, type CardDeclaration, type CardNodeType } from '@/inkling/nodes/cards'
+import { CARD_DECLARATIONS, type AnyCardDeclaration, type CardNodeType } from '@/inkling/nodes/cards'
 import { resolveCardInsertCommand, resolveCardMenuCommand } from '@/inkling/nodes/cards/card-commands'
 import { CARD_DECORATE_TARGETS, getCardDecorateTarget } from '@/inkling/nodes/cards/card-decorate'
 import { getCardToolbarLabel } from '@/inkling/nodes/cards/card-facts'
@@ -195,7 +195,7 @@ describe('card declarations as the single source of truth', () => {
   it('exposes exactly the getDataset keys its declaration spec names', () => {
     const datasetsByCard = collectFromConstructedCards((node) => node.getDataset())
     for (const card of CARD_WRAPPER_NODES) {
-      const declaration: CardDeclaration | undefined = CARD_DECLARATIONS.find(
+      const declaration: AnyCardDeclaration | undefined = CARD_DECLARATIONS.find(
         (entry) => entry.nodeType === card.nodeType,
       )
       const dataset = datasetsByCard.get(card.nodeType) ?? {}

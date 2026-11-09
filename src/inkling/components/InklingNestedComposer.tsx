@@ -6,7 +6,11 @@ import { LexicalNestedComposer, type LexicalNestedComposerProps } from '@lexical
 import React from 'react'
 
 import InklingCollaborationContext from '@/inkling/context/InklingCollaborationContext'
-import { useWordCountCallback, useWordCountLanguage } from '@/inkling/hooks/useWordCountCallback'
+import {
+  useWordCountCallback,
+  useWordCountLanguage,
+  useWordCountSelectionCallback,
+} from '@/inkling/hooks/useWordCountCallback'
 import ReplacementStringsPlugin from '@/inkling/plugins/ReplacementStringsPlugin'
 import TKPlugin from '@/inkling/plugins/TKPlugin'
 import WordCountPlugin from '@/inkling/plugins/WordCountPlugin'
@@ -35,6 +39,7 @@ const InklingNestedComposer = ({
   // reactive: re-renders when the top-level plugin publishes its callback, so
   // a nested composer rendered first still mounts its own WordCountPlugin
   const wordCountOnChange = useWordCountCallback()
+  const wordCountOnSelectionChange = useWordCountSelectionCallback()
   const wordCountLanguage = useWordCountLanguage()
 
   return (
@@ -54,8 +59,12 @@ const InklingNestedComposer = ({
           shouldBootstrap={true}
         />
       ) : null}
-      {wordCountOnChange ? (
-        <WordCountPlugin language={wordCountLanguage ?? undefined} onChange={wordCountOnChange} />
+      {wordCountOnChange || wordCountOnSelectionChange ? (
+        <WordCountPlugin
+          language={wordCountLanguage ?? undefined}
+          onChange={wordCountOnChange ?? undefined}
+          onSelectionChange={wordCountOnSelectionChange ?? undefined}
+        />
       ) : null}
       <TKPlugin />
       <ReplacementStringsPlugin />

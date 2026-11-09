@@ -11,13 +11,12 @@ import {
   registerEmojiExactMatchCompletion,
   searchEmojis,
   type EmojiSearchResult,
-  type EmojiSkin,
 } from '@/inkling/plugins/behaviour/emoji-completion'
 import trackEvent from '@/inkling/utils/analytics'
 
 class EmojiOption extends MenuOption {
   id: string
-  skins: EmojiSkin[]
+  skins: EmojiSearchResult['skins']
 
   constructor(emoji: EmojiSearchResult) {
     super(emoji.id)

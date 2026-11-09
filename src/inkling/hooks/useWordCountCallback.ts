@@ -9,8 +9,15 @@ export function useWordCountCallback(): ((count: number) => void) | null {
   return useWordCountHandleState((state) => state.onChange)
 }
 
-// The top-level plugin's language, published alongside onChange (C7 §3.4) —
-// null until the plugin mounts; nested composers pass it to their own
+// The selection-count channel of the same handle. A selection-only top-level
+// plugin publishes this without an onChange, and nested composers mount a
+// selection-only WordCountPlugin with it.
+export function useWordCountSelectionCallback(): ((count: number | null) => void) | null {
+  return useWordCountHandleState((state) => state.onSelectionChange)
+}
+
+// The top-level plugin's language, published alongside the callbacks (C7
+// §3.4) — null until the plugin mounts; nested composers pass it to their own
 // WordCountPlugin so nested editors count with the same language.
 export function useWordCountLanguage(): string | null {
   return useWordCountHandleState((state) => state.language)

@@ -4,8 +4,6 @@ import React from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 
-import type { ImageNodeDataset } from '@/inkling/nodes/ImageNode'
-
 import { useCardSelectionState } from '@/inkling/context/CardSelectionStoreContext'
 import { useDragDropHandle, useDragDropHandleState } from '@/inkling/context/DragDropHandleContext'
 import { useInklingDragScrollContainerSelector } from '@/inkling/context/InklingHostIntegrationContext'
@@ -75,12 +73,15 @@ function useDragDropReorder(editor: LexicalEditor): void {
         return draggableInfo || false
       },
       createDragPreviewElement: (draggableInfo: DraggableInfo) => {
-        const { cardName } = draggableInfo
-        const { Icon } = draggableInfo
+        // loose image drags (gallery rows) have no card preview — the
+        // container's own image fallback handles them
+        if (draggableInfo.type !== 'card') {
+          return
+        }
 
-        // cardName always resolves here (the producer above sets it from the
-        // card's getType()); image cards fall through to the container's own
-        // image preview
+        const { cardName, Icon } = draggableInfo
+
+        // image cards fall through to the container's own image preview
         if (cardName === 'image') {
           return
         }
@@ -129,11 +130,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
         droppableElem: HTMLElement,
         position: DroppablePosition,
       ): DropResolution | false => {
-        // only allow card and image drops (images can be dragged out of a gallery)
-        if (draggableInfo.type !== 'card' && draggableInfo.type !== 'image') {
-          return false
-        }
-
         const rootElement = editor.getRootElement()
         if (!rootElement || !draggableInfo.element) {
           return false
@@ -152,10 +148,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
         return resolution ? { insertIndex: resolution.insertIndex } : false
       },
       onDrop: (draggableInfo: DraggableInfo, dropResolution: DropResolution | null): DropResult => {
-        if (draggableInfo.type !== 'card' && draggableInfo.type !== 'image') {
-          return false
-        }
-
         const rootElement = editor.getRootElement()
         // no resolution, no drop: the card container only accepts drops the
         // indicator resolved a slot for
@@ -192,13 +184,9 @@ function useDragDropReorder(editor: LexicalEditor): void {
 
           // insert new image node on image drops — only an actual insert
           // counts as handled; a failed insert reports failure so the source
-          // node stays put
-          if (draggableInfo.type === 'image') {
-            // untyped drag boundary: DraggableInfo.dataset is Record<string,
-            // unknown>; an 'image'-type drag carries a gallery-picked image
-            // dataset (useGalleryReorder), narrowed here to the closed type
-            result = $insertDraggedImage(draggableInfo.dataset as ImageNodeDataset, droppables, insertIndex) !== null
-          }
+          // node stays put. The 'image' variant carries the gallery-picked
+          // image dataset at its precise type — no assertion needed
+          result = $insertDraggedImage(draggableInfo.dataset, droppables, insertIndex) !== null
         })
 
         return result
@@ -210,8 +198,10 @@ function useDragDropReorder(editor: LexicalEditor): void {
       },
       // a card can be dropped into another card which means we need to remove the original
       onDropEnd: (draggableInfo: DraggableInfo, success: boolean, sourceHandled: boolean): void => {
-        // avoid removing the card if it's just a re-order or no move occurred
-        if (!shouldRemoveDropSource(draggableInfo.type, success, sourceHandled)) {
+        // only card payloads own a source node key; the removal policy itself
+        // is about the drop outcome (a same-container reorder reports
+        // sourceHandled, a failed drop removes nothing)
+        if (draggableInfo.type !== 'card' || !shouldRemoveDropSource(success, sourceHandled)) {
           return
         }
 

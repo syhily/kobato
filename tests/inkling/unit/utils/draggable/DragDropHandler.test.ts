@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { imageDrag } from '#/inkling/utils/draggable-fixtures'
 import { DragDropHandler } from '@/inkling/utils/draggable/DragDropHandler'
 import {
   CONTAINER_DATA_ATTR,
@@ -25,13 +26,7 @@ function createHandlers() {
         if (!element) {
           return false
         }
-        return {
-          type: 'image',
-          element,
-          target: null,
-          mousePosition: { x: 0, y: 0 },
-          dataset: {},
-        }
+        return imageDrag({ element })
       }),
       draggableSelector: '.draggable',
     },

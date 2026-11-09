@@ -3,6 +3,8 @@ import type { AnyLexicalCommand, LexicalEditor } from 'lexical'
 import { $setSelection } from 'lexical'
 import React from 'react'
 
+import type { CardMenuInsertParams } from '@/inkling/nodes/cards/card-menu-build'
+
 import { CardMenu } from '@/inkling/components/ui/CardMenu'
 import { PlusButton, PlusMenu } from '@/inkling/components/ui/PlusMenu'
 import { SlashMenu } from '@/inkling/components/ui/SlashMenu'
@@ -200,10 +202,7 @@ export function CardMenuPopup({
   // insert-and-close is the session's seam (it owns the close policy); this
   // is the single type-erased adapter both trigger syntaxes dispatch through
   const insert = React.useCallback(
-    (
-      insertCommand: AnyLexicalCommand | undefined,
-      params: { insertParams?: Record<string, unknown>; queryParams?: string[] } = {},
-    ): void => {
+    (insertCommand: AnyLexicalCommand | undefined, params: CardMenuInsertParams = {}): void => {
       // a menu item without an insert command has nothing to dispatch
       if (!insertCommand) {
         return

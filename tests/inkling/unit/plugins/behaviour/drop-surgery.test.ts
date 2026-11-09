@@ -15,6 +15,7 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { cardDrag, imageDrag } from '#/inkling/utils/draggable-fixtures'
 import { tick, updateEditor } from '#/inkling/utils/test-editor'
 import { $isGalleryNode, GalleryNode } from '@/inkling/nodes/GalleryNode'
 import { $createImageNode, $isImageNode, ImageNode } from '@/inkling/nodes/ImageNode'
@@ -24,6 +25,7 @@ import {
   $relocateCard,
   $removeDropSource,
   applyImageCardDrop,
+  type ImageCardDraggableInfo,
   isImageCardDropAllowed,
   resolveDragMarkerRefresh,
   shouldRemoveDropSource,
@@ -244,16 +246,13 @@ describe('$insertDraggedImage', () => {
 })
 
 describe('shouldRemoveDropSource', () => {
-  it('removes the source only after a successful card drop handled elsewhere', () => {
+  it('removes the source only after a successful drop handled elsewhere', () => {
     // cross-card drop: the target container handled the drop, the source remains
-    expect(shouldRemoveDropSource('card', true, false)).toBe(true)
+    expect(shouldRemoveDropSource(true, false)).toBe(true)
     // same-container reorder reports sourceHandled — the card stays
-    expect(shouldRemoveDropSource('card', true, true)).toBe(false)
+    expect(shouldRemoveDropSource(true, true)).toBe(false)
     // a failed drop removes nothing
-    expect(shouldRemoveDropSource('card', false, false)).toBe(false)
-    // images are inserted as new nodes; their source is not this plugin's to remove
-    expect(shouldRemoveDropSource('image', true, false)).toBe(false)
-    expect(shouldRemoveDropSource(undefined, true, false)).toBe(false)
+    expect(shouldRemoveDropSource(false, false)).toBe(false)
   })
 })
 
@@ -287,14 +286,11 @@ describe('$removeDropSource', () => {
     const before = readTopLevelKeys(editor)
 
     let removed = true
-    let removedWithoutKey = true
     await updateEditor(editor, () => {
       removed = $removeDropSource('missing-key')
-      removedWithoutKey = $removeDropSource(undefined)
     })
 
     expect(removed).toBe(false)
-    expect(removedWithoutKey).toBe(false)
     expect(readTopLevelKeys(editor)).toEqual(before)
     expect(readTopLevelKeys(editor)).toContain(keys.imageAKey)
   })
@@ -515,7 +511,7 @@ describe('$insertDraggedImage without the image card registered', () => {
 describe('the image-card-onto-image drop policy', () => {
   const MERGE_NODES = [ImageNode, GalleryNode]
 
-  function draggableInfo(overrides: Record<string, unknown> = {}) {
+  function imageCardDrag(overrides: Partial<ImageCardDraggableInfo> = {}): ImageCardDraggableInfo {
     return {
       type: 'card',
       cardName: 'image',
@@ -525,15 +521,14 @@ describe('the image-card-onto-image drop policy', () => {
       mousePosition: { x: 0, y: 0 },
       dataset: { src: 'https://cdn.example.com/dragged.png' },
       ...overrides,
-    } as Parameters<typeof isImageCardDropAllowed>[0]
+    }
   }
 
   it.each([
-    ['allows an image card dragged from a different node', draggableInfo(), true],
-    ['rejects a non-card payload', draggableInfo({ type: 'image' }), false],
-    ['rejects a non-image card', draggableInfo({ cardName: 'file' }), false],
-    ['rejects a missing node key', draggableInfo({ nodeKey: undefined }), false],
-    ['rejects dropping the card onto itself', draggableInfo({ nodeKey: 'target-key' }), false],
+    ['allows an image card dragged from a different node', imageCardDrag(), true],
+    ['rejects a loose image payload', imageDrag(), false],
+    ['rejects a non-image card', cardDrag({ cardName: 'file' }), false],
+    ['rejects dropping the card onto itself', imageCardDrag({ nodeKey: 'target-key' }), false],
   ])('%s', (_label, info, expected) => {
     expect(isImageCardDropAllowed(info, 'target-key')).toBe(expected)
   })
@@ -541,7 +536,7 @@ describe('the image-card-onto-image drop policy', () => {
   it('applyImageCardDrop merges the pair into a gallery', async () => {
     const editor = createEditor({ namespace: 'test', nodes: MERGE_NODES, onError: () => {} })
     let targetKey = ''
-    let info = draggableInfo()
+    let info = imageCardDrag()
     await updateEditor(editor, () => {
       const root = $getRoot()
       root.clear()
@@ -549,7 +544,7 @@ describe('the image-card-onto-image drop policy', () => {
       const dragged = $createImageNode({ src: 'https://cdn.example.com/dragged.png' })
       root.append(target, dragged)
       targetKey = target.getKey()
-      info = draggableInfo({ nodeKey: dragged.getKey() })
+      info = imageCardDrag({ nodeKey: dragged.getKey() })
     })
 
     applyImageCardDrop(editor, targetKey, info)
@@ -569,7 +564,7 @@ describe('the image-card-onto-image drop policy', () => {
       $getRoot().append($createImageNode({ src: 'https://cdn.example.com/target.png' }))
     })
 
-    applyImageCardDrop(editor, 'target-key', draggableInfo({ type: 'image' }))
+    applyImageCardDrop(editor, 'target-key', imageDrag())
     await tick()
 
     editor.getEditorState().read(() => {

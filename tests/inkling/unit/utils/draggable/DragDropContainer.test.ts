@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cardDrag, imageDrag } from '#/inkling/utils/draggable-fixtures'
 import {
   DragDropContainer,
   type ContainerDragHandlers,
@@ -14,13 +15,7 @@ function createHandlers(): ContainerDragHandlers {
         if (!element) {
           return false
         }
-        return {
-          type: element.dataset.type || 'unknown',
-          element,
-          target: null,
-          mousePosition: { x: 0, y: 0 },
-          dataset: {},
-        }
+        return cardDrag({ element, nodeKey: 'fixture-key' })
       }),
       draggableSelector: '.draggable',
     },
@@ -110,12 +105,7 @@ describe('DragDropContainer', () => {
 
     const container = new DragDropContainer(containerElement, handlers)
     const draggable = containerElement.querySelector('.draggable') as HTMLElement
-    const info: DraggableInfo = {
-      element: draggable,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
-      dataset: {},
-    }
+    const info = cardDrag({ element: draggable, nodeKey: 'fixture-key' })
 
     const dragPreview = container.createDragPreviewElement(info)
     expect(dragPreview?.element).toBe(customDragPreviewElement)
@@ -132,13 +122,7 @@ describe('DragDropContainer', () => {
     img.height = 200
     draggable.appendChild(img)
 
-    const info: DraggableInfo = {
-      type: 'image',
-      element: draggable,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
-      dataset: {},
-    }
+    const info = imageDrag({ element: draggable })
 
     const dragPreview = container.createDragPreviewElement(info)
     expect(dragPreview?.element).toBeInstanceOf(HTMLImageElement)
@@ -157,13 +141,7 @@ describe('DragDropContainer', () => {
     img.height = 400
     draggable.appendChild(img)
 
-    const info: DraggableInfo = {
-      cardName: 'image',
-      element: draggable,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
-      dataset: {},
-    }
+    const info = cardDrag({ cardName: 'image', nodeKey: 'fixture-key', element: draggable })
 
     const dragPreview = container.createDragPreviewElement(info)
     expect(dragPreview?.element).toBeInstanceOf(HTMLImageElement)
@@ -174,13 +152,7 @@ describe('DragDropContainer', () => {
     const container = new DragDropContainer(containerElement, handlers)
 
     const draggable = containerElement.querySelector('.draggable') as HTMLElement
-    const info: DraggableInfo = {
-      type: 'text',
-      element: draggable,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
-      dataset: {},
-    }
+    const info = cardDrag({ cardName: 'file', nodeKey: 'fixture-key', element: draggable })
 
     const dragPreviewElement = container.createDragPreviewElement(info)
     expect(dragPreviewElement).toBeUndefined()

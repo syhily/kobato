@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 
-import { CARD_DECLARATIONS, type CardDeclaration } from '@/inkling/nodes/cards'
+import { CARD_DECLARATIONS, type AnyCardDeclaration } from '@/inkling/nodes/cards'
 
 /**
  * Import-spec classification invariant (CONTEXT.md: "import spec"): every
@@ -18,7 +18,7 @@ const DERIVABLE_CARDS = ['audio', 'button', 'callout', 'file', 'horizontalrule',
 
 const STRUCTURAL_CARDS = ['bookmark', 'codeblock', 'footnotedefinition', 'gallery', 'header', 'html', 'math']
 
-function baseNodeImportSpec(declaration: CardDeclaration): CardImportSpec | undefined {
+function baseNodeImportSpec(declaration: AnyCardDeclaration): CardImportSpec | undefined {
   // declaration.baseNode is typed CardBaseNodeClass — the generated statics
   // are on the field type, no cast
   return declaration.baseNode.importSpec

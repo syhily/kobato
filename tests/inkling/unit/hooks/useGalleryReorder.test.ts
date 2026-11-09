@@ -2,8 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import React from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { DraggableInfo } from '@/inkling/utils/draggable/DragDropContainer'
-
+import { cardDrag, imageDrag } from '#/inkling/utils/draggable-fixtures'
 import { DragDropHandleContext } from '@/inkling/context/DragDropHandleContext'
 import useGalleryReorder, { type GalleryImage } from '@/inkling/hooks/useGalleryReorder'
 import { createDragDropHandle } from '@/inkling/plugins/behaviour/dragDropHandle'
@@ -98,17 +97,14 @@ describe('useGalleryReorder', () => {
   it('adds an external image on drop', async () => {
     const { options, updateImages } = await getRegisteredOptions([])
 
-    const draggableInfo: DraggableInfo = {
-      type: 'image',
+    const draggableInfo = imageDrag({
       element: null,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
       dataset: {
         src: 'https://example.com/image.jpg',
         width: 100,
         height: 200,
       },
-    }
+    })
 
     // empty gallery: the drop is container-level, so the resolution is null
     // and the first image lands at slot 0
@@ -135,13 +131,7 @@ describe('useGalleryReorder', () => {
     img.src = src
     element.append(img)
 
-    const draggableInfo: DraggableInfo = {
-      type: 'image',
-      element,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
-      dataset: { src },
-    }
+    const draggableInfo = imageDrag({ element, dataset: { src } })
 
     const result = options.droppable.onDrop(draggableInfo, null)
 
@@ -159,13 +149,10 @@ describe('useGalleryReorder', () => {
 
     const draggableElement = container.children[0]
 
-    const draggableInfo: DraggableInfo = {
-      type: 'image',
+    const draggableInfo = imageDrag({
       element: draggableElement as HTMLElement,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
       dataset: { src: 'https://example.com/one.jpg' },
-    }
+    })
 
     const result = options.droppable.onDrop(draggableInfo, { insertIndex: 3 })
 
@@ -193,13 +180,10 @@ describe('useGalleryReorder', () => {
     })
     const [, options] = registerContainer.mock.calls[0]
 
-    const draggableInfo: DraggableInfo = {
-      type: 'image',
+    const draggableInfo = imageDrag({
       element: container.children[1] as HTMLElement,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
       dataset: { src: 'https://example.com/two.jpg' },
-    }
+    })
 
     const success = options.droppable.onDrop(draggableInfo, { insertIndex: 0 })
 
@@ -213,13 +197,10 @@ describe('useGalleryReorder', () => {
 
     const draggableElement = container.children[0]
 
-    const draggableInfo: DraggableInfo = {
-      type: 'image',
+    const draggableInfo = imageDrag({
       element: draggableElement as HTMLElement,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
       dataset: { src: 'https://example.com/one.jpg' },
-    }
+    })
 
     // the handler routes the drop result back to the target container's own
     // onDropEnd — sourceHandled tells it not to remove the reordered image
@@ -238,13 +219,10 @@ describe('useGalleryReorder', () => {
     const images: GalleryImage[] = [{ src: 'https://example.com/one.jpg' }, { src: 'https://example.com/two.jpg' }]
     const { onDropEnd, container, updateImages } = await getRegisteredOptions(images)
 
-    const draggableInfo: DraggableInfo = {
-      type: 'image',
+    const draggableInfo = imageDrag({
       element: container.children[0] as HTMLElement,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
       dataset: { src: 'https://example.com/one.jpg' },
-    }
+    })
 
     // dropped elsewhere: this gallery's onDrop never ran, so the handler
     // reports sourceHandled=false and the source image is removed — located
@@ -257,13 +235,8 @@ describe('useGalleryReorder', () => {
   it('does not allow dropping non-image draggables', async () => {
     const { options, updateImages } = await getRegisteredOptions([])
 
-    const draggableInfo: DraggableInfo = {
-      type: 'file',
-      element: null,
-      target: null,
-      mousePosition: { x: 0, y: 0 },
-      dataset: {},
-    }
+    // a real non-image card payload: the gallery rejects it by kind
+    const draggableInfo = cardDrag({ cardName: 'file', nodeKey: 'file-key', element: null })
 
     const success = options.droppable.onDrop(draggableInfo, null)
 

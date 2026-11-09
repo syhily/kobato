@@ -11,6 +11,7 @@ import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createHostIntegrationValue } from '#/inkling/utils/host-integration-context'
+import { createHostIntegrationWrapper } from '#/inkling/utils/host-integration-wrapper'
 import { tick } from '#/inkling/utils/test-editor'
 import { InklingHostIntegrationProvider } from '@/inkling/context/InklingHostIntegrationContext'
 import InklingUiPrefsContext from '@/inkling/context/InklingUiPrefsContext'
@@ -27,13 +28,6 @@ function createTestEditor(): LexicalEditor {
     onError: () => {},
     theme: {},
   })
-}
-
-function createWrapper(cardConfig = {}) {
-  const value = createHostIntegrationValue({ cardConfig })
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <InklingHostIntegrationProvider value={value}>{children}</InklingHostIntegrationProvider>
-  }
 }
 
 // the labels seam: prefs context carries the
@@ -58,7 +52,7 @@ describe('useCardMenu', () => {
 
   it('builds the card menu from the registered card nodes as a flat list', () => {
     const editor = createTestEditor()
-    const { result } = renderHook(() => useCardMenu(editor), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useCardMenu(editor), { wrapper: createHostIntegrationWrapper() })
 
     expect(result.current.cardMenu.items.length).toBeGreaterThan(0)
     expect(result.current.cardMenu.maxItemIndex).toBe(result.current.cardMenu.items.length - 1)
@@ -69,14 +63,14 @@ describe('useCardMenu', () => {
 
   it('filters the flat list by query', () => {
     const editor = createTestEditor()
-    const { result } = renderHook(() => useCardMenu(editor, 'html'), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useCardMenu(editor, 'html'), { wrapper: createHostIntegrationWrapper() })
 
     expect(result.current.cardMenu.items.map((item) => item.label)).toEqual(['HTML'])
   })
 
   it('adds the Table pseudo entry when the editor registers the table family', () => {
     const editor = createTestEditor()
-    const { result } = renderHook(() => useCardMenu(editor, 'table'), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useCardMenu(editor, 'table'), { wrapper: createHostIntegrationWrapper() })
 
     expect(result.current.cardMenu.items.map((item) => item.label)).toEqual(['Table'])
   })
@@ -92,7 +86,7 @@ describe('useCardMenu', () => {
       onError: () => {},
       theme: {},
     })
-    const { result } = renderHook(() => useCardMenu(editor, 'table'), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useCardMenu(editor, 'table'), { wrapper: createHostIntegrationWrapper() })
 
     expect(result.current.cardMenu.items.map((item) => item.label)).toEqual([])
   })
@@ -126,7 +120,7 @@ describe('useCardMenu', () => {
   it('dispatches the insert command with the resolved insertParams as dataset', () => {
     const editor = createTestEditor()
     const dispatchCommandSpy = vi.spyOn(editor, 'dispatchCommand')
-    const { result } = renderHook(() => useCardMenu(editor), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useCardMenu(editor), { wrapper: createHostIntegrationWrapper() })
 
     act(() => {
       result.current.insert(INSERT_TEST_COMMAND, { insertParams: { html: '<p>x</p>' } })
@@ -139,7 +133,7 @@ describe('useCardMenu', () => {
     const editor = createTestEditor()
     const dispatchCommandSpy = vi.spyOn(editor, 'dispatchCommand')
     const { result } = renderHook(() => useCardMenu(editor, 'image Nature', { commandParams: ['Nature'] }), {
-      wrapper: createWrapper(),
+      wrapper: createHostIntegrationWrapper(),
     })
 
     act(() => {
@@ -153,7 +147,7 @@ describe('useCardMenu', () => {
     const editor = createTestEditor()
     const dispatchCommandSpy = vi.spyOn(editor, 'dispatchCommand')
     const { result } = renderHook(() => useCardMenu(editor, 'image', { commandParams: [''] }), {
-      wrapper: createWrapper(),
+      wrapper: createHostIntegrationWrapper(),
     })
 
     act(() => {
@@ -181,7 +175,7 @@ describe('useCardMenu', () => {
     )
 
     const { result } = renderHook(() => useCardMenu(editor, 'html', { replaceTriggerParagraph: true }), {
-      wrapper: createWrapper(),
+      wrapper: createHostIntegrationWrapper(),
     })
 
     await act(async () => {

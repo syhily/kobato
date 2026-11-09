@@ -170,7 +170,7 @@ describe('CardInsertPlugin', () => {
   )
 
   it.each(INSERT_MATRIX.filter(({ card }) => ['header', 'html', 'video'].includes(card)))(
-    '$card: non-object payloads return false and never fire INSERT_CARD_COMMAND',
+    '$card: null, string, and array payloads return false and never fire INSERT_CARD_COMMAND',
     async ({ node, command }) => {
       editor = createTestEditor({ nodes: [node] })
       await mountRegistrar(editor)
@@ -179,6 +179,7 @@ describe('CardInsertPlugin', () => {
 
       expect(editor.dispatchCommand(command, null)).toBe(false)
       expect(editor.dispatchCommand(command, 'not-an-object')).toBe(false)
+      expect(editor.dispatchCommand(command, [])).toBe(false)
       expect(ref.payload).toBeUndefined()
 
       removeListener()

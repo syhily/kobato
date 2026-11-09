@@ -16,6 +16,7 @@
  */
 import type { EditorState, LexicalEditor } from 'lexical'
 
+import type { Expect, Equal, Extends } from '#/inkling/utils/type-pins'
 import type { CardSpecFieldMap, CardSpecFieldNames, TransientPropSpec } from '@/inkling/nodes/base/card-specs'
 import type { HostCardSpec } from '@/inkling/nodes/cards/host-cards'
 
@@ -27,10 +28,6 @@ import { audioDeclaration } from '@/inkling/nodes/cards/audio.declaration'
 import { bookmarkDeclaration } from '@/inkling/nodes/cards/bookmark.declaration'
 import { calloutDeclaration } from '@/inkling/nodes/cards/callout.declaration'
 import { toggleDeclaration } from '@/inkling/nodes/cards/toggle.declaration'
-
-type Expect<T extends true> = T
-type Extends<A, B> = [A] extends [B] ? true : false
-type Equal<A, B> = (<T>(_: T) => T extends A ? 1 : 2) extends <T>(_: T) => T extends B ? 1 : 2 ? true : false
 
 // the derivation itself: the audio spec yields exactly its two transient
 // field names

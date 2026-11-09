@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseButtonNode } from '@/inkling/nodes/base/nodes/button/ButtonNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const buttonDeclaration = {
+export const buttonDeclaration = checkedCardDeclaration({
   nodeType: 'button',
   baseNode: BaseButtonNode,
   decorateTarget: {
@@ -25,4 +24,4 @@ export const buttonDeclaration = {
   insert: { openInEditMode: true },
   toolbarLabel: 'button',
   markdown: { kind: 'fence' },
-} satisfies CardDeclaration<'button'>
+} satisfies CardDeclaration<'button', typeof BaseButtonNode, readonly [], readonly []>)

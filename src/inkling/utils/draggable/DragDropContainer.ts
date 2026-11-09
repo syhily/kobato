@@ -1,11 +1,14 @@
 import type { ComponentType, SVGProps } from 'react'
 
+import type { ImageNodeDataset } from '@/inkling/nodes/cards/card-commands'
+
 import {
   CONTAINER_DATA_ATTR,
   DRAGGABLE_DATA_ATTR,
   DROPPABLE_DATA_ATTR,
   INKLING_ZINDEX,
 } from '@/inkling/utils/draggable/draggable-constants'
+import { isGalleryImageDrag } from '@/inkling/utils/draggable/gallery-drop'
 
 // registerContainer options (plan 047 step 4): three honest groups replacing
 // one flat bag whose index signature let `isDragEnabled` ride unnamed.
@@ -70,24 +73,50 @@ export interface ContainerDragHandlers {
   lifecycle?: ContainerLifecycleHandlers
 }
 
-export interface DraggableInfo {
-  // open discriminant: inkling's producers write 'card' (DragDropReorderPlugin)
-  // or 'image' (gallery reorder/merge) and every consumer compares exactly
-  // those literals; any other string is a host drag type consumers ignore
-  type?: 'card' | 'image' | (string & Record<never, never>)
-  cardName?: string
-  // the card node's key, set by the card drag producer (DragDropReorderPlugin)
-  // and read back on drop (image→gallery merge, reorder)
-  nodeKey?: string
-  Icon?: ComponentType<SVGProps<SVGSVGElement>>
+/** What every drag payload owns, independent of what is being dragged. */
+export interface DraggableInfoBase {
   element: HTMLElement | null
   target: HTMLElement | null
   mousePosition: { x: number; y: number }
-  // card datasets carry more than scalars — a dragged gallery's dataset
-  // contains GalleryImage[] plus the live caption LexicalEditor/EditorState
-  // (generate-decorator-node.getDataset copies all internal props verbatim)
+}
+
+/**
+ * A card drag, produced by DragDropReorderPlugin's top-level block scan. The
+ * dataset is the dragged card's own `getDataset()` — heterogeneous across
+ * card types (a gallery carries GalleryImage[] plus the live caption
+ * LexicalEditor/EditorState), so it stays an open record on purpose. The node
+ * key identifies the source card for reorder and image→gallery merge.
+ */
+export interface CardDraggableInfo extends DraggableInfoBase {
+  type: 'card'
+  cardName: string
+  nodeKey: string
+  Icon?: ComponentType<SVGProps<SVGSVGElement>>
   dataset: Record<string, unknown>
 }
+
+/**
+ * A loose image drag, produced by useGalleryReorder. Its dataset is the
+ * gallery row picked into the image card's construction vocabulary
+ * (`ImageNodeDataset`, the registry-layer insert-command payload type — a
+ * type-only import, erased at runtime), so the image-insert surgery consumes
+ * it without an assertion.
+ */
+export interface ImageDraggableInfo extends DraggableInfoBase {
+  type: 'image'
+  dataset: ImageNodeDataset
+}
+
+/**
+ * The closed payload set for the container wiring: `getDraggableInfo` is
+ * implemented exactly twice — DragDropReorderPlugin's card producer (that
+ * producer lives in `src/inkling/plugins`) and useGalleryReorder — and no host
+ * or custom drag adapter exists, so the container's own payload type needs no
+ * open-string escape. The pure drop policies stay deliberately open:
+ * gallery-drop's fact predicates accept plain `{ type, cardName }` and reject
+ * unknown runtime values.
+ */
+export type DraggableInfo = CardDraggableInfo | ImageDraggableInfo
 
 export type DroppablePosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
@@ -178,7 +207,7 @@ export class DragDropContainer {
       }
     }
 
-    if (draggableInfo.type === 'image' || draggableInfo.cardName === 'image') {
+    if (isGalleryImageDrag(draggableInfo)) {
       const image = draggableInfo.element?.querySelector('img')
       if (image) {
         const aspectRatio = image.width / image.height

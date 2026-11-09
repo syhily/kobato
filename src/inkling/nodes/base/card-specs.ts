@@ -197,11 +197,15 @@ export type NestedEditorFieldNames<Spec extends NestedEditorSpec> =
  * declaration yields `never`.
  */
 export type CardSpecFieldNames<D> =
-  | (D extends { transientProps: infer Specs extends readonly TransientPropSpec[] }
-      ? TransientPropFieldName<Specs[number]>
+  | (D extends { transientProps?: infer Specs }
+      ? NonNullable<Specs> extends readonly TransientPropSpec[]
+        ? TransientPropFieldName<NonNullable<Specs>[number]>
+        : never
       : never)
-  | (D extends { nestedEditors: infer Specs extends readonly NestedEditorSpec[] }
-      ? NestedEditorFieldNames<Specs[number]>
+  | (D extends { nestedEditors?: infer Specs }
+      ? NonNullable<Specs> extends readonly NestedEditorSpec[]
+        ? NestedEditorFieldNames<NonNullable<Specs>[number]>
+        : never
       : never)
 
 /**
@@ -293,18 +297,32 @@ export type CardSpecFieldMapFor<
  * same vocabulary by merging `CardSpecFieldMapFor` over the spec arrays their
  * module owns (the base module is where the arrays live; the declaration
  * imports them from there).
+ *
+ * The spec properties are matched OPTIONALLY on purpose: a host card's
+ * preserved spec type carries `transientProps?`/`nestedEditors?` (the host
+ * may omit them), and the maps must still resolve from the inferred arrays.
+ * `NonNullable` strips the optional-property `undefined`; an absent or
+ * non-array property contributes nothing.
  */
-export type CardSpecFieldMap<D> = (D extends { transientProps: infer Specs extends readonly TransientPropSpec[] }
-  ? TransientPropFieldMap<Specs>
+export type CardSpecFieldMap<D> = (D extends { transientProps?: infer Specs }
+  ? NonNullable<Specs> extends readonly TransientPropSpec[]
+    ? TransientPropFieldMap<NonNullable<Specs>>
+    : unknown
   : unknown) &
-  (D extends { nestedEditors: infer Specs extends readonly NestedEditorSpec[] } ? NestedEditorFieldMap<Specs> : unknown)
+  (D extends { nestedEditors?: infer Specs }
+    ? NonNullable<Specs> extends readonly NestedEditorSpec[]
+      ? NestedEditorFieldMap<NonNullable<Specs>>
+      : unknown
+    : unknown)
 
 /**
  * The accessor map of a card node, DERIVED the same way as
  * `CardSpecFieldMap` — see `TransientPropAccessorMap`.
  */
-export type CardSpecAccessorMap<D> = D extends { transientProps: infer Specs extends readonly TransientPropSpec[] }
-  ? TransientPropAccessorMap<Specs>
+export type CardSpecAccessorMap<D> = D extends { transientProps?: infer Specs }
+  ? NonNullable<Specs> extends readonly TransientPropSpec[]
+    ? TransientPropAccessorMap<NonNullable<Specs>>
+    : unknown
   : unknown
 
 /**

@@ -32,10 +32,12 @@ export interface EmojiSkin {
 
 /** The emoji-mart search-result shape consumers rely on (SearchIndex.search
  * returns `any`; the boundary validates against this before handing results
- * out). */
+ * out). `skins` is a non-empty tuple because every consumer reads
+ * `skins[0].native` — an entry without a skin is an insertion-time crash, so
+ * the boundary drops it instead of modelling it. */
 export interface EmojiSearchResult {
   id: string
-  skins: EmojiSkin[]
+  skins: readonly [EmojiSkin, ...EmojiSkin[]]
 }
 
 /** What an insertion surgery committed, so the caller can attach product
@@ -82,7 +84,8 @@ const EMOTICON_SEARCH_ALIASES: Record<string, string> = {
 
 // emoji-mart's SearchIndex.search returns any — one runtime validation at
 // the boundary; every call site goes through this. Entries missing the shape
-// consumers rely on are dropped rather than breaking at insertion time.
+// consumers rely on are dropped rather than breaking at insertion time —
+// including an empty `skins` list, since insertion reads `skins[0].native`.
 function isEmojiSearchResult(value: unknown): value is EmojiSearchResult {
   return (
     typeof value === 'object' &&
@@ -91,6 +94,7 @@ function isEmojiSearchResult(value: unknown): value is EmojiSearchResult {
     typeof value.id === 'string' &&
     'skins' in value &&
     Array.isArray(value.skins) &&
+    value.skins.length > 0 &&
     value.skins.every(
       (skin: unknown) =>
         typeof skin === 'object' && skin !== null && 'native' in skin && typeof skin.native === 'string',

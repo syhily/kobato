@@ -4,13 +4,13 @@ import { COMMAND_PRIORITY_LOW, KEY_DOWN_COMMAND } from 'lexical'
 
 import type { KeyboardNavigationDeps } from '@/inkling/plugins/behaviour/keyboard-navigation/types'
 
-import { MODIFIER_SHORTCUTS } from '@/inkling/plugins/behaviour/keyboard-navigation/shortcuts'
+import { KEYBOARD_SHORTCUTS } from '@/inkling/plugins/behaviour/keyboard-navigation/shortcuts'
 
 export function registerModifierCommand(editor: LexicalEditor, _deps: KeyboardNavigationDeps): () => void {
   return editor.registerCommand(
     KEY_DOWN_COMMAND,
     (event) => {
-      for (const shortcut of MODIFIER_SHORTCUTS) {
+      for (const shortcut of KEYBOARD_SHORTCUTS) {
         if (shortcut.matches(event)) {
           return shortcut.run(editor, event)
         }

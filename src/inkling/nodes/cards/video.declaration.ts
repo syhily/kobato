@@ -1,9 +1,8 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseVideoNode, videoNestedEditors, videoTransientProps } from '@/inkling/nodes/base/nodes/video/VideoNode'
 import { decorateCardWidth } from '@/inkling/nodes/base/utils/card-widths'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const videoDeclaration = {
+export const videoDeclaration = checkedCardDeclaration({
   nodeType: 'video',
   baseNode: BaseVideoNode,
   nestedEditors: videoNestedEditors,
@@ -30,4 +29,4 @@ export const videoDeclaration = {
   uploadType: 'video',
   toolbarLabel: 'video',
   markdown: { kind: 'fence' },
-} satisfies CardDeclaration<'video'>
+} satisfies CardDeclaration<'video', typeof BaseVideoNode, typeof videoTransientProps, typeof videoNestedEditors>)

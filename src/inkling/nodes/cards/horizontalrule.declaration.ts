@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseHorizontalRuleNode } from '@/inkling/nodes/base/nodes/horizontalrule/HorizontalRuleNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const horizontalRuleDeclaration = {
+export const horizontalRuleDeclaration = checkedCardDeclaration({
   nodeType: 'horizontalrule',
   baseNode: BaseHorizontalRuleNode,
   // No decorateTarget: the card renders with no wrapper props. It
@@ -25,4 +24,4 @@ export const horizontalRuleDeclaration = {
   // Markdown-eligible with no card fence: `---` is handled by
   // DEFAULT_TRANSFORMERS (`HR` in `@/inkling/markdown/transformers`).
   markdown: { kind: 'exempt' },
-} satisfies CardDeclaration<'horizontalrule'>
+} satisfies CardDeclaration<'horizontalrule', typeof BaseHorizontalRuleNode, readonly [], readonly []>)

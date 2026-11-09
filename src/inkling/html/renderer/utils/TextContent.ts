@@ -2,7 +2,7 @@ import type { LinkNode } from '@lexical/link'
 import type { LexicalNode, TextFormatType } from 'lexical'
 
 import { $isLinkNode } from '@lexical/link'
-import { $isTextNode, $isLineBreakNode, TextNode } from 'lexical'
+import { $isTextNode, $isLineBreakNode } from 'lexical'
 
 import type { ExportChildren } from '@/inkling/html/renderer/transformers/index'
 import type { RenderContext } from '@/inkling/nodes/base/render-context'
@@ -140,19 +140,23 @@ export default class TextContent {
         // insert text
         currentNode.append(node.getTextContent())
 
-        // close tags in correct order if next node doesn't have the format
+        // close the outermost format the next node lacks and every format nested inside it
         // links are their own formatting islands so all formats need to close before a link
         const nextNode = remainingNodes.find((n) => $isTextNode(n) || $isLinkNode(n))
-        // iterate a snapshot copy: the body pops the live openFormats array
-        for (const format of openFormats.slice()) {
-          if (!nextNode || $isLinkNode(nextNode) || (nextNode instanceof TextNode && !nextNode.hasFormat(format))) {
+        const firstFormatToClose = openFormats.findIndex(
+          (format) => !nextNode || $isLinkNode(nextNode) || ($isTextNode(nextNode) && !nextNode.hasFormat(format)),
+        )
+
+        if (firstFormatToClose !== -1) {
+          while (openFormats.length > firstFormatToClose) {
             // climb only while the parent chain stays elements (the root
             // climb can meet a Document)
             const parent = currentNode.parentNode
-            if (isDomElement(parent)) {
-              currentNode = parent
-              openFormats.pop()
+            if (!isDomElement(parent)) {
+              break
             }
+            currentNode = parent
+            openFormats.pop()
           }
         }
 

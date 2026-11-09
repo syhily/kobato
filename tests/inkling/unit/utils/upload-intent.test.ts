@@ -14,7 +14,11 @@ import {
 } from '@/inkling/nodes/base'
 import { FileNode, $createFileNode } from '@/inkling/nodes/FileNode'
 import { ImageNode, $createImageNode } from '@/inkling/nodes/ImageNode'
-import { runUploadIntent, type RunUploadIntentOptions } from '@/inkling/nodes/upload-intent'
+import {
+  runUploadIntent,
+  type ExtractMetadataContext,
+  type RunUploadIntentOptions,
+} from '@/inkling/nodes/upload-intent'
 
 describe('runUploadIntent', () => {
   let editor: LexicalEditor
@@ -53,8 +57,8 @@ describe('runUploadIntent', () => {
       files: null,
       upload,
       prePatch,
-      leasePreview: true,
-      onEmptyResult: 'patch',
+      preview: {},
+      emptyResult: { kind: 'patch' },
       patch: vi.fn(),
     })
 
@@ -76,8 +80,8 @@ describe('runUploadIntent', () => {
       files: [],
       upload,
       prePatch,
-      leasePreview: true,
-      onEmptyResult: 'patch',
+      preview: {},
+      emptyResult: { kind: 'patch' },
       patch: vi.fn(),
     })
 
@@ -95,15 +99,20 @@ describe('runUploadIntent', () => {
       return {
         editor,
         guard: $isImageNode,
-        leasePreview: true,
-        previewPatch: (node: ImageNodeType, url: string) => {
-          node.previewSrc = url
+        preview: {
+          publish: (node, url) => {
+            node.previewSrc = url
+          },
         },
-        extractMetadata: async ({ previewUrl }: { previewUrl: string | null }) => ({
-          width: previewUrl ? 100 : 0,
-          height: 200,
-        }),
-        onEmptyResult: 'patch' as const,
+        metadata: {
+          kind: 'extract',
+          timing: 'beforeUpload',
+          extract: async ({ previewUrl }) => ({
+            width: previewUrl ? 100 : 0,
+            height: 200,
+          }),
+        },
+        emptyResult: { kind: 'patch' },
         patch: (node, { meta, resultUrl }) => {
           if (!meta) {
             throw new Error('Expected extracted image metadata')
@@ -124,16 +133,28 @@ describe('runUploadIntent', () => {
       })
     }
 
-    it('publishes the preview, then patches the result and releases the lease', async () => {
+    it('publishes the preview before uploading, then releases the lease after the upload settles', async () => {
       const nodeKey = await createNodeInEditor(() => $createImageNode({ src: '' }))
       const file = new File(['image'], 'test.png', { type: 'image/png' })
       const upload = vi.fn().mockResolvedValue([{ url: 'https://example.com/image.png' }])
+      const publish = vi.fn((node: ImageNodeType, url: string) => {
+        node.previewSrc = url
+      })
 
-      const result = await runUploadIntent({ ...imageIntent(), nodeKey, files: [file], upload })
+      const result = await runUploadIntent({
+        ...imageIntent({ preview: { publish } }),
+        nodeKey,
+        files: [file],
+        upload,
+      })
 
       expect(result).toBe('https://example.com/image.png')
       expect(createObjectURLSpy).toHaveBeenCalledExactlyOnceWith(file)
       expect(revokeObjectURLSpy).toHaveBeenCalledExactlyOnceWith('blob:preview')
+      // ordered invocation, not just final state: lease → publish → upload → release
+      expect(createObjectURLSpy.mock.invocationCallOrder[0]).toBeLessThan(publish.mock.invocationCallOrder[0])
+      expect(publish.mock.invocationCallOrder[0]).toBeLessThan(upload.mock.invocationCallOrder[0])
+      expect(upload.mock.invocationCallOrder[0]).toBeLessThan(revokeObjectURLSpy.mock.invocationCallOrder[0])
       expect(readImage(nodeKey)).toEqual({
         src: 'https://example.com/image.png',
         previewSrc: null,
@@ -160,6 +181,8 @@ describe('runUploadIntent', () => {
       ).rejects.toThrow('upload failed')
 
       expect(revokeObjectURLSpy).toHaveBeenCalledExactlyOnceWith('blob:preview')
+      // released only after the upload settled (rejected), not before it started
+      expect(upload.mock.invocationCallOrder[0]).toBeLessThan(revokeObjectURLSpy.mock.invocationCallOrder[0])
       // the preview patch was applied before the rejection and stays
       expect(readImage(nodeKey)?.previewSrc).toBe('blob:preview')
     })
@@ -171,8 +194,12 @@ describe('runUploadIntent', () => {
       await expect(
         runUploadIntent({
           ...imageIntent({
-            extractMetadata: async () => {
-              throw new Error('failed to read dimensions')
+            metadata: {
+              kind: 'extract',
+              timing: 'beforeUpload',
+              extract: async () => {
+                throw new Error('failed to read dimensions')
+              },
             },
           }),
           nodeKey,
@@ -190,14 +217,13 @@ describe('runUploadIntent', () => {
     type AudioMeta = { duration: number }
     type AudioIntent = Omit<RunUploadIntentOptions<AudioNodeType, AudioMeta>, 'nodeKey' | 'files' | 'upload'>
 
-    function audioIntent(extractMetadata: NonNullable<AudioIntent['extractMetadata']>): AudioIntent {
+    function audioIntent(extract: (context: ExtractMetadataContext) => Promise<AudioMeta>): AudioIntent {
       return {
         editor,
         guard: $isAudioNode,
-        leasePreview: true,
-        metadataTiming: 'afterUpload' as const,
-        extractMetadata,
-        onEmptyResult: 'bail' as const,
+        preview: {},
+        metadata: { kind: 'extract', timing: 'afterUpload', extract },
+        emptyResult: { kind: 'bail' },
         patch: (node, { meta, resultUrl }) => {
           if (!meta) {
             throw new Error('Expected extracted audio metadata')
@@ -219,12 +245,12 @@ describe('runUploadIntent', () => {
       const nodeKey = await createNodeInEditor(() => $createAudioNode({ src: '' }))
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
       const upload = vi.fn().mockResolvedValue([{ url: 'https://example.com/audio.mp3' }])
-      const extractMetadata = vi.fn().mockResolvedValue({ duration: 42 })
+      const extract = vi.fn().mockResolvedValue({ duration: 42 })
 
-      const result = await runUploadIntent({ ...audioIntent(extractMetadata), nodeKey, files: [file], upload })
+      const result = await runUploadIntent({ ...audioIntent(extract), nodeKey, files: [file], upload })
 
       expect(result).toBe('https://example.com/audio.mp3')
-      expect(extractMetadata).toHaveBeenCalledExactlyOnceWith({
+      expect(extract).toHaveBeenCalledExactlyOnceWith({
         file,
         previewUrl: 'blob:preview',
         resultUrl: 'https://example.com/audio.mp3',
@@ -236,17 +262,17 @@ describe('runUploadIntent', () => {
     it('bails with the node untouched and skips extraction when the result has no url', async () => {
       const nodeKey = await createNodeInEditor(() => $createAudioNode({ src: '/old.mp3' }))
       const upload = vi.fn().mockResolvedValue([{}])
-      const extractMetadata = vi.fn().mockResolvedValue({ duration: 42 })
+      const extract = vi.fn().mockResolvedValue({ duration: 42 })
 
       const result = await runUploadIntent({
-        ...audioIntent(extractMetadata),
+        ...audioIntent(extract),
         nodeKey,
         files: [new File(['x'], 't.mp3')],
         upload,
       })
 
       expect(result).toBeUndefined()
-      expect(extractMetadata).not.toHaveBeenCalled()
+      expect(extract).not.toHaveBeenCalled()
       expect(readAudio(nodeKey)).toEqual({ src: '/old.mp3', duration: 0 })
       expect(revokeObjectURLSpy).toHaveBeenCalledExactlyOnceWith('blob:preview')
     })
@@ -259,12 +285,14 @@ describe('runUploadIntent', () => {
       return {
         editor,
         guard: $isFileNode,
-        prePatch: (node: FileNodeType) => {
+        prePatch: (node) => {
           node.src = ''
         },
-        isEmptyResult: (result: Array<{ url?: string }> | undefined) => !result?.[0],
-        onEmptyResult: 'bail' as const,
-        patch: (node: FileNodeType, { resultUrl }: { resultUrl: string | undefined }) => {
+        emptyResult: {
+          kind: 'bail',
+          isEmptyResult: (result) => !result?.[0],
+        },
+        patch: (node, { resultUrl }) => {
           node.src = resultUrl ?? ''
         },
       }
@@ -320,8 +348,8 @@ describe('runUploadIntent', () => {
         files: [file],
         upload,
         uploadOptions: (node) => ({ formData: { url: node?.src ?? '' } }),
-        onEmptyResult: 'bail',
-        patch: (node: AudioNodeType, { resultUrl }: { resultUrl: string | undefined }) => {
+        emptyResult: { kind: 'bail' },
+        patch: (node, { resultUrl }) => {
           node.thumbnailSrc = resultUrl ?? ''
         },
       })
@@ -347,9 +375,8 @@ describe('runUploadIntent', () => {
         guard: $isImageNode,
         files: [new File(['x'], 't.png')],
         upload,
-        meta: { duration: 7 },
-        onEmptyResult: 'bail',
-        onBail,
+        metadata: { kind: 'preExtracted', meta: { duration: 7 } },
+        emptyResult: { kind: 'bail', onBail },
         patch: vi.fn(),
       })
 
@@ -368,8 +395,8 @@ describe('runUploadIntent', () => {
         guard: $isImageNode,
         files: [new File(['x'], 't.png')],
         upload,
-        meta: { duration: 7 },
-        onEmptyResult: 'bail',
+        metadata: { kind: 'preExtracted', meta: { duration: 7 } },
+        emptyResult: { kind: 'bail' },
         patch,
       })
 

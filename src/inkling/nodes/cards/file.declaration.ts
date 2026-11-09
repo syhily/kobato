@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseFileNode, fileTransientProps } from '@/inkling/nodes/base/nodes/file/FileNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const fileDeclaration = {
+export const fileDeclaration = checkedCardDeclaration({
   nodeType: 'file',
   baseNode: BaseFileNode,
   transientProps: fileTransientProps,
@@ -28,4 +27,4 @@ export const fileDeclaration = {
   // contract ("file-upload"), not a transform of "file"
   toolbarLabel: 'file-upload',
   markdown: { kind: 'fence' },
-} satisfies CardDeclaration<'file'>
+} satisfies CardDeclaration<'file', typeof BaseFileNode, typeof fileTransientProps, readonly []>)

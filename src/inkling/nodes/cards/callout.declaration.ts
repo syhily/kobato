@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseCalloutNode, calloutNestedEditors } from '@/inkling/nodes/base/nodes/callout/CalloutNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const calloutDeclaration = {
+export const calloutDeclaration = checkedCardDeclaration({
   nodeType: 'callout',
   baseNode: BaseCalloutNode,
   nestedEditors: calloutNestedEditors,
@@ -21,4 +20,4 @@ export const calloutDeclaration = {
   insert: { openInEditMode: true },
   toolbarLabel: 'callout',
   markdown: { kind: 'fence' },
-} satisfies CardDeclaration<'callout'>
+} satisfies CardDeclaration<'callout', typeof BaseCalloutNode, readonly [], typeof calloutNestedEditors>)

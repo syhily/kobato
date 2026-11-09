@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseMathNode } from '@/inkling/nodes/base/nodes/math/MathNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const mathDeclaration = {
+export const mathDeclaration = checkedCardDeclaration({
   nodeType: 'math',
   baseNode: BaseMathNode,
   decorateTarget: {
@@ -23,4 +22,4 @@ export const mathDeclaration = {
   insert: { openInEditMode: true },
   toolbarLabel: 'math',
   // Not in the markdown round-trip: GFM has no math block syntax.
-} satisfies CardDeclaration<'math'>
+} satisfies CardDeclaration<'math', typeof BaseMathNode, readonly [], readonly []>)

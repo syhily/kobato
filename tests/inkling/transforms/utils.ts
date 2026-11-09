@@ -6,7 +6,7 @@ import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import assert from 'node:assert/strict'
 
-import { DEFAULT_NODES } from '@/inkling/nodes/base'
+import { DEFAULT_BASE_NODES } from '@/inkling/nodes/base'
 
 export const defaultNodes: LexicalNodeConfig[] = [
   // basic HTML nodes
@@ -17,7 +17,7 @@ export const defaultNodes: LexicalNodeConfig[] = [
   QuoteNode,
 
   // Inkling nodes
-  ...DEFAULT_NODES,
+  ...DEFAULT_BASE_NODES,
 ]
 
 export const defaultEditorConfig: CreateEditorArgs = {

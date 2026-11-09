@@ -68,15 +68,19 @@ export { EXTENDED_HEADING_NODE_PAIR, EXTENDED_QUOTE_NODE_PAIR, EXTENDED_TEXT_NOD
 /** The entity-node tail closing the editor's node sets. */
 export const ENTITY_TAIL_NODES = [TKNode, AtLinkNode, AtLinkSearchNode, ZWNJNode, MathInlineNode, FootnoteRefNode]
 
-// The base node set: the extended-node pairs, then every declaration's base
-// node in DECLARATION order — the same order the editor node set
-// (src/nodes/DefaultNodes.ts) composes. MarkdownNode and AsideNode are
-// base-only nodes with no declaration to derive from, so they head the card
-// run. Registration order carries no runtime semantics (node types are
-// unique; replacements ride the named pairs), so no legacy rank is
-// preserved — the pinned literal in test/unit/nodes/derived-node-sets.test.ts
-// guards drift, not history.
-export const DEFAULT_NODES = [
+// DEFAULT_BASE_NODES: the React-free base-class node set — the extended-node
+// pairs, then every declaration's base node in DECLARATION order, closing with
+// the entity tail. The headless HTML import/render surfaces compose it
+// (`DEFAULT_HTML_NODES`), registering the base classes the converters construct
+// directly. It deliberately excludes the assembled wrapper cards: the editor
+// surface composes from EDITOR_BASE_NODES (`src/inkling/nodes/DefaultNodes.ts`)
+// instead, which starts from its own base run and appends the assembled card
+// classes. MarkdownNode and AsideNode are base-only nodes with no declaration to
+// derive from, so they head the card run. Registration order carries no runtime
+// semantics (node types are unique; replacements ride the named pairs), so no
+// legacy rank is preserved — the pinned literal in
+// `tests/inkling/unit/nodes/derived-node-sets.test.ts` guards drift, not history.
+export const DEFAULT_BASE_NODES = [
   ...EXTENDED_TEXT_NODE_PAIR,
   ...EXTENDED_HEADING_NODE_PAIR,
   ...EXTENDED_QUOTE_NODE_PAIR,

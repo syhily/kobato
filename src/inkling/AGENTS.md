@@ -106,6 +106,33 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   module owns — renaming or retyping a spec entry is a
   compile error at every consumer. The pipeline's layering rule is pinned by a static import guard
   (`tests/inkling/unit/nodes/card-layering-imports.test.ts`).
+- Menu entries are type-checked against the card's construction dataset: a declaration passes its
+  base class and spec array types to `CardDeclaration` (`CardDeclaration<'image', typeof
+  BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>`, with `readonly []` for an
+  absent array), and `CardMenuDataset` derives `insertParams`'s partial-dataset type and
+  `queryParams`'s string-valued-key type from `getPropertyDefaults()` plus
+  `CardSpecTransientDataset`/`CardSpecNestedEditorDataset` — an invalid key, value, or query key is
+  a compile error at the declaration site. Omitting the arguments is NOT a silent fallback:
+  `DeclaredCardMenuDataset` resolves the defaults to `never`, so such a declaration cannot use
+  `insertParams`/`queryParams`; the broad declaration existential lives on `AnyCardDeclaration`.
+  Declarations are wrapped as `checkedCardDeclaration({ … } satisfies CardDeclaration<…>)`: the
+  inner `satisfies` keeps contextual typing and the shape check, and the identity wrapper applies
+  the exact-key check over the declaration's inferred menu literal — including the function-valued
+  `insertParams` return type, which `satisfies` cannot excess-check. `tests/inkling/typecheck/card-menu-params.ts` pins the declaration rejection (object and function forms), non-vacuous
+  open-dataset/broad-array/omitted-wrapper probes, and a reusable predicate over the real
+  `CARD_DECLARATIONS` family that proves every insert key (object and function-return forms) and
+  every query key belongs to the declaration's dataset — a future declaration skipping
+  `checkedCardDeclaration` is caught there. Host `defineCard` derives the same vocabulary from its
+  `B` and separate `Transient`/`Nested` generics and rejects unknown `insertParams` keys, drifted
+  values, and non-string query keys for both object and function forms on a DIRECT INLINE literal
+  (the `const Menu` capture keeps the caller's literals; `& Menu` is why). Any PRE-WIDENED input —
+  `queryParams: readonly string[]` or `baseNode: CardBaseNodeClass` arriving through a variable, a
+  helper return, or an explicit annotation — is an intentional type-erasure boundary and is
+  accepted unchecked where the literal is gone. Compatibility: a `satisfies HostCardSpec`
+  annotation keeps literal `insertParams` keys/values and is checked, but contextually widens
+  `queryParams` elements to `string`, so query keys in that form are accepted unchecked; an
+  explicit `const spec: HostCardSpec = …` annotation erases insert keys, insert values, and query
+  keys alike.
 - Card `decorate()` goes through an injection slot, not a direct import:
   `src/inkling/nodes/card-decorate-slot.ts` (react-free) owns `registerCardDecorate(impl)` /
   `decorateCardNode(node)`, `assemble-card-node.ts`'s `decorate()` delegates to the slot, and the
@@ -150,12 +177,14 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   it without import cycles) — a neutral fact store whose projections every derived view computes
   through the same projectors the built-in declarations use, intersected with each editor's
   registered node types.
-  - **Type preservation**: `defineCard` is generic over the spec itself
-    (`HostCard<NodeType, Spec>`), so const-asserted `nestedEditors`/`transientProps` arrays land
-    their literal `__*` field names and value types on the returned `card.node` via
-    `CardSpecFieldMap`/`CardSpecAccessorMap` — the same typing the built-in declarations get. A
-    non-const inline array widens entry names to `string` under contextual typing and the field map
-    degrades to the loose `__${string}` pattern (never a compile error). Host base classes
+  - **Type preservation**: `defineCard` is generic over the non-menu spec facts (`Spec`), the
+    spec's own arrays (`Transient`/`Nested`), and the menu literal (`Menu`); the returned
+    `HostCard<NodeType, Spec & { transientProps?; nestedEditors? }>` preserves the arrays as
+    optional members, so const-asserted `nestedEditors`/`transientProps` land their literal `__*`
+    field names and value types on `card.node` via `CardSpecFieldMap`/`CardSpecAccessorMap` (the
+    maps match optional spec properties) — the same typing the built-in declarations get. A
+    non-const inline array widens entry names to `string` and the field map degrades to the loose
+    `__${string}` pattern (never a compile error). Host base classes
     self-type the same vocabulary by interface-merging `CardSpecFieldMapFor` over the shared
     spec array (the `BaseToggleNode` idiom; kobato's cards carry the oxlint declaration-merging
     disables locally because its scope grant covers only `src/inkling/**`) — no hand-written
@@ -253,7 +282,7 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   `DEFAULT_FEATURE_PLUGINS`. The cell guard (`table-cell-guard.ts` — a cell holds exactly one
   paragraph of inline content; math-inline is dropped, footnote-ref joins the illegal list when it
   exists) is a default transform so it also covers the headless import path. The family is
-  deliberately absent from `@/inkling/nodes/base` DEFAULT_NODES; `DEFAULT_HTML_NODES` appends it
+  deliberately absent from `@/inkling/nodes/base` DEFAULT_BASE_NODES; `DEFAULT_HTML_NODES` appends it
   after the base run instead, so the headless HTML API imports and renders tables by default — which
   is what makes the cell guard's headless-import coverage real. Export header policy is
   single-sourced in `src/inkling/nodes/table/table-facts.ts`: the live HTML export reads the header
@@ -288,7 +317,14 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
 - Server-prerendered artifact slots stay opaque node data : the code card's `highlightedHtml`
   (Shiki) and the math family's `mathml`/`svg` (KaTeX) are filled host-side on save — inkling never
   runs either in the browser (CSP) — and the base-node source setters (`code`/`language`/`tex`)
-  clear the slot on edit. Request-scoped render-time meta rides `ExportDOMOptions.resolveRenderMeta`
+  clear the slot on edit (construction and `importJSON` assign the private fields directly, so a
+  host-filled artifact survives deserialization). The `invalidates` references behind those setters
+  are validated against the declared property vocabulary at class creation — an unknown reference
+  throws with nodeType/property/reference instead of silently leaving a stale artifact. Runtime
+  validation is mandatory even though const-asserted property arrays CAN be checked by exact-key
+  conditional types (the Round 2 card-spec idiom): host cards and pre-widened arrays erase the
+  sibling literals, so a type-only check would be incomplete.
+  Request-scoped render-time meta rides `ExportDOMOptions.resolveRenderMeta`
   into the frozen render context, letting a host card resolve enrichment by (kind, id)
   synchronously — exportDOM is a sync pipeline, so hosts resolve before rendering.
 - User-visible chrome strings come from one closed flat labels table (host reference
@@ -314,6 +350,70 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   and `countWords` keeps its original regex path, so hosts that never opt in keep their old counts.
   Hosts still mount the plugin themselves (the composer does not force word counting on) — the prop
   only seeds the language.
+- `WordCountPlugin` also carries an OPTIONAL selection channel,
+  `onSelectionChange?: (count: number | null) => void` (upstream Ghost 0a04348143ab). `null` means
+  collapsed/no active selection; `0` is a real count for a non-empty selection with zero words under
+  the counter's rules, so a punctuation-only selection is `0`, never `null`. The counting engine
+  (`createWordCounter` in `src/inkling/plugins/behaviour/word-counter.ts`) owns both channels: a
+  selection-only mount (`onSelectionChange` without `onChange`) never builds or runs the document
+  pass, so it pays only for the selected text; a counter with neither callback attaches no listeners
+  at all. `onChange` stays optional on the plugin, the handle state, and the counter options, and
+  its original incremental behavior is unchanged. Selection state lives in the same
+  per-TOP-LEVEL-editor `WordCountState` WeakMap as `nodeWordCounts` (never module/request globals):
+  `selectionCounts` is keyed by COUNTER INSTANCE identity (so two counters on one editor cannot
+  delete each other) with `{ editor, count, updatedAt, callback }`, and each entry is evaluated
+  independently — an entry counts only when `entry.editor.isEditable()` and
+  `hasEditorFocus(entry.editor, state)`; the newest eligible entry wins. There is no composer-wide
+  focused-editor veto, so a programmatically focused editor wins even when the previous editor's
+  BLUR was missed, while a focused editor with a collapsed selection emits null instead of another
+  editor's stale non-null count. A rendered editor's DOM root is the focus authority; the
+  `focusedEditor` ledger is consulted only for rootless headless editors and is cleared on their
+  detach, which keeps tests deterministic. Focus recomputes, blur clears immediately,
+  `registerEditableListener` recomputes on readOnly flips, and detach (card deletion or unmount)
+  removes only that counter's entry and re-evaluates. Dedup is PER CALLBACK:
+  `lastSelectionWordCounts: Map<callback, number | null>`; every update broadcasts the winning count
+  to every registered counter's callback (different callbacks each receive updates), the same
+  callback shared by main and nested counters dedups, and an attaching counter delivers the current
+  value only when its callback has no prior emission entry (so a nested counter mount or a
+  `setLanguage` swap does not re-emit the same value). Detach broadcasts once more to the departing callback and then
+  prunes emission entries no remaining counter owns, so callback identities do not leak.
+  `setLanguage` swaps the segmenter on the existing counter without detach/attach churn;
+  `WordCountPlugin` calls it on both live counters, and each counter recomputes only its own
+  channel. `WordCountPlugin` runs document and selection as independent counter instances:
+  changing `onSelectionChange` recreates only the selection counter (never the document pass or the
+  full-count callback), changing `onChange` recreates only the document counter, and a language
+  change calls `setLanguage` on both live counters. All channels publish through ONE
+  `publishWordCountCallback` effect; the per-channel ownership stacks keep simultaneous
+  publishes, removals, and replacements independent. Selection-only updates commit with empty
+  dirty maps, so the selection flush is scheduled before the content-change guard; throttles and
+  command listeners are cancelled on detach. The handle publishes top-level-only
+  (`publishWordCountCallback`) with per-channel
+  ownership stacks: onChange, onSelectionChange, and language are independent; a cleanup removes
+  its own token from any stack position and republishes the new top, so an unmounted publisher is
+  never resurrected (A→B→A-cleanup→B-cleanup ends null) while a still-mounted predecessor is
+  restored (A→B→B-cleanup→A-cleanup ends on A then null); a null language is "no opinion" rather
+  than a clear. `InklingNestedComposer` mounts a nested `WordCountPlugin` when EITHER callback is
+  present (passing both plus the published language), and `useWordCountSelectionCallback` is the
+  render-only subscription for the selection channel. The demo's `WordCount` chrome shows
+  `X of Y words` from this callback. Pinned by
+  `tests/inkling/unit/plugins/behaviour/word-counter.test.ts`,
+  `tests/inkling/unit/plugins/behaviour/wordCountHandle.test.ts`,
+  `tests/inkling/unit/plugins/WordCountPlugin.test.tsx`, and
+  `tests/inkling/unit/components/InklingNestedComposerWordCount.test.tsx`.
+- A plain-key chord lives in the same `KEYBOARD_SHORTCUTS` table
+  (`src/inkling/plugins/behaviour/keyboard-navigation/shortcuts.ts`; the type is `KeyboardShortcut`
+  — the registration function keeps its historical `registerModifierCommand` name): typing an
+  unmodified backtick over a non-collapsed range selection prevents the text replacement and
+  dispatches `FORMAT_TEXT_COMMAND 'code'` through the same `dispatchCodeFormat` helper ctrl+shift+K
+  uses, so it toggles inline code, keeps the selection, and lands as one undo entry (upstream Ghost
+  c19173beb59e). A collapsed selection, alt/ctrl/meta modifiers, Shift (some layouts produce a
+  backtick with Shift), and IME composition fall through and type a normal backtick. `matches` is a
+  pure key-shape test and `run` may decline by returning false; the registration loop stops at the
+  first match, so the table's matches stay mutually exclusive. It is registered through
+  `registerKeyboardNavigation`, so every surface that mounts keyboard navigation (including nested
+  card/caption editors) gets it; CodeMirror owns its own backtick because the key-down passthrough
+  consumes card-inner key events first. Pinned by
+  `tests/inkling/unit/plugins/behaviour/backtick-code-selection.test.tsx`.
 
 ## Documented tradeoffs
 

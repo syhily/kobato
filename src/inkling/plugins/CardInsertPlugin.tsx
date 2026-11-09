@@ -11,7 +11,7 @@ import { INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 // command payloads cross an untyped runtime boundary (menu dispatch, external
 // consumers), so narrow before constructing the node
 function isCardDataset(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function registerCardInsert(

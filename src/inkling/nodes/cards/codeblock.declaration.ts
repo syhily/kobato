@@ -1,12 +1,11 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import {
   BaseCodeBlockNode,
   codeBlockNestedEditors,
   codeBlockTransientProps,
 } from '@/inkling/nodes/base/nodes/codeblock/CodeBlockNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const codeBlockDeclaration = {
+export const codeBlockDeclaration = checkedCardDeclaration({
   nodeType: 'codeblock',
   baseNode: BaseCodeBlockNode,
   nestedEditors: codeBlockNestedEditors,
@@ -37,4 +36,9 @@ export const codeBlockDeclaration = {
   // Markdown-eligible with no card fence: the code fence is handled
   // by DEFAULT_TRANSFORMERS (`CODE_BLOCK` in `@/inkling/markdown/transformers`).
   markdown: { kind: 'exempt' },
-} satisfies CardDeclaration<'codeblock'>
+} satisfies CardDeclaration<
+  'codeblock',
+  typeof BaseCodeBlockNode,
+  typeof codeBlockTransientProps,
+  typeof codeBlockNestedEditors
+>)

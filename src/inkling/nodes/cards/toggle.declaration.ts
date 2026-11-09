@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseToggleNode, toggleNestedEditors } from '@/inkling/nodes/base/nodes/toggle/ToggleNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const toggleDeclaration = {
+export const toggleDeclaration = checkedCardDeclaration({
   nodeType: 'toggle',
   baseNode: BaseToggleNode,
   nestedEditors: toggleNestedEditors,
@@ -25,4 +24,4 @@ export const toggleDeclaration = {
   insert: { openInEditMode: true },
   toolbarLabel: 'toggle',
   markdown: { kind: 'fence' },
-} satisfies CardDeclaration<'toggle'>
+} satisfies CardDeclaration<'toggle', typeof BaseToggleNode, readonly [], typeof toggleNestedEditors>)

@@ -2,7 +2,7 @@ import type { AnyLexicalCommand } from 'lexical'
 
 import React from 'react'
 
-import type { MenuSection, ResolvedMenuItem } from '@/inkling/nodes/cards/card-menu-build'
+import type { CardMenuInsertParams, MenuSection, ResolvedMenuItem } from '@/inkling/nodes/cards/card-menu-build'
 
 import TrashCardIcon from '@/inkling/assets/icons/inkling-trash.svg?react'
 import { useInklingLabels } from '@/inkling/hooks/useInklingLabels'
@@ -65,7 +65,6 @@ function CardMenuItemIcon({ Icon }: { Icon: React.ComponentType<React.SVGProps<S
 export interface CardMenuItemProps {
   label?: string
   desc?: string
-  icon?: string
   Icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
   isSelected?: boolean
   scrollToItem?: boolean
@@ -247,10 +246,7 @@ export interface CardMenuProps {
    * `data-inkling-cardmenu-idx` numbering is the flat index across sections,
    * matching buildCardMenu's `items` ordering. */
   sections?: CardMenuSectionData[]
-  insert?: (
-    insertCommand?: AnyLexicalCommand,
-    params?: { insertParams?: Record<string, unknown>; queryParams?: string[] },
-  ) => void
+  insert?: (insertCommand?: AnyLexicalCommand, params?: CardMenuInsertParams) => void
   selectedItemIndex?: number
   scrollToSelectedItem?: boolean
   closeMenu?: () => void

@@ -25,7 +25,7 @@ import { registerTabCommand } from '@/inkling/plugins/behaviour/keyboard-navigat
 // order. The key-down passthrough must stay first so it can swallow key
 // events from card inner elements before any sibling handler sees them
 // (pinned by key-down.test.ts). The table IS the order — a mis-ordering is
-// a visible diff, not a comment violation (the MODIFIER_SHORTCUTS shape in
+// a visible diff, not a comment violation (the KEYBOARD_SHORTCUTS shape in
 // shortcuts.ts is the precedent).
 const KEYBOARD_HANDLERS = [
   registerKeyDownPassthrough,

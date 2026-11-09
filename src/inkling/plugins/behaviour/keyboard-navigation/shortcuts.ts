@@ -18,13 +18,16 @@ import { $createAsideNode, $isAsideNode } from '@/inkling/nodes/AsideNode'
 import { $selectDecoratorNode } from '@/inkling/utils'
 
 /**
- * The modifier-key shortcut table (round 3, C7): each entry owns one chord —
- * `matches` is the pure key test, `run` the editor surgery. The registration
- * loop in modifier.ts walks the table in order and stops at the first match,
- * so entries stay independent of one another.
+ * The keyboard-shortcut table (round 3, C7): each entry owns one key shape.
+ * `matches` is the pure key-shape test (modifier chords and, for
+ * `codeSelectionBacktick`, a plain key); `run` is the editor surgery and may
+ * decline by returning false, letting the browser type the key normally. The
+ * registration loop in modifier.ts stops at the first matching entry, so
+ * entries must keep their `matches` mutually exclusive rather than relying on
+ * a later entry to get a second chance.
  */
-export interface ModifierShortcut {
-  /** The pure chord test — no editor reads. */
+export interface KeyboardShortcut {
+  /** The pure key-shape test — no editor reads. */
   matches: (event: KeyboardEvent) => boolean
   /** The editor surgery; returns true when the event is fully consumed. */
   run: (editor: LexicalEditor, event: KeyboardEvent) => boolean
@@ -33,7 +36,7 @@ export interface ModifierShortcut {
 const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const
 
 /** meta+ArrowUp/Down on macOS jumps the caret (or node selection) to the document edges. */
-const documentEdgeJump: ModifierShortcut = {
+const documentEdgeJump: KeyboardShortcut = {
   matches: ({ metaKey, key }) => metaKey && (key === 'ArrowUp' || key === 'ArrowDown'),
   run: (_editor, event) => {
     const selection = $getSelection()
@@ -72,7 +75,7 @@ const documentEdgeJump: ModifierShortcut = {
 }
 
 /** ctrl+Q cycles the block type: paragraph → quote → aside → paragraph. */
-const quoteAsideCycle: ModifierShortcut = {
+const quoteAsideCycle: KeyboardShortcut = {
   matches: ({ ctrlKey, code }) => ctrlKey && code === 'KeyQ',
   run: (_editor, event) => {
     // avoid quit behaviour
@@ -95,7 +98,7 @@ const quoteAsideCycle: ModifierShortcut = {
 }
 
 /** ctrl/cmd+alt+H toggles highlight. */
-const highlightToggle: ModifierShortcut = {
+const highlightToggle: KeyboardShortcut = {
   matches: ({ ctrlKey, metaKey, altKey, code }) => (ctrlKey || metaKey) && altKey && code === 'KeyH',
   run: (editor, event) => {
     event.preventDefault()
@@ -104,17 +107,46 @@ const highlightToggle: ModifierShortcut = {
   },
 }
 
+// The one inline-code dispatch shared by ctrl+shift+K and the backtick chord,
+// so both stay on exactly the same FORMAT_TEXT_COMMAND path.
+function dispatchCodeFormat(editor: LexicalEditor): true {
+  editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code')
+  return true
+}
+
 /** ctrl+shift+K formats the selection as code. */
-const codeFormat: ModifierShortcut = {
+const codeFormat: KeyboardShortcut = {
   matches: ({ ctrlKey, shiftKey, code }) => ctrlKey && shiftKey && code === 'KeyK',
-  run: (editor) => {
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code')
-    return true
+  run: (editor) => dispatchCodeFormat(editor),
+}
+
+/**
+ * Typing an unmodified backtick over a non-collapsed selection toggles inline
+ * code through the same FORMAT_TEXT_COMMAND path as ctrl+shift+K. A collapsed
+ * selection, a modifier chord (Shift included — some layouts produce a
+ * backtick with Shift), and IME composition all fall through so the browser
+ * types the character normally. Registered here (not as a separate behaviour
+ * plugin) because this table is the keyboard-navigation seam every surface
+ * with keyboard navigation mounts — nested card/caption editors included.
+ * CodeMirror owns its own backtick: the key-down passthrough consumes
+ * card-inner events before this table sees them.
+ */
+const codeSelectionBacktick: KeyboardShortcut = {
+  matches: ({ key, altKey, ctrlKey, metaKey, shiftKey, isComposing }) =>
+    key === '`' && !altKey && !ctrlKey && !metaKey && !shiftKey && !isComposing,
+  run: (editor, event) => {
+    const selection = $getSelection()
+    if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+      return false
+    }
+
+    event.preventDefault()
+    return dispatchCodeFormat(editor)
   },
 }
 
 /** ctrl+alt+U strikethroughs (cmd+alt+U launches the browser source view). */
-const strikethroughFormat: ModifierShortcut = {
+const strikethroughFormat: KeyboardShortcut = {
   matches: ({ ctrlKey, altKey, code }) => ctrlKey && altKey && code === 'KeyU',
   run: (editor) => {
     editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough')
@@ -123,7 +155,7 @@ const strikethroughFormat: ModifierShortcut = {
 }
 
 /** ctrl+alt+1..6 turns the block into that heading level. */
-const headingFormat: ModifierShortcut = {
+const headingFormat: KeyboardShortcut = {
   matches: ({ ctrlKey, altKey, key }) => ctrlKey && altKey && /^[1-6]$/.test(key),
   run: (_editor, event) => {
     event.preventDefault()
@@ -138,7 +170,7 @@ const headingFormat: ModifierShortcut = {
 }
 
 /** ctrl+L toggles the list (alt → ordered); inside a list it unwraps to a flush paragraph. */
-const listToggle: ModifierShortcut = {
+const listToggle: KeyboardShortcut = {
   matches: ({ ctrlKey, code }) => ctrlKey && code === 'KeyL',
   run: (editor, event) => {
     event.preventDefault()
@@ -166,11 +198,12 @@ const listToggle: ModifierShortcut = {
   },
 }
 
-export const MODIFIER_SHORTCUTS: ModifierShortcut[] = [
+export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   documentEdgeJump,
   quoteAsideCycle,
   highlightToggle,
   codeFormat,
+  codeSelectionBacktick,
   strikethroughFormat,
   headingFormat,
   listToggle,

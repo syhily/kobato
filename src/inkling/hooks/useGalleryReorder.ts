@@ -113,7 +113,7 @@ export default function useGalleryReorder({
     position: DroppablePosition,
   ): DropResolution | false => {
     // do not allow dropping of non-images
-    if (draggableInfo.type !== 'image' && draggableInfo.cardName !== 'image') {
+    if (!isGalleryImageDrag(draggableInfo)) {
       return false
     }
 
@@ -152,8 +152,9 @@ export default function useGalleryReorder({
     // enablement policy: enable dropping when an image is dragged in from
     // outside of this card — other drags leave enablement untouched
     adjustEnableOnDragStart: (draggableInfo) => {
-      const isImageDrag = draggableInfo.type === 'image' || draggableInfo.cardName === 'image'
-      return isImageDrag && draggableInfo.dataset.src && images.length !== maxImages ? true : undefined
+      return isGalleryImageDrag(draggableInfo) && draggableInfo.dataset.src && images.length !== maxImages
+        ? true
+        : undefined
     },
   })
   const container = dropTarget.container

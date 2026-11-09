@@ -29,13 +29,8 @@ interface MenuItemBase {
   // CardMenu renders anything else as null, so a typo must not compile
   type?: 'card' | 'snippet'
   onRemove?: () => void
-  queryParams?: string[]
+  queryParams?: readonly string[]
   dataTestId?: string
-  name?: string
-  icon?: string
-  customContent?: React.ReactNode
-  hidden?: boolean
-  disabled?: boolean
 }
 
 export interface MenuItem extends MenuItemBase {
@@ -61,6 +56,11 @@ export interface CardMenuSource {
 export interface ResolvedMenuItem extends MenuItemBase {
   insertParams?: Record<string, unknown>
 }
+
+/** The params one resolved menu item contributes to the insert dispatch: the
+ * plain `insertParams` dataset plus the typed `/card param` keys it maps them
+ * onto. `queryParams` keeps the item's `readonly string[]` declaration. */
+export type CardMenuInsertParams = Pick<ResolvedMenuItem, 'insertParams' | 'queryParams'>
 
 /**
  * What the menu build reads from the host config — the FLAT subset of

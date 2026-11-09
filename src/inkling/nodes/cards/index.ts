@@ -14,7 +14,7 @@ import { mathDeclaration } from '@/inkling/nodes/cards/math.declaration'
 import { toggleDeclaration } from '@/inkling/nodes/cards/toggle.declaration'
 import { videoDeclaration } from '@/inkling/nodes/cards/video.declaration'
 
-export type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
+export type { AnyCardDeclaration, CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
 /**
  * The card declarations — the single per-card source of truth (CONTEXT.md:
@@ -22,7 +22,7 @@ export type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
  * derived view over this list.
  *
  * The declaration order reproduces the pre-refactor card run of
- * `@/inkling/nodes/DefaultNodes`; the base `DEFAULT_NODES` in `@/inkling/nodes/base` had a
+ * `@/inkling/nodes/DefaultNodes`; the base `DEFAULT_BASE_NODES` in `@/inkling/nodes/base` had a
  * different historical order and pins it explicitly at the derivation site.
  *
  * ADDING A CARD — the full touch-point list:

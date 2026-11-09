@@ -1,8 +1,7 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import { BaseHtmlNode } from '@/inkling/nodes/base/nodes/html/HtmlNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const htmlDeclaration = {
+export const htmlDeclaration = checkedCardDeclaration({
   nodeType: 'html',
   baseNode: BaseHtmlNode,
   decorateTarget: {
@@ -25,4 +24,4 @@ export const htmlDeclaration = {
   insert: { openInEditMode: true },
   toolbarLabel: 'html',
   markdown: { kind: 'fence' },
-} satisfies CardDeclaration<'html'>
+} satisfies CardDeclaration<'html', typeof BaseHtmlNode, readonly [], readonly []>)

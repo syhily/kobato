@@ -1,12 +1,11 @@
-import type { CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
-
 import {
   BaseBookmarkNode,
   bookmarkNestedEditors,
   bookmarkTransientProps,
 } from '@/inkling/nodes/base/nodes/bookmark/BookmarkNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/cards/card-declaration'
 
-export const bookmarkDeclaration = {
+export const bookmarkDeclaration = checkedCardDeclaration({
   nodeType: 'bookmark',
   baseNode: BaseBookmarkNode,
   nestedEditors: bookmarkNestedEditors,
@@ -27,4 +26,9 @@ export const bookmarkDeclaration = {
   insert: { requiresRangeSelection: true, insertCommandPriority: 'high' },
   toolbarLabel: 'bookmark',
   markdown: { kind: 'fence' },
-} satisfies CardDeclaration<'bookmark'>
+} satisfies CardDeclaration<
+  'bookmark',
+  typeof BaseBookmarkNode,
+  typeof bookmarkTransientProps,
+  typeof bookmarkNestedEditors
+>)
