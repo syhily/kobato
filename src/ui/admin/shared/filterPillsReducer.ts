@@ -17,9 +17,14 @@ export function filterPillsReducer<TField extends string>(
 ): ActiveFilter<TField>[] {
   switch (action.type) {
     case 'addFilter': {
-      // One pill per field: a re-add replaces the existing pill and moves it to the end.
-      const next = filters.filter((f) => f.field !== action.field)
-      return [...next, { field: action.field, value: action.value, label: action.label }]
+      // One pill per field: replace an existing pill in place; append a new field.
+      const idx = filters.findIndex((f) => f.field === action.field)
+      if (idx === -1) {
+        return [...filters, { field: action.field, value: action.value, label: action.label }]
+      }
+      const next = [...filters]
+      next[idx] = { field: action.field, value: action.value, label: action.label }
+      return next
     }
     case 'removeFilter':
       return filters.filter((f) => f.field !== action.field)

@@ -34,7 +34,7 @@ describe('filterPillsReducer', () => {
     expect(next).toEqual([{ field: 'status', value: 'approved', label: '已审核' }])
   })
 
-  it('addFilter keeps other fields and moves the replaced pill to the end', () => {
+  it('addFilter replaces the existing pill in place', () => {
     const prev = [pill('status', 'pending', '待审核'), pill('page', 'pid-1')]
     const next = filterPillsReducer<Field>(prev, {
       type: 'addFilter',
@@ -42,7 +42,7 @@ describe('filterPillsReducer', () => {
       value: 'approved',
       label: '已审核',
     })
-    expect(next).toEqual([pill('page', 'pid-1'), { field: 'status', value: 'approved', label: '已审核' }])
+    expect(next).toEqual([{ field: 'status', value: 'approved', label: '已审核' }, pill('page', 'pid-1')])
   })
 
   it('addFilter does not mutate the previous array', () => {

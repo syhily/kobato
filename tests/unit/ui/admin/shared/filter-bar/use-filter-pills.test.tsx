@@ -67,8 +67,8 @@ describe('useFilterPills — uncontrolled reducer', () => {
 
     act(() => result.current.dispatch({ type: 'addFilter', field: 'status', value: 'approved', label: '已审核' }))
     expect(result.current.filters).toEqual([
-      { field: 'author', value: 'u1', label: 'Alice' },
       { field: 'status', value: 'approved', label: '已审核' },
+      { field: 'author', value: 'u1', label: 'Alice' },
     ])
 
     act(() => result.current.dispatch({ type: 'removeFilter', field: 'author' }))

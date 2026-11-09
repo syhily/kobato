@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
-
 import { tZhCN } from '#/_helpers/i18n'
 import {
   buildPostFilterFields as buildPostFilterFieldsBase,
@@ -11,6 +9,7 @@ import {
   postFiltersToSearch,
   syncPostFiltersFromUrl as syncPostFiltersFromUrlBase,
 } from '@/ui/admin/posts/filter-fields'
+import { filterPillsReducer, type ActiveFilter, type FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 const buildPostFilterFields = (sources: Parameters<typeof buildPostFilterFieldsBase>[0]) =>
   buildPostFilterFieldsBase(sources, tZhCN)
@@ -147,6 +146,22 @@ describe('ui/admin/posts/syncPostFiltersFromUrl', () => {
     expect(dispatch).toHaveBeenCalledWith({ type: 'removeFilter', field: 'status' })
     expect(dispatch).toHaveBeenCalledWith({ type: 'removeFilter', field: 'category' })
     expect(dispatch).toHaveBeenCalledWith({ type: 'addFilter', field: 'tag', value: 'react', label: 'react' })
+  })
+
+  it('keeps pill order when the URL changes status', () => {
+    let current: ActiveFilter<PostFilterFieldKey>[] = [
+      { field: 'status', value: 'draft', label: '草稿' },
+      authorPill,
+      { field: 'tag', value: 'react', label: 'react' },
+    ]
+    const dispatch = (action: FilterPillsAction<PostFilterFieldKey>) => {
+      current = filterPillsReducer(current, action)
+    }
+
+    syncPostFiltersFromUrl(current, dispatch, '?status=published&tag=react')
+
+    expect(current.map((filter) => filter.field)).toEqual(['status', 'author', 'tag'])
+    expect(current[0]?.value).toBe('published')
   })
 
   it('leaves matching pills and user-added pills untouched', () => {
