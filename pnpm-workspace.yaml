@@ -103,11 +103,11 @@ catalog:
   markdown-it-sub: ^2.0.0
   markdown-it-sup: ^2.0.0
   medium-zoom: ^1.1.2
-  motion: ^14.11.0
+  motion: ^14.11.1
   node-device-detector: ^2.2.8
   nodemailer: ^10.4.0
   oxc-transform-react: ^0.158.0
-  oxfmt: ^0.77.0
+  oxfmt: ^0.78.0
   oxlint: ^1.93.0
   oxlint-tsgolint: ^7.0.2006
   pino: ^10.4.0
@@ -166,9 +166,9 @@ peerDependencyRules:
   allowedVersions:
     '@emnapi/core': '1'
     '@emnapi/runtime': '1'
-    oxc-transform-react: '^0.157.0'
+    oxc-transform-react: '^0.158.0'
 permissions:
   drizzle-kit:
-    skills: true
+    skills: false
   taze:
-    skills: true
+    skills: false
