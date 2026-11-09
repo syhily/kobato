@@ -7,15 +7,14 @@ export function useEditorShellLayout() {
   useAdminScrollTopLift(true)
 
   const isLg = useMediaQuery('(min-width: 1024px)', true)
-  // The meta panel starts closed at every viewport (mx-space parity: the
-  // writing column owns the screen until the author asks for the panel);
-  // dropping below lg still force-closes it into the Sheet.
-  const [metaOpen, setMetaOpen] = useState(false)
-  // Render-phase adjustment: when the viewport drops below lg, force the panel closed.
-  const [wasLg, setWasLg] = useState(isLg)
-  if (isLg !== wasLg) {
-    setWasLg(isLg)
-    if (!isLg) {
+  const isMobile = useMediaQuery('(max-width: 767px)', false)
+  // Only mobile starts closed; SSR defaults to the expanded non-mobile layout.
+  const [metaOpen, setMetaOpen] = useState(!isMobile)
+  // Close the Sheet when entering mobile; widening preserves the user's choice.
+  const [wasMobile, setWasMobile] = useState(isMobile)
+  if (isMobile !== wasMobile) {
+    setWasMobile(isMobile)
+    if (isMobile) {
       setMetaOpen(false)
     }
   }
