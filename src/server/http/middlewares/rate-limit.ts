@@ -1,3 +1,5 @@
+import type { Context } from 'hono'
+
 import { createMiddleware } from 'hono/factory'
 
 import type { Env } from '@/server/http/context'
@@ -15,6 +17,16 @@ export function rateLimitByIp(key: string, bucketOrName: RateLimitBucket | keyof
   return createMiddleware<Env>(async (c, next) => {
     const bucket: RateLimitBucket = typeof bucketOrName === 'string' ? readBucket(bucketOrName) : bucketOrName
     const { exceeded } = await tryKeyedRateLimit(`rate-limit:${key}:${c.var.requestContext.clientAddress}`, bucket)
+    if (exceeded) {
+      throw localizedHttpException(429, 'error.api.rateLimited')
+    }
+    await next()
+  })
+}
+
+export function rateLimitByRequestKey(key: string, bucket: RateLimitBucket, requestKey: (c: Context<Env>) => string) {
+  return createMiddleware<Env>(async (c, next) => {
+    const { exceeded } = await tryKeyedRateLimit(`rate-limit:${key}:${requestKey(c)}`, bucket)
     if (exceeded) {
       throw localizedHttpException(429, 'error.api.rateLimited')
     }

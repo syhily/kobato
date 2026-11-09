@@ -9,7 +9,7 @@ import { isLive } from '@/server/domains/content/schemas/live-gate'
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public-query'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
 import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
-import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
+import { rateLimitByIp, rateLimitByRequestKey } from '@/server/http/middlewares/rate-limit'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { through } from '@/server/infra/cache/registry'
 import { drawOpenGraph } from '@/server/render/og/render'
@@ -120,8 +120,8 @@ const AVATAR_HEADERS = {
   'Cache-Control': 'public, max-age=604800',
 }
 
-// The avatar route proxies an external mirror per miss — its own stricter bucket stacked on the images limit.
-const AVATAR_RATE_BUCKET = { windowSeconds: 60, maxAttempts: 30 }
+const AVATAR_IP_RATE_BUCKET = { windowSeconds: 60, maxAttempts: 3000 }
+const AVATAR_RATE_BUCKET = { windowSeconds: 1, maxAttempts: 5 }
 
 // Hono footgun: `:name.png` captures the `.png` into the param — declare
 // `{[^/]+\\.png}` regex constraints instead (a former avatar regression).
@@ -166,8 +166,8 @@ export const imagesRouter = new Hono<Env>()
   })
   .get(
     '/images/avatar/:filename{[^/]+\\.png}',
-    imagesRateLimit,
-    rateLimitByIp('avatar', AVATAR_RATE_BUCKET),
+    rateLimitByIp('avatar-ip', AVATAR_IP_RATE_BUCKET),
+    rateLimitByRequestKey('avatar', AVATAR_RATE_BUCKET, (c) => stripPng(c.req.param('filename')).toLowerCase()),
     async (c) => {
       const hash = stripPng(c.req.param('filename'))
       if (!hash) {

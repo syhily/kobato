@@ -9,7 +9,7 @@ import { makeRequestContext } from '#/_helpers/request-context'
 import { onErrorHandler } from '@/server/http/errors'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
-import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
+import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 // `/images/*.png` param extraction against the real engine (seeded rows,
 // rate limiter, kv cache); seams: avatar fetch, OG canvas, calendar renderer.
@@ -102,17 +102,34 @@ describe('imagesRouter avatar', () => {
     expect(res.status).toBe(404)
   })
 
-  it('throttles the avatar route with its own stricter bucket', async () => {
-    // 30 per 60s per IP; the 31st → 429.
-    for (let i = 0; i < 30; i += 1) {
+  it('uses counters dedicated to avatar requests', async () => {
+    const res = await app.request('/images/avatar/abcdef0123456789.png')
+
+    expect(res.status).toBe(200)
+    expect(__rateLimitKeysForTests()).toEqual(['rate-limit:avatar-ip:127.0.0.1', 'rate-limit:avatar:abcdef0123456789'])
+  })
+
+  it('allows five requests per avatar per second and tracks avatars independently', async () => {
+    for (let i = 0; i < 5; i += 1) {
       const res = await app.request('/images/avatar/abcdef0123456789.png')
       expect(res.status).toBe(200)
     }
-    const res = await app.request('/images/avatar/abcdef0123456789.png')
-    expect(res.status).toBe(429)
-    expect(await res.json()).toMatchObject({
+
+    const limited = await app.request('/images/avatar/abcdef0123456789.png')
+    expect(limited.status).toBe(429)
+    expect(await limited.json()).toMatchObject({
       error: { code: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试。' },
     })
+    expect((await app.request('/images/avatar/fedcba9876543210.png')).status).toBe(200)
+  })
+
+  it('allows 3000 avatar requests per IP per minute', async () => {
+    for (let i = 0; i < 3000; i += 1) {
+      const res = await app.request(`/images/avatar/avatar-${i}.png`)
+      expect(res.status).toBe(200)
+    }
+
+    expect((await app.request('/images/avatar/avatar-overflow.png')).status).toBe(429)
   })
 })
 
