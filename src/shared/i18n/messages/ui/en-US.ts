@@ -560,6 +560,7 @@ export const uiMessagesEnUS = {
   'admin.shell.nav.allPosts': 'All posts',
   'admin.shell.nav.drafts': 'Drafts',
   'admin.shell.nav.published': 'Published',
+  'admin.shell.nav.deleted': 'Deleted',
   'admin.shell.nav.interactions': 'Interactions',
   'admin.shell.nav.taxonomy': 'Taxonomy',
   'admin.shell.nav.media': 'Media',

@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
-import { Fragment, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import {
   buildPostFilterFields,
   postFiltersFromSearch,
+  postFiltersToSearch,
   type PostsFilterQuery,
   syncPostFiltersFromUrl,
 } from '@/ui/admin/posts/filter-fields'
@@ -61,12 +62,22 @@ export function PostsView() {
   const [sortBy, setSortBy] = useState<'publishedAt' | 'updatedAt'>('publishedAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  // URL → pills sync via the "adjust state during render" pattern; UI-driven changes never touch `search`.
+  // URL → pills sync via the "adjust state during render" pattern (sidebar / dashboard deep links).
   const [lastSearch, setLastSearch] = useState(search)
   if (search !== lastSearch) {
     setLastSearch(search)
     syncPostFiltersFromUrl(pills.filters, pills.dispatch, search, t)
   }
+
+  // Pills → URL sync: in-view filter edits flow back into `?status/category/tag` (replace, no history
+  // entries) so the sidebar's posts status submenu tracks the active filters.
+  const navigate = useNavigate()
+  useEffect(() => {
+    const nextSearch = postFiltersToSearch(pills.filters, search)
+    if (nextSearch !== null) {
+      void navigate({ search: nextSearch }, { replace: true })
+    }
+  }, [pills.filters, search, navigate])
 
   const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
     namespace: orpcQuery.admin.posts.list,

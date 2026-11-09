@@ -542,6 +542,7 @@ export const uiMessagesZhCN = {
   'admin.shell.nav.allPosts': '全部文章',
   'admin.shell.nav.drafts': '草稿箱',
   'admin.shell.nav.published': '已发布',
+  'admin.shell.nav.deleted': '已删除',
   'admin.shell.nav.interactions': '网页互动',
   'admin.shell.nav.taxonomy': '分门别类',
   'admin.shell.nav.media': '媒体管理',

@@ -136,6 +136,30 @@ export function postFiltersFromSearch(search: string, t: I18nValue['t']): Active
   return pills
 }
 
+/** Reflect the URL-backed pills into the location search so the sidebar's
+ *  status links track in-view filter edits; returns the next search string,
+ *  or null when the URL already matches the pills. */
+export function postFiltersToSearch(filters: ActiveFilter<PostFilterFieldKey>[], currentSearch: string): string | null {
+  const params = new URLSearchParams(currentSearch)
+  let changed = false
+  for (const field of URL_FILTER_FIELDS) {
+    const next = filters.find((f) => f.field === field)?.value ?? null
+    if (params.get(field) !== next) {
+      changed = true
+      if (next === null) {
+        params.delete(field)
+      } else {
+        params.set(field, next)
+      }
+    }
+  }
+  if (!changed) {
+    return null
+  }
+  const serialized = params.toString()
+  return serialized ? `?${serialized}` : ''
+}
+
 /** Reconcile the URL-backed pills after a navigation while already on the
  *  posts list — user-added pills (author) survive. */
 export function syncPostFiltersFromUrl(

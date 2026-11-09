@@ -544,6 +544,7 @@ export const uiMessagesZhHK = {
   'admin.shell.nav.allPosts': '全部文章',
   'admin.shell.nav.drafts': '草稿箱',
   'admin.shell.nav.published': '已發佈',
+  'admin.shell.nav.deleted': '已刪除',
   'admin.shell.nav.interactions': '網頁互動',
   'admin.shell.nav.taxonomy': '分門別類',
   'admin.shell.nav.media': '媒體管理',

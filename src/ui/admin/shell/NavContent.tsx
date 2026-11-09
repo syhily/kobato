@@ -9,6 +9,7 @@ import {
   PlusIcon,
   ShieldIcon,
 } from 'lucide-react'
+import { useLocation } from 'react-router'
 
 import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
 
@@ -26,6 +27,12 @@ interface NavContentProps {
 
 export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCount = 0, userCount }: NavContentProps) {
   const { t } = useI18n()
+  // The posts status submenu tracks the list's ?status= param (PostsView keeps the URL in sync with its pills).
+  const { pathname, search } = useLocation()
+  const onPostsList = pathname === '/admin/posts'
+  const rawPostsStatus = new URLSearchParams(search).get('status')
+  // `hidden` is the pre-rename spelling of `unlisted` on bookmarked deep links.
+  const postsStatus = rawPostsStatus === 'hidden' ? 'unlisted' : rawPostsStatus
   if (!role) {
     return null
   }
@@ -56,18 +63,35 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
 
               <NavMenuItem.CollapsibleMenu>
                 <NavMenuItem>
-                  <NavMenuItem.Link to="/admin/posts" className="pl-11" end>
+                  <NavMenuItem.Link
+                    to="/admin/posts"
+                    className="pl-11"
+                    isActive={onPostsList && (postsStatus === null || postsStatus === 'all')}
+                  >
                     <NavMenuItem.Label>{t('admin.shell.nav.allPosts')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
-                  <NavMenuItem.Link to="/admin/posts?status=draft" className="pl-11">
+                  <NavMenuItem.Link to="/admin/posts?status=draft" className="pl-11" isActive={postsStatus === 'draft'}>
                     <NavMenuItem.Label>{t('admin.shell.nav.drafts')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
-                  <NavMenuItem.Link to="/admin/posts?status=published" className="pl-11">
+                  <NavMenuItem.Link
+                    to="/admin/posts?status=published"
+                    className="pl-11"
+                    isActive={postsStatus === 'published'}
+                  >
                     <NavMenuItem.Label>{t('admin.shell.nav.published')}</NavMenuItem.Label>
+                  </NavMenuItem.Link>
+                </NavMenuItem>
+                <NavMenuItem>
+                  <NavMenuItem.Link
+                    to="/admin/posts?status=deleted"
+                    className="pl-11"
+                    isActive={postsStatus === 'deleted'}
+                  >
+                    <NavMenuItem.Label>{t('admin.shell.nav.deleted')}</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
               </NavMenuItem.CollapsibleMenu>

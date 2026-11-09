@@ -8,6 +8,7 @@ import {
   deriveStatusFields,
   type PostFilterFieldKey,
   postFiltersFromSearch as postFiltersFromSearchBase,
+  postFiltersToSearch,
   syncPostFiltersFromUrl as syncPostFiltersFromUrlBase,
 } from '@/ui/admin/posts/filter-fields'
 
@@ -156,5 +157,38 @@ describe('ui/admin/posts/syncPostFiltersFromUrl', () => {
     ]
     syncPostFiltersFromUrl(current, dispatch, '?status=published')
     expect(dispatch).not.toHaveBeenCalled()
+  })
+})
+
+describe('ui/admin/posts/postFiltersToSearch', () => {
+  it('returns null when the URL already matches the pills', () => {
+    const pills: ActiveFilter<PostFilterFieldKey>[] = [{ field: 'status', value: 'draft', label: '草稿' }]
+    expect(postFiltersToSearch(pills, '?status=draft')).toBeNull()
+    expect(postFiltersToSearch([], '')).toBeNull()
+  })
+
+  it('writes the active URL-backed pills into the search', () => {
+    const pills: ActiveFilter<PostFilterFieldKey>[] = [
+      { field: 'status', value: 'deleted', label: '已删除' },
+      { field: 'tag', value: 'react', label: 'react' },
+    ]
+    expect(postFiltersToSearch(pills, '')).toBe('?status=deleted&tag=react')
+  })
+
+  it('replaces a stale status and drops cleared pills', () => {
+    const pills: ActiveFilter<PostFilterFieldKey>[] = [{ field: 'category', value: 'c-1', label: '前端' }]
+    expect(postFiltersToSearch(pills, '?status=draft')).toBe('?category=c-1')
+  })
+
+  it('clears the search entirely when the last pill is removed', () => {
+    expect(postFiltersToSearch([], '?status=deleted')).toBe('')
+  })
+
+  it('ignores UI-local pills and preserves unrelated params', () => {
+    const pills: ActiveFilter<PostFilterFieldKey>[] = [{ field: 'author', value: 'u-1', label: '雨帆' }]
+    expect(postFiltersToSearch(pills, '?from=dashboard')).toBeNull()
+    expect(postFiltersToSearch([{ field: 'status', value: 'draft', label: '草稿' }, ...pills], '?from=dashboard')).toBe(
+      '?from=dashboard&status=draft',
+    )
   })
 })
