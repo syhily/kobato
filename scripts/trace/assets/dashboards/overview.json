@@ -1,0 +1,347 @@
+{
+  "version": 8,
+  "title": "Kobato — Overview",
+  "description": "Request rate, error rate, latency and frontend Web Vitals for development.",
+  "tabs": [
+    {
+      "tabId": "default",
+      "name": "Overview",
+      "panels": [
+        {
+          "id": "ov-requests",
+          "type": "line",
+          "title": "HTTP requests per minute",
+          "description": "server http.server spans by minute",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, count(*) AS y FROM \"default\" WHERE service_name = 'kobato' AND operation_name = 'http.server' GROUP BY x ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 6,
+            "h": 5,
+            "i": 1
+          }
+        },
+        {
+          "id": "ov-errors",
+          "type": "line",
+          "title": "Server errors per minute",
+          "description": "http.server spans with an ERROR status",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, count(*) AS y FROM \"default\" WHERE service_name = 'kobato' AND operation_name = 'http.server' AND span_status = 'ERROR' GROUP BY x ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 6,
+            "y": 0,
+            "w": 6,
+            "h": 5,
+            "i": 2
+          }
+        },
+        {
+          "id": "ov-latency",
+          "type": "table",
+          "title": "Server latency by route (P50/P95/P99)",
+          "description": "span duration is reported in microseconds",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT http_route, count(*) AS requests, approx_percentile_cont(duration, 0.5) AS p50_us, approx_percentile_cont(duration, 0.95) AS p95_us, approx_percentile_cont(duration, 0.99) AS p99_us FROM \"default\" WHERE service_name = 'kobato' AND operation_name = 'http.server' GROUP BY http_route ORDER BY p95_us DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 4,
+            "i": 3
+          }
+        },
+        {
+          "id": "ov-vitals",
+          "type": "line",
+          "title": "Frontend Web Vitals",
+          "description": "RUM view events; durations are microseconds",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, avg(view_largest_contentful_paint) / 1000.0 AS lcp_us, avg(view_inp_us) AS inp_us, avg(view_cumulative_layout_shift) AS cls FROM \"_rumdata\" WHERE type = 'view' GROUP BY x ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 6,
+            "y": 5,
+            "w": 6,
+            "h": 5,
+            "i": 4
+          }
+        },
+        {
+          "id": "ov-ttfb",
+          "type": "line",
+          "title": "Frontend TTFB",
+          "description": "RUM initial view first_byte",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, avg(view_first_byte) / 1000.0 AS ttfb_us FROM \"_rumdata\" WHERE type = 'view' GROUP BY x ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 6,
+            "h": 5,
+            "i": 5
+          }
+        },
+        {
+          "id": "ov-slow-routes",
+          "type": "table",
+          "title": "Slowest routes",
+          "description": "top 15 http.server routes by P95",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT http_route, count(*) AS requests, approx_percentile_cont(duration, 0.95) AS p95_us FROM \"default\" WHERE service_name = 'kobato' AND operation_name = 'http.server' GROUP BY http_route ORDER BY p95_us DESC LIMIT 15",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 20,
+            "w": 12,
+            "h": 4,
+            "i": 6
+          }
+        }
+      ]
+    }
+  ],
+  "defaultDatetimeDuration": {
+    "type": "relative",
+    "relativeTimePeriod": "15m"
+  }
+}

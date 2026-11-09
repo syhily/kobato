@@ -1,0 +1,567 @@
+{
+  "version": 8,
+  "title": "Kobato — Server",
+  "description": "SSR, oRPC, SQLite/DuckDB, cache, event-loop and representative trace waterfalls.",
+  "tabs": [
+    {
+      "tabId": "default",
+      "name": "Overview",
+      "panels": [
+        {
+          "id": "sv-ssr",
+          "type": "line",
+          "title": "SSR shell and stream",
+          "description": "rr/ssr span duration by operation",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, operation_name, avg(duration) AS avg_us FROM \"default\" WHERE service_name = 'kobato' AND operation_name IN ('rr.document', 'rr.data', 'ssr.shell', 'ssr.stream') GROUP BY x, operation_name ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 6,
+            "h": 5,
+            "i": 1
+          }
+        },
+        {
+          "id": "sv-orpc",
+          "type": "table",
+          "title": "oRPC procedures",
+          "description": "procedure duration and volume by transport",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT orpc_procedure, orpc_transport, count(*) AS calls, approx_percentile_cont(duration, 0.95) AS p95_us FROM \"default\" WHERE service_name = 'kobato' AND operation_name LIKE 'orpc.%' GROUP BY orpc_procedure, orpc_transport ORDER BY p95_us DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 4,
+            "w": 12,
+            "h": 4,
+            "i": 2
+          }
+        },
+        {
+          "id": "sv-db",
+          "type": "line",
+          "title": "SQLite and DuckDB",
+          "description": "db span duration by engine and operation",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, operation_name, avg(duration) AS avg_us FROM \"default\" WHERE service_name = 'kobato' AND operation_name IN ('db.sqlite.query', 'db.duckdb.query') GROUP BY x, operation_name ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 5,
+            "w": 6,
+            "h": 5,
+            "i": 3
+          }
+        },
+        {
+          "id": "sv-db-table",
+          "type": "table",
+          "title": "Database operations",
+          "description": "count and P95 per engine/operation",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT db_engine, db_operation, count(*) AS calls, approx_percentile_cont(duration, 0.95) AS p95_us FROM \"default\" WHERE service_name = 'kobato' AND operation_name IN ('db.sqlite.query', 'db.duckdb.query') GROUP BY db_engine, db_operation ORDER BY p95_us DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 12,
+            "w": 12,
+            "h": 4,
+            "i": 4
+          }
+        },
+        {
+          "id": "sv-cache",
+          "type": "line",
+          "title": "Cache lookups",
+          "description": "delta cache.lookup.count increments per minute (sum of each export interval)",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, cache_bucket, sum(value) AS y FROM \"cache_lookup_count\" GROUP BY x, cache_bucket ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "cache_lookup_count",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 6,
+            "h": 5,
+            "i": 5
+          }
+        },
+        {
+          "id": "sv-event-loop",
+          "type": "line",
+          "title": "Event loop delay",
+          "description": "observable gauge mean in milliseconds",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, avg(value) AS y FROM \"event_loop_delay\" GROUP BY x ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "event_loop_delay",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 6,
+            "y": 10,
+            "w": 6,
+            "h": 5,
+            "i": 6
+          }
+        },
+        {
+          "id": "sv-outbound",
+          "type": "table",
+          "title": "Outbound HTTP calls",
+          "description": "http.client spans by closed operation/method/status",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT http_client_operation, http_request_method, http_response_status_code, count(*) AS calls, approx_percentile_cont(duration, 0.95) AS p95_us FROM \"default\" WHERE service_name = 'kobato' AND operation_name = 'http.client' GROUP BY http_client_operation, http_request_method, http_response_status_code ORDER BY calls DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 16,
+            "w": 12,
+            "h": 4,
+            "i": 8
+          }
+        },
+        {
+          "id": "sv-image-queue",
+          "type": "line",
+          "title": "Image queue wait total (ms/minute)",
+          "description": "sum of image.queue.duration histogram _sum data points per minute; DEV inline is 0 by construction",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, sum(value) AS total_queue_ms FROM \"image_queue_duration_sum\" GROUP BY x ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "image_queue_duration_sum",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 20,
+            "w": 6,
+            "h": 5,
+            "i": 9
+          }
+        },
+        {
+          "id": "sv-image-exec",
+          "type": "line",
+          "title": "Image execution total (ms/minute)",
+          "description": "sum of image.execution.duration histogram _sum data points per minute",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, sum(value) AS total_execution_ms FROM \"image_execution_duration_sum\" GROUP BY x ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "image_execution_duration_sum",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 6,
+            "y": 20,
+            "w": 6,
+            "h": 5,
+            "i": 10
+          }
+        },
+        {
+          "id": "sv-traces",
+          "type": "table",
+          "title": "Representative server traces",
+          "description": "one row per span; open by trace_id in the trace explorer",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT trace_id, span_id, operation_name, http_route, duration, status_code, start_time FROM \"default\" WHERE service_name = 'kobato' ORDER BY start_time DESC LIMIT 200",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 25,
+            "w": 12,
+            "h": 4,
+            "i": 7
+          }
+        }
+      ]
+    }
+  ],
+  "defaultDatetimeDuration": {
+    "type": "relative",
+    "relativeTimePeriod": "15m"
+  }
+}

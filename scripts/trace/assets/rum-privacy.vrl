@@ -1,0 +1,150 @@
+# Kobato RUM privacy allowlist (ADR-0012, second boundary).
+#
+# This is the storage-time, fail-closed boundary: the pipeline builds a NEW
+# event from an explicit allowlist and assigns it to `.`. Every field not named
+# here is deleted by construction — including a future SDK field nobody has
+# added to a denylist. The browser `beforeSend` policy cannot do this: the slim
+# SDK's `limitModification` copies only its declared paths back onto the event,
+# so arbitrary browser-side deletion is discarded. This pipeline is therefore
+# mandatory before frontend RUM is enabled (`trace:init` installs it).
+#
+# Preserved: trace/span ids, route template, RUM session/view random ids,
+# numeric Web Vitals, duration/status/coarse sizes, closed error fields, and
+# the small O2 metadata set the dashboards use.
+# Dropped: IP/GeoIP/device/user-agent enrichment, headers, exact byte counts,
+# DOM selectors, raw performance objects, error stacks/messages, and anything
+# unknown (including a synthetic unknown field carrying a secret).
+old = .
+safe = {}
+
+# Identity/context required by the dashboards and correlation.
+if exists(old.type) { safe.type = old.type }
+if exists(old.date) { safe.date = old.date }
+if exists(old.application_id) { safe.application_id = old.application_id }
+if exists(old.service) { safe.service = old.service }
+if exists(old.version) { safe.version = old.version }
+if exists(old.source) { safe.source = old.source }
+if exists(old.env) { safe.env = old.env }
+if exists(old.sdk_version) { safe.sdk_version = old.sdk_version }
+if exists(old.o2tags) { safe.o2tags = old.o2tags }
+if exists(old.session_id) { safe.session_id = old.session_id }
+if exists(old.session_type) { safe.session_type = old.session_type }
+if exists(old.view_id) { safe.view_id = old.view_id }
+if exists(old.view_name) { safe.view_name = old.view_name }
+if exists(old.view_url) { safe.view_url = old.view_url }
+
+# O2/SDK metadata: fixed, small, and non-identifying.
+if exists(old._timestamp) { safe._timestamp = old._timestamp }
+if exists(old._o2_format_version) { safe._o2_format_version = old._o2_format_version }
+if exists(old._o2_sdk_name) { safe._o2_sdk_name = old._o2_sdk_name }
+if exists(old._o2_browser_sdk_version) { safe._o2_browser_sdk_version = old._o2_browser_sdk_version }
+if exists(old._o2_trace_id) { safe._o2_trace_id = old._o2_trace_id }
+if exists(old._o2_span_id) { safe._o2_span_id = old._o2_span_id }
+if exists(old._o2_parent_span_id) { safe._o2_parent_span_id = old._o2_parent_span_id }
+if exists(old._o2_rule_psr) { safe._o2_rule_psr = old._o2_rule_psr }
+if exists(old._o2_discarded) { safe._o2_discarded = old._o2_discarded }
+if exists(old._o2_document_version) { safe._o2_document_version = old._o2_document_version }
+if exists(old._o2_configuration_session_sample_rate) { safe._o2_configuration_session_sample_rate = old._o2_configuration_session_sample_rate }
+if exists(old._o2_configuration_session_replay_sample_rate) { safe._o2_configuration_session_replay_sample_rate = old._o2_configuration_session_replay_sample_rate }
+if exists(old._o2_configuration_profiling_sample_rate) { safe._o2_configuration_profiling_sample_rate = old._o2_configuration_profiling_sample_rate }
+if exists(old._o2_configuration_trace_sample_rate) { safe._o2_configuration_trace_sample_rate = old._o2_configuration_trace_sample_rate }
+
+# View: timings, counts, and the numeric Web Vitals only. Selectors and the
+# raw performance JSON objects are deliberately absent.
+if exists(old.view_loading_type) { safe.view_loading_type = old.view_loading_type }
+if exists(old.view_loading_time) { safe.view_loading_time = old.view_loading_time }
+if exists(old.view_network_settled_time) { safe.view_network_settled_time = old.view_network_settled_time }
+if exists(old.view_time_spent) { safe.view_time_spent = old.view_time_spent }
+if exists(old.view_first_byte) { safe.view_first_byte = old.view_first_byte }
+if exists(old.view_dom_interactive) { safe.view_dom_interactive = old.view_dom_interactive }
+if exists(old.view_dom_content_loaded) { safe.view_dom_content_loaded = old.view_dom_content_loaded }
+if exists(old.view_dom_complete) { safe.view_dom_complete = old.view_dom_complete }
+if exists(old.view_load_event) { safe.view_load_event = old.view_load_event }
+if exists(old.view_first_contentful_paint) { safe.view_first_contentful_paint = old.view_first_contentful_paint }
+if exists(old.view_largest_contentful_paint) { safe.view_largest_contentful_paint = old.view_largest_contentful_paint }
+if exists(old.view_cumulative_layout_shift) { safe.view_cumulative_layout_shift = old.view_cumulative_layout_shift }
+if exists(old.view_cumulative_layout_shift_time) { safe.view_cumulative_layout_shift_time = old.view_cumulative_layout_shift_time }
+if exists(old.view_interaction_to_next_paint) { safe.view_interaction_to_next_paint = old.view_interaction_to_next_paint }
+if exists(old.view_action_count) { safe.view_action_count = old.view_action_count }
+if exists(old.view_error_count) { safe.view_error_count = old.view_error_count }
+if exists(old.view_long_task_count) { safe.view_long_task_count = old.view_long_task_count }
+if exists(old.view_resource_count) { safe.view_resource_count = old.view_resource_count }
+if exists(old.view_frustration_count) { safe.view_frustration_count = old.view_frustration_count }
+if exists(old.view_is_active) { safe.view_is_active = old.view_is_active }
+if exists(old.view_in_foreground) { safe.view_in_foreground = old.view_in_foreground }
+
+# Resource: type/url/status/duration and phase timings. Exact bytes and
+# response headers are absent; only power-of-two buckets are re-derived.
+if exists(old.resource_type) { safe.resource_type = old.resource_type }
+if exists(old.resource_url) { safe.resource_url = old.resource_url }
+if exists(old.resource_method) { safe.resource_method = old.resource_method }
+if exists(old.resource_status_code) { safe.resource_status_code = old.resource_status_code }
+if exists(old.resource_duration) { safe.resource_duration = old.resource_duration }
+if exists(old.resource_render_blocking_status) { safe.resource_render_blocking_status = old.resource_render_blocking_status }
+if exists(old.resource_delivery_type) { safe.resource_delivery_type = old.resource_delivery_type }
+if exists(old.resource_protocol) { safe.resource_protocol = old.resource_protocol }
+if exists(old.resource_worker_duration) { safe.resource_worker_duration = old.resource_worker_duration }
+if exists(old.resource_worker_start) { safe.resource_worker_start = old.resource_worker_start }
+if exists(old.resource_redirect_duration) { safe.resource_redirect_duration = old.resource_redirect_duration }
+if exists(old.resource_redirect_start) { safe.resource_redirect_start = old.resource_redirect_start }
+if exists(old.resource_dns_duration) { safe.resource_dns_duration = old.resource_dns_duration }
+if exists(old.resource_dns_start) { safe.resource_dns_start = old.resource_dns_start }
+if exists(old.resource_connect_duration) { safe.resource_connect_duration = old.resource_connect_duration }
+if exists(old.resource_connect_start) { safe.resource_connect_start = old.resource_connect_start }
+if exists(old.resource_ssl_duration) { safe.resource_ssl_duration = old.resource_ssl_duration }
+if exists(old.resource_ssl_start) { safe.resource_ssl_start = old.resource_ssl_start }
+if exists(old.resource_first_byte_duration) { safe.resource_first_byte_duration = old.resource_first_byte_duration }
+if exists(old.resource_first_byte_start) { safe.resource_first_byte_start = old.resource_first_byte_start }
+if exists(old.resource_download_duration) { safe.resource_download_duration = old.resource_download_duration }
+if exists(old.resource_download_start) { safe.resource_download_start = old.resource_download_start }
+
+# Coarse byte buckets (powers of two); exact sizes never leave the pipeline.
+safe.resource_size_bucket = 0
+if exists(old.resource_size) {
+  size = to_int(old.resource_size) ?? 0
+  if size <= 1024 { safe.resource_size_bucket = 1024 } else if size <= 4096 { safe.resource_size_bucket = 4096 } else if size <= 16384 { safe.resource_size_bucket = 16384 } else if size <= 65536 { safe.resource_size_bucket = 65536 } else if size <= 262144 { safe.resource_size_bucket = 262144 } else if size <= 1048576 { safe.resource_size_bucket = 1048576 } else { safe.resource_size_bucket = 4194304 }
+}
+safe.resource_transfer_size_bucket = 0
+if exists(old.resource_transfer_size) {
+  transfer = to_int(old.resource_transfer_size) ?? 0
+  if transfer <= 1024 { safe.resource_transfer_size_bucket = 1024 } else if transfer <= 4096 { safe.resource_transfer_size_bucket = 4096 } else if transfer <= 16384 { safe.resource_transfer_size_bucket = 16384 } else if transfer <= 65536 { safe.resource_transfer_size_bucket = 65536 } else if transfer <= 262144 { safe.resource_transfer_size_bucket = 262144 } else if transfer <= 1048576 { safe.resource_transfer_size_bucket = 1048576 } else { safe.resource_transfer_size_bucket = 4194304 }
+}
+
+# Long tasks: duration/blocking and the fixed entry type only.
+if exists(old.long_task_duration) { safe.long_task_duration = old.long_task_duration }
+if exists(old.long_task_blocking_duration) { safe.long_task_blocking_duration = old.long_task_blocking_duration }
+if exists(old.long_task_entry_type) { safe.long_task_entry_type = old.long_task_entry_type }
+if exists(old.long_task_is_frozen_frame) { safe.long_task_is_frozen_frame = old.long_task_is_frozen_frame }
+
+# Errors: closed/stable fields only. No free-form message, stack, fingerprint,
+# request/response body, or resource URL.
+if exists(old.error_type) { safe.error_type = old.error_type }
+if exists(old.error_source) { safe.error_source = old.error_source }
+if exists(old.error_handling) { safe.error_handling = old.error_handling }
+if exists(old.error_category) { safe.error_category = old.error_category }
+if exists(old.error_code) { safe.error_code = old.error_code }
+
+# Stable numeric INP projection. O2 flatten turns the SDK's
+# view.performance.inp.duration into view_performance_inp_duration (ns). Keep
+# microseconds as a floating value (never integer-truncated); null means "no
+# interaction measured" and is never a fake 0 sample. A legacy JSON fallback
+# covers rows produced before the flattened schema.
+safe.view_inp_us = null
+if old.type == "view" {
+  if exists(old.view_performance_inp_duration) {
+    ns = to_float(old.view_performance_inp_duration) ?? 0.0
+    if ns > 0.0 {
+      safe.view_inp_us = ns / 1000.0
+    }
+  } else if exists(old.view_performance_inp) {
+    parsed, err = parse_json(old.view_performance_inp)
+    if err == null && exists(parsed.duration) {
+      ns = to_float(parsed.duration) ?? 0.0
+      if ns > 0.0 {
+        safe.view_inp_us = ns / 1000.0
+      }
+    }
+  }
+}
+
+. = safe

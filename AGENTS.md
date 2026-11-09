@@ -28,6 +28,7 @@ Agents load these additively as they move through the codebase:
 | `src/inkling/AGENTS.md`                | The Lexical editor layer: card pipeline, headless surface, labels  |
 | `tests/AGENTS.md`                      | Test utilities, naming conventions, coverage rules                 |
 | `scripts/sea/AGENTS.md`                | SEA packaging, build/smoke/probe/e2e, self-update                  |
+| `scripts/trace/README.md`              | Optional OpenObserve dev container, dashboards, privacy, smoke     |
 
 ## Skills
 

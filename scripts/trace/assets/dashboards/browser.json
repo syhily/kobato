@@ -1,0 +1,347 @@
+{
+  "version": 8,
+  "title": "Kobato — Browser",
+  "description": "Hard/soft navigation, Web Vitals, long tasks, resources and sanitized errors.",
+  "tabs": [
+    {
+      "tabId": "default",
+      "name": "Overview",
+      "panels": [
+        {
+          "id": "br-views",
+          "type": "table",
+          "title": "Views by route",
+          "description": "hard and SPA navigations grouped by route template",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT view_name, view_loading_type, count(*) AS views, avg(view_loading_time) / 1000.0 AS avg_loading_us FROM \"_rumdata\" WHERE type = 'view' GROUP BY view_name, view_loading_type ORDER BY views DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 4,
+            "i": 1
+          }
+        },
+        {
+          "id": "br-vitals",
+          "type": "table",
+          "title": "Web Vitals by route",
+          "description": "LCP, INP, CLS and TTFB (durations in microseconds)",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT view_name, count(*) AS views, avg(view_largest_contentful_paint) / 1000.0 AS lcp_us, avg(view_inp_us) AS inp_us, avg(view_cumulative_layout_shift) AS cls, avg(view_first_byte) / 1000.0 AS ttfb_us FROM \"_rumdata\" WHERE type = 'view' GROUP BY view_name ORDER BY views DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 4,
+            "w": 12,
+            "h": 4,
+            "i": 2
+          }
+        },
+        {
+          "id": "br-longtasks",
+          "type": "table",
+          "title": "Long tasks",
+          "description": "long-task duration by route",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT view_name, count(*) AS long_tasks, avg(long_task_duration) / 1000.0 AS avg_us, max(long_task_duration) / 1000.0 AS max_us FROM \"_rumdata\" WHERE type = 'long_task' GROUP BY view_name ORDER BY max_us DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 5,
+            "w": 6,
+            "h": 5,
+            "i": 3
+          }
+        },
+        {
+          "id": "br-resources",
+          "type": "table",
+          "title": "Resource timing",
+          "description": "phase timings and coarse transfer size by type",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT resource_type, count(*) AS requests, avg(resource_duration) / 1000.0 AS avg_us, avg(resource_transfer_size_bucket) AS avg_transfer_bucket FROM \"_rumdata\" WHERE type = 'resource' GROUP BY resource_type ORDER BY requests DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 6,
+            "y": 5,
+            "w": 6,
+            "h": 5,
+            "i": 4
+          }
+        },
+        {
+          "id": "br-errors",
+          "type": "table",
+          "title": "Sanitized browser errors",
+          "description": "fixed category, source, code and sanitized stack only",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT error_type, error_source, error_handling, count(*) AS errors, max(view_name) AS last_route FROM \"_rumdata\" WHERE type = 'error' GROUP BY error_type, error_source, error_handling ORDER BY errors DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 16,
+            "w": 12,
+            "h": 4,
+            "i": 5
+          }
+        },
+        {
+          "id": "br-cache",
+          "type": "table",
+          "title": "Cold vs warm resources",
+          "description": "delivery_type from the Resource Timing API",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT view_name, resource_type, resource_delivery_type, count(*) AS requests, avg(resource_duration) / 1000.0 AS avg_us FROM \"_rumdata\" WHERE type = 'resource' GROUP BY view_name, resource_type, resource_delivery_type ORDER BY requests DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 20,
+            "w": 12,
+            "h": 4,
+            "i": 6
+          }
+        }
+      ]
+    }
+  ],
+  "defaultDatetimeDuration": {
+    "type": "relative",
+    "relativeTimePeriod": "15m"
+  }
+}

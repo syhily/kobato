@@ -1,0 +1,182 @@
+{
+  "version": 8,
+  "title": "Kobato — Correlation",
+  "description": "RUM resource → same-origin server trace → DB/SSR spans, with trace IDs as exemplars.",
+  "tabs": [
+    {
+      "tabId": "default",
+      "name": "Overview",
+      "panels": [
+        {
+          "id": "co-rum-trace",
+          "type": "table",
+          "title": "RUM resources with trace ids",
+          "description": "same-origin Fetch/XHR traceparent correlation; join these trace IDs with the server span panel",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT _o2_trace_id AS trace_id, view_name, resource_url, resource_duration / 1000.0 AS resource_duration_us, resource_status_code FROM \"_rumdata\" WHERE type = 'resource' AND _o2_trace_id IS NOT NULL LIMIT 100",
+              "customQuery": true,
+              "fields": {
+                "stream": "_rumdata",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 4,
+            "i": 1
+          }
+        },
+        {
+          "id": "co-spans",
+          "type": "table",
+          "title": "Server span tree",
+          "description": "all spans for the most recent correlated traces",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT trace_id, span_id, reference_parent_span_id, operation_name, http_route, duration, status_code, start_time FROM \"default\" WHERE service_name = 'kobato' ORDER BY start_time DESC LIMIT 300",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 4,
+            "w": 12,
+            "h": 4,
+            "i": 2
+          }
+        },
+        {
+          "id": "co-db",
+          "type": "table",
+          "title": "DB and SSR spans by trace",
+          "description": "trace_ids shared with the RUM resource panel",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT trace_id, operation_name, db_engine, db_operation, duration FROM \"default\" WHERE service_name = 'kobato' AND (operation_name IN ('db.sqlite.query', 'db.duckdb.query', 'ssr.shell', 'ssr.stream')) ORDER BY start_time DESC LIMIT 200",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 4,
+            "i": 3
+          }
+        }
+      ]
+    }
+  ],
+  "defaultDatetimeDuration": {
+    "type": "relative",
+    "relativeTimePeriod": "15m"
+  }
+}

@@ -65,6 +65,16 @@ jobs:
         if: github.event_name == 'pull_request'
       - run: pnpm run sea:build
         if: github.event_name == 'pull_request'
+      # The ordinary test job runs before any build and therefore skips this
+      # proof by design. Run it explicitly against the real production output
+      # in the build job (push: `build/server`; PR: `sea:build`).
+      - name: production trace/rum bundle guard
+        run: |
+          test -d build/client
+          test -d build/server
+          pnpm exec vitest run --project unit tests/unit/arch/production-rum-bundle.test.ts
+        env:
+          KOBATO_REQUIRE_PRODUCTION_BUILD: '1'
       # Real-Chromium journeys (tests/browser). CI uses Playwright's bundled
       # Chromium; `sea:browser` forces the built binary, so a missing
       # dist-sea/kobato fails the step instead of silently skipping.
