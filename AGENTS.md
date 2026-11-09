@@ -37,11 +37,12 @@ Agent Skills under `.agents/skills/` override these conventions on conflict:
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | `react-router-framework-mode` | Routes, loaders, actions, forms, navigation, `react-router.config.ts`          |
 | `vercel-react-best-practices` | Any React/SSR code. The 70 numbered rules are the performance baseline.        |
-| `vercel-composition-patterns` | New components, boolean-prop matrices, compound components, context providers. |
 | `vercel-geist-design-system`  | Geist/Vercel-inspired UI: typography, spacing, color, app shells.              |
-| `shadcn`                      | shadcn/ui components, presets, `components.json`.                              |
-| `web-design-guidelines`       | UI accessibility, UX, Web Interface Guidelines compliance.                     |
-| `improve`                     | Read-only codebase audit producing prioritized implementation plans.           |
+
+The `drizzle` and `taze` skills are CLI-generated symlinks (gitignored) into
+`node_modules` — they exist in every installed working tree and are not
+repo-owned. `.claude/skills/` mirrors repo-owned skills for Claude Code via
+symlink.
 
 ## Build & CI
 
