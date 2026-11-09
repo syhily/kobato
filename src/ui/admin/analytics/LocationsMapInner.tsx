@@ -19,6 +19,7 @@ interface AreaDatum {
 }
 
 const COLOR_AREA = 'var(--color-chart-1)'
+const MAP_AREA_IDS = new Set(WorldMapTopoJSON.objects.countries.geometries.map((feature) => feature.id))
 
 export interface LocationsMapInnerProps {
   rows: MetricRow[]
@@ -32,7 +33,8 @@ export function LocationsMapInner({ rows }: LocationsMapInnerProps) {
     () =>
       rows
         .filter((row) => /^[A-Za-z]{2}$/.test(row.name))
-        .map((row) => ({ id: row.name.toUpperCase(), count: row.visits })),
+        .map((row) => ({ id: row.name.toUpperCase(), count: row.visits }))
+        .filter((area) => MAP_AREA_IDS.has(area.id)),
     [rows],
   )
   const maxCount = areas.reduce((max, area) => Math.max(max, area.count), 0)

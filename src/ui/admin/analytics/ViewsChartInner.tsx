@@ -121,7 +121,12 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
           numTicks={3}
         />
         <VisTooltip />
-        <VisCrosshair x={x} template={tooltipTemplate} color={[COLOR_VISITS, COLOR_VISITORS]} />
+        <VisCrosshair
+          x={x}
+          y={[yVisits, yVisitors]}
+          template={tooltipTemplate}
+          color={[COLOR_VISITS, COLOR_VISITORS]}
+        />
       </VisXYContainer>
       <p id={summaryId} className="sr-only">
         {summary}
