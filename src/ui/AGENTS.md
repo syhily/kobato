@@ -214,8 +214,14 @@ unrelated concerns.
   `inkling-comment-editor.css` ride a lazy chunk so the public post page's static import
   graph stays editor-free. The always-visible reply form is interaction-gated
   (isomorphic placeholder → pointerdown/focus activates, hover prefetches the chunk,
-  focus is handed to the contenteditable after mount); the inline edit forms and admin
-  dialogs pass `eager`, since the click that opened them was already the interaction.
+  focus is handed to the contenteditable after mount); the inline reply form (the
+  reply click on a comment), the public inline edit forms, and the admin dialogs
+  pass `eager`, since the click that opened them was already the interaction — the
+  reply and edit forms add `focusOnMount`, so the composer lands ready for input
+  (the reply / edit buttons hover-prefetch both chunks through
+  `warmCommentEditorChunks`). Every activation that ends in a focus holds the
+  shared iOS viewport zoom lock until one task after the contenteditable takes
+  focus (see `client/AGENTS.md` → iOS auto-zoom).
   Labels: a workspace document's root payload (`i18n.inklingLabels`) supplies the table;
   a PUBLIC document has none, so hover/focus intent prefetches exactly the active
   locale's table chunk (`@/client/editor/inkling-labels::loadInklingLabels`)

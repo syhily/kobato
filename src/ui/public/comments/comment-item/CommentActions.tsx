@@ -21,6 +21,7 @@ import { useI18n } from '@/ui/lib/I18nProvider'
 import { commentFlags } from '@/ui/public/comments/comment-item/comment-flags'
 import { commentFooterButtonClass } from '@/ui/public/comments/comment-item/helpers'
 import { useCommentsActions, useCommentsIdentity } from '@/ui/public/comments/comments-context'
+import { warmCommentEditorChunks } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface CommentActionsProps {
   comment: CommentItemType
@@ -33,7 +34,7 @@ interface CommentActionsProps {
 
 export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActionsProps) {
   const siteIdentity = useSiteIdentity()
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
   const identity = useCommentsIdentity('CommentActions')
   const actions = useCommentsActions('CommentActions')
   const approve = useMutation({
@@ -65,6 +66,9 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
   const handleDelete = () => remove.mutate({ commentId: comment.id })
   const handleRequestDelete = () => requestDelete.mutate({ commentId: comment.id })
   const handleCancelDelete = () => cancelDelete.mutate({ commentId: comment.id })
+  // The reply / edit buttons mount the composer eagerly on click — hover
+  // intent warms both chunks so the editor lands ready for input.
+  const warmComposer = () => warmCommentEditorChunks(locale)
 
   return (
     <div className="flex flex-1 items-center gap-2 text-xs text-ink-4">
@@ -73,6 +77,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
         type="button"
         className={cn(commentFooterButtonClass, 'hover:text-brand')}
         onMouseDown={(event) => event.preventDefault()}
+        onPointerEnter={warmComposer}
         onClick={handleReply}
       >
         {t('public.comments.reply')}
@@ -82,6 +87,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
           type="button"
           className={cn(commentFooterButtonClass, 'hover:text-alert')}
           onMouseDown={(event) => event.preventDefault()}
+          onPointerEnter={warmComposer}
           onClick={onEditAdmin}
         >
           {t('public.comments.edit')}
@@ -92,6 +98,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
           type="button"
           className={cn(commentFooterButtonClass, 'hover:text-alert')}
           onMouseDown={(event) => event.preventDefault()}
+          onPointerEnter={warmComposer}
           onClick={onEditOwn}
           disabled={ownEditDisabled}
         >

@@ -56,6 +56,7 @@ export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormPro
     <div className="mt-2 block w-full">
       <LazyCommentBodyEditor
         eager
+        focusOnMount
         initialBody={seed}
         // The wire row already carries `body`, so the seed is synchronous and a
         // static key suffices — bumping it on the first editor update would

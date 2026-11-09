@@ -44,6 +44,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
     <div className="mt-2 block w-full">
       <LazyCommentBodyEditor
         eager
+        focusOnMount
         initialBody={seed}
         // The seed is synchronous, so a static key suffices — bumping it on
         // the first editor update would re-run the reset effect and wipe the

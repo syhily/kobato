@@ -20,6 +20,7 @@ import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEdito
 const PAYLOAD_LABELS = { 'placeholder.editor': 'PAYLOAD labels' }
 
 const loader = vi.hoisted(() => ({ load: vi.fn() }))
+const zoomLock = vi.hoisted(() => ({ acquire: vi.fn(), release: vi.fn() }))
 
 // Keep the real payload hook; record/stub only the on-demand table load.
 vi.mock('@/client/editor/inkling-labels', async (importOriginal) => {
@@ -27,10 +28,21 @@ vi.mock('@/client/editor/inkling-labels', async (importOriginal) => {
   return { ...actual, loadInklingLabels: loader.load }
 })
 
+// The zoom lock is iOS-gated against the real UA — assert the choreography
+// through spies instead (held from activation intent, released one task
+// after the focus handoff).
+vi.mock('@/client/lib/viewport-zoom-lock', () => ({
+  acquireViewportZoomLock: zoomLock.acquire,
+  releaseViewportZoomLock: zoomLock.release,
+}))
+
 // The composer chunk itself is out of scope; labels are the observable input.
+// contentEditable makes the mount observable through document.activeElement.
 vi.mock('@/ui/public/comments/CommentBodyEditor', () => ({
   CommentBodyEditor: ({ labels }: { labels?: Record<string, string> }) => (
-    <div data-testid="composer">{labels?.['placeholder.editor'] ?? 'english-defaults'}</div>
+    <div data-testid="composer" contentEditable suppressContentEditableWarning>
+      {labels?.['placeholder.editor'] ?? 'english-defaults'}
+    </div>
   ),
 }))
 
@@ -40,7 +52,7 @@ function makeRouter(rootLoaderData: { i18n?: unknown } = SEED.root as never) {
   return createMemoryRouter(editorRoute(), { hydrationData: { loaderData: { root: rootLoaderData } } })
 }
 
-function editorRoute(options: { eager?: boolean } = {}): RouteObject[] {
+function editorRoute(options: { eager?: boolean; focusOnMount?: boolean } = {}): RouteObject[] {
   return [
     {
       id: 'root',
@@ -48,6 +60,7 @@ function editorRoute(options: { eager?: boolean } = {}): RouteObject[] {
       element: wrapWithI18n(
         <LazyCommentBodyEditor
           eager={options.eager === true}
+          focusOnMount={options.focusOnMount === true}
           initialBody={{} as never}
           bodyKey="comment-1"
           onBodyChange={() => {}}
@@ -144,5 +157,63 @@ describe('LazyCommentBodyEditor — SSR placeholder parity', () => {
         i18n: { locale: 'zh-CN', inklingLabels: PAYLOAD_LABELS },
       } as never),
     )
+  })
+})
+
+describe('LazyCommentBodyEditor — focusOnMount hands focus to the mounted composer', () => {
+  it('focuses the contenteditable as soon as the eager composer mounts', async () => {
+    render(
+      <RouterProvider
+        router={createMemoryRouter(editorRoute({ eager: true, focusOnMount: true }), {
+          hydrationData: { loaderData: SEED },
+        })}
+      />,
+    )
+
+    const composer = await screen.findByTestId('composer')
+    expect(document.activeElement).toBe(composer)
+  })
+
+  it('leaves the composer unfocused without focusOnMount', async () => {
+    render(
+      <RouterProvider
+        router={createMemoryRouter(editorRoute({ eager: true }), { hydrationData: { loaderData: SEED } })}
+      />,
+    )
+
+    const composer = await screen.findByTestId('composer')
+    expect(document.activeElement).not.toBe(composer)
+  })
+})
+
+describe('LazyCommentBodyEditor — iOS zoom lock around the focus handoff', () => {
+  beforeEach(() => {
+    zoomLock.acquire.mockClear()
+    zoomLock.release.mockClear()
+  })
+
+  it('holds the lock from the tap until one task after focus lands', async () => {
+    render(<RouterProvider router={makeRouter()} />)
+
+    fireEvent.pointerDown(screen.getByRole('textbox'))
+    // Locked at the activation intent — before any chunk resolves.
+    expect(zoomLock.acquire).toHaveBeenCalledTimes(1)
+
+    const composer = await waitFor(() => screen.getByTestId('composer'))
+    // Released only after the contenteditable took focus (next task).
+    await waitFor(() => expect(zoomLock.release).toHaveBeenCalledTimes(1))
+    expect(document.activeElement).toBe(composer)
+    expect(zoomLock.acquire.mock.invocationCallOrder[0]).toBeLessThan(zoomLock.release.mock.invocationCallOrder[0])
+  })
+
+  it('releases the lock when the surface unmounts before the composer mounts', async () => {
+    loader.load.mockImplementation(() => new Promise(() => {}) as Promise<Record<string, string>>)
+    const view = render(<RouterProvider router={makeRouter()} />)
+
+    fireEvent.pointerDown(screen.getByRole('textbox'))
+    expect(zoomLock.acquire).toHaveBeenCalledTimes(1)
+
+    view.unmount()
+    expect(zoomLock.release).toHaveBeenCalledTimes(1)
   })
 })
