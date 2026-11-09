@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
@@ -5,9 +7,9 @@ import { updateBlogSettingsSection } from '@/server/domains/settings/services/co
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { buildInstallSectionRows, seedInstallSections } from '@/server/domains/settings/services/install-flow'
 import { sectionChangeHandler } from '@/server/domains/settings/services/section-changes'
+import { countEntryFiles, resolveCacheRoot } from '@/server/infra/cache/file-store'
 import * as cacheRegistry from '@/server/infra/cache/registry'
 import { get, set } from '@/server/infra/cache/registry'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { APP_VERSION } from '@/shared/config/version'
 import { resolveAppLocalization } from '@/shared/i18n/app-localization'
 
@@ -182,14 +184,14 @@ describe('settings sections — section-scoped representation generations', () =
 
   it('a relevant save moves the feed key and leaves a stale row unreachable', async () => {
     const before = feedParams()
-    await set(db, 'feed', before, { rss: '<rss/>', atom: '<feed/>' })
+    await set('feed', before, { rss: '<rss/>', atom: '<feed/>' })
 
     await updateBlogSettingsSection(db, 'content', { feed: { size: 5 } }, null)
     const after = feedParams()
     expect(after.settingsRevision).not.toBe(before.settingsRevision)
-    expect(await get(db, 'feed', after)).toBeNull()
+    expect(await get('feed', after)).toBeNull()
     // The section handler reclaimed the previous generation's rows too.
-    expect(await get(db, 'feed', before)).toBeNull()
+    expect(await get('feed', before)).toBeNull()
   })
 
   it('an unrelated save keeps feed/calendar/comments rows addressable', async () => {
@@ -197,67 +199,65 @@ describe('settings sections — section-scoped representation generations', () =
     const calendar = calendarParams()
     const comments = commentsParams()
     const sitemap = { settingsRevision: revisions().sitemap }
-    await set(db, 'feed', feed, { rss: '<rss/>', atom: '<feed/>' })
-    await set(db, 'calendar', calendar, Buffer.from('png'))
-    await set(db, 'comments', comments, ['comment:1'])
-    await set(db, 'sitemap', sitemap, '<urlset/>')
+    await set('feed', feed, { rss: '<rss/>', atom: '<feed/>' })
+    await set('calendar', calendar, Buffer.from('png'))
+    await set('comments', comments, ['comment:1'])
+    await set('sitemap', sitemap, '<urlset/>')
 
     await updateBlogSettingsSection(db, 'security', { csrf: { enabled: false } }, null)
     await updateBlogSettingsSection(db, 'backup', { retention: { days: 31 } }, null)
 
-    expect(await get(db, 'feed', feed)).toEqual({ rss: '<rss/>', atom: '<feed/>' })
-    expect(await get(db, 'calendar', calendar)).toEqual(Buffer.from('png'))
-    expect(await get(db, 'comments', comments)).toEqual(['comment:1'])
-    expect(await get(db, 'sitemap', sitemap)).toBe('<urlset/>')
+    expect(await get('feed', feed)).toEqual({ rss: '<rss/>', atom: '<feed/>' })
+    expect(await get('calendar', calendar)).toEqual(Buffer.from('png'))
+    expect(await get('comments', comments)).toEqual(['comment:1'])
+    expect(await get('sitemap', sitemap)).toBe('<urlset/>')
   })
 
   it('comments scope moves the comments key (the count is a key input too)', async () => {
     const before = commentsParams()
-    await set(db, 'comments', before, ['comment:1'])
+    await set('comments', before, ['comment:1'])
 
     await updateBlogSettingsSection(db, 'comments', { comments: { size: 20 } }, null)
     const after = commentsParams()
     expect(after.settingsRevision).not.toBe(before.settingsRevision)
-    expect(await get(db, 'comments', after)).toBeNull()
+    expect(await get('comments', after)).toBeNull()
     // The reclaim handler deletes the whole comments bucket.
-    expect(await get(db, 'comments', before)).toBeNull()
+    expect(await get('comments', before)).toBeNull()
 
     // Same generation, different count: another key.
-    expect(await get(db, 'comments', { ...after, limit: 6 })).toBeNull()
+    expect(await get('comments', { ...after, limit: 6 })).toBeNull()
   })
 
   it('drops every settings-derived bucket variant on a real section update', async () => {
     const feed = feedParams()
     const calendar = calendarParams()
     const comments = commentsParams()
-    await set(db, 'feed', feed, { rss: '<rss/>', atom: '<feed/>' })
-    await set(db, 'feed', { ...feed, locale: 'en-US' }, { rss: '<rss/>', atom: '<feed/>' })
-    await set(db, 'calendar', calendar, Buffer.from('png'))
-    await set(db, 'calendar', { ...calendar, theme: 'dark', locale: 'zh-TW' }, Buffer.from('png'))
+    await set('feed', feed, { rss: '<rss/>', atom: '<feed/>' })
+    await set('feed', { ...feed, locale: 'en-US' }, { rss: '<rss/>', atom: '<feed/>' })
+    await set('calendar', calendar, Buffer.from('png'))
+    await set('calendar', { ...calendar, theme: 'dark', locale: 'zh-TW' }, Buffer.from('png'))
     await set(
-      db,
       'og',
       { slug: 'post-x', title: 'T', summary: 'S', cover: 'C', settingsRevision: revisions().og },
       Buffer.from('png'),
     )
-    await set(db, 'comments', comments, ['comment:1'])
-    await set(db, 'sitemap', { settingsRevision: revisions().sitemap }, '<urlset/>')
+    await set('comments', comments, ['comment:1'])
+    await set('sitemap', { settingsRevision: revisions().sitemap }, '<urlset/>')
     // An unrelated bucket must survive the save.
-    await set(db, 'tags', {}, ['tag:1'])
+    await set('tags', {}, ['tag:1'])
 
     const result = await updateBlogSettingsSection(db, 'general', { locale: 'zh-TW' }, null)
     expect(result.warnings).toEqual([])
 
-    expect(await get(db, 'feed', feed)).toBeNull()
-    expect(await get(db, 'feed', { ...feed, locale: 'en-US' })).toBeNull()
-    expect(await get(db, 'calendar', calendar)).toBeNull()
-    expect(await get(db, 'calendar', { ...calendar, theme: 'dark', locale: 'zh-TW' })).toBeNull()
-    expect(await get(db, 'comments', comments)).toBeNull()
-    expect(await get(db, 'tags', {})).toEqual(['tag:1'])
+    expect(await get('feed', feed)).toBeNull()
+    expect(await get('feed', { ...feed, locale: 'en-US' })).toBeNull()
+    expect(await get('calendar', calendar)).toBeNull()
+    expect(await get('calendar', { ...calendar, theme: 'dark', locale: 'zh-TW' })).toBeNull()
+    expect(await get('comments', comments)).toBeNull()
+    expect(await get('tags', {})).toEqual(['tag:1'])
 
-    const rows = await db.select({ bucket: kvCache.bucket }).from(kvCache)
     for (const bucket of ['feed', 'calendar', 'og', 'comments', 'sitemap'] as const) {
-      expect(rows.some((row) => row.bucket === bucket)).toBe(false)
+      expect(await countEntryFiles(bucket)).toBe(0)
     }
   })
 
@@ -268,7 +268,7 @@ describe('settings sections — section-scoped representation generations', () =
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
-    const pendingFeed = cacheRegistry.through(db, 'feed', before, async () => {
+    const pendingFeed = cacheRegistry.through('feed', before, async () => {
       await gate
       settled = true
       return { rss: '<stale/>', atom: '<stale/>' }
@@ -281,12 +281,16 @@ describe('settings sections — section-scoped representation generations', () =
 
     release()
     await pendingFeed
+    // The write is fire-and-forget — wait for the late entry to land.
+    await vi.waitFor(async () => {
+      expect(await get('feed', before)).toEqual({ rss: '<stale/>', atom: '<stale/>' })
+    })
 
     const after = feedParams()
     expect(after.settingsRevision).not.toBe(before.settingsRevision)
     // The stale render wrote its own (old) generation key; the new one stays empty.
-    expect(await get(db, 'feed', before)).toEqual({ rss: '<stale/>', atom: '<stale/>' })
-    expect(await get(db, 'feed', after)).toBeNull()
+    expect(await get('feed', before)).toEqual({ rss: '<stale/>', atom: '<stale/>' })
+    expect(await get('feed', after)).toBeNull()
   })
 
   it('routes a bucket-clear failure into the save warning channel', async () => {
@@ -303,10 +307,11 @@ describe('settings sections — section-scoped representation generations', () =
   })
 
   it('does not fabricate a generation counter for the cleared buckets', async () => {
-    await set(db, 'feed', feedParams(), { rss: '<rss/>', atom: '<feed/>' })
+    await set('feed', feedParams(), { rss: '<rss/>', atom: '<feed/>' })
     await updateBlogSettingsSection(db, 'general', { locale: 'zh-CN' }, null)
 
-    const keys = (await db.select({ key: kvCache.key }).from(kvCache)).map((row) => row.key)
-    expect(keys.filter((key) => key.includes('generation'))).toEqual([])
+    for (const bucket of ['feed', 'calendar', 'og', 'comments', 'sitemap'] as const) {
+      expect(existsSync(path.join(resolveCacheRoot(), bucket, '_generation'))).toBe(false)
+    }
   })
 })

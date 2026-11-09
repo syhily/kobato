@@ -16,7 +16,7 @@ const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await bumpCounter(db, 'searchResult')
+  await bumpCounter('searchResult')
 })
 
 /** The same caller-supplied live gate the production search loader passes. */

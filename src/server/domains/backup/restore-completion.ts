@@ -9,7 +9,7 @@ import { getLogger } from '@/server/infra/logger'
 /**
  * The restore completion chain — the recovery policy behind the machine's
  * `complete` step: rollback → reopen → reschedule → migrate → ANALYZE →
- * restart. Engine access is injected by the composition root; every step
+ * cache wipe → restart. Engine access is injected by the composition root; every step
  * owns its swallow-and-log rule, and a failed reopen aborts the chain
  * before the restart — never restart into a dead handle.
  */
@@ -21,6 +21,10 @@ export interface RestoreCompletionDeps {
   getDb(): Database
   /** The live handle whose sqlite client runs the post-bulk-load ANALYZE. */
   getDatabaseHandle(): DatabaseHandle
+  /** Drop the restored-instance file cache; may reject with a partial-wipe failure. */
+  wipeCache(): Promise<void>
+  /** Tell admins the cache wipe failed (the restore itself succeeded). */
+  notifyCacheWipeFailed(): void
 }
 
 const log = getLogger('backup.restore-completion')
@@ -81,6 +85,24 @@ export function createRestoreCompletion(
           err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr),
         })
       }
+
+      if (success) {
+        try {
+          await deps.wipeCache()
+        } catch (wipeErr) {
+          log.warn('File cache wipe failed after restore; residual entries may serve until their TTL expires', {
+            err: wipeErr instanceof Error ? wipeErr.message : String(wipeErr),
+          })
+          try {
+            deps.notifyCacheWipeFailed()
+          } catch (notifyErr) {
+            log.warn('Failed to notify admins about the cache wipe failure', {
+              err: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+            })
+          }
+        }
+      }
+
       await restartServer()
       log.info('Restore completion finished, server back online')
       // Success path — drop the pre-restore originals the swap kept.

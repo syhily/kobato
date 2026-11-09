@@ -8,9 +8,9 @@ import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 import { livePostWhere } from '@/server/domains/posts/live-gate'
+import { countEntryFiles } from '@/server/infra/cache/file-store'
 import { __resetCacheCountersForTests, bumpCounter, getCounter, set } from '@/server/infra/cache/registry'
 import { content } from '@/server/infra/db/schema/content'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { scheduleRegisteredJob } from '@/server/infra/job-registry'
@@ -20,7 +20,7 @@ import { representationRevisionsFor } from '@/shared/config/representation-scope
 import { APP_VERSION } from '@/shared/config/version'
 
 // The job against the real engine: real rows drive next-due and the effect
-// is real kv_cache invalidation; only scheduleRegisteredJob('content.scheduled-publish') is called.
+// is real filesystem cache invalidation; only scheduleRegisteredJob('content.scheduled-publish') is called.
 const db = getTestDb()
 
 const HOUR_MS = 3_600_000
@@ -58,20 +58,19 @@ async function seedScheduledPage(publishedAt: Date): Promise<number> {
 
 function warmFeed(): Promise<void> {
   return set(
-    db,
     'feed',
     { scope: 'all', locale: 'zh-CN', version: APP_VERSION, settingsRevision: getBlogSettingsSnapshotSync().revision },
     ['stale'],
   )
 }
 
-/** TTL expiry only makes `get` miss; only the bucket clear DELETES the row. */
-function feedRowCount(): number {
-  return db.select().from(kvCache).where(eq(kvCache.bucket, 'feed')).all().length
+/** TTL expiry only makes `get` miss; only the bucket clear DELETES the entry files. */
+function feedRowCount(): Promise<number> {
+  return countEntryFiles('feed')
 }
 
-function sitemapRowCount(): number {
-  return db.select().from(kvCache).where(eq(kvCache.bucket, 'sitemap')).all().length
+function sitemapRowCount(): Promise<number> {
+  return countEntryFiles('sitemap')
 }
 
 beforeEach(async () => {
@@ -89,19 +88,19 @@ describe('scheduled-publish job', () => {
     const publishedAt = new Date(Date.now() + HOUR_MS)
     await seedScheduledPost(publishedAt)
     await warmFeed()
-    bumpCounter(db, 'searchResult')
-    const generationBefore = await getCounter(db, 'searchResult')
+    bumpCounter('searchResult')
+    const generationBefore = await getCounter('searchResult')
 
     scheduleRegisteredJob('content.scheduled-publish')
 
     // Before the due time: nothing fires, the public gate still hides the row.
     await vi.advanceTimersByTimeAsync(HOUR_MS - 60_000)
-    expect(feedRowCount()).toBe(1)
+    expect(await feedRowCount()).toBe(1)
     expect(db.select().from(post).where(livePostWhere()).all()).toHaveLength(0)
 
     await vi.advanceTimersByTimeAsync(60_000)
-    expect(feedRowCount()).toBe(0)
-    expect(await getCounter(db, 'searchResult')).toBe(generationBefore + 1)
+    expect(await feedRowCount()).toBe(0)
+    expect(await getCounter('searchResult')).toBe(generationBefore + 1)
     // …and the row is publicly visible under the live gate now.
     expect(db.select().from(post).where(livePostWhere()).all()).toHaveLength(1)
   })
@@ -114,13 +113,13 @@ describe('scheduled-publish job', () => {
     scheduleRegisteredJob('content.scheduled-publish')
 
     await vi.advanceTimersByTimeAsync(HOUR_MS)
-    expect(feedRowCount()).toBe(0)
+    expect(await feedRowCount()).toBe(0)
 
     // The second row re-armed the timer: its due time invalidates again.
     await warmFeed()
-    expect(feedRowCount()).toBe(1)
+    expect(await feedRowCount()).toBe(1)
     await vi.advanceTimersByTimeAsync(HOUR_MS)
-    expect(feedRowCount()).toBe(0)
+    expect(await feedRowCount()).toBe(0)
   })
 
   it('stays suspended with nothing scheduled — caches are left alone', async () => {
@@ -129,22 +128,21 @@ describe('scheduled-publish job', () => {
 
     expect(vi.getTimerCount()).toBeGreaterThan(0)
     await vi.advanceTimersByTimeAsync(10 * 60_000)
-    expect(feedRowCount()).toBe(1)
+    expect(await feedRowCount()).toBe(1)
   })
 
   it('invalidates for a scheduled page too (sitemap surface)', async () => {
     await seedScheduledPage(new Date(Date.now() + HOUR_MS))
     await set(
-      db,
       'sitemap',
       { settingsRevision: representationRevisionsFor(getBlogSettingsBundleSync()).sitemap },
       '<xml>stale</xml>',
     )
 
     scheduleRegisteredJob('content.scheduled-publish')
-    expect(sitemapRowCount()).toBe(1)
+    expect(await sitemapRowCount()).toBe(1)
     await vi.advanceTimersByTimeAsync(HOUR_MS)
-    expect(sitemapRowCount()).toBe(0)
+    expect(await sitemapRowCount()).toBe(0)
   })
 
   it('a meta update that moves the schedule earlier re-arms the timer', async () => {
@@ -162,7 +160,7 @@ describe('scheduled-publish job', () => {
     // Re-warm and prove the re-armed timer fires at the EARLIER time.
     await warmFeed()
     await vi.advanceTimersByTimeAsync(HOUR_MS)
-    expect(feedRowCount()).toBe(0)
+    expect(await feedRowCount()).toBe(0)
   })
 
   it('cancelling the schedule (publishedAt: null) disarms the pending fire', async () => {
@@ -175,7 +173,7 @@ describe('scheduled-publish job', () => {
 
     await warmFeed()
     await vi.advanceTimersByTimeAsync(2 * HOUR_MS)
-    expect(feedRowCount()).toBe(1)
+    expect(await feedRowCount()).toBe(1)
   })
 
   it('publishing with a future publishedAt arms the timer', async () => {
@@ -200,6 +198,6 @@ describe('scheduled-publish job', () => {
 
     await warmFeed()
     await vi.advanceTimersByTimeAsync(HOUR_MS)
-    expect(feedRowCount()).toBe(0)
+    expect(await feedRowCount()).toBe(0)
   })
 })

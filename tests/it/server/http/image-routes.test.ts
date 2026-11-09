@@ -32,7 +32,6 @@ vi.mock('@/server/render/og/render', () => ({
 vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn().mockImplementation(
     async (
-      _db: unknown,
       params: { year?: string; time?: string },
       options: { theme: string; locale: string; ifNoneMatch: string | null },
     ) =>

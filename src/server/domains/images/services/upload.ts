@@ -203,7 +203,7 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
     }
   }
 
-  await invalidateImageEnhanceCacheFor(db, row.storagePath)
+  await invalidateImageEnhanceCacheFor(row.storagePath)
 
   return toAdminImageDto(row, input.uploader?.name ?? null)
 }

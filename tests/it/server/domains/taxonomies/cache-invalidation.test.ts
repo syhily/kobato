@@ -1,9 +1,8 @@
-import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '#/_helpers/lexical'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { countEntryFiles } from '@/server/infra/cache/file-store'
 import { getBlogSettingsSnapshotSync } from '@/shared/config/getters'
 import { APP_VERSION } from '@/shared/config/version'
 
@@ -13,9 +12,8 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-async function feedRowCount(): Promise<number> {
-  const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
-  return rows.length
+function feedRowCount(): Promise<number> {
+  return countEntryFiles('feed')
 }
 
 describe('taxonomy cache invalidation', () => {
@@ -41,9 +39,8 @@ describe('taxonomy cache invalidation', () => {
 
     // Warm the feed bucket, including the category-scoped key.
     const settingsRevision = getBlogSettingsSnapshotSync().revision
-    await set(db, 'feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION, settingsRevision }, '<xml>all</xml>')
+    await set('feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION, settingsRevision }, '<xml>all</xml>')
     await set(
-      db,
       'feed',
       { scope: 'cat:feedcat', locale: 'zh-CN', version: APP_VERSION, settingsRevision },
       '<xml>cat</xml>',

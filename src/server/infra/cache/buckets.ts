@@ -1,11 +1,11 @@
-import { and, count, eq, gt, isNull, or } from 'drizzle-orm'
+import { count, gt } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { CacheBucketStats, ReservedCacheBucketStats } from '@/shared/contracts/cache'
 import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@/shared/types/cache'
 
-import { resolveCacheSlot } from '@/server/infra/cache/registry'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { clearBucketDir, clearBucketEntries, statBucket } from '@/server/infra/cache/file-store'
+import { bumpCounter, isCounterBucket, resolveCacheSlot } from '@/server/infra/cache/registry'
 import { session } from '@/server/infra/db/schema/session'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { rateLimitEntryCount } from '@/server/infra/rate-limit'
@@ -14,9 +14,10 @@ import { resolveAppLocalization } from '@/shared/i18n/app-localization'
 import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@/shared/types/cache'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Admin view over the shared cache declarations; bucket IDs double as the
-// `kv_cache.bucket` column value. Sessions and rate-limit counters are
-// deliberately excluded — they surface read-only via `RESERVED_CACHE_BUCKETS`.
+// Admin view over the shared cache declarations; bucket IDs are the stable
+// directory names under `<storage.data>/cache`. Sessions and rate-limit
+// counters are deliberately excluded — they surface read-only via
+// `RESERVED_CACHE_BUCKETS`.
 //
 // The registry stores message ids, so the DTO keeps its historical
 // `label`/`description` string shape: translate through the settings locale
@@ -45,35 +46,40 @@ export function getBucket(id: CacheBucketId): CacheBucket | undefined {
   return getCacheBuckets().find((bucket) => bucket.id === id)
 }
 
-// Filter expired rows like kv-store reads — report what the cache would actually serve.
-function liveEntries() {
-  return or(isNull(kvCache.expiresAt), gt(kvCache.expiresAt, new Date()))
+/**
+ * Async admin clear. A counter bucket advances its persisted generation FIRST
+ * (strict: a failed bump aborts the clear), then drops entry shards while
+ * keeping `_generation`; a late write that captured the pre-clear generation
+ * can only recreate an older-generation file, which no reader will address.
+ * Non-counter buckets simply rm the whole directory.
+ */
+export async function clearBucket(bucket: CacheBucket): Promise<number> {
+  if (isCounterBucket(bucket.id)) {
+    const generation = bumpCounter(bucket.id)
+    if (generation === null) {
+      throw new Error(`cache bucket clear aborted: generation bump failed for '${bucket.id}'`)
+    }
+    return clearBucketEntries(bucket.id)
+  }
+  return clearBucketDir(bucket.id)
 }
 
-export async function countBucket(db: Database, bucket: CacheBucket): Promise<number> {
-  const rows = await db
-    .select({ value: count() })
-    .from(kvCache)
-    .where(and(eq(kvCache.bucket, bucket.id), liveEntries()))
-  return rows[0]?.value ?? 0
-}
-
-export async function clearBucket(db: Database, bucket: CacheBucket): Promise<number> {
-  const result = await db.delete(kvCache).where(eq(kvCache.bucket, bucket.id))
-  return Number(result.changes)
-}
-
-export async function snapshotAllBuckets(db: Database): Promise<CacheBucketStats[]> {
+export async function snapshotAllBuckets(): Promise<CacheBucketStats[]> {
   return Promise.all(
-    getCacheBuckets().map(async (bucket) => ({
-      id: bucket.id,
-      label: bucket.label,
-      description: bucket.description,
-      prefix: bucket.prefix,
-      ttlSeconds: bucket.ttlSeconds,
-      pattern: bucket.pattern,
-      keyCount: await countBucket(db, bucket),
-    })),
+    getCacheBuckets().map(async (bucket) => {
+      // One shard walk supplies both the live count and the on-disk size.
+      const usage = await statBucket(bucket.id)
+      return {
+        id: bucket.id,
+        label: bucket.label,
+        description: bucket.description,
+        prefix: bucket.prefix,
+        ttlSeconds: bucket.ttlSeconds,
+        pattern: bucket.pattern,
+        keyCount: usage.keyCount,
+        byteSize: usage.byteSize,
+      }
+    }),
   )
 }
 
@@ -98,9 +104,9 @@ export async function snapshotReservedBuckets(db: Database): Promise<ReservedCac
   )
 }
 
-export async function clearAllBuckets(db: Database): Promise<Record<CacheBucketId, number>> {
+export async function clearAllBuckets(): Promise<Record<CacheBucketId, number>> {
   const buckets = getCacheBuckets()
-  const entries = await Promise.all(buckets.map(async (bucket) => [bucket.id, await clearBucket(db, bucket)] as const))
+  const entries = await Promise.all(buckets.map(async (bucket) => [bucket.id, await clearBucket(bucket)] as const))
   // CACHE_BUCKET_IDS covers every bucket id; the Record just can't be proven from a runtime map.
   const result = unsafeCast<Record<CacheBucketId, number>>(Object.fromEntries(CACHE_BUCKET_IDS.map((id) => [id, 0])))
   for (const [id, removed] of entries) {

@@ -10,7 +10,7 @@ import { createPage } from '@/server/domains/pages/services/mutate'
 import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
 import { createPost, updatePostMeta } from '@/server/domains/posts/services/mutate'
 import { upsertAdminCategory } from '@/server/domains/taxonomies/categories/services/mutate'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { countEntryFiles } from '@/server/infra/cache/file-store'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { drawOpenGraph } from '@/server/render/og/render'
@@ -55,9 +55,8 @@ async function pageIdBySlug(slug: string): Promise<number> {
   return rows[0]!.id
 }
 
-async function cachedBuckets(): Promise<string[]> {
-  const rows = await db.select({ bucket: kvCache.bucket }).from(kvCache)
-  return rows.map((row) => row.bucket)
+async function bucketHasEntries(bucket: string): Promise<boolean> {
+  return (await countEntryFiles(bucket)) > 0
 }
 
 describe('render cache warmup on content publish/update', () => {
@@ -73,7 +72,7 @@ describe('render cache warmup on content publish/update', () => {
     )
     expect(result.status).toBe('saved')
 
-    expect(warmMock).toHaveBeenCalledWith(db, {
+    expect(warmMock).toHaveBeenCalledWith({
       slug: 'hello-world',
       title: 'Hello World',
       summary: '',
@@ -81,9 +80,8 @@ describe('render cache warmup on content publish/update', () => {
     })
     // Fire-and-forget warm: wait for the async write to land.
     await vi.waitFor(async () => {
-      const buckets = await cachedBuckets()
-      expect(buckets).toContain('og')
-      expect(buckets).toContain('calendar')
+      expect(await bucketHasEntries('og')).toBe(true)
+      expect(await bucketHasEntries('calendar')).toBe(true)
     })
   })
 
@@ -103,7 +101,6 @@ describe('render cache warmup on content publish/update', () => {
     await updatePostMeta(db, { id: liveId, title: 'Live Post Renamed' })
     // No explicit slug: the update re-derives it, so the warm target carries the NEW slug.
     expect(warmMock).toHaveBeenCalledWith(
-      db,
       expect.objectContaining({ slug: 'live-post-renamed', title: 'Live Post Renamed' }),
     )
 
@@ -125,7 +122,7 @@ describe('render cache warmup on content publish/update', () => {
     expect(result.status).toBe('saved')
 
     // The OG path resolves an empty page summary to the site description; the warm key must too.
-    expect(warmMock).toHaveBeenCalledWith(db, {
+    expect(warmMock).toHaveBeenCalledWith({
       slug: 'about',
       title: 'About',
       summary: '诗与梦想的远方',
@@ -154,14 +151,14 @@ describe('category OG warmup (audit P1-12)', () => {
     await upsertAdminCategory(db, { name: 'Tech Notes', cover: '', description: '' })
 
     // The OG route serves categories under a `cat-`-prefixed slug.
-    expect(warmMock).toHaveBeenCalledWith(db, {
+    expect(warmMock).toHaveBeenCalledWith({
       slug: 'cat-tech-notes',
       title: 'Tech Notes',
       summary: '诗与梦想的远方',
       cover: '',
     })
     await vi.waitFor(async () => {
-      expect(await cachedBuckets()).toContain('og')
+      expect(await bucketHasEntries('og')).toBe(true)
     })
   })
 
@@ -171,7 +168,7 @@ describe('category OG warmup (audit P1-12)', () => {
 
     await upsertAdminCategory(db, { id: Number(created.id), name: 'New Cat', cover: '', description: 'new summary' })
 
-    expect(warmMock).toHaveBeenCalledWith(db, {
+    expect(warmMock).toHaveBeenCalledWith({
       slug: 'cat-new-cat',
       title: 'New Cat',
       summary: 'new summary',

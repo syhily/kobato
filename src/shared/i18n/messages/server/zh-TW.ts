@@ -103,4 +103,7 @@ export const serverMessagesZhTW = {
   'notification.mail.zeaburCleanup.title': '郵件服務已自動關閉',
   'notification.mail.zeaburCleanup.body':
     'Zeabur 郵件服務已下線，系統偵測到站點仍在使用它，已自動關閉郵件傳送。請到「系統設定 → 郵件」重新設定 SMTP 或 Mailgun 後重新啟用。',
+  'notification.backup.cacheWipeFailed.title': '還原已生效，但快取清理失敗',
+  'notification.backup.cacheWipeFailed.body':
+    '還原已完成，還原的內容已經生效。部分無修訂的快取項目可能仍會被使用，直到正常 TTL 到期後自癒。請查看伺服器日誌了解詳情。',
 } satisfies ServerMessages

@@ -1257,6 +1257,7 @@ export const uiMessagesEnUS = {
   'admin.settings.cache.view.confirmAll': 'Clear everything',
   'admin.settings.cache.view.confirm': 'Clear',
   'admin.settings.cache.bucket.keyCount': 'Cached entries',
+  'admin.settings.cache.bucket.byteSize': 'Disk usage',
   'admin.settings.cache.bucket.prefix': 'Current prefix',
   'admin.settings.cache.bucket.pattern': 'Key pattern',
   'admin.settings.cache.bucket.ttl': 'Current TTL',

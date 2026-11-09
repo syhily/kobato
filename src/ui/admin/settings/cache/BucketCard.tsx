@@ -6,6 +6,7 @@ import type { CacheBucketStats } from '@/shared/contracts/cache'
 import type { CacheBucketId } from '@/shared/types/cache'
 import type { ClearStatus } from '@/ui/admin/settings/cache/cache-status'
 
+import { formatBytes } from '@/shared/i18n/format'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@/ui/admin/settings/cache/cache-constants'
 import { clamp, formatTtl, hoursToSeconds } from '@/ui/admin/settings/cache/cache-formatters'
@@ -203,8 +204,12 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
 
   return (
     <SettingGroup title={bucket.label} description={bucket.description}>
-      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <BucketField label={t('admin.settings.cache.bucket.keyCount')} value={`${bucket.keyCount}`} />
+        <BucketField
+          label={t('admin.settings.cache.bucket.byteSize')}
+          value={formatBytes(bucket.byteSize, { locale })}
+        />
         <BucketField
           label={t('admin.settings.cache.bucket.prefix')}
           value={<code className="font-mono text-xs">{bucket.prefix}</code>}

@@ -27,9 +27,8 @@ export async function searchPosts(
     return { hits: [], page: 1, totalPages: 0 }
   }
 
-  const generation = await getCounter(db, 'searchResult')
+  const generation = await getCounter('searchResult')
   const allSlugs = await through(
-    db,
     'searchResult',
     { generation, parts: likeCacheKeyParts(trimmed) },
     () => runLikeSearch(db, baseWhere, trimmed),

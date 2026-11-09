@@ -45,7 +45,7 @@ async function hydrateCategoryImages(db: Database, categories: Category[]): Prom
 }
 
 export async function listAllCategories(db: Database): Promise<Category[]> {
-  return through(db, 'categories', {}, () => queryAllCategories(db))
+  return through('categories', {}, () => queryAllCategories(db))
 }
 
 async function queryAllCategories(db: Database): Promise<Category[]> {

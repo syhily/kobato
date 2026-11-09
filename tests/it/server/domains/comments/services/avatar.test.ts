@@ -22,7 +22,6 @@ import {
   serveAvatar,
 } from '@/server/domains/comments/services/avatar'
 import { type AvatarEntry, AvatarStatus, get, set } from '@/server/infra/cache/registry'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { user } from '@/server/infra/db/schema/user'
 import { imageWidth } from '@/server/infra/image/compress'
 // Only fetch is stubbed; the engine, kv cache registry, and sharp are real.
@@ -42,6 +41,7 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -118,7 +118,7 @@ function mockFetch(responses: Array<Response | (() => Response)>) {
 }
 
 async function cachedAvatar(size: number, email: string): Promise<AvatarEntry | null> {
-  return get<'avatar', AvatarEntry>(db, 'avatar', { size, email })
+  return get<'avatar', AvatarEntry>('avatar', { size, email })
 }
 
 describe('domains/comments/services/avatar — resolveAvatarSize', () => {
@@ -445,7 +445,7 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
       }),
     ])
 
-    const dataUrl = await fetchGithubAvatarDataUrl(db)
+    const dataUrl = await fetchGithubAvatarDataUrl()
 
     // PNG magic bytes → 'iVBORw==' in base64.
     expect(dataUrl).toBe('data:image/png;base64,iVBORw==')
@@ -454,13 +454,13 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
   it('defaults the content type to image/png when the upstream omits the header', async () => {
     mockFetch([new Response(new Uint8Array([1, 2, 3]).buffer, { status: 200 })])
 
-    expect(await fetchGithubAvatarDataUrl(db)).toMatch(/^data:image\/png;base64,/)
+    expect(await fetchGithubAvatarDataUrl()).toMatch(/^data:image\/png;base64,/)
   })
 
   it('resolves to an empty string when the upstream is not ok', async () => {
     mockFetch([new Response('not found', { status: 404 })])
 
-    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
   })
 
   it('serves a repeat call from the cache without a second upstream fetch', async () => {
@@ -471,8 +471,11 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
       }),
     ])
 
-    const first = await fetchGithubAvatarDataUrl(db)
-    const second = await fetchGithubAvatarDataUrl(db)
+    const first = await fetchGithubAvatarDataUrl()
+    await vi.waitFor(async () => {
+      expect(await get('githubAvatar', {})).toBe('data:image/png;base64,iVBORw==')
+    })
+    const second = await fetchGithubAvatarDataUrl()
 
     expect(first).toBe('data:image/png;base64,iVBORw==')
     expect(second).toBe(first)
@@ -482,32 +485,54 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
   it('caches a failure briefly — a repeat call is served from the cache without refetching', async () => {
     // A GitHub outage must not turn every call into a 30s-timeout upstream
     // fetch; the failure rides a short TTL instead of the bucket default.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const start = new Date('2026-07-19T00:00:00Z')
+    vi.setSystemTime(start)
     const fetchFn = mockFetch([new Response('not found', { status: 404 })])
 
-    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
-    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
+    await vi.waitFor(async () => {
+      expect(await get('githubAvatar', {})).toBe('')
+    })
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
     expect(fetchFn).toHaveBeenCalledTimes(1)
 
-    const failureRow = (await db.select().from(kvCache)).find((row) => row.bucket === 'githubAvatar')
-    expect(failureRow?.expiresAt).not.toBeNull()
-    const failureTtlMs = failureRow!.expiresAt!.getTime() - Date.now()
-    expect(failureTtlMs).toBeGreaterThan(0)
-    expect(failureTtlMs).toBeLessThanOrEqual(5 * 60 * 1000)
+    // Still cached just inside the 5-minute failure window.
+    vi.setSystemTime(new Date(start.getTime() + 4 * 60 * 1000))
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+
+    // Past the window the failure is retried.
+    vi.setSystemTime(new Date(start.getTime() + 6 * 60 * 1000))
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
+    expect(fetchFn).toHaveBeenCalledTimes(2)
   })
 
   it('caches a successful fetch on the full bucket TTL', async () => {
-    mockFetch([
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const start = new Date('2026-07-19T00:00:00Z')
+    vi.setSystemTime(start)
+    const png = () =>
       new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer, {
         status: 200,
         headers: { 'Content-Type': 'image/png' },
-      }),
-    ])
+      })
+    const fetchFn = mockFetch([png(), png()])
 
-    expect(await fetchGithubAvatarDataUrl(db)).toBe('data:image/png;base64,iVBORw==')
+    expect(await fetchGithubAvatarDataUrl()).toBe('data:image/png;base64,iVBORw==')
+    await vi.waitFor(async () => {
+      expect(await get('githubAvatar', {})).toBe('data:image/png;base64,iVBORw==')
+    })
 
-    const row = (await db.select().from(kvCache)).find((entry) => entry.bucket === 'githubAvatar')
-    const ttlMs = row!.expiresAt!.getTime() - Date.now()
-    expect(ttlMs).toBeGreaterThan(5 * 60 * 1000)
+    // Past the failure window (5 min) but inside the full bucket TTL.
+    vi.setSystemTime(new Date(start.getTime() + 6 * 60 * 1000))
+    expect(await fetchGithubAvatarDataUrl()).toBe('data:image/png;base64,iVBORw==')
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+
+    // Past the 15-minute bucket TTL the entry regenerates.
+    vi.setSystemTime(new Date(start.getTime() + 16 * 60 * 1000))
+    expect(await fetchGithubAvatarDataUrl()).toBe('data:image/png;base64,iVBORw==')
+    expect(fetchFn).toHaveBeenCalledTimes(2)
   })
 
   it('resolves to an empty string when the advertised body exceeds the byte cap', async () => {
@@ -518,13 +543,13 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
       }),
     ])
 
-    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
   })
 
   it('resolves to an empty string when the fetched body exceeds the byte cap', async () => {
     mockFetch([new Response(new Uint8Array(600 * 1024).buffer, { status: 200 })])
 
-    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
   })
 
   it('resolves to an empty string when the fetch rejects (timeout / network)', async () => {
@@ -534,7 +559,7 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
       },
     ])
 
-    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
   })
 })
 
@@ -543,7 +568,7 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
 
-    const hash = await resolveAvatarForEmail(db, 'someone@example.com')
+    const hash = await resolveAvatarForEmail('someone@example.com')
 
     expect(hash).toMatch(/^[0-9a-f]{64}$/)
     expect(spy).not.toHaveBeenCalled()
@@ -554,7 +579,7 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
     const body = await pngOfSize(100)
     mockFetch([new Response(new Uint8Array(body), { status: 200 })])
 
-    const hash = await resolveAvatarForEmail(db, '12345@qq.com')
+    const hash = await resolveAvatarForEmail('12345@qq.com')
 
     const entry = await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)
     expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
@@ -564,7 +589,7 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
   it('pre-warms the NO_AVATAR sentinel when the QQ upstream has no avatar', async () => {
     mockFetch([new Response(null, { status: 404 })])
 
-    const hash = await resolveAvatarForEmail(db, '12345@qq.com')
+    const hash = await resolveAvatarForEmail('12345@qq.com')
 
     expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toEqual({
       status: AvatarStatus.NO_AVATAR,
@@ -575,7 +600,6 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
   it('skips the QQ fetch and keeps the entry when a HAVE_AVATAR entry is already cached', async () => {
     const hash = await encodedEmail('12345@qq.com')
     await set(
-      db,
       'avatar',
       { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
       { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('cached-av') },
@@ -583,7 +607,7 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
-    expect(await resolveAvatarForEmail(db, '12345@qq.com')).toBe(hash)
+    expect(await resolveAvatarForEmail('12345@qq.com')).toBe(hash)
 
     expect(fetchSpy).not.toHaveBeenCalled()
     expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toEqual({
@@ -595,7 +619,6 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
   it('never lets a transient upstream failure shadow a still-cached positive entry', async () => {
     const hash = await encodedEmail('12345@qq.com')
     await set(
-      db,
       'avatar',
       { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
       { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('cached-av') },
@@ -606,7 +629,7 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
       },
     ])
 
-    await resolveAvatarForEmail(db, '12345@qq.com')
+    await resolveAvatarForEmail('12345@qq.com')
 
     expect(fetchSpy).not.toHaveBeenCalled()
     expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toEqual({
@@ -618,7 +641,6 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
   it('skips the QQ fetch when a NO_AVATAR entry is already cached', async () => {
     const hash = await encodedEmail('12345@qq.com')
     await set(
-      db,
       'avatar',
       { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
       { status: AvatarStatus.NO_AVATAR, buffer: null },
@@ -626,7 +648,7 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
-    expect(await resolveAvatarForEmail(db, '12345@qq.com')).toBe(hash)
+    expect(await resolveAvatarForEmail('12345@qq.com')).toBe(hash)
 
     expect(fetchSpy).not.toHaveBeenCalled()
     expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toEqual({
@@ -643,7 +665,7 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
     ])
 
     const hash = await withAvatarConfig({ githubToken: 'ghp_test', sources: ['github'] }, () =>
-      resolveAvatarForEmail(db, 'someone@example.com'),
+      resolveAvatarForEmail('someone@example.com'),
     )
 
     expect(fetchFn).toHaveBeenCalledTimes(2)
@@ -658,7 +680,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
-    // No user row: the attacker-chosen param must not grow kv_cache.
+    // No user row: the attacker-chosen param must not grow the avatar cache.
     const result = await serveAvatar(db, '42', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
@@ -669,12 +691,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
   it('serves a QQ positive cache hit as png without fetching upstream (read-through)', async () => {
     const id = await seedUser({ email: '12345@qq.com' })
     const hash = await encodedEmail('12345@qq.com')
-    await set(
-      db,
-      'avatar',
-      { size: 120, email: hash },
-      { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('qq-av') },
-    )
+    await set('avatar', { size: 120, email: hash }, { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('qq-av') })
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
@@ -702,7 +719,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
   it('redirects on a QQ negative-cache entry without fetching upstream', async () => {
     const id = await seedUser({ email: '12345@qq.com' })
     const hash = await encodedEmail('12345@qq.com')
-    await set(db, 'avatar', { size: 120, email: hash }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+    await set('avatar', { size: 120, email: hash }, { status: AvatarStatus.NO_AVATAR, buffer: null })
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
@@ -742,7 +759,6 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
     await set(
-      db,
       'avatar',
       { size: 120, email: GRAVATAR_HASH },
       { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('av') },
@@ -757,7 +773,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
   it('redirects on a gravatar negative-cache entry without fetching upstream', async () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
-    await set(db, 'avatar', { size: 120, email: GRAVATAR_HASH }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+    await set('avatar', { size: 120, email: GRAVATAR_HASH }, { status: AvatarStatus.NO_AVATAR, buffer: null })
 
     const result = await serveAvatar(db, GRAVATAR_HASH, 120)
 
@@ -791,7 +807,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     // encodeAvatar normalizes a payload-less positive to the NO_AVATAR sentinel byte.
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
-    await set(db, 'avatar', { size: 120, email: GRAVATAR_HASH }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
+    await set('avatar', { size: 120, email: GRAVATAR_HASH }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
 
     const result = await withAllowedMirror(() => serveAvatar(db, GRAVATAR_HASH, 120))
 
@@ -806,7 +822,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const result = await serveAvatar(db, '../../etc/passwd', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
-    // Invalid hashes must not grow kv_cache.
+    // Invalid hashes must not grow the avatar cache.
     expect(await cachedAvatar(120, '../../etc/passwd')).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
   })

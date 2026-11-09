@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AppLocale } from '@/shared/i18n/locales'
@@ -13,11 +12,9 @@ import {
   get,
   getCounter,
   remove,
-  resolveCacheSlot,
   through,
   throughMany,
 } from '@/server/infra/cache/registry'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 import { APP_VERSION } from '@/shared/config/version'
@@ -30,9 +27,11 @@ beforeEach(async () => {
   __resetCacheCountersForTests()
 })
 
-async function findRow(key: string) {
-  const rows = await db.select().from(kvCache).where(eq(kvCache.key, key)).limit(1)
-  return rows[0] ?? null
+/** Fire-and-forget writes land asynchronously; wait for the observable entry. */
+async function waitForEntry<T>(read: () => Promise<T | null>, expected: T): Promise<void> {
+  await vi.waitFor(async () => {
+    expect(await read()).toEqual(expected)
+  })
 }
 
 /** A feed-relevant settings change: content.feed is in the feed scope's deps. */
@@ -65,25 +64,18 @@ function feedParams(overrides: { scope?: string; locale?: AppLocale; settingsRev
   }
 }
 
-function feedKey(params: ReturnType<typeof feedParams>): string {
-  return `${resolveCacheSlot('feed').prefix}${params.locale}:${params.version}:${params.settingsRevision}:${params.scope}`
-}
-
 describe('cache registry (integration)', () => {
   it('through round-trips a json entry: miss → loader, then hit', async () => {
     const loader = vi.fn().mockResolvedValue({ rss: '<rss/>', atom: '<atom/>' })
     const params = feedParams()
 
-    const first = await through(db, 'feed', params, loader)
-    const second = await through(db, 'feed', params, loader)
+    const first = await through('feed', params, loader)
+    await waitForEntry(() => get('feed', params), { rss: '<rss/>', atom: '<atom/>' })
+    const second = await through('feed', params, loader)
 
     expect(first).toEqual({ rss: '<rss/>', atom: '<atom/>' })
     expect(second).toEqual(first)
     expect(loader).toHaveBeenCalledTimes(1)
-
-    const row = await findRow(feedKey(params))
-    expect(row?.bucket).toBe('feed')
-    expect(row?.expiresAt).not.toBeNull()
   })
 
   it('throughMany serves hits, loads misses, and caches negatives', async () => {
@@ -103,54 +95,62 @@ describe('cache registry (integration)', () => {
       { params: { storagePath: 'b.png' }, value: { found: false } },
     ])
 
-    const first = await throughMany(db, 'imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
+    const first = await throughMany('imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
     expect(first[0]?.value).toMatchObject({ found: true, width: 10 })
     expect(first[1]?.value).toEqual({ found: false })
 
+    // The writes are fire-and-forget: wait until both entries are observable.
+    await waitForEntry(() => get('imageMeta', { storagePath: 'a.png' }), first[0]!.value)
+    await waitForEntry(() => get('imageMeta', { storagePath: 'b.png' }), { found: false })
+
     // Second pass: both entries are cached, the negative included.
-    const second = await throughMany(db, 'imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
+    const second = await throughMany('imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
     expect(second[1]?.value).toEqual({ found: false })
     expect(loader).toHaveBeenCalledTimes(1)
   })
 
   it('clear deletes only the targeted bucket', async () => {
-    await through(db, 'feed', feedParams(), async () => 'feed-xml')
-    await through(db, 'tags', {}, async () => ['tag'])
+    await through('feed', feedParams(), async () => 'feed-xml')
+    await through('tags', {}, async () => ['tag'])
+    await waitForEntry(() => get('feed', feedParams()), 'feed-xml')
+    await waitForEntry(() => get('tags', {}), ['tag'])
 
-    await clear(db, 'feed')
+    clear('feed')
 
-    expect(await findRow(feedKey(feedParams()))).toBeNull()
-    expect(await findRow('tags:all')).not.toBeNull()
+    expect(await get('feed', feedParams())).toBeNull()
+    expect(await get('tags', {})).toEqual(['tag'])
   })
 
   it('a feed-relevant settings write moves the key — the previous generation is unreachable', async () => {
     const before = feedParams()
-    await through(db, 'feed', before, async () => ({ rss: '<old/>', atom: '<old/>' }))
+    await through('feed', before, async () => ({ rss: '<old/>', atom: '<old/>' }))
+    await waitForEntry(() => get('feed', before), { rss: '<old/>', atom: '<old/>' })
 
     setBlogSettingsBundleForTests(withChangedFeedSettings())
     const after = feedParams()
     expect(after.settingsRevision).not.toBe(before.settingsRevision)
 
-    expect(await get(db, 'feed', after)).toBeNull()
+    expect(await get('feed', after)).toBeNull()
     const loader = vi.fn().mockResolvedValue({ rss: '<new/>', atom: '<new/>' })
-    expect(await through(db, 'feed', after, loader)).toEqual({ rss: '<new/>', atom: '<new/>' })
+    expect(await through('feed', after, loader)).toEqual({ rss: '<new/>', atom: '<new/>' })
     expect(loader).toHaveBeenCalledTimes(1)
 
     // The old generation's bytes are still on disk (TTL reaps them) but no
     // request can address them any more.
-    expect(await get(db, 'feed', before)).toEqual({ rss: '<old/>', atom: '<old/>' })
+    expect(await get('feed', before)).toEqual({ rss: '<old/>', atom: '<old/>' })
   })
 
   it('an UNRELATED settings write keeps the key — no needless invalidation', async () => {
     const params = feedParams()
     const loader = vi.fn().mockResolvedValue({ rss: '<rss/>', atom: '<atom/>' })
-    await through(db, 'feed', params, loader)
+    await through('feed', params, loader)
+    await waitForEntry(() => get('feed', params), { rss: '<rss/>', atom: '<atom/>' })
 
     // security is not in the feed scope's dependency list.
     setBlogSettingsBundleForTests(withChangedSecuritySettings())
     expect(feedParams().settingsRevision).toBe(params.settingsRevision)
 
-    const again = await through(db, 'feed', params, loader)
+    const again = await through('feed', params, loader)
     expect(again).toEqual({ rss: '<rss/>', atom: '<atom/>' })
     expect(loader).toHaveBeenCalledTimes(1)
   })
@@ -161,7 +161,7 @@ describe('cache registry (integration)', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
-    const pending = through(db, 'feed', before, async () => {
+    const pending = through('feed', before, async () => {
       await gate
       return { rss: '<stale/>', atom: '<stale/>' }
     })
@@ -170,34 +170,38 @@ describe('cache registry (integration)', () => {
     // new request now addresses the new generation.
     setBlogSettingsBundleForTests(withChangedFeedSettings())
     const after = feedParams()
-    const fresh = await through(db, 'feed', after, async () => ({ rss: '<fresh/>', atom: '<fresh/>' }))
+    const fresh = await through('feed', after, async () => ({ rss: '<fresh/>', atom: '<fresh/>' }))
     expect(fresh).toEqual({ rss: '<fresh/>', atom: '<fresh/>' })
+    // The fresh write is fire-and-forget; let it land before reclamation so the
+    // only possible post-clear writer is the parked stale render.
+    await waitForEntry(() => get('feed', after), fresh)
 
     // Storage reclamation runs immediately — no drain, no wait.
-    clearLocalizedOutputs(db)
+    clearLocalizedOutputs()
 
     release()
     await pending
+    await vi.waitFor(async () => {
+      expect(await get('feed', before)).toEqual({ rss: '<stale/>', atom: '<stale/>' })
+    })
 
     // The late write lands on the OLD key only; the new generation stays empty
     // rather than being polluted by the stale render.
-    expect(await findRow(feedKey(before))).not.toBeNull()
-    expect(await get(db, 'feed', before)).toEqual({ rss: '<stale/>', atom: '<stale/>' })
-    expect(await findRow(feedKey(after))).toBeNull()
+    expect(await get('feed', after)).toBeNull()
 
     // A fresh request re-renders its own generation.
     const retry = vi.fn().mockResolvedValue({ rss: '<fresh-2/>', atom: '<fresh-2/>' })
-    expect(await through(db, 'feed', after, retry)).toEqual({ rss: '<fresh-2/>', atom: '<fresh-2/>' })
+    expect(await through('feed', after, retry)).toEqual({ rss: '<fresh-2/>', atom: '<fresh-2/>' })
     expect(retry).toHaveBeenCalledTimes(1)
   })
 
-  it('clearLocalizedOutputs deletes immediately, without waiting for in-flight loads', async () => {
+  it('clearLocalizedOutputs reclaims immediately, without waiting for in-flight loads', async () => {
     let release!: () => void
     let settled = false
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
-    const pending = through(db, 'feed', feedParams(), async () => {
+    const pending = through('feed', feedParams(), async () => {
       await gate
       settled = true
       return { rss: '<late/>', atom: '<late/>' }
@@ -205,7 +209,7 @@ describe('cache registry (integration)', () => {
 
     // Synchronous and immediate: the call returns while the render is still
     // parked on its gate. Correctness never depends on this delete.
-    clearLocalizedOutputs(db)
+    clearLocalizedOutputs()
     expect(settled).toBe(false)
 
     release()
@@ -213,47 +217,34 @@ describe('cache registry (integration)', () => {
     expect(settled).toBe(true)
   })
 
-  it('clearLocalizedOutputs attempts every settings-derived bucket and throws the first failure', () => {
-    const calls: string[] = []
-    const failingDb = {
-      delete: () => {
-        calls.push('delete')
-        throw new Error('disk gone')
-      },
-    }
-
-    expect(() => clearLocalizedOutputs(failingDb as never)).toThrow('disk gone')
-    expect(calls).toHaveLength(5)
-  })
-
   it('remove deletes a single computed key', async () => {
-    await through(db, 'categories', {}, async () => ['cat'])
-    await remove(db, 'categories', {})
+    await through('categories', {}, async () => ['cat'])
+    await waitForEntry(() => get('categories', {}), ['cat'])
+    await remove('categories', {})
 
-    expect(await findRow('categories:all')).toBeNull()
+    expect(await get('categories', {})).toBeNull()
   })
 
   it('counter starts at 0, bumps monotonically, and memoizes', async () => {
-    expect(await getCounter(db, 'searchResult')).toBe(0)
+    expect(await getCounter('searchResult')).toBe(0)
 
-    await bumpCounter(db, 'searchResult')
-    await bumpCounter(db, 'searchResult')
-    expect(await getCounter(db, 'searchResult')).toBe(2)
-
-    const row = await findRow('search-result:generation')
-    expect(row?.bucket).toBe('searchResult')
-    expect(row?.expiresAt).toBeNull()
+    bumpCounter('searchResult')
+    bumpCounter('searchResult')
+    expect(await getCounter('searchResult')).toBe(2)
   })
 
-  it('counter re-reads the row after the test reset', async () => {
-    await bumpCounter(db, 'searchResult')
-    expect(await getCounter(db, 'searchResult')).toBe(1)
+  it('counter re-reads the file after the test reset', async () => {
+    bumpCounter('searchResult')
+    expect(await getCounter('searchResult')).toBe(1)
 
-    // An out-of-band writer (e.g. a SQL shell) edits the counter directly.
-    await db.update(kvCache).set({ value: 9 }).where(eq(kvCache.key, 'search-result:generation'))
+    // An out-of-band writer edits the generation file directly.
+    const { writeFileSync } = await import('node:fs')
+    const path = await import('node:path')
+    const { resolveCacheRoot } = await import('@/server/infra/cache/file-store')
+    writeFileSync(path.join(resolveCacheRoot(), 'searchResult', '_generation'), '9')
     __resetCacheCountersForTests()
 
-    expect(await getCounter(db, 'searchResult')).toBe(9)
+    expect(await getCounter('searchResult')).toBe(9)
   })
 
   it('devBypass re-runs the loader in dev but still writes the entry', async () => {
@@ -267,13 +258,12 @@ describe('cache registry (integration)', () => {
       settingsRevision: representationRevisionsFor(getBlogSettingsBundleSync()).og,
     }
 
-    await through(db, 'og', params, loader)
+    await through('og', params, loader)
+    await waitForEntry(() => get('og', params), Buffer.from('png-1'))
     loader.mockResolvedValue(Buffer.from('png-2'))
-    await through(db, 'og', params, loader)
+    await through('og', params, loader)
 
     expect(loader).toHaveBeenCalledTimes(2)
-
-    const cached = await get(db, 'og', params)
-    expect(cached).toEqual(Buffer.from('png-2'))
+    await waitForEntry(() => get('og', params), Buffer.from('png-2'))
   })
 })

@@ -1,45 +1,68 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { readdir, stat } from 'node:fs/promises'
+import path from 'node:path'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ClearCacheTarget } from '@/shared/types/cache'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/cache/admin-ops'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { countEntryFiles, readGeneration, resolveCacheRoot, setItem } from '@/server/infra/cache/file-store'
+import { bumpCounter, get, getCounter, through } from '@/server/infra/cache/registry'
 import { session } from '@/server/infra/db/schema/session'
 
 const db = getTestDb()
 
-async function seedKvRow(key: string, bucket: string, opts: { expired?: boolean } = {}): Promise<void> {
-  await db.insert(kvCache).values({
-    key,
-    bucket,
-    blob: Buffer.from([1]),
-    expiresAt: opts.expired ? new Date(Date.now() - 1000) : new Date(Date.now() + 3_600_000),
-  })
+async function seedEntry(bucket: string, key: string, opts: { expired?: boolean } = {}): Promise<void> {
+  await setItem(bucket, key, { seeded: key }, opts.expired ? { ttlSeconds: -1 } : { ttlSeconds: 3600 })
 }
 
-async function remainingKvKeys(): Promise<string[]> {
-  const rows = await db.select({ key: kvCache.key }).from(kvCache).orderBy(kvCache.key)
-  return rows.map((row) => row.key)
+/** Actual shard-file sizes — the same population `byteSize` is defined over. */
+async function entryFileSizes(bucket: string): Promise<number[]> {
+  const bucketDir = path.join(resolveCacheRoot(), bucket)
+  const sizes: number[] = []
+  let shards
+  try {
+    shards = await readdir(bucketDir, { withFileTypes: true })
+  } catch {
+    return sizes
+  }
+  for (const shard of shards) {
+    if (!shard.isDirectory() || !/^[0-9a-f]{2}$/.test(shard.name)) {
+      continue
+    }
+    const shardDir = path.join(bucketDir, shard.name)
+    let files
+    try {
+      files = await readdir(shardDir, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const file of files) {
+      if (file.isFile()) {
+        sizes.push((await stat(path.join(shardDir, file.name))).size)
+      }
+    }
+  }
+  return sizes
 }
 
 describe('service: cache admin', () => {
   beforeEach(async () => {
-    // Truncate kv_cache (and everything else) so no leftover rows from
-    // other tests pollute the bucket counts.
+    // Wipe the content DB and the filesystem cache so no leftover entries
+    // from other tests pollute the bucket counts.
     await clearAllTables(db)
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
 
-  it('counts rows per bucket column', async () => {
-    await seedKvRow('og:hello-deadbeef', 'og')
-    await seedKvRow('og:world-cafef00d', 'og')
-    await seedKvRow('avatar:abc', 'avatar')
-    await seedKvRow('calendar:2026-04-30', 'calendar')
-    await seedKvRow('feed:xml:all', 'feed')
+  it('counts live entry files per bucket directory', async () => {
+    await seedEntry('og', 'og:hello-deadbeef')
+    await seedEntry('og', 'og:world-cafef00d')
+    await seedEntry('avatar', 'avatar:abc')
+    await seedEntry('calendar', 'calendar:2026-04-30')
+    await seedEntry('feed', 'feed:xml:all')
     // Out-of-bucket noise — must NOT show up.
-    await seedKvRow('legacy:misc', 'misc')
+    await seedEntry('misc', 'legacy:misc')
 
     const stats = await getAdminCacheStats(db)
 
@@ -61,36 +84,43 @@ describe('service: cache admin', () => {
     expect(stats.total).toBe(5)
   })
 
-  it('does not count expired rows but still clears them', async () => {
-    await seedKvRow('og:live', 'og')
-    await seedKvRow('og:expired', 'og', { expired: true })
+  it('counts only live keys but sums the bytes of every entry file', async () => {
+    await seedEntry('og', 'og:live')
+    const liveBytes = (await entryFileSizes('og')).reduce((sum, size) => sum + size, 0)
+    await seedEntry('og', 'og:expired', { expired: true })
+    const allSizes = await entryFileSizes('og')
+    expect(allSizes).toHaveLength(2)
 
-    const stats = await getAdminCacheStats(db)
-    expect(stats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(1)
+    const og = (await getAdminCacheStats(db)).buckets.find((bucket) => bucket.id === 'og')
+    expect(og?.keyCount).toBe(1)
+    expect(og?.byteSize).toBe(allSizes.reduce((sum, size) => sum + size, 0))
+    expect(og?.byteSize).toBeGreaterThan(liveBytes)
 
     const result = await clearAdminCache(db, 'og')
     expect(result.total).toBe(2)
-    expect(await remainingKvKeys()).toEqual([])
+    expect(await countEntryFiles('og')).toBe(0)
   })
 
   it('clears only the targeted bucket', async () => {
-    await seedKvRow('og:hello-deadbeef', 'og')
-    await seedKvRow('og:world-cafef00d', 'og')
-    await seedKvRow('avatar:abc', 'avatar')
-    await seedKvRow('legacy:misc', 'misc')
+    await seedEntry('og', 'og:hello-deadbeef')
+    await seedEntry('og', 'og:world-cafef00d')
+    await seedEntry('avatar', 'avatar:abc')
+    await seedEntry('misc', 'legacy:misc')
 
     const result = await clearAdminCache(db, 'og')
 
     expect(result.cleared).toEqual([{ bucketId: 'og', label: 'OG 图缓存', removed: 2 }])
     expect(result.total).toBe(2)
-    expect(await remainingKvKeys()).toEqual(['avatar:abc', 'legacy:misc'])
+    expect(await countEntryFiles('og')).toBe(0)
+    expect(await countEntryFiles('avatar')).toBe(1)
+    expect(await countEntryFiles('misc')).toBe(1)
   })
 
   it('aggregates counts when clearing all buckets', async () => {
-    await seedKvRow('og:hello-deadbeef', 'og')
-    await seedKvRow('avatar:abc', 'avatar')
-    await seedKvRow('avatar:def', 'avatar')
-    await seedKvRow('calendar:2026-04-30', 'calendar')
+    await seedEntry('og', 'og:hello-deadbeef')
+    await seedEntry('avatar', 'avatar:abc')
+    await seedEntry('avatar', 'avatar:def')
+    await seedEntry('calendar', 'calendar:2026-04-30')
     await db.insert(session).values({
       id: 'session-1',
       data: {},
@@ -115,10 +145,56 @@ describe('service: cache admin', () => {
       githubAvatar: 0,
       githubRelease: 0,
     })
-    expect(await remainingKvKeys()).toEqual([])
+    expect(await countEntryFiles('og')).toBe(0)
+    expect(await countEntryFiles('avatar')).toBe(0)
+    expect(await countEntryFiles('calendar')).toBe(0)
     // Sessions are a reserved bucket: never cleared, still reported.
     expect(result.refreshedStats.reserved.find((bucket) => bucket.id === 'session')?.keyCount).toBe(1)
   })
+
+  it.each([0, 1])(
+    'admin-clearing searchResult cannot revive a late loader write (starting generation %i)',
+    async (startGeneration) => {
+      for (let i = 0; i < startGeneration; i += 1) {
+        bumpCounter('searchResult')
+      }
+      expect(await getCounter('searchResult')).toBe(startGeneration)
+
+      let release!: () => void
+      let started!: () => void
+      const gate = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      const loaderStarted = new Promise<void>((resolve) => {
+        started = resolve
+      })
+      const lateParams = { generation: startGeneration, parts: ['late-stale-hash'] }
+      const pending = through('searchResult', lateParams, async () => {
+        started()
+        await gate
+        return ['late-value']
+      })
+      await loaderStarted
+
+      const cleared = await clearAdminCache(db, 'searchResult')
+      expect(cleared.cleared[0]?.bucketId).toBe('searchResult')
+      expect(cleared.total).toBe(0)
+
+      release()
+      await pending
+
+      // The parked loader's fire-and-forget write lands under the OLD
+      // generation — proof the race is real, and that it stays unreachable.
+      await vi.waitFor(async () => {
+        expect(await get('searchResult', lateParams)).toEqual(['late-value'])
+      })
+
+      const nextGeneration = await getCounter('searchResult')
+      expect(nextGeneration).toBe(startGeneration + 1)
+      expect(await readGeneration('searchResult')).toBe(nextGeneration)
+      expect(await get('searchResult', { ...lateParams, generation: nextGeneration })).toBeNull()
+    },
+  )
 
   it('reports live session rows in the reserved bucket stats', async () => {
     await db.insert(session).values([
@@ -148,7 +224,7 @@ describe('service: cache admin', () => {
     expect(result.cleared[0]?.removed).toBe(0)
   })
 
-  it('surfaces a renamed prefix on the stats entry while the bucket column stays authoritative', async () => {
+  it('surfaces a renamed prefix on the stats entry while the bucket directory stays authoritative', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       cache: {
@@ -162,23 +238,23 @@ describe('service: cache admin', () => {
       },
     })
 
-    await seedKvRow('opengraph:fresh-deadbeef', 'og')
-    await seedKvRow('og:stale-deadbeef', 'og') // legacy key under the old prefix, same bucket label
-    await seedKvRow('avatar:abc', 'avatar')
+    await seedEntry('og', 'opengraph:fresh-deadbeef')
+    await seedEntry('og', 'og:stale-deadbeef') // legacy key under the old prefix, same bucket directory
+    await seedEntry('avatar', 'avatar:abc')
 
     const stats = await getAdminCacheStats(db)
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.pattern).toBe('opengraph:*')
-    // Both rows carry the `og` bucket label — counting follows the column,
+    // Both entries live in the `og` directory — counting follows the bucket,
     // not the key prefix, so a rename no longer orphans old entries.
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(2)
 
     const cleared = await clearAdminCache(db, 'og')
     expect(cleared.total).toBe(2)
-    expect(await remainingKvKeys()).toEqual(['avatar:abc'])
+    expect(await countEntryFiles('avatar')).toBe(1)
   })
 
   it('exposes prefix + TTL on every stats entry', async () => {
-    await seedKvRow('og:hello-x', 'og')
+    await seedEntry('og', 'og:hello-x')
     const stats = await getAdminCacheStats(db)
 
     const og = stats.buckets.find((bucket) => bucket.id === 'og')
@@ -189,9 +265,9 @@ describe('service: cache admin', () => {
   })
 
   it('counts and clears the imageMeta bucket the same way as og/avatar/calendar', async () => {
-    await seedKvRow('image-meta:images/2024/06/cover.jpg', 'imageMeta')
-    await seedKvRow('image-meta:images/2024/06/banner.jpg', 'imageMeta')
-    await seedKvRow('og:foo', 'og')
+    await seedEntry('imageMeta', 'image-meta:images/2024/06/cover.jpg')
+    await seedEntry('imageMeta', 'image-meta:images/2024/06/banner.jpg')
+    await seedEntry('og', 'og:foo')
 
     const stats = await getAdminCacheStats(db)
     const counts = Object.fromEntries(stats.buckets.map((b) => [b.id, b.keyCount]))
@@ -200,6 +276,6 @@ describe('service: cache admin', () => {
     const result = await clearAdminCache(db, 'imageMeta')
     expect(result.total).toBe(2)
     expect(result.cleared[0]?.bucketId).toBe('imageMeta')
-    expect(await remainingKvKeys()).toEqual(['og:foo'])
+    expect(await countEntryFiles('og')).toBe(1)
   })
 })

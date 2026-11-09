@@ -1,7 +1,6 @@
 // Self-update service — orchestrates release lookup, gate evaluation,
 // and version comparison. The job state machine lives in `job.ts`.
 
-import type { Database } from '@/server/infra/db/database'
 import type { UpdateCheckResult } from '@/shared/contracts/update'
 
 import { startUpdateJob } from '@/server/domains/update/job'
@@ -35,9 +34,9 @@ export function isNewerVersion(latest: string, current: string): boolean {
   return lz > cz
 }
 
-export async function checkForUpdate(db: Database): Promise<UpdateCheckResult> {
+export async function checkForUpdate(): Promise<UpdateCheckResult> {
   const gate = evaluateSelfUpdateGate()
-  const release = await fetchLatestRelease(db)
+  const release = await fetchLatestRelease()
   return {
     currentVersion: APP_VERSION,
     latestVersion: release.tagName.replace(/^v/, ''),
@@ -49,9 +48,9 @@ export async function checkForUpdate(db: Database): Promise<UpdateCheckResult> {
   }
 }
 
-export async function applyUpdate(db: Database): Promise<{ fromVersion: string; toVersion: string }> {
+export async function applyUpdate(): Promise<{ fromVersion: string; toVersion: string }> {
   // Re-check at apply time: the UI's earlier `check` result may be stale.
-  const check = await checkForUpdate(db)
+  const check = await checkForUpdate()
   if (!check.updateAvailable) {
     throw new DomainError('CONFLICT', descriptorFor('update.error.alreadyLatest'))
   }

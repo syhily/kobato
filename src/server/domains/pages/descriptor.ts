@@ -63,8 +63,8 @@ export const pageDescriptor: MetaEntityDescriptor<
   preview: {
     project: (meta, revision) => toCmsPage(meta, revision),
     async afterPublish(db, meta) {
-      invalidateContent(db, { entity: 'page' })
-      warmContentRenderCaches(db, pageOgTarget(meta))
+      invalidateContent({ entity: 'page' })
+      warmContentRenderCaches(pageOgTarget(meta))
     },
   },
   adminDto: {
@@ -78,14 +78,14 @@ export const pageDescriptor: MetaEntityDescriptor<
       showFriends: input.showFriends ?? existing.showFriends,
     }),
     async afterMutation(db, meta) {
-      invalidateContent(db, { entity: 'page' })
+      invalidateContent({ entity: 'page' })
       // Re-warm only when the mutation leaves a publicly reachable page.
       if (isLive(meta)) {
-        warmContentRenderCaches(db, pageOgTarget(meta))
+        warmContentRenderCaches(pageOgTarget(meta))
       }
     },
-    async afterRestore(db) {
-      invalidateContent(db, { entity: 'page' })
+    async afterRestore(_db) {
+      invalidateContent({ entity: 'page' })
       return undefined
     },
   },

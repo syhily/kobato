@@ -646,14 +646,14 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
-  it('keeps the kv-store row-access plane private to the cache module', () => {
-    // `@/server/infra/cache/registry` is the only kv-store consumer — key
-    // shapes and codecs stay declared in one place.
+  it('keeps the file-store access plane private to the cache module', () => {
+    // The cache modules are the only file-store consumers — key shapes,
+    // envelope encoding, and the on-disk layout stay declared in one place.
     const offenders = files('src', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
       if (file.startsWith('src/server/infra/cache/')) {
         return false
       }
-      return readFileSync(file, 'utf8').includes('@/server/infra/cache/kv-store')
+      return readFileSync(file, 'utf8').includes('@/server/infra/cache/file-store')
     })
 
     expect(offenders).toEqual([])

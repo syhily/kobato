@@ -244,7 +244,7 @@ describe('detail representation ETags', () => {
       await db.insert(postTag).values({ postId, tagId: tagRows[0]!.id })
     }
     // `listAllTags` is cached per bucket — drop the empty list seeded by earlier cases.
-    clear(db, 'tags')
+    clear('tags')
 
     const first = await readPost('etag-post')
     const sameDay = await readPost('etag-post')
@@ -263,7 +263,7 @@ describe('detail representation ETags', () => {
     const postId = await seedPost('etag-post')
     const tagRows = await db.insert(tagTable).values({ name: 'pinned', slug: 'pinned' }).returning({ id: tagTable.id })
     await db.insert(postTag).values({ postId, tagId: tagRows[0]!.id })
-    clear(db, 'tags')
+    clear('tags')
 
     // Global settings keep recentPosts=5 / randomTags=10; the pinned bundle
     // disables both — the payload must follow the pinned capture.

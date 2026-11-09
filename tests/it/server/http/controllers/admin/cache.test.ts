@@ -5,7 +5,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { adminCacheRouter } from '@/server/http/controllers/admin/cache.controller'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { setItem } from '@/server/infra/cache/file-store'
 
 const db = getTestDb()
 
@@ -24,7 +24,7 @@ describe('adminCacheRouter.getStats', () => {
 
 describe('adminCacheRouter.clear', () => {
   it('forwards the target string to the service and ships the refreshed stats', async () => {
-    await db.insert(kvCache).values({ key: 'og:hello', bucket: 'og', blob: Buffer.from([1]) })
+    await setItem('og', 'og:hello', { hello: true }, { ttlSeconds: 3600 })
 
     const ctx = makeAuthedCtx({ db })
     const res = (await call(adminCacheRouter.clear, { target: 'og' }, { context: ctx })) as {

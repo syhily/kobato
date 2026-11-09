@@ -1,16 +1,18 @@
-import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { countEntryFiles, resolveCacheRoot } from '@/server/infra/cache/file-store'
+import { get } from '@/server/infra/cache/registry'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { post } from '@/server/infra/db/schema/post'
+import { likeCacheKeyParts } from '@/server/infra/search/like'
 
 const db = getTestDb()
 
 const { searchPosts } = await import('@/server/infra/search/search')
-const { bumpCounter, getCounter, resolveCacheSlot, __resetCacheCountersForTests } =
-  await import('@/server/infra/cache/registry')
+const { bumpCounter, getCounter, __resetCacheCountersForTests } = await import('@/server/infra/cache/registry')
 const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@/server/infra/logger')
 const { getPostsBySlugs } = await import('@/server/domains/posts/services/public-query')
 const { searchPostOptions } = await import('@/server/infra/search/options')
@@ -31,7 +33,7 @@ function liveWhere() {
 beforeEach(async () => {
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  // Drop the process-wide memo so each test re-reads the cleared kv_cache table.
+  // Drop the process-wide memo so each test re-reads the cleared cache root.
   __resetCacheCountersForTests()
   __clearLogCaptureForTests()
 })
@@ -113,6 +115,12 @@ describe('services/search — searchPosts', () => {
   })
 })
 
+async function waitForCachedSearch(query: string, generation: number): Promise<void> {
+  await vi.waitFor(async () => {
+    expect(await get('searchResult', { generation, parts: likeCacheKeyParts(query) })).not.toBeNull()
+  })
+}
+
 describe('services/search — search result cache invalidation', () => {
   it('serves fresh results after the search generation is bumped', async () => {
     await seedPost({ slug: 'cache-alpha', title: 'Cache Alpha' })
@@ -120,20 +128,22 @@ describe('services/search — search result cache invalidation', () => {
     // First query populates the result cache; a corpus change stays invisible while the entry lives.
     const first = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(first.hits).toEqual(['cache-alpha'])
+    await waitForCachedSearch('cache', 0)
 
     await seedPost({ slug: 'cache-beta', title: 'Cache Beta' })
     const stale = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(stale.hits).toEqual(['cache-alpha'])
 
-    await bumpCounter(db, 'searchResult')
+    await bumpCounter('searchResult')
     const fresh = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(fresh.hits).toEqual(['cache-beta', 'cache-alpha'])
+    await waitForCachedSearch('cache', 1)
 
     await seedPost({ slug: 'cache-gamma', title: 'Cache Gamma' })
     const staleAgain = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(staleAgain.hits).toEqual(['cache-beta', 'cache-alpha'])
 
-    await bumpCounter(db, 'searchResult')
+    await bumpCounter('searchResult')
     const freshAgain = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(freshAgain.hits).toEqual(['cache-gamma', 'cache-beta', 'cache-alpha'])
   })
@@ -144,16 +154,17 @@ describe('services/search — searchResult cache rows (real registry)', () => {
     await seedPost({ slug: 'gen-post', title: 'Generation Probe' })
 
     // The counter starts at 0 — a read must NOT create the row.
-    expect(await getCounter(db, 'searchResult')).toBe(0)
+    expect(await getCounter('searchResult')).toBe(0)
 
     const result = await searchPosts(db, liveWhere(), 'generation', 10)
     expect(result.hits).toEqual(['gen-post'])
 
-    const prefix = resolveCacheSlot('searchResult').prefix
-    const rows = await db.select().from(kvCache).where(eq(kvCache.bucket, 'searchResult'))
-    expect(rows).toHaveLength(1)
-    expect(rows[0].key.startsWith(`${prefix}0:`)).toBe(true)
-    expect(rows.some((row) => row.key === `${prefix}generation`)).toBe(false)
+    // Generation 0 was stamped into the key; reads never create the counter file.
+    await vi.waitFor(async () => {
+      expect(await get('searchResult', { generation: 0, parts: likeCacheKeyParts('generation') })).not.toBeNull()
+    })
+    expect(await get('searchResult', { generation: 1, parts: likeCacheKeyParts('generation') })).toBeNull()
+    expect(existsSync(path.join(resolveCacheRoot(), 'searchResult', '_generation'))).toBe(false)
   })
 
   it('serves a later page from the same cached slug list without a second entry', async () => {
@@ -164,20 +175,24 @@ describe('services/search — searchResult cache rows (real registry)', () => {
 
     const first = await searchPosts(db, liveWhere(), 'paged', 2, 0)
     expect(first.hits).toEqual(['page-c', 'page-b'])
+    await waitForCachedSearch('paged', 0)
 
     const second = await searchPosts(db, liveWhere(), 'paged', 2, 2)
     expect(second.hits).toEqual(['page-a'])
     expect(second.page).toBe(2)
     expect(second.totalPages).toBe(2)
 
-    const rows = await db.select().from(kvCache).where(eq(kvCache.bucket, 'searchResult'))
-    expect(rows).toHaveLength(1)
+    expect(await countEntryFiles('searchResult')).toBe(1)
   })
 
   it('logs a cache hit on a repeated identical query', async () => {
     await seedPost({ slug: 'hit-post', title: 'Hit Probe' })
 
     await searchPosts(db, liveWhere(), 'hit probe', 10)
+    // The miss write is fire-and-forget; wait for it before the repeat read.
+    await vi.waitFor(async () => {
+      expect(await get('searchResult', { generation: 0, parts: likeCacheKeyParts('hit probe') })).not.toBeNull()
+    })
     await searchPosts(db, liveWhere(), 'hit probe', 10)
 
     const hits = __logCaptureForTests().filter((entry) => entry.msg === 'Search result cache hit')

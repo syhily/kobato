@@ -199,14 +199,16 @@ on a commit failure, treating a per-field save as "the whole card is clean"
 ### Cache
 
 **Cache declaration**:
-One named `kv_cache` bucket (og, calendar, avatar, imageMeta,
+One named cache bucket (og, calendar, avatar, imageMeta,
 searchResult, feed, sitemap, categories, tags, comments,
 githubRelease, githubAvatar). Declared once in `@/shared/cache/registry` (metadata plane:
 label, description, default prefix + TTL, tunable flag); the behavior
 plane (`@/server/infra/cache/registry`) attaches the key shape, codec,
-and write policy, and every consumer goes through its verbs (`through`,
+and write policy, and every consumer goes through its db-free verbs (`through`,
 `get`/`set`/`remove`/`clear`, `throughMany`, generation counters) — never
-through `kv-store` directly.
+through `file-store` directly. Storage is the sharded `<storage.data>/cache`
+tree (ADR-0013), and content mutations invalidate through
+`invalidateContent(event)`.
 _Avoid_: hand-rolled cache-aside at call sites, ad-hoc key strings
 outside the behavior plane
 
@@ -227,13 +229,13 @@ settings reuse keys across restarts and an UNRELATED save
 (security/backup/mail/limits) or a credential rotation moves nothing.
 The boot-unique `revision` is request identity / locale sync only. The
 `general`/`content`/`assets`/`sidebar`/`fonts`/`comments` handlers additionally
-delete the feed/calendar/og/comments buckets to reclaim the orphaned rows —
+delete the feed/calendar/og/comments/sitemap buckets to reclaim the orphaned entries —
 correctness never depends on that delete or on waiting for in-flight renders.
 _Avoid_: locale-less feed/calendar keys, `max-age` on localized
 representations, generation counters for those buckets
 
 **Content invalidation**:
-One door — `invalidateContent(db, event)` in
+One door — `invalidateContent(event)` in
 `@/server/domains/content/invalidate` — owns the event → side-effect
 mapping (post: feed + taxonomy lists + sitemap + search generation; page:
 sitemap; category/tag: taxonomy list + whole feed bucket; comment:

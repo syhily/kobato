@@ -63,7 +63,7 @@ describe('sitemapRouter', () => {
 
   it('builds sitemap on cache miss from the pinned settings + sitemap revision', async () => {
     const built = '<urlset><url><loc>/hello</loc></url></urlset>'
-    const through = vi.fn((_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader())
+    const through = vi.fn((_id: unknown, _params: unknown, loader: () => unknown) => loader())
     vi.doMock('@/server/infra/cache/registry', () => ({ through }))
     vi.doMock('@/server/infra/rate-limit', () => ({
       readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
@@ -79,7 +79,7 @@ describe('sitemapRouter', () => {
     const res = await app.request('/sitemap.xml')
     expect(res.status).toBe(200)
     await expect(res.text()).resolves.toBe(built)
-    expect(through).toHaveBeenCalledWith({}, 'sitemap', { settingsRevision: REVISIONS.sitemap }, expect.any(Function))
+    expect(through).toHaveBeenCalledWith('sitemap', { settingsRevision: REVISIONS.sitemap }, expect.any(Function))
     expect(buildSitemapXml).toHaveBeenCalledWith({}, TEST_BLOG_SETTINGS_BUNDLE)
   })
 

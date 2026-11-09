@@ -1,8 +1,6 @@
 // Latest-release lookup against the GitHub Releases API.
 // Shared by the public `github.release` procedure and the self-update domain.
 
-import type { Database } from '@/server/infra/db/database'
-
 import { through } from '@/server/infra/cache/registry'
 import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
@@ -38,14 +36,14 @@ function isGitHubRelease(
   )
 }
 
-export async function fetchLatestRelease(db: Database): Promise<LatestRelease> {
+export async function fetchLatestRelease(): Promise<LatestRelease> {
   const parsed = parseRepo(APP_REPOSITORY)
   if (!parsed) {
     throw new DomainError('INTERNAL', descriptorFor('update.error.repositoryInvalid'))
   }
   const { owner, repo } = parsed
   // Read-through the short-TTL bucket; failed fetches are never cached.
-  return through(db, 'githubRelease', { owner, repo, endpoint: 'releases/latest' }, async () => {
+  return through('githubRelease', { owner, repo, endpoint: 'releases/latest' }, async () => {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
       signal: AbortSignal.timeout(30_000),
     })

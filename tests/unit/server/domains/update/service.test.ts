@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
-
 import { DomainError } from '@/server/infra/http/errors'
 
 const gateMocks = vi.hoisted(() => ({ evaluateSelfUpdateGate: vi.fn() }))
@@ -14,9 +12,6 @@ vi.mock('@/server/domains/update/job', () => ({ startUpdateJob: jobMocks.startUp
 vi.mock('@/shared/config/version', () => ({ APP_VERSION: '6.4.0' }))
 
 const { checkForUpdate, applyUpdate, isNewerVersion } = await import('@/server/domains/update/service')
-
-// Only forwarded to the mocked release lookup — a plain object suffices.
-const db = {} as Database
 
 function release(tagName: string) {
   return {
@@ -39,7 +34,7 @@ describe('update/service', () => {
   })
 
   it('composes the check result from release, gate, and version comparison', async () => {
-    const result = await checkForUpdate(db)
+    const result = await checkForUpdate()
     expect(result).toEqual({
       currentVersion: '6.4.0',
       latestVersion: '6.5.0',
@@ -53,7 +48,7 @@ describe('update/service', () => {
 
   it('reports no update when the release is not newer', async () => {
     releaseMocks.fetchLatestRelease.mockResolvedValue(release('v6.4.0'))
-    const result = await checkForUpdate(db)
+    const result = await checkForUpdate()
     expect(result.updateAvailable).toBe(false)
   })
 
@@ -67,21 +62,21 @@ describe('update/service', () => {
       reasons: [descriptor.fallbackMessage],
       reasonDescriptors: [descriptor],
     })
-    const result = await checkForUpdate(db)
+    const result = await checkForUpdate()
     expect(result.canSelfUpdate).toBe(false)
     expect(result.reasons).toEqual([descriptor])
   })
 
   it('apply starts the job and returns the from/to versions', async () => {
-    const result = await applyUpdate(db)
+    const result = await applyUpdate()
     expect(result).toEqual({ fromVersion: '6.4.0', toVersion: '6.5.0' })
     expect(jobMocks.startUpdateJob).toHaveBeenCalledWith('v6.5.0')
   })
 
   it('apply re-checks freshness and refuses when no update is available', async () => {
     releaseMocks.fetchLatestRelease.mockResolvedValue(release('v6.4.0'))
-    await expect(applyUpdate(db)).rejects.toThrow(DomainError)
-    await expect(applyUpdate(db)).rejects.toMatchObject({ code: 'CONFLICT' })
+    await expect(applyUpdate()).rejects.toThrow(DomainError)
+    await expect(applyUpdate()).rejects.toMatchObject({ code: 'CONFLICT' })
     expect(jobMocks.startUpdateJob).not.toHaveBeenCalled()
   })
 
@@ -103,7 +98,7 @@ describe('update/service', () => {
     })
     // No locale-flavored punctuation is assembled here: the summary is one
     // typed message and the reasons ride `issues` for the transport to fold.
-    await expect(applyUpdate(db)).rejects.toMatchObject({
+    await expect(applyUpdate()).rejects.toMatchObject({
       code: 'FORBIDDEN',
       message: 'This deployment cannot self-update.',
       descriptor: { messageKey: 'update.error.gateBlocked' },

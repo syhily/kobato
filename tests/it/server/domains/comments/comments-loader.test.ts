@@ -1,13 +1,12 @@
-import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, regularSession } from '#/_helpers/session'
 import { latestComments, loadComments } from '@/server/domains/comments/services/public-query'
+import { get } from '@/server/infra/cache/registry'
 import { findMetricByTarget } from '@/server/infra/db/operations/metric'
 import { comment } from '@/server/infra/db/schema/comment'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
@@ -174,10 +173,11 @@ describe('services/comments/loader — latestComments', () => {
 
     await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, 'caller-comments-revision')
 
-    const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'comments'))
-    expect(rows).toHaveLength(1)
     // No recompute: the exact caller token is in the key, plus the count.
-    expect(rows[0]!.key).toBe('comments:caller-comments-revision:5')
+    await vi.waitFor(async () => {
+      expect(await get('comments', { settingsRevision: 'caller-comments-revision', limit: 5 })).not.toBeNull()
+    })
+    expect(await get('comments', { settingsRevision: 'other-revision', limit: 5 })).toBeNull()
   })
 
   it('latestComments caps the pool at the configured sidebar count', async () => {

@@ -59,9 +59,9 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
       description: input.description,
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
-    invalidateContent(db, { entity: 'category' })
+    invalidateContent({ entity: 'category' })
     // Warm the new content-hash OG key now, not on first crawler request (audit P1-12).
-    warmContentRenderCaches(db, categoryOgTarget(row))
+    warmContentRenderCaches(categoryOgTarget(row))
     const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: row.name })
     return toAdminCategoryDto(row, counts.get(row.name) ?? 0)
   }
@@ -91,9 +91,9 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
   if (updated === null) {
     throw taxonomyNotFound('category')
   }
-  invalidateContent(db, { entity: 'category' })
+  invalidateContent({ entity: 'category' })
   // Rename/cover change derives a fresh content-hash key — re-warm under it.
-  warmContentRenderCaches(db, categoryOgTarget(updated))
+  warmContentRenderCaches(categoryOgTarget(updated))
   const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: updated.name })
   return toAdminCategoryDto(updated, counts.get(updated.name) ?? 0)
 }
@@ -125,7 +125,7 @@ export async function reorderAdminCategories(db: Database, orderedIds: readonly 
     ),
     countPostsByTaxonomy(db, { kind: 'category', gate: 'admin' }),
   ])
-  invalidateContent(db, { entity: 'category' })
+  invalidateContent({ entity: 'category' })
   return updated.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0))
 }
 
@@ -136,7 +136,7 @@ export async function deleteAdminCategory(db: Database, id: number): Promise<boo
     listPostTitles: (row) => listPostTitlesByCategoryId(db, row.id),
   })
   if (result) {
-    invalidateContent(db, { entity: 'category' })
+    invalidateContent({ entity: 'category' })
   }
   return result
 }

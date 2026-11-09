@@ -35,17 +35,17 @@ const adminLog = getLogger('comments.admin')
 
 export async function approveCommentById(db: Database, id: number): Promise<void> {
   await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))
-  invalidateContent(db, { entity: 'comment' })
+  invalidateContent({ entity: 'comment' })
 }
 
 export async function deleteCommentById(db: Database, id: number): Promise<void> {
   await db.delete(comment).where(eq(comment.id, id))
-  invalidateContent(db, { entity: 'comment' })
+  invalidateContent({ entity: 'comment' })
 }
 
 export async function softDeleteCommentById(db: Database, id: number): Promise<void> {
   await db.update(comment).set({ deletedAt: new Date() }).where(eq(comment.id, id))
-  invalidateContent(db, { entity: 'comment' })
+  invalidateContent({ entity: 'comment' })
 }
 
 export async function bulkApprovePendingByUser(db: Database, userId: number): Promise<number> {
@@ -54,7 +54,7 @@ export async function bulkApprovePendingByUser(db: Database, userId: number): Pr
     .set({ isPending: false })
     .where(and(eq(comment.userId, userId), eq(comment.isPending, true), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  invalidateContent(db, { entity: 'comment' })
+  invalidateContent({ entity: 'comment' })
   return updated.length
 }
 
@@ -65,7 +65,7 @@ export async function bulkSoftDeleteCommentsByUser(db: Database, userId: number)
     .set({ deletedAt: new Date() })
     .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  invalidateContent(db, { entity: 'comment' })
+  invalidateContent({ entity: 'comment' })
   return updated.length
 }
 

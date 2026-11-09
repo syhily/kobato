@@ -1,7 +1,5 @@
 import { format } from 'date-fns'
 
-import type { Database } from '@/server/infra/db/database'
-
 import { type OgWarmTarget, wireContentRenderWarmup } from '@/server/domains/content/render-warmup'
 import { through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
@@ -18,14 +16,14 @@ const log = getLogger('render.warmup')
  * today's calendar (both themes) through the same `through(...)` key the
  * HTTP resources use. Failures are logged and swallowed.
  */
-function warmContentCaches(db: Database, og: OgWarmTarget): void {
+function warmContentCaches(og: OgWarmTarget): void {
   // The request path keys by the REQUEST capture; the warmup has no request, so
   // it resolves TODAY'S snapshot once and keys + renders from that same capture
   // (OG cards include settings-derived identity/SEO, so they carry it too).
   const snapshot = getBlogSettingsSnapshotSync()
   const localization = resolveAppLocalization(snapshot)
 
-  void through(db, 'og', { ...og, settingsRevision: localization.revisions.og }, () =>
+  void through('og', { ...og, settingsRevision: localization.revisions.og }, () =>
     drawOpenGraph(og, snapshot.bundle),
   ).catch((err: unknown) => {
     log.warn('OG render warmup failed', {
@@ -38,7 +36,6 @@ function warmContentCaches(db: Database, og: OgWarmTarget): void {
   for (const theme of ['light', 'dark'] as const) {
     const date = format(today, 'yyyy-MM-dd')
     void through(
-      db,
       'calendar',
       {
         date,

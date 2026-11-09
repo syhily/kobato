@@ -71,11 +71,10 @@ function nextScheduledPublishDelayMs(): number | null {
 
 // Sync (node:sqlite): invalidateContent is sync.
 function runScheduledPublish(): void {
-  const db = jobDb()
   // The row is live as of now; invalidate both entities (idempotent).
   // No extra search reindex — the `searchResult` bump covers it.
-  invalidateContent(db, { entity: 'post' })
-  invalidateContent(db, { entity: 'page' })
+  invalidateContent({ entity: 'post' })
+  invalidateContent({ entity: 'page' })
   log.info('Scheduled publish reached; public caches invalidated')
 }
 

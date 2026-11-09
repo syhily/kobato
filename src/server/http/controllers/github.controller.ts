@@ -10,9 +10,9 @@ const avatar = publicProc
   .route({ method: 'GET', path: '/github/avatar' })
   .output(z.object({ avatar: z.string() }))
   .use(resourceRateLimit)
-  .handler(async ({ context }) => {
+  .handler(async () => {
     // Fetch + base64 inlining lives in the comments domain; upstream failures resolve to ''.
-    return { avatar: await fetchGithubAvatarDataUrl(context.db) }
+    return { avatar: await fetchGithubAvatarDataUrl() }
   })
 
 const release = publicProc
@@ -26,10 +26,10 @@ const release = publicProc
     }),
   )
   .use(resourceRateLimit)
-  .handler(async ({ context }) => {
+  .handler(async () => {
     // Fetch/validate lives in the update domain; the wire shape stays byte-identical.
     try {
-      return await fetchLatestRelease(context.db)
+      return await fetchLatestRelease()
     } catch (err) {
       if (err instanceof DomainError) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', { message: err.message })

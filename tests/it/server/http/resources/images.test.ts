@@ -7,13 +7,14 @@ import type { Env } from '@/server/http/context'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
+import { countEntryFiles } from '@/server/infra/cache/file-store'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 
 // `imagesRouter` outcome mapping against the real engine (seeded rows, live gate,
-// rate limiter, kv cache, real serveCalendar); seams: avatar fetch, OG canvas, calendar renderer.
+// rate limiter, file cache, real serveCalendar); seams: avatar fetch, OG canvas, calendar renderer.
 
 vi.mock('@/server/render/calendar/render', () => ({
   renderCalendar: vi.fn(),
@@ -167,6 +168,10 @@ describe('images resource', () => {
       const first = await requestImages('http://localhost/images/calendar/2026/0424.png')
       const etag = first.headers.get('ETag')!
       expect(renderCalendar).toHaveBeenCalledTimes(1)
+      // The miss write is fire-and-forget; wait for the cache entry before revalidating.
+      await vi.waitFor(async () => {
+        expect(await countEntryFiles('calendar')).toBe(1)
+      })
 
       const cached = await requestImages('http://localhost/images/calendar/2026/0424.png', {
         'if-none-match': etag,

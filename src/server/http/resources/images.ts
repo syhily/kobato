@@ -59,7 +59,7 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
       return ogFallback(c)
     }
 
-    const { db, settings, localization } = c.var.requestContext
+    const { settings, localization } = c.var.requestContext
     const entities = await Promise.all(adapters.map((adapter) => adapter.resolve(c, slug)))
     const selectedIndex = entities.findIndex((entity) => entity !== null)
     const entity = entities[selectedIndex]
@@ -74,7 +74,6 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
     // The key carries the pinned settings generation AND the renderer gets the
     // same bundle, so the card's title/logo/SEO dimensions match the key.
     const buffer = await through(
-      db,
       'og',
       {
         slug: `${adapter.cacheKeyPrefix}${slug}`,
@@ -137,9 +136,8 @@ export const imagesRouter = new Hono<Env>()
   .get('/images/og/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([postOgAdapter, pageOgAdapter]))
   .get('/images/og/cats/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([categoryOgAdapter]))
   .get('/images/calendar/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) => {
-    const { db, settings, localization } = c.var.requestContext
+    const { settings, localization } = c.var.requestContext
     return serveCalendar(
-      db,
       { year: c.req.param('year'), time: stripPng(c.req.param('filename')) },
       {
         theme: 'light',
@@ -151,9 +149,8 @@ export const imagesRouter = new Hono<Env>()
     )
   })
   .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) => {
-    const { db, settings, localization } = c.var.requestContext
+    const { settings, localization } = c.var.requestContext
     return serveCalendar(
-      db,
       { year: c.req.param('year'), time: stripPng(c.req.param('filename')) },
       {
         theme: 'dark',

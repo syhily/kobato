@@ -1,13 +1,14 @@
-import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
+import type { AppLocale } from '@/shared/i18n/locales'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { countEntryFiles } from '@/server/infra/cache/file-store'
+import { get } from '@/server/infra/cache/registry'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 import { APP_VERSION } from '@/shared/config/version'
@@ -18,12 +19,12 @@ vi.mock('@/server/render/feed/generator', () => ({
 
 import { onErrorHandler } from '@/server/http/errors'
 import { feedRouter } from '@/server/http/resources/feed'
-import { resolveCacheSlot } from '@/server/infra/cache/registry'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { generateFeeds } from '@/server/render/feed/generator'
 
-// The real kv_cache registry: cold cache persists, warm cache serves without regenerating.
-// Seams: the feed generator; the rate limiter runs real against the settings snapshot.
+// The real file-cache registry: cold misses persist (fire-and-forget), warm
+// hits serve without regenerating. Seams: the feed generator; the rate limiter
+// runs real against the settings snapshot.
 const db = getTestDb()
 
 const BUILT = { rss: '<rss version="2.0">built</rss>', atom: '<feed>built</feed>' }
@@ -42,19 +43,20 @@ function requestFeed(url: string, headers?: Record<string, string>) {
   return app.request(url, { headers })
 }
 
-function feedKey(
-  scope: string,
-  locale = 'zh-CN',
-  settingsRevision = representationRevisionsFor(getBlogSettingsBundleSync()).feed,
-): string {
-  return `${resolveCacheSlot('feed').prefix}${locale}:${APP_VERSION}:${settingsRevision}:${scope}`
+function feedParams(scope: string, locale: AppLocale = 'zh-CN') {
+  return {
+    scope,
+    locale,
+    version: APP_VERSION,
+    settingsRevision: representationRevisionsFor(getBlogSettingsBundleSync()).feed,
+  }
 }
 
-async function cachedFeedScopes(): Promise<string[]> {
-  const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
-  const prefix = resolveCacheSlot('feed').prefix
-  const localeVersion = `zh-CN:${APP_VERSION}:${representationRevisionsFor(getBlogSettingsBundleSync()).feed}:`
-  return rows.map((row) => row.key.slice(prefix.length + localeVersion.length)).sort()
+/** The through() write is fire-and-forget; wait for the observable entry. */
+async function waitForCachedFeed(scope: string, locale: AppLocale = 'zh-CN'): Promise<void> {
+  await vi.waitFor(async () => {
+    expect(await get('feed', feedParams(scope, locale))).toEqual(BUILT)
+  })
 }
 
 describe('feed resource', () => {
@@ -132,8 +134,9 @@ describe('feed resource', () => {
     const first = await requestFeed('http://localhost/feed')
     expect(first.status).toBe(200)
     expect(generateFeeds).toHaveBeenCalledTimes(1)
+    await waitForCachedFeed('all')
 
-    // The corpus "changed" — a warm cache must still serve the stored row.
+    // The corpus "changed" — a warm cache must still serve the stored entry.
     ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(REBUILT)
 
     const res = await requestFeed('http://localhost/feed')
@@ -147,39 +150,38 @@ describe('feed resource', () => {
     await expect(res.text()).resolves.toBe(BUILT.rss)
   })
 
-  it('populates the cache on a miss before responding', async () => {
+  it('writes the cache entry after a miss (fire-and-forget)', async () => {
     const res = await requestFeed('http://localhost/feed')
 
     expect(generateFeeds).toHaveBeenCalledTimes(1)
     await expect(res.text()).resolves.toBe(BUILT.rss)
 
-    const rows = await db
-      .select()
-      .from(kvCache)
-      .where(eq(kvCache.key, feedKey('all')))
-    expect(rows).toHaveLength(1)
-    expect(rows[0].bucket).toBe('feed')
-    expect(rows[0].value).toEqual(BUILT)
+    await waitForCachedFeed('all')
+    expect(await countEntryFiles('feed')).toBe(1)
   })
 
-  it('namespaces the cache key for category feeds', async () => {
+  it('namespaces the cache entry for category feeds', async () => {
     await requestFeed('http://localhost/cats/tech/feed')
-    expect(await cachedFeedScopes()).toEqual(['cat:tech'])
+    await waitForCachedFeed('cat:tech')
+    expect(await get('feed', feedParams('all'))).toBeNull()
   })
 
-  it('namespaces the cache key for tag feeds', async () => {
+  it('namespaces the cache entry for tag feeds', async () => {
     await requestFeed('http://localhost/tags/tech/feed')
-    expect(await cachedFeedScopes()).toEqual(['tag:tech'])
+    await waitForCachedFeed('tag:tech')
+    expect(await get('feed', feedParams('all'))).toBeNull()
   })
 
-  it('uses the bare `all` key for the site-wide feed', async () => {
+  it('uses the bare `all` scope for the site-wide feed', async () => {
     await requestFeed('http://localhost/feed')
-    expect(await cachedFeedScopes()).toEqual(['all'])
+    await waitForCachedFeed('all')
+    expect(await countEntryFiles('feed')).toBe(1)
   })
 
   it('namespaces a category slugged `all` away from the site-wide feed', async () => {
     await requestFeed('http://localhost/cats/all/feed')
-    expect(await cachedFeedScopes()).toEqual(['cat:all'])
+    await waitForCachedFeed('cat:all')
+    expect(await get('feed', feedParams('all'))).toBeNull()
   })
 })
 
@@ -195,6 +197,7 @@ describe('feed resource — conditional requests and locale variants', () => {
     const first = await requestFeed('http://localhost/feed')
     const etag = first.headers.get('ETag')!
     await first.text()
+    await waitForCachedFeed('all')
 
     const cached = await requestFeed('http://localhost/feed', { 'if-none-match': etag })
 
@@ -210,6 +213,7 @@ describe('feed resource — conditional requests and locale variants', () => {
     const first = await requestFeed('http://localhost/feed')
     const firstTag = first.headers.get('ETag')
     await first.text()
+    await waitForCachedFeed('all')
 
     // A fresh date inside `generateFeeds` would change a body-derived tag only
     // when the served body changes; a cache hit serves the same bytes.
@@ -237,10 +241,8 @@ describe('feed resource — conditional requests and locale variants', () => {
       expect(en.headers.get('Content-Language')).toBe('en-US')
       await en.text()
 
-      const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
-      const keys = rows.map((row) => row.key)
-      expect(keys).toContain(feedKey('all', 'en-US'))
-      expect(keys).not.toContain(feedKey('all', 'zh-CN'))
+      await waitForCachedFeed('all', 'en-US')
+      expect(await get('feed', feedParams('all', 'zh-CN'))).toBeNull()
     } finally {
       setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
     }
@@ -252,14 +254,15 @@ describe('feed resource — conditional requests and locale variants', () => {
     const [, options] = (generateFeeds as ReturnType<typeof vi.fn>).mock.calls[0] as [unknown, { settings: unknown }]
     expect(options.settings).toBe(getBlogSettingsBundleSync())
 
-    const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
-    expect(rows.map((row) => row.key)).toEqual([feedKey('all')])
+    await waitForCachedFeed('all')
+    expect(await countEntryFiles('feed')).toBe(1)
   })
 
   it('keeps the warm entry across an UNRELATED (security) settings save', async () => {
     const first = await requestFeed('http://localhost/feed')
     await first.text()
     expect(generateFeeds).toHaveBeenCalledTimes(1)
+    await waitForCachedFeed('all')
 
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -281,6 +284,7 @@ describe('feed resource — conditional requests and locale variants', () => {
     expect(first.status).toBe(200)
     await first.text()
     expect(generateFeeds).toHaveBeenCalledTimes(1)
+    await waitForCachedFeed('all')
 
     // Any section save advances the revision; the old key is unreachable.
     setBlogSettingsBundleForTests({
@@ -300,8 +304,9 @@ describe('feed resource — conditional requests and locale variants', () => {
     expect(options.settings?.siteIdentity?.title).toBe('Renamed Blog')
 
     // Both generations are on disk; only the new one is addressable.
-    const keys = (await db.select({ key: kvCache.key }).from(kvCache)).map((row) => row.key)
-    expect(keys).toContain(feedKey('all'))
-    expect(keys).toHaveLength(2)
+    await vi.waitFor(async () => {
+      expect(await get('feed', feedParams('all'))).toEqual(REBUILT)
+    })
+    expect(await countEntryFiles('feed')).toBe(2)
   })
 })

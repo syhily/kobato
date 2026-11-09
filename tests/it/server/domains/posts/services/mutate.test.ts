@@ -197,7 +197,7 @@ describe('posts/services/mutate — updatePostMeta', () => {
     await updatePostMeta(db, { id: postId, slug: 'old', title: 'Renamed', tags: [] })
 
     // Published meta edits invalidate and re-index from the published revision.
-    expect(invalidateContentMock).toHaveBeenCalledWith(db, { entity: 'post' })
+    expect(invalidateContentMock).toHaveBeenCalledWith({ entity: 'post' })
     expect(indexPostFromRevisionMock).toHaveBeenCalledTimes(1)
     expect(indexPostFromRevisionMock.mock.calls[0]?.[2]).toBe('Renamed')
     const rows = await indexRows()

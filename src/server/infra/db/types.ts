@@ -3,7 +3,6 @@ import type { comment } from '@/server/infra/db/schema/comment'
 import type { setting } from '@/server/infra/db/schema/config'
 import type { content } from '@/server/infra/db/schema/content'
 import type { friend } from '@/server/infra/db/schema/friend'
-import type { kvCache } from '@/server/infra/db/schema/kv-cache'
 import type { image, music } from '@/server/infra/db/schema/media'
 import type { like, metric } from '@/server/infra/db/schema/metric'
 import type { newsletterSubscriber } from '@/server/infra/db/schema/newsletter'
@@ -40,7 +39,6 @@ export type NewWebmention = typeof webmention.$inferInsert
 export type NewWebmentionOutbox = typeof webmentionOutbox.$inferInsert
 export type NewWebmentionInbox = typeof webmentionInbox.$inferInsert
 export type NewSession = typeof session.$inferInsert
-export type NewKvCacheEntry = typeof kvCache.$inferInsert
 export type NewOneTimeToken = typeof oneTimeToken.$inferInsert
 
 export type PasskeyCredentialRow = typeof passkeyCredential.$inferSelect
@@ -66,5 +64,4 @@ export type WebmentionRow = typeof webmention.$inferSelect
 export type WebmentionOutboxRow = typeof webmentionOutbox.$inferSelect
 export type WebmentionInboxRow = typeof webmentionInbox.$inferSelect
 export type SessionRow = typeof session.$inferSelect
-export type KvCacheRow = typeof kvCache.$inferSelect
 export type OneTimeTokenRow = typeof oneTimeToken.$inferSelect

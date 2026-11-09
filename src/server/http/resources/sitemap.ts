@@ -15,7 +15,7 @@ export const SITEMAP_CACHE_CONTROL = 'public, no-cache'
 
 export const sitemapRouter = new Hono<Env>().get('/sitemap.xml', rateLimitByIp('sitemap', 'resource'), async (c) => {
   const { db, settings, localization } = c.var.requestContext
-  const xml = await through(db, 'sitemap', { settingsRevision: localization.revisions.sitemap }, () =>
+  const xml = await through('sitemap', { settingsRevision: localization.revisions.sitemap }, () =>
     buildSitemapXml(db, settings),
   )
   // Strong ETag over the exact bytes: a cache hit reuses the same XML, and the

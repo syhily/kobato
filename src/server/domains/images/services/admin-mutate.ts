@@ -46,7 +46,7 @@ export async function deleteImage(db: Database, id: number, viewer?: ImageViewer
   if (deleted === null) {
     throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
-  await invalidateImageEnhanceCacheFor(db, deleted.storagePath)
+  await invalidateImageEnhanceCacheFor(deleted.storagePath)
 }
 
 export async function updateImageNote(
@@ -113,7 +113,7 @@ export async function recalculateImageThumbhash(
     throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
 
-  await invalidateImageEnhanceCacheFor(db, existing.storagePath)
+  await invalidateImageEnhanceCacheFor(existing.storagePath)
 
   return toAdminImageDto(updated, updated.uploaderName)
 }

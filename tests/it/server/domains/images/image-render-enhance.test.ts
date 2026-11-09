@@ -1,8 +1,7 @@
-import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { get } from '@/server/infra/cache/registry'
 import { image } from '@/server/infra/db/schema/media'
 
 const { resolveImageRef } = await import('@/server/domains/images/services/resolve')
@@ -60,12 +59,10 @@ describe('server/images/render-enhance — resolveImageRef', () => {
     const result1 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result1).not.toBeNull()
 
-    const cached = await db
-      .select({ key: kvCache.key, bucket: kvCache.bucket })
-      .from(kvCache)
-      .where(eq(kvCache.key, 'image-meta:images/categories/coding.jpg'))
-    expect(cached).toHaveLength(1)
-    expect(cached[0]?.bucket).toBe('imageMeta')
+    // The throughMany write is fire-and-forget: wait for the cached metadata.
+    await vi.waitFor(async () => {
+      expect(await get('imageMeta', { storagePath: 'images/categories/coding.jpg' })).not.toBeNull()
+    })
 
     // Second call should return the same result (cache hit)
     const result2 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')

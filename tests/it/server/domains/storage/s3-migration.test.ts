@@ -108,7 +108,7 @@ function wireTestHooks(postSwitchBackfill: (hookDb: Database) => Promise<unknown
     flipBrandingDrivers,
     invalidateImageMeta: async (hookDb, storagePaths) => {
       for (const storagePath of storagePaths) {
-        await invalidateImageEnhanceCacheFor(hookDb, storagePath)
+        await invalidateImageEnhanceCacheFor(storagePath)
       }
     },
     postSwitchBackfill: async (hookDb) => postSwitchBackfill(hookDb),

@@ -1,17 +1,26 @@
 import type { ZodType } from 'zod'
 
-import { and, eq, gt, isNull, or } from 'drizzle-orm'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 
-import type { Database } from '@/server/infra/db/database'
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { CacheBucketId } from '@/shared/types/cache'
 import type { JsonValue } from '@/shared/utils/json-value'
 
+import {
+  bumpGeneration,
+  getItem,
+  getItemRaw,
+  getItems,
+  readGeneration,
+  removeItem,
+  setItem,
+  setItemRaw,
+  trashBucketSync,
+  unlinkBucketEntriesSync,
+  wipeCache as wipeFileCache,
+} from '@/server/infra/cache/file-store'
 import { createInflight } from '@/server/infra/cache/inflight'
-import { getItem, getItemRaw, getItems, removeItem, setItem, setItemRaw } from '@/server/infra/cache/kv-store'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { getLogger } from '@/server/infra/logger'
 import { withSpanAsync } from '@/server/infra/trace/facade'
 import { recordCacheLookup } from '@/server/infra/trace/metrics'
@@ -23,9 +32,10 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 const log = getLogger('cache')
 
 /**
- * The cache behavior plane — the only module reading/writing `kv_cache` rows
- * (via `kv-store`). Best-effort: failures degrade to a miss / a skipped write —
- * the cache must never fail the request it serves; loader errors propagate.
+ * The cache behavior plane — the only module reading/writing cache entries
+ * (via `file-store`, ADR-0013). Best-effort: failures degrade to a miss / a
+ * skipped write — the cache must never fail the request it serves; loader
+ * errors propagate.
  */
 
 interface CacheParamsMap {
@@ -65,7 +75,7 @@ interface CacheBehavior<P> {
   ttlFor?: (value: unknown) => number | undefined
   /** Dev mode re-runs the loader but still writes. */
   devBypass?: boolean
-  /** Declares the `${prefix}generation` counter row. */
+  /** Declares the bucket's `_generation` counter file. */
   counter?: boolean
 }
 
@@ -227,26 +237,26 @@ function keyFor<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): { ke
   return { key: `${slot.prefix}${BEHAVIORS[id].key(params)}`, slot }
 }
 
-async function readEntry(db: Database, id: CacheBucketId, key: string): Promise<unknown> {
+async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
   const behavior = BEHAVIORS[id]
   try {
     if (behavior.kind === 'binary') {
-      const raw = await getItemRaw(db, key)
+      const raw = await getItemRaw(id, key)
       if (raw === null) {
         return null
       }
       const decode = behavior.decode ?? ((blob: Buffer) => blob)
       return decode(raw)
     }
-    const parsed = await getItem(db, key)
+    const parsed = await getItem(id, key)
     if (parsed === null) {
       return null
     }
     if (behavior.schema !== undefined) {
       const result = behavior.schema.safeParse(parsed)
       if (!result.success) {
-        // Stale shape reads as a miss and evicts the row.
-        await removeItem(db, key)
+        // Stale shape reads as a miss and evicts the entry.
+        await removeItem(id, key)
         return null
       }
       return result.data
@@ -258,18 +268,22 @@ async function readEntry(db: Database, id: CacheBucketId, key: string): Promise<
   }
 }
 
-async function writeEntry(db: Database, id: CacheBucketId, key: string, slot: ResolvedSlot, value: unknown) {
+/**
+ * Best-effort write: ttl resolution, codec, and filesystem failures are all
+ * swallowed so `void writeEntry(...)` can never surface an unhandled rejection.
+ */
+async function writeEntry(id: CacheBucketId, key: string, slot: ResolvedSlot, value: unknown) {
   const behavior = BEHAVIORS[id]
-  const ttlSeconds = behavior.ttlFor?.(value) ?? slot.ttlSeconds
   try {
+    const ttlSeconds = behavior.ttlFor?.(value) ?? slot.ttlSeconds
     if (behavior.kind === 'binary') {
       // A binary declaration without a codec stores raw Buffers.
       const encode = behavior.encode ?? ((blob: unknown) => unsafeCast<Buffer>(blob))
-      await setItemRaw(db, key, encode(value), { ttlSeconds, bucket: id })
+      await setItemRaw(id, key, encode(value), { ttlSeconds })
       return
     }
     // Payloads are JSON-native by declaration contract — the cast documents the boundary.
-    await setItem(db, key, unsafeCast<JsonValue>(value), { ttlSeconds, bucket: id })
+    await setItem(id, key, unsafeCast<JsonValue>(value), { ttlSeconds })
   } catch (error) {
     log.warn('cache write failed; continuing without warmth', { bucket: id, error })
   }
@@ -280,10 +294,11 @@ async function writeEntry(db: Database, id: CacheBucketId, key: string, slot: Re
 const inflight = createInflight<unknown>()
 
 /**
- * Cache-aside with inflight coalescing. `devBypass` caches skip the read in dev but still write.
+ * Cache-aside with inflight coalescing. `devBypass` caches skip the read in dev
+ * but still write. The write is fire-and-forget: the loader's value is returned
+ * without waiting for filesystem warmth (the write swallows its own errors).
  */
 export async function through<K extends CacheBucketId, V>(
-  db: Database,
   id: K,
   params: CacheParamsMap[K],
   loader: () => Promise<V>,
@@ -299,7 +314,7 @@ export async function through<K extends CacheBucketId, V>(
   return withSpanAsync('cache.lookup', { attributes: { 'cache.bucket': id } }, async (span) => {
     try {
       if (!bypassRead) {
-        const hit = await readEntry(db, id, key)
+        const hit = await readEntry(id, key)
         if (hit !== null) {
           result = 'hit'
           options.onHit?.(unsafeCast<V>(hit))
@@ -307,12 +322,12 @@ export async function through<K extends CacheBucketId, V>(
         }
       }
       // A join shares another caller's load; the cache is still a miss for
-      // this lookup (the row was absent on this call's direct read).
+      // this lookup (the entry was absent on this call's direct read).
       coalesced = inflight.has(joinKey)
       const value = await inflight(joinKey, async () => {
-        // Double-check: a concurrent request may have warmed the row while we waited.
+        // Double-check: a concurrent request may have warmed the entry while we waited.
         if (!bypassRead) {
-          const hit = await readEntry(db, id, key)
+          const hit = await readEntry(id, key)
           if (hit !== null) {
             result = 'hit'
             options.onHit?.(unsafeCast<V>(hit))
@@ -321,7 +336,7 @@ export async function through<K extends CacheBucketId, V>(
         }
         const loaded = await loader()
         if (behavior.cacheWhen === undefined || behavior.cacheWhen(loaded)) {
-          await writeEntry(db, id, key, slot, loaded)
+          void writeEntry(id, key, slot, loaded)
         }
         return loaded
       })
@@ -335,11 +350,7 @@ export async function through<K extends CacheBucketId, V>(
 }
 
 /** Concurrent reads of the same key coalesce. */
-export async function get<K extends CacheBucketId, V>(
-  db: Database,
-  id: K,
-  params: CacheParamsMap[K],
-): Promise<V | null> {
+export async function get<K extends CacheBucketId, V>(id: K, params: CacheParamsMap[K]): Promise<V | null> {
   const { key } = keyFor(id, params)
   const joinKey = `read:${id}:${key}`
   let result: 'hit' | 'miss' = 'miss'
@@ -347,7 +358,7 @@ export async function get<K extends CacheBucketId, V>(
 
   return withSpanAsync('cache.lookup', { attributes: { 'cache.bucket': id } }, async (span) => {
     try {
-      const value = await inflight(joinKey, () => readEntry(db, id, key))
+      const value = await inflight(joinKey, () => readEntry(id, key))
       result = value === null ? 'miss' : 'hit'
       return unsafeCast<V | null>(value)
     } finally {
@@ -359,35 +370,29 @@ export async function get<K extends CacheBucketId, V>(
 }
 
 /** Direct write (best-effort — failures are logged and swallowed). */
-export async function set<K extends CacheBucketId>(
-  db: Database,
-  id: K,
-  params: CacheParamsMap[K],
-  value: unknown,
-): Promise<void> {
+export async function set<K extends CacheBucketId>(id: K, params: CacheParamsMap[K], value: unknown): Promise<void> {
   const { key, slot } = keyFor(id, params)
-  await writeEntry(db, id, key, slot, value)
+  await writeEntry(id, key, slot, value)
 }
 
 /** Per-key delete (best-effort). */
-export async function remove<K extends CacheBucketId>(db: Database, id: K, params: CacheParamsMap[K]): Promise<void> {
+export async function remove<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): Promise<void> {
   const { key } = keyFor(id, params)
   try {
-    await removeItem(db, key)
+    await removeItem(id, key)
   } catch (error) {
     log.warn('cache remove failed', { bucket: id, error })
   }
 }
 
-/** Whole-bucket delete — one bucket-column DELETE, no prefix scan. Sync (node:sqlite); throws on failure. */
-function deleteBucket(db: Database, id: CacheBucketId): void {
-  db.delete(kvCache).where(eq(kvCache.bucket, id)).run()
-}
-
-/** Best-effort whole-bucket delete for ordinary content invalidation. */
-export function clear(db: Database, id: CacheBucketId): void {
+/**
+ * Best-effort whole-bucket clear for ordinary content invalidation. Small
+ * buckets only (feed/tags/categories/sitemap/comments) — entries are unlinked
+ * synchronously, matching the sync invalidation contract.
+ */
+export function clear(id: CacheBucketId): void {
   try {
-    deleteBucket(db, id)
+    unlinkBucketEntriesSync(id)
   } catch (error) {
     log.warn('cache bucket clear failed', { bucket: id, error })
   }
@@ -395,8 +400,10 @@ export function clear(db: Database, id: CacheBucketId): void {
 
 /**
  * Reclaim the storage behind the settings-derived render products (`feed`,
- * `calendar`, `og`) after a settings save. Strict (a failure reaches the
- * section-change warning channel), synchronous, and deliberately non-blocking.
+ * `calendar`, `og`, `comments`, `sitemap`) after a settings save. Strict (a
+ * failure reaches the section-change warning channel), synchronous, and
+ * deliberately non-blocking: each bucket is renamed to trash in O(1) and the
+ * recursive delete runs asynchronously.
  *
  * Correctness NEVER depends on this delete: every successful settings refresh
  * advances the snapshot revision (`shared/config/snapshot`), so the previous
@@ -404,13 +411,13 @@ export function clear(db: Database, id: CacheBucketId): void {
  * before the save can only write its own old-revision key. This is purely
  * storage reclamation — no locale/version generation counter is involved.
  */
-export function clearLocalizedOutputs(db: Database): void {
+export function clearLocalizedOutputs(): void {
   let failure: unknown
   for (const id of ['feed', 'calendar', 'og', 'comments', 'sitemap'] as const) {
     try {
-      deleteBucket(db, id)
+      trashBucketSync(id)
     } catch (error) {
-      // Attempt BOTH buckets — a feed failure must not strand the calendar rows.
+      // Attempt ALL buckets — a feed failure must not strand the calendar entries.
       failure ??= error
     }
   }
@@ -420,11 +427,12 @@ export function clearLocalizedOutputs(db: Database): void {
 }
 
 /**
- * Batch cache-aside: one MGET per entry, the loader runs once for the misses.
- * Returns one entry per input, in input order (uncovered misses are null).
+ * Batch cache-aside: an MGET-style read of every key (one file read per key,
+ * fanned out), the loader runs once for the misses. Returns one entry per
+ * input in input order (uncovered misses are null); missing values are
+ * written back fire-and-forget.
  */
 export async function throughMany<K extends CacheBucketId, V>(
-  db: Database,
   id: K,
   paramsList: CacheParamsMap[K][],
   loader: (missing: CacheParamsMap[K][]) => Promise<{ params: CacheParamsMap[K]; value: V }[]>,
@@ -441,7 +449,7 @@ export async function throughMany<K extends CacheBucketId, V>(
     try {
       let cached: { key: string; value: unknown }[]
       try {
-        cached = await getItems(db, keys)
+        cached = await getItems(id, keys)
       } catch (error) {
         log.warn('cache batch read failed; treating every key as a miss', { bucket: id, error })
         cached = keys.map((key) => ({ key, value: null }))
@@ -461,17 +469,15 @@ export async function throughMany<K extends CacheBucketId, V>(
         const loaded = await loader(missing)
         // Match loaded values by computed key — the loader may rebuild its params.
         const loadedByKey = new Map(loaded.map((entry) => [behavior.key(entry.params), entry.value]))
-        await Promise.all(
-          missingIndexes.map(async (index) => {
-            const params = paramsList[index] as CacheParamsMap[K]
-            const value = loadedByKey.get(behavior.key(params))
-            if (value === undefined) {
-              return
-            }
-            values[index] = value
-            await writeEntry(db, id, keys[index] as string, slot, value)
-          }),
-        )
+        for (const index of missingIndexes) {
+          const params = paramsList[index] as CacheParamsMap[K]
+          const value = loadedByKey.get(behavior.key(params))
+          if (value === undefined) {
+            continue
+          }
+          values[index] = value
+          void writeEntry(id, keys[index] as string, slot, value)
+        }
       }
 
       return paramsList.map((params, index) => ({ params, value: values[index] ?? null }))
@@ -493,40 +499,20 @@ function assertCounter(id: CacheBucketId): void {
   }
 }
 
-function counterKey(id: CacheBucketId): string {
-  return `${resolveCacheSlot(id).prefix}generation`
+/** Drop every memoized generation so the next counter read re-reads `_generation`. */
+export function resetCacheCounterMemo(): void {
+  counterMemo.clear()
 }
 
-// Counter row: `${prefix}generation` key, raw integer JSON in `value`, NULL
-// `expires_at` (never swept) — read via direct SQL, not kv-store.
-function parseCounter(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
-  return Number.isNaN(parsed) ? 0 : parsed
-}
-
-function liveCounterRow() {
-  return or(isNull(kvCache.expiresAt), gt(kvCache.expiresAt, new Date()))
-}
-
-export function getCounter(db: Database, id: CacheBucketId): Promise<number> {
+export function getCounter(id: CacheBucketId): Promise<number> {
   assertCounter(id)
   let memo = counterMemo.get(id)
   if (memo === undefined) {
-    memo = Promise.resolve()
-      .then(() =>
-        db
-          .select({ value: kvCache.value })
-          .from(kvCache)
-          .where(and(eq(kvCache.key, counterKey(id)), liveCounterRow()))
-          .limit(1)
-          .all(),
-      )
-      .then((rows) => parseCounter(rows[0]?.value ?? 0))
-      .catch((error: unknown) => {
-        counterMemo.delete(id)
-        log.warn('cache counter read failed', { bucket: id, error })
-        return 0
-      })
+    memo = readGeneration(id).catch((error: unknown) => {
+      counterMemo.delete(id)
+      log.warn('cache counter read failed', { bucket: id, error })
+      return 0
+    })
     counterMemo.set(id, memo)
   }
   return memo
@@ -534,31 +520,45 @@ export function getCounter(db: Database, id: CacheBucketId): Promise<number> {
 
 /**
  * Bump the generation, orphaning entries with older stamps. Fire-and-forget:
- * failures are logged and swallowed here. Sync — node:sqlite.
+ * failures are logged and swallowed here. Sync — a tmp-file + rename, no fsync.
+ * Returns the new generation, or `null` on failure so a strict caller (admin
+ * clear) can abort instead of continuing on a stale generation.
  */
-export function bumpCounter(db: Database, id: CacheBucketId): void {
+export function bumpCounter(id: CacheBucketId): number | null {
   assertCounter(id)
   try {
-    const key = counterKey(id)
-    const rows = db
-      .select({ value: kvCache.value })
-      .from(kvCache)
-      .where(and(eq(kvCache.key, key), liveCounterRow()))
-      .limit(1)
-      .all()
-    const generation = parseCounter(rows[0]?.value ?? 0) + 1
-    db.insert(kvCache)
-      .values({ key, bucket: id, value: generation, blob: null, expiresAt: null })
-      .onConflictDoUpdate({ target: kvCache.key, set: { value: generation, blob: null, expiresAt: null } })
-      .run()
+    const generation = bumpGeneration(id)
     counterMemo.set(id, Promise.resolve(generation))
     log.info('cache counter bumped', { bucket: id, generation })
+    return generation
   } catch (error: unknown) {
     log.warn('cache counter bump failed', { bucket: id, error })
+    return null
   }
 }
 
-/** Test-only seam: drop the process-cached counters so the next read re-reads `kv_cache`. */
+/** Whether the bucket owns a `_generation` counter (only `searchResult` today). */
+export function isCounterBucket(id: CacheBucketId): boolean {
+  return BEHAVIORS[id].counter === true
+}
+
+/**
+ * Restore-completion wipe: clear the cache tree and, in a `finally`, drop the
+ * process-local generation memo so the next counter read re-reads the file.
+ * A partial wipe can leave pre-restore entries that may remain reachable until
+ * their TTL, and the old generation may still be on disk; the memo reset only
+ * guarantees the next read goes back to the file. The caller's
+ * warning/notification path owns the residual window.
+ */
+export async function wipeCacheForRestore(): Promise<void> {
+  try {
+    await wipeFileCache()
+  } finally {
+    resetCacheCounterMemo()
+  }
+}
+
+/** Test-only seam: drop the process-cached counters so the next read re-reads `_generation`. */
 export function __resetCacheCountersForTests(): void {
-  counterMemo.clear()
+  resetCacheCounterMemo()
 }

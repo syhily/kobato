@@ -57,6 +57,8 @@ describe('folder migrations (sqlite)', () => {
     const shape = readDbShape(handle.db)
     expect(shape.tables.length).toBeGreaterThan(0)
     expect(shape.migrations.length).toBeGreaterThan(0)
+    // The legacy SQLite cache table is gone — storage lives on the filesystem.
+    expect(shape.tables).not.toContain('kv_cache')
   })
 
   it('is idempotent — a second run applies nothing', () => {

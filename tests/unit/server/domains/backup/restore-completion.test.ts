@@ -31,6 +31,8 @@ function makeDeps(): RestoreCompletionDeps & {
   reopenDatabase: ReturnType<typeof vi.fn>
   getDb: ReturnType<typeof vi.fn>
   getDatabaseHandle: ReturnType<typeof vi.fn>
+  wipeCache: ReturnType<typeof vi.fn>
+  notifyCacheWipeFailed: ReturnType<typeof vi.fn>
   clientExec: ReturnType<typeof vi.fn>
 } {
   const clientExec = vi.fn()
@@ -38,6 +40,8 @@ function makeDeps(): RestoreCompletionDeps & {
     reopenDatabase: vi.fn().mockResolvedValue({ db: {}, client: { exec: clientExec } }),
     getDb: vi.fn().mockReturnValue({ id: 'db' }),
     getDatabaseHandle: vi.fn().mockReturnValue({ client: { exec: clientExec } }),
+    wipeCache: vi.fn().mockResolvedValue(undefined),
+    notifyCacheWipeFailed: vi.fn<() => void>(),
     clientExec,
   }
 }
@@ -57,6 +61,49 @@ describe('backup/restore-completion', () => {
     expect(mockMigrateDatabase).toHaveBeenCalledTimes(1)
     expect(deps.clientExec).toHaveBeenCalledWith('ANALYZE')
     expect(mockRestartServer).toHaveBeenCalledTimes(1)
+    expect(deps.wipeCache).toHaveBeenCalledTimes(1)
+    expect(deps.notifyCacheWipeFailed).not.toHaveBeenCalled()
+  })
+
+  it('wipes the cache after reopen/migrate and before restart', async () => {
+    const deps = makeDeps()
+    mockMigrateDatabase.mockResolvedValue(undefined)
+    mockRestartServer.mockResolvedValue(undefined)
+
+    await createRestoreCompletion(deps)(true, undefined)
+
+    const reopenAt = deps.reopenDatabase.mock.invocationCallOrder[0]!
+    const migrateAt = mockMigrateDatabase.mock.invocationCallOrder[0]!
+    const wipeAt = deps.wipeCache.mock.invocationCallOrder[0]!
+    const restartAt = mockRestartServer.mock.invocationCallOrder[0]!
+    expect(reopenAt).toBeLessThan(migrateAt)
+    expect(migrateAt).toBeLessThan(wipeAt)
+    expect(wipeAt).toBeLessThan(restartAt)
+  })
+
+  it('notifies admins and still restarts when the cache wipe fails', async () => {
+    const deps = makeDeps()
+    deps.wipeCache.mockRejectedValue(new AggregateError([new Error('bucket busy')], 'cache wipe failed'))
+    mockRestartServer.mockResolvedValue(undefined)
+
+    await createRestoreCompletion(deps)(true, undefined)
+
+    expect(deps.wipeCache).toHaveBeenCalledTimes(1)
+    expect(deps.notifyCacheWipeFailed).toHaveBeenCalledTimes(1)
+    expect(mockRestartServer).toHaveBeenCalledTimes(1)
+  })
+
+  it('still restarts when the cache-wipe notification itself throws', async () => {
+    const deps = makeDeps()
+    deps.wipeCache.mockRejectedValue(new Error('cache wipe failed'))
+    deps.notifyCacheWipeFailed.mockImplementation(() => {
+      throw new Error('notifications unavailable')
+    })
+    mockRestartServer.mockResolvedValue(undefined)
+
+    await expect(createRestoreCompletion(deps)(true, undefined)).resolves.toBeUndefined()
+    expect(deps.notifyCacheWipeFailed).toHaveBeenCalledTimes(1)
+    expect(mockRestartServer).toHaveBeenCalledTimes(1)
   })
 
   it('rolls back the pre-restore originals before restarting on failure', async () => {
@@ -73,8 +120,10 @@ describe('backup/restore-completion', () => {
     expect(mockRollbackPreRestoreFiles.mock.invocationCallOrder[0]!).toBeLessThan(
       mockRestartServer.mock.invocationCallOrder[0]!,
     )
-    // The failure path never deletes the originals.
+    // The failure path never deletes the originals or touches the restored cache.
     expect(mockCleanupPreRestoreFiles).not.toHaveBeenCalled()
+    expect(deps.wipeCache).not.toHaveBeenCalled()
+    expect(deps.notifyCacheWipeFailed).not.toHaveBeenCalled()
   })
 
   it('cleans the pre-restore originals after a successful restore and never rolls back', async () => {
@@ -98,6 +147,9 @@ describe('backup/restore-completion', () => {
     await createRestoreCompletion(deps)(true, undefined)
 
     expect(mockRestartServer).toHaveBeenCalledTimes(1)
+    // A failed migration still runs the cache wipe: only the NEW content DB's
+    // cache must survive a restore.
+    expect(deps.wipeCache).toHaveBeenCalledTimes(1)
   })
 
   it('reschedules the archive job only once the database is live again', async () => {
@@ -120,5 +172,7 @@ describe('backup/restore-completion', () => {
     expect(mockMigrateDatabase).not.toHaveBeenCalled()
     expect(mockRestartServer).not.toHaveBeenCalled()
     expect(mockCleanupPreRestoreFiles).not.toHaveBeenCalled()
+    expect(deps.wipeCache).not.toHaveBeenCalled()
+    expect(deps.notifyCacheWipeFailed).not.toHaveBeenCalled()
   })
 })

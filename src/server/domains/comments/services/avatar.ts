@@ -296,18 +296,17 @@ export async function fetchAvatarByChain(
  *  themselves, so this is where they get their chance — but only when such a
  *  source can actually match this email (QQ shape, or a configured GitHub
  *  token), so plain emails still cost zero upstream calls here. */
-export async function resolveAvatarForEmail(db: Database, email: string): Promise<string> {
+export async function resolveAvatarForEmail(email: string): Promise<string> {
   const hash = await encodedEmail(email)
   const comments = requireBlogSettingsSection('comments').comments
   const prewarmable = comments.avatar.sources.some(
     (source) => (source === 'qq' && isQQEmail(email)) || (source === 'github' && comments.githubToken),
   )
   if (prewarmable) {
-    const cached = await get<'avatar', AvatarEntry>(db, 'avatar', { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash })
+    const cached = await get<'avatar', AvatarEntry>('avatar', { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash })
     if (cached === null) {
       const buffer = await fetchAvatarByChain({ email, hash }, DEFAULT_AVATAR_SIZE_BUCKET)
       await set(
-        db,
         'avatar',
         { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
         buffer === null
@@ -348,18 +347,18 @@ const EMAIL_HASH_RE = /^([a-f0-9]{32}|[a-f0-9]{64})$/i
  *  space is attacker-chosen and the repeat cost is one indexed lookup. */
 export async function serveAvatar(db: Database, hash: string, size: number): Promise<ServedAvatar> {
   if (!isNumeric(hash) && !EMAIL_HASH_RE.test(hash)) {
-    // Neither id nor hash — redirect without caching, so garbage can't grow kv_cache.
+    // Neither id nor hash — redirect without caching, so garbage can't grow the avatar cache.
     return { kind: 'redirect' }
   }
   const { email, hash: canonical } = await resolveAvatarInfo(db, hash)
   if (canonical === null) {
     // No user row — do NOT negative-cache under the raw param: the hash is
-    // attacker-chosen, so each write would be unbounded kv_cache churn.
+    // attacker-chosen, so each write would be unbounded cache churn.
     // The repeat cost is one cheap indexed user lookup.
     return { kind: 'redirect' }
   }
 
-  const cached = await get<'avatar', AvatarEntry>(db, 'avatar', { size, email: canonical })
+  const cached = await get<'avatar', AvatarEntry>('avatar', { size, email: canonical })
   if (cached !== null) {
     if (cached.status === AvatarStatus.NO_AVATAR) {
       return { kind: 'redirect' }
@@ -371,10 +370,10 @@ export async function serveAvatar(db: Database, hash: string, size: number): Pro
 
   const buffer = await fetchAvatarByChain({ email, hash: canonical }, size)
   if (buffer === null) {
-    await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+    await set('avatar', { size, email: canonical }, { status: AvatarStatus.NO_AVATAR, buffer: null })
     return { kind: 'redirect' }
   }
-  await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.HAVE_AVATAR, buffer })
+  await set('avatar', { size, email: canonical }, { status: AvatarStatus.HAVE_AVATAR, buffer })
   return { kind: 'png', buffer }
 }
 
@@ -397,8 +396,8 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  *  request); any failure → `''`. Cached via the `githubAvatar` bucket —
  *  failures ride a short TTL so a GitHub outage cannot turn every call
  *  into a 30s-timeout upstream fetch. */
-export async function fetchGithubAvatarDataUrl(db: Database): Promise<string> {
-  return through(db, 'githubAvatar', {}, async () => {
+export async function fetchGithubAvatarDataUrl(): Promise<string> {
+  return through('githubAvatar', {}, async () => {
     try {
       const res = await fetch(GITHUB_AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
       if (!res.ok) {

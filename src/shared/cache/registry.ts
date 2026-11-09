@@ -1,16 +1,16 @@
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 // Cache declaration registry — the metadata plane of the cache layer.
-// One declaration per `kv_cache` bucket; every derived enumeration reads
-// from this table, so adding a cache never requires editing a second
-// list. The `id` doubles as the `kv_cache.bucket` value.
+// One declaration per cache bucket; every derived enumeration reads from
+// this table, so adding a cache never requires editing a second list. The
+// `id` is the stable directory name under `<storage.data>/cache`.
 //
 // Labels and key-shape descriptions are UI MESSAGE IDS, not copy: the admin
 // surface resolves them through its translator (`{prefix}` is the live bucket
 // prefix). The registry itself stays neutral so it can be imported from both
 // bundles without dragging a locale in.
 export interface CacheDeclaration {
-  /** Stable discriminator — also the `kv_cache.bucket` value. */
+  /** Stable discriminator — also the cache directory name. */
   readonly id: string
   /** Admin panel label message id. */
   readonly labelId: UiMessageId

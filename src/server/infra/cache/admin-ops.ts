@@ -14,14 +14,14 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
 export async function getAdminCacheStats(db: Database): Promise<AdminCacheStatsDto> {
-  const [buckets, reserved] = await Promise.all([snapshotAllBuckets(db), snapshotReservedBuckets(db)])
+  const [buckets, reserved] = await Promise.all([snapshotAllBuckets(), snapshotReservedBuckets(db)])
   const total = buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0)
   return { buckets, reserved, total, generatedAt: new Date().toISOString() }
 }
 
 export async function clearAdminCache(db: Database, target: ClearCacheTarget): Promise<ClearCacheResultDto> {
   if (target === 'all') {
-    const removed = await clearAllBuckets(db)
+    const removed = await clearAllBuckets()
     const cleared = getCacheBuckets().map((bucket) => ({
       bucketId: bucket.id,
       label: bucket.label,
@@ -36,7 +36,7 @@ export async function clearAdminCache(db: Database, target: ClearCacheTarget): P
     // Belt-and-braces guard for callers that bypass the API-surface Zod schema.
     throw new DomainError('BAD_REQUEST', descriptorFor('admin.cache.error.unknownGroup', { target }))
   }
-  const removed = await clearBucket(db, bucket)
+  const removed = await clearBucket(bucket)
   return {
     cleared: [{ bucketId: bucket.id, label: bucket.label, removed }],
     total: removed,

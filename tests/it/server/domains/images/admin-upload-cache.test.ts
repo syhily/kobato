@@ -57,7 +57,7 @@ describe('images/services/cache — invalidateImageEnhanceCacheFor', () => {
   it('clears the cached entry', async () => {
     await seedImage({ storagePath: 'images/to-clear.jpg' })
     await cache.readManyMeta(db, ['images/to-clear.jpg'])
-    await cache.invalidateImageEnhanceCacheFor(db, 'images/to-clear.jpg')
+    await cache.invalidateImageEnhanceCacheFor('images/to-clear.jpg')
 
     await db.delete(image).where(eq(image.storagePath, 'images/to-clear.jpg'))
     const meta = (await cache.readManyMeta(db, ['images/to-clear.jpg'])).get('images/to-clear.jpg')

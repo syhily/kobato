@@ -1,10 +1,9 @@
-import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { latestComments } from '@/server/domains/comments/services/public-query'
+import { get } from '@/server/infra/cache/registry'
 import { comment } from '@/server/infra/db/schema/comment'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
@@ -34,9 +33,15 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-async function latestCommentsRow() {
-  const rows = await db.select().from(kvCache).where(eq(kvCache.bucket, 'comments')).limit(1)
-  return rows[0] ?? null
+function latestCommentsEntry() {
+  return get('comments', { settingsRevision: COMMENTS_REVISION, limit: 5 })
+}
+
+/** The through() write is fire-and-forget; wait for the warmed entry. */
+async function waitForWarmEntry(): Promise<void> {
+  await vi.waitFor(async () => {
+    expect(await latestCommentsEntry()).not.toBeNull()
+  })
 }
 
 async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Promise<number> {
@@ -93,12 +98,12 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     // Pending comments are not listed yet.
     const warmed = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
     expect(warmed).toHaveLength(0)
-    expect(await latestCommentsRow()).not.toBeNull()
+    await waitForWarmEntry()
 
     const { approved } = await bulkApproveCommentsByUser(db, userId)
     expect(approved).toBe(1)
 
-    expect(await latestCommentsRow()).toBeNull()
+    expect(await latestCommentsEntry()).toBeNull()
     const fresh = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
     expect(fresh).toHaveLength(1)
     expect(fresh[0]!.permalink).toBe(`/posts/bulk-approve-target/#user-comment-${commentId}`)
@@ -111,12 +116,12 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
 
     const warmed = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
     expect(warmed).toHaveLength(1)
-    expect(await latestCommentsRow()).not.toBeNull()
+    await waitForWarmEntry()
 
     const { deleted } = await bulkDeleteCommentsByUser(db, userId)
     expect(deleted).toBe(1)
 
-    expect(await latestCommentsRow()).toBeNull()
+    expect(await latestCommentsEntry()).toBeNull()
     const fresh = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
     expect(fresh).toHaveLength(0)
   })
@@ -130,11 +135,11 @@ describe('comments/repos/moderation — approve-delete-request clears the sideba
 
     const warmed = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
     expect(warmed).toHaveLength(1)
-    expect(await latestCommentsRow()).not.toBeNull()
+    await waitForWarmEntry()
 
     await softDeleteCommentById(db, commentId)
 
-    expect(await latestCommentsRow()).toBeNull()
+    expect(await latestCommentsEntry()).toBeNull()
     const fresh = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
     expect(fresh).toHaveLength(0)
   })

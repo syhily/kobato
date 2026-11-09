@@ -1,5 +1,3 @@
-import type { Database } from '@/server/infra/db/database'
-
 import { bumpCounter, clear } from '@/server/infra/cache/registry'
 
 /**
@@ -13,28 +11,28 @@ export type ContentInvalidationEvent =
   | { entity: 'tag' }
   | { entity: 'comment' }
 
-// Sync (node:sqlite): called inside entity transactions (comment persist).
-export function invalidateContent(db: Database, event: ContentInvalidationEvent): void {
+// Synchronous: called inside entity transactions (comment persist).
+export function invalidateContent(event: ContentInvalidationEvent): void {
   switch (event.entity) {
     case 'post':
-      clear(db, 'feed')
-      clear(db, 'tags')
-      clear(db, 'categories')
-      clear(db, 'sitemap')
-      bumpCounter(db, 'searchResult')
+      clear('feed')
+      clear('tags')
+      clear('categories')
+      clear('sitemap')
+      bumpCounter('searchResult')
       return
     case 'page':
-      clear(db, 'sitemap')
+      clear('sitemap')
       return
     case 'category':
-      clear(db, 'categories')
-      clear(db, 'feed')
+      clear('categories')
+      clear('feed')
       return
     case 'tag':
-      clear(db, 'tags')
-      clear(db, 'feed')
+      clear('tags')
+      clear('feed')
       return
     case 'comment':
-      clear(db, 'comments')
+      clear('comments')
   }
 }

@@ -1198,6 +1198,7 @@ export const uiMessagesZhCN = {
   'admin.settings.cache.view.confirmAll': '确认清空全部',
   'admin.settings.cache.view.confirm': '确认清空',
   'admin.settings.cache.bucket.keyCount': '缓存条数',
+  'admin.settings.cache.bucket.byteSize': '磁盘占用',
   'admin.settings.cache.bucket.prefix': '当前前缀',
   'admin.settings.cache.bucket.pattern': '键匹配模式',
   'admin.settings.cache.bucket.ttl': '当前 TTL',

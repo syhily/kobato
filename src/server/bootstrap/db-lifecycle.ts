@@ -34,7 +34,7 @@ import { registerSectionChangeHandler } from '@/server/domains/settings/services
 import { runZeaburMailCleanupAtBoot } from '@/server/domains/settings/services/zeabur-mail-cleanup'
 import { wireS3Migration } from '@/server/domains/storage/s3-migration'
 import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
-import { clearLocalizedOutputs } from '@/server/infra/cache/registry'
+import { clearLocalizedOutputs, wipeCacheForRestore } from '@/server/infra/cache/registry'
 import { isVitest } from '@/server/infra/config'
 import {
   flushAllBatchers,
@@ -146,7 +146,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
     flipBrandingDrivers,
     invalidateImageMeta: async (db, storagePaths) => {
       for (const storagePath of storagePaths) {
-        await invalidateImageEnhanceCacheFor(db, storagePath)
+        await invalidateImageEnhanceCacheFor(storagePath)
       }
     },
     postSwitchBackfill: async (db) => backfillStorageAssetUrls(db),
@@ -200,21 +200,35 @@ wireRestoreMachine({
   prepareForSwap: prepareDatabaseForRestore,
   reopenAfterSwap: reopenDatabaseAndGetDb,
   // The completion chain (rollback → reopen → reschedule → migrate →
-  // ANALYZE → restart) lives in the backup domain; only the engine access
-  // is wired here.
-  complete: createRestoreCompletion({ reopenDatabase, getDb, getDatabaseHandle }),
+  // ANALYZE → cache wipe → restart) lives in the backup domain; only the
+  // engine access and post-restore side effects are wired here.
+  complete: createRestoreCompletion({
+    reopenDatabase,
+    getDb,
+    getDatabaseHandle,
+    // Regardless of wipe outcome, the registry wrapper drops the process-local
+    // generation memo so the next counter read re-reads `_generation`. A
+    // partial wipe can still leave residual entries that age out by TTL.
+    wipeCache: wipeCacheForRestore,
+    notifyCacheWipeFailed: () => {
+      notifyAdmins(getDb(), {
+        titleKey: 'notification.backup.cacheWipeFailed.title',
+        bodyKey: 'notification.backup.cacheWipeFailed.body',
+      })
+    },
+  }),
 })
 
 // Composition root: section-change side effects register here, keeping the registry module inert.
 // Every settings save advances the snapshot revision, so the previous
 // feed/calendar generation is unreachable by construction. These handlers only
-// RECLAIM the now-orphaned rows (whole-bucket DELETE, every locale/version/
-// revision variation); a delete failure reaches the section-change warning
+// RECLAIM the now-orphaned entries (rename-to-trash, every locale/version/
+// revision variation); a reclaim failure reaches the section-change warning
 // channel. Sections listed here are the ones whose values feed those renders:
 // identity/locale (general), feed size (content), branding URLs (assets),
 // daily-quote source/bank (sidebar), canvas fonts (fonts) and the comments
 // digest (comments).
-const reclaimLocalizedOutputs = () => clearLocalizedOutputs(getDb())
+const reclaimLocalizedOutputs = () => clearLocalizedOutputs()
 registerSectionChangeHandler('general', reclaimLocalizedOutputs)
 registerSectionChangeHandler('content', reclaimLocalizedOutputs)
 registerSectionChangeHandler('assets', reclaimLocalizedOutputs)

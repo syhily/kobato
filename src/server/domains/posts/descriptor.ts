@@ -123,9 +123,9 @@ export const postDescriptor: MetaEntityDescriptor<
   preview: {
     project: (meta, revision) => toCmsPost(meta, revision),
     async afterPublish(db, meta, body, warnings) {
-      invalidateContent(db, { entity: 'post' })
+      invalidateContent({ entity: 'post' })
       // Warm the OG card + today's calendar ahead of a crawler's first scan.
-      warmContentRenderCaches(db, {
+      warmContentRenderCaches({
         slug: meta.slug,
         title: meta.title,
         summary: meta.summary,
@@ -224,10 +224,10 @@ export const postDescriptor: MetaEntityDescriptor<
         return
       }
       // A published post's meta update reaches the public surface immediately — invalidate now.
-      invalidateContent(db, { entity: 'post' })
+      invalidateContent({ entity: 'post' })
       // Re-warm live rows' OG card + calendar under the NEW render inputs; others skip.
       if (isLive(meta)) {
-        warmContentRenderCaches(db, {
+        warmContentRenderCaches({
           slug: meta.slug,
           title: meta.title,
           summary: meta.summary,
@@ -272,7 +272,7 @@ export const postDescriptor: MetaEntityDescriptor<
       return { id: meta.id, title: meta.title, summary: meta.summary, revision }
     },
     async afterRestore(db, indexable) {
-      invalidateContent(db, { entity: 'post' })
+      invalidateContent({ entity: 'post' })
       if (indexable === null) {
         return undefined
       }

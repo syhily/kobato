@@ -13,8 +13,8 @@ const findAvatar = publicProc
   .use(resourceRateLimit)
   .input(z.object({ email: z.email() }))
   .output(z.object({ avatar: z.string() }))
-  .handler(async ({ input, context }) => {
-    const hash = await resolveAvatarForEmail(context.db, input.email)
+  .handler(async ({ input }) => {
+    const hash = await resolveAvatarForEmail(input.email)
     return {
       avatar: joinUrl(requireBlogSettingsSection('siteIdentity').website, avatarImageUrl(hash)),
     }

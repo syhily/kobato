@@ -17,6 +17,8 @@ const RELEASED_NOTIFICATION_KEYS = [
   'notification.job.failed.title',
   'notification.mail.zeaburCleanup.body',
   'notification.mail.zeaburCleanup.title',
+  'notification.backup.cacheWipeFailed.body',
+  'notification.backup.cacheWipeFailed.title',
 ] as const
 
 interface Case {
@@ -58,6 +60,28 @@ const CASES: Case[] = [
       'zh-CN': '任务「backup」最近一次执行失败。请到「任务」页面查看详情。',
       'zh-TW': '任務「backup」最近一次執行失敗。請到「任務」頁面檢視詳情。',
       'zh-HK': '任務「backup」最近一次執行失敗。請到「任務」頁面檢視詳情。',
+    },
+  },
+  {
+    key: 'notification.backup.cacheWipeFailed.title',
+    messages: {
+      'en-US': 'Restored content is live, but cache cleanup failed',
+      'zh-CN': '恢复已生效，但缓存清理失败',
+      'zh-TW': '還原已生效，但快取清理失敗',
+      'zh-HK': '還原已生效，但快取清理失敗',
+    },
+  },
+  {
+    key: 'notification.backup.cacheWipeFailed.body',
+    messages: {
+      'en-US':
+        'The restore has completed and the restored content is already in effect. Some revision-free cache entries may still be served until their normal TTL expires. Check the server log for details.',
+      'zh-CN':
+        '恢复已完成，恢复的内容已经生效。部分无修订的缓存条目可能仍会被使用，直到正常 TTL 到期后自愈。请查看服务器日志了解详情。',
+      'zh-TW':
+        '還原已完成，還原的內容已經生效。部分無修訂的快取項目可能仍會被使用，直到正常 TTL 到期後自癒。請查看伺服器日誌了解詳情。',
+      'zh-HK':
+        '還原已完成，還原的內容已經生效。部分無修訂的快取項目可能仍會被使用，直到正常 TTL 到期後自動恢復。請查看伺服器日誌了解詳情。',
     },
   },
   {

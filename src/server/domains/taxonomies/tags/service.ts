@@ -87,7 +87,7 @@ export async function upsertAdminTag(
       'tag',
     )
     const row = await insertTag(db, { name: input.name, slug, ogImage: input.ogImage ?? '' })
-    invalidateContent(db, { entity: 'tag' })
+    invalidateContent({ entity: 'tag' })
     const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: row.name })
     return toAdminTagDto(row, counts.get(row.name) ?? 0)
   }
@@ -115,7 +115,7 @@ export async function upsertAdminTag(
   if (updated === null) {
     throw taxonomyNotFound('tag')
   }
-  invalidateContent(db, { entity: 'tag' })
+  invalidateContent({ entity: 'tag' })
   const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: updated.name })
   return toAdminTagDto(updated, counts.get(updated.name) ?? 0)
 }
@@ -128,7 +128,7 @@ export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerI
     listPostTitles: (row) => listPostTitlesByTaxonomy(db, row.name),
   })
   if (deleted) {
-    invalidateContent(db, { entity: 'tag' })
+    invalidateContent({ entity: 'tag' })
   }
   return deleted
 }
@@ -140,7 +140,7 @@ export async function findTagBySlug(db: Database, slug: string): Promise<TagRow 
 }
 
 export async function listAllTags(db: Database): Promise<Tag[]> {
-  return through(db, 'tags', {}, async () => {
+  return through('tags', {}, async () => {
     const tagRows = await db
       .select({ name: tagTable.name, slug: tagTable.slug })
       .from(tagTable)

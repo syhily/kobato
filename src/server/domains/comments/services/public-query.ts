@@ -47,7 +47,7 @@ export async function latestComments(
   commentsRevision: string,
 ): Promise<LatestComment[]> {
   const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar', settings), 'recentComments')
-  return through(db, 'comments', { settingsRevision: commentsRevision, limit }, async () => {
+  return through('comments', { settingsRevision: commentsRevision, limit }, async () => {
     const ids = await adminUserIds(db)
     const distinctIds = await latestDistinctCommentIds(db, ids, limit)
     const rows = await commentsByIds(db, distinctIds, limit)

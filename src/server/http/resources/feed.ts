@@ -40,7 +40,6 @@ async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope: F
   const { db, settings, localization } = c.var.requestContext
   const { locale, revisions } = localization
   const feed = await through(
-    db,
     'feed',
     { scope: cacheKeyFor(scope), locale, version: APP_VERSION, settingsRevision: revisions.feed },
     () => generateFeeds(db, { ...scope, locale, settings }),

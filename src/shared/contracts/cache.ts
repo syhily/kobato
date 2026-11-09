@@ -13,8 +13,15 @@ const cacheBucketStatsDto = z.object({
   prefix: z.string(),
   ttlSeconds: z.number().int().nonnegative(),
   pattern: z.string(),
-  /** Live row count for the bucket (expired rows excluded). */
+  /** Live entry count: a valid `KBC1` envelope that is not expired. */
   keyCount: z.number().int().nonnegative(),
+  /**
+   * On-disk bytes of every entry file in the bucket's shards, envelope
+   * included. Expired and malformed entries still occupy disk, so they count
+   * here even though they are excluded from `keyCount`; `_generation`, `_tmp`,
+   * and trash directories are excluded.
+   */
+  byteSize: z.number().int().nonnegative(),
 })
 export type CacheBucketStats = z.infer<typeof cacheBucketStatsDto>
 

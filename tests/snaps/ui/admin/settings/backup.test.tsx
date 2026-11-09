@@ -236,6 +236,7 @@ describe('snapshot: BucketCard', () => {
     ttlSeconds: 60 * 60 * 24,
     pattern: 'og:*',
     keyCount: 42,
+    byteSize: 43_008,
   }
 
   const allBuckets = {
@@ -262,6 +263,7 @@ describe('snapshot: BucketCard', () => {
     expect(html).toContain('OG 预渲染缓存')
     expect(html).toContain('缓存条数')
     expect(html).toContain('42')
+    expect(html).toContain('磁盘占用')
     expect(html).toContain('当前前缀')
     expect(html).toContain('og:')
     expect(html).toContain('键匹配模式')

@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
-
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 
 // The renderers are the only heavy seam — canvas/font/quote work is
 // covered by their own suites. `through` runs for real: with the
-// dev-bypass buckets it always runs the loader, and the write into the
-// inert db stub fails soft inside the registry (logged, swallowed).
+// dev-bypass buckets it always runs the loader.
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: vi.fn(async () => Buffer.from('og-png')),
 }))
@@ -29,8 +26,6 @@ import '@/server/render/warmup/content-cache'
 const drawOpenGraphMock = vi.mocked(drawOpenGraph)
 const renderCalendarMock = vi.mocked(renderCalendar)
 
-const db = {} as Database
-
 const og = { slug: 'hello', title: 'Hello', summary: 'World', cover: '/cover.png' }
 
 beforeEach(() => {
@@ -41,7 +36,7 @@ beforeEach(() => {
 
 describe('render/warmup/content-cache (through the domain seam)', () => {
   it('warms the OG bucket with the request-path render inputs', async () => {
-    warmContentRenderCaches(db, og)
+    warmContentRenderCaches(og)
 
     await vi.waitFor(() => {
       expect(drawOpenGraphMock).toHaveBeenCalledWith(og, TEST_BLOG_SETTINGS_BUNDLE)
@@ -49,7 +44,7 @@ describe('render/warmup/content-cache (through the domain seam)', () => {
   })
 
   it('warms today’s calendar in both themes', async () => {
-    warmContentRenderCaches(db, og)
+    warmContentRenderCaches(og)
 
     await vi.waitFor(() => {
       expect(renderCalendarMock).toHaveBeenCalledTimes(2)
@@ -68,7 +63,7 @@ describe('render/warmup/content-cache (through the domain seam)', () => {
   it('swallows a failed OG render — the warm never reaches its trigger', async () => {
     drawOpenGraphMock.mockRejectedValueOnce(new Error('render down'))
 
-    expect(() => warmContentRenderCaches(db, og)).not.toThrow()
+    expect(() => warmContentRenderCaches(og)).not.toThrow()
     await vi.waitFor(() => {
       expect(warn).toHaveBeenCalledWith('OG render warmup failed', expect.objectContaining({ slug: 'hello' }))
     })
@@ -77,7 +72,7 @@ describe('render/warmup/content-cache (through the domain seam)', () => {
   it('swallows a failed calendar render', async () => {
     renderCalendarMock.mockRejectedValueOnce(new Error('quote down'))
 
-    warmContentRenderCaches(db, og)
+    warmContentRenderCaches(og)
     await vi.waitFor(() => {
       expect(warn).toHaveBeenCalledWith('calendar render warmup failed', expect.objectContaining({ err: 'quote down' }))
     })

@@ -13,7 +13,7 @@ export function insertComment(db: Database, values: NewComment): Comment | null 
   const res = db.insert(comment).values(values).returning().all()
   const row = res[0] ?? null
   if (row !== null) {
-    invalidateContent(db, { entity: 'comment' })
+    invalidateContent({ entity: 'comment' })
   }
   return row
 }
@@ -27,7 +27,7 @@ export async function updateCommentBodyAndContent(
   content: string,
 ): Promise<void> {
   await db.update(comment).set({ body, content }).where(eq(comment.id, id))
-  invalidateContent(db, { entity: 'comment' })
+  invalidateContent({ entity: 'comment' })
 }
 
 // Fresh-edit variant of `comment.updateOwn`: an in-grace-window owner edit
@@ -45,7 +45,7 @@ export async function updateOwnCommentBody(
     .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
   const affected = Number(result.changes)
   if (affected > 0) {
-    invalidateContent(db, { entity: 'comment' })
+    invalidateContent({ entity: 'comment' })
   }
   return affected
 }
@@ -66,7 +66,7 @@ export async function updateOwnCommentBodyAndPending(
     .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
   const affected = Number(result.changes)
   if (affected > 0) {
-    invalidateContent(db, { entity: 'comment' })
+    invalidateContent({ entity: 'comment' })
   }
   return affected
 }

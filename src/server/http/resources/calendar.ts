@@ -1,7 +1,6 @@
 import { format, isValid, parse } from 'date-fns'
 import { HTTPException } from 'hono/http-exception'
 
-import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { AppLocale } from '@/shared/i18n/locales'
 
@@ -41,7 +40,6 @@ export interface CalendarRequestOptions {
 }
 
 export async function serveCalendar(
-  db: Database,
   params: { year?: string; time?: string },
   options: CalendarRequestOptions,
 ): Promise<Response> {
@@ -65,7 +63,6 @@ export async function serveCalendar(
 
   const { theme, locale, settingsRevision, settings, ifNoneMatch } = options
   const buffer = await through(
-    db,
     'calendar',
     { date: format(date, 'yyyy-MM-dd'), theme, locale, version: APP_VERSION, settingsRevision },
     () => renderCalendar(date, theme, locale, settings),

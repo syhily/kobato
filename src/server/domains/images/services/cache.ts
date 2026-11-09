@@ -42,7 +42,6 @@ export async function readManyMeta(db: Database, storagePaths: string[]): Promis
   }
 
   const results = await throughMany(
-    db,
     'imageMeta',
     storagePaths.map((storagePath) => ({ storagePath })),
     async (missing) => {
@@ -66,8 +65,8 @@ export async function readManyMeta(db: Database, storagePaths: string[]): Promis
   return out
 }
 
-export async function invalidateImageEnhanceCacheFor(db: Database, storagePath: string): Promise<void> {
-  await remove(db, 'imageMeta', { storagePath })
+export async function invalidateImageEnhanceCacheFor(storagePath: string): Promise<void> {
+  await remove('imageMeta', { storagePath })
 }
 
 /**

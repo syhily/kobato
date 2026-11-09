@@ -229,6 +229,7 @@ function makePopulatedStats(): AdminCacheStatsDto {
         ttlSeconds: 604800,
         pattern: 'og:*',
         keyCount: 42,
+        byteSize: 1_572_864,
       },
       {
         id: 'avatar',
@@ -238,6 +239,7 @@ function makePopulatedStats(): AdminCacheStatsDto {
         ttlSeconds: 604800,
         pattern: 'avatar:*',
         keyCount: 100,
+        byteSize: 2_097_152,
       },
     ],
     reserved: [
@@ -268,6 +270,7 @@ describe('snapshot: CacheView', () => {
     expect(html).toContain('头像缓存')
     expect(html).toContain('受保护的缓存（只读）')
     expect(html).toContain('登录会话')
+    expect(html).toContain('磁盘占用')
     expect(html).toContain('当前键数：')
     expect(html).toContain('13')
   })

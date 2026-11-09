@@ -127,7 +127,9 @@ journeys from its `build` / `build-develop` jobs. Both install Chromium with
   users and `getDb()` consumers share it; db-lifecycle migrates it at
   import). `closeTestDatabase` is a no-op on the global — its lifetime
   is the module graph's. `clearAllTables(db)` also resets
-  `sqlite_sequence` so seeded ids restart at 1.
+  `sqlite_sequence` so seeded ids restart at 1, wipes the per-process
+  filesystem cache (`file-store::wipeCache`), and drops the generation
+  memo.
 - **File-backed flows**: `createTestDatabaseFile()` returns a fresh
   migrated temp file — required for backup/restore (VACUUM INTO, file
   swaps) and WAL/pragma assertions.

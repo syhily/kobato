@@ -121,6 +121,9 @@ export const serverMessagesEnUS = {
   'notification.mail.zeaburCleanup.title': 'Mail sending was turned off automatically',
   'notification.mail.zeaburCleanup.body':
     'The Zeabur mail service is gone. This site still used it, so sending was turned off automatically. Reconfigure SMTP or Mailgun under Settings > Mail and turn it back on.',
+  'notification.backup.cacheWipeFailed.title': 'Restored content is live, but cache cleanup failed',
+  'notification.backup.cacheWipeFailed.body':
+    'The restore has completed and the restored content is already in effect. Some revision-free cache entries may still be served until their normal TTL expires. Check the server log for details.',
 } as const
 
 export type ServerMessageId = keyof typeof serverMessagesEnUS

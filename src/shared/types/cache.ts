@@ -55,7 +55,7 @@ export const CACHE_BUCKET_FALLBACKS = unsafeCast<Record<TunableCacheBucketId, Ca
 
 // Read-only surfaces (no rename, no clear): clearing sessions logs
 // everyone out; clearing rate-limit counters unblocks throttled
-// abusers. Both live outside `kv_cache` (DB table / process memory).
+// abusers. Both live outside the file cache (DB table / process memory).
 export type ReservedCacheBucketId = 'session' | 'rateLimit'
 
 export interface ReservedCacheBucket {

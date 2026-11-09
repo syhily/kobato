@@ -1200,6 +1200,7 @@ export const uiMessagesZhTW = {
   'admin.settings.cache.view.confirmAll': '確認清空全部',
   'admin.settings.cache.view.confirm': '確認清空',
   'admin.settings.cache.bucket.keyCount': '快取條數',
+  'admin.settings.cache.bucket.byteSize': '磁碟佔用',
   'admin.settings.cache.bucket.prefix': '目前前綴',
   'admin.settings.cache.bucket.pattern': '鍵符合模式',
   'admin.settings.cache.bucket.ttl': '目前 TTL',
