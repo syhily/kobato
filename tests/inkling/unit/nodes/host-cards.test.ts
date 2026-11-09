@@ -336,7 +336,7 @@ describe('host card insert integration', () => {
       $getRoot().append(paragraph)
       paragraph.select()
     })
-    // Lexical 0.46 commits updates on a microtask — tick() drains the queue so
+    // Lexical 0.53 commits updates on a microtask — tick() drains the queue so
     // assertions see the settled state
     await tick()
 

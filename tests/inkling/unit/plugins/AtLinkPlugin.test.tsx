@@ -103,7 +103,7 @@ describe('AtLinkPlugin', () => {
   }
 
   async function actFlush() {
-    // Lexical 0.46 defers commits (and listener cascades) to microtasks —
+    // Lexical 0.53 defers commits (and listener cascades) to microtasks —
     // drain the queue inside act so assertions see the settled state
     await act(async () => {
       await tick()

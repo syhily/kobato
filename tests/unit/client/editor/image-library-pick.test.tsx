@@ -133,7 +133,7 @@ describe('ImageLibraryCardPicker', () => {
 
     await act(async () => {
       onPick?.(makeImage())
-      // Lexical 0.46 commits the pick write on a microtask — drain it
+      // Lexical 0.53 commits the pick write on a microtask — drain it
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 

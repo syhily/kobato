@@ -49,7 +49,7 @@ async function editAlignedParagraph(
   })
   if (format !== '') {
     $setBlocksAlignment(editor, format)
-    // Lexical 0.46 propagates the commit (and its transforms) in a later
+    // Lexical 0.53 propagates the commit (and its transforms) in a later
     // microtask — getEditorState() before the hop still shows the pre-align
     // state
     await tick()

@@ -47,7 +47,7 @@ describe('selector-insertion', () => {
 
   it('inserts the picked card and removes the placeholder (gif command)', async () => {
     const placeholderKey = insertPlaceholder()
-    // Lexical 0.46 commits updates on a microtask — tick() drains the queue so
+    // Lexical 0.53 commits updates on a microtask — tick() drains the queue so
     // assertions see the settled state
     await tick()
 

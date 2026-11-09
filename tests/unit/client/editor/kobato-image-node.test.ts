@@ -8,7 +8,7 @@
 // instanceof gates the stock behaviours rely on ($isImageNode covers upload
 // intent / drop surgery).
 //
-// Lexical 0.46's constructor invariants require an active editor, and every
+// Lexical 0.53's constructor invariants require an active editor, and every
 // read path (generated accessors, exportJSON, exportDOM) goes through
 // getLatest(), which throws #195 without an active editor state — so each
 // case runs its construction AND its reads inside a single `editor.update`.

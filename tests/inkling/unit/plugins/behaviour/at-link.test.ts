@@ -123,7 +123,7 @@ function createTestEditor() {
   })
 }
 
-// Lexical 0.46 commits updates on a microtask, and listener-triggered
+// Lexical 0.53 commits updates on a microtask, and listener-triggered
 // cascade updates defer again — the drain/tick pair from the test-editor
 // harness drains the whole queue so assertions see the settled state (the
 // previous renderHook harness got the same drain for free from act()).

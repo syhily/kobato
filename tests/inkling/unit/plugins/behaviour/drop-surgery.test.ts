@@ -636,7 +636,7 @@ describe('resolveDragMarkerRefresh', () => {
     )
   })
 
-  it('ignores the root flag alone (Lexical 0.46 dirties root on every update)', () => {
+  it('ignores the root flag alone (Lexical 0.53 dirties root on every update)', () => {
     const dirtyElements = new Map<NodeKey, boolean>([['root', true]])
     expect(resolveDragMarkerRefresh(dirtyElements, editor.getEditorState())).toBe(false)
   })

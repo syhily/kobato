@@ -232,7 +232,7 @@ describe('the registered renumber scan', () => {
 
   // Registration precedes content — the production order (the plugin mounts
   // with the composer) and the order every other test here uses. Registering
-  // a transform on an ALREADY non-empty editor makes Lexical 0.46 schedule a
+  // a transform on an ALREADY non-empty editor makes Lexical 0.53 schedule a
   // 'history-merge'-tagged mark-dirty commit as a microtask, and a
   // synchronous edit in between inherits the tag and gets gate-skipped
   // (upstream quirk; RestrictContentPlugin's RootNode transform has it too).

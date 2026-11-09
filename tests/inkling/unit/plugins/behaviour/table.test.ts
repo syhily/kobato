@@ -36,7 +36,7 @@ function createTestEditor(): LexicalEditor {
   return editor
 }
 
-// 0.46 defers the commit of a plain editor.update() to a microtask; discrete
+// 0.53 defers the commit of a plain editor.update() to a microtask; discrete
 // updates commit synchronously, so assertions can read right after.
 function commit(editor: LexicalEditor, mutate: () => void) {
   editor.update(mutate, { discrete: true })

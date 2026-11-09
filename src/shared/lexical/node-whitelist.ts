@@ -7,9 +7,8 @@
 // Every type string was verified against the node class that serializes it
 // (source cited per entry). Two families:
 //
-// - Upstream Lexical 0.46 (`lexical` / `@lexical/*` — the whole lexical
-//   family is pinned at 0.46.0 by inkling; verified against the installed
-//   dist bundles and .d.ts files under node_modules).
+// - Upstream Lexical 0.53 (`lexical` / `@lexical/*`; verified against the
+//   installed dist bundles and .d.ts files under node_modules).
 // - inkling node classes (src/inkling/nodes/**). inkling's three
 //   extended nodes REPLACE their upstream base via Lexical's node
 //   replacement mechanism (src/nodes/base/nodes/extended-node-pairs.ts) and

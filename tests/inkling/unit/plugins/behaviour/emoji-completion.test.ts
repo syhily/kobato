@@ -59,7 +59,7 @@ function createTestEditor() {
   })
 }
 
-// Lexical 0.46 commits listener-triggered work on microtasks — a macrotask
+// Lexical 0.53 commits listener-triggered work on microtasks — a macrotask
 // wait (tick) drains the search promise and the completion update.
 
 // Emulates the browser-side format sync Lexical does when reconciling the

@@ -132,7 +132,7 @@ describe('registerModifierCommand', () => {
       appendParagraphWithCaret(editor, 'hello')
 
       editor.dispatchCommand(KEY_DOWN_COMMAND, keyEvent({ key: '3', ctrlKey: true, altKey: true }))
-      // Lexical 0.46 commits updates on a microtask — tick() drains the queue
+      // Lexical 0.53 commits updates on a microtask — tick() drains the queue
       // after each dispatch so state assertions see the settled editor
       await tick()
 

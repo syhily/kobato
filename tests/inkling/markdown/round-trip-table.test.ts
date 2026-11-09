@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { lexicalStateToMarkdown, markdownToLexicalState } from '@/inkling/markdown/round-trip'
 
 // The dialect speaks GFM pipe tables through the hand-written GFM_TABLE
-// transformer (round-trip.ts) — @lexical/markdown 0.46 has no upstream TABLE
+// transformer (round-trip.ts) — @lexical/markdown 0.53 has no upstream TABLE
 // transformer. Cells are inline-only by construction: cell markdown converts
 // through the dialect's minimal inline set on import.
 describe('Markdown round-trip: GFM tables', function () {

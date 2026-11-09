@@ -47,7 +47,7 @@ function createTestEditor(): LexicalEditor {
   })
 }
 
-// Lexical 0.46 commits updates on a microtask, and listener-triggered
+// Lexical 0.53 commits updates on a microtask, and listener-triggered
 // cascade updates defer again — the harness's drainEnqueuedUpdates drains
 // the whole queue so assertions see the settled state.
 

@@ -276,7 +276,7 @@ describe('autoOpenOnInsert', () => {
 
     const request = store.getState().request
     expect(request?.nodeType).toBe('pickerWidget')
-    // Lexical 0.46 commits the insert on a microtask — drain before reading
+    // Lexical 0.53 commits the insert on a microtask — drain before reading
     await tick()
     // the node landed under the request's key — the pick write resolves it
     editor.getEditorState().read(() => {
@@ -496,7 +496,7 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     })
     await act(async () => {
       editor.dispatchCommand(resolveCardInsertCommand('pickerWidget'), {})
-      // Lexical 0.46 commits the insert on a microtask — drain before reading
+      // Lexical 0.53 commits the insert on a microtask — drain before reading
       await tick()
     })
     const request = pickerStore.getState().request
@@ -528,7 +528,7 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     const nodeKey = await insertWithAutoOpen()
 
     // the write seam's mergeHistory option applies Lexical's HISTORY_MERGE_TAG
-    // (the block body matters: Lexical 0.46 treats a listener's return value
+    // (the block body matters: Lexical 0.53 treats a listener's return value
     // as a cleanup registration — an expression body returning push()'s
     // length would break the next commit)
     const seenTags: string[][] = []
