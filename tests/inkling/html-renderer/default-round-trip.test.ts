@@ -111,8 +111,17 @@ describe('default import-to-render round trip', function () {
     const onError = vi.fn()
     const state = `{"root":{"children":[{"type":"definitely-not-registered","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`
 
-    await expect(lexicalStateToHtml(state, { dom, onError })).rejects.toThrow()
+    // Lexical 0.53's parseEditorState recovers from a parse failure (the
+    // error goes to onError, the empty state commits cleanly), so a
+    // non-throwing handler degrades to empty output; a throwing handler
+    // (the server projection's failFast) keeps the fail-fast contract.
+    await expect(lexicalStateToHtml(state, { dom, onError })).resolves.toBe('')
     expect(onError).toHaveBeenCalled()
+
+    const failFast = (error: Error): never => {
+      throw error
+    }
+    await expect(lexicalStateToHtml(state, { dom, onError: failFast })).rejects.toThrow()
   })
 
   it('does not mutate the shared default node array across render() calls', async function () {

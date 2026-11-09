@@ -1,4 +1,4 @@
-import type { LexicalCommand, LexicalEditor, LexicalNode, NodeKey } from 'lexical'
+import type { AnyLexicalCommand, LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 import type { ComponentType, ReactNode, SVGProps } from 'react'
 
 import type {
@@ -26,7 +26,7 @@ import type { CardFencePayload } from '@/inkling/nodes/cards/card-markdown-trans
  */
 export type HostCardMenuEntrySpec = Omit<CardMenuEntrySpec, 'icon' | 'command'> & {
   icon: CardIconId | ComponentType<SVGProps<SVGSVGElement>>
-  command: CardMenuCommand | LexicalCommand<unknown>
+  command: CardMenuCommand | AnyLexicalCommand
 }
 
 /**

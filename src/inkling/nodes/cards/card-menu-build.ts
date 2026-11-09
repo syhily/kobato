@@ -1,4 +1,4 @@
-import type { LexicalCommand } from 'lexical'
+import type { AnyLexicalCommand } from 'lexical'
 
 import type {
   GifSettings,
@@ -19,7 +19,7 @@ interface MenuItemBase {
   labelKey?: string
   desc?: string
   Icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  insertCommand?: LexicalCommand<unknown>
+  insertCommand?: AnyLexicalCommand
   matches?: ((query: string, label: string) => boolean) | string[]
   priority?: number
   shortcut?: string

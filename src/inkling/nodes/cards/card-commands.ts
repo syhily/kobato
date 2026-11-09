@@ -1,4 +1,4 @@
-import type { LexicalCommand } from 'lexical'
+import type { AnyLexicalCommand } from 'lexical'
 
 import { createCommand } from 'lexical'
 
@@ -158,7 +158,7 @@ const BUILTIN_INSERT_COMMANDS = {
   math: INSERT_MATH_COMMAND,
   toggle: INSERT_TOGGLE_COMMAND,
   video: INSERT_VIDEO_COMMAND,
-} satisfies Record<Exclude<CardNodeType, 'footnotedefinition'>, LexicalCommand<unknown>>
+} satisfies Record<Exclude<CardNodeType, 'footnotedefinition'>, AnyLexicalCommand>
 
 /**
  * The named non-insert menu commands (`CardMenuCommand` minus `'insert'`) —
@@ -166,7 +166,7 @@ const BUILTIN_INSERT_COMMANDS = {
  * over the name union so a new named extra fails typecheck until its command
  * joins.
  */
-const NAMED_MENU_COMMANDS: Record<Exclude<CardMenuCommand, 'insert'>, LexicalCommand<unknown>> = {
+const NAMED_MENU_COMMANDS: Record<Exclude<CardMenuCommand, 'insert'>, AnyLexicalCommand> = {
   openGifSelector: OPEN_GIF_SELECTOR_COMMAND,
   openImageLibrary: OPEN_IMAGE_LIBRARY_COMMAND,
 }
@@ -176,7 +176,7 @@ const NAMED_MENU_COMMANDS: Record<Exclude<CardMenuCommand, 'insert'>, LexicalCom
 // level, before their composer mounts). Memoization is what makes menu
 // dispatch and command registration name the same object: every consumer
 // resolves through the function below.
-const hostInsertCommands = new Map<string, LexicalCommand<unknown>>()
+const hostInsertCommands = new Map<string, AnyLexicalCommand>()
 
 /**
  * Resolves a card's insert command by node type: a built-in card answers
@@ -187,8 +187,8 @@ const hostInsertCommands = new Map<string, LexicalCommand<unknown>>()
  * so a card's menu dispatch and its command registration always name the
  * same object.
  */
-export function resolveCardInsertCommand(nodeType: string): LexicalCommand<unknown> {
-  const builtin = (BUILTIN_INSERT_COMMANDS as Partial<Record<string, LexicalCommand<unknown>>>)[nodeType]
+export function resolveCardInsertCommand(nodeType: string): AnyLexicalCommand {
+  const builtin = (BUILTIN_INSERT_COMMANDS as Partial<Record<string, AnyLexicalCommand>>)[nodeType]
   if (builtin !== undefined) {
     return builtin
   }
@@ -205,6 +205,6 @@ export function resolveCardInsertCommand(nodeType: string): LexicalCommand<unkno
  * object: `'insert'` names the entry's own card insert command (derived from
  * the card's node type); the extras name the Image card's selector commands.
  */
-export function resolveCardMenuCommand(command: CardMenuCommand, nodeType: string): LexicalCommand<unknown> {
+export function resolveCardMenuCommand(command: CardMenuCommand, nodeType: string): AnyLexicalCommand {
   return command === 'insert' ? resolveCardInsertCommand(nodeType) : NAMED_MENU_COMMANDS[command]
 }

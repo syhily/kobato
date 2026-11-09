@@ -4,7 +4,7 @@
 
 - `src/inkling/` is kobato's rich-text editor layer — the squashed inkling snapshot at 601961b0
   (formerly the `@inkling/editor` workspace package in `packages/inkling`), dissolved into the app
-  tree. Lexical-based, React 19, TypeScript, Lexical 0.46.
+  tree. Lexical-based, React 19, TypeScript, Lexical 0.53.
 - The layer stays host-agnostic: it imports nothing from kobato's other layers. The rest of the app
   consumes it ONLY through two entry surfaces, pinned by
   `tests/unit/shared/contracts/boundaries.test.ts`:
@@ -248,7 +248,7 @@ pnpm demo            # vite demo — the standalone demo app (not part of the ty
   state through a tree-direct transformer
   (`src/inkling/html/renderer/transformers/element/table.ts`: header cell ⇔ `<th>`), while the GFM
   pipe-table transformer in `src/inkling/markdown/round-trip.ts` forges row 0 as the header
-  (hand-written because `@lexical/markdown` 0.46 ships no TABLE transformer).
+  (hand-written because `@lexical/markdown` 0.53 still ships no TABLE transformer).
 - The footnote pair is a TextNode entity plus a menu-less card on the declaration pipeline.
   `FootnoteRefNode` (`src/inkling/nodes/footnote/FootnoteRefNode.ts`) is a TextNode entity (TKNode
   precedent: `isTextEntity()` + the `canInsertText*` pair) whose visible text IS the 1-based

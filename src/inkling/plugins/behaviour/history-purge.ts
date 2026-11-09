@@ -40,6 +40,8 @@ export function purgeDeadEditorHistoryEntries(historyState: HistoryState, liveEd
     historyState.current = { editor: liveEditor, editorState: liveEditor.getEditorState() }
   }
 
+  // oxlint-disable-next-line typescript/no-deprecated -- the signal replacement lives on HistoryExtension (extension API); the plugin-pattern registerHistory itself still dispatches these commands, so toolbar state syncs through them
   liveEditor.dispatchCommand(CAN_UNDO_COMMAND, historyState.undoStack.length > 0)
+  // oxlint-disable-next-line typescript/no-deprecated -- see the note above
   liveEditor.dispatchCommand(CAN_REDO_COMMAND, historyState.redoStack.length > 0)
 }

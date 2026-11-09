@@ -1,3 +1,5 @@
+import type { AnyLexicalCommand } from 'lexical'
+
 import {
   createEditor,
   KEY_ARROW_DOWN_COMMAND,
@@ -47,7 +49,7 @@ describe('registerMenuKeyboardNavigation', () => {
     teardown = null
   })
 
-  function key(command: typeof KEY_ARROW_DOWN_COMMAND, keyName: string): KeyboardEvent {
+  function key(command: AnyLexicalCommand, keyName: string): KeyboardEvent {
     // cancelable: true so preventDefault() sets defaultPrevented (jsdom's
     // KeyboardEvent is non-cancelable by default)
     return new KeyboardEvent('keydown', { key: keyName, cancelable: true })

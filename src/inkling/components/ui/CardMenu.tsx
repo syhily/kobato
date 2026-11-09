@@ -1,4 +1,4 @@
-import type { LexicalCommand } from 'lexical'
+import type { AnyLexicalCommand } from 'lexical'
 
 import React from 'react'
 
@@ -248,7 +248,7 @@ export interface CardMenuProps {
    * matching buildCardMenu's `items` ordering. */
   sections?: CardMenuSectionData[]
   insert?: (
-    insertCommand?: LexicalCommand<unknown>,
+    insertCommand?: AnyLexicalCommand,
     params?: { insertParams?: Record<string, unknown>; queryParams?: string[] },
   ) => void
   selectedItemIndex?: number

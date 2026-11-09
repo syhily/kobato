@@ -1,4 +1,4 @@
-import type { Klass, LexicalCommand, LexicalEditor, LexicalNode } from 'lexical'
+import type { AnyLexicalCommand, Klass, LexicalEditor, LexicalNode } from 'lexical'
 
 import { renderHook } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, COMMAND_PRIORITY_CRITICAL } from 'lexical'
@@ -60,7 +60,7 @@ function captureInsertCard(editor: LexicalEditor) {
 interface MatrixRow {
   card: string
   node: Klass<LexicalNode>
-  command: LexicalCommand<unknown>
+  command: AnyLexicalCommand
   dataset: unknown
   openInEditMode: boolean
   requiresRangeSelection?: boolean

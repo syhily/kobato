@@ -52,8 +52,22 @@ export function updateEditor(
   updateFn: () => void,
   options?: EditorUpdateOptions,
 ): Promise<void> {
-  return new Promise<void>((resolve) => {
-    editor.update(updateFn, { ...options, onUpdate: () => resolve() })
+  return new Promise<void>((resolve, reject) => {
+    editor.update(
+      () => {
+        try {
+          updateFn()
+        } catch (error) {
+          // Lexical routes an updateFn throw to onError (often a no-op in
+          // tests), and 0.52+ drops the pending update so onUpdate never
+          // fires — reject so the spec fails fast with the real error
+          // instead of hanging to the timeout.
+          reject(error)
+          throw error
+        }
+      },
+      { ...options, onUpdate: () => resolve() },
+    )
   })
 }
 

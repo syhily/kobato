@@ -9,11 +9,6 @@ import { $isTextNode, TextNode } from 'lexical'
 //
 // https://lexical.dev/docs/concepts/serialization#handling-extended-html-styling
 
-export const extendedTextNodeReplacement = {
-  replace: TextNode,
-  with: (node: TextNode) => new ExtendedTextNode(node.__text),
-}
-
 export class ExtendedTextNode extends TextNode {
   static getType() {
     return 'extended-text'
@@ -24,7 +19,8 @@ export class ExtendedTextNode extends TextNode {
   }
 
   static importDOM() {
-    const importers = TextNode.importDOM()
+    // Optional since the $config() protocol port (see ExtendedHeadingNode).
+    const importers = TextNode.importDOM?.()
     return {
       ...importers,
       span: () => ({
@@ -51,6 +47,12 @@ export class ExtendedTextNode extends TextNode {
   isInline(): true {
     return true
   }
+}
+
+export const extendedTextNodeReplacement = {
+  replace: TextNode,
+  with: (node: TextNode) => new ExtendedTextNode(node.__text),
+  withKlass: ExtendedTextNode,
 }
 
 type DOMConverterFn = ((node: HTMLElement) => DOMConversion | null) | undefined

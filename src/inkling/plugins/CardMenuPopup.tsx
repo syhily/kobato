@@ -1,4 +1,4 @@
-import type { LexicalCommand, LexicalEditor } from 'lexical'
+import type { AnyLexicalCommand, LexicalEditor } from 'lexical'
 
 import { $setSelection } from 'lexical'
 import React from 'react'
@@ -201,7 +201,7 @@ export function CardMenuPopup({
   // is the single type-erased adapter both trigger syntaxes dispatch through
   const insert = React.useCallback(
     (
-      insertCommand: LexicalCommand<unknown> | undefined,
+      insertCommand: AnyLexicalCommand | undefined,
       params: { insertParams?: Record<string, unknown>; queryParams?: string[] } = {},
     ): void => {
       // a menu item without an insert command has nothing to dispatch

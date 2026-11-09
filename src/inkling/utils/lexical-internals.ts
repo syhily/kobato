@@ -1,6 +1,6 @@
 import type { EditorThemeClasses, Klass, LexicalEditor, LexicalNode } from 'lexical'
 
-// Minimal structural view of Lexical editor internals. Verified against Lexical 0.46
+// Minimal structural view of Lexical editor internals. Verified against Lexical 0.53
 // (node_modules/lexical/dist/LexicalEditor.d.ts). Public alternatives checked:
 // - editor.isEditable() exists for editability, but no public parent-editor accessor.
 // - hasNode/hasNodes/getRegisteredNode exist, but require already knowing the class;

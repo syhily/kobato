@@ -1,5 +1,6 @@
 import { createHeadlessEditor } from '@lexical/headless'
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -61,7 +62,8 @@ describe('$isAtStartOfDocument', () => {
       paragraph.append($createTextNode('Hello'))
       root.append(paragraph)
 
-      const nodeSelection = paragraph.select()
+      const nodeSelection = $createNodeSelection()
+      nodeSelection.add(paragraph.getKey())
       $setSelection(nodeSelection)
 
       expect($isAtStartOfDocument(nodeSelection)).toBe(true)

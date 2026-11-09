@@ -98,6 +98,7 @@ export class MathInlineNode extends DecoratorNode<null> {
     return {
       ...super.exportJSON(),
       type: 'math-inline',
+      // oxlint-disable-next-line typescript/no-deprecated -- persisted payloads carry version; a live export still emits it
       version: 1,
       tex: this.__tex,
       mathml: this.__mathml,

@@ -16,12 +16,15 @@ const options = {
 // Serialized Lexical JSON nodes have varying shapes depending on node type.
 // Extend SerializedElementNode with recursive children and an index signature
 // for type-specific properties (tag, listType, url, src, text) from subclasses.
-interface NodeJSON extends SerializedElementNode<NodeJSON> {
+type NodeJSON = SerializedElementNode & {
+  children: NodeJSON[]
   [key: string]: unknown
 }
 
-function htmlToLexical(html: string, opts?: Parameters<typeof importWithDom>[1]): SerializedEditorState<NodeJSON> {
-  return importWithDom(html, opts) as SerializedEditorState<NodeJSON>
+type EditorStateJSON = Omit<SerializedEditorState, 'root'> & { root: NodeJSON }
+
+function htmlToLexical(html: string, opts?: Parameters<typeof importWithDom>[1]): EditorStateJSON {
+  return importWithDom(html, opts) as EditorStateJSON
 }
 
 describe('HTMLtoLexical', function () {

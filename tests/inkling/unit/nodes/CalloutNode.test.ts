@@ -55,10 +55,12 @@ describe('CalloutNode', () => {
         () => {
           const root = $getRoot()
           root.clear()
-          const paragraph = root.append($createParagraphNode())
+          const paragraph = $createParagraphNode()
           paragraph.append($createTextNode('Callout body'))
+          root.append(paragraph)
         },
-        { onUpdate: () => {} },
+        // discrete: the exportJSON below reads the committed state synchronously (0.52+ defers non-discrete commits)
+        { discrete: true },
       )
 
       const json = node.exportJSON() as Record<string, unknown>

@@ -13,10 +13,13 @@ export function attachCaptionEditorWithText(node: { __captionEditor: LexicalEdit
     () => {
       const root = $getRoot()
       root.clear()
-      const paragraph = root.append($createParagraphNode())
+      const paragraph = $createParagraphNode()
       paragraph.append($createTextNode(text))
+      root.append(paragraph)
     },
-    { onUpdate: () => {} },
+    // discrete: 0.52+ commits non-discrete updates on a microtask, and the
+    // specs read the committed state via exportJSON synchronously below
+    { discrete: true },
   )
   node.__captionEditor = captionEditor
 }

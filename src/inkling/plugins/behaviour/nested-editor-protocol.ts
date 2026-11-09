@@ -16,8 +16,8 @@
 //   Writers: `InklingNestedEditorPlugin.tsx`, `InklingCaptionEditor.tsx`.
 //   Readers: `keyboard-navigation/selection-extension.ts`, `keyboard-navigation/enter.ts`.
 //
-// - Typeahead presence. Lexical 0.46.0 added `commandPriority` to typeahead
-//   menus, but the project's menus still register at the default
+// - Typeahead presence. Lexical's typeahead menus accept a `commandPriority`,
+//   but the project's menus still register at the default
 //   COMMAND_PRIORITY_LOW, so an open menu cannot pre-empt the nested editors'
 //   own Enter/Arrow handlers by priority. Until menus register higher, those
 //   handlers must bail out when a menu is open, and `isTypeaheadMenuOpen` is

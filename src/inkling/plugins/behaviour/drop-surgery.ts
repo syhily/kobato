@@ -238,7 +238,7 @@ export function $removeDropSource(nodeKey: NodeKey | undefined): boolean {
  * ancestors as dirty *parents* (flag false), so per-keystroke updates skip
  * the refresh; a direct root child being intentionally dirty (cloned) means
  * a block was added, removed, reordered, or re-rendered — and the
- * reconciler recreates its DOM. Lexical 0.46 marks the root itself
+ * reconciler recreates its DOM. Lexical marks the root itself
  * intentionally dirty on every update ($applyAllTransforms), so the root's
  * own flag is ignored. The plugin additionally forces a refresh on drag
  * start as a final safety net.

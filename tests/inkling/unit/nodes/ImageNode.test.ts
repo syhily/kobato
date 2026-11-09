@@ -50,14 +50,17 @@ describe('ImageNode', () => {
     })
   })
 
-  it('guards against a missing editor when exporting caption JSON', async () => {
+  // the constructor always creates and populates the nested caption editor,
+  // so export re-serializes a raw caption string into normalized caption HTML
+  // (the image spec's cleanBasicHtml keeps only the first child's inner content)
+  it('re-serializes a raw caption through the nested caption editor on export', async () => {
     await updateEditor(editor, () => {
       const imageNode = $createImageNode({ src: '/image.png', caption: 'A caption' })
       const json = imageNode.exportJSON()
       if (!('caption' in json)) {
         throw new Error('Expected serialized image to include caption')
       }
-      expect(json.caption).toBe('A caption')
+      expect(json.caption).toBe('<span style="white-space: pre-wrap;">A caption</span>')
     })
   })
 

@@ -1,4 +1,4 @@
-import type { LexicalCommand, LexicalEditor } from 'lexical'
+import type { AnyLexicalCommand, LexicalEditor } from 'lexical'
 
 import { TableNode } from '@lexical/table'
 import React from 'react'
@@ -24,7 +24,7 @@ import { $swapTriggerParagraph } from '@/inkling/plugins/behaviour/card-menu-tri
 
 export type CardMenuInsertParams = Pick<ResolvedMenuItem, 'insertParams' | 'queryParams'>
 
-export type CardMenuInsert = (insertCommand: LexicalCommand<unknown>, params?: CardMenuInsertParams) => void
+export type CardMenuInsert = (insertCommand: AnyLexicalCommand, params?: CardMenuInsertParams) => void
 
 export interface UseCardMenuOptions {
   /** Typed `/card param` values, merged into the dispatch dataset under the

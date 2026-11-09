@@ -137,12 +137,20 @@ describe('InklingSurface', () => {
     expect(nestedSharedState).toBeDefined()
     expect(nestedSharedState!.historyState).toBe(topSharedState!.historyState)
 
-    await setText(nestedEditor, 'nested content edited')
+    await setText(nestedEditor, 'first edit')
+    await setText(nestedEditor, 'second edit')
 
-    // the nested edit landed on the shared (top-level) undo stack
+    // the nested edits landed on the shared (top-level) undo stack
     const undoStack = topSharedState!.historyState.undoStack as { editor: LexicalEditor }[]
-    expect(undoStack.length).toBeGreaterThan(0)
-    expect(undoStack.at(-1)!.editor).toBe(nestedEditor)
+    expect(undoStack.some((entry) => entry.editor === nestedEditor)).toBe(true)
+
+    // one undo stack for the whole surface: a top-level undo retracts the nested edit
+    act(() => {
+      topEditor!.dispatchCommand(UNDO_COMMAND, undefined)
+    })
+    await waitFor(() => {
+      expect(getText(nestedEditor)).toBe('first edit')
+    })
   })
 
   it('falls back to per-instance history states when composed without a surface', async () => {

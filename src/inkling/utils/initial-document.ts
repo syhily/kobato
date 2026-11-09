@@ -36,6 +36,7 @@ const FULL_EMPTY_PARAGRAPH: SerializedParagraphNode = {
   textFormat: 0,
   textStyle: '',
   type: 'paragraph',
+  // oxlint-disable-next-line typescript/no-deprecated -- persisted payloads carry version and a live export still emits it; dropping it changes the stored shape
   version: 1,
 }
 
@@ -58,6 +59,7 @@ export const MINIMAL_DOCUMENT: SerializedEditorState = {
     format: '',
     indent: 0,
     type: 'root',
+    // oxlint-disable-next-line typescript/no-deprecated -- see the note on FULL_EMPTY_PARAGRAPH
     version: 1,
   },
 }

@@ -8,7 +8,7 @@
  * This function copies inherited methods as own properties so Lexical's
  * validation passes without warnings.
  *
- * Lexical checks (still present in the shipped Lexical 0.46:
+ * Lexical checks (still present in the shipped Lexical 0.53:
  * `hasOwnStaticMethod` → `hasOwn(klass, k)` in Lexical.dev.js):
  * - `klass.hasOwnProperty('getType')`  — static
  * - `klass.hasOwnProperty('clone')`    — static

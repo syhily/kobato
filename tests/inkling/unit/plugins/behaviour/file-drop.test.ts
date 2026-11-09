@@ -46,7 +46,7 @@ function createFile(name: string, type: string): File {
 describe('file drop', () => {
   let editor: LexicalEditor
   let rootElement: HTMLElement
-  let mediaClaims: Array<{ type: string; file: File }>
+  let mediaClaims: Array<{ type: string | undefined; file: File }>
 
   beforeEach(() => {
     selectionMock.forceNull = false
@@ -66,7 +66,7 @@ describe('file drop', () => {
     mediaClaims = []
     editor.registerCommand(
       INSERT_MEDIA_COMMAND,
-      (payload: { type: string; file: File }) => {
+      (payload: { type: string | undefined; file: File }) => {
         mediaClaims.push(payload)
         return true
       },

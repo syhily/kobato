@@ -8,5 +8,10 @@ import { htmlToLexical as importWithDom, type htmlToLexicalOptions } from '@/ink
 const dom = createTestDom()
 
 export function htmlToLexical(html: string, options?: Omit<htmlToLexicalOptions, 'dom'>) {
-  return importWithDom(html, { ...options, dom })
+  const state = importWithDom(html, { ...options, dom })
+  // Normalize through the persisted form: Lexical 0.51+ schema-driven export
+  // leaves undefined-valued keys on the plain object (e.g. root textFormat),
+  // which JSON.stringify drops — the strict deep-equal fixtures compare
+  // against the persisted shape.
+  return JSON.parse(JSON.stringify(state)) as ReturnType<typeof importWithDom>
 }

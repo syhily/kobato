@@ -183,6 +183,7 @@ const InklingComposerBase = ({
   )
 
   return (
+    // oxlint-disable-next-line typescript/no-deprecated -- the LexicalExtensionComposer migration is a deliberate follow-up: the whole plugin surface (CORE_PLUGINS/DEFAULT_FEATURE_PLUGINS) is built on the legacy plugin pattern, so the composer moves last, not first
     <LexicalComposer initialConfig={initialConfig}>
       <ComposerHandlesProvider>
         <InklingHostIntegrationProvider value={hostIntegrationValue}>

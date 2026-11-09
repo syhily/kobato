@@ -14,11 +14,6 @@ const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const satisfies rea
 //
 // https://lexical.dev/docs/concepts/serialization#handling-extended-html-styling
 
-export const extendedHeadingNodeReplacement = {
-  replace: HeadingNode,
-  with: (node: HeadingNode) => new ExtendedHeadingNode(node.__tag),
-}
-
 export class ExtendedHeadingNode extends HeadingNode {
   static getType() {
     return 'extended-heading'
@@ -29,7 +24,9 @@ export class ExtendedHeadingNode extends HeadingNode {
   }
 
   static importDOM() {
-    const importers = HeadingNode.importDOM()
+    // Optional since the $config() protocol port: the runtime still synthesizes
+    // the base importer, but the static is typed as possibly absent.
+    const importers = HeadingNode.importDOM?.()
     return {
       ...importers,
       p: patchParagraphConversion(importers?.p),
@@ -49,6 +46,12 @@ export class ExtendedHeadingNode extends HeadingNode {
     json.type = 'extended-heading'
     return json
   }
+}
+
+export const extendedHeadingNodeReplacement = {
+  replace: HeadingNode,
+  with: (node: HeadingNode) => new ExtendedHeadingNode(node.__tag),
+  withKlass: ExtendedHeadingNode,
 }
 
 type DOMConverterFn = ((node: HTMLElement) => DOMConversion | null) | undefined

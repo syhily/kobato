@@ -66,11 +66,13 @@ describe('BookmarkNode', () => {
     })
   })
 
-  it('exports raw caption when no caption editor exists', async () => {
+  // the constructor always creates and populates the nested caption editor,
+  // so export re-serializes a raw caption string into normalized caption HTML
+  it('re-serializes a raw caption through the nested caption editor on export', async () => {
     await updateEditor(editor, () => {
       const node = $createBookmarkNode({ caption: 'Raw caption' })
       const json = node.exportJSON()
-      expect(json.caption).toBe('Raw caption')
+      expect(json.caption).toBe('<p><span style="white-space: pre-wrap;">Raw caption</span></p>')
     })
   })
 })

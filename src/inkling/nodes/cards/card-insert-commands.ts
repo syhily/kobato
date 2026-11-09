@@ -1,4 +1,4 @@
-import type { Klass, LexicalCommand, LexicalNode } from 'lexical'
+import type { AnyLexicalCommand, Klass, LexicalNode } from 'lexical'
 
 import type { CardInsertSpec } from '@/inkling/nodes/cards/card-declaration'
 
@@ -10,7 +10,7 @@ import { CARD_WRAPPER_NODES } from '@/inkling/nodes/cards/card-wrappers'
 export interface CardInsertRegistration {
   nodeType: string
   node: Klass<LexicalNode>
-  command: LexicalCommand<unknown>
+  command: AnyLexicalCommand
   insert: CardInsertSpec
   /**
    * Host cards whose picker spec carries `autoOpenOnInsert` (CONTEXT.md:

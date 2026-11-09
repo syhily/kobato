@@ -389,7 +389,6 @@ describe('HTMLtoLexical: Google Docs', function () {
           {
             children: [
               {
-                checked: undefined,
                 children: [
                   {
                     detail: 0,
@@ -409,7 +408,6 @@ describe('HTMLtoLexical: Google Docs', function () {
                 value: 1,
               },
               {
-                checked: undefined,
                 children: [
                   {
                     detail: 0,

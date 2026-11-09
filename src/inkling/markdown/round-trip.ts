@@ -138,7 +138,7 @@ const CODE_FENCE: MultilineElementTransformer = {
   type: 'multiline-element',
 }
 
-// GFM pipe-table transformer, hand-written: @lexical/markdown 0.46 ships no
+// GFM pipe-table transformer, hand-written: @lexical/markdown 0.53 still ships no
 // upstream TABLE transformer — only the row/divider regexes that
 // normalizeMarkdown uses. Import claims a header row only when a divider
 // line follows it (otherwise the line stays a literal paragraph); cell

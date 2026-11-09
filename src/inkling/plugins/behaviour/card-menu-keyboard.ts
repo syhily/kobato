@@ -50,7 +50,7 @@ export function registerMenuKeyboardNavigation(editor: LexicalEditor, ports: Men
     return true
   }
 
-  const enter = (event: KeyboardEvent) => {
+  const enter = (event: KeyboardEvent | null) => {
     if (!ports.isOpen()) {
       return false
     }
@@ -58,7 +58,7 @@ export function registerMenuKeyboardNavigation(editor: LexicalEditor, ports: Men
     if (item?.insertCommand) {
       ports.onSelect(item)
     }
-    event.preventDefault()
+    event?.preventDefault()
     return true
   }
 

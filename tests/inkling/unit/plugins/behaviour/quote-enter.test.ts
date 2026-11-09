@@ -30,7 +30,7 @@ function editorWithQuoteEnter(): LexicalEditor {
 }
 
 function dispatchEnter(editor: LexicalEditor, init: KeyboardEventInit = {}): Promise<boolean> {
-  const command: LexicalCommand<KeyboardEvent> = KEY_ENTER_COMMAND
+  const command: LexicalCommand<KeyboardEvent | null> = KEY_ENTER_COMMAND
   return new Promise((resolve) => {
     let result = false
     editor.update(

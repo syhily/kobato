@@ -52,10 +52,11 @@ describe('ToggleNode', () => {
           () => {
             const root = $getRoot()
             root.clear()
-            const paragraph = root.append($createParagraphNode())
+            const paragraph = $createParagraphNode()
             paragraph.append($createTextNode('Text'))
+            root.append(paragraph)
           },
-          { onUpdate: () => {} },
+          { discrete: true },
         )
         return nested
       }

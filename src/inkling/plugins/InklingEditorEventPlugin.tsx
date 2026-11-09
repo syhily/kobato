@@ -1,4 +1,4 @@
-import type { LexicalCommand } from 'lexical'
+import type { AnyLexicalCommand } from 'lexical'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { COMMAND_PRIORITY_EDITOR } from 'lexical'
@@ -12,7 +12,7 @@ export const InklingEditorEventPlugin = ({
   command,
   onEvent,
 }: {
-  command: LexicalCommand<unknown>
+  command: AnyLexicalCommand
   onEvent?: () => void
 }) => {
   const [editor] = useLexicalComposerContext()

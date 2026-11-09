@@ -12,8 +12,6 @@ import { $createLineBreakNode, $isParagraphNode, $setFormatFromDOM } from 'lexic
 //
 // https://lexical.dev/docs/concepts/serialization#handling-extended-html-styling
 
-export const extendedQuoteNodeReplacement = { replace: QuoteNode, with: () => new ExtendedQuoteNode() }
-
 export class ExtendedQuoteNode extends QuoteNode {
   static getType() {
     return 'extended-quote'
@@ -24,7 +22,8 @@ export class ExtendedQuoteNode extends QuoteNode {
   }
 
   static importDOM() {
-    const importers = QuoteNode.importDOM()
+    // Optional since the $config() protocol port (see ExtendedHeadingNode).
+    const importers = QuoteNode.importDOM?.()
     return {
       ...importers,
       blockquote: convertBlockquoteElement,
@@ -49,6 +48,12 @@ export class ExtendedQuoteNode extends QuoteNode {
     return true
   }
   /* c8 ignore end */
+}
+
+export const extendedQuoteNodeReplacement = {
+  replace: QuoteNode,
+  with: () => new ExtendedQuoteNode(),
+  withKlass: ExtendedQuoteNode,
 }
 
 function convertBlockquoteElement() {
