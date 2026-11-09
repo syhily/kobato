@@ -4,7 +4,7 @@ import { ARTICLE_LIST_MAX_DEPTH, lexicalEditorStateSchema, MAX_TREE_DEPTH } from
 
 // Fixtures pin the storage wire shape the inkling composer produces —
 // element nodes always carry children/direction/format/indent, text nodes
-// carry detail/format/mode/style/text (lexical 0.46 exporters).
+// carry detail/format/mode/style/text (lexical 0.53 exporters).
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }
@@ -140,11 +140,13 @@ describe('lexicalEditorStateSchema', () => {
     expect(lexicalEditorStateSchema.safeParse({ root: null }).success).toBe(false)
     expect(lexicalEditorStateSchema.safeParse({ root: element('paragraph') }).success).toBe(false)
     expect(lexicalEditorStateSchema.safeParse({ root: { type: 'root', version: 1, children: {} } }).success).toBe(false)
-    // node missing required fields
+    // node missing required fields (children is never a serializer default)
     expect(lexicalEditorStateSchema.safeParse(state([{ type: 'paragraph' }])).success).toBe(false)
+    // a compact-dialect paragraph (serializer-default keys omitted) heals —
+    // src/shared/lexical/dialect.ts
     expect(
       lexicalEditorStateSchema.safeParse(state([{ type: 'paragraph', version: 1, children: [], indent: 0 }])).success,
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it('validates the shared text-node fields', () => {
@@ -155,9 +157,12 @@ describe('lexicalEditorStateSchema', () => {
     expect(
       lexicalEditorStateSchema.safeParse(state([element('paragraph', [text('x', { detail: 'bold' })])])).success,
     ).toBe(false)
-    // missing `style`
+    // missing `text` — not a serializer default, nothing heals it
+    const { text: _text, ...noText } = text('x')
+    expect(lexicalEditorStateSchema.safeParse(state([element('paragraph', [noText])])).success).toBe(false)
+    // missing serializer-default keys heal (the compact storage dialect)
     const { style: _style, ...noStyle } = text('x')
-    expect(lexicalEditorStateSchema.safeParse(state([element('paragraph', [noStyle])])).success).toBe(false)
+    expect(lexicalEditorStateSchema.safeParse(state([element('paragraph', [noStyle])])).success).toBe(true)
   })
 
   it('refines link urls through the safe-url policy', () => {

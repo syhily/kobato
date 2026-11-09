@@ -16,6 +16,7 @@ import {
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
+import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Real repo layer (repo assertions read table state); the entity adapter
@@ -603,6 +604,39 @@ describe('content/lifecycle — KobatoImage closed loop (R11)', () => {
     expect(rows[0]!.bodyHtml).toContain('solution-begin')
     expect(rows[0]!.bodyText).toContain('cover')
     expect(rows[0]!.bodyHtmlFeed).not.toBeNull()
+  })
+})
+
+describe('content/lifecycle — compact storage dialect', () => {
+  it('persists the body in the compact dialect and heals it through the schema', async () => {
+    const meta = await seedPost()
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+
+    const result = await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+      'draft',
+    )
+
+    expect(result.status).toBe('saved')
+    const rows = await revisionsOf(meta.id)
+    expect(rows).toHaveLength(1)
+
+    // The stored row omits the serializer-default keys (the fixture roots at
+    // direction 'ltr' — a non-default value, so it stays)…
+    const stored = unsafeCast<{ root: Record<string, unknown> }>(rows[0]!.body)
+    expect(stored.root).not.toHaveProperty('version')
+    expect(stored.root).not.toHaveProperty('format')
+    const paragraph = (stored.root.children as Record<string, unknown>[])[0]!
+    expect(paragraph).not.toHaveProperty('version')
+    expect(paragraph).not.toHaveProperty('indent')
+    expect((paragraph.children as Record<string, unknown>[])[0]).not.toHaveProperty('detail')
+
+    // …and the schema's normalize preprocess heals it back to the full
+    // dialect, so the save no-op short-circuit and revision DTOs are
+    // dialect-blind.
+    expect(lexicalEditorStateSchema.parse(rows[0]!.body)).toEqual(lexicalEditorStateSchema.parse(VALID_BODY))
   })
 })
 

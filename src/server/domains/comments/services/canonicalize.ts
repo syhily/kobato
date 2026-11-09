@@ -14,6 +14,7 @@ import {
   commentEditorStateTextLength,
   isCommentEditorStateBlank,
 } from '@/shared/lexical/comment-schema'
+import { compactLexicalEditorState } from '@/shared/lexical/dialect'
 import { visitLexicalNodes } from '@/shared/lexical/walk'
 
 const COMMENT_MAX_BLOCKS = 200
@@ -75,7 +76,9 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
   } catch {
     content = lexicalStateToPlainText(revalidated.data)
   }
-  return { body: revalidated.data, content }
+  // Persist the compact dialect (src/shared/lexical/dialect.ts) — readers
+  // heal through the schema's normalize preprocess or the editor's own parse.
+  return { body: compactLexicalEditorState(revalidated.data), content }
 }
 
 function stripServerFilledFields(state: CommentEditorState): void {

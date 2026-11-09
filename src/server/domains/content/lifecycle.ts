@@ -22,6 +22,7 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { getLogger, type Logger } from '@/server/infra/logger'
 import { computeBodyProjections, type BodyProjections } from '@/server/infra/pt/lexical-projection'
 import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@/shared/lexical/collect'
+import { compactLexicalEditorState } from '@/shared/lexical/dialect'
 
 const log = getLogger('content.lifecycle')
 
@@ -152,7 +153,10 @@ export async function saveBody<TMeta, TPreview>(
 
   const repoInput = {
     ownerId: adapter.getId(meta),
-    body,
+    // Stored in the compact dialect (src/shared/lexical/dialect.ts): every
+    // read heals through the schema's normalize preprocess, so the no-op
+    // short-circuit and revision DTOs see the full dialect regardless.
+    body: compactLexicalEditorState(body),
     imageSources,
     headings,
     authorId: input.authorId,

@@ -5,7 +5,7 @@ import type { LexicalEditorState } from '@/shared/lexical/schema'
 // Lexical editor-state fixtures for the R9a save pipeline. Shapes pin the
 // storage wire format the inkling composer produces: element nodes always
 // carry children/direction/format/indent, text nodes carry
-// detail/format/mode/style/text (lexical 0.46 exporters). Mirrored from
+// detail/format/mode/style/text (lexical 0.53 exporters). Mirrored from
 // tests/unit/shared/lexical/schema.test.ts — keep both in sync.
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
@@ -25,7 +25,9 @@ export function lexicalBodyWith(children: unknown[]): LexicalEditorState {
 }
 
 export function lexicalParagraph(value: string) {
-  return element('paragraph', [text(value)])
+  // the 0.53 full-dialect exporter writes textFormat/textStyle even at their
+  // defaults on paragraphs (the schema heal refills them — dialect.ts)
+  return element('paragraph', [text(value)], { textFormat: 0, textStyle: '' })
 }
 
 export function lexicalHeading(tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6', value: string) {

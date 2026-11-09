@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { SerializedEditorState } from '@/inkling/headless'
 
+import { normalizeLexicalDialect } from '@/shared/lexical/dialect'
 import { FULL_EDITOR_NODE_TYPES, ROOT_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 import { isSafeUrl } from '@/shared/sanitize-url'
 
@@ -13,8 +14,11 @@ import { isSafeUrl } from '@/shared/sanitize-url'
 // Strictness mirrors the PT schema (`src/shared/pt/schema.ts`): every node
 // variant enumerates its serialized fields explicitly with plain `z.object`
 // (unknown keys are stripped, not rejected), required fields are the ones
-// the 0.46 exporters always write, optional fields are the conditional
-// ones.
+// the 0.53 full-dialect exporters always write, optional fields are the
+// conditional ones. Stored/POSTed payloads may also arrive in the COMPACT
+// dialect (serializer-default keys omitted — src/shared/lexical/dialect.ts);
+// the `normalizeLexicalDialect` preprocess refills the defaults before shape
+// validation, so the parse output is always the full dialect.
 //
 // The node union covers the FULL whitelist and validates shape only; the
 // per-surface policy (which subset is allowed, how deep lists may nest) is
@@ -49,12 +53,12 @@ export const ARTICLE_LIST_MAX_DEPTH = 6
 
 const NODE_VERSION = z.number().int().min(1)
 
-// SerializedElementNode fields (lexical 0.46 dist LexicalElementNode.d.ts).
+// SerializedElementNode fields (lexical 0.53 dist LexicalElementNode.d.ts).
 const DIRECTION = z.enum(['ltr', 'rtl']).nullable()
 const ELEMENT_FORMAT = z.enum(['left', 'start', 'center', 'right', 'end', 'justify', ''])
 const INDENT = z.number().int().min(0)
 
-// SerializedTextNode fields (lexical 0.46 dist nodes/LexicalTextNode.d.ts).
+// SerializedTextNode fields (lexical 0.53 dist nodes/LexicalTextNode.d.ts).
 const TEXT_FIELDS = {
   detail: z.number().int(),
   format: z.number().int(),
@@ -319,37 +323,43 @@ export function buildLexicalEditorStateSchema(options: LexicalEditorStateSchemaO
   })
   return z.preprocess(
     boundTreeDepth,
-    base.superRefine((state, ctx) => {
-      const stack: Array<{ node: LexicalNodeJson; listDepth: number; path: PropertyKey[] }> = state.root.children.map(
-        (node, index) => ({ node, listDepth: 0, path: ['root', 'children', index] }),
-      )
-      while (stack.length > 0) {
-        const frame = stack.pop()
-        if (!frame) {
-          continue
-        }
-        const { node, listDepth, path } = frame
-        if (!allowed.has(node.type)) {
-          ctx.addIssue({ code: 'custom', message: `node type "${node.type}" is not allowed in this state`, path })
-          continue
-        }
-        let childListDepth = listDepth
-        if (node.type === 'list') {
-          if (listDepth >= options.maxListDepth) {
-            ctx.addIssue({
-              code: 'custom',
-              message: `list nesting exceeds the maximum depth of ${options.maxListDepth}`,
-              path,
-            })
+    // The dialect heal runs before shape validation so both storage dialects
+    // (full and compact — src/shared/lexical/dialect.ts) parse to the same
+    // full-dialect output.
+    z.preprocess(
+      normalizeLexicalDialect,
+      base.superRefine((state, ctx) => {
+        const stack: Array<{ node: LexicalNodeJson; listDepth: number; path: PropertyKey[] }> = state.root.children.map(
+          (node, index) => ({ node, listDepth: 0, path: ['root', 'children', index] }),
+        )
+        while (stack.length > 0) {
+          const frame = stack.pop()
+          if (!frame) {
             continue
           }
-          childListDepth = listDepth + 1
+          const { node, listDepth, path } = frame
+          if (!allowed.has(node.type)) {
+            ctx.addIssue({ code: 'custom', message: `node type "${node.type}" is not allowed in this state`, path })
+            continue
+          }
+          let childListDepth = listDepth
+          if (node.type === 'list') {
+            if (listDepth >= options.maxListDepth) {
+              ctx.addIssue({
+                code: 'custom',
+                message: `list nesting exceeds the maximum depth of ${options.maxListDepth}`,
+                path,
+              })
+              continue
+            }
+            childListDepth = listDepth + 1
+          }
+          node.children?.forEach((child, index) => {
+            stack.push({ node: child, listDepth: childListDepth, path: [...path, 'children', index] })
+          })
         }
-        node.children?.forEach((child, index) => {
-          stack.push({ node: child, listDepth: childListDepth, path: [...path, 'children', index] })
-        })
-      }
-    }),
+      }),
+    ),
   )
 }
 

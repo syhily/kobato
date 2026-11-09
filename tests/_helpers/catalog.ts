@@ -39,6 +39,9 @@ export function makeCommentBody(text: string): CommentEditorState {
           direction: 'ltr',
           format: '',
           indent: 0,
+          // 0.53 full-dialect paragraph keys (the schema heal refills them)
+          textFormat: 0,
+          textStyle: '',
           children: [{ type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text }],
         },
       ],

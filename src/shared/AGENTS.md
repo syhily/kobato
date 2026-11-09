@@ -42,7 +42,10 @@ server or client boundary catch and log it.
   schema (`schema` — also owns `EMPTY_LEXICAL_EDITOR_STATE`), the restricted
   comment state schema (`comment-schema` — also owns
   `EMPTY_COMMENT_EDITOR_STATE` and the shared `isCommentEditorStateBlank`
-  submit gate), and the composer-mounted node-set
+  submit gate), the payload-dialect pair (`dialect` — `compactLexicalEditorState`
+  slims a full-dialect state for storage by deleting serializer-default keys;
+  the schemas' `normalizeLexicalDialect` preprocess refills them, so both
+  dialects parse to the same full-dialect output), and the composer-mounted node-set
   manifests (`composer-nodes` — ARTICLE (R11) and COMMENT (R12) are both
   live, pinned three-way schema ⇐ whitelist ⇐ composer by contract test). Pure
   zod — no lexical runtime dependency; the `SerializedEditorState` type is an
