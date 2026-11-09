@@ -1,9 +1,11 @@
-import { type RefObject, useEffect } from 'react'
+import { type RefObject, useContext, useEffect, useEffectEvent } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { IntlContext } from 'react-intl'
 
 import type { MusicPlayerCardProps } from '@/ui/public/music-player/music-player'
 
 import { isHttpUrl } from '@/shared/utils/safe-url'
+import { I18nProvider, type I18nMessages, useI18n } from '@/ui/lib/I18nProvider'
 
 // Defense-in-depth for the hydrated mount points: `data-url` / `data-cover`
 // are sanitized with the `body` preset before they land in the projected
@@ -41,6 +43,11 @@ export function safeMediaSrc(value: string | null | undefined): string | undefin
 // stay static fallbacks. The cleanup unmounts those roots, and the playback
 // hook's own teardown pauses the audio element.
 export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
+  const intl = useContext(IntlContext)
+  const { locale } = useI18n()
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- I18nProvider only supplies string catalogs.
+  const getI18nProps = useEffectEvent(() => ({ locale, messages: intl?.messages as I18nMessages }))
+
   useEffect(() => {
     const container = containerRef.current
     if (container === null) {
@@ -74,7 +81,11 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
         // Drop the static fallback card before React takes over the node.
         mount.replaceChildren()
         const root = createRoot(mount)
-        root.render(<MusicPlayerCard {...audio} />)
+        root.render(
+          <I18nProvider {...getI18nProps()}>
+            <MusicPlayerCard {...audio} />
+          </I18nProvider>,
+        )
         roots.push(root)
       }
     })

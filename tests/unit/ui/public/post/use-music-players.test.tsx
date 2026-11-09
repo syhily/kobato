@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 
-import { act, renderHook } from '@testing-library/react'
+import { act } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { renderHookWithI18n } from '#/_helpers/i18n-render'
 import { safeMediaSrc, useMusicPlayers } from '@/ui/public/post/use-music-players'
 
 // The player module pulls in audio element wiring; stub the dynamic import
@@ -60,7 +61,7 @@ describe('useMusicPlayers', () => {
     const { container, ref } = mountContainer(html)
 
     await act(async () => {
-      renderHook(() => useMusicPlayers(ref, html))
+      renderHookWithI18n(() => useMusicPlayers(ref, html))
       await Promise.resolve()
     })
 
@@ -75,7 +76,7 @@ describe('useMusicPlayers', () => {
   it('keeps the empty placeholder for mount points without a URL', async () => {
     const { container, ref } = mountContainer('<div class="aplayer" data-id="7"></div>')
     await act(async () => {
-      renderHook(() => useMusicPlayers(ref, '<div class="aplayer" data-id="7"></div>'))
+      renderHookWithI18n(() => useMusicPlayers(ref, '<div class="aplayer" data-id="7"></div>'))
       await Promise.resolve()
     })
     expect(container.querySelector('[data-stub-player]')).toBeNull()
@@ -83,7 +84,7 @@ describe('useMusicPlayers', () => {
   })
 
   it('no-ops when no mount points exist', () => {
-    expect(() => renderHook(() => useMusicPlayers({ current: null }, ''))).not.toThrow()
+    expect(() => renderHookWithI18n(() => useMusicPlayers({ current: null }, ''))).not.toThrow()
   })
 
   it('skips a mount point whose data-url is not an http(s) / same-origin URL', async () => {
@@ -93,7 +94,7 @@ describe('useMusicPlayers', () => {
       '<div class="aplayer" data-name="ProtocolRelative" data-url="//evil.example/x.mp3"></div>'
     const { container, ref } = mountContainer(html)
     await act(async () => {
-      renderHook(() => useMusicPlayers(ref, html))
+      renderHookWithI18n(() => useMusicPlayers(ref, html))
       await Promise.resolve()
     })
     expect(container.querySelector('[data-stub-player]')).toBeNull()
@@ -106,7 +107,7 @@ describe('useMusicPlayers', () => {
       '<div class="aplayer" data-name="Song" data-url="https://cdn/x.mp3" data-cover="javascript:alert(1)"></div>'
     const { container, ref } = mountContainer(html)
     await act(async () => {
-      renderHook(() => useMusicPlayers(ref, html))
+      renderHookWithI18n(() => useMusicPlayers(ref, html))
       await Promise.resolve()
     })
     const player = container.querySelector('[data-stub-player]')
@@ -119,7 +120,7 @@ describe('useMusicPlayers', () => {
     const { container, ref } = mountContainer(html)
     await act(async () => {
       // The re-scan key intentionally carries no 'class="aplayer"' marker.
-      renderHook(() => useMusicPlayers(ref, 'rescan-key'))
+      renderHookWithI18n(() => useMusicPlayers(ref, 'rescan-key'))
       await Promise.resolve()
     })
     expect(container.querySelector('[data-stub-player]')?.getAttribute('data-url')).toBe('https://cdn/x.mp3')
@@ -136,7 +137,7 @@ describe('useMusicPlayers', () => {
 
     let rerender: (props: { html: string }) => void
     await act(async () => {
-      ;({ rerender } = renderHook(({ html }) => useMusicPlayers(ref, html), { initialProps: { html: htmlA } }))
+      ;({ rerender } = renderHookWithI18n(({ html }) => useMusicPlayers(ref, html), { initialProps: { html: htmlA } }))
       await Promise.resolve()
     })
     expect(container.querySelector('[data-stub-player]')?.getAttribute('data-url')).toBe('https://cdn/old.mp3')
