@@ -25,6 +25,7 @@ import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { assetsRouter } from '@/server/http/resources/assets'
 import { backupRouter } from '@/server/http/resources/backup'
 import { brandingRouter } from '@/server/http/resources/branding'
+import { devRumStatusRouter } from '@/server/http/resources/dev-rum'
 import { feedRouter } from '@/server/http/resources/feed'
 import { fontsRouter } from '@/server/http/resources/fonts'
 import { fontsEmbeddedRouter } from '@/server/http/resources/fonts-embedded'
@@ -39,12 +40,16 @@ import { webmentionRouter } from '@/server/http/resources/webmention'
 import { webmentionLinkHeader } from '@/server/http/webmention-link-header'
 import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
+import { activeFrontendRum } from '@/server/infra/trace/config'
+import { devTraceRequestMiddleware } from '@/server/infra/trace/middleware'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 export interface CspInput {
   bundle: BlogSettingsBundle | null
   nonce: string
   isDev: boolean
+  /** Validated OpenObserve origin; only DEV + active frontend RUM adds it. */
+  rumOrigin?: string | null
 }
 
 /**
@@ -63,7 +68,22 @@ export const ACCEPT_CH_HEADER =
  * page served from any other origin (dev server, alternate domain) would
  * otherwise block its own first-party images/media.
  */
-export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
+function safeRumOrigin(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null
+    }
+    return url.username === '' && url.password === '' && url.pathname === '/' ? url.origin : null
+  } catch {
+    return null
+  }
+}
+
+export function buildCspHeader({ bundle, nonce, isDev, rumOrigin }: CspInput): string {
   const origins = new Set<string>()
   if (bundle?.assets?.asset?.host) {
     origins.add(`https://${bundle.assets.asset.host}`)
@@ -81,6 +101,10 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   // origin (e.g. pre-R16d music meta snapshots) — allow any https image/media
   // source in dev. Production stays on the explicit origin list above.
   const devMediaExtra = isDev ? `${mediaExtra} https:` : mediaExtra
+  // ADR-0012: only an active DEV frontend bootstrap widens connect-src. The
+  // production CSP, script-src, and worker-src are unchanged.
+  const validatedRumOrigin = isDev ? safeRumOrigin(rumOrigin) : null
+  const connectSrc = validatedRumOrigin === null ? "connect-src 'self'" : `connect-src 'self' ${validatedRumOrigin}`
   return [
     "default-src 'self'",
     scriptSrc,
@@ -89,7 +113,7 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
     `font-src 'self' ${extra}`,
     `img-src 'self' data: blob: ${devMediaExtra}`,
     `media-src 'self' ${devMediaExtra}`,
-    "connect-src 'self'",
+    connectSrc,
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
@@ -104,6 +128,10 @@ export function configureMiddleware(app: Hono<Env>): void {
   // request URL (request-context derivation, RR's `.data` action origin check).
   app.use(trustProxy)
   app.use(requestId())
+  // ADR-0012: the root server span starts after trust-proxy/request-ID (so the
+  // W3C parent and normalized request are available) and BEFORE compression
+  // (so it covers the complete application pipeline).
+  app.use(devTraceRequestMiddleware())
   app.use(compress())
   // Overwrite `secureHeaders`' static CSP with the nonce value — must stay registered before it.
   app.use(async (c, next) => {
@@ -114,7 +142,9 @@ export function configureMiddleware(app: Hono<Env>): void {
       return
     }
     const bundle = getBlogSettingsBundleSync()
-    const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev: import.meta.env.DEV })
+    const isDev = import.meta.env.DEV
+    const rumOrigin = isDev ? activeFrontendRum()?.site : null
+    const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev, rumOrigin })
     c.res.headers.set('Content-Security-Policy', csp)
     // Opt the origin into User-Agent Client Hints: Chromium sends the
     // requested Sec-CH-UA-* headers on subsequent requests, letting
@@ -182,6 +212,13 @@ export function configureMiddleware(app: Hono<Env>): void {
 
   app.get('/health', (c) => c.json({ status: 'ok' }))
   app.get('/ready', readyHandler)
+
+  // DEV-only frontend RUM drift signal. The resource router owns the payload
+  // and no-store policy; production never mounts it, and the path stays out of
+  // HTTP spans/RUM activity/tracing.
+  if (import.meta.env.DEV) {
+    app.route('/', devRumStatusRouter)
+  }
 
   // Mounted BEFORE createApiApp so their bodyLimit is not overridden by the 10 MB global limit.
   app.route('/', backupRouter)

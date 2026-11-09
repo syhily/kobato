@@ -65,7 +65,15 @@ Adding a route: pick the area directory, choose a role filename, add the manifes
   `/editor`) inside the procedure, and `shouldRevalidate` refreshes the root payload on
   public ↔ workspace navigations and every form action. The exact `@/server/*` import whitelist
   for public routes + root is pinned by the boundaries contract
-  test (`ssr-caller`, `loaders/route-exports`, `infra/http/*`, plus `render/warmup/*` for root).
+  test (`ssr-caller`, `loaders/route-exports`, `infra/http/*`, plus `render/warmup/*`,
+  `infra/trace/react-router`, and `infra/trace/config` for root). Root also owns the trace middleware
+  (`export const middleware = [traceRouteMiddleware]`): one no-op-in-production
+  document/`.data` span around loaders, actions, and the SSR entry (ADR-0012). It must stay in
+  the root module — not per-route middleware — so a single span spans the whole request. The root loader projects
+  `activeFrontendRum()` as a `rum` key ONLY when DEV + every frontend gate pass + the O2 allowlist pipeline + stored function hash/wiring were verified at startup; production/disabled
+  responses omit the key entirely (no null placeholder, no `serverAuthorizationHeader` — the projection is the
+  narrow browser bootstrap in `shared/contracts/trace`). `root.tsx`'s `App` mounts `useDevRum(loaderData.rum ?? null)`
+  once; it renders nothing and performs the DNT/GPC check before the dynamic SDK import.
 - **Admin SSR data goes through oRPC too** — `routes/admin/**` and `routes/editor/**` loaders
   compose the domain endpoints (`account.*`, `comments.*`, `analytics.*`, `admin.*` — added in
   `shared/contracts/admin.ts`) via the same `createSsrCaller` (which also returns `viewer`/`session`

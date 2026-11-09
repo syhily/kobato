@@ -12,11 +12,14 @@ import { setCsrfToken } from '@/client/api/client'
 import { makeQueryClient } from '@/client/api/query-client'
 import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
+import { useDevRum } from '@/client/hooks/use-dev-rum'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { defaultTransition } from '@/client/lib/motion'
 import { createSsrCaller } from '@/server/http/ssr-caller'
 import { documentHeaders } from '@/server/infra/http/headers'
+import { activeFrontendRum } from '@/server/infra/trace/config'
+import { traceRouteMiddleware } from '@/server/infra/trace/react-router'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
 import { defaultFontStackFor } from '@/shared/config/font-stacks'
 import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/config/getters'
@@ -68,7 +71,9 @@ function collectTier2Chunks(
   return result
 }
 
-export const middleware: MiddlewareFunction<Response>[] = []
+// Root middleware runs around loaders/actions AND the SSR entry, so one
+// document/`.data` span covers the whole React Router request (ADR-0012).
+export const middleware: MiddlewareFunction<Response>[] = [traceRouteMiddleware]
 
 // Root is the nearest error boundary for loader-thrown 304s; this passes the
 // thrown Response's representation headers through RR's header rebuild.
@@ -87,6 +92,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   // Boot data loads through the content API like every public route; the theme cookie is parsed inside.
   const boot = await caller.content.bootstrap()
+
+  // ADR-0012: the browser bootstrap exists only in DEV with every frontend gate
+  // passing. Disabled/production resolves to null and the key is not emitted at
+  // all; the server authorization header has no path into this projection.
+  const rum = activeFrontendRum()
 
   const warmupManifest = getWarmupManifest()
   const pathname = new URL(request.url).pathname
@@ -108,6 +118,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     tier2Chunks,
     cspNonce,
     nowIso,
+    ...(rum === null ? {} : { rum }),
   }
 }
 
@@ -272,6 +283,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
     setCsrfToken(loaderData.csrfToken)
   }, [loaderData.csrfToken])
 
+  useDevRum(loaderData.rum ?? null)
   useFocusHash()
   useIosNoZoomOnFocus()
   useChunkErrorRecovery()

@@ -254,6 +254,11 @@ describe('contract: module and bundle boundaries', () => {
       'src/server/domains/comments/services/avatar.ts', // fixed GitHub avatar URL
       'src/server/domains/update/release.ts', // fixed api.github.com release metadata
       'src/server/domains/update/pipeline.ts', // release-asset URLs from the update metadata
+      // Startup-only O2 pipeline probe: fixed `/api/<org>/pipelines` path on
+      // the validated loopback/https trace endpoint, using the same
+      // server-only credential as the direct OTLP exporters (which also do
+      // not use safeFetch). Never request/user-influenced.
+      'src/server/infra/trace/pipeline-verify.ts',
     ])
     const allowlistedPrefixes = [
       'src/server/domains/music/providers/', // provider API endpoints with their own signing
@@ -532,7 +537,7 @@ describe('contract: module and bundle boundaries', () => {
     const allowed = (file: string, target: string): boolean => {
       const prefixes = ['@/server/http/ssr-caller', '@/server/http/loaders/route-exports', '@/server/infra/http/']
       if (file === 'src/root.tsx') {
-        prefixes.push('@/server/render/warmup/')
+        prefixes.push('@/server/render/warmup/', '@/server/infra/trace/react-router', '@/server/infra/trace/config')
       }
       return prefixes.some((prefix) => target.startsWith(prefix) || target.startsWith(`src/${prefix.slice(2)}`))
     }

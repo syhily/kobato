@@ -77,6 +77,42 @@ describe('buildCspHeader', () => {
     expect(csp).toContain("connect-src 'self'")
   })
 
+  it('adds the validated OpenObserve origin to connect-src only for active DEV frontend RUM', () => {
+    const devCsp = buildCspHeader({
+      bundle: null,
+      nonce: NONCE,
+      isDev: true,
+      rumOrigin: 'http://127.0.0.1:5080',
+    })
+    expect(devCsp).toContain("connect-src 'self' http://127.0.0.1:5080")
+    // script-src is unchanged: the RUM package is bundled, never a CDN script.
+    expect(/script-src[^;]*/.exec(devCsp)?.[0]).toBe("script-src 'self' 'unsafe-inline'")
+    expect(devCsp).not.toContain('https://cdn.openobserve')
+
+    const prodCsp = buildCspHeader({
+      bundle: null,
+      nonce: NONCE,
+      isDev: false,
+      rumOrigin: 'http://127.0.0.1:5080',
+    })
+    expect(prodCsp).toContain("connect-src 'self'")
+    expect(prodCsp).not.toContain('127.0.0.1:5080')
+  })
+
+  it('ignores an absent or malformed RUM origin', () => {
+    for (const rumOrigin of [
+      null,
+      undefined,
+      '',
+      'not a url',
+      'https://user:pass@obs.example.com',
+      'https://obs.example.com/path',
+    ]) {
+      const csp = buildCspHeader({ bundle: null, nonce: NONCE, isDev: true, rumOrigin })
+      expect(csp).toContain("connect-src 'self'")
+    }
+  })
+
   it('handles a null bundle without throwing', () => {
     const csp = buildCspHeader({ bundle: null, nonce: NONCE, isDev: false })
     expect(csp).toContain("default-src 'self'")

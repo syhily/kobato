@@ -126,6 +126,24 @@ describe('configureMiddleware', () => {
   })
 })
 
+describe('DEV-only RUM status mount', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('mounts the resource router only in development', () => {
+    vi.stubEnv('DEV', true)
+    const devApp = new Hono<Env>()
+    configureMiddleware(devApp)
+    expect(devApp.routes.map((route) => route.path)).toContain('/api/dev/rum/status')
+
+    vi.stubEnv('DEV', false)
+    const prodApp = new Hono<Env>()
+    configureMiddleware(prodApp)
+    expect(prodApp.routes.map((route) => route.path)).not.toContain('/api/dev/rum/status')
+  })
+})
+
 describe('dynamic CSP middleware', () => {
   it('keeps the static secureHeaders CSP when the real WP decoy short-circuits before the RequestContext is derived', async () => {
     const app = new Hono<Env>()
