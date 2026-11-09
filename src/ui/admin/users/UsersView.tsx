@@ -57,7 +57,7 @@ export function UsersView() {
           <div className="flex items-baseline gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">{t('admin.users.title')}</h1>
             {!isLoading && (
-              <span className="text-lg font-normal text-muted-foreground">{formatNumber(total, { locale })}</span>
+              <span className="text-sm font-normal text-muted-foreground">{formatNumber(total, { locale })}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -67,6 +67,7 @@ export function UsersView() {
               </InputGroupAddon>
               <InputGroupInput
                 type="search"
+                size="sm"
                 value={qInput}
                 onChange={(e) => setQInput(e.target.value)}
                 placeholder={t('admin.users.searchPlaceholder')}

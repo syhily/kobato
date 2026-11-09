@@ -15,6 +15,7 @@ import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { Input } from '@/ui/components/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
@@ -91,16 +92,17 @@ export function TagsView() {
             </>
           }
         >
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative w-56">
               <SearchIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <input
+              <Input
                 type="search"
+                size="sm"
                 value={qInput}
                 onChange={(e) => setQInput(e.target.value)}
                 placeholder={t('admin.tags.searchPlaceholder')}
                 aria-label={t('admin.tags.searchAria')}
-                className="h-9 w-full rounded-xl border border-input bg-transparent py-1 pr-3 pl-9 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:shadow-focus focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="pl-9"
               />
             </div>
             <Button type="button" size="sm" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>

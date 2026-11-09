@@ -173,8 +173,8 @@ export function ImagesView() {
           title={t('admin.images.title')}
           description={t('admin.images.description', { count: total })}
         >
-          <Button type="button" onClick={() => setUploadOpen(true)}>
-            <PlusIcon /> {t('admin.images.upload')}
+          <Button type="button" size="sm" onClick={() => setUploadOpen(true)}>
+            <PlusIcon data-icon /> {t('admin.images.upload')}
           </Button>
         </AdminListPage.Header>
 

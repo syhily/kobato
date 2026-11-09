@@ -121,11 +121,12 @@ export function FriendsView() {
           }
           description={t('admin.friends.description')}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative w-56">
               <SearchIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
+                size="sm"
                 value={qInput}
                 onChange={(e) => setQInput(e.target.value)}
                 placeholder={t('admin.friends.searchPlaceholder')}
@@ -133,7 +134,7 @@ export function FriendsView() {
                 className="pl-9"
               />
             </div>
-            <div className="flex h-9 items-center gap-2 rounded-xl border border-input px-3">
+            <div className="flex h-9 items-center gap-2 rounded-sm border border-line-muted px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:shadow-focus">
               <Checkbox
                 id="friends-include-hidden"
                 checked={includeHidden}
@@ -143,8 +144,8 @@ export function FriendsView() {
                 {t('admin.friends.includeHidden')}
               </label>
             </div>
-            <Button type="button" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>
-              <PlusIcon />
+            <Button type="button" size="sm" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>
+              <PlusIcon data-icon />
               {t('admin.friends.new')}
             </Button>
           </div>

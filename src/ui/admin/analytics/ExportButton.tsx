@@ -48,7 +48,7 @@ export function ExportButton({ state, className, scope }: ExportButtonProps) {
       size="sm"
       disabled={pending}
       onClick={() => void download()}
-      className={cn('h-8 gap-1.5', className)}
+      className={cn('gap-1.5', className)}
     >
       <DownloadIcon data-icon aria-hidden />
       {pending ? t('admin.analytics.export.exporting') : t('admin.analytics.export.csv')}

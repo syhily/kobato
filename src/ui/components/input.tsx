@@ -11,6 +11,7 @@ const inputVariants = cva(
         // `md` is a compatibility alias for `default` (40px, aligns with Button h-10).
         default: 'h-10 px-3 py-2 text-base md:text-sm',
         md: 'h-10 px-3 py-2 text-base md:text-sm',
+        sm: 'h-9 px-3 py-2 text-base md:text-sm',
         lg: 'h-11 px-4 py-2 text-base',
       },
     },

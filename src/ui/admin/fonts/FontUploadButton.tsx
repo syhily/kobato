@@ -96,8 +96,8 @@ export function FontUploadButton() {
   return (
     <>
       <input ref={fileInputRef} type="file" accept=".ttf,.otf" hidden onChange={onFileSelected} />
-      <Button type="button" onClick={() => fileInputRef.current?.click()}>
-        <UploadIcon data-icon="sm" />
+      <Button type="button" size="sm" onClick={() => fileInputRef.current?.click()}>
+        <UploadIcon data-icon />
         {t('admin.fonts.upload.button')}
       </Button>
 
