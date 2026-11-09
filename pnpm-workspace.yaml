@@ -20,7 +20,7 @@ catalog:
   '@dnd-kit/utilities': ^3.2.2
   '@duckdb/node-api': ^2.0.0-r.1
   '@emoji-mart/data': ^1.2.1
-  '@formatjs/icu-messageformat-parser': ^3.5.22
+  '@formatjs/icu-messageformat-parser': ^3.5.23
   '@hono/node-server': ^2.1.6
   '@hono/vite-dev-server': ^0.26.1
   '@icons-pack/react-simple-icons': ^13.15.1
@@ -70,7 +70,7 @@ catalog:
   '@uiw/react-codemirror': ^4.25.12
   '@unovis/react': ^1.8.0
   '@unovis/ts': ^1.8.0
-  '@vitejs/plugin-react': ^6.2.1
+  '@vitejs/plugin-react': ^6.3.0
   '@vitest/coverage-v8': ^5.1.0
   bcryptjs: ^3.0.3
   cn: ^0.5.2
@@ -103,12 +103,12 @@ catalog:
   markdown-it-sub: ^2.0.0
   markdown-it-sup: ^2.0.0
   medium-zoom: ^1.1.2
-  motion: ^14.10.1
-  node-device-detector: ^2.2.7
+  motion: ^14.11.0
+  node-device-detector: ^2.2.8
   nodemailer: ^10.4.0
-  oxc-transform-react: ^0.157.0
+  oxc-transform-react: ^0.158.0
   oxfmt: ^0.77.0
-  oxlint: ^1.92.0
+  oxlint: ^1.93.0
   oxlint-tsgolint: ^7.0.2006
   pino: ^10.4.0
   pinyin-pro: ^3.29.5
@@ -120,9 +120,9 @@ catalog:
   react-day-picker: ^10.0.2
   react-dom: ^19.3.1
   react-hook-form: ^7.91.0
-  react-intl: ^12.1.6
+  react-intl: ^12.1.7
   react-router: ^8.5.1
-  rolldown: ^1.3.0
+  rolldown: ^1.3.1
   rolldown-plugin-dts: ^0.30.0
   sharp: ^0.35.5
   shiki: ^4.6.0
@@ -131,7 +131,7 @@ catalog:
   taze: ^21.3.0
   typescript: ^7.0.2
   undici: ^8.12.4
-  vite: ^8.3.6
+  vite: ^8.3.7
   vite-node: ^6.0.0
   vite-plugin-svgr: ^5.2.0
   vitest: ^5.1.0

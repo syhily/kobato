@@ -33,11 +33,11 @@ Agents load these additively as they move through the codebase:
 
 Agent Skills under `.agents/skills/` override these conventions on conflict:
 
-| Skill                         | Triggers                                                                       |
-| ----------------------------- | ------------------------------------------------------------------------------ |
-| `react-router-framework-mode` | Routes, loaders, actions, forms, navigation, `react-router.config.ts`          |
-| `vercel-react-best-practices` | Any React/SSR code. The 70 numbered rules are the performance baseline.        |
-| `vercel-geist-design-system`  | Geist/Vercel-inspired UI: typography, spacing, color, app shells.              |
+| Skill                         | Triggers                                                                |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| `react-router-framework-mode` | Routes, loaders, actions, forms, navigation, `react-router.config.ts`   |
+| `vercel-react-best-practices` | Any React/SSR code. The 70 numbered rules are the performance baseline. |
+| `vercel-geist-design-system`  | Geist/Vercel-inspired UI: typography, spacing, color, app shells.       |
 
 The `drizzle` and `taze` skills are CLI-generated symlinks (gitignored) into
 `node_modules` — they exist in every installed working tree and are not
