@@ -1,15 +1,17 @@
-// Shared plumbing for the development-only OpenObserve setup (ADR-0012).
+// Shared plumbing for the OpenObserve development container (ADR-0012/ADR-0014).
 //
-// Everything here is explicit tooling: `pnpm dev`, `pnpm test`, and the
+// Everything here is explicit dev tooling: `pnpm dev`, `pnpm test`, and the
 // production build never import this module and never require Docker. The
-// scripts own a single loopback container, a dedicated volume, and a state
-// file in the worktree's ignored `tmp/openobserve/` tree (mode 0600) so no
-// credential is ever printed or committed.
+// scripts own a single loopback container, a dedicated volume, a state file in
+// the worktree's ignored `tmp/openobserve/` tree (mode 0600), and the dev-only
+// 1-day retention policy (ADR-0014). They no longer provision the OpenObserve
+// assets: the RUM token, privacy pipeline, and dashboards are installed by the
+// SERVER during the admin connection test (ADR-0014).
 
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { z } from 'zod'
 
 import { TRACE_LOG_STREAM } from '../../src/shared/contracts/trace-logs.ts'
@@ -56,6 +58,11 @@ export interface TraceState {
   organization: string
   adminEmail: string
   adminPassword: string
+  /**
+   * Legacy slot: the RUM client token is now created by the SERVER during the
+   * admin connection test and written back into the encrypted settings row.
+   * Kept in the state-file contract so an older `state.json` still parses.
+   */
   rumToken: string
   applicationId: string
   containerName: string
@@ -107,10 +114,6 @@ export function stateFilePath(): string {
   return join(stateDirectory(), 'state.json')
 }
 
-export function traceConfigFragmentPath(): string {
-  return join(stateDirectory(), 'kobato.trace.json')
-}
-
 export async function readState(): Promise<TraceState | null> {
   try {
     const raw = await readFile(stateFilePath(), 'utf-8')
@@ -126,31 +129,6 @@ export async function writeState(state: TraceState): Promise<string> {
   await mkdir(dir, { recursive: true, mode: 0o700 })
   const path = stateFilePath()
   await writeFile(path, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 })
-  await chmod(path, 0o600)
-  return path
-}
-
-export async function writeTraceConfigFragment(state: TraceState): Promise<string> {
-  const fragment = {
-    trace: {
-      enabled: true,
-      logs: { enabled: true },
-      endpoint: state.endpoint,
-      organization: state.organization,
-      serverAuthorizationHeader: basicAuthorization(state.adminEmail, state.adminPassword),
-      sampleRate: 1,
-      includeRedactedSql: false,
-      frontend: {
-        enabled: true,
-        applicationId: state.applicationId,
-        clientToken: state.rumToken,
-        sessionSampleRate: 100,
-      },
-    },
-  }
-  const path = traceConfigFragmentPath()
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 })
-  await writeFile(path, `${JSON.stringify(fragment, null, 2)}\n`, { mode: 0o600 })
   await chmod(path, 0o600)
   return path
 }
@@ -718,4 +696,14 @@ export function endpointFromState(state: TraceState): string {
 
 export function resolveFromRepo(relative: string): string {
   return resolve(import.meta.dirname, '../..', relative)
+}
+
+/** Versioned dashboards + the RUM privacy VRL, shared with the server provisioner. */
+export function observabilityAssetDirectory(): string {
+  return resolveFromRepo('src/server/domains/observability/assets')
+}
+
+/** One bundled OpenObserve v8 dashboard by file name (e.g. `overview.json`). */
+export function observabilityDashboardPath(file: string): string {
+  return join(observabilityAssetDirectory(), 'dashboards', file)
 }

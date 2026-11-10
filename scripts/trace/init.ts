@@ -1,61 +1,50 @@
-// `pnpm run trace:init` — provision the development OpenObserve instance:
-// RUM token, 1-day stream retention, the RUM privacy pipeline, and the four
-// versioned dashboards. Credentials come from the mode-0600 state file (or
-// explicit KOBATO_TRACE_* env overrides) and are never printed.
+// `pnpm run trace:init` — finish the development OpenObserve container setup
+// and print the values an admin enters in Settings → Observability.
+//
+// The server owns asset provisioning: saving the section and pressing "Test
+// connection" verifies the credentials AND installs the RUM token, the privacy
+// pipeline/function, and the four versioned dashboards (idempotently). The dev
+// tooling therefore keeps only the container-only policy — 1-day retention —
+// and must never print a credential. Writing the DB row directly was rejected:
+// the password column is encrypted with a key derived inside the SERVER process
+// (`security.encryptionKey` + the server crypto module), so a dev script would
+// have to parse the DEV config and duplicate that derivation. Printing the
+// non-secret values (and pointing at the 0600 state file for the password) is
+// simpler and cannot corrupt an encrypted settings row.
 
-import {
-  RUM_PRIVACY_FUNCTION_NAME,
-  RUM_PRIVACY_PIPELINE_NAME,
-  RUM_PRIVACY_PIPELINE_VERSION,
-} from '../../src/shared/contracts/trace-pipeline.ts'
-import {
-  fail,
-  log,
-  o2Context,
-  readState,
-  RETENTION_DAYS,
-  stateFilePath,
-  waitForOpenObserve,
-  warn,
-  writeState,
-  writeTraceConfigFragment,
-} from './lib.ts'
-import { ensureRumToken, provisionOpenObserve } from './provision.ts'
+import { fail, log, o2Context, readState, RETENTION_DAYS, stateFilePath, waitForOpenObserve, warn } from './lib.ts'
+import { applyRetention } from './provision.ts'
 
 async function main(): Promise<void> {
-  const initial = await readState()
-  if (initial === null) {
+  const state = await readState()
+  if (state === null) {
     fail('No OpenObserve development state. Run `pnpm run trace:up` first.')
   }
-  await waitForOpenObserve(initial.endpoint)
-  const state = await ensureRumToken(o2Context(initial), initial, async (next) => {
-    await writeState(next)
-  })
+  await waitForOpenObserve(state.endpoint)
   const ctx = o2Context(state)
 
-  const report = await provisionOpenObserve(ctx)
-  log(
-    `==> RUM privacy pipeline ${RUM_PRIVACY_PIPELINE_NAME} v${RUM_PRIVACY_PIPELINE_VERSION} installed (function ${RUM_PRIVACY_FUNCTION_NAME})`,
-  )
-  log(`==> imported ${report.dashboards} dashboards`)
-  if (report.retention.missing) {
+  const retention = await applyRetention(ctx)
+  if (retention.missing) {
     warn(
       '    no telemetry streams exist yet; run `pnpm run trace:init` again after one request so 1-day retention is applied',
     )
   } else {
-    log(`==> retention: ${RETENTION_DAYS} day applied to ${report.retention.applied} stream(s) (others already set)`)
+    log(`==> retention: ${RETENTION_DAYS} day applied to ${retention.applied} stream(s) (others already set)`)
   }
 
-  const fragment = await writeTraceConfigFragment(state)
-  log('==> config fragment written (secrets included, mode 0600)')
-  log(`    fragment: ${fragment}`)
-  log(`    state:    ${stateFilePath()}`)
-  log(`    endpoint: ${state.endpoint} (org ${state.organization})`)
-  log(`    applicationId: ${state.applicationId}`)
-  log('    Merge the "trace" block (traces, metrics, server logs, frontend RUM) into kobato.config.json.')
-  log('    Restart the DEV server afterwards; trace.* is a boot-time snapshot.')
-  log('    Do not commit the fragment: it carries server and RUM credentials.')
-  log('    OpenObserve CORS must include the exact DEV origin (trace:up sets localhost/127.0.0.1:4321).')
+  log('')
+  log('==> enter these in Admin → Settings → Observability, then press "Test connection"')
+  log(`    endpoint:       ${state.endpoint}`)
+  log(`    organization:   ${state.organization}   (also the RUM application id)`)
+  log(`    username:       ${state.adminEmail}`)
+  log(`    password:       read "adminPassword" from ${stateFilePath()} (never printed)`)
+  log('    enable tracing, server logs, and frontend RUM in the same panel, then save')
+  log('')
+  log('    "Test connection" verifies the credentials, ensures the organization, installs the RUM')
+  log('    privacy pipeline/function and the four dashboards, and writes the RUM client token')
+  log('    back into the encrypted settings row. Nothing else is required in dev.')
+  log(`    OpenObserve CORS must include the exact DEV origin (trace:up sets localhost/127.0.0.1:4321).`)
+  log(`    state (never commit): ${stateFilePath()}`)
 }
 
 try {

@@ -1,50 +1,17 @@
-// Provisioning shared by `trace:init` and `trace:smoke`: RUM token, retention,
-// the RUM privacy pipeline, and the four versioned dashboards.
+// Dev-container retention policy for the OpenObserve development setup
+// (ADR-0014).
+//
+// The SERVER now owns asset provisioning end to end: the RUM client token, the
+// privacy pipeline + function, and the four versioned dashboards are installed
+// by `admin.observability.testConnection` (idempotent, also re-applied by the
+// boot auto-upgrade). Retention is deliberately NOT server-owned: production
+// keeps the operator's OpenObserve policy, while this dev container wants the
+// shortest representable window. `trace:init` and the smoke therefore apply it
+// through this module.
 
-import { createHash } from 'node:crypto'
-import { readFile, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import type { O2Context, StreamInfo } from './lib.ts'
 
-import type { O2Context, StreamInfo, TraceState } from './lib.ts'
-
-import {
-  RUM_PRIVACY_FUNCTION_NAME,
-  RUM_PRIVACY_PIPELINE_DESCRIPTION,
-  RUM_PRIVACY_PIPELINE_NAME,
-  RUM_PRIVACY_VRL_SHA256,
-} from '../../src/shared/contracts/trace-pipeline.ts'
-import { unsafeCast } from '../../src/shared/utils/unsafe-cast.ts'
-import {
-  createRumToken,
-  getRumToken,
-  isRelevantTraceStream,
-  listStreams,
-  RETENTION_DAYS,
-  RUM_STREAM,
-  setRetention,
-  upsertDashboard,
-  upsertFunction,
-  upsertPipeline,
-} from './lib.ts'
-
-const DASHBOARD_DIR = join(import.meta.dirname, 'assets', 'dashboards')
-
-export async function ensureRumToken(
-  ctx: O2Context,
-  state: TraceState,
-  persist: (next: TraceState) => Promise<void>,
-): Promise<TraceState> {
-  if (state.rumToken !== '') {
-    const current = await getRumToken(ctx)
-    if (current === state.rumToken) {
-      return state
-    }
-  }
-  const token = await createRumToken(ctx)
-  const updated = { ...state, rumToken: token }
-  await persist(updated)
-  return updated
-}
+import { isRelevantTraceStream, listStreams, RETENTION_DAYS, setRetention } from './lib.ts'
 
 export interface RetentionReport {
   applied: number
@@ -52,6 +19,11 @@ export interface RetentionReport {
   streams: Array<{ name: string; type: string; retention: number }>
 }
 
+/**
+ * Apply the 1-day dev retention to every Kobato-relevant stream. Streams are
+ * created lazily by the first ingest, so a run before any request reports
+ * `missing: true` and applies nothing.
+ */
 export async function applyRetention(ctx: O2Context): Promise<RetentionReport> {
   const streams: StreamInfo[] = []
   for (const type of ['logs', 'traces', 'metrics'] as const) {
@@ -79,83 +51,4 @@ export async function applyRetention(ctx: O2Context): Promise<RetentionReport> {
       retention: stream.settings?.data_retention ?? RETENTION_DAYS,
     })),
   }
-}
-
-export async function installPrivacyPipeline(ctx: O2Context): Promise<void> {
-  const raw = await readFile(join(import.meta.dirname, 'assets', 'rum-privacy.vrl'), 'utf-8')
-  const vrl = raw.trim()
-  const hash = createHash('sha256').update(vrl, 'utf8').digest('hex')
-  if (hash !== RUM_PRIVACY_VRL_SHA256) {
-    throw new Error('rum-privacy.vrl changed without updating RUM_PRIVACY_VRL_SHA256')
-  }
-  await upsertFunction(ctx, { name: RUM_PRIVACY_FUNCTION_NAME, function: vrl, transType: 0 })
-  await upsertPipeline(ctx, {
-    name: RUM_PRIVACY_PIPELINE_NAME,
-    description: RUM_PRIVACY_PIPELINE_DESCRIPTION,
-    enabled: true,
-    source: {
-      source_type: 'realtime',
-      org_id: ctx.organization,
-      stream_name: RUM_STREAM,
-      stream_type: 'logs',
-    },
-    nodes: [
-      {
-        id: 'input',
-        data: {
-          node_type: 'stream',
-          org_id: ctx.organization,
-          stream_name: RUM_STREAM,
-          stream_type: 'logs',
-        },
-        position: { x: 0, y: 0 },
-        io_type: 'input',
-      },
-      {
-        id: 'privacy',
-        data: { node_type: 'function', name: RUM_PRIVACY_FUNCTION_NAME, after_flatten: true },
-        position: { x: 240, y: 0 },
-        io_type: 'default',
-      },
-      {
-        id: 'output',
-        data: {
-          node_type: 'stream',
-          org_id: ctx.organization,
-          stream_name: RUM_STREAM,
-          stream_type: 'logs',
-        },
-        position: { x: 480, y: 0 },
-        io_type: 'output',
-      },
-    ],
-    edges: [
-      { id: 'einput-privacy', source: 'input', target: 'privacy' },
-      { id: 'eprivacy-output', source: 'privacy', target: 'output' },
-    ],
-  })
-}
-
-export async function importDashboards(ctx: O2Context): Promise<number> {
-  const entries = await readdir(DASHBOARD_DIR)
-  const files = entries.filter((name) => name.endsWith('.json')).sort()
-  let imported = 0
-  for (const file of files) {
-    const body = unsafeCast<Record<string, unknown>>(JSON.parse(await readFile(join(DASHBOARD_DIR, file), 'utf-8')))
-    await upsertDashboard(ctx, body)
-    imported += 1
-  }
-  return imported
-}
-
-export interface ProvisionReport {
-  dashboards: number
-  retention: RetentionReport
-}
-
-export async function provisionOpenObserve(ctx: O2Context): Promise<ProvisionReport> {
-  await installPrivacyPipeline(ctx)
-  const dashboards = await importDashboards(ctx)
-  const retention = await applyRetention(ctx)
-  return { dashboards, retention }
 }

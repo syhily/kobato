@@ -28,7 +28,7 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import sharp from 'sharp'
 
-import type { O2Context, StreamInfo, TraceState } from './lib.ts'
+import type { O2Context, TraceState } from './lib.ts'
 
 import { TRACE_METRIC_STREAMS } from '../../src/shared/contracts/trace-metrics.ts'
 import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '../../src/shared/contracts/trace-pipeline.ts'
@@ -43,23 +43,23 @@ import {
   fail,
   generateFixture,
   generatePassword,
-  isRelevantTraceStream,
+  getRumToken,
   listDashboards,
   listStreams,
   log,
   LOG_STREAM,
   o2Context,
   o2Json,
+  observabilityDashboardPath,
   RETENTION_DAYS,
   search,
-  setRetention,
   upsertFunction,
   startOpenObserve,
   stopOpenObserve,
   waitForOpenObserve,
   warn,
 } from './lib.ts'
-import { ensureRumToken, provisionOpenObserve } from './provision.ts'
+import { applyRetention } from './provision.ts'
 
 const REPO_ROOT = join(import.meta.dirname, '..', '..')
 const BOOT_TIMEOUT_MS = 120_000
@@ -275,13 +275,9 @@ function fixtureNeedles(fx: SmokeFixtures): Array<{ field: string; value: string
   return Object.entries(fx).map(([field, value]) => ({ field, value: String(value) }))
 }
 
-async function writeDevConfig(
-  path: string,
-  port: number,
-  dataDir: string,
-  state: TraceState,
-  traceEnabled = true,
-): Promise<void> {
+async function writeDevConfig(path: string, port: number, dataDir: string): Promise<void> {
+  // Tracing has NO config-file surface (ADR-0014): the smoke configures the
+  // `observability` settings section through the real admin RPC below.
   const config = {
     server: { host: '127.0.0.1', port, loggingLevel: 'info' },
     security: {
@@ -290,27 +286,138 @@ async function writeDevConfig(
       trustedProxies: [],
     },
     storage: { data: dataDir, database: '', analyticsDatabase: '', defaultFont: '' },
-    trace: traceEnabled
-      ? {
-          enabled: true,
-          logs: { enabled: true },
-          endpoint: state.endpoint,
-          organization: state.organization,
-          serverAuthorizationHeader: `Basic ${Buffer.from(`${state.adminEmail}:${state.adminPassword}`).toString('base64')}`,
-          sampleRate: 1,
-          includeRedactedSql: false,
-          frontend: {
-            enabled: true,
-            applicationId: state.applicationId,
-            clientToken: state.rumToken,
-            sessionSampleRate: 100,
-          },
-        }
-      : { enabled: false },
   }
   // Synthetic fixtures deliberately never reach the config file.
   await mkdir(join(path, '..'), { recursive: true })
   await writeFile(path, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 })
+}
+
+interface ObservabilityStatus {
+  runtime: { phase: 'disabled' | 'unverified' | 'invalid' | 'running' | 'failed'; lastError: string | null }
+  verified: boolean
+  provisioned: boolean
+  provisionedCurrent: boolean
+  version: string | null
+}
+
+interface ObservabilityTestConnectionResult {
+  ok: true
+  version: string | null
+  organization: 'created' | 'exists'
+  provision:
+    | {
+        status: 'succeeded'
+        organization: 'created' | 'exists'
+        rumToken: 'created' | 'exists'
+        pipeline: 'installed'
+        dashboards: number
+        provisionedFingerprint: string
+      }
+    | { status: 'failed'; descriptor: { messageKey: string } }
+}
+
+/**
+ * Save a sparse `observability` patch through the REAL admin settings
+ * procedure (`POST /rpc/admin/settings/update`). This is the same call the
+ * settings panel makes, so the smoke exercises the write schema, the secret
+ * encryption, and the section-change handler.
+ */
+async function saveObservabilitySettings(session: AdminSession, patch: Record<string, unknown>): Promise<void> {
+  const result = await callE2eRpc<{ section: unknown; warnings: string[] }>(
+    session.client,
+    '/admin/settings/update',
+    { section: 'observability', payload: { observability: patch } },
+    session.csrfToken,
+  )
+  assert(result.status === 200, `observability settings save failed (${result.status})`)
+  assert(result.json.warnings.length === 0, `observability save returned warnings: ${result.json.warnings.join('; ')}`)
+}
+
+/** Read the read-only status projection (`GET /rpc/admin/observability/status`). */
+async function readObservabilityStatus(session: AdminSession): Promise<ObservabilityStatus> {
+  // oRPC's GET transport carries the serialized request envelope in `data`,
+  // not the bare input: `{"json":{}}` (empty query input).
+  const data = encodeURIComponent(JSON.stringify({ json: {} }))
+  const res = await session.client.get(`/rpc/admin/observability/status?data=${data}`, {
+    headers: { accept: 'application/json', 'x-csrf-token': session.csrfToken },
+  })
+  assert(res.status === 200, `observability status returned ${res.status}`)
+  const body = unsafeCast<{ json: ObservabilityStatus }>(await res.json())
+  return body.json
+}
+
+/** The runtime apply is async (serialized queue) — poll until the phase settles. */
+async function waitForRuntimePhase(
+  session: AdminSession,
+  expected: ObservabilityStatus['runtime']['phase'],
+  timeoutMs = 90_000,
+): Promise<ObservabilityStatus> {
+  const deadline = Date.now() + timeoutMs
+  let last: ObservabilityStatus | null = null
+  while (Date.now() < deadline) {
+    last = await readObservabilityStatus(session).catch(() => null)
+    if (last?.runtime.phase === expected) {
+      return last
+    }
+    await sleep(750)
+  }
+  throw new Error(
+    `observability runtime did not reach ${expected} within ${timeoutMs / 1000}s (last=${last?.runtime.phase ?? 'unreadable'}, error=${last?.runtime.lastError ?? 'none'})`,
+  )
+}
+
+/**
+ * Configure observability exactly as an admin would: save the connection
+ * fields, test the connection (which verifies the fingerprint AND provisions
+ * the RUM token / privacy pipeline / dashboards), wait for the runtime to
+ * start, then flip the reporting switches (a runtime-fingerprint change that
+ * keeps the verified connection) and wait for the browser gate.
+ */
+async function configureObservability(
+  session: AdminSession,
+  state: TraceState,
+  origin: string,
+): Promise<ObservabilityTestConnectionResult> {
+  await saveObservabilitySettings(session, {
+    enabled: true,
+    endpoint: state.endpoint,
+    organization: state.organization,
+    username: state.adminEmail,
+    password: state.adminPassword,
+    sampleRate: 1,
+    includeRedactedSql: false,
+  })
+
+  const test = await callE2eRpc<ObservabilityTestConnectionResult>(
+    session.client,
+    '/admin/observability/testConnection',
+    {},
+    session.csrfToken,
+  )
+  assert(test.status === 200, `observability connection test returned ${test.status}`)
+  assert(test.json.ok === true, 'observability connection test did not report ok')
+  assert(
+    test.json.provision.status === 'succeeded',
+    `auto-provision failed: ${test.json.provision.status === 'failed' ? test.json.provision.descriptor.messageKey : 'unknown'}`,
+  )
+  assert(
+    test.json.provision.dashboards >= 4,
+    `expected at least 4 provisioned dashboards, got ${test.json.provision.dashboards}`,
+  )
+
+  const running = await waitForRuntimePhase(session, 'running')
+  assert(running.verified, 'runtime is running but the connection is not verified')
+  assert(running.provisioned && running.provisionedCurrent, 'provisioned assets are missing or stale')
+
+  // Switch flips AFTER verification: the connection fingerprint excludes them,
+  // so the runtime restarts without losing the verified state.
+  await saveObservabilitySettings(session, {
+    logs: { enabled: true },
+    frontend: { enabled: true, sessionSampleRate: 100 },
+  })
+  await waitForRuntimePhase(session, 'running')
+  await waitForRumStatus(origin, true, 60_000)
+  return test.json
 }
 
 interface AdminSession {
@@ -672,6 +779,7 @@ async function measureBrowserNavigation(
 
 async function ingestUnknownFieldRumEvent(
   state: TraceState,
+  rumToken: string,
   fx: SmokeFixtures,
 ): Promise<{ viewId: string; traceId: string; applicationId: string }> {
   const viewId = randomBytes(12).toString('hex')
@@ -699,7 +807,7 @@ async function ingestUnknownFieldRumEvent(
     user_agent_os_major: '99',
   }
   const res = await fetch(
-    `${state.endpoint}/rum/v1/${state.organization}/rum?o2-api-key=${encodeURIComponent(state.rumToken)}`,
+    `${state.endpoint}/rum/v1/${state.organization}/rum?o2-api-key=${encodeURIComponent(rumToken)}`,
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -745,7 +853,7 @@ async function syntheticPanelRow(
 ): Promise<Record<string, unknown>> {
   const body = unsafeCast<{
     tabs: Array<{ panels: Array<{ id: string; queries: Array<{ query: string }> }> }>
-  }>(JSON.parse(await readFile(join(import.meta.dirname, 'assets', 'dashboards', `${dashboard}.json`), 'utf-8')))
+  }>(JSON.parse(await readFile(observabilityDashboardPath(`${dashboard}.json`), 'utf-8')))
   const panel = body.tabs.flatMap((tab) => tab.panels).find((entry) => entry.id === panelId)
   assert(panel !== undefined, `missing panel ${panelId}`)
   const query = panel.queries[0]?.query
@@ -768,7 +876,7 @@ async function panelRow(
     tabs: Array<{
       panels: Array<{ id: string; queries: Array<{ query: string; fields: { stream_type: string } }> }>
     }>
-  }>(JSON.parse(await readFile(join(import.meta.dirname, 'assets', 'dashboards', `${dashboard}.json`), 'utf-8')))
+  }>(JSON.parse(await readFile(observabilityDashboardPath(`${dashboard}.json`), 'utf-8')))
   const panel = body.tabs.flatMap((tab) => tab.panels).find((entry) => entry.id === panelId)
   assert(panel !== undefined, `missing panel ${panelId}`)
   const query = panel.queries[0]
@@ -853,7 +961,7 @@ async function waitForBrowserRumConsent(
 ): Promise<void> {
   await page.waitForFunction(
     (expectedConsent) => {
-      const state: unknown = Reflect.get(window, Symbol.for('kobato.dev-rum.runtime'))
+      const state: unknown = Reflect.get(window, Symbol.for('kobato.rum.runtime'))
       return state !== null && typeof state === 'object' && Reflect.get(state, 'consent') === expectedConsent
     },
     expected,
@@ -865,7 +973,7 @@ async function waitForRumStatus(origin: string, expected: boolean, timeoutMs = 3
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     try {
-      const res = await fetch(`${origin}/api/dev/rum/status`, {
+      const res = await fetch(`${origin}/api/rum/status`, {
         cache: 'no-store',
         headers: { accept: 'application/json' },
         signal: AbortSignal.timeout(2000),
@@ -915,13 +1023,9 @@ async function main(): Promise<void> {
     log('==> starting throwaway OpenObserve')
     startOpenObserve(state, { corsOrigins: origin })
     await waitForOpenObserve(state.endpoint)
-    let ctx = o2Context(state)
-    const withToken = await ensureRumToken(ctx, state, async () => undefined)
-    Object.assign(state, withToken)
-    const provisioned = await provisionOpenObserve(ctx)
-    log(`==> provisioned ${provisioned.dashboards} dashboards; ${provisioned.retention.applied} retention updates`)
+    const ctx = o2Context(state)
 
-    await writeDevConfig(configPath, appPort, dataDir, state)
+    await writeDevConfig(configPath, appPort, dataDir)
 
     log('==> booting DEV server (migrations)')
     server = await bootDevServer(configPath, appPort, serverLog)
@@ -931,10 +1035,18 @@ async function main(): Promise<void> {
     log('==> seeding synthetic admin and settings')
     seedAdmin(join(dataDir, 'kobato.db'), fx.adminEmail, fx.adminPassword, origin)
 
-    log('==> booting DEV server (installed, tracing enabled)')
+    log('==> booting DEV server (installed)')
     server = await bootDevServer(configPath, appPort, serverLog)
     const staged = await stagePost(origin, fx)
     await stageScheduledPost(staged.session, fx)
+
+    log('==> configuring observability through the admin settings surface')
+    const connection = await configureObservability(staged.session, state, origin)
+    log(
+      `    connected to ${state.endpoint} (${connection.organization}, version ${connection.version ?? 'unknown'}); ${connection.provision.status === 'succeeded' ? connection.provision.dashboards : 0} dashboards`,
+    )
+    const rumToken = await getRumToken(ctx)
+    assert(rumToken !== null && rumToken !== '', 'the server did not install a RUM client token')
 
     log('==> driving Chromium')
     browser = await chromium.launch({ headless: process.env.KOBATO_TRACE_SMOKE_HEADLESS !== '0' })
@@ -972,19 +1084,24 @@ async function main(): Promise<void> {
     await page.waitForTimeout(1500)
 
     // A real same-origin oRPC call from the page. The token comes from the
-    // rendered document, so it belongs to this browser session; RUM's fetch
-    // instrumentation adds the W3C traceparent.
+    // document's React Router handoff (`csrfToken` in the root loader data),
+    // so it belongs to this browser session; RUM's fetch instrumentation adds
+    // the W3C traceparent.
     const html = await page.content()
-    const csrfCandidates = [...new Set(html.match(/[0-9a-f]{64}/g) ?? [])]
-    assert(csrfCandidates.length === 1, `expected one public CSRF token, found ${csrfCandidates.length}`)
-    const rpcStatus = await page.evaluate(async (csrfToken: string) => {
+    const tokenMatch = /"csrfToken":"([0-9a-f]{64})"/.exec(html) ?? /csrfToken[^0-9a-f]{0,16}([0-9a-f]{64})/.exec(html)
+    assert(
+      tokenMatch !== null,
+      `the document carried no root csrfToken (${new Set(html.match(/[0-9a-f]{64}/g) ?? []).size} 64-hex candidates)`,
+    )
+    const csrfToken = tokenMatch[1]!
+    const rpcStatus = await page.evaluate(async (token: string) => {
       const res = await fetch('/rpc/content/bootstrap', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': csrfToken },
+        headers: { 'content-type': 'application/json', 'x-csrf-token': token },
         body: JSON.stringify({ json: {} }),
       })
       return res.status
-    }, csrfCandidates[0]!)
+    }, csrfToken)
     assert(rpcStatus === 200, `browser oRPC bootstrap returned HTTP ${rpcStatus}`)
 
     // A real uncaught browser error; the fixture must never leave the browser.
@@ -1028,7 +1145,6 @@ async function main(): Promise<void> {
     const onBrowserSamples = await measureBrowserNavigation(context, origin, 3)
 
     log('==> waiting for traces and RUM data in OpenObserve')
-    ctx = o2Context(state)
     const traceRows = (await waitForRows(
       ctx,
       'traces',
@@ -1059,7 +1175,7 @@ async function main(): Promise<void> {
       throw error
     }
 
-    const privacyProbe = await ingestUnknownFieldRumEvent(state, fx)
+    const privacyProbe = await ingestUnknownFieldRumEvent(state, rumToken, fx)
 
     const jobRows = (await waitForRows(
       ctx,
@@ -1129,6 +1245,16 @@ async function main(): Promise<void> {
 
     log('')
     log('== checks ==')
+
+    await check('settings-driven observability is verified, provisioned and running (P2/P3 chain)', async () => {
+      const status = await readObservabilityStatus(staged.session)
+      assert(status.runtime.phase === 'running', `runtime phase is ${status.runtime.phase}`)
+      assert(status.runtime.lastError === null, `runtime reported ${status.runtime.lastError}`)
+      assert(status.verified, 'the saved connection is not verified')
+      assert(status.provisioned && status.provisionedCurrent, 'provisioned assets are missing or stale')
+      assert(status.version !== null, 'the connection test did not report an OpenObserve version')
+      return `phase=${status.runtime.phase} verified=${status.verified} provisionedCurrent=${status.provisionedCurrent} version=${status.version}`
+    })
 
     await check('CSP exposes the O2 origin only after the privacy gate passes', async () => {
       const res = await fetch(origin, { headers: { accept: 'text/html' }, signal: AbortSignal.timeout(10_000) })
@@ -1461,32 +1587,20 @@ async function main(): Promise<void> {
       return `${logRows.length} rows / ${keys.size} columns; no request/response/URL/query/pid/hostname/context/error columns or fixture values`
     })
 
-    await check('retention is 1 day on every relevant stream', async () => {
-      const streams: StreamInfo[] = []
-      for (const type of ['logs', 'traces', 'metrics'] as const) {
-        streams.push(...(await listStreams(ctx, type)))
-      }
-      const relevant = streams.filter((stream) => isRelevantTraceStream(stream.name))
-      assert(relevant.length > 0, 'no relevant streams found')
+    await check('retention is 1 day on every relevant stream (dev tooling policy)', async () => {
+      // Retention is the ONE OpenObserve policy the dev tooling still owns; the
+      // server's provisioning deliberately never touches it (ADR-0014).
+      const first = await applyRetention(ctx)
+      assert(first.streams.length > 0, 'no relevant streams found')
       assert(
-        relevant.some((stream) => stream.name === LOG_STREAM),
+        first.streams.some((stream) => stream.name === LOG_STREAM),
         `${LOG_STREAM} is missing from the retention set`,
       )
-      const wrong = relevant.filter((stream) => (stream.settings?.data_retention ?? 0) !== RETENTION_DAYS)
-      if (wrong.length > 0) {
-        for (const stream of wrong) {
-          await setRetention(ctx, stream, RETENTION_DAYS)
-        }
-      }
-      const reread = await Promise.all((['logs', 'traces', 'metrics'] as const).map((type) => listStreams(ctx, type)))
-      const flat = reread.flat()
-      const stillWrong = flat.filter(
-        (stream) =>
-          relevant.some((entry) => entry.name === stream.name) &&
-          (stream.settings?.data_retention ?? 0) !== RETENTION_DAYS,
-      )
-      assert(stillWrong.length === 0, `retention still not 1 day: ${stillWrong.map((s) => s.name).join(', ')}`)
-      return `${relevant.length} streams at 1 day (first pass fixed ${wrong.length})`
+      const converged = await applyRetention(ctx)
+      assert(converged.applied === 0, `retention did not converge: ${converged.applied} stream(s) still wrong`)
+      const wrong = converged.streams.filter((stream) => stream.retention !== RETENTION_DAYS)
+      assert(wrong.length === 0, `retention still not 1 day: ${wrong.map((stream) => stream.name).join(', ')}`)
+      return `${converged.streams.length} streams at 1 day (first pass fixed ${first.applied})`
     })
 
     await check('unknown RUM fields are deleted by default (fail-closed)', async () => {
@@ -1594,7 +1708,7 @@ async function main(): Promise<void> {
           tabs: Array<{
             panels: Array<{ id: string; queries: Array<{ query: string; fields: { stream_type: string } }> }>
           }>
-        }>(JSON.parse(await readFile(join(import.meta.dirname, 'assets', 'dashboards', `${file}.json`), 'utf-8')))
+        }>(JSON.parse(await readFile(observabilityDashboardPath(`${file}.json`), 'utf-8')))
         for (const panel of body.tabs.flatMap((tab) => tab.panels)) {
           const query = panel.queries[0]
           if (query === undefined) {
@@ -1844,11 +1958,20 @@ async function main(): Promise<void> {
         `RUM rows arrived after quiescence (${quiescence.signature} → ${rumRowSignature(afterQuiesce)})`,
       )
 
-      await provisionOpenObserve(verificationCtx)
+      // Restore through the PRODUCT path: the admin provision procedure
+      // re-installs the privacy pipeline idempotently and re-applies the runtime.
+      const restore = await callE2eRpc<{ provisionedFingerprint: string }>(
+        staged.session.client,
+        '/admin/observability/provision',
+        {},
+        staged.session.csrfToken,
+      )
+      assert(restore.status === 200, `provision restore failed (${restore.status})`)
+      assert(restore.json.provisionedFingerprint !== '', 'provision restore returned no fingerprint')
       await waitForRumStatus(origin, true, 30_000)
       await waitForBrowserRumConsent(openPage, 'granted', 30_000)
       const rumState = await openPage.evaluate(() => {
-        const state = Reflect.get(window, Symbol.for('kobato.dev-rum.runtime'))
+        const state = Reflect.get(window, Symbol.for('kobato.rum.runtime'))
         if (state === undefined || state === null) {
           return null
         }
@@ -1897,12 +2020,12 @@ async function main(): Promise<void> {
     })
 
     await check('telemetry on/off overhead comparison recorded', async () => {
-      docker(['stop', state.containerName])
-      assert(server !== null, 'DEV server is not running')
-      await stopDevServer(server)
-      server = null
-      await writeDevConfig(configPath, appPort, dataDir, state, false)
-      server = await bootDevServer(configPath, appPort, serverLog)
+      // Flip the PRODUCT switch instead of rewriting a config file: the runtime
+      // stops exporting without a server restart, then restarts from the SAME
+      // verified settings (the connection fingerprint excludes `enabled`).
+      await saveObservabilitySettings(staged.session, { enabled: false })
+      await waitForRuntimePhase(staged.session, 'disabled')
+      await waitForRumStatus(origin, false, 30_000)
       await fetch(origin).then((res) => res.text())
       const offServerSamples = await measureServerRequests(origin, 5)
       assert(browser !== null, 'browser is not running')
@@ -1912,6 +2035,10 @@ async function main(): Promise<void> {
       await offWarmup.close()
       const offBrowserSamples = await measureBrowserNavigation(offContext, origin, 3)
       await offContext.close()
+
+      await saveObservabilitySettings(staged.session, { enabled: true })
+      await waitForRuntimePhase(staged.session, 'running')
+      await waitForRumStatus(origin, true, 60_000)
 
       const round = (values: number[]) => values.map((value) => Math.round(value * 10) / 10)
       const onServerMedian = median(onServerSamples)

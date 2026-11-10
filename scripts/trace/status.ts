@@ -1,5 +1,8 @@
 // `pnpm run trace:status` — inspect the local OpenObserve instance without
-// printing credentials.
+// printing credentials. Dashboards and the RUM privacy pipeline are installed
+// by the SERVER during the admin connection test (ADR-0014); this command only
+// observes them, so a missing asset means the panel has not been configured and
+// tested yet.
 
 import { RUM_PRIVACY_PIPELINE_NAME } from '../../src/shared/contracts/trace-pipeline.ts'
 import {
@@ -26,6 +29,11 @@ async function main(): Promise<void> {
   log(`container: ${state.containerName} (${containerRunning(state.containerName) ? 'running' : 'stopped'})`)
   log(`volume:    ${state.volumeName}`)
   log(`endpoint:  ${state.endpoint}`)
+  log(`org:       ${state.organization}   (site name = OpenObserve organization = RUM application id)`)
+  log(`username:  ${state.adminEmail}`)
+  log(
+    `settings:  enter endpoint/organization/username (+ the state file's adminPassword) in Admin → Settings → Observability`,
+  )
   if (!containerExists(state.containerName) || !containerRunning(state.containerName)) {
     log('OpenObserve is not running.')
     return
