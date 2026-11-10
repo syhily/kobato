@@ -1,195 +1,120 @@
 # Routes conventions
 
-`src/routes/` contains route modules — loader / action / meta / component orchestration. Read
-session/context at the perimeter, call orchestrators (`server/http/loaders/*`, domain-surface
-services), project DTOs through `shared/`, render with `ui/`. **Public routes and the root loader
-are the exception**: they read through the `content.*` oRPC group via `createSsrCaller`
-(`@/server/http/ssr-caller`), never touching domain services or `server/http/loaders/*` directly.
-No DB queries, cache access, or markdown parsing
-inline — never import `server/infra/db/operations/*` (pinned by a boundaries contract test).
-Resource routes (feeds, sitemap, OG images, JSON APIs) live alongside page modules so the per-URL
-contract is obvious from the file system. This file is the long-form companion to the terse route
-manifest in `@/routes` — the **why** behind a `layout()`, route ordering, or `id`.
+`src/routes/` holds route modules — loader / action / meta / component orchestration. Read session/context at
+the perimeter, call orchestrators (`server/http/loaders/*`, domain-surface services), project DTOs through
+`shared/`, render with `ui/`. No DB queries, cache access, or markdown parsing inline — never import
+`server/infra/db/operations/*` (boundaries contract test). `routes.ts` is the URL contract, route ids derive from
+the file path; URLs and physical paths stay stable. Non-page requests (API, feeds, sitemap, generated images) are
+Hono routes in `server.ts`, not resource routes; components take plain props, never `server/*` in JSX.
+
+**Public routes and the root loader are the exception**: both read `content.*` via `createSsrCaller`
+(`@/server/http/ssr-caller`), never domain services or `server/http/loaders/*`.
 
 ## Route trees
 
 Four nested trees, each with its own `routes/<tree>/layout.tsx`:
 
-- `routes/public/` — public site: `home`, `archives`, `categories`, `category/list`, `tag/list`,
-  `search/list`, `post/detail`, `page/detail`, `not-found`.
+- `routes/public/` — public site: `home`, `archives`, `categories`, `category/list`, `tag/list`, `search/list`,
+  `post/detail`, `page/detail`, `not-found`.
 - `routes/auth/` — split-screen login + install: `signin`, `setup/index` (`/admin/setup`).
 - `routes/admin/` — admin SPA: `dashboard`, `comments`, `me/{profile,comments,sessions}`,
   `security/{sessions,audit-log,users/{index,detail}}`, `taxonomy/{categories,tags}`,
   `library/{images,music,branding,fonts}`, `pages/index`, `posts/{index,analytics}`,
   `analytics/{layout,overview,realtime,mentions}`, `settings/{layout,index}`.
-- `routes/editor/` — standalone immersive editing shell (split from `routes/admin/`):
-  `post/{new,edit,analytics}`, `page/{new,edit}`. Own layout keeps editor chrome free of admin
-  SPA chrome.
+- `routes/editor/` — standalone editing shell: `post/{new,edit,analytics}`, `page/{new,edit}`; its own layout
+  keeps editor chrome free of admin SPA chrome.
 
 ## File naming
 
-We do **not** use React Router's segment-based filename convention (`_index.tsx`, `($slug).tsx`).
-The URL is the contract — `routes.ts` is the manifest, the filesystem is storage. Modules are
-grouped by area into sub-directories, each file named by its **role**:
+Neither `_index.tsx` nor `($slug).tsx` is used: `routes.ts` is the manifest, files are named by **role**.
 
-| Role file             | Meaning                                                                                        |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| `<area>/layout.tsx`   | Pathless or pathed layout — owns chrome, error boundary, revalidation policy for its children. |
-| `<entity>/detail.tsx` | Single-resource page (`public/post/detail.tsx`, `admin/security/users/detail.tsx`).            |
-| `<entity>/list.tsx`   | Paginated listing — mounted twice in `routes.ts` (`/cats/:slug` AND `/cats/:slug/page/:num`).  |
-| `<entity>/index.tsx`  | The bare-prefix admin page.                                                                    |
-| `<entity>/new.tsx`    | Admin create form (`/admin/<entity>/new`).                                                     |
-| `<entity>/edit.tsx`   | Admin edit form (`/admin/<entity>/:id/edit`).                                                  |
-| `<area>/<role>.tsx`   | Flat role within an area — `public/home.tsx`, `public/not-found.tsx`, `auth/signin.tsx`.       |
+| Role file             | Meaning                                                                                   |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| `<area>/layout.tsx`   | Pathless or pathed layout — chrome, error boundary, revalidation policy for its children. |
+| `<entity>/detail.tsx` | Single resource (`public/post/detail.tsx`, `admin/security/users/detail.tsx`).            |
+| `<entity>/list.tsx`   | Paginated listing, mounted twice (`/cats/:slug` AND `/cats/:slug/page/:num`).             |
+| `<entity>/index.tsx`  | The bare-prefix admin page.                                                               |
+| `<entity>/new.tsx`    | Admin create form (`/admin/<entity>/new`); `edit.tsx` serves `<entity>/:id/edit`.         |
+| `<area>/<role>.tsx`   | Flat role in an area — `public/home.tsx`, `public/not-found.tsx`, `auth/signin.tsx`.      |
 
-Adding a route: pick the area directory, choose a role filename, add the manifest entry in
-`@/routes`. Never introduce a new pattern or adopt the segment-based convention.
+Adding a route: pick the area directory, choose a role filename, add the manifest entry in `@/routes`; never
+introduce a new pattern.
 
 ## Patterns
 
-- `loader` for render-time data, `action` for route form submissions.
-- `redirect`, `data`, `Response`, and thrown responses for control flow.
-- **Public SSR data goes through oRPC** — `routes/public/**` loaders and `src/root.tsx` call the
-  `content.*` procedures via `createSsrCaller` (`@/server/http/ssr-caller`), an in-process router
-  client bound to the per-request `HandlerContext`. Loaders stay one-liners: `unwrapListing(...)`
-  (home/tag/category/search), `unwrapListingPayload(...)` (archives/categories) and
-  `unwrapDetail(...)` (post/page detail) map the output union back to the URL contract —
-  `redirect` → thrown 301/302, `not-modified` → thrown 304, `ORPCError('NOT_FOUND')` →
-  `notFound()`. Every listing loader forwards the request's `if-none-match` and returns
-  `data(payload, { headers: { ETag } })` (the 304 is rebuilt from the request localization with
-  the listing `private, no-cache` profile). Detail loaders fire `content.comments.byKey` and
-  `webmention.list` only on the ok branch, chained off the critical payload's `commentKey`
-  (un-awaited, so comments/webmentions still stream via `<Await>`; never speculatively — a
-  304/301/404 read costs zero comments work). The root loader calls `content.bootstrap()` with no
-  args — the theme cookie is parsed and the message scope derived (public pathname vs `/admin` +
-  `/editor`) inside the procedure, and `shouldRevalidate` refreshes the root payload on
-  public ↔ workspace navigations and every form action. The exact `@/server/*` import whitelist
-  for public routes + root is pinned by the boundaries contract
-  test (`ssr-caller`, `loaders/route-exports`, `infra/http/*`, plus `render/warmup/*`,
-  `infra/trace/react-router`, and `infra/trace/config` for root). Root also owns the trace middleware
-  (`export const middleware = [traceRouteMiddleware]`): one no-op-in-production
-  document/`.data` span around loaders, actions, and the SSR entry (ADR-0012). It must stay in
-  the root module — not per-route middleware — so a single span spans the whole request. The root loader projects
-  `activeFrontendRum()` as a `rum` key in EVERY build when every frontend gate passes and the runtime verified the
-  O2 allowlist pipeline + stored function hash/wiring (build-independent — only the bootstrap's `environment`
-  label differs); disabled/withheld responses omit the key entirely (no null placeholder, no
-  `serverAuthorizationHeader` — the projection is the narrow browser bootstrap in `shared/contracts/trace`).
-  `root.tsx`'s `App` mounts `useRum(loaderData.rum ?? null)` once; it renders nothing and performs the DNT/GPC
-  check before the dynamic SDK import.
-- **Admin SSR data goes through oRPC too** — `routes/admin/**` and `routes/editor/**` loaders
-  compose the domain endpoints (`account.*`, `comments.*`, `analytics.*`, `admin.*` — added in
-  `shared/contracts/admin.ts`) via the same `createSsrCaller` (which also returns `viewer`/`session`
-  for the route-level `requireRole` gates and `isCurrent` projections). Loaders keep the
-  `requireRole` gate, do their own `Promise.all` composition (role-conditional branches — e.g. the
-  dashboard's admin-only analytics/moderation reads), and translate `ORPCError` codes back to
-  Responses (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts). There
-  is no page-level aggregate group — orchestration stays in the loaders. Loaders whose ONLY job is
-  the role gate (`getRequestContext` → `requireRole` → `return null`) collapse to
-  `export const loader = guardOnlyLoader('<role>')` from `@/server/http/request-context`; loaders
-  that also fetch data keep the hand-written `requireRole(viewer ?? undefined, '<role>')` line. The
-  boundaries test pins
-  the admin/editor whitelist (`ssr-caller`, `request-context`, `domains/auth/rbac`, `infra/http/*`)
-  and the auth whitelist (signin/setup authentication-flow orchestration, which deliberately stays
-  direct: `domains/auth/*`, `domains/comments/services/public-query`, `domains/settings/install-gate`,
-  `http/loaders/signin`, `request-context`, `infra/rate-limit`).
-- **Non-page requests** (API, feeds, sitemap, generated images) are served by Hono native routes
-  mounted in `server.ts`, NOT React Router resource routes.
-- Public URLs and physical paths stay stable — route ids derive from the file path.
-- Route components accept plain props and never reach back into `server/*` inside the JSX tree.
+- `loader` for render-time data, `action` for form submissions; `redirect`, `data`, `Response`, and thrown
+  responses for control flow.
+- **Public SSR data goes through oRPC.** `routes/public/**` loaders and `src/root.tsx` call `content.*` via
+  `createSsrCaller`. Loaders stay one-liners: `unwrapListing` (home/tag/category/search), `unwrapListingPayload`
+  (archives/categories), `unwrapDetail` (post/page detail) map the output union to the URL contract — `redirect` →
+  thrown 301/302, `not-modified` → thrown 304, `ORPCError('NOT_FOUND')` → `notFound()`. Listing loaders forward
+  `if-none-match` and return `data(payload, { headers: { ETag } })`; the 304 is rebuilt from the request
+  localization with the listing `private, no-cache` profile.
+- Detail loaders fire `content.comments.byKey` and `webmention.list` only on the ok branch, un-awaited off
+  `commentKey` so they stream via `<Await>`; never speculatively, so a 304/301/404 read does no comments work.
+- The root loader calls `content.bootstrap()` with no args (theme cookie and message scope resolved inside the
+  procedure: public pathname vs `/admin` + `/editor`); `shouldRevalidate` refreshes it on public ↔ workspace
+  navigation and every form action. Root middleware `[traceRouteMiddleware]` adds one no-op-in-production
+  document/`.data` span around loaders, actions, and the SSR entry, and must stay in the root module, not per-route.
+- The root loader projects `activeFrontendRum()` as `rum` in every build once all frontend gates pass and the
+  runtime verified the O2 allowlist pipeline + stored function hash/wiring; withheld responses omit the key
+  entirely — no null placeholder, `serverAuthorizationHeader`, OpenObserve endpoint/organization, or RUM client
+  token (the browser posts to the same-origin `/api/rum/intake` relay). `App` mounts
+  `useRum(loaderData.rum ?? null)` once; it runs the DNT/GPC check before the dynamic SDK import.
+- **Admin SSR data goes through oRPC too.** `routes/admin/**` and `routes/editor/**` loaders compose
+  `account.*`, `comments.*`, `analytics.*`, `admin.*` (`shared/contracts/admin.ts`) via the same
+  `createSsrCaller`, which also returns `viewer`/`session` for `requireRole` gates and `isCurrent`.
+- Admin loaders keep `requireRole`, compose with their own `Promise.all` (role-conditional branches) and map
+  `ORPCError` codes (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts); no
+  page-level aggregate group exists. Gate-only loaders (`getRequestContext` → `requireRole` → `return null`)
+  collapse to `guardOnlyLoader('<role>')` from `@/server/http/request-context`; data loaders keep
+  `requireRole(viewer ?? undefined, '<role>')`.
+- Boundaries whitelists — public+root: `ssr-caller`, `loaders/route-exports`, `infra/http/*` (+ `render/warmup/*`,
+  `infra/trace/react-router`, `infra/trace/config`); admin/editor: `ssr-caller`, `request-context`,
+  `domains/auth/rbac`, `infra/http/*`; auth (direct): `domains/auth/*`, `domains/comments/services/public-query`,
+  `domains/settings/install-gate`, `http/loaders/signin`, `request-context`, `infra/rate-limit`.
 
 ## Content patterns
 
-- `post` + `content` → `/posts/:slug`; `page` + `content` → `/:slug`. Both render the saved
-  `bodyHtml` projection through `DetailBodyChrome` (see `src/ui/AGENTS.md` → Content editors);
-  public URLs use `slug`, not internal id.
-- `visible=false` posts are hidden from the public home and random-post widgets but stay in
-  archives, tags, search, sitemap, feeds, and category/tag listings. Full gate rules:
-  `src/server/AGENTS.md` → Content.
+- `post` + `content` → `/posts/:slug`; `page` + `content` → `/:slug`. Both render the saved `bodyHtml` projection
+  through `DetailBodyChrome` (see `src/ui/AGENTS.md` → Content editors); public URLs use `slug`, not internal id.
+- `visible=false` posts are hidden from the public home and random-post widgets but stay in archives, tags,
+  search, sitemap, feeds, and category/tag listings (`src/server/AGENTS.md` → Content).
 
 ## Page draft preview
 
-- `routes/public/page/detail.tsx` paints a red admin-only badge via `PageDetailBody`'s
-  `draftMarker` prop: `'draft' | 'unpublished-draft' | 'published-draft' | null`.
-- Catalog miss → anonymous 404, admin sees latest draft (**【草稿】**).
-- Catalog hit + `?draft=true` → anonymous ignores; admin sees **【未发布的草稿】** (newer draft
-  exists) or **【已发布的草稿】** (latest revision IS published).
-- Service: `loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug, viewer)`
-  (`@/server/domains/content/lifecycle`) → `{ preview, hasNewerDraft }`. Access rule lives on the
-  entity descriptor (`canPreviewDraft(viewer, meta)`): pages admin-only, posts author+ AND the
-  post's `authorId` (admins preview anyone's) — mounted in the post detail route.
-
----
+- `routes/public/page/detail.tsx` paints a red admin-only badge via `PageDetailBody`'s `draftMarker`:
+  `'draft' | 'unpublished-draft' | 'published-draft' | null`.
+- Catalog miss → anonymous 404, admin sees latest draft (**【草稿】**); catalog hit + `?draft=true` → anonymous
+  ignores, admin sees **【未发布的草稿】** (newer draft) or **【已发布的草稿】** (latest revision IS published).
+- `loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug, viewer)` (`@/server/domains/content/lifecycle`) →
+  `{ preview, hasNewerDraft }`; the access rule is on the entity descriptor (`canPreviewDraft(viewer, meta)`):
+  pages admin-only, posts author+ AND the post's `authorId` (admins preview anyone's), in the post route.
 
 ## Manifest anchors
 
-Each manifest block has an anchor comment pointing at a section below. Multi-paragraph rationale
-goes here, not in `routes.ts`.
-
-### A. Public layout (`routes/public/layout.tsx`)
-
-**Pathless** layout wrapping every public URL. Owns `<BaseLayout>`, which **statically imports
-`public.css`**: React Router only emits `<link rel="stylesheet">` for stylesheets reachable from
-the matched route module graph, so the static import guarantees a styled first paint. **Do not**
-lazy-load `public.css` from a child route or move it into a regular component — both reintroduce
-FOUC. Admin / login / install / API routes live **outside** this layout so their bundles skip the
-public stylesheet cascade; the admin / auth / editor layouts import the separate `admin.css`
-entry instead (see `src/styles/AGENTS.md` → Entry structure).
-
-### B. Splat catch-all inside the public layout
-
-```ts
-route('*', 'routes/public/not-found.tsx'),
-```
-
-The splat MUST stay last inside `public/layout.tsx`. `*` is the lowest-priority match, firing only
-for paths nothing else handles — multi-segment WordPress probes (`/wp-content/plugins/x.php`,
-`/cgi-bin/test`). Single-segment `.php` / `cgi-bin` probes hit `:slug` first and are intercepted
-inside `routes/public/page/detail.tsx` (see the wp-decoy helper).
-
-### C. Resource routes outside the public layout
-
-Resource routes sit **outside** `public/layout.tsx`: no `<Outlet />` chrome, no `<BaseLayout>`,
-no `public.css` in their bundle. Each returns a `Response` directly from a `loader` (GET) or
-`action` (POST/PATCH/DELETE).
-
-### D. Feed URLs (Hono resource router)
-
-The six public feed URLs are served by `feedRouter` (`src/server/http/resources/feed.ts`), mounted
-at the root in `src/server/http/middleware-pipeline.ts` (`app.route('/', feedRouter)`). They do
-**not** appear in `routes.ts`:
-
-| URL                     | Handler scope             |
-| ----------------------- | ------------------------- |
-| `/feed`                 | site-wide RSS             |
-| `/feed/atom`            | site-wide Atom            |
-| `/cats/:slug/feed`      | `{ category: slug }` RSS  |
-| `/cats/:slug/feed/atom` | `{ category: slug }` Atom |
-| `/tags/:slug/feed`      | `{ tag: slug }` RSS       |
-| `/tags/:slug/feed/atom` | `{ tag: slug }` Atom      |
-
-Each handler pins its taxonomy scope at compile time and passes the `slug` param straight into
-`generateFeeds` — no URL-sniffing helper. Responses are rate-limited (`tryResourceRateLimit`) and
-cached through the cache module's `through` verb (`feed` declaration) with a namespaced key
-(`cat:<slug>` / `tag:<slug>` / `all`) so a category slugged `all` can't collide with the site-wide
-feed. New scope → new `.get()` pair stating its scope inline.
-
-### E. API routes (Hono layer)
-
-All internal API endpoints live in the Hono server (`src/server/http/`) as oRPC procedures. They do
-**not** appear in `routes.ts` — the manifest only contains page routes.
-
-### F. Auth split-screen layout (`routes/auth/layout.tsx`)
-
-Owns the split-screen layout shared by login and the install flow — independent of the admin SPA
-shell.
-
-### G. admin SPA shell (`routes/admin/layout.tsx`)
-
-Owns its own chrome (sidebar + topbar), opts out of `BaseLayout` via `handle.layout = 'admin'`,
-and does **not** reuse the auth split-screen layout (F).
-
-### H. Settings sub-layout (`routes/admin/settings/layout.tsx`)
-
-Wraps the single `/admin/settings` page, hydrates the full `BlogSettingsBundle` once, and exposes
-`{ bundle, timeZones, masks }` (plus the admin parent context) via `useOutletContext()`. Asserts
-the bundle invariant up front so the page never handles a partial setup.
+- **A. Public layout (`routes/public/layout.tsx`)** — **pathless** layout wrapping every public URL; owns
+  `<BaseLayout>`, which **statically imports `public.css`** so the matched route graph links the stylesheet (styled
+  first paint). **Do not** lazy-load `public.css` from a child route or move it into a regular component — FOUC.
+  Admin / login / install / API routes stay outside and import `admin.css` (`src/styles/AGENTS.md` → Entry structure).
+- **B. Splat catch-all** — `route('*', 'routes/public/not-found.tsx')` MUST stay last inside `public/layout.tsx`:
+  `*` is the lowest-priority match, firing only for paths nothing else handles — multi-segment WordPress probes
+  (`/wp-content/plugins/x.php`, `/cgi-bin/test`); single-segment `.php` / `cgi-bin` probes hit `:slug` first and
+  are intercepted in `routes/public/page/detail.tsx` (wp-decoy helper).
+- **C. Resource and API routes** — resource routes sit outside `public/layout.tsx` (no `<Outlet />`,
+  `<BaseLayout>`, or `public.css`) and return a `Response` from a `loader` (GET) or `action` (POST/PATCH/DELETE);
+  internal API endpoints are Hono oRPC procedures in `src/server/http/`, so the manifest holds page routes only.
+- **D. Feed URLs** — six URLs from `feedRouter` (`src/server/http/resources/feed.ts`), mounted at the root in
+  `src/server/http/middleware-pipeline.ts` (`app.route('/', feedRouter)`); none appear in `routes.ts`: `/feed`,
+  `/feed/atom` (site-wide); `/cats/:slug/feed`, `/cats/:slug/feed/atom` (`{ category: slug }`); `/tags/:slug/feed`,
+  `/tags/:slug/feed/atom` (`{ tag: slug }`). Handlers pin their taxonomy scope at compile time, pass `slug` into
+  `generateFeeds`, are rate-limited (`tryResourceRateLimit`), and cache through the cache module's `through` verb
+  (`feed` declaration) keyed `cat:<slug>` / `tag:<slug>` / `all`, so a category slugged `all` can't collide. New
+  scope → new `.get()` pair stating its scope inline.
+- **F. Auth split-screen layout (`routes/auth/layout.tsx`)** — shared by login and the install flow, independent of
+  the admin SPA shell.
+- **G. admin SPA shell (`routes/admin/layout.tsx`)** — own chrome (sidebar + topbar), opts out of `BaseLayout` via
+  `handle.layout = 'admin'`, does not reuse the auth layout (F).
+- **H. Settings sub-layout (`routes/admin/settings/layout.tsx`)** — wraps `/admin/settings`, hydrates the full
+  `BlogSettingsBundle` once, exposes `{ bundle, timeZones, masks }` (with the admin parent context) via
+  `useOutletContext()`, and asserts the bundle invariant up front.

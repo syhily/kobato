@@ -2,534 +2,253 @@
 
 ## Overview
 
-- `src/inkling/` is kobato's rich-text editor layer — the squashed inkling snapshot at 601961b0
-  (formerly the `@inkling/editor` workspace package in `packages/inkling`), dissolved into the app
-  tree. Lexical-based, React 19, TypeScript, Lexical 0.53.
-- The layer stays host-agnostic: it imports nothing from kobato's other layers. The rest of the app
-  consumes it ONLY through two entry surfaces, pinned by
-  `tests/unit/shared/contracts/boundaries.test.ts`:
-  - `@/inkling` — the React barrel (`src/inkling/index.ts`), used by `client/` / `ui/` / `routes/`.
-    It calls `registerCardDecorateAdapter()` at module top level — a bare side-effect import would
-    be tree-shaken away, so the registration MUST stay an explicit top-level statement in the
-    barrel.
-  - `@/inkling/headless` — the react-free conversion surface (`src/inkling/headless.ts`), the only
-    surface `server/` and `shared/` may use.
-- The old `/core` entry is gone (it had zero consumers); `InklingComposerBase` remains for card-free
-  compositions.
-- The composer builds its editor through the Lexical EXTENSION API, not the deprecated
-  `LexicalComposer`: `InklingComposerBase` mounts `LexicalExtensionComposer` with the root extension
-  assembled by `src/inkling/components/inkling-root-extension.ts` (namespace/theme/html/nodes/onError
-  plus `$initialEditorState` — `null` when collaboration bootstraps, initializer functions keep the
-  legacy `root.isEmpty()` guard). Two invariants there are load-bearing: the extension is frozen per
-  mount through a lazy `useState` initializer (`LexicalExtensionComposer` REBUILDS the editor when the
-  extension identity changes, where the legacy composer read its config once), and the composer gets
-  `contentEditable={null}` because the `RichTextPlugin` core entry owns the editable element. Node
-  decorators render through `ReactExtension` in this world, so the root extension configures
-  `ReactExtension`'s `ErrorBoundary` with `InklingErrorBoundary` (the `RichTextPlugin` prop is inert
-  here); every legacy plugin (`HistoryPlugin`, `useLexicalComposerContext`, …) keeps working off the
-  context `ReactExtension` provides. Composer-owned Providers wrap `LexicalExtensionComposer` itself:
-  ReactExtension renders card decorators as siblings of its `children`, so Providers nested under
+- `src/inkling/` is kobato's rich-text editor layer (Lexical 0.53, React 19, TS), importing nothing from other layers. Source `src/inkling/`; tests
+  `tests/inkling/` (own vitest project); demo `demo/`.
+- Two entry surfaces only (`tests/unit/shared/contracts/boundaries.test.ts`): `@/inkling` (React barrel `src/inkling/index.ts`; for `client/`, `ui/`,
+  `routes/`) and `@/inkling/headless` (`src/inkling/headless.ts`, react-free; the only surface `server/` and `shared/` may use). The barrel's top-level
+  `registerCardDecorateAdapter()` call MUST stay explicit.
+- Composer: the Lexical EXTENSION API, not `LexicalComposer`. `InklingComposerBase` (also the card-free composer) mounts `LexicalExtensionComposer` with the
+  root extension from `src/inkling/components/inkling-root-extension.ts` (namespace/theme/html/nodes/onError plus `$initialEditorState`: `null` when
+  collaboration bootstraps; initializers keep the `root.isEmpty()` guard).
+- Freeze the extension per mount via a lazy `useState` initializer: `LexicalExtensionComposer` REBUILDS the editor when the extension identity changes.
+  `contentEditable={null}` on the composer: the `RichTextPlugin` core entry owns the editable element. Decorators render through `ReactExtension`, so the
+  root extension wires its `ErrorBoundary` to `InklingErrorBoundary` (the `RichTextPlugin` prop is inert).
+- Composer-owned Providers wrap `LexicalExtensionComposer` itself: ReactExtension renders card decorators as siblings of `children`, so Providers under
   `children` are invisible to cards and their nested editors.
-- Source: `src/inkling/`, tests: `tests/inkling/` (a dedicated vitest project), demo: `demo/` at the
-  repo root.
 
 ## Essential commands
 
-Run these from the kobato root:
+Run from the kobato root:
 
 ```bash
-pnpm run type        # root tsc — a single pass that also covers tests/inkling
+pnpm run type        # root tsc — one pass, also covers tests/inkling
 pnpm run lint        # oxlint (root config)
-pnpm test:inkling    # vitest run --project inkling
-pnpm run fmt         # oxfmt --write with the root config (covers src/inkling, tests/inkling, demo)
-pnpm run fmt:check   # oxfmt --check with the root config
-pnpm demo            # vite demo — the standalone demo app (not part of the type/test/build gates)
+pnpm test:inkling    # vitest run --project inkling (<file> for one file; npx vitest --project inkling = watch)
+pnpm run fmt         # oxfmt --write (covers src/inkling, tests/inkling, demo)
+pnpm run fmt:check   # oxfmt --check
+pnpm demo            # vite demo — not part of the type/test/build gates
 ```
 
 ## Code style
 
-- Formatter/linter: `oxfmt` and `oxlint`, configured ONLY at the kobato root (`oxfmt.config.ts`,
-  `oxlint.config.ts`) — this layer carries no config files of its own. The root oxlint config scopes
-  inkling's documented exceptions in a `src/inkling/**` override (public barrel, intentional Lexical
-  cycles, class+interface merging, editor-chrome a11y exemptions, and the keeper rules —
-  eqeqeq/no-eval/no-plusplus/no-explicit-any etc. — that the kobato codebase itself is not clean
-  under); the root oxfmt config points Tailwind sorting at `src/inkling/styles/index.css` with
-  `clsx` through its own override (`src/inkling/**`, `demo/**`).
-- Single quotes, no semicolons, trailing commas, print width 120.
-- Tailwind classes scoped under `.inkling-lexical`.
-- Import sorting is handled by `oxfmt`.
-- `oxlint` runs type-aware (oxlint-tsgolint, TS7-based) with `typeCheck` on. tsgolint discovers each
-  file's nearest `tsconfig.json`; the whole repo — `src/inkling` and `tests/inkling` included —
-  resolves to the single root tsconfig. The root tsconfig's `verbatimModuleSyntax` means type-only
-  imports must use `import type`. Note: tsgolint caches its program state — if a tsconfig edit
-  produces a sudden flood of `TS2339`-style errors across test files, re-run `pnpm run lint` once
-  before believing it.
+- `oxfmt` / `oxlint` are configured ONLY at the kobato root (`oxfmt.config.ts`, `oxlint.config.ts`); this layer has no config files. The root oxlint config
+  scopes inkling exceptions in a `src/inkling/**` override (public barrel, intentional Lexical cycles, class+interface merging, editor-chrome a11y
+  exemptions, keeper rules — eqeqeq / no-eval / no-plusplus / no-explicit-any); the root oxfmt config points Tailwind sorting at
+  `src/inkling/styles/index.css` with `clsx` via its `src/inkling/**`, `demo/**` override.
+- Single quotes, no semicolons, trailing commas, print width 120; Tailwind scoped under `.inkling-lexical`; import sorting by `oxfmt`. `oxlint` is
+  type-aware (oxlint-tsgolint, TS7-based, `typeCheck` on) against the single root `tsconfig.json`, `tests/inkling` included; `verbatimModuleSyntax` makes
+  `import type` mandatory. A tsconfig edit that floods test files with `TS2339`-style errors means tsgolint's cached program is stale — re-run
+  `pnpm run lint` once.
 
 ## Architecture notes
 
-- Domain glossary terms used below: **card** (a decorator-node block), **card adjacency**, **card
-  spec**, **card declaration**, **render target**, **host card**, **artifact slot**, **render-time
-  meta**. This file is the term owner.
-- `src/inkling/index.ts` is the public barrel. Do **not** import from `@/inkling/index` inside
-  `src/inkling/nodes/*Node.ts` shim files; import shared primitives directly
-  (`@/inkling/components/InklingCardWrapper`, `@/inkling/nodes/MinimalNodes`).
-- Every card is collapsed to its declaration (`src/inkling/nodes/cards/*.declaration.ts`): the
-  registered class is assembled exactly once per card by the memoized `assembleCardNodeOnce` in
-  `src/inkling/nodes/assemble-card-node.ts`, and `CARD_WRAPPER_NODES` in
-  `src/inkling/nodes/cards/card-wrappers.ts` is derived from `CARD_DECLARATIONS`. The
-  `src/inkling/nodes/*Node.ts` paths are type-only shims re-exporting the assembled class (via
-  `assembleCardNodeOnce`), the base-canonical `$is*`, and their dataset type. Base node classes are
-  named `Base*Node` (e.g. `BaseAudioNode`) with a `$createBase*Node` factory; the public `*Node`
-  name / `$create*Node` factory belong to the shim and construct the assembled class. Card-specific
-  behaviour lives on the declaration (menu/insert/markdown facts) or the base class (e.g. `isEmpty`);
-  nested-editor/transient specs are adopted via class statics only — the generator's options bag has
-  no `nestedEditors` entry. Each card declaration also carries its card-menu entries (naming
-  commands by string via `CardMenuCommand` — never importing the command table), insert-spec flags,
-  drag icon, and markdown eligibility (`CardMarkdownSpec`: `{ kind: 'fence' }` or
-  `{ kind: 'exempt' }`) — `src/inkling/nodes/cards/card-commands.ts` (command constants keyed
-  exhaustively by node type, resolved through
-  `resolveCardInsertCommand`/`resolveCardMenuCommand`), the menu/drag-icon registries, the decorate
-  targets (each card's `render*Card` export lives beside its component in the
-  `src/inkling/nodes/*NodeComponent.tsx` files, paired by `src/inkling/nodes/cards/card-decorate.tsx`),
-  and the fence payload table in `src/inkling/nodes/cards/card-markdown-transformers.ts` (keyed
-  exhaustively by the fence-eligible declarations; payloads stay one layer up because their
-  `createNode` must construct the wrapper class) are derived views over the declarations. Adding a
-  card means writing a declaration plus the touch points listed in `src/inkling/nodes/cards/index.ts`
-  (render export, command constant, labels keys, fence payload as applicable) — the mechanically
-  checkable ones are pinned by `tests/inkling/unit/nodes/card-cross-registry-consistency.test.ts`
-  and `card-declarations.test.ts`. Every derived view resolves its facts through one merge-policy
-  module (`resolveCardFacts` in `src/inkling/nodes/cards/card-facts.ts`: built-in declaration first,
-  host registry fallback), and each card's transient/nested-editor spec arrays live in its base node
-  module (still `as const satisfies` — the declaration imports them from there), so
-  `CardSpecFieldMap` (exported from the barrel) derives the shim's `__*`
-  field names AND value types from the declaration (transient `initial` lambdas carry the value type;
-  a nested-editor entry's `nullable: true` carries `LexicalEditor | null`) while the base class
-  self-types the same vocabulary by interface-merging `CardSpecFieldMapFor` over the arrays its
-  module owns — renaming or retyping a spec entry is a
-  compile error at every consumer. The pipeline's layering rule is pinned by a static import guard
-  (`tests/inkling/unit/nodes/card-layering-imports.test.ts`).
-- Menu entries are type-checked against the card's construction dataset: a declaration passes its
-  base class and spec array types to `CardDeclaration` (`CardDeclaration<'image', typeof
-  BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>`, with `readonly []` for an
-  absent array), and `CardMenuDataset` derives `insertParams`'s partial-dataset type and
-  `queryParams`'s string-valued-key type from `getPropertyDefaults()` plus
-  `CardSpecTransientDataset`/`CardSpecNestedEditorDataset` — an invalid key, value, or query key is
-  a compile error at the declaration site. Omitting the arguments is NOT a silent fallback:
-  `DeclaredCardMenuDataset` resolves the defaults to `never`, so such a declaration cannot use
-  `insertParams`/`queryParams`; the broad declaration existential lives on `AnyCardDeclaration`.
-  Declarations are wrapped as `checkedCardDeclaration({ … } satisfies CardDeclaration<…>)`: the
-  inner `satisfies` keeps contextual typing and the shape check, and the identity wrapper applies
-  the exact-key check over the declaration's inferred menu literal — including the function-valued
-  `insertParams` return type, which `satisfies` cannot excess-check. `tests/inkling/typecheck/card-menu-params.ts` pins the declaration rejection (object and function forms), non-vacuous
-  open-dataset/broad-array/omitted-wrapper probes, and a reusable predicate over the real
-  `CARD_DECLARATIONS` family that proves every insert key (object and function-return forms) and
-  every query key belongs to the declaration's dataset — a future declaration skipping
-  `checkedCardDeclaration` is caught there. Host `defineCard` derives the same vocabulary from its
-  `B` and separate `Transient`/`Nested` generics and rejects unknown `insertParams` keys, drifted
-  values, and non-string query keys for both object and function forms on a DIRECT INLINE literal
-  (the `const Menu` capture keeps the caller's literals; `& Menu` is why). Any PRE-WIDENED input —
-  `queryParams: readonly string[]` or `baseNode: CardBaseNodeClass` arriving through a variable, a
-  helper return, or an explicit annotation — is an intentional type-erasure boundary and is
-  accepted unchecked where the literal is gone. Compatibility: a `satisfies HostCardSpec`
-  annotation keeps literal `insertParams` keys/values and is checked, but contextually widens
-  `queryParams` elements to `string`, so query keys in that form are accepted unchecked; an
-  explicit `const spec: HostCardSpec = …` annotation erases insert keys, insert values, and query
-  keys alike.
-- Card `decorate()` goes through an injection slot, not a direct import:
-  `src/inkling/nodes/card-decorate-slot.ts` (react-free) owns `registerCardDecorate(impl)` /
-  `decorateCardNode(node)`, `assemble-card-node.ts`'s `decorate()` delegates to the slot, and the
-  real adapter lives in `src/inkling/nodes/decorate-card.tsx` (which pulls in every card component,
-  CodeMirror included). This inversion is what keeps `@/inkling/headless` react-free: the
-  markdown/HTML importers construct card nodes without dragging the component tree into the bundle.
-  The `@/inkling` barrel (`src/inkling/index.ts`) calls `registerCardDecorateAdapter()` at module
-  top level — the registration stays an explicit top-level statement by convention, since a bare
-  side-effect import would be tree-shaken away. Tests that build editors outside
-  `tests/inkling/utils/test-editor.ts` (which registers it) must call
-  `registerCardDecorateAdapter()` themselves; an unregistered slot throws a descriptive error the
-  first time a card node renders.
-- Top-level editor surfaces are presets over one composition rule: node sets derive from
-  `EDITOR_BASE_NODES` (src/inkling/nodes/DefaultNodes.ts), and the plugin surface is two data
-  lists — `CORE_PLUGINS` (src/inkling/plugins/CorePlugins.tsx: the mount set every
-  `InklingComposableEditor` renders, entries carry `when` mount conditions and consume a typed
-  `CorePluginScope`) plus `DEFAULT_FEATURE_PLUGINS` (src/inkling/plugins/DefaultFeaturePlugins.tsx) —
-  enumerable and snapshot-pinned by `tests/inkling/unit/plugins/derived-feature-plugin-sets.test.ts`.
-  A custom host surface wraps its top-level tree in exactly one `InklingSurface` (exported from
-  `src/inkling/index.ts`) inside an `InklingComposer` so nested card editors share the top-level
-  undo stack and `onChange`. Two surface-level toggles ride `InklingComposableEditor`'s props:
-  `alignment` (default ON for the InklingEditor article surface, off elsewhere) both keeps element
-  `format` through the default transforms and exposes the floating toolbar's alignment group
-  (left/center/right on paragraph/heading/quote — tiptap TextAlign parity; surgery/state/visibility
-  live in `src/inkling/plugins/behaviour/format-toolbar.ts`), `focusMode` (default OFF everywhere —
-  the host owns the toggle) mounts the `focus-mode` core entry (`FocusModePlugin`): the headless
-  behaviour (`src/inkling/plugins/behaviour/focus-mode.ts`) puts `inkling-focus-mode` on the root
-  element and `data-inkling-focus-active` on the selected top-level block (a DOM walk, so editing
-  inside a card's nested editor focuses the whole card), and host CSS dims the rest — tiptap
-  extension-focus parity delivered as a real UX, since tiptap's `tiptap-focus-node` class was dead
-  config with no CSS consumer. Separately, the always-mounted `InklingAutoLinkPlugin` core entry
-  (matcher policy in `src/inkling/plugins/behaviour/autolink.ts`) no-ops on surfaces composed
-  without AutoLinkNode. The `typography` feature plugin (`TypographyPlugin`, grammar in
-  `src/inkling/plugins/behaviour/typography.ts`) aligns with tiptap extension-typography's default
-  rule set minus the em-dash rule `EmEnDashPlugin` already owns; IME composition protection is the
-  update-scan seam's composing skip, shared with EmEnDash/HorizontalRule.
-- Hosts declare their own cards through the public `defineCard` seam
-  (src/inkling/nodes/cards/host-cards.ts): one spec carries the base node (built with the exported
-  `generateDecoratorNode`), insert/menu/toolbar facts, and the decorate render; `defineCard`
-  validates, assembles, and registers, and the raw spec lands in the host registry
-  (src/inkling/nodes/cards/host-card-registry.ts, kept registry-only so the derived views can read
-  it without import cycles) — a neutral fact store whose projections every derived view computes
-  through the same projectors the built-in declarations use, intersected with each editor's
-  registered node types.
-  - **Type preservation**: `defineCard` is generic over the non-menu spec facts (`Spec`), the
-    spec's own arrays (`Transient`/`Nested`), and the menu literal (`Menu`); the returned
-    `HostCard<NodeType, Spec & { transientProps?; nestedEditors? }>` preserves the arrays as
-    optional members, so const-asserted `nestedEditors`/`transientProps` land their literal `__*`
-    field names and value types on `card.node` via `CardSpecFieldMap`/`CardSpecAccessorMap` (the
-    maps match optional spec properties) — the same typing the built-in declarations get. A
-    non-const inline array widens entry names to `string` and the field map degrades to the loose
-    `__${string}` pattern (never a compile error). Host base classes
-    self-type the same vocabulary by interface-merging `CardSpecFieldMapFor` over the shared
-    spec array (the `BaseToggleNode` idiom; kobato's cards carry the oxlint declaration-merging
-    disables locally because its scope grant covers only `src/inkling/**`) — no hand-written
-    `declare __*` blocks. Compile-time pins: `tests/inkling/unit/nodes/host-cards.test.ts`.
-  - **Self-wiring markdown**: the round-trip pair
-    (`src/inkling/markdown/round-trip.ts`) composes every registered host card by default — the
-    assembled class registers on the conversion editor, and a `markdownFence` spec's transformer
-    is derived from the stored spec through `createCardTransformer` (the registry keeps its
-    raw-spec philosophy; the handle's `markdownTransformer` is a convenience, not the source).
-    The `cards` option AUGMENTS the default (its remaining purpose is handles built without
-    `defineCard`), replacing a registered type's wiring on a nodeType collision; there is no
-    opt-out flag — a card leaves the round-trip by not declaring `markdownFence`.
-  - **Self-wiring node set**: `getHostCardNodes()`
-    (`src/inkling/nodes/cards/host-card-nodes.ts`, exported from the barrel) returns every
-    registered host card's assembled class in registration order, so hosts compose
-    `...getHostCardNodes()` into `<InklingComposer nodes>` instead of hand-spreading handles —
-    the card modules' own imports still carry the `defineCard` side effects (registration order =
-    import order there).
-  - **Host labels namespace**: host menu entries name their `labelKey` `host.<name>` and resolve
-    `menu.host.<name>.label`/`.desc` through the same `<InklingComposer labels={...}>` channel
-    (`InklingLabelsInput` opens exactly that template; the shipped `InklingLabels` table and its
-    snapshot stay closed, and `lookupLabel` reads host keys through its `in` guard). Absent an
-    override, the entry's own spec text remains the fallback.
-- The **pick seam** (CONTEXT.md: "pick seam", "entity-backed card") is the host-card counterpart
-  of the decorate slot: a host card whose dataset references a host-owned entity (kobato's music
-  library row) declares a `picker` on its `defineCard` spec — `{ render, autoOpenOnInsert? }`; the
-  dialog itself lives in host code. Dispatch rides a per-composer composer handle
-  (`src/inkling/plugins/behaviour/cardPickerStore.ts`, created in `ComposerHandlesProvider`,
-  context binding in `src/inkling/context/CardPickerStoreContext.tsx`): the card component calls
-  `useCardPicker().open(nodeKey)` (placeholder click, replace affordance), or the request rides
-  the INSERT_CARD_COMMAND payload's `openPicker` flag — set by the insert registrar when
-  `autoOpenOnInsert` is projected, or by a host's own intent command (kobato's image-library
-  entry) — with `registerCardCommands` as the single write site. The command channel only, so
-  editor-state loads never trigger a picker; `open()` additionally no-ops on a non-editable
-  editor, so a read-only surface never originates a request even before the host's mount gate
-  runs. `CardPickerHostPlugin` (a `CORE_PLUGINS` entry gated
-  to non-nested, non-read-only surfaces — nested composers share the top-level handle, so a nested
-  mount would render the active picker twice) subscribes to the store, resolves the picker through
-  the registry's one channel (`resolveCardPicker` in the host registry: the host spec's `picker`
-  fact first, then the **variant override** — `registerCardPicker(nodeType, picker)` carries a
-  picker for a card type with no host spec, e.g. a same-type subclass of a built-in card like
-  kobato's KobatoImageNode, which `defineCard` hard-rejects; one picker per node type, enforced at
-  registration in both directions, and the override channel REJECTS `autoOpenOnInsert` — variant
-  inserts ride the built-in insert registration with no auto-open projection, so the host
-  dispatches its insert with `openPicker: true` from its own intent command, the
-  OPEN_IMAGE_LIBRARY_COMMAND idiom), and mounts
-  `picker.render({ editor, nodeKey, close, fromInsert })` for the active request. Lifecycle
-  guarantees, all pinned in
-  `tests/inkling/unit/plugins/card-picker.test.tsx`: the request drops when the node leaves the
-  document (an existence read at listener registration covers a deletion committed before the
-  effect attached, then the forward update listener), when the picker unregisters mid-session, and
-  on host unmount — the page editor flips `readOnly` on every save, and a store write that
-  outlived its host would re-open the picker unprompted on remount. Everything crosses the boundary
-  by node KEY, never the node instance (Lexical #195); pick writes resolve the latest instance
-  inside `editor.update()` through the card write seam (`useCardChrome`). An insert-channel
-  request carries `fromInsert` (written only at the `openPicker` write site) and the pick write
-  merges into the insert's history entry through the write seam's `mergeHistory` option
-  (Lexical's `HISTORY_MERGE_TAG`, applied inkling-side) — one Cmd+Z retracts insert and pick
-  together; placeholder/replace opens leave it unset, so those writes stay discrete undo entries.
-  The registry field is
-  type-only React, so the headless surface stays free of the seam (pinned in
-  `tests/inkling/unit/plugins/card-picker.test.tsx`). The barrel also re-exports Lexical's
-  `COMMAND_PRIORITY_*` constants (hosts intercepting stock commands name the level instead of
-  hardcoding the number) and `createRenderContext` (a variant subclass overriding exportDOM with
-  its own render fn calls `renderFn(this, createRenderContext(options))` — react-free, but kept
-  off `@/inkling/headless` because the server-side projection classes are spec-built fresh and
-  never delegate).
-- Each card has a renderer under `src/inkling/nodes/base/nodes/<card>/`. The same per-card module
-  houses the card's transient/nested-editor spec arrays (imported by its declaration); the shared
-  caption spec core lives beside them in `base/nodes/caption-editor-spec.ts` — its MINIMAL_NODES
-  import runs against the layer grain but closes no cycle, since the node sets compose only base
-  leaves (the same direction `generate-decorator-node` already depends on through
-  `nodes/nested-editors`).
-- `src/inkling/utils` is the bottom layer : node-coupled modules live with their consumers — the
-  upload intents in `src/inkling/nodes/upload-intent.ts`, the card-menu build and the
-  registered-cards projection in `src/inkling/nodes/cards/card-menu-build.ts` /
-  `editor-card-nodes.ts`, the nested-editor bootstrap in `src/inkling/nodes/nested-editors.ts`, the
-  image width policy in `src/inkling/nodes/base/utils/image-card-widths.ts`, the bookmark embed flow
-  in `src/inkling/hooks/bookmark-embed-flow.ts`. The boundary is pinned statically by
-  `tests/inkling/unit/utils/utils-import-guard.test.ts`: no utils module runtime-imports
-  `@/inkling/nodes` (except the shared pure leaves under `@/inkling/nodes/base/utils/`),
-  `@/inkling/components`, `@/inkling/hooks`, or `@/inkling/plugins`. `CARD_WIDTHS` has one barrel
-  home — the public `src/inkling/utils/index.ts` re-export; internal consumers import the source
-  `@/inkling/nodes/base/utils/card-widths` directly.
-- The table family (`src/inkling/nodes/table/`) is a non-card element family: `INKLING_TABLE_NODES`
-  re-exports upstream's `TableNode`/`TableRowNode`/`TableCellNode` and joins `EDITOR_BASE_NODES`
-  after the link pair (LinkNode + AutoLinkNode — AutoLinkNode powers the default autolink plugin and
-  extends LinkNode without replacing it, so imported `<a>` markup still lands as plain LinkNode;
-  `DEFAULT_HTML_NODES` registers it too, since typed-URL autolinks serialize as type `autolink`).
-  Its slash/plus menu entry is a pseudo `CardMenuSource` (`table-menu.ts`) that `useCardMenu` merges
-  only when the editor registers TableNode; `INSERT_TABLE_COMMAND` is our own behaviour-layer
-  command (`src/inkling/plugins/behaviour/table.ts`, 3×3 with header row by default — header row
-  only, never a header column), not upstream's registerTablePlugin; its handler plus upstream's
-  selection observer (Tab navigation, cell-range selection) make up `InklingTablePlugin` in
-  `DEFAULT_FEATURE_PLUGINS`. The cell guard (`table-cell-guard.ts` — a cell holds exactly one
-  paragraph of inline content; math-inline is dropped, footnote-ref joins the illegal list when it
-  exists) is a default transform so it also covers the headless import path. The family is
-  deliberately absent from `@/inkling/nodes/base` DEFAULT_BASE_NODES; `DEFAULT_HTML_NODES` appends it
-  after the base run instead, so the headless HTML API imports and renders tables by default — which
-  is what makes the cell guard's headless-import coverage real. Export header policy is
-  single-sourced in `src/inkling/nodes/table/table-facts.ts`: the live HTML export reads the header
-  state through a tree-direct transformer
-  (`src/inkling/html/renderer/transformers/element/table.ts`: header cell ⇔ `<th>`), while the GFM
-  pipe-table transformer in `src/inkling/markdown/round-trip.ts` forges row 0 as the header
-  (hand-written because `@lexical/markdown` 0.53 still ships no TABLE transformer).
-- The footnote pair is a TextNode entity plus a menu-less card on the declaration pipeline.
-  `FootnoteRefNode` (`src/inkling/nodes/footnote/FootnoteRefNode.ts`) is a TextNode entity (TKNode
-  precedent: `isTextEntity()` + the `canInsertText*` pair) whose visible text IS the 1-based
-  citation index — the renumber engine rewrites the text in place, so no index field can drift from
-  what the reader sees; `footnote-anchors.ts` is the single owner of the
-  `user-content-fn(N)`/`user-content-fnref(N)` anchor contract, and `footnote-keys.ts` recasts every
-  imported ref's `targetKey` (import-is-a-new-entity). The definition is a declaration-pipeline card
-  with no menu/insert command/drag icon and one nested editor (`content`). The headless behaviour
-  lives in `src/inkling/plugins/behaviour/footnotes.ts`: the `^ ` caret trigger
-  (`FOOTNOTE_INSERT_TRIGGER_REGEX = /(\s|^)\^ $/` — narrower than kobato on purpose, with backslash
-  suppression and the table-cell/code-block guard ported from kobato's `canInsertFootnoteMark`), the
-  renumber engine `$syncFootnoteIndices` (refs in first-citation order, orphan definitions tailed in
-  stored order, the whole sync skipped when a ref targets a missing definition, signature
-  short-circuit), `$removeFootnote` (definition card plus every citing ref; the reverse is not
-  done — a ref-less definition stays as a tailed orphan), and a RootNode transform keeping
-  definitions one contiguous doc-end run. `FootnotePlugin` (key `footnote` in
-  `DEFAULT_FEATURE_PLUGINS`) is only the React/DOM adapter. Export wraps the run in a footnotes
-  `<section>` via the subsystem's registered post-processor
-  (`src/inkling/nodes/footnote/footnote-html-export.ts` on the string layer's post-processing seam,
-  `src/inkling/html/renderer/post-process.ts`; the heading title resolves through
-  `resolveExportPolicy('footnotes-section-title')` with the deprecated `footnotesSectionTitle` flat
-  key forwarding, blank falls back to "Footnotes"), and the ref splices inline through the
-  `isInlineMarkupEntity()` dispatch. Known v1 gap: nested editors are separate editor instances, so
-  footnote insertion is disabled there and numbering never descends into them.
-- Server-prerendered artifact slots stay opaque node data : the code card's `highlightedHtml`
-  (Shiki) and the math family's `mathml`/`svg` (KaTeX) are filled host-side on save — inkling never
-  runs either in the browser (CSP) — and the base-node source setters (`code`/`language`/`tex`)
-  clear the slot on edit (construction and `importJSON` assign the private fields directly, so a
-  host-filled artifact survives deserialization). The `invalidates` references behind those setters
-  are validated against the declared property vocabulary at class creation — an unknown reference
-  throws with nodeType/property/reference instead of silently leaving a stale artifact. Runtime
-  validation is mandatory even though const-asserted property arrays CAN be checked by exact-key
-  conditional types (the Round 2 card-spec idiom): host cards and pre-widened arrays erase the
-  sibling literals, so a type-only check would be incomplete.
-  Request-scoped render-time meta rides `ExportDOMOptions.resolveRenderMeta`
-  into the frozen render context, letting a host card resolve enrichment by (kind, id)
-  synchronously — exportDOM is a sync pipeline, so hosts resolve before rendering.
-- User-visible chrome strings come from one closed flat labels table (host reference
-  `src/inkling/labels/inkling-labels.ts`): `src/inkling/labels/inkling-labels.ts` owns the dotted
-  keys + English defaults, `<InklingComposer labels={...}>` merges a host override subset once into
-  `InklingUiPrefsContext.labels`, and components read via `useInklingLabels()`. The same ui-prefs
-  channel carries two surface flags for minimal hosts: `isEmojiEnabled` (default true — `false`
-  keeps `EmojiPickerPlugin` out of `InklingNestedEditor`/`InklingCaptionEditor`; the page editor's
-  top-level mount in `DEFAULT_FEATURE_PLUGINS` is unaffected) and `codeEditor` (default `'rich'` —
-  `'plain'` swaps the code block card's lazy CodeMirror edit surface for the static
-  `CodeBlockPlainEditor` textarea, which never imports the codemirror chunk; pinned by
-  `tests/inkling/unit/components/ui/cards/plain-code-editor-import-guard.test.ts`). Menu labels stay
-  indirect — each card declaration's menu entry (and the table pseudo-source) carries a required
-  `labelKey`, and `buildCardMenu` resolves `menu.${labelKey}.label`/`.desc` through the resolver
-  `useCardMenu` injects; the declared English is the fallback. `DEFAULT_LABELS` + the two types are
-  exported from the `@/inkling` barrel (single-sourced in `src/inkling/shared-exports.ts`);
-  `tests/inkling/unit/labels.test.ts` snapshots the key list. The same seam wires `WordCountPlugin`'s
-  `language` prop to `Intl.Segmenter` word counting (`countWords(text, language)`), with `language`
-  published on the word-count handle so nested editors match. A host that never names a language on
-  the plugin itself gets one from the composer: `InklingComposer`'s `wordCountLanguage` prop (the
-  host's UI locale) lands in `InklingUiPrefsContext`, and `WordCountPlugin` resolves
-  `language ?? wordCountLanguage` — when BOTH are absent it stays `undefined` (published as `null`)
-  and `countWords` keeps its original regex path, so hosts that never opt in keep their old counts.
-  Hosts still mount the plugin themselves (the composer does not force word counting on) — the prop
-  only seeds the language.
-- `WordCountPlugin` also carries an OPTIONAL selection channel,
-  `onSelectionChange?: (count: number | null) => void` (upstream Ghost 0a04348143ab). `null` means
-  collapsed/no active selection; `0` is a real count for a non-empty selection with zero words under
-  the counter's rules, so a punctuation-only selection is `0`, never `null`. The counting engine
-  (`createWordCounter` in `src/inkling/plugins/behaviour/word-counter.ts`) owns both channels: a
-  selection-only mount (`onSelectionChange` without `onChange`) never builds or runs the document
-  pass, so it pays only for the selected text; a counter with neither callback attaches no listeners
-  at all. `onChange` stays optional on the plugin, the handle state, and the counter options, and
-  its original incremental behavior is unchanged. Selection state lives in the same
-  per-TOP-LEVEL-editor `WordCountState` WeakMap as `nodeWordCounts` (never module/request globals):
-  `selectionCounts` is keyed by COUNTER INSTANCE identity (so two counters on one editor cannot
-  delete each other) with `{ editor, count, updatedAt, callback }`, and each entry is evaluated
-  independently — an entry counts only when `entry.editor.isEditable()` and
-  `hasEditorFocus(entry.editor, state)`; the newest eligible entry wins. There is no composer-wide
-  focused-editor veto, so a programmatically focused editor wins even when the previous editor's
-  BLUR was missed, while a focused editor with a collapsed selection emits null instead of another
-  editor's stale non-null count. A rendered editor's DOM root is the focus authority; the
-  `focusedEditor` ledger is consulted only for rootless headless editors and is cleared on their
-  detach, which keeps tests deterministic. Focus recomputes, blur clears immediately,
-  `registerEditableListener` recomputes on readOnly flips, and detach (card deletion or unmount)
-  removes only that counter's entry and re-evaluates. Dedup is PER CALLBACK:
-  `lastSelectionWordCounts: Map<callback, number | null>`; every update broadcasts the winning count
-  to every registered counter's callback (different callbacks each receive updates), the same
-  callback shared by main and nested counters dedups, and an attaching counter delivers the current
-  value only when its callback has no prior emission entry (so a nested counter mount or a
-  `setLanguage` swap does not re-emit the same value). Detach broadcasts once more to the departing callback and then
-  prunes emission entries no remaining counter owns, so callback identities do not leak.
-  `setLanguage` swaps the segmenter on the existing counter without detach/attach churn;
-  `WordCountPlugin` calls it on both live counters, and each counter recomputes only its own
-  channel. `WordCountPlugin` runs document and selection as independent counter instances:
-  changing `onSelectionChange` recreates only the selection counter (never the document pass or the
-  full-count callback), changing `onChange` recreates only the document counter, and a language
-  change calls `setLanguage` on both live counters. All channels publish through ONE
-  `publishWordCountCallback` effect; the per-channel ownership stacks keep simultaneous
-  publishes, removals, and replacements independent. Selection-only updates commit with empty
-  dirty maps, so the selection flush is scheduled before the content-change guard; throttles and
-  command listeners are cancelled on detach. The handle publishes top-level-only
-  (`publishWordCountCallback`) with per-channel
-  ownership stacks: onChange, onSelectionChange, and language are independent; a cleanup removes
-  its own token from any stack position and republishes the new top, so an unmounted publisher is
-  never resurrected (A→B→A-cleanup→B-cleanup ends null) while a still-mounted predecessor is
-  restored (A→B→B-cleanup→A-cleanup ends on A then null); a null language is "no opinion" rather
-  than a clear. `InklingNestedComposer` mounts a nested `WordCountPlugin` when EITHER callback is
-  present (passing both plus the published language), and `useWordCountSelectionCallback` is the
-  render-only subscription for the selection channel. The demo's `WordCount` chrome shows
-  `X of Y words` from this callback. Pinned by
-  `tests/inkling/unit/plugins/behaviour/word-counter.test.ts`,
-  `tests/inkling/unit/plugins/behaviour/wordCountHandle.test.ts`,
-  `tests/inkling/unit/plugins/WordCountPlugin.test.tsx`, and
-  `tests/inkling/unit/components/InklingNestedComposerWordCount.test.tsx`.
-- A plain-key chord lives in the same `KEYBOARD_SHORTCUTS` table
-  (`src/inkling/plugins/behaviour/keyboard-navigation/shortcuts.ts`; the type is `KeyboardShortcut`
-  — the registration function keeps its historical `registerModifierCommand` name): typing an
-  unmodified backtick over a non-collapsed range selection prevents the text replacement and
-  dispatches `FORMAT_TEXT_COMMAND 'code'` through the same `dispatchCodeFormat` helper ctrl+shift+K
-  uses, so it toggles inline code, keeps the selection, and lands as one undo entry (upstream Ghost
-  c19173beb59e). A collapsed selection, alt/ctrl/meta modifiers, Shift (some layouts produce a
-  backtick with Shift), and IME composition fall through and type a normal backtick. `matches` is a
-  pure key-shape test and `run` may decline by returning false; the registration loop stops at the
-  first match, so the table's matches stay mutually exclusive. It is registered through
-  `registerKeyboardNavigation`, so every surface that mounts keyboard navigation (including nested
-  card/caption editors) gets it; CodeMirror owns its own backtick because the key-down passthrough
-  consumes card-inner key events first. Pinned by
-  `tests/inkling/unit/plugins/behaviour/backtick-code-selection.test.tsx`.
+Glossary owned here: **card** (a decorator-node block), **card adjacency**, **card spec**, **card declaration**, **render target**, **host card**,
+**artifact slot**, **render-time meta**.
+
+### Card pipeline
+
+- Cards collapse to declarations (`src/inkling/nodes/cards/*.declaration.ts`); memoized `assembleCardNodeOnce` (`src/inkling/nodes/assemble-card-node.ts`)
+  assembles the class once per card, and `CARD_WRAPPER_NODES` (`src/inkling/nodes/cards/card-wrappers.ts`) derives from `CARD_DECLARATIONS`.
+- `src/inkling/nodes/*Node.ts` are type-only shims exposing the assembled class, the base-canonical `$is*`, and the dataset type. Never import
+  `@/inkling/index` from a shim; import `@/inkling/components/InklingCardWrapper` and `@/inkling/nodes/MinimalNodes` directly. Base classes are `Base*Node`
+  with `$createBase*Node`; the public `*Node` / `$create*Node` live in the shim and construct the assembled class.
+- Behaviour sits on the declaration (menu/insert/markdown) or the base class (e.g. `isEmpty`); nested-editor/transient specs are adopted via class statics
+  only (no `nestedEditors` generator option). A declaration carries menu entries (commands as `CardMenuCommand` strings, never the command table), insert
+  flags, drag icon, and markdown eligibility (`CardMarkdownSpec`: `{ kind: 'fence' }` | `{ kind: 'exempt' }`).
+- Derived views (through `resolveCardFacts` in `src/inkling/nodes/cards/card-facts.ts`: built-in first, host fallback):
+  `src/inkling/nodes/cards/card-commands.ts` (exhaustive by node type, via `resolveCardInsertCommand` / `resolveCardMenuCommand`), menu and drag-icon
+  registries, decorate targets (`render*Card` in `src/inkling/nodes/*NodeComponent.tsx`, paired by `src/inkling/nodes/cards/card-decorate.tsx`), and the
+  fence payload table (`src/inkling/nodes/cards/card-markdown-transformers.ts`, exhaustive by fence-eligible declarations).
+- Spec arrays live in the base node module (`as const satisfies`); `CardSpecFieldMap` derives the shim's `__*` names and value types (transient `initial`
+  lambdas carry the value type; `nullable: true` carries `LexicalEditor | null`), and the base class self-types the same vocabulary via
+  `CardSpecFieldMapFor` — renaming or retyping an entry is a compile error.
+- Adding a card = a declaration plus the touch points in `src/inkling/nodes/cards/index.ts` (render export, command constant, labels keys, fence payload).
+  Pins: `tests/inkling/unit/nodes/card-cross-registry-consistency.test.ts`, `tests/inkling/unit/nodes/card-declarations.test.ts`,
+  `tests/inkling/unit/nodes/card-layering-imports.test.ts`.
+
+### Menu dataset typing
+
+- `CardDeclaration` takes base class and spec array types
+  (`CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>`, `readonly []` when absent); `CardMenuDataset`
+  derives `insertParams`' partial dataset and `queryParams`' string-valued keys from `getPropertyDefaults()` plus `CardSpecTransientDataset` /
+  `CardSpecNestedEditorDataset`, so bad keys or values are compile errors. Omitting them is NOT a fallback (`DeclaredCardMenuDataset` → `never`);
+  `AnyCardDeclaration` is the broad existential.
+- `checkedCardDeclaration({ … } satisfies CardDeclaration<…>)`: `satisfies` keeps contextual typing and shape checking; the identity wrapper
+  exact-key-checks the inferred menu literal, including function-valued `insertParams` returns. `tests/inkling/typecheck/card-menu-params.ts` pins rejection
+  (both forms), the non-vacuous probes, and that every `CARD_DECLARATIONS` insert/query key belongs to its dataset.
+- Host `defineCard` derives the same vocabulary from `B` plus `Transient`/`Nested` and rejects unknown `insertParams` keys, drifted values, and non-string
+  query keys on a DIRECT INLINE literal. Pre-widened input (`queryParams: readonly string[]`, `baseNode: CardBaseNodeClass` via variable, return, or
+  annotation) is a type-erasure boundary and goes unchecked; `satisfies HostCardSpec` keeps `insertParams` checked but widens `queryParams` to `string`;
+  `const spec: HostCardSpec = …` erases all keys.
+
+### Decorate slot
+
+- `decorate()` goes through an injection slot: `src/inkling/nodes/card-decorate-slot.ts` (react-free) owns `registerCardDecorate(impl)` /
+  `decorateCardNode(node)`, and `src/inkling/nodes/assemble-card-node.ts` delegates to it. The adapter is `src/inkling/nodes/decorate-card.tsx` (every card
+  component, CodeMirror included), keeping `@/inkling/headless` react-free.
+
+### Editor surfaces
+
+- Node sets derive from `EDITOR_BASE_NODES` (`src/inkling/nodes/DefaultNodes.ts`); plugins are two data lists — `CORE_PLUGINS`
+  (`src/inkling/plugins/CorePlugins.tsx`: the mount set every `InklingComposableEditor` renders, entries with `when` conditions and a typed
+  `CorePluginScope`) and `DEFAULT_FEATURE_PLUGINS` (`src/inkling/plugins/DefaultFeaturePlugins.tsx`) — snapshot-pinned by
+  `tests/inkling/unit/plugins/derived-feature-plugin-sets.test.ts`.
+- A custom host surface wraps its top-level tree in exactly one `InklingSurface` inside an `InklingComposer`, so nested card editors share the top-level
+  undo stack and `onChange`.
+- `alignment` (default ON for the InklingEditor article surface; `src/inkling/plugins/behaviour/format-toolbar.ts`) keeps element `format` and exposes
+  left/center/right on paragraph/heading/quote. `focusMode` (default OFF; host owns the toggle) mounts the `focus-mode` core entry (`FocusModePlugin`),
+  whose `src/inkling/plugins/behaviour/focus-mode.ts` sets `inkling-focus-mode` on the root and `data-inkling-focus-active` on the selected top-level block
+  via a DOM walk.
+- `InklingAutoLinkPlugin` (`src/inkling/plugins/behaviour/autolink.ts`) no-ops without AutoLinkNode; `TypographyPlugin`
+  (`src/inkling/plugins/behaviour/typography.ts`) matches tiptap extension-typography minus the em-dash rule `EmEnDashPlugin` owns. IME composition
+  protection is the update-scan seam's composing skip.
+
+### Host cards
+
+- `defineCard` (`src/inkling/nodes/cards/host-cards.ts`) takes one spec: base node (exported `generateDecoratorNode`), insert/menu/toolbar facts, decorate
+  render. It validates, assembles, registers, and stores the raw spec in `src/inkling/nodes/cards/host-card-registry.ts` (registry-only), projected through
+  the built-in projectors and intersected with each editor's registered node types.
+- Type preservation: generics over `Spec`, `Transient`/`Nested`, and the menu literal `Menu`; the returned
+  `HostCard<NodeType, Spec & { transientProps?; nestedEditors? }>` keeps const-asserted arrays' literal `__*` names and value types on `card.node` via
+  `CardSpecFieldMap`/`CardSpecAccessorMap`, while a non-const inline array widens names to `string`. Base classes interface-merge `CardSpecFieldMapFor` (no
+  hand-written `declare __*`). Pins: `tests/inkling/unit/nodes/host-cards.test.ts`.
+- Markdown: `src/inkling/markdown/round-trip.ts` composes every registered host card by default; a `markdownFence` transformer derives from the stored spec
+  via `createCardTransformer`. The `cards` option AUGMENTS the default (handles without `defineCard`) and replaces a nodeType collision; no opt-out flag —
+  leave a card out by not declaring `markdownFence`.
+- Node set: `getHostCardNodes()` (barrel-exported, `src/inkling/nodes/cards/host-card-nodes.ts`) returns every registered host card's class in registration
+  order, so hosts spread it into `<InklingComposer nodes>`; card modules' imports carry the `defineCard` side effects.
+- Labels: host entries use `labelKey` `host.<name>`, resolved as `menu.host.<name>.label`/`.desc` through `<InklingComposer labels={...}>`
+  (`InklingLabelsInput` opens exactly that template; the shipped `InklingLabels` table and snapshot stay closed; `lookupLabel` reads host keys through its
+  `in` guard). Spec text is the fallback.
+
+### Pick seam
+
+- Host cards referencing host-owned entities declare `picker: { render, autoOpenOnInsert? }`; the dialog is host code. Dispatch rides a per-composer handle
+  (`src/inkling/plugins/behaviour/cardPickerStore.ts`, created in `ComposerHandlesProvider`, context `src/inkling/context/CardPickerStoreContext.tsx`):
+  `useCardPicker().open(nodeKey)`, or INSERT_CARD_COMMAND's `openPicker` flag (insert registrar when `autoOpenOnInsert` is projected, or a host intent
+  command), with `registerCardCommands` as the single write site. Command channel only; `open()` no-ops when not editable.
+- `CardPickerHostPlugin` (a `CORE_PLUGINS` entry gated to non-nested, non-read-only surfaces) resolves via `resolveCardPicker` (spec `picker` first, then
+  variant override) and mounts `picker.render({ editor, nodeKey, close, fromInsert })`. `registerCardPicker(nodeType, picker)` overrides a type with no host
+  spec (a same-type subclass of a built-in card, which `defineCard` rejects): one picker per node type, enforced both ways, and it REJECTS
+  `autoOpenOnInsert` — such inserts ride the built-in registration, so the host passes `openPicker: true` itself.
+- Lifecycle (`tests/inkling/unit/plugins/card-picker.test.tsx`): the request drops when the node leaves the document, when the picker unregisters, and on
+  host unmount.
+- Requests cross by node KEY, never the instance (Lexical #195); writes resolve the latest instance in `editor.update()` through `useCardChrome`.
+  `fromInsert` (only at the `openPicker` site) merges the pick into the insert's history entry via `mergeHistory` (`HISTORY_MERGE_TAG`) — one Cmd+Z retracts
+  both; placeholder/replace stays discrete.
+- The registry field is type-only React, so headless stays free of the seam. The barrel re-exports `COMMAND_PRIORITY_*` (name the level, never the number)
+  and `createRenderContext` (exportDOM overrides call `renderFn(this, createRenderContext(options))`; react-free, but kept off `@/inkling/headless`).
+
+### Node families
+
+- Each card's renderer lives under `src/inkling/nodes/base/nodes/<card>/` with its spec arrays; the caption spec core is
+  `src/inkling/nodes/base/nodes/caption-editor-spec.ts`, whose MINIMAL_NODES import composes only base leaves.
+- `src/inkling/utils` is the bottom layer; node-coupled modules sit with consumers: `src/inkling/nodes/upload-intent.ts`,
+  `src/inkling/nodes/cards/card-menu-build.ts`, `src/inkling/nodes/cards/editor-card-nodes.ts`, `src/inkling/nodes/nested-editors.ts`,
+  `src/inkling/nodes/base/utils/image-card-widths.ts`, `src/inkling/hooks/bookmark-embed-flow.ts`. No utils module may runtime-import `@/inkling/nodes`
+  (except pure leaves under `@/inkling/nodes/base/utils/`), `@/inkling/components`, `@/inkling/hooks`, or `@/inkling/plugins`
+  (`tests/inkling/unit/utils/utils-import-guard.test.ts`); `CARD_WIDTHS` exports only via `src/inkling/utils/index.ts`, and internal consumers import
+  `@/inkling/nodes/base/utils/card-widths`.
+- Table family (`src/inkling/nodes/table/`): `INKLING_TABLE_NODES` re-exports upstream `TableNode`/`TableRowNode`/`TableCellNode` and joins
+  `EDITOR_BASE_NODES` after the link pair (LinkNode + AutoLinkNode; AutoLinkNode extends LinkNode, so imported `<a>` stays LinkNode, and
+  `DEFAULT_HTML_NODES` registers it since typed-URL autolinks serialize as `autolink`). Its slash/plus entry is a pseudo `CardMenuSource` (`table-menu.ts`)
+  merged by `useCardMenu` only when TableNode is registered.
+- `INSERT_TABLE_COMMAND` is our `src/inkling/plugins/behaviour/table.ts` command (3×3, header row only, never a header column), not upstream's
+  `registerTablePlugin`; it plus upstream's selection observer form `InklingTablePlugin` in `DEFAULT_FEATURE_PLUGINS`.
+- Cell guard: `table-cell-guard.ts` allows one paragraph of inline content per cell (math-inline dropped, footnote-ref illegal when present) as a default
+  transform, covering the headless import path. The family is absent from `DEFAULT_BASE_NODES`; `DEFAULT_HTML_NODES` appends it after the base run, so the
+  headless HTML API renders tables.
+- Header policy is single-sourced in `src/inkling/nodes/table/table-facts.ts`: HTML export maps header cells to `<th>`
+  (`src/inkling/html/renderer/transformers/element/table.ts`); the GFM pipe-table transformer in `src/inkling/markdown/round-trip.ts` forges row 0 as the
+  header (`@lexical/markdown` 0.53 has no TABLE transformer).
+- Footnote pair: `FootnoteRefNode` (`src/inkling/nodes/footnote/FootnoteRefNode.ts`) is a TextNode entity (`isTextEntity()` + `canInsertText*`) whose
+  visible text IS the 1-based citation index (renumber rewrites it in place); `footnote-anchors.ts` owns the `user-content-fn(N)`/`user-content-fnref(N)`
+  contract, `footnote-keys.ts` recasts imported refs' `targetKey`. The definition is a menu-less declaration-pipeline card with one nested editor for
+  `content`.
+- Footnote behaviour (`src/inkling/plugins/behaviour/footnotes.ts`): `^ ` trigger `FOOTNOTE_INSERT_TRIGGER_REGEX = /(\s|^)\^ $/` (backslash suppression,
+  table-cell/code-block guard), `$syncFootnoteIndices` (first-citation order, orphans tailed in stored order, sync skipped when a ref targets a missing
+  definition, signature short-circuit), `$removeFootnote` (definition plus citing refs; a ref-less definition stays an orphan), and a RootNode transform
+  keeping definitions one doc-end run. `FootnotePlugin` (key `footnote`) is the React/DOM adapter only.
+- Footnote export wraps the run in a `<section>` via `src/inkling/nodes/footnote/footnote-html-export.ts` on `src/inkling/html/renderer/post-process.ts`
+  (title via `resolveExportPolicy('footnotes-section-title')`, deprecated `footnotesSectionTitle` consulted, blank → "Footnotes"); refs splice through
+  `isInlineMarkupEntity()`. Known gap: nested editors are separate instances, so insertion is disabled there and numbering never descends.
+- Artifact slots stay opaque: `highlightedHtml` (Shiki) and `mathml`/`svg` (KaTeX) are host-filled on save (never in the browser, CSP); the
+  `code`/`language`/`tex` setters clear the slot on edit, while construction and `importJSON` assign private fields so host-filled artifacts survive
+  deserialization; `invalidates` references are validated against the declared property vocabulary at class creation. Render-time meta rides
+  `ExportDOMOptions.resolveRenderMeta` into the frozen render context, resolved by (kind, id) synchronously before export.
+
+### Labels and word counting
+
+- `src/inkling/labels/inkling-labels.ts` owns the closed flat table (dotted keys + English defaults); `<InklingComposer labels={...}>` merges a host
+  override subset once into `InklingUiPrefsContext.labels`; components use `useInklingLabels()`. `DEFAULT_LABELS` and its two types export from `@/inkling`
+  (`src/inkling/shared-exports.ts`); `tests/inkling/unit/labels.test.ts` snapshots the keys.
+- ui-prefs flags: `isEmojiEnabled` (default true; `false` keeps `EmojiPickerPlugin` out of `InklingNestedEditor`/`InklingCaptionEditor` only) and
+  `codeEditor` (default `'rich'`; `'plain'` uses static `CodeBlockPlainEditor`, no codemirror chunk; pinned by
+  `tests/inkling/unit/components/ui/cards/plain-code-editor-import-guard.test.ts`).
+- Menu labels: each declaration entry (and the table pseudo-source) carries a required `labelKey`; `buildCardMenu` resolves `menu.${labelKey}.label`/`.desc`
+  via `useCardMenu`'s resolver; declared English is the fallback.
+- Word count: `language` drives `Intl.Segmenter` (`countWords(text, language)`) and publishes on the handle; `wordCountLanguage` (UI locale) seeds
+  `language ?? wordCountLanguage` from `InklingUiPrefsContext`; with both absent it stays `undefined` (published `null`) and `countWords` keeps its regex
+  path. Hosts mount the plugin themselves.
+- `onSelectionChange?: (count: number | null) => void`: `null` = collapsed/no selection; `0` = non-empty selection with zero words (punctuation-only is `0`,
+  never `null`). A rendered editor's DOM root is the focus authority; `focusedEditor` serves rootless headless editors and clears on detach;
+  `registerEditableListener` recomputes on `readOnly` flips. `createWordCounter` (`src/inkling/plugins/behaviour/word-counter.ts`) owns both channels; a
+  selection-only mount never runs the document pass; no callback attaches no listeners.
+- `selectionCounts` lives with `nodeWordCounts` in the per-TOP-LEVEL-editor `WordCountState` WeakMap (never globals), keyed by COUNTER INSTANCE identity;
+  entries count only when `entry.editor.isEditable()` and `hasEditorFocus(entry.editor, state)`; newest eligible wins; a collapsed selection emits null, not
+  another editor's stale count.
+- Dedup is PER CALLBACK (`lastSelectionWordCounts: Map<callback, number | null>`); attaching emits only without a prior entry; detach broadcasts once to the
+  departing callback, then prunes entries no remaining counter owns. Document and selection are independent counters (`setLanguage` swaps in place on both),
+  publishing through one `publishWordCountCallback` effect with per-channel ownership stacks (null language = "no opinion").
+- `InklingNestedComposer` mounts a nested `WordCountPlugin` when EITHER callback is present; `useWordCountSelectionCallback` is the render-only selection
+  subscription. Pins: `tests/inkling/unit/plugins/behaviour/word-counter.test.ts`, `tests/inkling/unit/plugins/behaviour/wordCountHandle.test.ts`,
+  `tests/inkling/unit/plugins/WordCountPlugin.test.tsx`, `tests/inkling/unit/components/InklingNestedComposerWordCount.test.tsx`.
+- Backtick chord in `KEYBOARD_SHORTCUTS` (`src/inkling/plugins/behaviour/keyboard-navigation/shortcuts.ts`; type `KeyboardShortcut`; the registration
+  function keeps `registerModifierCommand`): unmodified backtick over a non-collapsed range selection dispatches `FORMAT_TEXT_COMMAND 'code'` via
+  `dispatchCodeFormat` (the ctrl+shift+K helper) — one undo entry; collapsed selections, alt/ctrl/meta, Shift, and IME fall through. `matches` is a pure
+  key-shape test, `run` may return false, the loop stops at the first match; `registerKeyboardNavigation` covers nested editors; CodeMirror owns its own
+  backtick. Pinned by `tests/inkling/unit/plugins/behaviour/backtick-code-selection.test.tsx`.
 
 ## Documented tradeoffs
 
-- Content typography (headings, paragraphs, lists, quotes, code rhythm) is NOT owned by this layer:
-  kobato replaced `@tailwindcss/typography` with an owned typeset layer
-  (`src/styles/typeset.css` in the host), and the host passes
-  `contentEditableClassName="typeset typeset-post|typeset-comment"` into `InklingComposableEditor`
-  so the canvas shares the rendered presets. `src/inkling/styles/components/inkling-prose.css` keeps
-  only card rhythm, nested-editor chrome variants, the aside pull-quote, and the accent re-scope.
-  The typeset guard honors `.not-inkling-prose` and `.inkling-blockquote-alt`.
-- The editor stylesheet is consumed as source: `src/inkling/styles/index.css` is imported by the
-  host's two partials (`src/styles/inkling-editor.css`, `src/styles/inkling-comment-editor.css`)
-  into the `inkling` cascade layer, pinned below `utilities` but above `base` by the bare `@layer`
-  ordering
-  statements in `admin.css` / `public.css` so host-card Tailwind utilities beat inkling's scoped
-  preflight while the host preflight cannot zero the package's own utilities. Chrome arbitrary
-  values are authored in rem (0.1rem/px), never px literals: the kobato page-editor canvas runs
-  under `zoom: 2/3` on a 15px root, so only root-relative lengths render pixel-identical to the
-  10px-root demo. Both partials import `src/styles/dark-variant.css` before the package sheet so its
-  `dark:` utilities compile with kobato's class-or-media variant instead of Tailwind's default
-  media-only one. The theme-token parity lives in those partials' token bridge (`--inkling-accent-color`
-  ← `--brand`, `--font-sans` ← `--font-body`) — that bridge is what keeps the canvas on kobato's
-  design tokens. The old `./core.css` split no longer exists.
-- The public markdown round-trip API (`src/inkling/markdown/round-trip.ts`) intentionally uses a
-  constrained node set and does not round-trip decorator cards.
-- There are no build artifacts and no package boundaries — consumers import source. `@/inkling` is
-  the full editor; `@/inkling/headless` (zero React) is the server-side conversion surface — the
-  HTML/markdown/plain-text state converters and nothing else; kobato's server bundle imports the
-  editor ONLY through this surface. Kobato R10 also consumes `generateDecoratorNode` (plus the
-  `DecoratorNodeProperty` type) from this surface: the host's React-free card base classes register
-  straight into the converter node lists — the same pattern `DEFAULT_HTML_NODES` uses for the
-  built-in cards' `baseNode`s. The `RenderContext` / `ExportDOMOutput` types deliberately stay
-  internal: hosts declare structural slices instead (kobato's `CardRenderContext`). The barrel's
-  shared contract (Lexical runtime types, host-config types, labels, the library browser, the
-  card-free composition pieces, `version`) is single-sourced in `src/inkling/shared-exports.ts` —
-  add shared names there, never in the barrel directly. `@/inkling/headless` deliberately does NOT
-  go through `shared-exports` (it would pull the React component tree in), and the barrel in turn
-  never re-exports the headless conversion modules — `headless-html` reaches jsdom (and its undici
-  chain) through `headless-dom`'s lazy import, so a barrel re-export would drag jsdom into the
-  client module graph (pinned by `tests/inkling/unit/html/jsdom-import-guard.test.ts`). `version` reads kobato's
-  `__APP_VERSION__` build-time define. Feature runtimes load behind lazy
-  boundaries so the editor island chunk ships without them: emoji-mart
-  (`@emoji-mart/data` + SearchIndex) rides the import port in
-  `src/inkling/plugins/behaviour/emoji-completion.ts` (chunk module
-  `emoji-search-index.ts`, loaded on the first ':' typeahead query) and the
-  callout card's `EmojiPickerPortal` sits behind `React.lazy` (opens only on
-  click — a null Suspense fallback is SSR-safe); markdown-it rides the import
-  port in `src/inkling/markdown/lazy-paste-dialect.ts` (pre-warmed on
-  MarkdownPastePlugin mount and awaited on a cold first paste, because two
-  sync consumers — the paste command handler and the markdown card's
-  exportDOM — cannot await; the headless HTML surface seeds the port
-  statically since the server bundle has no chunk budget); the CodeMirror
-  family loads behind `LazyCardEditor`
-  (`src/inkling/components/ui/cards/LazyCardEditor.tsx` — the hydration-safe
-  gate: static code-box fallback on SSR and first client render, lazy editor
-  after mount) in `CodeBlockCard.tsx` (`CodeBlockEditor.tsx` chunk) and
-  `HtmlCard.tsx` (`HtmlCard/HtmlEditor.tsx` chunk), with
-  `src/inkling/utils/codemirror-config.ts` riding the shared chunk.
-  Minimal surfaces skip two of those runtimes entirely via the ui-prefs
-  surface flags (documented in the architecture notes above): kobato's
-  comment composer sets `isEmojiEnabled={false}` (no emoji typeahead, no
-  emoji-mart chunk) and `codeEditor="plain"` (`CodeBlockPlainEditor`, no
-  codemirror chunk). MarkdownPastePlugin's mount pre-warm of the paste
-  dialect is idle-scheduled (requestIdleCallback, setTimeout fallback) so the
-  fetch never contends with editor mount; the cold-paste await stays the
-  correctness floor.
-  `fast-average-color` stays an ordinary eager dependency (too small to
-  split); `yjs`/`y-websocket` are the older precedent —
-  `enableMultiplayer` awaits a lazily imported collaboration chunk at runtime (the load session is
-  headless: `src/inkling/utils/services/lazy-collaboration.ts` behind an import port, with
-  `useCollaborationProviderFactory` the React adapter), so the barrel stays free of them until
-  used. The retired `/core` entry's two composition defaults survive in the components themselves:
-  `InklingComposer`'s `nodes` prop is OPTIONAL (defaults to `DEFAULT_NODES`) while
-  `src/inkling/components/InklingComposerBase.tsx` — the card-free composer — requires it, and
-  `MarkdownShortcutPlugin`'s default transformer set is the card-free `MINIMAL_TRANSFORMERS`
-  (`InklingEditor` passes `DEFAULT_TRANSFORMERS` explicitly).
-- Base node classes must not reuse DOM global names — this is why every base class is `Base*Node`
-  (e.g. `BaseAudioNode`, not `AudioNode`): the convention dates from the dts-bundling era
-  (declaration bundlers collided with lib.dom.d.ts) and stays. React Compiler runs on the layer: the
-  app build compiles it via `@vitejs/plugin-react`'s `compiler: true`, and the inkling vitest
-  project compiles the same way so tests exercise the compiled semantics.
-- The headless HTML API lazily imports `jsdom` (a plain root devDependency now) behind
-  `src/inkling/html/headless-dom.ts` (the headless DOM port) — the only module that may import it;
-  `tests/inkling/unit/html/jsdom-import-guard.test.ts` enforces that statically. The public
-  `lexicalStateToHtml` owns the render recipe (no internal renderer class); the shared
-  headless-editor assembly lives in `src/inkling/html/headless-editor.ts` with named merge modes
-  (renderer/plain-text `additive` vs importer `wholesale`). Do not add a second jsdom importer.
+- Content typography is NOT owned here: the host owns `src/styles/typeset.css` and passes `contentEditableClassName="typeset typeset-post|typeset-comment"`
+  into `InklingComposableEditor`; `src/inkling/styles/components/inkling-prose.css` keeps only card rhythm, nested-editor chrome variants, the aside
+  pull-quote, and the accent re-scope. The typeset guard honors `.not-inkling-prose` and `.inkling-blockquote-alt`.
+- `src/inkling/styles/index.css` is consumed as source: imported by `src/styles/inkling-editor.css` and `src/styles/inkling-comment-editor.css` into the
+  `inkling` cascade layer, below `utilities` and above `base` via the bare `@layer` statements in `admin.css` / `public.css`. Chrome arbitrary values are
+  authored in rem (0.1rem/px), never px: the canvas runs `zoom: 2/3` on a 15px root (demo: 10px-root). Both partials import `src/styles/dark-variant.css`
+  first, and bridge tokens (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`).
+- `src/inkling/markdown/round-trip.ts` intentionally uses a constrained node set and does not round-trip decorator cards.
+- `@/inkling/headless` (zero React) is the server-side conversion surface only (HTML/markdown/plain-text converters) and the server bundle's ONLY editor
+  import, which also takes `generateDecoratorNode` plus `DecoratorNodeProperty` from it. `RenderContext` / `ExportDOMOutput` stay internal (hosts declare
+  slices like `CardRenderContext`); the barrel's shared contract is single-sourced in `src/inkling/shared-exports.ts` — add shared names there, never in the
+  barrel.
+- `@/inkling/headless` bypasses `shared-exports` (it would pull the React tree in), and the barrel never re-exports headless conversion modules:
+  `headless-html` reaches jsdom through `headless-dom`'s lazy import, so a re-export would drag jsdom into the client graph
+  (`tests/inkling/unit/html/jsdom-import-guard.test.ts`). `version` reads `__APP_VERSION__`.
+- Lazy runtimes keep the island chunk free of them: emoji-mart via `src/inkling/plugins/behaviour/emoji-completion.ts` (chunk `emoji-search-index.ts`, first
+  ':' query), the callout `EmojiPickerPortal` behind `React.lazy`; markdown-it via `src/inkling/markdown/lazy-paste-dialect.ts` (pre-warmed on mount,
+  awaited on cold first paste, seeded by the headless HTML surface); CodeMirror via `src/inkling/components/ui/cards/LazyCardEditor.tsx` (static fallback on
+  SSR/first render) in `CodeBlockCard.tsx` and `HtmlCard.tsx`, with `src/inkling/utils/codemirror-config.ts` on the shared chunk; `yjs`/`y-websocket` via
+  `enableMultiplayer` and `src/inkling/utils/services/lazy-collaboration.ts`, with `useCollaborationProviderFactory` the React adapter. `fast-average-color`
+  stays eager.
+- Composition defaults: `InklingComposer`'s `nodes` prop is OPTIONAL (defaults to `DEFAULT_NODES`) while `src/inkling/components/InklingComposerBase.tsx`
+  requires it; `MarkdownShortcutPlugin` defaults to the card-free `MINIMAL_TRANSFORMERS` (`InklingEditor` passes `DEFAULT_TRANSFORMERS`).
+- Base node classes must not reuse DOM global names — hence `Base*Node` (e.g. `BaseAudioNode`). React Compiler runs on the layer (`@vitejs/plugin-react`'s
+  `compiler: true`, also for inkling tests).
+- The headless HTML API lazily imports `jsdom` behind `src/inkling/html/headless-dom.ts` — the only module that may import it; `lexicalStateToHtml` owns the
+  render recipe, `src/inkling/html/headless-editor.ts` the shared assembly with merge modes (renderer/plain-text `additive` vs importer `wholesale`). Do not
+  add a second jsdom importer.
 
 ## Testing
 
-- Vitest, jsdom environment, globals off (explicit `vitest` imports, same as the other projects) —
-  its own project (`tests/inkling/vitest.config.ts`;
-  the include list mirrors the layer: `unit/`, `utils/`, `clean-basic-html/`, `html-api/`,
-  `html-to-lexical/`, `html-renderer/`, `markdown/`, `transforms/`, `nodes-base/`). The project is
-  part of the root `pnpm run test`; `src/inkling/**` is excluded from the root coverage gate (the
-  suite's historical thresholds sit below the root 60).
-- `vitest.config.ts` inlines `@testing-library/jest-dom` (`server.deps.inline`): its vitest entry
-  imports `vitest`, and externalizing it splits the snapshot/expect singletons and breaks every
+- Vitest, jsdom, globals off (explicit `vitest` imports), its own project (`tests/inkling/vitest.config.ts`; include list mirrors the layer: `unit/`,
+  `utils/`, `clean-basic-html/`, `html-api/`, `html-to-lexical/`, `html-renderer/`, `markdown/`, `transforms/`, `nodes-base/`). Part of root
+  `pnpm run test`; `src/inkling/**` is excluded from the root coverage gate.
+- `vitest.config.ts` inlines `@testing-library/jest-dom` (`server.deps.inline`); externalizing it splits the snapshot/expect singletons and breaks every
   `toMatchSnapshot`. Keep that inline entry.
-- Rendered-card specs need the decorate adapter registered (see the architecture note above):
-  `tests/inkling/utils/test-editor.ts` registers it for the shared harness; bespoke `createEditor`
-  specs call `registerCardDecorateAdapter()` at module scope.
-
-### AI-friendly vs human-friendly entry points
-
-AI agents (scripted, parseable output):
-
-- `pnpm test:inkling` — full inkling suite; `npx vitest run --project inkling <file>` for one file.
-- `pnpm run type`, `pnpm run lint`, `pnpm run fmt:check` — static gates.
-
-Humans (interactive, visual):
-
-- `npx vitest --project inkling` — Vitest watch mode.
-- `pnpm demo` — the standalone demo app.
+- Rendered-card specs need the decorate adapter: `tests/inkling/utils/test-editor.ts` registers it, bespoke `createEditor` specs call
+  `registerCardDecorateAdapter()` at module scope, and an unregistered slot throws on first card render.
 
 ## Before finishing work
 
