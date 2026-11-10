@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  FORBIDDEN_DEV_TELEMETRY_MARKERS,
+  FORBIDDEN_BROWSER_TELEMETRY_MARKERS,
   SEA_BUNDLE_DEFINED_GLOBALS,
   scanBundleText,
 } from '../../../../scripts/sea/check-bundle.ts'
@@ -75,21 +75,21 @@ describe('scanBundleText: undefined build-time globals', () => {
   })
 })
 
-describe('scanBundleText: development-only telemetry exclusion', () => {
-  it('passes a production bundle with no OTel/OpenObserve SDK markers', () => {
+describe('scanBundleText: browser-only RUM exclusion', () => {
+  it('passes a server bundle with no browser RUM or OTel SDK markers', () => {
     const text = ['const span = { traceId: "abc" }', 'console.log(span.traceId)'].join('\n')
     expect(scanBundleText(text, SEA_BUNDLE_DEFINED_GLOBALS)).toEqual([])
   })
 
-  it.each([...FORBIDDEN_DEV_TELEMETRY_MARKERS])('flags a bundle carrying the %s marker', (marker) => {
+  it.each([...FORBIDDEN_BROWSER_TELEMETRY_MARKERS])('flags a bundle carrying the %s marker', (marker) => {
     const text = `const leaked = "${marker}something"`
 
     expect(scanBundleText(text, SEA_BUNDLE_DEFINED_GLOBALS)).toEqual([
-      `development-only telemetry SDK remains: ${marker}`,
+      `browser-only RUM SDK remains in a server bundle: ${marker}`,
     ])
   })
 
-  it('pins the marker set to the packages ADR-0012 confines to DEV', () => {
-    expect([...FORBIDDEN_DEV_TELEMETRY_MARKERS]).toEqual(['@opentelemetry/', '@openobserve/'])
+  it('keeps the server OTel SDK bundleable while the browser RUM SDK stays client-only', () => {
+    expect([...FORBIDDEN_BROWSER_TELEMETRY_MARKERS]).toEqual(['@openobserve/'])
   })
 })

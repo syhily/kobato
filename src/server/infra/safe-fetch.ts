@@ -45,6 +45,15 @@ export interface SafeFetchOptions {
    *  on :8000) — never set it for a user-influenced URL. Applies to the
    *  redirect hops too. */
   allowNonStandardPort?: boolean
+  /**
+   * Exact origin (`https://host[:port]`) of a fixed, admin-validated backend —
+   * e.g. the self-hosted OpenObserve endpoint from the `observability`
+   * settings. Only a request whose origin EQUALS this value bypasses the
+   * private-host blocklist and the port allowlist, including at connect-time
+   * DNS validation; every redirect target to another origin is still fully
+   * guarded. Never derive it from an inbound request or a redirect Location.
+   */
+  trustedOrigin?: string
   /** Closed telemetry operation name (ADR-0012). The URL/host/query are never
    *  recorded; omit and the span uses the fixed `unspecified` label. */
   operation?: SafeFetchOperation
@@ -137,17 +146,25 @@ function familyNumber(family: LookupOptions['family']): number {
   return family ?? 0
 }
 
-/** Resolve + validate one dial. Throws on a resolution failure, an empty
- *  answer, or ANY blocked address — the socket never sees a peer the
- *  blocklist would reject. */
-async function resolveForDial(host: string, family: number, hints: number): Promise<LookupAddress[]> {
+/** Resolve + validate one dial. Throws on a resolution failure or an empty
+ *  answer; with `validate` EVERY resolved address must pass the blocklist, so
+ *  the socket never sees a peer the guard would reject. A trusted fixed
+ *  endpoint skips only the blocklist, never the resolution itself. */
+async function resolveForDial(
+  host: string,
+  family: number,
+  hints: number,
+  validate: boolean,
+): Promise<LookupAddress[]> {
   const addresses = await lookup(host, { all: true, family, hints })
   if (addresses.length === 0) {
     throw noAddressError(host)
   }
-  for (const { address } of addresses) {
-    if (isBlockedFetchHost(address)) {
-      throw blockedAddressError(host, address)
+  if (validate) {
+    for (const { address } of addresses) {
+      if (isBlockedFetchHost(address)) {
+        throw blockedAddressError(host, address)
+      }
     }
   }
   return addresses
@@ -157,13 +174,18 @@ async function resolveForDial(host: string, family: number, hints: number): Prom
  *  validated at connect time and only validated addresses are handed to
  *  the socket. Failures abort the connection (fail closed). Exported so
  *  the dial-time rebinding invariant can be tested directly — safeFetch's
- *  own port allowlist rejects the ephemeral ports a test server binds. */
-export function createDialLookup(): LookupFunction {
+ *  own port allowlist rejects the ephemeral ports a test server binds.
+ *
+ *  `allowPrivateHostnames` is the connect-time half of `trustedOrigin`: a
+ *  fixed admin-validated endpoint may intentionally resolve to a loopback /
+ *  private address, so only that exact hostname skips the blocklist. */
+export function createDialLookup(allowPrivateHostnames?: ReadonlySet<string>): LookupFunction {
   return (hostname, options, callback) => {
     const bare = bareHostname(hostname)
+    const trusted = allowPrivateHostnames?.has(bare.toLowerCase()) === true
     const literal = isIP(bare)
     if (literal !== 0) {
-      if (isBlockedFetchHost(bare)) {
+      if (!trusted && isBlockedFetchHost(bare)) {
         callback(blockedAddressError(bare, bare), '')
         return
       }
@@ -177,7 +199,7 @@ export function createDialLookup(): LookupFunction {
     }
     void (async () => {
       try {
-        const addresses = await resolveForDial(bare, familyNumber(options.family), options.hints ?? 0)
+        const addresses = await resolveForDial(bare, familyNumber(options.family), options.hints ?? 0, !trusted)
         if (options.all === true) {
           callback(null, addresses)
         } else if (addresses[0] !== undefined) {
@@ -193,9 +215,20 @@ export function createDialLookup(): LookupFunction {
 /** Validate one target against the protocol/port allowlist, SSRF guard,
  *  and DNS: a lookup failure (or a host that resolves to nothing) is a
  *  failure, and every resolved address must pass the blocklist. */
-async function guardTarget(parsed: URL, url: string, allowNonStandardPort: boolean): Promise<SafeFetchFailure | null> {
+async function guardTarget(
+  parsed: URL,
+  url: string,
+  allowNonStandardPort: boolean,
+  trustedOrigin: string | undefined,
+): Promise<SafeFetchFailure | null> {
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     return failure('bad-protocol', url)
+  }
+  // The fixed, admin-validated endpoint (e.g. self-hosted OpenObserve) may
+  // use any port and resolve to a private address. The match is the EXACT
+  // origin; a redirect to another origin still runs the full guard below.
+  if (trustedOrigin !== undefined && parsed.origin === trustedOrigin) {
+    return null
   }
   // Only the standard web ports: a URL parser normalizes the default port
   // away (`:443` on https reads as ''), so any explicit remainder is
@@ -331,21 +364,27 @@ async function performSafeFetch(
     method = 'GET',
     body,
     allowNonStandardPort = false,
+    trustedOrigin,
   } = options
 
   const initial = tryParseUrl(url)
   if (initial === null) {
     return failure('invalid-url', url)
   }
-  const initialRejection = await guardTarget(initial, url, allowNonStandardPort)
+  const initialRejection = await guardTarget(initial, url, allowNonStandardPort, trustedOrigin)
   if (initialRejection !== null) {
     return initialRejection
   }
 
+  // Connect-time half of the trusted-origin exemption: only that hostname may
+  // dial a private address. Every other hop keeps the rebinding guard.
+  const trustedHostname =
+    trustedOrigin === undefined ? undefined : new Set([bareHostname(new URL(trustedOrigin).hostname).toLowerCase()])
+
   // One agent per call: every hop — including redirect targets — dials
   // through the same validating lookup. A fresh agent never reuses a
   // connection validated by a previous call.
-  const agent = new Agent({ connect: { lookup: createDialLookup() } })
+  const agent = new Agent({ connect: { lookup: createDialLookup(trustedHostname) } })
   let agentOwnedByStream = false
 
   try {
@@ -387,7 +426,7 @@ async function performSafeFetch(
         return failure('invalid-url', location)
       }
       // Re-validate every hop: a remote server can 302 toward an internal address.
-      const hopRejection = await guardTarget(nextUrl, nextUrl.toString(), allowNonStandardPort)
+      const hopRejection = await guardTarget(nextUrl, nextUrl.toString(), allowNonStandardPort, trustedOrigin)
       if (hopRejection !== null) {
         return hopRejection
       }

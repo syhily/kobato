@@ -11,7 +11,7 @@ import {
   RUM_PRIVACY_VRL_SHA256,
 } from '../../../../src/shared/contracts/trace-pipeline.ts'
 
-const ASSETS = join(import.meta.dirname, '../../../../scripts/trace/assets')
+const ASSETS = join(import.meta.dirname, '../../../../src/server/domains/observability/assets')
 const DASHBOARDS = join(ASSETS, 'dashboards')
 
 interface Panel {

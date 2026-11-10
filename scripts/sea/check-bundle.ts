@@ -29,10 +29,13 @@ export const SEA_BUNDLE_DEFINED_GLOBALS = [
 const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'])
 const allowedRelativeSpecifiers = new Set(['./MyComponent'])
 
-// ADR-0012: the real OpenObserve/OTel SDKs are development-only. A production
-// or SEA bundle must never carry their module paths — if a dynamic DEV entry
-// stops being DCE'd, the marker survives and this check fails the build.
-export const FORBIDDEN_DEV_TELEMETRY_MARKERS = ['@opentelemetry/', '@openobserve/'] as const
+// The server OTel SDK is a released capability and IS bundled (the trace
+// runtime is reached through a dynamic import, inlined by the SEA build). The
+// browser RUM SDK is the opposite: it is a browser-only package reached only
+// from the client RUM loader, so it must never appear in a server bundle — a
+// surviving `@openobserve/` marker means a client module (or its dynamic edge)
+// leaked into the server graph.
+export const FORBIDDEN_BROWSER_TELEMETRY_MARKERS = ['@openobserve/'] as const
 
 function isAllowedSpecifier(specifier: string) {
   return builtins.has(specifier) || specifier.startsWith('node:') || allowedExternalSpecifiers.has(specifier)
@@ -70,9 +73,9 @@ export function scanBundleText(text: string, definedGlobals: readonly string[]) 
     errors.push('import.meta.env remains in the bundle')
   }
 
-  for (const marker of FORBIDDEN_DEV_TELEMETRY_MARKERS) {
+  for (const marker of FORBIDDEN_BROWSER_TELEMETRY_MARKERS) {
     if (text.includes(marker)) {
-      errors.push(`development-only telemetry SDK remains: ${marker}`)
+      errors.push(`browser-only RUM SDK remains in a server bundle: ${marker}`)
     }
   }
 

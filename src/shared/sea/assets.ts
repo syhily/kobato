@@ -51,6 +51,28 @@ export const SEA_NATIVE_SKIA_ICU_KEY = 'natives/icudtl.dat'
 export const SEA_NATIVE_DUCKDB_ADDON_KEY = 'natives/duckdb.node'
 
 /**
+ * Prefix of the admin-provisioning assets for the `observability` domain
+ * (`observability/dashboards/*.json` + `observability/rum-privacy.vrl`).
+ * Raw text assets, read through `readAssetTextOrDisk`; the runtime reader is
+ * `src/server/domains/observability/assets.ts`.
+ */
+export const SEA_OBSERVABILITY_ASSET_PREFIX = 'observability/'
+
+/** Key of the fail-closed RUM privacy VRL installed into OpenObserve. */
+export const SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY = 'observability/rum-privacy.vrl'
+
+/** Prefix of the versioned OpenObserve v8 dashboards. */
+export const SEA_OBSERVABILITY_DASHBOARD_PREFIX = 'observability/dashboards/'
+
+/** The four versioned dashboards imported by `provision`, in stable order. */
+export const OBSERVABILITY_DASHBOARD_FILES = [
+  'browser.json',
+  'correlation.json',
+  'overview.json',
+  'server.json',
+] as const
+
+/**
  * Key of the embedded `@img/sharp-libvips-<platform>/versions` answer.
  * Absent on win32 (no separate libvips package) — the redirected probe
  * then throws and sharp falls back upstream-style.

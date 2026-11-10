@@ -13,6 +13,9 @@ import {
   SEA_NATIVE_SHARP_ADDON_KEY,
   SEA_NATIVE_SKIA_ADDON_KEY,
   SEA_NATIVE_SKIA_ICU_KEY,
+  SEA_OBSERVABILITY_ASSET_PREFIX,
+  SEA_OBSERVABILITY_DASHBOARD_PREFIX,
+  SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
@@ -42,6 +45,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       'SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY',
       'SEA_NATIVE_META_SHARP_PACKAGE_KEY',
       'SEA_NATIVE_META_SHARP_VERSIONS_KEY',
+      'SEA_OBSERVABILITY_ASSET_PREFIX',
     ],
     forbiddenLiterals: [
       `'manifest.json'`,
@@ -53,6 +57,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       `'natives/skia.node'`,
       `'natives/icudtl.dat'`,
       `'natives-meta/`,
+      `'observability/`,
     ],
   },
   {
@@ -122,6 +127,15 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
     names: ['SEA_CLIENT_ASSET_PREFIX'],
     forbiddenLiterals: [`'client/'`],
   },
+  {
+    file: 'src/server/domains/observability/assets.ts',
+    names: [
+      'SEA_OBSERVABILITY_DASHBOARD_PREFIX',
+      'SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY',
+      'OBSERVABILITY_DASHBOARD_FILES',
+    ],
+    forbiddenLiterals: [`'observability/`, `'observability/dashboards/`, `'observability/rum-privacy.vrl'`],
+  },
 ]
 
 function readSource(path: string): string {
@@ -144,6 +158,9 @@ describe('contract: SEA embedded-asset keys', () => {
     expect(SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY).toBe('natives-meta/libvips-package.json')
     expect(SEA_NATIVE_META_SHARP_PACKAGE_KEY).toBe('natives-meta/sharp-platform-package.json')
     expect(SEA_NATIVE_META_SHARP_VERSIONS_KEY).toBe('natives-meta/sharp-platform-versions.json')
+    expect(SEA_OBSERVABILITY_ASSET_PREFIX).toBe('observability/')
+    expect(SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY).toBe('observability/rum-privacy.vrl')
+    expect(SEA_OBSERVABILITY_DASHBOARD_PREFIX).toBe('observability/dashboards/')
   })
 
   it('writer and readers all import their keys from the shared module', () => {
@@ -163,6 +180,15 @@ describe('contract: SEA embedded-asset keys', () => {
         expect(source, `${file} must not hardcode ${literal} (owned by ${SHARED_MODULE})`).not.toContain(literal)
       }
     }
+  })
+
+  it('reads raw observability assets through the VFS/disk helper, never the packed blob channel', () => {
+    const source = readSource('src/server/domains/observability/assets.ts')
+    // These five assets are registered as RAW (codec 'none') and mounted on the
+    // SEA VFS; `getEmbeddedAsset` is only contractual for packed natives/*.
+    expect(source).toContain('readAssetTextOrDisk')
+    expect(source).not.toContain('getEmbeddedAsset')
+    expect(source).not.toContain("from '@/server/infra/sea'")
   })
 
   it('sea-natives no longer defines the manifest keys locally', () => {

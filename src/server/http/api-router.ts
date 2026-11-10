@@ -12,6 +12,7 @@ import { adminJobsRouter } from '@/server/http/controllers/admin/jobs.controller
 import { adminMailRouter } from '@/server/http/controllers/admin/mail.controller'
 import { adminMusicRouter } from '@/server/http/controllers/admin/music.controller'
 import { adminNotificationsRouter } from '@/server/http/controllers/admin/notifications.controller'
+import { adminObservabilityRouter } from '@/server/http/controllers/admin/observability.controller'
 import { adminPagesRouter } from '@/server/http/controllers/admin/pages.controller'
 import { adminPostsRouter } from '@/server/http/controllers/admin/posts.controller'
 import { adminRendersRouter } from '@/server/http/controllers/admin/renders.controller'
@@ -83,6 +84,7 @@ export const apiRouter = {
     jobs: adminJobsRouter,
     music: adminMusicRouter,
     notifications: adminNotificationsRouter,
+    observability: adminObservabilityRouter,
     pages: adminPagesRouter,
     posts: adminPostsRouter,
     renders: adminRendersRouter,

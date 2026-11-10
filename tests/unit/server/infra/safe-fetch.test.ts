@@ -52,6 +52,11 @@ describe('infra/safe-fetch — initial URL guard', () => {
     const fn = mockFetch(() => new Response(null, { status: 200 }))
     const result = await safeFetch('ftp://example.com/x')
     expect(result).toMatchObject({ ok: false, reason: 'bad-protocol' })
+    // The trusted-origin exemption never bypasses the protocol gate.
+    await expect(safeFetch('ftp://example.com/x', { trustedOrigin: 'ftp://example.com' })).resolves.toMatchObject({
+      ok: false,
+      reason: 'bad-protocol',
+    })
     expect(fn).not.toHaveBeenCalled()
   })
 
@@ -103,6 +108,30 @@ describe('infra/safe-fetch — initial URL guard', () => {
     })
     expect(fn).not.toHaveBeenCalled()
   })
+
+  it('allows a loopback fixed endpoint only through the exact trusted origin', async () => {
+    const fn = mockFetch(() => new Response(new Uint8Array([1]), { status: 200 }))
+    await expect(
+      safeFetch('http://127.0.0.1:5080/healthz', { trustedOrigin: 'http://127.0.0.1:5080' }),
+    ).resolves.toMatchObject({ ok: true })
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    // A different origin (even the same loopback host on another port) stays blocked.
+    await expect(
+      safeFetch('http://127.0.0.1:5081/healthz', { trustedOrigin: 'http://127.0.0.1:5080' }),
+    ).resolves.toMatchObject({ ok: false, reason: 'bad-port' })
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+
+  it('still blocks a redirect from a trusted origin to another private origin', async () => {
+    const fn = mockFetch(
+      () => new Response(null, { status: 302, headers: { location: 'http://127.0.0.1:9000/internal' } }),
+    )
+    await expect(
+      safeFetch('http://127.0.0.1:5080/healthz', { trustedOrigin: 'http://127.0.0.1:5080' }),
+    ).resolves.toMatchObject({ ok: false, reason: 'bad-port', url: 'http://127.0.0.1:9000/internal' })
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('infra/safe-fetch — DNS guard', () => {
@@ -112,6 +141,17 @@ describe('infra/safe-fetch — DNS guard', () => {
     const result = await safeFetch('https://rebinding.example.com/x')
     expect(result).toMatchObject({ ok: false, reason: 'blocked-host', url: 'https://rebinding.example.com/x' })
     expect(fn).not.toHaveBeenCalled()
+  })
+
+  it('lets a trusted fixed endpoint resolve to a private address', async () => {
+    lookupMock.mockResolvedValue([{ address: '10.0.0.12', family: 4 }])
+    const fn = mockFetch(() => new Response(new Uint8Array([1]), { status: 200 }))
+    await expect(
+      safeFetch('https://obs.internal.example.com/healthz', {
+        trustedOrigin: 'https://obs.internal.example.com',
+      }),
+    ).resolves.toMatchObject({ ok: true })
+    expect(fn).toHaveBeenCalledTimes(1)
   })
 
   it('rejects when ANY resolved address is private', async () => {
@@ -183,6 +223,15 @@ describe('infra/safe-fetch — DNS guard', () => {
 })
 
 describe('infra/safe-fetch — dial-time DNS binding', () => {
+  it('lets the trusted endpoint hostname dial a private address at connect time', async () => {
+    lookupMock.mockResolvedValue([{ address: '10.0.0.12', family: 4 }])
+    const callback = vi.fn()
+    createDialLookup(new Set(['obs.internal.example.com']))('obs.internal.example.com', { all: true }, callback)
+    await vi.waitFor(() => expect(callback).toHaveBeenCalled())
+    expect(callback.mock.calls[0]?.[0]).toBeNull()
+    expect(callback.mock.calls[0]?.[1]).toEqual([{ address: '10.0.0.12', family: 4 }])
+  })
+
   it('aborts the connection when the dial-time lookup resolves a blocked address', async () => {
     // Real socket, real undici Agent — only `node:dns/promises` is mocked.
     // The validating lookup is exercised directly: safeFetch's own port

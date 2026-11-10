@@ -27,6 +27,7 @@ import {
   SEA_NATIVE_SHARP_ADDON_KEY,
   SEA_NATIVE_SKIA_ADDON_KEY,
   SEA_NATIVE_SKIA_ICU_KEY,
+  SEA_OBSERVABILITY_ASSET_PREFIX,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
@@ -429,6 +430,18 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
 
   // The worker-pool smoke entry, embedded as text for `--smoke-worker`.
   await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
+
+  // Observability provisioning assets (4 dashboards + the RUM privacy VRL).
+  // RAW assets — `shouldPackAsset` leaves them unpacked, so under SEA they are
+  // plain files on the VFS mount; the runtime reads them with
+  // `readAssetTextOrDisk` (never the packed blob channel).
+  await addTree(
+    assets,
+    files,
+    SEA_OBSERVABILITY_ASSET_PREFIX,
+    join(repoRoot, 'src', 'server', 'domains', 'observability', 'assets'),
+    ctx,
+  )
 
   // Native dynamic libraries + platform metadata — the only assets extracted to disk at runtime.
   await addNativeAssets(assets, files, ctx)
