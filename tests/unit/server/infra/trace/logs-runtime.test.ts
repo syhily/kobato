@@ -67,7 +67,13 @@ const SERVER_CONFIG: ServerTraceRuntimeConfig = {
 }
 
 function resolution(overrides: Partial<ServerTraceRuntimeConfig> = {}): TraceConfigResolution {
-  return { status: 'active', server: { ...SERVER_CONFIG, ...overrides }, frontend: null, diagnostics: [] }
+  return {
+    status: 'active',
+    server: { ...SERVER_CONFIG, ...overrides },
+    frontend: null,
+    frontendRelay: null,
+    diagnostics: [],
+  }
 }
 
 /** In-memory exporter plus a durable snapshot: its own shutdown() clears the buffer. */

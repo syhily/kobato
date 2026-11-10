@@ -183,7 +183,7 @@ const status = adminProc
     const stored = site?.provisionedFingerprint ?? ''
     const runtime = getObservabilityRuntimeStatus()
     return {
-      runtime: { phase: runtime.phase, lastError: runtime.lastError },
+      runtime: { phase: runtime.phase, lastError: runtime.lastError, lastExportError: runtime.lastExportError },
       verified: isObservabilityConnectionVerified(site),
       provisioned: stored !== '',
       provisionedCurrent: stored !== '' && currentAssets !== null && stored === currentAssets,

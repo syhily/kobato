@@ -1,5 +1,5 @@
-// Admin observability wire contract (P2): connection test, provisioning, and
-// the read-only status projection P3 renders as its three cards.
+// Admin observability wire contract: connection test, provisioning, and the
+// read-only status projection the three admin cards render.
 //
 // Structured data only — the UI owns every label. Errors travel as the shared
 // `ErrorMessageDescriptor` contract (`ApiErrorData`), never as prose here.
@@ -60,12 +60,24 @@ export const observabilityProvisionOutputSchema = observabilityProvisionSummaryS
 
 export const observabilityStatusInputSchema = z.object({}).strict()
 
+/** Latest OTLP export failure observed by the running runtime (error class name only, never a message). */
+export const observabilityExportErrorSchema = z
+  .object({
+    signal: z.enum(['traces', 'metrics', 'logs']),
+    error: z.string(),
+    /** Epoch milliseconds. */
+    at: z.number(),
+  })
+  .strict()
+
 export const observabilityStatusOutputSchema = z
   .object({
     runtime: z
       .object({
         phase: observabilityRuntimePhaseSchema,
         lastError: z.string().nullable(),
+        /** Null while every signal exports cleanly or no runtime is active. */
+        lastExportError: observabilityExportErrorSchema.nullable(),
       })
       .strict(),
     /** The saved connection matches the last successful test (the fingerprint itself is never returned). */

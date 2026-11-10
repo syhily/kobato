@@ -1,12 +1,9 @@
-// OpenObserve log pipeline (ADR-0012; activated from the `observability`
-// settings section, in every build).
+// OpenObserve log pipeline: the second server SDK entry, next to `runtime.ts`.
 //
-// The second server SDK implementation entry, next to `runtime.ts`. It is
-// constructed by the trace runtime — never imported by anything else — and it
-// consumes only the already-projected record stream: `log-record.ts` decides
-// what a line may say, this module only ships it. No stdout logger is imported
-// here, so an exporter hiccup cannot turn into a log line (and a log line
-// cannot loop back into this pipeline).
+// Constructed by the trace runtime and imported by nothing else. It consumes the
+// already-projected record stream — `log-record.ts` decides what a line may say,
+// this module only ships it — and imports no stdout logger, so an exporter
+// hiccup cannot become a log line (and a log line cannot loop back in here).
 //
 // Boundaries that matter here:
 // - Fixed resource attributes come from `resource.ts` (one three-key object).
@@ -14,8 +11,8 @@
 //   plus the OpenObserve `stream-name`; it is never projected to the browser.
 // - Bounded batch pipeline (1024/256/1s/3s, one export in flight), so a stalled
 //   OpenObserve instance drops log records instead of growing the heap.
-// - The SDK associates the active trace context itself (`context.active()`);
-//   callers pass no context and no exception object.
+// - The SDK associates the active trace context itself; callers pass no context
+//   and no exception object.
 
 import type { LogRecord, SeverityNumber } from '@opentelemetry/api'
 import type { LogRecordExporter } from '@opentelemetry/sdk-logs'
@@ -29,6 +26,7 @@ import type { LogSink } from '@/server/infra/logger/sink'
 import type { TraceLogsRuntimeConfig } from '@/server/infra/trace/config'
 import type { LogSeverityText } from '@/server/infra/trace/log-record'
 
+import { observeExporter } from '@/server/infra/trace/export-health'
 import { projectLogLine } from '@/server/infra/trace/log-record'
 import { traceResourceAttributes } from '@/server/infra/trace/resource'
 import { APP_VERSION } from '@/shared/config/version'
@@ -63,6 +61,8 @@ export interface LogPipeline {
 export interface LogPipelineOptions {
   /** Test seam: in-memory exporter instead of direct OTLP/HTTP. */
   exporter?: LogRecordExporter
+  /** Export-health token: when present, every export outcome is recorded under it. */
+  healthToken?: object
 }
 
 /**
@@ -70,7 +70,7 @@ export interface LogPipelineOptions {
  * and rethrow so the caller can degrade logs only (traces/metrics continue).
  */
 export function buildLogPipeline(config: TraceLogsRuntimeConfig, options: LogPipelineOptions = {}): LogPipeline {
-  const exporter =
+  const constructed =
     options.exporter ??
     new OTLPLogExporter({
       url: config.otlpLogsUrl,
@@ -81,6 +81,8 @@ export function buildLogPipeline(config: TraceLogsRuntimeConfig, options: LogPip
       timeoutMillis: EXPORT_TIMEOUT_MS,
       concurrencyLimit: 1,
     })
+  const exporter =
+    options.healthToken === undefined ? constructed : observeExporter(constructed, options.healthToken, 'logs')
 
   let provider: LoggerProvider | null = null
   let processor: BatchLogRecordProcessor | null = null

@@ -1,26 +1,17 @@
-// OpenObserve OTel runtime (ADR-0012; activated from the `observability`
-// settings section since the release follow-up).
+// OpenObserve OTel runtime: one of the two server modules allowed to import the
+// OpenTelemetry SDKs (the other is `logs-runtime.ts`, which this constructs),
+// reached through a dynamic import from `domains/observability/runtime-manager.ts`
+// so the SDK chunk loads only when tracing is configured. `facade.ts` stays the
+// application-facing surface.
 //
-// One of the two server modules allowed to import the real OpenTelemetry SDKs
-// (the other is `logs-runtime.ts`, which this module constructs). It is reached
-// through a dynamic import from `domains/observability/runtime-manager.ts`, so
-// the SDK chunk is loaded only when the admin has configured tracing.
-// `facade.ts` stays the application-facing surface.
-//
-// Boundaries that matter here:
 // - Resource attributes come from the fixed three-key `resource.ts` for ALL
-//   signals (traces, metrics, logs). No host/OS/process/env detector runs (no
-//   `defaultResource()`).
-// - Export is direct OTLP/HTTP into OpenObserve, behind a bounded queue and a
-//   short export timeout. Nothing waits on an export in the request path.
-// - Only W3C `traceparent`/`tracestate` are extracted; baggage and alternative
-//   propagators are deliberately absent.
-// - Metrics use a periodic reader with the same resource, a bounded export
-//   timeout, and a closed instrument/attribute catalog (`metrics.ts`), so a
-//   non-finite value or an undeclared label can never reach the exporter.
-// - Logs are a sibling pipeline: the sink is installed into the Pino writable's
-//   slot and every line is projected by `log-record.ts` before export. A logs
-//   failure degrades only logs.
+//   signals. No host/OS/process/env detector runs.
+// - Export is direct OTLP/HTTP behind a bounded queue; nothing in the request
+//   path waits on an export. Only W3C `traceparent`/`tracestate` are extracted.
+// - Metrics use a periodic reader and the closed instrument/attribute catalog
+//   (`metrics.ts`): a non-finite value or an undeclared label never exports.
+// - Logs are a sibling pipeline projected by `log-record.ts`; a logs failure
+//   degrades only logs.
 
 import type {
   Context,
@@ -61,12 +52,14 @@ import type {
   SpanKind,
   SpanOptions,
   TraceDelegate,
+  UpDownCounter,
 } from '@/server/infra/trace/facade'
 import type { LogPipeline } from '@/server/infra/trace/logs-runtime'
 
 import { registerShutdownHook, unregisterShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { clearLogSink, setLogSink } from '@/server/infra/logger/sink'
+import { activateExportHealth, deactivateExportHealth, observeExporter } from '@/server/infra/trace/export-health'
 import { installTraceDelegate, uninstallTraceDelegate } from '@/server/infra/trace/facade'
 import { activateFrontendGate, deactivateFrontendGate } from '@/server/infra/trace/frontend-gate'
 import { buildLogPipeline } from '@/server/infra/trace/logs-runtime'
@@ -289,14 +282,17 @@ function createFacadeSpan(span: OtelSpan): Span {
 
 const NOOP_COUNTER: Counter = Object.freeze({ add: () => undefined })
 const NOOP_HISTOGRAM: Histogram = Object.freeze({ record: () => undefined })
+const NOOP_UPDOWN_COUNTER: UpDownCounter = Object.freeze({ add: () => undefined })
 
 interface InstrumentCache {
   counter(name: string, options?: MetricOptions): Counter | null
   histogram(name: string, options?: MetricOptions): Histogram | null
+  upDownCounter(name: string, options?: MetricOptions): UpDownCounter | null
 }
 
 function createInstrumentCache(meter: Meter | null): InstrumentCache {
   const counters = new Map<string, OtelCounter>()
+  const upDownCounters = new Map<string, OtelCounter>()
   const histograms = new Map<string, OtelHistogram>()
 
   return {
@@ -356,6 +352,34 @@ function createInstrumentCache(meter: Meter | null): InstrumentCache {
         },
       }
     },
+    upDownCounter(name, options) {
+      if (meter === null || metricKind(name) !== 'upDownCounter') {
+        return null
+      }
+      let instrument = upDownCounters.get(name)
+      if (instrument === undefined) {
+        try {
+          instrument = meter.createUpDownCounter(name, { description: options?.description, unit: options?.unit })
+          upDownCounters.set(name, instrument)
+        } catch (error) {
+          log.warn('Trace metric instrument could not be created', {
+            metric: isAllowedMetricName(name) ? name : 'unknown',
+            error: error instanceof Error ? error.name : typeof error,
+          })
+          return null
+        }
+      }
+      return {
+        add(value, attributes) {
+          // Signed deltas are the point: only a non-finite value is dropped.
+          const projected = sanitizeMetricAttributes(name, attributes)
+          if (!Number.isFinite(value) || projected === null) {
+            return
+          }
+          instrument.add(value, projected)
+        },
+      }
+    },
   }
 }
 
@@ -393,9 +417,16 @@ function createDelegate(provider: TracerProvider, meter: Meter | null): TraceDel
     histogram(name, options) {
       return instruments.histogram(name, options) ?? NOOP_HISTOGRAM
     },
+    upDownCounter(name, options) {
+      return instruments.upDownCounter(name, options) ?? NOOP_UPDOWN_COUNTER
+    },
   }
 }
 
+// No rate-limiting on export-failure noise: the SDK logs one stderr line per
+// failed flush, which only happens while OpenObserve is unreachable — that
+// stream is the outage signal. The bounded queue drops spans during a prolonged
+// outage instead of growing memory without bound.
 function buildExporter(config: ServerTraceRuntimeConfig): SpanExporter {
   return new OTLPTraceExporter({
     url: config.otlpTracesUrl,
@@ -416,19 +447,21 @@ function buildProvider(config: ServerTraceRuntimeConfig, exporter: SpanExporter)
   })
   return new TracerProvider({
     resource,
+    // ParentBased on purpose: a RUM-sampled browser session propagates
+    // traceparent with sampled=1, so every server span under that session is
+    // recorded regardless of `sampleRate`. The effective rate for
+    // browser-initiated requests is governed by frontend.sessionSampleRate;
+    // `sampleRate` bounds only server-originated (parentless) traces.
     sampler: new ParentBasedSampler({ root: new TraceIdRatioBasedSampler(config.sampleRate) }),
     spanProcessors: [spanProcessor],
   })
 }
 
 /**
- * The single production metric exporter. DELTA temporality makes O2's
- * `_sum`/`_count` streams represent each export interval's increment, so a
- * dashboard `sum(value)` inside a short bucket is a true per-bucket total
- * rather than a re-summed cumulative snapshot. The selector keeps up-down
- * counters cumulative (the SDK's documented delta preference).
- *
- * Exported for the temporality contract test.
+ * The single production metric exporter. DELTA temporality makes OpenObserve's
+ * `_sum`/`_count` streams per-interval increments, so a dashboard `sum(value)`
+ * in a short bucket is a true per-bucket total; up-down counters stay
+ * cumulative (the SDK's documented delta preference).
  */
 export function buildMetricExporter(config: ServerTraceRuntimeConfig): OTLPMetricExporter {
   return new OTLPMetricExporter({
@@ -441,19 +474,19 @@ export function buildMetricExporter(config: ServerTraceRuntimeConfig): OTLPMetri
 }
 
 /**
- * Build the meter pipeline: the same fixed resource, a periodic OTLP reader
- * (or a test reader), and the event-loop observer. The observer is a
- * `perf_hooks` interval histogram — no host/process detector is involved.
+ * The event-loop observer is a `perf_hooks` interval histogram — no
+ * host/process detector is involved.
  */
 function buildMetricPipeline(
   config: ServerTraceRuntimeConfig,
+  healthToken: object,
   reader?: MetricReader,
   observerHooks?: MetricObserverHooks,
 ): MetricPipeline {
   const metricReader =
     reader ??
     new PeriodicExportingMetricReader({
-      exporter: buildMetricExporter(config),
+      exporter: observeExporter(buildMetricExporter(config), healthToken, 'metrics'),
       exportIntervalMillis: METRIC_EXPORT_INTERVAL_MS,
       exportTimeoutMillis: EXPORT_TIMEOUT_MS,
     })
@@ -511,10 +544,9 @@ function buildMetricPipeline(
 }
 
 /**
- * Install the AsyncLocalStorage context manager. A prior instance (HMR)
- * may already have registered one; the global slot then keeps that working
- * manager instead of replacing it, and no state is disabled on shutdown so a
- * reload cannot break the next instance.
+ * A prior HMR instance may already own the global slot; the re-registration
+ * then fails benignly and the working manager is kept. It is never disabled on
+ * shutdown so a reload cannot break the next instance.
  */
 function ensureContextManager(): void {
   try {
@@ -582,9 +614,8 @@ function makeHandle(state: RuntimeState): TraceRuntimeHandle {
 }
 
 /**
- * Start the trace pipeline. Idempotent: the same process returns the same
- * handle, and disabled/invalid configurations resolve to an inert handle
- * without constructing a provider.
+ * Idempotent: a started process returns the same handle; disabled/invalid
+ * configurations resolve to an inert handle without constructing a provider.
  */
 export async function startTraceRuntime(options: TraceRuntimeStartOptions): Promise<TraceRuntimeHandle> {
   if (runtime !== null) {
@@ -597,9 +628,10 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
   }
 
   const config = resolution.server
+  const gateToken: object = {}
   let provider: TracerProvider
   try {
-    const exporter = options.spanExporter ?? buildExporter(config)
+    const exporter = observeExporter(options.spanExporter ?? buildExporter(config), gateToken, 'traces')
     provider = buildProvider(config, exporter)
   } catch (error) {
     try {
@@ -619,7 +651,6 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
   const stopSqlite = options.lifecycle?.stopSqliteQueryTrace ?? stopSqliteQueryTrace
   const disableMonitor = options.lifecycle?.disableMonitor ?? ((monitor: ELDHistogram | null) => monitor?.disable())
 
-  const gateToken: object = {}
   let verificationTimer: NodeJS.Timeout | null = null
   let metricPipeline: MetricPipeline | null = null
   let logPipeline: LogPipeline | null = null
@@ -630,9 +661,8 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
   let rolledBack = false
 
   /**
-   * Every cleanup action is independently isolated: a failure in one step must
-   * not prevent the remaining resources from being released, and no cleanup
-   * error may escape into HMR disposal or the process shutdown hook.
+   * Each step is isolated: one failure must not block the rest, and no cleanup
+   * error may escape HMR disposal or the process shutdown hook.
    */
   const cleanup = (): void => {
     const steps: Array<() => void> = [
@@ -665,21 +695,19 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
           verificationTimer = null
         }
         deactivateFrontendGate(gateToken)
+        deactivateExportHealth(gateToken)
       },
     ]
     for (const step of steps) {
       try {
         step()
-      } catch {
-        // Telemetry cleanup must never throw.
-      }
+      } catch {}
     }
   }
 
   /**
-   * Unified, idempotent rollback for everything after the tracer provider is
-   * constructed. Cleanup actions share the isolated `cleanup` helper; provider
-   * shutdown is bounded and never rejects.
+   * Idempotent rollback for everything after the tracer provider is
+   * constructed; provider shutdown is bounded and never rejects.
    */
   const rollback = async (): Promise<void> => {
     if (rolledBack) {
@@ -689,17 +717,14 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
     cleanup()
     try {
       await shutdownSignals(provider, metricPipeline?.provider ?? null, logPipeline, SHUTDOWN_TIMEOUT_MS)
-    } catch {
-      // Telemetry cleanup must never throw.
-    }
+    } catch {}
   }
 
   try {
     // A metric failure degrades to trace-only telemetry; it never disables the
-    // trace pipeline (or the site). This runs inside the unified
-    // tail so even the degradation log cannot escape the rollback boundary.
+    // trace pipeline (or the site).
     try {
-      metricPipeline = buildMetricPipeline(config, options.metricReader, options.eventLoopObserver)
+      metricPipeline = buildMetricPipeline(config, gateToken, options.metricReader, options.eventLoopObserver)
     } catch (error) {
       log.warn('OpenObserve metric pipeline could not start; metrics stay disabled', {
         error: error instanceof Error ? error.name : typeof error,
@@ -712,7 +737,7 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
     // never traces or metrics.
     if (config.logs !== null) {
       try {
-        logPipeline = buildLogPipeline(config.logs, { exporter: options.logRecordExporter })
+        logPipeline = buildLogPipeline(config.logs, { exporter: options.logRecordExporter, healthToken: gateToken })
       } catch (error) {
         logPipeline = null
         log.warn('OpenObserve log pipeline could not start; logs stay disabled', {
@@ -773,11 +798,13 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
       gateToken,
       stopped: false,
     }
+    // Export health starts clean for the new runtime; failures land here via
+    // the observed exporters from this point on.
+    activateExportHealth(gateToken)
 
-    // The browser gate is build-independent: whenever the settings projection
-    // produced a frontend CANDIDATE, verify the O2 allowlist pipeline before
-    // exposing it. A failed/offline probe withholds ONLY browser RUM; the
-    // server pipeline above keeps running.
+    // Whenever the settings projection produced a frontend CANDIDATE, verify
+    // the O2 allowlist pipeline before exposing it. A failed/offline probe
+    // withholds only browser RUM; the server pipeline keeps running.
     if (resolution.frontend !== null) {
       const verifier = options.verifyFrontendPipeline ?? verifyRumPrivacyPipeline
       const verifyTimeoutMs = options.frontendVerifyTimeoutMs ?? RUM_PRIVACY_VERIFY_TIMEOUT_MS
@@ -788,7 +815,7 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
           return verified
         }
         if (verified) {
-          activateFrontendGate(gateToken, resolution.frontend!)
+          activateFrontendGate(gateToken, resolution.frontend!, resolution.frontendRelay!)
           if (!gateActive) {
             log.info('OpenObserve frontend RUM enabled after privacy pipeline verification', {
               organization: config.organization,
@@ -854,9 +881,7 @@ export async function stopTraceRuntime(options: { timeoutMs?: number } = {}): Pr
 
   try {
     state.cleanup()
-  } catch {
-    // Defensive: `cleanup` already isolates each step.
-  }
+  } catch {}
 
   try {
     await shutdownSignals(

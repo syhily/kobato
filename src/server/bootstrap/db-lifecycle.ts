@@ -24,6 +24,7 @@ import {
 } from '@/server/domains/content/services/asset-url-backfill'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { notifyAdmins } from '@/server/domains/notifications/service'
+import { syncObservabilityRetention } from '@/server/domains/observability/retention'
 import { syncObservabilityRuntime } from '@/server/domains/observability/runtime-manager'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
@@ -112,11 +113,10 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setJobHandleGetter({ getDatabaseHandle: () => engine.get() })
   wireBackupSnapshots({ snapshotAnalyticsTo })
   wireBackupEncryption({
-    // Live read at backup time: toggling the settings card takes effect on
-    // the next backup without a restart. Missing bundle/section (tests) or
-    // encryption off = no password. Enabled-but-passwordless (rows written
-    // before the settings schema rejected that state) fails CLOSED — a
-    // plaintext archive must never be written while the UI claims encryption.
+    // Live read at backup time: toggling the settings card takes effect on the next
+    // backup without a restart. Missing bundle/section (tests) or encryption off = no
+    // password. Enabled-but-passwordless fails CLOSED — a plaintext archive must never
+    // be written while the UI claims encryption.
     resolveEncryptionPassword: () => {
       const encryption = getBlogSettingsBundleSync()?.backup?.encryption
       if (encryption?.enabled !== true) {
@@ -186,7 +186,7 @@ if (!isVitest()) {
   // deleted mid-swap by a restore that started milliseconds after boot.
   await sweepStaleRestoreDirs()
   // recoverPreRestoreFiles already ran before the engines opened (it owns
-  // the mid-swap crash window); nothing further to do here.
+  // the mid-swap crash window).
 }
 
 wireRestoreMachine({
@@ -216,15 +216,10 @@ wireRestoreMachine({
   }),
 })
 
-// Composition root: section-change side effects register here, keeping the registry module inert.
-// Every settings save advances the snapshot revision, so the previous
-// feed/calendar generation is unreachable by construction. These handlers only
-// RECLAIM the now-orphaned entries (rename-to-trash, every locale/version/
-// revision variation); a reclaim failure reaches the section-change warning
-// channel. Sections listed here are the ones whose values feed those renders:
-// identity/locale (general), feed size (content), branding URLs (assets),
-// daily-quote source/bank (sidebar), canvas fonts (fonts) and the comments
-// digest (comments).
+// Composition root: section-change handlers register here, keeping the registry module
+// inert. A save advances the snapshot revision, so the previous localized renders are
+// unreachable by construction; these handlers only RECLAIM the orphaned entries
+// (rename-to-trash), and a reclaim failure reaches the section-change warning channel.
 const reclaimLocalizedOutputs = () => clearLocalizedOutputs()
 registerSectionChangeHandler('general', reclaimLocalizedOutputs)
 registerSectionChangeHandler('content', reclaimLocalizedOutputs)
@@ -237,8 +232,11 @@ registerSectionChangeHandler('limits', rescheduleArchive)
 registerSectionChangeHandler('mail', invalidateMailTransportCache)
 registerSectionChangeHandler('analytics', rescheduleGeoipUpdate)
 // Hot-apply the observability runtime on every save; an unverified or disabled
-// fingerprint stops the providers instead of starting them.
-registerSectionChangeHandler('observability', syncObservabilityRuntime)
+// fingerprint stops the providers instead of starting them. The opt-in stream
+// retention sync rides the same hook (a no-op while `retentionDays` is 0).
+registerSectionChangeHandler('observability', () =>
+  Promise.all([syncObservabilityRuntime(), syncObservabilityRetention()]).then(() => undefined),
+)
 
 // Migrate once per process (HMR-safe via the 'migrationsRan' slot);
 // vitest's per-graph :memory: DBs must migrate themselves.
@@ -248,9 +246,9 @@ if (!migrationsRanInHmr()) {
   markMigrationsRanInHmr()
 }
 
-// One-time rewrite of legacy baked CDN-absolute asset URLs to the site-owned
-// `/storage/<key>` form — flag-gated and failure-swallowing inside; fire-and-
-// forget so boot never waits on (or fails on) the corpus scan.
+// One-time rewrite of legacy data (baked CDN-absolute asset URLs → site-owned
+// `/storage/<key>`), flag-gated and failure-swallowing inside; fire-and-forget
+// so boot never waits on (or fails on) the corpus scan.
 if (!isVitest()) {
   void (async () => {
     await runAssetUrlBackfillOnceAtBoot(getDb())
@@ -261,8 +259,6 @@ if (!isVitest()) {
     })
   })()
 }
-
-// The priority-0 shutdown hook (after the priority-100 batcher flushes) lives in the ManagedEngine.
 
 /** Flush every batcher BEFORE the handle closes (rows land in the pre-swap DB, not dead-letter), then reset and close. */
 export async function prepareDatabaseForRestore(): Promise<void> {

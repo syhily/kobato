@@ -1,15 +1,14 @@
-// OpenObserve management client (ADR-0012 follow-up).
+// OpenObserve management client: health, organization discovery/creation, RUM
+// tokens, functions, pipelines, and v8 dashboards. Every request goes through
+// `safeFetch` with the configured endpoint as a `trustedOrigin` (self-hosted O2
+// may be loopback/private), has a bounded timeout, and never carries a URL or
+// credential into an error. Idempotent GETs retry once after a short backoff
+// on transient `network`/`timeout` failures; mutations never retry.
 //
-// The server-side counterpart of `scripts/trace/lib.ts`'s HTTP surface: health,
-// organization discovery/creation, RUM tokens, functions, pipelines, and v8
-// dashboards. Every request goes through `safeFetch` with the configured
-// endpoint as a `trustedOrigin` (self-hosted O2 may be loopback/private), has a
-// bounded timeout, and never carries a URL or credential into an error.
-//
-// Version probe note: OpenObserve v1.x `/healthz` answers only
-// `{"status":"ok"}`. The release version comes from the authenticated
-// `GET /api/<org>/config` response (`version`), so it is probed after the
-// organization exists and the credentials are proven.
+// OpenObserve v1.x `/healthz` answers only `{"status":"ok"}`; the release
+// version comes from the authenticated `GET /api/<org>/config` response
+// (`version`), so it is probed after the organization exists and the credentials
+// are proven.
 
 import type { SafeFetchFailure, SafeFetchResult } from '@/server/infra/safe-fetch'
 
@@ -22,6 +21,21 @@ export const O2_REQUEST_TIMEOUT_MS = 8_000
 export const O2_HEALTH_TIMEOUT_MS = 5_000
 const O2_MAX_RESPONSE_BYTES = 4 * 1024 * 1024
 
+/**
+ * Idempotent GETs retry exactly once after a short backoff: a transient
+ * network/timeout blip should not force the admin to re-run the connection
+ * test or provisioning by hand. Only `network`/`timeout` kinds qualify — an
+ * answered HTTP status (even 5xx) is an upstream decision, not a blip.
+ * Mutations are never retried.
+ */
+const O2_GET_RETRY_BACKOFF_MS = 250
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
 export type O2Operation =
   | 'health'
   | 'organizations'
@@ -31,6 +45,7 @@ export type O2Operation =
   | 'functions'
   | 'pipelines'
   | 'dashboards'
+  | 'streams'
 
 export type O2ErrorKind =
   | 'config'
@@ -91,6 +106,14 @@ export interface O2DashboardSummary {
   hash?: string
 }
 
+export type O2StreamType = 'logs' | 'traces' | 'metrics'
+
+export interface O2StreamInfo {
+  name: string
+  /** `settings.data_retention` in days; `null` when the upstream omits it. */
+  retentionDays: number | null
+}
+
 export interface O2Client {
   health(): Promise<void>
   listOrganizations(): Promise<O2Organization[]>
@@ -102,6 +125,8 @@ export interface O2Client {
   upsertPipeline(pipeline: O2PipelineRecord): Promise<string>
   listDashboards(): Promise<O2DashboardSummary[]>
   upsertDashboard(body: Record<string, unknown>): Promise<string>
+  listStreams(type: O2StreamType): Promise<O2StreamInfo[]>
+  setStreamRetention(stream: string, type: O2StreamType, days: number): Promise<void>
 }
 
 interface ParsedJson {
@@ -174,9 +199,8 @@ function titleOf(body: Record<string, unknown>): string {
 
 /**
  * Build a client from the saved settings section. Configuration/grammar
- * problems throw `config` before any request; the organization is
- * re-asserted against the shared grammar as defence in depth before it is
- * interpolated into a path.
+ * problems throw `config` before any request; the organization is re-asserted
+ * against the shared grammar before it is interpolated into a path.
  */
 export function createO2Client(config: O2ClientConfig): O2Client {
   const origin = normalizeObservabilityOrigin(config.endpoint)
@@ -213,20 +237,29 @@ export function createO2Client(config: O2ClientConfig): O2Client {
     if (init.body !== undefined) {
       headers['content-type'] = 'application/json'
     }
-    const result = await safeFetch(`${baseOrigin}${path}`, {
-      method: init.method ?? 'GET',
-      headers,
-      body: init.body,
-      timeoutMs: operation === 'health' ? O2_HEALTH_TIMEOUT_MS : timeoutMs,
-      maxBytes: O2_MAX_RESPONSE_BYTES,
-      maxRedirects: 0,
-      trustedOrigin: baseOrigin,
-      operation: 'observability.o2',
-    })
-    if (!result.ok) {
-      throw new O2ClientError(failureKind(result), operation, result.status)
+    const method = init.method ?? 'GET'
+    const attempts = method === 'GET' ? 2 : 1
+    for (let attempt = 1; ; attempt += 1) {
+      const result = await safeFetch(`${baseOrigin}${path}`, {
+        method,
+        headers,
+        body: init.body,
+        timeoutMs: operation === 'health' ? O2_HEALTH_TIMEOUT_MS : timeoutMs,
+        maxBytes: O2_MAX_RESPONSE_BYTES,
+        maxRedirects: 0,
+        trustedOrigin: baseOrigin,
+        operation: 'observability.o2',
+      })
+      if (result.ok) {
+        return result
+      }
+      const kind = failureKind(result)
+      const retryable = attempt < attempts && (kind === 'network' || kind === 'timeout')
+      if (!retryable) {
+        throw new O2ClientError(kind, operation, result.status)
+      }
+      await sleep(O2_GET_RETRY_BACKOFF_MS)
     }
-    return result
   }
 
   async function requestJson(
@@ -417,6 +450,26 @@ export function createO2Client(config: O2ClientConfig): O2Client {
         },
       )
       return existing.dashboardId
+    },
+
+    async listStreams(type: O2StreamType): Promise<O2StreamInfo[]> {
+      const value = await requestJson(`${orgBase}/streams?type=${type}`, 'streams')
+      return recordList(value, 'list').flatMap((entry) => {
+        if (typeof entry.name !== 'string' || entry.name === '') {
+          return []
+        }
+        const settings = isRecord(entry.settings) ? entry.settings : null
+        const retention =
+          settings !== null && typeof settings.data_retention === 'number' ? settings.data_retention : null
+        return [{ name: entry.name, retentionDays: retention }]
+      })
+    },
+
+    async setStreamRetention(stream: string, type: O2StreamType, days: number): Promise<void> {
+      await call(`${orgBase}/streams/${encodeURIComponent(stream)}/settings?type=${type}`, 'streams', {
+        method: 'PUT',
+        body: JSON.stringify({ data_retention: days }),
+      })
     },
   }
 }

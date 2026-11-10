@@ -2,19 +2,22 @@
 //
 // The settings section is the single source of truth: this module maps it onto
 // the infra trace input, decides whether the configuration may activate, and
-// hot-applies fingerprint changes. Every failure is contained here — telemetry
-// must never affect the site's availability.
+// hot-applies fingerprint changes. Every failure stays contained here —
+// telemetry must never affect the site's availability.
 
 import type { ObservabilitySettingsSlice } from '@/server/domains/observability/config'
 import type { TraceConfigResolution } from '@/server/infra/trace/config'
+import type { ExportFailure } from '@/server/infra/trace/export-health'
 
 import {
   observabilityConnectionFingerprint,
   observabilityRuntimeFingerprint,
   toTraceRuntimeSettings,
 } from '@/server/domains/observability/config'
+import { syncObservabilityRetention } from '@/server/domains/observability/retention'
 import { getLogger } from '@/server/infra/logger'
 import { logTraceDiagnostics, resolveTraceConfig, traceEnvironment } from '@/server/infra/trace/config'
+import { lastExportFailure } from '@/server/infra/trace/export-health'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -32,6 +35,13 @@ export interface ObservabilityRuntimeStatus {
   fingerprint: string | null
   /** Diagnostics-free failure summary (codes / field names only, never a value). */
   lastError: string | null
+  /**
+   * Latest OTLP export failure reported by the running runtime's observed
+   * exporters (traces/metrics/logs). Null while every signal exports cleanly
+   * or no runtime is active — phase alone cannot see an upstream outage, this
+   * can.
+   */
+  lastExportError: ExportFailure | null
 }
 
 interface RuntimeState {
@@ -66,10 +76,41 @@ function markHmrStarted(started: boolean): void {
 }
 
 export function getObservabilityRuntimeStatus(): ObservabilityRuntimeStatus {
-  return { phase: state.phase, fingerprint: state.fingerprint, lastError: state.lastError }
+  return {
+    phase: state.phase,
+    fingerprint: state.fingerprint,
+    lastError: state.lastError,
+    lastExportError: lastExportFailure(),
+  }
+}
+
+/**
+ * Streams are created lazily by first ingest, which only happens AFTER the
+ * runtime starts — the boot/save retention passes cannot see them yet. One
+ * delayed pass after entering `running` picks those streams up; the retention
+ * sync itself is a no-op unless a positive `retentionDays` is configured.
+ */
+const POST_START_RETENTION_SYNC_DELAY_MS = 60_000
+let postStartRetentionTimer: NodeJS.Timeout | null = null
+
+function cancelPostStartRetentionSync(): void {
+  if (postStartRetentionTimer !== null) {
+    clearTimeout(postStartRetentionTimer)
+    postStartRetentionTimer = null
+  }
+}
+
+function schedulePostStartRetentionSync(): void {
+  cancelPostStartRetentionSync()
+  postStartRetentionTimer = setTimeout(() => {
+    postStartRetentionTimer = null
+    void syncObservabilityRetention()
+  }, POST_START_RETENTION_SYNC_DELAY_MS)
+  postStartRetentionTimer.unref?.()
 }
 
 async function stopRuntime(): Promise<void> {
+  cancelPostStartRetentionSync()
   if (!state.started && !hmrStarted()) {
     return
   }
@@ -120,6 +161,7 @@ async function startRuntime(site: ObservabilitySettingsSlice, fingerprint: strin
     }
     state = { phase: 'running', fingerprint, lastError: null, started: true }
     markHmrStarted(true)
+    schedulePostStartRetentionSync()
   } catch (error) {
     // SDK chunk load / provider construction failure: the site keeps running.
     state = { phase: 'failed', fingerprint, lastError: `trace-start-failed: ${errorName(error)}`, started: false }
@@ -142,11 +184,9 @@ async function apply(): Promise<void> {
     return
   }
 
-  // Two fingerprints with different jobs: the connection fingerprint gates
-  // activation (and is what `verifiedFingerprint` stores), the runtime
-  // fingerprint drives restart detection. Flipping a switch after a successful
-  // connection test therefore restarts the providers without losing the
-  // verification; touching endpoint/organization/credentials does the opposite.
+  // Connection fingerprint gates activation (`verifiedFingerprint`); the runtime
+  // fingerprint drives restart detection, so a toggled switch restarts the
+  // providers without touching the verification.
   const fingerprint = observabilityRuntimeFingerprint(site)
   if (!site.enabled) {
     await stopRuntime()
@@ -156,7 +196,7 @@ async function apply(): Promise<void> {
 
   if (site.verifiedFingerprint === '' || site.verifiedFingerprint !== observabilityConnectionFingerprint(site)) {
     // Never activate a configuration an admin has not verified; the connection
-    // test (P2) writes the fingerprint that unlocks this branch.
+    // test writes the fingerprint that unlocks this branch.
     if (state.phase !== 'unverified' || state.fingerprint !== fingerprint) {
       log.info('OpenObserve observability is configured but not verified; server telemetry stays off')
     }
@@ -185,6 +225,7 @@ export function syncObservabilityRuntime(): Promise<void> {
 
 /** Test seam: drop the module state between cases. */
 export function __resetObservabilityRuntimeForTests(): void {
+  cancelPostStartRetentionSync()
   state = { phase: 'disabled', fingerprint: null, lastError: null, started: false }
   queue = Promise.resolve()
 }

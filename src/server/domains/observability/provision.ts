@@ -1,10 +1,8 @@
 // OpenObserve asset provisioning: RUM token, the fail-closed privacy
-// function/pipeline, and the four versioned dashboards. Retention is
-// deliberately NOT applied here — short retention is a development-container
-// policy owned by `scripts/trace`, never a production default.
-//
-// All writes share one process-local queue so an admin "provision" and the
-// boot upgrade can never interleave settings writes.
+// function/pipeline, and the four versioned dashboards. Stream retention is NOT
+// applied here — it is an opt-in standing policy reconciled by `retention.ts`
+// on settings saves and at boot. All writes share one process-local queue so an
+// admin "provision" and the boot upgrade can never interleave settings writes.
 
 import type { ObservabilitySettingsSlice } from '@/server/domains/observability/config'
 import type { O2Client } from '@/server/domains/observability/o2-client'
@@ -20,11 +18,10 @@ import {
   RUM_PRIVACY_FUNCTION_NAME,
   RUM_PRIVACY_PIPELINE_DESCRIPTION,
   RUM_PRIVACY_PIPELINE_NAME,
+  RUM_STREAM_NAME,
 } from '@/shared/contracts/trace-pipeline'
 
 const log = getLogger('observability.provision')
-
-const RUM_STREAM = '_rumdata'
 
 /** The subset of the observability section the provisioning path owns. */
 export interface ObservabilitySettingsPatch {
@@ -61,7 +58,7 @@ function installPrivacyPipeline(client: O2Client, organization: string, vrl: str
       source: {
         source_type: 'realtime',
         org_id: organization,
-        stream_name: RUM_STREAM,
+        stream_name: RUM_STREAM_NAME,
         stream_type: 'logs',
       },
       nodes: [
@@ -70,7 +67,7 @@ function installPrivacyPipeline(client: O2Client, organization: string, vrl: str
           data: {
             node_type: 'stream',
             org_id: organization,
-            stream_name: RUM_STREAM,
+            stream_name: RUM_STREAM_NAME,
             stream_type: 'logs',
           },
           position: { x: 0, y: 0 },
@@ -87,7 +84,7 @@ function installPrivacyPipeline(client: O2Client, organization: string, vrl: str
           data: {
             node_type: 'stream',
             org_id: organization,
-            stream_name: RUM_STREAM,
+            stream_name: RUM_STREAM_NAME,
             stream_type: 'logs',
           },
           position: { x: 480, y: 0 },

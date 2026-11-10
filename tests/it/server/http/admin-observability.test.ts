@@ -46,8 +46,9 @@ const SITE: ObservabilitySettingsSlice = {
   password: 'secret',
   sampleRate: 1,
   includeRedactedSql: false,
+  retentionDays: 0,
   logs: { enabled: false },
-  frontend: { enabled: false, sessionSampleRate: 100 },
+  frontend: { enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' },
   rumClientToken: '',
   verifiedFingerprint: '',
   provisionedFingerprint: '',
@@ -315,7 +316,7 @@ describe('admin.observability.status', () => {
     const res = await callRpc('/admin/observability/status', {}, makeAuthedCtx({ db, userId: '1', role: 'admin' }))
     expect(res.status).toBe(200)
     const status = await parseRpcJson<{
-      runtime: { phase: string; lastError: string | null }
+      runtime: { phase: string; lastError: string | null; lastExportError: unknown }
       verified: boolean
       provisioned: boolean
       provisionedCurrent: boolean
@@ -323,6 +324,7 @@ describe('admin.observability.status', () => {
     }>(res)
 
     expect(status.runtime.phase).toBe('running')
+    expect(status.runtime.lastExportError).toBeNull()
     expect(status.runtime).not.toHaveProperty('fingerprint')
     expect(status.verified).toBe(true)
     expect(status.provisioned).toBe(true)

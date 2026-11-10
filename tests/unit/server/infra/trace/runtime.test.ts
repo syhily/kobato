@@ -1,4 +1,5 @@
 import { SpanStatusCode } from '@opentelemetry/api'
+import { ExportResultCode } from '@opentelemetry/core'
 import { InMemorySpanExporter, type ReadableSpan, type SpanExporter } from '@opentelemetry/sdk-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -6,6 +7,7 @@ import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/i
 
 import { TestMetricReader } from '#/_helpers/in-memory-metric-reader'
 import { __getLifecycleContainer } from '@/server/infra/lifecycle'
+import { __resetExportHealthForTests, lastExportFailure } from '@/server/infra/trace/export-health'
 import {
   __resetTraceFacadeForTests,
   activeTraceIds,
@@ -33,12 +35,13 @@ function activeResolution(overrides: Partial<ServerTraceRuntimeConfig> = {}): Tr
     status: 'active',
     server: { ...CONFIG, ...overrides },
     frontend: null,
+    frontendRelay: null,
     diagnostics: [],
   }
 }
 
 function disabledResolution(): TraceConfigResolution {
-  return { status: 'disabled', server: null, frontend: null, diagnostics: [] }
+  return { status: 'disabled', server: null, frontend: null, frontendRelay: null, diagnostics: [] }
 }
 
 /**
@@ -71,6 +74,7 @@ beforeEach(() => {
   vi.stubEnv('DEV', true as never)
   vi.stubEnv('PROD', false as never)
   __resetTraceFacadeForTests()
+  __resetExportHealthForTests()
   harness = createExporterHarness()
 })
 
@@ -78,6 +82,7 @@ afterEach(async () => {
   await stopTraceRuntime()
   uninstallTraceDelegate()
   __resetTraceFacadeForTests()
+  __resetExportHealthForTests()
   vi.unstubAllEnvs()
 })
 
@@ -107,7 +112,7 @@ describe('trace runtime — activation gates', () => {
     expect(isTraceActive()).toBe(false)
 
     const invalid = await startTraceRuntime({
-      resolution: { status: 'invalid', server: null, frontend: null, diagnostics: [] },
+      resolution: { status: 'invalid', server: null, frontend: null, frontendRelay: null, diagnostics: [] },
       spanExporter: harness.exporter,
     })
     expect(invalid.started).toBe(false)
@@ -167,6 +172,60 @@ describe('trace runtime — activation gates', () => {
     await handle.forceFlush()
 
     expect(harness.spans.map((span) => span.name)).toEqual(['before.stop'])
+  })
+})
+
+describe('trace runtime — export health', () => {
+  it('records a failed span export and self-heals on the next success', async () => {
+    let failExports = true
+    const inner = new InMemorySpanExporter()
+    const flaky: SpanExporter = {
+      export(batch, resultCallback) {
+        if (failExports) {
+          resultCallback({ code: ExportResultCode.FAILED, error: new TypeError('connect refused') })
+          return
+        }
+        inner.export(batch, resultCallback)
+      },
+      shutdown: () => inner.shutdown(),
+      forceFlush: () => inner.forceFlush(),
+    }
+    const handle = await startTraceRuntime({
+      resolution: activeResolution(),
+      spanExporter: flaky,
+      metricReader: new TestMetricReader(),
+    })
+    expect(handle.started).toBe(true)
+
+    await withSpanAsync('outage.span', async () => 'ok')
+    await handle.forceFlush()
+    expect(lastExportFailure()).toMatchObject({ signal: 'traces', error: 'TypeError' })
+
+    failExports = false
+    await withSpanAsync('recovered.span', async () => 'ok')
+    await handle.forceFlush()
+    expect(lastExportFailure()).toBeNull()
+  })
+
+  it('clears the tracked health when the runtime stops', async () => {
+    const failing: SpanExporter = {
+      export(_batch, resultCallback) {
+        resultCallback({ code: ExportResultCode.FAILED, error: new Error('down') })
+      },
+      shutdown: () => Promise.resolve(),
+    }
+    const handle = await startTraceRuntime({
+      resolution: activeResolution(),
+      spanExporter: failing,
+      metricReader: new TestMetricReader(),
+    })
+
+    await withSpanAsync('outage.span', async () => 'ok')
+    await handle.forceFlush()
+    expect(lastExportFailure()).not.toBeNull()
+
+    await handle.shutdown()
+    expect(lastExportFailure()).toBeNull()
   })
 })
 

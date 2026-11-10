@@ -128,6 +128,45 @@ describe('o2-client — failure classification', () => {
   })
 })
 
+describe('o2-client — idempotent GET retry', () => {
+  it('retries a GET once after a transient network failure and succeeds', async () => {
+    let attempts = 0
+    const calls = mockFetch(() => {
+      attempts += 1
+      if (attempts === 1) {
+        throw new TypeError('fetch failed')
+      }
+      return json({ data: [{ identifier: 'my-site', name: 'My Site' }] })
+    })
+
+    await expect(client().listOrganizations()).resolves.toEqual([{ identifier: 'my-site', name: 'My Site' }])
+    expect(calls).toHaveLength(2)
+  })
+
+  it('gives up after one retry and reports the transient kind', async () => {
+    const fetchMock = vi.fn(() => Promise.reject(new TypeError('fetch failed')))
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await failure(client().listOrganizations())).toMatchObject({ kind: 'network' })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not retry a GET the upstream answered (even 5xx)', async () => {
+    const calls = mockFetch(() => json({}, 503))
+
+    await failure(client().listOrganizations())
+    expect(calls).toHaveLength(1)
+  })
+
+  it('never retries a mutation', async () => {
+    const fetchMock = vi.fn(() => Promise.reject(new TypeError('fetch failed')))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await failure(client().createRumToken())
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('o2-client — organization creation', () => {
   it('reports an existing organization without creating one', async () => {
     const calls = mockFetch(() => json({ data: [{ identifier: 'my-site', name: 'my-site' }] }))
@@ -251,5 +290,40 @@ describe('o2-client — assets', () => {
     await expect(o2.upsertDashboard({ title: 'Kobato — Overview' })).resolves.toBe('dash-1')
     const update = calls.find((call) => call.init.method === 'PUT')
     expect(update?.url).toBe(`${BASE}/api/my-site/dashboards/dash-1?folder=default&hash=h1`)
+  })
+})
+
+describe('o2-client — streams', () => {
+  it('lists streams with their current retention, skipping malformed entries', async () => {
+    const calls = mockFetch(() =>
+      json({
+        list: [
+          { name: '_rumdata', stream_type: 'logs', settings: { data_retention: 7 } },
+          { name: 'default', stream_type: 'traces', settings: {} },
+          { name: 'no-settings' },
+          { stream_type: 'logs' },
+          'garbage',
+        ],
+      }),
+    )
+    await expect(client().listStreams('logs')).resolves.toEqual([
+      { name: '_rumdata', retentionDays: 7 },
+      { name: 'default', retentionDays: null },
+      { name: 'no-settings', retentionDays: null },
+    ])
+    expect(calls[0]?.url).toBe(`${BASE}/api/my-site/streams?type=logs`)
+  })
+
+  it('applies retention with a PUT to the stream settings endpoint', async () => {
+    const calls = mockFetch(() => json({}))
+    await expect(client().setStreamRetention('_rumdata', 'logs', 30)).resolves.toBeUndefined()
+    expect(calls[0]?.url).toBe(`${BASE}/api/my-site/streams/_rumdata/settings?type=logs`)
+    expect(calls[0]?.init.method).toBe('PUT')
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({ data_retention: 30 })
+  })
+
+  it('classifies a streams failure with the closed operation', async () => {
+    mockFetch(() => json({}, 403))
+    expect(await failure(client().listStreams('metrics'))).toMatchObject({ kind: 'forbidden', operation: 'streams' })
   })
 })

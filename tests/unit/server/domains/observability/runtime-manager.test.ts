@@ -16,6 +16,12 @@ import {
   getObservabilityRuntimeStatus,
   syncObservabilityRuntime,
 } from '@/server/domains/observability/runtime-manager'
+import {
+  __resetExportHealthForTests,
+  activateExportHealth,
+  deactivateExportHealth,
+  recordExportOutcome,
+} from '@/server/infra/trace/export-health'
 
 const runtimeMock = vi.hoisted(() => ({
   startTraceRuntime: vi.fn(),
@@ -23,6 +29,12 @@ const runtimeMock = vi.hoisted(() => ({
 }))
 
 vi.mock('@/server/infra/trace/runtime', () => runtimeMock)
+
+const retentionMock = vi.hoisted(() => ({
+  syncObservabilityRetention: vi.fn(),
+}))
+
+vi.mock('@/server/domains/observability/retention', () => retentionMock)
 
 const SITE: ObservabilitySettingsSlice = {
   enabled: true,
@@ -32,8 +44,9 @@ const SITE: ObservabilitySettingsSlice = {
   password: 'secret',
   sampleRate: 1,
   includeRedactedSql: false,
+  retentionDays: 0,
   logs: { enabled: false },
-  frontend: { enabled: false, sessionSampleRate: 100 },
+  frontend: { enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' },
   rumClientToken: 'rum-token',
   verifiedFingerprint: '',
   provisionedFingerprint: '',
@@ -66,11 +79,15 @@ beforeEach(() => {
   runtimeMock.stopTraceRuntime.mockReset()
   runtimeMock.startTraceRuntime.mockResolvedValue({ started: true, shutdown: vi.fn(), forceFlush: vi.fn() })
   runtimeMock.stopTraceRuntime.mockResolvedValue(undefined)
+  retentionMock.syncObservabilityRetention.mockReset()
+  retentionMock.syncObservabilityRetention.mockResolvedValue(undefined)
+  __resetExportHealthForTests()
   __resetObservabilityRuntimeForTests()
 })
 
 afterEach(() => {
   resetBlogSettingsForTests()
+  __resetExportHealthForTests()
   __resetObservabilityRuntimeForTests()
 })
 
@@ -82,7 +99,12 @@ describe('observability runtime manager — activation gates', () => {
 
     expect(runtimeMock.startTraceRuntime).not.toHaveBeenCalled()
     expect(runtimeMock.stopTraceRuntime).not.toHaveBeenCalled()
-    expect(getObservabilityRuntimeStatus()).toEqual({ phase: 'disabled', fingerprint: null, lastError: null })
+    expect(getObservabilityRuntimeStatus()).toEqual({
+      phase: 'disabled',
+      fingerprint: null,
+      lastError: null,
+      lastExportError: null,
+    })
   })
 
   it('stops a running runtime when the snapshot disappears (HMR module re-evaluation)', async () => {
@@ -93,7 +115,12 @@ describe('observability runtime manager — activation gates', () => {
     await syncObservabilityRuntime()
 
     expect(runtimeMock.stopTraceRuntime).toHaveBeenCalledTimes(1)
-    expect(getObservabilityRuntimeStatus()).toEqual({ phase: 'disabled', fingerprint: null, lastError: null })
+    expect(getObservabilityRuntimeStatus()).toEqual({
+      phase: 'disabled',
+      fingerprint: null,
+      lastError: null,
+      lastExportError: null,
+    })
   })
 
   it('does not start while the master switch is off', async () => {
@@ -144,6 +171,7 @@ describe('observability runtime manager — activation gates', () => {
       phase: 'running',
       fingerprint: observabilityRuntimeFingerprint(site),
       lastError: null,
+      lastExportError: null,
     })
   })
 })
@@ -164,7 +192,7 @@ describe('observability runtime manager — hot apply', () => {
 
   it.each<[string, Partial<ObservabilitySettingsSlice>]>([
     ['log export switches on', { logs: { enabled: true } }],
-    ['browser RUM switches on', { frontend: { enabled: true, sessionSampleRate: 100 } }],
+    ['browser RUM switches on', { frontend: { enabled: true, sessionSampleRate: 100, clientIdentity: 'anonymous' } }],
     ['the snapshot sampling rate changes', { sampleRate: 0.25 }],
     ['the redacted-SQL flag changes', { includeRedactedSql: true }],
   ])('restarts without losing verification when %s', async (_label, patch) => {
@@ -219,7 +247,7 @@ describe('observability runtime manager — hot apply', () => {
   })
 
   it('passes the resolved projection (org, Basic header, RUM client token) to the runtime', async () => {
-    seed(verified({ frontend: { enabled: true, sessionSampleRate: 40 } }))
+    seed(verified({ frontend: { enabled: true, sessionSampleRate: 40, clientIdentity: 'anonymous' } }))
     await syncObservabilityRuntime()
 
     const resolution = runtimeMock.startTraceRuntime.mock.calls[0]?.[0]?.resolution
@@ -230,11 +258,15 @@ describe('observability runtime manager — hot apply', () => {
       authorizationHeader: `Basic ${Buffer.from('admin@example.com:secret').toString('base64')}`,
     })
     expect(resolution?.frontend).toMatchObject({
-      site: 'https://obs.example.com',
-      organization: 'my-site',
       applicationId: 'my-site',
-      clientToken: 'rum-token',
+      service: 'kobato',
       sessionSampleRate: 40,
+    })
+    expect(resolution?.frontendRelay).toEqual({
+      endpoint: 'https://obs.example.com',
+      organization: 'my-site',
+      clientToken: 'rum-token',
+      clientIdentity: 'anonymous',
     })
   })
 })
@@ -262,5 +294,77 @@ describe('observability runtime manager — failure isolation', () => {
       phase: 'failed',
       lastError: 'trace-provider-start-failed',
     })
+  })
+})
+
+describe('observability runtime manager — export health', () => {
+  it('surfaces the latest OTLP export failure the running runtime observed', async () => {
+    const token = {}
+    activateExportHealth(token)
+    recordExportOutcome(token, 'traces', false, new TypeError('connect ECONNREFUSED'))
+    seed(verified())
+
+    await syncObservabilityRuntime()
+
+    const status = getObservabilityRuntimeStatus()
+    expect(status.phase).toBe('running')
+    expect(status.lastExportError).toMatchObject({ signal: 'traces', error: 'TypeError' })
+    expect(JSON.stringify(status.lastExportError)).not.toContain('ECONNREFUSED')
+    deactivateExportHealth(token)
+  })
+})
+
+describe('observability runtime manager — post-start retention pass', () => {
+  it('runs one delayed retention pass after the runtime enters running', async () => {
+    vi.useFakeTimers()
+    try {
+      seed(verified())
+      await syncObservabilityRuntime()
+      expect(retentionMock.syncObservabilityRetention).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect(retentionMock.syncObservabilityRetention).toHaveBeenCalledTimes(1)
+
+      // No further pass is scheduled by the timer itself.
+      await vi.advanceTimersByTimeAsync(120_000)
+      expect(retentionMock.syncObservabilityRetention).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('cancels the scheduled pass when the runtime stops before it fires', async () => {
+    vi.useFakeTimers()
+    try {
+      seed(verified())
+      await syncObservabilityRuntime()
+
+      seed(verified({ enabled: false }))
+      await syncObservabilityRuntime()
+
+      await vi.advanceTimersByTimeAsync(120_000)
+      expect(retentionMock.syncObservabilityRetention).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('reschedules against the latest start when the runtime restarts', async () => {
+    vi.useFakeTimers()
+    try {
+      seed(verified())
+      await syncObservabilityRuntime()
+
+      // A fingerprint change restarts the runtime; the first pass is replaced,
+      // so the retention sync still runs exactly once.
+      await vi.advanceTimersByTimeAsync(30_000)
+      seed(verified({ sampleRate: 0.25 }))
+      await syncObservabilityRuntime()
+      await vi.advanceTimersByTimeAsync(60_000)
+
+      expect(retentionMock.syncObservabilityRetention).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

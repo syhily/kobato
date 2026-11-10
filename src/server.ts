@@ -5,6 +5,7 @@ import type { Env } from '@/server/http/context'
 import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
 import { upgradeObservabilityProvisioningAtBoot } from '@/server/domains/observability/provision'
+import { syncObservabilityRetention } from '@/server/domains/observability/retention'
 import { syncObservabilityRuntime } from '@/server/domains/observability/runtime-manager'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
@@ -20,9 +21,8 @@ import { setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lif
 import { root } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
-// Load-bearing: each background job module self-registers on the registry
-// at import time; `startAllRegisteredJobs()` below arms them in one loop.
-// Registration order is irrelevant — each job computes its own delay.
+// Load-bearing: each job module self-registers on the registry at import time; `startAllRegisteredJobs()` below
+// arms them. Registration order is irrelevant — each job computes its own delay.
 import '@/server/domains/analytics/geoip-scheduler'
 import '@/server/domains/audit/services/scheduler'
 import '@/server/domains/auth/token-purge-scheduler'
@@ -66,30 +66,26 @@ if (!hmr?.secretsMigrated) {
   await refreshBlogSettings(getDb())
 }
 
-// ADR-0012 follow-up: OpenObserve is a released capability configured in the
-// `observability` settings section. It runs after the settings snapshot is
-// hydrated and before the schedulers start, so background jobs are traced from
-// their first run. Failures are isolated inside the domain and never block the
-// site.
-//
-// `secretsMigrated` skips the refresh above on HMR, and HMR can also re-evaluate
-// `shared/config/snapshot` (module-level state) — a fresh snapshot module reads
-// back as empty. `hydrateBlogSettings` is single-flight: it returns the cached
-// hydration when the snapshot survived, and re-reads the DB when the module was
-// re-created. Without this, the boot sync would see no settings and stop the
-// providers until the next admin save.
+// Runs after settings hydration and before the schedulers start, so background jobs are traced from their first
+// run; failures are isolated inside the domain and never block the site.
+// HMR can re-evaluate `shared/config/snapshot` (module-level state), so a fresh snapshot module reads back empty;
+// `hydrateBlogSettings` is single-flight — cached when the snapshot survived, DB re-read when the module was
+// re-created.
 await hydrateBlogSettings(getDb())
 await syncObservabilityRuntime()
 
-// Best-effort asset upgrade: a verified config whose stored asset fingerprint
-// no longer matches this build re-provisions the RUM privacy pipeline and the
-// four dashboards. Fire-and-forget (bounded O2 timeouts); failures only log
-// and never block the site.
+// Best-effort asset upgrade: a verified config whose stored asset fingerprint no longer matches this build
+// re-provisions the RUM privacy pipeline and the four dashboards. Fire-and-forget; failures only log.
 void upgradeObservabilityProvisioningAtBoot({
   site: getBlogSettingsBundleSync()?.observability?.observability ?? null,
   writeSettings: (patch) =>
     updateBlogSettingsSection(getDb(), 'observability', { observability: patch }, null).then(() => undefined),
 })
+
+// Opt-in stream retention: reconciled at boot and on every section save when
+// the admin owns the policy (`retentionDays` > 0); 0 leaves OpenObserve
+// untouched. Same best-effort posture as the asset upgrade above.
+void syncObservabilityRetention()
 
 if (!hmr?.secretsMigrated) {
   startAllRegisteredJobs()
