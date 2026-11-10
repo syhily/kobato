@@ -25,7 +25,6 @@ import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { assetsRouter } from '@/server/http/resources/assets'
 import { backupRouter } from '@/server/http/resources/backup'
 import { brandingRouter } from '@/server/http/resources/branding'
-import { devRumStatusRouter } from '@/server/http/resources/dev-rum'
 import { feedRouter } from '@/server/http/resources/feed'
 import { fontsRouter } from '@/server/http/resources/fonts'
 import { fontsEmbeddedRouter } from '@/server/http/resources/fonts-embedded'
@@ -35,6 +34,7 @@ import { localStorageRouter } from '@/server/http/resources/local-storage'
 import { maxmindRouter } from '@/server/http/resources/maxmind'
 import { musicProxyRouter } from '@/server/http/resources/music-proxy'
 import { redirectsRouter } from '@/server/http/resources/redirects'
+import { rumStatusRouter } from '@/server/http/resources/rum-status'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { webmentionRouter } from '@/server/http/resources/webmention'
 import { webmentionLinkHeader } from '@/server/http/webmention-link-header'
@@ -48,7 +48,7 @@ export interface CspInput {
   bundle: BlogSettingsBundle | null
   nonce: string
   isDev: boolean
-  /** Validated OpenObserve origin; only DEV + active frontend RUM adds it. */
+  /** Validated OpenObserve origin; any active (verified) frontend RUM adds it. */
   rumOrigin?: string | null
 }
 
@@ -101,9 +101,10 @@ export function buildCspHeader({ bundle, nonce, isDev, rumOrigin }: CspInput): s
   // origin (e.g. pre-R16d music meta snapshots) — allow any https image/media
   // source in dev. Production stays on the explicit origin list above.
   const devMediaExtra = isDev ? `${mediaExtra} https:` : mediaExtra
-  // ADR-0012: only an active DEV frontend bootstrap widens connect-src. The
-  // production CSP, script-src, and worker-src are unchanged.
-  const validatedRumOrigin = isDev ? safeRumOrigin(rumOrigin) : null
+  // ADR-0012: an active (verified) frontend bootstrap widens connect-src in
+  // every build — the browser SDK posts to `<origin>/rum/v1/<org>/rum`. The
+  // RUM package is bundled, so script-src/worker-src stay untouched.
+  const validatedRumOrigin = safeRumOrigin(rumOrigin)
   const connectSrc = validatedRumOrigin === null ? "connect-src 'self'" : `connect-src 'self' ${validatedRumOrigin}`
   return [
     "default-src 'self'",
@@ -153,7 +154,7 @@ export function configureMiddleware(app: Hono<Env>): void {
     }
     const bundle = getBlogSettingsBundleSync()
     const isDev = import.meta.env.DEV
-    const rumOrigin = isDev ? activeFrontendRum()?.site : null
+    const rumOrigin = activeFrontendRum()?.site ?? null
     const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev, rumOrigin })
     c.res.headers.set('Content-Security-Policy', csp)
     // Opt the origin into User-Agent Client Hints: Chromium sends the
@@ -223,12 +224,10 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.get('/health', (c) => c.json({ status: 'ok' }))
   app.get('/ready', readyHandler)
 
-  // DEV-only frontend RUM drift signal. The resource router owns the payload
-  // and no-store policy; production never mounts it, and the path stays out of
-  // HTTP spans/RUM activity/tracing.
-  if (import.meta.env.DEV) {
-    app.route('/', devRumStatusRouter)
-  }
+  // Frontend RUM drift signal, mounted in every build: settings changes never
+  // re-mount this router, so the gate is evaluated per request inside the
+  // handler. The path stays out of HTTP spans and RUM activity/tracing.
+  app.route('/', rumStatusRouter)
 
   // Mounted BEFORE createApiApp so their bodyLimit is not overridden by the 10 MB global limit.
   app.route('/', backupRouter)

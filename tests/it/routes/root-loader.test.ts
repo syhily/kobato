@@ -79,30 +79,35 @@ describe('root loader', () => {
     expect(JSON.stringify(result)).not.toContain('serverAuthorizationHeader')
   })
 
-  it('returns only the narrow browser bootstrap when frontend RUM is active', async () => {
-    const bootstrap = {
+  it('returns only the narrow browser bootstrap when frontend RUM is active — in dev and production builds', async () => {
+    const makeBootstrap = (environment: 'development' | 'production') => ({
       site: 'http://127.0.0.1:5080',
       organization: 'default',
       applicationId: 'kobato-dev',
       clientToken: 'rum-token',
       service: 'kobato',
-      environment: 'development',
+      environment,
       sessionSampleRate: 100,
-    }
-    traceConfig.current = { rum: bootstrap }
-
-    const args = makeLoaderArgs({
-      request: new Request('http://localhost/'),
-      session,
-      user: undefined,
-      clientAddress: '127.0.0.1',
-      cspNonce: 'test-nonce-abc123',
     })
+    const args = () =>
+      makeLoaderArgs({
+        request: new Request('http://localhost/'),
+        session,
+        user: undefined,
+        clientAddress: '127.0.0.1',
+        cspNonce: 'test-nonce-abc123',
+      })
 
-    const result = await loader(args)
+    for (const environment of ['development', 'production'] as const) {
+      const bootstrap = makeBootstrap(environment)
+      traceConfig.current = { rum: bootstrap }
 
-    expect(result).toHaveProperty('rum', bootstrap)
-    expect(JSON.stringify(result.rum)).not.toContain('serverAuthorizationHeader')
-    expect(JSON.stringify(result.rum)).not.toContain('authorizationHeader')
+      const result = await loader(args())
+
+      expect(result).toHaveProperty('rum', bootstrap)
+      expect(result.rum?.environment).toBe(environment)
+      expect(JSON.stringify(result.rum)).not.toContain('serverAuthorizationHeader')
+      expect(JSON.stringify(result.rum)).not.toContain('authorizationHeader')
+    }
   })
 })

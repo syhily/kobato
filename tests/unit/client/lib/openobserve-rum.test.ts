@@ -8,11 +8,11 @@ import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
 import { makeResourceEvent, makeViewEvent, RUM_TEST_SESSION_ID, RUM_TEST_TRACE_ID } from '#/_helpers/rum-events'
 import {
   __pollRumStatusForTests,
-  __resetDevRumForTests,
+  __resetRumForTests,
   rumTransportFromBootstrap,
-  startDevRum,
-  stopDevRum,
-  suspendDevRum,
+  startRum,
+  stopRum,
+  suspendRum,
 } from '@/client/lib/openobserve-rum'
 import { isSelfTelemetryRumUrl, isTraceableRumUrl } from '@/client/lib/rum-url-policy'
 import { APP_VERSION } from '@/shared/config/version'
@@ -57,7 +57,7 @@ function initConfiguration(): Record<string, any> {
 beforeEach(() => {
   Object.defineProperty(window.navigator, 'doNotTrack', { configurable: true, value: null })
   globalThis.sessionStorage.clear()
-  __resetDevRumForTests()
+  __resetRumForTests()
   sdk.init.mockReset()
   sdk.setViewName.mockReset()
   sdk.setTrackingConsent.mockReset()
@@ -70,13 +70,13 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  __resetDevRumForTests()
+  __resetRumForTests()
   vi.unstubAllGlobals()
 })
 
-describe('startDevRum initialization', () => {
+describe('startRum initialization', () => {
   it('maps the bootstrap onto the real slim SDK configuration', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     const configuration = initConfiguration()
 
     expect(configuration).toMatchObject({
@@ -125,7 +125,7 @@ describe('startDevRum initialization', () => {
     const secret = 'Basic c2VydmVyLXNlY3JldA=='
     const bootstrap = { ...BOOTSTRAP, serverAuthorizationHeader: secret } as unknown as FrontendRumBootstrap
 
-    await startDevRum(bootstrap, ROUTE)
+    await startRum(bootstrap, ROUTE)
     const configuration = initConfiguration()
 
     expect(configuration).not.toHaveProperty('serverAuthorizationHeader')
@@ -134,8 +134,8 @@ describe('startDevRum initialization', () => {
   })
 
   it('is idempotent: a second start does not re-init but updates the view', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
-    await startDevRum(BOOTSTRAP, { id: 'routes/public/home', template: '/' })
+    await startRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, { id: 'routes/public/home', template: '/' })
 
     expect(sdk.init).toHaveBeenCalledOnce()
     expect(sdk.setViewName).toHaveBeenLastCalledWith('routes/public/home')
@@ -143,11 +143,11 @@ describe('startDevRum initialization', () => {
 
   it('restores the per-session event budget after a page reload', async () => {
     globalThis.sessionStorage.setItem(
-      'kobato.dev-rum.budget',
+      'kobato.rum.budget',
       JSON.stringify({ sessionId: RUM_TEST_SESSION_ID, resources: 500, errors: 0 }),
     )
 
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     const { beforeSend } = initConfiguration()
 
     expect(beforeSend(makeResourceEvent({ url: 'http://localhost:3000/rpc/content/home' }), {})).toBe(false)
@@ -160,25 +160,25 @@ describe('startDevRum initialization', () => {
   })
 
   it('survives an HMR module re-evaluation without re-initializing', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     vi.resetModules()
     const reloaded = await import('@/client/lib/openobserve-rum')
-    await reloaded.startDevRum(BOOTSTRAP, { id: 'routes/public/home', template: '/' })
+    await reloaded.startRum(BOOTSTRAP, { id: 'routes/public/home', template: '/' })
 
     expect(sdk.init).toHaveBeenCalledOnce()
     expect(sdk.setViewName).toHaveBeenLastCalledWith('routes/public/home')
   })
 
   it('suspend keeps the SDK/route/poll and gate recovery resumes the current view', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     await Promise.resolve()
 
-    suspendDevRum()
+    suspendRum()
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('not-granted')
     expect(sdk.stopSession).toHaveBeenCalledOnce()
     expect(sdk.startView).not.toHaveBeenCalled()
 
-    const state = Reflect.get(globalThis, Symbol.for('kobato.dev-rum.runtime')) as Record<string, unknown>
+    const state = Reflect.get(globalThis, Symbol.for('kobato.rum.runtime')) as Record<string, unknown>
     expect(state.status).toBe('started')
     expect(state.api).not.toBeNull()
     expect(state.pollTimer).not.toBeNull()
@@ -196,16 +196,16 @@ describe('startDevRum initialization', () => {
   })
 
   it('revokes consent on an explicit stop, is idempotent, and can re-init after it', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
 
-    stopDevRum()
+    stopRum()
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('not-granted')
     const callsAfterStop = sdk.setTrackingConsent.mock.calls.length
 
-    stopDevRum()
+    stopRum()
     expect(sdk.setTrackingConsent).toHaveBeenCalledTimes(callsAfterStop)
 
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     expect(sdk.init).toHaveBeenCalledTimes(2)
     expect(sdk.init.mock.calls[1]![0]).toMatchObject({ trackingConsent: 'granted' })
   })
@@ -215,24 +215,24 @@ describe('startDevRum initialization', () => {
       'fetch',
       vi.fn(async () => ({ ok: true, json: async () => ({ enabled: false }) })),
     )
-    const starting = startDevRum(BOOTSTRAP, ROUTE)
-    suspendDevRum()
+    const starting = startRum(BOOTSTRAP, ROUTE)
+    suspendRum()
     await starting
 
     expect(sdk.init.mock.calls[0]![0]).toMatchObject({ trackingConsent: 'not-granted' })
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('not-granted')
-    const state = Reflect.get(globalThis, Symbol.for('kobato.dev-rum.runtime')) as Record<string, unknown>
+    const state = Reflect.get(globalThis, Symbol.for('kobato.rum.runtime')) as Record<string, unknown>
     expect(state.status).toBe('started')
     expect(state.consent).toBe('not-granted')
   })
 
   it('aborts an in-flight initialization when the SDK is fully stopped', async () => {
-    const starting = startDevRum(BOOTSTRAP, ROUTE)
-    stopDevRum()
+    const starting = startRum(BOOTSTRAP, ROUTE)
+    stopRum()
     await starting
 
     expect(sdk.init).not.toHaveBeenCalled()
-    const state = Reflect.get(globalThis, Symbol.for('kobato.dev-rum.runtime')) as Record<string, unknown>
+    const state = Reflect.get(globalThis, Symbol.for('kobato.rum.runtime')) as Record<string, unknown>
     expect(state.status).toBe('idle')
   })
 
@@ -241,8 +241,8 @@ describe('startDevRum initialization', () => {
       throw new Error('sdk init failed')
     })
 
-    await expect(startDevRum(BOOTSTRAP, ROUTE)).resolves.toBeUndefined()
-    await expect(startDevRum(BOOTSTRAP, ROUTE)).resolves.toBeUndefined()
+    await expect(startRum(BOOTSTRAP, ROUTE)).resolves.toBeUndefined()
+    await expect(startRum(BOOTSTRAP, ROUTE)).resolves.toBeUndefined()
 
     expect(sdk.init).toHaveBeenCalledOnce()
     expect(sdk.setViewName).not.toHaveBeenCalled()
@@ -251,7 +251,7 @@ describe('startDevRum initialization', () => {
 
 describe('runtime status polling', () => {
   it('stops on false, resumes the current view with startView on true', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({ ok: true, json: async () => ({ enabled: false }) })),
@@ -272,12 +272,12 @@ describe('runtime status polling', () => {
     expect(sdk.stopSession).toHaveBeenCalledOnce()
   })
 
-  it('never re-authorizes via startDevRum while the gate is closed', async () => {
+  it('never re-authorizes via startRum while the gate is closed', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({ ok: true, json: async () => ({ enabled: false }) })),
     )
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('not-granted')
     expect(sdk.startView).not.toHaveBeenCalled()
@@ -285,8 +285,8 @@ describe('runtime status polling', () => {
 
     const homeRoute = { id: 'routes/public/home', template: '/' }
     const adminRoute = { id: 'routes/admin/posts/analytics', template: '/admin/posts/:postId/analytics' }
-    await startDevRum(BOOTSTRAP, homeRoute)
-    await startDevRum(BOOTSTRAP, adminRoute)
+    await startRum(BOOTSTRAP, homeRoute)
+    await startRum(BOOTSTRAP, adminRoute)
     await new Promise((resolve) => setTimeout(resolve, 10))
 
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('not-granted')
@@ -294,7 +294,7 @@ describe('runtime status polling', () => {
     expect(sdk.stopSession).toHaveBeenCalledOnce()
     expect(sdk.init).toHaveBeenCalledOnce()
     expect(sdk.setViewName).toHaveBeenLastCalledWith(adminRoute.id)
-    const state = Reflect.get(globalThis, Symbol.for('kobato.dev-rum.runtime')) as Record<string, unknown>
+    const state = Reflect.get(globalThis, Symbol.for('kobato.rum.runtime')) as Record<string, unknown>
     expect(state.consent).toBe('not-granted')
     expect(state.route).toEqual(adminRoute)
 
@@ -310,7 +310,7 @@ describe('runtime status polling', () => {
 
   it('resumes an open editor route in place without unmounting or navigating', async () => {
     const editorRoute = { id: 'routes/editor/post/edit', template: '/editor/post/:id' }
-    await startDevRum(BOOTSTRAP, editorRoute)
+    await startRum(BOOTSTRAP, editorRoute)
 
     vi.stubGlobal(
       'fetch',
@@ -334,7 +334,7 @@ describe('runtime status polling', () => {
   })
 
   it('does not resume from a stale response after polling stopped', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     let resolveFetch!: (value: { ok: boolean; json: () => Promise<{ enabled: boolean }> }) => void
     const pending = new Promise<{ ok: boolean; json: () => Promise<{ enabled: boolean }> }>((resolve) => {
       resolveFetch = resolve
@@ -345,7 +345,7 @@ describe('runtime status polling', () => {
     )
 
     const polling = __pollRumStatusForTests()
-    stopDevRum()
+    stopRum()
     resolveFetch({ ok: true, json: async () => ({ enabled: true }) })
     await polling
 
@@ -353,7 +353,7 @@ describe('runtime status polling', () => {
   })
 
   it('fails closed on a rejected status fetch or malformed payload', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => {
@@ -373,7 +373,7 @@ describe('runtime status polling', () => {
   })
 
   it('never grants or starts a view while DNT is enabled', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     await __pollRumStatusForTests()
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('granted')
 
@@ -406,13 +406,13 @@ describe('tracing propagation predicate', () => {
     expect(isTraceableRumUrl('http://localhost:4321/rum/v1/default/rum', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/health', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/ready', origin)).toBe(false)
-    expect(isTraceableRumUrl('http://localhost:4321/api/dev/rum/status', origin)).toBe(false)
-    expect(isSelfTelemetryRumUrl('http://localhost:4321/api/dev/rum/status', origin)).toBe(true)
+    expect(isTraceableRumUrl('http://localhost:4321/api/rum/status', origin)).toBe(false)
+    expect(isSelfTelemetryRumUrl('http://localhost:4321/api/rum/status', origin)).toBe(true)
     expect(isSelfTelemetryRumUrl('http://localhost:4321/api/analytics/env', origin)).toBe(true)
   })
 
   it('registers only the tracecontext propagator', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     const configuration = initConfiguration()
     expect(configuration.allowedTracingUrls).toHaveLength(1)
     expect(configuration.allowedTracingUrls[0].propagatorTypes).toEqual(['tracecontext'])
@@ -420,7 +420,7 @@ describe('tracing propagation predicate', () => {
   })
 
   it('wires the allowlist beforeSend policy and rewrites view identity', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     const { beforeSend } = initConfiguration()
     const event = makeViewEvent()
 
@@ -436,7 +436,7 @@ describe('tracing propagation predicate', () => {
   })
 
   it('never claims correlation for the initial hard navigation', async () => {
-    await startDevRum(BOOTSTRAP, ROUTE)
+    await startRum(BOOTSTRAP, ROUTE)
     const { beforeSend } = initConfiguration()
     const view = makeViewEvent()
     // Even if the SDK attached a document trace id to the view, the policy

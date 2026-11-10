@@ -1,17 +1,18 @@
 /**
  * ADR-0012 source boundary: the real OpenTelemetry/OpenObserve SDKs may only
- * enter through the approved DEV-only entry modules. Everything else —
- * including the production no-op facade (`infra/trace/facade.ts`), the log
- * projection (`infra/trace/log-record.ts`), the shared resource
+ * enter through the approved entry modules. Everything else — including the
+ * no-op facade (`infra/trace/facade.ts`), the log projection
+ * (`infra/trace/log-record.ts`), the shared resource
  * (`infra/trace/resource.ts`), and the log sink slot (`infra/logger/sink.ts`) —
  * must stay SDK-free.
  *
- * The server entries are real: the trace runtime is reached through `src/server.ts`'s
- * DEV-only dynamic import, and the log pipeline is statically constructed by
- * the trace runtime only (never a second entry). The browser RUM loader is
- * reached through `use-dev-rum`'s DEV-gated dynamic import. This scan proves no
- * other source module imports an SDK; the production bundle scan proves the
- * real packages are absent from the shipped output.
+ * The server entries are real: the trace runtime is reached through the
+ * observability domain's dynamic import (so the SDK chunk loads only when the
+ * admin configured telemetry), and the log pipeline is statically constructed
+ * by the trace runtime only (never a second entry). The browser RUM loader is
+ * reached only through `use-rum`'s SSR-pruned dynamic import, so it exists
+ * solely as a client chunk. This scan proves no other source module imports an
+ * SDK.
  */
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -21,8 +22,8 @@ import { describe, expect, it } from 'vitest'
 const PROJECT_ROOT = process.cwd()
 const SOURCE_DIR = join(PROJECT_ROOT, 'src')
 
-/** The only modules allowed to import a real SDK — and only behind DEV guards. */
-export const APPROVED_DEV_SDK_ENTRIES = [
+/** The only modules allowed to import a real SDK. */
+export const APPROVED_SDK_ENTRIES = [
   'src/server/infra/trace/runtime.ts',
   'src/server/infra/trace/logs-runtime.ts',
   'src/client/lib/openobserve-rum.ts',
@@ -75,12 +76,12 @@ function collectTelemetryViolations(filePaths: readonly string[]): string[] {
   const violations: string[] = []
   for (const filePath of filePaths) {
     const rel = relativePath(filePath)
-    if ((APPROVED_DEV_SDK_ENTRIES as readonly string[]).includes(rel)) {
+    if ((APPROVED_SDK_ENTRIES as readonly string[]).includes(rel)) {
       continue
     }
     for (const specifier of getValueSpecifiers(readFileSync(filePath, 'utf-8'))) {
       if (TELEMETRY_PACKAGE_PATTERN.test(specifier)) {
-        violations.push(`${rel} imports development-only telemetry SDK '${specifier}'`)
+        violations.push(`${rel} imports telemetry SDK '${specifier}' outside the approved entries`)
       }
     }
   }
@@ -94,7 +95,7 @@ function collectSourceFiles(): string[] {
 }
 
 describe('trace SDK source boundary', () => {
-  it('no source module outside the approved DEV entries imports an OTel/OpenObserve SDK', () => {
+  it('no source module outside the approved entries imports an OTel/OpenObserve SDK', () => {
     expect(collectTelemetryViolations(collectSourceFiles())).toEqual([])
   })
 
@@ -150,7 +151,7 @@ describe('trace SDK source boundary', () => {
     }
   })
 
-  it('reaches the DEV runtime only through the guarded dynamic import in server.ts', () => {
+  it('reaches the trace runtime only through the observability domain dynamic import', () => {
     const offenders: string[] = []
     const staticFrom = /import\s+(?:type\s+)?[^'"]*?from\s+['"]([^'"]*infra\/trace\/runtime)['"]/g
     const sideEffect = /import\s+['"]([^'"]*infra\/trace\/runtime)['"]/g
@@ -165,17 +166,17 @@ describe('trace SDK source boundary', () => {
         }
       }
       for (const match of source.matchAll(dynamic)) {
-        if (rel !== 'src/server.ts') {
+        if (rel !== 'src/server/domains/observability/runtime-manager.ts') {
           offenders.push(`${rel} dynamically imports ${match[1]}`)
         }
       }
     }
 
     expect(offenders).toEqual([])
+    const managerSource = readFileSync(join(SOURCE_DIR, 'server/domains/observability/runtime-manager.ts'), 'utf-8')
+    expect(managerSource).toContain("await import('@/server/infra/trace/runtime')")
     const serverSource = readFileSync(join(SOURCE_DIR, 'server.ts'), 'utf-8')
-    expect(serverSource).toMatch(
-      /if \(import\.meta\.env\.DEV\)[\s\S]*?await import\('@\/server\/infra\/trace\/runtime'\)/,
-    )
+    expect(serverSource).not.toContain('infra/trace/runtime')
   })
 
   it('depends on the slim RUM package only — never the full RUM, browser-logs, or Replay recorder', () => {
@@ -215,19 +216,26 @@ describe('trace SDK source boundary', () => {
     ])
     expect(runtimeSource).toMatch(/await import\('@openobserve\/browser-rum-slim'\)/)
 
-    const hookSource = readFileSync(join(PROJECT_ROOT, 'src/client/hooks/use-dev-rum.ts'), 'utf-8')
+    const hookSource = readFileSync(join(PROJECT_ROOT, 'src/client/hooks/use-rum.ts'), 'utf-8')
     expect(hookSource).not.toMatch(/from ['"]@\/client\/lib\/openobserve-rum['"]/)
-    const devGuard = hookSource.indexOf('if (!import.meta.env.DEV)')
     const loadCall = hookSource.indexOf('void loadRumModule()')
-    const policyGuard = hookSource.indexOf('isDevRumDenied()')
-    expect(devGuard).toBeGreaterThan(-1)
+    const policyGuard = hookSource.indexOf('isRumDenied()')
+    const schemaGuard = hookSource.indexOf('frontendRumBootstrapSchema.safeParse')
+    // `import.meta.env.SSR` is a build-time constant: the early return is what
+    // keeps the RUM chunk out of the server/SEA bundle. It precedes the only
+    // dynamic import edge.
+    const ssrGuard = hookSource.indexOf('if (import.meta.env.SSR)')
+    expect(ssrGuard).toBeGreaterThan(-1)
     expect(loadCall).toBeGreaterThan(-1)
     expect(policyGuard).toBeGreaterThan(-1)
-    // DNT/GPC, the bootstrap schema gate, and the DEV guard all run before the
-    // import request is issued.
+    expect(schemaGuard).toBeGreaterThan(-1)
+    // DNT/GPC, the bootstrap schema gate, and the SSR build guard all run
+    // before the import request is issued.
     expect(policyGuard).toBeLessThan(loadCall)
-    expect(devGuard).toBeLessThan(loadCall)
-    expect(hookSource.indexOf('frontendRumBootstrapSchema.safeParse')).toBeLessThan(loadCall)
+    expect(ssrGuard).toBeLessThan(loadCall)
+    expect(schemaGuard).toBeLessThan(loadCall)
+    // There is no build-time DEV gate left: production browsers load RUM.
+    expect(hookSource).not.toContain('import.meta.env.DEV')
   })
 
   it('constructs the log pipeline only from the trace runtime, never directly', () => {
@@ -260,8 +268,8 @@ describe('trace SDK source boundary', () => {
     expect(getValueSpecifiers(logsRuntimeSource).filter((specifier) => specifier.includes('infra/logger'))).toEqual([])
   })
 
-  it('pins the approved DEV-only entry modules by name', () => {
-    expect([...APPROVED_DEV_SDK_ENTRIES]).toEqual([
+  it('pins the approved SDK entry modules by name', () => {
+    expect([...APPROVED_SDK_ENTRIES]).toEqual([
       'src/server/infra/trace/runtime.ts',
       'src/server/infra/trace/logs-runtime.ts',
       'src/client/lib/openobserve-rum.ts',

@@ -126,21 +126,20 @@ describe('configureMiddleware', () => {
   })
 })
 
-describe('DEV-only RUM status mount', () => {
+describe('RUM status mount', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
   })
 
-  it('mounts the resource router only in development', () => {
-    vi.stubEnv('DEV', true)
-    const devApp = new Hono<Env>()
-    configureMiddleware(devApp)
-    expect(devApp.routes.map((route) => route.path)).toContain('/api/dev/rum/status')
-
-    vi.stubEnv('DEV', false)
-    const prodApp = new Hono<Env>()
-    configureMiddleware(prodApp)
-    expect(prodApp.routes.map((route) => route.path)).not.toContain('/api/dev/rum/status')
+  it('mounts the resource router in every build (the gate lives in the handler)', () => {
+    for (const dev of [true, false]) {
+      vi.stubEnv('DEV', dev)
+      const app = new Hono<Env>()
+      configureMiddleware(app)
+      const paths = app.routes.map((route) => route.path)
+      expect(paths).toContain('/api/rum/status')
+      expect(paths).not.toContain('/api/dev/rum/status')
+    }
   })
 })
 

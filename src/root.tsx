@@ -12,9 +12,9 @@ import { setCsrfToken } from '@/client/api/client'
 import { makeQueryClient } from '@/client/api/query-client'
 import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
-import { useDevRum } from '@/client/hooks/use-dev-rum'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
+import { useRum } from '@/client/hooks/use-rum'
 import { defaultTransition } from '@/client/lib/motion'
 import { createSsrCaller } from '@/server/http/ssr-caller'
 import { documentHeaders } from '@/server/infra/http/headers'
@@ -93,9 +93,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Boot data loads through the content API like every public route; the theme cookie is parsed inside.
   const boot = await caller.content.bootstrap()
 
-  // ADR-0012: the browser bootstrap exists only in DEV with every frontend gate
-  // passing. Disabled/production resolves to null and the key is not emitted at
-  // all; the server authorization header has no path into this projection.
+  // ADR-0012: the browser bootstrap exists in EVERY build once the settings
+  // projection and the runtime's OpenObserve pipeline verification both pass.
+  // Otherwise it resolves to null and the key is not emitted at all; the
+  // server authorization header has no path into this projection.
   const rum = activeFrontendRum()
 
   const warmupManifest = getWarmupManifest()
@@ -283,7 +284,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
     setCsrfToken(loaderData.csrfToken)
   }, [loaderData.csrfToken])
 
-  useDevRum(loaderData.rum ?? null)
+  useRum(loaderData.rum ?? null)
   useFocusHash()
   useIosNoZoomOnFocus()
   useChunkErrorRecovery()

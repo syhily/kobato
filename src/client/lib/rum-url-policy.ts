@@ -9,7 +9,7 @@
 const SELF_TELEMETRY_PATHS: ReadonlySet<string> = new Set([
   '/api/analytics/env',
   '/api/analytics/events',
-  '/api/dev/rum/status',
+  '/api/rum/status',
 ])
 const DROPPED_PATH_PREFIXES = ['/rum/', '/health', '/ready'] as const
 

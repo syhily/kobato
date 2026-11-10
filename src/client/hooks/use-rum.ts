@@ -1,9 +1,11 @@
-// Root-mounted development RUM activation (ADR-0012).
+// Root-mounted browser RUM activation (ADR-0012).
 //
 // The hook renders nothing, runs only in effects after hydration, and checks
 // DNT/GPC BEFORE any dynamic import. The slim SDK chunk is therefore never
-// downloaded by a denied browser. Initialization is idempotent under React
-// StrictMode and HMR, and a rejected import/bootstrap never escapes.
+// downloaded by a denied browser — and never at all by a visitor whose site has
+// no verified `observability` frontend configuration (the root loader then
+// omits the bootstrap). Initialization is idempotent under React StrictMode and
+// HMR, and a rejected import/bootstrap never escapes.
 
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'
@@ -13,12 +15,12 @@ import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
 import { rumRouteContextFromMatches } from '@/client/lib/rum-route'
 import { frontendRumBootstrapSchema } from '@/shared/contracts/trace'
 
-type DevRumModule = typeof import('@/client/lib/openobserve-rum')
+type RumModule = typeof import('@/client/lib/openobserve-rum')
 
-let rumModulePromise: Promise<DevRumModule> | null = null
+let rumModulePromise: Promise<RumModule> | null = null
 let pendingStopTimer: ReturnType<typeof setTimeout> | null = null
 
-function loadRumModule(): Promise<DevRumModule> {
+function loadRumModule(): Promise<RumModule> {
   rumModulePromise ??= import('@/client/lib/openobserve-rum')
   return rumModulePromise
 }
@@ -46,7 +48,7 @@ function schedulePendingStop(): void {
       return
     }
     void rumModulePromise
-      .then((module) => module.stopDevRum())
+      .then((module) => module.stopRum())
       .catch(() => {
         // The module was requested but failed to load; there is nothing to stop.
       })
@@ -59,20 +61,20 @@ function applyModuleAction(action: 'suspend' | 'stop'): void {
   }
   cancelPendingStop()
   void rumModulePromise
-    .then((module) => (action === 'suspend' ? module.suspendDevRum() : module.stopDevRum()))
+    .then((module) => (action === 'suspend' ? module.suspendRum() : module.stopRum()))
     .catch(() => {
       // The module was requested but failed to load; there is nothing to stop.
     })
 }
 
 /** Test seam: forget the cached dynamic-import promise and any pending revoke. */
-export function __resetDevRumHookForTests(): void {
+export function __resetRumHookForTests(): void {
   cancelPendingStop()
   rumModulePromise = null
 }
 
 /** Test seam: `true` once the SDK chunk import has been requested. */
-export function __isDevRumModuleRequestedForTests(): boolean {
+export function __isRumModuleRequestedForTests(): boolean {
   return rumModulePromise !== null
 }
 
@@ -80,7 +82,7 @@ export function __isDevRumModuleRequestedForTests(): boolean {
  * DNT=`1` and GPC=`true` both suppress the SDK download. The checks are
  * browser-only and read defensively: a missing Navigator/policy is allowed.
  */
-export function isDevRumDenied(nav: Navigator | undefined = globalThis.navigator): boolean {
+export function isRumDenied(nav: Navigator | undefined = globalThis.navigator): boolean {
   if (nav === undefined) {
     return false
   }
@@ -92,20 +94,26 @@ export function isDevRumDenied(nav: Navigator | undefined = globalThis.navigator
 
 /**
  * Mount once at the root. `bootstrap` is the narrow root-loader projection; it
- * is absent in production, when tracing is disabled, and when frontend RUM is
- * incomplete. An initial `null` is a no-op (no import, no DOM). After an active
- * bootstrap, `null` means the O2 gate was withheld: suspend consent but keep
- * the SDK handle, route, and status poll alive so a later gate recovery can
- * `startView` in the same document. DNT/GPC, invalid bootstrap, and real
- * unmount fully stop instead.
+ * is absent when observability is disabled, when frontend RUM is incomplete,
+ * and when the O2 pipeline verification withheld the gate. An initial `null` is
+ * a no-op (no import, no DOM). After an active bootstrap, `null` means the gate
+ * was withheld: suspend consent but keep the SDK handle, route, and status poll
+ * alive so a later gate recovery can `startView` in the same document. DNT/GPC,
+ * invalid bootstrap, and real unmount fully stop instead.
  */
-export function useDevRum(bootstrap: FrontendRumBootstrap | null): void {
+export function useRum(bootstrap: FrontendRumBootstrap | null): void {
   const route = rumRouteContextFromMatches(useMatches())
   const routeId = route.id
   const routeTemplate = route.template
-  const denied = isDevRumDenied()
+  const denied = isRumDenied()
 
   useEffect(() => {
+    // Build-time constant: the SSR bundle must never pull the browser RUM
+    // chunk. Folding this to `true` removes the dynamic import edge, so the
+    // server graph (and the SEA binary) carries no `@openobserve` code.
+    if (import.meta.env.SSR) {
+      return
+    }
     if (denied) {
       // DNT/GPC is a terminal user decision: stop the SDK and its poll. An
       // initial denial has no module request and therefore no import.
@@ -126,23 +134,17 @@ export function useDevRum(bootstrap: FrontendRumBootstrap | null): void {
       applyModuleAction('stop')
       return
     }
-    // Build-time gate: production never creates the SDK chunk. The dynamic
-    // import below is the only client path to the slim RUM package.
-    if (!import.meta.env.DEV) {
-      applyModuleAction('stop')
-      return
-    }
 
     // This effect is valid: cancel a revoke scheduled by a route-change or
     // StrictMode cleanup. The SDK stays initialized and only its view/poller
-    // is refreshed by `startDevRum`.
+    // is refreshed by `startRum`.
     cancelPendingStop()
 
     let cancelled = false
     void loadRumModule()
       .then((module) => {
         if (!cancelled) {
-          return module.startDevRum(parsed.data, { id: routeId, template: routeTemplate })
+          return module.startRum(parsed.data, { id: routeId, template: routeTemplate })
         }
         return undefined
       })

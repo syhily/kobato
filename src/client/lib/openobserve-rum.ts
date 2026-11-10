@@ -1,8 +1,10 @@
-// Development-only OpenObserve slim RUM loader (ADR-0012).
+// OpenObserve slim RUM loader (ADR-0012).
 //
 // This is the ONLY client module allowed to import the RUM SDK, and the import
-// is a dynamic one reached exclusively from the DEV-gated `useDevRum` effect.
-// Production DCE removes the caller and this chunk; the bundle scan proves it.
+// is a dynamic one reached exclusively from the `useRum` effect after the root
+// loader supplied a verified bootstrap. The SDK therefore lives in its own lazy
+// chunk: a visitor whose site has no active frontend configuration never
+// downloads it, and the SSR/SEA bundle carries none of it.
 //
 // The SDK is initialized with privacy-first defaults: no Replay, no browser
 // logs, no user/account identity, no custom device/geo enrichment, no telemetry
@@ -36,9 +38,9 @@ interface RumRuntimeState {
   startGeneration: number
 }
 
-const RUM_RUNTIME_KEY = Symbol.for('kobato.dev-rum.runtime')
-const BUDGET_STORAGE_KEY = 'kobato.dev-rum.budget'
-export const RUM_STATUS_PATH = '/api/dev/rum/status'
+const RUM_RUNTIME_KEY = Symbol.for('kobato.rum.runtime')
+const BUDGET_STORAGE_KEY = 'kobato.rum.budget'
+export const RUM_STATUS_PATH = '/api/rum/status'
 export const RUM_STATUS_POLL_INTERVAL_MS = 10_000
 
 function isBudgetSnapshot(value: unknown): value is RumBudgetSnapshot {
@@ -119,7 +121,7 @@ function runtime(): RumRuntimeState {
 }
 
 /** Test seam: remove the page-level runtime (counters and SDK handle included). */
-export function __resetDevRumForTests(): void {
+export function __resetRumForTests(): void {
   const existing = Reflect.get(globalThis, RUM_RUNTIME_KEY) as unknown
   if (isRumRuntimeState(existing)) {
     stopStatusPolling(existing)
@@ -268,7 +270,7 @@ function startStatusPolling(state: RumRuntimeState): void {
  * same document with `startView` when the gate returns. Used for a bootstrap
  * that became null without an explicit user privacy/opt-out decision.
  */
-export function suspendDevRum(): void {
+export function suspendRum(): void {
   const state = runtime()
   const lostConsent = state.consent === 'granted'
   // Record the requested state even while `initialize` is still in flight, so
@@ -294,7 +296,7 @@ export function suspendDevRum(): void {
 }
 
 /** Revoke consent and stop polling (DNT/GPC, invalid bootstrap, unmount/HMR). */
-export function stopDevRum(): void {
+export function stopRum(): void {
   const state = runtime()
   stopStatusPolling(state)
   state.startGeneration = (state.startGeneration ?? 0) + 1
@@ -318,7 +320,7 @@ export async function __pollRumStatusForTests(): Promise<void> {
  * Idempotently start the slim SDK. Returns once initialization settled; a
  * failure is contained and later calls never retry in the same page.
  */
-export async function startDevRum(bootstrap: FrontendRumBootstrap, route: RumRouteContext): Promise<void> {
+export async function startRum(bootstrap: FrontendRumBootstrap, route: RumRouteContext): Promise<void> {
   const state = runtime()
   state.route = route
 
@@ -370,8 +372,8 @@ async function initialize(state: RumRuntimeState, bootstrap: FrontendRumBootstra
   }
 
   try {
-    // The one SDK import in the client graph. Only this DEV-only chunk reaches
-    // it; the production bundle never contains the package.
+    // The one SDK import in the client graph: this module is the only edge, and
+    // it is reached lazily, so the package ships as its own chunk.
     const module = await import('@openobserve/browser-rum-slim')
     if (state.startGeneration !== generation || state.status !== 'starting') {
       return
@@ -448,5 +450,5 @@ async function initialize(state: RumRuntimeState, bootstrap: FrontendRumBootstra
 }
 
 if (import.meta.hot) {
-  import.meta.hot.dispose(() => stopDevRum())
+  import.meta.hot.dispose(() => stopRum())
 }

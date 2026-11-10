@@ -8,7 +8,15 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('install.gate')
 
-const EXEMPT_PATHS = new Set(['/admin/signin', '/admin/setup', '/api/setup/restore', '/ready'])
+const EXEMPT_PATHS = new Set([
+  '/admin/signin',
+  '/admin/setup',
+  '/api/setup/restore',
+  // The frontend RUM drift probe must always answer; pre-install it reports
+  // `{enabled:false}` instead of redirecting the browser poll.
+  '/api/rum/status',
+  '/ready',
+])
 
 const EXEMPT_PATH_PREFIXES = [
   '/assets/',
