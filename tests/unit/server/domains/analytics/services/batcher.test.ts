@@ -76,7 +76,7 @@ function makeItem(
 describe('analytics batcher (DuckDB appender)', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
-    resetAllBatchers()
+    await resetAllBatchers()
     if (analyticsHandle?.closed === false) {
       await closeTestAnalyticsDb(analyticsHandle)
     }
@@ -90,7 +90,7 @@ describe('analytics batcher (DuckDB appender)', () => {
   })
 
   afterAll(async () => {
-    resetAllBatchers()
+    await resetAllBatchers()
     __resetAnalyticsEngineForTests()
     await closeTestAnalyticsDb(analyticsHandle)
   })

@@ -11,6 +11,7 @@ export default defineConfig({
     projects: [
       'tests/unit/vitest.config.ts',
       'tests/it/vitest.config.ts',
+      'tests/vitest.duckdb.config.ts',
       'tests/snaps/vitest.config.ts',
       'tests/inkling/vitest.config.ts',
     ],

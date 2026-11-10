@@ -62,7 +62,7 @@ async function accessLogPaths(handle: AnalyticsHandle): Promise<unknown[]> {
 }
 
 beforeEach(async () => {
-  resetAllBatchers()
+  await resetAllBatchers()
   if (analyticsHandle?.closed === false) {
     await closeTestAnalyticsDb(analyticsHandle)
   }
@@ -74,7 +74,7 @@ beforeEach(async () => {
 })
 
 afterAll(async () => {
-  resetAllBatchers()
+  await resetAllBatchers()
   __resetAnalyticsEngineForTests()
   if (analyticsHandle?.closed === false) {
     await closeTestAnalyticsDb(analyticsHandle)

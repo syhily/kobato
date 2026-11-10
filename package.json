@@ -49,6 +49,7 @@
     "start": "node ./build/server/index.js",
     "test": "vitest run",
     "test:browser": "node scripts/browser/cli.ts",
+    "test:duckdb": "vitest run --project duckdb",
     "test:inkling": "vitest run --project inkling",
     "test:it": "vitest run --project it",
     "test:snaps": "vitest run --project snaps",

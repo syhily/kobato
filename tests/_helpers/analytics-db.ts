@@ -11,6 +11,7 @@ import { appendAccessEvents } from '@/server/domains/analytics/services/access-l
 import { appendDeviceEnvClientRows, appendDeviceEnvServerRows } from '@/server/domains/analytics/services/device-env'
 import { ANALYTICS_DDL } from '@/server/domains/analytics/services/schema'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
+import { settleAllBatchers } from '@/server/infra/db/batcher-registry'
 
 const handles: AnalyticsHandle[] = []
 const dirs: string[] = []
@@ -29,6 +30,9 @@ export async function closeTestAnalyticsDb(handle: AnalyticsHandle): Promise<voi
   if (index !== -1) {
     handles.splice(index, 1)
   }
+  // Join any batcher flush still writing through this handle — closing the
+  // DuckDB connections under an in-flight append is a native use-after-free.
+  await settleAllBatchers()
   await closeAnalyticsDatabase(handle)
 }
 

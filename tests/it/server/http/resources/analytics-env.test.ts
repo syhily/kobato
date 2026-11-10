@@ -61,7 +61,7 @@ async function deviceEnvRows(): Promise<Record<string, unknown>[]> {
 }
 
 beforeEach(async () => {
-  resetAllBatchers()
+  await resetAllBatchers()
   if (analyticsHandle?.closed === false) {
     await closeTestAnalyticsDb(analyticsHandle)
   }
@@ -75,7 +75,7 @@ beforeEach(async () => {
 })
 
 afterAll(async () => {
-  resetAllBatchers()
+  await resetAllBatchers()
   __resetAnalyticsEngineForTests()
   await closeTestAnalyticsDb(analyticsHandle)
 })

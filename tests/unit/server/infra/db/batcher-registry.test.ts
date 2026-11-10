@@ -7,6 +7,7 @@ import {
   registerBatcher,
   requireBatcher,
   resetAllBatchers,
+  settleAllBatchers,
 } from '@/server/infra/db/batcher-registry'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
@@ -137,5 +138,48 @@ describe('server/infra/db/batcher-registry', () => {
     initAllBatchers(handle)
     expect(init).toHaveBeenCalledTimes(2)
     expect(requireBatcher('test-reset')).toBe(batcher)
+  })
+
+  it('resetAllBatchers joins an in-flight flush before resolving', async () => {
+    // Registrations accumulate file-wide and later tests re-init this
+    // batcher, so the gate must disarm itself once this test is done.
+    let release!: () => void
+    let inflight: Promise<void> | null = new Promise<void>((resolve) => (release = resolve))
+    const batcher = { ...fakeBatcher(), settle: vi.fn(() => inflight ?? Promise.resolve()) }
+    registerBatcher('test-settle-join', () => batcher)
+    initAllBatchers(handle)
+
+    let resolved = false
+    const reset = resetAllBatchers().then(() => {
+      resolved = true
+    })
+    // Instances detach synchronously; only the in-flight join is deferred.
+    expect(() => requireBatcher('test-settle-join')).toThrow('test-settle-join not initialized')
+    await Promise.resolve()
+    expect(resolved).toBe(false)
+
+    release()
+    inflight = null
+    await reset
+    expect(resolved).toBe(true)
+  })
+
+  it('resetAllBatchers resolves even when an in-flight flush rejects', async () => {
+    const batcher = { ...fakeBatcher(), settle: vi.fn(() => Promise.reject(new Error('write exploded'))) }
+    registerBatcher('test-settle-reject', () => batcher)
+    initAllBatchers(handle)
+
+    await expect(resetAllBatchers()).resolves.toBeUndefined()
+  })
+
+  it('settleAllBatchers joins in-flight flushes without dropping instances', async () => {
+    const batcher = { ...fakeBatcher(), settle: vi.fn(async () => undefined) }
+    registerBatcher('test-settle-keep', () => batcher)
+    initAllBatchers(handle)
+
+    await settleAllBatchers()
+
+    expect(batcher.settle).toHaveBeenCalledOnce()
+    expect(requireBatcher('test-settle-keep')).toBe(batcher)
   })
 })

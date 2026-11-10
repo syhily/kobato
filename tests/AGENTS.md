@@ -4,7 +4,7 @@ Conventions for the `tests/` directory.
 
 ## Layout
 
-Tests are split into four Vitest workspace projects plus two live-instance
+Tests are split into five Vitest workspace projects plus two live-instance
 suites (HTTP e2e and real-browser Playwright). **The first three mirror the
 `src/` layout:**
 
@@ -20,6 +20,14 @@ suites (HTTP e2e and real-browser Playwright). **The first three mirror the
   `npx vitest run --project inkling` (alias `pnpm test:inkling`). Its helpers
   live in `tests/inkling/utils/` — including the `test-editor.ts` harness that
   registers the card decorate adapter — NOT in `tests/_helpers/`.
+- **`duckdb`** (`tests/vitest.duckdb.config.ts`) — Every test file that spins
+  up the real DuckDB native engine, regardless of which tree it lives in.
+  The membership list is owned by `tests/duckdb-files.ts` and pinned by
+  `tests/unit/arch/duckdb-project-files.test.ts`; the `unit`/`it` projects
+  exclude the same list. Files run sequentially, each in a fresh fork
+  (`pool: 'forks'` + `fileParallelism: false`), so a native crash kills only
+  its own worker and the failure is scoped to this project. Run it with
+  `pnpm test:duckdb`.
 - **`tests/e2e/`** — True HTTP e2e: tests drive a real kobato instance (the
   SEA binary booted by `scripts/sea/e2e.ts`) over plain `fetch`. No
   in-process shortcuts, no `vi.mock`. **Not part of `pnpm test`** (the
@@ -93,6 +101,7 @@ Or run a single project:
 ```bash
 npx vitest run --project unit
 npx vitest run --project it
+npx vitest run --project duckdb
 npx vitest run --project snaps
 npx vitest run --project inkling
 ```
@@ -120,7 +129,7 @@ journeys from its `build` / `build-develop` jobs. Both install Chromium with
 `pnpm exec playwright install --with-deps chromium` and set
 `KOBATO_BROWSER_CHANNEL=chromium`.
 
-### Worker isolation (integration only)
+### Worker isolation
 
 - **SQLite**: one in-memory database per test file (`:memory:` is
   per-connection; the harness returns the lifecycle global so direct
@@ -136,7 +145,13 @@ journeys from its `build` / `build-develop` jobs. Both install Chromium with
   swaps) and WAL/pragma assertions.
 - **DuckDB**: analytics tests open a per-run sidecar file via
   `createTestAnalyticsDb()` from `#/_helpers/analytics-db` and close it
-  with `closeTestAnalyticsDb(handle)`.
+  with `closeTestAnalyticsDb(handle)`. These files all run in the dedicated
+  `duckdb` project (see Layout). `closeTestAnalyticsDb` first joins any
+  in-flight batcher flush (`settleAllBatchers`) — closing the connections
+  under an in-flight append is a native use-after-free. For the same reason,
+  a `resetAllBatchers()` that precedes a handle close MUST be awaited
+  (`reset` detaches instances synchronously; its returned promise joins the
+  flushes they had in flight).
 - Tests that write tables should call `clearAllTables(db)` in `beforeEach` to reset state between cases within the same worker.
 - Tests that exercise the real (unmocked) rate limiter should additionally call `__resetRateLimitsForTests()` from `@/server/infra/rate-limit` in `beforeEach` — the limiter is a process-level Map, so per-IP/email budgets otherwise leak across tests within a file.
 
@@ -197,7 +212,7 @@ ceremony:
     parsed, and scan roots grow per migration slice
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/analytics-db` — DuckDB sidecar creation / seeding / teardown
-    (analytics integration tests)
+    (closes settle in-flight batcher flushes before touching connections)
   - `#/_helpers/db` — query helpers (integration only)
   - `#/_helpers/mock-ctx` — mock auth context (integration only)
   - `#/_helpers/request-context` — `makeRequestContext`, the single

@@ -281,7 +281,7 @@ if (!isVitest()) {
 /** Flush every batcher BEFORE the handle closes (rows land in the pre-swap DB, not dead-letter), then reset and close. */
 export async function prepareDatabaseForRestore(): Promise<void> {
   await flushAllBatchers()
-  resetAllBatchers()
+  await resetAllBatchers()
   resetLikeTokenSweep()
   await engine.closeForSwap()
   // Close the sidecar after the flush so buffered access events land first.

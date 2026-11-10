@@ -13,6 +13,8 @@ interface RegisteredBatcher {
   flush(): Promise<unknown>
   /** Teardown flush that ignores the pause gate — preferred before the database swap. */
   flushForTeardown?(): Promise<unknown>
+  /** Join an in-flight flush without draining — awaited before the writer underneath closes. */
+  settle?(): Promise<unknown>
   /** Drain + hold flushes for an external consistency window (analytics backup). */
   pause?(): Promise<unknown>
   /** Release a pause — buffered payloads flush immediately. */
@@ -83,12 +85,38 @@ export async function flushAllBatchers(): Promise<void> {
   }
 }
 
-/** Drop every instance (after a flush, before a database swap). */
-export function resetAllBatchers(): void {
+/** Capture every in-flight flush as one never-rejecting join promise. */
+function settleInflightFlushes(): Promise<void> {
+  const inflight: Promise<unknown>[] = []
+  for (const entry of entries) {
+    const settle = entry.instance?.settle?.()
+    if (settle) {
+      inflight.push(Promise.resolve(settle).catch(() => undefined))
+    }
+  }
+  return Promise.all(inflight).then(() => undefined)
+}
+
+/**
+ * Join every in-flight batcher flush (no drain, no dispose) — the pre-close
+ * quiesce for a teardown about to shut the engine the batchers write to.
+ */
+export function settleAllBatchers(): Promise<void> {
+  return settleInflightFlushes()
+}
+
+/**
+ * Drop every instance (after a flush, before a database swap). The returned
+ * promise joins any flush still in flight at dispose time — await it before
+ * closing the engine those flushes write to (DuckDB use-after-free guard).
+ */
+export function resetAllBatchers(): Promise<void> {
+  const inflight = settleInflightFlushes()
   for (const entry of entries) {
     entry.instance?.dispose?.()
     entry.instance = undefined
   }
+  return inflight
 }
 
 /**

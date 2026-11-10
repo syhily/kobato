@@ -136,6 +136,16 @@ export abstract class FlushLoop<Pending, Result> {
     return this.drain()
   }
 
+  /**
+   * Join an in-flight flush WITHOUT draining pending payload — the quiesce
+   * point for a teardown that closes the writer underneath (engine swap,
+   * test-side handle close). Never rejects: a failed flush already reported
+   * itself through onWriteFailed.
+   */
+  settle(): Promise<Result> {
+    return (this.flushing ?? Promise.resolve(this.emptyResult)).catch(() => this.emptyResult)
+  }
+
   /** Singleflight drain — the shared write path for flush(), pause(), and flushForTeardown(). */
   private async drain(): Promise<Result> {
     if (this.flushing) {
