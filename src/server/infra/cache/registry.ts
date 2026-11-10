@@ -9,9 +9,9 @@ import type { JsonValue } from '@/shared/utils/json-value'
 
 import {
   bumpGeneration,
-  getItem,
-  getItemRaw,
-  getItems,
+  getItemRawWithExpiry,
+  getItemWithExpiry,
+  getItemsWithExpiry,
   readGeneration,
   removeItem,
   setItem,
@@ -21,6 +21,13 @@ import {
   wipeCache as wipeFileCache,
 } from '@/server/infra/cache/file-store'
 import { createInflight } from '@/server/infra/cache/inflight'
+import {
+  clearMemoryBucket,
+  getMemoryItem,
+  removeMemoryItem,
+  setMemoryItem,
+  wipeMemoryCache,
+} from '@/server/infra/cache/memory-store'
 import { getLogger } from '@/server/infra/logger'
 import { withSpanAsync } from '@/server/infra/trace/facade'
 import { recordCacheLookup } from '@/server/infra/trace/metrics'
@@ -32,8 +39,12 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 const log = getLogger('cache')
 
 /**
- * The cache behavior plane — the only module reading/writing cache entries
- * (via `file-store`, ADR-0013). Best-effort: failures degrade to a miss / a
+ * The cache behavior plane — the only module reading/writing cache entries:
+ * a process-local L1 (`memory-store`) in front of the on-disk plane
+ * (`file-store`, ADR-0013). Reads try L1, fall back to disk, and backfill L1
+ * with the envelope's own deadline; writes mirror into L1 only after the disk
+ * write succeeds. Every invalidation verb evicts L1 synchronously, before its
+ * filesystem leg. Best-effort throughout: failures degrade to a miss / a
  * skipped write — the cache must never fail the request it serves; loader
  * errors propagate.
  */
@@ -237,18 +248,52 @@ function keyFor<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): { ke
   return { key: `${slot.prefix}${BEHAVIORS[id].key(params)}`, slot }
 }
 
+/**
+ * Decode a binary payload and mirror the decoded shape into L1. A codec may
+ * normalize the write shape (the avatar sentinel does), so both planes publish
+ * what a disk read would return — never the raw write value. Returns `null` when
+ * the codec rejects the payload (a miss, never an L1 entry).
+ */
+function decodeAndMirrorBinary(
+  id: CacheBucketId,
+  key: string,
+  decode: ((raw: Buffer) => unknown) | undefined,
+  encoded: Buffer,
+  expiresAtMs: number,
+): unknown {
+  const decodeFn = decode ?? ((blob: Buffer) => blob)
+  const value = decodeFn(encoded)
+  if (value !== null) {
+    // The encoded payload size is the honest estimate for a decoded shape whose
+    // Buffer members serialize as byte arrays.
+    setMemoryItem(id, key, value, { expiresAtMs, bytes: encoded.byteLength })
+  }
+  return value
+}
+
 async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
   const behavior = BEHAVIORS[id]
+  // Misses use two internal sentinels: the disk plane answers `null` (its
+  // envelope contract), memory answers `undefined` (a stored `undefined` is
+  // never admitted). `readEntry` normalizes both to `null`.
+  const memoryHit = getMemoryItem(id, key)
+  if (memoryHit !== undefined) {
+    return memoryHit
+  }
   try {
     if (behavior.kind === 'binary') {
-      const raw = await getItemRaw(id, key)
-      if (raw === null) {
+      const stored = await getItemRawWithExpiry(id, key)
+      if (stored === null) {
         return null
       }
-      const decode = behavior.decode ?? ((blob: Buffer) => blob)
-      return decode(raw)
+      return decodeAndMirrorBinary(id, key, behavior.decode, stored.value, stored.expiresAtMs)
     }
-    const parsed = await getItem(id, key)
+    const stored = await getItemWithExpiry<JsonValue>(id, key)
+    if (stored === null) {
+      return null
+    }
+    // A literal `null` payload is a miss, exactly as before the L1 layer.
+    const parsed = stored.value
     if (parsed === null) {
       return null
     }
@@ -259,8 +304,10 @@ async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
         await removeItem(id, key)
         return null
       }
+      setMemoryItem(id, key, result.data, { expiresAtMs: stored.expiresAtMs })
       return result.data
     }
+    setMemoryItem(id, key, parsed, { expiresAtMs: stored.expiresAtMs })
     return parsed
   } catch (error) {
     log.warn('cache read failed; treating as a miss', { bucket: id, error })
@@ -276,14 +323,33 @@ async function writeEntry(id: CacheBucketId, key: string, slot: ResolvedSlot, va
   const behavior = BEHAVIORS[id]
   try {
     const ttlSeconds = behavior.ttlFor?.(value) ?? slot.ttlSeconds
+    // ONE deadline, derived here and handed to both planes: the envelope stores
+    // it verbatim, and L1 expires on the same instant.
+    const expiresAtMs = ttlSeconds ? Math.round(Date.now() + ttlSeconds * 1000) : 0
+    // No bucket declares `schema` today — this guard is forward-compat for the
+    // `CacheBehavior` contract: a schema bucket only fills L1 from the validated
+    // READ path, never from the loader's raw write value.
+    const schemaValidated = behavior.schema !== undefined
     if (behavior.kind === 'binary') {
       // A binary declaration without a codec stores raw Buffers.
       const encode = behavior.encode ?? ((blob: unknown) => unsafeCast<Buffer>(blob))
-      await setItemRaw(id, key, encode(value), { ttlSeconds })
+      const encoded = encode(value)
+      await setItemRaw(id, key, encoded, { expiresAtMs })
+      if (!schemaValidated) {
+        decodeAndMirrorBinary(id, key, behavior.decode, encoded, expiresAtMs)
+      }
       return
     }
-    // Payloads are JSON-native by declaration contract — the cast documents the boundary.
-    await setItem(id, key, unsafeCast<JsonValue>(value), { ttlSeconds })
+    // `setItem` returns the exact text it wrote. Parsing THAT keeps L1's value
+    // identical to a disk read (undefined fields disappear, Dates become
+    // strings, NaN becomes null) and sizes it without a second stringify.
+    const text = await setItem(id, key, unsafeCast<JsonValue>(value), { expiresAtMs })
+    if (!schemaValidated) {
+      setMemoryItem(id, key, unsafeCast<JsonValue>(JSON.parse(text)), {
+        expiresAtMs,
+        bytes: Buffer.byteLength(text, 'utf8'),
+      })
+    }
   } catch (error) {
     log.warn('cache write failed; continuing without warmth', { bucket: id, error })
   }
@@ -378,6 +444,8 @@ export async function set<K extends CacheBucketId>(id: K, params: CacheParamsMap
 /** Per-key delete (best-effort). */
 export async function remove<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): Promise<void> {
   const { key } = keyFor(id, params)
+  // Memory first: a failed unlink must not leave the value reachable through L1.
+  removeMemoryItem(id, key)
   try {
     await removeItem(id, key)
   } catch (error) {
@@ -391,11 +459,22 @@ export async function remove<K extends CacheBucketId>(id: K, params: CacheParams
  * synchronously, matching the sync invalidation contract.
  */
 export function clear(id: CacheBucketId): void {
+  // Synchronous invalidation covers both planes, even if the unlink fails.
+  clearMemoryBucket(id)
   try {
     unlinkBucketEntriesSync(id)
   } catch (error) {
     log.warn('cache bucket clear failed', { bucket: id, error })
   }
+}
+
+/**
+ * L1-only synchronous eviction, for the admin clear path in `buckets.ts`: its
+ * filesystem leg is async, but the memory tier must go cold before it starts.
+ * Ordinary invalidation uses `clear`/`remove` instead.
+ */
+export function evictBucketMemory(id: CacheBucketId): void {
+  clearMemoryBucket(id)
 }
 
 /**
@@ -414,6 +493,8 @@ export function clear(id: CacheBucketId): void {
 export function clearLocalizedOutputs(): void {
   let failure: unknown
   for (const id of ['feed', 'calendar', 'og', 'comments', 'sitemap'] as const) {
+    // L1 goes cold first — a trash failure must not keep a stale render servable.
+    clearMemoryBucket(id)
     try {
       trashBucketSync(id)
     } catch (error) {
@@ -427,10 +508,11 @@ export function clearLocalizedOutputs(): void {
 }
 
 /**
- * Batch cache-aside: an MGET-style read of every key (one file read per key,
- * fanned out), the loader runs once for the misses. Returns one entry per
- * input in input order (uncovered misses are null); missing values are
- * written back fire-and-forget.
+ * Batch cache-aside: L1 first, then an MGET-style read of the remaining keys
+ * (one file read per key, fanned out); the loader runs once for the misses.
+ * Returns one entry per input in input order (uncovered misses are null);
+ * missing values are written back fire-and-forget. Disk hits backfill L1 under
+ * the envelope's own deadline.
  */
 export async function throughMany<K extends CacheBucketId, V>(
   id: K,
@@ -447,36 +529,55 @@ export async function throughMany<K extends CacheBucketId, V>(
   let result: 'hit' | 'miss' = 'hit'
   return withSpanAsync('cache.lookup', { attributes: { 'cache.bucket': id } }, async (span) => {
     try {
-      let cached: { key: string; value: unknown }[]
-      try {
-        cached = await getItems(id, keys)
-      } catch (error) {
-        log.warn('cache batch read failed; treating every key as a miss', { bucket: id, error })
-        cached = keys.map((key) => ({ key, value: null }))
-      }
-
-      const values: (V | null)[] = cached.map((entry) => unsafeCast<V | null>(entry.value))
+      const values: (V | null)[] = paramsList.map(() => null)
       const missingIndexes: number[] = []
-      cached.forEach((entry, index) => {
-        if (entry.value === null) {
+      keys.forEach((key, index) => {
+        const memoryHit = getMemoryItem(id, key)
+        if (memoryHit === undefined) {
           missingIndexes.push(index)
+        } else {
+          values[index] = unsafeCast<V | null>(memoryHit)
         }
       })
 
       if (missingIndexes.length > 0) {
-        result = 'miss'
-        const missing = missingIndexes.map((index) => paramsList[index] as CacheParamsMap[K])
-        const loaded = await loader(missing)
-        // Match loaded values by computed key — the loader may rebuild its params.
-        const loadedByKey = new Map(loaded.map((entry) => [behavior.key(entry.params), entry.value]))
-        for (const index of missingIndexes) {
-          const params = paramsList[index] as CacheParamsMap[K]
-          const value = loadedByKey.get(behavior.key(params))
-          if (value === undefined) {
-            continue
+        const diskKeys = missingIndexes.map((index) => keys[index] as string)
+        let cached: Awaited<ReturnType<typeof getItemsWithExpiry>>
+        try {
+          cached = await getItemsWithExpiry(id, diskKeys)
+        } catch (error) {
+          log.warn('cache batch read failed; treating every key as a miss', { bucket: id, error })
+          cached = diskKeys.map((key) => ({ key, entry: null }))
+        }
+
+        const stillMissing: number[] = []
+        cached.forEach((entry, position) => {
+          const index = missingIndexes[position] as number
+          // `entry === null` is the file-store miss; `entry.value === null` is a
+          // literal `null` payload, which `readEntry` also treats as a miss.
+          if (entry.entry === null || entry.entry.value === null) {
+            stillMissing.push(index)
+            return
           }
-          values[index] = value
-          void writeEntry(id, keys[index] as string, slot, value)
+          values[index] = unsafeCast<V | null>(entry.entry.value)
+          setMemoryItem(id, entry.key, entry.entry.value, { expiresAtMs: entry.entry.expiresAtMs })
+        })
+
+        if (stillMissing.length > 0) {
+          result = 'miss'
+          const missing = stillMissing.map((index) => paramsList[index] as CacheParamsMap[K])
+          const loaded = await loader(missing)
+          // Match loaded values by computed key — the loader may rebuild its params.
+          const loadedByKey = new Map(loaded.map((entry) => [behavior.key(entry.params), entry.value]))
+          for (const index of stillMissing) {
+            const params = paramsList[index] as CacheParamsMap[K]
+            const value = loadedByKey.get(behavior.key(params))
+            if (value === undefined) {
+              continue
+            }
+            values[index] = value
+            void writeEntry(id, keys[index] as string, slot, value)
+          }
         }
       }
 
@@ -543,14 +644,17 @@ export function isCounterBucket(id: CacheBucketId): boolean {
 }
 
 /**
- * Restore-completion wipe: clear the cache tree and, in a `finally`, drop the
- * process-local generation memo so the next counter read re-reads the file.
- * A partial wipe can leave pre-restore entries that may remain reachable until
- * their TTL, and the old generation may still be on disk; the memo reset only
- * guarantees the next read goes back to the file. The caller's
- * warning/notification path owns the residual window.
+ * Restore-completion wipe: clear the cache tree and both process-local planes.
+ * L1 is dropped FIRST — even a partial file wipe must never leave pre-restore
+ * values servable — and the generation memo is dropped in a `finally` so the
+ * next counter read re-reads the file. A partial wipe can leave pre-restore
+ * entries on disk that may remain reachable until their TTL, and the old
+ * generation may still be on disk; the memo reset only guarantees the next read
+ * goes back to the file. The caller's warning/notification path owns the
+ * residual window.
  */
 export async function wipeCacheForRestore(): Promise<void> {
+  wipeMemoryCache()
   try {
     await wipeFileCache()
   } finally {

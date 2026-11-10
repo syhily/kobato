@@ -5,7 +5,7 @@ import type { CacheBucketStats, ReservedCacheBucketStats } from '@/shared/contra
 import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@/shared/types/cache'
 
 import { clearBucketDir, clearBucketEntries, statBucket } from '@/server/infra/cache/file-store'
-import { bumpCounter, isCounterBucket, resolveCacheSlot } from '@/server/infra/cache/registry'
+import { bumpCounter, evictBucketMemory, isCounterBucket, resolveCacheSlot } from '@/server/infra/cache/registry'
 import { session } from '@/server/infra/db/schema/session'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { rateLimitEntryCount } from '@/server/infra/rate-limit'
@@ -47,13 +47,16 @@ export function getBucket(id: CacheBucketId): CacheBucket | undefined {
 }
 
 /**
- * Async admin clear. A counter bucket advances its persisted generation FIRST
+ * Async admin clear. The process-local L1 tier is dropped synchronously FIRST —
+ * the disk walk below is async and a served request must never see a value the
+ * admin just cleared. A counter bucket then advances its persisted generation
  * (strict: a failed bump aborts the clear), then drops entry shards while
  * keeping `_generation`; a late write that captured the pre-clear generation
  * can only recreate an older-generation file, which no reader will address.
  * Non-counter buckets simply rm the whole directory.
  */
 export async function clearBucket(bucket: CacheBucket): Promise<number> {
+  evictBucketMemory(bucket.id)
   if (isCounterBucket(bucket.id)) {
     const generation = bumpCounter(bucket.id)
     if (generation === null) {

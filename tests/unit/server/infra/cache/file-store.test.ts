@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -8,9 +9,9 @@ import {
   bumpGeneration,
   clearBucketEntries,
   countEntryFiles,
-  getItem,
-  getItemRaw,
-  getItems,
+  getItemRawWithExpiry,
+  getItemsWithExpiry,
+  getItemWithExpiry,
   readGeneration,
   removeItem,
   resolveCacheRoot,
@@ -71,25 +72,29 @@ describe('cache root', () => {
 
   it('rejects bucket ids that could escape the cache root', async () => {
     await expect(setItem('../escape', 'key', 1)).rejects.toThrow(TypeError)
-    await expect(getItem('a/b', 'key')).rejects.toThrow(TypeError)
+    await expect(getItemWithExpiry('a/b', 'key')).rejects.toThrow(TypeError)
   })
 })
 
 describe('roundtrip', () => {
-  it('round-trips JSON payloads and reports misses as null', async () => {
+  it('round-trips JSON payloads, returns the stored text, and reports misses as null', async () => {
     const value = { title: 'Kobato 小鸟', tags: ['a', null, 3], nested: { ok: true } }
-    await setItem('feed', 'feed:xml:en:1:home', value)
-    await expect(getItem('feed', 'feed:xml:en:1:home')).resolves.toEqual(value)
-    await expect(getItem('feed', 'feed:xml:en:1:missing')).resolves.toBeNull()
+    const text = await setItem('feed', 'feed:xml:en:1:home', value)
+    expect(text).toBe(JSON.stringify(value))
+    await expect(getItemWithExpiry<typeof value>('feed', 'feed:xml:en:1:home')).resolves.toEqual({
+      value,
+      expiresAtMs: 0,
+    })
+    await expect(getItemWithExpiry('feed', 'feed:xml:en:1:missing')).resolves.toBeNull()
   })
 
   it('round-trips raw binary payloads byte-for-byte', async () => {
     const payload = Buffer.from([0, 255, 1, 254, 0x4b, 0x42, 0x43])
     await setItemRaw('og', 'og:card:example', payload)
-    const raw = await getItemRaw('og', 'og:card:example')
-    expect(raw).not.toBeNull()
-    expect(Buffer.compare(raw as Buffer, payload)).toBe(0)
-    await expect(getItemRaw('og', 'og:card:missing')).resolves.toBeNull()
+    const stored = await getItemRawWithExpiry('og', 'og:card:example')
+    expect(stored?.expiresAtMs).toBe(0)
+    expect(Buffer.compare(stored!.value, payload)).toBe(0)
+    await expect(getItemRawWithExpiry('og', 'og:card:missing')).resolves.toBeNull()
   })
 })
 
@@ -98,16 +103,19 @@ describe('expiry', () => {
     vi.useRealTimers()
   })
 
-  it('expires lazily and evicts the file on the exact deadline', async () => {
+  it('exposes the absolute deadline and expires lazily on the exact instant', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'))
     await setItem('calendar', 'calendar:ttl', { day: 1 }, { ttlSeconds: 5 })
 
+    const stored = await getItemWithExpiry('calendar', 'calendar:ttl')
+    expect(stored?.expiresAtMs).toBe(Date.parse('2026-01-01T00:00:05.000Z'))
+
     vi.setSystemTime(new Date('2026-01-01T00:00:04.999Z'))
-    await expect(getItem('calendar', 'calendar:ttl')).resolves.toEqual({ day: 1 })
+    await expect(getItemWithExpiry('calendar', 'calendar:ttl')).resolves.toMatchObject({ value: { day: 1 } })
 
     vi.setSystemTime(new Date('2026-01-01T00:00:05.000Z'))
-    await expect(getItem('calendar', 'calendar:ttl')).resolves.toBeNull()
+    await expect(getItemWithExpiry('calendar', 'calendar:ttl')).resolves.toBeNull()
     await expect(stat(expectedEntryPath('calendar', 'calendar:ttl'))).rejects.toMatchObject({ code: 'ENOENT' })
   })
 
@@ -117,7 +125,25 @@ describe('expiry', () => {
     await setItem('githubRelease', 'githubRelease:owner/repo', { tag: 'v1' })
 
     vi.setSystemTime(new Date('2027-01-01T00:00:00.000Z'))
-    await expect(getItem('githubRelease', 'githubRelease:owner/repo')).resolves.toEqual({ tag: 'v1' })
+    await expect(getItemWithExpiry('githubRelease', 'githubRelease:owner/repo')).resolves.toMatchObject({
+      value: { tag: 'v1' },
+      expiresAtMs: 0,
+    })
+  })
+
+  it('accepts an absolute deadline that wins over ttlSeconds', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'))
+    const deadline = Date.now() + 10_000
+    await setItem('calendar', 'calendar:deadline', { day: 2 }, { expiresAtMs: deadline, ttlSeconds: 3600 })
+
+    await expect(getItemWithExpiry('calendar', 'calendar:deadline')).resolves.toEqual({
+      value: { day: 2 },
+      expiresAtMs: deadline,
+    })
+
+    vi.setSystemTime(new Date(deadline))
+    await expect(getItemWithExpiry('calendar', 'calendar:deadline')).resolves.toBeNull()
   })
 })
 
@@ -128,7 +154,7 @@ describe('envelope validation', () => {
     const file = expectedEntryPath('avatar', key)
     await writeFile(file, Buffer.concat([Buffer.from('KBC2'), Buffer.alloc(8), Buffer.from('{}')]))
 
-    await expect(getItem('avatar', key)).resolves.toBeNull()
+    await expect(getItemWithExpiry('avatar', key)).resolves.toBeNull()
     await expect(stat(file)).rejects.toMatchObject({ code: 'ENOENT' })
   })
 
@@ -138,28 +164,25 @@ describe('envelope validation', () => {
     const file = expectedEntryPath('githubAvatar', key)
     await writeFile(file, Buffer.from('KBC1'))
 
-    await expect(getItem('githubAvatar', key)).resolves.toBeNull()
+    await expect(getItemWithExpiry('githubAvatar', key)).resolves.toBeNull()
     await expect(stat(file)).rejects.toMatchObject({ code: 'ENOENT' })
   })
 
   it('propagates real payload errors to the caller', async () => {
     await setItemRaw('imageMeta', 'image-meta:not-json', Buffer.from('not json'))
-    await expect(getItem('imageMeta', 'image-meta:not-json')).rejects.toThrow(SyntaxError)
+    await expect(getItemWithExpiry('imageMeta', 'image-meta:not-json')).rejects.toThrow(SyntaxError)
   })
 })
 
-describe('getItems', () => {
-  it('preserves input order and reports missing keys as null', async () => {
+describe('getItemsWithExpiry', () => {
+  it('preserves input order and reports missing keys as null entries', async () => {
     await setItem('searchResult', 'search:b', { id: 'b' })
     await setItem('searchResult', 'search:a', { id: 'a' })
 
-    await expect(getItems('searchResult', ['search:b', 'search:missing', 'search:a', 'search:b'])).resolves.toEqual([
-      { key: 'search:b', value: { id: 'b' } },
-      { key: 'search:missing', value: null },
-      { key: 'search:a', value: { id: 'a' } },
-      { key: 'search:b', value: { id: 'b' } },
-    ])
-    await expect(getItems('searchResult', [])).resolves.toEqual([])
+    const entries = await getItemsWithExpiry('searchResult', ['search:b', 'search:missing', 'search:a', 'search:b'])
+    expect(entries.map((entry) => entry.key)).toEqual(['search:b', 'search:missing', 'search:a', 'search:b'])
+    expect(entries.map((entry) => entry.entry?.value ?? null)).toEqual([{ id: 'b' }, null, { id: 'a' }, { id: 'b' }])
+    await expect(getItemsWithExpiry('searchResult', [])).resolves.toEqual([])
   })
 })
 
@@ -171,7 +194,7 @@ describe('removeItem', () => {
   it('removes an existing entry and is idempotent', async () => {
     await setItem('tags', 'tags:all', { tags: [] })
     await removeItem('tags', 'tags:all')
-    await expect(getItem('tags', 'tags:all')).resolves.toBeNull()
+    await expect(getItemWithExpiry('tags', 'tags:all')).resolves.toBeNull()
     await expect(removeItem('tags', 'tags:all')).resolves.toBeUndefined()
   })
 })
@@ -228,7 +251,7 @@ describe('generation counter and counter-bucket clear', () => {
     await setItem('githubRelease', 'release:1:fresh', ['fresh'])
 
     expect(await clearBucketEntries('githubRelease')).toBe(2)
-    expect(await countEntryFiles('githubRelease')).toBe(0)
+    await expect(countEntryFiles('githubRelease')).resolves.toBe(0)
     await expect(readGeneration('githubRelease')).resolves.toBe(1)
   })
 })
@@ -272,10 +295,10 @@ describe('bucket clear races', () => {
       await setItem('comments', key, { limit: 5 })
       await rm(bucketPath('comments'), { recursive: true, force: true })
 
-      await expect(getItem('comments', key)).resolves.toBeNull()
+      await expect(getItemWithExpiry('comments', key)).resolves.toBeNull()
       // The write recreates the bucket tree instead of assuming it survived.
-      await expect(setItem('comments', key, { limit: 5 })).resolves.toBeUndefined()
-      await expect(getItem('comments', key)).resolves.toEqual({ limit: 5 })
+      await expect(setItem('comments', key, { limit: 5 })).resolves.toBe('{"limit":5}')
+      await expect(getItemWithExpiry('comments', key)).resolves.toMatchObject({ value: { limit: 5 } })
       await expect(removeItem('comments', 'comments:never-written')).resolves.toBeUndefined()
 
       await new Promise((resolve) => setImmediate(resolve))

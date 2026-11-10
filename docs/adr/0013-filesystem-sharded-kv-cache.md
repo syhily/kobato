@@ -335,3 +335,35 @@ work, and the admin panel is the natural place to notice growth.
 - Synchronous work on the invalidation path is now bounded by construction:
   single-digit unlinks inside transactions, O(1) renames for large
   reclamations, async deletes everywhere else.
+
+## Amendment
+
+### 2026-11-10 — process-local L1 memory tier
+
+The "not a read-latency optimization" posture above is superseded for hot
+reads. The POC numbers made the case: a file hit costs ~44–80 µs plus a
+`JSON.parse`, while a process-memory hit costs ~1 µs and no parse. A new
+`src/server/infra/cache/memory-store.ts` now sits in front of the file store,
+owned by the same behavior plane — `registry` remains the only module that
+reads or writes entries.
+
+- **Shape.** One LRU per bucket, bounded on BOTH entry count and estimated
+  bytes (sum < ~12 MiB); a single entry above 64 KiB is never admitted, and
+  `og`/`calendar` carry a ZERO budget — L1-exempt by policy, independent of
+  value size (a zero budget is a hard refusal, so even an empty value cannot
+  slip in). Entries hold DECODED values plus the envelope's absolute
+  `expiresAtMs`; a hit hands every caller the same object, so cache results
+  are read-only by contract.
+- **TTL from one source.** The write path computes the absolute deadline once
+  and hands it to both the envelope (`FileStoreSetOptions.expiresAtMs`) and
+  L1; a disk-hit backfill reuses the deadline read from the envelope. Lazy
+  expiry on read matches the file store's semantics, so L1 can never outlive
+  the file it mirrors.
+- **Invalidation precedes I/O.** `remove`, `clear`, `clearLocalizedOutputs`,
+  the admin clear, and the restore wipe drop the affected L1 entries
+  synchronously BEFORE touching the filesystem, so a failed or slow leg cannot
+  keep a stale value servable. Single-process SEA means no cross-process
+  coherence protocol is needed.
+- **Writes mirror what a read would return.** Binary buckets mirror
+  `decode(encode(value))`, JSON buckets mirror the `JSON.parse(JSON.stringify(value))`
+  round-trip, so a memory hit is observationally identical to a disk hit.

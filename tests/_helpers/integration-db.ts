@@ -9,6 +9,7 @@ import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { wipeCache } from '@/server/infra/cache/file-store'
+import { __resetMemoryCacheForTests } from '@/server/infra/cache/memory-store'
 import { resetCacheCounterMemo } from '@/server/infra/cache/registry'
 import { closeDatabase, openDatabase } from '@/server/infra/db/database'
 
@@ -77,8 +78,9 @@ export async function clearAllTables(db: Database): Promise<void> {
   } finally {
     db.run(sql`PRAGMA foreign_keys = ON`)
   }
-  // The cache lives outside SQLite (ADR-0013): wipe its tree and the
-  // process-wide generation memo so every test starts cold.
+  // The cache lives outside SQLite (ADR-0013): wipe its tree, its process-local
+  // L1, and the generation memo so every test starts cold.
   await wipeCache()
+  __resetMemoryCacheForTests()
   resetCacheCounterMemo()
 }

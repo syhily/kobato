@@ -3,7 +3,7 @@ import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { countEntryFiles, getItem, resolveCacheRoot, setItem } from '@/server/infra/cache/file-store'
+import { countEntryFiles, getItemWithExpiry, resolveCacheRoot, setItem } from '@/server/infra/cache/file-store'
 import { sweepExpiredKvEntries } from '@/server/infra/cache/kv-maintenance'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { session } from '@/server/infra/db/schema/session'
@@ -37,9 +37,9 @@ describe('sweepExpiredKvEntries', () => {
     await sweepExpiredKvEntries(db)
 
     expect(await countEntryFiles('feed')).toBe(2)
-    expect(await getItem('feed', 'k:expired')).toBeNull()
-    expect(await getItem('feed', 'k:live')).toEqual({ json: 2 })
-    expect(await getItem('feed', 'k:immortal')).toEqual({ json: 3 })
+    await expect(getItemWithExpiry('feed', 'k:expired')).resolves.toBeNull()
+    await expect(getItemWithExpiry('feed', 'k:live')).resolves.toMatchObject({ value: { json: 2 } })
+    await expect(getItemWithExpiry('feed', 'k:immortal')).resolves.toMatchObject({ value: { json: 3 } })
     expect((await db.select({ key: oneTimeToken.key }).from(oneTimeToken)).map((row) => row.key)).toEqual([
       'comment:token:live',
     ])

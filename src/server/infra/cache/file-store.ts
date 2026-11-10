@@ -57,8 +57,11 @@ const SWEEP_AGE_MS = 60 * 60 * 1000
 const TRASH_INFIX = '.trash-'
 
 export interface FileStoreSetOptions {
-  /** Time-to-live in seconds. Omit for an entry that never expires. */
+  /** Time-to-live in seconds. Ignored when `expiresAtMs` is provided. */
   ttlSeconds?: number
+  /** Absolute deadline (epoch ms, `0` = never). The registry passes the deadline
+   *  it also stores in L1, so both planes share one value. */
+  expiresAtMs?: number
 }
 
 // Vitest runs on `:memory:` and must not share `/tmp/kobato-data` with other
@@ -109,6 +112,9 @@ async function discard(file: string): Promise<void> {
 }
 
 function expiryFrom(opts: FileStoreSetOptions): number {
+  if (opts.expiresAtMs !== undefined) {
+    return opts.expiresAtMs
+  }
   return opts.ttlSeconds ? Math.round(Date.now() + opts.ttlSeconds * 1000) : 0
 }
 
@@ -131,7 +137,7 @@ function decodeEnvelope(raw: Buffer): Envelope | null {
   return { payload: raw.subarray(HEADER_SIZE), expiresAtMs: Number(raw.readBigUInt64BE(MAGIC.length)) }
 }
 
-async function readPayload(bucket: string, fullKey: string): Promise<Buffer | null> {
+async function readEnvelope(bucket: string, fullKey: string): Promise<Envelope | null> {
   const file = entryPath(bucket, fullKey)
   let raw: Buffer
   try {
@@ -151,7 +157,7 @@ async function readPayload(bucket: string, fullKey: string): Promise<Buffer | nu
     await discard(file)
     return null
   }
-  return envelope.payload
+  return envelope
 }
 
 async function writeOnce(shardDir: string, tmpDir: string, file: string, bytes: Buffer): Promise<void> {
@@ -184,22 +190,41 @@ async function writePayload(bucket: string, fullKey: string, payload: Buffer, op
   }
 }
 
-export async function getItem<T>(bucket: string, fullKey: string): Promise<T | null> {
-  const payload = await readPayload(bucket, fullKey)
-  return payload === null ? null : unsafeCast<T | null>(JSON.parse(payload.toString('utf8')))
+/**
+ * A live payload plus the deadline it was written with (`0` = never). The
+ * registry mirrors the value into its L1 memory layer under this SAME deadline,
+ * so the memory copy can never outlive the file.
+ */
+export interface StoredEntry<T> {
+  value: T
+  expiresAtMs: number
 }
 
+export async function getItemWithExpiry<T>(bucket: string, fullKey: string): Promise<StoredEntry<T> | null> {
+  const envelope = await readEnvelope(bucket, fullKey)
+  return envelope === null
+    ? null
+    : { value: unsafeCast<T>(JSON.parse(envelope.payload.toString('utf8'))), expiresAtMs: envelope.expiresAtMs }
+}
+
+/**
+ * JSON write. Returns the exact text it stored, so a caller that also mirrors
+ * the value into a memory tier can reuse it instead of serializing twice.
+ */
 export async function setItem(
   bucket: string,
   fullKey: string,
   value: JsonValue,
   opts: FileStoreSetOptions = {},
-): Promise<void> {
-  await writePayload(bucket, fullKey, Buffer.from(JSON.stringify(value), 'utf8'), opts)
+): Promise<string> {
+  const text = JSON.stringify(value)
+  await writePayload(bucket, fullKey, Buffer.from(text, 'utf8'), opts)
+  return text
 }
 
-export async function getItemRaw(bucket: string, fullKey: string): Promise<Buffer | null> {
-  return readPayload(bucket, fullKey)
+export async function getItemRawWithExpiry(bucket: string, fullKey: string): Promise<StoredEntry<Buffer> | null> {
+  const envelope = await readEnvelope(bucket, fullKey)
+  return envelope === null ? null : { value: envelope.payload, expiresAtMs: envelope.expiresAtMs }
 }
 
 export async function setItemRaw(
@@ -211,9 +236,12 @@ export async function setItemRaw(
   await writePayload(bucket, fullKey, value, opts)
 }
 
-/** MGET: one entry per input key, in input order; missing keys carry `null`. */
-export async function getItems(bucket: string, keys: readonly string[]): Promise<{ key: string; value: unknown }[]> {
-  return Promise.all(keys.map(async (key) => ({ key, value: await getItem<unknown>(bucket, key) })))
+/** MGET with the envelope deadline, for callers that mirror the hit into L1. */
+export async function getItemsWithExpiry(
+  bucket: string,
+  keys: readonly string[],
+): Promise<{ key: string; entry: StoredEntry<unknown> | null }[]> {
+  return Promise.all(keys.map(async (key) => ({ key, entry: await getItemWithExpiry<unknown>(bucket, key) })))
 }
 
 export async function removeItem(bucket: string, fullKey: string): Promise<void> {

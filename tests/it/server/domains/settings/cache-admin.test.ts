@@ -8,7 +8,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/cache/admin-ops'
 import { countEntryFiles, readGeneration, resolveCacheRoot, setItem } from '@/server/infra/cache/file-store'
-import { bumpCounter, get, getCounter, through } from '@/server/infra/cache/registry'
+import { bumpCounter, get, getCounter, set, through } from '@/server/infra/cache/registry'
 import { session } from '@/server/infra/db/schema/session'
 
 const db = getTestDb()
@@ -114,6 +114,20 @@ describe('service: cache admin', () => {
     expect(await countEntryFiles('og')).toBe(0)
     expect(await countEntryFiles('avatar')).toBe(1)
     expect(await countEntryFiles('misc')).toBe(1)
+  })
+
+  it('drops the L1 memory tier as part of the admin clear', async () => {
+    // `set` writes the file and mirrors L1, so this read never touches disk.
+    await set('tags', {}, ['seeded'])
+    expect(await get('tags', {})).toEqual(['seeded'])
+    expect(await countEntryFiles('tags')).toBe(1)
+
+    const result = await clearAdminCache(db, 'tags')
+
+    expect(result.total).toBe(1)
+    expect(await countEntryFiles('tags')).toBe(0)
+    // L1 went cold with the clear — the value cannot be resurrected from memory.
+    expect(await get('tags', {})).toBeNull()
   })
 
   it('aggregates counts when clearing all buckets', async () => {

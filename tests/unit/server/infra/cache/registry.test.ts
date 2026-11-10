@@ -1,22 +1,31 @@
 import { Buffer } from 'node:buffer'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fileStoreMock = vi.hoisted(() => ({
-  getItem: vi.fn<(bucket: string, key: string) => Promise<unknown>>(),
-  getItemRaw: vi.fn<(bucket: string, key: string) => Promise<Buffer | null>>(),
-  getItems: vi.fn<(bucket: string, keys: string[]) => Promise<{ key: string; value: unknown }[]>>(),
+  getItemWithExpiry: vi.fn<(bucket: string, key: string) => Promise<{ value: unknown; expiresAtMs: number } | null>>(),
+  getItemRawWithExpiry:
+    vi.fn<(bucket: string, key: string) => Promise<{ value: Buffer; expiresAtMs: number } | null>>(),
+  getItemsWithExpiry:
+    vi.fn<
+      (
+        bucket: string,
+        keys: string[],
+      ) => Promise<{ key: string; entry: { value: unknown; expiresAtMs: number } | null }[]>
+    >(),
   removeItem: vi.fn<(bucket: string, key: string) => Promise<void>>(),
-  setItem: vi.fn<(bucket: string, key: string, value: unknown, opts: unknown) => Promise<void>>(),
+  setItem: vi.fn<(bucket: string, key: string, value: unknown, opts: unknown) => Promise<string>>(),
   setItemRaw: vi.fn<(bucket: string, key: string, value: Buffer, opts: unknown) => Promise<void>>(),
   readGeneration: vi.fn<(bucket: string) => Promise<number>>(),
   bumpGeneration: vi.fn<(bucket: string) => number>(),
   unlinkBucketEntriesSync: vi.fn<(bucket: string) => number>(),
   trashBucketSync: vi.fn<(bucket: string) => void>(),
+  wipeCache: vi.fn<() => Promise<void>>(),
 }))
 
 vi.mock('@/server/infra/cache/file-store', () => fileStoreMock)
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { __resetMemoryCacheForTests } from '@/server/infra/cache/memory-store'
 import {
   __resetCacheCountersForTests,
   AvatarStatus,
@@ -29,6 +38,7 @@ import {
   set,
   through,
   throughMany,
+  wipeCacheForRestore,
 } from '@/server/infra/cache/registry'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 import { APP_VERSION } from '@/shared/config/version'
@@ -44,25 +54,41 @@ beforeEach(() => {
   vi.clearAllMocks()
   ;(import.meta.env as any).PROD = true
   __resetCacheCountersForTests()
-  fileStoreMock.getItem.mockResolvedValue(null)
-  fileStoreMock.getItemRaw.mockResolvedValue(null)
-  fileStoreMock.getItems.mockImplementation(async (_bucket, keys) => keys.map((key) => ({ key, value: null })))
+  __resetMemoryCacheForTests()
+  fileStoreMock.getItemWithExpiry.mockResolvedValue(null)
+  fileStoreMock.getItemRawWithExpiry.mockResolvedValue(null)
+  fileStoreMock.getItemsWithExpiry.mockImplementation(async (_bucket, keys) =>
+    keys.map((key) => ({ key, entry: null })),
+  )
   fileStoreMock.removeItem.mockResolvedValue(undefined)
-  fileStoreMock.setItem.mockResolvedValue(undefined)
+  // The real store returns the text it wrote; the registry parses it for L1.
+  fileStoreMock.setItem.mockImplementation(async (_bucket, _key, value) => JSON.stringify(value))
   fileStoreMock.setItemRaw.mockResolvedValue(undefined)
   fileStoreMock.readGeneration.mockResolvedValue(0)
   fileStoreMock.bumpGeneration.mockReturnValue(1)
   fileStoreMock.unlinkBucketEntriesSync.mockReturnValue(0)
   fileStoreMock.trashBucketSync.mockReturnValue(undefined)
+  fileStoreMock.wipeCache.mockResolvedValue(undefined)
 })
 
 afterAll(() => {
   ;(import.meta.env as any).PROD = originalProd
 })
 
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+/** Pin `Date.now` so a write's derived deadline is assertable by exact value. */
+function mockNow(iso: string): number {
+  const now = Date.parse(iso)
+  vi.spyOn(Date, 'now').mockReturnValue(now)
+  return now
+}
+
 describe('cache registry — through', () => {
   it('returns the cached value on a hit without running the loader', async () => {
-    fileStoreMock.getItem.mockResolvedValue({ rss: '<rss/>', atom: '<atom/>' })
+    fileStoreMock.getItemWithExpiry.mockResolvedValue({ value: { rss: '<rss/>', atom: '<atom/>' }, expiresAtMs: 0 })
     const loader = vi.fn()
     const onHit = vi.fn()
 
@@ -74,13 +100,17 @@ describe('cache registry — through', () => {
     )
 
     expect(value).toEqual({ rss: '<rss/>', atom: '<atom/>' })
-    expect(fileStoreMock.getItem).toHaveBeenCalledWith('feed', `feed:xml:zh-CN:${APP_VERSION}:${REVISIONS.feed}:all`)
+    expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledWith(
+      'feed',
+      `feed:xml:zh-CN:${APP_VERSION}:${REVISIONS.feed}:all`,
+    )
     expect(loader).not.toHaveBeenCalled()
     expect(onHit).toHaveBeenCalledWith({ rss: '<rss/>', atom: '<atom/>' })
     expect(fileStoreMock.setItem).not.toHaveBeenCalled()
   })
 
   it('runs the loader on a miss and writes the result back', async () => {
+    const now = mockNow('2026-01-01T00:00:00.000Z')
     const loader = vi.fn().mockResolvedValue(['a', 'b'])
 
     const value = await through('categories', {}, loader)
@@ -89,7 +119,7 @@ describe('cache registry — through', () => {
     expect(loader).toHaveBeenCalledTimes(1)
     await vi.waitFor(() => {
       expect(fileStoreMock.setItem).toHaveBeenCalledWith('categories', 'categories:all', ['a', 'b'], {
-        ttlSeconds: 300,
+        expiresAtMs: now + 300_000,
       })
     })
   })
@@ -117,7 +147,8 @@ describe('cache registry — through', () => {
   })
 
   it('degrades to a plain load when the read fails', async () => {
-    fileStoreMock.getItem.mockRejectedValue(new Error('disk down'))
+    const now = mockNow('2026-01-01T00:00:00.000Z')
+    fileStoreMock.getItemWithExpiry.mockRejectedValue(new Error('disk down'))
     const loader = vi.fn().mockResolvedValue('<xml/>')
 
     const value = await through('sitemap', { settingsRevision: 'sitemap-rev' }, loader)
@@ -126,16 +157,16 @@ describe('cache registry — through', () => {
     expect(loader).toHaveBeenCalledTimes(1)
     await vi.waitFor(() => {
       expect(fileStoreMock.setItem).toHaveBeenCalledWith('sitemap', 'sitemap:xmlsitemap-rev', '<xml/>', {
-        ttlSeconds: 300,
+        expiresAtMs: now + 300_000,
       })
     })
   })
 
   it('returns the loader value before a slow write settles (fire-and-forget)', async () => {
-    let releaseWrite!: () => void
+    let releaseWrite!: (text: string) => void
     fileStoreMock.setItem.mockImplementation(
       () =>
-        new Promise<void>((resolve) => {
+        new Promise<string>((resolve) => {
           releaseWrite = resolve
         }),
     )
@@ -144,7 +175,7 @@ describe('cache registry — through', () => {
     await expect(through('comments', { settingsRevision: 'comments-rev', limit: 5 }, loader)).resolves.toEqual(['c1'])
     expect(fileStoreMock.setItem).toHaveBeenCalledTimes(1)
     // Proven by the still-pending write: the loader value already reached the caller.
-    releaseWrite()
+    releaseWrite('["c1"]')
   })
 
   it('still returns the loader value when the write fails, without an unhandled rejection', async () => {
@@ -188,7 +219,7 @@ describe('cache registry — through', () => {
 describe('cache registry — devBypass', () => {
   it('re-runs the loader in dev but still writes the entry', async () => {
     ;(import.meta.env as any).PROD = false
-    fileStoreMock.getItemRaw.mockResolvedValue(Buffer.from('stale-png'))
+    fileStoreMock.getItemRawWithExpiry.mockResolvedValue({ value: Buffer.from('stale-png'), expiresAtMs: 0 })
     const loader = vi.fn().mockResolvedValue(Buffer.from('fresh-png'))
 
     const value = await through(
@@ -198,7 +229,7 @@ describe('cache registry — devBypass', () => {
     )
 
     expect(value).toEqual(Buffer.from('fresh-png'))
-    expect(fileStoreMock.getItemRaw).not.toHaveBeenCalled()
+    expect(fileStoreMock.getItemRawWithExpiry).not.toHaveBeenCalled()
     expect(loader).toHaveBeenCalledTimes(1)
     await vi.waitFor(() => {
       expect(fileStoreMock.setItemRaw).toHaveBeenCalledTimes(1)
@@ -206,7 +237,7 @@ describe('cache registry — devBypass', () => {
   })
 
   it('serves the cached entry in production', async () => {
-    fileStoreMock.getItemRaw.mockResolvedValue(Buffer.from('cached-png'))
+    fileStoreMock.getItemRawWithExpiry.mockResolvedValue({ value: Buffer.from('cached-png'), expiresAtMs: 0 })
     const loader = vi.fn()
 
     const value = await through(
@@ -323,16 +354,22 @@ describe('cache registry — avatar sentinel codec', () => {
     expect(blob).toEqual(Buffer.from([AvatarStatus.NO_AVATAR]))
   })
 
-  it('round-trips both sentinel forms through get', async () => {
-    fileStoreMock.getItemRaw.mockResolvedValueOnce(Buffer.from([AvatarStatus.NO_AVATAR]))
+  it('round-trips the NO_AVATAR sentinel through get', async () => {
+    fileStoreMock.getItemRawWithExpiry.mockResolvedValueOnce({
+      value: Buffer.from([AvatarStatus.NO_AVATAR]),
+      expiresAtMs: 0,
+    })
     await expect(get('avatar', { size: 80, email: 'a@b.c' })).resolves.toEqual({
       status: AvatarStatus.NO_AVATAR,
       buffer: null,
     })
+  })
 
-    fileStoreMock.getItemRaw.mockResolvedValueOnce(
-      Buffer.concat([Buffer.from([AvatarStatus.HAVE_AVATAR]), Buffer.from('png')]),
-    )
+  it('round-trips the HAVE_AVATAR sentinel through get', async () => {
+    fileStoreMock.getItemRawWithExpiry.mockResolvedValueOnce({
+      value: Buffer.concat([Buffer.from([AvatarStatus.HAVE_AVATAR]), Buffer.from('png')]),
+      expiresAtMs: 0,
+    })
     await expect(get('avatar', { size: 80, email: 'a@b.c' })).resolves.toEqual({
       status: AvatarStatus.HAVE_AVATAR,
       buffer: Buffer.from('png'),
@@ -340,14 +377,14 @@ describe('cache registry — avatar sentinel codec', () => {
   })
 
   it('reads an unknown sentinel byte as a miss', async () => {
-    fileStoreMock.getItemRaw.mockResolvedValueOnce(Buffer.from([7, 1, 2, 3]))
+    fileStoreMock.getItemRawWithExpiry.mockResolvedValueOnce({ value: Buffer.from([7, 1, 2, 3]), expiresAtMs: 0 })
     await expect(get('avatar', { size: 80, email: 'a@b.c' })).resolves.toBeNull()
   })
 })
 
 describe('cache registry — get / set / remove / clear', () => {
   it('coalesces concurrent reads of the same key', async () => {
-    fileStoreMock.getItem.mockResolvedValue({ found: false })
+    fileStoreMock.getItemWithExpiry.mockResolvedValue({ value: { found: false }, expiresAtMs: 0 })
 
     const [a, b] = await Promise.all([
       get('imageMeta', { storagePath: 'x.png' }),
@@ -356,8 +393,8 @@ describe('cache registry — get / set / remove / clear', () => {
 
     expect(a).toEqual({ found: false })
     expect(b).toEqual({ found: false })
-    expect(fileStoreMock.getItem).toHaveBeenCalledTimes(1)
-    expect(fileStoreMock.getItem).toHaveBeenCalledWith('imageMeta', 'image-meta:x.png')
+    expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(1)
+    expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledWith('imageMeta', 'image-meta:x.png')
   })
 
   it('remove deletes the computed key', async () => {
@@ -399,10 +436,11 @@ describe('cache registry — get / set / remove / clear', () => {
 
 describe('cache registry — throughMany', () => {
   it('returns entries in input order, loads misses, and writes them back', async () => {
-    fileStoreMock.getItems.mockResolvedValue([
-      { key: 'image-meta:a.png', value: { found: true, storagePath: 'a.png' } },
-      { key: 'image-meta:b.png', value: null },
-      { key: 'image-meta:c.png', value: null },
+    const now = mockNow('2026-01-01T00:00:00.000Z')
+    fileStoreMock.getItemsWithExpiry.mockResolvedValue([
+      { key: 'image-meta:a.png', entry: { value: { found: true, storagePath: 'a.png' }, expiresAtMs: 0 } },
+      { key: 'image-meta:b.png', entry: null },
+      { key: 'image-meta:c.png', entry: null },
     ])
     const loader = vi.fn().mockResolvedValue([
       { params: { storagePath: 'b.png' }, value: { found: true, storagePath: 'b.png' } },
@@ -415,7 +453,7 @@ describe('cache registry — throughMany', () => {
       loader,
     )
 
-    expect(fileStoreMock.getItems).toHaveBeenCalledWith('imageMeta', [
+    expect(fileStoreMock.getItemsWithExpiry).toHaveBeenCalledWith('imageMeta', [
       'image-meta:a.png',
       'image-meta:b.png',
       'image-meta:c.png',
@@ -433,13 +471,13 @@ describe('cache registry — throughMany', () => {
       'imageMeta',
       'image-meta:b.png',
       { found: true, storagePath: 'b.png' },
-      { ttlSeconds: 3600 },
+      { expiresAtMs: now + 3_600_000 },
     )
     expect(fileStoreMock.setItem).toHaveBeenCalledWith(
       'imageMeta',
       'image-meta:c.png',
       { found: false },
-      { ttlSeconds: 3600 },
+      { expiresAtMs: now + 3_600_000 },
     )
   })
 
@@ -497,5 +535,219 @@ describe('cache registry — counters', () => {
     })
 
     expect(bumpCounter('searchResult')).toBeNull()
+  })
+})
+
+describe('cache registry — L1 memory tier', () => {
+  it('serves a disk hit from L1 on the next read', async () => {
+    fileStoreMock.getItemWithExpiry.mockResolvedValue({ value: { meta: 1 }, expiresAtMs: 0 })
+
+    await expect(get('imageMeta', { storagePath: 'a.png' })).resolves.toEqual({ meta: 1 })
+    await expect(get('imageMeta', { storagePath: 'a.png' })).resolves.toEqual({ meta: 1 })
+
+    expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(1)
+  })
+
+  it('backfills the decoded binary value', async () => {
+    fileStoreMock.getItemRawWithExpiry.mockResolvedValue({
+      value: Buffer.concat([Buffer.from([AvatarStatus.HAVE_AVATAR]), Buffer.from('png')]),
+      expiresAtMs: 0,
+    })
+
+    await expect(get('avatar', { size: 80, email: 'a@b.c' })).resolves.toEqual({
+      status: AvatarStatus.HAVE_AVATAR,
+      buffer: Buffer.from('png'),
+    })
+    await get('avatar', { size: 80, email: 'a@b.c' })
+
+    expect(fileStoreMock.getItemRawWithExpiry).toHaveBeenCalledTimes(1)
+  })
+
+  it('mirrors the decoded binary shape, not the raw write value', async () => {
+    // encodeAvatar normalizes a payload-less positive to the NO_AVATAR sentinel;
+    // L1 must publish the decoded shape a disk read would produce.
+    await set('avatar', { size: 80, email: 'a@b.c' }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
+
+    await expect(get('avatar', { size: 80, email: 'a@b.c' })).resolves.toEqual({
+      status: AvatarStatus.NO_AVATAR,
+      buffer: null,
+    })
+    expect(fileStoreMock.getItemRawWithExpiry).not.toHaveBeenCalled()
+  })
+
+  it('mirrors the JSON round-trip a disk read would produce', async () => {
+    await set(
+      'imageMeta',
+      { storagePath: 'x.png' },
+      {
+        count: Number.NaN,
+        at: new Date('2026-01-01T00:00:00.000Z'),
+        nested: { missing: undefined, kept: 1 },
+      },
+    )
+
+    const cached = (await get('imageMeta', { storagePath: 'x.png' })) as {
+      count: unknown
+      at: unknown
+      nested: Record<string, unknown>
+    }
+
+    // A memory hit must be observationally identical to a disk hit: NaN → null,
+    // Date → ISO string, undefined fields dropped.
+    expect(cached.count).toBeNull()
+    expect(cached.at).toBe('2026-01-01T00:00:00.000Z')
+    expect(cached.nested).toEqual({ kept: 1 })
+    expect('missing' in cached.nested).toBe(false)
+    expect(fileStoreMock.getItemWithExpiry).not.toHaveBeenCalled()
+  })
+
+  it('gives the disk envelope and L1 the same absolute deadline', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'))
+      await set('categories', {}, ['cat'])
+      const options = fileStoreMock.setItem.mock.calls[0]?.[3] as { expiresAtMs: number }
+      expect(options.expiresAtMs).toBe(Date.now() + 300_000)
+
+      // At the shared deadline both planes miss; a fresh L1 deadline would serve it.
+      vi.setSystemTime(new Date(options.expiresAtMs))
+      await expect(get('categories', {})).resolves.toBeNull()
+      expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('honours the envelope deadline when backfilling, not a fresh one', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'))
+      fileStoreMock.getItemWithExpiry
+        .mockResolvedValueOnce({ value: 'v', expiresAtMs: Date.now() + 1_000 })
+        .mockResolvedValue(null)
+
+      await expect(get('tags', {})).resolves.toBe('v')
+      vi.setSystemTime(new Date('2026-01-01T00:00:01.000Z'))
+      // A fresh deadline would serve the value from L1; the envelope's own
+      // deadline expired, so the read falls through to disk (a miss).
+      await expect(get('tags', {})).resolves.toBeNull()
+
+      expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('mirrors a successful write so a later read never touches disk', async () => {
+    await set('categories', {}, ['cat'])
+
+    await expect(get('categories', {})).resolves.toEqual(['cat'])
+    expect(fileStoreMock.getItemWithExpiry).not.toHaveBeenCalled()
+  })
+
+  it('does not mirror a write whose disk leg failed', async () => {
+    fileStoreMock.setItem.mockRejectedValue(new Error('disk down'))
+
+    await set('categories', {}, ['cat'])
+
+    await expect(get('categories', {})).resolves.toBeNull()
+    expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(1)
+  })
+
+  it('remove evicts the memory copy even when the unlink fails', async () => {
+    await set('imageMeta', { storagePath: 'x.png' }, { found: true })
+    fileStoreMock.removeItem.mockRejectedValue(new Error('disk gone'))
+    fileStoreMock.getItemWithExpiry.mockResolvedValue(null)
+
+    await remove('imageMeta', { storagePath: 'x.png' })
+
+    await expect(get('imageMeta', { storagePath: 'x.png' })).resolves.toBeNull()
+    expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(1)
+  })
+
+  it('clear drops the bucket memory tier even when the unlink fails', async () => {
+    await set('categories', {}, ['cat'])
+    fileStoreMock.unlinkBucketEntriesSync.mockImplementation(() => {
+      throw new Error('disk gone')
+    })
+
+    clear('categories')
+
+    await expect(get('categories', {})).resolves.toBeNull()
+    expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(1)
+  })
+
+  it('clearLocalizedOutputs drops all five memory tiers', async () => {
+    const feed = { scope: 'all', locale: 'zh-CN' as const, version: APP_VERSION, settingsRevision: REVISIONS.feed }
+    const calendar = {
+      date: '2026-06-17',
+      theme: 'light' as const,
+      locale: 'zh-CN' as const,
+      version: APP_VERSION,
+      settingsRevision: REVISIONS.calendar,
+    }
+    const og = { slug: 'post-x', title: 'T', summary: 'S', cover: '', settingsRevision: REVISIONS.og }
+    const sitemap = { settingsRevision: 'sitemap-rev' }
+    const comments = { settingsRevision: 'comments-rev', limit: 5 }
+    await set('feed', feed, { rss: 'x' })
+    await set('calendar', calendar, Buffer.from('png'))
+    await set('og', og, Buffer.from('png'))
+    await set('sitemap', sitemap, '<urlset/>')
+    await set('comments', comments, ['c'])
+
+    clearLocalizedOutputs()
+
+    // Every bucket's memory tier is gone: each read has to reach the disk plane
+    // (whose mock answers null), so nothing is served from L1.
+    await expect(get('feed', feed)).resolves.toBeNull()
+    await expect(get('calendar', calendar)).resolves.toBeNull()
+    await expect(get('og', og)).resolves.toBeNull()
+    await expect(get('sitemap', sitemap)).resolves.toBeNull()
+    await expect(get('comments', comments)).resolves.toBeNull()
+    expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(3)
+    expect(fileStoreMock.getItemRawWithExpiry).toHaveBeenCalledTimes(2)
+  })
+
+  it('wipeCacheForRestore drops every memory entry', async () => {
+    await set('categories', {}, ['cat'])
+
+    await wipeCacheForRestore()
+
+    await expect(get('categories', {})).resolves.toBeNull()
+    expect(fileStoreMock.wipeCache).toHaveBeenCalledTimes(1)
+  })
+
+  it('serves throughMany from L1 and batch-reads only the rest', async () => {
+    await set('imageMeta', { storagePath: 'a.png' }, { found: true, storagePath: 'a.png' })
+    fileStoreMock.getItemsWithExpiry.mockResolvedValue([
+      { key: 'image-meta:b.png', entry: { value: { found: false }, expiresAtMs: 0 } },
+    ])
+    const loader = vi.fn()
+
+    const result = await throughMany('imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
+
+    expect(result).toEqual([
+      { params: { storagePath: 'a.png' }, value: { found: true, storagePath: 'a.png' } },
+      { params: { storagePath: 'b.png' }, value: { found: false } },
+    ])
+    expect(fileStoreMock.getItemsWithExpiry).toHaveBeenCalledWith('imageMeta', ['image-meta:b.png'])
+    expect(loader).not.toHaveBeenCalled()
+
+    // The disk hit is mirrored, so a second pass reads both keys from L1.
+    await throughMany('imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
+    expect(fileStoreMock.getItemsWithExpiry).toHaveBeenCalledTimes(1)
+  })
+
+  it('treats a literal null payload as a miss in throughMany', async () => {
+    fileStoreMock.getItemsWithExpiry.mockResolvedValue([
+      { key: 'image-meta:a.png', entry: { value: null, expiresAtMs: 0 } },
+    ])
+    const loader = vi.fn().mockResolvedValue([{ params: { storagePath: 'a.png' }, value: { found: true } }])
+
+    const result = await throughMany('imageMeta', [{ storagePath: 'a.png' }], loader)
+
+    // Same miss semantics as readEntry: the loader must run for a null payload.
+    expect(loader).toHaveBeenCalledWith([{ storagePath: 'a.png' }])
+    expect(result).toEqual([{ params: { storagePath: 'a.png' }, value: { found: true } }])
   })
 })
