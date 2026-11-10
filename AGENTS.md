@@ -8,27 +8,28 @@ Repository conventions for AI agents and contributors.
 - Path alias `@/*` → `./src/*`.
 - Five layers under `src/`: `routes/` (orchestration), `server/` (SSR), `client/` (browser), `ui/` (components), `shared/` (isomorphic) — plus `src/inkling/`, the self-contained Lexical editor layer.
 - Distribution is a single Node.js executable (SEA); runtime infrastructure config is `kobato.config.json`, validated through `CONFIG_TABLE`.
+- Observability (traces/metrics/logs/browser RUM) is a release capability configured ONLY in the admin `observability` settings section and provisioned by the server (ADR-0014); `scripts/trace/` is optional DEV container tooling (retention + smoke).
 
 ## Subdirectory conventions
 
 Agents load these additively as they move through the codebase:
 
-| File                                   | Scope                                                              |
-| -------------------------------------- | ------------------------------------------------------------------ |
-| `src/routes/AGENTS.md`                 | Route modules, loaders, actions, React Router conventions          |
-| `src/server/AGENTS.md`                 | Server layers, API procedures, auth, databases, content            |
-| `src/server/infra/AGENTS.md`           | Config file contract, SEA runtime rules                            |
-| `src/server/domains/storage/AGENTS.md` | S3 config locking, storage migration, asset URLs                   |
-| `src/server/domains/backup/AGENTS.md`  | Backup archive, encryption, restore                                |
-| `src/client/AGENTS.md`                 | Browser hooks, oRPC client, React.lazy patterns                    |
-| `src/ui/AGENTS.md`                     | Pure-props components, shadcn, PT renderer, component architecture |
-| `src/ui/admin/settings/AGENTS.md`      | Settings autosave model and card wrappers                          |
-| `src/styles/AGENTS.md`                 | Tailwind tokens, design-system CSS, `@theme` conventions           |
-| `src/shared/AGENTS.md`                 | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
-| `src/inkling/AGENTS.md`                | The Lexical editor layer: card pipeline, headless surface, labels  |
-| `tests/AGENTS.md`                      | Test utilities, naming conventions, coverage rules                 |
-| `scripts/sea/AGENTS.md`                | SEA packaging, build/smoke/probe/e2e, self-update                  |
-| `scripts/trace/README.md`              | Optional OpenObserve dev container, dashboards, privacy, smoke     |
+| File                                   | Scope                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------ |
+| `src/routes/AGENTS.md`                 | Route modules, loaders, actions, React Router conventions                |
+| `src/server/AGENTS.md`                 | Server layers, API procedures, auth, databases, content                  |
+| `src/server/infra/AGENTS.md`           | Config file contract, SEA runtime rules                                  |
+| `src/server/domains/storage/AGENTS.md` | S3 config locking, storage migration, asset URLs                         |
+| `src/server/domains/backup/AGENTS.md`  | Backup archive, encryption, restore                                      |
+| `src/client/AGENTS.md`                 | Browser hooks, oRPC client, React.lazy patterns                          |
+| `src/ui/AGENTS.md`                     | Pure-props components, shadcn, PT renderer, component architecture       |
+| `src/ui/admin/settings/AGENTS.md`      | Settings autosave model and card wrappers                                |
+| `src/styles/AGENTS.md`                 | Tailwind tokens, design-system CSS, `@theme` conventions                 |
+| `src/shared/AGENTS.md`                 | Isomorphic modules, Zod contracts, DTOs, PT schema                       |
+| `src/inkling/AGENTS.md`                | The Lexical editor layer: card pipeline, headless surface, labels        |
+| `tests/AGENTS.md`                      | Test utilities, naming conventions, coverage rules                       |
+| `scripts/sea/AGENTS.md`                | SEA packaging, build/smoke/probe/e2e, self-update                        |
+| `scripts/trace/README.md`              | Optional OpenObserve DEV container, dev retention, privacy assets, smoke |
 
 ## Skills
 

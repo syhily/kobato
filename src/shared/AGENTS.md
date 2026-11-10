@@ -21,7 +21,9 @@ server or client boundary catch and log it.
 ## Structure
 
 - `config/` — settings sections, defaults, projection, socials
-  (`BlogSettingsBundle`), and `snapshot` — the process-wide settings snapshot
+  (`BlogSettingsBundle`), the OpenObserve origin/site-name grammar
+  (`observability`, shared by the settings write schema and the runtime
+  resolver), and `snapshot` — the process-wide settings snapshot
   slot. Its boot-unique `<bootId>:<counter>` `revision` (`crypto.randomUUID`
   per process; +1 per successful hydrate/refresh, pre-install included) is
   REQUEST IDENTITY / locale sync ONLY — never a cache generation.

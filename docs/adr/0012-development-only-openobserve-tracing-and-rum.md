@@ -1,6 +1,6 @@
 # ADR-0012: Development-only OpenObserve tracing and privacy-minimized frontend RUM
 
-- Status: accepted
+- Status: accepted; **partially superseded by [ADR-0014](0014-openobserve-as-release-capability.md)** (configuration source, production activation, DEV-only RUM/CSP/status endpoint, asset provisioning). The collection, privacy, and pipeline decisions below remain in force.
 - Date: 2026-11-09
 
 ## Context

@@ -70,10 +70,12 @@ Adding a route: pick the area directory, choose a role filename, add the manifes
   (`export const middleware = [traceRouteMiddleware]`): one no-op-in-production
   document/`.data` span around loaders, actions, and the SSR entry (ADR-0012). It must stay in
   the root module — not per-route middleware — so a single span spans the whole request. The root loader projects
-  `activeFrontendRum()` as a `rum` key ONLY when DEV + every frontend gate pass + the O2 allowlist pipeline + stored function hash/wiring were verified at startup; production/disabled
-  responses omit the key entirely (no null placeholder, no `serverAuthorizationHeader` — the projection is the
-  narrow browser bootstrap in `shared/contracts/trace`). `root.tsx`'s `App` mounts `useDevRum(loaderData.rum ?? null)`
-  once; it renders nothing and performs the DNT/GPC check before the dynamic SDK import.
+  `activeFrontendRum()` as a `rum` key in EVERY build when every frontend gate passes and the runtime verified the
+  O2 allowlist pipeline + stored function hash/wiring (build-independent — only the bootstrap's `environment`
+  label differs); disabled/withheld responses omit the key entirely (no null placeholder, no
+  `serverAuthorizationHeader` — the projection is the narrow browser bootstrap in `shared/contracts/trace`).
+  `root.tsx`'s `App` mounts `useRum(loaderData.rum ?? null)` once; it renders nothing and performs the DNT/GPC
+  check before the dynamic SDK import.
 - **Admin SSR data goes through oRPC too** — `routes/admin/**` and `routes/editor/**` loaders
   compose the domain endpoints (`account.*`, `comments.*`, `analytics.*`, `admin.*` — added in
   `shared/contracts/admin.ts`) via the same `createSsrCaller` (which also returns `viewer`/`session`
