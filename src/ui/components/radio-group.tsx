@@ -14,7 +14,7 @@ function RadioGroupItem({ className, ...props }: ComponentProps<typeof BaseRadio
     <BaseRadio.Root
       data-slot="radio-group-item"
       className={cn(
-        'peer relative inline-flex aspect-square size-4 shrink-0 items-center justify-center rounded-full border border-input outline-none',
+        'peer relative inline-flex aspect-square size-4 shrink-0 items-center justify-center rounded-full border border-line-muted outline-none',
         'after:absolute after:-inset-x-3 after:-inset-y-2',
         'focus-visible:border-ring focus-visible:shadow-focus',
         'disabled:cursor-not-allowed disabled:opacity-50',

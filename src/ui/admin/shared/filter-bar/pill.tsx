@@ -65,11 +65,11 @@ export function FilterPill<K extends string>({ field, filter, search, onRemove, 
 
   return (
     <div className="flex items-center">
-      <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-border bg-background px-3 text-sm text-foreground">
+      <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-line-muted bg-background px-3 text-sm text-foreground">
         {FieldIcon && <FieldIcon className="size-3.5 text-muted-foreground" />}
         {fieldLabel}
       </div>
-      <div className="flex h-9 items-center border border-r-0 border-border bg-background">
+      <div className="flex h-9 items-center border border-r-0 border-line-muted bg-background">
         {!field ? null : field.kind === 'options' ? (
           <OptionsValueEditor field={field} value={filter.value} onChange={onValueChange} />
         ) : field.kind === 'search' && searchState ? (
@@ -112,7 +112,7 @@ export function FilterPill<K extends string>({ field, filter, search, onRemove, 
       <button
         type="button"
         className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-border text-muted-foreground transition',
+          'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-line-muted text-muted-foreground transition',
           'hover:bg-secondary hover:text-foreground',
           'focus-visible:shadow-focus focus-visible:outline-none',
         )}

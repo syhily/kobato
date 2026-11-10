@@ -104,7 +104,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
       <button
         type="button"
         onClick={onEdit}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />
@@ -114,7 +114,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
       <button
         type="button"
         onClick={onDelete}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive"
         title={t('common.action.delete')}
       >
         <Trash2Icon className="size-4" />

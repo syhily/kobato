@@ -153,7 +153,7 @@ export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEdit
 
   return (
     <div className="flex h-full w-full items-stretch">
-      <DateOperatorTrigger value={op} onChange={handleOperatorChange} className="border-r border-border" />
+      <DateOperatorTrigger value={op} onChange={handleOperatorChange} className="border-r border-line-muted" />
       <div className="flex flex-1 items-stretch">
         <input
           ref={inputRef}

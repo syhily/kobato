@@ -195,7 +195,7 @@ export function ImageDetailDialog({
                     setNoteDraft(currentNote)
                     setEditingNote(true)
                   }}
-                  className="cursor-text rounded border border-transparent px-2 py-1 text-left text-sm transition-colors outline-none hover:border-input hover:bg-muted/50 focus-visible:border-input focus-visible:bg-muted/50"
+                  className="cursor-text rounded border border-transparent px-2 py-1 text-left text-sm transition-colors outline-none hover:border-line-muted hover:bg-muted/50 focus-visible:border-line-muted focus-visible:bg-muted/50"
                   title={t('admin.images.detail.noteEditTitle')}
                 >
                   {image.note || <span className="text-muted-foreground">{t('admin.images.detail.noteEmpty')}</span>}

@@ -121,7 +121,7 @@ export function PageRow({ page }: PageRowProps) {
       {/* CTA button */}
       <Link
         to={`/editor/page/${page.id}`}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />

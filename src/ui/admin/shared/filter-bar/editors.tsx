@@ -222,7 +222,7 @@ export function TextFilterEditor<K extends string>({
           value={value.op}
           onChange={handleOperatorChange}
           operators={field.operators}
-          className="border-r border-border"
+          className="border-r border-line-muted"
         />
       )}
       <div className="flex flex-1 items-stretch">

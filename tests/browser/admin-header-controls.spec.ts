@@ -38,22 +38,63 @@ for (const path of HEADER_ROUTES) {
 
     const controls = adminPage.locator('main header').first().locator(HEADER_CONTROLS)
     await expect(controls.first()).toBeVisible()
-    const heights = await controls.evaluateAll((elements) =>
-      elements.map((element) => ({
-        tag: element.tagName,
-        height: element.getBoundingClientRect().height,
-      })),
+    const measurements = await controls.evaluateAll((elements) =>
+      elements.map((element) => {
+        const style = getComputedStyle(element)
+        return {
+          tag: element.tagName,
+          height: element.getBoundingClientRect().height,
+          borderColor: style.borderTopColor,
+          borderWidth: Number.parseFloat(style.borderTopWidth),
+        }
+      }),
     )
     const expectedHeight = await expectedControlHeight(adminPage)
-    expect(heights.length).toBeGreaterThan(0)
+    expect(measurements.length).toBeGreaterThan(0)
     expect(
-      heights.every((control) => control.height === expectedHeight),
-      JSON.stringify(heights),
+      measurements.every((control) => control.height === expectedHeight),
+      JSON.stringify(measurements),
     ).toBe(true)
+    const expectedBorderColor = measurements.find((control) => control.borderWidth > 0)?.borderColor
+    const mismatchedBorders = measurements.filter(
+      (control) => control.borderWidth > 0 && control.borderColor !== expectedBorderColor,
+    )
+    expect(mismatchedBorders, JSON.stringify(measurements)).toEqual([])
 
     await adminPage.screenshot({ path: test.info().outputPath(`header-${path.replaceAll('/', '-')}.png`) })
   })
 }
+
+test('unifies neutral filter borders in light and dark themes', async ({ adminPage }) => {
+  await adminPage.setViewportSize({ width: 1440, height: 900 })
+  await adminPage.goto('/admin/posts?status=published&category=c-1')
+  await waitForHydration(adminPage, 'main header button')
+
+  const filterBar = adminPage.getByRole('button', { name: '添加筛选' }).locator('..')
+  const readBorderColors = () =>
+    filterBar
+      .locator('*')
+      .evaluateAll((elements) =>
+        Array.from(
+          new Set(
+            elements
+              .filter((element) => Number.parseFloat(getComputedStyle(element).borderTopWidth) > 0)
+              .map((element) => getComputedStyle(element).borderTopColor),
+          ),
+        ),
+      )
+
+  expect(await readBorderColors()).toHaveLength(1)
+  await adminPage.screenshot({ path: test.info().outputPath('posts-filter-borders-light.png') })
+
+  await adminPage.getByText('深色模式', { exact: true }).click()
+  await expect(adminPage.locator('html')).toHaveClass(/dark/)
+  await adminPage.waitForTimeout(700)
+  expect(await readBorderColors()).toHaveLength(1)
+  await adminPage.screenshot({ path: test.info().outputPath('posts-filter-borders-dark.png') })
+  await adminPage.getByText('浅色模式', { exact: true }).click()
+  await expect(adminPage.locator('html')).not.toHaveClass(/dark/)
+})
 
 test('matches the friends visibility option to the adjacent search input', async ({ adminPage }) => {
   await adminPage.setViewportSize({ width: 1440, height: 900 })
@@ -84,6 +125,7 @@ test('matches the friends visibility option to the adjacent search input', async
   await expect(checkbox).toHaveAttribute('aria-checked', 'true')
   await adminPage.getByText('包含已隐藏', { exact: true }).click()
   await expect(checkbox).toHaveAttribute('aria-checked', 'false')
+  await adminPage.waitForTimeout(350)
   await checkbox.focus()
   await expect(checkbox).toBeFocused()
   expect(await checkbox.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none')

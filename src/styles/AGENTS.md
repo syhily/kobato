@@ -146,6 +146,13 @@ When modifying files in this directory, open and follow these skills first:
 - The contract test in `tests/unit/contract/tailwind-tokens.test.ts`
   guards against drift between `tailwind.css` and `cn.ts`.
 
+## Border roles
+
+Use two neutral border roles consistently: `border-border` for containers, cards and dividers;
+`border-line-muted` for interactive control outlines (inputs, buttons, selects, filter pills and
+row actions). Keep primary, destructive, selected and focus borders semantic. Do not introduce
+`border-input`, `border-line` or `border-ga-300` as alternative resting colors for controls.
+
 ## Locale font chains
 
 `tailwind.css` owns the DEFAULT `--font-body` / `--font-serif` chains: `:root`

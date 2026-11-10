@@ -66,7 +66,7 @@ function WindowEditCell({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          'flex h-7 items-center justify-between gap-1 rounded-md border border-line bg-transparent px-2 text-xs shadow-xs transition-[color,box-shadow] outline-none',
+          'flex h-7 items-center justify-between gap-1 rounded-md border border-line-muted bg-transparent px-2 text-xs shadow-xs transition-[color,box-shadow] outline-none',
           'focus-visible:border-ring focus-visible:shadow-focus',
         )}
       >

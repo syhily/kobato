@@ -56,11 +56,11 @@ function SearchFilterPill({
 
   return (
     <div className="flex items-center">
-      <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-border bg-background px-3 text-sm text-foreground">
+      <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-line-muted bg-background px-3 text-sm text-foreground">
         <SearchIcon className="size-3.5 text-muted-foreground" />
         {t('admin.images.filter.search')}
       </div>
-      <div className="flex h-9 min-w-0 items-center border border-r-0 border-border bg-background">
+      <div className="flex h-9 min-w-0 items-center border border-r-0 border-line-muted bg-background">
         <input
           ref={inputRef}
           type="text"
@@ -80,7 +80,7 @@ function SearchFilterPill({
       <button
         type="button"
         className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-border text-muted-foreground transition',
+          'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-line-muted text-muted-foreground transition',
           'hover:bg-secondary hover:text-foreground',
           'focus-visible:shadow-focus focus-visible:outline-none',
         )}
@@ -104,10 +104,10 @@ function KindFilterPill({
   const { t } = useI18n()
   return (
     <div className="flex items-center">
-      <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-border bg-background px-3 text-sm text-foreground">
+      <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-l-md border border-r-0 border-line-muted bg-background px-3 text-sm text-foreground">
         {t('admin.images.filter.kind')}
       </div>
-      <div className="flex h-9 items-center border border-r-0 border-border bg-background">
+      <div className="flex h-9 items-center border border-r-0 border-line-muted bg-background">
         <Select<AdminImageKind>
           value={value}
           items={KIND_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) }))}
@@ -132,7 +132,7 @@ function KindFilterPill({
       <button
         type="button"
         className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-border text-muted-foreground transition',
+          'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-line-muted text-muted-foreground transition',
           'hover:bg-secondary hover:text-foreground',
           'focus-visible:shadow-focus focus-visible:outline-none',
         )}
@@ -191,7 +191,7 @@ export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearF
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
-            'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-sm transition hover:bg-accent',
+            'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-line-muted px-3 text-sm transition hover:bg-accent',
             'focus-visible:shadow-focus focus-visible:outline-none',
           )}
         >

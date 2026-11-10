@@ -33,7 +33,7 @@ export function SessionSortSelect<T extends string>({ sort, options, onChange }:
   }
 
   return (
-    <div className="inline-flex items-center overflow-hidden rounded-md border border-border">
+    <div className="inline-flex items-center overflow-hidden rounded-md border border-line-muted">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
@@ -70,7 +70,7 @@ export function SessionSortSelect<T extends string>({ sort, options, onChange }:
         type="button"
         aria-label={sort.direction === 'asc' ? t('admin.sessions.sortAsc') : t('admin.sessions.sortDesc')}
         className={cn(
-          'flex h-9 w-9 items-center justify-center border-l border-border text-muted-foreground transition',
+          'flex h-9 w-9 items-center justify-center border-l border-line-muted text-muted-foreground transition',
           'hover:bg-accent hover:text-foreground',
           'focus-visible:shadow-focus focus-visible:outline-none',
         )}

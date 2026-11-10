@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover
 import { useI18n } from '@/ui/lib/I18nProvider'
 
 const TRIGGER_CLASSES =
-  'h-9 w-full justify-start gap-2 border-line bg-transparent px-3 py-2 font-normal shadow-xs transition-[color,box-shadow] data-[popup-open]:border-ring data-[popup-open]:shadow-focus'
+  'h-9 w-full justify-start gap-2 border-line-muted bg-transparent px-3 py-2 font-normal shadow-xs transition-[color,box-shadow] data-[popup-open]:border-ring data-[popup-open]:shadow-focus'
 
 export function parseRange(from: string, to: string): DateRange | undefined {
   const start = from ? new Date(`${from}T00:00:00`) : undefined

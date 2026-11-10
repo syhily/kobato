@@ -111,7 +111,7 @@ export function Calendar({
         defaultClassNames.dropdowns,
       ),
       dropdown_root: cn(
-        'relative rounded-md border border-input shadow-xs has-focus:border-ring has-focus:shadow-focus',
+        'relative rounded-md border border-line-muted shadow-xs has-focus:border-ring has-focus:shadow-focus',
         defaultClassNames.dropdown_root,
       ),
       dropdown: cn('absolute inset-0 opacity-0', defaultClassNames.dropdown),

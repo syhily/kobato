@@ -91,7 +91,7 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         type="button"
         onClick={onEdit}
         disabled={disabled}
-        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />
@@ -102,7 +102,7 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         type="button"
         onClick={onDelete}
         disabled={disabled}
-        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
         title={t('common.action.delete')}
         aria-label={t('admin.friends.row.delete', { website: friend.website })}
       >

@@ -11,7 +11,7 @@ function InputGroup({ className, ...props }: ComponentProps<'fieldset'>) {
     <fieldset
       data-slot="input-group"
       className={cn(
-        'group/input-group relative flex w-full items-center rounded-md border border-line p-0 shadow-xs transition-[color,box-shadow] outline-none',
+        'group/input-group relative flex w-full items-center rounded-md border border-line-muted p-0 shadow-xs transition-[color,box-shadow] outline-none',
         'h-9 min-w-0 has-[>textarea]:h-auto',
         'has-[>[data-align=inline-start]]:[&>input]:pl-2',
         'has-[>[data-align=inline-end]]:[&>input]:pr-2',
