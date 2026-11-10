@@ -165,6 +165,19 @@ describe('dynamic CSP middleware', () => {
     const csp = res.headers.get('Content-Security-Policy')
     expect(csp).toContain("base-uri 'self'")
   })
+
+  it('omits CSP on a 304 so the revalidated cache keeps the nonce that matches its stored body', async () => {
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    // Install-gate-exempt prefix (see the trustProxy probes below) so the 304 handler is reached.
+    app.get('/favicon-csp-304-probe', (c) => c.body(null, 304))
+    const res = await app.request('/favicon-csp-304-probe')
+    expect(res.status).toBe(304)
+    // Neither the dynamic per-request policy nor the static secureHeaders one:
+    // RFC 9111 §4.3.4 folds these headers into the stored entry, whose inline
+    // scripts carry the ORIGINAL nonce.
+    expect(res.headers.get('Content-Security-Policy')).toBeNull()
+  })
 })
 
 describe('static fallback CSP script-src', () => {

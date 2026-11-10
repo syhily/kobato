@@ -141,6 +141,16 @@ export function configureMiddleware(app: Hono<Env>): void {
     if (!rc) {
       return
     }
+    // A 304 revalidates a CACHED document whose inline scripts carry the
+    // ORIGINAL request's nonce. Revalidating caches fold the 304's headers
+    // into the stored entry (RFC 9111 §4.3.4), so a fresh per-request CSP here
+    // would leave every cached inline script blocked. Strip CSP from the 304
+    // (the static secureHeaders one included) so the cache keeps the policy
+    // that matches the stored body.
+    if (c.res.status === 304) {
+      c.res.headers.delete('Content-Security-Policy')
+      return
+    }
     const bundle = getBlogSettingsBundleSync()
     const isDev = import.meta.env.DEV
     const rumOrigin = isDev ? activeFrontendRum()?.site : null
