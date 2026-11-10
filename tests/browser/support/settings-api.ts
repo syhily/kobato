@@ -67,8 +67,32 @@ export class SettingsApi {
     }
   }
 
-  resetGeneral(): Promise<void> {
-    return this.updateGeneral(BASELINE_GENERAL)
+  async resetGeneral(): Promise<void> {
+    await this.updateGeneral(BASELINE_GENERAL)
+    let observed: Record<string, unknown> = {}
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const result = await callE2eRpc<{ bundle: { siteIdentity: Record<string, unknown> } }>(
+        this.client,
+        '/admin/settings/bootstrap',
+        undefined,
+        this.csrfToken,
+      )
+      if (result.status === 200) {
+        observed = result.json.bundle.siteIdentity
+        let matches = true
+        for (const [key, value] of Object.entries(BASELINE_GENERAL)) {
+          if (observed[key] !== value) {
+            matches = false
+            break
+          }
+        }
+        if (matches) {
+          return
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    throw new Error(`settings reset did not converge: ${JSON.stringify(observed)}`)
   }
 
   async updateSocials(socials: Array<Record<string, unknown>>): Promise<void> {
