@@ -6,7 +6,7 @@ import { cn } from '@/ui/lib/cn'
 export type TooltipPlacement = 'top' | 'left'
 
 const PUBLIC_BASE_CLASS =
-  'pointer-events-none relative z-(--z-tooltip) w-max max-w-[min(24rem,calc(100vw-1rem))] rounded-xs bg-canvas px-2.5 py-1.5 text-admin-sm leading-[1.6] text-ink-1 shadow-tooltip'
+  'pointer-events-none relative w-max max-w-[min(24rem,calc(100vw-1rem))] rounded-xs bg-canvas px-2.5 py-1.5 text-admin-sm leading-[1.6] text-ink-1 shadow-tooltip'
 
 const ARROW_CLASS =
   'before:absolute before:size-0 before:border-solid' +
@@ -76,7 +76,7 @@ function TooltipContent({ children }: TooltipContentProps) {
   }
   return (
     <BaseTooltip.Portal>
-      <BaseTooltip.Positioner side={placement} sideOffset={8}>
+      <BaseTooltip.Positioner className="z-(--z-tooltip)" side={placement} sideOffset={8}>
         <BaseTooltip.Popup className={cn(PUBLIC_BASE_CLASS, ARROW_CLASS)}>{children}</BaseTooltip.Popup>
       </BaseTooltip.Positioner>
     </BaseTooltip.Portal>
