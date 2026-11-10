@@ -16,7 +16,7 @@ import { isTraceActive, runInSpan, startSpan } from '@/server/infra/trace/facade
 import { recordHttpServer } from '@/server/infra/trace/metrics'
 import { takeRoutePattern } from '@/server/infra/trace/route-registry'
 
-const EXCLUDED_PATHS: ReadonlySet<string> = new Set(['/health', '/ready', '/api/dev/rum/status'])
+const EXCLUDED_PATHS: ReadonlySet<string> = new Set(['/health', '/ready', '/api/rum/status'])
 
 /** Hono's catch-all route for React Router documents/data requests. */
 const REACT_ROUTER_ROUTE = 'react_router'

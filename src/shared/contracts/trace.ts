@@ -14,7 +14,7 @@ export const frontendRumBootstrapSchema = z
     applicationId: z.string().min(1),
     clientToken: z.string().min(1),
     service: z.string().min(1),
-    environment: z.literal('development'),
+    environment: z.enum(['development', 'production']),
     sessionSampleRate: z.number().min(0).max(100),
   })
   .strict()

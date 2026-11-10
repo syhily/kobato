@@ -8,7 +8,7 @@ import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/i
 import { TestMetricReader, dataPointsOf, metricByName, pointValue } from '#/_helpers/in-memory-metric-reader'
 import { __resetTraceFacadeForTests, counter, histogram } from '@/server/infra/trace/facade'
 import { METRIC, recordCacheLookup, recordSsrPhase } from '@/server/infra/trace/metrics'
-import { isDevTraceRunning, startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',
@@ -39,13 +39,13 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
 })
 
 async function start(metricReader: TestMetricReader = reader) {
-  return startDevTrace({ resolution: resolution(), spanExporter: spanHarness(), metricReader })
+  return startTraceRuntime({ resolution: resolution(), spanExporter: spanHarness(), metricReader })
 }
 
 const EVENT_LOOP_METRIC_TIMEOUT_MS = 2_000
@@ -224,7 +224,7 @@ describe('trace metrics — closed catalog', () => {
   it('restarts with a fresh reader and a single observer after HMR-style stop/start', async () => {
     const first = await start()
     await first.shutdown()
-    expect(isDevTraceRunning()).toBe(false)
+    expect(isTraceRuntimeRunning()).toBe(false)
 
     const secondReader = new TestMetricReader()
     const second = await start(secondReader)
@@ -244,8 +244,8 @@ describe('trace metrics — lifecycle', () => {
     expect(flushSpy).toHaveBeenCalled()
 
     await handle.shutdown()
-    await stopDevTrace()
-    await stopDevTrace()
+    await stopTraceRuntime()
+    await stopTraceRuntime()
   })
 
   it('emits nothing after stop', async () => {

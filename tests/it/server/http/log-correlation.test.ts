@@ -17,7 +17,7 @@ import { resBindings, sanitizeReqHeaders } from '@/server/infra/logger/sanitizer
 import { __resetLogSinkForTests } from '@/server/infra/logger/sink'
 import { __resetTraceFacadeForTests } from '@/server/infra/trace/facade'
 import { devTraceRequestMiddleware } from '@/server/infra/trace/middleware'
-import { startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const TRACE_ID = '4bf92f3577b34da6a3ce929d0e0e4736'
 const REMOTE_SPAN_ID = '00f067aa0ba902b7'
@@ -111,13 +111,11 @@ function buildApp(): Hono<Env> {
 
 let spans: ReadableSpan[]
 let records: ReadableLogRecord[]
-let handle: Awaited<ReturnType<typeof startDevTrace>>
+let handle: Awaited<ReturnType<typeof startTraceRuntime>>
 const originalRootLevel = root.level
 let stdoutSpy: MockInstance<typeof process.stdout.write> | undefined
 
 beforeEach(async () => {
-  vi.stubEnv('DEV', true as never)
-  vi.stubEnv('PROD', false as never)
   __resetTraceFacadeForTests()
   __resetLogSinkForTests()
   // The test env pins server.loggingLevel to silent; let the real Pino root write.
@@ -130,7 +128,7 @@ beforeEach(async () => {
   const logHarness = createLogHarness()
   spans = spanHarness.spans
   records = logHarness.records
-  handle = await startDevTrace({
+  handle = await startTraceRuntime({
     resolution: resolution(),
     spanExporter: spanHarness.exporter,
     metricReader: new TestMetricReader(),
@@ -139,7 +137,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   __resetLogSinkForTests()
   stdoutSpy?.mockRestore()

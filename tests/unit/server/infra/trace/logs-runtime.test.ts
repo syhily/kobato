@@ -21,8 +21,8 @@ import {
   uninstallTraceDelegate,
   withSpanAsync,
 } from '@/server/infra/trace/facade'
-import { buildDevLogPipeline } from '@/server/infra/trace/logs-runtime'
-import { isDevTraceRunning, startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { buildLogPipeline } from '@/server/infra/trace/logs-runtime'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 import { TRACE_LOG_STREAM } from '@/shared/contracts/trace-logs'
 
 const exporterState = vi.hoisted(() => ({
@@ -137,8 +137,6 @@ function line(record: Record<string, unknown> = {}): string {
 let harness: LogHarness
 
 beforeEach(() => {
-  vi.stubEnv('DEV', true as never)
-  vi.stubEnv('PROD', false as never)
   __resetTraceFacadeForTests()
   __resetLogSinkForTests()
   __clearLogCaptureForTests()
@@ -148,7 +146,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   uninstallTraceDelegate()
   __resetTraceFacadeForTests()
   __resetLogSinkForTests()
@@ -156,7 +154,7 @@ afterEach(async () => {
 })
 
 async function startWithLogs(overrides: Partial<ServerTraceRuntimeConfig> = {}) {
-  return startDevTrace({
+  return startTraceRuntime({
     resolution: resolution(overrides),
     spanExporter: new InMemorySpanExporter(),
     metricReader: new TestMetricReader(),
@@ -166,7 +164,7 @@ async function startWithLogs(overrides: Partial<ServerTraceRuntimeConfig> = {}) 
 
 describe('log pipeline — projection boundary', () => {
   it('exports a projected record with the fixed three-key resource', async () => {
-    const pipeline = buildDevLogPipeline(LOGS_CONFIG, { exporter: harness.exporter })
+    const pipeline = buildLogPipeline(LOGS_CONFIG, { exporter: harness.exporter })
 
     pipeline.sink.push(line({ msg: 'plain message' }))
     await pipeline.forceFlush(1000)
@@ -190,7 +188,7 @@ describe('log pipeline — projection boundary', () => {
   })
 
   it('drops everything below info and marker/oversize lines instead of exporting them', async () => {
-    const pipeline = buildDevLogPipeline(LOGS_CONFIG, { exporter: harness.exporter })
+    const pipeline = buildLogPipeline(LOGS_CONFIG, { exporter: harness.exporter })
 
     pipeline.sink.push(line({ level: 'debug' }))
     pipeline.sink.push(line({ msg: 'user {E}alice{/E}' }))
@@ -203,7 +201,7 @@ describe('log pipeline — projection boundary', () => {
   })
 
   it('never exports forbidden fields, error content, or the authorization value', async () => {
-    const pipeline = buildDevLogPipeline(LOGS_CONFIG, { exporter: harness.exporter })
+    const pipeline = buildLogPipeline(LOGS_CONFIG, { exporter: harness.exporter })
 
     pipeline.sink.push(
       line({
@@ -253,7 +251,7 @@ describe('log pipeline — projection boundary', () => {
     const flaky = createFlakyLogHarness()
     const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation((() => true) as typeof process.stdout.write)
     try {
-      const pipeline = buildDevLogPipeline(LOGS_CONFIG, { exporter: flaky.exporter })
+      const pipeline = buildLogPipeline(LOGS_CONFIG, { exporter: flaky.exporter })
 
       expect(() => pipeline.sink.push(line({ msg: 'first' }))).not.toThrow()
       await pipeline.forceFlush(1000)
@@ -275,7 +273,7 @@ describe('log pipeline — projection boundary', () => {
   })
 
   it('shuts down idempotently and stops accepting lines afterwards', async () => {
-    const pipeline = buildDevLogPipeline(LOGS_CONFIG, { exporter: harness.exporter })
+    const pipeline = buildLogPipeline(LOGS_CONFIG, { exporter: harness.exporter })
 
     pipeline.sink.push(line())
     await pipeline.forceFlush(1000)
@@ -292,7 +290,7 @@ describe('log pipeline — projection boundary', () => {
 
 describe('log pipeline — exporter configuration', () => {
   it('posts to the OTLP logs URL with the server credential and stream name', async () => {
-    const pipeline = buildDevLogPipeline(LOGS_CONFIG)
+    const pipeline = buildLogPipeline(LOGS_CONFIG)
 
     expect(exporterState.options).toHaveLength(1)
     expect(exporterState.options[0]).toMatchObject({
@@ -328,6 +326,21 @@ describe('trace runtime — log pipeline lifecycle', () => {
     await handle.forceFlush()
 
     expect(harness.records.map((record) => record.body)).toEqual(['through the runtime'])
+    const enabled = __logCaptureForTests().filter((entry) => entry.msg === 'OpenObserve tracing enabled')
+    expect(enabled.at(-1)?.ctx.logs).toBe(true)
+  })
+
+  it('installs the sink and exports in a production build', async () => {
+    vi.stubEnv('DEV', false as never)
+    vi.stubEnv('PROD', true as never)
+
+    const handle = await startWithLogs()
+    expect(handle.started).toBe(true)
+
+    pushLogLine(line({ msg: 'production log' }))
+    await handle.forceFlush()
+
+    expect(harness.records.map((record) => record.body)).toEqual(['production log'])
     const enabled = __logCaptureForTests().filter((entry) => entry.msg === 'OpenObserve tracing enabled')
     expect(enabled.at(-1)?.ctx.logs).toBe(true)
   })
@@ -371,14 +384,14 @@ describe('trace runtime — log pipeline lifecycle', () => {
   it('degrades only logs when the log pipeline cannot be constructed', async () => {
     exporterState.throwOnConstruct = true
 
-    const handle = await startDevTrace({
+    const handle = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: new TestMetricReader(),
     })
 
     expect(handle.started).toBe(true)
-    expect(isDevTraceRunning()).toBe(true)
+    expect(isTraceRuntimeRunning()).toBe(true)
     const warnings = __logCaptureForTests().filter((entry) => entry.msg.includes('log pipeline could not start'))
     expect(warnings).toHaveLength(1)
 
@@ -392,13 +405,13 @@ describe('trace runtime — log pipeline lifecycle', () => {
 
     pushLogLine(line())
     await handle.shutdown()
-    expect(isDevTraceRunning()).toBe(false)
+    expect(isTraceRuntimeRunning()).toBe(false)
 
     pushLogLine(line({ msg: 'after stop' }))
     await handle.forceFlush()
     await handle.shutdown()
-    await stopDevTrace()
-    await stopDevTrace()
+    await stopTraceRuntime()
+    await stopTraceRuntime()
 
     expect(harness.records.map((record) => record.body)).toEqual(['message'])
   })

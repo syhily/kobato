@@ -11,7 +11,7 @@ import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/i
 import { TestMetricReader } from '#/_helpers/in-memory-metric-reader'
 import { safeFetch } from '@/server/infra/safe-fetch'
 import { __resetTraceFacadeForTests } from '@/server/infra/trace/facade'
-import { startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
@@ -36,7 +36,7 @@ function resolution(): TraceConfigResolution {
 
 let exporter: InMemorySpanExporter
 let spans: ReadableSpan[]
-let handle: Awaited<ReturnType<typeof startDevTrace>>
+let handle: Awaited<ReturnType<typeof startTraceRuntime>>
 
 beforeEach(async () => {
   vi.stubEnv('DEV', true as never)
@@ -52,7 +52,7 @@ beforeEach(async () => {
     shutdown: () => exporter.shutdown(),
     forceFlush: () => exporter.forceFlush(),
   }
-  handle = await startDevTrace({
+  handle = await startTraceRuntime({
     resolution: resolution(),
     spanExporter: harnessed,
     metricReader: new TestMetricReader(),
@@ -62,7 +62,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   vi.unstubAllGlobals()
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
 })

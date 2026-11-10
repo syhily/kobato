@@ -5,6 +5,7 @@ import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/i
 import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
 
 import { TestMetricReader } from '#/_helpers/in-memory-metric-reader'
+import { activeFrontendRum, traceEnvironment } from '@/server/infra/trace/config'
 import { __resetTraceFacadeForTests } from '@/server/infra/trace/facade'
 import {
   __resetFrontendGateForTests,
@@ -12,7 +13,7 @@ import {
   deactivateFrontendGate,
   verifiedFrontendBootstrap,
 } from '@/server/infra/trace/frontend-gate'
-import { isDevTraceRunning, startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',
@@ -47,7 +48,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   __resetFrontendGateForTests()
   vi.unstubAllEnvs()
@@ -62,7 +63,7 @@ async function start(
   frontendVerifyTimeoutMs = 200,
   frontendRecheckIntervalMs?: number,
 ) {
-  return startDevTrace({
+  return startTraceRuntime({
     resolution: resolution(),
     spanExporter: new InMemorySpanExporter(),
     metricReader: new TestMetricReader(),
@@ -78,15 +79,35 @@ describe('frontend RUM verification gate', () => {
 
     expect(handle.started).toBe(true)
     expect(verifiedFrontendBootstrap()).toEqual(BOOTSTRAP)
-    await stopDevTrace()
+    expect(activeFrontendRum()).toEqual(BOOTSTRAP)
+    await stopTraceRuntime()
     expect(verifiedFrontendBootstrap()).toBeNull()
+    expect(activeFrontendRum()).toBeNull()
+  })
+
+  it('runs the verification and exposes the bootstrap in a production build too', async () => {
+    vi.stubEnv('DEV', false as never)
+    vi.stubEnv('PROD', true as never)
+    expect(traceEnvironment()).toBe('production')
+
+    let verified = 0
+    const handle = await start(async () => {
+      verified += 1
+      return true
+    })
+
+    expect(verified).toBe(1)
+    expect(handle.started).toBe(true)
+    // The gate is build-independent; only `resolveTraceConfig`'s environment
+    // label differs (pinned by the config tests).
+    expect(activeFrontendRum()).toEqual(BOOTSTRAP)
   })
 
   it('withholds the bootstrap on verifier failure while server tracing stays active', async () => {
     await start(async () => false)
 
     expect(verifiedFrontendBootstrap()).toBeNull()
-    expect(isDevTraceRunning()).toBe(true)
+    expect(isTraceRuntimeRunning()).toBe(true)
   })
 
   it('times out a hung verifier without failing startup', async () => {
@@ -95,7 +116,7 @@ describe('frontend RUM verification gate', () => {
 
     expect(Date.now() - started).toBeLessThan(1000)
     expect(verifiedFrontendBootstrap()).toBeNull()
-    expect(isDevTraceRunning()).toBe(true)
+    expect(isTraceRuntimeRunning()).toBe(true)
   })
 
   it('does not let a stopped runtime clear a newer gate', () => {
@@ -131,7 +152,7 @@ describe('frontend RUM verification gate', () => {
     await sleep(80)
     expect(verifiedFrontendBootstrap()).not.toBeNull()
 
-    await stopDevTrace()
+    await stopTraceRuntime()
     const callsAtStop = calls
     await sleep(80)
     expect(calls).toBe(callsAtStop)
@@ -140,7 +161,7 @@ describe('frontend RUM verification gate', () => {
   it('re-verifies after stop and restart', async () => {
     await start(async () => true)
     expect(verifiedFrontendBootstrap()).not.toBeNull()
-    await stopDevTrace()
+    await stopTraceRuntime()
     expect(verifiedFrontendBootstrap()).toBeNull()
 
     await start(async () => true)

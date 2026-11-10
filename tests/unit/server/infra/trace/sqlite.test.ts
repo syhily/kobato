@@ -9,7 +9,7 @@ import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/i
 import { TestMetricReader, dataPointsOf } from '#/_helpers/in-memory-metric-reader'
 import { __resetTraceFacadeForTests, withSpanAsync } from '@/server/infra/trace/facade'
 import { METRIC } from '@/server/infra/trace/metrics'
-import { startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 import {
   isSqliteQueryTraceSubscribed,
   sqlOperation,
@@ -53,7 +53,7 @@ function createExporterHarness(): SpanHarness {
 
 let harness: SpanHarness
 let reader: TestMetricReader
-let handle: Awaited<ReturnType<typeof startDevTrace>>
+let handle: Awaited<ReturnType<typeof startTraceRuntime>>
 
 beforeEach(async () => {
   vi.stubEnv('DEV', true as never)
@@ -62,7 +62,7 @@ beforeEach(async () => {
   stopSqliteQueryTrace()
   harness = createExporterHarness()
   reader = new TestMetricReader()
-  handle = await startDevTrace({
+  handle = await startTraceRuntime({
     resolution: resolution(),
     spanExporter: harness.exporter,
     metricReader: reader,
@@ -71,7 +71,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   stopSqliteQueryTrace()
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
 })

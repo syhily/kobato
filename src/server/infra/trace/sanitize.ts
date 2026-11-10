@@ -59,6 +59,7 @@ export const SAFE_FETCH_OPERATIONS = [
   'calendar.quote.shanbay',
   'calendar.quote.wufazhuce',
   'calendar.quote.hitokoto',
+  'observability.o2',
   'og.cover',
 ] as const
 export type SafeFetchOperation = (typeof SAFE_FETCH_OPERATIONS)[number]

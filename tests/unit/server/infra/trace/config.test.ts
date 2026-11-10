@@ -1,41 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { loadServerConfig, type TraceConfigSection } from '@/server/infra/config'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 import {
-  currentTraceConfig,
   deriveOtlpUrls,
   formatTraceDiagnostic,
-  loadTraceConfig,
   logTraceDiagnostics,
   resolveTraceConfig,
+  type TraceRuntimeSettings,
 } from '@/server/infra/trace/config'
 import { frontendRumBootstrapSchema } from '@/shared/contracts/trace'
 
-const realArgv = process.argv
-
-const TRACE_ENV_KEYS = [
-  'trace__enabled',
-  'trace__logs__enabled',
-  'trace__endpoint',
-  'trace__organization',
-  'trace__serverAuthorizationHeader',
-  'trace__sampleRate',
-  'trace__includeRedactedSql',
-  'trace__frontend__enabled',
-  'trace__frontend__applicationId',
-  'trace__frontend__clientToken',
-  'trace__frontend__sessionSampleRate',
-] as const
-
-const BASE: TraceConfigSection = {
+const BASE: TraceRuntimeSettings = {
   enabled: true,
-  logs: { enabled: false },
   endpoint: 'http://127.0.0.1:5080',
   organization: 'default',
-  serverAuthorizationHeader: 'Basic dGVzdDp0ZXN0',
+  authorizationHeader: 'Basic dGVzdDp0ZXN0',
   sampleRate: 1,
   includeRedactedSql: false,
+  logs: { enabled: false },
   frontend: {
     enabled: false,
     applicationId: '',
@@ -45,9 +27,9 @@ const BASE: TraceConfigSection = {
 }
 
 function traceInput(
-  overrides: Partial<TraceConfigSection> = {},
-  frontend: Partial<TraceConfigSection['frontend']> = {},
-): TraceConfigSection {
+  overrides: Partial<TraceRuntimeSettings> = {},
+  frontend: Partial<TraceRuntimeSettings['frontend']> = {},
+): TraceRuntimeSettings {
   return {
     ...BASE,
     ...overrides,
@@ -55,97 +37,16 @@ function traceInput(
   }
 }
 
-const DEV = { isDevelopment: true }
-const PROD = { isDevelopment: false }
-
-function clearTraceEnv(): void {
-  for (const key of TRACE_ENV_KEYS) {
-    vi.stubEnv(key, undefined)
-  }
-}
+const DEV = { environment: 'development' } as const
+const PROD = { environment: 'production' } as const
 
 beforeEach(() => {
-  clearTraceEnv()
   __clearLogCaptureForTests()
 })
 
 afterEach(() => {
-  process.argv = realArgv
-  vi.unstubAllEnvs()
   vi.restoreAllMocks()
   __clearLogCaptureForTests()
-})
-
-describe('trace config — CONFIG_TABLE defaults and env coercion', () => {
-  it('defaults the entire trace block to an inert, disabled configuration', () => {
-    process.argv = [realArgv[0]!, realArgv[1]!]
-
-    expect(loadServerConfig().trace).toEqual({
-      enabled: false,
-      logs: { enabled: false },
-      endpoint: '',
-      organization: 'default',
-      serverAuthorizationHeader: '',
-      sampleRate: 1,
-      includeRedactedSql: false,
-      frontend: {
-        enabled: false,
-        applicationId: '',
-        clientToken: '',
-        sessionSampleRate: 100,
-      },
-    })
-  })
-
-  it('coerces the __-convention env values to native booleans and numbers', () => {
-    process.argv = [realArgv[0]!, realArgv[1]!]
-    vi.stubEnv('trace__enabled', 'true')
-    vi.stubEnv('trace__endpoint', 'https://observability.example.com')
-    vi.stubEnv('trace__organization', 'team-prod')
-    vi.stubEnv('trace__serverAuthorizationHeader', 'Basic abc123')
-    vi.stubEnv('trace__sampleRate', '0.25')
-    vi.stubEnv('trace__includeRedactedSql', 'false')
-    vi.stubEnv('trace__frontend__enabled', 'true')
-    vi.stubEnv('trace__frontend__applicationId', 'kobato-dev')
-    vi.stubEnv('trace__frontend__clientToken', 'rum-token-123')
-    vi.stubEnv('trace__frontend__sessionSampleRate', '12.5')
-
-    const trace = loadServerConfig().trace
-
-    expect(trace.enabled).toBe(true)
-    expect(trace.endpoint).toBe('https://observability.example.com')
-    expect(trace.organization).toBe('team-prod')
-    expect(trace.serverAuthorizationHeader).toBe('Basic abc123')
-    expect(trace.sampleRate).toBe(0.25)
-    expect(trace.includeRedactedSql).toBe(false)
-    expect(trace.frontend).toEqual({
-      enabled: true,
-      applicationId: 'kobato-dev',
-      clientToken: 'rum-token-123',
-      sessionSampleRate: 12.5,
-    })
-  })
-
-  it('accepts 1/0 boolean env spellings without treating "false" as truthy', () => {
-    process.argv = [realArgv[0]!, realArgv[1]!]
-    vi.stubEnv('trace__enabled', '1')
-    vi.stubEnv('trace__includeRedactedSql', '0')
-    vi.stubEnv('trace__frontend__enabled', '0')
-
-    const trace = loadServerConfig().trace
-
-    expect(trace.enabled).toBe(true)
-    expect(trace.includeRedactedSql).toBe(false)
-    expect(trace.frontend.enabled).toBe(false)
-  })
-
-  it('keeps a numeric-looking authorization value as a string', () => {
-    process.argv = [realArgv[0]!, realArgv[1]!]
-    const secret = '1234567890123456789012345678901234567890'
-    vi.stubEnv('trace__serverAuthorizationHeader', secret)
-
-    expect(loadServerConfig().trace.serverAuthorizationHeader).toBe(secret)
-  })
 })
 
 describe('trace config — OTLP URL derivation', () => {
@@ -190,7 +91,7 @@ describe('trace config — endpoint security', () => {
     expect(resolution.server).toBeNull()
     expect(resolution.frontend).toBeNull()
     expect(resolution.diagnostics).toHaveLength(1)
-    expect(resolution.diagnostics[0]?.fields).toContain('trace.endpoint')
+    expect(resolution.diagnostics[0]?.fields).toContain('observability.endpoint')
   })
 
   it.each(['../evil', 'a/b', 'with space', '.', '..', '', 'a'.repeat(65)])(
@@ -199,7 +100,7 @@ describe('trace config — endpoint security', () => {
       const resolution = resolveTraceConfig(traceInput({ organization }), DEV)
 
       expect(resolution.status).toBe('invalid')
-      expect(resolution.diagnostics[0]?.fields).toContain('trace.organization')
+      expect(resolution.diagnostics[0]?.fields).toContain('observability.organization')
     },
   )
 
@@ -220,7 +121,7 @@ describe('trace config — sampling and credentials', () => {
     const resolution = resolveTraceConfig(traceInput({ sampleRate }), DEV)
 
     expect(resolution.status).toBe('invalid')
-    expect(resolution.diagnostics[0]?.fields).toContain('trace.sampleRate')
+    expect(resolution.diagnostics[0]?.fields).toContain('observability.sampleRate')
   })
 
   it.each([0, 50, 100])('accepts sessionSampleRate %s', (sessionSampleRate) => {
@@ -241,45 +142,33 @@ describe('trace config — sampling and credentials', () => {
     expect(resolution.status).toBe('active')
     expect(resolution.server).not.toBeNull()
     expect(resolution.frontend).toBeNull()
-    expect(resolution.diagnostics[0]?.fields).toContain('trace.frontend.sessionSampleRate')
+    expect(resolution.diagnostics[0]?.fields).toContain('observability.frontend.sessionSampleRate')
   })
 
   it.each(['', ' leading', 'trailing ', 'line\nbreak', 'tab\tseparated', 'x'.repeat(8193)])(
     'treats the authorization header %j as missing',
-    (serverAuthorizationHeader) => {
-      const resolution = resolveTraceConfig(traceInput({ serverAuthorizationHeader }), DEV)
+    (authorizationHeader) => {
+      const resolution = resolveTraceConfig(traceInput({ authorizationHeader }), DEV)
 
       expect(resolution.status).toBe('invalid')
-      expect(resolution.diagnostics[0]?.fields).toContain('trace.serverAuthorizationHeader')
+      expect(resolution.diagnostics[0]?.fields).toContain('observability.credentials')
     },
   )
 })
 
 describe('trace config — activation matrix', () => {
-  it('is inert in production even with a complete configuration', () => {
+  it('is environment-agnostic: the same active projection starts in production', () => {
     const resolution = resolveTraceConfig(
       traceInput({}, { enabled: true, applicationId: 'app', clientToken: 'token' }),
       PROD,
     )
 
-    expect(resolution.status).toBe('disabled')
-    expect(resolution.server).toBeNull()
-    expect(resolution.frontend).toBeNull()
-    expect(resolution.diagnostics).toEqual([
-      { code: 'trace-production-disabled', level: 'warn', fields: ['trace.enabled'] },
-    ])
+    expect(resolution.status).toBe('active')
+    expect(resolution.server).not.toBeNull()
+    expect(resolution.frontend?.environment).toBe('production')
   })
 
-  it('stays silent in production when tracing is disabled', () => {
-    expect(resolveTraceConfig(traceInput({ enabled: false }), PROD)).toEqual({
-      status: 'disabled',
-      server: null,
-      frontend: null,
-      diagnostics: [],
-    })
-  })
-
-  it('is a no-op in development while trace.enabled is false', () => {
+  it('stays disabled — and silent — while the master switch is off', () => {
     expect(
       resolveTraceConfig(
         traceInput({ enabled: false }, { enabled: true, applicationId: 'app', clientToken: 'token' }),
@@ -344,7 +233,7 @@ describe('trace config — activation matrix', () => {
         endpoint: 'http://remote.example.com',
         organization: '../bad',
         sampleRate: 2,
-        serverAuthorizationHeader: '',
+        authorizationHeader: '',
       }),
       DEV,
     )
@@ -352,22 +241,16 @@ describe('trace config — activation matrix', () => {
     expect(resolution.status).toBe('invalid')
     expect(resolution.diagnostics).toHaveLength(1)
     expect(resolution.diagnostics[0]?.fields).toEqual([
-      'trace.endpoint',
-      'trace.organization',
-      'trace.sampleRate',
-      'trace.serverAuthorizationHeader',
+      'observability.endpoint',
+      'observability.organization',
+      'observability.sampleRate',
+      'observability.credentials',
     ])
   })
 })
 
 describe('trace config — log export projection', () => {
-  it('defaults trace.logs.enabled to false', () => {
-    process.argv = [realArgv[0]!, realArgv[1]!]
-
-    expect(loadServerConfig().trace.logs).toEqual({ enabled: false })
-  })
-
-  it('warns with field names only when logs are enabled without trace.enabled', () => {
+  it('warns with field names only when logs are enabled without the master switch', () => {
     const resolution = resolveTraceConfig(traceInput({ enabled: false, logs: { enabled: true } }), DEV)
 
     expect(resolution).toEqual({
@@ -378,14 +261,14 @@ describe('trace config — log export projection', () => {
         {
           code: 'trace-logs-require-trace',
           level: 'warn',
-          fields: ['trace.logs.enabled', 'trace.enabled'],
+          fields: ['observability.logs.enabled', 'observability.enabled'],
         },
       ],
     })
 
     const line = formatTraceDiagnostic(resolution.diagnostics[0]!)
-    expect(line).toContain('trace.logs.enabled')
-    expect(line).toContain('trace.enabled')
+    expect(line).toContain('observability.logs.enabled')
+    expect(line).toContain('observability.enabled')
     expect(line).not.toContain('127.0.0.1')
   })
 
@@ -403,17 +286,6 @@ describe('trace config — log export projection', () => {
     expect(enabled.diagnostics).toEqual([])
   })
 
-  it('stays inert in production with logs enabled', () => {
-    const resolution = resolveTraceConfig(traceInput({ logs: { enabled: true } }), PROD)
-
-    expect(resolution.status).toBe('disabled')
-    expect(resolution.server).toBeNull()
-    expect(resolution.frontend).toBeNull()
-    expect(resolution.diagnostics).toEqual([
-      { code: 'trace-production-disabled', level: 'warn', fields: ['trace.enabled'] },
-    ])
-  })
-
   it('drops the logs projection when the server configuration is invalid', () => {
     const resolution = resolveTraceConfig(
       traceInput({ logs: { enabled: true }, endpoint: 'https://user:pass@obs.example.com' }),
@@ -429,10 +301,7 @@ describe('trace config — safe projections and diagnostics', () => {
   it('never projects the server authorization header to the browser', () => {
     const secret = 'Basic c2VydmVyLXNlY3JldA=='
     const resolution = resolveTraceConfig(
-      traceInput(
-        { serverAuthorizationHeader: secret },
-        { enabled: true, applicationId: 'app', clientToken: 'rum-token' },
-      ),
+      traceInput({ authorizationHeader: secret }, { enabled: true, applicationId: 'app', clientToken: 'rum-token' }),
       DEV,
     )
 
@@ -448,7 +317,7 @@ describe('trace config — safe projections and diagnostics', () => {
       traceInput({
         endpoint: 'https://user:pass@obs.example.com',
         organization: 'bad org',
-        serverAuthorizationHeader: `${secret}\nX-Injected: 1`,
+        authorizationHeader: `${secret}\nX-Injected: 1`,
       }),
       DEV,
     )
@@ -456,16 +325,16 @@ describe('trace config — safe projections and diagnostics', () => {
     expect(resolution.diagnostics).toHaveLength(1)
     const line = formatTraceDiagnostic(resolution.diagnostics[0]!)
 
-    expect(line).toContain('trace.endpoint')
-    expect(line).toContain('trace.organization')
-    expect(line).toContain('trace.serverAuthorizationHeader')
+    expect(line).toContain('observability.endpoint')
+    expect(line).toContain('observability.organization')
+    expect(line).toContain('observability.credentials')
     expect(line).not.toContain(secret)
     expect(line).not.toContain('user:pass')
   })
 
   it('logs one safe line for an enabled-but-incomplete configuration', () => {
     const resolution = resolveTraceConfig(
-      traceInput({ serverAuthorizationHeader: '', endpoint: 'https://user:pass@obs.example.com' }),
+      traceInput({ authorizationHeader: '', endpoint: 'https://user:pass@obs.example.com' }),
       DEV,
     )
     expect(resolution.diagnostics).toHaveLength(1)
@@ -475,35 +344,7 @@ describe('trace config — safe projections and diagnostics', () => {
     const entries = __logCaptureForTests().filter((entry) => entry.scope === 'trace')
     expect(entries).toHaveLength(1)
     expect(entries[0]?.level).toBe('error')
-    expect(entries[0]?.msg).toContain('trace.endpoint')
+    expect(entries[0]?.msg).toContain('observability.endpoint')
     expect(entries[0]?.msg).not.toContain('user:pass')
-  })
-})
-
-describe('trace config — process snapshot', () => {
-  it('resolves the boot snapshot to a disabled no-op in the test environment', () => {
-    const resolution = currentTraceConfig()
-
-    expect(resolution.status).toBe('disabled')
-    expect(resolution.server).toBeNull()
-    expect(resolution.frontend).toBeNull()
-    expect(resolution.diagnostics).toEqual([])
-  })
-
-  it('does not log anything when the snapshot is disabled', () => {
-    loadTraceConfig()
-
-    expect(__logCaptureForTests().filter((entry) => entry.scope === 'trace')).toEqual([])
-  })
-
-  it('produces the production warning for the same enabled flag', () => {
-    const resolution = resolveTraceConfig(traceInput({ enabled: true }), PROD)
-
-    logTraceDiagnostics(resolution.diagnostics)
-
-    const entries = __logCaptureForTests().filter((entry) => entry.scope === 'trace')
-    expect(entries).toHaveLength(1)
-    expect(entries[0]?.level).toBe('warn')
-    expect(entries[0]?.msg).toContain('production')
   })
 })

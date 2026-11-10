@@ -20,7 +20,7 @@ import { __resetTraceFacadeForTests } from '@/server/infra/trace/facade'
 import { METRIC } from '@/server/infra/trace/metrics'
 import { devTraceRequestMiddleware } from '@/server/infra/trace/middleware'
 import { traceRouteMiddleware } from '@/server/infra/trace/react-router'
-import { startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const renderHarness = vi.hoisted(() => {
   const state: {
@@ -126,7 +126,7 @@ const TRACEPARENT = `00-${TRACE_ID}-${REMOTE_SPAN_ID}-01`
 
 let harness: ExporterHarness
 let metricReader: TestMetricReader
-let handle: Awaited<ReturnType<typeof startDevTrace>>
+let handle: Awaited<ReturnType<typeof startTraceRuntime>>
 
 beforeEach(async () => {
   vi.stubEnv('DEV', true as never)
@@ -135,7 +135,7 @@ beforeEach(async () => {
   renderHarness.reset()
   harness = createExporterHarness()
   metricReader = new TestMetricReader()
-  handle = await startDevTrace({
+  handle = await startTraceRuntime({
     resolution: resolution(),
     spanExporter: harness.exporter,
     metricReader,
@@ -143,7 +143,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
 })

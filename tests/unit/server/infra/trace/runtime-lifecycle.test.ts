@@ -10,7 +10,7 @@ import { TestMetricReader, dataPointsOf } from '#/_helpers/in-memory-metric-read
 import { __getLifecycleContainer, registerShutdownHook, unregisterShutdownHook } from '@/server/infra/lifecycle'
 import { __resetTraceFacadeForTests, counter, isTraceActive, uninstallTraceDelegate } from '@/server/infra/trace/facade'
 import { METRIC } from '@/server/infra/trace/metrics'
-import { isDevTraceRunning, startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 import { isSqliteQueryTraceSubscribed, startSqliteQueryTrace, stopSqliteQueryTrace } from '@/server/infra/trace/sqlite'
 
 const CONFIG: ServerTraceRuntimeConfig = {
@@ -46,7 +46,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   stopSqliteQueryTrace()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
@@ -56,7 +56,7 @@ describe('trace runtime lifecycle — event-loop observer failure', () => {
   it('disables an enabled monitor exactly once when gauge creation throws, and can restart', async () => {
     const failed = fakeMonitor()
     const reader = new TestMetricReader()
-    const failedHandle = await startDevTrace({
+    const failedHandle = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: reader,
@@ -69,7 +69,7 @@ describe('trace runtime lifecycle — event-loop observer failure', () => {
     })
 
     expect(failedHandle.started).toBe(true)
-    expect(isDevTraceRunning()).toBe(true)
+    expect(isTraceRuntimeRunning()).toBe(true)
     expect(failed.enable).toHaveBeenCalledTimes(1)
     expect(failed.disable).toHaveBeenCalledTimes(1)
 
@@ -87,7 +87,7 @@ describe('trace runtime lifecycle — event-loop observer failure', () => {
     expect(failed.disable).toHaveBeenCalledTimes(1)
 
     const healthy = fakeMonitor()
-    const restarted = await startDevTrace({
+    const restarted = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: new TestMetricReader(),
@@ -101,7 +101,7 @@ describe('trace runtime lifecycle — event-loop observer failure', () => {
     expect(failed.disable).toHaveBeenCalledTimes(1)
     expect(healthy.enable).toHaveBeenCalledTimes(1)
 
-    await stopDevTrace()
+    await stopTraceRuntime()
     expect(healthy.disable).toHaveBeenCalledTimes(1)
   })
 
@@ -110,7 +110,7 @@ describe('trace runtime lifecycle — event-loop observer failure', () => {
     failed.enable.mockImplementationOnce(() => {
       throw new Error('enable failed')
     })
-    const handle = await startDevTrace({
+    const handle = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: new TestMetricReader(),
@@ -133,7 +133,7 @@ describe('trace runtime lifecycle — event-loop observer failure', () => {
     const addCallback = vi.fn(() => {
       throw new Error('addCallback failed')
     })
-    const handle = await startDevTrace({
+    const handle = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: new TestMetricReader(),
@@ -174,7 +174,7 @@ describe('trace runtime lifecycle — stop cleanup isolation', () => {
     })
     const hookBaseline = __getLifecycleContainer().hooks.length
 
-    const handle = await startDevTrace({
+    const handle = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: new TestMetricReader(),
@@ -193,20 +193,20 @@ describe('trace runtime lifecycle — stop cleanup isolation', () => {
     expect(handle.started).toBe(true)
     expect(__getLifecycleContainer().hooks).toHaveLength(hookBaseline + 1)
 
-    await expect(stopDevTrace()).resolves.toBeUndefined()
+    await expect(stopTraceRuntime()).resolves.toBeUndefined()
 
     expect(uninstall).toHaveBeenCalledTimes(1)
     expect(unregister).toHaveBeenCalledTimes(1)
     expect(stopSqlite).toHaveBeenCalledTimes(1)
     expect(disableMonitor).toHaveBeenCalledTimes(1)
     expect(monitor.disable).toHaveBeenCalledTimes(1)
-    expect(isDevTraceRunning()).toBe(false)
+    expect(isTraceRuntimeRunning()).toBe(false)
     expect(isTraceActive()).toBe(false)
     expect(isSqliteQueryTraceSubscribed()).toBe(false)
     expect(__getLifecycleContainer().hooks).toHaveLength(hookBaseline)
 
     // Repeated stop/shutdown is a no-op; nothing throws into HMR disposal.
-    await stopDevTrace()
+    await stopTraceRuntime()
     await handle.shutdown()
     expect(uninstall).toHaveBeenCalledTimes(1)
     expect(monitor.disable).toHaveBeenCalledTimes(1)
@@ -220,7 +220,7 @@ describe('trace runtime lifecycle — startup rollback', () => {
     const readerShutdown = vi.spyOn(reader, 'shutdown')
     const hookBaseline = __getLifecycleContainer().hooks.length
 
-    const handle = await startDevTrace({
+    const handle = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: reader,
@@ -237,7 +237,7 @@ describe('trace runtime lifecycle — startup rollback', () => {
     })
 
     expect(handle.started).toBe(false)
-    expect(isDevTraceRunning()).toBe(false)
+    expect(isTraceRuntimeRunning()).toBe(false)
     expect(isTraceActive()).toBe(false)
     expect(isSqliteQueryTraceSubscribed()).toBe(false)
     expect(monitor.disable).toHaveBeenCalledTimes(1)
@@ -249,15 +249,15 @@ describe('trace runtime lifecycle — startup rollback', () => {
     await handle.forceFlush()
     expect(monitor.disable).toHaveBeenCalledTimes(1)
 
-    const restarted = await startDevTrace({
+    const restarted = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: new TestMetricReader(),
     })
     expect(restarted.started).toBe(true)
-    expect(isDevTraceRunning()).toBe(true)
-    await stopDevTrace()
-    expect(isDevTraceRunning()).toBe(false)
+    expect(isTraceRuntimeRunning()).toBe(true)
+    await stopTraceRuntime()
+    expect(isTraceRuntimeRunning()).toBe(false)
   })
 
   it('unregisters a hook registered before a throwing registration and cleans the rest', async () => {
@@ -266,7 +266,7 @@ describe('trace runtime lifecycle — startup rollback', () => {
     const readerShutdown = vi.spyOn(reader, 'shutdown')
     const hookBaseline = __getLifecycleContainer().hooks.length
 
-    const handle = await startDevTrace({
+    const handle = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: reader,
@@ -286,20 +286,20 @@ describe('trace runtime lifecycle — startup rollback', () => {
     })
 
     expect(handle.started).toBe(false)
-    expect(isDevTraceRunning()).toBe(false)
+    expect(isTraceRuntimeRunning()).toBe(false)
     expect(isTraceActive()).toBe(false)
     expect(isSqliteQueryTraceSubscribed()).toBe(false)
     expect(monitor.disable).toHaveBeenCalledTimes(1)
     expect(readerShutdown).toHaveBeenCalled()
     expect(__getLifecycleContainer().hooks).toHaveLength(hookBaseline)
 
-    const restarted = await startDevTrace({
+    const restarted = await startTraceRuntime({
       resolution: resolution(),
       spanExporter: new InMemorySpanExporter(),
       metricReader: new TestMetricReader(),
     })
     expect(restarted.started).toBe(true)
-    await stopDevTrace()
+    await stopTraceRuntime()
     expect(__getLifecycleContainer().hooks).toHaveLength(hookBaseline)
   })
 })

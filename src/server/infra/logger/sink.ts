@@ -1,6 +1,8 @@
 // SDK-free log sink seam. The Pino Writable in ../logger.ts forwards every
-// serialized line here; a later DEV-only runtime installs the sink. Zero
-// imports by design — this module must stay loadable before any SDK exists.
+// serialized line here; the trace runtime installs the sink whenever the
+// `observability.logs.enabled` setting is active (every build, dev and
+// production alike). Zero imports by design — this module must stay loadable
+// before any SDK exists.
 
 export interface LogSink {
   push(line: string): void
@@ -11,13 +13,9 @@ let sink: LogSink | null = null
 // itself, which would recurse without bound. Re-entrant lines are dropped.
 let inFlight = false
 
-function isDevelopmentRuntime(): boolean {
-  return import.meta.env.DEV === true && import.meta.env.PROD !== true
-}
-
-/** Install the sink. Only the development runtime may, and only into an empty slot. */
+/** Install the sink into the process-wide empty slot. Build-independent. */
 export function setLogSink(next: LogSink): boolean {
-  if (!isDevelopmentRuntime() || sink !== null) {
+  if (sink !== null) {
     return false
   }
   sink = next

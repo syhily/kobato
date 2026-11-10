@@ -14,7 +14,7 @@ vi.mock('@/server/infra/db/job-run-recorder', () => ({
 import { TestMetricReader } from '#/_helpers/in-memory-metric-reader'
 import { scheduleJob, stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 import { __resetTraceFacadeForTests, withSpanAsync } from '@/server/infra/trace/facade'
-import { startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',
@@ -32,7 +32,7 @@ function resolution(): TraceConfigResolution {
 }
 
 let spans: ReadableSpan[]
-let handle: Awaited<ReturnType<typeof startDevTrace>>
+let handle: Awaited<ReturnType<typeof startTraceRuntime>>
 
 beforeEach(async () => {
   vi.stubEnv('DEV', true as never)
@@ -49,7 +49,7 @@ beforeEach(async () => {
     shutdown: () => Promise.resolve(),
     forceFlush: () => Promise.resolve(),
   }
-  handle = await startDevTrace({
+  handle = await startTraceRuntime({
     resolution: resolution(),
     spanExporter: harnessed,
     metricReader: new TestMetricReader(),
@@ -60,7 +60,7 @@ beforeEach(async () => {
 afterEach(async () => {
   stopAllScheduledJobs()
   vi.useRealTimers()
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
 })

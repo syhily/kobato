@@ -4,7 +4,10 @@ import type { Env } from '@/server/http/context'
 
 import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
-import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { upgradeObservabilityProvisioningAtBoot } from '@/server/domains/observability/provision'
+import { syncObservabilityRuntime } from '@/server/domains/observability/runtime-manager'
+import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { migrateSecretsEncryption } from '@/server/domains/settings/services/migrate-secrets'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
@@ -15,6 +18,7 @@ import { getProcessPool } from '@/server/infra/image/process-pool'
 import { startAllRegisteredJobs } from '@/server/infra/job-registry'
 import { setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
 // Load-bearing: each background job module self-registers on the registry
 // at import time; `startAllRegisteredJobs()` below arms them in one loop.
@@ -55,28 +59,39 @@ wrapFetchWithLeakedResponseHandler(app)
 
 setRestartApp(app)
 
-// ADR-0012: development-only OpenObserve tracing. The dynamic import is the
-// only path to the real SDK; a production build replaces `import.meta.env.DEV`
-// with `false`, so the provider/exporter never enters the bundle. Disabled or
-// invalid configurations resolve to a no-op handle.
-if (import.meta.env.DEV) {
-  try {
-    const { startDevTrace } = await import('@/server/infra/trace/runtime')
-    await startDevTrace()
-  } catch (err) {
-    root.warn(
-      { err: err instanceof Error ? err.name : typeof err },
-      'Failed to start development tracing; continuing without telemetry',
-    )
-  }
-}
-
 // Migrations and settings hydration must finish before schedulers start — else the "Settings not hydrated" race. Block is HMR-safe via `secretsMigrated`.
 
 if (!hmr?.secretsMigrated) {
   await migrateSecretsEncryption(getDb())
   await refreshBlogSettings(getDb())
+}
 
+// ADR-0012 follow-up: OpenObserve is a released capability configured in the
+// `observability` settings section. It runs after the settings snapshot is
+// hydrated and before the schedulers start, so background jobs are traced from
+// their first run. Failures are isolated inside the domain and never block the
+// site.
+//
+// `secretsMigrated` skips the refresh above on HMR, and HMR can also re-evaluate
+// `shared/config/snapshot` (module-level state) — a fresh snapshot module reads
+// back as empty. `hydrateBlogSettings` is single-flight: it returns the cached
+// hydration when the snapshot survived, and re-reads the DB when the module was
+// re-created. Without this, the boot sync would see no settings and stop the
+// providers until the next admin save.
+await hydrateBlogSettings(getDb())
+await syncObservabilityRuntime()
+
+// Best-effort asset upgrade: a verified config whose stored asset fingerprint
+// no longer matches this build re-provisions the RUM privacy pipeline and the
+// four dashboards. Fire-and-forget (bounded O2 timeouts); failures only log
+// and never block the site.
+void upgradeObservabilityProvisioningAtBoot({
+  site: getBlogSettingsBundleSync()?.observability?.observability ?? null,
+  writeSettings: (patch) =>
+    updateBlogSettingsSection(getDb(), 'observability', { observability: patch }, null).then(() => undefined),
+})
+
+if (!hmr?.secretsMigrated) {
   startAllRegisteredJobs()
 
   if (hmr) {

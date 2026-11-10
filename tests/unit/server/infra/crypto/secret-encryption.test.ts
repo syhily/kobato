@@ -113,6 +113,22 @@ describe('secret-encryption', () => {
     })
   })
 
+  describe('secretHmac', () => {
+    it('is deterministic and purpose-scoped', async () => {
+      const { secretHmac } = await importModule(MOCK_KEY)
+      expect(secretHmac('observability', 'payload')).toBe(secretHmac('observability', 'payload'))
+      expect(secretHmac('observability', 'payload')).not.toBe(secretHmac('other-purpose', 'payload'))
+      expect(secretHmac('observability', 'payload')).toMatch(/^[0-9a-f]{64}$/)
+    })
+
+    it('derives its key from the deployment encryption key', async () => {
+      const first = (await importModule(MOCK_KEY)).secretHmac('observability', 'payload')
+      clean()
+      const rotated = (await importModule('b'.repeat(32))).secretHmac('observability', 'payload')
+      expect(rotated).not.toBe(first)
+    })
+  })
+
   describe('v2 format produces enc2: prefix', () => {
     it('uses enc2: prefix for new encryptions', async () => {
       const { encryptIfNeeded, isEncrypted } = await importModule(MOCK_KEY)

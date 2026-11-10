@@ -12,7 +12,7 @@ import { TestMetricReader, dataPointsOf } from '#/_helpers/in-memory-metric-read
 import { runAnalyticsQuery } from '@/server/domains/analytics/services/analytics-sql'
 import { __resetTraceFacadeForTests, withSpanAsync } from '@/server/infra/trace/facade'
 import { METRIC } from '@/server/infra/trace/metrics'
-import { startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',
@@ -40,7 +40,7 @@ function readerWith(run: () => Promise<{ getRowObjects: () => Record<string, unk
 let exporter: InMemorySpanExporter
 let spanSpy: ReadableSpan[]
 let reader: TestMetricReader
-let handle: Awaited<ReturnType<typeof startDevTrace>>
+let handle: Awaited<ReturnType<typeof startTraceRuntime>>
 
 beforeEach(async () => {
   vi.stubEnv('DEV', true as never)
@@ -57,11 +57,11 @@ beforeEach(async () => {
     forceFlush: () => exporter.forceFlush(),
   }
   reader = new TestMetricReader()
-  handle = await startDevTrace({ resolution: resolution(), spanExporter: harnessed, metricReader: reader })
+  handle = await startTraceRuntime({ resolution: resolution(), spanExporter: harnessed, metricReader: reader })
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
 })

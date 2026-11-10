@@ -1,4 +1,4 @@
-import { createDecipheriv, createHash, createCipheriv, hkdfSync, randomBytes } from 'node:crypto'
+import { createCipheriv, createDecipheriv, createHash, createHmac, hkdfSync, randomBytes } from 'node:crypto'
 
 import { serverConfig } from '@/server/infra/config'
 import { getLogger } from '@/server/infra/logger'
@@ -14,10 +14,12 @@ const ENCRYPTED_V2_PREFIX = 'enc2:'
 
 const LEGACY_HKDF_SALT = Buffer.from('kobato-secret-v2-salt')
 const HKDF_INFO = 'aes-256-gcm-key'
+const FINGERPRINT_HKDF_INFO = 'kobato-fingerprint-hmac'
 
 let cachedLegacyKey: Buffer | undefined
 let cachedLegacyV2Key: Buffer | undefined
 let cachedDeploymentKey: Buffer | undefined
+const cachedHmacKeys = new Map<string, Buffer>()
 
 function getLegacyKey(): Buffer {
   if (cachedLegacyKey !== undefined) {
@@ -89,6 +91,31 @@ export function isEncrypted(value: string): boolean {
   const prefix = value.startsWith(ENCRYPTED_V2_PREFIX) ? ENCRYPTED_V2_PREFIX : ENCRYPTED_PREFIX
   const parts = value.slice(prefix.length).split(':')
   return parts.length === 3 && parts.every((p) => p.length > 0 && /^[0-9a-f]+$/i.test(p))
+}
+
+function getFingerprintHmacKey(purpose: string): Buffer {
+  const cached = cachedHmacKeys.get(purpose)
+  if (cached !== undefined) {
+    return cached
+  }
+  const key = Buffer.from(
+    hkdfSync('sha256', getDeploymentKey(), Buffer.alloc(0), `${FINGERPRINT_HKDF_INFO}:${purpose}`, 32),
+  )
+  cachedHmacKeys.set(purpose, key)
+  return key
+}
+
+/**
+ * Keyed digest for values that leave the server (e.g. the admin-visible
+ * observability fingerprint). A plain sha256 over a password-bearing payload is
+ * offline-guessable, so the digest is keyed with a purpose-scoped HKDF of the
+ * deployment key — the same `security.encryptionKey` that encrypts stored
+ * secrets. Consequence: rotating `security.encryptionKey` invalidates every
+ * previously stored fingerprint; the affected configuration then reads as
+ * unverified and must be re-tested. That is the intended, visible behavior.
+ */
+export function secretHmac(purpose: string, payload: string): string {
+  return createHmac('sha256', getFingerprintHmacKey(purpose)).update(payload).digest('hex')
 }
 
 export function encryptIfNeeded(plaintext: string): string {

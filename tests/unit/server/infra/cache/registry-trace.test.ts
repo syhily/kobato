@@ -32,7 +32,7 @@ import { __resetMemoryCacheForTests } from '@/server/infra/cache/memory-store'
 import { get, through, throughMany } from '@/server/infra/cache/registry'
 import { __resetTraceFacadeForTests } from '@/server/infra/trace/facade'
 import { METRIC } from '@/server/infra/trace/metrics'
-import { startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',
@@ -52,7 +52,7 @@ function resolution(): TraceConfigResolution {
 let spanExporter: InMemorySpanExporter
 let spans: ReadableSpan[]
 let reader: TestMetricReader
-let handle: Awaited<ReturnType<typeof startDevTrace>>
+let handle: Awaited<ReturnType<typeof startTraceRuntime>>
 
 beforeEach(async () => {
   vi.stubEnv('DEV', true as never)
@@ -82,11 +82,11 @@ beforeEach(async () => {
     forceFlush: () => spanExporter.forceFlush(),
   }
   reader = new TestMetricReader()
-  handle = await startDevTrace({ resolution: resolution(), spanExporter: exporter, metricReader: reader })
+  handle = await startTraceRuntime({ resolution: resolution(), spanExporter: exporter, metricReader: reader })
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
 })

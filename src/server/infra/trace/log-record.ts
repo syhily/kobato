@@ -1,6 +1,6 @@
-// Log-line projection for the DEV-only OpenObserve log pipeline (ADR-0012).
+// Log-line projection for the OpenObserve log pipeline (ADR-0012).
 //
-// This module is SDK-free and never imports the logger: the DEV runtime feeds
+// This module is SDK-free and never imports the logger: the trace runtime feeds
 // it the serialized Pino lines captured by the log sink, and only what this
 // projection returns can leave the process. Messages are a closed shape (a
 // fixed HTTP phrase or a sanitized non-HTTP static message); request ids,

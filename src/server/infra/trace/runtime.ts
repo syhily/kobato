@@ -1,9 +1,10 @@
-// Development-only OpenObserve OTel runtime (ADR-0012).
+// OpenObserve OTel runtime (ADR-0012; activated from the `observability`
+// settings section since the release follow-up).
 //
 // One of the two server modules allowed to import the real OpenTelemetry SDKs
-// (the other is `logs-runtime.ts`, which this module constructs). It is loaded
-// through a DEV-only dynamic import from `server.ts`, so a production bundle
-// has no provider, exporter, context manager, or sampler to reach.
+// (the other is `logs-runtime.ts`, which this module constructs). It is reached
+// through a dynamic import from `domains/observability/runtime-manager.ts`, so
+// the SDK chunk is loaded only when the admin has configured tracing.
 // `facade.ts` stays the application-facing surface.
 //
 // Boundaries that matter here:
@@ -61,15 +62,14 @@ import type {
   SpanOptions,
   TraceDelegate,
 } from '@/server/infra/trace/facade'
-import type { DevLogPipeline } from '@/server/infra/trace/logs-runtime'
+import type { LogPipeline } from '@/server/infra/trace/logs-runtime'
 
 import { registerShutdownHook, unregisterShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { clearLogSink, setLogSink } from '@/server/infra/logger/sink'
-import { isTraceDevelopmentRuntime, loadTraceConfig } from '@/server/infra/trace/config'
 import { installTraceDelegate, uninstallTraceDelegate } from '@/server/infra/trace/facade'
 import { activateFrontendGate, deactivateFrontendGate } from '@/server/infra/trace/frontend-gate'
-import { buildDevLogPipeline } from '@/server/infra/trace/logs-runtime'
+import { buildLogPipeline } from '@/server/infra/trace/logs-runtime'
 import {
   isAllowedMetricName,
   METRIC,
@@ -117,7 +117,7 @@ const TRACE_CONTEXT_GETTER: TextMapGetter<Record<string, string>> = {
   get: (carrier, key) => carrier[key],
 }
 
-export interface DevTraceHandle {
+export interface TraceRuntimeHandle {
   /** True only when a real provider + delegate were installed. */
   readonly started: boolean
   /** Idempotent, bounded flush + shutdown. */
@@ -143,9 +143,9 @@ export interface TraceLifecycleHooks {
   disableMonitor?: (monitor: ELDHistogram | null) => void
 }
 
-export interface DevTraceStartOptions {
-  /** Test seam: skip boot-config resolution. */
-  resolution?: TraceConfigResolution
+export interface TraceRuntimeStartOptions {
+  /** The resolved settings projection; the domain orchestrator owns resolution. */
+  resolution: TraceConfigResolution
   /** Test seam: in-memory exporter instead of direct OTLP/HTTP. */
   spanExporter?: SpanExporter
   /** Test seam: collect metrics in memory instead of the periodic OTLP reader. */
@@ -173,7 +173,7 @@ interface MetricPipeline {
 interface RuntimeState {
   provider: TracerProvider
   metricProvider: MeterProvider | null
-  logPipeline: DevLogPipeline | null
+  logPipeline: LogPipeline | null
   config: ServerTraceRuntimeConfig
   /** Isolated, idempotent cleanup actions shared by rollback and stop. */
   cleanup: () => void
@@ -184,7 +184,7 @@ interface RuntimeState {
 
 let runtime: RuntimeState | null = null
 
-const INERT_HANDLE: DevTraceHandle = {
+const INERT_HANDLE: TraceRuntimeHandle = {
   started: false,
   shutdown: () => Promise.resolve(),
   forceFlush: () => Promise.resolve(),
@@ -442,7 +442,7 @@ export function buildMetricExporter(config: ServerTraceRuntimeConfig): OTLPMetri
 
 /**
  * Build the meter pipeline: the same fixed resource, a periodic OTLP reader
- * (or a test reader), and the DEV-only event-loop observer. The observer is a
+ * (or a test reader), and the event-loop observer. The observer is a
  * `perf_hooks` interval histogram — no host/process detector is involved.
  */
 function buildMetricPipeline(
@@ -511,7 +511,7 @@ function buildMetricPipeline(
 }
 
 /**
- * Install the AsyncLocalStorage context manager. A prior DEV instance (HMR)
+ * Install the AsyncLocalStorage context manager. A prior instance (HMR)
  * may already have registered one; the global slot then keeps that working
  * manager instead of replacing it, and no state is disabled on shutdown so a
  * reload cannot break the next instance.
@@ -541,7 +541,7 @@ function flushAll(state: RuntimeState): Promise<void> {
 function shutdownSignals(
   provider: TracerProvider,
   metricProvider: MeterProvider | null,
-  logPipeline: DevLogPipeline | null,
+  logPipeline: LogPipeline | null,
   timeoutMs: number,
 ): Promise<void> {
   const traceShutdown = provider.shutdown().catch(() => undefined)
@@ -573,28 +573,25 @@ async function verifyFrontendGate(
   }
 }
 
-function makeHandle(state: RuntimeState): DevTraceHandle {
+function makeHandle(state: RuntimeState): TraceRuntimeHandle {
   return {
     started: true,
-    shutdown: () => stopDevTrace({ timeoutMs: SHUTDOWN_TIMEOUT_MS }),
+    shutdown: () => stopTraceRuntime({ timeoutMs: SHUTDOWN_TIMEOUT_MS }),
     forceFlush: () => (state.stopped ? Promise.resolve() : withTimeout(flushAll(state), EXPORT_TIMEOUT_MS)),
   }
 }
 
 /**
- * Start the DEVELOPMENT trace pipeline. Idempotent: the same process returns
- * the same handle, and production/disabled/invalid configurations resolve to
- * an inert handle without constructing a provider.
+ * Start the trace pipeline. Idempotent: the same process returns the same
+ * handle, and disabled/invalid configurations resolve to an inert handle
+ * without constructing a provider.
  */
-export async function startDevTrace(options: DevTraceStartOptions = {}): Promise<DevTraceHandle> {
+export async function startTraceRuntime(options: TraceRuntimeStartOptions): Promise<TraceRuntimeHandle> {
   if (runtime !== null) {
     return makeHandle(runtime)
   }
-  if (!isTraceDevelopmentRuntime()) {
-    return INERT_HANDLE
-  }
 
-  const resolution = options.resolution ?? loadTraceConfig()
+  const resolution = options.resolution
   if (resolution.status !== 'active' || resolution.server === null) {
     return INERT_HANDLE
   }
@@ -625,7 +622,7 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
   const gateToken: object = {}
   let verificationTimer: NodeJS.Timeout | null = null
   let metricPipeline: MetricPipeline | null = null
-  let logPipeline: DevLogPipeline | null = null
+  let logPipeline: LogPipeline | null = null
   let delegate: TraceDelegate | null = null
   let delegateInstalled = false
   let sqliteAttempted = false
@@ -699,7 +696,7 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
 
   try {
     // A metric failure degrades to trace-only telemetry; it never disables the
-    // trace pipeline (or the development site). This runs inside the unified
+    // trace pipeline (or the site). This runs inside the unified
     // tail so even the degradation log cannot escape the rollback boundary.
     try {
       metricPipeline = buildMetricPipeline(config, options.metricReader, options.eventLoopObserver)
@@ -715,7 +712,7 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
     // never traces or metrics.
     if (config.logs !== null) {
       try {
-        logPipeline = buildDevLogPipeline(config.logs, { exporter: options.logRecordExporter })
+        logPipeline = buildLogPipeline(config.logs, { exporter: options.logRecordExporter })
       } catch (error) {
         logPipeline = null
         log.warn('OpenObserve log pipeline could not start; logs stay disabled', {
@@ -732,8 +729,9 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
       return INERT_HANDLE
     }
 
-    // The sink slot is process-wide: when it is already taken (an older DEV
-    // runtime), discard only this new log pipeline and keep tracing.
+    // The sink slot is process-wide: when it is already taken (an older
+    // runtime left over from HMR), discard only this new log pipeline and keep
+    // tracing.
     if (logPipeline !== null) {
       let installed = false
       try {
@@ -756,7 +754,7 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
     sqliteAttempted = true
     startSqlite({ includeRedactedSql: config.includeRedactedSql })
 
-    shutdownHook = () => stopDevTrace({ timeoutMs: SHUTDOWN_TIMEOUT_MS })
+    shutdownHook = () => stopTraceRuntime({ timeoutMs: SHUTDOWN_TIMEOUT_MS })
     registerHook(shutdownHook, SHUTDOWN_HOOK_PRIORITY)
 
     log.info('OpenObserve tracing enabled', {
@@ -776,6 +774,10 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
       stopped: false,
     }
 
+    // The browser gate is build-independent: whenever the settings projection
+    // produced a frontend CANDIDATE, verify the O2 allowlist pipeline before
+    // exposing it. A failed/offline probe withholds ONLY browser RUM; the
+    // server pipeline above keeps running.
     if (resolution.frontend !== null) {
       const verifier = options.verifyFrontendPipeline ?? verifyRumPrivacyPipeline
       const verifyTimeoutMs = options.frontendVerifyTimeoutMs ?? RUM_PRIVACY_VERIFY_TIMEOUT_MS
@@ -842,7 +844,7 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
 }
 
 /** Idempotent, bounded teardown. Safe to call from HMR disposal and shutdown hooks. */
-export async function stopDevTrace(options: { timeoutMs?: number } = {}): Promise<void> {
+export async function stopTraceRuntime(options: { timeoutMs?: number } = {}): Promise<void> {
   const state = runtime
   if (state === null) {
     return
@@ -869,12 +871,12 @@ export async function stopDevTrace(options: { timeoutMs?: number } = {}): Promis
 }
 
 /** Whether a provider + delegate are currently installed (tests, HMR audit). */
-export function isDevTraceRunning(): boolean {
+export function isTraceRuntimeRunning(): boolean {
   return runtime !== null
 }
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
-    void stopDevTrace()
+    void stopTraceRuntime()
   })
 }

@@ -15,7 +15,7 @@ import {
   uninstallTraceDelegate,
   withSpanAsync,
 } from '@/server/infra/trace/facade'
-import { isDevTraceRunning, startDevTrace, stopDevTrace } from '@/server/infra/trace/runtime'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',
@@ -75,7 +75,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  await stopDevTrace()
+  await stopTraceRuntime()
   uninstallTraceDelegate()
   __resetTraceFacadeForTests()
   vi.unstubAllEnvs()
@@ -83,8 +83,8 @@ afterEach(async () => {
 
 async function start(
   overrides: Partial<ServerTraceRuntimeConfig> = {},
-): Promise<Awaited<ReturnType<typeof startDevTrace>>> {
-  return startDevTrace({
+): Promise<Awaited<ReturnType<typeof startTraceRuntime>>> {
+  return startTraceRuntime({
     resolution: activeResolution(overrides),
     spanExporter: harness.exporter,
     // Keep forceFlush/shutdown off the real OTLP network in unit tests.
@@ -97,16 +97,16 @@ describe('trace runtime — activation gates', () => {
     const handle = await start()
 
     expect(handle.started).toBe(true)
-    expect(isDevTraceRunning()).toBe(true)
+    expect(isTraceRuntimeRunning()).toBe(true)
     expect(isTraceActive()).toBe(true)
   })
 
   it('does not start for disabled or invalid configuration', async () => {
-    const disabled = await startDevTrace({ resolution: disabledResolution(), spanExporter: harness.exporter })
+    const disabled = await startTraceRuntime({ resolution: disabledResolution(), spanExporter: harness.exporter })
     expect(disabled.started).toBe(false)
     expect(isTraceActive()).toBe(false)
 
-    const invalid = await startDevTrace({
+    const invalid = await startTraceRuntime({
       resolution: { status: 'invalid', server: null, frontend: null, diagnostics: [] },
       spanExporter: harness.exporter,
     })
@@ -114,14 +114,15 @@ describe('trace runtime — activation gates', () => {
     expect(isTraceActive()).toBe(false)
   })
 
-  it('is permanently inert in production even with an active resolution', async () => {
+  it('starts in a production build when the settings resolution is active', async () => {
+    vi.stubEnv('DEV', false as never)
     vi.stubEnv('PROD', true as never)
 
-    const handle = await startDevTrace({ resolution: activeResolution(), spanExporter: harness.exporter })
+    const handle = await startTraceRuntime({ resolution: activeResolution(), spanExporter: harness.exporter })
 
-    expect(handle.started).toBe(false)
-    expect(isDevTraceRunning()).toBe(false)
-    expect(isTraceActive()).toBe(false)
+    expect(handle.started).toBe(true)
+    expect(isTraceRuntimeRunning()).toBe(true)
+    expect(isTraceActive()).toBe(true)
   })
 
   it('is idempotent: a second start keeps one provider', async () => {
@@ -147,7 +148,7 @@ describe('trace runtime — activation gates', () => {
     await handle.shutdown()
     expect(container.hooks).toHaveLength(before)
 
-    await stopDevTrace()
+    await stopTraceRuntime()
     expect(container.hooks).toHaveLength(before)
   })
 
@@ -156,10 +157,10 @@ describe('trace runtime — activation gates', () => {
 
     await withSpanAsync('before.stop', async () => 'ok')
     await handle.shutdown()
-    await stopDevTrace()
-    await stopDevTrace()
+    await stopTraceRuntime()
+    await stopTraceRuntime()
 
-    expect(isDevTraceRunning()).toBe(false)
+    expect(isTraceRuntimeRunning()).toBe(false)
     expect(isTraceActive()).toBe(false)
 
     await withSpanAsync('after.stop', async () => 'ok')

@@ -495,33 +495,25 @@ describe('trace facade — delegate lifecycle failures', () => {
   })
 })
 
-describe('trace facade — production is permanently inert', () => {
-  it('refuses installation in production', () => {
+describe('trace facade — installation is runtime-owned, not build-gated', () => {
+  it('installs and routes in a production build (the settings gate lives upstream)', () => {
+    vi.stubEnv('DEV', false as never)
     vi.stubEnv('PROD', true as never)
-    const { delegate } = recordingDelegate()
-
-    expect(installTraceDelegate(delegate)).toBe(false)
-    expect(isTraceDelegateInstalled()).toBe(false)
-    expect(activeTraceIds()).toBeNull()
-  })
-
-  it('stops routing through an already-installed delegate once production is active', () => {
     const { delegate, startSpan } = recordingDelegate()
-    expect(installTraceDelegate(delegate)).toBe(true)
 
-    vi.stubEnv('PROD', true as never)
-    expect(isTraceDelegateInstalled()).toBe(false)
+    expect(installTraceDelegate(delegate)).toBe(true)
+    expect(isTraceDelegateInstalled()).toBe(true)
 
     expect(withSpan('production.span', () => 'ok')).toBe('ok')
-    expect(startSpan).not.toHaveBeenCalled()
+    expect(startSpan).toHaveBeenCalledTimes(1)
   })
 
-  it('refuses installation when the DEV flag is off', () => {
-    vi.stubEnv('DEV', false as never)
-    const { delegate } = recordingDelegate()
+  it('stays inert until a delegate is installed', () => {
+    vi.stubEnv('PROD', true as never)
 
-    expect(installTraceDelegate(delegate)).toBe(false)
+    expect(isTraceDelegateInstalled()).toBe(false)
     expect(isTraceActive()).toBe(false)
+    expect(activeTraceIds()).toBeNull()
   })
 })
 

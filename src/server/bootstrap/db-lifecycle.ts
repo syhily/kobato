@@ -27,6 +27,7 @@ import { runPtLexicalBackfillAtBoot } from '@/server/domains/content/services/pt
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { notifyAdmins } from '@/server/domains/notifications/service'
+import { syncObservabilityRuntime } from '@/server/domains/observability/runtime-manager'
 import { reindexSearchToCompletion } from '@/server/domains/posts/services/search-reindex'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
@@ -239,6 +240,9 @@ registerSectionChangeHandler('backup', rescheduleBackup)
 registerSectionChangeHandler('limits', rescheduleArchive)
 registerSectionChangeHandler('mail', invalidateMailTransportCache)
 registerSectionChangeHandler('analytics', rescheduleGeoipUpdate)
+// Hot-apply the observability runtime on every save; an unverified or disabled
+// fingerprint stops the providers instead of starting them.
+registerSectionChangeHandler('observability', syncObservabilityRuntime)
 
 // Migrate once per process (HMR-safe via the 'migrationsRan' slot);
 // vitest's per-graph :memory: DBs must migrate themselves.

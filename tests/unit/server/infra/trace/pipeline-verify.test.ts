@@ -27,7 +27,10 @@ const CONFIG: ServerTraceRuntimeConfig = {
   logs: null,
 }
 
-const BODY = readFileSync(join(process.cwd(), 'scripts/trace/assets/rum-privacy.vrl'), 'utf-8').trim()
+const BODY = readFileSync(
+  join(process.cwd(), 'src/server/domains/observability/assets/rum-privacy.vrl'),
+  'utf-8',
+).trim()
 
 function pipeline(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {

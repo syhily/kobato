@@ -1,12 +1,12 @@
 // No-OpenTelemetry-import tracing surface (ADR-0012).
 //
-// Application code depends on this facade only. Before a DEV runtime installs
-// a delegate — and always in production — every operation is a true
-// pass-through: the callback still runs, metrics are no-ops, and no telemetry
-// failure can ever propagate into request/rendering correctness.
+// Application code depends on this facade only. Until an admin-configured
+// runtime installs a delegate — and whenever tracing is disabled — every
+// operation is a true pass-through: the callback still runs, metrics are
+// no-ops, and no telemetry failure can ever propagate into request/rendering
+// correctness.
 
 import { getLogger } from '@/server/infra/logger'
-import { isTraceDevelopmentRuntime } from '@/server/infra/trace/config'
 
 const log = getLogger('trace')
 
@@ -69,8 +69,8 @@ export interface Histogram {
 }
 
 /**
- * The DEV-only implementation contract. `runtime.ts` installs one; nothing
- * else in the application may implement or consume it.
+ * The implementation contract. `runtime.ts` installs one; nothing else in the
+ * application may implement or consume it.
  */
 export interface TraceDelegate {
   startSpan(name: string, options?: SpanOptions): Span
@@ -127,7 +127,7 @@ function reportFailure(operation: string, error: unknown): void {
 }
 
 function currentDelegate(): TraceDelegate | null {
-  return activeDelegate !== null && isTraceDevelopmentRuntime() ? activeDelegate : null
+  return activeDelegate
 }
 
 /**
@@ -614,19 +614,17 @@ export function histogram(name: string, options?: MetricOptions): Histogram {
   }
 }
 
-/** True only while a DEV delegate is installed and the build is not production. */
+/** True only while a runtime delegate is installed. */
 export function isTraceActive(): boolean {
   return currentDelegate() !== null
 }
 
 /**
- * Install the DEV runtime delegate. Production refuses installation, so the
- * real provider/exporter can never be reached even if a caller misbehaves.
+ * Install the runtime delegate. Only `infra/trace/runtime.ts` calls this after
+ * constructing a provider; a caller that misbehaves can at most route spans
+ * into a broken delegate, which the guarded surface isolates.
  */
 export function installTraceDelegate(delegate: TraceDelegate): boolean {
-  if (!isTraceDevelopmentRuntime()) {
-    return false
-  }
   if (activeDelegate === delegate) {
     return true
   }

@@ -24,21 +24,6 @@ export interface ConfigEntry {
   fileDefault: unknown
 }
 
-// Env values reach `loadServerConfig` as raw strings (and `parseEnvValue`
-// only types the write-back), so booleans need an explicit grammar instead
-// of z.coerce.boolean(), which would read "false" as true.
-const configBoolean = z
-  .union([
-    z.boolean(),
-    z.literal('true'),
-    z.literal('false'),
-    z.literal('1'),
-    z.literal('0'),
-    z.literal(1),
-    z.literal(0),
-  ])
-  .transform((value) => value === true || value === 'true' || value === '1' || value === 1)
-
 export const CONFIG_TABLE = [
   { path: ['server', 'host'], schema: z.string().min(1).default('0.0.0.0'), fileDefault: '0.0.0.0' },
   {
@@ -121,26 +106,6 @@ export const CONFIG_TABLE = [
     path: ['storage', 'defaultFont'],
     schema: z.string().min(1).optional(),
     fileDefault: '',
-  },
-  // Development-only OpenObserve tracing (ADR-0012). Structural parsing is
-  // deliberately permissive here; semantic activation — endpoint security,
-  // the organization path grammar, credential completeness, and sampling
-  // ranges — resolves safely at `infra/trace/config.ts` so a bad trace block
-  // can never prevent the development site from starting.
-  { path: ['trace', 'enabled'], schema: configBoolean.default(false), fileDefault: false },
-  { path: ['trace', 'logs', 'enabled'], schema: configBoolean.default(false), fileDefault: false },
-  { path: ['trace', 'endpoint'], schema: z.string().default(''), fileDefault: '' },
-  { path: ['trace', 'organization'], schema: z.string().default('default'), fileDefault: 'default' },
-  { path: ['trace', 'serverAuthorizationHeader'], schema: z.string().default(''), fileDefault: '' },
-  { path: ['trace', 'sampleRate'], schema: z.coerce.number().default(1), fileDefault: 1 },
-  { path: ['trace', 'includeRedactedSql'], schema: configBoolean.default(false), fileDefault: false },
-  { path: ['trace', 'frontend', 'enabled'], schema: configBoolean.default(false), fileDefault: false },
-  { path: ['trace', 'frontend', 'applicationId'], schema: z.string().default(''), fileDefault: '' },
-  { path: ['trace', 'frontend', 'clientToken'], schema: z.string().default(''), fileDefault: '' },
-  {
-    path: ['trace', 'frontend', 'sessionSampleRate'],
-    schema: z.coerce.number().default(100),
-    fileDefault: 100,
   },
 ] as const satisfies readonly ConfigEntry[]
 
@@ -597,31 +562,6 @@ export function loadConfig(): Record<string, unknown> {
   return runtimeEnv
 }
 
-/** The nested, validated configuration every consumer reads. */
-export interface TraceFrontendConfigSection {
-  enabled: boolean
-  applicationId: string
-  clientToken: string
-  sessionSampleRate: number
-}
-
-/** Development-only OpenObserve tracing. Semantics live in `infra/trace/config.ts`. */
-export interface TraceConfigSection {
-  enabled: boolean
-  logs: TraceLogsConfigSection
-  endpoint: string
-  organization: string
-  serverAuthorizationHeader: string
-  sampleRate: number
-  includeRedactedSql: boolean
-  frontend: TraceFrontendConfigSection
-}
-
-/** `trace.logs.enabled` only; the OTLP URL/credential are derived from the trace block. */
-export interface TraceLogsConfigSection {
-  enabled: boolean
-}
-
 export interface ServerConfig {
   server: {
     host: string
@@ -643,7 +583,6 @@ export interface ServerConfig {
     analyticsDatabase: string
     defaultFont?: string | undefined
   }
-  trace: TraceConfigSection
 }
 
 /**

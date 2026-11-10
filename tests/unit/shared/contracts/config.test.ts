@@ -27,4 +27,9 @@ describe('contract: kobato.config.example.json mirrors CONFIG_TABLE', () => {
 
     expect(exampleKeys.sort()).toEqual([...tableKeys].sort())
   })
+
+  it('carries no trace.* rows — OpenObserve is configured only in the observability settings section', () => {
+    const topLevelKeys: readonly string[] = CONFIG_TABLE.map((entry) => entry.path[0])
+    expect(topLevelKeys).not.toContain('trace')
+  })
 })

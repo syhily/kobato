@@ -1,19 +1,23 @@
-// Development-only OpenObserve activation (ADR-0012).
+// OpenObserve activation (ADR-0012, now a released product capability).
 //
-// This module is the single place that turns the raw `trace.*` config block
-// into either an inert no-op or a fully validated server/frontend projection.
-// It never imports an OTel/OpenObserve SDK: `runtime.ts` owns the real
-// implementation and consumes `ServerTraceRuntimeConfig` from here.
+// This module is the single place that turns a settings projection (the
+// `observability` section, mapped by `domains/observability`) into either an
+// inert no-op or a fully validated server/frontend projection. It never imports
+// an OTel/OpenObserve SDK: `runtime.ts` owns the real implementation and
+// consumes `ServerTraceRuntimeConfig` from here.
 
 import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
 
-import { serverConfig, type TraceConfigSection } from '@/server/infra/config'
 import { getLogger } from '@/server/infra/logger'
 import { verifiedFrontendBootstrap } from '@/server/infra/trace/frontend-gate'
+import {
+  isSecureObservabilityOrigin,
+  normalizeObservabilityOrigin,
+  OBSERVABILITY_ORGANIZATION_PATTERN,
+} from '@/shared/config/observability'
 
 const log = getLogger('trace')
 
-const ORGANIZATION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
 // Header values are printable ASCII without surrounding whitespace: the
 // exact OpenObserve ingestion value must never carry a CR/LF (header
 // injection) or a stray space that changes the upstream credential.
@@ -42,7 +46,7 @@ export interface ServerTraceRuntimeConfig {
   otlpTracesUrl: string
   otlpMetricsUrl: string
   /**
-   * Non-null only when the pipeline is active AND `trace.logs.enabled` is on.
+   * Non-null only when the pipeline is active AND the logs switch is on.
    * Logs reuse the traces/metrics endpoint, organization, and credential.
    */
   logs: TraceLogsRuntimeConfig | null
@@ -54,16 +58,12 @@ export interface OtlpUrls {
   logs: string
 }
 
-export type TraceDiagnosticCode =
-  | 'trace-production-disabled'
-  | 'trace-invalid-config'
-  | 'trace-frontend-invalid-config'
-  | 'trace-logs-require-trace'
+export type TraceDiagnosticCode = 'trace-invalid-config' | 'trace-frontend-invalid-config' | 'trace-logs-require-trace'
 
 export interface TraceConfigDiagnostic {
   code: TraceDiagnosticCode
   level: 'warn' | 'error'
-  /** Dotted config keys only — never a configured value. */
+  /** Settings keys only — never a configured value. */
   fields: readonly string[]
 }
 
@@ -81,17 +81,44 @@ export interface TraceConfigResolution {
   diagnostics: readonly TraceConfigDiagnostic[]
 }
 
-export interface ResolveTraceConfigOptions {
-  isDevelopment: boolean
+export interface TraceFrontendSettings {
+  enabled: boolean
+  /** The site name (`observability.organization`), used as the O2 application id. */
+  applicationId: string
+  /** `observability.rumClientToken`. */
+  clientToken: string
+  sessionSampleRate: number
 }
 
+/**
+ * The runtime input, equivalent to the `observability` settings section. The
+ * domain layer composes `authorizationHeader` from the admin username/password
+ * so this module stays free of credential semantics.
+ */
+export interface TraceRuntimeSettings {
+  enabled: boolean
+  endpoint: string
+  organization: string
+  authorizationHeader: string
+  sampleRate: number
+  includeRedactedSql: boolean
+  logs: { enabled: boolean }
+  frontend: TraceFrontendSettings
+}
+
+export interface ResolveTraceConfigOptions {
+  /** Build-time environment; only projects the browser bootstrap label. */
+  environment: TraceEnvironment
+}
+
+export type TraceEnvironment = 'development' | 'production'
+
 const DIAGNOSTIC_MESSAGES: Record<TraceDiagnosticCode, string> = {
-  'trace-production-disabled': 'OpenObserve tracing is disabled in production builds (trace.enabled is ignored)',
   'trace-invalid-config': 'OpenObserve tracing is disabled because the configuration is invalid or incomplete',
   'trace-frontend-invalid-config':
     'OpenObserve frontend RUM is disabled because the configuration is invalid or incomplete',
   'trace-logs-require-trace':
-    'OpenObserve log export is disabled because it requires tracing (trace.logs.enabled is ignored)',
+    'OpenObserve log export is disabled because it requires tracing (observability.logs.enabled is ignored)',
 }
 
 /** Derive the direct OpenObserve OTLP endpoints from the validated origin. */
@@ -102,47 +129,6 @@ export function deriveOtlpUrls(origin: string, organization: string): OtlpUrls {
     metrics: `${base}/v1/metrics`,
     logs: `${base}/v1/logs`,
   }
-}
-
-function isLoopbackHostname(hostname: string): boolean {
-  const host = hostname.toLowerCase()
-  if (host === 'localhost' || host === '[::1]' || host === '::1') {
-    return true
-  }
-  return /^127(?:\.\d{1,3}){3}$/.test(host)
-}
-
-/**
- * Parse the configured OpenObserve origin. Rejects credentials, query
- * strings, fragments, non-root paths, non-http(s) schemes, and plain HTTP to
- * any non-loopback host.
- */
-function parseTraceEndpoint(raw: string): string | null {
-  if (raw.length === 0 || raw !== raw.trim()) {
-    return null
-  }
-  let url: URL
-  try {
-    url = new URL(raw)
-  } catch {
-    return null
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    return null
-  }
-  if (url.username !== '' || url.password !== '') {
-    return null
-  }
-  if (url.search !== '' || url.hash !== '') {
-    return null
-  }
-  if (url.pathname !== '/' && url.pathname !== '') {
-    return null
-  }
-  if (url.protocol === 'http:' && !isLoopbackHostname(url.hostname)) {
-    return null
-  }
-  return url.origin
 }
 
 function isValidAuthorizationHeader(value: string): boolean {
@@ -162,7 +148,7 @@ function buildServerConfig(
   endpoint: string,
   organization: string,
   authorizationHeader: string,
-  input: TraceConfigSection,
+  input: TraceRuntimeSettings,
 ): ServerTraceRuntimeConfig {
   const urls = deriveOtlpUrls(endpoint, organization)
   return {
@@ -178,55 +164,50 @@ function buildServerConfig(
 }
 
 /**
- * Resolve activation from a parsed `trace.*` block.
+ * Resolve activation from a settings projection.
  *
- * Production is always inert (at most one warning), and any invalid server
- * configuration disables BOTH pipelines rather than partially initializing.
- * Frontend RUM is only offered on top of a fully active server pipeline.
+ * Any invalid server configuration disables BOTH pipelines rather than
+ * partially initializing; frontend RUM is only offered on top of a fully
+ * active server pipeline. Whether the browser gate is exposed is the runtime
+ * verification's decision in `activeFrontendRum()`, not this function's, and
+ * it is environment-independent.
  */
 export function resolveTraceConfig(
-  input: TraceConfigSection,
+  input: TraceRuntimeSettings,
   options: ResolveTraceConfigOptions,
 ): TraceConfigResolution {
-  if (!options.isDevelopment) {
-    return {
-      status: 'disabled',
-      server: null,
-      frontend: null,
-      diagnostics: input.enabled
-        ? [{ code: 'trace-production-disabled', level: 'warn', fields: ['trace.enabled'] }]
-        : [],
-    }
-  }
-
   if (!input.enabled) {
     return {
       status: 'disabled',
       server: null,
       frontend: null,
       diagnostics: input.logs.enabled
-        ? [{ code: 'trace-logs-require-trace', level: 'warn', fields: ['trace.logs.enabled', 'trace.enabled'] }]
+        ? [
+            {
+              code: 'trace-logs-require-trace',
+              level: 'warn',
+              fields: ['observability.logs.enabled', 'observability.enabled'],
+            },
+          ]
         : [],
     }
   }
 
   const serverFields: string[] = []
-  const endpoint = parseTraceEndpoint(input.endpoint)
-  if (endpoint === null) {
-    serverFields.push('trace.endpoint')
+  const endpoint = normalizeObservabilityOrigin(input.endpoint)
+  if (endpoint === null || !isSecureObservabilityOrigin(input.endpoint)) {
+    serverFields.push('observability.endpoint')
   }
-  const organization = ORGANIZATION_PATTERN.test(input.organization) ? input.organization : null
+  const organization = OBSERVABILITY_ORGANIZATION_PATTERN.test(input.organization) ? input.organization : null
   if (organization === null) {
-    serverFields.push('trace.organization')
+    serverFields.push('observability.organization')
   }
   if (!isRateInRange(input.sampleRate, 1)) {
-    serverFields.push('trace.sampleRate')
+    serverFields.push('observability.sampleRate')
   }
-  const authorizationHeader = isValidAuthorizationHeader(input.serverAuthorizationHeader)
-    ? input.serverAuthorizationHeader
-    : null
+  const authorizationHeader = isValidAuthorizationHeader(input.authorizationHeader) ? input.authorizationHeader : null
   if (authorizationHeader === null) {
-    serverFields.push('trace.serverAuthorizationHeader')
+    serverFields.push('observability.credentials')
   }
 
   if (endpoint === null || organization === null || authorizationHeader === null || serverFields.length > 0) {
@@ -247,14 +228,14 @@ export function resolveTraceConfig(
   const frontendFields: string[] = []
   const applicationId = APPLICATION_ID_PATTERN.test(input.frontend.applicationId) ? input.frontend.applicationId : null
   if (applicationId === null) {
-    frontendFields.push('trace.frontend.applicationId')
+    frontendFields.push('observability.organization')
   }
   const clientToken = CLIENT_TOKEN_PATTERN.test(input.frontend.clientToken) ? input.frontend.clientToken : null
   if (clientToken === null) {
-    frontendFields.push('trace.frontend.clientToken')
+    frontendFields.push('observability.rumClientToken')
   }
   if (!isRateInRange(input.frontend.sessionSampleRate, 100)) {
-    frontendFields.push('trace.frontend.sessionSampleRate')
+    frontendFields.push('observability.frontend.sessionSampleRate')
   }
 
   if (applicationId === null || clientToken === null || frontendFields.length > 0) {
@@ -275,32 +256,32 @@ export function resolveTraceConfig(
       applicationId,
       clientToken,
       service: 'kobato',
-      environment: 'development',
+      environment: options.environment,
       sessionSampleRate: input.frontend.sessionSampleRate,
     },
     diagnostics: [],
   }
 }
 
-/** The build-time development gate. Production is never development. */
-export function isTraceDevelopmentRuntime(): boolean {
-  return import.meta.env.DEV === true && import.meta.env.PROD !== true
-}
-
-/** Resolve the process-wide boot snapshot (`serverConfig.trace`). */
-export function currentTraceConfig(): TraceConfigResolution {
-  return resolveTraceConfig(serverConfig.trace, { isDevelopment: isTraceDevelopmentRuntime() })
+/**
+ * The build-time environment LABEL projected into the browser bootstrap. It
+ * never gates a pipeline: a development and a production build run the exact
+ * same verification and exposure path, only the `env` dimension of the RUM
+ * event differs.
+ */
+export function traceEnvironment(): TraceEnvironment {
+  return import.meta.env.DEV === true && import.meta.env.PROD !== true ? 'development' : 'production'
 }
 
 /**
- * The frontend bootstrap the root loader and CSP may expose. Pure config
- * resolution only produces a CANDIDATE; this function additionally requires
- * the DEV runtime's startup verification of the O2 allowlist pipeline.
+ * The frontend bootstrap the root loader and CSP may expose. The settings
+ * projection only produces a CANDIDATE; this function additionally requires
+ * the runtime's successful verification of the O2 allowlist pipeline (the
+ * startup probe plus the periodic recheck), in EVERY build. An unverified,
+ * offline, or stopped pipeline withholds only browser RUM — server
+ * traces/metrics/logs keep running.
  */
 export function activeFrontendRum(): FrontendRumBootstrap | null {
-  if (currentTraceConfig().frontend === null) {
-    return null
-  }
   return verifiedFrontendBootstrap()
 }
 
@@ -310,8 +291,8 @@ export function formatTraceDiagnostic(diagnostic: TraceConfigDiagnostic): string
 }
 
 /**
- * Emit the safe startup diagnostics. Resolutions carry at most one
- * diagnostic per affected pipeline, so an enabled-but-incomplete block
+ * Emit the safe activation diagnostics. Resolutions carry at most one
+ * diagnostic per affected pipeline, so an enabled-but-incomplete projection
  * produces one log line containing field names only.
  */
 export function logTraceDiagnostics(diagnostics: readonly TraceConfigDiagnostic[]): void {
@@ -323,11 +304,4 @@ export function logTraceDiagnostics(diagnostics: readonly TraceConfigDiagnostic[
       log.error(message)
     }
   }
-}
-
-/** Resolve and log the boot-time trace configuration snapshot. */
-export function loadTraceConfig(): TraceConfigResolution {
-  const resolution = currentTraceConfig()
-  logTraceDiagnostics(resolution.diagnostics)
-  return resolution
 }

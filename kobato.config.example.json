@@ -14,22 +14,5 @@
     "defaultFont": "",
     "database": "",
     "analyticsDatabase": ""
-  },
-  "trace": {
-    "enabled": false,
-    "logs": {
-      "enabled": false
-    },
-    "endpoint": "",
-    "organization": "default",
-    "serverAuthorizationHeader": "",
-    "sampleRate": 1,
-    "includeRedactedSql": false,
-    "frontend": {
-      "enabled": false,
-      "applicationId": "",
-      "clientToken": "",
-      "sessionSampleRate": 100
-    }
   }
 }

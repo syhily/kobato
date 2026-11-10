@@ -3,23 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import { logger, root } from '@/server/infra/logger'
 import { __resetLogSinkForTests, clearLogSink, pushLogLine, setLogSink, type LogSink } from '@/server/infra/logger/sink'
 
-const runtimeEnv = import.meta.env as unknown as Record<string, unknown>
-const originalDev = runtimeEnv.DEV
-const originalProd = runtimeEnv.PROD
 // The test env pins `server.loggingLevel: 'silent'`; raise the live pino level
 // for the duration of each case so lines actually reach the writable.
 const originalRootLevel = root.level
-
-function setRuntime(dev: boolean, prod: boolean): void {
-  runtimeEnv.DEV = dev
-  runtimeEnv.PROD = prod
-}
 
 let stdoutSpy: MockInstance<typeof process.stdout.write> | undefined
 let stdoutLines: string[] = []
 
 beforeEach(() => {
-  setRuntime(true, false)
   __resetLogSinkForTests()
   root.level = 'debug'
   stdoutLines = []
@@ -35,8 +26,7 @@ afterEach(() => {
   root.level = originalRootLevel
   stdoutSpy?.mockRestore()
   stdoutSpy = undefined
-  runtimeEnv.DEV = originalDev
-  runtimeEnv.PROD = originalProd
+  vi.unstubAllEnvs()
   vi.restoreAllMocks()
 })
 
@@ -45,7 +35,7 @@ function stdoutText(): string {
 }
 
 describe('log sink slot', () => {
-  it('installs once in the development runtime', () => {
+  it('installs once into the empty process-wide slot', () => {
     const first: LogSink = { push: vi.fn() }
     const second: LogSink = { push: vi.fn() }
 
@@ -58,19 +48,16 @@ describe('log sink slot', () => {
     expect(setLogSink(second)).toBe(true)
   })
 
-  it('refuses installation in a production runtime', () => {
-    setRuntime(false, true)
+  it('installs and forwards in a production build — there is no build gate', () => {
+    vi.stubEnv('DEV', false as never)
+    vi.stubEnv('PROD', true as never)
     const sink: LogSink = { push: vi.fn() }
 
-    expect(setLogSink(sink)).toBe(false)
-    pushLogLine('{"level":"info","msg":"no sink"}\n')
+    expect(setLogSink(sink)).toBe(true)
+    pushLogLine('{"level":"info","msg":"production"}\n')
 
-    expect(sink.push).not.toHaveBeenCalled()
-  })
-
-  it('refuses installation when DEV and PROD are both set', () => {
-    setRuntime(true, true)
-    expect(setLogSink({ push: vi.fn() })).toBe(false)
+    expect(sink.push).toHaveBeenCalledOnce()
+    expect(sink.push).toHaveBeenCalledWith('{"level":"info","msg":"production"}\n')
   })
 
   it('does nothing when no sink is installed', () => {

@@ -1,4 +1,5 @@
-// Development-only OpenObserve log pipeline (ADR-0012).
+// OpenObserve log pipeline (ADR-0012; activated from the `observability`
+// settings section, in every build).
 //
 // The second server SDK implementation entry, next to `runtime.ts`. It is
 // constructed by the trace runtime — never imported by anything else — and it
@@ -50,7 +51,7 @@ const SEVERITY_NUMBERS: Readonly<Record<LogSeverityText, SeverityNumber>> = {
   FATAL: SeverityNumberEnum.FATAL,
 }
 
-export interface DevLogPipeline {
+export interface LogPipeline {
   /** Installed into the Pino writable's sink slot by the runtime. */
   readonly sink: LogSink
   /** Bounded flush; resolves, never rejects. */
@@ -59,7 +60,7 @@ export interface DevLogPipeline {
   shutdown(): Promise<void>
 }
 
-export interface DevLogPipelineOptions {
+export interface LogPipelineOptions {
   /** Test seam: in-memory exporter instead of direct OTLP/HTTP. */
   exporter?: LogRecordExporter
 }
@@ -68,10 +69,7 @@ export interface DevLogPipelineOptions {
  * Build the log pipeline. Construction failures clean up whatever was created
  * and rethrow so the caller can degrade logs only (traces/metrics continue).
  */
-export function buildDevLogPipeline(
-  config: TraceLogsRuntimeConfig,
-  options: DevLogPipelineOptions = {},
-): DevLogPipeline {
+export function buildLogPipeline(config: TraceLogsRuntimeConfig, options: LogPipelineOptions = {}): LogPipeline {
   const exporter =
     options.exporter ??
     new OTLPLogExporter({
