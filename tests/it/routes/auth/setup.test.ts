@@ -310,7 +310,7 @@ describe('routes/setup', () => {
       expect(data?.error).toBe('Setup Token 已过期或失效，请重新验证。')
     })
 
-    it('returns error when schema validation fails', async () => {
+    it('returns the first field error when schema validation fails', async () => {
       await mintSetupToken()
 
       const formData = new FormData()
@@ -328,7 +328,140 @@ describe('routes/setup', () => {
       })
 
       const data = (result as { data?: Record<string, unknown> }).data
-      expect(data?.error).toBe('请填写完整的管理员账号信息。')
+      expect(data?.error).toBe('请填写站点名称')
+    })
+
+    it('surfaces the password rule when the password fails complexity validation', async () => {
+      await mintSetupToken()
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      // Long enough, but no uppercase letter → the complexity rule fires.
+      formData.set('password', 'password1234')
+
+      const result = await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('密码必须包含至少一个大写字母、一个小写字母和一个数字')
+      expect((data?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('auth.validation.passwordComplexity')
+      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
+    })
+
+    it('surfaces the password byte-ceiling rule with its max param', async () => {
+      await mintSetupToken()
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      // 73 bytes of ASCII within the 128-char DoS cap → the bcrypt byte rule fires.
+      formData.set('password', 'Aa1' + 'a'.repeat(70))
+
+      const result = await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('密码过长（最多 72 字节）')
+      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
+    })
+
+    it('surfaces the site-name message when the title is blank', async () => {
+      await mintSetupToken()
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', '')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      formData.set('password', 'Password1234')
+
+      const result = await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('请填写站点名称')
+      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
+    })
+
+    it('surfaces the email message when the email is malformed', async () => {
+      await mintSetupToken()
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'not-an-email')
+      formData.set('password', 'Password1234')
+
+      const result = await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('请输入有效的邮箱地址')
+      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
+    })
+
+    it('surfaces the minimum-length rule for a short password', async () => {
+      await mintSetupToken()
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      formData.set('password', 'Ab1')
+
+      const result = await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('密码长度至少为 10 个字符')
+      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
     })
 
     it('rejects an unsupported locale without calling the install service', async () => {

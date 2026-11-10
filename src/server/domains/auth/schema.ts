@@ -20,11 +20,16 @@ export const MAX_PASSWORD_LENGTH = 128
 export const MAX_PASSWORD_BYTES = 72
 
 /**
- * Custom password-rule messages are typed UI-catalog ids (never prose): the
- * server maps them into wire descriptors at the boundary (`zodIssuesToWire`),
- * and the `{max}` bound rides the custom issue's `params`.
+ * Custom validation-rule messages are typed UI-catalog ids (never prose): the
+ * server maps them into wire descriptors at the boundary (`zodIssuesToWire`,
+ * or `authFlowValidationError` for the route-form flows), and numeric bounds
+ * like `{min}`/`{max}` ride the issue's derived params.
  */
 export const authValidationMessages = {
+  siteNameRequired: 'auth.validation.siteNameRequired',
+  nameRequired: 'auth.validation.nameRequired',
+  emailInvalid: 'auth.validation.emailInvalid',
+  passwordTooShort: 'auth.validation.passwordTooShort',
   passwordTooLong: 'auth.validation.passwordTooLong',
   passwordComplexity: 'auth.validation.passwordComplexity',
   updateFieldRequired: 'auth.validation.updateFieldRequired',
@@ -44,7 +49,7 @@ export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 export function newPasswordSchema() {
   return z
     .string()
-    .min(MIN_PASSWORD_LENGTH)
+    .min(MIN_PASSWORD_LENGTH, authValidationMessages.passwordTooShort)
     .superRefine((value, ctx) => {
       if (!passwordWithinBcryptLimit(value)) {
         ctx.addIssue({
@@ -66,9 +71,9 @@ export const signInSchema = z.object({
 export type SignInInput = z.infer<typeof signInSchema>
 
 export const signUpAdminSchema = z.object({
-  title: z.string().min(1),
-  name: z.string().min(1),
-  email: z.email(),
+  title: z.string({ message: authValidationMessages.siteNameRequired }).min(1, authValidationMessages.siteNameRequired),
+  name: z.string({ message: authValidationMessages.nameRequired }).min(1, authValidationMessages.nameRequired),
+  email: z.email({ message: authValidationMessages.emailInvalid }),
   password: newPasswordSchema(),
   locale: z.enum(SUPPORTED_LOCALES).default(DEFAULT_LOCALE),
 })

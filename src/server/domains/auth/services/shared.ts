@@ -2,6 +2,8 @@
 // (`credential`, `otp`, `passkey`, `password-reset`, `setup`) are the
 // single owner of the auth session-key state machine.
 
+import type { z } from 'zod'
+
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { ErrorMessageDescriptor, ErrorMessageParams } from '@/shared/contracts/api-error'
@@ -9,9 +11,10 @@ import type { AppLocale } from '@/shared/i18n/locales'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 import { checkMailReady } from '@/server/infra/email/sender'
-import { descriptorFor } from '@/server/infra/http/error-descriptor'
+import { descriptorFor, isUiMessageId, messageDescriptor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { zodIssueParams } from '@/shared/utils/zod-issue-bounds'
 
 /** A flow error whose copy the sign-in route translates for the request locale. */
 export type AuthFlowError = Extract<AuthFlowResult, { type: 'error' }>
@@ -47,6 +50,21 @@ export function authFlowMessage(
 /** Descriptor-backed error outcome; `message` keeps the English fallback for logs. */
 export function authFlowError(messageKey: UiMessageId, params?: ErrorMessageParams): AuthFlowError {
   const descriptor = descriptorFor(messageKey, params)
+  return { type: 'error', message: descriptor.fallbackMessage, descriptor }
+}
+
+/**
+ * Schema-parse failure → flow error: the first issue carrying a typed catalog
+ * id (the custom rule messages in `domains/auth/schema.ts`, e.g. the password
+ * rules) wins so the user sees the actual condition; standard Zod prose
+ * (missing/invalid plain fields) keeps the caller's generic key.
+ */
+export function authFlowValidationError(fallbackKey: UiMessageId, issues: readonly z.core.$ZodIssue[]): AuthFlowError {
+  const typed = issues.find((issue) => isUiMessageId(issue.message))
+  if (typed === undefined) {
+    return authFlowError(fallbackKey)
+  }
+  const descriptor = messageDescriptor(typed.message, zodIssueParams(typed))
   return { type: 'error', message: descriptor.fallbackMessage, descriptor }
 }
 

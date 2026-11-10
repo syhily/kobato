@@ -2830,6 +2830,10 @@ export const uiMessagesEnUS = {
   'auth.validation.passwordTooLong': 'The password is too long (at most {max} bytes)',
   'auth.validation.passwordComplexity':
     'The password must contain at least one uppercase letter, one lowercase letter and one digit',
+  'auth.validation.siteNameRequired': 'Enter a site name',
+  'auth.validation.nameRequired': 'Enter a nickname',
+  'auth.validation.emailInvalid': 'Enter a valid email address',
+  'auth.validation.passwordTooShort': 'The password must be at least {min} characters',
   'auth.validation.updateFieldRequired': 'Provide at least one field to update',
   'admin.settings.errors.unrecognizedKeys': 'Unrecognized keys: {keys}',
   'admin.settings.assets.error.endpointHttps':

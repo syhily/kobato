@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { signInSchema, signUpAdminSchema, updateUserSchema } from '@/server/domains/auth/schema'
+import { zodIssueParams } from '@/shared/utils/zod-issue-bounds'
 
 describe('auth/schema — password complexity', () => {
   const base = { title: 'Blog', name: 'Admin', email: 'admin@example.com' }
@@ -53,6 +54,44 @@ describe('auth/schema — password complexity', () => {
   it('signin keeps accepting long passwords (bcrypt truncates both sides of a compare)', async () => {
     const data = await signInSchema.parseAsync({ email: 'admin@example.com', password: 'x'.repeat(100) })
     expect(data.password).toHaveLength(100)
+  })
+})
+
+describe('auth/schema — typed validation messages', () => {
+  const base = { title: 'Blog', name: 'Admin', email: 'admin@example.com', password: 'CorrectHorse1' }
+
+  it('tags an empty site title with the typed required message', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, title: '' })
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toBe('auth.validation.siteNameRequired')
+  })
+
+  it('tags an empty nickname with the typed required message', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, name: '' })
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toBe('auth.validation.nameRequired')
+  })
+
+  it('tags a malformed email with the typed invalid message', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, email: 'not-an-email' })
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toBe('auth.validation.emailInvalid')
+  })
+
+  it('tags a short password with the typed message and the {min} bound', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, password: 'Ab1' })
+    expect(parsed.success).toBe(false)
+    const issue = parsed.error?.issues[0]
+    expect(issue?.message).toBe('auth.validation.passwordTooShort')
+    expect(zodIssueParams(issue)).toEqual({ min: 10 })
+  })
+
+  it('tags a past-72-byte password with the typed message and the {max} param', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, password: `${'Aa1'.repeat(24)}x` })
+    expect(parsed.success).toBe(false)
+    const issue = parsed.error?.issues.find((i) => i.message === 'auth.validation.passwordTooLong')
+    expect(issue).toBeDefined()
+    expect(zodIssueParams(issue)).toEqual({ max: 72 })
   })
 })
 

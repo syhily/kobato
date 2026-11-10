@@ -7,7 +7,12 @@ import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/services/setup'
-import { authFlowError, authFlowMessage, type AuthFlowError } from '@/server/domains/auth/services/shared'
+import {
+  authFlowError,
+  authFlowMessage,
+  authFlowValidationError,
+  type AuthFlowError,
+} from '@/server/domains/auth/services/shared'
 import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@/server/domains/auth/setup-token'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { getRequestContext } from '@/server/http/request-context'
@@ -60,8 +65,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   // Server translates, client displays: resolve the flow descriptor for this
   // request's locale and carry the key for stable client-side branching.
-  const fail = (messageKey: UiMessageId, status?: number) => {
-    const flow: AuthFlowError = authFlowError(messageKey)
+  const failFlow = (flow: AuthFlowError, status?: number) => {
     const payload: {
       error: string
       errorDescriptor?: ErrorMessageDescriptor
@@ -71,6 +75,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
     return status === undefined ? data(payload) : data(payload, { status })
   }
+  const fail = (messageKey: UiMessageId, status?: number) => failFlow(authFlowError(messageKey), status)
 
   if (intent === 'verify-token') {
     if (!validateCsrfForAction(session, request, formData)) {
@@ -123,7 +128,10 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     const parsed = signUpAdminSchema.safeParse(values)
     if (!parsed.success) {
-      return fail('auth.setup.error.formIncomplete')
+      // Field rules carry typed catalog ids, so the first failing field's own
+      // copy reaches the user; only non-field failures (e.g. a tampered locale
+      // enum) fall back to the generic incomplete-form notice.
+      return failFlow(authFlowValidationError('auth.setup.error.formIncomplete', parsed.error.issues))
     }
 
     const result = await signUpInitialAdminWithSession(db, {
@@ -134,10 +142,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     })
 
     if (result.type === 'error') {
-      return data({
-        error: authFlowMessage(result.message, result.descriptor, rc.localization.locale),
-        ...(result.descriptor === undefined ? {} : { errorDescriptor: result.descriptor }),
-      })
+      return failFlow(result)
     }
 
     if (result.type === 'redirect') {
