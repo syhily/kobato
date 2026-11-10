@@ -1,4 +1,5 @@
 import {
+  Activity,
   Archive,
   AtSign,
   BarChart3,
@@ -51,6 +52,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   SlidersHorizontal,
   Archive,
   BarChart3,
+  Activity,
 }
 
 interface SettingsNavItemProps {

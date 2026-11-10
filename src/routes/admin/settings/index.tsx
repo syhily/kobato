@@ -28,6 +28,7 @@ import { LimitsForm } from '@/ui/admin/settings/LimitsForm'
 import { MailForm } from '@/ui/admin/settings/MailForm'
 import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
 import { NewsletterForm } from '@/ui/admin/settings/NewsletterForm'
+import { ObservabilityForm } from '@/ui/admin/settings/ObservabilityForm'
 import { SecurityForm } from '@/ui/admin/settings/SecurityForm'
 import { SeoForm } from '@/ui/admin/settings/SeoForm'
 import { SettingsFlushProvider, useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
@@ -129,6 +130,16 @@ const SECTION_CONFIGS = [
   {
     id: 'analytics',
     render: (bundle) => <AnalyticsForm analytics={bundle.analytics} />,
+  },
+  {
+    id: 'observability',
+    render: (bundle, _tz, masks) => (
+      <ObservabilityForm
+        observability={bundle.observability}
+        passwordMask={masks.observabilityPasswordMask}
+        rumClientTokenMask={masks.observabilityRumClientTokenMask}
+      />
+    ),
   },
   {
     id: 'security',
