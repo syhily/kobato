@@ -312,12 +312,42 @@ export interface SecuritySettings {
   }
 }
 
+/**
+ * OpenObserve observability (ADR-0012 follow-up). The site name doubles as the
+ * OpenObserve organization; secrets are encrypted at rest and redacted for
+ * admin payloads. `verifiedFingerprint` pins the configuration that last passed
+ * a connection test (the runtime never activates an unverified fingerprint).
+ */
+export interface ObservabilitySettings {
+  observability: {
+    enabled: boolean
+    endpoint: string
+    organization: string
+    username: string
+    password?: string | undefined
+    sampleRate: number
+    includeRedactedSql: boolean
+    logs: {
+      enabled: boolean
+    }
+    frontend: {
+      enabled: boolean
+      sessionSampleRate: number
+    }
+    rumClientToken?: string | undefined
+    verifiedFingerprint: string
+    provisionedFingerprint: string
+  }
+}
+
 export interface SecretMasks {
   mailSmtpPassMask: string | null
   mailMailgunApiKeyMask: string | null
   assetsSecretAccessKeyMask: string | null
   commentsGithubTokenMask: string | null
   backupEncryptionPasswordMask: string | null
+  observabilityPasswordMask: string | null
+  observabilityRumClientTokenMask: string | null
 }
 
 export interface BlogSettingsBundle {
@@ -339,6 +369,7 @@ export interface BlogSettingsBundle {
   limits: LimitsSettings | null
   analytics: AnalyticsSettings | null
   security: SecuritySettings | null
+  observability: ObservabilitySettings | null
 }
 
 /**

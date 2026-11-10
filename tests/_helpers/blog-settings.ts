@@ -9,6 +9,7 @@ import { backupDefaults } from '@/server/domains/settings/sections/backup'
 import { limitsDefaults } from '@/server/domains/settings/sections/limits'
 import { mailDefaults } from '@/server/domains/settings/sections/mail'
 import { newsletterDefaults } from '@/server/domains/settings/sections/newsletter'
+import { observabilityDefaults } from '@/server/domains/settings/sections/observability'
 import { securityDefaults } from '@/server/domains/settings/sections/security'
 import { seoDefaults } from '@/server/domains/settings/sections/seo'
 import { rateLimitDefaults } from '@/shared/config/defaults'
@@ -129,6 +130,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     csrf: { ...securityDefaults.csrf, exemptPaths: [...securityDefaults.csrf.exemptPaths] },
     cors: { ...securityDefaults.cors, origins: [...securityDefaults.cors.origins] },
   },
+  observability: observabilityDefaults,
 }
 
 /** Seed (or clear) the snapshot. Custom bundles are cloned + frozen; the

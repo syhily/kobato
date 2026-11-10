@@ -18,6 +18,8 @@ function bundleWithSecrets(): BlogSettingsBundle {
   bundle.assets!.storage.secretAccessKey = 's3-dd44'
   bundle.comments!.comments.githubToken = 'ghp-ee55'
   bundle.backup!.encryption.password = 'bk-ff66'
+  bundle.observability!.observability.password = 'obs-gg77'
+  bundle.observability!.observability.rumClientToken = 'rum-hh88'
   return bundle
 }
 
@@ -46,7 +48,7 @@ describe('derived read/redact accessors', () => {
   it('read returns the configured secret for every entry', () => {
     const bundle = bundleWithSecrets()
     const values = SECRET_FIELDS.map((config) => config.read(bundle))
-    expect(values).toEqual(['pass-bb22', 'mg-cc33', 's3-dd44', 'ghp-ee55', 'bk-ff66'])
+    expect(values).toEqual(['pass-bb22', 'mg-cc33', 's3-dd44', 'ghp-ee55', 'bk-ff66', 'obs-gg77', 'rum-hh88'])
   })
 
   it('read returns undefined for null sections and the raw value for blank secrets', () => {

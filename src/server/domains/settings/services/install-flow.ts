@@ -1,5 +1,5 @@
 // Install-time seed of every settings section — the strict counterpart to hydrate's lazy
-// backfill: all 17 rows validated BEFORE any write, then persisted on the caller's
+// backfill: all 19 rows validated BEFORE any write, then persisted on the caller's
 // transaction so they commit atomically with the first admin row.
 
 import type { Database } from '@/server/infra/db/database'
@@ -33,7 +33,7 @@ export type InstallSectionRowsResult =
   | { ok: false; descriptor: ErrorMessageDescriptor }
 
 /**
- * Build and validate all 17 section rows for a fresh install. The first validation
+ * Build and validate all 19 section rows for a fresh install. The first validation
  * failure returns as a user-facing message; registry-default drift keeps its thrown DomainError.
  */
 export function buildInstallSectionRows(input: InstallSeedInput): InstallSectionRowsResult {

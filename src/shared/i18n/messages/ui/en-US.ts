@@ -338,6 +338,8 @@ export const uiMessagesEnUS = {
   'admin.settings.section.navigation.label': 'Navigation menu',
   'admin.settings.section.newsletter.description': 'Newsletter switch, sender name and subject prefix',
   'admin.settings.section.newsletter.label': 'Newsletter',
+  'admin.settings.section.observability.description': 'OpenObserve tracing, metrics, logs and browser RUM',
+  'admin.settings.section.observability.label': 'Observability',
   'admin.settings.section.rateLimit.description': 'Per-IP / email limits for sign-in, comments and likes',
   'admin.settings.section.rateLimit.label': 'Rate limiting',
   'admin.settings.section.security.description': 'CSRF protection, path exemptions and CORS configuration',
@@ -1325,6 +1327,90 @@ export const uiMessagesEnUS = {
   'admin.settings.analytics.geoip.tooLargeTitle': 'File too large',
   'admin.settings.analytics.geoip.tooLarge': 'MaxMind database files are limited to 100 MB',
   'admin.settings.analytics.geoip.uploadSuccess': 'MaxMind database uploaded',
+  'admin.settings.observability.connection.title': 'OpenObserve connection',
+  'admin.settings.observability.connection.description':
+    'Enter the OpenObserve origin and credentials, save, then test the connection. A successful test initializes the monitoring assets.',
+  'admin.settings.observability.connection.endpoint': 'Endpoint',
+  'admin.settings.observability.connection.endpointHint':
+    'Origin only, for example https://obs.example.com; a remote endpoint must use HTTPS',
+  'admin.settings.observability.connection.endpointPlaceholder': 'https://obs.example.com',
+  'admin.settings.observability.connection.organization': 'Site name (organization)',
+  'admin.settings.observability.connection.organizationHint':
+    'The name of this site in OpenObserve, also used as the organization; created on demand after a successful test',
+  'admin.settings.observability.connection.username': 'Username',
+  'admin.settings.observability.connection.password': 'Password',
+  'admin.settings.observability.connection.keepPassword': 'Keep the current password',
+  'admin.settings.observability.connection.passwordHintEmpty': 'No password stored yet',
+  'admin.settings.observability.connection.passwordPlaceholder': 'Enter the OpenObserve password',
+  'admin.settings.observability.connection.test': 'Test connection',
+  'admin.settings.observability.connection.testing': 'Testing…',
+  'admin.settings.observability.connection.testFailed': 'Connection test failed',
+  'admin.settings.observability.connection.testHint':
+    'The test uses saved settings only: clicking commits this card first, then runs the test. The test also syncs the monitoring assets, so it can take a few seconds.',
+  'admin.settings.observability.connection.unsaved':
+    'The connection settings could not be saved; fix them before testing.',
+  'admin.settings.observability.connection.verified': 'Connection verified',
+  'admin.settings.observability.connection.unverified': 'Connection not verified yet',
+  'admin.settings.observability.connection.testSucceeded': 'Connection test passed',
+  'admin.settings.observability.connection.version': 'OpenObserve version: {version}',
+  'admin.settings.observability.connection.provisionRetryHint':
+    'Use “Resync” on the monitoring dashboards card to retry the asset sync.',
+  'admin.settings.observability.reporting.title': 'Data reporting',
+  'admin.settings.observability.reporting.description':
+    'Controls server-side traces, metrics, logs and browser RUM reporting.',
+  'admin.settings.observability.reporting.gate': 'Test the connection successfully before changing these switches.',
+  'admin.settings.observability.reporting.runtime': 'Runtime status',
+  'admin.settings.observability.reporting.enabled': 'Enable reporting',
+  'admin.settings.observability.reporting.enabledHint': 'Master switch for server-side traces and metrics',
+  'admin.settings.observability.reporting.logs': 'Log shipping',
+  'admin.settings.observability.reporting.logsHint': 'Ship server logs to OpenObserve',
+  'admin.settings.observability.reporting.frontend': 'Browser RUM',
+  'admin.settings.observability.reporting.frontendHint':
+    'Collect page performance, resources and errors; only active for a verified connection on a build that injects the bootstrap',
+  'admin.settings.observability.reporting.sessionSampleRate': 'RUM session sample rate (0-100)',
+  'admin.settings.observability.reporting.sessionSampleRateHint':
+    'Percentage; 100 collects everything, 0 disables collection',
+  'admin.settings.observability.reporting.sampleRate': 'Server sample rate (0-1)',
+  'admin.settings.observability.reporting.sampleRateHint': '0 samples nothing, 1 samples everything',
+  'admin.settings.observability.reporting.includeRedactedSql': 'Record redacted SQL',
+  'admin.settings.observability.reporting.includeRedactedSqlHint': 'Attach redacted SQL statements to traces',
+  'admin.settings.observability.reporting.lastError': 'Last error',
+  'admin.settings.observability.reporting.lastErrorHint':
+    'Contains only an error code and a field name; copy it when reporting a problem',
+  'admin.settings.observability.reporting.phase.loading': 'Reading…',
+  'admin.settings.observability.reporting.phase.disabled': 'Disabled',
+  'admin.settings.observability.reporting.phase.unverified': 'Awaiting verification',
+  'admin.settings.observability.reporting.phase.invalid': 'Invalid configuration',
+  'admin.settings.observability.reporting.phase.running': 'Running',
+  'admin.settings.observability.reporting.phase.failed': 'Failed',
+  'admin.settings.observability.assets.title': 'Monitoring dashboards',
+  'admin.settings.observability.assets.description':
+    'A verified connection initializes the default assets: 4 dashboards, the privacy pipeline and the browser RUM token.',
+  'admin.settings.observability.assets.state': 'Asset status',
+  'admin.settings.observability.assets.statusLoading': 'Reading the status…',
+  'admin.settings.observability.assets.provisioned': 'Provisioned',
+  'admin.settings.observability.assets.notProvisioned': 'Not provisioned yet',
+  'admin.settings.observability.assets.current': 'The assets match this build',
+  'admin.settings.observability.assets.outdated':
+    'The assets are outdated; they upgrade automatically on the next start, or use “Resync” now',
+  'admin.settings.observability.assets.includes':
+    'Default dashboards: requests, errors, performance and browser RUM — plus the privacy pipeline and the browser RUM token.',
+  'admin.settings.observability.assets.dashboardsSynced': 'Dashboards ready: {dashboards}',
+  'admin.settings.observability.assets.organizationCreated': 'Organization created',
+  'admin.settings.observability.assets.organizationExists': 'Organization already exists',
+  'admin.settings.observability.assets.rumTokenCreated': 'RUM token generated and stored encrypted',
+  'admin.settings.observability.assets.rumTokenExists': 'Reusing the existing RUM token',
+  'admin.settings.observability.assets.pipelineInstalled': 'Privacy pipeline installed',
+  'admin.settings.observability.assets.token': 'Browser RUM token',
+  'admin.settings.observability.assets.tokenHint':
+    'Read-only; written automatically by a connection test or an asset sync',
+  'admin.settings.observability.assets.tokenConfigured': 'Configured (ends with …{mask})',
+  'admin.settings.observability.assets.tokenMissing': 'Not configured yet; written after a successful connection test',
+  'admin.settings.observability.assets.resync': 'Resync',
+  'admin.settings.observability.assets.resyncing': 'Syncing…',
+  'admin.settings.observability.assets.provisionFailed': 'Asset sync failed',
+  'admin.settings.observability.assets.resyncHint':
+    'Recreate or update the dashboards and pipeline from the saved settings; the connection must be verified first.',
   'common.pagination.label': 'Pagination',
   'admin.toast.invalidFileType': 'Wrong file type',
   'admin.toast.fileTooLarge': 'File too large',
@@ -2792,6 +2878,28 @@ export const uiMessagesEnUS = {
     'Custom quotes need at least {min} entries, or clear them to use the built-in bank',
   'admin.settings.mail.error.hostnameInvalid':
     'Enter a hostname or domain (letters / digits / `-` / `.` only); no scheme, port, path or IP address',
+  'admin.settings.observability.error.endpointInvalid':
+    'Enter the OpenObserve origin only (for example https://obs.example.com) — no path, query string or credentials',
+  'admin.settings.observability.error.endpointHttps':
+    'A remote OpenObserve endpoint must use HTTPS; plain HTTP is only allowed for loopback addresses',
+  'admin.settings.observability.error.organizationInvalid':
+    'The site name must be 1–64 letters, digits, `_` or `-`, starting with a letter or digit',
+  'admin.settings.observability.error.incomplete': 'Missing observability setting: {field}',
+  'admin.settings.observability.error.config':
+    'The observability settings are invalid; check the endpoint, organization, username and password',
+  'admin.settings.observability.error.unreachable':
+    'Could not reach OpenObserve; check the endpoint and the network connection',
+  'admin.settings.observability.error.unauthorized': 'OpenObserve rejected the username or password',
+  'admin.settings.observability.error.forbidden': 'The OpenObserve account is not allowed to perform this operation',
+  'admin.settings.observability.error.organizationUnavailable':
+    'The OpenObserve organization “{organization}” is unavailable; the account must be a root user with organization creation through ingestion enabled',
+  'admin.settings.observability.error.health': 'OpenObserve is not healthy; check the server status',
+  'admin.settings.observability.error.upstream': 'OpenObserve returned an unexpected response',
+  'admin.settings.observability.error.provisionFailed':
+    'The connection is verified, but the OpenObserve assets could not be synced; retry the asset sync',
+  'admin.settings.observability.error.notVerified': 'Test the connection successfully before provisioning OpenObserve',
+  'admin.settings.observability.error.assetsUnavailable':
+    'The bundled OpenObserve assets are unavailable; reinstall or rebuild the application',
   'admin.settings.fonts.error.familyInvalid': 'font-family must not contain quotes, backslashes, or braces',
   'content.error.entityNotFound':
     '{entity, select, post {The post} page {The page} other {The content}} does not exist or has been deleted.',

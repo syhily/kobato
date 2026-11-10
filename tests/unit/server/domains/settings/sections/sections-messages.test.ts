@@ -9,7 +9,7 @@ import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
 // The remaining settings sections' custom validation copy (comments, socials,
-// cache, backup, sidebar, mail, fonts): typed ids, four locales, parameterized
+// cache, backup, sidebar, mail, fonts, observability): typed ids, four locales, parameterized
 // where the bound/identifier matters.
 interface Case {
   key: UiMessageId
@@ -140,6 +140,34 @@ const CASES: Case[] = [
       'zh-CN': '请填写主机名或域名（只能包含字母 / 数字 / `-` / `.`），不能带协议、端口、路径或 IP 地址',
       'zh-TW': '請填寫主機名稱或網域（只能包含字母 / 數字 / `-` / `.`），不能帶通訊協定、連接埠、路徑或 IP 位址',
       'zh-HK': '請填寫主機名稱或網域（只能包含字母 / 數字 / `-` / `.`），不能帶通訊協定、連接埠、路徑或 IP 位址',
+    },
+  },
+  {
+    key: 'admin.settings.observability.error.endpointInvalid',
+    messages: {
+      'en-US':
+        'Enter the OpenObserve origin only (for example https://obs.example.com) — no path, query string or credentials',
+      'zh-CN': '只需填写 OpenObserve 的源地址（例如 https://obs.example.com），不要包含路径、查询参数或账号密码',
+      'zh-TW': '只需填寫 OpenObserve 的來源位址（例如 https://obs.example.com），不要包含路徑、查詢參數或帳號密碼',
+      'zh-HK': '只需填寫 OpenObserve 的來源位址（例如 https://obs.example.com），不要包含路徑、查詢參數或帳號密碼',
+    },
+  },
+  {
+    key: 'admin.settings.observability.error.endpointHttps',
+    messages: {
+      'en-US': 'A remote OpenObserve endpoint must use HTTPS; plain HTTP is only allowed for loopback addresses',
+      'zh-CN': '远程 OpenObserve 地址必须使用 HTTPS；仅回环地址允许明文 HTTP',
+      'zh-TW': '遠端 OpenObserve 位址必須使用 HTTPS；僅回送位址允許明文 HTTP',
+      'zh-HK': '遠端 OpenObserve 位址必須使用 HTTPS；僅回送位址允許明文 HTTP',
+    },
+  },
+  {
+    key: 'admin.settings.observability.error.organizationInvalid',
+    messages: {
+      'en-US': 'The site name must be 1–64 letters, digits, `_` or `-`, starting with a letter or digit',
+      'zh-CN': '站点名称需为 1–64 位字母、数字、`_` 或 `-`，且以字母或数字开头',
+      'zh-TW': '站台名稱需為 1–64 位字母、數字、`_` 或 `-`，且以字母或數字開頭',
+      'zh-HK': '網站名稱需為 1–64 位字母、數字、`_` 或 `-`，且以字母或數字開頭',
     },
   },
   {

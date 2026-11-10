@@ -87,6 +87,7 @@ export const SETTINGS_SECRET_FIELD_NAMES: ReadonlySet<string> = new Set([
   'secretAccessKey',
   'githubToken',
   'password',
+  'rumClientToken',
 ])
 
 /** Deterministic JSON: object keys sorted, `undefined` members dropped, arrays in order. */

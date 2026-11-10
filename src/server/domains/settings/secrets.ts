@@ -81,6 +81,18 @@ export const SECRET_FIELDS = [
   declareSecret({ section: 'assets', path: 'storage', field: 'secretAccessKey', maskKey: 'assetsSecretAccessKeyMask' }),
   declareSecret({ section: 'comments', path: 'comments', field: 'githubToken', maskKey: 'commentsGithubTokenMask' }),
   declareSecret({ section: 'backup', path: 'encryption', field: 'password', maskKey: 'backupEncryptionPasswordMask' }),
+  declareSecret({
+    section: 'observability',
+    path: 'observability',
+    field: 'password',
+    maskKey: 'observabilityPasswordMask',
+  }),
+  declareSecret({
+    section: 'observability',
+    path: 'observability',
+    field: 'rumClientToken',
+    maskKey: 'observabilityRumClientTokenMask',
+  }),
 ]
 
 // Post-hoc assert, not `satisfies` — a contextual element type would widen the

@@ -146,6 +146,22 @@ const fixtureBundle: BlogSettingsBundle = {
     cors: { enabled: false, origins: [] },
     passkey: { enabled: false },
   },
+  observability: {
+    observability: {
+      enabled: false,
+      endpoint: '',
+      organization: '',
+      username: '',
+      password: '',
+      sampleRate: 1,
+      includeRedactedSql: false,
+      logs: { enabled: false },
+      frontend: { enabled: false, sessionSampleRate: 100 },
+      rumClientToken: '',
+      verifiedFingerprint: '',
+      provisionedFingerprint: '',
+    },
+  },
   webmentions: {
     webmention: { receiveEnabled: true, displayOnPosts: true },
   },
@@ -170,6 +186,7 @@ const BUNDLE_SCOPES: Record<keyof BlogSettingsBundle, string> = {
   limits: 'blog.limits',
   analytics: 'blog.analytics',
   security: 'blog.security',
+  observability: 'blog.observability',
 }
 
 /**

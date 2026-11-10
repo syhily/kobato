@@ -133,4 +133,10 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     group: 'system',
     icon: 'ShieldCheck',
   },
+  observability: {
+    labelId: 'admin.settings.section.observability.label',
+    descriptionId: 'admin.settings.section.observability.description',
+    group: 'system',
+    icon: 'Activity',
+  },
 }

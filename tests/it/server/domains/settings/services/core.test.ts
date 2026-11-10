@@ -249,6 +249,7 @@ describe('computeSecretMasks', () => {
       assets: { storage: { secretAccessKey: 's3-dd44' } },
       comments: { comments: { githubToken: 'ghp-ee55' } },
       backup: { encryption: { password: 'bk-ff66' } },
+      observability: { observability: { password: 'obs-gg77', rumClientToken: 'rum-hh88' } },
     } as unknown as BlogSettingsBundle
 
     const masks = computeSecretMasks(bundle)
@@ -263,6 +264,8 @@ describe('computeSecretMasks', () => {
       assetsSecretAccessKeyMask: 'dd44',
       commentsGithubTokenMask: 'ee55',
       backupEncryptionPasswordMask: 'ff66',
+      observabilityPasswordMask: 'gg77',
+      observabilityRumClientTokenMask: 'hh88',
     })
   })
 
@@ -280,6 +283,8 @@ describe('computeSecretMasks', () => {
       assetsSecretAccessKeyMask: null,
       commentsGithubTokenMask: null,
       backupEncryptionPasswordMask: null,
+      observabilityPasswordMask: null,
+      observabilityRumClientTokenMask: null,
     })
   })
 })

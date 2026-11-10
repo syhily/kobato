@@ -13,6 +13,8 @@ export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
     assetsSecretAccessKeyMask: null,
     commentsGithubTokenMask: null,
     backupEncryptionPasswordMask: null,
+    observabilityPasswordMask: null,
+    observabilityRumClientTokenMask: null,
   }
   for (const config of SECRET_FIELDS) {
     const value = config.read(bundle)

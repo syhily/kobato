@@ -22,7 +22,17 @@ const ALL_DEP_SECTIONS = new Set(Object.values(REPRESENTATION_SECTION_DEPS).flat
 const SECTION_BY_BUNDLE_KEY = new Map<string, SettingsSection>(
   Object.entries(SECTION_TO_BUNDLE_KEY).map(([section, bundleKey]) => [bundleKey, section as SettingsSection]),
 )
-const ADMIN_ONLY = ['mail', 'newsletter', 'cache', 'rateLimit', 'backup', 'limits', 'analytics', 'security'] as const
+const ADMIN_ONLY = [
+  'mail',
+  'newsletter',
+  'cache',
+  'rateLimit',
+  'backup',
+  'limits',
+  'analytics',
+  'security',
+  'observability',
+] as const
 
 afterEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

@@ -16,6 +16,7 @@ import { limitsSection } from '@/server/domains/settings/sections/limits'
 import { mailSection } from '@/server/domains/settings/sections/mail'
 import { navigationSection } from '@/server/domains/settings/sections/navigation'
 import { newsletterSection } from '@/server/domains/settings/sections/newsletter'
+import { observabilitySection } from '@/server/domains/settings/sections/observability'
 import { rateLimitSection } from '@/server/domains/settings/sections/rate-limit'
 import { securitySection } from '@/server/domains/settings/sections/security'
 import { seoSection } from '@/server/domains/settings/sections/seo'
@@ -65,6 +66,7 @@ export const SECTION_REGISTRY = {
   limits: limitsSection,
   analytics: analyticsSection,
   security: securitySection,
+  observability: observabilitySection,
 } as const satisfies Record<SettingsSection, SectionMeta>
 
 /** Common prefix used to fetch every settings row in one SELECT. */
