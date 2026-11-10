@@ -8,6 +8,7 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
+import { observabilityDefaults } from '@/server/domains/settings/sections/observability'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
@@ -154,6 +155,33 @@ describe('content.bootstrap', () => {
     // The fixture's font slots are empty — the resolver answers the empty shape.
     expect(json.fonts).toEqual({ global: [], post: [], code: [] })
     expect(json.csrfToken).toBe('test-csrf-token')
+  })
+
+  it('never ships the admin-only observability section to a document payload', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      observability: {
+        observability: {
+          ...observabilityDefaults.observability,
+          endpoint: 'https://obs.example.com',
+          organization: 'my-site',
+          username: 'admin@example.com',
+          password: 'secret',
+          verifiedFingerprint: 'a'.repeat(64),
+          provisionedFingerprint: 'b'.repeat(64),
+          rumClientToken: 'rum-token',
+        },
+      },
+    })
+    const res = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const json = await parseRpcJson<{ blogSettings: Record<string, unknown> | null }>(res)
+
+    expect(json.blogSettings).not.toBeNull()
+    expect(json.blogSettings?.observability).toBeNull()
+    const serialized = JSON.stringify(json.blogSettings)
+    expect(serialized).not.toContain('obs.example.com')
+    expect(serialized).not.toContain('provisionedFingerprint')
+    expect(serialized).not.toContain('rum-token')
   })
 
   it('parses the theme cookie inside the procedure (dark / light)', async () => {

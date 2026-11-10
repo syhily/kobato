@@ -1,3 +1,5 @@
+import type { BlogSettingsBundle } from '@/shared/config/types'
+
 import { resolveFontsForRender } from '@/server/domains/fonts/services/render'
 import { redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
 import { publicProc } from '@/server/http/orpc-base'
@@ -6,6 +8,17 @@ import { uiMessagesForScope } from '@/shared/i18n/catalog'
 import { catalogScopeForPathname } from '@/shared/i18n/catalog-scope'
 import { inklingLabelsFor } from '@/shared/i18n/inkling-labels'
 import { parseThemeCookie } from '@/shared/utils/theme-cookie'
+
+/**
+ * The document-scope settings projection: redacted secrets, and the
+ * admin-only `observability` section dropped. A public document has no reason
+ * to ship the OpenObserve endpoint/organization/username or the two
+ * verification fingerprints to every anonymous visitor; the admin settings
+ * page reads its own `admin.settings.bootstrap` payload.
+ */
+function projectSettingsForDocument(bundle: BlogSettingsBundle): BlogSettingsBundle {
+  return { ...redactSecretsFromBundle(bundle), observability: null }
+}
 
 // The root loader's data segment (public AND admin): redacted settings
 // bundle, fonts, theme, CSRF token, and the CURRENT locale's UI messages for
@@ -27,7 +40,7 @@ export const contentBootstrap = publicProc
     // `context.localization`, so the shipped locale and the settings payload
     // can never come from two different snapshots.
     const rawBundle = context.settings
-    const blogSettings = rawBundle ? redactSecretsFromBundle(rawBundle) : null
+    const blogSettings = rawBundle ? projectSettingsForDocument(rawBundle) : null
 
     // Resolve the configured font-id slots into browser-ready {family, href}
     // lists so `<head>` can emit one self-hosted `<link>` per font without a
