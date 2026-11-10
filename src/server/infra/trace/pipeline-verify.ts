@@ -1,10 +1,10 @@
-// Startup verifier for the OpenObserve RUM privacy pipeline (ADR-0012).
+// Verifier for the OpenObserve RUM privacy pipeline.
 //
-// This is a server-only probe using the same OTLP authorization value as the
-// exporter. It verifies the pipeline wiring AND the actual stored function
-// body hash, not just a human-readable description. It never logs the
-// credential and never throws: a false result withholds only the browser
-// bootstrap, while server traces/metrics continue.
+// Server-only probe using the same OTLP authorization value as the exporter. It
+// checks the pipeline wiring AND the stored function body hash, not just a
+// human-readable description. It never logs the credential and never throws: a
+// false result withholds only the browser bootstrap, while server
+// traces/metrics continue.
 
 import { createHash } from 'node:crypto'
 
@@ -16,6 +16,7 @@ import {
   RUM_PRIVACY_PIPELINE_DESCRIPTION,
   RUM_PRIVACY_PIPELINE_NAME,
   RUM_PRIVACY_VRL_SHA256,
+  RUM_STREAM_NAME,
   RUM_PRIVACY_VERSION_MARKER,
 } from '@/shared/contracts/trace-pipeline'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -51,7 +52,7 @@ function verifiedPipeline(value: unknown, organization: string): boolean {
     source === null ||
     source.source_type !== 'realtime' ||
     source.org_id !== organization ||
-    source.stream_name !== '_rumdata' ||
+    source.stream_name !== RUM_STREAM_NAME ||
     source.stream_type !== 'logs' ||
     !Array.isArray(value.nodes) ||
     !Array.isArray(value.edges) ||
@@ -79,14 +80,14 @@ function verifiedPipeline(value: unknown, organization: string): boolean {
     fn.is_disabled === true ||
     output.is_disabled === true ||
     inputData.node_type !== 'stream' ||
-    inputData.stream_name !== '_rumdata' ||
+    inputData.stream_name !== RUM_STREAM_NAME ||
     inputData.stream_type !== 'logs' ||
     inputData.org_id !== organization ||
     fnData.node_type !== 'function' ||
     fnData.name !== RUM_PRIVACY_FUNCTION_NAME ||
     fnData.after_flatten !== true ||
     outputData.node_type !== 'stream' ||
-    outputData.stream_name !== '_rumdata' ||
+    outputData.stream_name !== RUM_STREAM_NAME ||
     outputData.stream_type !== 'logs' ||
     outputData.org_id !== organization ||
     typeof input.id !== 'string' ||

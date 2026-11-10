@@ -1,8 +1,8 @@
-// Hono request-lifecycle span (ADR-0012).
+// Hono request-lifecycle span.
 //
 // Mounted after trust-proxy/request-ID and before compression, so the span
-// covers the complete application pipeline. It extracts ONLY W3C trace
-// context; the route template is resolved after the downstream handler has
+// covers the complete application pipeline. Only W3C trace context is
+// extracted; the route template is resolved after the downstream handler has
 // run, and unknown/catch-all routes collapse to a fixed category so a raw
 // path can never become an attribute.
 
@@ -13,10 +13,9 @@ import { routePath } from 'hono/route'
 import type { Span } from '@/server/infra/trace/facade'
 
 import { isTraceActive, runInSpan, startSpan } from '@/server/infra/trace/facade'
-import { recordHttpServer } from '@/server/infra/trace/metrics'
+import { addHttpServerActive, recordHttpServer } from '@/server/infra/trace/metrics'
 import { takeRoutePattern } from '@/server/infra/trace/route-registry'
-
-const EXCLUDED_PATHS: ReadonlySet<string> = new Set(['/health', '/ready', '/api/rum/status'])
+import { isSelfTelemetryPath } from '@/server/infra/trace/self-telemetry-paths'
 
 /** Hono's catch-all route for React Router documents/data requests. */
 const REACT_ROUTER_ROUTE = 'react_router'
@@ -85,12 +84,13 @@ export function devTraceRequestMiddleware(): MiddlewareHandler {
       await next()
       return
     }
-    if (EXCLUDED_PATHS.has(c.req.path)) {
+    if (isSelfTelemetryPath(c.req.path)) {
       await next()
       return
     }
 
     const startedAt = performance.now()
+    addHttpServerActive(c.req.method, 1)
     const span = startSpan('http.server', {
       kind: 'server',
       traceContext: {
@@ -109,6 +109,7 @@ export function devTraceRequestMiddleware(): MiddlewareHandler {
         throw error
       } finally {
         span.end()
+        addHttpServerActive(c.req.method, -1)
         if (outcome !== null) {
           recordHttpServer(c.req.method, outcome.route, outcome.status, performance.now() - startedAt)
         }

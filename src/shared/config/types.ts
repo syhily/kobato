@@ -1,6 +1,7 @@
 import type { BundleKey, SECTION_TO_BUNDLE_KEY, SettingsSection } from '@/shared/config/sections'
 import type { SocialNetwork } from '@/shared/config/socials'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
+import type { RumClientIdentity } from '@/shared/contracts/trace'
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { CacheBucketSlot, TunableCacheBucketId } from '@/shared/types/cache'
 import type { AvatarSource } from '@/shared/utils/avatar'
@@ -145,7 +146,7 @@ export interface FooterNavItem {
 export interface MailSettings {
   mail: {
     enabled: boolean
-    /** Send an email alongside direct messages and admin alerts (ADR-0008). */
+    /** Send an email alongside direct messages and admin alerts. */
     notificationEmails: boolean
     sender: string
     transport: 'smtp' | 'mailgun'
@@ -234,10 +235,9 @@ export interface RateLimitBucket {
   maxAttempts: number
 }
 
-// One bucket per scenario; the per-IP and per-email counters of a scenario
-// share its (window, maxAttempts) — the legacy per-dimension twins
-// (`signInIp`/`signInEmail`, …) were merged so the settings surface stays
-// manageable. `rate-limit-bucket.ts` upgrades legacy stored rows on parse.
+// One bucket per scenario: the per-IP and per-email counters of a scenario share
+// its (window, maxAttempts). `rate-limit-bucket.ts` upgrades legacy
+// per-dimension rows on parse.
 export interface RateLimitSettings {
   signIn: RateLimitBucket
   otpSend: RateLimitBucket
@@ -313,10 +313,10 @@ export interface SecuritySettings {
 }
 
 /**
- * OpenObserve observability (ADR-0012 follow-up). The site name doubles as the
- * OpenObserve organization; secrets are encrypted at rest and redacted for
- * admin payloads. `verifiedFingerprint` pins the configuration that last passed
- * a connection test (the runtime never activates an unverified fingerprint).
+ * OpenObserve observability. The site name doubles as the OpenObserve
+ * organization; secrets are encrypted at rest and redacted for admin payloads.
+ * `verifiedFingerprint` pins the configuration that last passed a connection test
+ * (the runtime never activates an unverified fingerprint).
  */
 export interface ObservabilitySettings {
   observability: {
@@ -327,12 +327,24 @@ export interface ObservabilitySettings {
     password?: string | undefined
     sampleRate: number
     includeRedactedSql: boolean
+    /**
+     * Days OpenObserve keeps each Kobato-owned stream. 0 (the default) leaves
+     * the operator's own retention policy untouched; a positive value makes the
+     * server enforce it on every settings save and at boot.
+     */
+    retentionDays: number
     logs: {
       enabled: boolean
     }
     frontend: {
       enabled: boolean
       sessionSampleRate: number
+      /**
+       * `anonymous` (default): the relay forwards no request identity.
+       * `forward`: the relay attaches the client address + User-Agent and the
+       * visitor must pass the privacy consent gate first.
+       */
+      clientIdentity: RumClientIdentity
     }
     rumClientToken?: string | undefined
     verifiedFingerprint: string

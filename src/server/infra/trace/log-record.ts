@@ -1,13 +1,14 @@
-// Log-line projection for the OpenObserve log pipeline (ADR-0012).
+// Log-line projection for the OpenObserve log pipeline.
 //
-// This module is SDK-free and never imports the logger: the trace runtime feeds
-// it the serialized Pino lines captured by the log sink, and only what this
-// projection returns can leave the process. Messages are a closed shape (a
-// fixed HTTP phrase or a sanitized non-HTTP static message); request ids,
-// URLs, headers, host/pid, arbitrary context, error messages, stacks, and
-// causes have no route through here.
+// SDK-free and never imports the logger: the trace runtime feeds it the
+// serialized Pino lines captured by the log sink, and only what this projection
+// returns can leave the process. Messages are a closed shape (a fixed HTTP
+// phrase or a sanitized non-HTTP static message); request ids, URLs, headers,
+// host/pid, arbitrary context, error messages, stacks, and causes have no route
+// through here. Local stdout logging is unaffected by any drop.
 
 import { projectError } from '@/server/infra/trace/sanitize'
+import { isSelfTelemetryPath } from '@/server/infra/trace/self-telemetry-paths'
 
 export const LOG_LINE_MAX_BYTES = 32 * 1024
 export const LOG_BODY_MAX_LENGTH = 200
@@ -32,7 +33,7 @@ export interface ProjectedLogRecord {
   attributes: ProjectedLogAttributes
 }
 
-export type LogLineDropReason = 'oversize' | 'malformed' | 'severity' | 'marker' | 'shape' | 'internal'
+export type LogLineDropReason = 'oversize' | 'malformed' | 'severity' | 'marker' | 'shape' | 'internal' | 'telemetry'
 
 export type LogLineProjection = { kind: 'ok'; record: ProjectedLogRecord } | { kind: 'drop'; reason: LogLineDropReason }
 
@@ -166,6 +167,22 @@ function project(line: string, now: number): LogLineProjection {
   }
 
   const status = readStatus(parsed.res)
+
+  // Self-telemetry endpoints (health probes, the RUM status poll every 10 s
+  // per open tab, the intake relay) are excluded from spans and metrics; the
+  // same paths must not flood the log stream either. Only QUIET lines drop —
+  // a rejection or failure stays visible. Local stdout logging is unaffected.
+  if (
+    isHttp &&
+    severity.number < ERROR_SEVERITY_NUMBER &&
+    (status === null || status < 400) &&
+    isPlainObject(parsed.req) &&
+    typeof parsed.req.url === 'string' &&
+    isSelfTelemetryPath(parsed.req.url)
+  ) {
+    return { kind: 'drop', reason: 'telemetry' }
+  }
+
   let body: string | undefined
   if (isHttp) {
     body = projectHttpBody(severity.number, status)

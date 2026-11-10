@@ -46,7 +46,7 @@ const CONFIG: ServerTraceRuntimeConfig = {
 }
 
 function resolution(): TraceConfigResolution {
-  return { status: 'active', server: CONFIG, frontend: null, diagnostics: [] }
+  return { status: 'active', server: CONFIG, frontend: null, frontendRelay: null, diagnostics: [] }
 }
 
 let spanExporter: InMemorySpanExporter

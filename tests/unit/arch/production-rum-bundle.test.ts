@@ -24,8 +24,13 @@ const RUM_SDK_MARKERS = ['o2-api-key', 'x-openobserve-trace-id', 'o2-evp-origin'
 /** A loader-only marker: the RUM status poll path. */
 const RUM_LOADER_MARKER = '/api/rum/status'
 
-/** Anything that would prove browser RUM code reached a server bundle. */
-const SERVER_FORBIDDEN_RUM_MARKERS = ['@openobserve/', ...RUM_SDK_MARKERS] as const
+/**
+ * Anything that would prove browser RUM code reached a server bundle.
+ * `o2-api-key` is deliberately ABSENT: the server rewrites that query parameter
+ * in the same-origin intake relay (`http/resources/rum-intake.ts`), so the
+ * literal is server-owned.
+ */
+const SERVER_FORBIDDEN_RUM_MARKERS = ['@openobserve/', 'x-openobserve-trace-id', 'o2-evp-origin'] as const
 
 /** The Rollup/Rolldown entry + root chunks of the client document graph. */
 const EAGER_CHUNK_PATTERNS = [/\/entry\.client-[^/]+\.js$/, /\/root-[^/]+\.js$/] as const

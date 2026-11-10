@@ -8,6 +8,7 @@ import {
   normalizeObservabilityOrigin,
   OBSERVABILITY_ORGANIZATION_PATTERN,
 } from '@/shared/config/observability'
+import { rumClientIdentitySchema } from '@/shared/contracts/trace'
 
 /** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */
 export const observabilityValidationMessages = {
@@ -25,8 +26,10 @@ const frontendReadSchema = z
   .object({
     enabled: coerceBoolean.default(false),
     sessionSampleRate: z.coerce.number().min(0).max(100).default(100),
+    // Read-tolerant: a hand-edited row falls back to `anonymous`.
+    clientIdentity: rumClientIdentitySchema.catch('anonymous').default('anonymous'),
   })
-  .default({ enabled: false, sessionSampleRate: 100 })
+  .default({ enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' })
 
 const logsWriteSchema = z
   .object({ enabled: coerceBoolean.default(false) })
@@ -36,9 +39,10 @@ const frontendWriteSchema = z
   .object({
     enabled: coerceBoolean.default(false),
     sessionSampleRate: z.coerce.number().min(0).max(100).default(100),
+    clientIdentity: rumClientIdentitySchema.default('anonymous'),
   })
   .strict()
-  .default({ enabled: false, sessionSampleRate: 100 })
+  .default({ enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' })
 
 const observabilityShape = {
   enabled: coerceBoolean.default(false),
@@ -50,12 +54,14 @@ const observabilityShape = {
   password: z.string().max(512).optional(),
   sampleRate: z.coerce.number().min(0).max(1).default(1),
   includeRedactedSql: coerceBoolean.default(false),
+  // Opt-in stream retention: 0 leaves the operator's OpenObserve policy alone.
+  retentionDays: z.coerce.number().int().min(0).max(3650).default(0),
   logs: logsReadSchema,
   frontend: frontendReadSchema,
   rumClientToken: z.string().max(4096).optional(),
   /** Fingerprint of the configuration that last passed a connection test. */
   verifiedFingerprint: z.string().max(128).default(''),
-  /** Fingerprint of the provisioned OpenObserve assets (P2). */
+  /** Fingerprint of the provisioned OpenObserve assets. */
   provisionedFingerprint: z.string().max(128).default(''),
 }
 
@@ -98,8 +104,9 @@ export const observabilityDefaults = {
     password: '',
     sampleRate: 1,
     includeRedactedSql: false,
+    retentionDays: 0,
     logs: { enabled: false },
-    frontend: { enabled: false, sessionSampleRate: 100 },
+    frontend: { enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' },
     rumClientToken: '',
     verifiedFingerprint: '',
     provisionedFingerprint: '',

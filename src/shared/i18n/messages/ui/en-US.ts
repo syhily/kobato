@@ -100,6 +100,11 @@ export const uiMessagesEnUS = {
   'public.like.title': 'Like this article?',
   'public.like.unlike': 'Unlike',
   'public.like.wechatQrHint': 'Press and hold the QR code in WeChat',
+  'public.rumConsent.title': 'Anonymous usage statistics',
+  'public.rumConsent.body':
+    'With your consent, this site collects page performance and errors together with your coarse region (country only) and browser family, to help the author improve the site. Your IP address is never stored.',
+  'public.rumConsent.accept': 'Accept',
+  'public.rumConsent.decline': 'Decline',
   'public.search.inputPlaceholder': 'Type a keyword and press Enter',
   'public.search.label': 'Search articles',
   'public.search.open': 'Open search',
@@ -594,6 +599,7 @@ export const uiMessagesEnUS = {
   'admin.settings.layout.loadFailed': 'Failed to load settings',
   'admin.settings.shared.toggle.on': 'On',
   'admin.settings.shared.toggle.off': 'Off',
+  'admin.settings.shared.hintTooltip': 'More information',
   'admin.settings.content.pagination.title': 'Pagination',
   'admin.settings.content.pagination.description':
     'How many posts each list page shows. Changes apply immediately to the home, category, tag and search listings.',
@@ -1332,7 +1338,7 @@ export const uiMessagesEnUS = {
     'Enter the OpenObserve origin and credentials, save, then test the connection. A successful test initializes the monitoring assets.',
   'admin.settings.observability.connection.endpoint': 'Endpoint',
   'admin.settings.observability.connection.endpointHint':
-    'Origin only, for example https://obs.example.com; a remote endpoint must use HTTPS',
+    'Origin only, for example https://obs.example.com; plain HTTP is accepted only for loopback or private-network addresses. Only this server contacts the endpoint — visitors’ browsers never see it',
   'admin.settings.observability.connection.endpointPlaceholder': 'https://obs.example.com',
   'admin.settings.observability.connection.organization': 'Site name (organization)',
   'admin.settings.observability.connection.organizationHint':
@@ -1370,10 +1376,18 @@ export const uiMessagesEnUS = {
   'admin.settings.observability.reporting.sessionSampleRate': 'RUM session sample rate (0-100)',
   'admin.settings.observability.reporting.sessionSampleRateHint':
     'Percentage; 100 collects everything, 0 disables collection',
+  'admin.settings.observability.reporting.clientIdentity': 'Visitor identity',
+  'admin.settings.observability.reporting.clientIdentityHint':
+    'Anonymous forwards nothing. Forward attaches the visitor address and browser agent so OpenObserve can enrich country-level geo and browser/OS/device families; visitors must accept a privacy consent banner first, and OpenObserve needs ZO_HTTP_REAL_IP_SOURCE=RightmostXForwardedFor. Raw addresses are never stored.',
+  'admin.settings.observability.reporting.clientIdentity.anonymous': 'Anonymous',
+  'admin.settings.observability.reporting.clientIdentity.forward': 'Forward (consent-gated)',
   'admin.settings.observability.reporting.sampleRate': 'Server sample rate (0-1)',
   'admin.settings.observability.reporting.sampleRateHint': '0 samples nothing, 1 samples everything',
   'admin.settings.observability.reporting.includeRedactedSql': 'Record redacted SQL',
   'admin.settings.observability.reporting.includeRedactedSqlHint': 'Attach redacted SQL statements to traces',
+  'admin.settings.observability.reporting.retentionDays': 'Retention days (0-3650)',
+  'admin.settings.observability.reporting.retentionDaysHint':
+    "0 keeps OpenObserve's own retention policy; a positive value makes Kobato enforce it on every save and at startup",
   'admin.settings.observability.reporting.lastError': 'Last error',
   'admin.settings.observability.reporting.lastErrorHint':
     'Contains only an error code and a field name; copy it when reporting a problem',
@@ -1383,6 +1397,8 @@ export const uiMessagesEnUS = {
   'admin.settings.observability.reporting.phase.invalid': 'Invalid configuration',
   'admin.settings.observability.reporting.phase.running': 'Running',
   'admin.settings.observability.reporting.phase.failed': 'Failed',
+  'admin.settings.observability.reporting.exportError':
+    'Latest OTLP export failed ({signal}, {error}) at {time} — telemetry is dropped until OpenObserve recovers.',
   'admin.settings.observability.assets.title': 'Monitoring dashboards',
   'admin.settings.observability.assets.description':
     'A verified connection initializes the default assets: 4 dashboards, the privacy pipeline and the browser RUM token.',
@@ -1411,6 +1427,32 @@ export const uiMessagesEnUS = {
   'admin.settings.observability.assets.provisionFailed': 'Asset sync failed',
   'admin.settings.observability.assets.resyncHint':
     'Recreate or update the dashboards and pipeline from the saved settings; the connection must be verified first.',
+  'admin.settings.observability.tooltip.endpoint':
+    'The OpenObserve origin this server exports traces, metrics, logs and relayed browser RUM to. Prerequisite: a reachable OpenObserve deployment — HTTPS for public hosts, plain HTTP only for loopback or private-network addresses. Visitors’ browsers never contact it.',
+  'admin.settings.observability.tooltip.organization':
+    'The OpenObserve organization owning this site’s streams and dashboards; it doubles as the RUM application id. Nothing to prepare — a successful connection test creates it when missing.',
+  'admin.settings.observability.tooltip.username':
+    'OpenObserve user for the management APIs and OTLP ingestion. Prerequisite: permission to list and create organizations, manage functions, pipelines, dashboards and RUM tokens, and ingest telemetry.',
+  'admin.settings.observability.tooltip.password':
+    'Stored encrypted like every settings secret; leave blank to keep the stored one. Changing endpoint, organization, username or password invalidates the verification — re-run the connection test.',
+  'admin.settings.observability.tooltip.enabled':
+    'Master switch for server-side traces and metrics. Prerequisite: a verified connection — run one successful connection test first.',
+  'admin.settings.observability.tooltip.logs':
+    'Ships privacy-projected server logs to the kobato_logs stream. Prerequisite: “Enable reporting” is on. The projection keeps only closed fields — never URLs, queries or payloads.',
+  'admin.settings.observability.tooltip.frontend':
+    'Collects page performance, resources and errors through the slim SDK, posted to the same-origin relay — OpenObserve needs no public exposure or CORS entry. Prerequisite: a verified connection with the privacy pipeline installed (done by the connection test).',
+  'admin.settings.observability.tooltip.sessionSampleRate':
+    'Percentage of browser sessions that report RUM; 0 collects nothing.',
+  'admin.settings.observability.tooltip.clientIdentity':
+    'Anonymous forwards no visitor identity. Forward attaches the visitor address and browser agent so OpenObserve can enrich country-level geography and browser/OS/device families. Prerequisites: ZO_HTTP_REAL_IP_SOURCE=RightmostXForwardedFor on OpenObserve, and the visitor’s consent to the privacy banner. Raw addresses are never stored.',
+  'admin.settings.observability.tooltip.sampleRate':
+    'Share of server traces kept, between 0 and 1; 1 keeps everything.',
+  'admin.settings.observability.tooltip.includeRedactedSql':
+    'Attaches redacted SQL statements (all parameter values removed) to database spans. No OpenObserve prerequisite.',
+  'admin.settings.observability.tooltip.retentionDays':
+    'Days OpenObserve keeps each Kobato-owned stream. 0 leaves the OpenObserve instance policy untouched; a positive value is enforced on every save and at startup. OpenObserve OSS rounds retention to whole days.',
+  'admin.settings.observability.tooltip.token':
+    'Written automatically by the connection test and injected by the same-origin relay into every browser batch; it never reaches a document. Rotate it in OpenObserve, then re-run the connection test to refresh.',
   'common.pagination.label': 'Pagination',
   'admin.toast.invalidFileType': 'Wrong file type',
   'admin.toast.fileTooLarge': 'File too large',

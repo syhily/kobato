@@ -15,8 +15,9 @@ const VALID = {
     password: 'secret',
     sampleRate: 0.5,
     includeRedactedSql: true,
+    retentionDays: 14,
     logs: { enabled: true },
-    frontend: { enabled: true, sessionSampleRate: 25 },
+    frontend: { enabled: true, sessionSampleRate: 25, clientIdentity: 'anonymous' },
     rumClientToken: 'rum-token',
     verifiedFingerprint: 'abc',
     provisionedFingerprint: 'def',
@@ -44,8 +45,13 @@ describe('observability read schema', () => {
     expect(parsed.observability.username).toBe('')
     expect(parsed.observability.sampleRate).toBe(1)
     expect(parsed.observability.includeRedactedSql).toBe(false)
+    expect(parsed.observability.retentionDays).toBe(0)
     expect(parsed.observability.logs).toEqual({ enabled: false })
-    expect(parsed.observability.frontend).toEqual({ enabled: false, sessionSampleRate: 100 })
+    expect(parsed.observability.frontend).toEqual({
+      enabled: false,
+      sessionSampleRate: 100,
+      clientIdentity: 'anonymous',
+    })
     expect(parsed.observability.verifiedFingerprint).toBe('')
     expect(parsed.observability.provisionedFingerprint).toBe('')
   })
@@ -145,8 +151,52 @@ describe('observability write schema', () => {
     ).toBe(false)
     expect(
       observabilityWriteSchema.safeParse({
-        observability: { ...VALID.observability, frontend: { enabled: true, sessionSampleRate: 101 } },
+        observability: {
+          ...VALID.observability,
+          frontend: { enabled: true, sessionSampleRate: 101, clientIdentity: 'anonymous' },
+        },
       }).success,
     ).toBe(false)
+  })
+
+  it.each([0, 1, 3650])('accepts the retention boundary %d', (retentionDays) => {
+    const result = observabilityWriteSchema.safeParse({ observability: { ...VALID.observability, retentionDays } })
+    expect(result.success).toBe(true)
+  })
+
+  it.each([-1, 3651, 1.5])('rejects the out-of-range retention %d', (retentionDays) => {
+    const result = observabilityWriteSchema.safeParse({ observability: { ...VALID.observability, retentionDays } })
+    expect(result.success).toBe(false)
+  })
+
+  it('coerces a form-style retention string to a number', () => {
+    const parsed = observabilityWriteSchema.parse({ observability: { ...VALID.observability, retentionDays: '30' } })
+    expect(parsed.observability.retentionDays).toBe(30)
+  })
+
+  it.each(['anonymous', 'forward'])('accepts the clientIdentity mode %j', (clientIdentity) => {
+    const result = observabilityWriteSchema.safeParse({
+      observability: { ...VALID.observability, frontend: { enabled: true, sessionSampleRate: 25, clientIdentity } },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects an unknown clientIdentity mode on write', () => {
+    const result = observabilityWriteSchema.safeParse({
+      observability: {
+        ...VALID.observability,
+        frontend: { enabled: true, sessionSampleRate: 25, clientIdentity: 'full' },
+      },
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('observability clientIdentity read tolerance', () => {
+  it('falls a hand-edited unknown mode back to anonymous on read', () => {
+    const parsed = observabilitySchema.parse({
+      observability: { frontend: { enabled: true, sessionSampleRate: 25, clientIdentity: 'full' } },
+    })
+    expect(parsed.observability.frontend.clientIdentity).toBe('anonymous')
   })
 })

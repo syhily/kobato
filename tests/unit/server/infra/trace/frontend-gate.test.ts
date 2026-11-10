@@ -1,17 +1,18 @@
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/infra/trace/config'
+import type { FrontendRumRelay, ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/infra/trace/config'
 import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
 
 import { TestMetricReader } from '#/_helpers/in-memory-metric-reader'
-import { activeFrontendRum, traceEnvironment } from '@/server/infra/trace/config'
+import { activeFrontendRelay, activeFrontendRum, traceEnvironment } from '@/server/infra/trace/config'
 import { __resetTraceFacadeForTests } from '@/server/infra/trace/facade'
 import {
   __resetFrontendGateForTests,
   activateFrontendGate,
   deactivateFrontendGate,
   verifiedFrontendBootstrap,
+  verifiedFrontendRelay,
 } from '@/server/infra/trace/frontend-gate'
 import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
@@ -27,17 +28,22 @@ const CONFIG: ServerTraceRuntimeConfig = {
 }
 
 const BOOTSTRAP: FrontendRumBootstrap = {
-  site: 'http://127.0.0.1:5080',
-  organization: 'default',
   applicationId: 'kobato-dev',
-  clientToken: 'rum-token',
   service: 'kobato',
   environment: 'development',
   sessionSampleRate: 100,
+  clientIdentity: 'anonymous',
+}
+
+const RELAY: FrontendRumRelay = {
+  endpoint: 'http://127.0.0.1:5080',
+  organization: 'default',
+  clientToken: 'rum-token',
+  clientIdentity: 'anonymous',
 }
 
 function resolution(): TraceConfigResolution {
-  return { status: 'active', server: CONFIG, frontend: BOOTSTRAP, diagnostics: [] }
+  return { status: 'active', server: CONFIG, frontend: BOOTSTRAP, frontendRelay: RELAY, diagnostics: [] }
 }
 
 beforeEach(() => {
@@ -80,9 +86,14 @@ describe('frontend RUM verification gate', () => {
     expect(handle.started).toBe(true)
     expect(verifiedFrontendBootstrap()).toEqual(BOOTSTRAP)
     expect(activeFrontendRum()).toEqual(BOOTSTRAP)
+    // The relay target rides the same gate entry.
+    expect(verifiedFrontendRelay()).toEqual(RELAY)
+    expect(activeFrontendRelay()).toEqual(RELAY)
     await stopTraceRuntime()
     expect(verifiedFrontendBootstrap()).toBeNull()
     expect(activeFrontendRum()).toBeNull()
+    expect(verifiedFrontendRelay()).toBeNull()
+    expect(activeFrontendRelay()).toBeNull()
   })
 
   it('runs the verification and exposes the bootstrap in a production build too', async () => {
@@ -107,6 +118,7 @@ describe('frontend RUM verification gate', () => {
     await start(async () => false)
 
     expect(verifiedFrontendBootstrap()).toBeNull()
+    expect(verifiedFrontendRelay()).toBeNull()
     expect(isTraceRuntimeRunning()).toBe(true)
   })
 
@@ -122,12 +134,14 @@ describe('frontend RUM verification gate', () => {
   it('does not let a stopped runtime clear a newer gate', () => {
     const oldToken = {}
     const newToken = {}
-    activateFrontendGate(oldToken, BOOTSTRAP)
-    activateFrontendGate(newToken, BOOTSTRAP)
+    activateFrontendGate(oldToken, BOOTSTRAP, RELAY)
+    activateFrontendGate(newToken, BOOTSTRAP, RELAY)
     deactivateFrontendGate(oldToken)
     expect(verifiedFrontendBootstrap()).toEqual(BOOTSTRAP)
+    expect(verifiedFrontendRelay()).toEqual(RELAY)
     deactivateFrontendGate(newToken)
     expect(verifiedFrontendBootstrap()).toBeNull()
+    expect(verifiedFrontendRelay()).toBeNull()
   })
 
   it('periodically revokes a failed gate, restores on recovery, and clears its interval', async () => {

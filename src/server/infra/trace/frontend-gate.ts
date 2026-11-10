@@ -1,22 +1,25 @@
-// Process-wide frontend RUM verification gate (ADR-0012).
+// Process-wide frontend RUM verification gate.
 //
-// Configuration parsing produces a CANDIDATE browser bootstrap. The root
-// loader and CSP may only expose it after the DEV runtime has queried
-// OpenObserve and verified the allowlist pipeline. The token guard makes
-// cleanup runtime-scoped: an HMR-disposed runtime can never clear the gate
-// installed by its replacement.
+// Configuration parsing produces a CANDIDATE browser bootstrap plus a
+// server-only relay target. The root loader may only expose the bootstrap — and
+// the intake relay may only forward — after the runtime has queried OpenObserve
+// and verified the allowlist pipeline. The token guard keeps cleanup
+// runtime-scoped: an HMR-disposed runtime can never clear the gate installed by
+// its replacement.
 
+import type { FrontendRumRelay } from '@/server/infra/trace/config'
 import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
 
 interface GateEntry {
   token: object
   bootstrap: FrontendRumBootstrap
+  relay: FrontendRumRelay
 }
 
 let current: GateEntry | null = null
 
-export function activateFrontendGate(token: object, bootstrap: FrontendRumBootstrap): void {
-  current = { token, bootstrap }
+export function activateFrontendGate(token: object, bootstrap: FrontendRumBootstrap, relay: FrontendRumRelay): void {
+  current = { token, bootstrap, relay }
 }
 
 export function deactivateFrontendGate(token: object): void {
@@ -28,6 +31,11 @@ export function deactivateFrontendGate(token: object): void {
 /** The verified bootstrap, or null while unverified/offline/stopped. */
 export function verifiedFrontendBootstrap(): FrontendRumBootstrap | null {
   return current?.bootstrap ?? null
+}
+
+/** The verified server-only relay target, or null while the gate is closed. */
+export function verifiedFrontendRelay(): FrontendRumRelay | null {
+  return current?.relay ?? null
 }
 
 /** Test-only reset; runtime cleanup must use the token guard instead. */

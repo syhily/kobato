@@ -1,5 +1,4 @@
 // `pnpm run trace:smoke` — real end-to-end OpenObserve smoke.
-//
 // Brings up a throwaway single-container OpenObserve, provisions the same
 // retention/pipeline/dashboards as `trace:init`, boots the REAL DEV server
 // (react-router dev) with a throwaway config, drives Chromium through public
@@ -9,7 +8,6 @@
 // data is replayed after the restart. Server logs must land in the independent
 // `kobato_logs` stream with the closed projected columns and correlate with the
 // same request's `http.server` span by trace_id AND span_id.
-//
 // Everything is synthetic and loopback-only. Ordinary `pnpm test` never runs
 // this file; it requires Docker and Playwright.
 
@@ -276,8 +274,8 @@ function fixtureNeedles(fx: SmokeFixtures): Array<{ field: string; value: string
 }
 
 async function writeDevConfig(path: string, port: number, dataDir: string): Promise<void> {
-  // Tracing has NO config-file surface (ADR-0014): the smoke configures the
-  // `observability` settings section through the real admin RPC below.
+  // Tracing has no config-file surface: the smoke configures the `observability`
+  // settings section through the real admin RPC below.
   const config = {
     server: { host: '127.0.0.1', port, loggingLevel: 'info' },
     security: {
@@ -638,7 +636,17 @@ async function scanForbiddenFields(ctx: O2Context, startTimeMs: number): Promise
     /^action_/,
     /^graphql_/,
   ]
-  return [...keys].filter((key) => forbidden.some((pattern) => pattern.test(key))).sort()
+  // The VRL deliberately keeps these coarse identity dimensions (country/ISO
+  // geo, UA/OS/device family) for `forward`-mode deployments; every finer
+  // geo_info_*/user_agent_* field stays forbidden.
+  const allowed = new Set([
+    'geo_info_country',
+    'geo_info_country_iso_code',
+    'user_agent_user_agent_family',
+    'user_agent_os_family',
+    'user_agent_device_family',
+  ])
+  return [...keys].filter((key) => !allowed.has(key) && forbidden.some((pattern) => pattern.test(key))).sort()
 }
 
 async function processTreeRssKb(rootPid: number): Promise<number> {
@@ -1256,27 +1264,50 @@ async function main(): Promise<void> {
       return `phase=${status.runtime.phase} verified=${status.verified} provisionedCurrent=${status.provisionedCurrent} version=${status.version}`
     })
 
-    await check('CSP exposes the O2 origin only after the privacy gate passes', async () => {
+    await check('CSP never exposes the O2 origin (browser RUM relays same-origin)', async () => {
       const res = await fetch(origin, { headers: { accept: 'text/html' }, signal: AbortSignal.timeout(10_000) })
       assert(res.ok, `public page returned ${res.status}`)
       const csp = res.headers.get('content-security-policy') ?? ''
-      assert(csp.includes(state.endpoint), 'connect-src is missing the verified O2 origin')
-      return state.endpoint
+      assert(!csp.includes(state.endpoint), 'connect-src must never carry the OpenObserve origin')
+      assert(csp.includes("connect-src 'self'"), 'connect-src is missing the self baseline')
+      return "connect-src 'self'"
     })
 
-    await check('RUM CORS preflight allows the exact DEV origin', async () => {
-      const res = await fetch(`${state.endpoint}/rum/v1/${state.organization}/rum`, {
-        method: 'OPTIONS',
-        headers: {
-          origin,
-          'access-control-request-method': 'POST',
-          'access-control-request-headers': 'content-type',
+    await check('same-origin intake relay injects the RUM token and forwards', async () => {
+      const viewId = randomBytes(12).toString('hex')
+      const payload = {
+        type: 'view',
+        date: Date.now(),
+        application: { id: `relay-probe-${viewId}` },
+        service: 'kobato',
+        session: { id: randomBytes(12).toString('hex'), type: 'user' },
+        view: { id: viewId, name: 'routes/public/home', url: `${origin}/` },
+        view_loading_type: 'initial_load',
+        _o2: { format_version: 2 },
+      }
+      // The browser never learns the configured organization — the slim SDK
+      // posts `organizationIdentifier ?? 'default'`. Probe with a deliberately
+      // foreign segment: the relay must validate only the track shape and
+      // rewrite the upstream org (the row lands in the CONFIGURED org's
+      // stream, searched below through `ctx`).
+      const res = await fetch(
+        `${origin}/api/rum/intake/rum/v1/foreign-sdk-org/rum?o2source=browser&o2-api-key=kobato-relay&batch_time=${Date.now()}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(10_000),
         },
-      })
-      assert(res.ok, `preflight returned ${res.status}`)
-      const allowed = res.headers.get('access-control-allow-origin')
-      assert(allowed === origin, `allow-origin is ${allowed ?? 'missing'}, expected ${origin}`)
-      return origin
+      )
+      assert(res.status === 202, `the intake relay returned ${res.status}`)
+      await waitForRows(
+        ctx,
+        'logs',
+        `SELECT * FROM "_rumdata" WHERE view_id = '${viewId}' LIMIT 10`,
+        runStart,
+        (rows) => rows.some((row) => row.type === 'view'),
+      )
+      return `view ${viewId} relayed through the app origin (org segment rewritten)`
     })
 
     await check('server waterfall: Hono → RR → oRPC → SQLite → SSR', () => {
@@ -1588,8 +1619,8 @@ async function main(): Promise<void> {
     })
 
     await check('retention is 1 day on every relevant stream (dev tooling policy)', async () => {
-      // Retention is the ONE OpenObserve policy the dev tooling still owns; the
-      // server's provisioning deliberately never touches it (ADR-0014).
+      // Retention is the one OpenObserve policy the dev tooling owns in dev; the
+      // server applies it only when the admin opts in (`retentionDays`, default 0).
       const first = await applyRetention(ctx)
       assert(first.streams.length > 0, 'no relevant streams found')
       assert(
@@ -1658,7 +1689,7 @@ async function main(): Promise<void> {
       assert(pipeline?.enabled !== false, 'privacy pipeline is disabled')
       const forbidden = await scanForbiddenFields(ctx, runStart)
       assert(forbidden.length === 0, `forbidden RUM fields stored: ${forbidden.join(', ')}`)
-      return 'no ip/geo/user_agent/device/usr/account/context/request/response fields'
+      return 'no ip/geo detail/UA version/device/usr/account/context/request/response fields (coarse geo + UA family allowlisted)'
     })
 
     await check('dashboard imports resolve', async () => {
@@ -1809,9 +1840,6 @@ async function main(): Promise<void> {
       return `${consoleErrors.length} expected console error(s)`
     })
 
-    // ---------------------------------------------------------------------
-    // Failure isolation
-    // ---------------------------------------------------------------------
     log('')
     log('== failure isolation ==')
 
@@ -1911,7 +1939,14 @@ async function main(): Promise<void> {
       assert(!html.includes('o2-api-key'), 'RUM intake marker leaked while O2 was offline')
       const csp = res.headers.get('content-security-policy') ?? ''
       assert(!csp.includes(state.endpoint), 'connect-src kept the O2 origin without a verified gate')
-      return 'server served normally; no frontend bootstrap/CSP RUM origin'
+      const relay = await fetch(`${origin}/api/rum/intake/rum/v1/${state.organization}/rum?o2-api-key=kobato-relay`, {
+        method: 'POST',
+        headers: { 'content-type': 'text/plain;charset=UTF-8' },
+        body: '{}',
+        signal: AbortSignal.timeout(10_000),
+      })
+      assert(relay.status === 404, `the intake relay answered ${relay.status} while O2 was offline`)
+      return 'server served normally; no frontend bootstrap/CSP RUM origin; relay closed'
     })
 
     await check('running pipeline tamper stops an open browser and restore resumes it', async () => {

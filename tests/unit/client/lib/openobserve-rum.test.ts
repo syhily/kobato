@@ -9,7 +9,7 @@ import { makeResourceEvent, makeViewEvent, RUM_TEST_SESSION_ID, RUM_TEST_TRACE_I
 import {
   __pollRumStatusForTests,
   __resetRumForTests,
-  rumTransportFromBootstrap,
+  rumIntakeProxyUrl,
   startRum,
   stopRum,
   suspendRum,
@@ -40,13 +40,11 @@ vi.mock('@openobserve/browser-rum-slim', () => ({
 const ROUTE = { id: 'routes/public/post/detail', template: '/posts/:slug' }
 
 const BOOTSTRAP: FrontendRumBootstrap = {
-  site: 'http://127.0.0.1:5080',
-  organization: 'default',
   applicationId: 'kobato-dev',
-  clientToken: 'rum-client-token',
   service: 'kobato',
   environment: 'development',
   sessionSampleRate: 25,
+  clientIdentity: 'anonymous',
 }
 
 function initConfiguration(): Record<string, any> {
@@ -81,11 +79,8 @@ describe('startRum initialization', () => {
 
     expect(configuration).toMatchObject({
       applicationId: 'kobato-dev',
-      clientToken: 'rum-client-token',
-      site: '127.0.0.1:5080',
-      insecureHTTP: true,
-      organizationIdentifier: 'default',
-      apiVersion: 'v1',
+      // The placeholder token never leaves the same-origin relay.
+      clientToken: 'kobato-relay',
       service: 'kobato',
       env: 'development',
       version: APP_VERSION,
@@ -108,17 +103,20 @@ describe('startRum initialization', () => {
       traceSampleRate: 100,
       traceContextInjection: 'sampled',
     })
-    expect(configuration).not.toHaveProperty('proxy')
+    expect(configuration.proxy).toBe(rumIntakeProxyUrl)
+    // The browser learns neither the OpenObserve endpoint nor the organization.
+    expect(configuration).not.toHaveProperty('site')
+    expect(configuration).not.toHaveProperty('insecureHTTP')
+    expect(configuration).not.toHaveProperty('organizationIdentifier')
     expect(configuration).not.toHaveProperty('workerUrl')
     expect(configuration).not.toHaveProperty('setUser')
     expect(sdk.setViewName).toHaveBeenCalledWith('routes/public/post/detail')
   })
 
-  it('maps an HTTPS endpoint to the site host without insecure HTTP', () => {
-    expect(rumTransportFromBootstrap({ ...BOOTSTRAP, site: 'https://obs.example.com' })).toEqual({
-      site: 'obs.example.com',
-      insecureHTTP: false,
-    })
+  it('builds the same-origin intake URL from the SDK path and parameters', () => {
+    expect(rumIntakeProxyUrl({ path: '/rum/v1/default/rum', parameters: 'o2-api-key=kobato-relay&batch_time=1' })).toBe(
+      `${globalThis.location.origin}/api/rum/intake/rum/v1/default/rum?o2-api-key=kobato-relay&batch_time=1`,
+    )
   })
 
   it('never puts the server OTLP credential into the browser configuration', async () => {
@@ -404,10 +402,12 @@ describe('tracing propagation predicate', () => {
     expect(isTraceableRumUrl('http://localhost:4321/api/analytics/env', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/api/analytics/events', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/rum/v1/default/rum', origin)).toBe(false)
+    expect(isTraceableRumUrl('http://localhost:4321/api/rum/intake/rum/v1/default/rum', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/health', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/ready', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/api/rum/status', origin)).toBe(false)
     expect(isSelfTelemetryRumUrl('http://localhost:4321/api/rum/status', origin)).toBe(true)
+    expect(isSelfTelemetryRumUrl('http://localhost:4321/api/rum/intake/rum/v1/default/rum', origin)).toBe(true)
     expect(isSelfTelemetryRumUrl('http://localhost:4321/api/analytics/env', origin)).toBe(true)
   })
 

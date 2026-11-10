@@ -1,7 +1,8 @@
 // OpenObserve observability grammar shared by the settings write schema (early,
-// actionable feedback) and the server runtime resolver (the authority). Both
-// must agree: the settings layer must never persist a value the runtime would
-// silently reject.
+// actionable feedback) and the server runtime resolver (the authority). Both must
+// agree: the settings layer must never persist a value the runtime would reject.
+
+import { isPrivateIp } from '@/shared/utils/safe-url'
 
 /** An OpenObserve organization is one path segment: no separators, no dots. */
 export const OBSERVABILITY_ORGANIZATION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
@@ -45,8 +46,13 @@ export function normalizeObservabilityOrigin(raw: string): string | null {
 }
 
 /**
- * Write-path gate for a NON-EMPTY origin: it must be an origin, and plain HTTP
- * is only allowed for loopback (the ingestion credential rides every request).
+ * Write-path gate for a NON-EMPTY origin: it must be an origin, and plain HTTP is
+ * only allowed for loopback or a private/reserved IP literal. Every signal —
+ * server OTLP and the relayed browser RUM batches alike — leaves through the
+ * server with the ingestion credential attached, so a public plaintext hop stays
+ * rejected while an internal OpenObserve (`http://192.168.x.x:5080`) is a
+ * legitimate deployment. A hostname (even one that resolves privately) still
+ * requires HTTPS: the grammar cannot classify it without a DNS answer.
  */
 export function isSecureObservabilityOrigin(raw: string): boolean {
   const origin = normalizeObservabilityOrigin(raw)
@@ -54,5 +60,5 @@ export function isSecureObservabilityOrigin(raw: string): boolean {
     return false
   }
   const url = new URL(origin)
-  return url.protocol === 'https:' || isObservabilityLoopbackHost(url.hostname)
+  return url.protocol === 'https:' || isObservabilityLoopbackHost(url.hostname) || isPrivateIp(url.hostname)
 }

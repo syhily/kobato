@@ -1,12 +1,11 @@
-// Shared plumbing for the OpenObserve development container (ADR-0012/ADR-0014).
-//
+// Shared plumbing for the OpenObserve development container.
 // Everything here is explicit dev tooling: `pnpm dev`, `pnpm test`, and the
 // production build never import this module and never require Docker. The
 // scripts own a single loopback container, a dedicated volume, a state file in
 // the worktree's ignored `tmp/openobserve/` tree (mode 0600), and the dev-only
-// 1-day retention policy (ADR-0014). They no longer provision the OpenObserve
-// assets: the RUM token, privacy pipeline, and dashboards are installed by the
-// SERVER during the admin connection test (ADR-0014).
+// 1-day retention policy. They never provision OpenObserve assets: the RUM
+// token, privacy pipeline, and dashboards are installed by the SERVER during
+// the admin connection test.
 
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
@@ -16,6 +15,7 @@ import { z } from 'zod'
 
 import { TRACE_LOG_STREAM } from '../../src/shared/contracts/trace-logs.ts'
 import { isTraceMetricStreamName } from '../../src/shared/contracts/trace-metrics.ts'
+import { RUM_STREAM_NAME } from '../../src/shared/contracts/trace-pipeline.ts'
 import { isRecord } from '../../src/shared/utils/type-guards.ts'
 import { unsafeCast } from '../../src/shared/utils/unsafe-cast.ts'
 
@@ -29,7 +29,8 @@ export const DEFAULT_O2_PORT = 5080
 export const DEFAULT_APP_PORT = 4321
 export const DEFAULT_APPLICATION_ID = 'kobato-dev'
 export const RETENTION_DAYS = 1
-export const RUM_STREAM = '_rumdata'
+/** The RUM intake stream, owned by `src/shared/contracts/trace-pipeline.ts`. */
+export const RUM_STREAM = RUM_STREAM_NAME
 export const TRACE_STREAM = 'default'
 /** The application log stream, owned by `src/shared/contracts/trace-logs.ts`. */
 export const LOG_STREAM = TRACE_LOG_STREAM
@@ -59,9 +60,8 @@ export interface TraceState {
   adminEmail: string
   adminPassword: string
   /**
-   * Legacy slot: the RUM client token is now created by the SERVER during the
-   * admin connection test and written back into the encrypted settings row.
-   * Kept in the state-file contract so an older `state.json` still parses.
+   * Kept in the state-file contract so an existing `state.json` still parses; the
+   * RUM client token is created by the server during the admin connection test.
    */
   rumToken: string
   applicationId: string
@@ -199,10 +199,6 @@ export function buildState(overrides: StateDefaults = {}): TraceState {
     createdAt: new Date().toISOString(),
   }
 }
-
-// ---------------------------------------------------------------------------
-// Docker
-// ---------------------------------------------------------------------------
 
 export interface CommandResult {
   status: number
@@ -382,11 +378,15 @@ export function startOpenObserve(state: TraceState, options: { corsOrigins?: str
     '-e',
     'ZO_TELEMETRY=false',
     // The smoke and local stack never inspect GeoIP fields; O2 otherwise
-    // downloads ~59 MB of MaxMind data on startup and blocks `/healthz` until
-    // it finishes. A slow network made the restart health wait flaky, so keep
-    // the throwaway instance offline and deterministic.
+    // downloads ~59 MB of MaxMind data on startup and blocks `/healthz` until it
+    // finishes, which makes the restart health wait flaky.
     '-e',
     'ZO_MMDB_DISABLE_DOWNLOAD=true',
+    // Resolve the RUM intake IP from the rightmost X-Forwarded-For hop (the
+    // address Kobato's relay writes) instead of the TCP peer, mirroring the
+    // production `forward` deployment.
+    '-e',
+    'ZO_HTTP_REAL_IP_SOURCE=RightmostXForwardedFor',
     '-e',
     `ZO_CORS_ALLOWED_ORIGINS=${options.corsOrigins ?? corsOrigins()}`,
     // Local development wants WAL data queryable in seconds, not the 10-minute
@@ -472,10 +472,6 @@ export function stopOpenObserve(name: string, removeVolume: boolean, volumeName?
     removeVolume: (resource) => docker(['volume', 'rm', '-f', resource]),
   })
 }
-
-// ---------------------------------------------------------------------------
-// OpenObserve HTTP API
-// ---------------------------------------------------------------------------
 
 export interface O2Context {
   endpoint: string

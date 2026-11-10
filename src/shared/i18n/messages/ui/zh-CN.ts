@@ -92,6 +92,11 @@ export const uiMessagesZhCN = {
   'public.like.title': '喜欢这篇文章吗？',
   'public.like.unlike': '取消点赞',
   'public.like.wechatQrHint': '在微信中请长按二维码',
+  'public.rumConsent.title': '匿名使用统计',
+  'public.rumConsent.body':
+    '在您同意后，本站会采集页面性能与错误，并附带您所在的大致地区（仅国家/地区）与浏览器类型，用于帮助作者改进站点。您的 IP 地址不会被存储。',
+  'public.rumConsent.accept': '同意',
+  'public.rumConsent.decline': '拒绝',
   'public.search.inputPlaceholder': '搜索并回车',
   'public.search.label': '文章寻踪',
   'public.search.open': '打开搜索',
@@ -576,6 +581,7 @@ export const uiMessagesZhCN = {
   'admin.settings.layout.loadFailed': '设置加载失败',
   'admin.settings.shared.toggle.on': '已开启',
   'admin.settings.shared.toggle.off': '已关闭',
+  'admin.settings.shared.hintTooltip': '了解更多',
   'admin.settings.content.pagination.title': '分页',
   'admin.settings.content.pagination.description':
     '每个列表页显示多少篇文章。改动会立即影响首页 / 分类 / 标签 / 搜索结果。',
@@ -1264,7 +1270,7 @@ export const uiMessagesZhCN = {
     '填写 OpenObserve 地址与账号，保存后测试连接；测试成功会自动初始化监控资产。',
   'admin.settings.observability.connection.endpoint': '地址',
   'admin.settings.observability.connection.endpointHint':
-    '只填 Origin，例如 https://obs.example.com；远程地址必须使用 HTTPS',
+    '只填 Origin，例如 https://obs.example.com；纯 HTTP 仅接受回环或内网地址。只有本服务器会访问该地址，访客浏览器永远看不到它',
   'admin.settings.observability.connection.endpointPlaceholder': 'https://obs.example.com',
   'admin.settings.observability.connection.organization': '站点名称（组织）',
   'admin.settings.observability.connection.organizationHint':
@@ -1298,10 +1304,18 @@ export const uiMessagesZhCN = {
     '采集页面性能、资源与错误；仅在连接验证通过、且构建注入了 bootstrap 时生效',
   'admin.settings.observability.reporting.sessionSampleRate': 'RUM 会话采样率（0-100）',
   'admin.settings.observability.reporting.sessionSampleRateHint': '百分比；100 表示全量采集，0 表示关闭采集',
+  'admin.settings.observability.reporting.clientIdentity': '访客身份',
+  'admin.settings.observability.reporting.clientIdentityHint':
+    '匿名模式不转发任何身份信息；转发模式会附带访客地址与浏览器 UA，供 OpenObserve 富化国家/地区级地理与浏览器、系统、设备家族统计——访客需先同意隐私提示，且 OpenObserve 需配置 ZO_HTTP_REAL_IP_SOURCE=RightmostXForwardedFor。原始地址永远不会入库。',
+  'admin.settings.observability.reporting.clientIdentity.anonymous': '匿名',
+  'admin.settings.observability.reporting.clientIdentity.forward': '转发（需访客同意）',
   'admin.settings.observability.reporting.sampleRate': '服务端采样率（0-1）',
   'admin.settings.observability.reporting.sampleRateHint': '0 表示不采样，1 表示全量采集',
   'admin.settings.observability.reporting.includeRedactedSql': '记录脱敏 SQL',
   'admin.settings.observability.reporting.includeRedactedSqlHint': '在 trace 中附带脱敏后的 SQL 语句',
+  'admin.settings.observability.reporting.retentionDays': '数据保留天数 (0-3650)',
+  'admin.settings.observability.reporting.retentionDaysHint':
+    '0 表示沿用 OpenObserve 自身的保留策略；大于 0 时由 Kobato 在每次保存与启动时统一接管',
   'admin.settings.observability.reporting.lastError': '最近错误',
   'admin.settings.observability.reporting.lastErrorHint': '仅包含错误码与字段名，可复制后反馈给维护者',
   'admin.settings.observability.reporting.phase.loading': '读取中…',
@@ -1310,6 +1324,8 @@ export const uiMessagesZhCN = {
   'admin.settings.observability.reporting.phase.invalid': '配置无效',
   'admin.settings.observability.reporting.phase.running': '运行中',
   'admin.settings.observability.reporting.phase.failed': '运行失败',
+  'admin.settings.observability.reporting.exportError':
+    '最近一次 OTLP 导出失败（{signal}，{error}），时间 {time}；OpenObserve 恢复前遥测数据将被丢弃。',
   'admin.settings.observability.assets.title': '监控面板',
   'admin.settings.observability.assets.description':
     '连接验证通过时会初始化默认资产：4 个监控面板、隐私过滤 pipeline 与浏览器 RUM token。',
@@ -1336,6 +1352,30 @@ export const uiMessagesZhCN = {
   'admin.settings.observability.assets.provisionFailed': '资产同步失败',
   'admin.settings.observability.assets.resyncHint':
     '使用已保存的设置重新创建或更新面板与 pipeline；需要先通过连接测试。',
+  'admin.settings.observability.tooltip.endpoint':
+    '服务端上报 trace、指标、日志以及中转浏览器 RUM 的 OpenObserve 地址。前提：一个可连通的 OpenObserve 部署——公网主机必须使用 HTTPS，仅回环或内网地址允许明文 HTTP。访客浏览器永远不会直接访问它。',
+  'admin.settings.observability.tooltip.organization':
+    '承载本站数据流与仪表盘的 OpenObserve 组织，同时作为 RUM 应用 ID。无需提前创建——连接测试通过时会自动创建。',
+  'admin.settings.observability.tooltip.username':
+    '用于管理 API 与 OTLP 写入的 OpenObserve 用户。前提：该用户需有列出/创建组织、管理函数/管道/仪表盘/RUM 令牌以及写入遥测数据的权限。',
+  'admin.settings.observability.tooltip.password':
+    '与其他设置密钥一样加密存储；留空表示保留当前密码。修改地址、组织、用户名或密码都会使验证失效——需重新执行连接测试。',
+  'admin.settings.observability.tooltip.enabled':
+    '服务端 trace 与指标的总开关。前提：连接已通过验证——先完成一次成功的连接测试。',
+  'admin.settings.observability.tooltip.logs':
+    '把脱敏投影后的服务端日志推送到 kobato_logs 流。前提：已开启「启用上报」。投影只保留封闭字段——不含 URL、查询参数或请求体。',
+  'admin.settings.observability.tooltip.frontend':
+    '通过精简 SDK 采集页面性能、资源与错误，经同源中继转发——OpenObserve 无需公网暴露或 CORS 配置。前提：连接已验证且已安装隐私管道（由连接测试完成）。',
+  'admin.settings.observability.tooltip.sessionSampleRate': '上报 RUM 的浏览器会话百分比；0 表示不采集。',
+  'admin.settings.observability.tooltip.clientIdentity':
+    '匿名模式不转发访客身份；转发模式附带访客地址与浏览器 UA，供 OpenObserve 富化国家/地区级地理与浏览器/系统/设备家族。前提：OpenObserve 配置 ZO_HTTP_REAL_IP_SOURCE=RightmostXForwardedFor，且访客在隐私提示中同意。原始地址永远不会入库。',
+  'admin.settings.observability.tooltip.sampleRate': '服务端 trace 的采样比例（0-1）；1 表示全量保留。',
+  'admin.settings.observability.tooltip.includeRedactedSql':
+    '在数据库 span 上附带脱敏后的 SQL 语句（参数全部移除）。无 OpenObserve 侧前提。',
+  'admin.settings.observability.tooltip.retentionDays':
+    'OpenObserve 保留各 Kobato 数据流的天数。0 表示沿用 OpenObserve 实例自身的策略；大于 0 时在每次保存与启动时强制同步。OpenObserve OSS 以整天为粒度。',
+  'admin.settings.observability.tooltip.token':
+    '由连接测试自动写入，并由同源中继注入每批浏览器数据；它永远不会出现在页面中。在 OpenObserve 中轮换后，重新执行连接测试即可更新。',
   'common.pagination.label': '分页',
   'admin.toast.invalidFileType': '文件类型错误',
   'admin.toast.fileTooLarge': '文件过大',

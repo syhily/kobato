@@ -3,6 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { RumConsent } from '@/client/lib/rum-consent'
 import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
 
 import { __isRumModuleRequestedForTests, __resetRumHookForTests, isRumDenied, useRum } from '@/client/hooks/use-rum'
@@ -26,13 +27,11 @@ vi.mock('@/client/lib/openobserve-rum', () => ({
 }))
 
 const BOOTSTRAP: FrontendRumBootstrap = {
-  site: 'http://127.0.0.1:5080',
-  organization: 'default',
   applicationId: 'kobato-dev',
-  clientToken: 'rum-client-token',
   service: 'kobato',
   environment: 'development',
   sessionSampleRate: 100,
+  clientIdentity: 'anonymous',
 }
 
 function stubPolicy(options: { dnt?: string | null; gpc?: boolean } = {}): void {
@@ -235,5 +234,64 @@ describe('useRum', () => {
 
     await waitFor(() => expect(rum.stopRum).toHaveBeenCalledOnce())
     expect(rum.suspendRum).not.toHaveBeenCalled()
+  })
+})
+
+describe('useRum — forward-mode consent gate', () => {
+  const FORWARD: FrontendRumBootstrap = { ...BOOTSTRAP, clientIdentity: 'forward' }
+
+  it('never requests the SDK chunk while the decision is undecided', async () => {
+    renderHook(() => useRum(FORWARD, null))
+
+    await Promise.resolve()
+    expect(__isRumModuleRequestedForTests()).toBe(false)
+    expect(rum.startRum).not.toHaveBeenCalled()
+    expect(rum.suspendRum).not.toHaveBeenCalled()
+  })
+
+  it('treats a declined decision exactly like an undecided one', async () => {
+    renderHook(() => useRum(FORWARD, 'declined'))
+
+    await Promise.resolve()
+    expect(__isRumModuleRequestedForTests()).toBe(false)
+    expect(rum.startRum).not.toHaveBeenCalled()
+  })
+
+  it('starts in the same document once consent is accepted', async () => {
+    const { rerender } = renderHook<unknown, { consent: RumConsent | null }>(
+      ({ consent }) => useRum(FORWARD, consent),
+      { initialProps: { consent: null } },
+    )
+    await Promise.resolve()
+    expect(rum.startRum).not.toHaveBeenCalled()
+
+    rerender({ consent: 'accepted' })
+
+    await waitFor(() => expect(rum.startRum).toHaveBeenCalledOnce())
+    expect(rum.startRum).toHaveBeenCalledWith(FORWARD, {
+      id: 'routes/public/post/detail',
+      template: '/posts/:slug',
+    })
+    expect(rum.stopRum).not.toHaveBeenCalled()
+  })
+
+  it('fully stops a running SDK when consent is withdrawn', async () => {
+    const { rerender } = renderHook<unknown, { consent: RumConsent | null }>(
+      ({ consent }) => useRum(FORWARD, consent),
+      { initialProps: { consent: 'accepted' } },
+    )
+    await waitFor(() => expect(rum.startRum).toHaveBeenCalledOnce())
+
+    rerender({ consent: 'declined' })
+
+    await waitFor(() => expect(rum.stopRum).toHaveBeenCalledOnce())
+    expect(rum.suspendRum).not.toHaveBeenCalled()
+    expect(rum.startRum).toHaveBeenCalledOnce()
+  })
+
+  it('does not gate an anonymous bootstrap on consent', async () => {
+    renderHook(() => useRum(BOOTSTRAP, null))
+
+    await waitFor(() => expect(rum.startRum).toHaveBeenCalledOnce())
   })
 })

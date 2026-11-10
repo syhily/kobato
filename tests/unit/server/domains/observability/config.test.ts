@@ -17,8 +17,9 @@ const BASE: ObservabilitySettingsSlice = {
   password: 'secret',
   sampleRate: 1,
   includeRedactedSql: false,
+  retentionDays: 0,
   logs: { enabled: false },
-  frontend: { enabled: false, sessionSampleRate: 100 },
+  frontend: { enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' },
   rumClientToken: 'rum-token',
   verifiedFingerprint: '',
   provisionedFingerprint: '',
@@ -46,8 +47,9 @@ describe('observability connection fingerprint', () => {
       { sampleRate: 0.25 },
       { includeRedactedSql: true },
       { logs: { enabled: true } },
-      { frontend: { enabled: true, sessionSampleRate: 25 } },
+      { frontend: { enabled: true, sessionSampleRate: 25, clientIdentity: 'anonymous' } },
       { rumClientToken: 'rotated-token' },
+      { retentionDays: 30 },
     ] satisfies Partial<ObservabilitySettingsSlice>[]) {
       expect(observabilityConnectionFingerprint({ ...BASE, ...patch })).toBe(baseline)
     }
@@ -75,17 +77,26 @@ describe('observability runtime fingerprint', () => {
     ['sampleRate', { sampleRate: 0.5 }],
     ['includeRedactedSql', { includeRedactedSql: true }],
     ['logs.enabled', { logs: { enabled: true } }],
-    ['frontend.enabled', { frontend: { enabled: true, sessionSampleRate: 100 } }],
-    ['frontend.sessionSampleRate', { frontend: { enabled: false, sessionSampleRate: 50 } }],
+    ['frontend.enabled', { frontend: { enabled: true, sessionSampleRate: 100, clientIdentity: 'anonymous' } }],
+    [
+      'frontend.sessionSampleRate',
+      { frontend: { enabled: false, sessionSampleRate: 50, clientIdentity: 'anonymous' } },
+    ],
+    // Identity forwarding changes the relay behavior and the browser bootstrap,
+    // so it must hot-restart the runtime.
+    ['frontend.clientIdentity', { frontend: { enabled: true, sessionSampleRate: 100, clientIdentity: 'forward' } }],
   ])('changes when the pipeline setting %s changes', (_label, patch) => {
     expect(observabilityRuntimeFingerprint({ ...BASE, ...patch })).not.toBe(observabilityRuntimeFingerprint(BASE))
   })
 
-  it('ignores the master switch and the browser-only client token', () => {
+  it('ignores the master switch, the browser-only client token and the retention policy', () => {
     expect(observabilityRuntimeFingerprint({ ...BASE, enabled: false })).toBe(observabilityRuntimeFingerprint(BASE))
     expect(observabilityRuntimeFingerprint({ ...BASE, rumClientToken: 'rotated-token' })).toBe(
       observabilityRuntimeFingerprint(BASE),
     )
+    // Retention is a data policy reconciled by its own sync — it must not
+    // restart the providers.
+    expect(observabilityRuntimeFingerprint({ ...BASE, retentionDays: 30 })).toBe(observabilityRuntimeFingerprint(BASE))
   })
 })
 
@@ -106,7 +117,7 @@ describe('toTraceRuntimeSettings', () => {
     const input = toTraceRuntimeSettings({
       ...BASE,
       logs: { enabled: true },
-      frontend: { enabled: true, sessionSampleRate: 20 },
+      frontend: { enabled: true, sessionSampleRate: 20, clientIdentity: 'anonymous' },
     })
 
     expect(input).toEqual({
@@ -122,6 +133,7 @@ describe('toTraceRuntimeSettings', () => {
         applicationId: 'my-site',
         clientToken: 'rum-token',
         sessionSampleRate: 20,
+        clientIdentity: 'anonymous',
       },
     })
   })

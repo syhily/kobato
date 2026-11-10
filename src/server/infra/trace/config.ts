@@ -1,15 +1,11 @@
-// OpenObserve activation (ADR-0012, now a released product capability).
-//
-// This module is the single place that turns a settings projection (the
-// `observability` section, mapped by `domains/observability`) into either an
-// inert no-op or a fully validated server/frontend projection. It never imports
-// an OTel/OpenObserve SDK: `runtime.ts` owns the real implementation and
-// consumes `ServerTraceRuntimeConfig` from here.
+// Turns the `observability` settings projection into either an inert no-op or a
+// validated server/frontend projection. Never imports an OTel/OpenObserve SDK:
+// `runtime.ts` owns the implementation and consumes `ServerTraceRuntimeConfig`.
 
-import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
+import type { FrontendRumBootstrap, RumClientIdentity } from '@/shared/contracts/trace'
 
 import { getLogger } from '@/server/infra/logger'
-import { verifiedFrontendBootstrap } from '@/server/infra/trace/frontend-gate'
+import { verifiedFrontendBootstrap, verifiedFrontendRelay } from '@/server/infra/trace/frontend-gate'
 import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
@@ -19,14 +15,32 @@ import {
 const log = getLogger('trace')
 
 // Header values are printable ASCII without surrounding whitespace: the
-// exact OpenObserve ingestion value must never carry a CR/LF (header
-// injection) or a stray space that changes the upstream credential.
+// ingestion value must carry no CR/LF (header injection) and no stray space that
+// changes the upstream credential.
 const AUTHORIZATION_HEADER_PATTERN = /^[\x20-\x7E]+$/
 // Application IDs and RUM client tokens are opaque printable strings; both
 // reject whitespace so a pasted value cannot silently break the browser SDK.
 const APPLICATION_ID_PATTERN = /^[A-Za-z0-9._:-]{1,256}$/
 const CLIENT_TOKEN_PATTERN = /^[\x21-\x7E]{1,4096}$/
 const MAX_AUTHORIZATION_HEADER_LENGTH = 8192
+
+/**
+ * The server-side half of the frontend pipeline: everything the same-origin
+ * intake relay needs to forward a browser batch to OpenObserve. Never projected
+ * to the browser — the gate hands it only to the intake resource route.
+ */
+export interface FrontendRumRelay {
+  /** Normalized OpenObserve origin (`http://127.0.0.1:5080`). */
+  endpoint: string
+  organization: string
+  /** The provisioned RUM client token, injected into every relayed batch. */
+  clientToken: string
+  /**
+   * `forward`: attach the trusted-proxy-resolved client address and the
+   * original User-Agent to the relayed batch (consent-gated on the client).
+   */
+  clientIdentity: RumClientIdentity
+}
 
 export interface TraceLogsRuntimeConfig {
   /** Direct OTLP/HTTP logs endpoint (`<origin>/api/<org>/v1/logs`). */
@@ -78,6 +92,8 @@ export interface TraceConfigResolution {
   status: TraceConfigStatus
   server: ServerTraceRuntimeConfig | null
   frontend: FrontendRumBootstrap | null
+  /** Server-only relay target for `/api/rum/intake`; null whenever `frontend` is. */
+  frontendRelay: FrontendRumRelay | null
   diagnostics: readonly TraceConfigDiagnostic[]
 }
 
@@ -88,6 +104,7 @@ export interface TraceFrontendSettings {
   /** `observability.rumClientToken`. */
   clientToken: string
   sessionSampleRate: number
+  clientIdentity: RumClientIdentity
 }
 
 /**
@@ -166,11 +183,10 @@ function buildServerConfig(
 /**
  * Resolve activation from a settings projection.
  *
- * Any invalid server configuration disables BOTH pipelines rather than
- * partially initializing; frontend RUM is only offered on top of a fully
- * active server pipeline. Whether the browser gate is exposed is the runtime
- * verification's decision in `activeFrontendRum()`, not this function's, and
- * it is environment-independent.
+ * Any invalid server configuration disables BOTH pipelines rather than partially
+ * initializing; frontend RUM is only offered on top of a fully active server
+ * pipeline. Exposing the browser gate is the runtime verification's decision in
+ * `activeFrontendRum()`, and is environment-independent.
  */
 export function resolveTraceConfig(
   input: TraceRuntimeSettings,
@@ -181,6 +197,7 @@ export function resolveTraceConfig(
       status: 'disabled',
       server: null,
       frontend: null,
+      frontendRelay: null,
       diagnostics: input.logs.enabled
         ? [
             {
@@ -215,6 +232,7 @@ export function resolveTraceConfig(
       status: 'invalid',
       server: null,
       frontend: null,
+      frontendRelay: null,
       diagnostics: [{ code: 'trace-invalid-config', level: 'error', fields: serverFields }],
     }
   }
@@ -222,7 +240,7 @@ export function resolveTraceConfig(
   const server = buildServerConfig(endpoint, organization, authorizationHeader, input)
 
   if (!input.frontend.enabled) {
-    return { status: 'active', server, frontend: null, diagnostics: [] }
+    return { status: 'active', server, frontend: null, frontendRelay: null, diagnostics: [] }
   }
 
   const frontendFields: string[] = []
@@ -243,6 +261,7 @@ export function resolveTraceConfig(
       status: 'active',
       server,
       frontend: null,
+      frontendRelay: null,
       diagnostics: [{ code: 'trace-frontend-invalid-config', level: 'warn', fields: frontendFields }],
     }
   }
@@ -251,38 +270,43 @@ export function resolveTraceConfig(
     status: 'active',
     server,
     frontend: {
-      site: endpoint,
-      organization,
       applicationId,
-      clientToken,
       service: 'kobato',
       environment: options.environment,
       sessionSampleRate: input.frontend.sessionSampleRate,
+      clientIdentity: input.frontend.clientIdentity,
     },
+    frontendRelay: { endpoint, organization, clientToken, clientIdentity: input.frontend.clientIdentity },
     diagnostics: [],
   }
 }
 
 /**
- * The build-time environment LABEL projected into the browser bootstrap. It
- * never gates a pipeline: a development and a production build run the exact
- * same verification and exposure path, only the `env` dimension of the RUM
- * event differs.
+ * Build-time environment label projected into the browser bootstrap. It never
+ * gates a pipeline: dev and production builds run the same verification and
+ * exposure path; only the `env` RUM dimension differs.
  */
 export function traceEnvironment(): TraceEnvironment {
   return import.meta.env.DEV === true && import.meta.env.PROD !== true ? 'development' : 'production'
 }
 
 /**
- * The frontend bootstrap the root loader and CSP may expose. The settings
- * projection only produces a CANDIDATE; this function additionally requires
- * the runtime's successful verification of the O2 allowlist pipeline (the
- * startup probe plus the periodic recheck), in EVERY build. An unverified,
- * offline, or stopped pipeline withholds only browser RUM — server
- * traces/metrics/logs keep running.
+ * Frontend bootstrap the root loader and CSP may expose. The settings projection
+ * only produces a CANDIDATE; this requires the runtime's successful verification
+ * of the O2 allowlist pipeline. A withheld, offline, or stopped pipeline hides
+ * only browser RUM — server traces/metrics/logs keep running.
  */
 export function activeFrontendRum(): FrontendRumBootstrap | null {
   return verifiedFrontendBootstrap()
+}
+
+/**
+ * Server-only relay target the `/api/rum/intake` resource forwards to. Gated by
+ * the same verification entry as the browser bootstrap: when it closes, the
+ * relay closes at the same instant.
+ */
+export function activeFrontendRelay(): FrontendRumRelay | null {
+  return verifiedFrontendRelay()
 }
 
 /** Format one diagnostic without ever echoing a configured value. */
@@ -291,9 +315,8 @@ export function formatTraceDiagnostic(diagnostic: TraceConfigDiagnostic): string
 }
 
 /**
- * Emit the safe activation diagnostics. Resolutions carry at most one
- * diagnostic per affected pipeline, so an enabled-but-incomplete projection
- * produces one log line containing field names only.
+ * Emit the safe activation diagnostics: one log line per affected pipeline,
+ * field names only — never a configured value.
  */
 export function logTraceDiagnostics(diagnostics: readonly TraceConfigDiagnostic[]): void {
   for (const diagnostic of diagnostics) {

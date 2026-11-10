@@ -14,7 +14,8 @@ import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
-import { useRum } from '@/client/hooks/use-rum'
+import { useRum, isRumDenied } from '@/client/hooks/use-rum'
+import { useRumConsent } from '@/client/hooks/use-rum-consent'
 import { defaultTransition } from '@/client/lib/motion'
 import { createSsrCaller } from '@/server/http/ssr-caller'
 import { documentHeaders } from '@/server/infra/http/headers'
@@ -36,6 +37,7 @@ import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
 import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
+import { RumConsentBanner } from '@/ui/public/chrome/RumConsentBanner'
 const PublicErrorLayout = lazy(() =>
   import('@/ui/public/chrome/BaseLayout').then((module) => ({ default: module.BaseLayout })),
 )
@@ -71,8 +73,7 @@ function collectTier2Chunks(
   return result
 }
 
-// Root middleware runs around loaders/actions AND the SSR entry, so one
-// document/`.data` span covers the whole React Router request (ADR-0012).
+// Root middleware wraps loaders/actions and the SSR entry, so one document/`.data` span covers the whole request.
 export const middleware: MiddlewareFunction<Response>[] = [traceRouteMiddleware]
 
 // Root is the nearest error boundary for loader-thrown 304s; this passes the
@@ -93,10 +94,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Boot data loads through the content API like every public route; the theme cookie is parsed inside.
   const boot = await caller.content.bootstrap()
 
-  // ADR-0012: the browser bootstrap exists in EVERY build once the settings
-  // projection and the runtime's OpenObserve pipeline verification both pass.
-  // Otherwise it resolves to null and the key is not emitted at all; the
-  // server authorization header has no path into this projection.
+  // The browser bootstrap exists only once the settings projection and the runtime's OpenObserve pipeline
+  // verification pass; otherwise the key is omitted entirely and the server authorization header never reaches it.
   const rum = activeFrontendRum()
 
   const warmupManifest = getWarmupManifest()
@@ -104,7 +103,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const criticalLinks = getCriticalChunksForPathname(pathname) ?? warmupManifest?.tier1 ?? []
   const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, boot.admin, new Set(criticalLinks)) : []
 
-  // Server clock for public chrome: loader data keeps SSR and hydration on the same instant (audit P2-23).
+  // Server clock for public chrome: loader data keeps SSR and hydration on the same instant.
   const nowIso = new Date().toISOString()
 
   return {
@@ -124,18 +123,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 /**
- * The root payload carries the document-scope message catalog (`public` vs
- * `workspace`) and the current locale's settings revision, so the payload must
- * be refreshed in exactly two situations:
- *
- *  · a form action — it can change the settings the payload is derived from
- *    (locale, theme cookie, session identity), so the default policy applies;
- *  · a navigation crossing the public ↔ workspace boundary — the next document
- *    needs a different namespace (and, into the workspace, the Inkling label
- *    table). Without this, a client-side navigation would keep the previous
- *    scope's catalog and render missing admin messages.
- *
- * Same-scope navigations keep the payload (no messages/fonts/theme churn).
+ * Revalidate when a navigation crosses the document-scope message catalog boundary (`public` vs `workspace`);
+ * otherwise client-side navigation keeps the previous scope's catalog and renders missing admin messages.
  */
 export function shouldRevalidate({
   currentUrl,
@@ -209,17 +198,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const criticalLinks = rootData?.criticalLinks ?? []
   const tier2Chunks = rootData?.tier2Chunks ?? []
 
-  // One i18n payload drives both the document language and the provider.
-  // `fallbackMessages` is the ONLY synchronous message module the client may
-  // import directly; the full catalog arrives as loader data.
+  // `fallbackMessages` is the only synchronous message module the client may import directly; the full catalog
+  // arrives as loader data.
   const i18n = rootData?.i18n ?? null
   const locale: AppLocale = i18n?.locale ?? DEFAULT_LOCALE
   const messages = i18n?.messages ?? fallbackMessages
 
-  // When custom fonts are configured, override the CSS font tokens on <html>
-  // so the slot's stack prepends the LOCALE's default fallback chain (the same
-  // map the CSS `:lang()` branches use — no hardcoded CJK tail for en-US):
-  //   global → --font-body, post → --font-serif, code → --font-code
+  // Custom fonts prepend to the locale's default fallback chain (`defaultFontStackFor`, the same map the
+  // CSS `:lang()` branches use).
   const htmlStyle: Record<string, string> = {}
   const defaultFonts = defaultFontStackFor(locale)
   if (globalFonts.length > 0) {
@@ -270,9 +256,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Routes opt in to custom chrome via `handle.layout` ("admin" = own chrome:
-// admin SPA, login/install split-screen) and can disable the site footer
-// with `handle.footer = false` (see `routes/public/page/detail.tsx`).
+// `handle.layout = 'admin'` marks routes that own their chrome (admin SPA, login/install split-screen).
 export type RouteHandle = {
   layout?: 'admin'
   footer?: boolean
@@ -284,7 +268,16 @@ export default function App({ loaderData }: Route.ComponentProps) {
     setCsrfToken(loaderData.csrfToken)
   }, [loaderData.csrfToken])
 
-  useRum(loaderData.rum ?? null)
+  const rum = loaderData.rum ?? null
+  // The consent gate applies only when the relay forwards request identity; in `anonymous` mode the decision is
+  // irrelevant and RUM starts consent-free. The banner renders only after the post-mount storage read (`ready`),
+  // so SSR and the first client render agree (no hydration flash), and DNT/GPC visitors are never asked.
+  const consentRequired = rum?.clientIdentity === 'forward'
+  const consent = useRumConsent()
+  // Anonymous mode never consults the decision; passing a constant keeps a
+  // consent change from retriggering the RUM effect there.
+  useRum(rum, consentRequired ? consent.decision : null)
+  const showConsentBanner = consentRequired && consent.ready && consent.decision === null && !isRumDenied()
   useFocusHash()
   useIosNoZoomOnFocus()
   useChunkErrorRecovery()
@@ -302,6 +295,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
             <LocaleSyncProvider locale={locale} revision={i18n?.revision}>
               <NavigationSplash />
               <Outlet />
+              {showConsentBanner ? <RumConsentBanner onAccept={consent.accept} onDecline={consent.decline} /> : null}
             </LocaleSyncProvider>
           </LazyMotionConfig>
         </BlogSettingsProvider>
@@ -321,9 +315,8 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
     <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
         <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
-          {/* Full chrome only with a COMPLETE i18n payload: a root-loader failure
-              renders the minimal ErrorView over the fallback messages, never a
-              layout whose chrome still needs catalog copy. */}
+          {/* Full chrome only with a complete i18n payload; a root-loader failure renders the minimal ErrorView
+              over the fallback messages. */}
           {loaderData?.i18n ? (
             <Suspense fallback={body}>
               <PublicErrorLayout currentUser={loaderData?.currentUser ?? null} pathname="/" search="">

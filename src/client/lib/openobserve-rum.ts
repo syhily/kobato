@@ -1,14 +1,8 @@
-// OpenObserve slim RUM loader (ADR-0012).
-//
-// This is the ONLY client module allowed to import the RUM SDK, and the import
-// is a dynamic one reached exclusively from the `useRum` effect after the root
-// loader supplied a verified bootstrap. The SDK therefore lives in its own lazy
-// chunk: a visitor whose site has no active frontend configuration never
-// downloads it, and the SSR/SEA bundle carries none of it.
-//
-// The SDK is initialized with privacy-first defaults: no Replay, no browser
-// logs, no user/account identity, no custom device/geo enrichment, no telemetry
-// reporting, and a same-origin-only W3C tracecontext propagator.
+// The ONLY client module allowed to import the RUM SDK, reached exclusively
+// from the `useRum` effect after the root loader verified a bootstrap.
+// Every intake batch posts to the same-origin `/api/rum/intake` relay, so the
+// OpenObserve endpoint and client token never reach the document — no CORS
+// preflight, no CSP `connect-src` widening.
 
 import type { DatadogRum, RumInitConfiguration } from '@openobserve/browser-rum-slim'
 
@@ -20,6 +14,7 @@ import { getLogger } from '@/client/lib/logger'
 import { createRumEventPolicy } from '@/client/lib/rum-sanitizer'
 import { isSelfTelemetryRumUrl, isTraceableRumUrl } from '@/client/lib/rum-url-policy'
 import { APP_VERSION } from '@/shared/config/version'
+import { RUM_INTAKE_PATH, RUM_RELAY_CLIENT_TOKEN } from '@/shared/contracts/trace'
 
 const log = getLogger('rum')
 
@@ -142,16 +137,15 @@ function documentOrigin(): string | null {
   }
 }
 
-/** Map the validated bootstrap origin onto the SDK's `site` + `insecureHTTP` pair. */
-export function rumTransportFromBootstrap(bootstrap: FrontendRumBootstrap): {
-  site: string
-  insecureHTTP: boolean
-} {
-  const endpoint = new URL(bootstrap.site)
-  return {
-    site: endpoint.host,
-    insecureHTTP: endpoint.protocol === 'http:',
-  }
+/**
+ * The SDK calls this proxy builder with its upstream `/rum/v1/<org>/rum` path
+ * and query; both ride along unchanged — the server relay validates the
+ * sub-path and swaps the placeholder `o2-api-key` for the real token, so the
+ * OpenObserve endpoint and credential never reach the browser.
+ */
+export function rumIntakeProxyUrl({ path, parameters }: { path: string; parameters: string }): string {
+  const origin = documentOrigin()
+  return `${origin ?? ''}${RUM_INTAKE_PATH}${path}?${parameters}`
 }
 
 function isTrackingAllowed(): boolean {
@@ -207,26 +201,23 @@ async function pollStatus(state: RumRuntimeState): Promise<void> {
     state.consent = consent
     state.revokedByGate = consent !== 'granted'
     if (lostConsent) {
-      // On the first granted→not-granted transition, explicitly stop the
-      // session. `setTrackingConsent('not-granted')` also expires the session,
-      // but an explicit stop makes the view/session lifecycle unambiguous
-      // before the recovery `startView` call.
+      // Explicit stop on the first granted→not-granted transition keeps the
+      // view/session lifecycle unambiguous before the recovery `startView`.
       try {
         state.api.stopSession()
       } catch {
-        // The SDK call is monitored; consent revocation still applies.
+        // Swallowed: setTrackingConsent below still enforces revocation.
       }
     }
     state.api.setTrackingConsent(consent)
     if (shouldResumeView) {
-      // Consent is granted again while the document is still open. The slim
-      // SDK's documented manual-view API ends the stopped view and starts a
-      // fresh one for the current route; no reload/navigation is involved, so
-      // unsaved editor input in the same document is preserved.
+      // Consent recovered while the document is still open: `startView` ends
+      // the stopped view and starts a fresh one in the same document — no
+      // reload/navigation, so unsaved editor input is preserved.
       try {
         state.api.startView(state.route?.id ?? 'unknown')
       } catch {
-        // The SDK call is monitored; keep polling and leave consent granted.
+        // Swallowed: keep polling and leave consent granted.
       }
     }
   } catch {
@@ -240,7 +231,7 @@ async function pollStatus(state: RumRuntimeState): Promise<void> {
         try {
           state.api.stopSession()
         } catch {
-          // The SDK call is monitored; consent revocation still applies.
+          // Swallowed: setTrackingConsent below still enforces revocation.
         }
       }
       state.api.setTrackingConsent('not-granted')
@@ -266,9 +257,9 @@ function startStatusPolling(state: RumRuntimeState): void {
 
 /**
  * Temporarily revoke consent while the O2 gate is closed, KEEPING the SDK
- * handle, route, and status poll. A later status poll can therefore resume the
- * same document with `startView` when the gate returns. Used for a bootstrap
- * that became null without an explicit user privacy/opt-out decision.
+ * handle, route, and status poll so a later poll can resume the same document
+ * with `startView` when the gate returns. Used for a bootstrap that became
+ * null without an explicit privacy decision.
  */
 export function suspendRum(): void {
   const state = runtime()
@@ -288,8 +279,8 @@ export function suspendRum(): void {
     }
   }
   state.api.setTrackingConsent('not-granted')
-  // Keep the drift poll alive; suspend must not strand the page behind a
-  // closed gate. If the timer was lost, restart it from the retained handle.
+  // Keep the poll alive so suspend can recover when the gate returns; restart
+  // it if the timer was lost.
   if (state.pollTimer === null) {
     startStatusPolling(state)
   }
@@ -328,9 +319,9 @@ export async function startRum(bootstrap: FrontendRumBootstrap, route: RumRouteC
     return
   }
   if (state.status === 'started') {
-    // Consent recovery is owned exclusively by the status poll. A SPA
-    // navigation or a stale bootstrap must never re-authorize while the gate
-    // is closed; only update the current view name and keep polling.
+    // Consent recovery is owned exclusively by the status poll: a SPA
+    // navigation or stale bootstrap must never re-authorize behind a closed
+    // gate — only update the view name and keep polling.
     state.api?.setViewName(route.id)
     startStatusPolling(state)
     return
@@ -344,9 +335,9 @@ export async function startRum(bootstrap: FrontendRumBootstrap, route: RumRouteC
     return
   }
 
-  // A fresh idle start is backed by an active root-loader bootstrap; reset a
-  // stale not-granted state left by a previous full stop/suspend. An in-flight
-  // `starting` initialization keeps a suspend requested during import.
+  // A fresh idle start is backed by an active root-loader bootstrap, so reset
+  // stale not-granted state; an in-flight `starting` run keeps a suspend that
+  // was requested during the import.
   if (state.status === 'idle') {
     state.consent = 'granted'
     state.revokedByGate = false
@@ -372,14 +363,13 @@ async function initialize(state: RumRuntimeState, bootstrap: FrontendRumBootstra
   }
 
   try {
-    // The one SDK import in the client graph: this module is the only edge, and
-    // it is reached lazily, so the package ships as its own chunk.
+    // The one SDK import edge in the client graph; reached lazily, so the
+    // package ships as its own chunk.
     const module = await import('@openobserve/browser-rum-slim')
     if (state.startGeneration !== generation || state.status !== 'starting') {
       return
     }
     const desiredConsent = state.consent
-    const transport = rumTransportFromBootstrap(bootstrap)
 
     const policy = createRumEventPolicy({
       getScope: () => {
@@ -393,11 +383,10 @@ async function initialize(state: RumRuntimeState, bootstrap: FrontendRumBootstra
 
     const initConfiguration: RumInitConfiguration = {
       applicationId: bootstrap.applicationId,
-      clientToken: bootstrap.clientToken,
-      site: transport.site,
-      insecureHTTP: transport.insecureHTTP,
-      organizationIdentifier: bootstrap.organization,
-      apiVersion: 'v1',
+      // The SDK refuses to initialize without a token; this placeholder never
+      // leaves the same-origin relay, which injects the real one server-side.
+      clientToken: RUM_RELAY_CLIENT_TOKEN,
+      proxy: rumIntakeProxyUrl,
       service: bootstrap.service,
       env: bootstrap.environment,
       version: APP_VERSION,

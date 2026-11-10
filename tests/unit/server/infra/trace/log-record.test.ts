@@ -57,6 +57,57 @@ describe('projectLogLine — HTTP records', () => {
     })
   })
 
+  it.each(['/health', '/ready', '/api/rum/status', '/api/rum/intake/rum/v1/default/rum'])(
+    'drops a quiet line for the self-telemetry path %s',
+    (url) => {
+      const projection = projectLogLine(
+        line({
+          level: 'info',
+          time: '2026-01-01T00:00:00.000Z',
+          req: { method: 'GET', url },
+          res: { status: 200 },
+        }),
+        NOW,
+      )
+
+      expectDrop(projection, 'telemetry')
+    },
+  )
+
+  it('keeps a rejected or failed self-telemetry request visible', () => {
+    for (const [level, status] of [
+      ['warn', 404],
+      ['info', 500],
+      ['error', 200],
+    ] as const) {
+      const projection = projectLogLine(
+        line({
+          level,
+          time: '2026-01-01T00:00:00.000Z',
+          req: { method: 'GET', url: '/api/rum/status' },
+          res: { status },
+        }),
+        NOW,
+      )
+
+      expect(projection.kind).toBe('ok')
+    }
+  })
+
+  it('keeps a quiet line for an ordinary path', () => {
+    const projection = projectLogLine(
+      line({
+        level: 'info',
+        time: '2026-01-01T00:00:00.000Z',
+        req: { method: 'GET', url: '/posts/hello' },
+        res: { status: 200 },
+      }),
+      NOW,
+    )
+
+    expect(projection).toMatchObject({ kind: 'ok', record: { body: 'HTTP request completed' } })
+  })
+
   it('never reads the original message of an HTTP record', () => {
     const projection = projectLogLine(
       infoLine({

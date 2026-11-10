@@ -1,4 +1,4 @@
-# Kobato RUM privacy allowlist (ADR-0012, second boundary).
+# Kobato RUM privacy allowlist (the second, storage-time boundary).
 #
 # This is the storage-time, fail-closed boundary: the pipeline builds a NEW
 # event from an explicit allowlist and assigns it to `.`. Every field not named
@@ -9,11 +9,15 @@
 # mandatory before frontend RUM is enabled (`trace:init` installs it).
 #
 # Preserved: trace/span ids, route template, RUM session/view random ids,
-# numeric Web Vitals, duration/status/coarse sizes, closed error fields, and
-# the small O2 metadata set the dashboards use.
-# Dropped: IP/GeoIP/device/user-agent enrichment, headers, exact byte counts,
-# DOM selectors, raw performance objects, error stacks/messages, and anything
-# unknown (including a synthetic unknown field carrying a secret).
+# numeric Web Vitals, duration/status/coarse sizes, closed error fields, the
+# small O2 metadata set the dashboards use, and — only when the relay forwards
+# request identity (`observability.frontend.clientIdentity: forward`) — the
+# coarse geo (country/ISO) and UA family enrichments. Those fields stay null
+# in the default `anonymous` mode and the null check keeps them out.
+# Dropped: the raw IP address, city/lat-long GeoIP detail, UA version strings
+# and the raw User-Agent, headers, exact byte counts, DOM selectors, raw
+# performance objects, error stacks/messages, and anything unknown (including
+# a synthetic unknown field carrying a secret).
 old = .
 safe = {}
 
@@ -32,6 +36,19 @@ if exists(old.session_type) { safe.session_type = old.session_type }
 if exists(old.view_id) { safe.view_id = old.view_id }
 if exists(old.view_name) { safe.view_name = old.view_name }
 if exists(old.view_url) { safe.view_url = old.view_url }
+
+# Coarse visitor dimensions. Only populated when the relay forwards request
+# identity (`observability.frontend.clientIdentity: forward`): O2's RUM
+# middleware then resolves the X-Forwarded-For address (MaxMind) and parses
+# the forwarded User-Agent into these flat fields. Kept at country/ISO and
+# family granularity — the raw address, city/lat-long, UA version strings,
+# and the raw UA are still dropped below. The `!= null` guard keeps the
+# all-null enrichment of the default `anonymous` mode out of storage.
+if exists(old.geo_info_country) && old.geo_info_country != null { safe.geo_info_country = old.geo_info_country }
+if exists(old.geo_info_country_iso_code) && old.geo_info_country_iso_code != null { safe.geo_info_country_iso_code = old.geo_info_country_iso_code }
+if exists(old.user_agent_user_agent_family) && old.user_agent_user_agent_family != null { safe.user_agent_user_agent_family = old.user_agent_user_agent_family }
+if exists(old.user_agent_os_family) && old.user_agent_os_family != null { safe.user_agent_os_family = old.user_agent_os_family }
+if exists(old.user_agent_device_family) && old.user_agent_device_family != null { safe.user_agent_device_family = old.user_agent_device_family }
 
 # O2/SDK metadata: fixed, small, and non-identifying.
 if exists(old._timestamp) { safe._timestamp = old._timestamp }

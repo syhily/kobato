@@ -1,15 +1,16 @@
-// Root-mounted browser RUM activation (ADR-0012).
+// Root-mounted browser RUM activation.
 //
 // The hook renders nothing, runs only in effects after hydration, and checks
-// DNT/GPC BEFORE any dynamic import. The slim SDK chunk is therefore never
-// downloaded by a denied browser — and never at all by a visitor whose site has
-// no verified `observability` frontend configuration (the root loader then
-// omits the bootstrap). Initialization is idempotent under React StrictMode and
-// HMR, and a rejected import/bootstrap never escapes.
+// DNT/GPC BEFORE any dynamic import — a denied browser never downloads the SDK
+// chunk, and neither does a visitor whose root loader omitted the bootstrap.
+// With `clientIdentity: forward`, the strict consent gate applies on top: no
+// import, session, or intake batch until the persisted decision is `accepted`,
+// and a later `declined` fully stops a running SDK.
 
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'
 
+import type { RumConsent } from '@/client/lib/rum-consent'
 import type { FrontendRumBootstrap } from '@/shared/contracts/trace'
 
 import { rumRouteContextFromMatches } from '@/client/lib/rum-route'
@@ -35,10 +36,9 @@ function cancelPendingStop(): void {
 /**
  * Cleanup runs on a route change, StrictMode's double effect, and a real
  * unmount. Defer the full stop one task so the next effect can cancel it:
- * a valid route change restarts polling; bootstrap=null cancels this and
- * suspends (keeping the SDK/route/poll alive); DNT/GPC/invalid bootstrap
- * cancel this and fully stop; with no following effect (real unmount) the
- * deferred stop runs.
+ * a valid route change restarts polling; bootstrap=null suspends; DNT/GPC or
+ * an invalid bootstrap fully stops; with no following effect (real unmount)
+ * the deferred stop runs.
  */
 function schedulePendingStop(): void {
   cancelPendingStop()
@@ -93,15 +93,17 @@ export function isRumDenied(nav: Navigator | undefined = globalThis.navigator): 
 }
 
 /**
- * Mount once at the root. `bootstrap` is the narrow root-loader projection; it
- * is absent when observability is disabled, when frontend RUM is incomplete,
- * and when the O2 pipeline verification withheld the gate. An initial `null` is
- * a no-op (no import, no DOM). After an active bootstrap, `null` means the gate
- * was withheld: suspend consent but keep the SDK handle, route, and status poll
- * alive so a later gate recovery can `startView` in the same document. DNT/GPC,
- * invalid bootstrap, and real unmount fully stop instead.
+ * Mount once at the root. `bootstrap` is the narrow root-loader projection,
+ * absent when observability is disabled or the O2 pipeline gate withheld it.
+ * An initial `null` is a no-op (no import, no DOM). After an active bootstrap,
+ * `null` suspends: consent revoked, but the SDK handle, route, and status poll
+ * stay alive for a later gate recovery in the same document. DNT/GPC, an
+ * invalid bootstrap, and a real unmount fully stop instead.
+ *
+ * `consent` only gates a `clientIdentity: forward` bootstrap; anything but an
+ * explicit `accepted` keeps the SDK chunk undownloaded.
  */
-export function useRum(bootstrap: FrontendRumBootstrap | null): void {
+export function useRum(bootstrap: FrontendRumBootstrap | null, consent: RumConsent | null = null): void {
   const route = rumRouteContextFromMatches(useMatches())
   const routeId = route.id
   const routeTemplate = route.template
@@ -134,6 +136,13 @@ export function useRum(bootstrap: FrontendRumBootstrap | null): void {
       applyModuleAction('stop')
       return
     }
+    if (parsed.data.clientIdentity === 'forward' && consent !== 'accepted') {
+      // Strict consent gate: forwarding request identity is personal-data
+      // processing, so nothing starts — not even the SDK download — before an
+      // explicit accept, and a withdrawal stops a running SDK outright.
+      applyModuleAction('stop')
+      return
+    }
 
     // This effect is valid: cancel a revoke scheduled by a route-change or
     // StrictMode cleanup. The SDK stays initialized and only its view/poller
@@ -160,5 +169,5 @@ export function useRum(bootstrap: FrontendRumBootstrap | null): void {
       // this deferred full stop runs.
       schedulePendingStop()
     }
-  }, [bootstrap, denied, routeId, routeTemplate])
+  }, [bootstrap, consent, denied, routeId, routeTemplate])
 }

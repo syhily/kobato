@@ -1,9 +1,7 @@
-// Pure settings → runtime projection for the observability domain.
-//
-// The infra layer accepts a fully composed OTLP credential and no business
-// semantics; this module owns the mapping (site name → organization and RUM
-// application id, admin username/password → Basic header) and the two settings
-// fingerprints that gate activation and drive hot restarts.
+// Settings → infra runtime projection for the observability domain. The infra
+// layer takes a fully composed OTLP credential and owns no business semantics;
+// this module owns the mapping (site name → organization, admin credentials →
+// Basic header) and the two fingerprints that gate activation and hot restarts.
 
 import type { TraceRuntimeSettings } from '@/server/infra/trace/config'
 import type { ObservabilitySettings } from '@/shared/config/types'
@@ -13,25 +11,23 @@ import { secretHmac } from '@/server/infra/crypto/secret-encryption'
 export type ObservabilitySettingsSlice = ObservabilitySettings['observability']
 
 /**
- * Bump when a fingerprinted field set changes — previously stored
- * `verifiedFingerprint` values then stop matching and the config must be
- * re-tested. `obs1` → `obs2` split the connection and runtime scopes and moved
- * the digest from plain sha256 to a keyed HMAC.
+ * Bump when a fingerprinted field set changes: stored `verifiedFingerprint`
+ * values then stop matching and the admin must re-test the connection.
  */
 const FINGERPRINT_VERSION = 'obs2'
 const FINGERPRINT_PURPOSE = 'observability'
 
 /**
- * The CONNECTION fingerprint: exactly the parameters a connection test proves
+ * CONNECTION fingerprint: exactly the parameters a connection test proves
  * (endpoint / organization / username / password). `verifiedFingerprint` stores
- * this value, and activation compares against it — enabling tracing, log
- * export, browser RUM, or changing a sampling rate must NOT invalidate an
+ * it and activation compares against it, so enabling tracing, log export, or
+ * browser RUM — or changing a sampling rate — must NOT invalidate an
  * already-verified connection.
  *
  * Keyed with the deployment key (HMAC) because the value is exposed to the
  * admin UI: a plain sha256 over the password would be offline-guessable.
- * Rotating `security.encryptionKey` therefore invalidates stored
- * verifications — the UI reports "not verified" and the admin re-tests.
+ * Rotating `security.encryptionKey` therefore invalidates stored verifications,
+ * and the admin re-tests.
  */
 export function observabilityConnectionFingerprint(site: ObservabilitySettingsSlice): string {
   return fingerprint('connection', {
@@ -43,14 +39,15 @@ export function observabilityConnectionFingerprint(site: ObservabilitySettingsSl
 }
 
 /**
- * The RUNTIME fingerprint: every setting that changes the server or browser
+ * RUNTIME fingerprint: every setting that changes the server or browser
  * pipeline. Used only for restart detection, so flipping a switch after
  * verification restarts the providers without losing the verification.
  *
- * `enabled` is excluded (the master switch is a separate gate and toggling it
- * back on must not force a re-test); `rumClientToken` is excluded because it
- * only affects the browser bootstrap, which re-reads the settings on the next
- * document.
+ * `enabled` is excluded (the master switch is a separate gate; toggling it back
+ * on must not force a re-test), `rumClientToken` because it only affects the
+ * browser bootstrap, which re-reads the settings on the next document, and
+ * `retentionDays` because it is a data policy reconciled by `retention.ts`, not
+ * a pipeline change — it must not restart the providers.
  */
 export function observabilityRuntimeFingerprint(site: ObservabilitySettingsSlice): string {
   return fingerprint('runtime', {
@@ -64,6 +61,9 @@ export function observabilityRuntimeFingerprint(site: ObservabilitySettingsSlice
     frontend: {
       enabled: site.frontend.enabled,
       sessionSampleRate: site.frontend.sessionSampleRate,
+      // `clientIdentity` changes both the relay behavior and the browser
+      // bootstrap (consent gate), so it must hot-restart the runtime.
+      clientIdentity: site.frontend.clientIdentity,
     },
   })
 }
@@ -97,6 +97,7 @@ export function toTraceRuntimeSettings(site: ObservabilitySettingsSlice): TraceR
       applicationId: site.organization,
       clientToken: site.rumClientToken ?? '',
       sessionSampleRate: site.frontend.sessionSampleRate,
+      clientIdentity: site.frontend.clientIdentity,
     },
   }
 }
