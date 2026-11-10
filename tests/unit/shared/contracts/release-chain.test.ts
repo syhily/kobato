@@ -28,6 +28,19 @@ describe('release chain: the draft-release flow stays triggerable', () => {
     expect(onBlock).toMatch(/push:[\s\S]*tags:/)
   })
 
+  it('sea.yml does not trigger release builds on main branch pushes', () => {
+    const pushBlock = sea.slice(sea.indexOf('push:'), sea.indexOf('pull_request:'))
+    expect(pushBlock).toMatch(/branches: \[develop\]/)
+    expect(pushBlock).toMatch(/tags: \['\*'\]/)
+
+    const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
+    for (const job of ['build', 'build-darwin', 'build-windows']) {
+      const block = jobBlocks.find((b) => b.startsWith(`${job}:`))
+      expect(block, `sea.yml job block for ${job}`).toBeDefined()
+      expect(block).not.toMatch(/github\.ref == 'refs\/heads\/main'/)
+    }
+  })
+
   it('sea.yml build matrix gate admits tag pushes — anchored per release-upload dependency job', () => {
     // Whole-file matches miss one leg's gate breaking — assert per job block.
     const tagGate = /if:.*startsWith\(github\.ref, 'refs\/tags\/'\)/
