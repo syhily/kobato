@@ -21,11 +21,11 @@ export function SettingGroup({ title, description, children, className, actions,
     <div
       className={cn('relative flex flex-col gap-6 rounded-xl border border-border shadow-sm transition-all', className)}
     >
-      <div className={cn('flex flex-col gap-6', Boolean(children) && 'p-5 md:p-7')}>
+      <div className={cn('flex flex-col gap-4', Boolean(children) && 'p-5 md:p-7')}>
         <div className="flex items-start justify-between gap-4">
           {(title || description) && (
             <div>
-              <h3 className="text-base font-semibold text-foreground">{title}</h3>
+              <h3 className="mt-2 text-base font-semibold text-foreground">{title}</h3>
               {description && <p className="mt-1 mr-5 text-sm text-muted-foreground">{description}</p>}
             </div>
           )}
