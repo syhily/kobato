@@ -14,6 +14,7 @@ import {
   switchLocale,
   waitForSettingsReady,
 } from './support/journey'
+import { BASELINE_GENERAL } from './support/settings-api'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -73,6 +74,10 @@ test('a failed dirty-card flush vetoes the locale switch', async ({ adminPage: p
   // is the authoritative check that the switch was vetoed server-side too).
   expect(await fetchHtmlLang(page)).toBe('zh-CN')
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
+
+  // Closing a dirty page fires the framework's pagehide flush; leave the form clean for the next test.
+  await page.unroute('**/rpc/admin/settings/update')
+  await replaceInput(page, page.locator('#general-description'), BASELINE_GENERAL.description)
 })
 
 test('a successful switch saves the dirty card, reloads once, and hydrates cleanly', async ({ adminPage: page }) => {
