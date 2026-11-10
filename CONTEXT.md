@@ -2,321 +2,194 @@
 
 Personal blog/CMS: posts, pages, comments, settings, assets — one admin, one public site.
 
-## Language
+## Content
 
-### Content
+**Live**: a post or page that is not soft-deleted, marked published, with a published revision and a
+non-future `publishedAt`; direct links work, listings may filter.
+_Avoid_: catalog-visible; published (silent about soft-delete, revision, scheduling)
 
-**Live**:
-A post or page is live when it is not soft-deleted, is marked published, has a
-published revision attached, and its `publishedAt` is not in the future. Live
-content is reachable by direct link; listing surfaces may filter further.
-_Avoid_: catalog-visible (retired `isCatalogVisible`), published (overloaded —
-says nothing about soft-delete, revision, or scheduling)
+**Promoted**: published with a published revision, whatever the soft-delete state and schedule; the
+projection for lifecycle bucketing (draft vs published) and restore re-indexing. Live implies Promoted.
+`isPromoted`/`promotedContentWhere` in `src/server/domains/content/schemas/live-gate.ts`, bound per
+entity by `promotedPostWhere`.
+_Avoid_: live (stricter: adds not-deleted and not-future legs), published (misses the revision)
 
-**Promoted**:
-A post or page is promoted when it is marked published and has a published
-revision attached, regardless of soft-delete state and scheduling. Promoted is
-the projection used by lifecycle bucketing (draft vs published) and restore
-re-indexing; Live implies Promoted, not the reverse. Its paired projections
-are `isPromoted` (in-memory) and `promotedContentWhere` (SQL) in
-`src/server/domains/content/schemas/live-gate.ts`, bound per entity by
-`promotedPostWhere`.
-_Avoid_: live (stricter — adds the not-deleted and not-future legs),
-published (overloaded — the bare flag misses the required published revision)
+**Visible**: `visible=false` hides a post from the home page and random-post widgets only; it stays in
+archives, tags, search, sitemap, feeds, and direct links. Orthogonal to Live.
+_Avoid_: hidden (implies unreachable)
 
-**Visible**:
-A post flag controlling _listing_ only: `visible=false` hides the post from the
-home page and random-post widgets, but it stays in archives, tags, search,
-sitemap, and feeds, and stays reachable by direct link. Orthogonal to Live.
-_Avoid_: hidden (implies unreachable — it is not)
+**Content lifecycle**: the single draft→publish revision pipeline owned by content: every body save,
+publish, preview, and editor load flows through it. Entity behavior attaches via `posts/descriptor.ts` /
+`pages/descriptor.ts`, turned by `entities/` factories into the lifecycle adapter and meta CRUD/mutation
+skeleton.
+_Avoid_: post draft service / page draft service (dual tracks)
 
-**Content lifecycle**:
-The single draft→publish revision pipeline owned by the content domain. Every
-post/page body save, publish, preview, and editor load flows through it;
-post- and page-specific behavior attaches through the entity's
-`descriptor.ts` (`posts/descriptor.ts`, `pages/descriptor.ts`), which the
-content domain's `entities/` factories turn into the lifecycle adapter and
-the meta CRUD/mutation skeleton.
-_Avoid_: post draft service / page draft service (retired dual tracks)
-
-**Scheduled**:
-Live-in-the-future content: published with a `publishedAt` later than now.
-Scheduled content is not live and answers 404 until its time arrives.
+**Scheduled**: published with a future `publishedAt` — not live, 404 until its time.
 _Avoid_: future-dated, timed
 
-**PT**:
-The legacy PortableText subset that typed rich content before the inkling
-migration, defined in `src/shared/pt/schema.ts`. Lexical editor states are
-the live storage format (`src/shared/lexical/`); the R15 boot backfill
-converts every pre-switch row on upgrade, so PT survives only as the legacy
-schema/utils feeding the converter and the dual-path legacy fallbacks
-(comment email/plain-text helpers, the asset-URL backfill). The PT SSR
-renderer and enriched-body overlay were retired in R13 — public bodies
-render the saved `bodyHtml` projection.
-_Avoid_: MDX (retired render target), InklingDocument (editor-vendor
-experiment, not the shipping store)
+**Lexical**: the storage format for post/page/comment bodies (`src/shared/lexical/`); public
+bodies render the saved `bodyHtml` projection.
+_Avoid_: MDX, InklingDocument (vendor experiment, not the shipping store)
 
-**Revision**:
-One row in the content table's revision pipeline: every draft save creates a
-new revision with a monotonically increasing `revisionNo`; publishing promotes
-a revision by pointing the entity's `publishedRevisionId` at it. The
-draft→publish revision pipeline is the Content lifecycle (q.v.), and "the
-published revision" is what makes content Live.
-_Avoid_: version (ambiguous with app version), draft (a revision's state,
-not the revision itself)
+**Revision**: one row in the content revision pipeline: every draft save adds a revision with a
+monotonic `revisionNo`; publishing points the entity's `publishedRevisionId` at one.
+_Avoid_: version (ambiguous with app version), draft (a revision's state)
 
-**Live gate**:
-The paired projections `isLive` (in-memory) and `liveContentWhere` (SQL) in
-`src/server/domains/content/schemas/live-gate.ts` that decide whether a row satisfies
-Live. Both take the same `{ asOf, includeScheduled }` options; entity column
-binding lives in the post-/page-table bindings (`posts/live-gate.ts` /
-`pages/live-gate.ts`).
-_Avoid_: hand-written `published && publishedRevisionId` checks (that's the
-Promoted gate (q.v.) — route them through its projections instead)
+**Live gate**: `isLive` (in-memory) and `liveContentWhere` (SQL) in
+`src/server/domains/content/schemas/live-gate.ts` decide Live; both take `{ asOf, includeScheduled }`;
+column binding in `posts/live-gate.ts` / `pages/live-gate.ts`.
+_Avoid_: hand-written `published && publishedRevisionId` checks (that is the Promoted gate)
 
-**Draft preview**:
-Viewing non-live content by direct link. Deliberate per-entity policy:
-authors may preview their own post drafts (admins any post draft); only
-admins may preview page drafts.
-_Avoid_: "preview" without an entity qualifier (the rule differs per
-entity), admin-only (the stale claim the code never enforced)
+**Draft preview**: viewing non-live content by direct link: authors their own post drafts (admins any
+post draft), admins only for page drafts.
+_Avoid_: "preview" unqualified (the rule differs per entity), admin-only (never enforced)
 
-**Taxonomy**:
-A category or tag used to group posts. A post has at most one category
-(`categoryId`) and any number of tags; both are edited from the admin
-and cannot be deleted while a post still references them. The taxonomy
-domains own their list caches; the post-count projections live on the
-posts surface (`posts/services/taxonomy.ts`).
-_Avoid_: label, topic; lumping friends in — friends is the blogroll
-feature, not a taxonomy
+**Taxonomy**: a category or tag grouping posts: at most one category (`categoryId`), any number of tags,
+admin-edited, undeletable while referenced. List caches are domain-owned; post-count projections in
+`posts/services/taxonomy.ts`.
+_Avoid_: label, topic; friends (that is the blogroll)
 
-**Branding asset**:
-One of the site's fixed identity images (favicon, logo, OG image,
-avatars), owned by `domains/assets` — slot key layouts, per-slot
-MIME/byte limits, favicon generation, the public branding routes.
-_Avoid_: "assets" unqualified — the `assets` Section (q.v.) is the
-storage-backend configuration (S3 toggle, credentials, upload limits,
-CDN host), a different concept that happens to share the name
+**Branding asset**: a fixed identity image (favicon, logo, OG image, avatars) owned by `domains/assets`
+— slot key layouts, per-slot MIME/byte limits, favicon generation, public branding routes.
+_Avoid_: "assets" unqualified (the assets Section is storage-backend config)
 
-**Entity-backed card**:
-A host card whose dataset references a row in a host-owned library (the
-music player's `playerId` points at a music row) instead of carrying all
-of its content inline. The card declares a picker through the pick seam
-(q.v.) so choosing the entity writes the reference AND a display meta
-snapshot onto the node at pick time; the save-time snapshot refresh
-(`lexical-music-snapshot`) stays the authority for the server-owned meta
-keys, so the pick-time write is display-only.
-_Avoid_: linked block, embed card (embeds resolve external URLs, not
-library rows)
+**Entity-backed card**: a host card whose dataset references a host-owned library row (music `playerId`
+→ music row) instead of inline content; it declares a picker through the pick seam, so a pick writes the
+reference plus a display meta snapshot. Save-time refresh (`lexical-music-snapshot`) stays authoritative
+for server-owned meta keys.
+_Avoid_: linked block, embed card (embeds resolve external URLs, not library rows)
 
-**Pick seam**:
-The inkling editor layer's channel for opening a host-owned picker dialog
-from an entity-backed card (q.v.): the card's `defineCard` spec declares
-`picker: { render, autoOpenOnInsert? }`, and dispatch rides a per-composer
-request store — the card component calls `useCardPicker().open(nodeKey)`
-(placeholder click, replace affordance) or the insert registrar opens the
-picker on a freshly inserted node — while inkling's `CardPickerHostPlugin`
-(a core plugin) mounts `picker.render({ editor, nodeKey, close, fromInsert? })` for the
-active request. Picks write back onto the node by KEY inside
-`editor.update()`, never through a captured node instance.
-_Avoid_: MusicPickContext (the retired bespoke per-card context), picker
-prop-drilling
+**Pick seam**: inkling's channel for a host-owned picker on an entity-backed card: `defineCard` declares
+`picker: { render, autoOpenOnInsert? }`; dispatch rides a per-composer request store, and
+`CardPickerHostPlugin` mounts `picker.render({ editor, nodeKey, close, fromInsert? })` for the active
+request. `useCardPicker().open(nodeKey)` opens it from the card (placeholder click, replace affordance),
+the insert registrar on a fresh node. Picks write back by node KEY inside `editor.update()`, never
+through a captured node.
+_Avoid_: per-card bespoke contexts, picker prop-drilling
 
-### Settings
+## Settings
 
-**Section**:
-One named slice of the settings bundle (general, assets, mail, security, …).
-The section list is the single source from which bundle keys, API DTOs, and
-secret masks are derived — adding a section must not require editing a second
-enumeration.
+**Section**: one named slice of the settings bundle (general, assets, mail, security, …); the section
+list is the single source for bundle keys, API DTOs, and secret masks — adding one must not require a
+second enumeration.
 _Avoid_: tab, card, category
 
-**Secret field**:
-A settings field stored encrypted (mail API keys, storage secret, search API
-key). Declared once; decrypt-on-load, preserve-on-omit, and masking all derive
-from that single declaration.
+**Secret field**: a settings field stored encrypted (mail API keys, storage secret, search API key),
+declared once; decrypt-on-load, preserve-on-omit, and masking all derive from it.
 _Avoid_: password, credential
 
-**Section patch**:
-The unit of a settings write: a partial Section payload carrying only the
-fields one card owns. The server merges it against the stored section
-(objects merge, lists replace) instead of trusting a client-assembled full
-snapshot; unknown fields are rejected.
+**Section patch**: the unit of a settings write — a partial Section payload with the fields one card
+owns; the server merges it into the stored section (objects merge, lists replace) and rejects unknown
+fields.
 _Avoid_: full-section snapshot, loader shape as write base
 
-### Internationalization
+## Internationalization
 
-**UI locale**:
-`siteIdentity.locale`, one of the four supported tags (`en-US`, `zh-HK`,
-`zh-TW`, `zh-CN`, `@/shared/i18n/locales`). It drives every system surface —
-public/admin/auth/editor copy, validation and error messages, emails,
-notifications, SEO, feeds and formatting — and is the tag emitted as
-`<html lang>` / `Content-Language`. It is NOT the language of the content.
-_Avoid_: site language (suggests the posts' language), i18n locale, language
-code (the stored value is a tag, canonicalized from legacy aliases)
+**UI locale**: `siteIdentity.locale`, one of `en-US`, `zh-HK`, `zh-TW`, `zh-CN`
+(`@/shared/i18n/locales`); drives every system surface (public/admin/auth/editor copy, validation and
+error messages, emails, notifications, SEO, feeds, formatting) and is emitted as `<html lang>` /
+`Content-Language`; it is never the content's language.
+_Avoid_: site language, i18n locale, language code (a tag canonicalized from legacy aliases)
 
-**Content language**:
-`post.contentLanguage` / `page.contentLanguage` — an optional BCP 47 tag the
-author declares for the prose of one post or page. Author input, never rewritten
-by the UI locale, never auto-detected and never translated. The write API
-accepts ANY well-formed tag (not a closed set — `ja`, `pt-BR`, `zh-Hant-TW` are
-all legal), stores its canonical spelling (`Intl.getCanonicalLocales`), and
-`null` / blank clears it; a malformed tag rejects the write with the
-`admin.editor.contentLanguage.error` descriptor and the `contentLanguage` field
-path. The public detail body container stamps it as `lang`; unset means the
-container inherits the document's UI locale. It changes no copy, no title, no
-body bytes and no feed URL.
-_Avoid_: confusing it with UI locale, using it to select a message catalog,
-treating it as an enum of the four UI locales
+**Content language**: `post.contentLanguage` / `page.contentLanguage`, an optional BCP 47 tag for one
+item's prose: author input, never rewritten by UI locale, never detected or translated. Any well-formed
+tag is stored canonicalized (`Intl.getCanonicalLocales`, e.g. `ja`, `pt-BR`, `zh-Hant-TW`); `null`/blank
+clears; malformed rejects with `admin.editor.contentLanguage.error` at the `contentLanguage` path.
+Public detail stamps it as `lang`, unset inherits the UI locale; no copy, title, body bytes, or feed URL
+changes.
+_Avoid_: treating it as the UI locale, using it to pick a message catalog, an enum of four locales
 
-**Message catalog**:
-One typed ICU module per locale per namespace — `messages/ui/<locale>` (client
-copy, shipped through the root loader) and `messages/server/<locale>` (email,
-notifications, background jobs). English defines the message-id type; the other
-locales `satisfies` it. `@/shared/i18n/catalog` aggregates them, merges the
-English baseline, and validates the ICU contract (variables, argument kinds,
-plural categories legal for the locale, select coverage). Adding copy means
-adding the key to all four locales — never inlining a string.
-_Avoid_: translations file, messages JSON (the catalogs are TS modules inside
-the SEA bundle), "just the Chinese strings" (English is the baseline)
+**Message catalog**: one typed ICU module per locale per namespace — `messages/ui/<locale>` (client
+copy, via the root loader) and `messages/server/<locale>` (email, notifications, jobs). English defines
+the message-id type, others `satisfies` it; `@/shared/i18n/catalog` aggregates, merges the English
+baseline, and validates the ICU contract (variables, argument kinds, legal plural categories, select
+coverage). New copy goes into all four locales, never inline.
+_Avoid_: translations file, messages JSON (TS modules in the SEA bundle), "just the Chinese strings"
 
-**Time format**:
-`siteIdentity.timeFormat`: `null` means "follow the UI locale" (Intl's short
-date + short time, in the site time zone); a string is the admin's custom token
-pattern, substituted token-by-token and never handed to date-fns.
-_Avoid_: default date format (there is no separate default — `null` IS it)
+**Time format**: `siteIdentity.timeFormat` — `null` follows the UI locale (Intl short date + short time
+in the site time zone); a string is a custom token pattern substituted token-by-token, never handed to
+date-fns.
+_Avoid_: default date format (`null` IS the default)
 
-**Locale switch**:
-The General settings language flow, the one control that does not save
-immediately: await `flushAllAndWait()` over every dirty settings card → only
-when all report clean, commit `field.onChange(newLocale)` and
-`save('locale')` → reload exactly once when the stored locale actually
-changed. A failed flush/commit vetoes the switch, keeps the unsaved input
-(the panel flush never rolls back a validation failure) and never reloads.
-_Avoid_: saving the locale first (or with dirty cards outstanding), reloading
-on a commit failure, treating a per-field save as "the whole card is clean"
+**Locale switch**: the General settings language flow, the one control that does not save immediately:
+`flushAllAndWait()` over every dirty card → when all are clean, `field.onChange(newLocale)` and
+`save('locale')` → one reload if the stored locale changed. A failed flush/commit vetoes the switch,
+keeps the unsaved input, never reloads.
+_Avoid_: saving the locale first, reloading on a commit failure, a per-field save read as the whole card
 
-### Cache
+## Cache
 
-**Cache declaration**:
-One named cache bucket (og, calendar, avatar, imageMeta,
-searchResult, feed, sitemap, categories, tags, comments,
-githubRelease, githubAvatar). Declared once in `@/shared/cache/registry` (metadata plane:
-label, description, default prefix + TTL, tunable flag); the behavior
-plane (`@/server/infra/cache/registry`) attaches the key shape, codec,
-and write policy, and every consumer goes through its db-free verbs (`through`,
-`get`/`set`/`remove`/`clear`, `throughMany`, generation counters) — never
-through `file-store` directly. Storage is the sharded `<storage.data>/cache`
-tree (ADR-0013), and content mutations invalidate through
-`invalidateContent(event)`.
-_Avoid_: hand-rolled cache-aside at call sites, ad-hoc key strings
-outside the behavior plane
+**Cache declaration**: one named bucket (og, calendar, avatar, imageMeta, searchResult, feed, sitemap,
+categories, tags, comments, githubRelease, githubAvatar): metadata in `@/shared/cache/registry` (label,
+description, default prefix + TTL, tunable flag), behavior in `@/server/infra/cache/registry` (key
+shape, codec, write policy). Consumers use its db-free verbs (`through`, `get`/`set`/`remove`/`clear`,
+`throughMany`, generation counters), never `file-store`. Storage is `<storage.data>/cache`; content
+invalidates through `invalidateContent(event)`.
+_Avoid_: hand-rolled cache-aside, ad-hoc keys outside the behavior plane
 
-**Locale representation**:
-Localized server output whose cache key includes the reader dimension AND the
-settings generation: the `feed`/`calendar` buckets key on
-`locale:APP_VERSION:settingsRevision:<content key>` (the calendar adds the
-theme), the `og` bucket on `settingsRevision:<slug>-<input hash>`, the
-`comments` bucket on `<commentsRevision>:<limit>`, the `sitemap` bucket on its
-site-origin generation, and their HTTP responses (plus
-`manifest.webmanifest`) are `Cache-Control: public, no-cache` with a strong
-ETag over the exact served bytes, so a language switch can never be served
-from a stale representation. `settingsRevision` is the SECTION-SCOPED,
-content-addressed generation (`shared/config/representation-scopes`): one hash
-per `detail`/`listing`/`feed`/`calendar`/`og`/`manifest`/`comments` over exactly
-the sections that surface renders (encrypted secrets excluded), so the same
-settings reuse keys across restarts and an UNRELATED save
-(security/backup/mail/limits) or a credential rotation moves nothing.
-The boot-unique `revision` is request identity / locale sync only. The
-`general`/`content`/`assets`/`sidebar`/`fonts`/`comments` handlers additionally
-delete the feed/calendar/og/comments/sitemap buckets to reclaim the orphaned entries —
-correctness never depends on that delete or on waiting for in-flight renders.
-_Avoid_: locale-less feed/calendar keys, `max-age` on localized
-representations, generation counters for those buckets
+**Locale representation**: localized server output keys on the reader dimension AND the settings
+generation: `feed`/`calendar` on `locale:APP_VERSION:settingsRevision:<content key>` (calendar adds the
+theme), `og` on `settingsRevision:<slug>-<input hash>`, `comments` on `<commentsRevision>:<limit>`,
+`sitemap` on its site-origin generation. Responses (plus `manifest.webmanifest`) are
+`Cache-Control: public, no-cache` with a strong ETag over the exact served bytes. `settingsRevision` is
+the SECTION-SCOPED, content-addressed generation (`shared/config/representation-scopes`): one hash per
+`detail`/`listing`/`feed`/`calendar`/`og`/`manifest`/`comments` over exactly the sections that surface
+renders (secrets excluded), so unrelated saves or credential rotation move nothing; the boot-unique
+`revision` is request identity / locale sync only. Bucket deletes by the
+`general`/`content`/`assets`/`sidebar`/`fonts`/`comments` handlers only reclaim orphans; correctness
+never depends on them or on waiting for in-flight renders.
+_Avoid_: locale-less keys, `max-age` on localized representations, generation counters for those buckets
 
-**Content invalidation**:
-One door — `invalidateContent(event)` in
-`@/server/domains/content/invalidate` — owns the event → side-effect
-mapping (post: feed + taxonomy lists + sitemap + search generation; page:
-sitemap; category/tag: taxonomy list + whole feed bucket; comment:
-latest-comments list). Emission layer: repo mutations for comments (two
-controllers call the repos directly, bypassing the services),
-service/lifecycle for posts, pages, and taxonomies.
-_Avoid_: calling cache clears or `bumpCounter` directly from mutation
-sites
+**Content invalidation**: one door — `invalidateContent(event)` in `@/server/domains/content/invalidate`
+— owns the event → side-effect map (post: feed + taxonomy lists + sitemap + search generation; page:
+sitemap; category/tag: taxonomy list + whole feed bucket; comment: latest-comments list). Emitted from
+repo mutations for comments (two controllers bypass the services), service/lifecycle for posts, pages,
+taxonomies.
+_Avoid_: cache clears or `bumpCounter` called directly from mutation sites
 
-### Request pipeline
+## Request pipeline
 
-**RequestContext**:
-The canonical per-request fact base (`src/server/http/request-context.ts`),
-derived exactly once per request by `requestContextMiddleware` and
-projected — never re-derived — onto the three context surfaces: Hono
-`c.var.requestContext`, the oRPC `HandlerContext` field copy, and the
-React Router `RouterContextProvider` key. It carries the session, the
-viewer, the proxy-aware client address, the normalized document URL
-(`.data` / `_routes` / `index` stripped), the request facts, the
-db/pool handles, the CSP nonce, and the request's PINNED settings bundle plus
-the `localization` projection (`locale`, site `timeZone`, `timeFormat`, and
-the snapshot `revision`). The bundle and the projection come from ONE lazy
-snapshot capture (`createLazyAppSnapshot`), so the bytes a renderer produces
-always belong to the revision in its cache key. Same-session mutations call
-`markSessionDirty()` and the middleware commits — the only Set-Cookie
-commit point; sid-changing flows (login rotation) keep their explicit
-Set-Cookie channel.
-_Avoid_: re-deriving the session / URL / client address in a loader,
-resource, or controller (read the projection), hand-built audit context
-literals (use `recordAuditEventFromContext`)
+**RequestContext**: the per-request fact base (`src/server/http/request-context.ts`), derived once by
+`requestContextMiddleware` and projected — never re-derived — onto Hono `c.var.requestContext`, the oRPC
+`HandlerContext` copy, and the React Router `RouterContextProvider` key. It carries the session, viewer,
+proxy-aware client address, normalized document URL (`.data`/`_routes`/`index` stripped), request facts,
+db/pool handles, CSP nonce, and the PINNED settings bundle plus the `localization` projection (`locale`,
+site `timeZone`, `timeFormat`, snapshot `revision`). Both come from ONE lazy snapshot capture
+(`createLazyAppSnapshot`), so rendered bytes belong to the revision in their cache key. Same-session
+mutations call `markSessionDirty()` and the middleware commits — the only Set-Cookie commit point;
+sid-changing flows keep their explicit Set-Cookie channel.
+_Avoid_: re-deriving session / URL / client address in a loader, resource, or controller, hand-built
+audit literals (use `recordAuditEventFromContext`)
 
-**Viewer**:
-The session's identity projection — the full `SessionUser` on
-`RequestContext.viewer` (`null` when anonymous). Permission predicates in
-`src/server/domains/auth/rbac.ts` take the structural minimum
-`ViewerIdentity { id, role }`, which a `SessionUser` satisfies; the audit
-trail reads the same shape.
-_Avoid_: `ViewerContext` (retired), `viewer.userId` (the field is `id`)
+**Viewer**: the session's identity projection — the full `SessionUser` on `RequestContext.viewer`
+(`null` when anonymous). Permission predicates in `src/server/domains/auth/rbac.ts` take
+`ViewerIdentity { id, role }`, which a `SessionUser` satisfies; audit reads the same shape.
+_Avoid_: `viewer.userId` (the field is `id`)
 
-### Structure
+## Structure
 
-**Core domain**:
-One of the language-backed concepts — `content`, `posts`, `pages`,
-`pt`, `settings` — whose terms appear in this file. Core domains are
-where the product's vocabulary lives; a change to a core concept
-(e.g. the Live gate) is a change to the language itself.
+**Core domain**: one of the language-backed concepts — `content`, `posts`, `pages`, `pt`, `settings` —
+whose terms appear here; changing a core concept (e.g. the Live gate) changes the language itself.
 _Avoid_: treating every folder in `domains/` as equally "core"
 
-**Feature domain**:
-A business feature built on the core concepts — `auth`, `users`,
-`comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`,
-`friends`, `newsletter`, `webmentions`. Features compose core concepts
-(a comment has a Lexical body; a taxonomy groups posts) but add no terms to
-the content language.
-_Avoid_: "service" (that's the platform stratum or a file name, never
-a feature)
+**Feature domain**: a business feature on the core concepts — `auth`, `users`, `comments`, `taxonomies`,
+`images`, `assets`, `fonts`, `music`, `friends`, `newsletter`, `webmentions`. Features compose core
+concepts (a comment has a Lexical body) but add no terms to the content language.
+_Avoid_: "service" (the platform stratum or a file name, never a feature)
 
-**Platform service**:
-A technical capability with no domain objects of its own — `analytics`,
-`audit`, `backup`, `update`, and the storage migration. Platform
-services are either leaves (import no other domain: analytics, audit,
-backup, update) or composition points (the storage migration
-orchestrates across domains from the admin perimeter). They are wired
-by bootstrap/perimeter; core and feature domains do not import them,
-except documented explicit wiring (settings rescheduling audit/backup,
-auth emitting audit events).
-_Avoid_: growing a new cross-domain import INTO a platform service —
-compose at the perimeter instead
+**Platform service**: a technical capability with no domain objects — `analytics`, `audit`, `backup`,
+`update`, and the storage migration. Either leaves (import no other domain) or composition points (the
+storage migration orchestrates across domains from the admin perimeter); wired by bootstrap/perimeter,
+and core/feature domains do not import them except documented wiring (settings rescheduling
+audit/backup, auth emitting audit events).
+_Avoid_: growing a new cross-domain import INTO a platform service — compose at the perimeter
 
-**Restore machine**:
-The single owner of a restore job's lifecycle
-(`domains/backup/restore-machine.ts`): claim → drain → swap → reopen →
-validate → complete → release. Two separate states: the running job
-(the slot, claimed atomically by `tryBeginRestore`, released when the
-chain finishes) and the terminal report (consumed once by the status
-projection). Engine specifics (flush/close/reopen) are injected once by
-the composition root via `wireRestoreMachine`; routes pass a buffer,
-never handles or phase names. The `complete` step's recovery policy —
-rollback → reopen → reschedule → migrate → ANALYZE → restart, including
-the never-restart-into-a-dead-handle invariant — lives in the backup
-domain too (`domains/backup/restore-completion.ts`), built by
-`createRestoreCompletion` over composition-root-injected engine access.
-_Avoid_: restore orchestrator (retired — the chain was split across
-lifecycle/orchestrator/db-lifecycle/routes before consolidation)
+**Restore machine**: the single owner of a restore job's lifecycle
+(`domains/backup/restore-machine.ts`): claim → drain → swap → reopen → validate → complete → release.
+Two states: the running job (the slot, claimed atomically by `tryBeginRestore`, released when the chain
+finishes) and the terminal report (consumed once by the status projection). Engine specifics are
+injected once by the composition root via `wireRestoreMachine`; routes pass a buffer, never handles or
+phase names. The `complete` recovery policy — rollback → reopen → reschedule → migrate → ANALYZE →
+restart, including the never-restart-into-a-dead-handle invariant — lives in
+`domains/backup/restore-completion.ts`, built by `createRestoreCompletion`.
+_Avoid_: restore orchestrator

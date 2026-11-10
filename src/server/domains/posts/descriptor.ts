@@ -251,8 +251,7 @@ export const postDescriptor: MetaEntityDescriptor<
         try {
           const indexed = await indexPostFromRevision(db, meta.id, meta.title, meta.summary, revision)
           if (!indexed) {
-            // Legacy PortableText row (pre-R9a) — the R15 backfill re-derives the index.
-            log.warn('update post: published revision is a legacy PT row, skipping search re-index', {
+            log.warn('update post: published revision body is not a Lexical state, skipping search re-index', {
               postId: meta.id.toString(),
             })
           }
@@ -285,8 +284,7 @@ export const postDescriptor: MetaEntityDescriptor<
           indexable.revision,
         )
         if (!indexed) {
-          // Legacy PortableText row (pre-R9a) — restored but indexed only after the R15 backfill.
-          log.warn('restore post: published revision is a legacy PT row, skipping search index', {
+          log.warn('restore post: published revision body is not a Lexical state, skipping search index', {
             postId: indexable.id.toString(),
           })
         }

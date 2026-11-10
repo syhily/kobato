@@ -1,9 +1,9 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "fb1d5c6c-6f25-4805-b0ed-c7e5fc3e53c2",
+  "id": "ec7f2771-7e3a-4f2c-9a5f-e7f2ea9e4042",
   "prevIds": [
-    "274b8d93-d7db-4838-90a6-2c1fccaa3996"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -44,10 +44,6 @@
     },
     {
       "name": "job_run",
-      "entityType": "tables"
-    },
-    {
-      "name": "kv_cache",
       "entityType": "tables"
     },
     {
@@ -1075,56 +1071,6 @@
       "entityType": "columns"
     },
     {
-      "table": "kv_cache",
-      "name": "key",
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "kv_cache",
-      "name": "bucket",
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "kv_cache",
-      "name": "value",
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "kv_cache",
-      "name": "blob",
-      "type": "blob",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "kv_cache",
-      "name": "expires_at",
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
       "table": "image",
       "name": "id",
       "type": "integer",
@@ -1726,6 +1672,46 @@
     },
     {
       "table": "notification",
+      "name": "title_key",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "notification",
+      "name": "title_params",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "notification",
+      "name": "body_key",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "notification",
+      "name": "body_params",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "notification",
       "name": "replyable",
       "type": "integer",
       "notNull": true,
@@ -2008,6 +1994,16 @@
       "table": "page",
       "name": "first_published_at",
       "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "page",
+      "name": "content_language",
+      "type": "text",
       "notNull": false,
       "autoincrement": false,
       "default": null,
@@ -2349,6 +2345,16 @@
       "name": "alias",
       "type": "text",
       "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "post",
+      "name": "content_language",
+      "type": "text",
+      "notNull": false,
       "autoincrement": false,
       "default": null,
       "generated": null,
@@ -3735,34 +3741,6 @@
       "entityType": "indexes"
     },
     {
-      "table": "kv_cache",
-      "name": "idx_kv_cache_bucket",
-      "columns": [
-        {
-          "value": "bucket",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "entityType": "indexes"
-    },
-    {
-      "table": "kv_cache",
-      "name": "idx_kv_cache_expires_at",
-      "columns": [
-        {
-          "value": "expires_at",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "entityType": "indexes"
-    },
-    {
       "table": "image",
       "name": "idx_image_created_at",
       "columns": [
@@ -4718,15 +4696,6 @@
       "name": "job_run_pk",
       "columns": [
         "id"
-      ],
-      "nameExplicit": false,
-      "entityType": "pks"
-    },
-    {
-      "table": "kv_cache",
-      "name": "kv_cache_pk",
-      "columns": [
-        "key"
       ],
       "nameExplicit": false,
       "entityType": "pks"

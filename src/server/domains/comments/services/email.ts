@@ -5,7 +5,6 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { Comment, User } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
-import type { PortableTextBody } from '@/shared/pt/schema'
 import type { CommentAndUser } from '@/shared/types/comments'
 
 import { lexicalStateToPlainText } from '@/inkling/headless'
@@ -19,7 +18,6 @@ import NewReply from '@/server/infra/email/templates/NewReply'
 import { emailTranslator } from '@/server/infra/email/translator'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-import { bodyToPlainText } from '@/shared/pt/utils'
 import { sanitizeHtmlString } from '@/shared/sanitize/sanitize-html'
 import { entityCommentUrl } from '@/shared/utils/paths'
 import { escapeHtml } from '@/shared/utils/security'
@@ -29,35 +27,33 @@ const log = getLogger('comments.email')
 
 /**
  * Allowlist sanitizer for the comment `content` column at the email boundary
- * (RawEmailHtml injects without sanitizing; the retired hand-rolled renderer
- * was safe by construction, the saved projection is not) — a thin wrapper
- * over the shared DOMPurify stack's 'comment-email' strategy
- * (src/shared/sanitize/config.ts owns the tag/attribute allowlist, which
- * mirrors the comment feed-variant projection's real output).
+ * (RawEmailHtml injects without sanitizing, and the saved projection is not
+ * safe by construction) — a thin wrapper over the shared DOMPurify stack's
+ * 'comment-email' strategy. src/shared/sanitize/config.ts owns the
+ * tag/attribute allowlist, which mirrors the comment feed-variant
+ * projection's real output.
  */
 function sanitizeCommentEmailHtml(html: string): string {
   return sanitizeHtmlString(html, 'comment-email')
 }
 
 /**
- * Email HTML for a comment row (R14): the saved `content` column IS the
- * feed-variant degraded-HTML projection computed at save time (R12), so the
- * mail path reads it directly — sanitized at this boundary. Legacy pre-R12
- * rows still carry a PortableText array body with a markdown `content`
- * snapshot; markdown is not email HTML, so those degrade to escaped plain
- * text until the R15 backfill converts them. A Lexical body with an empty
- * snapshot (should not happen — canonicalize falls back to plain text)
- * degrades to escaped plain text too. Never throws: a notification email
+ * Email HTML for a comment row. The saved `content` column is the
+ * feed-variant degraded-HTML projection computed at save time, so the mail
+ * path reads it directly — sanitized at this boundary. A Lexical body with
+ * an empty snapshot (should not happen — canonicalize falls back to plain
+ * text) degrades to escaped plain text. Never throws: a notification email
  * must never crash the comment flow.
  */
 function commentBodyEmailHtml(comment: { body: unknown; content: string | null }): string {
-  if (Array.isArray(comment.body)) {
-    return escapeHtml(bodyToPlainText(unsafeCast<PortableTextBody>(comment.body)))
-  }
   if (comment.content !== null && comment.content !== '') {
     return sanitizeCommentEmailHtml(comment.content)
   }
-  return escapeHtml(lexicalStateToPlainText(unsafeCast<LexicalEditorState>(comment.body)))
+  try {
+    return escapeHtml(lexicalStateToPlainText(unsafeCast<LexicalEditorState>(comment.body)))
+  } catch {
+    return ''
+  }
 }
 
 async function resolveEntity(db: Database, target: EntityTarget): Promise<{ title: string; url: string } | null> {

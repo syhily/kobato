@@ -1,34 +1,20 @@
-// The kobato image node (plan docs/plans/inkling-editor-replacement.md, round
-// R11): a subclass of the `.` entry's assembled `ImageNode` that persists the
-// four kobato-owned dataset keys the stock declaration drops — `thumbhash` /
-// `storagePath` / `imageId` (the image-library pass-through keys, consumed by
-// the save-time `syncLibraryImageBlocks` relink) and `layout` (the PT float
-// vocabulary `cardWidth` has no equivalent of). The shared React-free spec
-// (`@/shared/lexical/cards/kobato-image`) owns the property list, the
-// exportDOM renderer, and the import spec; the server projection builds its
-// own class from it through the headless factory.
+// The kobato image node: a subclass of the barrel's assembled `ImageNode` that
+// persists the four kobato-owned dataset keys the stock declaration drops —
+// `thumbhash` / `storagePath` / `imageId` (the image-library pass-through keys,
+// consumed by the save-time `syncLibraryImageBlocks` relink) and `layout` (the
+// legacy float vocabulary `cardWidth` has no equivalent of). The shared React-free spec
+// (`@/shared/lexical/cards/kobato-image`) owns the property list, the exportDOM
+// renderer, and the import spec; the server projection builds its own class from it.
 //
-// Why subclass instead of re-declaring: the assembled class carries the
-// caption nested editor and the upload transient props (`__initialFile`,
-// `__previewSrc`, `__triggerFileDialog`) plus the `decorate()` →
-// ImageNodeComponent wiring — re-declaring those from the spec would fork the
-// upload flow. The four extra keys therefore ride hand-written overrides:
-// constructor/getDataset (clone survives), exportJSON/importJSON
-// (persistence), importSpec (paste), and exportDOM — a plain method override
-// that renders the kobato markup through the barrel-exported render-context
-// factory (`createRenderContext`; the inherited exportDOM is bound to the
-// stock render fn by the base class's factory closure).
+// Subclassing instead of re-declaring keeps the assembled class's caption nested
+// editor, its upload transient props (`__initialFile`, `__previewSrc`,
+// `__triggerFileDialog`), and the `decorate()` wiring; re-declaring those from the
+// spec would fork the upload flow.
 //
-// The composer registers THIS class for node type `image` (never alongside
-// the stock class — Lexical keys registrations by type). Every stock image
-// behaviour is either type-gated (slash menu, upload claiming — all read the
-// registered-type set) or `instanceof BaseImageNode`-gated (upload intent,
-// drop surgery — the subclass passes), so only the two CLASS-identity gates
-// stand down: the stock INSERT_IMAGE_COMMAND/INSERT_MEDIA_COMMAND handlers
-// and InklingSelectorPlugin. `@/client/editor/image-insert-override`
-// re-supplies all three against this class (the image-library picker rides
-// the inkling pick seam — `registerCardPicker` in
-// `@/client/editor/image-library-pick`).
+// The composer registers THIS class for node type `image`, never alongside the
+// stock class (Lexical keys registrations by type). Stock image behaviour is either
+// type-gated or `instanceof BaseImageNode`-gated, so only the two CLASS-identity
+// gates stand down and `image-insert-override` re-supplies them.
 
 import type { CardRenderOutput } from '@/shared/lexical/cards/card-html'
 
@@ -48,9 +34,9 @@ export class KobatoImageNode extends ImageNode {
 
   constructor(dataset: Record<string, unknown> = {}, key?: string) {
     super(dataset, key)
-    // The constructor (like the generated importJSON) assigns fields
-    // directly, so a host-filled value survives deserialization and cloning —
-    // the artifact-slot edit-invalidation invariant only governs SETTERS.
+    // Fields are assigned directly (as the generated importJSON does), so a
+    // host-filled value survives deserialization and cloning; the artifact-slot
+    // edit-invalidation invariant governs setters only.
     this.__thumbhash = typeof dataset.thumbhash === 'string' ? dataset.thumbhash : ''
     this.__storagePath = typeof dataset.storagePath === 'string' ? dataset.storagePath : ''
     this.__imageId = typeof dataset.imageId === 'string' ? dataset.imageId : ''
@@ -85,11 +71,8 @@ export class KobatoImageNode extends ImageNode {
     this.getWritable().__layout = normalizeKobatoImageLayout(value)
   }
 
-  /**
-   * The generated getDataset reads only the stock property list — appending
-   * the four extra keys keeps `clone` (which reconstructs from
-   * `node.getDataset()`) lossless.
-   */
+  /** The generated getDataset reads only the stock property list; appending the
+   *  four extra keys keeps `clone` (which rebuilds from `getDataset()`) lossless. */
   override getDataset(): Record<string, unknown> {
     const dataset = super.getDataset()
     const self = this.getLatest()
@@ -101,10 +84,9 @@ export class KobatoImageNode extends ImageNode {
   }
 
   /**
-   * The stock hand-written exportJSON (historical key order + the blob guard
-   * + caption nested-editor re-serialization) plus the four kobato keys.
-   * `layout` is always emitted; the three pass-through keys omit when empty
-   * so library-less bodies stay byte-clean.
+   * Adds the four kobato keys to the stock exportJSON. `layout` is always
+   * emitted; the three pass-through keys omit when empty so library-less bodies
+   * stay byte-clean.
    */
   override exportJSON() {
     const json = super.exportJSON()
@@ -121,35 +103,23 @@ export class KobatoImageNode extends ImageNode {
     return { ...json, ...extra }
   }
 
-  /**
-   * The constructor already whitelists the dataset keys it understands, so
-   * importing is just construction from the serialized record (the generated
-   * importJSON does the same through its property list — which would drop
-   * the four extra keys).
-   */
+  /** The constructor whitelists every dataset key, so importing is plain
+   *  construction; the generated importJSON would drop the four extra keys. */
   static override importJSON(serializedNode: Record<string, unknown>): KobatoImageNode {
     return new KobatoImageNode(serializedNode)
   }
 
   static override importSpec = kobatoImageImportSpec
 
-  /**
-   * The kobato figure markup in place of the stock card's: the inherited
-   * exportDOM is bound to the stock render fn by the base class's factory
-   * closure, so the override calls the spec's renderer directly, building the
-   * render context through the barrel-exported factory. `this` satisfies the
-   * renderer's dataset view structurally — the instance genuinely carries the
-   * twelve dataset keys.
-   */
+  /** The inherited exportDOM is bound to the stock render fn by the base class's
+   *  factory closure, so this calls the spec's renderer directly; `this` satisfies
+   *  the renderer's dataset view structurally. */
   override exportDOM(editor: LexicalEditor, options?: ExportDOMOptions): CardRenderOutput {
     return renderKobatoImageNode(this, createRenderContext(options ?? {}))
   }
 }
 
-/**
- * The card write seam's guard (`useCardChrome`) for the image variant — the
- * pick seam's image-library render writes the picked dataset through it.
- */
+/** The card write seam's guard (`useCardChrome`) for the image variant. */
 export function isKobatoImageNode(node: unknown): node is KobatoImageNode {
   return node instanceof KobatoImageNode
 }

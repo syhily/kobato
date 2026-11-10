@@ -6,12 +6,7 @@ import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 import { readStringArray } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
 
-/**
- * The Lexical body reader for the ADMIN revision DTO (the save pipeline
- * stores Lexical states from R9a on). A PT-era row read through this
- * function fails loudly — the R15 backfill is what makes every stored row
- * Lexical.
- */
+/** Parses a stored Lexical body; every stored row is a Lexical state, so anything else fails loudly. */
 export function readLexicalBody(value: unknown): LexicalEditorState {
   return lexicalEditorStateSchema.parse(value)
 }
@@ -38,16 +33,12 @@ export function readHeadings(value: unknown): MarkdownHeading[] {
 }
 
 /**
- * The revision-joined CMS fields both catalog projections derive
- * identically — each empty when the entity has no published revision yet.
- *
- * Body routing (R13/R14): every public read path serves a saved projection
- * column (`body_html` for SSR, `body_html_feed` for RSS/Atom), so the raw
- * `body` blob never leaves the server through this projection. `bodyState`
- * is populated only when a projection column is NULL and the blob parses as
- * a Lexical state — the detail controllers and the feed generator use it for
- * the compute-on-read fallback; a parse failure (or a legacy PT array, which
- * no read path renders anymore) degrades to an empty body, never a throw.
+ * The revision-joined CMS fields both catalog projections derive identically;
+ * each is empty when the entity has no published revision yet. Public read paths
+ * serve the saved projection columns (`body_html`, `body_html_feed`), so the raw
+ * `body` blob never leaves the server: `bodyState` is populated only for the
+ * compute-on-read fallback (a column is NULL and the blob parses as Lexical), and
+ * a parse failure degrades to an empty body, never a throw.
  */
 export function readRevisionProjection(revision: ContentRow | null): {
   bodyHtml: string | null
@@ -62,7 +53,7 @@ export function readRevisionProjection(revision: ContentRow | null): {
   const bodyHtml = revision.bodyHtml
   const bodyHtmlFeed = revision.bodyHtmlFeed
   let bodyState: LexicalEditorState | null = null
-  if ((bodyHtml === null || bodyHtmlFeed === null) && !Array.isArray(revision.body)) {
+  if (bodyHtml === null || bodyHtmlFeed === null) {
     const parsed = lexicalEditorStateSchema.safeParse(revision.body)
     bodyState = parsed.success ? parsed.data : null
   }

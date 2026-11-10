@@ -1,1 +1,0 @@
-ALTER TABLE `storage_migration` ADD `verification` text;

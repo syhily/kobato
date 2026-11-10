@@ -1,4 +1,4 @@
-// Render-enhance projections over the `./resolve` pipeline: PT blocks get
+// Render-enhance projections over the `./resolve` pipeline: image blocks get
 // sparse dims + thumbhash (no public URL); `hydrateImageRefs` rewrites
 // cover/poster fields on list DTOs.
 

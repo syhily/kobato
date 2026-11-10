@@ -255,27 +255,47 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
     expect(html).toContain('<p>hi</p>')
   })
 
-  it('degrades legacy pre-Lexical array bodies to escaped plain text', async () => {
+  it('degrades a Lexical body with an empty content snapshot to escaped plain text', async () => {
     const ownerId = await seedTargetPost()
-    // A pre-R12 row: PT array body, markdown (not HTML) content snapshot.
-    const legacy = {
+    const noSnapshot = {
       ...commentInfo,
-      body: [
-        {
-          _type: 'block',
-          _key: 'b1',
-          style: 'normal',
-          children: [{ _type: 'span', _key: 's1', text: 'legacy <b>raw</b> text', marks: [] }],
+      body: {
+        root: {
+          type: 'root',
+          version: 1,
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          children: [
+            {
+              type: 'paragraph',
+              version: 1,
+              direction: 'ltr',
+              format: '',
+              indent: 0,
+              children: [
+                {
+                  type: 'extended-text',
+                  version: 1,
+                  detail: 0,
+                  format: 0,
+                  mode: 'normal',
+                  style: '',
+                  text: 'plain <b>raw</b> text',
+                },
+              ],
+            },
+          ],
         },
-      ],
-      content: 'legacy <b>raw</b> text',
+      },
+      content: null,
     } as unknown as CommentAndUser
 
-    await sendNewComment(db, legacy, { type: 'post', ownerId })
+    await sendNewComment(db, noSnapshot, { type: 'post', ownerId })
 
     const html = sentBody().get('html') as string
-    // Plain text, escaped — the markdown snapshot is NOT injected as HTML.
-    expect(html).toContain('legacy &lt;b&gt;raw&lt;/b&gt; text')
+    // Plain text, escaped — never injected as markup.
+    expect(html).toContain('plain &lt;b&gt;raw&lt;/b&gt; text')
     expect(html).not.toContain('<b>raw</b>')
   })
 

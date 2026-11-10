@@ -84,7 +84,7 @@ describe('ui/public/comments/comment-body-helpers', () => {
       )
     })
 
-    it('includes code block code and math tex (PT projection parity)', () => {
+    it('includes code block code and math tex', () => {
       expect(
         commentBodyPlainText(
           commentState([
@@ -93,17 +93,6 @@ describe('ui/public/comments/comment-body-helpers', () => {
           ]),
         ),
       ).toBe('const x = 1\na^2')
-    })
-
-    it('routes legacy PT rows to the PT projection (interregnum)', () => {
-      const ptBody = [
-        {
-          _type: 'block' as const,
-          _key: 'b1',
-          children: [{ _type: 'span' as const, _key: 's1', text: 'legacy', marks: [] }],
-        },
-      ]
-      expect(commentBodyPlainText(ptBody)).toBe('legacy')
     })
   })
 })

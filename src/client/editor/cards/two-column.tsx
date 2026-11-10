@@ -1,9 +1,8 @@
-// The `two-column` host card's editing-side assembly (plan
-// docs/plans/inkling-editor-replacement.md, round R10) — same dual-entry
-// contract as `./solution`: the base class is built from the shared spec
-// (`@/shared/lexical/cards/two-column`) through the `.` entry's factory, and
-// the decorate chrome shares the spec's class constants with the exportDOM
-// markup (the WYSIWYG gate).
+// The `two-column` host card's editing-side assembly — same dual-entry contract as
+// `./solution`: the base class is built from the shared spec
+// (`@/shared/lexical/cards/two-column`) through the `.` entry's factory, and the
+// decorate chrome shares the spec's class constants with the exportDOM markup (the
+// WYSIWYG gate).
 
 import type { ReactNode } from 'react'
 
@@ -31,20 +30,19 @@ import {
 import { TWO_COLUMN_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// The card's nested-editor spec (CONTEXT.md: "card spec"), const-asserted so
-// the literal names survive into the derived field maps — the same array
-// self-types the base class below and feeds the defineCard spec. `nullable`
-// mirrors the built-in cards: the base class is spec-less, so a raw base
-// instance leaves the fields unset and the guard in TwoColumnCardComponent
-// stays honest.
+// The card's nested-editor spec, const-asserted so the literal names survive into
+// the derived field maps (the same array self-types the base class below and feeds
+// the defineCard spec). `nullable` mirrors the built-in cards: the base class is
+// spec-less, so a raw base instance leaves the fields unset and the guard in
+// TwoColumnCardComponent stays honest.
 const twoColumnNestedEditors = [
   { ...TWO_COLUMN_NESTED_EDITORS[0]!, nodes: EDITOR_BASE_NODES, nullable: true },
   { ...TWO_COLUMN_NESTED_EDITORS[1]!, nodes: EDITOR_BASE_NODES, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]
 
-// The merged interface self-types the spec-driven nested-editor fields — the
-// inkling BaseToggleNode idiom; the pair needs the declaration-merging
-// exemption inkling's oxlint scope grants (src/client sits outside it).
+// The merged interface self-types the spec-driven nested-editor fields (the inkling
+// BaseToggleNode idiom); the pair needs the declaration-merging exemption inkling's
+// oxlint scope grants, which src/client sits outside.
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging, typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseTwoColumnNode extends CardSpecFieldMapFor<readonly [], typeof twoColumnNestedEditors> {}
 export class BaseTwoColumnNode extends generateDecoratorNode({
@@ -55,9 +53,9 @@ export class BaseTwoColumnNode extends generateDecoratorNode({
 
 export type TwoColumnCardNode = InstanceType<typeof BaseTwoColumnNode>
 
-/** The pane chrome: the `min-w-0` cell with the PT-parity data attributes.
- * The editor slot holds the nested composer on the canvas and the pane HTML
- * in the export (the parity test renders this shell directly). */
+/** The pane chrome: the `min-w-0` cell with the `data-pt-*` data attributes. The
+ *  editor slot holds the nested composer on the canvas and the pane HTML in the
+ *  export (the parity test renders this shell directly). */
 export function TwoColumnPaneView({ side, children }: { side: 'left' | 'right'; children?: ReactNode }) {
   return (
     <div className={TWO_COLUMN_CARD_CLASSES.pane} data-pt-two-column-pane="" data-side={side}>
@@ -96,10 +94,8 @@ function TwoColumnPane({
   )
 }
 
-/**
- * The card chrome: the responsive grid section. The pane slot holds the
- * nested editors on the canvas and the pane HTML in the export.
- */
+/** The card chrome: the responsive grid section. The pane slot holds the nested
+ *  editors on the canvas and the pane HTML in the export. */
 export function TwoColumnCardView({ left, right }: { left?: ReactNode; right?: ReactNode }) {
   return (
     <section className={TWO_COLUMN_CARD_CLASSES.root} data-pt-two-column="">
@@ -144,8 +140,7 @@ export const twoColumnCard = defineCard({
   insert: { openInEditMode: true },
   menu: [
     {
-      // The menu labels are English fallbacks; the overlay localizes them
-      // through `labelKey` (the inkling label tables).
+      // English fallback; the overlay localizes through `labelKey`.
       label: 'Two columns',
       labelKey: 'host.two-column',
       desc: 'Two side-by-side columns, each edited independently',

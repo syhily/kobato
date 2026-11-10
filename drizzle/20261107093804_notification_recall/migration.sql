@@ -1,1 +1,0 @@
-ALTER TABLE `notification` ADD `recalled_at` integer;

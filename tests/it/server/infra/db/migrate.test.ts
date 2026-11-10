@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-sqlite/migrator'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 
 import type { Database, DatabaseHandle } from '@/server/infra/db/database'
@@ -8,9 +9,8 @@ import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 import { createTestDatabaseFile } from '#/_helpers/integration-db'
 import { closeDatabase, openDatabase } from '@/server/infra/db/database'
 
-// The SEA binary runs the same folder migrator against the mounted VFS copy
-// of this exact `drizzle/` tree (embedded byte-identical) — the boot smoke
-// covers the in-binary run; here the folder path itself is pinned.
+// The SEA binary runs the same folder migrator against a byte-identical embedded copy of this
+// `drizzle/` tree; here the folder path itself is pinned.
 
 const MIGRATIONS_FOLDER = './drizzle'
 const MIGRATIONS_TABLE = '__drizzle_migrations'
@@ -24,6 +24,15 @@ interface MigrationRow {
 interface DbShape {
   tables: string[]
   migrations: MigrationRow[]
+}
+
+/** The single migration folder in the squashed tree (`<timestamp>_initial_schema`). */
+function soleMigrationSql(): string {
+  const folders = readdirSync(MIGRATIONS_FOLDER, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+  expect(folders).toHaveLength(1)
+  return readFileSync(join(MIGRATIONS_FOLDER, folders[0]!, 'migration.sql'), 'utf8')
 }
 
 function readDbShape(db: Database): DbShape {
@@ -57,7 +66,7 @@ describe('folder migrations (sqlite)', () => {
     const shape = readDbShape(handle.db)
     expect(shape.tables.length).toBeGreaterThan(0)
     expect(shape.migrations.length).toBeGreaterThan(0)
-    // The legacy SQLite cache table is gone — storage lives on the filesystem.
+    // No SQLite cache table: storage lives on the filesystem.
     expect(shape.tables).not.toContain('kv_cache')
   })
 
@@ -81,8 +90,8 @@ describe('folder migrations (sqlite)', () => {
         .map((column) => [column.name, column.notnull]),
     )
 
-    // Plan 001, 5b-ii: the English fallback stays in title/body; the descriptor
-    // columns are nullable so legacy direct/broadcast rows need no backfill.
+    // English fallback stays in title/body; the descriptor columns are nullable, so existing
+    // direct/broadcast rows need no backfill.
     expect(columns).toMatchObject({
       title: 1,
       body: 1,
@@ -107,11 +116,44 @@ describe('folder migrations (sqlite)', () => {
       expect(column).toMatchObject({ name: 'content_language', notnull: 0, dflt_value: null })
     }
 
-    // The migration is additive only: two ALTERs, no UPDATE / DEFAULT rewrite.
-    const migrationSql = readFileSync('drizzle/20261108113858_content_language/migration.sql', 'utf8')
-    expect(migrationSql).toContain('ALTER TABLE `page` ADD `content_language` text')
-    expect(migrationSql).toContain('ALTER TABLE `post` ADD `content_language` text')
-    expect(migrationSql).not.toMatch(/UPDATE|DEFAULT/i)
+    // The squashed initial migration carries the columns inline: pure CREATE
+    // DDL, no ALTER / UPDATE data rewrite.
+    const migrationSql = soleMigrationSql()
+    expect(migrationSql).toContain('`content_language` text')
+    expect(migrationSql).not.toMatch(/ALTER TABLE|^\s*UPDATE/im)
+  })
+
+  it('guards every CREATE statement with IF NOT EXISTS (drizzle/AGENTS.md)', () => {
+    const statements = soleMigrationSql()
+      .split('--> statement-breakpoint')
+      .map((statement) => statement.trim())
+      .filter((statement) => statement !== '')
+    expect(statements.length).toBeGreaterThan(0)
+    for (const statement of statements) {
+      expect(statement).toMatch(/^CREATE (TABLE|UNIQUE INDEX|INDEX) IF NOT EXISTS /)
+    }
+  })
+
+  it('no-ops on a database that already holds the final schema', () => {
+    // The dev-environment upgrade path: rows wiped from __drizzle_migrations,
+    // schema already present — the defensive guards make the re-run a no-op.
+    const handle = openDatabase(':memory:')
+    handles.push(handle)
+    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    const before = readDbShape(handle.db)
+    handle.db.run(sql`DELETE FROM ${sql.raw(`"${MIGRATIONS_TABLE}"`)}`)
+    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    const after = readDbShape(handle.db)
+    expect(after.tables).toEqual(before.tables)
+    expect(after.migrations.length).toBe(before.migrations.length)
+  })
+
+  it('keeps only the latest snapshot.json (drizzle/AGENTS.md)', () => {
+    const snapshots = readdirSync(MIGRATIONS_FOLDER, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => join(MIGRATIONS_FOLDER, entry.name, 'snapshot.json'))
+      .filter((path) => existsSync(path))
+    expect(snapshots.length).toBeLessThanOrEqual(1)
   })
 
   it('applies the pragma set the runtime relies on', () => {

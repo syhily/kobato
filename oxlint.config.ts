@@ -156,8 +156,8 @@ export default defineConfig({
     // Spreading a non-iterable / Map / Set into an array or object produces
     // surprising shapes. Rule has no current violations.
     'typescript/no-misused-spread': 'error',
-    // Tagged-union exhaustiveness on `'post' | 'page'` discriminators and
-    // PortableText block types. 7 sites today are missing default branches;
+    // Tagged-union exhaustiveness on `'post' | 'page'` discriminators.
+    // 7 sites today are missing default branches;
     // warn lets the backlog drain without blocking.
     'typescript/switch-exhaustiveness-check': 'warn',
     // Discourage blind @ts-ignore; @ts-expect-error is preferred.

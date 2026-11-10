@@ -10,9 +10,8 @@ export interface ListImagesInput {
 }
 
 /**
- * Sparse image metadata resolved for a PT image source (dimensions +
- * thumbhash; the block keeps its own src). Produced by the images
- * domain enhancer, consumed by the PT renderer's image-meta context.
+ * Sparse image metadata for an image source (the block keeps its own src),
+ * produced by the images domain enhancer and consumed by the renderer.
  */
 export interface ResolvedImageMeta {
   thumbhash?: string
@@ -73,12 +72,10 @@ export interface ImageUrlOptions {
   urlTemplate?: string
   /**
    * Site origin (e.g. `https://example.com`). When set and `src` is a
-   * site-owned `/storage/<key>` URL, the template is NOT applied inline — the
-   * transform intent travels as `?w=&h=&q=` query params and the `/storage/*`
-   * 302 boundary substitutes it into the template server-side. The server-side
-   * twin of the `{src}/{width}/{height}/{quality}` substitution below is
-   * `buildRedirectLocation` in `src/server/http/resources/storage-redirect.ts`
-   * — keep the two semantics in sync.
+   * site-owned `/storage/<key>` URL, the template is not applied inline: the
+   * transform intent travels as `?w=&h=&q=` and the `/storage/*` 302 boundary
+   * substitutes it server-side (`buildRedirectLocation` in
+   * `src/server/http/resources/storage-redirect.ts` — keep the two in sync).
    */
   siteOrigin?: string
 }
@@ -86,9 +83,9 @@ export interface ImageUrlOptions {
 const DEFAULT_SRCSET_BREAKPOINTS = [256, 512, 768, 1024, 1280, 1536]
 
 /**
- * The src unchanged when it is a site-owned asset URL in either accepted
- * form — origin-relative (`/storage/<key>`) or absolute on the site origin —
- * otherwise `null` (external URLs keep the legacy inline-template path).
+ * The src unchanged when it is a site-owned asset URL — origin-relative
+ * (`/storage/<key>`) or absolute on the site origin — otherwise `null`
+ * (external URLs use the inline-template path).
  */
 export function siteOwnedStorageSrc(src: string, siteOrigin: string | undefined): string | null {
   if (src.startsWith(STORAGE_ROUTE_PREFIX)) {

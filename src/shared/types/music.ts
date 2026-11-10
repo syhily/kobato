@@ -1,6 +1,6 @@
-// Wire-format DTOs for the music management endpoints. The row/result
-// DTOs (`AdminMusicDto`, `MetingSearchHit`, list/search/add/update
-// outputs) are zod-derived in `@/shared/contracts/music`.
+// Wire-format DTOs for the music-management endpoints; the row/result
+// DTOs (`AdminMusicDto`, `MetingSearchHit`, list/search/add/update outputs)
+// are zod-derived in `@/shared/contracts/music`.
 
 import type { MetingSource } from '@/shared/contracts/music'
 
@@ -44,7 +44,7 @@ export interface UpdateMusicInput {
   lyric?: string
 }
 
-// Resolved metadata embedded into a `musicPlayer` PortableText block at SSR time.
+// Resolved metadata embedded into a `musicPlayer` block at SSR time.
 // Field names match the props expected by `<APlayer audio={...} />`.
 export interface MusicPlayerBlockMeta {
   id: string

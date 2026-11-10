@@ -1,1 +1,0 @@
-ALTER TABLE `storage_migration` ADD `source_storage` text;

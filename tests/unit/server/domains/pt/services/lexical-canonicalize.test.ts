@@ -42,7 +42,7 @@ describe('pt/services/lexical-canonicalize — canonicalizeLexicalEditorState', 
     })
   })
 
-  it('rejects a PortableText body (the pre-R9a wire shape)', async () => {
+  it('rejects a non-Lexical array body', async () => {
     const error = await canonicalizeLexicalEditorState([{ _type: 'block', _key: 'b1', children: [] }]).catch(
       (e: unknown) => e,
     )
@@ -63,7 +63,7 @@ describe('pt/services/lexical-canonicalize — canonicalizeLexicalEditorState', 
     }
   })
 
-  // P0-10 parity: strip client-supplied prerender products and recompute server-side.
+  // Client-supplied prerender products must be stripped and recomputed server-side.
   describe('strips server-owned artifact slots', () => {
     it('drops client highlightedHtml/mathml/svg and recomputes them server-side', async () => {
       const state = await canonicalizeLexicalEditorState(

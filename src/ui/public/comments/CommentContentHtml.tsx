@@ -2,11 +2,9 @@ import { useMemo } from 'react'
 
 import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 
-// Renders the saved comment `content` column (the inkling feed-variant HTML
-// projection) — the R13 read path. Sanitization happens at this render
-// boundary on both engines (SSR node / hydration DOMPurify); storage keeps
-// the raw projection. Pre-R12 rows hold markdown-era text that degrades to
-// readable plain text here; the R15 backfill rebuilds their projection.
+// Renders the saved comment `content` column (the inkling feed-variant HTML projection).
+// Sanitization happens at this render boundary on both engines (SSR node / hydration
+// DOMPurify) because storage keeps the raw projection.
 export function CommentContentHtml({ content, className }: { content: string | null; className?: string }) {
   const clean = useMemo(() => sanitizeHtml(content ?? '', 'comment'), [content])
   return <div className={className} dangerouslySetInnerHTML={{ __html: clean }} />

@@ -84,8 +84,7 @@ function importSpecifiers(source: string): string[] {
   return [...source.matchAll(specifierRe)].map((match) => match[1])
 }
 
-// VALUE imports only: `import type` is erased at compile time and must not
-// trip a runtime-coupling ban.
+// Value imports only: `import type` is erased at compile time and must not trip a runtime-coupling ban.
 function valueImportSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   const staticRe = /\bimport\s+([^'";]*?)\s+from\s*['"]([^'"]+)['"]/g
@@ -105,8 +104,7 @@ function valueImportSpecifiers(source: string): string[] {
   return specifiers
 }
 
-// Checks compare both the `@/…` alias and the resolved `src/…` path so a
-// `../` escape cannot bypass an alias-only ban.
+// Compare both the `@/…` alias and the resolved `src/…` path so a `../` escape cannot bypass an alias-only ban.
 function resolveSpecifier(file: string, specifier: string): string {
   if (specifier.startsWith('./') || specifier.startsWith('../')) {
     return posixNormalize(`${posixDirname(file)}/${specifier}`)
@@ -114,8 +112,7 @@ function resolveSpecifier(file: string, specifier: string): string {
   return specifier
 }
 
-// Exported bindings that came from an import are facades; locally-declared
-// exports are legal.
+// Imported-then-exported bindings are facades; locally-declared exports are legal.
 function importedBindings(source: string): Set<string> {
   const names = new Set<string>()
   const importRe = /\bimport\s+([^'";]*?)\s+from\s*['"][^'"]+['"]/g
@@ -147,8 +144,7 @@ function importedBindings(source: string): Set<string> {
 
 describe('contract: module and bundle boundaries', () => {
   it('keeps value imports from @/server out of shared modules', () => {
-    // Value imports would drag the server graph into the shared (server +
-    // browser) bundle; type imports are erased and stay legal.
+    // Value imports would drag the server graph into the shared server+browser bundle.
     const offenders: string[] = []
     for (const file of files('src/shared', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of valueImportSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -163,9 +159,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps re-export facades out of src (every import points at the owning module)', () => {
-    // Import-then-export facades are banned; locally-declared exports stay
-    // legal. Allowlisted: the layout routes re-export AdminErrorFallback as
-    // ErrorBoundary (React Router requires that exact export name).
+    // Allowlisted: layout routes re-export AdminErrorFallback as ErrorBoundary
+    // (React Router requires that exact export name).
     const allowlist = new Set(
       ['src/routes/admin/layout.tsx', 'src/routes/auth/layout.tsx', 'src/routes/editor/layout.tsx'].map(
         (file) => `${file}: export { AdminErrorFallback as ErrorBoundary }`,
@@ -176,9 +171,8 @@ describe('contract: module and bundle boundaries', () => {
     const directRe = /\bexport\s+(?:type\s+)?(?:\*\s+as\s+[\w$]+|\*|\{[^{}]*\})\s*from\s*['"][^'"]+['"]/g
     const plainRe = /\bexport\s+(?:type\s+)?\{([^{}]*)\}(?!\s*from)/g
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
-      // src/inkling keeps its former package conventions: src/inkling/index.ts
-      // IS the editor layer's public barrel, and its internal re-exports are
-      // pinned by the suite's own guard tests (tests/inkling).
+      // src/inkling/index.ts is the editor layer's public barrel; its internal
+      // re-exports are pinned by the suite's own guard tests (tests/inkling).
       if (file.startsWith('src/inkling/')) {
         continue
       }
@@ -219,7 +213,6 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the server layer graph one-way (infra → domains → render → http)', () => {
-    // One-way layering: infra → domains → render → http; type imports count too.
     const rules: Array<{ from: string; banned: string[] }> = [
       { from: 'src/server/infra/', banned: ['@/server/domains/', '@/server/http/', '@/server/render/'] },
       { from: 'src/server/domains/', banned: ['@/server/http/', '@/server/render/'] },
@@ -244,20 +237,15 @@ describe('contract: module and bundle boundaries', () => {
 
   it('routes every server-side outbound fetch through safeFetch (allowlisted raw-fetch sites only)', () => {
     // safeFetch owns the SSRF guard, byte caps, redirect policy, and port
-    // allowlist; a raw `fetch(` in server code bypasses all of it. The
-    // allowlist pins the audited exceptions — fixed-target fetches whose URL
-    // is a compile-time constant or derived from release/provider config,
-    // never request/user input. Adding a site means justifying it here.
+    // allowlist; a raw `fetch(` bypasses all of it. Allowlisted sites are
+    // fixed compile-time or config-sourced targets, never request input.
     const allowlistedFiles = new Set([
       'src/server/infra/safe-fetch.ts', // the guard itself
       'src/server/domains/analytics/geoip-update.ts', // fixed MaxMind URLs
       'src/server/domains/comments/services/avatar.ts', // fixed GitHub avatar URL
       'src/server/domains/update/release.ts', // fixed api.github.com release metadata
       'src/server/domains/update/pipeline.ts', // release-asset URLs from the update metadata
-      // Startup-only O2 pipeline probe: fixed `/api/<org>/pipelines` path on
-      // the validated loopback/https trace endpoint, using the same
-      // server-only credential as the direct OTLP exporters (which also do
-      // not use safeFetch). Never request/user-influenced.
+      // Startup-only probe: fixed path on the validated trace endpoint.
       'src/server/infra/trace/pipeline-verify.ts',
     ])
     const allowlistedPrefixes = [
@@ -279,11 +267,9 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the inkling editor layer an island with exactly two entry surfaces', () => {
-    // src/inkling is the dissolved @inkling/editor package: it must stay
-    // self-contained (no imports of kobato layers — the editor is
-    // host-agnostic), and the rest of the app reaches it ONLY through the
-    // public barrel (`@/inkling`, React surfaces) or the react-free headless
-    // surface (`@/inkling/headless`, server + shared). Deep imports would
+    // src/inkling stays host-agnostic (no kobato-layer imports); the rest of
+    // the app reaches it only through `@/inkling` (React surfaces) or the
+    // react-free `@/inkling/headless` (server + shared) — deep imports
     // re-couple the app to the editor's internal layout.
     const KOBATO_LAYERS = ['@/server/', '@/client/', '@/ui/', '@/shared/', '@/routes/']
     const ENTRY_SURFACES = new Set(['@/inkling', '@/inkling/headless'])
@@ -321,9 +307,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the Postgres-era drivers and async transactions out of src', () => {
-    // The retired pg stack (`pg`, `pg-copy-streams`, `drizzle-orm/node-postgres`)
-    // must never re-enter src/. node:sqlite transactions are sync — a
-    // `transaction(async` callback commits before its awaited work runs.
+    // node:sqlite transactions are sync — a `transaction(async` callback commits
+    // before its awaited work runs. The node-postgres drivers stay banned.
     const BANNED_DRIVERS = ['pg', 'pg-copy-streams', 'drizzle-orm/node-postgres']
     const offenders: string[] = []
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
@@ -442,9 +427,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps domain repos private to their owning domain', () => {
-    // `repos/**` (or a root `repo.ts`) is a domain's private persistence
-    // layer; cross-domain capabilities must be promoted to the domain
-    // surface instead. Importers inside the owning domain stay legal.
+    // `repos/**` (or a root `repo.ts`) is a domain's private persistence layer;
+    // cross-domain capabilities must be promoted to the domain surface.
     const domainsRoot = 'src/server/domains'
     const reposOwner = (path: string): string | null => {
       if (!path.startsWith(`${domainsRoot}/`)) {
@@ -512,9 +496,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps routes on domain surfaces: no infra/db/operations imports under src/routes', () => {
-    // Routes must not reach into `infra/db/operations` — business data
-    // access belongs behind a domain surface or an http/loaders assembly.
-    // Non-data infra (rate limiter, `infra/http/status`) stays legal.
+    // Business data access belongs behind a domain surface or an
+    // http/loaders assembly; non-data infra (rate limiter, status) stays legal.
     const offenders: string[] = []
     for (const file of files('src/routes', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -671,7 +654,6 @@ describe('contract: module and bundle boundaries', () => {
           offenders.push(`${file}: ${specifier}`)
         }
       }
-      // `import type` is erased at compile time and stays legal otherwise.
       for (const specifier of valueImportSpecifiers(source)) {
         const target = resolveSpecifier(file, specifier)
         if (
@@ -705,8 +687,7 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps the Bootstrap npm dep fully retired from the public bundle', () => {
     const globals = readFileSync('src/styles/public.css', 'utf8')
 
-    // Match real import statements only — comments about retired paths must
-    // not trip these.
+    // Anchored to real import statements only — comments must not trip these.
     expect(globals).not.toMatch(/^\s*@import\s+['"]bootstrap/m)
     expect(globals).not.toMatch(/^\s*import\s.*from\s+['"]bootstrap/m)
     expect(globals).not.toContain('_legacy-utilities')
@@ -769,8 +750,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(tailwindCss).toMatch(/--ink-5:\s*#eaecf3;/)
     expect(tailwindCss).toMatch(/--color-ink-5:\s*var\(--ink-5\);/)
 
-    // Scan for residual className tokens that would only resolve through
-    // the deleted partials.
+    // Tokens that would only resolve through the removed CSS partials.
     const offenders: string[] = []
     const bannedClassTokens = [
       'list-item',
@@ -793,9 +773,8 @@ describe('contract: module and bundle boundaries', () => {
     ]
     const ambiguousClassTokens = ['media', 'overlay', 'text-muted']
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx', '-g', '*.css')) {
-      // src/inkling is the dissolved editor layer with its own scoped
-      // stylesheet — its tokens (e.g. `display: list-item`) are unrelated to
-      // the retired kobato partials this scan hunts.
+      // src/inkling's scoped stylesheet uses these tokens differently (e.g.
+      // `display: list-item`) — unrelated to the kobato partials this scan hunts.
       if (file.startsWith('src/inkling/')) {
         continue
       }
@@ -956,26 +935,11 @@ describe('contract: module and bundle boundaries', () => {
     expect(partialOffenders).toEqual([])
   })
   it('keeps client utilities independent from UI component modules', () => {
-    // `@/client/` hooks and `@/shared/` helpers are imported by server and
-    // browser bundles alike — reaching into `@/ui/` components would drag
-    // the DOM component graph into every consumer. Value and type imports
-    // both count, whether `@/`-aliased or relative.
-    //
-    // Allowlist: the editor canvas deliberately renders the public
-    // MusicPlayerCard verbatim (WYSIWYG with the hydration-enhanced public
-    // render). It is a leaf component (its only `@/ui` dependency is
-    // `ui/lib/cn`), and `client/editor/` is browser-only glue consumed by
-    // `ui/admin/editor/PageBodyEditor`, so no server-bundle contamination.
-    // The two picker dialogs join it for the same reason: the cards'
-    // pick-seam renders (the music card's defineCard spec, the image
-    // variant's `registerCardPicker`) mount the host-owned dialogs — admin
-    // chrome over the oRPC client, never reachable from the server bundle.
-    // `ui/lib/ThemeProvider` is the shared composer surface's theme read
-    // (`client/editor/editor-surface`) — a leaf context module already in
-    // every bundle via root.tsx. `ui/lib/I18nProvider` is the same story for
-    // the composer's locale read: the editor shell selects its label table and
-    // word-count language from the root translator, and the module is a leaf
-    // context (react-intl provider + logger) already mounted at the root.
+    // `@/client/` and `@/shared/` are imported by server and browser bundles
+    // alike; a `@/ui/` import would drag the DOM component graph into every
+    // consumer. Allowlist is leaf modules only: the editor canvas renders
+    // MusicPlayerCard verbatim and mounts the host-owned picker dialogs;
+    // ThemeProvider/I18nProvider ship in every bundle via root.tsx anyway.
     const CLIENT_TO_UI_ALLOWLIST = new Set([
       '@/ui/admin/editor/pickers/ImageLibraryPicker',
       '@/ui/admin/editor/pickers/MusicPickerDialog',
@@ -1058,9 +1022,7 @@ describe('contract: module and bundle boundaries', () => {
     for (const file of formFiles) {
       const formSource = readFileSync(file, 'utf8')
       expect(formSource).toMatch(/useSettingsCard/)
-      // Direct `useForm` import means the form bypasses the wrapper.
       expect(formSource).not.toMatch(/import\s*\{[^}]*\buseForm\b[^}]*\}\s*from\s*['"]react-hook-form['"]/)
-      // No form may import `useRevalidator` directly.
       expect(formSource).not.toMatch(/import\s*\{[^}]*\buseRevalidator\b[^}]*\}\s*from\s*['"]react-router['"]/)
     }
   })
@@ -1083,9 +1045,7 @@ describe('contract: module and bundle boundaries', () => {
     })
     expect(bareInputOffenders).toEqual([])
 
-    // Save-on-change lives in the Settings* wrappers. Banned in cards:
-    // hand-rolled `field.onChange(…)` + `save()` pairs, and bare
-    // `onChange={field.onChange}` with no wrapper import.
+    // Save-on-change lives in the Settings* wrappers, not in the cards.
     const handRolledOffenders = settingsCardFiles.filter((file) =>
       /field\.onChange\([^)]*\)\s*save\(\)/.test(readFileSync(file, 'utf8')),
     )
@@ -1149,8 +1109,7 @@ describe('contract: module and bundle boundaries', () => {
         specifier: './src/server/infra/image/worker-entry-plugin.ts',
       },
       {
-        // Config-graph file: same alias caveat; the plugin inlines package
-        // data reads the single-file SEA bundle cannot resolve at runtime.
+        // Config-graph file: the plugin inlines reads the single-file SEA bundle cannot resolve.
         key: 'vite.config.ts -> ./scripts/sea/inline-package-data.ts',
         file: 'vite.config.ts',
         specifier: './scripts/sea/inline-package-data.ts',
@@ -1178,22 +1137,19 @@ describe('contract: module and bundle boundaries', () => {
         specifier: '../../shared/constants/route-warmup.ts',
       },
       {
-        // Config-graph file: same alias caveat; shared contract keeps
-        // writer and reader from drifting.
+        // Config-graph file: shared contract keeps writer and reader from drifting.
         key: 'route-warmup.ts -> ../../shared/route-warmup/manifest.ts',
         file: 'src/server/infra/route-warmup.ts',
         specifier: '../../shared/route-warmup/manifest.ts',
       },
       {
-        // Config-graph file: same alias caveat; `unsafeCast` bridges
-        // Vite's structurally-compatible types.
+        // Config-graph file: `unsafeCast` bridges Vite's structurally-compatible types.
         key: 'dev.ts -> ../../../shared/utils/unsafe-cast.ts',
         file: 'src/server/infra/hono/dev.ts',
         specifier: '../../../shared/utils/unsafe-cast.ts',
       },
       {
-        // Config-graph file: same alias caveat; `unsafeCast` bridges
-        // Vite internals (env/ssr flags).
+        // Config-graph file: `unsafeCast` bridges Vite internals (env/ssr flags).
         key: 'route-warmup.ts -> ../../shared/utils/unsafe-cast.ts',
         file: 'src/server/infra/route-warmup.ts',
         specifier: '../../shared/utils/unsafe-cast.ts',
@@ -1346,8 +1302,7 @@ describe('contract: module and bundle boundaries', () => {
       expect(source, `${file} statically imports motion/react`).not.toMatch(/^import .* from 'motion\/react'/m)
       expect(source, `${file} bypasses the lazy boundary`).not.toContain('motion.div')
     }
-    // The same rule for page-level consumers: `motion/react` only via
-    // `lazy-motion.tsx`; `useReducedMotion` would force a static import.
+    // `motion/react` only via `lazy-motion.tsx`; `useReducedMotion` would force a static import.
     const motionConsumers = [
       'src/ui/public/widgets/Popup.tsx',
       'src/ui/public/post/TableOfContents.tsx',
@@ -1382,15 +1337,13 @@ describe('contract: module and bundle boundaries', () => {
       expect(source, `${file} statically imports Popup`).not.toContain("from '@/ui/public/widgets/Popup'")
     }
     const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
-    // Static import is safe: TOC motion renders through `lazy-motion.tsx`
-    // (lazy boundary regression pinned by toc-hydration.test.tsx).
+    // Static import is safe: TOC motion renders through `lazy-motion.tsx`.
     expect(detailChrome).toContain("import { TableOfContents } from '@/ui/public/post/TableOfContents'")
   })
 
   it('keeps the comment composer behind the LazyCommentBodyEditor boundary', () => {
     // The composer pulls the whole inkling island (~2.2 MB); a static value
-    // import anywhere outside the boundary module puts it back on the public
-    // post page's critical path.
+    // import puts it back on the public post page's critical path.
     const specifier = '@/ui/public/comments/CommentBodyEditor'
     const staticValueImport = new RegExp(`^import (?!type\\b).* from '${specifier}'`, 'm')
     const offenders: string[] = []
@@ -1482,7 +1435,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(publicCss).not.toMatch(/@import\s+['"][^'"]*ui\/post\/post\.css['"]/)
     expect(existsSync('src/ui/post/post.css')).toBe(false)
 
-    // The typography plugin is gone; typeset is vendored and owned.
+    // The Tailwind typography plugin stays out; typeset is vendored and owned.
     expect(packageJson).not.toContain('@tailwindcss/typography')
     for (const entry of [publicCss, adminCss]) {
       expect(entry).not.toContain("@plugin '@tailwindcss/typography'")
@@ -1490,7 +1443,6 @@ describe('contract: module and bundle boundaries', () => {
       expect(entry).toMatch(/@import '\.\/tailwind\.css';\s*\n@import '\.\/typeset\.css';/)
       expect(entry).not.toContain('typeset-kobato')
     }
-    // typeset-kobato.css was merged into typeset.css — it stays retired.
     expect(existsSync('src/styles/typeset-kobato.css')).toBe(false)
 
     // The kobato patch (inkling editor gates join the opt-out list) is
@@ -1502,9 +1454,8 @@ describe('contract: module and bundle boundaries', () => {
     // carries both hooks (`class="footnotes" data-footnotes`).
     expect(typesetCss).toContain('.footnotes, [data-footnotes]')
 
-    // Presets exist and declare their font hooks explicitly — kobato has no
-    // --font-heading/--font-mono tokens; the base defaults therefore point at
-    // inherit / var(--font-code) and both presets pin --font-serif.
+    // kobato has no --font-heading/--font-mono tokens, so the base defaults
+    // point at inherit / var(--font-code) and both presets pin --font-serif.
     for (const preset of ['typeset-post', 'typeset-comment']) {
       expect(typesetCss).toMatch(new RegExp(`\\.${preset}\\s*\\{`))
     }
@@ -1553,8 +1504,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the public UI free of dead exports and one-use comment pass-throughs', () => {
-    // The PT renderer was retired in R13 — the body_html projection renders
-    // through dSHI; hydration hooks own the interactive chrome.
+    // body_html renders through dSHI and hydration hooks own the interactive chrome;
+    // a PT renderer must not return.
     expect(existsSync('src/ui/pt/render.tsx')).toBe(false)
 
     const comments = readFileSync('src/ui/public/comments/Comments.tsx', 'utf8')
@@ -1596,10 +1547,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(draftMarkerDefinitions).toEqual(['src/shared/types/catalog.ts'])
   })
 
-  it('derives shared settings and comment contracts from their canonical owners', () => {
-    const commentSchema = readFileSync('src/shared/pt/comment-schema.ts', 'utf8')
-    expect(commentSchema).toMatch(/textBlockSchema\.extend\(/)
-
+  it('derives shared settings contracts from their canonical owners', () => {
     const display = readFileSync('src/shared/config/display.ts', 'utf8')
     expect(display).not.toMatch(/\bto:\s*['"]\/admin\/settings['"]/)
     expect(display).not.toMatch(/SECTION_DISPLAY_LIST/)
@@ -1672,8 +1620,7 @@ describe('contract: module and bundle boundaries', () => {
     // before the validated `serverConfig` snapshot exists, and must stay
     // dependency-light (SEA bundles inline them ahead of the app graph).
     const allowed = new Set([
-      // config.ts resolves `__`-convention env vars over kobato.config.json
-      // at module load.
+      // Resolves `__`-convention env vars over kobato.config.json at module load.
       'src/server/infra/config.ts',
       'src/server/infra/hono/dev.ts',
       'src/server/infra/sea.ts',
@@ -1697,9 +1644,9 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('routes the native packages through static imports + the bundler redirect plugin', () => {
-    // Native packages are statically imported and inlined; a
-    // `requireExternal` call site would hide them from the bundler and
-    // crash under SEA. Pin both halves: no call sites, plugin wired.
+    // Native packages are statically imported and inlined; a `requireExternal`
+    // call site would hide them from the bundler and crash under SEA.
+    // Pin both halves: no call sites, plugin wired.
     const offenders: string[] = []
     const nativeRequireExternal = /requireExternal(?:<[^>]*>)?\(\s*['"](?:sharp|@napi-rs\/canvas)(?:\/[^'"]*)?['"]/
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {

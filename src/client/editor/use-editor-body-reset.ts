@@ -1,22 +1,19 @@
-// The body-lifecycle glue both inkling surfaces (page + comment) share:
+// Body-lifecycle glue shared by both inkling surfaces (page + comment):
 //
-// - Mount snapshot: Lexical consumes the initial state only at editor
-//   creation, so the lazy state pins the mount-time seed — later
-//   `initialBody` prop changes must NOT recreate the composer.
+// - Mount snapshot: Lexical consumes the initial state only at editor creation, so
+//   the lazy state pins the mount-time seed — later `initialBody` prop changes must
+//   NOT recreate the composer.
 // - Imperative reseed: a `bodyKey` change (draft adopt, conflict resolution,
-//   reply-form reset, switching the edited comment) re-parses the seed into
-//   the live editor. `initialBody` identity changes alone re-run the effect
-//   but early-out on the key check.
+//   reply-form reset, switching the edited comment) re-parses the seed into the live
+//   editor. An `initialBody` identity change alone re-runs the effect but early-outs
+//   on the key check.
 // - Stable change emitter: `onBodyChange` rides a ref so the per-keystroke
-//   `handleChange` never changes identity. The emitter is the one narrowing
-//   boundary: inkling hands the stock SerializedEditorState; each surface's
-//   body type is the same JSON (restricted to its whitelist — schema.ts's
-//   WireCheck pins the extension) and the server re-validates on save, so
-//   the per-keystroke path casts instead of zod-parsing.
+//   `handleChange` never changes identity. The emitter casts instead of zod-parsing:
+//   each surface's body type is the same JSON restricted to its whitelist, and the
+//   server re-validates on save.
 //
 // `prepareSeed` shapes the seed before the composer parses it (the comment
-// surface's legacy-PT fallback + math-fence downgrade); the page surface
-// seeds the validated state as-is.
+// surface's legacy math-fence downgrade).
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 

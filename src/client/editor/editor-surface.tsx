@@ -1,26 +1,18 @@
 // The inkling composer skeleton both kobato editor surfaces (the page/article
-// body editor and the comment composer) share — extracted from
-// `@/ui/admin/editor/PageBodyEditor` and `@/ui/public/comments/CommentBodyEditor`,
-// where it was copy-shaped:
+// body editor and the comment composer) share.
 //
-// - `useEditorSurface` — the per-surface hook: the `registerAPI` →
-//   editor-instance dance and the body mount-snapshot/reseed wiring
-//   (`use-editor-body-reset`), parameterized by the surface's body type and
-//   optional seed shaping (`prepareSeed` — the comment surface's legacy-PT
-//   fallback + math-fence downgrade).
+// - `useEditorSurface` — the `registerAPI` → editor-instance dance and the
+//   body mount-snapshot/reseed wiring (`use-editor-body-reset`), parameterized
+//   by the surface's body type and optional seed shaping (`prepareSeed` — the
+//   comment surface's legacy math-fence downgrade).
 // - `EditorSurfaceComposer` — the InklingComposer shell with the host
-//   constants applied (the active locale's labels from the root i18n payload
-//   or an explicitly loaded table, theme-driven `darkMode`, and the locale as
-//   the word-count language); every delta — node set, `fileUploader`/
-//   `cardConfig`, the ui-prefs flags (`isEmojiEnabled`, `codeEditor`), the drag
-//   scroll selector — passes straight through, and `nodes` stays required so a
-//   surface can never silently mount the full card set.
+//   constants applied (the active locale's labels, theme-driven `darkMode`,
+//   the locale as the word-count language); every other prop passes straight
+//   through, and `nodes` stays required so a surface can never silently mount
+//   the full card set.
 //
-// What stays in the host components: the shell chrome around the composer
-// (the page surface's scroll container + hydration placeholder + focus-mode
-// button, the comment surface's click-to-focus box), the surface element
-// itself (InklingEditor vs InklingSurface and its props/children), and the
-// Ctrl+Q quote/aside capture on the shell div (`block-quote-aside-cycle`).
+// Host components keep the shell chrome, the surface element itself
+// (InklingEditor vs InklingSurface), and the Ctrl+Q capture on the shell div.
 
 import { useCallback, useState } from 'react'
 
@@ -92,8 +84,8 @@ export interface EditorSurfaceComposerProps extends Omit<
   nodes: NonNullable<InklingComposerProps['nodes']>
   /**
    * The surface's label overlay. Workspace surfaces omit it and read the active
-   * locale's table from the root payload; the PUBLIC comment composer passes the
-   * table it loaded after activation (the payload has none).
+   * locale's table from the root payload; the public comment composer passes the
+   * table it loaded after activation.
    */
   labels?: InklingLabelsInput
 }
@@ -101,9 +93,9 @@ export interface EditorSurfaceComposerProps extends Omit<
 export function EditorSurfaceComposer({ labels: explicitLabels, ...props }: EditorSurfaceComposerProps) {
   const { resolvedTheme } = useTheme()
   const { locale } = useI18n()
-  // The root loader's i18n payload carries the ACTIVE locale's table on
-  // workspace documents only; a missing payload (public document, root-loader
-  // failure, router-less render) falls back to Inkling's English defaults.
+  // Only workspace documents carry the active locale's table in the root loader
+  // payload; a missing payload (public document, root-loader failure, router-less
+  // render) falls back to Inkling's English defaults.
   const payloadLabels = useKobatoInklingLabels()
   const labels = explicitLabels ?? payloadLabels
   const { children, ...composerProps } = props

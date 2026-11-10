@@ -1,27 +1,15 @@
-// Comment body helpers (R12): the comment body is now a Lexical editor state
-// (`@/shared/lexical/comment-schema`). Rendering switched to the stored
-// `content` HTML column in R13, but this plain-text helper still reads the
-// body column, where rows written before the switch remain PortableText
-// arrays — it handles BOTH shapes until the body backfill lands.
+// Comment bodies are stored as a Lexical editor state (`@/shared/lexical/comment-schema`).
 
 import type { LexicalEditorState } from '@/shared/lexical/schema'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { lexicalNodeTextContent, visitLexicalNodes } from '@/shared/lexical/walk'
-import { bodyToPlainText } from '@/shared/pt/utils'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
- * Plain-text projection for snippets and the reply overlay. Accepts
- * `unknown` because pre-switch rows can still be PT arrays (routed to the
- * legacy `bodyToPlainText`); Lexical states are walked leaf-only, with
- * decorator code/tex payloads standing in for their visible content (parity
- * with the PT projection, which emitted code block code and mathBlock tex).
+ * Plain-text projection for snippets and the reply overlay. Lexical states walk
+ * leaf-only, with decorator code/tex payloads standing in for their visible content.
  */
 export function commentBodyPlainText(body: unknown): string {
-  if (Array.isArray(body)) {
-    return bodyToPlainText(unsafeCast<PortableTextBody>(body))
-  }
   const state = unsafeCast<LexicalEditorState>(body)
   const parts: string[] = []
   visitLexicalNodes(state, (node) => {

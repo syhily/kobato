@@ -18,21 +18,19 @@ export const content = sqliteTable(
     ownerId: integer('owner_id').notNull(),
     revisionNo: integer('revision_no').notNull(),
     status: text('status').notNull().default('draft'),
-    body: text('body', { mode: 'json' })
-      .notNull()
-      .$defaultFn(() => []),
+    // Lexical editor state (`@/shared/lexical/schema`); every writer passes it
+    // explicitly, so no default — a missing body fails loudly.
+    body: text('body', { mode: 'json' }).notNull(),
     imageSources: text('image_sources', { mode: 'json' })
       .notNull()
       .$defaultFn(() => []),
     headings: text('headings', { mode: 'json' })
       .notNull()
       .$defaultFn(() => []),
-    // Save-time projections of `body` for the Lexical migration (plan round
-    // R8): server-side read-path derived data filled by the save pipeline
-    // and the PT→Lexical backfill. Never part of the editor contract or the
-    // version-conflict/equality check — equality compares `body` only.
-    // Nullable until R9 fills them; PT-era rows stay NULL.
-    // Full-fidelity HTML via inkling headless `lexicalStateToHtml` — SSR/public rendering.
+    // Save-time projection of `body`, filled by the save pipeline: derived
+    // read-path data, never part of the editor contract or the
+    // version-conflict check (equality compares `body` only).
+    // Rendered via inkling headless `lexicalStateToHtml`.
     bodyHtml: text('body_html'),
     // Plain text via `lexicalStateToPlainText` — search and revision diffs.
     bodyText: text('body_text'),

@@ -8,15 +8,14 @@ import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
 import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
 // The admin "重建文章缓存" recovery hatch (dashboard button →
-// `/admin/renders/reproject-bodies`): re-derives the three R9b projection
+// `/admin/renders/reproject-bodies`): re-derives the three projection
 // columns (`bodyHtml` / `bodyText` / `bodyHtmlFeed`) of every `content`
 // revision row from its stored Lexical `body` — the repair path when a
 // renderer-side change (card markup, sanitize allowlist, projection-state
 // transform) leaves the saved projections stale. Only drifted rows are
-// written, and like the R15 backfill the write touches neither `updatedAt`
-// nor `clientRevisionToken` (a re-projection is not an edit). Rows still
-// holding a legacy PortableText body count as failed — the R15 backfill
-// owns their conversion (and re-derives the projections on the way).
+// written, and the write touches neither `updatedAt` nor
+// `clientRevisionToken` (a re-projection is not an edit). Rows whose stored
+// body is not a Lexical state count as failed.
 
 const log = getLogger('content.reproject-body-html')
 
@@ -73,8 +72,7 @@ export async function reprojectBodyHtmlBatch(
     try {
       const parsed = lexicalEditorStateSchema.safeParse(row.body)
       if (!parsed.success) {
-        // Legacy PortableText row — the R15 backfill re-derives it.
-        throw new Error('legacy pre-Lexical body (R15 backfill re-derives)')
+        throw new Error('body is not a Lexical state')
       }
       const projections = await computeBodyProjections(parsed.data)
       processed++

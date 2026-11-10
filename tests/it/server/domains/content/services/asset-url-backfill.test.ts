@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { lexicalBodyWith, lexicalImage, lexicalParagraph } from '#/_helpers/lexical'
+import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } from '#/_helpers/lexical'
 import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,
@@ -64,11 +64,11 @@ describe('content/services/asset-url-backfill — backfillStorageAssetUrls', () 
     const postId = await seedPostWithBody({
       slug: 'p1',
       cover: `${CDN}/images/cover.jpg`,
-      body: [
-        { _type: 'image', _key: 'i1', src: `${CDN}/images/baked.jpg`, storagePath: 'images/baked.jpg' },
-        { _type: 'image', _key: 'i2', src: `${CDN}/images/resolved.jpg` },
-        { _type: 'image', _key: 'i3', src: 'https://external.example/hotlink.jpg' },
-      ],
+      body: lexicalBodyWith([
+        lexicalImage({ src: `${CDN}/images/baked.jpg`, storagePath: 'images/baked.jpg', width: null, height: null }),
+        lexicalImage({ src: `${CDN}/images/resolved.jpg`, width: null, height: null }),
+        lexicalImage({ src: 'https://external.example/hotlink.jpg', width: null, height: null }),
+      ]),
     })
     await db.insert(pageTable).values({
       slug: 'pg1',
@@ -90,11 +90,11 @@ describe('content/services/asset-url-backfill — backfillStorageAssetUrls', () 
 
     expect(result).toEqual({ contentRows: 1, posts: 1, pages: 1, friends: 0, categories: 1, skippedContentRows: 0 })
     expect(await postCover(postId)).toBe('/storage/images/cover.jpg')
-    const body = (await contentBodyOf(postId)) as { src: string }[]
-    expect(body[0]!.src).toBe('/storage/images/baked.jpg')
-    expect(body[1]!.src).toBe('/storage/images/resolved.jpg')
-    // Truly external images stay untouched.
-    expect(body[2]!.src).toBe('https://external.example/hotlink.jpg')
+    const body = (await contentBodyOf(postId)) as LexicalEditorState
+    const srcs = body.root.children.map((node) => (node as unknown as { src: string }).src)
+    expect(srcs[0]).toBe('/storage/images/baked.jpg')
+    expect(srcs[1]).toBe('/storage/images/resolved.jpg')
+    expect(srcs[2]).toBe('https://external.example/hotlink.jpg')
 
     const pages = await db.select({ cover: pageTable.cover }).from(pageTable)
     expect(pages[0]!.cover).toBe('/storage/images/page-cover.jpg')
@@ -109,7 +109,7 @@ describe('content/services/asset-url-backfill — backfillStorageAssetUrls', () 
     await seedPostWithBody({
       slug: 'p1',
       cover: `${CDN}/images/cover.jpg`,
-      body: [{ _type: 'image', _key: 'i1', src: `${CDN}/images/baked.jpg` }],
+      body: lexicalBodyWith([lexicalImage({ src: `${CDN}/images/baked.jpg`, width: null, height: null })]),
     })
 
     const first = await backfillStorageAssetUrls(db)
@@ -147,38 +147,11 @@ describe('content/services/asset-url-backfill — Lexical bodies', () => {
     expect((body.root.children[1] as unknown as { content: string }).content).toContain(
       'src="/storage/images/nested.jpg"',
     )
-    // The saved projections embed the rewritten URLs, not the old CDN host.
-    expect(row.bodyHtml).toContain('/storage/images/baked.jpg')
-    expect(row.bodyHtml).toContain('/storage/images/nested.jpg')
-    expect(row.bodyHtml).not.toContain(CDN)
     expect(row.bodyHtmlFeed).toContain('/storage/images/baked.jpg')
     expect(row.bodyHtmlFeed).toContain('/storage/images/nested.jpg')
     expect(row.bodyHtmlFeed).not.toContain(CDN)
     // The image node's alt text feeds the plain-text projection.
     expect(row.bodyText).toContain('cover')
-  })
-
-  it('dispatches per row across PT and Lexical bodies in one run; PT rows get no projection work', async () => {
-    const ptPostId = await seedPostWithBody({
-      slug: 'pt1',
-      body: [{ _type: 'image', _key: 'i1', src: `${CDN}/images/pt.jpg` }],
-    })
-    const lexPostId = await seedPostWithBody({
-      slug: 'lex1',
-      body: lexicalBodyWith([lexicalImage({ src: `${CDN}/images/lex.jpg`, width: null, height: null })]),
-    })
-
-    const result = await backfillStorageAssetUrls(db)
-
-    expect(result.contentRows).toBe(2)
-    expect(result.skippedContentRows).toBe(0)
-    expect(((await contentBodyOf(ptPostId)) as { src: string }[])[0]!.src).toBe('/storage/images/pt.jpg')
-    const lexBody = (await contentBodyOf(lexPostId)) as LexicalEditorState
-    expect((lexBody.root.children[0] as unknown as { src: string }).src).toBe('/storage/images/lex.jpg')
-    // Changed PT rows stay projection-less — the boot PT→Lexical backfill
-    // converts them right after and derives the columns then.
-    expect(contentRowOf(ptPostId).bodyHtml).toBeNull()
-    expect(contentRowOf(lexPostId).bodyHtml).toContain('/storage/images/lex.jpg')
   })
 
   it('is idempotent on Lexical rows — a second run rewrites nothing', async () => {
@@ -197,7 +170,7 @@ describe('content/services/asset-url-backfill — Lexical bodies', () => {
     expect(second).toEqual({ contentRows: 0, posts: 0, pages: 0, friends: 0, categories: 0, skippedContentRows: 0 })
   })
 
-  it('counts rows whose body is neither PT nor Lexical as skipped and backfills the rest', async () => {
+  it('counts rows whose body is not a Lexical state as skipped and backfills the rest', async () => {
     const garbageId = await seedPostWithBody({ slug: 'garbage', body: { not: 'a-body' } })
     const okId = await seedPostWithBody({
       slug: 'ok',
@@ -211,7 +184,6 @@ describe('content/services/asset-url-backfill — Lexical bodies', () => {
 
     expect(result.skippedContentRows).toBe(1)
     expect(result.contentRows).toBe(1)
-    // The garbage row is left byte-identical; the valid row still backfilled.
     expect(await contentBodyOf(garbageId)).toEqual({ not: 'a-body' })
     const body = (await contentBodyOf(okId)) as LexicalEditorState
     expect((body.root.children[1] as unknown as { src: string }).src).toBe('/storage/images/x.jpg')
@@ -222,14 +194,14 @@ describe('content/services/asset-url-backfill — boot flag', () => {
   const FLAG_SCOPE = 'system.asset-url-backfill'
 
   it('runs once, persists the flag, and no-ops on later boots', async () => {
-    const postId = await seedPostWithBody({ slug: 'p1', cover: `${CDN}/images/cover.jpg`, body: [] })
+    const postId = await seedPostWithBody({ slug: 'p1', cover: `${CDN}/images/cover.jpg`, body: emptyLexicalBody() })
 
     await runAssetUrlBackfillOnceAtBoot(db)
     expect(await postCover(postId)).toBe('/storage/images/cover.jpg')
     expect(findFlag()).not.toBeNull()
 
     // A row dirtied AFTER the flag proves the second boot call is a no-op.
-    const lateId = await seedPostWithBody({ slug: 'p2', cover: `${CDN}/images/late.jpg`, body: [] })
+    const lateId = await seedPostWithBody({ slug: 'p2', cover: `${CDN}/images/late.jpg`, body: emptyLexicalBody() })
     await runAssetUrlBackfillOnceAtBoot(db)
     expect(await postCover(lateId)).toBe(`${CDN}/images/late.jpg`)
 

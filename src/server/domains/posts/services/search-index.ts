@@ -7,10 +7,9 @@ import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { computeBodyText } from '@/server/infra/pt/lexical-projection'
 import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
-// The indexed corpus is the save-time `body_text` projection (plan round
-// R14): publish passes the freshly canonicalized Lexical state, the
-// revision-row readers prefer the persisted column and only recompute when
-// it is NULL.
+// The indexed corpus is the save-time `body_text` projection: publish passes
+// the freshly canonicalized Lexical state, the revision-row readers prefer
+// the persisted column and only recompute when it is NULL.
 
 export async function indexPost(
   db: Database,
@@ -38,8 +37,7 @@ export async function indexPost(
 /**
  * Index from a persisted revision row: the saved `body_text` column wins;
  * a NULL column falls back to computing the projection from the Lexical
- * body. Returns false for legacy PortableText rows (pre-R9a) — the R15
- * backfill converts and re-derives them.
+ * body. Returns false when the stored body is not a Lexical state.
  */
 export async function indexPostFromRevision(
   db: Database,

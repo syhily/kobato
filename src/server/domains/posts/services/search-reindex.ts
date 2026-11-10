@@ -64,8 +64,7 @@ export async function reindexSearchBatch(db: Database, input: ReindexBatchInput 
       try {
         const indexed = await indexPostFromRevision(db, row.id, row.title, row.summary, rev)
         if (!indexed) {
-          // Legacy PortableText row (pre-R9a) — the R15 backfill re-derives it.
-          throw new Error('legacy pre-Lexical body (R15 backfill re-derives)')
+          throw new Error('revision body is not a Lexical state')
         }
         processed++
       } catch (err) {
@@ -86,8 +85,7 @@ export async function reindexSearchBatch(db: Database, input: ReindexBatchInput 
 
 /**
  * Drives `reindexSearchBatch` to completion (the bare call processes one
- * batch only). Idempotent — the R15 backfill runs it after converting the
- * legacy PT rows the indexer refused.
+ * batch only). Idempotent.
  */
 export async function reindexSearchToCompletion(
   db: Database,

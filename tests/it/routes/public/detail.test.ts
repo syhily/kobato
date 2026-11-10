@@ -4,11 +4,11 @@ import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AppLocalization } from '@/shared/i18n/app-localization'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { emptyLexicalBody } from '#/_helpers/lexical'
 import { adminSession, emptySession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { friend as friendTable } from '@/server/infra/db/schema/friend'
@@ -18,8 +18,8 @@ import { post as postTable } from '@/server/infra/db/schema/post'
 import { CACHE_PROFILES } from '@/server/infra/http/headers'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 
-// post/page.detail loaders against the real engine; seams: wrapped probes
-// gating per-test assertions.
+// post/page.detail loaders against the real engine; the seams are wrapped probes that gate
+// per-test assertions.
 
 const mocks = vi.hoisted(() => ({
   resolveSessionContext: vi.fn(),
@@ -98,9 +98,7 @@ beforeEach(async () => {
   vi.clearAllMocks()
 })
 
-async function seedPost(
-  opts: Partial<typeof postTable.$inferInsert> & { body?: PortableTextBody } = {},
-): Promise<number> {
+async function seedPost(opts: Partial<typeof postTable.$inferInsert> & { body?: unknown } = {}): Promise<number> {
   const { body, ...meta } = opts
   const rows = await db
     .insert(postTable)
@@ -117,7 +115,7 @@ async function seedPost(
   const postId = rows[0]!.id
   const revisions = await db
     .insert(contentTable)
-    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: body ?? [] })
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: body ?? emptyLexicalBody() })
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
@@ -130,12 +128,14 @@ async function seedDraftPost(slug: string, authorId = 1): Promise<number> {
     .values({ slug, title: 'Draft', published: false, visible: false, publishedRevisionId: null, authorId })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  await db.insert(contentTable).values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: [] })
+  await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: emptyLexicalBody() })
   return postId
 }
 
 async function seedPage(
-  opts: Partial<typeof pageTable.$inferInsert> & { body?: PortableTextBody; draftBody?: PortableTextBody } = {},
+  opts: Partial<typeof pageTable.$inferInsert> & { body?: unknown; draftBody?: unknown } = {},
 ): Promise<number> {
   const { body, draftBody, ...meta } = opts
   const rows = await db
@@ -152,7 +152,7 @@ async function seedPage(
   const pageId = rows[0]!.id
   const revisions = await db
     .insert(contentTable)
-    .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: body ?? [] })
+    .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: body ?? emptyLexicalBody() })
     .returning({ id: contentTable.id })
   await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   if (draftBody !== undefined) {
@@ -255,8 +255,8 @@ describe('routes/post.detail loader', () => {
 
     expect(data.post.title).toBe('Hello')
     expect(data.post.permalink).toBe('/posts/hello')
-    // Seeded with a legacy PT body and no projection column — the fallback
-    // renders empty rather than failing the page.
+    // Seeded with no projection column — the on-the-fly fallback projection
+    // renders the empty Lexical body rather than failing the page.
     expect(data.bodyHtml).toBe('')
     expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
@@ -411,7 +411,7 @@ describe('routes/post.detail loader — representation ETag', () => {
     // Republish without touching `published_at`: only the revision pointer moves.
     const revisions = await db
       .insert(contentTable)
-      .values({ type: 'post', ownerId: postId, revisionNo: 2, status: 'published', body: [] })
+      .values({ type: 'post', ownerId: postId, revisionNo: 2, status: 'published', body: emptyLexicalBody() })
       .returning({ id: contentTable.id })
     await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
 
@@ -535,7 +535,8 @@ describe('routes/page.detail loader', () => {
   })
 
   it('throws instead of re-resolving the session when the canonical request context is missing', async () => {
-    // ADR-0003: missing canonical request context is a programming error — throws, never consults resolveSessionContext.
+    // A missing canonical request context is a programming error — throws, never consults
+    // resolveSessionContext.
     const ctx = new RouterContextProvider()
 
     await expect(
@@ -689,7 +690,7 @@ describe('routes/page.detail loader — representation ETag', () => {
 
     const revisions = await db
       .insert(contentTable)
-      .values({ type: 'page', ownerId: pageId, revisionNo: 2, status: 'published', body: [] })
+      .values({ type: 'page', ownerId: pageId, revisionNo: 2, status: 'published', body: emptyLexicalBody() })
       .returning({ id: contentTable.id })
     await db
       .update(pageTable)

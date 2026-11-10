@@ -10,13 +10,13 @@ import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 
 // Real in-memory DB + real jsdom projections: drift repair, write scope
 // (projection columns only — never updatedAt / clientRevisionToken),
-// legacy-row failure, batch pagination.
+// unreadable-row failure, batch pagination.
 
 const db = getTestDb()
 
 const BODY = lexicalBodyWith([lexicalParagraph('你好，世界')])
 
-const LEGACY_PT_BODY = [{ _type: 'block', _key: 'b1', children: [{ _type: 'span', _key: 's1', text: '旧格式' }] }]
+const UNREADABLE_BODY = [{ _type: 'block', _key: 'b1', children: [{ _type: 'span', _key: 's1', text: '旧格式' }] }]
 
 async function seedRevision(overrides: Partial<typeof contentTable.$inferInsert> = {}): Promise<number> {
   const rows = await db
@@ -59,13 +59,13 @@ describe('content/services/reproject-body-html', () => {
     expect(current.clientRevisionToken).toBe(before.clientRevisionToken)
   })
 
-  it('counts legacy PortableText rows as failed and leaves them untouched', async () => {
-    const id = await seedRevision({ body: LEGACY_PT_BODY })
+  it('counts rows whose body is not a Lexical state as failed and leaves them untouched', async () => {
+    const id = await seedRevision({ body: UNREADABLE_BODY })
 
     const result = await reprojectBodyHtmlBatch(db)
 
     expect(result).toEqual({ processed: 0, failed: 1, rewritten: 0, total: 1, nextOffset: null })
-    expect(contentRow(id).body).toEqual(LEGACY_PT_BODY)
+    expect(contentRow(id).body).toEqual(UNREADABLE_BODY)
     expect(contentRow(id).bodyHtml).toBeNull()
   })
 
