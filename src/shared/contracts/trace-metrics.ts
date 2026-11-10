@@ -5,6 +5,7 @@
 export const TRACE_METRIC_NAMES = {
   httpServerDuration: 'http.server.duration',
   httpServerRequests: 'http.server.requests',
+  httpServerActiveRequests: 'http.server.active_requests',
   ssrShellDuration: 'ssr.shell.duration',
   ssrStreamDuration: 'ssr.stream.duration',
   dbOperationDuration: 'db.operation.duration',
@@ -13,6 +14,7 @@ export const TRACE_METRIC_NAMES = {
   imageQueueDuration: 'image.queue.duration',
   imageExecutionDuration: 'image.execution.duration',
   eventLoopDelay: 'event_loop.delay',
+  rumRelayOutcomes: 'rum.relay.outcomes',
 } as const
 
 /**
@@ -27,6 +29,7 @@ export const TRACE_METRIC_STREAM_PREFIXES = [
   'cache_lookup_',
   'image_',
   'event_loop_',
+  'rum_relay_',
 ] as const
 
 export const TRACE_METRIC_STREAMS = {

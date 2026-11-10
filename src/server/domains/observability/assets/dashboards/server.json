@@ -666,6 +666,116 @@
             "h": 5,
             "i": 12
           }
+        },
+        {
+          "id": "sv-active-requests",
+          "type": "line",
+          "title": "In-flight HTTP requests",
+          "description": "http.server.active_requests up-down gauge by method (cumulative signed deltas)",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, http_request_method, avg(value) AS y FROM \"http_server_active_requests\" GROUP BY x, http_request_method ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "http_server_active_requests",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 34,
+            "w": 6,
+            "h": 5,
+            "i": 13
+          }
+        },
+        {
+          "id": "sv-rum-relay",
+          "type": "line",
+          "title": "RUM relay outcomes",
+          "description": "rum.relay.outcomes delta increments per minute by terminal outcome",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, rum_relay_outcome, sum(value) AS y FROM \"rum_relay_outcomes\" GROUP BY x, rum_relay_outcome ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "rum_relay_outcomes",
+                "stream_type": "metrics",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 6,
+            "y": 34,
+            "w": 6,
+            "h": 5,
+            "i": 14
+          }
         }
       ]
     }

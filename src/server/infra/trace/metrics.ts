@@ -1,17 +1,22 @@
-// Closed metric catalog and the application-facing recording helpers
-// (ADR-0012). SDK-free: `runtime.ts` maps these names onto real OTel
-// instruments, and every helper here degrades to a no-op through the facade.
+// Closed metric catalog and the application-facing recording helpers.
 //
-// A metric may only be recorded with the attributes declared for it below.
-// Values are re-validated by `sanitize.ts`, so an attempt to pass a URL, a
-// trace/session id, a slug, or an entity id is dropped before it reaches an
-// SDK.
+// SDK-free: `runtime.ts` maps these names onto real OTel instruments, and every
+// helper here degrades to a no-op through the facade. A metric may only carry
+// the attributes declared for it below. Values are re-validated by `sanitize.ts`,
+// so a URL, a trace/session id, a slug, or an entity id is dropped before it
+// reaches an SDK.
 
 import type { MetricAttributes } from '@/server/infra/trace/facade'
-import type { DbEngine, DbOutcome, ImageOperation, ImageSizeBucket } from '@/server/infra/trace/sanitize'
+import type {
+  DbEngine,
+  DbOutcome,
+  ImageOperation,
+  ImageSizeBucket,
+  RumRelayOutcome,
+} from '@/server/infra/trace/sanitize'
 import type { CacheBucketId } from '@/shared/types/cache'
 
-import { counter, histogram } from '@/server/infra/trace/facade'
+import { counter, histogram, upDownCounter } from '@/server/infra/trace/facade'
 import { sanitizeAttributeValue } from '@/server/infra/trace/sanitize'
 import { TRACE_METRIC_NAMES } from '@/shared/contracts/trace-metrics'
 
@@ -19,7 +24,7 @@ export const METRIC = TRACE_METRIC_NAMES
 
 export type MetricName = (typeof TRACE_METRIC_NAMES)[keyof typeof TRACE_METRIC_NAMES]
 
-type MetricKind = 'counter' | 'histogram' | 'gauge'
+type MetricKind = 'counter' | 'upDownCounter' | 'histogram' | 'gauge'
 
 interface MetricDefinition {
   kind: MetricKind
@@ -27,15 +32,20 @@ interface MetricDefinition {
 }
 
 const HTTP_ATTRIBUTES = new Set(['http.request.method', 'http.route', 'http.response.status_code'])
+const HTTP_ACTIVE_ATTRIBUTES = new Set(['http.request.method'])
 const SSR_ATTRIBUTES = new Set(['ssr.outcome'])
 const DB_ATTRIBUTES = new Set(['db.engine', 'db.operation', 'db.outcome'])
 const CACHE_ATTRIBUTES = new Set(['cache.bucket', 'cache.result', 'cache.coalesced'])
 const IMAGE_QUEUE_ATTRIBUTES = new Set(['image.operation', 'image.size_bucket'])
 const IMAGE_EXECUTION_ATTRIBUTES = new Set(['image.operation', 'image.size_bucket', 'image.outcome'])
+const RUM_RELAY_ATTRIBUTES = new Set(['rum.relay.outcome'])
 
 const METRIC_DEFINITIONS: Readonly<Record<MetricName, MetricDefinition>> = {
   [METRIC.httpServerDuration]: { kind: 'histogram', attributes: HTTP_ATTRIBUTES },
   [METRIC.httpServerRequests]: { kind: 'counter', attributes: HTTP_ATTRIBUTES },
+  // Method only: the route template is unknown while the request is in flight,
+  // and mixing dimension sets across the add/remove pair would invent series.
+  [METRIC.httpServerActiveRequests]: { kind: 'upDownCounter', attributes: HTTP_ACTIVE_ATTRIBUTES },
   [METRIC.ssrShellDuration]: { kind: 'histogram', attributes: SSR_ATTRIBUTES },
   [METRIC.ssrStreamDuration]: { kind: 'histogram', attributes: SSR_ATTRIBUTES },
   [METRIC.dbOperationDuration]: { kind: 'histogram', attributes: DB_ATTRIBUTES },
@@ -44,6 +54,7 @@ const METRIC_DEFINITIONS: Readonly<Record<MetricName, MetricDefinition>> = {
   [METRIC.imageQueueDuration]: { kind: 'histogram', attributes: IMAGE_QUEUE_ATTRIBUTES },
   [METRIC.imageExecutionDuration]: { kind: 'histogram', attributes: IMAGE_EXECUTION_ATTRIBUTES },
   [METRIC.eventLoopDelay]: { kind: 'gauge', attributes: new Set() },
+  [METRIC.rumRelayOutcomes]: { kind: 'counter', attributes: RUM_RELAY_ATTRIBUTES },
 }
 
 export function isAllowedMetricName(name: string): name is MetricName {
@@ -119,6 +130,21 @@ export function recordHttpServer(method: string, route: string, status: number, 
     attributes,
   )
   counter(METRIC.httpServerRequests, { description: 'HTTP server requests', unit: '{request}' }).add(1, attributes)
+}
+
+/** In-flight HTTP requests: +1 on entry, -1 on the way out (the delta pair must balance). */
+export function addHttpServerActive(method: string, delta: 1 | -1): void {
+  upDownCounter(METRIC.httpServerActiveRequests, {
+    description: 'HTTP server requests currently in flight',
+    unit: '{request}',
+  }).add(delta, { 'http.request.method': method })
+}
+
+/** Terminal outcome of one relayed RUM batch — the relay's only quantified health signal. */
+export function recordRumRelayOutcome(outcome: RumRelayOutcome): void {
+  counter(METRIC.rumRelayOutcomes, { description: 'RUM intake relay batch outcomes', unit: '{batch}' }).add(1, {
+    'rum.relay.outcome': outcome,
+  })
 }
 
 export type SsrOutcome = 'ok' | 'error' | 'completed' | 'aborted'

@@ -1,10 +1,7 @@
-// No-OpenTelemetry-import tracing surface (ADR-0012).
-//
-// Application code depends on this facade only. Until an admin-configured
-// runtime installs a delegate — and whenever tracing is disabled — every
-// operation is a true pass-through: the callback still runs, metrics are
-// no-ops, and no telemetry failure can ever propagate into request/rendering
-// correctness.
+// No-SDK-import tracing surface; application code depends on this facade only.
+// Until a runtime installs a delegate — and whenever tracing is disabled — every
+// operation is a true pass-through and no telemetry failure can propagate into
+// request or rendering correctness.
 
 import { getLogger } from '@/server/infra/logger'
 
@@ -17,7 +14,7 @@ export type SpanAttributes = Readonly<Record<string, SpanAttributeValue>>
 export type MetricAttributes = Readonly<Record<string, string | number | boolean>>
 
 /**
- * The only inbound propagation channel the DEV runtime reads. Anything else
+ * The only inbound propagation channel the runtime reads. Anything else
  * (baggage, B3, custom headers) is ignored so a request cannot smuggle extra
  * context into a span.
  */
@@ -69,6 +66,14 @@ export interface Histogram {
 }
 
 /**
+ * Signed counterpart of `Counter` (e.g. in-flight requests): negative deltas
+ * are the whole point, so the guard bounds finiteness only.
+ */
+export interface UpDownCounter {
+  add(value: number, attributes?: MetricAttributes): void
+}
+
+/**
  * The implementation contract. `runtime.ts` installs one; nothing else in the
  * application may implement or consume it.
  */
@@ -79,6 +84,7 @@ export interface TraceDelegate {
   activeTraceIds(): ActiveTraceIds | null
   counter?(name: string, options?: MetricOptions): Counter
   histogram?(name: string, options?: MetricOptions): Histogram
+  upDownCounter?(name: string, options?: MetricOptions): UpDownCounter
 }
 
 const noop = () => undefined
@@ -95,6 +101,7 @@ const NOOP_SPAN: Span = Object.freeze({
 
 const NOOP_COUNTER: Counter = Object.freeze({ add: noop })
 const NOOP_HISTOGRAM: Histogram = Object.freeze({ record: noop })
+const NOOP_UPDOWN_COUNTER: UpDownCounter = Object.freeze({ add: noop })
 
 let activeDelegate: TraceDelegate | null = null
 
@@ -208,6 +215,23 @@ function guardHistogram(histogram: Histogram): Histogram {
   }
 }
 
+function guardUpDownCounter(upDownCounter: UpDownCounter): UpDownCounter {
+  return {
+    add(value, attributes) {
+      // Unlike a monotonic counter, a negative delta is legitimate; only a
+      // non-finite value never reaches the SDK.
+      if (!Number.isFinite(value)) {
+        return
+      }
+      try {
+        upDownCounter.add(value, attributes)
+      } catch (error) {
+        reportFailure('metric.updown', error)
+      }
+    },
+  }
+}
+
 function callWithSpan<T>(span: Span, fn: (span: Span) => T): T {
   try {
     return fn(span)
@@ -268,16 +292,14 @@ function runWithSpan<T>(name: string, options: SpanOptions | undefined, fn: (spa
   const span = guardSpan(rawSpan)
 
   // Record the application outcome separately from delegate failures: a
-  // delegate that throws during context cleanup must never replace a
-  // successful result or the application's own error. The holder keeps the
-  // union visible to TypeScript across the callback boundary.
+  // delegate that throws during context cleanup must never replace a successful
+  // result or the application's own error.
   const execution: { outcome: SpanOutcome<T> } = { outcome: { kind: 'pending' } }
   let runThrew = false
   let runError: unknown
   try {
-    // The delegate must see the ORIGINAL span object to install it as the
-    // active OTel context; application code only ever receives the guarded
-    // wrapper so a broken SDK object cannot throw into the request path.
+    // The delegate sees the ORIGINAL span; application code only gets the
+    // guarded wrapper (see `rawSpans`).
     delegate.runInSpan(rawSpan, () => {
       try {
         const value = callWithSpan(span, fn)
@@ -611,6 +633,19 @@ export function histogram(name: string, options?: MetricOptions): Histogram {
   } catch (error) {
     reportFailure('metric.histogram', error)
     return NOOP_HISTOGRAM
+  }
+}
+
+export function upDownCounter(name: string, options?: MetricOptions): UpDownCounter {
+  const delegate = currentDelegate()
+  if (delegate?.upDownCounter === undefined) {
+    return NOOP_UPDOWN_COUNTER
+  }
+  try {
+    return guardUpDownCounter(delegate.upDownCounter(name, options))
+  } catch (error) {
+    reportFailure('metric.updown', error)
+    return NOOP_UPDOWN_COUNTER
   }
 }
 

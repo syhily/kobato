@@ -1,18 +1,16 @@
-// Server-side telemetry privacy boundary (ADR-0012).
+// Server-side telemetry privacy boundary.
 //
-// This module is SDK-free on purpose: the DEV runtime applies it before any
-// value reaches an OTel span, so the allowlist — not the caller — decides what
-// can leave the process. Arbitrary messages, stacks, URLs, headers, and raw
-// paths have no route through here.
+// SDK-free on purpose: the runtime applies it before any value reaches an OTel
+// span, so the allowlist — not the caller — decides what can leave the process.
+// Arbitrary messages, stacks, URLs, headers, and raw paths have no route here.
 
 import type { SpanAttributeValue, SpanAttributes } from '@/server/infra/trace/facade'
 
 import { CACHE_BUCKET_IDS } from '@/shared/types/cache'
 
 /**
- * The closed set of span attributes this phase may emit. A new boundary adds
- * its own low-cardinality keys here (with an ADR note) instead of passing an
- * ad-hoc attribute through.
+ * Closed set of span attributes. A new boundary adds its own low-cardinality
+ * keys here instead of passing an ad-hoc attribute through.
  */
 const SPAN_ATTRIBUTE_KEYS: ReadonlySet<string> = new Set([
   'http.request.method',
@@ -37,6 +35,7 @@ const SPAN_ATTRIBUTE_KEYS: ReadonlySet<string> = new Set([
   'image.outcome',
   'job.name',
   'job.task_key',
+  'rum.relay.outcome',
   'error.type',
   'error.category',
 ])
@@ -60,6 +59,7 @@ export const SAFE_FETCH_OPERATIONS = [
   'calendar.quote.wufazhuce',
   'calendar.quote.hitokoto',
   'observability.o2',
+  'observability.rum.relay',
   'og.cover',
 ] as const
 export type SafeFetchOperation = (typeof SAFE_FETCH_OPERATIONS)[number]
@@ -75,6 +75,10 @@ export type DbEngine = (typeof DB_ENGINES)[number]
 
 export const DB_OUTCOMES = ['success', 'error'] as const
 export type DbOutcome = (typeof DB_OUTCOMES)[number]
+
+/** Closed terminal outcomes of one relayed RUM batch (client-shape rejections are not relay health). */
+export const RUM_RELAY_OUTCOMES = ['ok', 'upstream_error', 'rate_limited', 'oversized'] as const
+export type RumRelayOutcome = (typeof RUM_RELAY_OUTCOMES)[number]
 
 const MAX_ATTRIBUTE_STRING_LENGTH = 128
 const MAX_STATEMENT_LENGTH = 512
@@ -92,6 +96,7 @@ const VALUE_SETS: Readonly<Record<string, ReadonlySet<string>>> = {
   'image.size_bucket': new Set(IMAGE_SIZE_BUCKETS),
   'image.outcome': new Set(['success', 'error']),
   'http.client.operation': new Set(SAFE_FETCH_OPERATIONS),
+  'rum.relay.outcome': new Set(RUM_RELAY_OUTCOMES),
 }
 
 const VALUE_PATTERNS: Readonly<Record<string, RegExp>> = {

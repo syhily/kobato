@@ -38,7 +38,7 @@ async function dashboards(): Promise<Array<{ file: string; body: Dashboard }>> {
   )
 }
 
-describe('OpenObserve development assets (ADR-0012)', () => {
+describe('OpenObserve development assets', () => {
   it('pins a stable O2 image and the shortest OSS retention', () => {
     expect(O2_IMAGE).toBe('openobserve/openobserve:v1.1.2')
     expect(RETENTION_DAYS).toBe(1)
@@ -262,7 +262,13 @@ describe('OpenObserve development assets (ADR-0012)', () => {
     for (const forbidden of [
       'unknown_secret_field',
       '.ip',
-      '.user_agent_',
+      // Finer identity detail stays banned: only the coarse family/country
+      // granularity is allowlisted below.
+      '.geo_info_city',
+      '.geo_info_location',
+      '.user_agent_user_agent_major',
+      '.user_agent_user_agent_version',
+      '.user_agent_os_major',
       '.device_',
       '.error_stack',
       '.error_message',
@@ -271,6 +277,18 @@ describe('OpenObserve development assets (ADR-0012)', () => {
       '.resource_size)',
     ]) {
       expect(vrl, `${forbidden} absent`).not.toContain(`safe${forbidden}`)
+    }
+    // The five coarse identity dimensions survive only behind a null guard, so
+    // the default anonymous mode (all-null enrichment) stores nothing.
+    for (const coarse of [
+      'geo_info_country',
+      'geo_info_country_iso_code',
+      'user_agent_user_agent_family',
+      'user_agent_os_family',
+      'user_agent_device_family',
+    ]) {
+      expect(vrl, `${coarse} allowlisted`).toContain(`safe.${coarse}`)
+      expect(vrl, `${coarse} null-guarded`).toContain(`old.${coarse} != null`)
     }
     expect(vrl).toContain('safe.view_inp_us = null')
     expect(vrl).toContain('exists(old.view_performance_inp_duration)')

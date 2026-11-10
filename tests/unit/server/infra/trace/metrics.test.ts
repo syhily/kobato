@@ -6,8 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@/server/infra/trace/config'
 
 import { TestMetricReader, dataPointsOf, metricByName, pointValue } from '#/_helpers/in-memory-metric-reader'
-import { __resetTraceFacadeForTests, counter, histogram } from '@/server/infra/trace/facade'
-import { METRIC, recordCacheLookup, recordSsrPhase } from '@/server/infra/trace/metrics'
+import { __resetTraceFacadeForTests, counter, histogram, upDownCounter } from '@/server/infra/trace/facade'
+import {
+  addHttpServerActive,
+  METRIC,
+  recordCacheLookup,
+  recordRumRelayOutcome,
+  recordSsrPhase,
+} from '@/server/infra/trace/metrics'
 import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
 
 const CONFIG: ServerTraceRuntimeConfig = {
@@ -22,7 +28,7 @@ const CONFIG: ServerTraceRuntimeConfig = {
 }
 
 function resolution(): TraceConfigResolution {
-  return { status: 'active', server: CONFIG, frontend: null, diagnostics: [] }
+  return { status: 'active', server: CONFIG, frontend: null, frontendRelay: null, diagnostics: [] }
 }
 
 function spanHarness(): SpanExporter {
@@ -51,12 +57,8 @@ async function start(metricReader: TestMetricReader = reader) {
 const EVENT_LOOP_METRIC_TIMEOUT_MS = 2_000
 const EVENT_LOOP_METRIC_POLL_MS = 25
 
-/**
- * The event-loop gauge is collected from an observable callback, so under a
- * loaded suite the first `collect()` can still see no data point. Poll with a
- * bounded deadline for an actual finite sample; a real missing observer still
- * fails the test when the deadline expires.
- */
+/** The event-loop gauge comes from an observable callback, so the first `collect()` can see
+ * no data point under load: poll with a bounded deadline; a missing observer still fails. */
 async function waitForEventLoopDelay(metricReader: TestMetricReader) {
   const deadline = Date.now() + EVENT_LOOP_METRIC_TIMEOUT_MS
   for (;;) {
@@ -181,6 +183,46 @@ describe('trace metrics — closed catalog', () => {
       'cache.result': 'miss',
       'cache.coalesced': true,
     })
+  })
+
+  it('records signed up/down deltas for in-flight requests, dropping non-finite values', async () => {
+    await start()
+
+    addHttpServerActive('GET', 1)
+    addHttpServerActive('GET', 1)
+    addHttpServerActive('POST', 1)
+    addHttpServerActive('GET', -1)
+    const active = upDownCounter(METRIC.httpServerActiveRequests)
+    active.add(Number.NaN, { 'http.request.method': 'GET' })
+    // Only the method is declared: a route (unknown while in flight) is dropped.
+    active.add(1, { 'http.request.method': 'DELETE', 'http.route': '/posts/:slug' })
+
+    const metrics = await reader.collectResourceMetrics()
+    const points = dataPointsOf(metrics, METRIC.httpServerActiveRequests)
+    const byMethod = new Map(points.map((point) => [point.attributes?.['http.request.method'], pointValue(point)]))
+    expect(byMethod.get('GET')).toBe(1)
+    expect(byMethod.get('POST')).toBe(1)
+    expect(byMethod.get('DELETE')).toBe(1)
+    for (const point of points) {
+      expect(point.attributes).not.toHaveProperty('http.route')
+    }
+  })
+
+  it('records only the closed relay outcome vocabulary', async () => {
+    await start()
+
+    recordRumRelayOutcome('ok')
+    recordRumRelayOutcome('upstream_error')
+    recordRumRelayOutcome('rate_limited')
+    recordRumRelayOutcome('oversized')
+    recordRumRelayOutcome('gate_closed' as never)
+
+    const metrics = await reader.collectResourceMetrics()
+    const points = dataPointsOf(metrics, METRIC.rumRelayOutcomes)
+    const outcomes = points
+      .map((point) => point.attributes?.['rum.relay.outcome'])
+      .sort((a, b) => String(a).localeCompare(String(b)))
+    expect(outcomes).toEqual(['ok', 'oversized', 'rate_limited', 'upstream_error'])
   })
 
   it('uses the same fixed three-key resource and no detector enrichment', async () => {
