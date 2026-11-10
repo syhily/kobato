@@ -78,7 +78,8 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
   `ui/components/` primitives (`common.*` in the UI catalog). A test rendering one of those primitives directly must
   mount `I18nProvider` (`#/_helpers/i18n-render`).
 - Animation is Motion Only: JS-driven animation uses the `@/ui/components/lazy-motion` facade (`LazyMotion*` /
-  `LazyAnimatePresence`) with constants from `@/client/lib/motion` — never React `<ViewTransition>` or
+  `LazyAnimatePresence`; browser-only popups that cannot tolerate a static-node swap use `EagerMotion*` /
+  `EagerAnimatePresence`) with constants from `@/client/lib/motion` — never React `<ViewTransition>` or
   `document.startViewTransition` (root `AGENTS.md` holds the full rule; the ThemeProvider theme wipe is the sole
   exception).
 - Use `<Image />` from `@/ui/public/widgets/Image` for transformed remote images.

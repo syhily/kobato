@@ -1,13 +1,9 @@
-import type { AnimatePresence, MotionConfig, motion } from 'motion/react'
-
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { createElement, lazy, Suspense, type ComponentProps, type CSSProperties, type ReactNode } from 'react'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import { useHydrated } from '@/ui/lib/use-hydrated'
 
-// Shared lazy handles on the `motion/react` runtime: one dynamic import, one shared chunk.
-// Until it resolves (including SSR) elements render a static DOM fallback — DOM props
-// forwarded, animation-only props stripped, enter animation lost.
+// Element wrappers stay lazy; static DOM fallbacks forward DOM props and strip animation-only props.
 const MotionDiv = lazy(() => import('motion/react').then((module) => ({ default: module.motion.div })))
 const MotionButton = lazy(() => import('motion/react').then((module) => ({ default: module.motion.button })))
 const MotionSpan = lazy(() => import('motion/react').then((module) => ({ default: module.motion.span })))
@@ -126,24 +122,11 @@ export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeo
   )
 }
 
-const LazyMotionConfigImpl = lazy(() => import('motion/react').then((module) => ({ default: module.MotionConfig })))
-
-/**
- * `MotionConfig` behind the same lazy boundary; no DOM, so the fallback renders children bare.
- *
- * The boundary must NOT exist during SSR/hydration: it wraps the entire app, so a chunk still
- * loading at hydration (cold visit) would render pending against the server's resolved
- * markup — a whole-tree mismatch surfacing as React error #418. Children render bare until
- * the first client commit, then the provider mounts behind the boundary.
- */
+/** Eager: suspending this root provider would replace its fallback and reset the app's state. */
 export function LazyMotionConfig({ children, ...props }: ComponentProps<typeof MotionConfig>) {
-  const ready = useHydrated()
-  if (!ready) {
-    return <>{children}</>
-  }
-  return (
-    <Suspense fallback={<>{children}</>}>
-      <LazyMotionConfigImpl {...props}>{children}</LazyMotionConfigImpl>
-    </Suspense>
-  )
+  return <MotionConfig {...props}>{children}</MotionConfig>
 }
+
+export const EagerMotionDiv = motion.div
+export const EagerMotionButton = motion.button
+export const EagerAnimatePresence = AnimatePresence

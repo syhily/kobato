@@ -5,7 +5,7 @@ import { use, useEffect, useRef, useState } from 'react'
 import { browser, createPortal } from 'react-dom'
 
 import { transitions } from '@/client/lib/motion'
-import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv } from '@/ui/components/lazy-motion'
+import { EagerAnimatePresence, EagerMotionButton, EagerMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
@@ -160,9 +160,9 @@ export function Popup({
   }, [open, mounted, onClose, initialFocus])
 
   return createPortal(
-    <LazyAnimatePresence>
+    <EagerAnimatePresence>
       {open && mounted && (
-        <LazyMotionDiv
+        <EagerMotionDiv
           key="popup-wrapper"
           ref={portalRef}
           initial={{ opacity: 0 }}
@@ -171,7 +171,7 @@ export function Popup({
           transition={transitions.popupFade}
           className="fixed inset-0 z-1500 flex items-center justify-center overflow-x-hidden overflow-y-auto"
         >
-          <LazyMotionDiv
+          <EagerMotionDiv
             key="popup-backdrop"
             variants={backdropVariants}
             initial="hidden"
@@ -194,7 +194,7 @@ export function Popup({
               BODY_SIZE_CLASS[size],
             )}
           >
-            <LazyMotionDiv
+            <EagerMotionDiv
               key="popup-content"
               variants={contentVariants}
               initial="hidden"
@@ -203,8 +203,8 @@ export function Popup({
               transition={transitions.popup}
             >
               <div className={cn('relative rounded-lg bg-canvas text-ink-1', CONTENT_SIZE_CLASS[size])}>{children}</div>
-            </LazyMotionDiv>
-            <LazyMotionButton
+            </EagerMotionDiv>
+            <EagerMotionButton
               key="popup-close"
               type="button"
               aria-label={t('common.action.close')}
@@ -229,11 +229,11 @@ export function Popup({
               }}
             >
               <XIcon size={22} aria-hidden className="inline-block align-middle text-ink-4" />
-            </LazyMotionButton>
+            </EagerMotionButton>
           </div>
-        </LazyMotionDiv>
+        </EagerMotionDiv>
       )}
-    </LazyAnimatePresence>,
+    </EagerAnimatePresence>,
     document.body,
   )
 }

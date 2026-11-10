@@ -71,6 +71,18 @@ export class SettingsApi {
     return this.updateGeneral(BASELINE_GENERAL)
   }
 
+  async updateSocials(socials: Array<Record<string, unknown>>): Promise<void> {
+    const result = await callE2eRpc<{ section: unknown }>(
+      this.client,
+      '/admin/settings/update',
+      { section: 'socials', payload: { socials } },
+      this.csrfToken,
+    )
+    if (result.status !== 200) {
+      throw new Error(`socials settings update failed (${result.status})`)
+    }
+  }
+
   async deletePost(id: string): Promise<void> {
     const result = await callE2eRpc<unknown>(this.client, '/admin/posts/delete', { id }, this.csrfToken)
     if (result.status !== 200) {

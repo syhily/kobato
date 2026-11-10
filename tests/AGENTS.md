@@ -24,7 +24,8 @@ Five Vitest workspace projects plus two live-instance suites (HTTP e2e, real-bro
   the machine: mail journeys point the `mail` settings at the in-process SMTP capture server in `#/_helpers/e2e-mail` and extract secrets (OTP code, signin link) from the captured bytes.
 - **`tests/browser/`** — real-Chromium journeys (Playwright) for behavior jsdom cannot prove: admin sidebar edge alignment, toolbar-control
   sizing, the settings language switch (dirty-card flush veto, Portal focus, cross-tab sparse save), locale-change state retention on a
-  non-settings document, the public comment composer loading only the active locale's Inkling labels, and a post's `contentLanguage` DOM contract.
+  non-settings document, cold-load public popups (no state reset, static flash, or DOM replacement), the public comment composer loading only
+  the active locale's Inkling labels, and a post's `contentLanguage` DOM contract.
   - **Not part of `pnpm test`** and not a Vitest project. `pnpm run test:browser` boots a throwaway SEA instance or targets
     `KOBATO_BROWSER_BASE_URL`; `pnpm run sea:browser [binary]` always boots the built binary. An external `KOBATO_BROWSER_BASE_URL` target
     gets the same staged post + settings baseline — never point it at production.
