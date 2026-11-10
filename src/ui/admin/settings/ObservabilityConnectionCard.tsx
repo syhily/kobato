@@ -124,6 +124,7 @@ export function ObservabilityConnectionCard({
           label={t('admin.settings.observability.connection.endpoint')}
           htmlFor="observability-endpoint"
           hint={t('admin.settings.observability.connection.endpointHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.endpoint')}
         >
           <SettingsInput
             flushOnBlur={flushOnBlur}
@@ -137,6 +138,7 @@ export function ObservabilityConnectionCard({
           label={t('admin.settings.observability.connection.organization')}
           htmlFor="observability-organization"
           hint={t('admin.settings.observability.connection.organizationHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.organization')}
         >
           <SettingsInput
             flushOnBlur={flushOnBlur}
@@ -145,7 +147,11 @@ export function ObservabilityConnectionCard({
             {...form.register('organization')}
           />
         </SettingsRow>
-        <SettingsRow label={t('admin.settings.observability.connection.username')} htmlFor="observability-username">
+        <SettingsRow
+          label={t('admin.settings.observability.connection.username')}
+          htmlFor="observability-username"
+          labelTooltip={t('admin.settings.observability.tooltip.username')}
+        >
           <SettingsInput
             flushOnBlur={flushOnBlur}
             id="observability-username"
@@ -158,6 +164,7 @@ export function ObservabilityConnectionCard({
           label={t('admin.settings.observability.connection.password')}
           htmlFor="observability-password"
           hint={passwordField.hint}
+          labelTooltip={t('admin.settings.observability.tooltip.password')}
         >
           <SettingsSecretInput
             flushOnBlur={flushOnBlur}

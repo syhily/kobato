@@ -1,5 +1,6 @@
 import { type ReactNode, useId } from 'react'
 
+import { SettingsHintTooltip } from '@/ui/admin/settings/SettingsHintTooltip'
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from '@/ui/components/field'
 import { cn } from '@/ui/lib/cn'
 
@@ -15,6 +16,8 @@ interface SettingsRowProps {
   label: string
   /** Sets the label's `htmlFor` so it points at the control's `id`. */
   htmlFor?: string
+  /** Optional richer explanation shown behind a help icon next to the label. */
+  labelTooltip?: string
   /** Optional helper text rendered below the control. */
   hint?: ReactNode
   /** Validation error rendered through `FieldError`. Drives `data-invalid` styling. */
@@ -23,7 +26,7 @@ interface SettingsRowProps {
   children: SettingsRowChildren
 }
 
-export function SettingsRow({ label, htmlFor, hint, error, children }: SettingsRowProps) {
+export function SettingsRow({ label, htmlFor, labelTooltip, hint, error, children }: SettingsRowProps) {
   const generatedId = useId()
   const descriptionId = hint ? `${generatedId}-description` : undefined
   const errorId = error ? `${generatedId}-error` : undefined
@@ -39,15 +42,18 @@ export function SettingsRow({ label, htmlFor, hint, error, children }: SettingsR
       data-invalid={error ? true : undefined}
       className="gap-2 sm:grid sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-start sm:gap-4"
     >
-      <FieldLabel
-        htmlFor={htmlFor}
-        className={cn(
-          'text-sm leading-none font-medium text-foreground sm:pt-2',
-          'group-data-[invalid=true]/field:text-destructive',
-        )}
-      >
-        {label}
-      </FieldLabel>
+      <div className="flex items-center gap-1.5 sm:pt-2">
+        <FieldLabel
+          htmlFor={htmlFor}
+          className={cn(
+            'text-sm leading-none font-medium text-foreground',
+            'group-data-[invalid=true]/field:text-destructive',
+          )}
+        >
+          {label}
+        </FieldLabel>
+        {labelTooltip ? <SettingsHintTooltip content={labelTooltip} /> : null}
+      </div>
       <FieldContent>
         {renderedChildren}
         {hint ? <FieldDescription id={descriptionId}>{hint}</FieldDescription> : null}

@@ -67,7 +67,7 @@ let calls: string[]
 
 function makeStatus(overrides: Partial<ObservabilityStatusOutput> = {}): ObservabilityStatusOutput {
   return {
-    runtime: { phase: 'unverified', lastError: null },
+    runtime: { phase: 'unverified', lastError: null, lastExportError: null },
     verified: false,
     provisioned: false,
     provisionedCurrent: false,
@@ -185,6 +185,21 @@ describe('ui/admin/settings/ObservabilityForm', () => {
     expect(screen.getByText('监控面板：4 个已就绪')).toBeTruthy()
   })
 
+  it('commits a retention-days edit as a sparse patch on blur', async () => {
+    api.status = makeStatus({ verified: true })
+    renderForm()
+    await screen.findByText('连接已验证')
+
+    const input = document.getElementById('observability-retention-days') as HTMLInputElement
+    expect(input).not.toBeNull()
+    expect(input.disabled).toBe(false)
+    fireEvent.change(input, { target: { value: '7' } })
+    fireEvent.blur(input)
+
+    await waitFor(() => expect(payloads).toEqual([{ observability: { retentionDays: 7 } }]))
+    expect(server.observability.retentionDays).toBe(7)
+  })
+
   it('skips the connection test when the pending save is rejected', async () => {
     api.status = makeStatus({ verified: true })
     commit.mockResolvedValueOnce({ ok: false })
@@ -223,12 +238,29 @@ describe('ui/admin/settings/ObservabilityForm', () => {
   it('shows the runtime lastError as selectable text', async () => {
     api.status = makeStatus({
       verified: true,
-      runtime: { phase: 'failed', lastError: 'OBS_CONFIG_INVALID:endpoint' },
+      runtime: { phase: 'failed', lastError: 'OBS_CONFIG_INVALID:endpoint', lastExportError: null },
     })
     renderForm()
 
     expect(await screen.findByText('运行失败')).toBeTruthy()
     expect(screen.getByText('OBS_CONFIG_INVALID:endpoint')).toBeTruthy()
+  })
+
+  it('warns about the latest OTLP export failure while the runtime stays running', async () => {
+    api.status = makeStatus({
+      verified: true,
+      runtime: {
+        phase: 'running',
+        lastError: null,
+        lastExportError: { signal: 'traces', error: 'FetchError', at: Date.UTC(2026, 0, 2, 3, 4, 5) },
+      },
+    })
+    renderForm()
+
+    expect(await screen.findByText('运行中')).toBeTruthy()
+    const warning = await screen.findByText(/最近一次 OTLP 导出失败/)
+    expect(warning.textContent).toContain('traces')
+    expect(warning.textContent).toContain('FetchError')
   })
 
   it('runs the manual resync once verified and reports the created dashboards', async () => {

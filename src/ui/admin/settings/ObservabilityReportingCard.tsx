@@ -2,15 +2,20 @@ import { Controller, useWatch, type UseFormReturn } from 'react-hook-form'
 
 import type { ObservabilitySettings } from '@/shared/config/types'
 import type { ObservabilityStatusOutput } from '@/shared/contracts/observability'
+import type { RumClientIdentity } from '@/shared/contracts/trace'
+import type { AppLocale } from '@/shared/i18n/locales'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
+import { formatDateTime } from '@/shared/i18n/format'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
 import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
 interface ReportingFormState {
@@ -18,8 +23,10 @@ interface ReportingFormState {
   logsEnabled: boolean
   frontendEnabled: boolean
   sessionSampleRate: number
+  clientIdentity: RumClientIdentity
   sampleRate: number
   includeRedactedSql: boolean
+  retentionDays: number
 }
 
 const PHASE_MESSAGE_IDS = {
@@ -30,6 +37,15 @@ const PHASE_MESSAGE_IDS = {
   failed: 'admin.settings.observability.reporting.phase.failed',
 } as const satisfies Record<ObservabilityStatusOutput['runtime']['phase'], UiMessageId>
 
+/** Operational timestamp in the operator's own zone; falls back to UTC on an unreadable one. */
+function formatExportErrorTime(at: number, locale: AppLocale): string {
+  try {
+    return formatDateTime(new Date(at), { locale, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
+  } catch {
+    return formatDateTime(new Date(at), { locale, timeZone: 'UTC' })
+  }
+}
+
 function ToggleRow({
   form,
   save,
@@ -38,6 +54,7 @@ function ToggleRow({
   id,
   label,
   hint,
+  labelTooltip,
 }: {
   form: UseFormReturn<ReportingFormState>
   save: (field?: string) => unknown
@@ -46,10 +63,11 @@ function ToggleRow({
   id: string
   label: string
   hint: string
+  labelTooltip?: string
 }) {
   const { t } = useI18n()
   return (
-    <SettingsRow label={label} hint={hint}>
+    <SettingsRow label={label} hint={hint} labelTooltip={labelTooltip}>
       <Controller
         control={form.control}
         name={name}
@@ -87,7 +105,7 @@ function RateInput({
   flushOnBlur: () => void
   disabled: boolean
   id: string
-  name: 'sampleRate' | 'sessionSampleRate'
+  name: 'sampleRate' | 'sessionSampleRate' | 'retentionDays'
   min: number
   max: number
   step: number
@@ -117,7 +135,7 @@ export function ObservabilityReportingCard({
   status,
   onStatusInvalidated,
 }: ObservabilityReportingCardProps) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { form, flushOnBlur, save, settingGroupProps } = useSettingsCard<ObservabilitySettings, ReportingFormState>({
     section: 'observability',
     source: observability,
@@ -126,18 +144,22 @@ export function ObservabilityReportingCard({
       logsEnabled: source.observability.logs.enabled,
       frontendEnabled: source.observability.frontend.enabled,
       sessionSampleRate: source.observability.frontend.sessionSampleRate,
+      clientIdentity: source.observability.frontend.clientIdentity,
       sampleRate: source.observability.sampleRate,
       includeRedactedSql: source.observability.includeRedactedSql,
+      retentionDays: source.observability.retentionDays,
     }),
     fromState: (state) => ({
       observability: {
         enabled: state.enabled,
         sampleRate: state.sampleRate,
         includeRedactedSql: state.includeRedactedSql,
+        retentionDays: state.retentionDays,
         logs: { enabled: state.logsEnabled },
         frontend: {
           enabled: state.frontendEnabled,
           sessionSampleRate: state.sessionSampleRate,
+          clientIdentity: state.clientIdentity,
         },
       },
     }),
@@ -148,6 +170,12 @@ export function ObservabilityReportingCard({
   const frontendEnabled = useWatch({ control: form.control, name: 'frontendEnabled' })
   const gated = status?.verified !== true
   const runtimePhase = status === undefined ? null : status.runtime.phase
+  const exportError = status?.runtime.lastExportError ?? null
+
+  const clientIdentityOptions: ReadonlyArray<{ value: RumClientIdentity; label: string }> = [
+    { value: 'anonymous', label: t('admin.settings.observability.reporting.clientIdentity.anonymous') },
+    { value: 'forward', label: t('admin.settings.observability.reporting.clientIdentity.forward') },
+  ]
 
   return (
     <SettingGroup
@@ -163,11 +191,22 @@ export function ObservabilityReportingCard({
         ) : null}
 
         <SettingsRow label={t('admin.settings.observability.reporting.runtime')}>
-          <p className="text-sm text-muted-foreground">
-            {runtimePhase === null
-              ? t('admin.settings.observability.reporting.phase.loading')
-              : t(PHASE_MESSAGE_IDS[runtimePhase])}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-muted-foreground">
+              {runtimePhase === null
+                ? t('admin.settings.observability.reporting.phase.loading')
+                : t(PHASE_MESSAGE_IDS[runtimePhase])}
+            </p>
+            {exportError !== null ? (
+              <p className="text-sm text-status-warn-fg" role="status">
+                {t('admin.settings.observability.reporting.exportError', {
+                  signal: exportError.signal,
+                  error: exportError.error,
+                  time: formatExportErrorTime(exportError.at, locale),
+                })}
+              </p>
+            ) : null}
+          </div>
         </SettingsRow>
 
         <ToggleRow
@@ -178,6 +217,7 @@ export function ObservabilityReportingCard({
           id="observability-enabled"
           label={t('admin.settings.observability.reporting.enabled')}
           hint={t('admin.settings.observability.reporting.enabledHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.enabled')}
         />
         <ToggleRow
           form={form}
@@ -187,6 +227,7 @@ export function ObservabilityReportingCard({
           id="observability-logs-enabled"
           label={t('admin.settings.observability.reporting.logs')}
           hint={t('admin.settings.observability.reporting.logsHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.logs')}
         />
         <ToggleRow
           form={form}
@@ -196,11 +237,13 @@ export function ObservabilityReportingCard({
           id="observability-frontend-enabled"
           label={t('admin.settings.observability.reporting.frontend')}
           hint={t('admin.settings.observability.reporting.frontendHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.frontend')}
         />
         <SettingsRow
           label={t('admin.settings.observability.reporting.sessionSampleRate')}
           htmlFor="observability-session-sample-rate"
           hint={t('admin.settings.observability.reporting.sessionSampleRateHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.sessionSampleRate')}
         >
           <RateInput
             form={form}
@@ -214,9 +257,41 @@ export function ObservabilityReportingCard({
           />
         </SettingsRow>
         <SettingsRow
+          label={t('admin.settings.observability.reporting.clientIdentity')}
+          hint={t('admin.settings.observability.reporting.clientIdentityHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.clientIdentity')}
+        >
+          <Controller
+            control={form.control}
+            name="clientIdentity"
+            render={({ field }) => (
+              <SettingsSelect<RumClientIdentity>
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+                save={save}
+                disabled={gated || !frontendEnabled}
+                items={clientIdentityOptions}
+              >
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientIdentityOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </SettingsSelect>
+            )}
+          />
+        </SettingsRow>
+        <SettingsRow
           label={t('admin.settings.observability.reporting.sampleRate')}
           htmlFor="observability-sample-rate"
           hint={t('admin.settings.observability.reporting.sampleRateHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.sampleRate')}
         >
           <RateInput
             form={form}
@@ -237,7 +312,25 @@ export function ObservabilityReportingCard({
           id="observability-include-redacted-sql"
           label={t('admin.settings.observability.reporting.includeRedactedSql')}
           hint={t('admin.settings.observability.reporting.includeRedactedSqlHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.includeRedactedSql')}
         />
+        <SettingsRow
+          label={t('admin.settings.observability.reporting.retentionDays')}
+          htmlFor="observability-retention-days"
+          hint={t('admin.settings.observability.reporting.retentionDaysHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.retentionDays')}
+        >
+          <RateInput
+            form={form}
+            flushOnBlur={flushOnBlur}
+            disabled={gated}
+            id="observability-retention-days"
+            name="retentionDays"
+            min={0}
+            max={3650}
+            step={1}
+          />
+        </SettingsRow>
 
         {status !== undefined && status.runtime.lastError !== null ? (
           <SettingsRow

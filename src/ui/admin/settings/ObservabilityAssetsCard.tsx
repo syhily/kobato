@@ -71,6 +71,7 @@ export function ObservabilityAssetsCard({
         <SettingsRow
           label={t('admin.settings.observability.assets.token')}
           hint={t('admin.settings.observability.assets.tokenHint')}
+          labelTooltip={t('admin.settings.observability.tooltip.token')}
         >
           <code className="block w-full overflow-x-auto rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs break-all select-all">
             {rumClientTokenMask === null
