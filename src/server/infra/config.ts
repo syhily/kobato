@@ -128,6 +128,7 @@ export const CONFIG_TABLE = [
   // ranges — resolves safely at `infra/trace/config.ts` so a bad trace block
   // can never prevent the development site from starting.
   { path: ['trace', 'enabled'], schema: configBoolean.default(false), fileDefault: false },
+  { path: ['trace', 'logs', 'enabled'], schema: configBoolean.default(false), fileDefault: false },
   { path: ['trace', 'endpoint'], schema: z.string().default(''), fileDefault: '' },
   { path: ['trace', 'organization'], schema: z.string().default('default'), fileDefault: 'default' },
   { path: ['trace', 'serverAuthorizationHeader'], schema: z.string().default(''), fileDefault: '' },
@@ -607,12 +608,18 @@ export interface TraceFrontendConfigSection {
 /** Development-only OpenObserve tracing. Semantics live in `infra/trace/config.ts`. */
 export interface TraceConfigSection {
   enabled: boolean
+  logs: TraceLogsConfigSection
   endpoint: string
   organization: string
   serverAuthorizationHeader: string
   sampleRate: number
   includeRedactedSql: boolean
   frontend: TraceFrontendConfigSection
+}
+
+/** `trace.logs.enabled` only; the OTLP URL/credential are derived from the trace block. */
+export interface TraceLogsConfigSection {
+  enabled: boolean
 }
 
 export interface ServerConfig {

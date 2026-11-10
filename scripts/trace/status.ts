@@ -1,11 +1,11 @@
 // `pnpm run trace:status` — inspect the local OpenObserve instance without
 // printing credentials.
 
-import { isTraceMetricStreamName } from '../../src/shared/contracts/trace-metrics.ts'
 import { RUM_PRIVACY_PIPELINE_NAME } from '../../src/shared/contracts/trace-pipeline.ts'
 import {
   containerExists,
   containerRunning,
+  isRelevantTraceStream,
   listDashboards,
   listStreams,
   log,
@@ -36,9 +36,7 @@ async function main(): Promise<void> {
   log(`dashboards: ${dashboards.length === 0 ? 'none imported' : dashboards.map((entry) => entry.title).join(', ')}`)
   for (const type of ['logs', 'traces', 'metrics'] as const) {
     const streams = await listStreams(ctx, type).catch(() => [])
-    const relevant = streams.filter(
-      (stream) => stream.name === '_rumdata' || stream.name === 'default' || isTraceMetricStreamName(stream.name),
-    )
+    const relevant = streams.filter((stream) => isRelevantTraceStream(stream.name))
     if (relevant.length === 0) {
       continue
     }

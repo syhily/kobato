@@ -17,6 +17,9 @@
   },
   "trace": {
     "enabled": false,
+    "logs": {
+      "enabled": false
+    },
     "endpoint": "",
     "organization": "default",
     "serverAuthorizationHeader": "",

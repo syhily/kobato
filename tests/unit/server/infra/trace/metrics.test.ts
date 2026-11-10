@@ -18,6 +18,7 @@ const CONFIG: ServerTraceRuntimeConfig = {
   includeRedactedSql: false,
   otlpTracesUrl: 'http://127.0.0.1:5080/api/default/v1/traces',
   otlpMetricsUrl: 'http://127.0.0.1:5080/api/default/v1/metrics',
+  logs: null,
 }
 
 function resolution(): TraceConfigResolution {
@@ -104,6 +105,32 @@ describe('trace metrics — closed catalog', () => {
     })
     expect(points[0]!.attributes).not.toHaveProperty('http.route')
     expect(metricByName(metrics, 'user.private.metric')).toBeUndefined()
+  })
+
+  it('drops trace_id/span_id passed as metric labels (no exemplar support upstream)', async () => {
+    await start()
+
+    counter(METRIC.httpServerRequests).add(1, {
+      'http.request.method': 'GET',
+      'http.route': '/posts/:slug',
+      'http.response.status_code': 200,
+      trace_id: '4bf92f3577b34da6a3ce929d0e0e4736',
+      span_id: '00f067aa0ba902b7',
+    })
+
+    const metrics = await reader.collectResourceMetrics()
+    const [point] = dataPointsOf(metrics, METRIC.httpServerRequests)
+    expect(point).toBeDefined()
+    expect(point!.attributes).toEqual({
+      'http.request.method': 'GET',
+      'http.route': '/posts/:slug',
+      'http.response.status_code': 200,
+    })
+    expect(point!.attributes).not.toHaveProperty('trace_id')
+    expect(point!.attributes).not.toHaveProperty('span_id')
+    // sdk-metrics 3.1.0 / the 0.301.x OTLP transformer do not implement
+    // exemplars; there is no per-point TraceID channel to assert either.
+    expect((point as unknown as { exemplars?: unknown }).exemplars).toBeUndefined()
   })
 
   it('drops non-finite and negative metric values in both the runtime and the facade', async () => {

@@ -556,6 +556,116 @@
             "h": 4,
             "i": 7
           }
+        },
+        {
+          "id": "sv-log-severity",
+          "type": "line",
+          "title": "Log severity over time",
+          "description": "privacy-projected server log lines per severity",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp, '1 minute') AS x, severity, count(*) AS y FROM \"kobato_logs\" GROUP BY x, severity ORDER BY x",
+              "customQuery": true,
+              "fields": {
+                "stream": "kobato_logs",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 29,
+            "w": 6,
+            "h": 5,
+            "i": 11
+          }
+        },
+        {
+          "id": "sv-log-scope",
+          "type": "table",
+          "title": "Log lines by scope",
+          "description": "privacy-projected server log lines grouped by the fixed scope attribute",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT log_scope, count(*) AS lines FROM \"kobato_logs\" GROUP BY log_scope ORDER BY lines DESC",
+              "customQuery": true,
+              "fields": {
+                "stream": "kobato_logs",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 6,
+            "y": 29,
+            "w": 6,
+            "h": 5,
+            "i": 12
+          }
         }
       ]
     }

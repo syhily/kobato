@@ -3,7 +3,8 @@ import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { O2_IMAGE, RETENTION_DAYS, stateDirectory } from '../../../../scripts/trace/lib.ts'
+import { LOG_STREAM, O2_IMAGE, RETENTION_DAYS, stateDirectory } from '../../../../scripts/trace/lib.ts'
+import { TRACE_LOG_STREAM } from '../../../../src/shared/contracts/trace-logs.ts'
 import { TRACE_METRIC_NAMES, TRACE_METRIC_STREAM_PREFIXES } from '../../../../src/shared/contracts/trace-metrics.ts'
 import {
   RUM_PRIVACY_PIPELINE_DESCRIPTION,
@@ -78,6 +79,10 @@ describe('OpenObserve development assets (ADR-0012)', () => {
       'br-errors',
       'co-spans',
       'co-rum-trace',
+      'co-logs',
+      'co-slow-requests',
+      'sv-log-severity',
+      'sv-log-scope',
     ])
     const ids = new Set<string>()
     for (const entry of await dashboards()) {
@@ -100,6 +105,61 @@ describe('OpenObserve development assets (ADR-0012)', () => {
     }
     for (const id of required) {
       expect(ids.has(id), `${id} panel`).toBe(true)
+    }
+  })
+
+  it('reads server logs from the shared kobato_logs stream without cross-stream joins', async () => {
+    expect(LOG_STREAM).toBe(TRACE_LOG_STREAM)
+
+    let logPanels = 0
+    for (const entry of await dashboards()) {
+      for (const panel of (entry.body.tabs ?? []).flatMap((tab) => tab.panels ?? [])) {
+        const query = panel.queries?.[0]
+        if (query?.fields?.stream !== LOG_STREAM) {
+          continue
+        }
+        logPanels += 1
+        expect(query.fields.stream_type, `${entry.file}/${panel.id} stream type`).toBe('logs')
+        const sql = query.query ?? ''
+        // O2 cannot join a logs stream to a traces stream in one SQL query; the
+        // correlation is a UI/export join on trace_id/span_id, never a fake join.
+        expect(sql, `${entry.file}/${panel.id} join`).not.toMatch(/\bJOIN\b/i)
+        expect(sql, `${entry.file}/${panel.id} cross-stream`).not.toContain('"default"')
+        expect(sql, `${entry.file}/${panel.id} rum stream`).not.toContain('_rumdata')
+      }
+    }
+    expect(logPanels).toBe(3)
+
+    const slowRequests = (await dashboards())
+      .find((entry) => entry.file === 'correlation.json')
+      ?.body.tabs?.flatMap((tab) => tab.panels ?? [])
+      .find((panel) => panel.id === 'co-slow-requests')
+    const slowSql = slowRequests?.queries?.[0]?.query ?? ''
+    for (const fragment of [
+      "operation_name = 'http.server'",
+      'http_route',
+      'http_request_method',
+      'http_response_status_code',
+      'ORDER BY duration DESC',
+    ]) {
+      expect(slowSql, `co-slow-requests selects ${fragment}`).toContain(fragment)
+    }
+    // A generic slow-request table: route/status filtering is the dashboard
+    // user's drill-down step, so no status/route is hardcoded for the smoke.
+    expect(slowSql).not.toContain('http_response_status_code =')
+    expect(slowSql).not.toContain('http_route =')
+    // Never a fabricated exemplar/TraceID join into a metric or another stream.
+    expect(slowSql).not.toContain('trace_id =')
+    expect(slowSql.toUpperCase()).not.toContain('JOIN')
+    expect(slowRequests?.queries?.[0]?.fields?.stream_type).toBe('traces')
+
+    const correlation = (await dashboards()).find((entry) => entry.file === 'correlation.json')
+    const logs = (correlation?.body.tabs ?? [])
+      .flatMap((tab) => tab.panels ?? [])
+      .find((panel) => panel.id === 'co-logs')
+    const sql = logs?.queries?.[0]?.query ?? ''
+    for (const column of ['trace_id', 'span_id', 'body', 'severity', 'log_scope', '_timestamp']) {
+      expect(sql, `co-logs selects ${column}`).toContain(column)
     }
   })
 

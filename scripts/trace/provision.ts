@@ -7,7 +7,6 @@ import { join } from 'node:path'
 
 import type { O2Context, StreamInfo, TraceState } from './lib.ts'
 
-import { isTraceMetricStreamName } from '../../src/shared/contracts/trace-metrics.ts'
 import {
   RUM_PRIVACY_FUNCTION_NAME,
   RUM_PRIVACY_PIPELINE_DESCRIPTION,
@@ -18,6 +17,7 @@ import { unsafeCast } from '../../src/shared/utils/unsafe-cast.ts'
 import {
   createRumToken,
   getRumToken,
+  isRelevantTraceStream,
   listStreams,
   RETENTION_DAYS,
   RUM_STREAM,
@@ -60,11 +60,9 @@ export async function applyRetention(ctx: O2Context): Promise<RetentionReport> {
       streams.push({ ...stream, stream_type: type })
     }
   }
-  // Only Kobato-relevant streams. `default` is OpenObserve's trace stream in
-  // a single-org local instance; `_rumdata` is the RUM stream.
-  const relevant = streams.filter(
-    (stream) => stream.name === RUM_STREAM || stream.name === 'default' || isTraceMetricStreamName(stream.name),
-  )
+  // Only Kobato-relevant streams: `_rumdata` (RUM), `default` (traces),
+  // `kobato_logs` (server logs), and the closed metric prefixes.
+  const relevant = streams.filter((stream) => isRelevantTraceStream(stream.name))
   let applied = 0
   for (const stream of relevant) {
     if ((stream.settings?.data_retention ?? 0) !== RETENTION_DAYS) {

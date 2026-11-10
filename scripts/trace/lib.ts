@@ -12,6 +12,8 @@ import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
 
+import { TRACE_LOG_STREAM } from '../../src/shared/contracts/trace-logs.ts'
+import { isTraceMetricStreamName } from '../../src/shared/contracts/trace-metrics.ts'
 import { isRecord } from '../../src/shared/utils/type-guards.ts'
 import { unsafeCast } from '../../src/shared/utils/unsafe-cast.ts'
 
@@ -27,6 +29,13 @@ export const DEFAULT_APPLICATION_ID = 'kobato-dev'
 export const RETENTION_DAYS = 1
 export const RUM_STREAM = '_rumdata'
 export const TRACE_STREAM = 'default'
+/** The application log stream, owned by `src/shared/contracts/trace-logs.ts`. */
+export const LOG_STREAM = TRACE_LOG_STREAM
+
+/** Streams this tooling owns for retention/status: RUM, traces, server logs, metric streams. */
+export function isRelevantTraceStream(name: string): boolean {
+  return name === RUM_STREAM || name === TRACE_STREAM || name === LOG_STREAM || isTraceMetricStreamName(name)
+}
 
 // Closed ownership grammar. Arbitrary names from config/state must never reach
 // a `docker rm`/`volume rm` call.
@@ -125,6 +134,7 @@ export async function writeTraceConfigFragment(state: TraceState): Promise<strin
   const fragment = {
     trace: {
       enabled: true,
+      logs: { enabled: true },
       endpoint: state.endpoint,
       organization: state.organization,
       serverAuthorizationHeader: basicAuthorization(state.adminEmail, state.adminPassword),

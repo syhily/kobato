@@ -1,7 +1,7 @@
 {
   "version": 8,
   "title": "Kobato — Correlation",
-  "description": "RUM resource → same-origin server trace → DB/SSR spans, with trace IDs as exemplars.",
+  "description": "RUM resource → same-origin server trace → DB/SSR spans and privacy-projected log lines, with trace IDs as exemplars.",
   "tabs": [
     {
       "tabId": "default",
@@ -170,6 +170,116 @@
             "w": 12,
             "h": 4,
             "i": 3
+          }
+        },
+        {
+          "id": "co-logs",
+          "type": "table",
+          "title": "Server log lines",
+          "description": "privacy-projected log lines for the same traces; join on trace_id/span_id (O2 cannot join logs to traces in one query)",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT trace_id, span_id, body, severity, log_scope, http_request_method, http_response_status_code, _timestamp FROM \"kobato_logs\" WHERE service_name = 'kobato' ORDER BY _timestamp DESC LIMIT 300",
+              "customQuery": true,
+              "fields": {
+                "stream": "kobato_logs",
+                "stream_type": "logs",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 12,
+            "w": 12,
+            "h": 4,
+            "i": 4
+          }
+        },
+        {
+          "id": "co-slow-requests",
+          "type": "table",
+          "title": "Slow server requests",
+          "description": "approximate drill-down for a metric aggregate: the slowest real http.server spans in the dashboard time bucket, with route/status/method columns to filter manually — not a per-metric-point exemplar TraceID",
+          "config": {
+            "show_legends": true
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT trace_id, span_id, http_route, http_request_method, http_response_status_code, duration, start_time FROM \"default\" WHERE service_name = 'kobato' AND operation_name = 'http.server' ORDER BY duration DESC LIMIT 200",
+              "customQuery": true,
+              "fields": {
+                "stream": "default",
+                "stream_type": "traces",
+                "x": [
+                  {
+                    "label": "x",
+                    "alias": "x",
+                    "column": "x",
+                    "type": "build"
+                  }
+                ],
+                "y": [
+                  {
+                    "label": "y",
+                    "alias": "y",
+                    "column": "y",
+                    "type": "build"
+                  }
+                ],
+                "filter": {
+                  "type": "condition",
+                  "values": [],
+                  "column": null,
+                  "operator": "",
+                  "value": null,
+                  "logicalOperator": "AND",
+                  "filterType": "condition"
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": {
+            "x": 0,
+            "y": 16,
+            "w": 12,
+            "h": 4,
+            "i": 5
           }
         }
       ]

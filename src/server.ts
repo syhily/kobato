@@ -113,9 +113,9 @@ const httpServer = import.meta.env.PROD
   ? serve(
       { fetch: app.fetch.bind(app), port: serverConfig.server.port, hostname: serverConfig.server.host },
       (info) => {
-        root.info(`🚀 Server started on port ${info.port}`)
-        root.info(`🌍 http://127.0.0.1:${info.port}`)
-        root.info(`🏎️ Server started`)
+        root.info({ port: info.port }, '🚀 Server started')
+        root.info({ url: `http://127.0.0.1:${info.port}` }, '🌍 Local server URL')
+        root.info('🏎️ Server started')
       },
     )
   : null

@@ -16,6 +16,7 @@ const realArgv = process.argv
 
 const TRACE_ENV_KEYS = [
   'trace__enabled',
+  'trace__logs__enabled',
   'trace__endpoint',
   'trace__organization',
   'trace__serverAuthorizationHeader',
@@ -29,6 +30,7 @@ const TRACE_ENV_KEYS = [
 
 const BASE: TraceConfigSection = {
   enabled: true,
+  logs: { enabled: false },
   endpoint: 'http://127.0.0.1:5080',
   organization: 'default',
   serverAuthorizationHeader: 'Basic dGVzdDp0ZXN0',
@@ -80,6 +82,7 @@ describe('trace config — CONFIG_TABLE defaults and env coercion', () => {
 
     expect(loadServerConfig().trace).toEqual({
       enabled: false,
+      logs: { enabled: false },
       endpoint: '',
       organization: 'default',
       serverAuthorizationHeader: '',
@@ -150,6 +153,7 @@ describe('trace config — OTLP URL derivation', () => {
     expect(deriveOtlpUrls('https://observability.example.com', 'default')).toEqual({
       traces: 'https://observability.example.com/api/default/v1/traces',
       metrics: 'https://observability.example.com/api/default/v1/metrics',
+      logs: 'https://observability.example.com/api/default/v1/logs',
     })
   })
 
@@ -297,6 +301,7 @@ describe('trace config — activation matrix', () => {
       includeRedactedSql: false,
       otlpTracesUrl: 'http://127.0.0.1:5080/api/default/v1/traces',
       otlpMetricsUrl: 'http://127.0.0.1:5080/api/default/v1/metrics',
+      logs: null,
     })
     expect(resolution.frontend).toBeNull()
   })
@@ -352,6 +357,71 @@ describe('trace config — activation matrix', () => {
       'trace.sampleRate',
       'trace.serverAuthorizationHeader',
     ])
+  })
+})
+
+describe('trace config — log export projection', () => {
+  it('defaults trace.logs.enabled to false', () => {
+    process.argv = [realArgv[0]!, realArgv[1]!]
+
+    expect(loadServerConfig().trace.logs).toEqual({ enabled: false })
+  })
+
+  it('warns with field names only when logs are enabled without trace.enabled', () => {
+    const resolution = resolveTraceConfig(traceInput({ enabled: false, logs: { enabled: true } }), DEV)
+
+    expect(resolution).toEqual({
+      status: 'disabled',
+      server: null,
+      frontend: null,
+      diagnostics: [
+        {
+          code: 'trace-logs-require-trace',
+          level: 'warn',
+          fields: ['trace.logs.enabled', 'trace.enabled'],
+        },
+      ],
+    })
+
+    const line = formatTraceDiagnostic(resolution.diagnostics[0]!)
+    expect(line).toContain('trace.logs.enabled')
+    expect(line).toContain('trace.enabled')
+    expect(line).not.toContain('127.0.0.1')
+  })
+
+  it('projects the logs endpoint and reuses the trace credential only when enabled', () => {
+    const disabled = resolveTraceConfig(traceInput(), DEV)
+    expect(disabled.server?.logs).toBeNull()
+
+    const enabled = resolveTraceConfig(traceInput({ logs: { enabled: true } }), DEV)
+    expect(enabled.status).toBe('active')
+    expect(enabled.server?.logs).toEqual({
+      otlpLogsUrl: 'http://127.0.0.1:5080/api/default/v1/logs',
+      authorizationHeader: 'Basic dGVzdDp0ZXN0',
+    })
+    expect(enabled.server?.logs?.authorizationHeader).toBe(enabled.server?.authorizationHeader)
+    expect(enabled.diagnostics).toEqual([])
+  })
+
+  it('stays inert in production with logs enabled', () => {
+    const resolution = resolveTraceConfig(traceInput({ logs: { enabled: true } }), PROD)
+
+    expect(resolution.status).toBe('disabled')
+    expect(resolution.server).toBeNull()
+    expect(resolution.frontend).toBeNull()
+    expect(resolution.diagnostics).toEqual([
+      { code: 'trace-production-disabled', level: 'warn', fields: ['trace.enabled'] },
+    ])
+  })
+
+  it('drops the logs projection when the server configuration is invalid', () => {
+    const resolution = resolveTraceConfig(
+      traceInput({ logs: { enabled: true }, endpoint: 'https://user:pass@obs.example.com' }),
+      DEV,
+    )
+
+    expect(resolution.status).toBe('invalid')
+    expect(resolution.server).toBeNull()
   })
 })
 

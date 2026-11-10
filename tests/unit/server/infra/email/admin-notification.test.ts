@@ -78,7 +78,10 @@ describe('email/admin-notification — fireAndForgetNotify', () => {
     await settleNotify()
 
     expect(errorSpy).toHaveBeenCalledOnce()
-    expect(errorSpy).toHaveBeenCalledWith('failed to send new comment email', { error: failure })
+    expect(errorSpy).toHaveBeenCalledWith('Failed to send admin notification email', {
+      kind: 'new comment',
+      error: failure,
+    })
   })
 
   it('does not log when the send resolves', async () => {

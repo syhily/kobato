@@ -1,11 +1,14 @@
 /**
  * ADR-0012 source boundary: the real OpenTelemetry/OpenObserve SDKs may only
- * enter through the two approved DEV-only entry modules. Everything else —
- * including the production no-op facade (`infra/trace/facade.ts`) and the
- * config/projection module — must stay SDK-free.
+ * enter through the approved DEV-only entry modules. Everything else —
+ * including the production no-op facade (`infra/trace/facade.ts`), the log
+ * projection (`infra/trace/log-record.ts`), the shared resource
+ * (`infra/trace/resource.ts`), and the log sink slot (`infra/logger/sink.ts`) —
+ * must stay SDK-free.
  *
- * Both approved entries are now real: the server runtime is reached through
- * `src/server.ts`'s DEV-only dynamic import, and the browser RUM loader is
+ * The server entries are real: the trace runtime is reached through `src/server.ts`'s
+ * DEV-only dynamic import, and the log pipeline is statically constructed by
+ * the trace runtime only (never a second entry). The browser RUM loader is
  * reached through `use-dev-rum`'s DEV-gated dynamic import. This scan proves no
  * other source module imports an SDK; the production bundle scan proves the
  * real packages are absent from the shipped output.
@@ -21,6 +24,7 @@ const SOURCE_DIR = join(PROJECT_ROOT, 'src')
 /** The only modules allowed to import a real SDK — and only behind DEV guards. */
 export const APPROVED_DEV_SDK_ENTRIES = [
   'src/server/infra/trace/runtime.ts',
+  'src/server/infra/trace/logs-runtime.ts',
   'src/client/lib/openobserve-rum.ts',
 ] as const
 
@@ -94,10 +98,13 @@ describe('trace SDK source boundary', () => {
     expect(collectTelemetryViolations(collectSourceFiles())).toEqual([])
   })
 
-  it('keeps the SDK-free facade and config modules free of telemetry imports', () => {
+  it('keeps the SDK-free facade, config, resource, projection, and sink modules free of telemetry imports', () => {
     const protectedModules = [
       join(PROJECT_ROOT, 'src/server/infra/trace/facade.ts'),
       join(PROJECT_ROOT, 'src/server/infra/trace/config.ts'),
+      join(PROJECT_ROOT, 'src/server/infra/trace/resource.ts'),
+      join(PROJECT_ROOT, 'src/server/infra/trace/log-record.ts'),
+      join(PROJECT_ROOT, 'src/server/infra/logger/sink.ts'),
       join(PROJECT_ROOT, 'src/shared/contracts/trace.ts'),
     ]
 
@@ -223,9 +230,40 @@ describe('trace SDK source boundary', () => {
     expect(hookSource.indexOf('frontendRumBootstrapSchema.safeParse')).toBeLessThan(loadCall)
   })
 
-  it('pins the two DEV-only entry modules by name', () => {
+  it('constructs the log pipeline only from the trace runtime, never directly', () => {
+    const offenders: string[] = []
+    const logsRuntimeSpecifier = 'infra/trace/logs-runtime'
+    for (const file of collectSourceFiles()) {
+      const rel = relativePath(file)
+      const source = readFileSync(file, 'utf-8')
+      for (const specifier of getValueSpecifiers(source)) {
+        if (specifier.includes(logsRuntimeSpecifier) && rel !== 'src/server/infra/trace/runtime.ts') {
+          offenders.push(`${rel} imports ${specifier}`)
+        }
+      }
+      // Logs are a sibling pipeline built during start, not a second entry point.
+      for (const match of source.matchAll(/import\s*\(\s*['"]([^'"]*infra\/trace\/logs-runtime)['"]\s*\)/g)) {
+        offenders.push(`${rel} dynamically imports ${match[1]}`)
+      }
+    }
+
+    expect(offenders).toEqual([])
+
+    const runtimeSource = readFileSync(join(PROJECT_ROOT, 'src/server/infra/trace/runtime.ts'), 'utf-8')
+    expect(
+      getValueSpecifiers(runtimeSource).filter((specifier) => specifier.includes(logsRuntimeSpecifier)),
+    ).toHaveLength(1)
+
+    // The log pipeline must not import the stdout logger's value surface: a
+    // per-record diagnostic would loop back into its own sink.
+    const logsRuntimeSource = readFileSync(join(PROJECT_ROOT, 'src/server/infra/trace/logs-runtime.ts'), 'utf-8')
+    expect(getValueSpecifiers(logsRuntimeSource).filter((specifier) => specifier.includes('infra/logger'))).toEqual([])
+  })
+
+  it('pins the approved DEV-only entry modules by name', () => {
     expect([...APPROVED_DEV_SDK_ENTRIES]).toEqual([
       'src/server/infra/trace/runtime.ts',
+      'src/server/infra/trace/logs-runtime.ts',
       'src/client/lib/openobserve-rum.ts',
     ])
   })

@@ -47,7 +47,7 @@ export function makeQueueScheduler(options: QueueSchedulerOptions): QueueSchedul
   async function run(): Promise<void> {
     const processed = await options.runBatch(jobDb())
     if (processed > 0) {
-      log.info(`${label} batch processed`, { processed })
+      log.info('Webmention batch processed', { label, processed })
     }
   }
 

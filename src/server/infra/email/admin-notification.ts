@@ -29,9 +29,10 @@ export async function sendAdminNotification({
 }
 
 // Fire-and-forget: a mail hiccup must never fail the triggering action.
-// `what` is the static log fragment (`new comment` → `failed to send new comment email`).
+// `what` names the notification kind (`new comment` → context `kind`); the
+// message stays static so the outbound log projection keeps it.
 export function fireAndForgetNotify(promise: Promise<unknown>, log: Logger, what: string): void {
   void promise.catch((error) => {
-    log.error(`failed to send ${what} email`, { error })
+    log.error('Failed to send admin notification email', { kind: what, error })
   })
 }

@@ -65,7 +65,7 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
 
   await new Promise<void>((resolve) => {
     const timer = setTimeout(() => {
-      log.warn(`HTTP server close timed out after ${timeoutMs}ms, forcing remaining connections closed`)
+      log.warn('HTTP server close timed out; forcing remaining connections closed', { timeoutMs })
       nodeServer.closeAllConnections?.()
     }, timeoutMs)
 
@@ -207,7 +207,7 @@ export async function restartServer(): Promise<void> {
       const newServer = serve(
         { fetch: app.fetch.bind(app), port: serverConfig.server.port, hostname: serverConfig.server.host },
         (info) => {
-          restartLog.info(`Server restarted on port ${info.port}`)
+          restartLog.info('Server restarted', { port: info.port })
         },
       )
       setHttpServer(newServer)

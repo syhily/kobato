@@ -67,8 +67,11 @@ Explicitly out of scope:
   forwarding, and `@openobserve/browser-logs`.
 - Persistent visitor identity, advertising/product analytics, or joining RUM
   sessions to the existing page-view analytics identity.
-- Continuous CPU/heap profiling, general server-log ingestion, alerts, and an
-  always-on OTel Collector.
+- Continuous CPU/heap profiling, alerts, and an always-on OTel Collector.
+- Arbitrary server-log ingestion/query. A deliberately narrow, privacy-projected
+  DEV log export of the application's own Pino lines is in scope (Phase 6); it is
+  a closed record projection, not a general log pipeline, and it installs no
+  Pino transport.
 - Automatic tracing of process boot and migrations. Manual instrumentation
   starts with the running server; it does not require a module-preload hook.
 
@@ -85,6 +88,7 @@ variable.
 {
   "trace": {
     "enabled": false,
+    "logs": { "enabled": false },
     "endpoint": "",
     "organization": "default",
     "serverAuthorizationHeader": "",
@@ -101,7 +105,7 @@ variable.
 ```
 
 `endpoint` is the OpenObserve origin, for example
-`http://127.0.0.1:5080`. The server derives the OTLP trace and metric URLs from
+`http://127.0.0.1:5080`. The server derives the OTLP trace, metric, and log URLs from
 `endpoint` and `organization`. `serverAuthorizationHeader` is the exact
 server-only authorization value supplied by the OpenObserve OTLP ingestion
 setup. It is never returned by a loader or written into browser configuration.
@@ -120,6 +124,9 @@ Validation rules:
 - Reject endpoint URLs containing credentials, query strings, or fragments;
   validate `organization` as a closed path-segment grammar before deriving URLs.
 - Server activation requires a valid endpoint and authorization header.
+- Log export additionally requires `trace.logs.enabled`; it is default off and
+  cannot activate without `trace.enabled` (a logs-only DEV configuration warns
+  with field names only and stays disabled).
 - Frontend activation additionally requires `frontend.enabled`, an application
   ID, and a RUM client token.
 - An enabled but incomplete configuration emits one safe startup error and
@@ -144,6 +151,7 @@ The activation matrix is:
 | Any production build, regardless of config | No provider, exporter, RUM initialization, or report |
 | DEV + `trace.enabled=false`                | No-op                                                |
 | DEV + enabled + valid server config        | Server traces/metrics                                |
+| Above + `trace.logs.enabled`               | + bounded `/v1/logs` export to `kobato_logs`         |
 | Above + valid frontend config              | Candidate bootstrap only; no RUM yet                 |
 | Above + O2 pipeline verification succeeds  | Browser RUM is offered to the root loader and CSP    |
 | Browser DNT=`1` or GPC=`true`              | Browser SDK is not even downloaded                   |
@@ -165,8 +173,16 @@ knowledge:
   and in production it is a pass-through/no-op.
 - `runtime.ts` — DEV-only tracer/meter providers, propagator, batch/periodic
   processors and readers, bounded queues, OTLP exporters, and the event-loop
-  observer. It installs the facade delegate and start/stops the SQLite
-  subscriber.
+  observer. It installs the facade delegate, start/stops the SQLite
+  subscriber, and constructs the log pipeline.
+- `logs-runtime.ts` — the sibling DEV log pipeline (OTLP/HTTP log exporter,
+  bounded batch processor, closed record limits, sink) constructed only by
+  `runtime.ts`.
+- `resource.ts` — the fixed three-key resource shared by traces, metrics, and
+  logs.
+- `log-record.ts` — the SDK-free, closed projection of one Pino line.
+- `logger/sink.ts` — the process-wide sink slot installed into the Pino
+  writable; zero imports.
 - `sanitize.ts` — the closed span attribute/value allowlists and error
   projector.
 - `metrics.ts` — the closed metric name/attribute/dimension catalog and the
@@ -189,14 +205,16 @@ SDK directly.
 
 All new packages are `devDependencies` with versions in the pnpm catalog. Use
 only the required OTel API/SDK, async context, semantic-convention, resource,
-and OTLP trace/metric exporter packages plus
-`@openobserve/browser-rum-slim`. Do not install the Node auto-instrumentation
-meta package, the full RUM package, browser Zone.js context packages, or a Pino
-transport.
+and OTLP trace/metric/log exporter packages plus
+`@openobserve/browser-rum-slim` (`@opentelemetry/sdk-logs` and
+`@opentelemetry/exporter-logs-otlp-http` were added in Phase 6). Do not install
+the Node auto-instrumentation meta package, the full RUM package, browser
+Zone.js context packages, or a Pino transport.
 
 Build-time dynamic imports behind `import.meta.env.DEV` own every real SDK
-entry. Production DCE plus bundle checks must prove that `@opentelemetry/*`,
-`@openobserve/*`, OTLP exporter paths, and RUM initialization are absent from
+entry (`runtime.ts`, which constructs its sibling `logs-runtime.ts`). Production DCE plus
+bundle checks must prove that `@opentelemetry/*`, `@openobserve/*`, OTLP
+exporter paths (trace, metric, log), and RUM initialization are absent from
 client, server, and SEA outputs. A source-only `if (DEV)` test is not sufficient.
 
 ## Server instrumentation
@@ -301,11 +319,12 @@ names above, and they are the contract future changes must preserve:
   the DEV runtime starts and disabled on stop; no host/process detector exists.
 - **Shutdown/forceFlush** race tracer and meter through the same bounded
   timeout. `startDevTrace` remains idempotent, and HMR disposal stops the
-  observer and both providers before the next instance starts. A failure in the
+  observer and the tracer/meter providers before the next instance starts. A failure in the
   post-provider startup tail (delegate install, SQLite subscribe, shutdown-hook
   registration, or any later step) runs one idempotent rollback: restore the
   no-op facade, disable the observer, stop the subscriber, unregister the hook,
-  and bound-close both providers. No initialization error reaches the
+  and bound-close both providers (Phase 6 adds the log provider to the same
+  rollback). No initialization error reaches the
   application, and a later start begins from a clean state.
 - **SQLite** uses a dedicated `infra/trace/sqlite.ts` subscriber on
   `sqlite.db.query`, independent of the debug-log subscriber. A span is created
@@ -796,6 +815,131 @@ Production CSP remains unchanged.
   retention is day-granular, not 24 hours. The overhead samples above are
   local observations, not a universal performance claim.
 
+#### Phase 6 implementation notes (server log export)
+
+- **Activation and config.** `trace.logs.enabled` (CONFIG_TABLE boolean,
+  default/fileDefault false) is a subordinate DEV gate: production is inert,
+  `trace.enabled` is required, and a logs-only configuration emits one
+  `trace-logs-require-trace` warning whose diagnostic carries only the field
+  names `trace.logs.enabled`/`trace.enabled`. The projection reuses the
+  validated server endpoint, organization, and credential;
+  `deriveOtlpUrls` also yields `…/v1/logs`, and
+  `ServerTraceRuntimeConfig.logs` is non-null only when the whole gate holds.
+  It remains a boot-time snapshot with no admin-settings surface.
+- **Sink seam.** The Pino writable writes stdout first and forwards the exact
+  same serialized line to `logger/sink.ts`; the sink cannot affect stdout or
+  the stream callback. The slot installs only in DEV and only into an empty
+  slot, is cleared by identity, and isolates sink exceptions with a synchronous
+  re-entry fence (the Writable guard spans its callback so a sink that logs
+  cannot recurse). There is no Pino transport and no per-record diagnostic
+  logger.
+- **Projection.** `log-record.ts` (SDK-free, no logger import) drops lines over
+  32 KiB of UTF-8, malformed/non-object JSON, `debug`/`trace`/unknown levels,
+  marker-bearing (`{E}`/`{/E}`/`[REDACTED]`) messages, and every
+  `scope=trace` record. Info/warn/error/fatal map to OTel severity 9/13/17/21
+  with uppercase text. An HTTP record (a `req` object) never reads `msg`: its
+  body is one of `HTTP request completed`/`HTTP request rejected`/
+  `HTTP request failed` chosen from severity and status. Non-HTTP bodies are
+  the static message with control characters stripped and 200 code units max.
+  The closed attribute set is `log.scope` (validated grammar; `http`/`app`
+  defaults), `http.request.method`, `http.response.status_code`, `error.type`,
+  and `error.category` (existing error projector). Nothing else is read,
+  spread, or traversed.
+- **Pipeline and lifecycle.** `logs-runtime.ts` exports OTLP/HTTP to
+  `/v1/logs` with `Authorization` plus `stream-name: kobato_logs` (the shared
+  `TRACE_LOG_STREAM` constant), `timeoutMillis: 3000`, and
+  `concurrencyLimit: 1`, a `BatchLogRecordProcessor` (1024 queue / 256 batch /
+  1s delay / 3s timeout), and `logRecordLimits` of 8 attributes / 256
+  characters. Records are emitted with no explicit context or exception, so
+  the SDK attaches the active span's ids. The runtime builds logs after
+  metrics; construction failure or an occupied sink slot degrades only logs,
+  and never rolls back traces/metrics. Cleanup detaches the sink first, then
+  races tracer, meter, and log provider shutdown through the existing bounded
+  timeout; provider shutdown performs its own flush. The handle's `forceFlush`
+  (which includes the log provider) is a separate operation and is not part of
+  the stop path.
+- **Real OpenObserve column contract (verified against `v1.1.2`).** OTLP logs
+  carrying the `stream-name` header create an independent `kobato_logs` logs
+  stream (no `_json` fallback). `_search` returns the flattened columns
+  `body`, `severity` (text), `severity_number`, `log_scope`,
+  `http_request_method`, `http_response_status_code`, `trace_id`, `span_id`,
+  `service_name`, `service_version`, `deployment_environment`,
+  `instrumentation_library_name`/`_version`, `dropped_attributes_count`, and
+  `_timestamp`. No `msg`, `req`/`res`, header, URL/query, request id, pid,
+  hostname, or error message/stack/cause column exists. The smoke asserts
+  these names, and the dashboard SQL uses only them.
+- **Dashboards.** Server adds log-severity-over-time and log-lines-by-scope
+  panels; Correlation adds a `kobato_logs` table beside the span tables. O2
+  `_search` cannot join a logs stream to a traces stream, so correlation is an
+  explicit `trace_id`/`span_id` key in the UI, never a fabricated cross-stream
+  SQL join (pinned by the dashboard asset contract test). Correlation also
+  carries a generic “Slow server requests” span table: the slowest real
+  `http.server` spans in the dashboard time bucket, with route/status/method
+  columns. Adding `http_route` / `http_response_status_code` predicates is the
+  manual step for the aggregate being inspected; it is an approximate
+  drill-down from a metric aggregate, not a per-point exemplar join.
+- **Correlation matrix (exact vs. approximate).** RUM ↔ server trace is exact
+  through W3C `traceparent`/`_o2_trace_id` for browser-initiated Fetch/XHR (an
+  initial hard navigation has no browser parent). Server trace ↔ server log is
+  exact: the OTel log record is emitted inside the request's active span, so
+  both `trace_id` and `span_id` equal the `http.server` span. **Metric ↔ trace
+  is approximate only**: traces and metrics share the fixed resource and closed
+  route/status dimensions, and a dashboard time bucket anchors the drill-down,
+  but there is no TraceID join. `@opentelemetry/sdk-metrics` 3.1.0 and the
+  0.301.x OTLP transformer do not implement exemplars, and the DELTA reader
+  does not retain the emitting context. `trace_id`/`span_id` must never be
+  added as metric labels (unbounded cardinality/privacy) and log rows must
+  never stand in for metric rows; the metrics unit test pins that those
+  attributes are dropped, and the smoke asserts metric rows carry no such
+  columns.
+- **Verification.** Automated coverage: the config gate matrix, the
+  projection drop/closed-field matrix, real SDK log records through in-memory
+  exporters (severity, privacy, fixed resource keys, span correlation inside
+  and across awaits, unsampled trace ids, no records after shutdown), runtime
+  lifecycle (logs off installs no sink, construction failure keeps traces,
+  sink cleared on stop, flush includes logs), and a real Hono
+  `requestId`→trace→hono-pino integration test whose response log shares the
+  `http.server` trace/span ids while no URL/query/header/request-id fixture
+  leaves. The AST log-message contract requires static messages (options-based
+  indirections are pinned) and rejects interpolated messages and privacy
+  markers. The SDK boundary allows only `runtime.ts` and `logs-runtime.ts` on
+  the server side and pins that `logs-runtime.ts` is statically imported only
+  by `runtime.ts`; the production bundle guard additionally forbids
+  `OTLPLogExporter`, `BatchLogRecordProcessor`, and `LoggerProvider`.
+- **Real smoke (final run).** The final 2026-11-10 run against the pinned `v1.1.2` image passed
+  **33/33 checks**: 479 server spans, 695 RUM rows, 132 rows in the independent
+  `kobato_logs` stream (17 stored columns, 10 verified), 26 HTTP metric rows (15
+  columns with no `trace_id`/`span_id` labels), 29 dashboard panel queries (all
+  29 returned rows), 43 relevant streams at 1-day retention, 28.9 MB
+  process-tree RSS growth over 200 outage requests, 0 replayed outage spans, and
+  0 replayed outage log rows. The response-log check
+  found an HTTP log row and its `http.server` span sharing
+  `trace_id`/`span_id` (`HTTP request completed`, GET 302; trace
+  `e9b5069e…`, span `ac6d49a1…`) with
+  `service_name`/`service_version` equal to the trace resource; the closed-row
+  check saw 17 columns and none of the forbidden request/response/URL/query/
+  request-id/pid/hostname/error columns or fixtures. The metric-label check saw
+  15 columns and no `trace_id`/`span_id`. After the O2 restart, 41 new spans and
+  24 new log rows arrived; the outage window contained 0 spans and 0 log rows. The run also exposed two fixture defects outside this
+  feature, which were fixed in the smoke tooling: the synthetic site now points
+  at the running DEV origin (so a cover-less post's default OG cover resolves
+  locally), and the staged post carries the site-owned
+  `/images/open-graph.png` cover so the editor OG preview renders instead of
+  500ing. OpenObserve flattens the trace resource's `service.version`/
+  `deployment.environment` as `service_service_version`/
+  `service_deployment_environment`, while the log stream uses
+  `service_version`/`deployment_environment`; the smoke compares the correct
+  pair.
+- **Verified vs. unverified.** Verified: the independent `kobato_logs`
+  stream, the real column names above, HTTP log↔span correlation by both ids,
+  fixed bodies, the closed attribute/column set, resource parity with traces,
+  1-day retention, dashboard queries, no fixture leakage, and no
+  outage-window replay after an O2 restart. Unverified: an exporter that
+  fails after construction (only construction failure and offline drops are
+  exercised), non-HTTP multi-line behaviour beyond the static-message contract,
+  and whether a future OpenObserve upgrade changes the flattened log column
+  names (the smoke fails loudly and the contract must be re-read).
+
 ## Privacy, storage, and retention
 
 The outbound contract permits only technical, low-cardinality fields required
@@ -815,8 +959,8 @@ the mandatory storage-time enforcement point because the slim SDK's
 Keep OpenObserve bound to loopback in the documented local setup, with its own
 admin credentials and a dedicated development data volume. Configure 24-hour
 retention where supported, otherwise the shortest available retention. Trace,
-metric, and RUM data never enters Kobato's SQLite/DuckDB files, backup archives,
-or the SEA binary. Deleting the development volume deletes the telemetry.
+metric, RUM, and server log data never enters Kobato's SQLite/DuckDB files,
+backup archives, or the SEA binary. Deleting the development volume deletes the telemetry.
 
 ## Failure, backpressure, and lifecycle
 
@@ -827,8 +971,8 @@ actions never await export. When OpenObserve is unavailable, data is dropped;
 the site continues normally and emits at most rate-limited safe diagnostics.
 
 `startDevTrace` and browser initialization are idempotent. HMR disposal disables
-subscriptions/observers, restores the no-op facade, and performs a bounded flush
-and provider shutdown so reloads cannot double-export. Process shutdown uses a
+subscriptions/observers, restores the no-op facade, and performs a bounded
+provider shutdown (which flushes) so reloads cannot double-export. Process shutdown uses a
 bounded lifecycle hook without delaying the existing database/server teardown
 contract. Exporter, sanitizer, and observer failures never propagate into
 application execution.
@@ -855,15 +999,16 @@ Provision four dashboards:
    worker, event-loop delay, and representative trace waterfalls.
 3. **Browser** — hard/soft navigation, Web Vitals, long tasks, resource timing,
    sanitized errors, and cold/warm cache comparisons by route ID.
-4. **Correlation** — RUM resource → same-origin server trace → DB/SSR spans,
-   with trace IDs used as exemplars rather than metric labels.
+4. **Correlation** — RUM resource → same-origin server trace → DB/SSR spans and
+   the correlated `kobato_logs` lines, with trace/span IDs used as keys rather
+   than metric labels.
 
 Use synthetic development content for dashboards and verification. No
 production data copy is required.
 
 The OSS retention model is day-granular: `trace:init` applies the minimum
 per-stream `data_retention: 1` (one day) to `_rumdata`, the OTLP trace stream,
-and the Kobato metric streams. A 24-hour value is not representable; the
+`kobato_logs`, and the Kobato metric streams. A 24-hour value is not representable; the
 server-wide fallback enforces a 3-day minimum until the next init pass.
 
 ## Implementation plan
@@ -893,8 +1038,14 @@ server-wide fallback enforces a 3-day minimum until the next init pass.
      drop policy.
    - Run real server + browser journeys against OpenObserve, inspect actual
      stored fields, and record the overhead comparison.
+6. **Server log export (Phase 6)**
+   - Add `trace.logs.enabled`, the Pino-writable sink seam, the closed
+     log-record projection, and the DEV OTel log pipeline to the independent
+     `kobato_logs` stream (no Pino transport, no admin surface).
+   - Extend retention/status/dashboards and the real smoke with log↔span
+     correlation and the closed-column privacy checks.
 
-All five slices are in this iteration; frontend delivery is not deferred to a
+All six slices are in this iteration; frontend delivery is not deferred to a
 later ADR.
 
 ## Verification and acceptance
@@ -933,7 +1084,8 @@ waterfall, metrics, RUM/Web Vitals/resources, dashboard panel queries, the
 fail-closed privacy pipeline, a real unknown-field injection, and the
 outage/restart path plus a startup gate verification and an O2-offline
 frontend-withheld boot and a tamper-reject/recover gate check. It was run
-successfully on 2026-11-09 (29/29 checks, O2 `v1.1.2`).
+successfully on 2026-11-09 (29/29 checks, O2 `v1.1.2`) and again after the
+Phase 6 log export on 2026-11-10 (33/33 checks).
 
 Verified:
 
@@ -942,7 +1094,14 @@ Verified:
 - The initial hard-navigation limitation is visible and documented, not
   misrepresented by a false join.
 - OpenObserve contains no forbidden fixture values in traces, metrics, RUM,
-  errors, resource attributes, or metric labels.
+  errors, server logs, resource attributes, or metric labels. Server log rows
+  expose only the closed projected columns; `req`/`res`, headers, URL/query,
+  request id, pid/hostname, arbitrary context, and error message/stack/cause
+  never appear, and HTTP bodies are one of the three fixed phrases.
+- An HTTP response log and its `http.server` span share both `trace_id` and
+  `span_id`; the log stream's `service_name`/`service_version` match the trace
+  resource, and OpenObserve v1.1.2 creates the stream from the OTLP
+  `stream-name` header (`kobato_logs`, never `_json`).
 - A real RUM event with a flattened `view_performance_inp_duration=40_000_000`
   is stored as `view_inp_us=40000`; browser views without an interaction are
   `null`, never a fake 0.
@@ -963,7 +1122,8 @@ operation is the inline image transform; SQLite work is represented by real
 local instance has no MaxMind database), and any universal overhead claim
 (the local samples and medians are recorded above). O2 retention is one day
 (the OSS minimum), not a literal 24h window. The outage-path process-tree RSS
-observation was 20.3 MB growth over 200 requests in the final run.
+observation was 28.9 MB growth over 200 requests in the Phase 6 run (20.3 MB in
+the earlier Phase 5 run).
 
 ## Consequences
 
@@ -987,7 +1147,7 @@ observation was 20.3 MB growth over 200 requests in the final run.
 ## Rejected alternatives
 
 - **Tempo/Grafana or Sentry as an additional backend** — OpenObserve already
-  covers the required trace, metric, RUM, error, and dashboard surfaces; a second
+  covers the required trace, metric, log, RUM, error, and dashboard surfaces; a second
   platform increases cost and privacy review without answering this requirement
   better.
 - **Runtime-only disabling in a production bundle** — an inactive exporter is

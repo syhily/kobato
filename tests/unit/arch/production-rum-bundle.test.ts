@@ -25,7 +25,10 @@ const FORBIDDEN_MARKERS = [
   '@opentelemetry/',
   'OTLPTraceExporter',
   'OTLPMetricExporter',
+  'OTLPLogExporter',
   'BatchSpanProcessor',
+  'BatchLogRecordProcessor',
+  'LoggerProvider',
   'PeriodicExportingMetricReader',
   'AsyncLocalStorageContextManager',
 ] as const

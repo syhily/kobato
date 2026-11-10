@@ -24,6 +24,13 @@ const APPLICATION_ID_PATTERN = /^[A-Za-z0-9._:-]{1,256}$/
 const CLIENT_TOKEN_PATTERN = /^[\x21-\x7E]{1,4096}$/
 const MAX_AUTHORIZATION_HEADER_LENGTH = 8192
 
+export interface TraceLogsRuntimeConfig {
+  /** Direct OTLP/HTTP logs endpoint (`<origin>/api/<org>/v1/logs`). */
+  otlpLogsUrl: string
+  /** The same server-only OTLP authorization value used by traces/metrics. */
+  authorizationHeader: string
+}
+
 export interface ServerTraceRuntimeConfig {
   /** Normalized OpenObserve origin (`http://127.0.0.1:5080`). */
   endpoint: string
@@ -34,14 +41,24 @@ export interface ServerTraceRuntimeConfig {
   includeRedactedSql: boolean
   otlpTracesUrl: string
   otlpMetricsUrl: string
+  /**
+   * Non-null only when the pipeline is active AND `trace.logs.enabled` is on.
+   * Logs reuse the traces/metrics endpoint, organization, and credential.
+   */
+  logs: TraceLogsRuntimeConfig | null
 }
 
 export interface OtlpUrls {
   traces: string
   metrics: string
+  logs: string
 }
 
-export type TraceDiagnosticCode = 'trace-production-disabled' | 'trace-invalid-config' | 'trace-frontend-invalid-config'
+export type TraceDiagnosticCode =
+  | 'trace-production-disabled'
+  | 'trace-invalid-config'
+  | 'trace-frontend-invalid-config'
+  | 'trace-logs-require-trace'
 
 export interface TraceConfigDiagnostic {
   code: TraceDiagnosticCode
@@ -73,6 +90,8 @@ const DIAGNOSTIC_MESSAGES: Record<TraceDiagnosticCode, string> = {
   'trace-invalid-config': 'OpenObserve tracing is disabled because the configuration is invalid or incomplete',
   'trace-frontend-invalid-config':
     'OpenObserve frontend RUM is disabled because the configuration is invalid or incomplete',
+  'trace-logs-require-trace':
+    'OpenObserve log export is disabled because it requires tracing (trace.logs.enabled is ignored)',
 }
 
 /** Derive the direct OpenObserve OTLP endpoints from the validated origin. */
@@ -81,6 +100,7 @@ export function deriveOtlpUrls(origin: string, organization: string): OtlpUrls {
   return {
     traces: `${base}/v1/traces`,
     metrics: `${base}/v1/metrics`,
+    logs: `${base}/v1/logs`,
   }
 }
 
@@ -153,6 +173,7 @@ function buildServerConfig(
     includeRedactedSql: input.includeRedactedSql,
     otlpTracesUrl: urls.traces,
     otlpMetricsUrl: urls.metrics,
+    logs: input.logs.enabled ? { otlpLogsUrl: urls.logs, authorizationHeader } : null,
   }
 }
 
@@ -179,7 +200,14 @@ export function resolveTraceConfig(
   }
 
   if (!input.enabled) {
-    return { status: 'disabled', server: null, frontend: null, diagnostics: [] }
+    return {
+      status: 'disabled',
+      server: null,
+      frontend: null,
+      diagnostics: input.logs.enabled
+        ? [{ code: 'trace-logs-require-trace', level: 'warn', fields: ['trace.logs.enabled', 'trace.enabled'] }]
+        : [],
+    }
   }
 
   const serverFields: string[] = []

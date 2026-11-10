@@ -6,6 +6,7 @@ import { Writable } from 'node:stream'
 import pino from 'pino'
 
 import { isVitest, NODE_ENV, serverConfig, type ServerConfig } from '@/server/infra/config'
+import { pushLogLine } from '@/server/infra/logger/sink'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 type Level = NonNullable<ServerConfig['server']['loggingLevel']>
@@ -100,10 +101,25 @@ interface LogContext {
 }
 
 // Writable wrapper keeps output on process.stdout so test spies can intercept it.
+// stdout is written first and its bytes are independent of the optional sink.
+// A sink that logs re-enters this stream; Node buffers that nested write and
+// flushes it from inside cb(), so the forwarding guard spans the callback too.
+let forwarding = false
 const stdout = new Writable({
   write(chunk, _encoding, cb) {
-    process.stdout.write(String(chunk))
-    cb()
+    const line = String(chunk)
+    process.stdout.write(line)
+    if (forwarding) {
+      cb()
+      return
+    }
+    forwarding = true
+    try {
+      pushLogLine(line)
+      cb()
+    } finally {
+      forwarding = false
+    }
   },
 })
 

@@ -51,9 +51,9 @@ export async function migrateSecretsEncryption(db: Database): Promise<void> {
           decryptIfNeeded(value)
           verified++
         } catch (error) {
-          const msg = `[${scope}] ${path}.${field} failed to decrypt — ENCRYPTION_KEY may be incorrect or ciphertext is corrupted`
-          log.error(msg, { error })
-          failures.push(msg)
+          const detail = `[${scope}] ${path}.${field} failed to decrypt — ENCRYPTION_KEY may be incorrect or ciphertext is corrupted`
+          log.error('Secret value failed to decrypt', { detail, error })
+          failures.push(detail)
         }
       } else {
         try {
@@ -61,9 +61,9 @@ export async function migrateSecretsEncryption(db: Database): Promise<void> {
           dirtyScopes.add(scope)
           encrypted++
         } catch (error) {
-          const msg = `[${scope}] ${path}.${field} failed to encrypt`
-          log.error(msg, { error })
-          failures.push(msg)
+          const detail = `[${scope}] ${path}.${field} failed to encrypt`
+          log.error('Secret value failed to encrypt', { detail, error })
+          failures.push(detail)
         }
       }
     }
@@ -83,7 +83,7 @@ export async function migrateSecretsEncryption(db: Database): Promise<void> {
     }
 
     if (encrypted > 0 || verified > 0) {
-      log.info(`Secrets migration complete: ${encrypted} encrypted, ${verified} verified`)
+      log.info('Secrets encryption migration complete', { encrypted, verified })
     }
   } catch (error) {
     log.error('Secrets encryption migration failed', { error })

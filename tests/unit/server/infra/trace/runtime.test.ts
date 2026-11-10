@@ -25,6 +25,7 @@ const CONFIG: ServerTraceRuntimeConfig = {
   includeRedactedSql: false,
   otlpTracesUrl: 'http://127.0.0.1:5080/api/default/v1/traces',
   otlpMetricsUrl: 'http://127.0.0.1:5080/api/default/v1/metrics',
+  logs: null,
 }
 
 function activeResolution(overrides: Partial<ServerTraceRuntimeConfig> = {}): TraceConfigResolution {

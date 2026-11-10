@@ -123,7 +123,8 @@ export async function serveStoredLocalFile(input: StoredLocalFileInput): Promise
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       return new Response(null, { status: 404 })
     }
-    getLogger(input.logName.scope).warn(`Failed to stat ${input.logName.target}`, {
+    getLogger(input.logName.scope).warn('Failed to stat stored file', {
+      target: input.logName.target,
       key: input.key,
       error: String(error),
     })

@@ -61,14 +61,17 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
     listeningListener:
       options?.listeningListener ||
       ((info) => {
-        log.info(`🚀 Server started on port ${info.port}`)
-        log.info(`🌍 http://127.0.0.1:${info.port}`)
+        log.info('🚀 Server started', { port: info.port })
+        log.info('🌍 Local server URL', { url: `http://127.0.0.1:${info.port}` })
 
         if (basename !== '/') {
-          log.info(`🔗 http://127.0.0.1:${info.port}${basename}`)
+          log.info('🔗 Local server URL with site basename', {
+            url: `http://127.0.0.1:${info.port}${basename}`,
+            basename,
+          })
         }
 
-        log.info(`🏎️ Server started in ${Date.now() - startTime}ms`)
+        log.info('🏎️ Server startup timing', { startupMs: Date.now() - startTime })
       }),
     port: options?.port || serverConfig.server.port,
     hostname: options?.hostname || serverConfig.server.host,

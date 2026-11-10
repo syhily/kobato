@@ -52,7 +52,8 @@ async function main(): Promise<void> {
   log(`    state:    ${stateFilePath()}`)
   log(`    endpoint: ${state.endpoint} (org ${state.organization})`)
   log(`    applicationId: ${state.applicationId}`)
-  log('    Merge the "trace" block into kobato.config.json and restart the DEV server.')
+  log('    Merge the "trace" block (traces, metrics, server logs, frontend RUM) into kobato.config.json.')
+  log('    Restart the DEV server afterwards; trace.* is a boot-time snapshot.')
   log('    Do not commit the fragment: it carries server and RUM credentials.')
   log('    OpenObserve CORS must include the exact DEV origin (trace:up sets localhost/127.0.0.1:4321).')
 }

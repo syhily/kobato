@@ -4,9 +4,11 @@
 // retention/pipeline/dashboards as `trace:init`, boots the REAL DEV server
 // (react-router dev) with a throwaway config, drives Chromium through public
 // pages, an oRPC call, an SPA navigation and a sanitized error, then queries
-// OpenObserve for the actual stored traces/metrics/RUM. Finally it stops
-// OpenObserve, proves the site keeps working, and checks that no outage data
-// is replayed after the restart.
+// OpenObserve for the actual stored traces/metrics/RUM/server logs. Finally it
+// stops OpenObserve, proves the site keeps working, and checks that no outage
+// data is replayed after the restart. Server logs must land in the independent
+// `kobato_logs` stream with the closed projected columns and correlate with the
+// same request's `http.server` span by trace_id AND span_id.
 //
 // Everything is synthetic and loopback-only. Ordinary `pnpm test` never runs
 // this file; it requires Docker and Playwright.
@@ -28,7 +30,7 @@ import sharp from 'sharp'
 
 import type { O2Context, StreamInfo, TraceState } from './lib.ts'
 
-import { TRACE_METRIC_STREAMS, isTraceMetricStreamName } from '../../src/shared/contracts/trace-metrics.ts'
+import { TRACE_METRIC_STREAMS } from '../../src/shared/contracts/trace-metrics.ts'
 import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '../../src/shared/contracts/trace-pipeline.ts'
 import { unsafeCast } from '../../src/shared/utils/unsafe-cast.ts'
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '../../tests/_helpers/e2e-client.ts'
@@ -41,9 +43,11 @@ import {
   fail,
   generateFixture,
   generatePassword,
+  isRelevantTraceStream,
   listDashboards,
   listStreams,
   log,
+  LOG_STREAM,
   o2Context,
   o2Json,
   RETENTION_DAYS,
@@ -188,14 +192,16 @@ async function stopDevServer(server: DevServer): Promise<void> {
   }
 }
 
-function seedAdmin(databasePath: string, email: string, password: string): void {
+function seedAdmin(databasePath: string, email: string, password: string, origin: string): void {
   const year = new Date().getFullYear()
   const general = JSON.stringify({
     title: 'Kobato Trace Smoke',
     description: 'Synthetic OpenObserve smoke instance',
-    website: 'http://127.0.0.1',
+    // The site must point at the running DEV origin: a cover-less post's
+    // default OG cover is fetched from `<website>/images/open-graph.png`.
+    website: origin,
     keywords: [],
-    author: { name: 'Smoke Admin', email, url: 'http://127.0.0.1' },
+    author: { name: 'Smoke Admin', email, url: origin },
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-LL-dd HH:mm',
@@ -264,6 +270,11 @@ function fixtures(): SmokeFixtures {
   }
 }
 
+/** Every synthetic fixture string, labelled by field so a failure never echoes a secret. */
+function fixtureNeedles(fx: SmokeFixtures): Array<{ field: string; value: string }> {
+  return Object.entries(fx).map(([field, value]) => ({ field, value: String(value) }))
+}
+
 async function writeDevConfig(
   path: string,
   port: number,
@@ -282,6 +293,7 @@ async function writeDevConfig(
     trace: traceEnabled
       ? {
           enabled: true,
+          logs: { enabled: true },
           endpoint: state.endpoint,
           organization: state.organization,
           serverAuthorizationHeader: `Basic ${Buffer.from(`${state.adminEmail}:${state.adminPassword}`).toString('base64')}`,
@@ -326,6 +338,9 @@ async function stagePost(origin: string, fx: SmokeFixtures): Promise<{ session: 
     {
       title: fx.title,
       summary: `Synthetic summary ${fx.sqlValue}`,
+      // Site-owned cover: the editor's OG preview asks the renderer for a card,
+      // and a cover-less post's empty cover is not renderable.
+      cover: '/images/open-graph.png',
       slug: fx.slug,
       published: true,
       publishedAt: new Date().toISOString(),
@@ -438,6 +453,22 @@ interface RumRow {
   view_largest_contentful_paint?: number
   view_cumulative_layout_shift?: number
   view_inp_us?: number | null
+  [key: string]: unknown
+}
+
+interface LogRow {
+  _timestamp?: number
+  body?: string
+  severity?: string
+  severity_number?: number
+  log_scope?: string
+  http_request_method?: string
+  http_response_status_code?: number
+  service_name?: string
+  service_version?: string
+  deployment_environment?: string
+  trace_id?: string
+  span_id?: string
   [key: string]: unknown
 }
 
@@ -898,7 +929,7 @@ async function main(): Promise<void> {
     server = null
 
     log('==> seeding synthetic admin and settings')
-    seedAdmin(join(dataDir, 'kobato.db'), fx.adminEmail, fx.adminPassword)
+    seedAdmin(join(dataDir, 'kobato.db'), fx.adminEmail, fx.adminPassword, origin)
 
     log('==> booting DEV server (installed, tracing enabled)')
     server = await bootDevServer(configPath, appPort, serverLog)
@@ -1079,6 +1110,23 @@ async function main(): Promise<void> {
     }
     const metricTables = await listStreams(ctx, 'metrics')
 
+    // Hard probe: the DEV server's log pipeline must have created the
+    // independent `kobato_logs` stream (v1.1.2 honours the OTLP `stream-name`
+    // header for logs). The projected columns below are the real flattened
+    // names observed in OpenObserve, not assumptions.
+    const logStreams = await listStreams(ctx, 'logs')
+    assert(
+      logStreams.some((stream) => stream.name === LOG_STREAM),
+      `no ${LOG_STREAM} stream: ${logStreams.map((stream) => stream.name).join(', ')}`,
+    )
+    const logRows = (await waitForRows(
+      ctx,
+      'logs',
+      `SELECT * FROM "${LOG_STREAM}" WHERE service_name = 'kobato' AND _timestamp >= ${runStart * 1000} LIMIT 1000`,
+      runStart,
+      (rows) => rows.some((row) => typeof row.trace_id === 'string' && typeof row.span_id === 'string'),
+    )) as LogRow[]
+
     log('')
     log('== checks ==')
 
@@ -1242,6 +1290,25 @@ async function main(): Promise<void> {
       return `${metricRows.length} http metric rows; event_loop_delay=${eventLoop}; image/queue metrics=${imageMetrics}/${queueMetrics}`
     })
 
+    await check('metric rows carry no trace_id/span_id labels', async () => {
+      const rows = await waitForRows(
+        ctx,
+        'metrics',
+        `SELECT * FROM "${TRACE_METRIC_STREAMS.httpServerDurationCount}" LIMIT 100`,
+        runStart,
+        (result) => result.length > 0,
+      )
+      const keys = new Set<string>()
+      for (const row of rows) {
+        for (const key of Object.keys(row)) {
+          keys.add(key)
+        }
+      }
+      const leaked = [...keys].filter((key) => key === 'trace_id' || key === 'span_id')
+      assert(leaked.length === 0, `metric rows contain forbidden label columns: ${leaked.join(', ')}`)
+      return `${rows.length} metric rows; ${keys.size} columns; no trace_id/span_id (no exemplar channel upstream)`
+    })
+
     await check('metric streams carry delta increments, not cumulative snapshots', async () => {
       const countRows = await waitForRows(
         ctx,
@@ -1289,15 +1356,122 @@ async function main(): Promise<void> {
       return `${counts.length} count / ${sums.length} sum points; ${collectionWindows} collection windows; counts=[${counts.join(',')}]`
     })
 
+    await check('server logs land in the independent kobato_logs stream', () => {
+      const stream = logStreams.find((entry) => entry.name === LOG_STREAM)
+      assert(stream !== undefined, 'kobato_logs is missing')
+      assert(stream.stream_type === 'logs', `kobato_logs is a ${stream.stream_type} stream, not logs`)
+      const requiredColumns = [
+        'body',
+        'severity',
+        'severity_number',
+        'log_scope',
+        'trace_id',
+        'span_id',
+        'service_name',
+        'service_version',
+        'deployment_environment',
+        'instrumentation_library_name',
+      ]
+      for (const column of requiredColumns) {
+        assert(
+          logRows.some((row) => column in row),
+          `kobato_logs has no projected column ${column}`,
+        )
+      }
+      const severities = [...new Set(logRows.map((row) => row.severity).filter((value) => value !== undefined))].sort()
+      return `${logRows.length} rows in kobato_logs; severities=${severities.join(',')}; ${requiredColumns.length} columns verified`
+    })
+
+    await check('HTTP response log correlates with its http.server span by trace and span id', () => {
+      const serverSpans = new Map(
+        traceRows
+          .filter((row) => row.operation_name === 'http.server')
+          .map((row) => [`${String(row.trace_id)}:${String(row.span_id)}`, row]),
+      )
+      const phrases = new Set(['HTTP request completed', 'HTTP request rejected', 'HTTP request failed'])
+      const correlated = logRows.find(
+        (row) =>
+          row.log_scope === 'http' &&
+          typeof row.body === 'string' &&
+          phrases.has(row.body) &&
+          serverSpans.has(`${String(row.trace_id)}:${String(row.span_id)}`),
+      )
+      assert(correlated !== undefined, 'no HTTP log row shares trace_id AND span_id with an http.server span')
+      const span = serverSpans.get(`${String(correlated?.trace_id)}:${String(correlated?.span_id)}`)!
+      assert(correlated?.service_name === span.service_name, 'log service_name differs from the trace resource')
+      // O2 flattens the trace resource's `service.version`/`deployment.environment`
+      // as `service_service_version`/`service_deployment_environment`, while the
+      // log stream stores `service_version`/`deployment_environment`.
+      const traceVersion = span.service_service_version ?? span.service_version
+      const traceEnvironment = span.service_deployment_environment ?? span.deployment_environment
+      assert(
+        typeof traceVersion === 'string' && correlated?.service_version === traceVersion,
+        `log service_version ${String(correlated?.service_version)} differs from the trace resource ${String(traceVersion)}`,
+      )
+      assert(
+        correlated?.deployment_environment === traceEnvironment,
+        `log deployment.environment ${String(correlated?.deployment_environment)} differs from the trace resource ${String(traceEnvironment)}`,
+      )
+      assert(correlated?.deployment_environment === 'development', 'log deployment.environment is not development')
+      return `${String(correlated?.trace_id)}/${String(correlated?.span_id)} ${String(correlated?.body)} (${String(correlated?.http_request_method)} ${String(correlated?.http_response_status_code)})`
+    })
+
+    await check('server log rows expose only the closed projected fields', () => {
+      const forbiddenKeys = [
+        /^req$/,
+        /^res$/,
+        /^req_id$/,
+        /^request_id$/,
+        /_headers$/,
+        /^url$/,
+        /^query$/,
+        /^pid$/,
+        /^hostname$/,
+        /^context$/,
+        /^error_message$/,
+        /^error_stack$/,
+        /^error_cause$/,
+        /^msg$/,
+        /^response_time$/,
+        /^http_route$/,
+      ]
+      const keys = new Set<string>()
+      for (const row of logRows) {
+        for (const key of Object.keys(row)) {
+          keys.add(key)
+        }
+      }
+      const leakedKeys = [...keys].filter((key) => forbiddenKeys.some((pattern) => pattern.test(key)))
+      assert(leakedKeys.length === 0, `forbidden log columns: ${leakedKeys.join(', ')}`)
+
+      const phrases = new Set(['HTTP request completed', 'HTTP request rejected', 'HTTP request failed'])
+      for (const row of logRows) {
+        if (row.log_scope === 'http') {
+          assert(
+            typeof row.body === 'string' && phrases.has(row.body),
+            `HTTP log body is not one of the fixed phrases: ${String(row.body)}`,
+          )
+        }
+      }
+
+      const text = stringifyAll(logRows as Array<Record<string, unknown>>)
+      for (const { field, value } of fixtureNeedles(fx)) {
+        assert(!text.includes(value), `fixture leaked into server logs: ${field}`)
+      }
+      return `${logRows.length} rows / ${keys.size} columns; no request/response/URL/query/pid/hostname/context/error columns or fixture values`
+    })
+
     await check('retention is 1 day on every relevant stream', async () => {
       const streams: StreamInfo[] = []
       for (const type of ['logs', 'traces', 'metrics'] as const) {
         streams.push(...(await listStreams(ctx, type)))
       }
-      const relevant = streams.filter(
-        (stream) => stream.name === '_rumdata' || stream.name === 'default' || isTraceMetricStreamName(stream.name),
-      )
+      const relevant = streams.filter((stream) => isRelevantTraceStream(stream.name))
       assert(relevant.length > 0, 'no relevant streams found')
+      assert(
+        relevant.some((stream) => stream.name === LOG_STREAM),
+        `${LOG_STREAM} is missing from the retention set`,
+      )
       const wrong = relevant.filter((stream) => (stream.settings?.data_retention ?? 0) !== RETENTION_DAYS)
       if (wrong.length > 0) {
         for (const stream of wrong) {
@@ -1403,6 +1577,10 @@ async function main(): Promise<void> {
         'br-errors',
         'co-spans',
         'co-rum-trace',
+        'co-logs',
+        'co-slow-requests',
+        'sv-log-severity',
+        'sv-log-scope',
       ])
       // No 5xx and possibly no outbound traffic in a synthetic run; these
       // panels must still execute, but an empty result is explicitly allowed.
@@ -1475,7 +1653,6 @@ async function main(): Promise<void> {
     })
 
     await check('forbidden fixtures absent from traces, metrics and RUM', async () => {
-      const needles = [fx.slug, fx.email, fx.token, fx.search, fx.sqlValue, fx.rawUrl, fx.error]
       const haystacks: string[] = [stringifyAll(traceRows)]
       haystacks.push(stringifyAll(rumRows))
       for (const stream of metricTables) {
@@ -1492,12 +1669,12 @@ async function main(): Promise<void> {
           // _sum/_bucket siblings carry the data and are scanned separately.
         }
       }
-      for (const needle of needles) {
+      for (const { field, value } of fixtureNeedles(fx)) {
         for (const haystack of haystacks) {
-          assert(!haystack.includes(needle), `fixture leaked: ${needle.slice(0, 40)}`)
+          assert(!haystack.includes(value), `fixture leaked: ${field}`)
         }
       }
-      return 'slug/email/token/search/SQL/raw-URL/error fixtures absent'
+      return 'all fixture fields absent (admin credentials, slug, title, search, SQL, raw URL, error)'
     })
 
     await check('browser console produced no unexpected error', () => {
@@ -1508,8 +1685,8 @@ async function main(): Promise<void> {
           !line.includes('status of 404') &&
           // The synthetic seeded asset settings point at a non-existent
           // 127.0.0.1 image host; that fallback is unrelated to telemetry.
-          !line.includes('127.0.0.1/images/') &&
-          !line.includes('127.0.0.1/storage/'),
+          !/127\.0\.0\.1(?::\d+)?\/images\//.test(line) &&
+          !/127\.0\.0\.1(?::\d+)?\/storage\//.test(line),
       )
       if (unexpected.length > 0) {
         warn(`failed resources: ${failedResources.join(' | ').slice(0, 1000)}`)
@@ -1562,7 +1739,7 @@ async function main(): Promise<void> {
     })
 
     const o2RestartAt = Date.now()
-    await check('OpenObserve restart accepts only new data', async () => {
+    await check('OpenObserve restart accepts only new traces and logs', async () => {
       await restartOpenObserve(state)
       server = await bootDevServer(configPath, appPort, serverLog)
       await fetch(`${origin}/`, { signal: AbortSignal.timeout(10_000) })
@@ -1585,7 +1762,27 @@ async function main(): Promise<void> {
         (outageWindow.hits ?? []).length === 0,
         `${outageWindow.hits?.length ?? 0} outage-window spans were replayed after restart`,
       )
-      return `${after.length} new spans; ${outageWindow.hits?.length ?? 0} replayed`
+
+      const logsAfter = (await waitForRows(
+        ctx,
+        'logs',
+        `SELECT * FROM "${LOG_STREAM}" WHERE service_name = 'kobato' AND _timestamp >= ${o2RestartAt * 1000} LIMIT 200`,
+        o2RestartAt,
+        (rows) => rows.length > 0,
+      )) as LogRow[]
+      const outageLogs = (await search(ctx, {
+        type: 'logs',
+        sql: `SELECT * FROM "${LOG_STREAM}" WHERE service_name = 'kobato' AND _timestamp >= ${outageStart * 1000} AND _timestamp < ${o2RestartAt * 1000} LIMIT 1000`,
+        startTimeMs: outageStart,
+        endTimeMs: o2RestartAt,
+        size: 1000,
+      })) as { hits?: LogRow[] }
+      assert(logsAfter.length > 0, 'no new server log arrived after the restart')
+      assert(
+        (outageLogs.hits ?? []).length === 0,
+        `${outageLogs.hits?.length ?? 0} outage-window log rows were replayed after restart`,
+      )
+      return `${after.length} new spans, ${logsAfter.length} new log rows; ${outageWindow.hits?.length ?? 0} spans / ${outageLogs.hits?.length ?? 0} logs replayed`
     })
 
     await check('frontend RUM is withheld when OpenObserve is unavailable at startup', async () => {

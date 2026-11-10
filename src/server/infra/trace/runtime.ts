@@ -1,13 +1,15 @@
 // Development-only OpenObserve OTel runtime (ADR-0012).
 //
-// This is the ONLY server module allowed to import the real OpenTelemetry
-// SDKs. It is loaded through a DEV-only dynamic import from `server.ts`, so a
-// production bundle has no provider, exporter, context manager, or sampler to
-// reach. `facade.ts` stays the application-facing surface.
+// One of the two server modules allowed to import the real OpenTelemetry SDKs
+// (the other is `logs-runtime.ts`, which this module constructs). It is loaded
+// through a DEV-only dynamic import from `server.ts`, so a production bundle
+// has no provider, exporter, context manager, or sampler to reach.
+// `facade.ts` stays the application-facing surface.
 //
 // Boundaries that matter here:
-// - Resource attributes are a fixed three-key set for BOTH signals. No
-//   host/OS/process/env detector runs (no `defaultResource()`).
+// - Resource attributes come from the fixed three-key `resource.ts` for ALL
+//   signals (traces, metrics, logs). No host/OS/process/env detector runs (no
+//   `defaultResource()`).
 // - Export is direct OTLP/HTTP into OpenObserve, behind a bounded queue and a
 //   short export timeout. Nothing waits on an export in the request path.
 // - Only W3C `traceparent`/`tracestate` are extracted; baggage and alternative
@@ -15,6 +17,9 @@
 // - Metrics use a periodic reader with the same resource, a bounded export
 //   timeout, and a closed instrument/attribute catalog (`metrics.ts`), so a
 //   non-finite value or an undeclared label can never reach the exporter.
+// - Logs are a sibling pipeline: the sink is installed into the Pino writable's
+//   slot and every line is projected by `log-record.ts` before export. A logs
+//   failure degrades only logs.
 
 import type {
   Context,
@@ -26,6 +31,7 @@ import type {
   SpanContext,
   TextMapGetter,
 } from '@opentelemetry/api'
+import type { LogRecordExporter } from '@opentelemetry/sdk-logs'
 import type { MetricReader } from '@opentelemetry/sdk-metrics'
 import type { SpanExporter } from '@opentelemetry/sdk-trace'
 
@@ -55,12 +61,15 @@ import type {
   SpanOptions,
   TraceDelegate,
 } from '@/server/infra/trace/facade'
+import type { DevLogPipeline } from '@/server/infra/trace/logs-runtime'
 
 import { registerShutdownHook, unregisterShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { clearLogSink, setLogSink } from '@/server/infra/logger/sink'
 import { isTraceDevelopmentRuntime, loadTraceConfig } from '@/server/infra/trace/config'
 import { installTraceDelegate, uninstallTraceDelegate } from '@/server/infra/trace/facade'
 import { activateFrontendGate, deactivateFrontendGate } from '@/server/infra/trace/frontend-gate'
+import { buildDevLogPipeline } from '@/server/infra/trace/logs-runtime'
 import {
   isAllowedMetricName,
   METRIC,
@@ -73,14 +82,13 @@ import {
   type FrontendPipelineVerifier,
   verifyRumPrivacyPipeline,
 } from '@/server/infra/trace/pipeline-verify'
+import { traceResourceAttributes } from '@/server/infra/trace/resource'
 import { projectError, sanitizeSpanAttribute, sanitizeSpanAttributes } from '@/server/infra/trace/sanitize'
 import { startSqliteQueryTrace, stopSqliteQueryTrace } from '@/server/infra/trace/sqlite'
 import { APP_VERSION } from '@/shared/config/version'
 
 const log = getLogger('trace')
 
-const SERVICE_NAME = 'kobato'
-const DEPLOYMENT_ENVIRONMENT = 'development'
 const TRACER_NAME = 'kobato-server'
 const TRACER_VERSION = APP_VERSION
 
@@ -142,6 +150,8 @@ export interface DevTraceStartOptions {
   spanExporter?: SpanExporter
   /** Test seam: collect metrics in memory instead of the periodic OTLP reader. */
   metricReader?: MetricReader
+  /** Test seam: in-memory exporter instead of direct OTLP/HTTP for the log pipeline. */
+  logRecordExporter?: LogRecordExporter
   /** Test seam: replace the event-loop observer construction. */
   eventLoopObserver?: MetricObserverHooks
   /** Test seam: replace startup tail side effects. */
@@ -163,6 +173,7 @@ interface MetricPipeline {
 interface RuntimeState {
   provider: TracerProvider
   metricProvider: MeterProvider | null
+  logPipeline: DevLogPipeline | null
   config: ServerTraceRuntimeConfig
   /** Isolated, idempotent cleanup actions shared by rollback and stop. */
   cleanup: () => void
@@ -394,16 +405,8 @@ function buildExporter(config: ServerTraceRuntimeConfig): SpanExporter {
   })
 }
 
-function buildResource() {
-  return resourceFromAttributes({
-    'service.name': SERVICE_NAME,
-    'service.version': APP_VERSION,
-    'deployment.environment': DEPLOYMENT_ENVIRONMENT,
-  })
-}
-
 function buildProvider(config: ServerTraceRuntimeConfig, exporter: SpanExporter): TracerProvider {
-  const resource = buildResource()
+  const resource = resourceFromAttributes(traceResourceAttributes())
   const spanProcessor = new BatchSpanProcessor({
     exporter,
     maxQueueSize: MAX_QUEUE_SIZE,
@@ -454,7 +457,10 @@ function buildMetricPipeline(
       exportIntervalMillis: METRIC_EXPORT_INTERVAL_MS,
       exportTimeoutMillis: EXPORT_TIMEOUT_MS,
     })
-  const provider = new MeterProvider({ resource: buildResource(), readers: [metricReader] })
+  const provider = new MeterProvider({
+    resource: resourceFromAttributes(traceResourceAttributes()),
+    readers: [metricReader],
+  })
   let meter: Meter
   try {
     meter = provider.getMeter(TRACER_NAME, TRACER_VERSION)
@@ -528,12 +534,14 @@ function flushAll(state: RuntimeState): Promise<void> {
     state.metricProvider === null
       ? Promise.resolve()
       : state.metricProvider.forceFlush({ timeoutMillis: EXPORT_TIMEOUT_MS }).catch(() => undefined)
-  return Promise.all([traceFlush, metricFlush]).then(() => undefined)
+  const logFlush = state.logPipeline === null ? Promise.resolve() : state.logPipeline.forceFlush(EXPORT_TIMEOUT_MS)
+  return Promise.all([traceFlush, metricFlush, logFlush]).then(() => undefined)
 }
 
 function shutdownSignals(
   provider: TracerProvider,
   metricProvider: MeterProvider | null,
+  logPipeline: DevLogPipeline | null,
   timeoutMs: number,
 ): Promise<void> {
   const traceShutdown = provider.shutdown().catch(() => undefined)
@@ -541,7 +549,8 @@ function shutdownSignals(
     metricProvider === null
       ? Promise.resolve()
       : metricProvider.shutdown({ timeoutMillis: EXPORT_TIMEOUT_MS }).catch(() => undefined)
-  return withTimeout(Promise.all([traceShutdown, metricShutdown]), timeoutMs)
+  const logShutdown = logPipeline === null ? Promise.resolve() : logPipeline.shutdown()
+  return withTimeout(Promise.all([traceShutdown, metricShutdown, logShutdown]), timeoutMs)
 }
 
 async function verifyFrontendGate(
@@ -616,6 +625,7 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
   const gateToken: object = {}
   let verificationTimer: NodeJS.Timeout | null = null
   let metricPipeline: MetricPipeline | null = null
+  let logPipeline: DevLogPipeline | null = null
   let delegate: TraceDelegate | null = null
   let delegateInstalled = false
   let sqliteAttempted = false
@@ -629,6 +639,13 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
    */
   const cleanup = (): void => {
     const steps: Array<() => void> = [
+      // Detach the log sink first: nothing new may enter the pipeline while the
+      // provider below is being flushed and shut down.
+      () => {
+        if (logPipeline !== null) {
+          clearLogSink(logPipeline.sink)
+        }
+      },
       () => {
         if (delegateInstalled && delegate !== null) {
           uninstallDelegate(delegate)
@@ -674,7 +691,7 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
     rolledBack = true
     cleanup()
     try {
-      await shutdownSignals(provider, metricPipeline?.provider ?? null, SHUTDOWN_TIMEOUT_MS)
+      await shutdownSignals(provider, metricPipeline?.provider ?? null, logPipeline, SHUTDOWN_TIMEOUT_MS)
     } catch {
       // Telemetry cleanup must never throw.
     }
@@ -694,12 +711,46 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
 
     ensureContextManager()
 
+    // Logs are a sibling pipeline: a construction failure degrades only logs,
+    // never traces or metrics.
+    if (config.logs !== null) {
+      try {
+        logPipeline = buildDevLogPipeline(config.logs, { exporter: options.logRecordExporter })
+      } catch (error) {
+        logPipeline = null
+        log.warn('OpenObserve log pipeline could not start; logs stay disabled', {
+          error: error instanceof Error ? error.name : typeof error,
+        })
+      }
+    }
+
     const createdDelegate = createDelegate(provider, metricPipeline?.meter ?? null)
     delegate = createdDelegate
     delegateInstalled = installTraceDelegate(createdDelegate)
     if (!delegateInstalled) {
       await rollback()
       return INERT_HANDLE
+    }
+
+    // The sink slot is process-wide: when it is already taken (an older DEV
+    // runtime), discard only this new log pipeline and keep tracing.
+    if (logPipeline !== null) {
+      let installed = false
+      try {
+        installed = setLogSink(logPipeline.sink)
+      } catch {
+        installed = false
+      }
+      if (!installed) {
+        const discarded = logPipeline
+        logPipeline = null
+        try {
+          log.warn('OpenObserve log sink slot is unavailable; logs stay disabled')
+        } catch {
+          // A diagnostics failure must not affect tracing.
+        }
+        await withTimeout(discarded.shutdown(), EXPORT_TIMEOUT_MS)
+      }
     }
 
     sqliteAttempted = true
@@ -712,11 +763,13 @@ export async function startDevTrace(options: DevTraceStartOptions = {}): Promise
       organization: config.organization,
       sampleRate: config.sampleRate,
       metrics: metricPipeline !== null,
+      logs: logPipeline !== null,
     })
 
     runtime = {
       provider,
       metricProvider: metricPipeline?.provider ?? null,
+      logPipeline,
       config,
       cleanup,
       gateToken,
@@ -804,7 +857,12 @@ export async function stopDevTrace(options: { timeoutMs?: number } = {}): Promis
   }
 
   try {
-    await shutdownSignals(state.provider, state.metricProvider, options.timeoutMs ?? SHUTDOWN_TIMEOUT_MS)
+    await shutdownSignals(
+      state.provider,
+      state.metricProvider,
+      state.logPipeline,
+      options.timeoutMs ?? SHUTDOWN_TIMEOUT_MS,
+    )
   } catch {
     // Telemetry shutdown must never escape HMR disposal or a shutdown hook.
   }
