@@ -32,8 +32,9 @@ const SITE: ObservabilitySettingsSlice = {
   password: 'secret',
   sampleRate: 1,
   includeRedactedSql: false,
+  retentionDays: 0,
   logs: { enabled: false },
-  frontend: { enabled: false, sessionSampleRate: 100 },
+  frontend: { enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' },
   rumClientToken: 'rum-token',
   verifiedFingerprint: '',
   provisionedFingerprint: '',
@@ -98,7 +99,12 @@ describe('observability runtime re-arm after an HMR settings-snapshot loss', () 
 
     expect(runtimeMock.startTraceRuntime).not.toHaveBeenCalled()
     expect(runtimeMock.stopTraceRuntime).not.toHaveBeenCalled()
-    expect(getObservabilityRuntimeStatus()).toEqual({ phase: 'disabled', fingerprint: null, lastError: null })
+    expect(getObservabilityRuntimeStatus()).toEqual({
+      phase: 'disabled',
+      fingerprint: null,
+      lastError: null,
+      lastExportError: null,
+    })
   })
 
   it('re-hydrates on every call: a second boot cycle still arms', async () => {

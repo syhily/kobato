@@ -23,6 +23,7 @@ const BASE: TraceRuntimeSettings = {
     applicationId: '',
     clientToken: '',
     sessionSampleRate: 100,
+    clientIdentity: 'anonymous',
   },
 }
 
@@ -64,18 +65,29 @@ describe('trace config — OTLP URL derivation', () => {
 })
 
 describe('trace config — endpoint security', () => {
-  it.each(['http://127.0.0.1:5080', 'http://localhost:5080', 'http://[::1]:5080', 'https://obs.example.com'])(
-    'accepts %s',
-    (endpoint) => {
-      const resolution = resolveTraceConfig(traceInput({ endpoint }), DEV)
+  it.each([
+    'http://127.0.0.1:5080',
+    'http://localhost:5080',
+    'http://[::1]:5080',
+    'https://obs.example.com',
+    // The endpoint is server-only, so plain HTTP to a private network address (an internal
+    // OpenObserve) is a legitimate deployment.
+    'http://192.168.1.10:5080',
+    'http://10.0.0.5:5080',
+    'http://172.16.0.2:5080',
+    'http://[fd00::1]:5080',
+  ])('accepts %s', (endpoint) => {
+    const resolution = resolveTraceConfig(traceInput({ endpoint }), DEV)
 
-      expect(resolution.status).toBe('active')
-      expect(resolution.server?.endpoint).toBe(new URL(endpoint).origin)
-    },
-  )
+    expect(resolution.status).toBe('active')
+    expect(resolution.server?.endpoint).toBe(new URL(endpoint).origin)
+  })
 
   it.each([
     ['plain HTTP to a remote host', 'http://obs.example.com'],
+    // A hostname is not statically classifiable as internal — even one that
+    // resolves privately requires HTTPS.
+    ['plain HTTP to an internal hostname', 'http://openobserve.internal:5080'],
     ['embedded credentials', 'https://user:pass@obs.example.com'],
     ['a query string', 'https://obs.example.com/?token=1'],
     ['a fragment', 'https://obs.example.com/#frag'],
@@ -174,7 +186,7 @@ describe('trace config — activation matrix', () => {
         traceInput({ enabled: false }, { enabled: true, applicationId: 'app', clientToken: 'token' }),
         DEV,
       ),
-    ).toEqual({ status: 'disabled', server: null, frontend: null, diagnostics: [] })
+    ).toEqual({ status: 'disabled', server: null, frontend: null, frontendRelay: null, diagnostics: [] })
   })
 
   it('activates the server pipeline with a valid endpoint and authorization header', () => {
@@ -203,15 +215,53 @@ describe('trace config — activation matrix', () => {
 
     expect(resolution.status).toBe('active')
     expect(resolution.diagnostics).toEqual([])
+    // The browser projection carries no endpoint and no token — the same-origin intake
+    // relay owns both.
     expect(frontendRumBootstrapSchema.parse(resolution.frontend)).toEqual({
-      site: 'http://127.0.0.1:5080',
-      organization: 'default',
       applicationId: 'kobato-dev',
-      clientToken: 'rum-token',
       service: 'kobato',
       environment: 'development',
       sessionSampleRate: 25,
+      clientIdentity: 'anonymous',
     })
+    expect(JSON.stringify(resolution.frontend)).not.toContain('127.0.0.1')
+    expect(JSON.stringify(resolution.frontend)).not.toContain('rum-token')
+  })
+
+  it('projects the server-only relay target alongside the bootstrap', () => {
+    const resolution = resolveTraceConfig(
+      traceInput({}, { enabled: true, applicationId: 'kobato-dev', clientToken: 'rum-token', sessionSampleRate: 25 }),
+      DEV,
+    )
+
+    expect(resolution.frontendRelay).toEqual({
+      endpoint: 'http://127.0.0.1:5080',
+      organization: 'default',
+      clientToken: 'rum-token',
+      clientIdentity: 'anonymous',
+    })
+  })
+
+  it('carries the forward client-identity mode into the bootstrap and the relay', () => {
+    const resolution = resolveTraceConfig(
+      traceInput(
+        {},
+        { enabled: true, applicationId: 'kobato-dev', clientToken: 'rum-token', clientIdentity: 'forward' },
+      ),
+      DEV,
+    )
+
+    expect(resolution.frontend?.clientIdentity).toBe('forward')
+    expect(resolution.frontendRelay?.clientIdentity).toBe('forward')
+  })
+
+  it('projects no relay when the frontend is disabled or invalid', () => {
+    expect(resolveTraceConfig(traceInput(), DEV).frontendRelay).toBeNull()
+
+    const invalid = resolveTraceConfig(traceInput({}, { enabled: true, applicationId: 'app', clientToken: '' }), DEV)
+    expect(invalid.status).toBe('active')
+    expect(invalid.frontend).toBeNull()
+    expect(invalid.frontendRelay).toBeNull()
   })
 
   it.each([
@@ -257,6 +307,7 @@ describe('trace config — log export projection', () => {
       status: 'disabled',
       server: null,
       frontend: null,
+      frontendRelay: null,
       diagnostics: [
         {
           code: 'trace-logs-require-trace',
