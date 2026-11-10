@@ -47,7 +47,9 @@ export function createDragStartSession(
 ): DragStartSession {
   // Assigned by listen before any listener can fire (listeners only run once listen has
   // returned), so the resolution always sees the real detach.
-  let detach: () => void = () => {}
+  let detach: () => void = () => {
+    // Placeholder until listen() assigns the real detach below.
+  }
   const session = createPressThresholdSession(grab, {
     threshold: DRAG_START_THRESHOLD,
     onBegin: () => {

@@ -701,7 +701,9 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
     for (const step of steps) {
       try {
         step()
-      } catch {}
+      } catch {
+        // Every step runs even when an earlier one fails; rollback is best-effort.
+      }
     }
   }
 
@@ -717,7 +719,9 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
     cleanup()
     try {
       await shutdownSignals(provider, metricPipeline?.provider ?? null, logPipeline, SHUTDOWN_TIMEOUT_MS)
-    } catch {}
+    } catch {
+      // Rollback never rejects; a shutdown failure must not mask the original error.
+    }
   }
 
   try {
@@ -881,7 +885,9 @@ export async function stopTraceRuntime(options: { timeoutMs?: number } = {}): Pr
 
   try {
     state.cleanup()
-  } catch {}
+  } catch {
+    // Cleanup must never escape HMR disposal or a shutdown hook.
+  }
 
   try {
     await shutdownSignals(

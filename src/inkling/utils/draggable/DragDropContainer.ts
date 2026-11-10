@@ -116,7 +116,9 @@ export interface DropResolution {
   insertIndex: number
 }
 
-const noop = () => {}
+const noop = () => {
+  // Optional lifecycle/droppable handlers default to a no-op.
+}
 
 export class DragDropContainer {
   element: HTMLElement
