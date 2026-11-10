@@ -213,7 +213,7 @@ function SectionWrapper({
 
   return (
     <Fragment ref={ref}>
-      <h3 className="flex items-center gap-2 font-semibold text-foreground">
+      <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
         {Icon && <Icon className="size-4" />}
         {title}
       </h3>
