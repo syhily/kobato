@@ -21,6 +21,9 @@ embedded **DuckDB** sidecar. There is no database server to run, back up, or upg
 > docs covering the import boundaries, the four-layer `src/server/` graph, the
 > install contract, and the API permission matrix.
 
+Manuals: [Configuration](docs/manual/Configuration.md) ·
+[Deployment](docs/manual/Deployment.md)
+
 ## Features
 
 - Posts, pages, categories, tags, and comments — all managed in a built-in `/admin` console
@@ -45,7 +48,7 @@ pnpm run dev
 ```
 
 On first boot a `kobato.config.json` is created in the repo root
-(gitignored) — fill in the two secrets (see [Configuration](#configuration)
+(gitignored) — fill in the two secrets (see [Configuration](docs/manual/Configuration.md)
 for the file shape). The database files create themselves under
 `storage.data` (`./data` by default):
 
@@ -60,38 +63,6 @@ for the file shape). The database files create themselves under
 
 Open `/admin/setup` and enter the setup token printed in the console to
 create the admin account. Settings are seeded automatically.
-
-## Configuration
-
-Most settings are managed in the admin dashboard. Infrastructure
-configuration (database, secrets, data paths) lives in
-**`kobato.config.json`** — always present, auto-created with defaults when
-missing:
-
-1. `--config <path>` / `-c <path>`
-2. `<binary dir>/kobato.config.json` (SEA binary only)
-3. `./kobato.config.json`
-4. `~/.config/kobato.config.json`
-
-The first existing file wins. Environment variables override file values
-and are **written back into the file** — env is the injection mechanism,
-the file converges to the effective configuration. Variable names are the
-nested config path joined with a double underscore:
-
-| Variable                     | Config path                 | Description                                                                   |
-| ---------------------------- | --------------------------- | ----------------------------------------------------------------------------- |
-| `storage__data`              | `storage.data`              | Root data directory for the databases, fonts, uploads, and MaxMind DB         |
-| `storage__database`          | `storage.database`          | SQLite content database file, default `<data>/kobato.db`                      |
-| `storage__analyticsDatabase` | `storage.analyticsDatabase` | DuckDB analytics sidecar file, default `<data>/analytics.duckdb`              |
-| `security__sessionSecret`    | `security.sessionSecret`    | HMAC secret for cookies. Generate with `openssl rand -hex 32`                 |
-| `security__encryptionKey`    | `security.encryptionKey`    | AES-256-GCM key for encrypting secrets in the database                        |
-| `security__trustedProxies`   | `security.trustedProxies`   | Comma-separated proxy IPs / IPv4 CIDRs trusted to vouch for forwarded headers |
-| `server__host`               | `server.host`               | Listen address, default `0.0.0.0`                                             |
-| `server__port`               | `server.port`               | Listen port, default `4321`                                                   |
-| `storage__defaultFont`       | `storage.defaultFont`       | Optional fallback font file copied into `<data>/fonts`                        |
-| `server__loggingLevel`       | `server.loggingLevel`       | `debug` / `info` / `warn` / `error` / `silent`                                |
-
-See `kobato.config.example.json` for the file shape.
 
 ## Testing
 
@@ -110,64 +81,6 @@ For fast local feedback, run unit tests and snapshot tests only:
 pnpm run test:unit
 pnpm run test:snaps
 ```
-
-## Deployment
-
-Every release ships a self-contained single executable — no Node.js
-runtime, no `node_modules`, no database server. The server bundle, client
-assets, and database migrations are embedded in the binary; the native
-packages (sharp, canvas, DuckDB) are extracted to a cache directory on
-first run. Targets: `linux-x64`, `linux-arm64` (glibc), `darwin-arm64`,
-`win32-x64`, and `win32-arm64`.
-
-Download the archive for your platform (e.g. `kobato-linux-x64.tar.gz`)
-and its `.sha256` sidecar from the [latest release](../../releases/latest), verify,
-extract, and install:
-
-```bash
-sha256sum -c kobato-linux-x64.tar.gz.sha256
-tar -xzf kobato-linux-x64.tar.gz
-install -m 0755 kobato-linux-x64 /usr/local/bin/kobato
-kobato --version          # prints the baked-in version
-```
-
-Configure it through `kobato.config.json` (see [Configuration](#configuration)):
-on first boot the binary creates it next to itself with defaults — edit the
-file, or pass `__`-style environment variables once and let them be written
-into the file. `storage.data` defaults to `./data` relative to the working
-directory, so set it explicitly for a system install. The natives cache
-lands in `$XDG_CACHE_HOME/kobato` (override with `KOBATO_CACHE_DIR`).
-Database migrations run automatically at boot; on first boot, open
-`/admin/setup`. The admin console's backup job packs both database files
-(content + the analytics sidecar) into a single `.tar.gz` archive; legacy
-content-only backups stay restorable.
-
-A minimal systemd unit:
-
-```ini
-[Unit]
-Description=Kobato blog CMS
-After=network-online.target
-
-[Service]
-Type=simple
-# Generate real secrets with e.g. `openssl rand -hex 32` — the schema
-# requires both ≥ 32 chars and encryptionKey ≥ 10 distinct characters.
-Environment=security__sessionSecret=change-me
-Environment=security__encryptionKey=change-me
-Environment=storage__data=/var/lib/kobato
-ExecStart=/usr/local/bin/kobato
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-```
-
-The binary can update itself: in the admin console, open the version
-dialog → 检查更新 → 立即更新. It downloads the release asset for the current
-platform, verifies the sha256, swaps the executable in place (the previous
-one is kept as `kobato.bak` for manual rollback), and restarts.
 
 ## Scripts
 
