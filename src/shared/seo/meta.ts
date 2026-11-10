@@ -4,10 +4,10 @@ import type { BlogSettingsBundle, SiteAssetBranding } from '@/shared/config/type
 import type { AppLocale } from '@/shared/i18n/locales'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
-// Isomorphic by construction: route `meta()` exports pull this module
-// into the browser bundle, so it may only import `@/shared/*`. In particular it
-// must NOT import `@/shared/i18n/catalog` (the four catalogs) — localized copy
-// arrives as the root loader's `i18n` payload through `matches`.
+// Isomorphic by construction: route `meta()` exports pull this module into the
+// browser bundle, so it may only import `@/shared/*` — never
+// `@/shared/i18n/catalog`. Localized copy arrives as the root loader's `i18n`
+// payload through `matches`.
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { brandingVersionSuffix, extractXHandle } from '@/shared/config/utils'
 import { fallbackMessages } from '@/shared/i18n/fallback-messages'
@@ -18,17 +18,13 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { joinUrl } from '@/shared/utils/urls'
 
 /**
- * The i18n payload the root loader forwards from `content.bootstrap`.
- * `meta()` runs again on client navigation, so this MUST come from `matches`
- * — never from the server settings snapshot.
+ * The i18n payload the root loader forwards from `content.bootstrap`. `meta()`
+ * runs again on client navigation, so this must come from `matches`, never the
+ * server settings snapshot.
  */
 export interface SeoI18n {
   locale: AppLocale
-  /**
-   * The document-scope UI catalog (the root payload's public subset or the
-   * full workspace catalog). Only title-key lookups read it, and those keys are
-   * never admin-only.
-   */
+  /** Document-scope UI catalog; only title-key lookups read it. */
   messages: Readonly<Record<string, string>>
 }
 
@@ -354,10 +350,9 @@ export function routeMeta(
   const siteIdentity = resolved?.siteIdentity
   const rawTitle = resolveTitle(title, titleKey, i18n)
   if (resolved === null || siteIdentity === null || siteIdentity === undefined) {
-    // Pre-install fallback: the split-screen renders before settings
-    // exist — emit a minimal `<title>` and noindex.
-    // No payload at all (root loader failed): the minimal fallback module is the
-    // last-resort language source — never a bare literal and never another catalog.
+    // Pre-install (or root loader failed): emit a minimal `<title>` and
+    // noindex; the fallback module is the last-resort language source, never a
+    // bare literal or another catalog.
     return [
       { title: rawTitle ?? i18n?.messages['meta.preinstall'] ?? fallbackMessages['meta.preinstall'] },
       ...robotsTags(true),

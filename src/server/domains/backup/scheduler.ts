@@ -7,8 +7,7 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.scheduler')
 
-// The job registry owns boot start-up and the shared db getter; the db is
-// read at fire time so a recreated handle (restore) is picked up.
+// Read the db at fire time so a recreated handle (restore) is picked up.
 async function runBackupJob(): Promise<void> {
   try {
     const db = jobDb()
@@ -34,8 +33,8 @@ async function runBackupJob(): Promise<void> {
 function nextBackupDelayMs(): number | null {
   const bundle = getBlogSettingsBundleSync()
   if (!bundle) {
-    // Settings not hydrated yet (boot-time race) — suspend; the seam re-evaluates.
-    // A numeric delay here would FIRE the backup on every retry tick.
+    // Settings not hydrated yet (boot-time race) — suspend. A numeric delay
+    // here would FIRE the backup on every retry tick.
     log.warn('Settings not hydrated; backup schedule suspended')
     return null
   }
@@ -43,7 +42,7 @@ function nextBackupDelayMs(): number | null {
   const backupSettings = bundle.backup
   // Backups run regardless of S3 config — S3 off lands them in local storage.
   if (!backupSettings?.scheduled.enabled) {
-    // Suspended — the seam re-evaluates periodically, so toggling on takes effect.
+    // Suspending still lets the seam pick the timer up once enabled.
     return null
   }
 

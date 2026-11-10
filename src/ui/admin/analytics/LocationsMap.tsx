@@ -14,11 +14,9 @@ import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 
-// Country choropleth world map (Slite's `metrics/Locations.vue`) behind the
-// hydration-safe gate: SSR and the first client render emit the static
-// skeleton; the @unovis map (with WorldMapTopoJSON) mounts client-side.
-// Data comes from `analytics.metrics` type=country — ISO alpha-2 codes map
-// 1:1 onto the topojson feature ids.
+// Country choropleth behind the hydration-safe gate: SSR and the first client
+// render emit the static skeleton; the @unovis map mounts client-side.
+// ISO alpha-2 codes map 1:1 onto the topojson feature ids.
 
 const LazyLocationsMapInner = lazy(() =>
   import('@/ui/admin/analytics/LocationsMapInner').then((module) => ({ default: module.LocationsMapInner })),
@@ -77,8 +75,7 @@ export function LocationsMap({ initial, className, scope }: LocationsMapProps) {
   )
 }
 
-// Static pre-map placeholder — byte-identical between SSR, the first client
-// render, and the lazy-boundary fallback (React #418 rule).
+// Byte-identical between SSR, first client render and the lazy fallback (React #418).
 function LocationsMapSkeleton() {
   const { t } = useI18n()
   return (

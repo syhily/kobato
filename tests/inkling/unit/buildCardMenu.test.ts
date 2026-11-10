@@ -11,7 +11,7 @@ const Icon = () => null
 type NodeEntries = Array<[string, CardMenuSource]>
 
 // fixture menu items carry real commands — insertCommand is typed
-// LexicalCommand<unknown>, so bare string placeholders no longer compile
+// LexicalCommand<unknown>, so string placeholders do not typecheck
 const INSERT_CARD_ONE = createCommand('insert_card_one')
 const INSERT_CARD_TWO = createCommand('insert_card_two')
 const INSERT_CARD_THREE = createCommand('insert_card_three')
@@ -827,9 +827,8 @@ describe('buildCardMenu', function () {
     })
   })
 
-  // Label resolution: the resolver is
-  // optional, so every test above also pins the default path — no resolver,
-  // output byte-identical to the pre-C7 builder.
+  // Label resolution: the resolver is optional, so every test above also pins
+  // the default path — no resolver, declared text unchanged.
   describe('label resolution', function () {
     it('resolves label, desc, and the built-in section names through the resolver', async function () {
       const nodes: NodeEntries = [

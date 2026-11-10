@@ -16,9 +16,8 @@ import { MetricName } from '@/ui/admin/analytics/MetricName'
 import { MetricsGroup } from '@/ui/admin/analytics/MetricsGroup'
 import { ViewsChart } from '@/ui/admin/analytics/ViewsChart'
 
-// Fixtures mirror the wire DTOs exactly so a contract change fails loudly.
-// Panels no longer read the URL themselves — wrap them in the provider with
-// the deterministic stub state, as the route module would.
+// Fixtures mirror the wire DTOs exactly so a contract change fails loudly. Panels
+// read state from the provider, not the URL, so wrap them with the stub state.
 
 function withAnalyticsState(node: ReactNode): ReactNode {
   return <AnalyticsStateProvider state={makeAnalyticsState()}>{node}</AnalyticsStateProvider>
@@ -33,9 +32,8 @@ const METRIC_ROWS: MetricRow[] = [
 describe('snapshot: ViewsChart', () => {
   it('renders the static chart skeleton during SSR (the @unovis chart is client-only)', () => {
     const html = stableHtml(renderInRouter(withAnalyticsState(<ViewsChart />), '/admin/analytics'))
-    // Hydration-safe gate: SSR emits the identical pre-mount skeleton; no
-    // loader payload is painted (it would be Etc/UTC-bucketed), the
-    // client-timezone-aware query owns the first chart paint.
+    // Hydration gate: SSR emits the pre-mount skeleton and never paints loader payload
+    // (it would be Etc/UTC-bucketed); the client-timezone query owns the first paint.
     expect(html).toContain('role="status"')
     expect(html).toContain('aria-busy="true"')
     expect(html).toContain('加载中')

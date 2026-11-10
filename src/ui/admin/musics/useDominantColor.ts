@@ -3,8 +3,7 @@ import { useCallback } from 'react'
 // Per-URL cache — repeated track switches skip re-downloading the cover.
 const colorCache = new Map<string, string | null>()
 
-/** Extract a dominant color from an image URL via canvas, or null on
- *  failure; results cached per URL. */
+/** Extract a dominant color from an image URL via canvas, or null on failure; cached per URL. */
 export function useDominantColor() {
   return useCallback((imageUrl: string): Promise<string | null> => {
     const cached = colorCache.get(imageUrl)

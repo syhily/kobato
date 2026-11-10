@@ -27,11 +27,9 @@ export interface PutStreamInput {
   key: string
   body: Readable
   contentType: string
-  /**
-   * `Cache-Control` header, carried verbatim by backend-to-backend copies.
-   * Defaults to the `visibility`-derived value — without a `visibility`, the
-   * private-cache value (streams are backups).
-   */
+  /** `Cache-Control` header, carried verbatim by backend-to-backend copies. Defaults
+   *  to the `visibility`-derived value; without a `visibility`, the private value
+   *  (streams are backups). */
   cacheControl?: string
   /** Visibility class the default `cacheControl` derives from (see `key-policy`). */
   visibility?: ObjectVisibility
@@ -60,12 +58,9 @@ export interface StorageBackend {
   get(key: string): Promise<Buffer>
   /** Stream an object without buffering (large backups). */
   getStream(key: string): Promise<Readable>
-  /**
-   * Stream an object together with its stored Content-Type / Cache-Control
-   * headers so a backend-to-backend migration can copy them verbatim.
-   * Optional: backends without stored headers (local FS) omit it and the
-   * migration falls back to key-based defaults.
-   */
+  /** Streams an object with its stored Content-Type / Cache-Control headers so a
+   *  backend-to-backend migration can copy them verbatim; omitted by backends with no
+   *  stored headers (local FS), where the migration uses key-based defaults. */
   getStreamWithMeta?(key: string): Promise<StreamWithMeta>
   exists(key: string): Promise<boolean>
   delete(key: string): Promise<void>

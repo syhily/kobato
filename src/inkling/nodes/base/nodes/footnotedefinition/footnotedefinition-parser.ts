@@ -2,9 +2,7 @@ import type { LexicalNode } from 'lexical'
 
 import { createFootnoteTargetKey, resolveImportedFootnoteTargetKey } from '@/inkling/nodes/footnote/footnote-keys'
 
-// Hand-written import parser (CONTEXT.md: "import spec"; gallery-parser
-// precedent — structural parsing stays out of the flat per-property import
-// spec). Both footnote HTML dialects arrive as one container:
+// Hand-written parser: both footnote HTML dialects arrive as one container —
 // `section.footnotes > ol > li` is markdown-it-footnote's paste shape and
 // inkling's own export shape alike, so ONE conversion consumes the whole
 // section and returns every definition node. The li `id` is only the source

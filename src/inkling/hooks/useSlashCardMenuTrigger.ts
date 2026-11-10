@@ -6,8 +6,8 @@ import type { CardMenuSession } from '@/inkling/hooks/useCardMenuSession'
 
 import { registerSlashCardMenuTrigger } from '@/inkling/plugins/behaviour/card-menu-trigger'
 
-// Slash trigger binding — the React adapter between the slash card-menu
-// trigger (@/plugins/behaviour/card-menu-trigger) and the card-menu session.
+// Slash trigger binding — the React adapter between the slash card-menu trigger
+// (registerSlashCardMenuTrigger) and the card-menu session.
 // It owns the slash trigger state (the typed query and its command params)
 // and translates verdicts into session calls: a query verdict leases the
 // cursor range into the session (so Escape can restore it) and tracks the

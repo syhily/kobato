@@ -16,9 +16,9 @@ import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
-// Parity net for plan 062: pins both analytics shells to identical loader
-// data for the same post. Real engine: real rows + the seeded DuckDB
-// sidecar adopted into the lifecycle; only the view module is mocked.
+// Parity net: both analytics shells must return identical loader data for the same post. Real
+// engine: real rows + the seeded DuckDB sidecar adopted into the lifecycle; only the view module
+// is mocked.
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))

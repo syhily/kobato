@@ -41,11 +41,8 @@ interface PillsState<K extends string> {
   action: FilterPillsAction<K> | null
 }
 
-/**
- * Shared filter-pill state behind `<FilterPillBar>`: reducer, per-search-field
- * debounced server search, label rehydration, value codecs (malformed JSON
- * falls back to the editor default and never throws), and the `queryInput()` merge.
- */
+/** Shared filter-pill state behind `<FilterPillBar>`: reducer, per-search-field
+ *  debounced server search, label rehydration, value codecs (malformed JSON falls back to the editor default), and the `queryInput()` merge. */
 export function useFilterPills<K extends string>({ fields, initial, value, onChange }: UseFilterPillsOptions<K>) {
   const controlled = value !== undefined
   const [state, setState] = useState<PillsState<K>>({ filters: initial ?? value ?? [], action: null })
@@ -227,8 +224,7 @@ function sameFilters<K extends string>(a: ActiveFilter<K>[] | undefined, b: Acti
   })
 }
 
-/** Decode a pill value through its field's codec onto the query patch;
- *  undecodable values contribute nothing (a fresh empty pill is a no-op). */
+/** Decode a pill value through its field's codec onto the query patch; undecodable values contribute nothing. */
 function resolveFieldQueryPatch<K extends string>(field: FilterFieldSpec<K>, raw: string): FilterQueryPatch {
   switch (field.kind) {
     case 'text': {

@@ -54,9 +54,8 @@ function SelectContent({
   return (
     <BaseSelect.Portal>
       {/*
-       * `alignItemWithTrigger={false}` disables Base UI's macOS overlay mode
-       * (reported as 「下拉框样式很奇怪」); `min-w-[max(8rem,var(--anchor-width))]`
-       * matches the popup width to the trigger.
+       * `alignItemWithTrigger={false}` disables Base UI's macOS overlay mode, which
+       * detaches the popup from the trigger.
        */}
       <BaseSelect.Positioner
         align={align}

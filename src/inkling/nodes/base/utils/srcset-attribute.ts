@@ -3,8 +3,6 @@ import type { RenderContext } from '@/inkling/nodes/base/render-context'
 import { CONTENT_IMAGE_PATH_REGEX } from '@/inkling/nodes/base/utils/content-image-url'
 import { getAvailableImageWidths } from '@/inkling/nodes/base/utils/get-available-image-widths'
 
-// default content sizes: [600, 1000, 1600, 2400]
-
 export const getSrcsetAttribute = function ({
   src,
   width,
@@ -22,14 +20,13 @@ export const getSrcsetAttribute = function ({
   }
 
   // The local-content check reads siteUrl/imageBaseUrl from the context, so
-  // callers can't drop the forwarding (the b87ecc1 bug class).
+  // callers cannot drop the forwarding.
   if (context.isLocalContentImage(src) && context.canTransformImage && !context.canTransformImage(src)) {
     return
   }
 
   const srcsetWidths = getAvailableImageWidths({ width }, imageOptimization.contentImageSizes)
 
-  // apply srcset if this is a relative image that matches Inkling's image url structure
   if (context.isLocalContentImage(src)) {
     const match = src.match(CONTENT_IMAGE_PATH_REGEX)
     if (!match) {

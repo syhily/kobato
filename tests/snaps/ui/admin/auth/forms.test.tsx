@@ -3,9 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
 
-// AdminInstallForm's mode is clicked-in (event-gated), unreachable in one
-// SSR pass — auth-forms.test.tsx covers install mode; this adds the full
-// field set + the submitting copy driven by a mocked useNavigation.
+// AdminInstallForm's mode is event-gated, unreachable in one SSR pass; this file adds
+// the full field set and the submitting copy driven by a mocked useNavigation.
 
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: vi.fn(),

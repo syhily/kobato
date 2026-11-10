@@ -1,32 +1,13 @@
-// The footnote behaviour module —
-// headless; `FootnotePlugin` is only the React/DOM adapter. Four pieces:
+// Footnote behaviour — headless; `FootnotePlugin` is only the React/DOM adapter.
 //
-// - **Caret trigger** — `^ ` at the caret tail inserts ref + definition
-//   (`$insertFootnoteReference`), through the update-scan seam. The regex
-//   carries kobato's backslash suppression (`\^ ` never matches: the char
-//   before `^` must be whitespace or line start); the table/code-block
-//   guard ports kobato's `canInsertFootnoteMark`.
-// - **Renumber engine** (`$syncFootnoteIndices`) — kobato's pure-tree
-//   algorithm (`footnote-sync.ts:225-247`) as a Lexical traversal: refs in
-//   first-citation order, orphan definitions tailed in their stored order,
-//   digits written back into the ref TEXT (the text is the index) and the
-//   definition run reordered. Whole-sync is skipped when a ref targets a
-//   missing definition (prose-only round-trip preservation). Gated by the
-//   signature short-circuit (`footnote-sync.ts:117-127`).
-// - **Removal** (`$removeFootnote`) — definition card plus every ref
-//   pointing at it (`removeFootnoteReferencesToTargetKey` port). The
-//   reverse is deliberately NOT done: a definition whose last ref
-//   disappears becomes an orphan and is kept, tailed by the engine —
-//   kobato's semantics.
-// - **Doc-end run invariant** — a RootNode transform keeps the definitions
-//   one contiguous run at the document end, so "the footnotes section" is
-//   true while editing and at export (the string-layer wrap relies on it).
+// Cross-cutting invariants: removal deliberately does NOT remove a definition
+// whose last ref disappears — it stays as an orphan, tailed by the renumber
+// engine; the doc-end run invariant (one contiguous definition run at the
+// document end) is what the string-layer export wrap relies on.
 //
-// Known v1 gap (reviewed): nested editors are separate LexicalEditor
-// instances — the top-level walk cannot see inside them, so footnote
-// insertion is disabled there (registration is skipped per editor
-// instance) and numbering never descends. kobato descends into
-// solution/twoColumn; the gap is documented for migration.
+// Known gap: nested editors are separate LexicalEditor instances — the
+// top-level walk cannot see inside them, so footnote insertion is disabled
+// there and numbering never descends.
 
 import type { LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 
@@ -52,15 +33,12 @@ import { registerUpdateScan } from '@/inkling/plugins/behaviour/update-scan'
 import { getRegisteredNodeMap, isNestedEditor } from '@/inkling/utils/lexical-internals'
 
 /**
- * Caret trigger: `^ ` typed at the caret, with kobato's backslash
- * suppression built in — the character before `^` must be whitespace or
- * line start, so `\^ ` never fires. Narrower than kobato's
- * `/(^|[^\\])(\^ )$/` on purpose (any non-backslash char armed kobato's
- * trigger; the spec tightens it to a word boundary).
+ * Caret trigger: `^ ` typed at the caret. The character before `^` must be
+ * whitespace or line start, so `\^ ` never fires.
  */
 export const FOOTNOTE_INSERT_TRIGGER_REGEX = /(\s|^)\^ $/
 
-/** kobato's `canInsertFootnoteMark`: editable, and not inside a table cell or code block. */
+/** Editable, with a collapsed range selection outside a table cell or code block. */
 export function $canInsertFootnoteRef(editor: LexicalEditor): boolean {
   if (!editor.isEditable()) {
     return false
@@ -80,7 +58,7 @@ export function $canInsertFootnoteRef(editor: LexicalEditor): boolean {
 }
 
 interface FootnoteSnapshot {
-  /** Every ref occurrence in document order (top-level walk — see the v1 nested-editor gap above). */
+  /** Every ref occurrence in document order (top-level walk — see the nested-editor gap above). */
   refs: FootnoteRefNode[]
   /** The definition cards in document order. */
   definitions: BaseFootnoteDefinitionNode[]
@@ -113,10 +91,10 @@ export function $collectFootnoteSnapshot(): FootnoteSnapshot {
 }
 
 /**
- * The signature short-circuit (kobato `footnoteSyncSignature`): ref
- * `targetKey:digit` occurrences in citation order, then sorted definition
- * `targetKey@rank` entries — any renumber-relevant change flips the string,
- * so an unchanged signature skips the engine entirely.
+ * The signature short-circuit: ref `targetKey:digit` occurrences in citation
+ * order, then sorted definition `targetKey@rank` entries — any
+ * renumber-relevant change flips the string, so an unchanged signature skips
+ * the engine entirely.
  */
 export function $footnoteSyncSignature(snapshot: FootnoteSnapshot): string {
   const occurrences = snapshot.refs.map((ref) => `${ref.targetKey}:${ref.getTextContent()}`)
@@ -144,10 +122,10 @@ function collectCitationOrder(snapshot: FootnoteSnapshot): string[] {
 }
 
 /**
- * The renumber engine (kobato `synchronizeFootnoteIndices`): number refs by
- * first-citation order, tail orphan definitions, write the digits back into
- * the ref texts, and reorder the doc-end definition run to match. Skips
- * wholesale when there are no definitions or a ref targets a missing one.
+ * The renumber engine: number refs by first-citation order, tail orphan
+ * definitions, write the digits back into the ref texts, and reorder the
+ * doc-end definition run to match. Skips wholesale when there are no
+ * definitions or a ref targets a missing one.
  */
 export function $syncFootnoteIndices(snapshot: FootnoteSnapshot = $collectFootnoteSnapshot()): void {
   const { refs, definitions } = snapshot
@@ -245,7 +223,7 @@ export function $insertFootnoteReference(handle: FootnoteHandle): void {
   handle.requestFocus(targetKey)
 }
 
-/** kobato's `removeFootnoteReferencesToTargetKey` plus the definition card itself. */
+/** Removes the definition card plus every ref targeting `targetKey`; false when nothing matched. */
 export function $removeFootnote(targetKey: string): boolean {
   if (targetKey === '') {
     return false
@@ -355,8 +333,8 @@ export function publishFootnoteMaps(editor: LexicalEditor, handle: FootnoteHandl
 /**
  * Register the whole footnote behaviour on one editor: the caret-trigger
  * scan, the renumber scan, and the doc-end run transform. Skipped on
- * editors without the footnote node pair and on nested editors (the v1
- * gap — insertion is top-level only, guarded per editor instance).
+ * editors without the footnote node pair and on nested editors (insertion
+ * is top-level only, guarded per editor instance).
  */
 export function registerFootnotes(editor: LexicalEditor, handle: FootnoteHandle): () => void {
   if (isNestedEditor(editor)) {

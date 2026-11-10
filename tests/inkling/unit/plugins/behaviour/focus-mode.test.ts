@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createTestEditor, updateEditor } from '#/inkling/utils/test-editor'
 import { FOCUS_ACTIVE_ATTRIBUTE, FOCUS_MODE_CLASS, registerFocusMode } from '@/inkling/plugins/behaviour/focus-mode'
 
-// Focus-mode DOM bookkeeping (@/plugins/behaviour/focus-mode), pinned against
+// Focus-mode DOM bookkeeping, pinned against
 // a rendered editor: the mode class on the root, the active attribute
 // tracking the native selection's top-level block (including the
 // nested-editor/card-interior and node-selection shapes), and cleanup on

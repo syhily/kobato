@@ -2,8 +2,8 @@ import type { GalleryImage } from '@/inkling/types/gallery'
 
 // Gallery layout caps: at most 3 images per row, at most 9 images per gallery.
 // Owned here (the row-layout module) so the export renderer, the React
-// preview, and the node all read one source — the constants used to live on
-// GalleryNode.ts, forcing the renderer/parser into an import cycle with it.
+// preview, and the node/parser all read one source without an import cycle
+// through GalleryNode.
 export const MAX_IMAGES = 9
 export const MAX_PER_ROW = 3
 

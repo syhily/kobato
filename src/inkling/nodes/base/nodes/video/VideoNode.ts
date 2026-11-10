@@ -17,11 +17,11 @@ import { captionEditorSpecBase } from '@/inkling/nodes/base/nodes/caption-editor
 import { formatVideoDuration } from '@/inkling/nodes/base/nodes/video/format-video-duration'
 import { renderVideoNode } from '@/inkling/nodes/base/nodes/video/video-renderer'
 
-// The card's spec arrays (CONTEXT.md: "card spec") live here, beside the
-// class they type — the declaration imports them from this module. `as const`
-// keeps the literal `name`s and value types on the arrays' types so the `__*`
-// field maps derive both (CardSpecFieldMap / CardSpecFieldMapFor). The nested
-// editor is `nullable`: the markdown round-trip detaches it.
+// The card's spec arrays live here, beside the class they type — the
+// declaration imports them from this module. `as const` keeps the literal
+// `name`s and value types on the arrays' types so the `__*` field maps derive
+// both (CardSpecFieldMap / CardSpecFieldMapFor). The nested editor is
+// `nullable`: the markdown round-trip detaches it.
 export const videoNestedEditors = [
   { ...captionEditorSpecBase, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]

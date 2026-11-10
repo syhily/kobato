@@ -33,8 +33,8 @@ function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
   if (typeof socket?.remoteAddress === 'string') {
     return socket.remoteAddress
   }
-  // node-server can report undefined remoteAddress (e.g. behind a TCP reverse
-  // proxy); keying on `port:<n>` keeps rate-limit buckets per connection (V3-09).
+  // node-server can report undefined remoteAddress (e.g. behind a TCP reverse proxy);
+  // keying on `port:<n>` keeps rate-limit buckets per connection.
   if (typeof socket?.remotePort === 'number') {
     return `port:${socket.remotePort}`
   }
@@ -84,11 +84,9 @@ export async function deriveRequestContext(input: {
   }
 
   const rawUrl = new URL(request.url)
-  // Lazy + memoized: the settings snapshot is hydrated by `buildLoadContext`
-  // (RR loaders) and by the `/rpc/*` bridge, both AFTER this context exists —
-  // every reader therefore resolves it post-hydration. ONE capture pins the
-  // bundle and the localization (and its revision) together, so a settings
-  // save mid-request can never split the rendered bytes from their cache key.
+  // Lazy + memoized: hydration happens after this context exists (in `buildLoadContext`
+  // and the `/rpc/*` bridge), and ONE capture pins bundle + localization + revision
+  // together, so a save mid-request cannot split rendered bytes from their cache key.
   const appSnapshot = createLazyAppSnapshot()
   const requestContext: RequestContext = {
     session: sessionCtx.session,
@@ -112,8 +110,8 @@ export async function deriveRequestContext(input: {
 }
 
 /**
- * Single per-request derivation point and session commit point: the Set-Cookie
- * goes out after the response unless the route already set `__session` (ADR-0003).
+ * Single per-request derivation point and session commit point: the Set-Cookie goes out
+ * after the response unless the route already set `__session`.
  */
 export const requestContextMiddleware = createMiddleware<Env>(async (c, next) => {
   const derived = await deriveRequestContext({
@@ -122,8 +120,8 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
   })
   const { requestContext } = derived
 
-  // Session bearers keep the persisted-token contract; anonymous requests derive
-  // a stateless token from the `__csrf` cookie — no session row per GET (P1-4).
+  // Session bearers keep the persisted-token contract; anonymous requests derive a
+  // stateless token from the `__csrf` cookie — no session row per GET.
   const cookieHeader = c.req.raw.headers.get('cookie')
   let csrfCookieToSet: string | null = null
   if (readCookieValue(cookieHeader, SESSION_COOKIE_NAME) !== null) {
@@ -153,8 +151,8 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
   }
 
   if (derived.isSessionDirty()) {
-    // A route-set `__session` cookie wins — appending the commit would override
-    // it (Set-Cookie applies in order), resurrecting a session the route destroyed.
+    // A route-set `__session` cookie wins: Set-Cookie applies in order, so appending the
+    // commit would resurrect a session the route destroyed.
     const routeTookOver = c.res.headers.getSetCookie().some((v) => v.startsWith(`${SESSION_COOKIE_NAME}=`))
     if (!routeTookOver) {
       const setCookie = await commitSessionWithMaxAge(requestContext.session)

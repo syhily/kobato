@@ -16,9 +16,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('auth.session-storage')
 
-// DB handle injected by the composition root (a direct import would
-// invert the dependency direction); an unwired call fails loudly
-// instead of degrading.
+// DB handle injected by the composition root — a direct import would invert dependencies.
 let resolveDb: (() => Database) | null = null
 
 export function wireSessionStorageDb(deps: { getDb: () => Database }): void {
@@ -48,8 +46,8 @@ export interface PendingOtpUser {
 }
 
 export interface BlogSessionData {
-  // Invariant: `user` present ⇒ `user.role` non-null — the only writer
-  // is `establishLoginSession`, which throws on `!dbUser.role`.
+  // `user` present ⇒ `user.role` non-null: the only writer is `establishLoginSession`,
+  // which throws on `!dbUser.role`.
   user?: SessionUser
   pendingOtpUser?: PendingOtpUser
   otpFailCount?: number
@@ -127,8 +125,8 @@ async function writeSession(id: string, data: BlogSessionData, expires: Date | u
   // The json-mode column serializes the (JSON-native) payload itself.
   const payload = data
   const expiresAt = expires ?? new Date(Date.now() + resolveSessionMaxAge() * 1000)
-  // `user_id` derives from the payload on every write: OTP-pending
-  // sessions carry only `pendingOtpUser` → NULL.
+  // `user_id` derives from the payload on every write: OTP-pending sessions carry
+  // only `pendingOtpUser` and therefore write NULL.
   const userId = data.user ? idFromString(data.user.id) : null
   await db
     .insert(sessionTable)
@@ -147,8 +145,8 @@ export async function getRequestSession(request: Request): Promise<BlogSession> 
 }
 
 /**
- * Build a session with a pre-chosen sid — React Router closes over the
- * id at creation, so the login path mints it before row bookkeeping.
+ * Build a session with a pre-chosen sid: React Router closes over the id at creation,
+ * so the login path mints it before row bookkeeping.
  */
 export function buildSessionWithSid(sid: string, data: BlogSessionData): BlogSession {
   return createSession<BlogSessionData, BlogSessionData>(data, sid)

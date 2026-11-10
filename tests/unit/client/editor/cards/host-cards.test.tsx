@@ -1,20 +1,19 @@
-// The WYSIWYG parity gate for the R10 host cards (plan
-// docs/plans/inkling-editor-replacement.md): each card's decorate chrome
+// The WYSIWYG parity gate for the host cards: each card's decorate chrome
 // (what the canvas shows) must match the exportDOM markup the shared spec
-// renderers produce for the save-time projection (what `body_html` carries
-// and R13 renders publicly). Both sides derive from the same class/copy
-// constants in `@/shared/lexical/cards/`; this file proves the assembly by
-// rendering the React chrome (renderToStaticMarkup) and the shared renderers
-// (a stub RenderContext over jsdom) and comparing the DOM-normalized markup.
+// renderers produce for the save-time projection (`body_html`). Both sides
+// derive from the same class/copy constants in `@/shared/lexical/cards/`; this
+// file proves the assembly by rendering the React chrome
+// (renderToStaticMarkup) and the shared renderers (a stub RenderContext over
+// jsdom) and comparing the DOM-normalized markup.
 //
 // The card modules' top-level `defineCard` calls run on import — pure
 // registry writes, safe under the node environment.
 //
 // The composer context is mocked with a real headless editor (the barrel's
-// `createHeadlessEditor`) because the music card's component and picker now
-// ride the inkling pick seam (`useCardPicker` / `useCardChrome`), which reads
-// the composer context. The picker dialog itself is stubbed — its props are
-// the pick seam's observable boundary.
+// `createHeadlessEditor`) because the music card's component and picker ride
+// the inkling pick seam (`useCardPicker` / `useCardChrome`), which reads the
+// composer context. The picker dialog itself is stubbed — its props are the
+// pick seam's observable boundary.
 
 // @vitest-environment jsdom
 
@@ -163,7 +162,8 @@ describe('host card parity — solution', () => {
 
   it('pins the card assembly to the whitelist type and the shared spec', () => {
     expect(solutionCard.nodeType).toBe(SOLUTION_NODE_TYPE)
-    // The assembled class subclasses our base (assembleCardNodeOnce).
+    // The assembled class subclasses the shared base class (assembled by
+    // `assembleCardNodeOnce`).
     expect(solutionCard.node.prototype).toBeInstanceOf(BaseSolutionNode)
     expect(SOLUTION_NESTED_EDITOR.serializedKey).toBe(SOLUTION_CARD_PROPERTIES[0]!.name)
   })
@@ -256,7 +256,7 @@ describe('host card parity — music-player', () => {
 
   it('keeps the export fallback aligned with the player paused state', () => {
     // The byte-level parity lives in tests/unit/ui/public/music-player —
-    // here we only pin that the export fallback still ships the shared
+    // this suite only pins that the export fallback still ships the shared
     // structure the hydration hook replaces.
     const exported = musicPlayerFallbackHtml(META, escapeText)
     expect(exported).toContain(MUSIC_PLAYER_CARD_CLASSES.fallbackBody)

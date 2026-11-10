@@ -20,9 +20,8 @@ import { visitLexicalNodes } from '@/shared/lexical/walk'
 const COMMENT_MAX_BLOCKS = 200
 const COMMENT_MAX_HTTP_URLS = 3
 
-// Validate and prepare a comment body for persistence (R12, plan
-// docs/plans/inkling-editor-replacement.md): parse the comment Lexical
-// dialect, reject empty/link-spam bodies, strip forged server-rendered
+// Validate and prepare a comment body for persistence: parse the comment
+// Lexical dialect, reject empty/link-spam bodies, strip forged server-rendered
 // artifact slots, re-prerender them server-side, and project the
 // feed-variant degraded HTML for the `comment.content` snapshot. Failures →
 // DomainError.

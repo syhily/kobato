@@ -1,20 +1,18 @@
 import type { RenderContext } from '@/inkling/nodes/base/render-context'
 
 /*
- * The caption/figcaption pairing invariant (CONTEXT.md "render context"):
- * a card with a caption exports the `inkling-card-hascaption` marker class
- * AND a `<figcaption>` — one fact, one home, so neither leg can ship
- * without the other and the marker class always lands last on the class
- * list (the pinned export order). The image, gallery, bookmark, and
- * codeblock renderers are the DOM adapters (`appendCardCaption`); video is
- * the template adapter (`renderCardCaptionHtml` + the marker constant in
- * its `getCardClasses`).
+ * The caption/figcaption pairing invariant: a card with a caption exports the
+ * `inkling-card-hascaption` marker class AND a `<figcaption>` — one fact, one
+ * home, so neither leg can ship without the other and the marker class always
+ * lands last on the class list (the pinned export order). The image, gallery,
+ * bookmark, and codeblock renderers are the DOM adapters (`appendCardCaption`);
+ * video is the template adapter (`renderCardCaptionHtml` + the marker constant
+ * in its `getCardClasses`).
  *
  * The content policy is named data, not per-renderer knowledge: 'sanitize'
  * runs the render context's basic-HTML config; 'escape' is video's pinned
- * plan-040 divergence (DOMPurify cannot reproduce `escapeHtml` on the
- * pinned video-caption corpus — recorded at `escapeText` in the render
- * context).
+ * divergence (DOMPurify cannot reproduce `escapeHtml` on the pinned
+ * video-caption corpus — recorded at `escapeText` in the render context).
  */
 export type CardCaptionPolicy = 'sanitize' | 'escape'
 

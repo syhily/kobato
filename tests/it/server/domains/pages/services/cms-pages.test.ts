@@ -49,8 +49,8 @@ async function seedRevision(ownerId: number, overrides: Partial<typeof contentTa
       ownerId,
       revisionNo: overrides.revisionNo ?? 1,
       status: overrides.status ?? 'draft',
-      // Seeded revisions are read through the admin revision projection,
-      // Lexical-bodied since R9a.
+      // Seeded revisions are read through the admin revision projection, which
+      // expects a Lexical-bodied revision.
       body: emptyLexicalBody(),
       imageSources: [],
       headings: [],

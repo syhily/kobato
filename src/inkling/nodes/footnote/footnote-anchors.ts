@@ -1,9 +1,8 @@
-// Single owner of the footnote anchor DOM contract, ported verbatim from
-// kobato `src/shared/pt/footnote-anchors.ts` so inkling's exported HTML and
-// kobato's SSR HTML resolve a reference and its definition to the same
-// targets (kobato's footnote-preview sniffer matches on the same prefixes).
-// Raw `user-content-fn-` literals outside this module are a contract drift
-// bug.
+// Single owner of the footnote anchor DOM contract: inkling's exported HTML
+// and kobato's SSR HTML must resolve a reference and its definition to the
+// same targets (kobato's footnote-preview sniffer matches on the same
+// prefixes). Raw `user-content-fn-` literals outside this module are a
+// contract drift bug.
 
 export const FOOTNOTE_ID_PREFIX = 'user-content-fn-'
 export const FOOTNOTE_REF_ID_PREFIX = 'user-content-fnref-'

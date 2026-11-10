@@ -7,12 +7,10 @@ import type { MusicPlayerCardProps } from '@/ui/public/music-player/music-player
 import { isHttpUrl } from '@/shared/utils/safe-url'
 import { I18nProvider, type I18nMessages, useI18n } from '@/ui/lib/I18nProvider'
 
-// Defense-in-depth for the hydrated mount points: `data-url` / `data-cover`
-// are sanitized with the `body` preset before they land in the projected
-// body_html, but this hook assigns them to `audio.src` / `<img src>` directly.
-// Accept only http(s) URLs and same-origin relative paths (`/…`, never `//host`)
-// — `javascript:`, `data:`, and protocol-relative values skip the card and leave
-// its static fallback in place.
+// Defense-in-depth for the hydrated mount points: `data-url` / `data-cover` reach body_html
+// sanitized, but this hook assigns them to `audio.src` / `<img src>` directly. Accept only
+// http(s) URLs and same-origin relative paths (`/…`, never `//host`); anything else skips the
+// card and leaves its static fallback in place.
 export function safeMediaSrc(value: string | null | undefined): string | undefined {
   if (value === null || value === undefined) {
     return undefined
@@ -27,21 +25,17 @@ export function safeMediaSrc(value: string | null | undefined): string | undefin
   return isHttpUrl(trimmed) ? trimmed : undefined
 }
 
-// Music-player cards export a static mount point (`<div class="aplayer"
-// data-url …>` wrapping a static fallback card); this hook upgrades every
-// mount point with a URL to the real player after hydration. Mount points
-// without `data-url` (missing music meta at save time) keep their placeholder
-// — the PT-era behavior. The wrapper + mount-point markup comes from the
-// shared card spec (`@/shared/lexical/cards/music-player`), and the fallback
-// markup mirrors the player's paused initial render so the swap does not
-// shift layout.
+// Music-player cards export a static mount point (`<div class="aplayer" data-url …>` wrapping
+// a static fallback card); this hook upgrades every mount point with a URL to the real player
+// after hydration. Mount points without `data-url` (missing music meta at save time) keep
+// their placeholder. The mount-point markup comes from the shared card spec
+// (`@/shared/lexical/cards/music-player`), and the fallback mirrors the player's paused
+// initial render so the swap does not shift layout.
 //
-// `bodyHtml` is the effect's re-scan key: the container div is REUSED across
-// client-side navigations (only its innerHTML is swapped), so without it the
-// effect would never re-run — the previous article's React roots would keep
-// playing audio on detached nodes and the new article's mount points would
-// stay static fallbacks. The cleanup unmounts those roots, and the playback
-// hook's own teardown pauses the audio element.
+// `bodyHtml` is the effect's re-scan key: the container div is REUSED across client
+// navigations (only its innerHTML swaps), so without it the previous article's React roots
+// would keep playing audio on detached nodes and new mount points would stay static
+// fallbacks. The cleanup unmounts those roots; the playback hook pauses the audio itself.
 export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   const intl = useContext(IntlContext)
   const { locale } = useI18n()
@@ -92,10 +86,8 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
 
     return () => {
       cancelled = true
-      // root.unmount() tears the tree down synchronously; if React is
-      // mid-render when this cleanup runs (the container re-rendering under
-      // it), that races the in-flight render — React warns and may drop the
-      // unmount. Deferring past the current commit avoids the race.
+      // root.unmount() is synchronous; running it while React is mid-render races the
+      // in-flight render (React warns and may drop the unmount), so defer past the commit.
       setTimeout(() => {
         for (const root of roots) {
           root.unmount()

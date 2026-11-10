@@ -12,8 +12,7 @@ import { $ensureParagraphAfterCard } from '@/inkling/utils/$ensureParagraphAfter
 // the selection. Two special cases live here: a single-card snippet goes
 // through the card insert path (`INSERT_CARD_COMMAND`) so the card lands like
 // any other card insert, and a snippet whose last node is a card gets a
-// trailing paragraph so the caret has somewhere to go after it. The plugin
-// keeps only the command registration.
+// trailing paragraph so the caret has somewhere to go after it.
 
 /** The snippet insert payload — the `{ name, value }` pair the snippet menu
  * entry dispatches through the type-erased menu insert path
@@ -80,8 +79,7 @@ export function $insertSnippet(editor: LexicalEditor, dataset: unknown): boolean
     return false
   }
   // an entry with a string type can still fail generation — an unregistered
-  // type warns in dev and then throws on the missing registeredNode. The
-  // same host-data contract applies: no-op instead of throwing in the update.
+  // type warns in dev and then throws on the missing registeredNode
   let nodes: ReturnType<typeof $generateNodesFromSerializedNodes>
   try {
     nodes = $generateNodesFromSerializedNodes(serializedNodes)

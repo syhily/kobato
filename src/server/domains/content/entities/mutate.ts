@@ -35,8 +35,8 @@ export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> 
 }
 
 /**
- * The five-function meta-mutation skeleton every content entity shares;
- * all entity behavior attaches through the descriptor hooks.
+ * The five-function meta-mutation skeleton every content entity shares; entity
+ * behavior attaches through the descriptor hooks.
  */
 export function makeEntityMutations<
   TMeta extends MetaRowBase,
@@ -50,10 +50,7 @@ export function makeEntityMutations<
 ): EntityMutations<TInput, TAdminDto> {
   const { repos, mutations } = descriptor
 
-  /**
-   * `db.transaction` without drizzle's Promise-guard conditional —
-   * every callback here is sync by construction (node:sqlite).
-   */
+  /** `db.transaction` without drizzle's Promise-guard conditional: every callback here is sync (node:sqlite). */
   function syncTransaction<T>(db: Database, fn: (tx: Database) => T): T {
     return unsafeCast<(fn: (tx: Database) => T) => T>(db.transaction.bind(db))(fn)
   }
@@ -176,7 +173,6 @@ export function makeEntityMutations<
     })
     if (deleted) {
       await mutations.afterMutation?.(db, meta, 'delete')
-      // A deleted scheduled row is no longer the next one — re-arm.
       rescheduleScheduledPublish()
     }
     return { deleted }
@@ -209,7 +205,6 @@ export function makeEntityMutations<
     if (restored) {
       // `restored` implies the tx gathered a context (possibly the descriptor's own null/undefined).
       restoreWarning = await mutations.afterRestore?.(db, unsafeCast<TRestore>(ctx))
-      // A restored scheduled row may be the next one now — re-arm.
       rescheduleScheduledPublish()
     }
     const warningDescriptors = [slugWarning, restoreWarning].filter(
@@ -234,7 +229,6 @@ export function makeEntityMutations<
       )
     }
     await mutations.afterMutation?.(db, updated, 'unpublish')
-    // Unpublishing drops the row from the scheduled set — re-arm.
     rescheduleScheduledPublish()
     const extras = await mutations.mutationExtras?.(db, updated, { kind: 'unpublish' })
     return descriptor.adminDto.project(updated, extras)

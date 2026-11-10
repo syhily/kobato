@@ -1,24 +1,20 @@
-// The English baseline for Kobato's Inkling label overlay — DATA, not an
-// Inkling import: this table ships to the browser through the root loader's
-// i18n payload (see src/shared/i18n/inkling-labels.ts), so the editor layer
-// cannot be its source. The built-in values are byte-identical to Inkling's
-// `DEFAULT_LABELS`; `tests/unit/shared/i18n/inkling-labels.test.ts` is the
-// drift gate, and the compile-time key pin lives in
-// `@/client/editor/inkling-labels` (the only layer allowed to import Inkling
-// types).
+// The English baseline for Kobato's Inkling label overlay — DATA, not an Inkling
+// import: this table ships to the browser through the root loader's i18n payload
+// (see `src/shared/i18n/inkling-labels.ts`), so the editor layer cannot be its
+// source. Built-in values are byte-identical to Inkling's `DEFAULT_LABELS`;
+// `tests/unit/shared/i18n/inkling-labels.test.ts` is the drift gate.
 //
-// The host-card menu namespace (`menu.host.*`) has no Inkling default — its
-// English text is the card menu entry's own copy, written out here.
+// The host-card menu namespace (`menu.host.*`) has no Inkling default — its English
+// text is the card menu entry's own copy, written out here.
 //
-// The table covers ONLY the keys Kobato actually mounts (157 keys: built-in
-// chrome + the three host-card menu entries). Unmounted inkling features —
-// gif.* / pintura.* / snippet.* and their menu/toolbar keys — deliberately stay
-// absent and keep falling back to Inkling's English defaults.
+// The table covers ONLY the keys Kobato actually mounts (built-in chrome + the three
+// host-card menu entries). Unmounted inkling features — gif.* / pintura.* /
+// snippet.* and their menu/toolbar keys — deliberately stay absent and keep falling
+// back to Inkling's English defaults.
 //
 // `KobatoInklingLabelKey` is the key set the three other locales are held to.
-//
-// Interpolation tokens (`{max}` / `{cardType}` / `{name}` / `{progress}`) are
-// the consumption-site `string.replace` contract — never translate them.
+// Interpolation tokens (`{max}` / `{cardType}` / `{name}` / `{progress}`) are the
+// consumption-site `string.replace` contract — never translate them.
 
 export const kobatoInklingLabelsEnUS = {
   'placeholder.editor': 'Begin writing your post...',

@@ -126,9 +126,9 @@ describe('Format combinations', function () {
     }),
   )
 
-  // an earlier TextContent implementation was dependent on content formats having a specific order
-  // otherwise we would start tags and close tags in an incorrect order
-  // previous output: <p>(<strong><em>italic+bold</em><em> italic</em></strong>)</p>
+  // Tag open/close order must follow nesting, not the content-format
+  // declaration order; the pinned output guards the interleaved-tag regression
+  // (<p>(<strong><em>italic+bold</em><em> italic</em></strong>)</p>)
   it(
     'italic+bold different order',
     shouldRender({

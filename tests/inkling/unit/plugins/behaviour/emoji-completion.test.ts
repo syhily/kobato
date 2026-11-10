@@ -14,11 +14,10 @@ import {
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { drainEnqueuedUpdates, tick } from '#/inkling/utils/test-editor'
-// Behaviour pins for the headless half of the emoji picker
-// (src/plugins/behaviour/emoji-completion.ts): the query policy with the
-// emoticon alias table, the exact-match `:shortcode:` completion, and the two
-// insertion surgeries. The mounted-plugin wiring lives in
-// test/unit/plugins/EmojiPickerPlugin.test.tsx.
+// Behaviour pins for the headless half of the emoji picker: the query policy
+// with the emoticon alias table, the exact-match `:shortcode:` completion,
+// and the two insertion surgeries. The mounted-plugin wiring lives in
+// EmojiPickerPlugin.test.tsx.
 //
 // Harness notes:
 // - The tests run against the REAL emoji-mart SearchIndex (initialized once
@@ -30,9 +29,9 @@ import { drainEnqueuedUpdates, tick } from '#/inkling/utils/test-editor'
 //   editor-priority KEY_DOWN handler makes dispatchCommand return true
 //   regardless of this module's listener, so only the observable effects are
 //   pinned (text, commit callback, defaultPrevented).
-// - node.select() leaves selection.format at 0; in the browser Lexical syncs
-//   the format off the reconciled native selection. buildParagraph copies the
-//   caret node's format onto the selection to emulate that.
+// - node.select() leaves selection.format at 0; buildParagraph syncs the
+//   caret node's format onto the selection to emulate the browser-side
+//   reconciled-selection sync.
 // - The completion tests pin the keydown-time caret shape (text ':query',
 //   caret right after the query). jsdom has no keydown default action, and in
 //   real browsers the registration's preventDefault lands inside the
@@ -59,11 +58,9 @@ function createTestEditor() {
   })
 }
 
-// Lexical 0.53 commits listener-triggered work on microtasks — a macrotask
+// Lexical commits listener-triggered work on microtasks — a macrotask
 // wait (tick) drains the search promise and the completion update.
 
-// Emulates the browser-side format sync Lexical does when reconciling the
-// native selection — programmatic node.select() leaves format at 0.
 function $syncSelectionFormat(caretNode: TextNode) {
   const selection = $getSelection()
   if ($isRangeSelection(selection)) {
@@ -76,9 +73,8 @@ interface TextSegment {
   format?: 'bold' | 'code'
 }
 
-// Builds a single paragraph from text segments with a collapsed caret at
-// [segment, offset]; returns the created text nodes. Segments that would
-// merge (adjacent same-format text) must use buildSplitParagraph instead.
+// Segments that would merge (adjacent same-format text) must use
+// buildSplitParagraph instead.
 async function buildParagraph(
   editor: LexicalEditor,
   segments: TextSegment[],

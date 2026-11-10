@@ -33,9 +33,8 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// Covers the pending-review bucket on top of the admin friends list:
-// `useQuery` (pending rows) is mocked separately from the main list's
-// `useInfiniteQuery` (empty here), so the bucket renders alone.
+// The pending-review bucket: `useQuery` (pending rows) is mocked separately from the
+// main list's `useInfiniteQuery` (empty here), so the bucket renders alone.
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 

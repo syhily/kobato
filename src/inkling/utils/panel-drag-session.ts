@@ -1,13 +1,5 @@
-// Panel drag session — the settings panel's grab → drag → release choreography
-// as a headless module: the composed-path grab verdict (a grab landing on an
-// interactive child never starts a drag), the drag-lifetime move/end listeners
-// behind the injected listenActive port, and the drag state machine itself
-// (@/utils/floating-panel's createDragSession — threshold, adjust-on-drag,
-// declared effect ports — an adapter over the shared press-threshold core in
-// @/utils/draggable/press-threshold-session). Every port is injectable, so the
-// choreography is synchronously unit-testable; @/hooks/useFloatingPanel owns
-// every DOM consequence (the body-level press listeners feeding `grab`, the
-// window listeners behind listenActive, and the effects themselves).
+// The settings panel's grab → drag → release choreography as a headless module;
+// `useFloatingPanel` owns every DOM consequence.
 
 import { createDragSession, type DragSessionPorts, type PanelPosition } from '@/inkling/utils/floating-panel'
 
@@ -22,9 +14,8 @@ export interface PanelGrabVerdictPorts {
 }
 
 /**
- * Walks a press's composed path: the first interactive element swallows the
- * grab; reaching the panel first means the panel itself was grabbed; neither
- * in the path means the press landed outside.
+ * Walks a press's composed path: the first interactive element swallows the grab;
+ * reaching the panel first means the panel itself was grabbed; neither means outside.
  */
 export function resolvePanelGrabVerdict(
   path: readonly unknown[],
@@ -75,10 +66,9 @@ export interface PanelDragSession {
 }
 
 /**
- * The settings panel's drag choreography: grab verdict in, drag session plus
- * drag-lifetime listeners out. Listeners attach at grab time (not at the
- * threshold crossing) so the travel that crosses the threshold is observed;
- * release detaches them before the session's effects unwind.
+ * The settings panel's drag choreography. Listeners attach at grab time rather than at the
+ * threshold crossing, so the travel that crosses the threshold is observed; release detaches
+ * them before the session's effects unwind.
  */
 export function createPanelDragSession({
   listenActive,
@@ -98,8 +88,7 @@ export function createPanelDragSession({
   return {
     grab(point, path) {
       session.start(point)
-      // a second press while the listeners are still attached reuses them
-      // (attaching the same listeners twice is a DOM no-op)
+      // a second press while the listeners are still attached reuses them (double-attach is a DOM no-op)
       if (detachActive === null && resolvePanelGrabVerdict(path, { isPanel, isInteractive }) === 'panel') {
         detachActive = listenActive({ move: (nextPoint) => session.move(nextPoint), end: release })
       }

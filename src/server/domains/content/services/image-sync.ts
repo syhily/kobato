@@ -6,8 +6,7 @@ import { visitLexicalNodes } from '@/shared/lexical/walk'
 import { idFromString } from '@/shared/utils/id'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Two-step sync for `image` nodes at save time (Lexical counterpart of the
-// PT block sync, plan round R9a). Library nodes re-resolve from the
+// Save-time sync for `image` nodes: library nodes re-resolve from the
 // canonical `image` row and write back `alt`; external nodes are left
 // alone. Failures are swallowed.
 

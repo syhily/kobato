@@ -8,31 +8,24 @@ import { CARD_MARKDOWN_DECLARATIONS } from '@/inkling/nodes/cards/card-markdown-
 
 /**
  * Drift guard tying the card markdown transformers' field vocabulary to each
- * card's declared `properties` (the fence payloads themselves — the
- * documented intentional subset — are pinned byte-for-byte by
- * `round-trip-cards.test.ts`):
+ * card's declared `properties` (the fence payloads themselves are pinned
+ * byte-for-byte by `round-trip-cards.test.ts`):
  *
- * - exhaustiveness leg: every markdown-eligible card (the declaration's
- *   `markdown` spec) carries a card transformer or names its exemption
- *   (`markdown: { kind: 'exempt' }` on the declaration).
- *   The projection already throws at module init on a fence-eligible card
- *   with no payload (and the payload table's exhaustive `Record` fails
- *   typecheck first); this leg pins the contract explicitly.
- * - export leg: every node field a transformer's `getData` reads must be a
- *   declared property of the card's node class. A renamed/typo'd read
- *   (`node.titel`) would otherwise export `undefined` silently.
- * - import leg: every field in the fence payload must survive
- *   `createNode` into the created node's `exportJSON`. A write to an
- *   undeclared property is silently dropped by the generated constructor, so
- *   the sentinel never lands and this fails. The created node must also hold
- *   no live `__*Editor` nested-editor instance — detachment is by
- *   construction (`$detachNestedEditorsForRoundTrip` in the transformer's
- *   `replace`), driven by the class's adopted `nestedEditors` spec.
+ * - exhaustiveness: every markdown-eligible card carries a transformer or
+ *   names its exemption (`markdown: { kind: 'exempt' }`).
+ * - export: every node field a transformer's `getData` reads must be a
+ *   declared property. A typo'd read (`node.titel`) would otherwise export
+ *   `undefined` silently.
+ * - import: every fence payload field must survive `createNode` into the
+ *   created node's `exportJSON` — the generated constructor silently drops a
+ *   write to an undeclared property. The created node must also hold no live
+ *   `__*Editor` nested-editor instance; detachment is by construction
+ *   (`$detachNestedEditorsForRoundTrip`), driven by the class's
+ *   `nestedEditors` spec.
  *
- * Fence keys themselves need NOT be property names — deliberate renames
- * (audio's `caption` → `title`, callout's `text` → `calloutText`, bookmark's
- * `metadata` remap) are part of the markdown vocabulary; the guard checks the
- * node-side fields, by value.
+ * Fence keys need NOT be property names — renames (audio's `caption` →
+ * `title`, callout's `text` → `calloutText`, bookmark's `metadata` remap) are
+ * part of the markdown vocabulary; the guard checks the node-side fields.
  */
 
 // Lexical machinery a generated property getter touches on the proxied node —

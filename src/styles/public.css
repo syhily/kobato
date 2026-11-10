@@ -1,22 +1,11 @@
 /*
- * Public-site Tailwind entry — imported by BaseLayout (public chrome).
- *
- * Owns its own tailwindcss import and a `@source`
- * scope covering exactly the sources the public site renders: public
- * routes, public/components/icons/lib UI, root.tsx, and the inkling
- * host-card class constants the projected markup renders with. Admin-only
- * rules (music view transitions, admin medium-zoom stacking, scrollbar-thin)
- * live in admin.css and never reach this bundle. Content typography comes
- * from `typeset.css` (base rules + kobato presets in one owned file),
- * imported after the shared partial.
+ * Public-site Tailwind entry, imported by BaseLayout. Scans exactly the
+ * sources the public site renders; admin-only rules live in `admin.css`.
  */
-/* Cascade-layer order: the inkling comment-editor stylesheet (imported by
-   CommentBodyEditor's lazy chunk into `layer(inkling)`) must sit BELOW
-   Tailwind's utilities so host utilities beat inkling's scoped preflight —
-   but ABOVE `base`, or the host preflight's padding/margin reset beats the
-   package's own utilities (same trick as `admin.css`).
-   This bare statement pins the order no matter when that chunk's stylesheet
-   loads — admin.css carries the same statement for its side. */
+/* Cascade order: inkling below Tailwind utilities (host utilities beat its
+   scoped preflight) and above `base` (the preflight's padding/margin reset
+   would beat inkling's own utilities). The bare statement pins the order
+   regardless of when the lazy chunk's stylesheet loads. */
 @layer theme, base, inkling, components, utilities;
 @import 'tailwindcss' source(none);
 @import './tailwind.css';
@@ -29,11 +18,10 @@
 @source '../ui/components';
 @source '../ui/icons';
 @source '../ui/lib';
-/* Inkling host-card export markup (R10): the projected bodyHtml classes are
-   string literals in the shared card spec modules, not in any rendered dir */
+/* Projected bodyHtml classes are string literals in the shared card spec modules. */
 @source '../shared/lexical/cards';
 
-/* medium-zoom floats above every public chrome layer (popovers, drawers) */
+/* Medium-zoom floats above every public chrome layer (popovers, drawers) */
 .medium-zoom-overlay,
 .medium-zoom-image--opened {
   z-index: 1080;

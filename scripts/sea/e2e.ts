@@ -1,8 +1,7 @@
-// HTTP e2e orchestrator (`pnpm run sea:e2e [binary]`): boots the built SEA
-// binary against per-run temp files (same shared lifecycle as the managed
-// smoke — no external services), seeds the admin with a KNOWN random
-// password, then runs the tests/e2e vitest project over real HTTP. The
-// tests receive the base URL + credentials via KOBATO_E2E_* env vars only.
+// HTTP e2e orchestrator (`pnpm run sea:e2e [binary]`): boots the built SEA binary
+// against per-run temp files, seeds the admin with a KNOWN random password, then
+// runs the tests/e2e vitest project over real HTTP. The tests receive the base URL
+// and credentials through KOBATO_E2E_* env vars only.
 
 import bcrypt from 'bcryptjs'
 import { spawnSync } from 'node:child_process'
@@ -32,10 +31,9 @@ import { repoRoot, seaBinaryPath } from './paths.ts'
 const SHUTDOWN_TIMEOUT_MS = 15_000
 
 /**
- * Relax the rate-limit buckets the journeys would trip mid-suite (one
- * shared instance, one source IP): sign-in / OTP / resource. The row
- * carries the full bucket table because hydration validates it against
- * the section schema.
+ * Relax the rate-limit buckets the journeys would trip (one shared instance,
+ * one source IP). The row carries the full bucket table because hydration
+ * validates it against the section schema.
  */
 function relaxRateLimitsForE2e(databasePath: string) {
   const relaxed = {
@@ -115,7 +113,6 @@ async function main() {
       throw new Error(`expected /health 200 on the seeded instance, got ${health.status}`)
     }
 
-    // Assert the env-driven first boot wrote its overrides back into the config file.
     const converged = await readConvergedConfig(join(dirs.root, 'kobato.config.json'))
     if (converged.database !== databases.database) {
       throw new Error(
@@ -128,7 +125,7 @@ async function main() {
     const result = spawnSync('pnpm', ['exec', 'vitest', 'run', '--config', 'tests/e2e/vitest.config.ts'], {
       cwd: repoRoot,
       stdio: 'inherit',
-      // pnpm is a .cmd shim on Windows — see exec.ts.
+      // pnpm is a .cmd shim on Windows.
       shell: process.platform === 'win32',
       env: {
         ...process.env,

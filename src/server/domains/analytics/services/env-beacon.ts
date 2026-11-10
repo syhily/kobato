@@ -17,12 +17,11 @@ import { getLogger } from '@/server/infra/logger'
 import { ANALYTICS_ENV_DEAD_LETTER_PATH } from '@/server/infra/paths'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// The device-environment beacon side (`device_env_client`): the client
-// beacon arrives seconds after the server-side event row, so it is a pure
-// append into its own table, joined at query time by `event_id`. The id is
-// NOT validated against `access_events`: a bot-gated or direct-POST id
-// simply yields an orphan row, which the queries' JOIN drops and retention
-// clears in the same 180-day window.
+// The device-environment beacon side (`device_env_client`): the beacon arrives
+// seconds after the server-side event row, so it is a pure append into its own
+// table, joined at query time by `event_id`. The id is NOT validated against
+// `access_events`: a bot-gated or direct-POST id simply yields an orphan row,
+// which the JOIN drops and retention clears in the same 180-day window.
 
 const BATCHER_NAME = 'DeviceEnvBeaconBatcher'
 
@@ -68,9 +67,8 @@ function deserializeFromDeadLetter(line: string): DeviceEnvClientRow | null {
   })
 }
 
-// The DuckDB writer is injected by the composition root at import time —
-// a direct import would invert the dependency direction (domain →
-// composition root).
+// The DuckDB writer is injected by the composition root — importing it directly
+// would invert the dependency direction (domain → composition root).
 let resolveWriter: (() => DuckDBConnection) | null = null
 
 export function wireDeviceEnvBeaconBatcher(deps: { getWriter: () => DuckDBConnection }): void {
@@ -85,12 +83,11 @@ function requireWriter(): DuckDBConnection {
 }
 
 /**
- * Beacons are duplicates by nature: navigation back/forward re-fires an old
- * event id, StrictMode's dev double-effect sends twice, and dead-letter
- * replay can re-send a batch that partially landed. `event_id` is the PK, so
- * one duplicate would poison the WHOLE appender batch (and its replay) — so
- * filter against the table (and within the batch) before appending. The
- * single writer connection serializes these statements with the append.
+ * Beacons are duplicates by nature: back/forward navigation re-fires an old
+ * event id, StrictMode's dev double-effect sends twice, and dead-letter replay
+ * can re-send a batch that partially landed. `event_id` is the PK, so one
+ * duplicate would poison the WHOLE appender batch (and its replay) — filter
+ * against the table (and within the batch) before appending.
  */
 async function filterAlreadyStored(
   writer: DuckDBConnection,
@@ -140,8 +137,6 @@ class DeviceEnvBeaconBatcher extends InsertBatcher<DeviceEnvClientRow, DuckDBCon
   }
 }
 
-// Self-register on the infra batching seam so the bootstrap lifecycle
-// drives init/flush/reset/replay through the registry.
 registerBatcher(BATCHER_NAME, () => new DeviceEnvBeaconBatcher(), {
   replayDeadLetter: () => replayDeadLetterDeviceEnv(),
 })

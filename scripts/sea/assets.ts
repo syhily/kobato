@@ -1,9 +1,6 @@
-// SEA asset collection: build the embedded-asset map for `--build-sea`
-// (see blob.ts) and write manifest.json — the decompression registry the
-// runtime reads to verify/extract natives. Asset keys come from
-// `src/shared/sea/assets.ts`; never hardcode a key here. The manifest is
-// never packed (the reader needs it before decoding) and never lists
-// itself; sha256 hashes the RAW bytes, so verification is codec-agnostic.
+// SEA asset collection: build the embedded-asset map for `--build-sea` (see
+// blob.ts) and write manifest.json, the codec/integrity registry the runtime
+// reads. Asset keys come from `src/shared/sea/assets.ts` — never hardcode one.
 
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
@@ -47,36 +44,25 @@ import {
 const requireFromRepo = createRequire(join(repoRoot, 'package.json'))
 
 /**
- * Packing policy: ONLY the native dynamic libraries are zstd-packed (~170 MB
- * raw per platform — the blob stores assets uncompressed, so without packing
- * they would blow the binary budget). Everything else rides raw: with
- * `useVfs` each asset key becomes a real file in the mounted VFS, read
- * through plain `node:fs` — a packed payload would be unreadable zstd bytes
- * there. The natives themselves never go through the VFS; they extract to
- * disk via the `node:sea` getAsset + decode channel (dlopen needs real
- * files, and worker threads cannot see the mount).
+ * Packing policy: only the native dynamic libraries are zstd-packed; everything
+ * else rides raw — under `useVfs` each key is a plain `node:fs` read, so a
+ * packed payload would be unreadable there. Natives never touch the VFS:
+ * dlopen needs real files and worker threads cannot see the mount.
  */
 export function shouldPackAsset(key: string): boolean {
   return key.startsWith(SEA_NATIVE_ASSET_PREFIX)
 }
 
-/**
- * Assets below this stay uncompressed — framing + decode outweigh the savings.
- */
+/** Assets below this stay uncompressed — framing + decode outweigh the savings. */
 export const SEA_COMPRESSION_MIN_BYTES = 1024
 
 /**
- * zstd packs multithreaded above ZSTD_MULTITHREAD_MIN_BYTES. Capped at 8 —
- * zstd's job granularity saturates beyond that. Output stays a standard zstd
- * frame (any decoder reads it) and is deterministic for a fixed worker count;
- * cross-machine byte differences don't matter — the manifest hashes RAW bytes.
+ * Capped at 8 — zstd's job granularity saturates beyond that. The manifest
+ * hashes RAW bytes, so cross-machine packed-byte differences don't matter.
  */
 const ZSTD_PACK_WORKERS = Math.min(availableParallelism(), 8)
 
-/**
- * Payloads at or above this pack multithreaded; below it the thread-pool
- * spin-up (~10 ms per call × ~250 small assets) outweighs the savings.
- */
+/** Below this the thread-pool spin-up (~10 ms per call × ~250 small assets) outweighs the savings. */
 const ZSTD_MULTITHREAD_MIN_BYTES = 4 * 1024 * 1024
 
 interface ManifestFileEntry {
@@ -106,13 +92,8 @@ function sha256(bytes: Buffer) {
 }
 
 /**
- * Compress one asset's raw bytes for the blob; small assets stay raw.
- * zstd level 9, multithreaded on large payloads — the only pack codec.
- *
- * Why level 9 and not 19: the blob is ~50 MB either way (machine code packs
- * poorly), but level 19 costs ~37 s where level 9 costs ~2 s on the four
- * large natives. brotli-11 was measured too (42.3 MB vs 44.9 MB for zstd-19,
- * ~8.4 min single-threaded) — not worth ~14× the pack time for ~6% of blob.
+ * zstd level 9 is the only pack codec: level 19 costs ~37 s where 9 costs ~2 s,
+ * for roughly 6% of the blob (machine code packs poorly either way).
  */
 export function packAssetBytes(raw: Buffer): { codec: SeaAssetCodec; bytes: Buffer } {
   if (raw.byteLength < SEA_COMPRESSION_MIN_BYTES) {
@@ -126,9 +107,8 @@ export function packAssetBytes(raw: Buffer): { codec: SeaAssetCodec; bytes: Buff
 }
 
 /**
- * Sort manifest files by key with plain ASCII comparison — the manifest
- * bytes must be reproducible everywhere (the runtime natives dir is named
- * after the manifest's sha256).
+ * Plain ASCII key comparison — the manifest bytes must be reproducible
+ * everywhere (the runtime natives dir is named after the manifest's sha256).
  */
 export function sortManifestFiles<T extends { key: string }>(files: T[]): T[] {
   return files.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
@@ -264,8 +244,7 @@ async function singleFile(dir: string, pattern: RegExp, what: string): Promise<s
 
 /**
  * Patch a STAGED addon copy so the OS loader finds its companion libraries
- * in the same flat dir — never the node_modules originals. darwin: rpath →
- * loader_path; linux: `$ORIGIN` (patchelf); win32: nothing needed.
+ * in the same flat dir — never the node_modules originals.
  */
 function patchAddonRpath(stagedAddon: string, libraryFileNames: string[]) {
   if (process.platform === 'darwin') {
@@ -338,8 +317,7 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   await addAsset(assets, files, SEA_NATIVE_DUCKDB_ADDON_KEY, stagedDuckdbAddon, ctx)
   await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${libduckdbName}`, join(duckdbPkg.root, libduckdbName), ctx)
 
-  // Metadata the redirected probes answer from memory; each entry rides
-  // only when the source file exists on this platform.
+  // Metadata the redirected probes answer from memory (ride only if present).
   await addAsset(assets, files, SEA_NATIVE_META_SHARP_PACKAGE_KEY, join(sharpPkg.root, 'package.json'), ctx)
   const sharpVersions = join(sharpPkg.root, 'versions.json')
   if (existsSync(sharpVersions)) {
@@ -357,11 +335,6 @@ interface PackContext {
   packedBytes: number
 }
 
-/**
- * Add one file to the asset map: hash raw bytes, pack into `<packedDir>/<key>`
- * when the packing policy says so, and record the manifest entry (raw sha256,
- * codec, raw size).
- */
 async function addAsset(
   assets: Map<string, string>,
   files: ManifestFileEntry[],
@@ -386,7 +359,6 @@ async function addAsset(
   files.push({ key, path: key, sha256: sha256(raw), codec: packed.codec, size: raw.byteLength })
 }
 
-/** Add every file of `root` to the asset map under `keyPrefix` (with trailing slash). */
 async function addTree(
   assets: Map<string, string>,
   files: ManifestFileEntry[],
@@ -405,8 +377,8 @@ async function addTree(
 }
 
 /**
- * Collect the full asset map, write manifest.json, and return the map
- * including the manifest asset itself — never packed, the reader needs it first.
+ * The returned map includes the manifest asset itself — never packed, the
+ * runtime reader needs it first.
  */
 export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   const assets = new Map<string, string>()
@@ -415,11 +387,8 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   const ctx: PackContext = { packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
   await rm(ctx.packedDir, { recursive: true, force: true })
 
-  // Whole build/client tree (fingerprinted static assets + public files).
   await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'build', 'client'), ctx)
 
-  // Whole drizzle/ tree minus the drizzle-kit snapshot artifacts: the
-  // embedded migrator discovers folders by `*/migration.sql` keys only.
   await addTree(assets, files, SEA_DRIZZLE_ASSET_PREFIX, join(repoRoot, 'drizzle'), ctx, isDrizzleSnapshotArtifact)
 
   // The cn-font-split wasm core (single hashed file, pinned to a stable key).
@@ -428,13 +397,10 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   // The image worker bundle, embedded as text and eval'd under SEA.
   await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(), ctx)
 
-  // The worker-pool smoke entry, embedded as text for `--smoke-worker`.
   await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
 
-  // Observability provisioning assets (4 dashboards + the RUM privacy VRL).
-  // RAW assets — `shouldPackAsset` leaves them unpacked, so under SEA they are
-  // plain files on the VFS mount; the runtime reads them with
-  // `readAssetTextOrDisk` (never the packed blob channel).
+  // Observability provisioning assets (4 dashboards + the RUM privacy VRL) ride
+  // raw — plain VFS files via `readAssetTextOrDisk`, never the packed blob channel.
   await addTree(
     assets,
     files,
@@ -443,10 +409,8 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
     ctx,
   )
 
-  // Native dynamic libraries + platform metadata — the only assets extracted to disk at runtime.
   await addNativeAssets(assets, files, ctx)
 
-  // Sorted for deterministic bytes — the runtime natives dir is named after the manifest's sha256.
   const pkg = await readJson(join(repoRoot, 'package.json'))
   const manifest: SeaManifest = {
     version: pkg.version ?? fail('package.json has no "version" field'),

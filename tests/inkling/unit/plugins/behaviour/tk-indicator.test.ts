@@ -9,9 +9,9 @@ import {
   type TkRectLike,
 } from '@/inkling/plugins/behaviour/tk-indicator'
 
-// Data-driven pins for the TK indicator geometry and click-to-cycle policy
-// (src/plugins/behaviour/tk-indicator.ts). Editor wiring (measuring, rendering,
-// editor.update) lives in test/unit/plugins/TKPlugin.test.tsx.
+// Data-driven pins for the TK indicator geometry and click-to-cycle policy.
+// Editor wiring (measuring, rendering, editor.update) lives in
+// TKPlugin.test.tsx.
 
 describe('resolveTkIndicatorPosition', () => {
   const POSITION_CASES: Array<[string, TkRectLike | null, TkRectLike | null, TkIndicatorPosition]> = [

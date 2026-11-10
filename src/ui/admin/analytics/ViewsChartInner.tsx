@@ -10,9 +10,7 @@ import { getClientTimezone } from '@/ui/admin/analytics/use-analytics-state'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// The @unovis chart body — CLIENT ONLY. This module is lazy-loaded behind
-// the hydration gate in `ViewsChart.tsx`; never import it statically from an
-// SSR-rendered module.
+// CLIENT ONLY: lazy-mounted behind the hydration gate in ViewsChart.tsx — never import statically from an SSR-rendered module.
 
 interface ChartDatum {
   x: number
@@ -48,8 +46,7 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
     [points, unit],
   )
 
-  // Area/line for a multi-point series; grouped bars for a lone bucket or
-  // the minute unit (dense 1-minute buckets read as bars, per the plan).
+  // Area/line for a multi-point series; grouped bars for a lone bucket or dense minute buckets.
   const isAreaMode = data.length > 1 && unit !== 'minute'
 
   const totalVisits = data.reduce((sum, d) => sum + d.visits, 0)

@@ -43,24 +43,12 @@ type UseSettingsCardOptions<TSource extends object, TState extends FieldValues> 
 interface UseSettingsCardResult<TSource extends object, TState extends FieldValues> {
   form: UseFormReturn<TState>
   isSaving: boolean
-  /**
-   * Immediate commit (skips the dirty guard, still validates). With a field
-   * name, only that field's change is POSTed and only its baseline advances;
-   * a rejected field commit rolls that control back to its committed value
-   * (unless the admin edited it again mid-flight) and resolves false.
-   */
+  /** Immediate commit, skipping the dirty guard; a field name scopes it to that
+   *  field and rolls it back on rejection. */
   save: (field?: string) => Promise<boolean>
-  /**
-   * Blur-driven commit; no-op when the form matches the last committed
-   * snapshot. A failure keeps the dirty input and its error on screen.
-   */
+  /** Blur-driven commit; no-op when the form matches the last committed snapshot. */
   flushOnBlur: () => void
-  /**
-   * Awaitable whole-card flush registered with the panel: waits for an
-   * in-flight save, then commits every dirty field and re-checks. True only
-   * when the card is clean afterwards — a validation/commit/exception failure
-   * reports false WITHOUT resetting the admin's unsaved input.
-   */
+  /** Awaitable whole-card flush: true only when the card is clean afterwards, never resets unsaved input. */
   flush: () => Promise<boolean>
   /** Latest server-confirmed section (save response), falling back to the loader snapshot. Never POSTed. */
   display: TSource
@@ -134,9 +122,7 @@ function firstErrorMessage(node: unknown): string | undefined {
   return undefined
 }
 
-// Field-scoped commits (P1-13): `save(field)` POSTs only that field — the
-// patch is the sparse diff of the baseline vs the baseline with this field
-// replaced by its current form value.
+// Field-scoped commit patch: baseline with only this field replaced by its current form value.
 function getPathValue(values: unknown, path: string): unknown {
   let node = values
   for (const key of path.split('.')) {
@@ -191,10 +177,8 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   const { commit, isPending, status } = useSettingsMutation()
   const { localizeMessage, t } = useI18n()
   // Zod messages may be catalog ids (typed at the schema call site) or Zod's own
-  // default prose; translate the ids, leave the prose untouched. The issue's ICU
-  // params (numeric bounds AND a custom issue's `params` bag — `{label}`) come
-  // from the shared extractor. Runs BEFORE `buildZodErrors` so a raw id can
-  // never reach a field error.
+  // prose; translate the ids and leave the prose. Runs BEFORE `buildZodErrors` so
+  // a raw id can never reach a field error.
   const localizeIssues = useCallback(
     <Issue extends { message: string }>(issues: Issue[]): Issue[] =>
       issues.map((issue) => ({
@@ -265,18 +249,12 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         setSavedSource(null)
       }
     }
-    // Dirty — keep the edits; the pending flush will commit them.
   }
 
-  // ---------------------------------------------------------------------
-  // Per-card serialization
-  //
-  // Every commit runs through ONE promise chain: a second save never posts
-  // while the first is in flight, and responses apply in order — a stale
-  // response can never advance the baseline past a newer commit. `pendingRef`
-  // lets a flush WAIT for a control-triggered (field-scoped) save and then
-  // re-check the remaining dirty fields.
-  // ---------------------------------------------------------------------
+  // Per-card serialization: every commit runs through ONE promise chain, so
+  // responses apply in order and a stale response never advances the baseline
+  // past a newer commit. `pendingRef` lets a flush wait for a field-scoped
+  // save, then re-check the remaining dirty fields.
   const chainRef = useRef<Promise<void>>(Promise.resolve())
   const pendingRef = useRef<Promise<unknown> | null>(null)
 
@@ -302,15 +280,12 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
 
   /**
    * Commit the whole card. A failed commit — validation, rejection or throw —
-   * NEVER resets the form: the admin's dirty input and its error stay on
-   * screen so the failure stays actionable and the retry can succeed.
+   * NEVER resets the form: the dirty input and its error stay on screen so the
+   * retry can succeed.
    *
-   * The POST is a SPARSE diff against the last acknowledged baseline, never
-   * `fromState(getValues())` in full: a card shares its section with sibling
-   * cards and with other tabs, so re-sending an untouched owned field would
-   * write this tab's stale copy over a value someone else has since changed —
-   * the General timezone card used to drag the site locale along with a
-   * timezone edit that way.
+   * The POST is a sparse diff against the last acknowledged baseline: the card
+   * shares its section with sibling cards and other tabs, so re-sending an
+   * untouched owned field would write a stale copy over a newer value.
    */
   const commitWhole = useCallback(
     (): Promise<boolean> =>
@@ -324,7 +299,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
             async (values) => {
               try {
                 // Resolver-parsed values on the submitted side keep the patch
-                // normalized (trim and friends) exactly like the old full patch.
+                // normalized (trim and friends).
                 const patch = sparseDiff(fromState(unsafeCast<TState>(lastCommittedRef.current)), fromState(values))
                 if (patch === undefined) {
                   // Everything this card owns maps to its committed value
@@ -340,10 +315,9 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
                   const savedSection = unsafeCast<TSource>(result.section)
                   setSavedSource(savedSection)
                   // The baseline advances to the CAPTURED submitted values, never
-                  // to the response: the response may carry fields this card did
-                  // not submit (another tab's locale) which must not leak into
-                  // this form, while input typed during the round trip stays
-                  // dirty for the next flush.
+                  // to the response: a response field this card did not submit
+                  // must not leak into the form, while input typed during the
+                  // round trip stays dirty for the next flush.
                   setLastCommitted(submittedRaw)
                   onSaved?.(savedSection)
                   resolve(true)
@@ -375,8 +349,8 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
 
   /**
    * A discrete control is authoritative only once the server acknowledges it:
-   * put the field back on the last committed value after a rejection (unless
-   * the admin edited it again mid-flight — never clobber newer input).
+   * roll the field back to its committed value after a rejection — unless the
+   * admin edited it again mid-flight.
    */
   const revertField = useCallback(
     (field: string, base: DefaultValues<TState>, submitted: unknown) => {
@@ -388,8 +362,8 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     [getValues, setValue],
   )
 
-  // Field-scoped commit (P1-13): POST only the trigger field's change,
-  // advance only its baseline, roll back only it on rejection.
+  // Field-scoped commit: POST only the trigger field's change, advance only its
+  // baseline, roll back only it on rejection.
   const commitField = useCallback(
     (field: string): Promise<boolean> =>
       runExclusive(async () => {
@@ -455,7 +429,6 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     ],
   )
 
-  // Discrete controls fire immediately; a field name scopes the commit to that field.
   const save = useCallback(
     (field?: string): Promise<boolean> => {
       return field === undefined ? commitWhole() : commitField(field)
@@ -465,9 +438,9 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
 
   /**
    * Panel flush: wait out a control-triggered save, then keep committing until
-   * the card is clean. Bounded retries: an admin typing nonstop during the
-   * round trips reports false (the locale switch must not reload with unsaved
-   * edits).
+   * the card is clean. Bounded retries — an admin typing nonstop during the
+   * round trips reports false, so the locale switch never reloads with unsaved
+   * edits.
    */
   const FLUSH_MAX_ATTEMPTS = 3
   const flush = useCallback(async (): Promise<boolean> => {
@@ -500,9 +473,9 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     }
   }, [commitWhole, isDirty, section])
 
-  // Text-input blur — skip when nothing changed; also the historic
-  // fire-and-forget behavior for listeners that cannot await. A validation
-  // failure keeps the invalid input and its error (see `commitWhole`).
+  // Text-input blur — skip when nothing changed. Fire-and-forget for listeners
+  // that cannot await; a validation failure keeps the invalid input on screen
+  // (see `commitWhole`).
   const flushOnBlur = useCallback(() => {
     if (!isDirty()) {
       return

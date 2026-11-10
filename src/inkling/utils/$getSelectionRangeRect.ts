@@ -33,9 +33,9 @@ export function $getSelectionRangeRect({
     return null
   }
 
-  // we can get multiple rects if the selection spans multiple lines or has inline nodes like links
+  // A selection spanning several lines or containing inline nodes (links) yields several
+  // rects.
   if (selectionRects.length > 1) {
-    // add up the widths of all rects using the first top position
     for (let i = 1; i < selectionRects.length; i++) {
       const rect = selectionRects[i]
       if (rect.top === returnRect.top) {

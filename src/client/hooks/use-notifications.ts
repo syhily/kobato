@@ -19,10 +19,9 @@ import { isRecord } from '@/shared/utils/type-guards'
  * fresh after any notification mutation — read-state flips patch it from the
  * mutation response (`usePatchNotificationReadState`), content changes
  * invalidate it (`useInvalidateNotifications`). The idle cadence is
- * deliberately slow —
- * ADR-0009 (`docs/adr/0009-notification-realtime-delivery.md`) adopts tuned
- * polling instead of SSE: an async inbox tolerates a stale badge while the
- * tab sits in the background, and the moments that matter refetch on demand.
+ * deliberately slow — tuned polling instead of SSE: an async inbox tolerates
+ * a stale badge while the tab sits in the background, and the moments that
+ * matter refetch on demand.
  *
  * Exactly ONE observer per shell by design: `AppSidebar` on admin and
  * `BaseLayout` on public. Callers must pass the resulting count DOWN as a
@@ -59,9 +58,8 @@ export function useInvalidateNotifications(): () => Promise<void> {
   }
 }
 
-// oRPC's operation key shape (v1.16, pinned by a runtime probe during plan
-// 020): `[procedurePath, { input?, type? }]`, where an infinite query's input
-// is its FIRST page's input. So the list key is
+// oRPC's operation key shape: `[procedurePath, { input?, type? }]`, where an
+// infinite query's input is its FIRST page's input. So the list key is
 // `[['notifications','list'], { input: { tab, limit }, type: 'infinite' }]`
 // and the tab rides the key's second element. Derived per call (never at
 // module scope) so importing this hook never depends on the router shape.

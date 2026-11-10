@@ -20,8 +20,6 @@ export function requestTimeout(
   overrides: readonly TimeoutOverride[] = [],
 ): MiddlewareHandler<Env> {
   return async function requestTimeoutMiddleware(c, next) {
-    // Long-running endpoints (backup upload/decrypt staging of up to 500 MB)
-    // get their own budget — the 30s default would 503 them on slow links.
     const override = overrides.find((entry) => c.req.path.startsWith(entry.prefix))
     const effectiveTimeoutMs = override?.timeoutMs ?? timeoutMs
     const controller = new AbortController()

@@ -19,8 +19,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// the store equivalent of the old per-test CardContext factory: the card is
-// selected and not editing unless a test says otherwise
+// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'file-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -224,10 +223,6 @@ describe('FileNodeComponent', () => {
     })
 
     it('hides the snippet item and its separator when createSnippet is not configured', async () => {
-      // plan 046 step 4 deliberate change: file was the only card that did
-      // not gate the snippet item (or its separator) on
-      // cardConfig.createSnippet — the item opened an input whose creation
-      // silently no-oped. It now matches the other ten cards
       const nodeKey = await addFileNode(editor, { src: '/report.pdf' })
       const { container } = renderWithToolbar(nodeKey, { selected: true })
 
@@ -238,9 +233,6 @@ describe('FileNodeComponent', () => {
     })
 
     it('dispatches EDIT_CARD_COMMAND for the card when the edit item is clicked', async () => {
-      // plan 046 step 4 deliberate change: file's edit item was wired to an
-      // inert no-op (preventDefault/stopPropagation only); it now enters the
-      // edit mode FileCard already implements, like every other card
       const nodeKey = await addFileNode(editor, { src: '/report.pdf' })
       renderWithToolbar(nodeKey, { selected: true })
       const dispatchSpy = vi.spyOn(editor, 'dispatchCommand')

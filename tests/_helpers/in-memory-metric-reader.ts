@@ -3,9 +3,8 @@ import type { DataPoint, MetricData, ResourceMetrics } from '@opentelemetry/sdk-
 import { MetricReader } from '@opentelemetry/sdk-metrics'
 
 /**
- * Minimal in-memory metric reader (the SDK no longer ships
- * `InMemoryMetricReader` in the 3.x line). Collection is explicit, so a test
- * controls exactly when a data point is snapshotted.
+ * Minimal in-memory metric reader: the SDK's `InMemoryMetricReader` is absent in the
+ * 3.x line. Collection is explicit, so a test controls when a point is snapshotted.
  */
 export class TestMetricReader extends MetricReader {
   protected onForceFlush(): Promise<void> {

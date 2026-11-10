@@ -6,8 +6,8 @@ import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
 const log = getLogger('content')
 
 /**
- * The public read path serves the saved `body_html` projection. Rows saved
- * before R9b (or whose projection failed at save time) carry NULL — fall back
+ * The public read path serves the saved `body_html` projection. Rows whose
+ * projection was never written or failed at save time carry NULL — fall back
  * to computing the projection on read. Never throws: a body that cannot
  * project renders empty rather than 500ing the detail page.
  */

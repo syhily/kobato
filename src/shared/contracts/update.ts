@@ -10,9 +10,8 @@ export const updateCheckResultDto = z.object({
   updateAvailable: z.boolean(),
   canSelfUpdate: z.boolean(),
   /**
-   * Typed refusal descriptors when `canSelfUpdate` is false: the VersionDialog
-   * resolves each `messageKey` with the active locale. `fallbackMessage` stays
-   * English for logs and old clients.
+   * Typed refusal descriptors when `canSelfUpdate` is false, resolved by the
+   * VersionDialog; `fallbackMessage` stays English for logs and old clients.
    */
   reasons: z.array(z.custom<ErrorMessageDescriptor>()),
 })

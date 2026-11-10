@@ -3,7 +3,7 @@ import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * Headless-DOM-port import guard: `src/html/headless-dom.ts` is the only
+ * Headless-DOM-port import guard: `src/inkling/html/headless-dom.ts` is the only
  * module in the package that may reference jsdom (static or dynamic import).
  * Every other conversion module resolves its DOM through the port's
  * `resolveHeadlessDom`, so the optional jsdom peer stays out of the browser

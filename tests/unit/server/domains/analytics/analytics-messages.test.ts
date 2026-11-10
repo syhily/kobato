@@ -8,8 +8,6 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// GeoIP remote-update failures across all four locales (scheduler semantics and
-// provider diagnostics stay untouched).
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

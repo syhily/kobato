@@ -1,9 +1,7 @@
-// Server-filled artifact fields on the Lexical node datasets (plan
-// docs/plans/inkling-editor-replacement.md, round R9a) — the host pipeline
-// owns these slots: stripped from client input at canonicalize, recomputed
-// server-side on save, never written back by the editor. The equivalence
-// check (`equivalence.ts`) excludes them so a body differing only in
-// server-computed artifacts is not "dirty".
+// Server-filled artifact fields on the Lexical node datasets: stripped from
+// client input at canonicalize, recomputed server-side on save, and excluded by
+// the equivalence check (`equivalence.ts`) so a body differing only in them is
+// not "dirty".
 
 /** Shiki-rendered HTML on `codeblock` nodes. */
 export const CODEBLOCK_ARTIFACT_KEYS = ['highlightedHtml'] as const
@@ -12,8 +10,8 @@ export const CODEBLOCK_ARTIFACT_KEYS = ['highlightedHtml'] as const
 export const MATH_ARTIFACT_KEYS = ['mathml', 'svg'] as const
 
 /**
- * Save-time meta snapshot on `music-player` nodes (alongside `playerId`).
- * R10's `defineCard` must read exactly these dataset keys.
+ * Save-time meta snapshot on `music-player` nodes (alongside `playerId`);
+ * `defineCard` must read exactly these dataset keys.
  */
 export const MUSIC_PLAYER_META_KEYS = ['name', 'artist', 'cover', 'audioUrl', 'lyric'] as const
 

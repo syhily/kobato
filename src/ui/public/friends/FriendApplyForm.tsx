@@ -8,8 +8,6 @@ import { Textarea } from '@/ui/components/textarea'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { LazyPopup as Popup } from '@/ui/public/widgets/LazyPopup'
 
-// Public friend-link application: a signup button opens a Popup holding the form,
-// an off-screen honeypot (`contact`), and a success state.
 export function FriendApplyForm() {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
@@ -51,10 +49,9 @@ export function FriendApplyForm() {
   }
 
   const handleOpen = () => setOpen(true)
-  // `onClose` feeds Popup's focus-management effect ([open, mounted, onClose]),
-  // so its identity MUST stay stable: every re-render with a fresh closure tears
-  // the effect down, and the teardown focuses `previouslyFocusedRef` — stealing
-  // focus mid-session and re-capturing an in-dialog element as the restore target.
+  // `onClose` feeds Popup's focus-management effect, so its identity MUST stay stable: a
+  // fresh closure per render tears the effect down, and the teardown focuses
+  // `previouslyFocusedRef`, stealing focus mid-session and re-capturing a restore target.
   const handleClose = useCallback(() => {
     setOpen(false)
     // A closed dialog reopens fresh — clear stale success/error state.

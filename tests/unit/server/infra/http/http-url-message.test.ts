@@ -8,10 +8,9 @@ import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@/shared/utils/safe-url'
 
-// The shared http(s)-URL rule states a CATALOG ID, not prose: every schema
-// reusing it (admin user links, friend applications, …) produces the same
-// descriptor through `zodIssuesToWire`, and the reader sees the localized
-// sentence — never the key, never the pre-i18n Chinese text.
+// The shared http(s)-URL rule states a catalog id, not prose: every schema reusing it
+// (admin user links, friend applications, …) produces the same descriptor through
+// `zodIssuesToWire`, so the reader sees the localized sentence — never the key.
 
 const EXPECTED: Record<AppLocale, string> = {
   'en-US': 'Enter an http(s) URL',

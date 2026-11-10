@@ -62,7 +62,7 @@ function CompactGroup({ label, mentions }: { label: string; mentions: PublicWebm
 }
 
 /**
- * 「引用与回应」— approved webmentions grouped by mf2 type: replies/mentions as
+ * Approved webmentions grouped by mf2 type: replies/mentions as
  * cards, likes/reposts as compact rows. Pure props, SSR-only.
  */
 export function WebmentionList({ mentions }: { mentions: PublicWebmentionWire[] }) {

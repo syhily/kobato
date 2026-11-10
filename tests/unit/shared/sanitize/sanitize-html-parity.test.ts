@@ -7,13 +7,11 @@ import { sanitizeHtmlEngine as nodeEngine } from '@/shared/sanitize/engine.node'
 
 // Byte-parity pin for the two sanitize engine entry points. SSR ships the
 // node engine's output and hydration compares it against the client render's
-// `__html` string, so the two must produce identical BYTES — behavioral
-// equivalence is not enough (R16h: the old sanitize-html/DOMPurify split
-// mismatched on 859/9031 dev-DB rows; R16i replaced it with one shared
-// DOMPurify core, engines differing only in the DOM they bind). This file
-// keeps asserting `node === browser` on fixtures covering every historical
-// divergence class, so a future regression in the shared-core wiring or a
-// DOMPurify upgrade behavior change fails here instead of hydrating badly.
+// `__html` string, so both must produce identical BYTES — behavioral
+// equivalence is not enough. The engines share one DOMPurify core and differ
+// only in the DOM they bind; the fixtures cover every known divergence class,
+// so a wiring regression or a DOMPurify upgrade fails here instead of
+// hydrating badly.
 
 function expectParity(html: string, strategy: SafeHtmlStrategy): void {
   const config = strategyToConfig(strategy)

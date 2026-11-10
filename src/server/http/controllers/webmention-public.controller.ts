@@ -6,9 +6,9 @@ import { loadPublicWebmentionsForTarget } from '@/server/domains/webmentions/ser
 import { publicProc } from '@/server/http/orpc-base'
 import { publicWebmentionDto } from '@/shared/contracts/webmentions'
 
-// Headless surface for the「引用与回应」block (split-plan notes-6 §3.1):
-// `page_key` resolves through `resolveMetricTarget` (miss → NOT_FOUND); the
-// double display gate lives in the domain and answers an empty array when off.
+// Headless surface for the「引用与回应」block: `page_key` resolves through
+// `resolveMetricTarget` (miss → NOT_FOUND); the double display gate lives in
+// the domain and answers an empty array when off.
 const list = publicProc
   .route({ method: 'GET', path: '/webmention/list' })
   .input(webmentionPublicListSchema)

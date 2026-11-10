@@ -15,92 +15,34 @@ import { createHeadingIdTracker } from '@/inkling/utils/heading-id-tracker'
 import { sanitizeHtml } from '@/inkling/utils/sanitize-html'
 
 /**
- * The render-context seam (plan 040; the fold completed in plan 042): the
- * single read-only view of export-time policy and data, and the ONLY thing
- * card renderers receive besides the node. Before the seam, renderers
- * re-implemented URL allow-lists and sanitization ad hoc; this context is
- * the one interface those policies converge behind. The migration was
- * incremental, one step per commit:
- *
- * - `safeUrl` is the URL policy (Step 3 migrates the hand-rolled
- *   `isSafeUrl`/`isSafeMediaUrl` call sites; `is-safe-url.ts` stays as the
- *   seam's private implementation).
- * - `isLocalContentImage` folds the `siteUrl`/`imageBaseUrl` forwarding into
- *   the context (Step 3b), so renderers can't drop an argument.
- * - `sanitizeBasicHtml`/`sanitizeCardHtml` converge sanitization on DOMPurify
- *   (Step 4; named configs such as callout's land here). Two recorded STOP
- *   fallbacks from the Step-4 corpus diff live behind the seam too:
- *   `escapeText` (DOMPurify cannot reproduce `escapeHtml` for the video
- *   caption corpus) and `CALLOUT_HTML_CONFIG` (DOMPurify cannot reproduce
- *   cleanDOM's per-tag attribute policy), each documented at its definition.
- *   `sanitizeBasicHtml` is the default-config sanitize under a
- *   content-neutral name, shared by caption call sites and non-caption HTML
- *   such as the markdown card's rendered body.
- * - `createDocument` resolution absorbed the deleted `addCreateDocumentOption`
- *   helper (Step 6), and `trackIdAttribute` owns the heading-id dedup map the
- *   options bag's `usedIdAttributes` used to carry.
- * - Plan 042 completed the fold: renderers and transformers receive ONLY
- *   this context. The data fields it now also carries — `imageOptimization`
- *   (a frozen snapshot), the `canTransformImage*` callbacks (by reference),
- *   and `inklingVersion` — are documented at their declarations.
- *
- * The context is read-only: scalar fields are copied, `imageOptimization` is
- * a frozen snapshot, and the object itself is frozen. The freeze is shallow —
- * nested values inside `imageOptimization` stay shared references and must
- * not carry mutable state. `trackIdAttribute` is the one exception to the read-only surface:
- * it mutates the id-dedup map, which is internal per-render state the seam
- * owns, not exposed policy. The context is cheap to build, so callers
- * construct it once per render pass (per `exportDOM` call in the card
- * dispatch, per `$convertToHtmlString` run in the string layer) and never
- * share it across renders — which is exactly why the per-render id map is
- * safe.
- *
- * Card sources must not import the policy modules (`is-safe-url`,
- * `escape-html`, `clean-dom`, `sanitize-html`) directly — the guard in
- * `test/nodes-base/nodes/render-policy-imports.test.ts` enforces the seam
- * with zero exceptions.
+ * The read-only render context: the single view of export-time policy and data,
+ * and the only thing card renderers receive besides the node. Card sources must
+ * not import the policy modules (`is-safe-url`, `escape-html`, `clean-dom`,
+ * `sanitize-html`) directly — the guard in
+ * `test/nodes-base/nodes/render-policy-imports.test.ts` enforces the seam.
+ * Frozen shallowly: nested `imageOptimization` values stay shared references and
+ * must not carry mutable state. A context is built per render pass and never
+ * shared, which is why the map `trackIdAttribute` mutates is safe.
  */
 
 export type SafeUrlKind = 'navigation' | 'media'
 
-/**
- * A `sanitizeCardHtml` config that selects the cleanDOM unwrap-allowlist
- * fallback instead of DOMPurify. The attribute rules (A[href] re-validated
- * with the URL policy, CODE[style] constrained by CODE_STYLE_REGEX) are
- * cleanDOM's own defaults in `clean-dom.ts` — the config names only the tag
- * allowlist so the rules stay single-sourced.
- */
+/** A `sanitizeCardHtml` config selecting the cleanDOM unwrap-allowlist fallback instead of DOMPurify; the config names only the tag allowlist. */
 export interface UnwrapAllowlistConfig {
   readonly implementation: 'unwrap-allowlist'
   readonly allowedTags: string[]
 }
 
-/**
- * A DOMPurify config whose `sanitize()` still returns a string. Omitting
- * the DOM/fragment/trusted-type return keys keeps the seam's string return
- * honest: DOMPurify's own overloads then resolve the `string` signature
- * directly (dompurify 3.x ships overloads keyed on those config flags).
- * Structurally a pre-typed `Config` variable still assigns in — the seam
- * guards the literal case, which is how configs are passed in-repo.
- */
+/** A DOMPurify config whose `sanitize()` still returns a string (the DOM/fragment/trusted-type return keys are omitted). */
 export type SanitizeToStringConfig = Omit<DOMPurifyConfig, 'RETURN_DOM' | 'RETURN_DOM_FRAGMENT' | 'RETURN_TRUSTED_TYPE'>
 
 export type CardHtmlConfig = SanitizeToStringConfig | UnwrapAllowlistConfig
 
 /**
- * Callout's nested-editor allowlist, kept behind cleanDOM as a named
- * fallback (plan 040 Step 4 STOP condition). A plain DOMPurify config
- * (`ALLOWED_TAGS`/`ALLOWED_ATTR`, with or without `FORBID_CONTENTS: []`)
- * cannot reproduce cleanDOM's output on the pinned callout corpus:
- *
- * - DOMPurify's `ALLOWED_ATTR` is global, not per-tag — it keeps
- *   `style="background:red"` on MARK and `style="position:fixed;inset:0"` on
- *   CODE, which cleanDOM strips (MARK allows no attributes; CODE[style] must
- *   match `white-space: pre-wrap`).
- * - DOMPurify drops `<script>` contents; cleanDOM unwraps the tag and keeps
- *   its text (`<div><span><script>alert(1)</script>text</span></div>` →
- *   `alert(1)text`). `FORBID_CONTENTS: []` fixes that but not the per-tag
- *   attribute policy.
+ * Callout's nested-editor allowlist, kept behind cleanDOM: a plain DOMPurify
+ * config cannot reproduce cleanDOM's per-tag attribute policy (`ALLOWED_ATTR`
+ * is global, so it keeps `style` on MARK and arbitrary styles on CODE) nor its
+ * `<script>`-unwrap behaviour.
  */
 export const CALLOUT_HTML_CONFIG: UnwrapAllowlistConfig = {
   implementation: 'unwrap-allowlist',
@@ -108,14 +50,10 @@ export const CALLOUT_HTML_CONFIG: UnwrapAllowlistConfig = {
 }
 
 /**
- * The code card's server-prerendered artifact (Shiki). Shiki's dual-theme
- * output carries both themes on every token span's inline `style` as CSS
- * custom properties (`--shiki-light`/`--shiki-dark`), so the sanitize must
- * keep `SPAN[style]` or the highlight collapses to plain text. The tag set
- * covers Shiki's own wrapper (`pre.shiki > code > span.line`) for artifacts
- * that include it; DOMPurify's default `ALLOW_DATA_ATTR` already passes the
- * `data-*` hooks hosts attach. Inkling never runs Shiki — the artifact is
- * filled host-side (CSP: no wasm in the browser) and only carried here.
+ * The code card's server-prerendered Shiki artifact: dual-theme output carries
+ * both themes in each token span's inline `style` as CSS custom properties, so
+ * `SPAN[style]` must survive. Inkling never runs Shiki — the artifact is filled
+ * host-side (CSP: no wasm in the browser) and only carried here.
  */
 export const SHIKI_HTML_CONFIG: SanitizeToStringConfig = {
   ALLOWED_TAGS: ['pre', 'code', 'span'],
@@ -123,12 +61,10 @@ export const SHIKI_HTML_CONFIG: SanitizeToStringConfig = {
 }
 
 /**
- * The math family's server-prerendered artifacts (KaTeX). A render is either
- * a MathML tree or an SVG tree — two vocabularies with their own element and
- * attribute sets (`annotation[encoding]`, `path[d]`, …) that a hand-rolled
- * allowlist would drift from, so the sanitize uses DOMPurify's built-in
- * profiles. Inkling never runs KaTeX — the artifact is filled host-side (CSP:
- * no wasm in the browser) and only carried here.
+ * The math family's server-prerendered KaTeX artifacts: a MathML tree or an SVG
+ * tree, whose element/attribute vocabularies DOMPurify's built-in profiles own.
+ * Inkling never runs KaTeX — the artifact is filled host-side (CSP: no wasm in
+ * the browser).
  */
 export const MATH_HTML_CONFIG: SanitizeToStringConfig = {
   USE_PROFILES: { mathMl: true, svg: true },
@@ -139,17 +75,13 @@ function isUnwrapAllowlistConfig(config: CardHtmlConfig): config is UnwrapAllowl
 }
 
 /**
- * Color validation, single-sourced here (plan 040 Step 5). Accepts hex,
- * rgb/rgba, and CSS named colors; rejects arbitrary strings to keep
- * interpolated style values safe. The header renderer's `safeColor` fallback
- * helper is the consumer — note header legitimately falls back to
- * `'transparent'`, which the named-color arm accepts, so it must not be
- * rejected here.
+ * Accepts hex, rgb/rgba, and CSS named colors; rejects arbitrary strings to keep
+ * interpolated style values safe. The header renderer's `safeColor` stays the
+ * consumer, and `'transparent'` must keep matching the named-color arm.
  */
 const COLOR_VALUE_REGEX =
   /^#[0-9a-fA-F]{3,8}$|^rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(?:,\s*[\d.]+\s*)?\)$|^[a-zA-Z]+$/
 
-/** The general color-value check (header's `safeColor` fallback helper). */
 export function isSafeColorValue(value: string): boolean {
   return COLOR_VALUE_REGEX.test(value)
 }
@@ -165,12 +97,9 @@ function isContentImageSizes(value: unknown): value is Record<string, { width: n
 }
 
 /**
- * Validates the host-supplied imageOptimization bag into the typed snapshot:
- * each documented key is copied only when its runtime type matches, so a
- * mistyped host option degrades to "absent" (the consumers' documented
- * fallback path) instead of being frozen into the context as a lie. The
- * `ImageOptimizationOptions` type itself lives in `@/inkling/nodes/base/export-dom`
- * next to `ExportDOMOptions`.
+ * Validates the host-supplied bag into the typed snapshot: each documented key
+ * is copied only when its runtime type matches, so a mistyped option degrades to
+ * "absent" (the consumers' fallback path) instead of being frozen in as a lie.
  */
 function readImageOptimization(bag: ImageOptimizationOptions): ImageOptimizationOptions {
   const validated: ImageOptimizationOptions = {}
@@ -201,15 +130,13 @@ export interface RenderContext {
   /** image renderer: emit `<picture>` sources for modern formats (absent when not passed). */
   readonly pictureImageFormats: boolean | undefined
   /**
-   * Keyed export-policy resolution (CONTEXT.md-style render-time policy):
-   * the host's `options.resolveExportPolicy` answer, falling back to the
-   * deprecated flat option key when the resolver leaves it unanswered.
+   * Keyed export-policy resolution: the host's `options.resolveExportPolicy`
+   * answer, falling back to the deprecated flat option key when unanswered.
    */
   resolveExportPolicy(key: ExportPolicyKey): string | undefined
   /**
-   * Request-scoped render-time meta resolver, carried by reference (absent
-   * when not passed). Synchronous by contract — see the option's declaration
-   * in `@/inkling/nodes/base/export-dom`.
+   * Request-scoped render-time meta resolver, carried by reference (absent when
+   * not passed). Synchronous by contract.
    */
   readonly resolveRenderMeta: ((kind: string, id: string) => unknown) | undefined
   /** Resolved once: `options.createDocument` / `options.dom` / the browser global, in that order. */
@@ -217,31 +144,20 @@ export interface RenderContext {
   /** URL policy: returns `value` when it is safe for `kind`, `''` otherwise. */
   safeUrl(kind: SafeUrlKind, value: string): string
   /**
-   * Local-content check closing over the options' `siteUrl`/`imageBaseUrl`
-   * captured at build time — callers can no longer forget to forward them
-   * (the `b87ecc1` bug class).
+   * Local-content check closing over the `siteUrl`/`imageBaseUrl` captured at
+   * build time, so callers cannot forget to forward them.
    */
   isLocalContentImage(url: string): boolean
   /**
-   * Default-config `sanitizeHtml` under a content-neutral name, shared by
-   * caption call sites and non-caption HTML (the markdown card's rendered
-   * markdown-it body). The content-neutral name exists so no caller has to
-   * reach for a "caption" entry to sanitize basic HTML — the markdown
-   * renderer's direct `sanitize-html` import was the render-policy
-   * allowlist's last entry.
+   * Default-config `sanitizeHtml` under a content-neutral name, shared by caption
+   * call sites and non-caption HTML (the markdown card's rendered body).
    */
   sanitizeBasicHtml(html: string): string
   /**
-   * Plain-text template escaping — the single escaping path behind the seam.
-   * Introduced for the fields whose pinned output is `escapeHtml`'s (video
-   * captions); plan 041 routed every card renderer's template escaping
-   * through it. Recorded divergence (plan 040
-   * Step 4 STOP condition): the DOMPurify caption path cannot reproduce
-   * `escapeHtml` on the pinned corpus — it preserves benign inline markup
-   * (`This is a <b>caption</b>` keeps `<b>` instead of escaping it), strips
-   * `<img onerror>` down to `<img>`, rewrites `<script>` to the
+   * Plain-text template escaping, the single escaping path behind the seam.
+   * Stays on `escapeHtml` because DOMPurify cannot reproduce it: it preserves
+   * benign inline markup, strips `<img onerror>`, rewrites `<script>` to the
    * `js-embed-placeholder` `<pre>`, and does not entity-escape `&`/quotes.
-   * The `escape-html.ts` implementation therefore stays, behind this seam.
    */
   escapeText(value: string): string
   /**
@@ -251,30 +167,18 @@ export interface RenderContext {
    */
   sanitizeCardHtml(html: string, config: CardHtmlConfig): string
   /**
-   * Heading-id deduplication, folded in from the options bag's
-   * `usedIdAttributes` (plan 040 Step 6): records one use of the slugified
-   * base `id` and returns the id to emit — the base id on first use,
-   * `<id>-<n>` on repeats. The one mutable-state method on the context; the
-   * map is internal per-render state (the shared tracker in
-   * `@/inkling/utils/heading-id-tracker`), safe because a context is never shared
-   * across renders.
+   * Heading-id deduplication: records one use of the slugified base `id` and
+   * returns the id to emit — the base id on first use, `<id>-<n>` on repeats.
+   * The one mutable-state method on the context; the map is internal per-render
+   * state, safe because a context is never shared across renders.
    */
   trackIdAttribute(id: string): string
 }
 
-/**
- * Resolves the document factory for one render pass: `options.createDocument`
- * / `options.dom` / the browser global, in that order. This absorbs the
- * deleted `addCreateDocumentOption` helper (plan 040 Step 6) — the options bag
- * is read, never mutated — preserving its exact non-browser throw. The
- * browser-global fallback is covered by the seam tests via stubbed globals.
- */
 function resolveCreateDocument(options: ExportDOMOptions): () => Document {
   if (options.createDocument) {
-    // A truthy non-function `createDocument` is a caller bug. The pinned
-    // TypeError message names the historical caller — the check lived in the
-    // markdown renderer (test/nodes-base/nodes/markdown.test.ts pins the exact
-    // message) before plan 042 moved it into the factory.
+    // A truthy non-function `createDocument` is a caller bug; the pinned
+    // TypeError message names the markdown renderer, whose test fixes the text.
     if (typeof options.createDocument !== 'function') {
       throw new TypeError('renderMarkdownNode requires options.createDocument to be a function')
     }
@@ -303,10 +207,9 @@ function resolveCreateDocument(options: ExportDOMOptions): () => Document {
 }
 
 /**
- * The options copied verbatim onto the context (documented at their
- * interface declarations): the pass-through half of the seam. The Pick key
- * union is the single enumeration the factory copies from — a new
- * pass-through option joins the options type, the interface, and this list.
+ * The pass-through half of the seam: options copied verbatim onto the context
+ * (documented at their interface declarations). A new pass-through option joins
+ * the options type, the interface, and this list.
  */
 type VerbatimOptions = Pick<
   RenderContext,
@@ -314,9 +217,8 @@ type VerbatimOptions = Pick<
 >
 
 function pickVerbatimOptions(options: ExportDOMOptions): VerbatimOptions {
-  // Direct per-key reads: every key is checked against ExportDOMOptions at
-  // the read and against RenderContext at the return, so the two sides can
-  // never drift and no Record bridge/assertion is needed
+  // Direct per-key reads: every key is checked against ExportDOMOptions at the
+  // read and against RenderContext at the return, so the two sides cannot drift
   return {
     canTransformImage: options.canTransformImage,
     canTransformImageToFormat: options.canTransformImageToFormat,
@@ -326,27 +228,18 @@ function pickVerbatimOptions(options: ExportDOMOptions): VerbatimOptions {
 }
 
 /**
- * The deprecated flat option keys each policy key falls back to when the
- * host's resolver leaves it unanswered — the compatibility forwarding from
- * the pre-seam `ExportDOMOptions` shape.
+ * The deprecated flat option keys each policy key falls back to when the host's
+ * resolver leaves it unanswered.
  */
 const LEGACY_POLICY_OPTION_KEYS: Record<ExportPolicyKey, keyof ExportDOMOptions> = {
   'footnotes-section-title': 'footnotesSectionTitle',
   'inkling-version': 'inklingVersion',
 }
 
-/**
- * Builds the read-only render context for one render pass.
- */
 export function createRenderContext(options: ExportDOMOptions): RenderContext {
   const createDocument = resolveCreateDocument(options)
-  // the per-render heading-id dedup state — the shared tracker's map
-  // (`@/inkling/utils/heading-id-tracker`), not a local one
   const trackIdAttribute = createHeadingIdTracker()
 
-  // The keyed policy seam: the resolver answers first, the deprecated flat
-  // keys forward as its fallback, and an unanswered key stays undefined (the
-  // consumer's documented default path).
   const resolveExportPolicy = (key: ExportPolicyKey): string | undefined => {
     const resolved = options.resolveExportPolicy?.(key)
     if (resolved !== undefined) {
@@ -363,23 +256,18 @@ export function createRenderContext(options: ExportDOMOptions): RenderContext {
     : undefined
 
   // Sanitization binds to this render's own window instead of the browser
-  // global, resolved lazily so renders that never sanitize (plain text,
-  // headings) pay nothing and a DOM-less environment throws only on first
-  // use — the same non-browser error resolveCreateDocument throws eagerly.
-  // A createHTMLDocument()'s defaultView is always null, so the window can
-  // only come from options.dom, a windowed document, or the global.
+  // global, resolved lazily so renders that never sanitize pay nothing and a
+  // DOM-less environment throws only on first use.
   const browserWindow = globalThis.window?.document ? globalThis.window : undefined
   let resolvedWindow: ExportDOMDom['window'] | undefined
   const resolveWindow = (): ExportDOMDom['window'] => {
     if (resolvedWindow) {
       return resolvedWindow
     }
-    // When the caller passed options.createDocument, sanitize must bind to
-    // that factory's own document — options.dom?.window may point at a
-    // different document, and binding window B while elements are written to
-    // document A breaks the single-document invariant of one render pass. A
-    // createHTMLDocument()'s defaultView is always null, so options.dom?.window
-    // stays the fallback for factory-made documents without a view.
+    // When the caller passed options.createDocument, sanitize must bind to that
+    // factory's own document: options.dom?.window may point at a different one,
+    // and binding window B while elements are written to document A breaks the
+    // single-document invariant of one render pass.
     const candidate: ExportDOMDom['window'] | undefined = options.createDocument
       ? (createDocument().defaultView ?? options.dom?.window ?? browserWindow)
       : (options.dom?.window ?? createDocument().defaultView ?? browserWindow)
@@ -403,7 +291,7 @@ export function createRenderContext(options: ExportDOMOptions): RenderContext {
     },
     isLocalContentImage(url) {
       // `undefined` siteUrl/imageBaseUrl hit the same `''` defaults inside
-      // is-local-content-image as the old per-call-site forwarding did.
+      // is-local-content-image
       return isLocalContentImageImpl(url, siteUrl, imageBaseUrl)
     },
     sanitizeBasicHtml(html) {
@@ -419,10 +307,8 @@ export function createRenderContext(options: ExportDOMOptions): RenderContext {
         cleanDOM(container, config.allowedTags, context)
         return container.innerHTML
       }
-      // The ExportDOMDom window is structural ({ document: Document }) while
-      // DOMPurify's WindowLike is its own structural pick of the global
-      // window; neither is assignable to the other, and no runtime check can
-      // prove the bridge — the assertion stays inside the seam. One bound
+      // The ExportDOMDom window and DOMPurify's WindowLike are unrelated
+      // structural types, so the assertion stays inside the seam. One bound
       // instance per context.
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- structural window types are unrelated by construction; the seam binds a real window
       boundDOMPurify ??= DOMPurify(resolveWindow() as unknown as WindowLike)

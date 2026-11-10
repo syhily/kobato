@@ -7,8 +7,8 @@ import { MINIMAL_DOCUMENT } from '@/inkling/utils/initial-document'
 // barrel-facing functions with no dom passed — the vitest jsdom globals feed
 // the port's global leg. Option semantics are pinned by reference in the
 // characterization suites: renderer additive override in
-// test/html-renderer/default-round-trip.test.ts, importer wholesale
-// editorConfig replacement in test/html-to-lexical/.
+// tests/inkling/html-renderer/default-round-trip.test.ts, importer wholesale
+// editorConfig replacement in tests/inkling/html-to-lexical/.
 
 const HEADING_STATE = `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello","type":"extended-text","version":1}],"direction":"ltr","format":"","indent":0,"tag":"h1","type":"extended-heading","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`
 

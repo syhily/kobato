@@ -121,35 +121,28 @@ export function clearDeleteRequestInPages(data: AdminCommentsData, id: string, i
   }
 }
 
-// View-owned editor intents: the edit / reply / edit-user dialogs live in
-// the view; everything else on the actions object is controller-owned.
+// View-owned editor intents (edit / reply / edit-user); everything else on the actions object is controller-owned.
 export interface CommentIntents {
   edit(comment: AdminComment): void
   reply(comment: AdminComment): void
   editUser(comment: AdminComment): void
 }
 
-// The single comment-actions surface handed to `AdminCommentRow`; mutation
-// triggers lead through their confirm dialog first.
+// The single comment-actions surface handed to `AdminCommentRow`; triggers lead through their confirm dialog first.
 export interface CommentActions extends CommentIntents {
-  /** 通过 — confirm, then approve the pending comment. */
   approve(comment: AdminComment): void
-  /** 删除评论 — confirm, then delete the comment. */
   remove(comment: AdminComment): void
-  /** 同意删除 — confirm, then approve the author's delete request. */
   approveDeletion(comment: AdminComment): void
-  /** 拒绝删除 — confirm, then reject the author's delete request. */
   rejectDeletion(comment: AdminComment): void
   filterByPage(pageKey: string, pageTitle: string): void
   filterByAuthor(userId: string, name: string): void
-  /** Per-comment pending gates — mutations are shared, so a button disables only while ITS comment is in flight. */
+  /** Per-comment pending gates: mutations are shared, so a button disables only while its comment is in flight. */
   isApproving(comment: AdminComment): boolean
   isRemoving(comment: AdminComment): boolean
   isResolvingDeletion(comment: AdminComment): boolean
 }
 
-// Inverse of the URL write-back; intentionally lenient — invalid values fall
-// back to defaults so a hand-edited URL never bricks the page.
+// Inverse of the URL write-back; intentionally lenient — a hand-edited URL with invalid values falls back to defaults.
 export function parseCommentFiltersFromSearchParams(
   searchParams: URLSearchParams,
   t: I18nValue['t'],
@@ -200,8 +193,7 @@ export function parseCommentFiltersFromSearchParams(
 }
 
 export interface UseCommentsControllerOptions {
-  /** Live pill state — owned by the view's `useFilterPills`, which also
-   *  produced `queryInput` (the merged per-field `toQuery` patch). */
+  /** Live pill state, owned by the view's `useFilterPills`, which also produced `queryInput`. */
   filters: ActiveFilter<CommentFilterFieldKey>[]
   dispatch: Dispatch<FilterPillsAction<CommentFilterFieldKey>>
   queryInput: CommentsFilterQuery
@@ -257,7 +249,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
               }
             }
           } catch {
-            // ignore malformed legacy value
+            // ignore malformed pill value
           }
         } else if (filter.field === 'date' && filter.value) {
           try {
@@ -269,7 +261,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
               next.set('dateOp', range.op)
             }
           } catch {
-            // ignore malformed legacy value
+            // ignore malformed pill value
           }
         }
       }
@@ -327,13 +319,12 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     [patchPages],
   )
 
-  // Full refresh after mutations the local patches can't model (user edits,
-  // replies) — only the active query combination refetches.
+  // Full refresh after mutations the local patches can't model (user edits, replies).
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
   }, [queryClient])
 
-  // Each mutation owns its confirm-dialog state here; its cache patch rides on success.
+  // Each mutation owns its confirm-dialog state here; the cache patch rides on success.
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const closeConfirm = useCallback(() => setConfirm(null), [])
 
@@ -347,7 +338,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     onSuccess: (_result, variables) => removeComment(variables.commentId),
     onError: onMutationError('admin.toast.commentDeleteFailed', t),
   })
-  // Shared by 同意删除 / 拒绝删除 — the per-call `onSuccess` captures the comment for the reject path's count fixup.
+  // Shared by approve-deletion / reject-deletion — the per-call `onSuccess` captures the comment for the reject path's count fixup.
   const resolveDeletionMutation = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
     onError: onMutationError('admin.toast.commentDeleteRequestFailed', t),

@@ -14,9 +14,8 @@ import { $isMathInlineNode } from '@/inkling/nodes/math/MathInlineNode'
 /**
  * The one command inkling dispatches when the writer asks to edit an inline
  * math node — double-click on the preview, or Enter while a node selection
- * holds exactly one MathInlineNode. The editing UI itself is host-owned
- * (kobato opens its own panel): the host registers a listener for this
- * command and inkling never renders an editor for the inline node.
+ * holds exactly one MathInlineNode. The editing UI is host-owned: the host
+ * registers a listener, and inkling never renders an editor for the node.
  */
 export const EDIT_MATH_INLINE_COMMAND = createCommand<{ nodeKey: NodeKey }>('EDIT_MATH_INLINE_COMMAND')
 
@@ -24,9 +23,8 @@ export const EDIT_MATH_INLINE_COMMAND = createCommand<{ nodeKey: NodeKey }>('EDI
  * Double-click half of the edit gesture: resolves the math inline node under
  * the event target (the preview is a plain DOM subtree — createDOM renders
  * the stored artifacts without React) and dispatches
- * `EDIT_MATH_INLINE_COMMAND` with its key. Returns whether a node was hit, so
- * the adapter can leave other double-clicks alone. The dispatch happens
- * outside the read — dispatchCommand runs its own update.
+ * `EDIT_MATH_INLINE_COMMAND` with its key. Returns whether a node was hit.
+ * The dispatch happens outside the read — dispatchCommand runs its own update.
  */
 export function dispatchEditMathInlineAtTarget(editor: LexicalEditor, target: EventTarget | null): boolean {
   // The target can be any descendant of the preview — including SVG or MathML

@@ -5,7 +5,7 @@
  */
 export interface RequestFacts {
   /** Minted once per request — the analytics join key shared by the
-   *  server-side row and the client beacon (ADR-0006). */
+   *  server-side row and the client beacon. */
   analyticsEventId: string
   /** Normalized pathname: `.data` suffixes and `_routes` / `index` params stripped. */
   path: string

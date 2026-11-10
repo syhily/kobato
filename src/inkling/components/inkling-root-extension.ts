@@ -20,19 +20,14 @@ export interface InklingRootExtensionInput {
 }
 
 /**
- * Map the composer's normalized initial state onto the extension API with the
- * legacy `LexicalComposer` semantics intact:
+ * Map the composer's normalized initial state onto the extension API:
  *
  * - `undefined` falls through to `InitialStateExtension`'s default initializer
- *   (seed one empty paragraph when the root is empty). The legacy composer also
- *   selected that paragraph when the editor was already focused, but it ran
- *   before any root element existed, so the selection branch was unreachable —
- *   nothing is lost.
- * - an initializer function keeps its legacy `root.isEmpty()` guard —
+ *   (seed one empty paragraph when the root is empty).
+ * - an initializer function keeps its `root.isEmpty()` guard —
  *   `InitialStateExtension` calls functions unconditionally.
- * - strings/`EditorState` instances/`null` pass through; both pipelines apply
- *   them with `HISTORY_MERGE` options, and `null` skips initialization
- *   entirely (the collaboration path).
+ * - strings/`EditorState` instances/`null` pass through unchanged; `null` skips
+ *   initialization entirely (the collaboration path).
  */
 function toExtensionInitialState(
   initialEditorState: InitialEditorStateType | undefined,
@@ -49,16 +44,15 @@ function toExtensionInitialState(
 }
 
 /**
- * The composer's root extension: carries the createEditor configuration the
- * legacy `LexicalComposer initialConfig` used to hold. Built once per composer
- * mount (the caller freezes it in a mount-scoped memo) because
- * `LexicalExtensionComposer` rebuilds the editor when the extension identity
- * changes.
+ * The composer's root extension: carries the createEditor configuration (namespace,
+ * theme, html, nodes, onError, initial state). Built once per composer mount (the
+ * caller freezes it in a mount-scoped memo) because `LexicalExtensionComposer`
+ * rebuilds the editor when the extension identity changes.
  *
- * The `ReactExtension` dependency keeps decorator errors on the inkling
- * boundary (host `onError` sink + localized fallback): under the extension
- * composer, decorators render through `ReactExtension`, so `RichTextPlugin`'s
- * own `ErrorBoundary` prop is inert there.
+ * The `ReactExtension` dependency keeps decorator errors on the inkling boundary
+ * (host `onError` sink + localized fallback): under the extension composer,
+ * decorators render through `ReactExtension`, so `RichTextPlugin`'s own
+ * `ErrorBoundary` prop is inert there.
  */
 export function buildInklingRootExtension({ nodes, onError, initialEditorState }: InklingRootExtensionInput) {
   return defineExtension({

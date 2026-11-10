@@ -1,8 +1,7 @@
 /**
- * Proxy-aware client IP extraction: proxy headers are trusted ONLY from a
- * loopback direct peer or a configured trusted proxy
- * (`security.trustedProxies`), else the direct IP verbatim; no direct IP →
- * 'unknown' (non-loopback, so proxy headers stay untrusted).
+ * Proxy-aware client IP extraction: proxy headers are trusted ONLY from a loopback direct
+ * peer or a configured trusted proxy (`security.trustedProxies`), else the direct IP
+ * verbatim; no direct IP → 'unknown' (non-loopback, so proxy headers stay untrusted).
  */
 
 import { isValidIp, matchesTrustedProxy } from '@/server/infra/ip-match'
@@ -26,7 +25,7 @@ function isLoopback(ip: string): boolean {
 }
 
 export function getClientAddress(request: Request, directIp?: string, trustedProxies: readonly string[] = []): string {
-  // Unknown direct peer must NOT become loopback — that would trust spoofed proxy headers (P0-5).
+  // Unknown direct peer must NOT become loopback — that would trust spoofed proxy headers.
   if (directIp === undefined) {
     return 'unknown'
   }

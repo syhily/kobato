@@ -41,19 +41,12 @@ const MAX_TRANSFORM_DIMENSION = 4096
 const MAX_TRANSFORM_QUALITY = 100
 
 /**
- * Build the redirect target: `<publicBase>/<key>` plus the request's query
- * string (`?v=` cache buster passes through). When a CDN transform is
- * requested (`w`/`h`) AND `assets.storage.urlTemplate` is configured, the
- * template substitutes over the object URL — the server-side twin of the
- * client-side `getImageUrl`/`getImageSrcset` transform in
- * `src/shared/types/images.ts` (which emits the `w`/`h`/`q` params this
- * consumes); keep the two semantics in sync. Mirrors the legacy client-side
- * template semantics: `{src}` → the object URL, a template without `{src}`
- * appended to it; `w`/`h` must both be valid positive integers within
- * `MAX_TRANSFORM_DIMENSION` (the client emits them as a pair), missing /
- * out-of-range `q` falls back to the historical default of 100 (the quality
- * is clamped to `MAX_TRANSFORM_QUALITY`). The transform params are consumed;
- * everything else (e.g. `?v=`) survives.
+ * `<publicBase>/<key>` plus the query string, with `w`/`h`/`q` substituted into
+ * the configured CDN template — the server-side twin of `getImageUrl`/
+ * `getImageSrcset` in `src/shared/types/images.ts`; keep the two semantics in
+ * sync. Template rules: `{src}` → the object URL, a template without `{src}`
+ * appended to it; `w`/`h` are a pair. Transform params are consumed; the rest
+ * (e.g. `?v=`) survives.
  */
 function buildRedirectLocation(objectUrl: string, search: string, settings: BlogSettingsBundle | null): string {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)

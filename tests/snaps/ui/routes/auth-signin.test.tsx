@@ -10,9 +10,8 @@ import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { asRoute } from '#/_helpers/route-test-utils'
 import AdminLayoutRouteRaw from '@/routes/auth/layout'
 import AdminInstallRouteRaw from '@/routes/auth/setup'
-// Drive the route Component directly with fixture loaderData/actionData
-// (branches are pure given the data). `asRoute` widens the strict
-// ComponentProps so tests pass only the fields each branch reads.
+// Drive the route Component directly with fixture loaderData/actionData — branches are
+// pure given the data. `asRoute` widens the strict ComponentProps to the fields each reads.
 import LoginRouteRaw from '@/routes/auth/signin'
 
 const LoginRoute = asRoute(LoginRouteRaw)

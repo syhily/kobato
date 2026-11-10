@@ -1,20 +1,11 @@
 /**
- * Compile-time pins for the card menu's construction-dataset vocabulary.
+ * Compile-time pins for the card menu's construction-dataset vocabulary: a
+ * declaration derives `insertParams`/`queryParams` from its base class and
+ * spec arrays, `checkedCardDeclaration` applies the exact-key check, and
+ * `defineCard` does the same for host cards.
  *
- * The menu's `insertParams`/`queryParams` are no longer untyped records: a
- * declaration derives them from its base class (`getPropertyDefaults`) and
- * its spec arrays (`CardMenuDataset`), `checkedCardDeclaration` applies the
- * exact-key check over the inferred literal (including function-valued
- * `insertParams`, which `satisfies` cannot excess-check), and `defineCard`
- * derives the same vocabulary plus exact-key checking for host cards. The
- * pins below cover the derivation itself, the declaration-site rejection of a
- * bad key/value/query key (object and function forms), the durable "no silent
- * fallback" guard over the real declaration family, and the host seam
- * (`satisfies` vs explicit wide annotation).
- *
- * This file is included by the root tsconfig and is only type-checked — it is
- * never executed and contains no runtime assertions (the `defineCard` calls at
- * module scope would register cards if it ran).
+ * Type-checked only, never executed — the `defineCard` calls at module scope
+ * would register cards if it ran.
  */
 import type { ComponentType, SVGProps } from 'react'
 
@@ -40,7 +31,7 @@ import { defineCard } from '@/inkling/nodes/cards/host-cards'
 
 type ImageDataset = CardMenuDataset<typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>
 
-// --- derived vocabulary: the constructor's dataset, nothing more -------------
+// Derived vocabulary: the constructor's dataset, nothing more
 
 type _ImageTransientValue = Expect<Equal<ImageDataset['triggerFileDialog'], boolean | undefined>>
 type _ImageDatasetValue = Expect<Equal<ImageDataset['src'], string | undefined>>
@@ -59,18 +50,11 @@ type _NeverQueryKeys = Expect<Equal<CardMenuQueryParamKey<never>, never>>
 type AudioDataset = CardMenuDataset<typeof BaseAudioNode, typeof audioTransientProps, readonly []>
 type _AudioTransientValue = Expect<Equal<AudioDataset['triggerFileDialog'], boolean | undefined>>
 
-// --- durable family guard ---------------------------------------------------
-//
-// Omitting a declaration's type arguments already makes params unusable
-// (`DeclaredCardMenuDataset` -> `never`, probe A below). These predicates walk
-// the REAL `CARD_DECLARATIONS` family and close the remaining escapes:
-// - a broad spec array (probe B) yields an open dataset;
-// - `insertParams` keys of BOTH forms (object and function return) are dataset
-//   keys, even for a declaration that forgot `checkedCardDeclaration` — probe
-//   C shows `satisfies` alone misses a function-return typo, and this predicate
-//   reports it;
-// - `queryParams` keys are string-valued dataset keys.
-// Menu-less declarations are exempt (nothing to check).
+// Durable family guard. These predicates walk the REAL `CARD_DECLARATIONS`
+// family to close two escapes the declaration-site check misses: a broad spec
+// array yields an open dataset (probe B), and `satisfies` alone misses a
+// function-return typo when `checkedCardDeclaration` is omitted (probe C).
+// Menu-less declarations are exempt.
 
 type OpenMenuDeclaration<D> = D extends { menu: readonly unknown[] }
   ? string extends keyof CardDeclarationMenuDataset<D>
@@ -102,9 +86,8 @@ type _NoOpenMenuDatasets = Expect<Equal<OpenMenuDeclaration<(typeof CARD_DECLARA
 type _NoBadInsertKeys = Expect<Equal<BadInsertKeys<(typeof CARD_DECLARATIONS)[number]>, never>>
 type _NoBadQueryKeys = Expect<Equal<BadQueryKeys<(typeof CARD_DECLARATIONS)[number]>, never>>
 
-// non-vacuous proof A: omitting the type arguments makes params unusable —
-// `DeclaredCardMenuDataset` resolves to `never`, so the error is at the
-// declaration itself (a silent fallback with params is impossible).
+// Non-vacuous proof A: with the type arguments omitted, `DeclaredCardMenuDataset`
+// resolves to `never`, so the error lands on the declaration itself.
 const openFallbackProbe = {
   nodeType: 'openFallbackProbe',
   baseNode: BaseImageNode,
@@ -141,7 +124,7 @@ const queryOnlyFallbackProbe = {
 } satisfies CardDeclaration<'queryOnlyFallbackProbe'>
 void queryOnlyFallbackProbe
 
-// --- CardMenuEntryCheck used directly (independent of defineCard) -----------
+// CardMenuEntryCheck used directly (independent of defineCard)
 
 type CheckedEntryMenu = CardMenuEntryCheck<
   [{ label: string; insertParams: { src: string }; queryParams: ['src'] }],
@@ -164,9 +147,8 @@ void noInsertEntry
 const noInsertExtra: NoInsertMenu = [{ label: 'x', insertParams: {} }]
 void noInsertExtra
 
-// non-vacuous proof B: explicitly passing a BROAD spec array still satisfies
-// the declaration (no params used) but produces an open dataset — the family
-// guard above is the net that reports it.
+// Non-vacuous proof B: a BROAD spec array still satisfies the declaration but
+// yields an open dataset, which the family guard above reports.
 declare const broadTransientProps: readonly TransientPropSpec[]
 const broadArgsProbe = {
   nodeType: 'broadArgsProbe',
@@ -180,10 +162,8 @@ void broadArgsProbe
 // @ts-expect-error - the guard reports the open dataset (proves it is not vacuous)
 type _BroadArgsCaught = Expect<Equal<OpenMenuDeclaration<typeof broadArgsProbe>, never>>
 
-// non-vacuous proof C: a raw declaration that omits `checkedCardDeclaration`
-// still compiles `satisfies` (a function-return typo is invisible to excess
-// checks), but the family predicate above reports the key — so skipping the
-// wrapper cannot silently bypass exact-key checking.
+// Non-vacuous proof C: a raw declaration that omits `checkedCardDeclaration`
+// still compiles `satisfies`, but the family predicate reports the key.
 const rawFnTypoProbe = {
   nodeType: 'header',
   baseNode: BaseHeaderNode,
@@ -208,7 +188,7 @@ type _RawFnTypoReported = Expect<Equal<BadInsertKeys<typeof rawFnTypoProbe>, 've
 // @ts-expect-error - the family predicate rejects the omitted-wrapper typo
 type _RawFnTypoCaught = Expect<Equal<BadInsertKeys<typeof rawFnTypoProbe>, never>>
 
-// non-vacuous proof D: the query predicate reports an unknown query key
+// Non-vacuous proof D: the query predicate reports an unknown query key.
 type SyntheticBadQueryDeclaration = {
   baseNode: typeof BaseImageNode
   transientProps: typeof imageTransientProps
@@ -228,7 +208,7 @@ type _FenceUnion = Expect<
   >
 >
 
-// --- positive: a valid image menu entry compiles ----------------------------
+// Positive: a valid image menu entry compiles
 
 const validImageDeclaration = checkedCardDeclaration({
   nodeType: 'image',
@@ -249,7 +229,7 @@ const validImageDeclaration = checkedCardDeclaration({
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)
 void validImageDeclaration
 
-// --- negative: declaration-site rejection of a bad key, value and query key -
+// Negative: declaration-site rejection of a bad key, value and query key
 
 const invalidImageDeclaration = checkedCardDeclaration({
   nodeType: 'image',
@@ -292,7 +272,7 @@ const invalidImageDeclaration = checkedCardDeclaration({
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)
 void invalidImageDeclaration
 
-// --- function-valued insertParams: the built-in Header path ------------------
+// Function-valued insertParams: the built-in Header path
 
 const validHeaderDeclaration = checkedCardDeclaration({
   nodeType: 'header',
@@ -352,7 +332,7 @@ const invalidHeaderFnValueDeclaration = checkedCardDeclaration({
 } satisfies CardDeclaration<'header', typeof BaseHeaderNode, readonly [], typeof headerNestedEditors>)
 void invalidHeaderFnValueDeclaration
 
-// --- host cards: the same checking from B and the spec's own arrays ----------
+// Host cards: the same checking from B and the spec's own arrays
 
 const HostIcon: ComponentType<SVGProps<SVGSVGElement>> = () => null
 
@@ -420,7 +400,7 @@ const bareHost = defineCard({
 })
 void bareHost
 
-// --- host negatives (one call each: the error stays attributable) -----------
+// Host negatives (one call each: the error stays attributable)
 
 const hostUnknownKey = defineCard({
   ...hostProbeSpec('hostUnknownKeyProbe'),
@@ -544,7 +524,7 @@ const hostFnWrongValue = defineCard({
 })
 void hostFnWrongValue
 
-// --- `satisfies HostCardSpec` keeps the literal: defineCard still checks ----
+// `satisfies HostCardSpec` keeps the literal: defineCard still checks
 
 const satisfiedHostSpec = {
   nodeType: 'satisfiedHostProbe',
@@ -610,11 +590,9 @@ void satisfiedQueryCard
 // @ts-expect-error - `satisfies` preserves the literal menu shape, so defineCard's exact-key check still runs
 defineCard(satisfiedHostSpec)
 
-// --- explicit WIDE annotation is the intentional escape boundary ------------
-//
-// The menu literal's keys are erased by the `HostCardSpec` annotation, so
-// there is nothing left for defineCard to check — the author asserted the
-// shape. This is the ONLY way to bypass the check, and it must stay explicit.
+// Explicit WIDE annotation is the only escape boundary: the `HostCardSpec`
+// annotation erases the menu literal's keys, so defineCard has nothing to
+// check. It must stay explicit.
 
 const wideHostSpec: HostCardSpec<'wideHostProbe'> = {
   nodeType: 'wideHostProbe',
@@ -636,12 +614,9 @@ const wideHostSpec: HostCardSpec<'wideHostProbe'> = {
 const wideHostCard = defineCard(wideHostSpec)
 void wideHostCard
 
-// --- the menu item's dead optional fields stay dead -------------------------
-//
-// MenuItemBase once declared name / lowercase icon / customContent / hidden /
-// disabled, but neither buildCardMenu nor CardMenu reads them: the live entry
-// vocabulary is label/labelKey/desc/Icon/dataTestId/shortcut/onRemove/… A
-// field that silently does nothing must not come back through a menu literal.
+// Dead menu item fields must not come back: neither buildCardMenu nor
+// CardMenu reads name / icon / customContent / hidden / disabled, so a menu
+// literal carrying them would silently do nothing.
 
 type _DeadMenuFieldsStayOut = Expect<
   Equal<Extract<keyof ResolvedMenuItem, 'name' | 'icon' | 'customContent' | 'hidden' | 'disabled'>, never>

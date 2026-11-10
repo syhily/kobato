@@ -7,7 +7,7 @@ import { renderHookWithI18n } from '#/_helpers/i18n-render'
 
 // Integration suite for useEditorShellPersist, crossing the same interface
 // callers do. The wire-payload and status-transition DECISIONS live in the
-// pure planner (editor-shell-persist-plan.test.ts); here we pin the React
+// pure planner (editor-shell-persist-plan.test.ts); this suite pins the React
 // wiring: gating, mutation legs, banner protocol, baseline/freeze/token
 // ownership. Mutation slots are keyed by mutationFn identity — never by
 // useMutation call order.
@@ -452,7 +452,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
 })
 
 describe('ui/admin/editor-shell/useEditorShellPersist — opening body seeds the autosave baseline', () => {
-  // Audit P1-1: seeding the baseline makes the first debounce tick hit the reference check.
+  // Seeding the baseline makes the first debounce tick hit the reference check.
   it('seeds the engine baseline with the opening body on mount', () => {
     const openingBody = body('server state')
     const args = makeArgs({

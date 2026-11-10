@@ -14,7 +14,7 @@ export * from '@/inkling/transforms/transforms/denest'
 export * from '@/inkling/transforms/transforms/merge-list-nodes'
 export * from '@/inkling/transforms/transforms/remove-alignment'
 
-// only used when rendering so not registered by default
+// registered only on render paths, never by default
 export * from '@/inkling/transforms/transforms/remove-at-link-nodes'
 
 export interface DefaultTransformsOptions {
@@ -30,14 +30,13 @@ export function registerDefaultTransforms(editor: LexicalEditor, options?: Defau
   const alignment = options?.alignment ?? 'strip'
 
   return mergeRegister(
-    // strip unwanted alignment formats
     ...(alignment === 'strip'
       ? [
           registerRemoveAlignmentTransform(editor, ParagraphNode),
           registerRemoveAlignmentTransform(editor, HeadingNode),
           registerRemoveAlignmentTransform(editor, ExtendedHeadingNode),
           registerRemoveAlignmentTransform(editor, QuoteNode),
-          // Lexical 0.46 added format support to list items; strip alignment from them too
+          // upstream list items support formats, so strip alignment from them too
           registerRemoveAlignmentTransform(editor, ListItemNode),
         ]
       : []),

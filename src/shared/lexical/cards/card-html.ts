@@ -1,20 +1,12 @@
-// Shared helpers for the kobato host-card exportDOM renderers (plan
-// docs/plans/inkling-editor-replacement.md, round R10). React-free and
-// DOM-global-free: every DOM touch goes through the render context's
-// injected document factory, so the same renderers run under the browser
-// canvas and the server-side jsdom projection.
-//
-// No runtime or type import of inkling's internal `RenderContext`: shared/
-// may only consume the `@/inkling/headless` surface, which deliberately does
-// not export it. The seams below (`CardRenderContext` / `CardRenderOutput`)
-// are therefore local structural slices — field-for-field compatible with
-// the real context object both render paths pass in.
+// Shared helpers for the kobato host-card exportDOM renderers. React-free and
+// DOM-global-free: every DOM touch goes through the render context's injected
+// document factory, so the same renderers run under the browser canvas and the
+// server-side jsdom projection. `CardRenderContext` / `CardRenderOutput` are
+// local structural slices of inkling's internal `RenderContext` / export
+// output types, which shared/ cannot import (`@/inkling/headless` does not
+// export them).
 
-/**
- * The structural slice of inkling's `RenderContext` the host-card renderers
- * consume. Every field name/type matches `RenderContext`'s, so the real
- * context object is assignable to it.
- */
+/** Structural slice of inkling's `RenderContext` the host-card renderers consume. */
 export interface CardRenderContext {
   readonly createDocument: () => Document
   /** URL policy: returns `value` when it is safe for `kind`, `''` otherwise. */
@@ -24,24 +16,18 @@ export interface CardRenderContext {
   readonly resolveRenderMeta?: ((kind: string, id: string) => unknown) | undefined
 }
 
-/**
- * The structural exportDOM output the renderers return — matches inkling's
- * `ExportDOMOutput<'inner' | 'outer'>` (`element` is lib.dom-typed, the DOM
- * type both the browser canvas and the jsdom projection share).
- */
+/** Matches inkling's `ExportDOMOutput<'inner' | 'outer'>`; `element` is the
+ * lib.dom type both the browser canvas and the jsdom projection share. */
 export interface CardRenderOutput {
   element: HTMLElement
   type: 'inner' | 'outer'
 }
 
 /**
- * Render-time feed-variant signal. inkling's `ExportDOMOptions` key set is
- * closed (`ExportPolicyKey` covers inkling/footnotes policy only), so the
- * save-time projection's feed variant (`body_html_feed`, rssMode parity)
- * reaches the card renderers through the open `resolveRenderMeta` seam:
- * the projection answers this kind with `true` for the feed render pass and
- * leaves it unanswered for the full-fidelity pass. Kind-only — the id
- * argument is unused (every card reads the same per-pass flag).
+ * Feed-variant signal through the open `resolveRenderMeta` seam (inkling's
+ * `ExportDOMOptions` key set is closed): the projection answers `true` on the
+ * feed pass and leaves it unanswered otherwise. Kind-only — every card reads
+ * the same per-pass flag.
  */
 export const FEED_VARIANT_META_KIND = 'kobato:feed-variant'
 
@@ -51,11 +37,9 @@ export function isFeedVariantRender(context: CardRenderContext): boolean {
 }
 
 /**
- * Feed-variant URL rule (PT rssMode `absolutizeAssetSrc` parity): feed
- * readers resolve URLs on another origin, so origin-relative media srcs join
- * the site origin. The site origin reaches the renderers through the image
- * render env (`resolveKobatoImageRenderEnv` — answered for both projection
- * passes; the feed variant consumes only its `siteOrigin`).
+ * Feed-variant URL rule: feed readers resolve URLs on another origin, so
+ * origin-relative media srcs join the site origin (from the image render
+ * env's `siteOrigin`, answered on both projection passes).
  */
 export function absolutizeAssetSrcForFeed(src: string, siteOrigin: string | undefined): string {
   if (!src.startsWith('/') || src.startsWith('//') || siteOrigin === undefined || siteOrigin === '') {
@@ -74,9 +58,8 @@ export function elementFromHtml(document: Document, html: string, cardType: stri
   const container = document.createElement('div')
   container.innerHTML = html.trim()
   const element = container.firstElementChild
-  // The templates root at exactly one real HTML element. `instanceof` goes
-  // through the owner window: the server side runs this against a jsdom
-  // document, whose constructors are not the Node globals.
+  // `instanceof` goes through the owner window: the server side runs this
+  // against a jsdom document, whose constructors are not the Node globals.
   const win = document.defaultView
   if (win === null || !(element instanceof win.HTMLElement)) {
     throw new Error(`[${cardType}] render template produced no root element`)
@@ -84,12 +67,8 @@ export function elementFromHtml(document: Document, html: string, cardType: stri
   return element
 }
 
-/**
- * Builds the pass-through container a feed-variant renderer returns with
- * `type: 'inner'`, splicing the children markup without a wrapper (PT
- * rssMode parity: solution unwraps to its content, two-column flattens to
- * left + right).
- */
+/** The pass-through container a feed-variant renderer returns with
+ * `type: 'inner'`: the children markup spliced without a wrapper. */
 export function feedPassthroughElement(document: Document, innerHtml: string): HTMLElement {
   const container = document.createElement('div')
   container.innerHTML = innerHtml
@@ -107,13 +86,11 @@ const HTML_ENTITIES: Record<string, string> = {
 }
 
 /**
- * Tag-stripping HTML → text for the plain-text projection (`body_text`).
- * The server-registered card classes carry nested-editor content as opaque
- * HTML strings (no live nested editors headless-side), so the generated
- * `getTextContent` would leak raw markup into the search corpus — the
- * projection classes override `getTextContent` to run the wordCount
- * properties through this instead. Not a sanitizer (input is the save-time
- * cleaned nested-editor HTML); entity coverage is the common named set.
+ * Tag-stripping HTML → text for the plain-text projection (`body_text`):
+ * nested-editor content rides as opaque HTML strings, and the generated
+ * `getTextContent` would leak raw markup into the search corpus. Not a
+ * sanitizer — input is the save-time cleaned HTML; entity coverage is the
+ * common named set.
  */
 export function htmlToPlainText(html: string): string {
   return html

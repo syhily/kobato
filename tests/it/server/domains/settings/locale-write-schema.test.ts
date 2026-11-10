@@ -56,7 +56,6 @@ describe('general section — locale write/read schema split', () => {
         path: ['locale'],
       },
     ])
-    // Rejected means not persisted.
     expect(findSettingByScope(db, 'blog.general')?.data).toEqual(before?.data)
   })
 

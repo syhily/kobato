@@ -14,8 +14,8 @@ export function registerClickAndCut(editor: LexicalEditor) {
         const target = event.target
         if (target instanceof HTMLElement && target.matches('[data-lexical-decorator="true"]')) {
           // clicked on a decorator node, select it
-          // - only occurs when the padding above a card is clicked as our
-          //   cards have their own click handlers
+          // - only fires when the padding above a card is clicked — cards
+          //   have their own click handlers
           event.preventDefault()
           const cardNode = $getNearestNodeFromDOMNode(target)
           if (cardNode) {

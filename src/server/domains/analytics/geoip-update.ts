@@ -1,7 +1,6 @@
-// GeoLite2-City, fetched from the `geolite2-city` npm package mirrored
-// on jsDelivr (CC-BY-NC-SA-4.0 / MaxMind GeoLite2 EULA, attribution
-// required). Installed state lives in a JSON sidecar next to the
-// database file; the auto-update never replaces a manual upload.
+// GeoLite2-City from the `geolite2-city` npm package mirrored on jsDelivr
+// (CC-BY-NC-SA-4.0 / MaxMind GeoLite2 EULA, attribution required). Installed
+// state lives in a JSON sidecar next to the database file.
 
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
@@ -34,9 +33,8 @@ function geoipDownloadUrl(version: string): string {
   return `https://cdn.jsdelivr.net/npm/${GEOIP_PACKAGE}@${version}/GeoLite2-City.mmdb.gz`
 }
 
-// Both writers of the database/meta pair (remote install + upload
-// endpoint) serialize on this promise chain so the file and its sidecar
-// never describe different installs.
+// Both writers of the database/meta pair (remote install + upload endpoint)
+// serialize here so the file and its sidecar never describe different installs.
 let writeChain: Promise<void> = Promise.resolve()
 
 export function withGeoipWriteLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -52,7 +50,6 @@ export interface GeoipDbMeta {
   /** npm package version; `null` for manual uploads (unknown provenance). */
   version: string | null
   source: 'upload' | 'remote'
-  /** ISO timestamp of the install. */
   updatedAt: string
 }
 
@@ -77,8 +74,7 @@ export async function writeGeoipMeta(meta: GeoipDbMeta): Promise<void> {
 }
 
 /**
- * Best-effort meta write for callers that have already swapped the
- * database; the sidecar only feeds status and the provenance guard.
+ * For callers that have already swapped the database; the sidecar only feeds status and the provenance guard.
  */
 export async function writeGeoipMetaBestEffort(meta: GeoipDbMeta): Promise<void> {
   try {
@@ -221,7 +217,6 @@ async function checkAndInstallRemote(): Promise<GeoipUpdateResult> {
 // write lock serializes everything else.
 let inflight: Promise<GeoipUpdateResult> | null = null
 
-/** Manual check-and-update: downloads whenever the remote version differs. */
 export function runRemoteGeoipUpdate(): Promise<GeoipUpdateResult> {
   inflight ??= withGeoipWriteLock(checkAndInstallRemote).finally(() => {
     inflight = null

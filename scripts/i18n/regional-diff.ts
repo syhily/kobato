@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-// Read-only regional terminology report for reviewers. It never writes files,
-// never changes a catalog, and never fails on a difference: the count is a
-// review aid, not a quality gate. Representative decisions live in
-// `docs/i18n/glossary.md`; this script only shows the current landscape.
-//
+// Read-only regional terminology report for reviewers: never writes files,
+// never fails on a difference — the count is a review aid, not a quality gate.
+// Representative decisions live in `docs/i18n/glossary.md`.
 // Usage:
 //   pnpm exec vite-node scripts/i18n/regional-diff.ts
 //   pnpm exec vite-node scripts/i18n/regional-diff.ts --keys

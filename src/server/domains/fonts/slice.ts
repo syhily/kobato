@@ -4,9 +4,8 @@ import { fontSplit, type FontSplitOutputFile } from './vendor/wasm-split'
 
 const log = getLogger('fonts.slice')
 
-// Slicing wrapper around the vendored cn-font-split wasm core (see
-// `vendor/wasm-split.ts`). The caller owns the buffer + storage lifecycle;
-// this module owns only slice options + output partitioning.
+// Slicing wrapper around the vendored cn-font-split wasm core
+// (`vendor/wasm-split.ts`); the caller owns buffer + storage lifecycle.
 
 // No manual chunkSize / languageAreas / subsets — the wasm core's defaults win.
 export interface SliceOptions {

@@ -155,7 +155,7 @@ describe('users/repos/admin-query — listAdminUsers', () => {
 
   it('aggregates comments only for the paginated users', async () => {
     // The off-page user's comments must not leak into the page's stats —
-    // recency mode paginates users before aggregating (audit P1-13).
+    // recency mode paginates users before aggregating.
     const offPage = await seedUser({
       name: 'OffPage',
       email: 'off@example.com',

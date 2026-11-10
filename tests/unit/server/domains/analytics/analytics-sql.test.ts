@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { compileAnalyticsQuery, createAnalyticsQuery } from '@/server/domains/analytics/services/analytics-sql'
 import { buildAnalyticsFilter } from '@/server/domains/analytics/services/query-filter'
 
-// SQL-injection regression suite ported from Slite (tests/unit/analytics-sql.spec.ts),
-// adapted to kobato's range-based filter (is_bot + [startAt, endAt) are always present).
+// SQL-injection regression suite: `is_bot` and the `[startAt, endAt)` range are always
+// present, so every user value must bind as a parameter.
 
 const baseQuery = { range: { startAt: 100, endAt: 200 } }
 

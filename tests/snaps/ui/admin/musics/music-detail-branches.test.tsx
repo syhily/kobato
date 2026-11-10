@@ -27,11 +27,8 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// `MusicDetailView` is already covered by `musics-branches.test.tsx` for the
-// loading / error / not-found / resolved / no-cover / empty-lyrics branches.
-// This suite adds the remaining SSR-reachable render path driven by the
-// music-player context: the play/pause button reflects whether the current
-// track is the one being viewed and whether playback is active.
+// The remaining SSR-reachable render path: driven by the music-player context, the
+// play/pause button reflects whether the viewed track is current and playback active.
 
 const playerState = vi.hoisted(() => ({
   currentTrack: null as AdminMusicDto | null,
@@ -51,8 +48,8 @@ vi.mock('@/ui/admin/musics/MusicPlayerContext', () => ({
   useMusicPlayerTime: () => playerState.currentTime,
 }))
 
-// Divergent defaults preserved from this file's former local factory (the
-// shared catalog factory defaults to 夜的第七章 / 十一月的萧邦).
+// Local fixture defaults deliberately differ from the shared catalog factory
+// (夜的第七章 / 十一月的萧邦).
 const qingHuaCi: Partial<AdminMusicDto> = {
   name: '青花瓷',
   album: '我很忙',

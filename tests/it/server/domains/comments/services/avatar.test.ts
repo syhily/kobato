@@ -436,7 +436,7 @@ describe('domains/comments/services/avatar — fetchAvatarByChain', () => {
   })
 })
 
-describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk from github.controller)', () => {
+describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl', () => {
   it('inlines the upstream bytes as a base64 data URL with the upstream content type', async () => {
     mockFetch([
       new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer, {
@@ -502,7 +502,7 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
     expect(await fetchGithubAvatarDataUrl()).toBe('')
     expect(fetchFn).toHaveBeenCalledTimes(1)
 
-    // Past the window the failure is retried.
+    // Past the failure window the entry regenerates on the next call.
     vi.setSystemTime(new Date(start.getTime() + 6 * 60 * 1000))
     expect(await fetchGithubAvatarDataUrl()).toBe('')
     expect(fetchFn).toHaveBeenCalledTimes(2)

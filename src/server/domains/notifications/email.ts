@@ -76,8 +76,8 @@ function logSendResult(notificationId: number, userId: number, result: SendResul
 
 /**
  * One email per recipient, sequentially (no batching exists in the mail
- * pipeline). Broadcasts are deliberately excluded (ADR-0008): they fan out to
- * every user, which is exactly the class email is not for.
+ * pipeline). Broadcasts are deliberately excluded: they fan out to every
+ * user, which is exactly the class email is not for.
  */
 export async function sendNotificationEmail(
   db: Database,
@@ -112,7 +112,7 @@ export async function sendNotificationEmail(
 
 /**
  * Producer-facing seam: fire-and-forget so an SMTP outage never delays,
- * errors, or rolls back the in-app fan-out that already committed (ADR-0008).
+ * errors, or rolls back the in-app fan-out that already committed.
  */
 export function queueNotificationEmail(db: Database, row: NotificationRow, recipientIds: readonly number[]): void {
   fireAndForgetNotify(sendNotificationEmail(db, row, recipientIds), log, 'notification')

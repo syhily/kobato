@@ -1,7 +1,5 @@
-// Small debounce/throttle implementations matching the semantics this package
-// previously relied on: trailing-edge debounce by default, leading+trailing
-// throttle, and `.cancel()` on both. Replaces the former per-method imports
-// from the external utility dependency.
+// One implementation behind both: trailing-edge debounce by default, throttle as
+// leading+trailing via maxWait.
 
 export interface DebounceOptions {
   leading?: boolean
@@ -17,9 +15,8 @@ interface InternalOptions extends DebounceOptions {
   maxWait?: number
 }
 
-// Faithful port of the classic debounce core (Date.now based, so it behaves
-// identically under fake timers). `maxWait` is internal-only and used to
-// implement throttle, exactly as the previous dependency did.
+// Date.now based, so it behaves identically under fake timers. `maxWait` is internal-only
+// and used to implement throttle.
 function debounceInternal<A extends unknown[], R>(
   fn: (...args: A) => R,
   wait: number,

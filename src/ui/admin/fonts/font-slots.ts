@@ -99,8 +99,8 @@ export function useFontSlotsController() {
     },
   })
 
-  // Serialize persists one-at-a-time (audit P1-19): concurrent unversioned
-  // POSTs could land out of order and leave the server holding a stale order.
+  // Serialize persists: concurrent unversioned POSTs could land out of order
+  // and leave the server holding a stale order.
   const persistQueueRef = useRef<Promise<void>>(Promise.resolve())
 
   const persist = (slot: FontSlot, ids: string[]) => {

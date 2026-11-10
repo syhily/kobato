@@ -16,12 +16,8 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Admin view over the shared cache declarations; bucket IDs are the stable
 // directory names under `<storage.data>/cache`. Sessions and rate-limit
-// counters are deliberately excluded — they surface read-only via
-// `RESERVED_CACHE_BUCKETS`.
-//
-// The registry stores message ids, so the DTO keeps its historical
-// `label`/`description` string shape: translate through the settings locale
-// seam here rather than shipping ids across the wire.
+// counters are reserved (read-only via `RESERVED_CACHE_BUCKETS`). The registry
+// stores message ids, so labels are translated here, not shipped across the wire.
 
 function cacheTranslator() {
   return createServerTranslator(resolveAppLocalization().locale)
@@ -47,13 +43,12 @@ export function getBucket(id: CacheBucketId): CacheBucket | undefined {
 }
 
 /**
- * Async admin clear. The process-local L1 tier is dropped synchronously FIRST —
- * the disk walk below is async and a served request must never see a value the
- * admin just cleared. A counter bucket then advances its persisted generation
- * (strict: a failed bump aborts the clear), then drops entry shards while
- * keeping `_generation`; a late write that captured the pre-clear generation
- * can only recreate an older-generation file, which no reader will address.
- * Non-counter buckets simply rm the whole directory.
+ * Async admin clear. The process-local L1 tier drops synchronously FIRST — a
+ * served request must never see a value the admin just cleared. A counter
+ * bucket then bumps its persisted generation strictly (a failed bump aborts)
+ * before dropping entry shards, so a late write holding the pre-clear
+ * generation lands in a recreated shard no reader will address.
+ * Non-counter buckets rm the whole directory.
  */
 export async function clearBucket(bucket: CacheBucket): Promise<number> {
   evictBucketMemory(bucket.id)
@@ -70,7 +65,6 @@ export async function clearBucket(bucket: CacheBucket): Promise<number> {
 export async function snapshotAllBuckets(): Promise<CacheBucketStats[]> {
   return Promise.all(
     getCacheBuckets().map(async (bucket) => {
-      // One shard walk supplies both the live count and the on-disk size.
       const usage = await statBucket(bucket.id)
       return {
         id: bucket.id,

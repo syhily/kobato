@@ -7,9 +7,7 @@ import { describe, expect, it } from 'vitest'
 // the site's theme class has to import it UNLAYERED and BEFORE the stylesheet
 // that triggers the utility compile — otherwise that compilation falls back to
 // Tailwind's default media-only variant, whose rules fire under a dark OS even
-// when the site is class-locked to light (the ThemeToggle moon vanished on
-// article pages exactly this way: the inkling comment-editor chunk compiled
-// `dark:scale-0`/`dark:opacity-0` as bare `prefers-color-scheme` rules).
+// when the site is class-locked to light.
 
 const STYLES = resolve(process.cwd(), 'src/styles')
 

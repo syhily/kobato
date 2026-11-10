@@ -46,7 +46,7 @@ function tokensIn(text: string): string[] {
 
 describe('shared/i18n/inkling-labels — used-key parity', () => {
   it('covers exactly the 157 mounted keys', () => {
-    // 156 + `image.altToggle` (the caption editor's alt toggle, Step 6b).
+    // 156 + `image.altToggle` (the caption editor's alt toggle).
     expect(EN_KEYS).toHaveLength(157)
     for (const [locale, table] of Object.entries(TABLES)) {
       expect(Object.keys(table).sort(), locale).toEqual(EN_KEYS)

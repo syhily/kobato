@@ -78,7 +78,7 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   { name: 'shiki', reason: 'server-side syntax highlighting' },
   { name: 'katex', reason: 'server-side math rendering' },
   { name: 'pinyin-pro', reason: '~150KB CJK tables, server-side slug romanisation' },
-  { name: 'pg', reason: 'Phase 11 data-pump script only (devDependency)' },
+  { name: 'pg', reason: 'data-pump script only (devDependency)' },
   { name: 'drizzle-orm', reason: 'data layer, server-only' },
   { name: 'nodemailer', reason: 'mail delivery, server-only' },
   { name: 'bcryptjs', reason: 'auth hashing, server-only' },
@@ -217,8 +217,6 @@ describe('client bundle guard', () => {
   })
 })
 
-// --- server-only locale data boundary -------------------------------------
-
 /**
  * One server-only module family: client layers must not value-import anything
  * matching `patterns`, and the listed `owners` are the modules whose JOB is to
@@ -262,8 +260,6 @@ function collectScannedFiles(): string[] {
   }
   return files
 }
-
-// --- i18n bundle boundary -------------------------------------------------
 
 // `@/shared/i18n/messages/**` are the four catalogs (they also TYPE the message
 // ids, so `import type` is fine); `catalog` aggregates them; `server/infra/i18n`
@@ -320,8 +316,6 @@ describe('i18n bundle boundary', () => {
   })
 })
 
-// --- inkling label bundle boundary ----------------------------------------
-
 // The four Kobato Inkling label tables are ~22 KB together and the comment
 // composer is a PUBLIC chunk. Workspace documents get ONLY the active locale's
 // table as root-loader data (`content.bootstrap` → `i18n.inklingLabels`); a
@@ -334,7 +328,7 @@ const INKLING_LABEL_RULE: ServerOnlyImportRule = {
   patterns: [
     /^@\/shared\/i18n\/inkling-labels$/,
     /^@\/shared\/i18n\/inkling-labels\//,
-    // The pre-payload table home — banned so the four-table import cannot return.
+    // Banned: importing a table from here pulls all four locales into a chunk.
     /^@\/client\/editor\/inkling-labels\//,
   ],
   owners: [

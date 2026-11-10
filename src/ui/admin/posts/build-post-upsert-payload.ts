@@ -13,8 +13,7 @@ export function buildPostUpsertPayload({
   publishedAt?: string | null
 }): UpsertPostMetaInput {
   // An unparseable tag is never sent: the server would reject the whole save
-  // (including an unrelated body/meta edit), and the field already shows the
-  // inline error. The stored value stays as-is until the input is valid.
+  // (including an unrelated body/meta edit) and the field already shows the inline error.
   const contentLanguage = meta.contentLanguage.trim()
   return {
     ...(id !== undefined ? { id } : {}),

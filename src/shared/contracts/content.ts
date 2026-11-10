@@ -21,10 +21,11 @@ import type { Role } from '@/shared/utils/roles'
 
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// `content.*` — the Ghost-Content-API-style read-only group backing every public SSR
-// loader (in-process via `@/server/http/ssr-caller`). HTTP signals that can't cross the
-// RPC wire as thrown `Response`s travel as a discriminated union; 404s as `ORPCError('NOT_FOUND')`;
-// rich nested DTOs use `z.custom<T>()` — the sanctioned Zod-single-source exception.
+// `content.*` — the Ghost-Content-API-style read-only group backing every public
+// SSR loader (in-process via `@/server/http/ssr-caller`). HTTP signals that cannot
+// cross the RPC wire as thrown `Response`s travel as a discriminated union; 404s
+// as `ORPCError('NOT_FOUND')`; rich nested DTOs use `z.custom<T>()` — the
+// sanctioned Zod-single-source exception.
 
 export const contentRedirectSignalSchema = z.object({
   kind: z.literal('redirect'),
@@ -42,18 +43,16 @@ export type ContentNotModifiedSignal = z.infer<typeof contentNotModifiedSignalSc
 /** The non-OK half of every content output union. */
 export type ContentSignal = ContentRedirectSignal | ContentNotModifiedSignal
 
-// The root loader's data segment. No input: the theme is parsed from
-// the cookie inside the procedure so the route never touches cookie names.
+// The root loader's data segment. No input: the theme is parsed from the
+// cookie inside the procedure so the route never touches cookie names.
 //
 // `i18n` carries the request's representation token (`revision` — the settings
 // snapshot generation, the same token cache keys and ETags use), the CURRENT
-// locale's UI catalog for the document's SCOPE, and — on workspace paths
-// only — the current locale's Inkling label overlay. Public documents never
-// receive the `admin.*` namespace or an editor label table; `/admin` and
-// `/editor` receive both. `messages` / `inklingLabels` are typed rather than
-// re-validated here: their shapes are compile-time catalog types, and importing
-// a catalog module into this module would defeat that boundary (the sanctioned
-// `z.custom<T>()` exception, see above).
+// locale's UI catalog for the document's SCOPE, and — on workspace paths only —
+// the current locale's Inkling label overlay. Public documents never receive the
+// `admin.*` namespace or an editor label table; `/admin` and `/editor` receive
+// both. `messages` / `inklingLabels` are typed rather than re-validated here:
+// importing a catalog module into this module would defeat that boundary.
 export const contentBootstrapI18nSchema = z.object({
   locale: z.enum(SUPPORTED_LOCALES),
   /** Opaque settings-snapshot token; consumers only compare it (dedupe / cache keys). */
@@ -123,9 +122,8 @@ export const contentPostsListOutputSchema = z.union([
 export type ContentPostsListOutput = z.infer<typeof contentPostsListOutputSchema>
 
 // Detail critical (shared by post + page): everything the detail page needs
-// above the fold besides the body. Comments and webmentions are
-// deliberately EXCLUDED — they stream through `content.comments.byKey` /
-// `webmention.list`.
+// above the fold besides the body. Comments and webmentions are deliberately
+// EXCLUDED — they stream through `content.comments.byKey` / `webmention.list`.
 export interface DetailCriticalPayload {
   commentKey: string
   likes: number
@@ -157,8 +155,7 @@ export const contentPostBySlugOutputSchema = z.union([
   contentRedirectSignalSchema,
   contentNotModifiedSignalSchema,
   // Draft previews carry no public ETag (null) — the route stamps the header
-  // only when one exists; same contract as the page variant
-  // (`content.pages.bySlug`).
+  // only when one exists.
   z.object({ kind: z.literal('ok'), etag: z.string().nullable(), payload: z.custom<PostDetailPayload>() }),
 ])
 export type ContentPostBySlugOutput = z.infer<typeof contentPostBySlugOutputSchema>
@@ -184,8 +181,6 @@ export interface PageDetailPayload {
 export const contentPageBySlugOutputSchema = z.union([
   contentRedirectSignalSchema,
   contentNotModifiedSignalSchema,
-  // Draft previews carry no public ETag (null) — the route stamps the
-  // header only when one exists.
   z.object({ kind: z.literal('ok'), etag: z.string().nullable(), payload: z.custom<PageDetailPayload>() }),
 ])
 export type ContentPageBySlugOutput = z.infer<typeof contentPageBySlugOutputSchema>

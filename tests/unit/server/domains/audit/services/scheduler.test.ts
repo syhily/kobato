@@ -17,10 +17,8 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-// `computeNextRun` runs for real: the hydrated settings pin timeZone=UTC,
-// and the fake timers make the 04:00 daily schedule deterministic — the
-// next fire always lands within 24h, so advancing a full day + margin
-// crosses exactly one fire.
+// `computeNextRun` runs for real: UTC settings plus fake timers make the 04:00 schedule
+// deterministic, so one day + margin crosses exactly one fire.
 const ADVANCE_TO_NEXT_RUN_MS = 86_400_000 + 1_000
 
 const { rescheduleArchive } = await import('@/server/domains/audit/services/scheduler')

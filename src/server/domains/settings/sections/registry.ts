@@ -34,19 +34,19 @@ export interface SectionMeta<
   scope: string
   schema: S
   /**
-   * Stricter schema for the admin WRITE path only; defaults to `schema`.
-   * Keep write-only rules out of `schema` itself: hydration shares it, and
-   * a stored row the stricter rules reject (e.g. a legacy `http://` storage
-   * endpoint) would silently fall back to section defaults on boot.
+   * Stricter schema for the admin WRITE path only; defaults to `schema`. Keep write-only
+   * rules out of `schema` itself: hydration shares it, and a stored row the stricter
+   * rules reject (e.g. a legacy `http://` storage endpoint) would silently fall back to
+   * section defaults on boot.
    */
   writeSchema?: z.ZodType
   key: K
   defaults: Record<string, unknown> | null
 }
 
-// One module per section owns its schema, defaults, and metadata — adding a section
-// means ONE module plus ONE line here. This map is composition only; the parity assert
-// below pins every entry to its bundle slot.
+// One module per section owns its schema, defaults, and metadata; adding a section means
+// one module plus one line here. This map is composition only — the parity assert below
+// pins every entry to its bundle slot.
 export const SECTION_REGISTRY = {
   general: generalSection,
   assets: assetsSection,

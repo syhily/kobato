@@ -13,11 +13,8 @@ import { isPublicMessageKey } from '@/shared/i18n/catalog-scope'
 import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 import { uiMessagesZhTW } from '@/shared/i18n/messages/ui/zh-TW'
 
-// Cold-boot regression for the `/rpc/*` bridge: a pure RPC request never runs
-// `buildLoadContext`, so the bridge itself must hydrate settings BEFORE it
-// projects `rc.localization`. Without that await, the first cold
-// `content.bootstrap` call memoizes the pre-hydration zh-CN/UTC pair and an
-// installed non-default-locale site answers with the wrong catalog.
+// The `/rpc/*` bridge must hydrate settings BEFORE projecting `rc.localization`: a pure RPC request
+// never runs `buildLoadContext`, and a cold memo would pin the pre-hydration locale/timezone pair.
 
 const db = getTestDb()
 const CSRF = 'cold-boot-csrf-token'

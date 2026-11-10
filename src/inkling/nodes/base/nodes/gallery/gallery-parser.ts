@@ -1,6 +1,6 @@
-// Survives hand-written (no import spec, CONTEXT.md: "import spec"): the
-// `images` collection property, sibling walking with node removal, and the
-// SQS branch's DOM mutation are structural, not flat per-property reads.
+// Hand-written (no import spec): the `images` collection property, sibling
+// walking with node removal, and the SQS branch's DOM mutation are structural,
+// not flat per-property reads.
 import type { LexicalNode } from 'lexical'
 
 // MAX_PER_ROW comes straight from its canonical home — importing it via
@@ -21,7 +21,6 @@ function readGalleryImageAttributesFromElement(element: HTMLImageElement, imgNum
 export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unknown>) => LexicalNode) {
   return {
     figure: (nodeElem: HTMLElement) => {
-      // Inkling gallery card
       if (nodeElem.classList.contains('inkling-gallery-card')) {
         return {
           conversion(domNode: HTMLElement) {
@@ -54,11 +53,9 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
             const payload: Record<string, unknown> = {}
             const captions = [readCaptionFromElement(domNode)].filter((caption): caption is string => Boolean(caption))
 
-            // These galleries exist as a series of divs containing multiple figure+img.
-            // Grab the first set of imgs...
+            // These galleries exist as a series of divs containing multiple figure+img
             let imgs = Array.from(domNode.querySelectorAll('img'))
 
-            // ...and then iterate over any remaining divs until we run out of matches
             let nextNode = domNode.nextElementSibling
             while (nextNode && isGrafGallery(nextNode)) {
               const currentNode = nextNode
@@ -71,7 +68,7 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
 
               nextNode = currentNode.nextElementSibling
 
-              // remove nodes as we go so that they don't go through the parser
+              // remove consumed nodes so they do not go through the parser
               currentNode.remove()
             }
 
@@ -124,7 +121,6 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
               })
               .filter((img) => img !== undefined)
 
-            // Process nodes into the payload
             payload.images = imgs.map(readGalleryImageAttributesFromElement)
 
             payload.caption = readCaptionFromElement(domNode, { selector: '.meta-title' })

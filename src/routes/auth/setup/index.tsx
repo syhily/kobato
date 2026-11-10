@@ -34,11 +34,9 @@ const SETUP_VERIFY_BUCKET = { windowSeconds: 3600, maxAttempts: 10 }
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
   const db = rc.db
-  // Possible outcomes: noAdmin → render the credentials form; installed → 303 → /admin/signin.
   await ensureNoAdminOrRedirect(db)
 
-  // Re-surface the setup token in the server console on every wizard visit
-  // (covers restarts, log rotation).
+  // Re-surface the setup token in the server console on every wizard visit (covers restarts, log rotation).
   try {
     await getSetupToken(db)
   } catch {
@@ -63,8 +61,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData()
   const intent = formData.get('intent')
 
-  // Server translates, client displays: resolve the flow descriptor for this
-  // request's locale and carry the key for stable client-side branching.
+  // Server translates, client displays: resolve the descriptor for this locale, carry the key for stable branching.
   const failFlow = (flow: AuthFlowError, status?: number) => {
     const payload: {
       error: string
@@ -99,13 +96,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     session.set('setupTokenVerified', true)
-    // Same-session mutation — the request-context middleware emits the
-    // Set-Cookie after the response resolves.
+    // Same-session mutation: the request-context middleware emits Set-Cookie after the response resolves.
     rc.markSessionDirty()
     return data({ setupTokenVerified: true })
   }
 
-  // Intent: install (null intent kept for backward compat).
+  // Intent: install; a null intent is treated as install.
   if (intent === 'install' || intent === null) {
     if (session.get('setupTokenVerified') !== true) {
       return fail('auth.setup.error.tokenNotVerified')
@@ -128,9 +124,8 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     const parsed = signUpAdminSchema.safeParse(values)
     if (!parsed.success) {
-      // Field rules carry typed catalog ids, so the first failing field's own
-      // copy reaches the user; only non-field failures (e.g. a tampered locale
-      // enum) fall back to the generic incomplete-form notice.
+      // Field rules carry typed catalog ids, so the first failing field's own copy reaches the user; only
+      // non-field failures (e.g. a tampered locale enum) fall back to the generic incomplete-form notice.
       return failFlow(authFlowValidationError('auth.setup.error.formIncomplete', parsed.error.issues))
     }
 

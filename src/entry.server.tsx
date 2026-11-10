@@ -1,6 +1,5 @@
-// Zod 4.5 auto-compilation (3–9x parse on objects/unions) — must evaluate
-// before any module that constructs schemas. Server-only: the browser bundle
-// keeps `jitless` (see `@/shared/zod-config`), under which compile stands down.
+// Zod 4.5 auto-compilation (3–9x parse on objects/unions) must evaluate before any module that constructs schemas.
+// Server-only: the browser bundle keeps `jitless` (see `@/shared/zod-config`), under which compile stands down.
 import 'zod/compile'
 import type { RenderToPipeableStreamOptions } from 'react-dom/server'
 import type { EntryContext, RouterContextProvider } from 'react-router'
@@ -28,10 +27,8 @@ export const streamTimeout = 5_000
 const log = getLogger('entry.server')
 
 /**
- * The document language is the one the root Layout actually renders:
- * `rootData.i18n.locale`, falling back to DEFAULT_LOCALE exactly like Layout.
- * A failed root loader has no payload — the header must not claim the request
- * locale while `<html lang>` renders the fallback.
+ * Must match what the root Layout renders (`rootData.i18n.locale`); a failed root loader has no payload, so
+ * the header must not claim the request locale.
  */
 function documentLocale(routerContext: EntryContext): AppLocale {
   const loaderData: unknown = routerContext.staticHandlerContext?.loaderData
@@ -65,8 +62,7 @@ export default function handleRequest(
   routerContext: EntryContext,
   loadContext: RouterContextProvider,
 ) {
-  // One AppLocale drives the document language: `<html lang>`, meta og:locale
-  // and this header all agree. 304 responses never reach this entry (their
+  // One AppLocale drives `<html lang>`, og:locale, and this header. 304 responses never reach this entry (their
   // headers are rebuilt by RR — see root's `headers` export).
   responseHeaders.set('Content-Language', documentLocale(routerContext))
 
@@ -85,9 +81,8 @@ export default function handleRequest(
   const serverRouterNonce = import.meta.env.DEV ? undefined : nonce
 
   return new Promise<Response>((resolve, reject) => {
-    // ADR-0012: `ssr.shell` covers the initial render until shell/all-ready;
-    // `ssr.stream` covers only the post-shell stream. Both are manual spans
-    // because their boundaries are React callbacks, not one call site.
+    // `ssr.shell` covers the initial render until shell/all-ready; `ssr.stream` covers only the post-shell stream.
+    // Both are manual spans because their boundaries are React callbacks, not one call site.
     const shellStartedAt = performance.now()
     const shellSpan: Span = startSpan('ssr.shell', { attributes: { 'ssr.phase': 'shell' } })
     let shellEnded = false

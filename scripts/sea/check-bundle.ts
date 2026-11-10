@@ -1,7 +1,7 @@
 // Bundle sanity check for the SEA intermediates: every bundle must be fully
 // self-contained (leftovers fail at runtime — no node_modules next to the
-// binary). Also fails on any `__APP_*__`/`__SEA_*__` identifier the bundle's
-// define table does not cover (a bare ReferenceError at boot).
+// binary), and every `__APP_*__`/`__SEA_*__` identifier must be covered by the
+// define table (a leftover is a bare ReferenceError at boot).
 
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
@@ -29,11 +29,9 @@ export const SEA_BUNDLE_DEFINED_GLOBALS = [
 const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'])
 const allowedRelativeSpecifiers = new Set(['./MyComponent'])
 
-// The server OTel SDK is a released capability and IS bundled (the trace
-// runtime is reached through a dynamic import, inlined by the SEA build). The
-// browser RUM SDK is the opposite: it is a browser-only package reached only
-// from the client RUM loader, so it must never appear in a server bundle — a
-// surviving `@openobserve/` marker means a client module (or its dynamic edge)
+// The server OTel SDK is bundled (the trace runtime is a dynamic import the SEA
+// build inlines). The browser RUM SDK must never appear in a server bundle — a
+// surviving `@openobserve/` marker means a client module, or its dynamic edge,
 // leaked into the server graph.
 export const FORBIDDEN_BROWSER_TELEMETRY_MARKERS = ['@openobserve/'] as const
 
@@ -57,15 +55,10 @@ function executableLines(text: string) {
     })
 }
 
-// Compile-time globals the vite build substitutes via `define`; the reverse
-// scan fails on any `__APP_*__`/`__SEA_*__` identifier the define table
-// does not cover — a leftover is a bare ReferenceError at runtime.
+// Compile-time globals the vite build substitutes via `define`.
 const buildGlobalPattern = /\b__(?:APP|SEA)_[A-Z0-9_]*__\b/g
 
-/**
- * Scan one bundle's text for leftovers that would fail at runtime inside
- * the binary, including undefined build-time globals.
- */
+/** Scan one bundle's text for leftovers that would fail at runtime inside the binary. */
 export function scanBundleText(text: string, definedGlobals: readonly string[]) {
   const errors: string[] = []
 

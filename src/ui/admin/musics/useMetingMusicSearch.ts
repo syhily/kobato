@@ -20,9 +20,8 @@ export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] 
     })
 }
 
-// Search-pagination machine on the shared infinite-list scaffold (the search
-// endpoint reports only `hasMore`); callers keep their own inputs, add
-// mutation, and preview wiring.
+// Search-pagination machine on the shared infinite-list scaffold; the search
+// endpoint reports only `hasMore`.
 export function useMetingMusicSearch({ limit }: { limit: number }) {
   const [submitted, setSubmitted] = useState<{ source: MetingSource; keyword: string } | null>(null)
 

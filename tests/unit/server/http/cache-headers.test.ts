@@ -2,9 +2,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Cache-Control headers on derived assets (OG images, sitemaps) are part of
-// the public surface — search engines, social previewers, and CDNs key on
-// them. This file pins the live policy so any tweak shows up as a diff.
+// Cache-Control on derived assets (OG images, sitemaps) is public surface — search
+// engines, social previewers, and CDNs key on it.
 function read(relativePath: string): string {
   return readFileSync(resolve(process.cwd(), relativePath), 'utf8')
 }

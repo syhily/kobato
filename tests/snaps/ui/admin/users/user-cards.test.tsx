@@ -7,8 +7,8 @@ import { UserDetailView } from '@/ui/admin/users/UserDetailView'
 import { UserOperationsCard } from '@/ui/admin/users/UserOperationsCard'
 
 // One fixture per UserOperationsCard gating branch (role, deletedAt, isMuted,
-// pendingCount, commentCount, passkeyCount). user-detail.test.tsx covers the
-// author/self-admin/muted arms; this adds deleted, anonymous, passkey-edge + a resolved UserDetailView.
+// pendingCount, commentCount, passkeyCount), covering the deleted, anonymous and
+// passkey-edge arms plus a resolved UserDetailView.
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`

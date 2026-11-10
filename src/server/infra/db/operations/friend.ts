@@ -54,7 +54,6 @@ export async function listAdminFriendRows(db: Database, filters: AdminFriendsLis
   return applyPage(q, filters)
 }
 
-// Counter: same filter as the listing, ignoring offset/limit.
 export async function countAdminFriends(db: Database, filters: AdminFriendsListFilters = {}): Promise<number> {
   const where = assembleWhere(buildAdminFriendConditions(filters))
   const rows = where

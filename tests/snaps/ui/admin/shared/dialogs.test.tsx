@@ -29,9 +29,9 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// Base UI portals only mount after the open animation (client-only), so an
-// open dialog emits no SSR HTML — assert closed states directly (same
-// constraint as ConfirmDialog in admin-shared.test.tsx); search queries stubbed.
+// Base UI portals mount only after the open animation (client-only), so an open dialog
+// emits no SSR HTML and the closed states are asserted directly; search queries are
+// stubbed.
 
 const noop = () => undefined
 

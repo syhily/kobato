@@ -52,7 +52,7 @@ describe('Markdown round-trip', function () {
 
   it('round-trips a code block with a non-word language name', function () {
     // the export side emits free-input languages verbatim, so the import side
-    // accepts more than \w — c++/shell-session used to import as literal
+    // must accept more than \w — otherwise c++/shell-session import as literal
     // paragraphs
     const markdown = '```c++\nint main() {}\n```'
     const state = markdownToLexicalState(markdown)
@@ -74,10 +74,8 @@ describe('Markdown round-trip', function () {
     expect(roundTrip(markdown).trim()).toBe(markdown)
   })
 
-  // The card-aware round-trip dialect's coverage vs the paste dialect (plan
-  // 050 pins). Card-fence import itself is pinned in
-  // round-trip-cards.test.ts (```inkling:bookmark``` → BookmarkNode) and not
-  // re-pinned here.
+  // This dialect's coverage vs the paste dialect: card-fence import itself is
+  // pinned in round-trip-cards.test.ts and not re-pinned here.
   function firstTextOf(state: SerializedEditorState) {
     const paragraph = state.root.children[0] as unknown as { children: Array<{ text: string; format: number }> }
     return paragraph.children[0]
@@ -85,8 +83,8 @@ describe('Markdown round-trip', function () {
 
   it('imports ==marked== as highlight-formatted text', function () {
     // @lexical/markdown's TEXT_FORMAT_TRANSFORMERS include HIGHLIGHT, so this
-    // dialect speaks ==mark== as well — same result as the paste dialect's
-    // <mark> import (pinned in test/unit/plugins/MarkdownPastePlugin.test.tsx).
+    // dialect speaks ==mark== like the paste dialect's <mark> import
+    // (pinned in tests/inkling/unit/plugins/MarkdownPastePlugin.test.tsx).
     const text = firstTextOf(markdownToLexicalState('==marked=='))
     expect(text.text).toBe('marked')
     expect(text.format).toBe(IS_HIGHLIGHT)

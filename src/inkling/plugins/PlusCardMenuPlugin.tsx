@@ -9,10 +9,10 @@ import { CardMenuPopup, type CardMenuPopupHandle } from '@/inkling/plugins/CardM
 
 // Plus card menu — trigger wiring only. The trigger policy (caret/hover
 // verdicts, the selectionchange hide rule) lives in
-// @/plugins/behaviour/card-menu-trigger; everything downstream — the session,
-// the button's anchor chrome (including its Range, handed to the session on
-// open), the menu itself — is CardMenuPopup's 'button' anchor policy, driven
-// through the popup handle.
+// @/inkling/plugins/behaviour/card-menu-trigger; everything downstream — the
+// session, the button's anchor chrome (including its Range, handed to the
+// session on open), the menu itself — is CardMenuPopup's 'button' anchor
+// policy, driven through the popup handle.
 export default function PlusCardMenuPlugin(): React.ReactElement | null {
   const [editor] = useLexicalComposerContext()
   const popupRef = React.useRef<CardMenuPopupHandle | null>(null)

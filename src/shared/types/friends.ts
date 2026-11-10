@@ -1,6 +1,5 @@
-// Wire-format DTOs for the friend-management endpoints. Shared so
-// server (admin actions) and client (admin UI) import the same shape.
-// Bigints are stringified; the public site never ships `id`.
+// Wire DTOs for the friend-management endpoints (server actions + admin UI
+// import the same shape). Bigints are stringified; the public site never ships `id`.
 
 import type { AdminFriendDto } from '@/shared/contracts/friends'
 

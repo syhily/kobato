@@ -5,7 +5,7 @@ import { isSlashTriggerPress } from '@/inkling/plugins/behaviour/card-menu-trigg
 import { CardMenuPopup, type CardMenuPopupHandle } from '@/inkling/plugins/CardMenuPopup'
 
 // Slash card menu — trigger wiring only. The valid-press grammar lives in the
-// trigger module (@/plugins/behaviour/card-menu-trigger); everything
+// trigger module (@/inkling/plugins/behaviour/card-menu-trigger); everything
 // downstream — the session, the slash trigger binding, the keyboard
 // navigator, the menu itself — is CardMenuPopup's 'slash' trigger syntax over
 // the 'selection' anchor policy, driven through the popup handle.

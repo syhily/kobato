@@ -26,13 +26,12 @@ import {
   registerFootnotes,
 } from '@/inkling/plugins/behaviour/footnotes'
 
-// The footnote behaviour module — pins
-// for the renumber engine (kobato's footnote-sync matrix, table-driven), the
-// signature short-circuit, the caret trigger (with backslash suppression and
-// the table-cell guard), the doc-end-run transform, and `$removeFootnote`.
-// The undo-merge pin lives in test/unit/plugins/FootnotePlugin.test.tsx (it
-// needs a real history stack); the export byte contract in
-// test/unit/html/footnote-export.test.ts.
+// Pins for the footnote behaviour module: the renumber engine (the footnote-
+// sync matrix, table-driven), the signature short-circuit, the caret trigger
+// (with backslash suppression and the table-cell guard), the doc-end-run
+// transform, and `$removeFootnote`. The undo-merge pin lives in
+// FootnotePlugin.test.tsx (it needs a real history stack); the export byte
+// contract in footnote-export.test.ts.
 
 function createTestEditor(nodes: typeof DEFAULT_NODES = DEFAULT_NODES): LexicalEditor {
   return createHeadlessEditor({
@@ -48,9 +47,8 @@ type DocEntry =
   | { kind: 'p'; parts: Array<string | { ref: string; cites: string }> }
   | { kind: 'def'; targetKey: string; content?: string }
 
-// Builds a document from data: paragraphs of text/ref parts and definition
-// cards, in the given order. Construction order is NOT normalized — the
-// run transform is only exercised when registerFootnotes is in play.
+// Construction order is NOT normalized — the run transform only runs when
+// registerFootnotes is in play.
 function $buildDoc(entries: DocEntry[]): void {
   const root = $getRoot()
   for (const entry of entries) {
@@ -232,7 +230,7 @@ describe('the registered renumber scan', () => {
 
   // Registration precedes content — the production order (the plugin mounts
   // with the composer) and the order every other test here uses. Registering
-  // a transform on an ALREADY non-empty editor makes Lexical 0.53 schedule a
+  // a transform on an ALREADY non-empty editor makes Lexical schedule a
   // 'history-merge'-tagged mark-dirty commit as a microtask, and a
   // synchronous edit in between inherits the tag and gets gate-skipped
   // (upstream quirk; RestrictContentPlugin's RootNode transform has it too).
@@ -311,7 +309,6 @@ describe('the caret trigger scan', () => {
     })
   })
 
-  // Types text at the current collapsed caret through the public selection API.
   async function typeText(text: string): Promise<void> {
     await drainEnqueuedUpdates(editor, () => {
       const selection = $getSelection()
@@ -535,7 +532,7 @@ describe('registration guards', () => {
     const editor = createTestEditor()
     const nested = createTestEditor()
     // what Lexical's nested-composer machinery sets; the guard reads it
-    // through getParentEditor (src/utils/lexical-internals.ts)
+    // through getParentEditor
     ;(nested as unknown as { _parentEditor: LexicalEditor })._parentEditor = editor
     const handle = createFootnoteHandle()
     registerFootnotes(nested, handle)

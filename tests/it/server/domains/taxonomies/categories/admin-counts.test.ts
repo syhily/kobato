@@ -140,7 +140,7 @@ describe('listCategoriesForAdmin', () => {
     expect(result.categories[0]?.postCount).toBe(0)
   })
 
-  // Regression for drifted gates: list and upsert counts share one live-gate definition.
+  // List and upsert counts share one live-gate definition.
   it('list count and upsert-returned count agree (both exclude drafts)', async () => {
     const [cat] = await db
       .insert(category)

@@ -31,7 +31,6 @@ describe('commentReplySchema anti-spam', () => {
     name: 'Reader',
     email: 'reader@example.com',
     body: HELLO_BODY,
-    // csrf field removed
     subtitle: '',
   }
 

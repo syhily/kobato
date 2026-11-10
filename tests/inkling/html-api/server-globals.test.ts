@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { renderHeadless } from '#/inkling/utils/render-live'
 
-// Server-globals suite: headless renders must not touch browser globals. The
-// sanitize legs used to read the global window/DOMParser at call time, so a
-// Node process would ReferenceError (or sanitize against the wrong window).
+// Server-globals suite: headless renders must not touch browser globals. A
+// sanitize leg reading the global window/DOMParser at call time would
+// ReferenceError in a Node process (or sanitize against the wrong window).
 // Each case renders once with the jsdom-test globals present and once with
 // `window`/`document`/`DOMParser` stubbed away, pinning byte-identical output
 // from the injected dom alone.

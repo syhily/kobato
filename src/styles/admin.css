@@ -1,20 +1,12 @@
 /*
- * Admin-side Tailwind entry — imported by the admin / auth / editor layouts.
- *
- * Shares the token partial (`tailwind.css`) with the public entry but scans
- * only admin-rendered sources, so the emitted bundle drops public-only
- * artifacts (cursors, post/TOC/friends/webmention chrome, the public
- * medium-zoom z-index). Content typography comes from `typeset.css` (base
- * rules + kobato presets in one owned file) — the admin bundle needs it for
- * the editor canvases and comment views.
+ * Admin-side Tailwind entry, imported by the admin / auth / editor layouts.
+ * Scans only admin sources; `typeset.css` is required here for the editor
+ * canvases and comment views.
  */
-/* Cascade-layer order: the inkling editor stylesheet (imported by
-   PageBodyEditor's route chunk into `layer(inkling)`) must sit BELOW
-   Tailwind's utilities so kobato's host-card chrome utilities beat inkling's
-   scoped preflight — but ABOVE `base`: kobato's preflight zeroes padding/
-   margin globally, and with inkling below it the package's own utilities
-   (py-[.6rem] on card-menu items, …) lost to the reset. This bare statement
-   pins the order no matter when the editor chunk's stylesheet loads. */
+/* Cascade order: inkling below Tailwind utilities (host-card chrome utilities
+   beat its scoped preflight) and above `base` (kobato's preflight zeroes
+   padding/margin, killing inkling's own spacing utilities). The bare
+   statement pins the order regardless of chunk load timing. */
 @layer theme, base, inkling, components, utilities;
 @import 'tailwindcss' source(none);
 @import './tailwind.css';
@@ -28,28 +20,26 @@
 @source '../ui/components';
 @source '../ui/icons';
 @source '../ui/lib';
-/* Admin surfaces reuse public building blocks: music-player (the editor
-   canvas renders the playable card), chrome (root error views), the comment
-   editor (top-level files only — comment-item/ is public-only), popups, and
-   search. */
+/* Admin renders these public blocks: music-player (editor canvas card),
+   chrome (root error views), top-level comment editor (not comment-item/),
+   popups and search. */
 @source '../ui/public/music-player';
 @source '../ui/public/chrome';
 @source '../ui/public/comments/*.{ts,tsx}';
 @source '../ui/public/widgets';
 @source '../ui/public/Search.tsx';
-/* Inkling editor surface (R10 host cards): the card assembly modules and the
-   shared spec class constants they render with */
+/* Inkling editor surface: card assembly modules and the shared spec class
+   constants they render with */
 @source '../client/editor';
 @source '../shared/lexical/cards';
 
 @layer utilities {
-  /* medium-zoom stacks admin chrome under overlay popovers above */
+  /* Medium-zoom sits under overlay popovers */
   .medium-zoom-overlay,
   .medium-zoom-image--opened {
     z-index: 45;
   }
 
-  /* Thin scrollbar for the lyrics panel */
   .scrollbar-thin {
     scrollbar-width: thin;
   }

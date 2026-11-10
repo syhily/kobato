@@ -1,6 +1,4 @@
-// Identify step of the identifier-first signin: resolve which signin
-// method an account uses; the answer drives the client UI — passkey
-// prompt, "check your mailbox" notice, or the password field.
+// Identify step of the identifier-first signin: resolves which signin method an account uses.
 
 import { z } from 'zod'
 

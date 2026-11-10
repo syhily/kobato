@@ -22,9 +22,8 @@ class FakeWorker extends EventEmitter {
   }
 }
 
-// The pool's factory signature is `() => Worker` (node:worker_threads).
-// FakeWorker is an EventEmitter stand-in, so we cast at the boundary; at
-// runtime every worker is still a FakeWorker instance the test drives.
+// The pool's factory signature is `() => Worker` (node:worker_threads);
+// FakeWorker is an EventEmitter stand-in, cast at this boundary only.
 function createFakeWorker(): Worker {
   return new FakeWorker() as unknown as Worker
 }

@@ -40,13 +40,12 @@ const log = getLogger('cache')
 
 /**
  * The cache behavior plane — the only module reading/writing cache entries:
- * a process-local L1 (`memory-store`) in front of the on-disk plane
- * (`file-store`, ADR-0013). Reads try L1, fall back to disk, and backfill L1
- * with the envelope's own deadline; writes mirror into L1 only after the disk
- * write succeeds. Every invalidation verb evicts L1 synchronously, before its
- * filesystem leg. Best-effort throughout: failures degrade to a miss / a
- * skipped write — the cache must never fail the request it serves; loader
- * errors propagate.
+ * an L1 (`memory-store`) in front of the on-disk plane (`file-store`). Reads
+ * try L1, fall back to disk, backfill L1 under the envelope's own deadline;
+ * writes mirror into L1 only after the disk write succeeds; every invalidation
+ * evicts L1 synchronously before its filesystem leg. Best-effort throughout:
+ * failures degrade to a miss / a skipped write — the cache must never fail the
+ * request it serves; loader errors propagate.
  */
 
 interface CacheParamsMap {
@@ -135,21 +134,17 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   og: {
     kind: 'binary',
     devBypass: true,
-    // Hash of every render input AND the settings generation: the OG card embeds
-    // site title/summary/logo/SEO dimensions from the request-pinned snapshot,
-    // so a settings save must land on a fresh key, never a stale render.
+    // Hash of every render input (title/summary/cover) + settings generation:
+    // a settings save must land on a fresh key, never a stale render.
     key: ({ slug, title, summary, cover, settingsRevision }) =>
       `${settingsRevision}:${slug}-${createHash('sha1').update(`${title}\u0001${summary}\u0001${cover}`).digest('hex').slice(0, 16)}`,
   },
   calendar: {
     kind: 'binary',
     devBypass: true,
-    // Locale + representation version + settings generation are part of the
-    // key: the same date has a different PNG per language, a release
-    // (translation/renderer change) must never serve the previous
-    // representation, and a settings save (quote bank, identity) orphans the
-    // previous generation's entry. The `-dark` suffix keeps the two themes
-    // from clobbering each other.
+    // Locale + version + settings generation: the same date renders a different
+    // PNG per language, release, and settings generation. `-dark` keeps the
+    // themes apart.
     key: ({ date, theme, locale, version, settingsRevision }) =>
       `${locale}:${version}:${settingsRevision}:${date}${theme === 'dark' ? '-dark' : ''}`,
   },
@@ -174,10 +169,9 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   },
   feed: {
     kind: 'json',
-    // Locale + version + settings generation keyed: the RSS/Atom body is
-    // localized (`language` / `xml:lang`), a release ships new renderers /
-    // translations, and a settings save (feed size, branding, identity)
-    // produces a new representation under a new key.
+    // Locale + version + settings generation: the feed body is localized
+    // (`language` / `xml:lang`) and a release or settings save must land on a
+    // new key.
     key: ({ scope, locale, version, settingsRevision }) => `${locale}:${version}:${settingsRevision}:${scope}`,
   },
   sitemap: {
@@ -248,12 +242,9 @@ function keyFor<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): { ke
   return { key: `${slot.prefix}${BEHAVIORS[id].key(params)}`, slot }
 }
 
-/**
- * Decode a binary payload and mirror the decoded shape into L1. A codec may
- * normalize the write shape (the avatar sentinel does), so both planes publish
- * what a disk read would return — never the raw write value. Returns `null` when
- * the codec rejects the payload (a miss, never an L1 entry).
- */
+/** Decode a binary payload and mirror the decoded shape into L1 so both planes
+ *  publish what a disk read would return. Codec rejection (`null`) is a miss,
+ *  never an L1 entry. */
 function decodeAndMirrorBinary(
   id: CacheBucketId,
   key: string,
@@ -273,9 +264,8 @@ function decodeAndMirrorBinary(
 
 async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
   const behavior = BEHAVIORS[id]
-  // Misses use two internal sentinels: the disk plane answers `null` (its
-  // envelope contract), memory answers `undefined` (a stored `undefined` is
-  // never admitted). `readEntry` normalizes both to `null`.
+  // Miss sentinels: the disk plane answers `null`, memory `undefined` (never
+  // stored) — `readEntry` normalizes both to `null`.
   const memoryHit = getMemoryItem(id, key)
   if (memoryHit !== undefined) {
     return memoryHit
@@ -292,7 +282,7 @@ async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
     if (stored === null) {
       return null
     }
-    // A literal `null` payload is a miss, exactly as before the L1 layer.
+    // A literal `null` payload is a miss.
     const parsed = stored.value
     if (parsed === null) {
       return null
@@ -300,7 +290,6 @@ async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
     if (behavior.schema !== undefined) {
       const result = behavior.schema.safeParse(parsed)
       if (!result.success) {
-        // Stale shape reads as a miss and evicts the entry.
         await removeItem(id, key)
         return null
       }
@@ -326,12 +315,10 @@ async function writeEntry(id: CacheBucketId, key: string, slot: ResolvedSlot, va
     // ONE deadline, derived here and handed to both planes: the envelope stores
     // it verbatim, and L1 expires on the same instant.
     const expiresAtMs = ttlSeconds ? Math.round(Date.now() + ttlSeconds * 1000) : 0
-    // No bucket declares `schema` today — this guard is forward-compat for the
-    // `CacheBehavior` contract: a schema bucket only fills L1 from the validated
-    // READ path, never from the loader's raw write value.
+    // A schema bucket only fills L1 from the validated READ path, never from the
+    // loader's raw write value; no bucket declares a schema currently.
     const schemaValidated = behavior.schema !== undefined
     if (behavior.kind === 'binary') {
-      // A binary declaration without a codec stores raw Buffers.
       const encode = behavior.encode ?? ((blob: unknown) => unsafeCast<Buffer>(blob))
       const encoded = encode(value)
       await setItemRaw(id, key, encoded, { expiresAtMs })
@@ -455,11 +442,11 @@ export async function remove<K extends CacheBucketId>(id: K, params: CacheParams
 
 /**
  * Best-effort whole-bucket clear for ordinary content invalidation. Small
- * buckets only (feed/tags/categories/sitemap/comments) — entries are unlinked
- * synchronously, matching the sync invalidation contract.
+ * buckets only (feed/tags/categories/sitemap/comments): L1 drops synchronously
+ * (the invalidation contract holds even if the unlink then fails), then the
+ * entry files are unlinked in place.
  */
 export function clear(id: CacheBucketId): void {
-  // Synchronous invalidation covers both planes, even if the unlink fails.
   clearMemoryBucket(id)
   try {
     unlinkBucketEntriesSync(id)
@@ -471,24 +458,18 @@ export function clear(id: CacheBucketId): void {
 /**
  * L1-only synchronous eviction, for the admin clear path in `buckets.ts`: its
  * filesystem leg is async, but the memory tier must go cold before it starts.
- * Ordinary invalidation uses `clear`/`remove` instead.
  */
 export function evictBucketMemory(id: CacheBucketId): void {
   clearMemoryBucket(id)
 }
 
 /**
- * Reclaim the storage behind the settings-derived render products (`feed`,
+ * Reclaim the storage behind the settings-derived render buckets (`feed`,
  * `calendar`, `og`, `comments`, `sitemap`) after a settings save. Strict (a
- * failure reaches the section-change warning channel), synchronous, and
- * deliberately non-blocking: each bucket is renamed to trash in O(1) and the
- * recursive delete runs asynchronously.
- *
- * Correctness NEVER depends on this delete: every successful settings refresh
- * advances the snapshot revision (`shared/config/snapshot`), so the previous
- * generation's keys are already unreachable and an in-flight render started
- * before the save can only write its own old-revision key. This is purely
- * storage reclamation — no locale/version generation counter is involved.
+ * failure reaches the section-change warning channel); each bucket renames to
+ * trash in O(1) and is deleted async. Correctness NEVER depends on this
+ * delete: the snapshot-revision advance has already orphaned the old keys, and
+ * an in-flight render writes its own old-revision key.
  */
 export function clearLocalizedOutputs(): void {
   let failure: unknown
@@ -508,11 +489,10 @@ export function clearLocalizedOutputs(): void {
 }
 
 /**
- * Batch cache-aside: L1 first, then an MGET-style read of the remaining keys
- * (one file read per key, fanned out); the loader runs once for the misses.
- * Returns one entry per input in input order (uncovered misses are null);
- * missing values are written back fire-and-forget. Disk hits backfill L1 under
- * the envelope's own deadline.
+ * Batch cache-aside: L1 first, then one file read per remaining key, fanned
+ * out; the loader runs once for the misses. Returns one entry per input in
+ * input order (uncovered misses are null); missing values are written back
+ * fire-and-forget. Disk hits backfill L1 under the envelope's own deadline.
  */
 export async function throughMany<K extends CacheBucketId, V>(
   id: K,
@@ -638,7 +618,7 @@ export function bumpCounter(id: CacheBucketId): number | null {
   }
 }
 
-/** Whether the bucket owns a `_generation` counter (only `searchResult` today). */
+/** Whether the bucket owns a `_generation` counter (only `searchResult`). */
 export function isCounterBucket(id: CacheBucketId): boolean {
   return BEHAVIORS[id].counter === true
 }
@@ -648,10 +628,8 @@ export function isCounterBucket(id: CacheBucketId): boolean {
  * L1 is dropped FIRST — even a partial file wipe must never leave pre-restore
  * values servable — and the generation memo is dropped in a `finally` so the
  * next counter read re-reads the file. A partial wipe can leave pre-restore
- * entries on disk that may remain reachable until their TTL, and the old
- * generation may still be on disk; the memo reset only guarantees the next read
- * goes back to the file. The caller's warning/notification path owns the
- * residual window.
+ * entries on disk reachable until their TTL; the caller's warning path owns
+ * that residual window.
  */
 export async function wipeCacheForRestore(): Promise<void> {
   wipeMemoryCache()

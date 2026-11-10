@@ -146,7 +146,7 @@ describe('render cache warmup on content publish/update', () => {
   })
 })
 
-describe('category OG warmup (audit P1-12)', () => {
+describe('category OG warmup', () => {
   it('warms the category OG card after a category create', async () => {
     await upsertAdminCategory(db, { name: 'Tech Notes', cover: '', description: '' })
 

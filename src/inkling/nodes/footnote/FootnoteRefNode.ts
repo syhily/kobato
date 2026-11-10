@@ -13,13 +13,12 @@ export type SerializedFootnoteRefNode = SerializedTextNode & {
 }
 
 /**
- * Inline footnote reference (CONTEXT.md: footnote ref) — a TextNode entity
- * (TKNode precedent) whose visible text IS the 1-based index; the renumber
- * engine (`@/inkling/plugins/behaviour/footnotes`) rewrites the text in place, so no
- * separate index field can drift from what the reader sees. `__targetKey`
- * points at the definition card it cites (kobato's `footnoteRef.targetKey`).
- * Atomicity comes from `isTextEntity()` + the `canInsertText*` pair, exactly
- * like TKNode.
+ * Inline footnote reference — a TextNode entity (TKNode precedent) whose visible
+ * text IS the 1-based index; the renumber engine
+ * (`@/inkling/plugins/behaviour/footnotes`) rewrites the text in place, so no
+ * separate index field can drift from what the reader sees. `__targetKey` points
+ * at the definition card it cites (kobato's `footnoteRef.targetKey`). Atomicity
+ * comes from `isTextEntity()` + the `canInsertText*` pair, exactly like TKNode.
  */
 export class FootnoteRefNode extends TextNode {
   __targetKey: string
@@ -94,7 +93,7 @@ export class FootnoteRefNode extends TextNode {
     return { element: sup }
   }
 
-  // Two import lanes (CONTEXT.md: footnote ref): inkling/kobato HTML carries
+  // Two import lanes: inkling/kobato HTML carries
   // `a[href^="#user-content-fn-"]` inside the sup; the markdown-it-footnote
   // paste dialect emits `sup.footnote-ref` (its fragment hrefs survive the
   // headless importer, and the anchor `id="fnrefN[:M]"` remains when the

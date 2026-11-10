@@ -23,7 +23,6 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
   const light = brandingVersionSuffix(assets?.branding?.logoSvg)
   const dark = brandingVersionSuffix(assets?.branding?.logoDarkSvg)
 
-  // Global ⌘K / Ctrl+K shortcut
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const target = e.target
@@ -49,7 +48,6 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
   return (
     <SidebarHeader className={className}>
       <div className="flex flex-col items-stretch gap-6">
-        {/* Site branding */}
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="size-8 shrink-0 rounded-xl">
@@ -70,7 +68,6 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
           </div>
         </div>
 
-        {/* Global search trigger */}
         <button
           type="button"
           onClick={() => setSearchOpen(true)}

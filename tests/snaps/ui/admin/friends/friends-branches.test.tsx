@@ -27,9 +27,8 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// FriendsView derives rows from useInfiniteQuery pages and inlines
-// {q, includeHidden} via useState; friends-view.test.tsx covers
-// loading/empty. Adds populated rows, the error state, unchecked toggle.
+// Adds populated rows, the error state and the unchecked toggle to FriendsView, which
+// derives rows from useInfiniteQuery pages and inlines {q, includeHidden} via useState.
 
 vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],

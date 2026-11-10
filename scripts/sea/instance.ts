@@ -1,6 +1,6 @@
-// Shared lifecycle for driving a built SEA binary: per-run temp dirs (no
-// external services), boot with output captured to a log file, HTTP boot
-// polling, and the installed-instance SQL seed. Used by smoke.ts and e2e.ts.
+// Shared lifecycle for driving a built SEA binary: per-run temp dirs, boot with
+// output captured to a log file, HTTP boot polling, and the installed-instance
+// SQL seed. Used by smoke.ts and e2e.ts.
 
 import type { ChildProcess } from 'node:child_process'
 import type { WriteStream } from 'node:fs'
@@ -43,9 +43,7 @@ export interface SmokeServer {
 }
 
 export interface SmokeDatabases {
-  /** SQLite content database. */
   database: string
-  /** DuckDB analytics sidecar. */
   analytics: string
 }
 

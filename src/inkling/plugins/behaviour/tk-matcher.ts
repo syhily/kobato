@@ -15,15 +15,13 @@ export function getTKMatch(initialText: string): { start: number; end: number } 
   }
 
   function isValidMatch(match: RegExpExecArray) {
-    // negative lookbehind isn't supported before Safari 16.4
-    // so we capture the preceding char and test it here
+    // No negative lookbehind before Safari 16.4: capture the preceding char
+    // and test it here instead.
     if (match[1]?.trim() && WORD_CHAR_REGEX.test(match[1]) && match[2].slice(0, 1) !== '—') {
       return false
     }
 
-    // we also check any following char in code to avoid an overly
-    // complex regex when looking for word-chars following the optional
-    // trailing symbol char
+    // Test the following char in code rather than complicate the regex.
     if (match[4]?.trim() && WORD_CHAR_REGEX.test(match[4]) && match[2].slice(-1) !== '—') {
       return false
     }
@@ -31,10 +29,8 @@ export function getTKMatch(initialText: string): { start: number; end: number } 
     return true
   }
 
-  // our regex will match invalid TKs because we can't use negative lookbehind
-  // so we need to loop through the matches discarding any that are invalid
-  // and keeping track of the original input so we have correct offsets
-  // when we find a valid match
+  // The regex matches invalid TKs (no negative lookbehind), so loop and
+  // discard them, tracking the consumed text for correct offsets.
   let textBeforeMatch = ''
 
   while (matchArr !== null && !isValidMatch(matchArr)) {

@@ -24,8 +24,7 @@ class ResizeObserverMock {
 
 global.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver
 
-// the store equivalent of the old per-test CardContext factory: the card is
-// selected and editing unless a test says otherwise
+// the card is selected and editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'button-1',
   { selected = true, editing = true }: { selected?: boolean; editing?: boolean } = {},

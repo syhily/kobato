@@ -20,9 +20,8 @@ export async function findContentsByIds(db: Database, ids: number[]): Promise<Co
 }
 
 /**
- * Batch-join the published `content` revision for a list of metas.
- * Returns a map keyed by revision id so callers resolve
- * `publishedRevisionId` in O(1).
+ * Batch-join the published revision for a list of metas; keyed by revision id,
+ * so callers resolve `publishedRevisionId` in O(1).
  */
 export async function hydratePublishedRevisions(
   db: Database,

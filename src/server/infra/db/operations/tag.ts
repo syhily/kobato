@@ -42,7 +42,6 @@ export async function listAdminTagRows(db: Database, filters: AdminTagsListFilte
   return q
 }
 
-// Counter: same `q` filter as the listing, ignoring offset/limit.
 export async function countAdminTags(db: Database, filters: AdminTagsListFilters = {}): Promise<number> {
   const where = buildAdminTagWhere(filters)
   const rows = where

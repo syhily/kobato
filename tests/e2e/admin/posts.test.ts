@@ -13,7 +13,6 @@ describe('admin posts (HTTP e2e)', () => {
     // Login rotates the session — the CSRF token must be re-read.
     const csrfToken = await getAdminCsrfToken(client)
 
-    // Admin write path over oRPC: create a published post with a fixed slug.
     const created = await callE2eRpc<{ post: { id: string | number; slug: string } }>(
       client,
       '/admin/posts/upsertMeta',
@@ -27,12 +26,11 @@ describe('admin posts (HTTP e2e)', () => {
     )
     expect(created.status).toBe(200)
 
-    // Public read path: the post detail page renders the title.
     const detail = await client.get('/posts/e2e-hello')
     expect(detail.status).toBe(200)
     expect(await detail.text()).toContain('E2E Hello')
 
-    // Delete via RPC — the public page must disappear with it.
+    // The public page must disappear with the post.
     const removed = await callE2eRpc(client, '/admin/posts/delete', { id: String(created.json.post.id) }, csrfToken)
     expect(removed.status).toBe(200)
 

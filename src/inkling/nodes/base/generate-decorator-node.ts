@@ -21,15 +21,10 @@ import { createRenderContext } from '@/inkling/nodes/base/render-context'
 import readTextContent from '@/inkling/nodes/base/utils/read-text-content'
 import { populateNestedEditor, setupNestedEditor } from '@/inkling/nodes/nested-editors'
 
-// The render context is the ONLY export-time view a render fn receives
-// besides the node: render policy (URL, sanitization, feature flags) and the
-// image/markdown data options all live behind it
-// (plans 040/042). The public `exportDOM(editor, options)` entry point
-// builds the context from the options bag; the bag itself never reaches the
-// render fn. The node parameter is typed as the generated instance itself
-// (below), so a render fn's declared node view must be a shape the instance
-// genuinely satisfies — strict parameter contravariance rejects narrower
-// fictions (e.g. `width: number` where the dataset is `number | null`).
+// The render context is the ONLY export-time view a render fn receives besides
+// the node. The node parameter is typed as the generated instance itself, so
+// strict parameter contravariance rejects narrower fictions (e.g.
+// `width: number` where the dataset is `number | null`).
 type RenderFn<TNode, TOutput extends ExportDOMOutput = ExportDOMOutput> = (
   node: TNode,
   context: RenderContext,
@@ -44,21 +39,12 @@ type WidenLiteral<T> = T extends string
         ? U[]
         : T
 /**
- * Validates the required arguments passed to `generateDecoratorNode`.
- *
- * Every `invalidates` entry must name a property declared on the same node.
- * An unknown reference is a spec error that must fail at class creation: the
- * generated setter would otherwise clear a private field no property owns,
- * silently leaving the stale prerendered artifact (Shiki's `highlightedHtml`,
- * KaTeX's `mathml`/`svg`) in place after the edit.
- *
- * Runtime validation is mandatory even though a const-asserted property array
- * CAN be checked at the type level (an exact-key conditional type over the
- * literal sibling names — the Round 2 card-spec machinery proves the idiom):
- * host cards and pre-widened arrays (e.g. a `readonly DecoratorNodeProperty[]`
- * returned from a helper) erase those sibling literals, so a type-only check
- * would be incomplete. The runtime seam covers every array regardless of how
- * much of its literal type survived.
+ * Every `invalidates` entry must name a property declared on the same node; an
+ * unknown reference fails at class creation, otherwise the generated setter
+ * would clear a field no property owns and leave the stale prerendered artifact
+ * (Shiki's `highlightedHtml`, KaTeX's `mathml`/`svg`) in place after the edit.
+ * Runtime validation because host cards and pre-widened arrays erase the
+ * sibling literals a type-level check would need.
  */
 function validateArguments(nodeType: string, properties: readonly DecoratorNodeProperty[]) {
   /* c8 ignore start */
@@ -94,11 +80,9 @@ function validateArguments(nodeType: string, properties: readonly DecoratorNodeP
 }
 
 /**
- * The artifact-slot edit-invalidation invariant, one implementation for the
- * generated setters (from the spec's `invalidates` entries) and the one
- * non-generated node (MathInlineNode's tex setter): only EDITS clear the
- * slots — the constructor and importJSON assign the private fields
- * directly, so a host-filled artifact survives deserialization and cloning.
+ * Only EDITS clear artifact slots: the constructor and importJSON assign the
+ * private fields directly, so a host-filled artifact survives deserialization
+ * and cloning.
  */
 export function applyArtifactSlotInvalidation<K extends string>(
   changed: boolean,
@@ -108,9 +92,8 @@ export function applyArtifactSlotInvalidation<K extends string>(
   if (!changed) {
     return
   }
-  // the finite-key record is the true shape: the generated FieldCarrier
-  // (index signature) and the hand-written MathInlineNode (declared __*
-  // fields) are both structurally assignable — no cast at either call site
+  // no cast at either call site: both the generated FieldCarrier (index
+  // signature) and MathInlineNode (declared `__*` fields) are assignable
   for (const name of slotPrivateNames) {
     writable[name] = ''
   }
@@ -139,24 +122,19 @@ type GeneratedDecoratorNodeInstance<
 
 /**
  * The node's private `__<name>` fields, derived from the declared dataset
- * properties: every `{ name: 'src' }` property is stored on (and readable
- * through) `__src` at the property's value type. This is what closes the
- * field seam — `__`-prefixed reads on a typed card node are checked against
- * the card's declared vocabulary instead of an open index signature.
- * Transient-prop and nested-editor fields (`__triggerFileDialog`,
- * `__captionEditor`, …) are per-class spec state, not dataset properties;
- * each card's shim type derives them from the declaration's spec one layer
- * up via `CardSpecFieldMap`.
+ * properties: what closes the field seam, so `__`-prefixed reads are checked
+ * against the card's declared vocabulary instead of an open index signature.
+ * Transient-prop and nested-editor fields are per-class spec state, derived one
+ * layer up via `CardSpecFieldMap`.
  */
 type PrivateDatasetFields<TDataset extends Record<string, unknown>> = {
   [K in keyof TDataset as `__${string & K}`]: TDataset[K]
 }
 
 // An intersection rather than Lexical's `Spread` utility: `Spread` isn't provably
-// assignable to `SerializedLexicalNode` when TDataset is an unresolved generic, which
-// breaks the `exportJSON` override inside `generateDecoratorNode`. The trade-off is
-// that a dataset property colliding with `type`/`version` at an incompatible type
-// produces `never` — keep such properties compatible (e.g. HeaderNode's `version: number`).
+// assignable to `SerializedLexicalNode` for an unresolved generic. A dataset
+// property colliding with `type`/`version` at an incompatible type produces
+// `never` — keep such properties compatible (e.g. HeaderNode's `version: number`).
 export type SerializedGeneratedDecoratorNode<TDataset extends Record<string, unknown> = Record<string, unknown>> =
   SerializedLexicalNode & TDataset
 
@@ -171,11 +149,7 @@ export interface GeneratedDecoratorNodeClass<
   ): GeneratedDecoratorNodeInstance<TDataset, TOutput, TSerialized>
   prototype: GeneratedDecoratorNodeInstance<TDataset, TOutput, TSerialized>
   getType(): string
-  /**
-   * Polymorphic: the body constructs `new this(dataset, key)`, so cloning a
-   * card subclass yields that subclass — the fixed base-instance return was
-   * a type-level lie every card test cast around.
-   */
+  /** Polymorphic: the body constructs `new this(dataset, key)`, so cloning a card subclass yields that subclass. */
   clone<T extends GeneratedDecoratorNodeInstance<TDataset, TOutput, TSerialized>>(node: T): T
   transform(): null
   getPropertyDefaults(): TDataset
@@ -187,23 +161,14 @@ export interface GeneratedDecoratorNodeClass<
   importJSON(serializedNode: Record<string, unknown>): GeneratedDecoratorNodeInstance<TDataset, TOutput, TSerialized>
 }
 
-// Type-only view of the generated node's instance side, used in the instance
-// intersection above and by consumers holding a card node without its
-// concrete dataset type. Extending InklingDecoratorNode keeps generated nodes
-// LexicalNode-typed while declaring the generated members. This cannot be a
-// merged declaration on the generator's real class: that class is
-// function-local and its dataset members depend on the function's type
-// parameters, which merged declarations cannot capture. The surface is
-// declared here once, as types only — the generated class below supplies
-// every member at runtime, and the return-site cast bridges the two.
+// Type-only view of the generated node's instance side. Extending
+// InklingDecoratorNode keeps generated nodes LexicalNode-typed; this cannot be a
+// merged declaration because the generated class is function-local and its
+// dataset members depend on the function's type parameters.
 //
-// There is deliberately NO index signature here: field reads on a card node
-// must resolve against the card's declared vocabulary (the dataset
-// properties, mirrored as typed `__<name>` fields by `PrivateDatasetFields`,
-// plus the per-class transient/nested-editor fields the wrapper node types
-// declare). The function-local class below keeps its own index signature for
-// its dynamic spec-driven assignments; it never reaches consumers because
-// the class is only exposed through the `GeneratedDecoratorNodeClass` cast.
+// Deliberately no index signature: field reads resolve against the card's
+// declared vocabulary. The function-local class keeps its own for dynamic
+// spec-driven assignments and never reaches consumers.
 export interface GeneratedDecoratorNodeBase<
   TDataset extends Record<string, unknown> = Record<string, unknown>,
   TSerialized extends SerializedLexicalNode = SerializedGeneratedDecoratorNode<TDataset>,
@@ -212,29 +177,25 @@ export interface GeneratedDecoratorNodeBase<
   appendNestedEditorDataset<T extends Record<string, unknown>>(dataset: T): T
   appendTransientDataset<T extends Record<string, unknown>>(dataset: T): T
   serializeNestedEditorHtml<T extends Record<string, unknown>>(json: T): T
-  // closed on typed instances (SerializedLexicalNode & TDataset); the
-  // default keeps the open bag for consumers holding a card without its
-  // concrete dataset type. Cards that remap on export (bookmark's nested
-  // metadata, the footnote definition's index) declare their own
-  // TSerialized — see the generator's third type parameter.
+  // closed on typed instances (SerializedLexicalNode & TDataset); the default
+  // keeps the open bag for consumers holding a card without its concrete
+  // dataset type. Cards that remap on export declare their own TSerialized.
   exportJSON(): TSerialized
   isInklingCard(): true
   hasEditMode(): boolean
 }
 
 // the generated accessors' `this`, typed once: the class keeps a dynamic
-// index signature for its spec-driven fields (see the class-body note)
+// index signature for its spec-driven fields
 interface FieldCarrier {
   getLatest(): Record<string, unknown>
   getWritable(): Record<string, unknown>
 }
 
 /**
- * One get/set accessor pair over a private field — the single definition
- * helper shared by the generated dataset-property accessors below and the
- * transient-prop accessors the assembler stamps on the assembled class
- * (`@/inkling/nodes/assemble-card-node`). `onWrite` runs the edit-time side
- * effects (the artifact-slot invalidation, CONTEXT.md "artifact slot") before
+ * One get/set accessor pair over a private field, shared by the generated
+ * dataset-property accessors and the transient-prop accessors the assembler
+ * stamps on the assembled class. `onWrite` runs edit-time side effects before
  * the write.
  */
 export function defineFieldAccessor(
@@ -269,9 +230,8 @@ export function generateDecoratorNode<
 }: {
   nodeType: string
   properties?: Props
-  // The render fn's declared node type is checked against the generated
-  // instance shape: it must accept the instance, so every key it reads must
-  // exist on the node's dataset at the dataset's true (widened) type.
+  // The render fn's declared node type must accept the generated instance, so
+  // every key it reads exists on the dataset at its true (widened) type.
   defaultRenderFn?: RenderFn<
     GeneratedDecoratorNodeInstance<DecoratorNodeValueMap<Props>, TOutput, TSerialized>,
     TOutput
@@ -287,69 +247,45 @@ export function generateDecoratorNode<
 
   validateArguments(nodeType, nodeProperties)
 
-  // Adds a `privateName` field to the properties for convenience (e.g. `__name`):
-  // properties: [{name: 'name', privateName: '__name', default: 'hello'}, {...}]
   const internalProps: (DecoratorNodeProperty & { privateName: string })[] = nodeProperties.map((prop) => ({
     ...prop,
     privateName: `__${prop.name}`,
   }))
 
-  // The import spec names the card's DOM-import knowledge (CONTEXT.md:
-  // "import spec"); validate it against the property list at class-creation
-  // time so a read naming an unknown property fails loudly here.
   if (importSpec) {
     validateImportSpec(importSpec, internalProps, nodeType)
   }
 
   class GeneratedDecoratorNode extends InklingDecoratorNode {
-    // Function-local escape hatch for the spec-driven dynamic assignments
-    // below (`this[prop.privateName] = …`). Never visible to consumers: the
-    // class is only exposed through the `GeneratedDecoratorNodeClass` cast,
-    // whose instance side has no index signature (see the note on
-    // `GeneratedDecoratorNodeBase`).
+    // Function-local escape hatch for the spec-driven dynamic assignments below
+    // (`this[prop.privateName] = …`); never visible to consumers (see the note
+    // on `GeneratedDecoratorNodeBase`).
     [key: string]: unknown
 
-    /**
-     * The card's nested-editor spec entries (CONTEXT.md: "card spec"). Read
-     * off the node's actual class at runtime, so subclasses adopt a spec by
-     * redeclaring this static while the generated class itself (and spec-less
-     * subclasses) run no nested-editor behaviour.
-     */
+    /** Read off the node's actual class at runtime, so a subclass adopts a spec by redeclaring this static. */
     static nestedEditors: readonly NestedEditorSpec[] | undefined = undefined
 
-    /**
-     * The card's transient-prop spec entries (CONTEXT.md: "card spec"). Read
-     * off the node's actual class at runtime, so subclasses adopt a spec by
-     * redeclaring this static while the generated class itself (and spec-less
-     * subclasses) run no transient-prop behaviour.
-     */
+    /** Read off the node's actual class at runtime, so a subclass adopts a spec by redeclaring this static. */
     static transientProps: readonly TransientPropSpec[] | undefined = undefined
 
     /**
-     * The card's import spec (CONTEXT.md: "import spec"), exposed as a static
-     * so `importDOM` and the classification invariant read it off the class.
-     * Undefined for cards whose structural parsing keeps a hand-written
-     * parser.
+     * Exposed as a static so `importDOM` and the classification invariant read it
+     * off the class. Undefined for cards with a hand-written parser.
      */
     static importSpec: CardImportSpec | undefined = importSpec
 
     /**
-     * The derived DOM-import conversions (CONTEXT.md: "import spec"). Reads
-     * the spec off `this` — the class Lexical invokes `importDOM` on — so
-     * assembled/wrapper subclasses construct themselves and nested editors
-     * keep populating on paste, and a subclass redeclaring `static importSpec`
-     * derives from its own spec (the same adoption idiom as `nestedEditors`).
-     * Spec-less classes (MarkdownNode; cards with structural hand-written
-     * parsers, which override this) yield no conversions; Lexical tolerates
-     * the null return.
+     * Reads the spec off `this` — the class Lexical invokes `importDOM` on — so
+     * assembled/wrapper subclasses construct themselves and a subclass
+     * redeclaring `static importSpec` derives from its own spec. Spec-less
+     * classes yield null, which Lexical tolerates.
      */
     static importDOM() {
       return this.importSpec ? buildImportConversions(this.importSpec, this) : null
     }
 
-    // The import-conversion boundary constructs nodes from a plain payload
-    // record (import-spec.ts); the union admits both that record and the
-    // typed partial dataset without either side asserting the other.
+    // The union admits both the import-conversion payload record and the typed
+    // partial dataset without either side asserting the other.
     constructor(data: Partial<DecoratorNodeValueMap<Props>> | Record<string, unknown> = {}, key?: string) {
       super(key)
       const dataset = data as Record<string, unknown>
@@ -357,15 +293,10 @@ export function generateDecoratorNode<
         this[prop.privateName] = dataset[prop.name] ?? prop.default
       })
 
-      // set up nested editor instances, then populate them on initial
-      // construction from their serialized HTML property when no editor
-      // instance was passed in
       getNestedEditorSpecs(this).forEach((spec) => {
         const editorProperty = `__${spec.name}`
-        // Payloads crossing the constructor are untrusted (see the importJSON
-        // trust-boundary note): adopt a nested editor only when it really is
-        // a LexicalEditor instance — a truthy non-editor value falls back to
-        // a fresh editor rather than being asserted into setupNestedEditor
+        // Payloads crossing the constructor are untrusted: adopt a nested editor
+        // only when it really is a LexicalEditor instance, else start a fresh one
         const passedEditor = dataset[spec.name]
         const nestedEditor = setupNestedEditor({
           editor: isLexicalEditor(passedEditor) ? passedEditor : undefined,
@@ -381,20 +312,11 @@ export function generateDecoratorNode<
         }
       })
 
-      // initialize transient (client-side-only) props from the dataset;
-      // runs after the nested editors, matching the historical order in
-      // which wrapper constructors assigned these fields after super()
       getTransientPropSpecs(this).forEach((spec) => {
         this[getTransientPropPrivateName(spec)] = spec.initial ? spec.initial(dataset) : dataset[spec.name]
       })
     }
 
-    /**
-     * Returns the node's unique type
-     * @extends DecoratorNode
-     * @see https://lexical.dev/docs/concepts/nodes#extending-decoratornode
-     * @returns {string}
-     */
     static getType() {
       return nodeType
     }
@@ -403,24 +325,15 @@ export function generateDecoratorNode<
       return true
     }
 
-    /**
-     * Creates a copy of an existing node with all its properties
-     * @extends DecoratorNode
-     * @see https://lexical.dev/docs/concepts/nodes#extending-decoratornode
-     */
     static clone(node: GeneratedDecoratorNodeInstance<DecoratorNodeValueMap<Props>, TOutput>) {
       return new this(node.getDataset(), node.__key)
     }
 
-    /**
-     * Returns default values for any properties, allowing our editor code
-     * to detect when a property has been changed
-     */
+    /** Default values per declared property, so editor code can detect changed properties. */
     static getPropertyDefaults() {
-      // The reduce writes every declared property's default under its spec
-      // name, so the record IS the mapped value map at runtime; TS cannot
-      // relate dynamically-written keys to DecoratorNodeValueMap<Props>, and
-      // no runtime check can prove the mapped type of a generic.
+      // The reduce writes every declared property's default by construction, but
+      // TS cannot relate dynamically-written keys to DecoratorNodeValueMap<Props>,
+      // and no runtime check can prove the mapped type of a generic.
       const defaults = internalProps.reduce((obj: Record<string, unknown>, prop) => {
         obj[prop.name] = prop.default
         return obj
@@ -430,13 +343,10 @@ export function generateDecoratorNode<
     }
 
     /**
-     * Transforms URLs contained in the payload to relative paths (`__INKLING_URL__/relative/path/`),
-     * so that URLs to be changed without having to update the database
-     *
-     * Write-only in-repo: the consumer is an out-of-repo URL-rebasing pass that rewrites payload
-     * URLs to `__INKLING_URL__/...` paths — the marker `src/nodes/base/utils/content-image-url.ts`
-     * matches. Kept for that consumer; do not flag as dead.
-     * @see upstream URL utilities
+     * URL-bearing properties with their `urlType`, for the out-of-repo rebasing
+     * pass that rewrites payload URLs to `__INKLING_URL__/relative/path/` (the
+     * marker `utils/content-image-url.ts` matches). Write-only in-repo: do not
+     * flag as dead.
      */
     static get urlTransformMap() {
       const map: Record<string, string> = {}
@@ -454,10 +364,6 @@ export function generateDecoratorNode<
       return map
     }
 
-    /**
-     * Convenience method to get all properties of the node
-     * @returns {Object} - The node's properties
-     */
     getDataset() {
       const self = this.getLatest()
 
@@ -470,11 +376,9 @@ export function generateDecoratorNode<
     }
 
     /**
-     * Appends the client-side nested-editor keys (`<name>` and, unless the
-     * spec opts out, `<name>InitialState`) to a dataset. Mutates and returns
-     * the passed-in dataset; a no-op when the node's class has no
-     * `nestedEditors` spec. Also called by hand-written `getDataset`
-     * overrides (e.g. Bookmark's metadata remap).
+     * Appends the client-side nested-editor keys (`<name>` and, unless the spec
+     * opts out, `<name>InitialState`). Mutates and returns the dataset; a no-op
+     * when the class has no `nestedEditors` spec.
      */
     appendNestedEditorDataset<T extends Record<string, unknown>>(dataset: T): T {
       const specs = getNestedEditorSpecs(this)
@@ -492,11 +396,8 @@ export function generateDecoratorNode<
     }
 
     /**
-     * Appends the transient-prop keys a spec exposes (only specs naming a
-     * `datasetKey`) to a dataset, reading the current field off `this` —
-     * mirroring the hand-written `getDataset` overrides this replaces
-     * (Image exposed `dataset.__previewSrc = this.__previewSrc`). Mutates and
-     * returns the passed-in dataset; a no-op when the node's class has no
+     * Appends the transient-prop keys a spec exposes through `datasetKey`.
+     * Mutates and returns the dataset; a no-op when the class has no
      * `transientProps` spec.
      */
     appendTransientDataset<T extends Record<string, unknown>>(dataset: T): T {
@@ -512,12 +413,6 @@ export function generateDecoratorNode<
       return dataset
     }
 
-    /**
-     * Converts JSON to a Lexical node
-     * @see https://lexical.dev/docs/concepts/serialization#lexicalnodeimportjson
-     * @extends DecoratorNode
-     * @param {Object} serializedNode - Lexical's representation of the node, in JSON format
-     */
     static importJSON(serializedNode: Record<string, unknown>) {
       const data: Record<string, unknown> = {}
 
@@ -526,55 +421,38 @@ export function generateDecoratorNode<
       })
 
       // Trust boundary: payloads are trusted to match the declared prop types
-      // (same model as Lexical's own importJSON and upstream koenig). Only
-      // BookmarkNode validates its payload; a corrupt payload lands wrong-typed
-      // values in `__` fields and fails later at read/export time. The
-      // constructor does guard the nested-editor slots (real LexicalEditor
-      // instance, string HTML), where a wrong-typed value would crash setup
-      // immediately instead of failing later.
-      // constructor accepts the plain record directly (the import-conversion
-      // boundary constructs from the same shape), so no assertion is needed
+      // (the same model as Lexical's own importJSON); only the nested-editor
+      // slots are guarded in the constructor, where a wrong-typed value would
+      // crash setup immediately instead of failing later at read/export time.
       return new this(data)
     }
 
-    /**
-     * Serializes a Lexical node to JSON. The JSON content is then saved to the database.
-     * @extends DecoratorNode
-     * @see https://lexical.dev/docs/concepts/serialization#lexicalnodeexportjson
-     */
+    /** Serializes the node; the JSON is what gets saved to the database. */
     exportJSON(): TSerialized {
       const dataset = {
         type: nodeType,
         version: version,
         ...internalProps.reduce((obj: Record<string, unknown>, prop) => {
-          // the blob guard rides the property spec — an upload-in-progress
-          // data-string src must not be persisted
           obj[prop.name] = prop.redactDataUrl ? redactDataUrlValue(this[prop.name]) : this[prop.name]
           return obj
         }, {}),
       }
-      // the body builds the dataset-serialized shape (TSerialized's default);
-      // remapping subclasses override exportJSON wholesale — the cast is the
-      // bridge, like the class-to-interface one at the return site. TS cannot
-      // prove a generic TSerialized from the built dataset.
+      // The body builds TSerialized's default shape; remapping subclasses
+      // override exportJSON wholesale, so the cast is the bridge.
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the dataset is TSerialized's default shape; remapping subclasses override wholesale
       return this.serializeNestedEditorHtml(dataset) as unknown as TSerialized
     }
 
     /**
-     * Converts nested editor instances back into cleaned HTML on their
-     * `serializedKey` properties, because their content may not be
-     * automatically updated when the nested editor changes. Mutates and
-     * returns the passed-in JSON; a no-op when the node's class has no
-     * `nestedEditors` spec. Also called by hand-written `exportJSON`
-     * overrides (e.g. Image/Video blob-src guards, Bookmark's metadata remap).
+     * Re-serializes each nested editor's content into its `serializedKey`
+     * property, since the editor's content may not be reflected there. Mutates
+     * and returns the JSON; a no-op when the class has no `nestedEditors` spec.
      */
     serializeNestedEditorHtml<T extends Record<string, unknown>>(json: T): T {
       const target = json as Record<string, unknown>
       getNestedEditorSpecs(this).forEach((spec) => {
-        // the field is unknown through the class's dynamic index signature;
-        // the constructor guarantees a real LexicalEditor (the round-trip
-        // detach nulls it), so narrow instead of asserting
+        // narrow instead of asserting: the constructor guarantees a real
+        // LexicalEditor, while the round-trip detach nulls the field
         const editor: unknown = this[`__${spec.name}`]
         if (isLexicalEditor(editor)) {
           editor.getEditorState().read(() => {
@@ -591,14 +469,9 @@ export function generateDecoratorNode<
         throw new Error(`[generateDecoratorNode] ${nodeType}: "defaultRenderFn" is required`)
       }
 
-      // One read-only render context per export — the only export-time view
-      // the render fn receives besides the node (plan 042).
       const context = createRenderContext(options)
-      // The class's dynamic-dataset index signature makes `this` unprovable
-      // as the instance type (see the return-cast note below), but unlike the
-      // old inferred TRenderNode the asserted shape is now TRUE of the
-      // runtime object: the dataset keys at their widened types. No runtime
-      // check can prove a generic instance shape.
+      // The class's dynamic-dataset index signature makes `this` unprovable as
+      // the instance type; the asserted shape is true of the runtime object.
       return defaultRenderFn(
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the generated class supplies every instance member at runtime; TS cannot see past the index signature
         this as unknown as GeneratedDecoratorNodeInstance<GeneratedDataset, TOutput, TSerialized>,
@@ -607,46 +480,27 @@ export function generateDecoratorNode<
     }
 
     /* c8 ignore start */
-    /**
-     * Inserts node in the DOM. Required when extending the DecoratorNode.
-     * @extends DecoratorNode
-     * @see https://lexical.dev/docs/concepts/nodes#extending-decoratornode
-     */
+    /** Inserts the node in the DOM. Required when extending DecoratorNode. */
     createDOM() {
       return document.createElement('div')
     }
 
-    /**
-     * Required when extending the DecoratorNode
-     * @extends DecoratorNode
-     * @see https://lexical.dev/docs/concepts/nodes#extending-decoratornode
-     */
+    /** Required when extending DecoratorNode. */
     updateDOM() {
       return false
     }
 
-    /**
-     * Defines whether a node is a top-level block.
-     * @see https://lexical.dev/docs/api/classes/lexical.DecoratorNode#isinline
-     */
+    /** Whether the node is inline; cards are top-level blocks, so override if needed. */
     isInline() {
-      // All our cards are top-level blocks. Override if needed.
       return false
     }
     /* c8 ignore stop */
 
-    /**
-     * Defines whether a node has an edit mode in the editor UI — the
-     * options-bag fact, not a per-class override.
-     */
+    /** Edit-mode fact from the options bag, not a per-class override. */
     hasEditMode() {
       return hasEditMode
     }
 
-    /*
-     * Returns the text content of the node, used by the editor to calculate the word count
-     * This method filters out properties without `wordCount: true`
-     */
     getTextContent() {
       const self = this.getLatest()
       const propertiesWithText = nodeProperties.filter((prop) => !!prop.wordCount)
@@ -661,26 +515,10 @@ export function generateDecoratorNode<
   }
 
   /**
-   * Generates getters and setters for each property, following ES6 syntax
-   * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get
-   * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/set
-   *
-   * Example: for a given property 'content', the generated getter and setter will be:
-   * get content() {
-   *    const self = this.getLatest();
-   *    return self.__content;
-   * }
-   *
-   * set content(newVal) {
-   *   const writable = this.getWritable();
-   *   writable.__content = newVal;
-   * }
-   *
-   * They can be used as `node.content` (getter) and `node.content = 'new value'` (setter)
+   * Generates a getter and setter per property, so `node.content` reads the
+   * latest private field and assigning it writes through `getWritable()`.
    */
   internalProps.forEach((prop) => {
-    // the artifact slots this property's edits clear, resolved to their
-    // private names once (CONTEXT.md "artifact slot": edit-invalidates)
     const invalidatedSlots = prop.invalidates?.map((name) => `__${name}`)
 
     defineFieldAccessor(
@@ -695,10 +533,9 @@ export function generateDecoratorNode<
   })
 
   // The class-to-interface bridge documented on GeneratedDecoratorNodeBase:
-  // the function-local class supplies every declared member at runtime, but
-  // its spec-driven index signature and generic dataset members are not
-  // provably the interface shape — no runtime check can prove a generic
-  // class's interface either.
+  // the function-local class supplies every declared member at runtime, but its
+  // index signature and generic dataset members are not provably the interface
+  // shape.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- class-factory boundary; the generated class is the interface at runtime
   return GeneratedDecoratorNode as unknown as GeneratedDecoratorNodeClass<
     DecoratorNodeValueMap<Props>,

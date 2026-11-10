@@ -8,8 +8,8 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Jobs wire contract — the single source for the background-task catalog
 // (server aggregation + admin UI), the `job_run` trigger/status enums
-// (zod enum AND the SQL CHECK constraint in `infra/db/schema/job-run`),
-// and the list/history DTOs.
+// (zod enum AND the SQL CHECK constraint in `infra/db/schema/job-run`) and the
+// list/history DTOs.
 
 /** `job_run.trigger` values — zod enum and SQL CHECK share this array. */
 export const JOB_RUN_TRIGGERS = ['scheduled', 'manual'] as const
@@ -34,7 +34,6 @@ export interface TaskCatalogEntry {
   key: string
   /** UI message id — the admin task center resolves it with the active locale. */
   label: UiMessageId
-  /** UI message id. */
   description: UiMessageId
   kind: TaskKind
   group: TaskGroup
@@ -42,7 +41,6 @@ export interface TaskCatalogEntry {
   scheduleHint: UiMessageId
 }
 
-/** Static metadata for every managed background task. */
 export const TASK_CATALOG: readonly TaskCatalogEntry[] = [
   {
     key: 'backup',

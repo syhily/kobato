@@ -9,9 +9,9 @@ import { $createImageNode, ImageNode } from '@/inkling/nodes/ImageNode'
 import { INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 import { registerSelectorInsertCommands } from '@/inkling/plugins/behaviour/selector-insertion'
 
-// defined with the other card commands (`@/inkling/nodes/cards/card-commands`) and
-// the selector-insertion behaviour module; re-exported here to keep this
-// module's public surface unchanged
+// defined with the other card commands (`@/inkling/nodes/cards/card-commands`)
+// and in the selector-insertion behaviour module; re-exported here as part of
+// this module's public surface
 export { OPEN_GIF_SELECTOR_COMMAND }
 export { INSERT_FROM_GIF_COMMAND, INSERT_FROM_LIBRARY_COMMAND } from '@/inkling/plugins/behaviour/selector-insertion'
 

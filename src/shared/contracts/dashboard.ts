@@ -1,6 +1,5 @@
-// Admin dashboard wire contracts: the route loader projects recent
-// drafts / published posts into `DraftSummary` and picks the empty-state
-// line id server-side. Isomorphic so route chunk + server share one shape.
+// Admin dashboard wire contracts, isomorphic so the route chunk and the server
+// share one shape.
 
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 

@@ -16,13 +16,14 @@ export function registerMouseEvents(editor: LexicalEditor, deps: MouseEventsDeps
   // deselect cards on mousedown outside of the editor container
   const onMousedown = (event: MouseEvent) => {
     if (!event.target || !(event.target instanceof Node) || !document.body.contains(event.target)) {
-      // The event target is no longer in the DOM
-      // This is possible if we have listeners in the capture phase of the event (e.g. dropdowns)
+      // The event target is no longer in the DOM — possible when a
+      // capture-phase listener elsewhere (e.g. a dropdown) removed it.
       return
     }
 
-    // clicks outside of editor should deselect cards
-    //  this more generic handling prevents the need to handle blur for codemirror cards (and likely others)
+    // clicks outside of editor should deselect cards; the generic
+    // outside-click handling avoids per-card blur handling (CodeMirror
+    // cards et al)
     if (containerElem.current && !containerElem.current.contains(event.target)) {
       editor.getEditorState().read(() => {
         const selection = $getSelection()

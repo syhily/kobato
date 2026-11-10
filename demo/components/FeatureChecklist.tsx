@@ -36,7 +36,6 @@ const SECTIONS: Array<{ title: string; items: string[] }> = [
   },
 ]
 
-/** The collapsible "test every feature" checklist for the demo. */
 export default function FeatureChecklist() {
   const [open, setOpen] = React.useState(false)
 

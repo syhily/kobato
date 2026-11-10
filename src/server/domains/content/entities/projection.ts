@@ -1,10 +1,7 @@
 import type { MetaRowBase } from '@/server/domains/content/entities/descriptor'
 import type { AdminMetaBaseDto } from '@/shared/contracts/admin-meta'
 
-// The shared admin-DTO fields are zod-derived from `adminMetaBaseDto`
-// (`@/shared/contracts/admin-meta`) — this module keeps only the real
-// transform from the shared meta columns (bigint ids stringified,
-// Dates → ISO strings).
+// Shared fields are zod-derived from `adminMetaBaseDto`; only the id/date transform below is hand-written.
 export type AdminMetaDto = AdminMetaBaseDto
 
 export function toAdminMetaDto(

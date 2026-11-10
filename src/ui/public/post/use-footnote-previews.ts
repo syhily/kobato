@@ -2,16 +2,13 @@ import { type RefObject, useEffect } from 'react'
 
 import { sanitizeHtml } from '@/shared/sanitize/sanitize-html'
 
-// The dSHI twin of the PT renderer's FootnoteProvider/Tooltip pair: hovering
-// or focusing an exported footnote reference (`sup > a[href="#user-content-fn-N"]`)
-// floats the target note's body above it (below when the viewport top is in the
-// way), with an arrow pointing back at the trigger. One shared popover;
-// positioned `fixed` from the trigger's bounding rect.
+// Hovering or focusing an exported footnote reference (`sup > a[href="#user-content-fn-N"]`)
+// floats the target note's body above it (below when the viewport top is in the way), with an
+// arrow pointing back at the trigger. One shared popover, positioned `fixed` from the
+// trigger's bounding rect.
 //
-// `bodyHtml` is the effect's re-scan key: the container div is REUSED across
-// client-side navigations (only its innerHTML is swapped), so without it the
-// new article's footnote refs would never bind their preview listeners (see
-// useMusicPlayers for the full rationale).
+// `bodyHtml` is the effect's re-scan key (rationale in useMusicPlayers): without it,
+// new footnote refs never bind.
 const GAP = 8
 const ARROW_HALF = 6
 

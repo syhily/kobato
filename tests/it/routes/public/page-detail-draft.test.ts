@@ -10,10 +10,9 @@ import { adminSession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 
-// Draft-preview contract for page.detail: three `draftMarker` states,
-// only reachable by admin sessions (anonymous `?draft=true` is ignored).
-// R13: bodies are Lexical states + the saved `body_html` projection — the
-// pre-R13 path 500ed here by force-parsing the Lexical blob as PortableText.
+// Draft-preview contract for page.detail: three `draftMarker` states, only reachable by admin
+// sessions (anonymous `?draft=true` is ignored). Bodies are Lexical states plus the saved
+// `body_html` projection.
 
 const db = getTestDb()
 
@@ -160,7 +159,7 @@ describe('routes/page.detail draft preview', () => {
     expect(result.draftMarker).toBe('unpublished-draft')
   })
 
-  it('computes the projection on read when the draft revision carries a NULL body_html (the R9a 500)', async () => {
+  it('computes the projection on read when the draft revision carries a NULL body_html (a past 500)', async () => {
     const pageId = await seedPublishedPage('about', 'About')
     await seedRevision({ ownerId: pageId, revisionNo: 2, status: 'draft', body: draftBody, bodyHtml: null })
 

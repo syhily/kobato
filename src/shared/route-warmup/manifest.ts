@@ -101,7 +101,12 @@ function matchesAny(chunk: string, patterns: RegExp[]): boolean {
   return patterns.some((p) => p.test(name))
 }
 
-/** Chunks for the given manifest ids, deduped in insertion order. `'entry'` → `manifest.entry`; every other id INCLUDING `'root'` → `manifest.routes[id]` (module + imports + the `client*Module` / `hydrateFallbackModule` extras); unknown ids skipped. */
+/**
+ * Chunks for the given manifest ids, deduped in insertion order. `'entry'` maps
+ * to `manifest.entry`; every other id, including `'root'`, maps to
+ * `manifest.routes[id]` (module + imports + the `client*Module` /
+ * `hydrateFallbackModule` extras); unknown ids are skipped.
+ */
 export function collectManifestChunks(
   manifest: RouteManifest,
   ids: string[],

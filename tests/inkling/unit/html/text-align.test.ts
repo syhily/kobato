@@ -3,8 +3,8 @@
  * ['heading', 'paragraph', 'blockquote'] })` parity): an alignment set in the
  * editor must survive exportJSON serialization, the HTML export (live and
  * headless), and the HTML import — for all three states plus the no-alignment
- * default. The import side keeps alignment only under `alignment: 'keep'`;
- * the default 'strip' keeps serving surfaces without alignment UI.
+ * default. Import keeps alignment only under `alignment: 'keep'`; the default
+ * 'strip' serves surfaces without alignment UI.
  */
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
 import { describe, expect, it } from 'vitest'

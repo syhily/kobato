@@ -1,6 +1,6 @@
-// Bot detection — replaces the `isbot` package. Two fail-soft consumers:
-// `entry.server` (bots get `onAllReady` instead of a streamed shell) and
-// analytics enrichment (bot UAs excluded from visitor stats).
+// Bot detection. Two fail-soft consumers: `entry.server` (bots get
+// `onAllReady` instead of a streamed shell) and analytics enrichment (bot UAs
+// excluded from visitor stats).
 
 const BOT_TOKENS = [
   // Generic crawler vocabulary (covers googlebot, bingbot, gptbot,

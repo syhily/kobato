@@ -115,7 +115,6 @@ describe('route-warmup plugin — writeBundle handler', () => {
   it('skips when there is no server outDir', async () => {
     const { ctx } = buildPluginContext()
     ctx.options = {}
-    // Should not throw — just no-op.
     await invokeWriteBundle(ctx)
   })
 

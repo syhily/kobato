@@ -7,10 +7,9 @@ import { createServerTranslator, isServerMessageId } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 import { serverMessagesEnUS } from '@/shared/i18n/messages/server/en-US'
 
-// `notification.*` keys are PERSISTED in notification rows, so they are
-// append-only: this test freezes the released set and pins every locale's
-// copy. Adding a notification type appends a key here; renaming or deleting
-// one must never happen (an old row would lose its translation).
+// `notification.*` keys are persisted in notification rows, so the set is append-only:
+// adding a type appends a key here; renaming or deleting one would leave an old row
+// without its translation. This test freezes the set and pins every locale's copy.
 
 const RELEASED_NOTIFICATION_KEYS = [
   'notification.job.failed.body',

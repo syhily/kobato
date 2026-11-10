@@ -65,7 +65,7 @@ export function CodeBlockCard({
   if (isEditing) {
     // plain surfaces (the host's comment composer) edit the source in a
     // static textarea — no lazy boundary, so the codemirror chunk is never
-    // fetched; the rich path is byte-identical to before the split
+    // fetched
     if (codeEditor === 'plain') {
       return <CodeBlockPlainEditor code={code} language={language} updateCode={updateCode} onEscape={onEscape} />
     }

@@ -20,13 +20,11 @@ export const notification = sqliteTable(
     senderId: integer('sender_id'),
     title: text('title').notNull(),
     body: text('body').notNull(),
-    // System-notification i18n descriptor (plan 001, 5b-ii): `title`/`body`
-    // store the ENGLISH fallback computed at creation; these nullable
-    // key/params columns let every read path translate the full message into
-    // the reader's locale. User-authored kinds (direct/broadcast) keep NULL
-    // descriptor columns and show their original text. Params are JSON text
-    // (never `{ mode: 'json' }`: a corrupt legacy value must fall back, not
-    // throw while mapping the row). `notification.*` keys are append-only.
+    // System-notification i18n descriptor: `title`/`body` hold the creation-time
+    // ENGLISH fallback; these nullable columns let read paths translate per
+    // reader locale (direct/broadcast keep NULL — user text stays raw). Params
+    // are plain JSON text, never `{ mode: 'json' }`: a corrupt value must fall
+    // back, not throw while mapping the row. `notification.*` keys are append-only.
     titleKey: text('title_key'),
     titleParams: text('title_params'),
     bodyKey: text('body_key'),
@@ -37,8 +35,8 @@ export const notification = sqliteTable(
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    // Soft-delete marker for admin recall (ADR-0007). Rows stay in place —
-    // every read path filters `recalled_at IS NULL`; NULL = visible.
+    // Soft-delete marker for admin recall. Rows stay in place — every read
+    // path filters `recalled_at IS NULL`; NULL = visible.
     recalledAt: integer('recalled_at', { mode: 'timestamp_ms' }),
   },
   (table) => [

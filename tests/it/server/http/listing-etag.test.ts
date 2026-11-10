@@ -17,11 +17,10 @@ import { category as categoryTable, tag as tagTable } from '@/server/infra/db/sc
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 
-// Listing-document revalidation through the real oRPC path: the tag is a
-// fingerprint of the COMPLETE payload (page slice + metadata counters, SEO,
-// sidebar/extra, archives/categories rows) plus locale/time zone/format, the
-// LISTING generation, the site calendar day and APP_VERSION. Only an identical
-// representation may answer not-modified — and a 304 never records a view.
+// Listing-document revalidation through the real oRPC path: the tag fingerprints the COMPLETE
+// payload (page slice + counters, SEO, sidebar/extra, archives/categories) plus locale/time
+// zone/format, the LISTING generation, the site calendar day and APP_VERSION. Only an identical
+// representation may answer not-modified, and a 304 never records a view.
 
 const analytics = vi.hoisted(() => ({ trackPageView: vi.fn() }))
 
@@ -112,7 +111,6 @@ async function read<T>(
   return parseRpcJson<T>(res)
 }
 
-/** A settings bundle with one pagination size overridden (pinned-capture tests). */
 function withPageSize(scope: 'posts' | 'search', size: number): BlogSettingsBundle {
   const content = TEST_BLOG_SETTINGS_BUNDLE.content!
   return {

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { renderHookWithI18n } from '#/_helpers/i18n-render'
 
-// Save-warning surfacing (plan 058): the shell must surface a save
+// Save-warning surfacing: the shell must surface a save
 // warning instead of swallowing it. Mutation slots follow persist call
 // order: 0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
 

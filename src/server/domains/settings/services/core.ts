@@ -32,7 +32,7 @@ export interface SectionUpdateResult {
   /**
    * Honest side-effect failures: the row IS persisted but a registered change
    * handler threw, so derived state is stale until the next successful save or
-   * restart (P1-5). Descriptors — the controller localizes them per request.
+   * restart. Descriptors — the controller localizes them per request.
    */
   warnings: ErrorMessageDescriptor[]
 }

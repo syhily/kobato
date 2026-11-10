@@ -5,9 +5,9 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Canonical webmention value lists — the single source for the drizzle
 // `text({ enum })` columns, the SQL CHECK literals
-// (src/server/infra/db/schema/webmention.ts), and every zod enum below and
-// in src/server/domains/webmentions/schema.ts. Order is load-bearing: the
-// CHECK literals are generated from these arrays and must stay byte-identical.
+// (`src/server/infra/db/schema/webmention.ts`) and every zod enum below and in
+// `src/server/domains/webmentions/schema.ts`. Order is load-bearing: the CHECK
+// literals are generated from these arrays and must stay byte-identical.
 
 // Webmention moderation lifecycle: `pending` rows await admin review;
 // `rejected` rows are kept (auditable). `hidden` follows 7 consecutive
@@ -17,10 +17,9 @@ export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected', 'hidden']
 // Webmention source verification state: `failed` carries the last failure message in `last_error`.
 export const WEBMENTION_VERIFY_STATUSES = ['verified', 'failed'] as const
 
-// Webmention response type (W3C / IndieWeb mf2 classification —
-// docs/plans/2026-08-02-webmention-async-inbox-design.md): detected from
+// Webmention response type (W3C / IndieWeb mf2 classification): detected from
 // `u-in-reply-to` / `u-repost-of` / `u-like-of` markers, no marker = `mention`;
-// presentational grouping only, moderation and verification treat all types alike.
+// presentational grouping only — moderation and verification treat all types alike.
 export const WEBMENTION_TYPES = ['mention', 'reply', 'like', 'repost'] as const
 
 // Webmention send lifecycle: `sent` / `no-endpoint` / `failed` are terminal and kept (the row IS the send log);
@@ -60,9 +59,8 @@ export const adminWebmentionOutboxDto = z.object({
 })
 export type AdminWebmentionOutboxWire = z.infer<typeof adminWebmentionOutboxDto>
 
-// Public display DTO (approved mentions): deliberately narrow —
-// internal fields never leave the server. `type` crosses: the public
-// block groups replies/likes/reposts by it.
+// Public display DTO (approved mentions): deliberately narrow — internal fields
+// never leave the server. `type` crosses: the public block groups by it.
 export const publicWebmentionDto = z.object({
   id: idString,
   sourceUrl: z.string(),
@@ -75,8 +73,8 @@ export const publicWebmentionDto = z.object({
 export type PublicWebmentionWire = z.infer<typeof publicWebmentionDto>
 
 // Status-count envelopes for the admin list outputs: `all` plus one entry per
-// lifecycle status, derived from the canonical value lists so a new status
-// cannot drift between the SQL GROUP BY, the wire schema, and the TS copies.
+// lifecycle status, derived from the canonical lists so a new status cannot
+// drift between the SQL GROUP BY and the wire schema.
 function statusCountFields<T extends readonly string[]>(statuses: T): { [K in T[number]]: z.ZodNumber } {
   // Safe: every entry of `statuses` becomes exactly one key, so the shape covers precisely `T[number]`.
   return unsafeCast(Object.fromEntries(statuses.map((status) => [status, z.number().int()])))

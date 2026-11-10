@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useCodeCopyButtons } from '@/ui/public/post/use-code-copy-buttons'
 
-// The hydration twin of the retired PT CodeBlock chrome: exported
+// The hydration twin of the PT CodeBlock chrome: exported
 // `pre > code[data-code]` markup gets a wrapper + language label + copy
 // button injected after mount.
 

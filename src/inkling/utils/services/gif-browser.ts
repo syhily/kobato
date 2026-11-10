@@ -10,30 +10,18 @@ import { createRequestTrack, type RequestScheduler } from '@/inkling/utils/servi
 import { runTrackedRequest, type ServiceMachine } from '@/inkling/utils/services/service-machine'
 import { createSnapshotStore } from '@/inkling/utils/services/snapshot-store'
 
-// Gif browser — the headless module behind the GIF selector: fetch/pagination
-// behind an injected port, column balancing, and the keyboard-navigation
-// machine as pure transitions over plain data. One state owner, one publish:
-// the browser keeps the gif list, the balanced columns, the highlight, and the
-// loading/error flags; React subscribes to the snapshot and dispatches
-// intents. The churn (debounced search, overlapping requests, stale
-// responses) composes the service-machine primitives
-// (src/utils/services/service-machine.ts — the dispatch+effect protocol and
-// the tracked-request skeleton over the request track's scheduler port and
-// latest-wins guard) with the fetchPage promise factory port, so the race
-// matrix and the navigation table are synchronous unit tests instead of
-// renderHook + wall-clock sleeps. The
-// elementFromPoint probing used by horizontal moves is inherently DOM: it
-// sits behind the GifGeometry port (the adapter supplies the real probing
-// implementation) so the pure transitions stay table-testable. The React
-// adapter is GifSelector: snapshot in, JSX out, DOM events translated to
-// intents, and the returned effects (prevent-default, focus-search, insert)
-// executed against the DOM.
+// Gif browser — the headless module behind the GIF selector: fetch/pagination behind an
+// injected port, column balancing, and the keyboard-navigation machine as pure transitions
+// over plain data. The elementFromPoint probing used by horizontal moves is inherently DOM:
+// it sits behind the GifGeometry port so the transitions stay table-testable. The React
+// adapter is GifSelector: snapshot in, JSX out, DOM events translated to intents, and the
+// returned effects executed against the DOM.
 
 const API_VERSION = 'v2'
 export const GIF_SEARCH_DEBOUNCE_MS = 600
 const DEFAULT_COLUMN_COUNT = 4
 
-// Horizontal probing policy: we might hit spacing between gifs, so the probe
+// Horizontal probing policy: the probe can hit spacing between gifs, so it
 // starts one third down the highlighted tile and keeps moving up 5px at a
 // time, giving up after ten retries to avoid an infinite loop.
 const HORIZONTAL_PROBE_STEP_PX = 5
@@ -186,8 +174,8 @@ const FOCUS_SEARCH: GifBrowserEffect = { type: 'focus-search' }
 /**
  * The keyboard-navigation machine as a pure transition: nav state plus a key
  * event (as data) in, next nav state plus effects out. Geometry is consulted
- * only for horizontal moves. The dispatch table mirrors the selector's
- * historical behaviour exactly, including its quirks: focus-search never
+ * only for horizontal moves. The dispatch table preserves the selector's
+ * behaviour exactly, including its quirks: focus-search never
  * clears the highlight, moving past the first/last valid gif does not wrap,
  * and Enter on a button is left to native activation.
  */
@@ -259,7 +247,7 @@ export function reduceGifKey(state: GifNavState, event: GifKeyEventData, geometr
       return stay([PREVENT_DEFAULT])
     }
     if (highlighted.columnIndex >= columns.length - 1) {
-      // we don't wrap and we're on the last column, do nothing
+      // no wrap on the last column
       return stay([PREVENT_DEFAULT])
     }
     const next = probeHorizontalGif(gifs, highlighted, 'right', geometry)
@@ -275,7 +263,7 @@ export function reduceGifKey(state: GifNavState, event: GifKeyEventData, geometr
       return stay([PREVENT_DEFAULT, FOCUS_SEARCH])
     }
     if (highlighted.columnIndex === 0) {
-      // we don't wrap and we're on the first column, do nothing
+      // no wrap on the first column
       return stay([PREVENT_DEFAULT])
     }
     const next = probeHorizontalGif(gifs, highlighted, 'left', geometry)
@@ -370,9 +358,8 @@ export function createGifBrowser({
   let isLazyLoading = false
   let error: string | null = null
 
-  // the snapshot store and the latest-wins request guard: a newer search
-  // supersedes every in-flight request from an older generation, so a slow
-  // response can never overwrite newer results (or resurrect cleared ones)
+  // a newer search supersedes every in-flight request, so a slow response can never
+  // overwrite newer results (or resurrect cleared ones)
   const store = createSnapshotStore<GifBrowserSnapshot>({
     gifs,
     columns,
@@ -451,8 +438,6 @@ export function createGifBrowser({
 
     const outcome = await runTrackedRequest(track, seq, () => fetchPage(buildUrl(path, params)))
 
-    // a newer search superseded this request while we were awaiting — the
-    // newer request owns the flags, and the stale outcome must not apply
     if (!outcome) {
       return
     }
@@ -467,8 +452,8 @@ export function createGifBrowser({
           for (const gif of fetchOutcome.results) {
             addGif(gif)
           }
-          // keep the highlight by stable id across list swaps (the selector's
-          // historical sync effect), clearing it when the gif is gone
+          // keep the highlight by stable id across list swaps, clearing it
+          // when the gif is gone
           if (highlightedId && !gifs.some((gif) => gif.id === highlightedId)) {
             highlightedId = null
           }

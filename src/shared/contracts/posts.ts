@@ -4,8 +4,6 @@ import { adminMetaBaseDto } from '@/shared/contracts/admin-meta'
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 import { adminRevisionDto } from '@/shared/contracts/revision'
 
-// Shared content meta fields come from `adminMetaBaseDto`; only the
-// post-only fields are stated here.
 export const adminPostDto = adminMetaBaseDto.extend({
   visible: z.boolean(),
   category: z.string(),

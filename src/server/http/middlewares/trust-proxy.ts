@@ -43,9 +43,8 @@ let cachedBundle: object | null = null
 let cachedGate: { host: string } | null = null
 
 /**
- * The trust gate: an https `siteIdentity.website` declares a TLS-terminating
- * proxy in front (the node process only ever listens plain http), so proxy
- * scheme headers describe the real client-facing scheme and may be trusted.
+ * The trust gate: an https `siteIdentity.website` declares a TLS-terminating proxy in
+ * front (this process only listens plain http), so proxy scheme headers may be trusted.
  * Returns the canonical host for the headerless fallback, null when untrusted.
  */
 function trustProxyGate(): { host: string } | null {
@@ -61,18 +60,15 @@ function trustProxyGate(): { host: string } | null {
 }
 
 /**
- * Trust-proxy scheme fix. TLS-terminating proxies (nginx, Cloudflare, …) forward
- * plain HTTP, so `@hono/node-server` builds `request.url` with `http:` while
- * the browser's `Origin` is `https:` — React Router 8.3.1+'s
- * `throwIfPotentialCSRFAttack` then rejects every `.data` action POST with
- * "Bad Request". When the gate is on, rewrite the request URL to the public
- * scheme: the proxy's `X-Forwarded-Proto` / RFC 7239 `Forwarded` header when
- * present, else `https` when the request addresses the canonical host (TLS
- * termination is then logically entailed — an https site cannot be served by
- * this plain-http listener directly).
+ * Trust-proxy scheme fix. TLS-terminating proxies (nginx, Cloudflare, …) forward plain
+ * HTTP, so `@hono/node-server` builds `request.url` with `http:` while the browser's
+ * `Origin` is `https:`, and React Router's `throwIfPotentialCSRFAttack` then rejects every
+ * `.data` action POST. When the gate is on, rewrite the URL to the public scheme: the
+ * proxy's `X-Forwarded-Proto` / RFC 7239 `Forwarded` header when present, else `https`
+ * when the request addresses the canonical host.
  *
- * With an http/absent website the headers are ignored: direct http access
- * (dev, LAN) needs no fix, and a spoofed header gains a direct client nothing.
+ * With an http or absent website the headers are ignored: direct http access (dev, LAN)
+ * needs no fix, and a spoofed header gains a direct client nothing.
  */
 export const trustProxy = createMiddleware<Env>(async (c, next) => {
   const gate = trustProxyGate()

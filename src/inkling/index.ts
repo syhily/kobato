@@ -40,14 +40,12 @@ import TKCountPlugin from '@/inkling/plugins/TKCountPlugin'
 import TypographyPlugin from '@/inkling/plugins/TypographyPlugin'
 import WordCountPlugin from '@/inkling/plugins/WordCountPlugin'
 
-/* Exports ------------------------------------------------------------------ */
-
-/* Card decorate wiring: assembled card classes resolve decorate() through
- * the injection port in `@/inkling/nodes/card-decorate-slot`; this call fills the
- * slot for every full-entry consumer. It is an explicit entry-level statement
- * — not a module side effect — so registration is guaranteed regardless of
- * the bundler's side-effect assumptions, while the `@/inkling/headless` graph
- * (which never imports this barrel) stays free of the React component tree. */
+/* Card decorate wiring: assembled card classes resolve decorate() through the
+ * injection port in `@/inkling/nodes/card-decorate-slot`; this call fills the
+ * slot for every full-entry consumer. Keep it an explicit entry-level
+ * statement rather than a module side effect, so registration holds regardless
+ * of the bundler's side-effect assumptions and the headless graph (which never
+ * imports this barrel) stays free of the React component tree. */
 registerCardDecorateAdapter()
 
 /* The contract shared across entry surfaces (Lexical runtime types,
@@ -65,10 +63,9 @@ export type { InklingNestedComposerProps } from '@/inkling/components/InklingNes
 export type { PinturaConfig } from '@/inkling/hooks/usePinturaEditor'
 export type { FeaturePluginEntry } from '@/inkling/plugins/DefaultFeaturePlugins'
 
-/* The card family (declaration order): node classes, guards, factories,
- * dataset and serialized types, and insert commands — everything CONTEXT.md's
- * "editor surface" composition promise needs (subset surfaces join picked
- * card classes with EDITOR_BASE_NODES). */
+/* The card family: node classes, guards, factories, dataset and serialized
+ * types, and insert commands. A subset surface joins picked card classes with
+ * EDITOR_BASE_NODES. */
 export {
   CodeBlockNode,
   $createCodeBlockNode,
@@ -112,15 +109,15 @@ export type { GalleryNodeDataset, SerializedGalleryNode } from '@/inkling/nodes/
 export { MathNode, $createMathNode, $isMathNode, INSERT_MATH_COMMAND } from '@/inkling/nodes/MathNode'
 export type { MathNodeDataset } from '@/inkling/nodes/MathNode'
 
-/* Inline math (not a card — cards are block-level): the host owns the inline
+/* Inline math is not a card (cards are block-level): the host owns the inline
  * editing UI and listens for EDIT_MATH_INLINE_COMMAND. */
 export { $createMathInlineNode, $isMathInlineNode, MathInlineNode } from '@/inkling/nodes/math/MathInlineNode'
 export type { MathInlineDataset, SerializedMathInlineNode } from '@/inkling/nodes/math/MathInlineNode'
 export { EDIT_MATH_INLINE_COMMAND } from '@/inkling/plugins/behaviour/math-inline'
 
 /* Footnotes: the inline ref (a TextNode entity — its text IS the citation
- * index) and the menu-less definition card, created and ordered by the
- * footnote behaviour module (`FootnotePlugin` wires it on a surface). */
+ * index) and the menu-less definition card. FootnotePlugin wires the
+ * behaviour module that creates and orders them. */
 export { $createFootnoteRefNode, $isFootnoteRefNode, FootnoteRefNode } from '@/inkling/nodes/footnote/FootnoteRefNode'
 export type { SerializedFootnoteRefNode } from '@/inkling/nodes/footnote/FootnoteRefNode'
 export {
@@ -130,44 +127,39 @@ export {
 } from '@/inkling/nodes/FootnoteDefinitionNode'
 export type { FootnoteDefinitionNodeDataset } from '@/inkling/nodes/FootnoteDefinitionNode'
 
-/* Host card pipeline (CONTEXT.md: "host card"): `defineCard` declares a card
- * once and every derived view (node class, menus, decorate target, insert
- * registrar, toolbar label, markdown fence) picks it up;
- * `generateDecoratorNode` builds the base node the declaration names.
- * `EDITOR_BASE_NODES` is the non-card run a subset surface composes with its
- * picked card classes instead of forking DEFAULT_NODES. */
+/* Host card pipeline: `defineCard` declares a card once and every derived view
+ * (node class, menus, decorate target, insert registrar, toolbar label,
+ * markdown fence) picks it up; `generateDecoratorNode` builds the base node the
+ * declaration names. `EDITOR_BASE_NODES` is the non-card run a subset surface
+ * composes with its picked card classes instead of forking DEFAULT_NODES. */
 export { defineCard } from '@/inkling/nodes/cards/host-cards'
 export type { HostCard, HostCardMenuEntrySpec, HostCardSpec } from '@/inkling/nodes/cards/host-cards'
 /* The host-card node-set projection: every registered host card's assembled
- * class in registration order, so a host composes `...getHostCardNodes()`
- * into its node set instead of hand-spreading each handle's `node`. */
+ * class in registration order, so a host composes `...getHostCardNodes()` into
+ * its node set instead of hand-spreading each handle's `node`. */
 export { getHostCardNodes } from '@/inkling/nodes/cards/host-card-nodes'
 
 /* The shared card-insert dispatch target: a host that intercepts a per-card
- * INSERT_* command to construct its OWN node class (kobato's KobatoImageNode
- * — the stock registration in CardInsertPlugin constructs the declaration's
- * assembled class, silently dropping host-declared dataset keys) hands its
- * instance to the same selection/scroll choreography the built-in path uses
- * by re-dispatching INSERT_CARD_COMMAND. The per-card INSERT_* commands ride
- * the shim exports above. DELETE_CARD_COMMAND is the removal half of the same
- * protocol — a host card's chrome dispatches it so removal gets the built-in
- * sibling-selection/focus choreography instead of a bare node.remove(). */
+ * INSERT_* command to construct its own node class (kobato's KobatoImageNode;
+ * the stock registration builds the declaration's assembled class and drops
+ * host dataset keys) re-dispatches INSERT_CARD_COMMAND to reuse the same
+ * selection/scroll choreography. DELETE_CARD_COMMAND is the removal half — a
+ * host card's chrome dispatches it so removal gets the built-in
+ * sibling-selection/focus handling instead of a bare node.remove(). */
 export { DELETE_CARD_COMMAND, INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 export type { InsertCardPayload } from '@/inkling/plugins/behaviour/types'
 
-/* The image-library open command (kobato R11): with a host subclass
- * registered for node type `image` (KobatoImageNode), InklingSelectorPlugin's
- * LOW-priority handler still mounts — `hasNodes` gates on the TYPE — but
- * would open inkling's selector overlay (LibraryPlugin is entry-internal).
- * The host intercepts this command at HIGH priority to open its own library
- * dialog instead, then re-enters through INSERT_IMAGE_COMMAND. */
+/* The image-library open command: with a host subclass registered for node
+ * type `image` (KobatoImageNode), InklingSelectorPlugin's LOW-priority handler
+ * still mounts — `hasNodes` gates on the TYPE — but would open inkling's
+ * selector overlay. The host intercepts this command at HIGH priority to open
+ * its own library dialog, then re-enters through INSERT_IMAGE_COMMAND. */
 export { OPEN_IMAGE_LIBRARY_COMMAND } from '@/inkling/nodes/cards/card-commands'
 
-/* Editor factory for host-side node tests (kobato R11): Lexical 0.46's
- * constructor invariants forbid constructing nodes with no active editor.
- * Source consumption resolves a single Lexical instance for host and inkling
- * alike, so this is a convenience re-export of the host's own
- * `@lexical/headless` factory — one import for the test's whole node kit. */
+/* Editor factory for host-side node tests: Lexical forbids constructing nodes
+ * with no active editor. Source consumption resolves a single Lexical instance
+ * for host and inkling alike, so this is one import for a test's whole node
+ * kit. */
 export { createHeadlessEditor } from '@lexical/headless'
 
 export { generateDecoratorNode } from '@/inkling/nodes/base/generate-decorator-node'
@@ -182,15 +174,14 @@ export type {
 } from '@/inkling/nodes/base/card-specs'
 export { InklingDecoratorNode } from '@/inkling/nodes/base/InklingDecoratorNode'
 export type { CardNodeClass } from '@/inkling/nodes/assemble-card-node'
-// the render-context seam hosts write card renderers against (defineCard
-// docs name it in prose; ExportDOMOutput flows through `@/inkling/nodes/base`)
+// The render-context seam hosts write card renderers against; ExportDOMOutput
+// flows through `@/inkling/nodes/base`.
 export type { RenderContext } from '@/inkling/nodes/base/render-context'
 // A host VARIANT subclassing an assembled card class (kobato's KobatoImageNode)
-// overrides exportDOM with its own render fn and needs the entry-internal
-// context factory to do it through the seam: `renderFn(this,
-// createRenderContext(options))`. React-free (it already sits in the headless
-// graph via generateDecoratorNode); the headless surface deliberately keeps it
-// unexported — the server-side projection classes are spec-built fresh and
+// overrides exportDOM and needs the entry-internal context factory:
+// `renderFn(this, createRenderContext(options))`. React-free (it already sits
+// in the headless graph via generateDecoratorNode), but the headless surface
+// keeps it unexported — server-side projection classes are spec-built fresh and
 // never delegate.
 export { createRenderContext } from '@/inkling/nodes/base/render-context'
 export type { ExportDOMOptions } from '@/inkling/nodes/base/export-dom'
@@ -200,8 +191,8 @@ export { lexicalStateToMarkdown, markdownToLexicalState } from '@/inkling/markdo
 export type { MarkdownRoundTripOptions } from '@/inkling/markdown/round-trip'
 // The HTML/plain-text converters and their option/DOM types live ONLY on
 // `@/inkling/headless`: headless-html reaches jsdom through headless-dom's
-// lazy import, and re-exporting them here would drag jsdom (+ its undici
-// dependency chain) into the CLIENT module graph (pinned by
+// lazy import, and re-exporting them here would drag jsdom (and undici) into
+// the CLIENT module graph (pinned by
 // tests/inkling/unit/html/jsdom-import-guard.test.ts).
 
 export {

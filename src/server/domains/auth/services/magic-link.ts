@@ -1,6 +1,5 @@
-// Magic-link signin flow — send the one-time link (identify step) and
-// consume it (confirm step). Only the POST here consumes the token;
-// mail-client prefetchers never burn it.
+// Magic-link signin: send the one-time link (identify step) and consume it (confirm
+// step). Only the POST consumes the token, so mail-client prefetchers never burn it.
 
 import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 
@@ -23,8 +22,8 @@ import { resolveSiteOrigin } from '@/shared/config/site-origin'
 const log = getLogger('auth.magic-link')
 
 /**
- * Send the one-time signin link; returns an error message on failure,
- * `null` on success — the caller answers generically either way.
+ * Send the one-time signin link; returns a descriptor on failure, `null` on success —
+ * the caller answers generically either way.
  */
 export async function sendMagicLink(
   ctx: SigninFlowContext,
@@ -42,8 +41,8 @@ export async function sendMagicLink(
   }
 
   const { token } = issueSignInLinkToken(db, dbUser.id)
-  // Resolved here, from the configured site — a request-supplied origin
-  // would let a spoofed Host header point the emailed token at evil.tld.
+  // Resolved from the configured site: a request-supplied origin would let a spoofed
+  // Host header point the emailed token at an attacker host.
   const origin = resolveSiteOrigin(request)
   const link = `${origin}/admin/signin?action=magiclink&token=${encodeURIComponent(token)}&redirect_to=${encodeURIComponent(redirectTo)}`
 

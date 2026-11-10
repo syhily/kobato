@@ -294,16 +294,13 @@ describe('BaseToggleNode', function () {
       ),
     )
 
-    describe('sanitized heading and content output (plan 040 Step 4)', function () {
-      // The toggle renderer interpolates heading/content into HTML strings.
-      // Plan 040 Step 4 routes both through the render context: the heading
-      // is escaped (context.escapeText) and the nested-editor content is
-      // DOMPurify-sanitized (context.sanitizeBasicHtml), so markup-bearing
-      // inputs are neutralized while benign inputs render byte-identically.
-      // A standalone leading <script> parses into the document <head> inside
-      // sanitizeHtml's placeholder pass, so the pinned content below
-      // sanitizes to an empty string. Before/after evidence: the Step-4 fix
-      // commit message.
+    describe('sanitized heading and content output', function () {
+      // Heading/content interpolate into HTML strings but route through the
+      // render context: heading escaped via context.escapeText, content
+      // sanitized via context.sanitizeBasicHtml. A standalone leading
+      // <script> parses into the document <head> during sanitizeHtml's
+      // placeholder pass, so the pinned content below sanitizes to an empty
+      // string.
       const adversarialPayload = {
         heading: '<script>alert(1)</script>',
         content: '<script>alert(2)</script>',

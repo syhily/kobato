@@ -47,8 +47,8 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
   }, [tabs, tabContent])
 
   return (
-    // Ideally we would use Portal to avoid issues with transformed ancestors (https://bugs.chromium.org/p/chromium/issues/detail?id=20574)
-    // However, Portal causes problems with drag/drop, focus, etc
+    // No Portal: a portal would dodge Chromium's transformed-ancestor
+    // positioning bug (20574) but breaks drag/drop and focus handling.
     <div className={`!mt-0 touch-none ${darkMode ? 'dark' : ''} ${className ?? ''}`}>
       <div
         ref={ref}
@@ -67,10 +67,9 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
 
 /**
  * The inline label+control row shared by the settings below: label (with
- * optional description) left, control right; `stacked` switches to the
- * column layout. Internal by design — the rows' layouts genuinely diverge
- * beyond these four (sr-only, custom), so only the shared skeleton folds;
- * see SettingLabel.tsx.
+ * optional description) left, control right; `stacked` switches to the column
+ * layout. Internal by design — the rows' layouts genuinely diverge beyond these
+ * four (sr-only, custom), so only the shared skeleton folds; see SettingLabel.tsx.
  */
 function SettingRow({
   label,
@@ -156,9 +155,6 @@ export interface ListOption {
   label: string
 }
 
-/**
- * Enter a link with autocompletion
- */
 interface InputUrlSettingProps {
   dataTestId?: string
   label?: string
@@ -225,7 +221,7 @@ interface InputListSettingProps {
   value: string
 }
 
-// A text input with autocomplete suggestions; onChange passes the value, not an event
+// onChange passes the value, not an event
 export function InputListSetting({
   dataTestId,
   description,

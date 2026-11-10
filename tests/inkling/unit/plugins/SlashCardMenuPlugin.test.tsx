@@ -127,7 +127,7 @@ async function setupSlashPlugin() {
   return { editor, rootElement, dispatchCommandSpy }
 }
 
-/** The rendered selection marker — CardMenu's flat data-inkling-cardmenu-idx. */
+/** The rendered selection marker: CardMenu's flat data-inkling-cardmenu-idx. */
 function selectedMenuIndex(): string | null | undefined {
   return document.querySelector('[data-inkling-cardmenu-selected="true"]')?.getAttribute('data-inkling-cardmenu-idx')
 }
@@ -251,8 +251,8 @@ describe('SlashCardMenuPlugin', () => {
     })
   })
 
-  // Plugin-level pins for the menu navigator wiring (the state machine itself
-  // is table-tested in test/unit/hooks/card-menu-navigation.test.ts).
+  // Plugin-level pins for the menu navigator wiring; the state machine itself
+  // is table-tested in ../hooks/card-menu-navigation.test.ts.
   it('moves the rendered selection on arrow keys and wraps around at both ends', async () => {
     const { editor } = await setupSlashPlugin()
 
@@ -265,12 +265,11 @@ describe('SlashCardMenuPlugin', () => {
     })
 
     // CardMenuItem stamps data-inkling-cardmenu-idx on both the li and the
-    // button — count the buttons for the true item count
+    // button, so count the buttons for the true item count.
     const itemCount = document.querySelectorAll('button[data-inkling-cardmenu-idx]').length
     expect(itemCount).toBeGreaterThan(1)
     expect(selectedMenuIndex()).toBe('0')
 
-    // down steps forward one item
     await act(async () => {
       editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, new KeyboardEvent('keydown', { key: 'ArrowDown' }))
     })

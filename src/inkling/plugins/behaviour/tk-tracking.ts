@@ -13,8 +13,8 @@ import { nextTkNodeKey } from '@/inkling/plugins/behaviour/tk-indicator'
 // editor), the hover-highlight feed (the class swap across a top-level
 // node's TK elements), and the indicator click's selection surgery. The
 // plugin keeps the indicator component, the positioning (tk-indicator),
-// and the portal. Mirrors the footnotes.ts/FootnotePlugin split: the
-// behaviour registers against the editor and the handle; React renders.
+// and the portal; the behaviour registers against the editor and the
+// handle, React renders.
 
 /**
  * Feeds the tk handle from the editor's TKNode mutations: a created/updated
@@ -31,7 +31,6 @@ export function registerTkNodeTracking(
 ): () => void {
   return editor.registerMutationListener(TKNode, (mutatedNodes) => {
     editor.getEditorState().read(() => {
-      // mutatedNodes is a Map where each key is the NodeKey, and the value is the state of mutation.
       for (const [tkNodeKey, mutation] of mutatedNodes) {
         if (mutation === 'destroyed') {
           tkHandle.removeEditorTkNode(editor.getKey(), tkNodeKey)

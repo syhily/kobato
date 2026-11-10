@@ -8,11 +8,9 @@ import { regularSession } from '#/_helpers/session'
 import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
 import { createLazyAppSnapshot } from '@/shared/i18n/app-localization'
 
-// Stand-in for the canonical `RequestContext` — the suite's single
-// factory; never hand-roll `{ session, viewer, … }` literals.
-// No runtime edge to `@/server/http/request-context` (types only) so vi.mock
-// factories stay acyclic; `resolveAppLocalization` reads the shared snapshot
-// leaf, which is safe inside a mocked-module factory.
+// The suite's single `RequestContext` factory; never hand-roll `{ session, viewer, … }`
+// literals. Types only from `@/server/http/request-context`, so vi.mock factories stay
+// acyclic; `resolveAppLocalization` reads the shared snapshot leaf, safe inside a factory.
 /** Test-only partial projection: missing representation fields come from the lazy capture. */
 type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
   Partial<Pick<AppLocalization, 'timeFormat' | 'revision' | 'revisions'>>

@@ -41,8 +41,8 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
       // avoid Inkling behaviours when an inner element (e.g. a card input) has focus
       // and event wasn't triggered from nested editor
       if (!editorOwnsFocus(editor) && !isNested) {
-        // ignore default Lexical behaviour when inside an inner input or contenteditable,
-        // without this paste events inside CodeMirror for example will replace the card
+        // Swallow paste inside inner inputs/contenteditables — without this,
+        // a paste inside e.g. CodeMirror would replace the card.
         if (shouldIgnoreEvent(clipboardEvent)) {
           return true
         }
@@ -64,10 +64,10 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
 
       const html = clipboardData.getData(MIME_TEXT_HTML)
 
-      // Override Lexical's default paste behaviour when copy/pasting images:
-      //   - By default, Lexical ignores files if there is text/html or text/plain content in the clipboard
-      //   - This causes images copied from e.g. Slack to not paste correctly
-      //   - With this override, we allow pasting images when there is a single image file in the clipboard and if the text/html contains a <img /> tag
+      // Override Lexical's default image paste behaviour: Lexical ignores
+      // files when the clipboard carries text/html or text/plain, so images
+      // copied from e.g. Slack never paste. Paste only when there is a single
+      // image file and the html contains an <img /> tag.
       //
       // Lexical code:
       // https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.ts#L492-L494
@@ -83,9 +83,6 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
         return true
       }
 
-      // Normalize Office-style pasted HTML so `white-space: pre-wrap` doesn't
-      // turn newlines inside inline elements into line breaks that split text
-      // formatting. Fall back to Lexical's default paste for empty HTML.
       if (html) {
         clipboardEvent.preventDefault()
         editor.update(() => {

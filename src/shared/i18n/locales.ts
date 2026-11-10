@@ -1,14 +1,13 @@
-// The closed set of UI locales. HTML `lang`, `Content-Language`, RSS
-// `language` and Atom `xml:lang` all use these BCP 47 tags verbatim —
-// `zh-HK` / `zh-TW` are already unambiguous, so they are never widened to
-// `zh-Hant-HK` / `zh-Hant-TW`. Only Open Graph uses another spelling; see
-// `toOpenGraphLocale`.
+// The closed set of UI locales. HTML `lang`, `Content-Language`, RSS `language`
+// and Atom `xml:lang` all use these BCP 47 tags verbatim — `zh-HK` / `zh-TW` are
+// already unambiguous, so they are never widened to `zh-Hant-HK` / `zh-Hant-TW`.
+// Only Open Graph uses another spelling; see `toOpenGraphLocale`.
 
 export const SUPPORTED_LOCALES = ['en-US', 'zh-HK', 'zh-TW', 'zh-CN'] as const
 
 export type AppLocale = (typeof SUPPORTED_LOCALES)[number]
 
-/** Pre-i18n installs were Simplified Chinese; existing sites keep that default. */
+/** Default UI locale — existing installs rely on it never changing. */
 export const DEFAULT_LOCALE: AppLocale = 'zh-CN'
 
 /** The English baseline catalog's tag: the ICU reference and the runtime fallback for missing keys. */
@@ -25,9 +24,9 @@ export const LOCALE_DISPLAY_NAMES = {
   'zh-CN': '简体中文（中国大陆）',
 } as const satisfies Record<AppLocale, string>
 
-// Stored rows predate the closed set: they may carry a bare language code, a
-// script-qualified tag, or an underscore separator. Keys are the normalized
-// lookup form (`trim()`, lowercased, `_` → `-`), so matching is case-insensitive.
+// Stored rows may carry a bare language code, a script-qualified tag or an
+// underscore separator. Keys are the normalized lookup form (`trim()`, lowercased,
+// `_` → `-`), so matching is case-insensitive.
 const LOCALE_ALIASES: Record<string, AppLocale> = {
   en: 'en-US',
   'en-us': 'en-US',

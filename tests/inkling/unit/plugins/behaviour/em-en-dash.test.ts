@@ -13,12 +13,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { updateEditor } from '#/inkling/utils/test-editor'
 import { $replaceDashes } from '@/inkling/plugins/behaviour/em-en-dash'
 
-// Synchronous test table for the em/en dash grammar
-// (@/plugins/behaviour/em-en-dash) — em/en replacement, boundary guards,
-// the HR-shortcut exemption, and caret offset adjustment, pinned by calling
-// the scan body directly on a headless editor. The registration wiring
-// (update-scan seam, 'history-push' tag, undo) stays in
-// test/unit/plugins/EmEnDashPlugin.test.tsx.
+// Synchronous test table for the em/en dash grammar — em/en replacement,
+// boundary guards, the HR-shortcut exemption, and caret offset adjustment,
+// pinned by calling the scan body directly on a headless editor. The
+// registration wiring (update-scan seam, 'history-push' tag, undo) stays in
+// EmEnDashPlugin.test.tsx.
 
 function createTestEditor(): LexicalEditor {
   return createHeadlessEditor({

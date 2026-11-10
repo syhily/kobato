@@ -6,9 +6,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { bootstrapSeaRuntime, extractNatives, type SeaManifest } from '@/server/infra/sea-natives'
 
-// Unit tests for the SEA natives extractor: `extractNatives` runs against a
-// fake embedded-asset source and a temp cache dir (`bootstrapSeaRuntime` is
-// a no-op outside SEA mode), covering extraction, reuse, repair, and GC.
+// `extractNatives` runs against a fake embedded-asset source and a temp cache dir
+// (`bootstrapSeaRuntime` is a no-op outside SEA mode): extraction, reuse, repair, GC.
 
 const CURRENT_TARGET = `${process.platform}-${process.arch}`
 

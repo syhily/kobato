@@ -42,8 +42,8 @@ export interface CacheBucketSlot {
 }
 
 /** Declared prefix + TTL per tunable bucket — the pre-hydration fallback. */
-// Every tunable id is written by the loop below; the literal-keyed
-// Record just can't be proven complete from a runtime filter.
+// The cast is sound: the filter writes every tunable id, but TS can't prove a
+// runtime-built Record complete.
 export const CACHE_BUCKET_FALLBACKS = unsafeCast<Record<TunableCacheBucketId, CacheBucketSlot>>(
   Object.fromEntries(
     CACHE_DECLARATIONS.filter((entry) => entry.tunable).map((entry) => [
@@ -62,7 +62,6 @@ export interface ReservedCacheBucket {
   id: ReservedCacheBucketId
   /** Label message id — resolved by the admin surface's translator. */
   labelId: UiMessageId
-  /** Description message id. */
   descriptionId: UiMessageId
 }
 

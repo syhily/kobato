@@ -38,7 +38,7 @@ export interface MetaSidebarProps {
   onChange: (next: PageMetaDraft) => void
   /** Disable every input while a save / publish is in flight. */
   disabled?: boolean
-  /** Lifecycle status for the 基本信息 badge; `null` falls back to `never-saved`. */
+  /** Lifecycle status for the basic-info badge; `null` falls back to `never-saved`. */
   publishStatus?: SidebarPublishStatus | null
   /** Persisted (server-side) slug for the `/images/og/:slug.png` preview — reads
    *  `page.slug`, not `draft.slug`, so the preview stays live while typing. */

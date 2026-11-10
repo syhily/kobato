@@ -56,7 +56,6 @@ describe('ensureLexicalNodeOwnMethods', () => {
     expect(Object.hasOwn(OuterNode, 'clone')).toBe(true)
     expect(Object.hasOwn(OuterNode, 'importJSON')).toBe(true)
 
-    // Verify the methods still work correctly
     expect(OuterNode.getType()).toBe('generated')
   })
 
@@ -65,7 +64,6 @@ describe('ensureLexicalNodeOwnMethods', () => {
 
     expect(Object.hasOwn(OuterNode.prototype, 'exportJSON')).toBe(true)
 
-    // Verify the method still works correctly
     const node = new OuterNode()
     expect(node.exportJSON()).toEqual({ type: 'generated', version: 1 })
   })

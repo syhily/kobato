@@ -22,12 +22,12 @@ export function registerTabCommand(editor: LexicalEditor, deps: KeyboardNavigati
   return editor.registerCommand(
     KEY_TAB_COMMAND,
     (event) => {
-      // avoid processing card behaviours when an inner element has focus
+      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
 
-      // exit the editor if we're shift tabbing on an element that isn't tabbed
+      // Shift+Tab on a non-indented element exits the editor.
       if (event.shiftKey && cursorDidExitAtTop) {
         const selection = $getSelection()
 
@@ -59,8 +59,8 @@ export function registerTabCommand(editor: LexicalEditor, deps: KeyboardNavigati
         }
       }
 
-      // code card shortcut — trigger only; the regex, language extraction, and
-      // replace-and-select live in the card-shortcut seam (@/markdown/card-shortcuts)
+      // Code card shortcut: trigger only; regex, language extraction and
+      // replace-and-select live in @/inkling/markdown/card-shortcuts.
       if (!isNested) {
         if ($fireFenceKeyboardShortcut(event)) {
           return true
@@ -69,7 +69,7 @@ export function registerTabCommand(editor: LexicalEditor, deps: KeyboardNavigati
         const selection = $getSelection()
         const currentNode = selection?.getNodes()[0]
 
-        // handle indent behavior
+        // List indentation.
         if ($isListItemNode(currentNode) || ($isTextNode(currentNode) && $isListItemNode(currentNode.getParent()))) {
           event.preventDefault()
           let node = $isTextNode(currentNode) ? currentNode.getParent() : currentNode
@@ -87,7 +87,7 @@ export function registerTabCommand(editor: LexicalEditor, deps: KeyboardNavigati
           return true
         }
 
-        // generally prevent tabs from leaving the editor/interacting with the browser
+        // Keep Tab from leaving the editor or reaching the browser.
         event.preventDefault()
         return true
       }

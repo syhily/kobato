@@ -30,24 +30,20 @@ import {
   ZWNJNode,
 } from '@/inkling/nodes/base'
 import { BookmarkNode } from '@/inkling/nodes/BookmarkNode'
-// Characterization pins for the at-link behaviour, driven headlessly through
-// the registrations in src/plugins/behaviour/at-link.ts (insertion, session,
-// guards, shape transform, commit surgery). The mounted-plugin gating and
-// popup wiring live in test/unit/plugins/AtLinkPlugin.test.tsx.
+// Characterization pins for the at-link registrations (insertion, session,
+// guards, shape transform, commit). Mounted-plugin gating and popup wiring
+// live in AtLinkPlugin.test.tsx.
 //
 // Harness notes:
 // - The root element is attached before registering so the native 'input'
-//   fallback listener attaches (it only attaches when a root element exists
-//   at registration time).
-// - The editor is set non-editable: in jsdom the DOM-selection round-trip
-//   normalizes a caret at the start of the (empty) search node onto the
-//   preceding ZWNJ text node, while the session's update listener normalizes
-//   it back — the two fight forever until Lexical's cascade guard trips.
-//   Editability only gates Lexical's DOM-selection writes; the editor-state
-//   transitions pinned here are identical either way.
-// - Paste-into-search-node is not unit-pinned: jsdom has no ClipboardEvent
-//   implementation, so the guard's `instanceof ClipboardEvent` branch cannot
-//   be reached, so this guard branch is deliberately unpinned.
+//   fallback listener attaches (it only attaches when a root element exists).
+// - The editor is non-editable: in jsdom the DOM-selection round-trip and the
+//   session's update listener normalize the caret against each other until
+//   Lexical's cascade guard trips. Editability only gates DOM-selection
+//   writes; the pinned editor-state transitions are identical either way.
+// - Paste-into-search-node is deliberately unpinned: jsdom has no
+//   ClipboardEvent, so the guard's `instanceof ClipboardEvent` branch is
+//   unreachable.
 import {
   $commitAtLinkSelection,
   registerAtLinkGuards,
@@ -58,10 +54,9 @@ import {
   type AtLinkSessionSnapshot,
 } from '@/inkling/plugins/behaviour/at-link'
 
-// jsdom's Selection lacks the (non-standard) modify() API, which
+// jsdom's Selection lacks the (non-standard) modify() API that
 // RangeSelection.deleteCharacter routes through on the native fallback's
-// delete-the-'@' step. Polyfill the collapsed-text character cases the
-// fallback relies on; other shapes are left as no-ops.
+// delete-the-'@' step; polyfill just the collapsed-text character cases.
 if (!Selection.prototype.modify) {
   const adjacentTextNode = (node: Node, direction: 'previous' | 'next'): Text | null => {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
@@ -123,17 +118,14 @@ function createTestEditor() {
   })
 }
 
-// Lexical 0.53 commits updates on a microtask, and listener-triggered
-// cascade updates defer again — the drain/tick pair from the test-editor
-// harness drains the whole queue so assertions see the settled state (the
-// previous renderHook harness got the same drain for free from act()).
+// Lexical commits updates on a microtask and listener-triggered cascade
+// updates defer again — tick drains the queue so assertions see the settled
+// state.
 async function dispatchCommand(editor: LexicalEditor, ...args: Parameters<LexicalEditor['dispatchCommand']>) {
   const result = editor.dispatchCommand(...args)
   await tick()
   return result
 }
-
-// --- editor-state JSON builders -------------------------------------------
 
 const textNodeJSON = (text: string, format = 0) => ({
   detail: 0,
@@ -213,15 +205,11 @@ const editorStateJSON = (...paragraphs: unknown[]) => ({
   },
 })
 
-// --- state builders --------------------------------------------------------
-
 interface TextSegment {
   text: string
   format?: number
 }
 
-// Builds a single paragraph from text segments with a collapsed caret at
-// [segment, offset], or an element-point caret when caret is 'element'.
 async function buildSingleParagraph(
   editor: LexicalEditor,
   segments: TextSegment[],
@@ -248,8 +236,7 @@ async function buildSingleParagraph(
   })
 }
 
-// Builds 'hello ' + at-link(searchText) + ' world' in one paragraph with a
-// collapsed caret inside the search node, so the session focuses the at-link.
+// Caret inside the search node so the session focuses the at-link.
 async function buildAtLinkParagraph(editor: LexicalEditor, searchText = 'abc') {
   await drainEnqueuedUpdates(editor, () => {
     const root = $getRoot()
@@ -300,9 +287,8 @@ describe('at-link behaviour (headless registrations)', () => {
 
   async function dispatchNativeAt() {
     // Mirror the Lexical caret into the DOM selection first — in a real
-    // browser the DOM caret is already there when the input event fires,
-    // and the fallback's deleteCharacter step extends it via
-    // Selection.modify (polyfilled above).
+    // browser it is already there when the input event fires, and the
+    // fallback's deleteCharacter step extends it via Selection.modify.
     editor.getEditorState().read(() => {
       const selection = $getSelection()
       if ($isRangeSelection(selection) && selection.isCollapsed() && selection.anchor.type === 'text') {
@@ -741,8 +727,6 @@ describe('at-link behaviour (headless registrations)', () => {
   })
 
   describe('range selection spanning an at-link node', () => {
-    // Places a range selection with endpoints in the 'hello ' text (before),
-    // the search node (search), or the ' world' text (after).
     async function setRange(
       anchor: { segment: 'before' | 'search' | 'after'; offset: number },
       focus: { segment: 'before' | 'search' | 'after'; offset: number },

@@ -41,7 +41,7 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
   const fields = useMemo(() => buildAuditFilterFields(actors, t), [actors, t])
   const pills = useFilterPills({ fields })
 
-  // The actors query only feeds the 操作人 filter options — a failure leaves the
+  // The actors query only feeds the actor filter options — a failure leaves the
   // list usable but the filter empty, so surface it via toast (the list query's
   // error renders inline below instead).
   const actorsError = actorsQuery.error

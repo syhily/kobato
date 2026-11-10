@@ -879,7 +879,7 @@ describe('createGifBrowser: races and lifecycle', () => {
 
     browser.dispatch({ type: 'search', term: 'two' })
     scheduler.flush()
-    // the highlight survives the in-flight window, like the old sync effect
+    // the highlight survives the in-flight window
     expect(browser.getSnapshot().highlightedId).toBe('b')
     await tick()
     // the new list still holds a gif with id b — the highlight stays

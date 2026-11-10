@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Root SSR/i18n contract (plan 001, Step 2):
+ * Root SSR/i18n contract:
  *  · the root Layout feeds the loader's i18n payload to ONE react-intl provider
  *    and stamps `<html lang>` from it;
  *  · a real `renderToString` → `hydrateRoot` round-trip with identical

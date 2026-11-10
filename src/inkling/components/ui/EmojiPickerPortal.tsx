@@ -44,7 +44,8 @@ const EmojiPickerPortal = ({
   const [position, setPosition] = React.useState<PickerPosition | null>(null)
   const { darkMode } = React.useContext(InklingUiPrefsContext)
 
-  const shiftPixels = 35 // how many pixels we want to move it up when it's at the bottom of the screen
+  // lifts the picker above the trigger when it would sit at the viewport bottom
+  const shiftPixels = 35
   const handleScroll = React.useCallback(() => {
     if (positionRef.current) {
       const rect = positionRef.current.getBoundingClientRect()

@@ -11,7 +11,7 @@ import { setWebmentionStatus, upsertWebmention } from '@/server/infra/db/operati
 import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
 
-// public.webmention.list (split-plan notes-6 §3.1) against the real engine — same discipline as the comment-public suite.
+// `public.webmention.list` against the real engine — same discipline as the comment-public suite.
 const db = getTestDb()
 
 const TARGET_URL = 'https://example.com/posts/wm-target/'

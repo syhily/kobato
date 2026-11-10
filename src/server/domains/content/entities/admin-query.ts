@@ -27,10 +27,7 @@ export interface EntityAdminQuery<TFilters extends LimitOffset, TAdminDto> {
   listRevisionsForAdmin: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<AdminRevisionDto[]>
 }
 
-/**
- * The admin-query trio every content entity shares, all gated through
- * `assertAccess` — a missing entity surfaces NOT_FOUND.
- */
+/** Admin-query trio every content entity shares; all gated through `assertAccess`, so a missing entity is NOT_FOUND. */
 export function makeEntityAdminQuery<
   TMeta extends MetaRowBase,
   TNew,

@@ -105,10 +105,9 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   publishedAt: '',
 }
 
-// Keys derive from `EMPTY_POST_META_DRAFT` so a new `PostMetaDraft` field
-// joins the equality check automatically instead of silently desyncing.
-// Safe cast: the empty draft is a complete `PostMetaDraft`, so its runtime
-// keys are exactly `keyof PostMetaDraft`.
+// Keys derive from `EMPTY_POST_META_DRAFT` so a new draft field joins the
+// equality check automatically. The cast is sound: the empty draft is a
+// complete `PostMetaDraft`, so its runtime keys are exactly `keyof PostMetaDraft`.
 const POST_META_DRAFT_KEYS = unsafeCast<Array<keyof PostMetaDraft>>(Object.keys(EMPTY_POST_META_DRAFT))
 
 export function postMetaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean {

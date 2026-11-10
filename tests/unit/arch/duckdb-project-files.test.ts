@@ -55,8 +55,7 @@ describe('duckdb project membership', () => {
         }
       }
     }
-    // Mismatch? Update tests/duckdb-files.ts — new engine users join the
-    // list, retired ones leave it.
+    // Mismatch? Update tests/duckdb-files.ts.
     expect(actual.sort()).toEqual([...DUCKDB_TEST_FILES].sort())
   })
 })

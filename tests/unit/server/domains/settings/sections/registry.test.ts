@@ -32,9 +32,8 @@ describe('server/domains/settings/sections/registry', () => {
   })
 
   it('rejects a corrupt section default through the same validator on both paths', () => {
-    // Corrupt one section's seed in a registry double: the backfill
-    // builder and the validator the write path's merge base calls must
-    // reject with the identical message.
+    // Corrupt one section's seed: the backfill builder and the validator the write path's
+    // merge base calls must reject with the identical message.
     const mutableRegistry = SECTION_REGISTRY as unknown as Record<string, { defaults: unknown }>
     const original = SECTION_REGISTRY.limits
     mutableRegistry.limits = { ...original, defaults: { maxRequestBodySize: 'ten' } }

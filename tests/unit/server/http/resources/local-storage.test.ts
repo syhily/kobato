@@ -88,7 +88,7 @@ describe('local-storage public route — namespace allowlist (local driver)', ()
     expect(svg.status).toBe(200)
     expect(svg.headers.get('Content-Type')).toBe('image/svg+xml')
 
-    // Formerly served as octet-stream — the shared key-policy map closed the gap.
+    // `.flac` must map through the shared key policy, never to octet-stream.
     const flac = await app.request('/storage/musics/t.flac')
     expect(flac.status).toBe(200)
     expect(flac.headers.get('Content-Type')).toBe('audio/flac')

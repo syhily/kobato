@@ -1,9 +1,8 @@
 // The em/en dash replacement grammar — the scan body EmEnDashPlugin wires
-// into the update-scan seam (@/plugins/behaviour/update-scan). Pure text
-// policy over dirty leaves, with zero DOM: right-to-left scan, boundary
+// into the update-scan seam (@/inkling/plugins/behaviour/update-scan). Pure
+// text policy over dirty leaves, with zero DOM: right-to-left scan, boundary
 // guards, the HR-shortcut exemption, and caret offset adjustment. Kept
-// headless so the grammar can be pinned as a synchronous test table
-// (test/unit/plugins/behaviour/em-en-dash.test.ts).
+// headless so the grammar is a synchronous unit-test table.
 
 import { $getNodeByKey, $getSelection, $isRangeSelection, $isTextNode } from 'lexical'
 
@@ -29,7 +28,7 @@ export function $replaceDashes(dirtyLeaves: Set<string>, supportsHrShortcut: boo
 
     // '---' as the sole content of a paragraph is the horizontal-rule
     // card shortcut - leave it alone so the seam's HR trigger can fire
-    // (@/markdown/card-shortcuts)
+    // (@/inkling/markdown/card-shortcuts)
     if (supportsHrShortcut && text === '---' && node.getParent()?.getTextContent() === '---') {
       return
     }

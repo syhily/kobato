@@ -1,5 +1,3 @@
-// taken from the original upstream implementation
-
 import { awaitMediaEvents } from '@/inkling/utils/awaitMediaEvents'
 import { createPreviewLease } from '@/inkling/utils/preview-lease'
 
@@ -18,13 +16,10 @@ export default async function extractVideoMetadata(file: File): Promise<VideoMet
   video.muted = true
   video.playsInline = true
 
-  // The object URL lives behind a lease so every settle path — success, load
-  // error, timeout, canvas failure — revokes it exactly once.
+  // The object URL lives behind a lease so every settle path revokes it exactly once.
   const lease = createPreviewLease(file)
 
   try {
-    // loadedmetadata and canplay can arrive in one task for a local blob, so
-    // both listeners attach before the load starts.
     await awaitMediaEvents(video, {
       events: ['loadedmetadata', 'canplay'],
       errorMessage: 'Failed to load video metadata',

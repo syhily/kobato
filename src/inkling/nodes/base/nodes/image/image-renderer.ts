@@ -83,7 +83,6 @@ export function renderImageNode(node: ImageNodeData, context: RenderContext) {
 
   let sizes: string | undefined
   if (img.getAttribute('srcset') && node.width && node.width >= 720) {
-    // standard size
     if (!node.cardWidth || node.cardWidth === 'regular') {
       sizes = '(min-width: 720px) 720px'
     }

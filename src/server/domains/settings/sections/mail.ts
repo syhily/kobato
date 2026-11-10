@@ -45,8 +45,8 @@ const mailHostname = z
 export const mailSchema = z.object({
   mail: z.object({
     enabled: coerceBoolean,
-    // ADR-0008: direct messages and admin alerts also go out by email. ON by
-    // default — the feature is the point; `mail.enabled` stays the master gate.
+    // Direct messages and admin alerts also go out by email. ON by default — the
+    // feature is the point; `mail.enabled` stays the master gate.
     notificationEmails: coerceBoolean.default(true),
     sender: z.union([z.literal(''), z.email()]).default(''),
     // `.catch` maps legacy out-of-union values stored by older builds to SMTP

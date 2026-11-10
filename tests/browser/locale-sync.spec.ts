@@ -1,17 +1,4 @@
-// Real-Chromium settings journeys (plan 002 slice 5):
-//
-// * a dirty card that cannot flush vetoes the locale switch (no commit, no
-//    reload, input + focus preserved),
-// * a successful switch saves the dirty card first, reloads once, and the new
-//    document hydrates with the new `lang` and catalog without console errors,
-// * every locale (en-US / zh-HK / zh-TW / zh-CN) reloads through the real
-//    selector with its own `<html lang>` + menu and clean hydration,
-// * two real tabs: A switches the language while B has its own dirty field;
-//    B saves its field, reloads, and never writes the locale,
-// * a non-settings page with unsaved editor content is not hard-reloaded by
-//    the root broadcast and surfaces an explicit notice.
-//
-// The suite mutates the shared instance's general settings; `beforeEach`
+// The suite mutates the shared instance's general settings; beforeEach
 // restores the deterministic baseline over the admin HTTP surface.
 
 import { expect, test } from './support/fixtures'
@@ -78,7 +65,6 @@ test('a failed dirty-card flush vetoes the locale switch', async ({ adminPage: p
   expect(await reloaded).toBe(false)
   expect(await readWindowMarker(page)).toBe('journey-1')
 
-  // Nothing committed and no input lost.
   expect(updateBodies.some((body) => body.includes('"locale"'))).toBe(false)
   await expect(page.locator('#general-description')).toHaveValue(unsavedDescription)
   await expect(page.locator('#general-locale')).toHaveText(LOCALE_LABELS['zh-CN'])
@@ -106,7 +92,6 @@ test('a successful switch saves the dirty card, reloads once, and hydrates clean
   // the stable "menu" witness (it is not user content).
   await expect(page.getByRole('heading', { name: '站點', exact: true }).first()).toBeVisible()
 
-  // Public chrome follows the committed language too.
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW')
   await expect(page.getByText('跳至主要內容', { exact: false }).first()).toBeVisible()
@@ -126,8 +111,6 @@ test('every locale reloads with its own html lang and menu, with clean hydration
     'zh-CN': '站点',
   } as const
 
-  // Start at the baseline zh-CN; walk every locale through the real selector
-  // and back, reloading each time.
   for (const locale of ['en-US', 'zh-HK', 'zh-TW', 'zh-CN'] as const) {
     const reload = page.waitForEvent('load', { timeout: 30_000 })
     await waitForSettingsReady(page)
@@ -178,17 +161,14 @@ test('two tabs: A switches the language while B saves its own field and never wr
     await switchLocale(pageA, 'zh-TW')
     await Promise.all([reloadA, reloadB])
 
-    // Both documents follow the announced locale; B's own save survived.
     await expect(pageA.locator('html')).toHaveAttribute('lang', 'zh-TW')
     await expect(pageB.locator('html')).toHaveAttribute('lang', 'zh-TW')
     await expect(pageB.locator('#general-title')).toHaveValue(bTitle)
     await expect(pageB.locator('#general-timezone')).toContainText('Asia/Tokyo')
 
-    // B never re-committed the locale — its writes are title/timezone only.
     expect(bSettingsWrites.length).toBeGreaterThan(0)
     expect(bSettingsWrites.filter((body) => body.includes('"locale"'))).toEqual([])
 
-    // And B's stale form did not overwrite A's committed locale server-side.
     expect(await fetchHtmlLang(pageA)).toBe('zh-TW')
   } finally {
     await pageA.close()
@@ -227,7 +207,6 @@ test('an editor with unsaved content is not hard-reloaded by the locale broadcas
     await settingsReloaded
     expect(await editorReloaded).toBe(false)
 
-    // The document was not replaced, and the typed content is still there.
     expect(await readWindowMarker(editor)).toBe('editor-unsaved')
     await expect(title).toHaveValue(draftTitle)
 

@@ -10,10 +10,10 @@ import {
 } from '@/inkling/nodes/base/generate-decorator-node'
 import { renderAudioNode } from '@/inkling/nodes/base/nodes/audio/audio-renderer'
 
-// The card's transient-prop spec (CONTEXT.md: "card spec") lives here, beside
-// the class it types — the declaration imports it from this module. `as const`
-// keeps the literal `name`s and `initial` value types on the array's type so
-// the `__*` field maps derive both (CardSpecFieldMap / CardSpecFieldMapFor).
+// The card's transient-prop spec lives here, beside the class it types — the
+// declaration imports it from this module. `as const` keeps the literal `name`s
+// and `initial` value types on the array's type so the `__*` field maps derive
+// both (CardSpecFieldMap / CardSpecFieldMapFor).
 export const audioTransientProps = [
   transientTriggerFileDialogProp,
   transientInitialFileProp,

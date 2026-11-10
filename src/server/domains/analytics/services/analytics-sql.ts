@@ -9,11 +9,10 @@ import { withSpanAsync } from '@/server/infra/trace/facade'
 import { recordDbOperation } from '@/server/infra/trace/metrics'
 
 /**
- * Kysely as a pure SQL compiler (Slite's design): the DummyDriver never
- * connects — Kysely builds the AST, a custom compiler emits DuckDB SQL
- * with identifiers stripped of quoting and whitelisted against a strict
- * pattern. User values travel ONLY as bound `?` parameters; execution
- * goes through the existing MVCC reader connection.
+ * Kysely as a pure SQL compiler: the DummyDriver never connects — Kysely builds
+ * the AST, a custom compiler emits DuckDB SQL with identifiers unquoted and
+ * whitelisted against a strict pattern. User values travel ONLY as bound `?`
+ * parameters; execution goes through the MVCC reader connection.
  */
 
 export interface AnalyticsEventRow {
@@ -77,7 +76,6 @@ export function compileAnalyticsQuery(query: Compilable) {
   return query.compile()
 }
 
-/** DuckDB MVCC reader connection. */
 export type AnalyticsReader = DuckDBConnection
 
 function toBoundParameters(parameters: readonly unknown[]): DuckDBValue[] {
@@ -111,13 +109,12 @@ export const ANALYTICS_OPERATIONS = [
 export type AnalyticsOperation = (typeof ANALYTICS_OPERATIONS)[number]
 
 /**
- * Compile + execute a read query on the reader connection, materializing
- * row objects. BigInt cells convert to Number when safe (analytics
- * counts never approach the unsafe range — out-of-range converts to
- * String rather than losing precision silently).
+ * Compile + execute a read query on the reader connection. BigInt cells convert
+ * to Number when safe (analytics counts never approach the unsafe range) and to
+ * String otherwise rather than losing precision silently.
  *
- * This is THE analytics SQL execution boundary: the span/metric carry only
- * the caller's stable operation name — never SQL text or bound parameters.
+ * This is THE analytics SQL execution boundary: the span/metric carry only the
+ * caller's stable operation name — never SQL text or bound parameters.
  */
 export async function runAnalyticsQuery(
   reader: AnalyticsReader,

@@ -1,9 +1,7 @@
-// Bundler plugin: rename the native packages' platform-specifier requires
-// to `nativeRequire(...)` (`@/server/infra/native-require`) — their `.node`
-// and libvips loads must not resolve at bundle time (flat natives cache +
-// embedded `natives-meta/*` assets). The rewrite is text-level and verbatim
-// (template-literal args survive); the covered specifiers are pinned by the
-// `native-specifiers` contract test.
+// Bundler plugin: rewrite the native packages' platform-specifier requires to
+// `nativeRequire(...)` (`@/server/infra/native-require`) so their `.node` and
+// libvips loads resolve from the flat natives cache instead of at bundle time.
+// The rewrite is text-level and verbatim (template-literal args survive).
 
 import type { Plugin } from 'vite'
 
@@ -13,8 +11,7 @@ const NATIVE_REQUIRE_MODULE = '@/server/infra/native-require'
 /**
  * Modules to transform: files inside the sharp / @napi-rs/canvas /
  * @duckdb/node-bindings package dirs (pnpm-store and flat layouts both
- * contain a `/node_modules/<pkg>/` segment). Platform packages never enter
- * the module graph — their only references were rewritten away.
+ * contain a `/node_modules/<pkg>/` segment).
  */
 const SCOPED_MODULE =
   /[\\/]node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:sharp|@napi-rs[\\/]canvas|@duckdb[\\/]node-bindings)[\\/]/
@@ -41,7 +38,7 @@ export function isNativePackageModule(id: string): boolean {
   return SCOPED_MODULE.test(id)
 }
 
-/** Whether a `require(...)` argument is a platform specifier this plugin redirects. Exported for the contract test. */
+/** Whether a `require(...)` argument is a platform specifier this plugin redirects. */
 export function isPlatformSpecifierArg(arg: string): boolean {
   return PLATFORM_SPECIFIER_MARKERS.some((marker) => arg.includes(marker))
 }

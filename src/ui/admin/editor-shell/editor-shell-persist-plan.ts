@@ -5,15 +5,13 @@ import type { EditorShellStatus, RevisionLike } from '@/ui/admin/editor-shell/ed
 import { areLexicalEditorStatesEquivalent } from '@/shared/lexical/equivalence'
 import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
 
-// Pure save planners for the editor persist module: every wire-payload and
-// status-transition decision lives here so the orchestration logic is
-// testable without rendering React. The hook interpreters in
-// use-editor-shell-persist apply these plans verbatim — no decisions there.
+// Pure save planners for the editor persist module: wire-payload and
+// status-transition decisions live here so the orchestration is testable without
+// rendering React. The hooks apply these plans verbatim — no decisions there.
 
 /**
- * Classify a body-save wire result once. 'conflict' is interpreted ONLY here —
- * the persist flows (mutation legs, autosave flush, create) all consume this
- * verdict instead of re-reading `payload.status`.
+ * Classify a body-save wire result once. 'conflict' is interpreted ONLY here:
+ * every persist flow consumes this verdict instead of re-reading `payload.status`.
  */
 export type SaveBodyVerdict =
   | { kind: 'conflict'; expectedToken: string }

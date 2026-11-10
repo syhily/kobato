@@ -13,14 +13,14 @@ import {
 import type { ResolvedMenuItem } from '@/inkling/nodes/cards/card-menu-build'
 
 // The card menu's keyboard policy, headless — the mapping from keys to menu
-// actions the popup used to own inline. Two syntaxes, one module:
+// actions. Two syntaxes, one module:
 // - the slash trigger navigates the menu (arrows) and inserts the selected
 //   item (Enter), through the menu navigator (createMenuNavigator);
 // - the button trigger closes the menu on any arrow (the caret is left alone;
 //   Escape and outside-mousedown stay owned by the session).
 // Registration happens once per editor and reads its inputs at EVENT time
-// through ports (the card-interaction precedent), so the popup mounts the
-// registration while the menu is open instead of re-registering per render.
+// through ports, so the popup mounts the registration while the menu is open
+// instead of re-registering per render.
 
 export interface MenuKeyboardPorts {
   /** The menu is open at event time (the registration may outlive a close). */

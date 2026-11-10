@@ -12,11 +12,7 @@ import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
 import { createOrpcTraceInterceptor } from '@/server/http/orpc-trace'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-// Single API mount: `RPCHandler` answers `/rpc/*` behind a Hono perimeter —
-// live-settings body limit, CSRF, and the context projection onto
-// `HandlerContext` (+ `responseHeaders`, merged onto the final Response).
-// The client interceptor is the official seam for a span that owns the real
-// procedure invocation (and its stable procedure path).
+// The client-interceptor slot is the seam for the span owning the real procedure invocation.
 const handler = new RPCHandler(apiRouter, {
   clientInterceptors: [createOrpcTraceInterceptor('http')],
 })
@@ -32,12 +28,8 @@ function resolveMaxBodySize(): number {
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
-  // Hydrate BEFORE the body-limit resolver and the CSRF guard run: both read
-  // settings (the live request-size limit; the localized CSRF error copy), and
-  // a cold process must not answer with pre-hydration defaults (zh-CN + the
-  // built-in 10 MB cap). Single-flight — the bridge projection below reuses the
-  // memoized snapshot. Pure `/rpc/*` requests never pass through
-  // `buildLoadContext`, so this is their only pre-projection hydration point.
+  // Hydrate before the body-limit resolver and the CSRF guard: both read settings,
+  // and a cold process would otherwise answer zh-CN with the built-in 10 MB cap.
   app.use('/rpc/*', async (c, next) => {
     await hydrateBlogSettings(c.var.requestContext.db)
     await next()
@@ -56,10 +48,7 @@ export function createApiApp(): Hono<Env> {
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
     const rc = c.var.requestContext
-    // Settings are already hydrated by the pre-limit middleware above; the
-    // projection below pins `context.settings` and `context.localization` from
-    // ONE lazy capture. No re-derivation; `markSessionDirty` deliberately
-    // omitted (procedures get a read-only session).
+    // Read-only session: `markSessionDirty` is deliberately omitted here.
     const context: HandlerContext = {
       request: c.req.raw,
       requestFacts: rc.requestFacts,
@@ -76,7 +65,7 @@ export function createApiApp(): Hono<Env> {
       await next()
       return
     }
-    // Merge per-procedure headers (Set-Cookie etc.) onto the RPC response.
+    // Merge per-procedure headers; multiple Set-Cookie values must append, not overwrite.
     const merged = new Headers(result.response.headers)
     responseHeaders.forEach((value, key) => {
       if (key.toLowerCase() === 'set-cookie') {

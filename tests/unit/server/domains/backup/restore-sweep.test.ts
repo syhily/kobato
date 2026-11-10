@@ -3,10 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The sweep reads the REAL temp dir — that's the surface a crashed
-// process leaks into. Only the logger is silenced; the restore module's
-// infra seams (db path resolution, analytics) are irrelevant to this
-// path and mocked away like in restore-rollback.test.ts.
+// The sweep reads the real temp dir — the surface a crashed process leaks into. Only the
+// logger is silenced; infra seams this path never touches are mocked away.
 vi.mock('@/server/infra/db/database', () => ({
   resolveDatabasePath: () => ':memory:',
   isInMemoryPath: (path: string) => path === ':memory:',

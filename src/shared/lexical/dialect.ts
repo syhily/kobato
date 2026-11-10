@@ -2,35 +2,27 @@ import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Two wire dialects of the same editor state (see the dialect note in
-// `src/inkling/utils/initial-document.ts` for the historical pair):
+// Two wire dialects of the same editor state:
 //
-// - the FULL dialect — what a live 0.53 editor's `toJSON()` writes: every
-//   serializer-default key present (`direction: null`, `format: ''`,
-//   `indent: 0`, `version: 1`, the text-node quartet, paragraph
-//   `textFormat`/`textStyle`, link `target`/`rel`/`title: null`, …);
-// - the COMPACT storage dialect — the full dialect minus those default keys,
-//   the same slimming Lexical 0.53's own `toJSON(true)` applies to stock
-//   nodes, extended here to the inkling custom nodes (extended-text /
-//   extended-heading / extended-quote) whose exportJSON overrides never
-//   forward the compact flag.
+// - FULL — what a live editor's `toJSON()` writes: every serializer-default
+//   key present (`direction: null`, `format: ''`, `indent: 0`, `version: 1`,
+//   the text-node quartet, paragraph `textFormat`/`textStyle`, link
+//   `target`/`rel`/`title: null`, …);
+// - COMPACT storage — the full dialect minus those default keys, the same
+//   slimming Lexical's own `toJSON(true)` applies, extended to the inkling
+//   custom nodes whose exportJSON overrides never forward the compact flag.
 //
-// The dialects round-trip because every node's importJSON/updateFromJSON
-// heals a missing key back to exactly the default the full exporter writes
-// (verified against the 0.53 dist generated `update*Node` functions and
-// pinned by tests/inkling/unit/compact-round-trip.test.ts). The schema's
-// `normalizeLexicalDialect` preprocess plays the importer's role at the
-// validation boundary, so both dialects parse to the same full-dialect
-// output — fingerprints, equivalence checks, and readers see one shape.
+// The dialects round-trip because every importer heals a missing key back to
+// the full-exporter default (pinned by
+// tests/inkling/unit/compact-round-trip.test.ts); the schema's
+// `normalizeLexicalDialect` preprocess plays that role at the validation
+// boundary, so both dialects parse to one full-dialect shape.
 //
-// Two judgment calls, both mirroring the importer (NOT a naive "missing =
-// bullet" guess):
-// - `list.listType` heals to 'number' when absent (updateListNode's default),
-//   and `tag` is never read at import — it is re-derived from listType
-//   ('number' → 'ol', else 'ul') by setListType, so the compact dialect drops
-//   it outright;
-// - `table.frozenColumnCount`/`frozenRowCount`/`rowStriping` are strip-only:
-//   the full exporter omits them at default, so normalize must not add them.
+// Judgment calls mirroring the importer (NOT a naive "missing = default"
+// guess): `list.listType` heals to 'number' and `tag` is re-derived from
+// listType at import, so compact drops `tag` outright;
+// `table.frozenColumnCount`/`frozenRowCount`/`rowStriping` are strip-only —
+// the full exporter omits them at default, so normalize must not add them.
 
 type JsonObject = Record<string, unknown>
 
@@ -38,11 +30,10 @@ const ELEMENT_DEFAULTS: JsonObject = { direction: null, format: '', indent: 0 }
 const TEXT_DEFAULTS: JsonObject = { detail: 0, format: 0, mode: 'normal', style: '' }
 const LINK_DEFAULTS: JsonObject = { target: null, rel: null, title: null }
 
-/** Per-type keys the 0.53 serializers write even at their default value —
- * stripped by `compactLexicalEditorState`, refilled by
- * `normalizeLexicalDialect`. Only keys the FULL exporter writes
- * unconditionally belong here (a key the exporter writes only when
- * non-default stays optional in both dialects). */
+/** Per-type keys the serializers write even at their default value — stripped
+ * by `compactLexicalEditorState`, refilled by `normalizeLexicalDialect`. Only
+ * keys the FULL exporter writes unconditionally belong here (a key the exporter
+ * writes only when non-default stays optional in both dialects). */
 const NODE_DEFAULTS: Record<string, JsonObject> = {
   root: { ...ELEMENT_DEFAULTS, version: 1 },
   paragraph: { ...ELEMENT_DEFAULTS, textFormat: 0, textStyle: '', version: 1 },
@@ -148,8 +139,8 @@ const hasObjectRoot = (value: unknown): value is { root: JsonObject } =>
  * The schema-side heal: deep-clone the candidate and refill every
  * serializer-default key the compact dialect omits, so the parse output is
  * always the full dialect regardless of which dialect was stored/sent.
- * Shapes without an object root pass through untouched — reporting them is
- * the shape schema's job.
+ * Shapes without an object root pass through untouched — reporting them is the
+ * shape schema's job.
  */
 export function normalizeLexicalDialect(value: unknown): unknown {
   if (!hasObjectRoot(value)) {

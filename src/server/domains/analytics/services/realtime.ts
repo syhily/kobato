@@ -6,9 +6,7 @@ import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
 import { createAnalyticsQuery, runAnalyticsQuery } from '@/server/domains/analytics/services/analytics-sql'
 
-// Per-session SSE connection bookkeeping + cap policy for
-// `/api/analytics/events`, next to the tail query the stream polls.
-
+// Per-session SSE connection cap for `/api/analytics/events`.
 const MAX_REALTIME_CONNECTIONS_PER_SESSION = 2
 
 // Per-session connection counter — a plain Map is safe (single-threaded);
@@ -23,11 +21,7 @@ export function realtimeConnectionKey(sessionId: string | null | undefined, clie
   return `ip:${createHash('sha256').update(clientAddress).digest('hex').slice(0, 32)}`
 }
 
-/**
- * Take one of the per-key realtime-connection slots. Returns an
- * idempotent release function, or `null` at the cap (caller maps
- * that to 429).
- */
+/** Take one of the per-key connection slots; returns an idempotent release, or `null` at the cap (caller maps that to 429). */
 export function acquireRealtimeConnection(key: string): (() => void) | null {
   const current = activeSSEConnections.get(key) ?? 0
   if (current >= MAX_REALTIME_CONNECTIONS_PER_SESSION) {

@@ -13,11 +13,11 @@ import { renderToggleNode } from '@/inkling/nodes/base/nodes/toggle/toggle-rende
 import BASIC_NODES from '@/inkling/nodes/BasicNodes'
 import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
 
-// The card's nested-editor spec (CONTEXT.md: "card spec") lives here, beside
-// the class it types — the declaration imports it from this module. Both
-// editors are `nullable`: the markdown round-trip detaches them. The
-// MINIMAL/BASIC node-set imports run against the layer grain but close no
-// cycle — see the captionEditorSpecBase note.
+// The card's nested-editor spec lives here, beside the class it types — the
+// declaration imports it from this module. Both editors are `nullable`: the
+// markdown round-trip detaches them. The MINIMAL/BASIC node-set imports run
+// against the layer grain but close no cycle — see the captionEditorSpecBase
+// note.
 export const toggleNestedEditors = [
   {
     name: 'titleEditor',

@@ -21,7 +21,7 @@ export interface LoginActionData {
   /** The typed identity behind `message` — stable across locales (OtpForm branches on it). */
   messageDescriptor?: ErrorMessageDescriptor
   error?: string
-  /** The typed identity behind `error`; un-migrated flows omit it. */
+  /** The typed identity behind `error`; flows that lack a descriptor send only the plain string. */
   errorDescriptor?: ErrorMessageDescriptor
 }
 
@@ -51,8 +51,7 @@ export function useWebAuthnSupported(): boolean {
   return supported
 }
 
-// `passkey/auth-begin` returns `{ options: z.any() }` — narrows the untyped
-// response to the library's expected shape without an unsafe cast.
+// `passkey/auth-begin` returns `{ options: z.any() }`; narrow to the library's expected shape without an unsafe cast.
 function isAuthBeginResponse(value: unknown): value is { options: PublicKeyCredentialRequestOptionsJSON } {
   if (typeof value !== 'object' || value === null || !('options' in value)) {
     return false
@@ -172,8 +171,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     }
   }, [email, t])
 
-  // Leaving the passkey step retires any in-flight ceremony and dismisses the
-  // lingering native prompt.
+  // Leaving the passkey step retires any in-flight ceremony and dismisses the lingering native prompt.
   const backToEmail = () => {
     passkeyRunRef.current += 1
     WebAuthnAbortService.cancelCeremony()
@@ -262,8 +260,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     )
   }
 
-  // The email and passkey states share the identify form's layout: the input
-  // locks and the primary button becomes the scenario's action.
+  // The email and passkey states share the identify form's layout: locked input, scenario-specific primary button.
   const isPasskeyStep = step === 'passkey'
   return (
     <div className="flex w-full flex-col gap-6">

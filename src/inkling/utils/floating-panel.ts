@@ -1,18 +1,7 @@
-// Floating panel — the one headless module owning the settings panel's layout
-// decisions: the clamp math (clampWithinSpacing*, projected onto
-// @/utils/fit-rect's 'clamp' policy), the card-origin resolution, the initial
-// placement, the wide-card width transition, and the drag session
-// (createDragSession — a port adapter over the shared press-threshold core in
-// @/utils/draggable/press-threshold-session, which it shares with
-// DragDropHandler's drag-start session). Everything DOM-shaped arrives as
-// plain data or behind injected ports (position get/set, effect
-// activate/deactivate), so the rules are unit-testable without layout or
-// pointer events. The grab/listener choreography above the drag session lives
-// in @/utils/panel-drag-session, the re-clamp resolutions in
-// @/utils/panel-resize-choreography; the React adapter owning the DOM ports
-// (body-level pointer listeners, the user-select stylesheet, click
-// suppression, ResizeObservers) is @/hooks/useFloatingPanel; SettingsPanel is
-// the sole consumer above that.
+// The settings panel's layout decisions (clamp math, card origin, initial placement,
+// wide-card transition, drag session). The grab/listener choreography lives in
+// panel-drag-session, the re-clamp resolutions in panel-resize-choreography, and the React
+// DOM adapter in useFloatingPanel.
 
 import {
   createPressThresholdSession,
@@ -58,14 +47,7 @@ export function isMobileViewport(viewport: PanelViewport): boolean {
   return viewport.width < 768 && viewport.height > viewport.width
 }
 
-/**
- * The origin every clamp agrees on. When the card has a transform applied
- * (e.g. wide cards) the panel is positioned relative to the card element
- * rather than the window, so the card's rect becomes the origin. DOM edge —
- * takes the card element, returns plain data; deliberately kept as this
- * module's single direct DOM read (the getComputedStyle transform check),
- * everything else arrives as data.
- */
+/** The origin every clamp agrees on; the module's single direct DOM read. Reads the card element when a wide-card transform makes it the coordinate origin. */
 export function resolveCardOrigin(cardElement: HTMLElement | null): PanelPosition {
   if (!cardElement || window.getComputedStyle(cardElement).transform === 'none') {
     return { x: 0, y: 0 }
@@ -87,11 +69,9 @@ export interface ClampInput {
 }
 
 /**
- * Clamps a panel position so the panel keeps the given spacing from the
- * viewport edges. A previous spacing tighter than the requested one is kept
- * (negative spacing allowed) so a panel the user deliberately pushed offscreen
- * is not dragged back. The fit itself projects onto @/utils/fit-rect's
- * 'clamp' policy over the rendered (origin-adjusted) rect.
+ * Clamps a panel position so the panel keeps the given spacing from the viewport edges. A
+ * previous spacing tighter than the requested one is kept, so a panel the user deliberately
+ * pushed offscreen is not dragged back.
  */
 export function clampWithinSpacing({
   x,
@@ -144,7 +124,7 @@ export function clampOnDrag(input: ClampRest): PanelPosition {
   })
 }
 
-/** Settle clamp: minimum spacing ( honouring previous spacing), then the drag boundary. */
+/** Settle clamp: minimum spacing honouring previous spacing, then the drag boundary. */
 export function clampOnResize(input: ClampRest & { lastSpacing?: PanelSpacing | null }): PanelPosition {
   const { lastSpacing, ...rest } = input
   const settled = clampWithinSpacing({ ...rest, spacing: MIN_PANEL_SPACING, lastSpacing })
@@ -186,12 +166,7 @@ export function resolveInitialPanelPosition({
   return clampOnResize({ x, y, panelSize, viewport, origin })
 }
 
-/**
- * Empirical origin offset applied when a card goes wide — the wide-card
- * transform shifts the card's rect by a couple of pixels relative to where
- * the panel math expects it, and without the fudge the panel visibly bounces
- * on the transition. Carried from the original inline effect math.
- */
+/** Empirical origin offset applied when a card goes wide: the wide-card transform shifts the card's rect by a couple of px, and without the fudge the panel visibly bounces on the transition. */
 export const WIDE_CARD_ORIGIN_OFFSET: PanelPosition = { x: 2, y: 1 }
 
 export interface CardWidthTransitionInput {
@@ -223,14 +198,11 @@ export interface CardWidthTransition {
 }
 
 /**
- * The wide-card origin-shift policy: the panel positions in window
- * coordinates normally, but against the card's rect while the card is wide
- * (its transform makes it the coordinate origin — see `resolveCardOrigin`).
- * Entering wide re-bases the position from window to card origin; leaving
- * wide re-bases it back through the remembered origin. Both directions
- * settle-clamp the result. Returns null when no wide transition happened
- * (or the card element is gone), so the caller leaves its bookkeeping
- * untouched.
+ * The wide-card origin-shift policy: the panel positions in window coordinates normally,
+ * but against the card's rect while the card is wide (its transform makes it the coordinate
+ * origin — see `resolveCardOrigin`). Entering wide re-bases the position from window to
+ * card origin; leaving wide re-bases it back through the remembered origin. Returns null
+ * when no wide transition happened, so the caller leaves its bookkeeping untouched.
  */
 export function resolveCardWidthTransition({
   position,
@@ -279,9 +251,9 @@ export function resolveCardWidthTransition({
 }
 
 /**
- * Viewport-resize drift: when the viewport grows, pull the panel back towards
- * its preferred position by at most the grown amount, so a panel pushed
- * offscreen by a small viewport becomes fully visible again on resize/rotate.
+ * Viewport-resize drift: when the viewport grows, pull the panel back towards its preferred
+ * position by at most the grown amount, so a panel pushed offscreen by a small viewport
+ * becomes fully visible again on resize/rotate.
  */
 export function driftTowardsInitial(
   position: PanelPosition,
@@ -334,12 +306,9 @@ export interface DragSession {
 }
 
 /**
- * Headless drag session: start threshold → move → end, with the side effects
- * declared behind ports. A port adapter over the shared press-threshold core
- * (@/utils/draggable/press-threshold-session): the core's grab origin is the
- * zero point and this adapter feeds it travel deltas measured against the
- * live position, preserving the historical threshold math. The React adapter
- * feeds it pointer coordinates and owns every DOM consequence.
+ * Headless drag session: start threshold → move → end, with side effects declared behind
+ * ports. Port adapter over the shared press-threshold core: the core's grab origin is the
+ * zero point and this adapter feeds it travel deltas measured against the live position.
  */
 export function createDragSession({
   getPosition,
@@ -351,8 +320,7 @@ export function createDragSession({
   let dragging = false
   let offsetX = 0
   let offsetY = 0
-  // re-created per grab; never given an onCancel — ending the session is the
-  // adapter's own concern (end always unwinds the effects)
+  // re-created per grab; never given an onCancel — end() always unwinds the effects
   let press: PressThresholdSession | null = null
 
   return {

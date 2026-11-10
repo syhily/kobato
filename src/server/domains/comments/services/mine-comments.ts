@@ -42,7 +42,7 @@ export interface LoadMineCommentsResult {
 const EXCERPT_LIMIT = 80
 
 function makeExcerpt(raw: string): string {
-  // R12: `content` is now degraded HTML, not markdown — strip tags first.
+  // `content` is degraded HTML, not markdown — strip tags before excerpting.
   const trimmed = raw
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')

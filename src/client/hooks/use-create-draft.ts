@@ -65,7 +65,7 @@ export function useCreateDraft<TBody, TMeta>(
 
   // Lifecycle lives in useDraftSession; this adapter supplies the session
   // key and the meta-carrying mapping — the raw record body is surfaced,
-  // not the parsed one (historical create-flow behavior).
+  // not the parsed one.
   const mapLoaded = useCallback((record: DraftRecord): { body: TBody; meta: TMeta; savedAt: number } | null => {
     if (!hasMeta<TBody, TMeta>(record)) {
       return null

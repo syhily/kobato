@@ -1,17 +1,15 @@
 /**
  * Compile-time pins for the upload-intent policy composition.
  *
- * The intent options used to be a flat bag of optional knobs, so several
- * combinations compiled but could never take effect: a `previewPatch` without
- * `leasePreview`, a `metadataTiming` without an extractor, an `onBail` under
- * the patch policy, pre-extracted `meta` alongside an extractor. The three
- * policy unions (`preview` / `metadata` / `emptyResult`) close those shapes;
- * the negative pins below are the regression guard, and the positive pins keep
- * every valid card variant plus generic `TNode`/`TMeta` inference ergonomic
- * (no explicit type arguments, no casts).
+ * The three policy unions (`preview` / `metadata` / `emptyResult`) reject
+ * combinations that compile but can never take effect: a publish without a
+ * lease, a timing without an extractor, an `onBail` under the patch policy,
+ * pre-extracted `meta` alongside an extractor. The negative pins are the
+ * regression guard; the positive pins keep every card variant and generic
+ * `TNode`/`TMeta` inference ergonomic (no explicit type arguments, no casts).
  *
- * This file is included by the root tsconfig and is only type-checked — it is
- * never executed (the factory calls would start intents if it ran).
+ * Type-checked only, never executed — the factory calls would start intents
+ * if it ran.
  */
 import type { LexicalEditor, NodeKey } from 'lexical'
 
@@ -38,7 +36,7 @@ declare const nodeKey: NodeKey
 declare const upload: UploadFn
 declare const files: File[]
 
-// --- host uploader contract -------------------------------------------------
+// Host uploader contract
 
 // The host's `FileUploader['useFileUpload']` upload is structurally identical
 // to `UploadFn`: same `files`/`formData` parameters and the same
@@ -47,7 +45,7 @@ type _HostUpload = ReturnType<FileUploader['useFileUpload']>['upload']
 type _HostUploadAssignableToUploadFn = Expect<Extends<_HostUpload, UploadFn>>
 type _UploadFnAssignableToHostUpload = Expect<Extends<UploadFn, _HostUpload>>
 
-// --- positive variants ------------------------------------------------------
+// Positive variants
 
 // image: lease + publish, before-upload extraction from the preview URL,
 // patch-always — and TMeta inferred from the extractor, not annotated.
@@ -176,9 +174,9 @@ void videoFlowUploadIntent({
   onEmptyPreview: () => {},
 })
 
-// --- negative pins: the formerly dead combinations --------------------------
+// Negative pins: combinations that must not compile
 
-// a publish without a lease — `previewPatch` was silently ignored
+// a publish without a lease — a top-level previewPatch would be silently ignored
 runUploadIntent({
   editor,
   nodeKey,
@@ -191,7 +189,7 @@ runUploadIntent({
   patch: () => {},
 })
 
-// an after-upload timing with no extractor — the timing was never read
+// an after-upload timing with no extractor — the timing would never be read
 runUploadIntent({
   editor,
   nodeKey,
@@ -204,7 +202,7 @@ runUploadIntent({
   patch: () => {},
 })
 
-// an onBail hook under the patch policy — the hook was never called
+// an onBail hook under the patch policy — the hook would never be called
 runUploadIntent({
   editor,
   nodeKey,
@@ -228,7 +226,7 @@ runUploadIntent({
   patch: () => {},
 })
 
-// pre-extracted metadata alongside an extractor — one of the two was ignored
+// pre-extracted metadata alongside an extractor — one of the two would be ignored
 runUploadIntent({
   editor,
   nodeKey,

@@ -88,9 +88,8 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
   }, [])
 
   // the per-gesture document listener, so stop can remove it without the
-  // listener self-referencing its own binding. The gesture's only real
-  // effect is returning focus to the hex input on release — the named
-  // "isUsingColorPicker" session state was never read and is gone.
+  // listener self-referencing its own binding. The gesture's only real effect is
+  // returning focus to the hex input on release.
   const gestureStopRef = useRef<(() => void) | null>(null)
 
   const stopUsingColorPicker = useCallback(() => {

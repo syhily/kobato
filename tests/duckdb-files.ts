@@ -1,9 +1,8 @@
 /**
  * Test files that spin up the real DuckDB native engine, pinned by
- * `tests/unit/arch/duckdb-project-files.test.ts`. They run in the dedicated
- * `duckdb` vitest project (`tests/vitest.duckdb.config.ts`): sequential
- * files, one fresh fork per file, so a native crash is contained to its own
- * worker instead of taking down a shared one. Paths are relative to `tests/`.
+ * `tests/unit/arch/duckdb-project-files.test.ts`. They run in the dedicated `duckdb`
+ * project (`tests/vitest.duckdb.config.ts`): sequential files, one fresh fork each, so a
+ * native crash stays contained to its own worker. Paths are relative to `tests/`.
  */
 export const DUCKDB_TEST_FILES: readonly string[] = [
   'it/routes/admin/dashboard.test.ts',

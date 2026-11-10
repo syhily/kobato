@@ -14,12 +14,8 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// 7×24 weekday × hour heatmap (Slite's `analysis/Heatmap.vue`): CSS grid +
-// color-mix intensity, isodow weekdays (Mon-first rows), a visits/visitors
-// metric switch, and full keyboard navigation (arrow keys, roving tabindex,
-// role="grid"). Self-fetching with clientTimezone — the loader's cells are
-// bucketed in Etc/UTC, so the skeleton stays up until the client-timezone
-// query resolves instead of flashing a grid whose hour columns then shift.
+// Self-fetching with clientTimezone: loader cells are bucketed in Etc/UTC, so
+// the skeleton stays up until the client query resolves (hour columns would shift).
 
 const WEEKDAY_LABEL_IDS: readonly UiMessageId[] = [
   'admin.analytics.weekday.mon',

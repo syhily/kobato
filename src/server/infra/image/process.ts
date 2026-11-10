@@ -16,12 +16,10 @@ export async function processImageBuffer(
   operation: ImageOperation = 'unspecified',
 ): Promise<ProcessedImage> {
   if (import.meta.env.DEV) {
-    // The development server runs the transform inline, so the pool's
-    // queue/execution telemetry never fires there. Record the execution
-    // boundary directly (queue wait is zero by construction).
+    // The dev server runs the transform inline, so the pool's queue/execution
+    // telemetry never fires; record both boundaries directly so the metric
+    // stream exists (queue wait is zero by construction).
     const sizeBucket = imageSizeBucket(input.buffer.byteLength)
-    // DEV runs inline: queue wait is real and zero by construction, but the
-    // metric stream must exist so the Server dashboard can query it.
     recordImageQueue(operation, sizeBucket, 0)
     const startedAt = performance.now()
     const span = startSpan('image.worker', {

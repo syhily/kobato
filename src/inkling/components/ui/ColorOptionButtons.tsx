@@ -24,7 +24,6 @@ export function ColorOptionButtons({ buttons = [], selectedName, onClick }: Colo
 
   const selectedButton = buttons.find((button) => button.name === selectedName)
 
-  // Close the swatch popover when clicking outside of it
   useClickOutside(isOpen, componentRef, () => setIsOpen(false))
 
   return (

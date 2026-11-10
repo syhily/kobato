@@ -44,12 +44,12 @@ export async function signUpInitialAdminWithSession(
     return authFlowError('auth.setup.error.adminExists')
   }
 
-  // Settings domain owns the section seed; the admin insert and seed
-  // share one transaction so a fresh install commits or rolls back atomically.
+  // Settings domain owns the section seed; the admin insert and seed share one
+  // transaction so a fresh install commits or rolls back atomically.
   const seedRows = buildInstallSectionRows({ title, name, email, locale, hostname: new URL(request.url).hostname })
   if (!seedRows.ok) {
-    // Registry-drift diagnostic: the technical seed message rides as the
-    // fallback, the structured copy is the setup validation descriptor.
+    // Registry-drift diagnostic: the technical seed message rides as the fallback, the
+    // structured copy is the setup validation descriptor.
     const descriptor = seedRows.descriptor
     return { type: 'error', message: descriptor.fallbackMessage, descriptor }
   }
@@ -71,7 +71,7 @@ export async function signUpInitialAdminWithSession(
   await refreshBlogSettings(db)
   await invalidateSetupToken(db)
 
-  // Bulk-load install seed — refresh planner statistics (plan §1.9).
+  // Bulk-load install seed; refresh planner statistics.
   db.run(sql`ANALYZE`)
 
   return {

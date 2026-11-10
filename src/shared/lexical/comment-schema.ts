@@ -5,14 +5,12 @@ import { buildLexicalEditorStateSchema } from '@/shared/lexical/schema'
 import { lexicalNodeTextContent, visitLexicalNodes } from '@/shared/lexical/walk'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Restricted Lexical state for comment bodies — the server perimeter
-// validates every incoming body. Mirrors the PT `comment-schema.ts`
-// capability set: multi-paragraph, blockquote, nested lists, code block,
-// math block, link, math-inline (node whitelist in node-whitelist.ts).
+// Restricted Lexical state for comment bodies — the server perimeter validates
+// every incoming body. Capability set: multi-paragraph, blockquote, nested
+// lists, code block, math block, link, math-inline (node whitelist in
+// node-whitelist.ts).
 
-/** Mirrors the PT comment cap (`comment-schema.ts`'s level ≤ 4). The
- * Lexical version counts `list` nodes on the ancestor chain — the
- * list > listitem > list nesting depth. */
+/** List nesting cap: counts `list` nodes on the ancestor chain. */
 export const COMMENT_LIST_MAX_DEPTH = 4
 
 export const commentEditorStateSchema = buildLexicalEditorStateSchema({
@@ -22,11 +20,9 @@ export const commentEditorStateSchema = buildLexicalEditorStateSchema({
 
 export type CommentEditorState = z.infer<typeof commentEditorStateSchema>
 
-/** The comment form's reset/empty value — a single empty paragraph so the
- * state is both a valid `commentEditorStateSchema` parse target and the
- * composer's canonical blank. Element nodes carry their full serialized
- * field set (children/direction/format/indent are schema-required); the cast
- * bridges the erased `LexicalNodeJson` child type (type + version only). */
+/** The comment form's reset/empty value: a single empty paragraph, valid for
+ * both the schema parse and the composer's canonical blank. The cast bridges
+ * the erased `LexicalNodeJson` child type (type + version only). */
 export const EMPTY_COMMENT_EDITOR_STATE: CommentEditorState = unsafeCast<CommentEditorState>({
   root: {
     type: 'root',
@@ -49,13 +45,10 @@ export function safeValidateCommentEditorState(
 }
 
 /**
- * Cheap pre-render length bound for the server perimeter: the sum of the
- * text payloads that survive into the degraded-HTML projection (text nodes,
- * linebreaks, codeblock `code`, math `tex`). Every counted character is
- * emitted in the projection too, so exceeding the content cap here is
- * guaranteed to exceed it on the rendered side — but the check costs one
- * tree walk instead of a jsdom render of a body the 10 MB perimeter limit
- * allows.
+ * Cheap pre-render length bound for the server perimeter: counts only text
+ * that survives into the degraded-HTML projection, so exceeding the cap here
+ * guarantees exceeding it on the rendered side — one tree walk instead of a
+ * jsdom render of a body the 10 MB perimeter limit allows.
  */
 export function commentEditorStateTextLength(state: CommentEditorState): number {
   let total = 0
@@ -83,8 +76,7 @@ export function commentEditorStateTextLength(state: CommentEditorState): number 
 /**
  * Blank check (submit gating on both the comment form and the server
  * perimeter): a comment is blank when no text content survives trimming and
- * every codeblock `code` / math `tex` payload is empty. Mirrors the PT
- * `isCommentBodyEmpty` semantics.
+ * every codeblock `code` / math `tex` payload is empty.
  */
 export function isCommentEditorStateBlank(state: CommentEditorState): boolean {
   let blank = true

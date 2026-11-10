@@ -25,13 +25,8 @@ const CONFIG: ServerTraceRuntimeConfig = {
   logs: null,
 }
 
-/**
- * Faithful push exporter: it forwards the real OTLP exporter's temporality and
- * aggregation selectors into the SDK reader, then captures the collected
- * batches instead of serializing protobuf over HTTP. This exercises the real
- * `PeriodicExportingMetricReader` collection/reset path, not a hand-rolled
- * reader with SDK defaults.
- */
+/** Forwards the real OTLP exporter's temporality/aggregation selectors into the SDK reader and
+ * captures the collected batches, exercising the real `PeriodicExportingMetricReader` path. */
 class RecordingExporter implements PushMetricExporter {
   readonly batches: ResourceMetrics[] = []
 

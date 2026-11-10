@@ -4,9 +4,8 @@ import { assetsValidationMessages, assetsWriteSchema } from '@/server/domains/se
 import { securitySchema, securityValidationMessages } from '@/server/domains/settings/sections/security'
 import { zodIssueToWire } from '@/server/infra/http/error-descriptor'
 
-// Settings custom Zod prose is a typed catalog id at the schema, and the server
-// boundary (zodIssuesToWire) turns it into a descriptor: typed key + params +
-// an English fallback + the producer code + the preserved field path.
+// Settings Zod prose is a typed catalog id at the schema; zodIssuesToWire turns it into a
+// descriptor: typed key + params + English fallback + producer code + preserved field path.
 
 function issueOf(
   schema: { safeParse: (input: unknown) => { success: boolean; error?: { issues: unknown[] } } },

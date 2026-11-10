@@ -9,8 +9,8 @@ import { recordForceOverwriteAudit } from '@/server/domains/content/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 /**
- * Builds the body-lifecycle adapter from the same descriptor that drives
- * the meta CRUD skeleton. Lives outside `lifecycle.ts` for test seams.
+ * Builds the body-lifecycle adapter from the descriptor that drives the meta
+ * CRUD skeleton. Lives outside `lifecycle.ts` for test seams.
  */
 export function makeContentEntityAdapter<
   TMeta extends MetaRowBase,

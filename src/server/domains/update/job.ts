@@ -43,14 +43,14 @@ export function getUpdateJobStatus(locale: AppLocale = DEFAULT_LOCALE): UpdateJo
   return { ...current, error: createServerTranslator(locale).format(messageKey, params) }
 }
 
-// Self-restart after a successful binary swap (plan 090). The listen socket
-// MUST close before the replacement spawns (audit P0-7); exit goes through
-// `requestShutdown` so the batcher flush hooks run first.
+// Self-restart after a successful binary swap. The listen socket MUST close
+// before the replacement spawns; exit goes through `requestShutdown` so the
+// batcher flush hooks run first.
 function scheduleSelfRestart(): void {
   void (async () => {
     // 8s budget matches the graceful close in `performShutdown`.
     await closeHttpServer(8_000)
-    // Respawn failure (audit V3-01): re-bind the listener, release the job slot.
+    // Respawn failure: re-bind the listener, release the job slot.
     const recover = async (err: unknown): Promise<void> => {
       const message = err instanceof Error ? err.message : String(err)
       log.error('self-update respawn failed; restoring the listener', { err: message })

@@ -7,8 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Right-rail latest-50 feed from the SSE stream, rendered newest-first.
-
 export function RealtimeFeed({ className }: { className?: string }) {
   const { t } = useI18n()
   const { events, state } = useEventStream({ bufferSize: 50 })

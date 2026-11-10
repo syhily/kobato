@@ -40,8 +40,7 @@ const binaryModules = unsafeCast<Record<string, string>>(
   }),
 )
 
-// `favicon.svg` -> `faviconSvg`, `logo-large-dark.svg` -> `logoLargeDarkSvg`,
-// `apple-touch-icon.png` -> `appleTouchIcon`, `favicon.ico` -> `faviconIco`.
+// `favicon.svg` -> `faviconSvg`; `apple-touch-icon.png` -> `appleTouchIcon`; `favicon.ico` -> `faviconIco`.
 function keyForFile(path: string): string {
   const filename = path.slice(path.lastIndexOf('/') + 1)
   const match = /^(.+?)\.(svg|ico|png)$/.exec(filename)
@@ -92,9 +91,7 @@ export const DEFAULT_BINARY: Readonly<Record<BinarySlot, Buffer>> = indexBySlot(
   dataUriToBuffer,
 )
 
-// Pre-computed sha256 (hex) of every bundled default. Used as the ETag
-// value for fallback responses so HTTP caches can revalidate without us
-// hashing on every request.
+// Pre-computed sha256 per bundled default — serves as the fallback response's ETag.
 function hashRecord<K extends string>(record: Record<K, Buffer | string>): Record<K, string> {
   const out: Partial<Record<K, string>> = {}
   for (const [k, v] of unsafeCast<[K, Buffer | string][]>(Object.entries(record))) {

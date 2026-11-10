@@ -7,9 +7,8 @@ export const adminTagDto = z.object({
   name: z.string(),
   slug: z.string(),
   ogImage: z.string(),
-  // Live post count referencing this row via `post_tag` — mirrors the
-  // delete-block guard's view (postCount > 0 → 409). Computed by the
-  // service, not persisted.
+  // Live post count; mirrors the delete-block guard (postCount > 0 → 409).
+  // Computed by the service, not persisted.
   postCount: z.number().int().nonnegative(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,

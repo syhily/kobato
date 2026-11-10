@@ -55,8 +55,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       enabled: id !== '',
     }),
     // Seed from any cached music-list page so the hero (and its shared-element
-    // transition partner in AlbumCard) renders inside the navigation transition
-    // instead of after a skeleton round-trip.
+    // transition partner in AlbumCard) renders inside the navigation transition.
     placeholderData: () => {
       for (const [, data] of queryClient.getQueriesData<InfiniteData<ListMusicOutput, number>>({
         queryKey: orpcQuery.admin.music.list.key(),
@@ -214,7 +213,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={transitions.detailFade}
     >
-      {/* Close button */}
       <button
         type="button"
         onClick={() => void navigate('/admin/library/music')}
@@ -224,7 +222,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         <X className="size-5" />
       </button>
 
-      {/* Hero */}
       <div
         className={cn(
           '-mx-8 -mt-8 mb-8 px-8 pt-8 pb-8',
@@ -236,7 +233,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         }}
       >
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-end">
-          {/* Cover */}
           <LazyMotionDiv
             className="shrink-0"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -256,7 +252,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
             )}
           </LazyMotionDiv>
 
-          {/* Info / Edit Form */}
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <LazyMotionSpan
               className="text-xs font-medium tracking-wider text-ink-4 uppercase"
@@ -334,7 +329,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         </div>
       </div>
 
-      {/* Action Bar */}
       <LazyMotionDiv
         className="mb-8 flex items-center gap-3"
         initial={{ opacity: 0, y: 16 }}
@@ -405,7 +399,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         )}
       </LazyMotionDiv>
 
-      {/* Metadata */}
       {!editing && (
         <LazyMotionDiv
           className="mb-8 grid grid-cols-2 gap-4 text-sm text-ink-4 sm:grid-cols-4"
@@ -432,7 +425,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         </LazyMotionDiv>
       )}
 
-      {/* Lyrics */}
       <LazyMotionDiv
         className="border-t border-line pt-8"
         initial={{ opacity: 0, y: 16 }}

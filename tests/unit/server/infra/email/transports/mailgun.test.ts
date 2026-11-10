@@ -13,8 +13,7 @@ const baseConfig: MailgunConfig = {
   sender: 'noreply@mg.example.com',
 }
 
-// The transport talks to the Mailgun v3 API with native fetch — stub the
-// global instead of the old SDK client.
+// The transport talks to the Mailgun v3 API with native fetch — stub the global.
 const fetchMock = vi.fn()
 
 function formDataEntries(body: unknown): Record<string, string[]> {

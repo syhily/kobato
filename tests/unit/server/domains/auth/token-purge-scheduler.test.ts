@@ -14,11 +14,10 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-// `nextDailyMaintenanceDelayMs` runs for real. Pinning the fake clock to a
-// fixed instant keeps the delay-to-fire identical on every machine and run,
-// and advancing exactly that delay (+ 1 ms) crosses exactly one fire — a
-// full-day blind advance is wall-clock dependent (a run starting within 1 s
-// of the 04:30 slot double-fires) and sweeps a whole day of fake time.
+// `nextDailyMaintenanceDelayMs` runs for real. A pinned fake clock keeps the delay-to-fire
+// identical everywhere; advancing exactly that delay (+ 1 ms) crosses one fire, while a
+// blind full-day advance is wall-clock dependent (a run starting within 1 s of the 04:30
+// slot double-fires).
 const PINNED_NOW = new Date('2026-01-15T12:00:00.000Z')
 
 const { scheduleRegisteredJob, setJobHandleGetter } = await import('@/server/infra/job-registry')

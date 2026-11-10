@@ -31,9 +31,9 @@ queryMocks.filters = [] as ActiveFilter<PageFilterFieldKey>[]
 
 queryMocks.dispatch = vi.fn()
 
-// PagesView's list/authors queries are hoisted singletons so each test
-// swaps resolved data + loading flag; the pill hook mock (audit-branches
-// pattern) swaps ONLY the hook so the real FilterPillBar renders.
+// PagesView's list/authors queries are hoisted singletons so each test swaps resolved
+// data and the loading flag; only the pill hook is mocked, so the real FilterPillBar
+// renders.
 
 vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   const actual = await vi.importActual<typeof import('@/ui/admin/shared/filter-bar/useFilterPills')>(
@@ -61,8 +61,8 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   }
 })
 
-// Divergent defaults preserved from this file's former local factory (the
-// shared catalog factory derives slug/title from a generated numeric id).
+// Local fixture defaults deliberately differ from the shared catalog factory, which
+// derives slug/title from a generated numeric id.
 const aboutPage: Partial<AdminPageDto> = {
   id: '1000001',
   slug: 'about',

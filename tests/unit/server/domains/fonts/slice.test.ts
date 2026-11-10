@@ -4,9 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 import { sliceFont } from '@/server/domains/fonts/slice'
 
-// Schema-drift canary for the vendored cn-font-split WASM bundle: a drift
-// between cnfs.mjs (npm 7.4.3) and cnfs.wasm (GitHub 7.6.8) breaks the
-// protobuf round-trip. Fixture: Barlow TTF (SIL OFL 1.1), self-contained.
+// Schema-drift canary for the vendored cn-font-split WASM bundle: a version split between
+// cnfs.mjs and cnfs.wasm breaks the protobuf round-trip.
 
 const TTF_PATH = resolve(__dirname, '../../../../fixtures/fonts/Barlow-Regular.ttf')
 

@@ -103,8 +103,8 @@ describe('getRegisteredCardNodes', () => {
   it('carries the codeblock menu entry added for trimmed comment surfaces', () => {
     const cards = new Map(getRegisteredCardNodes(new Set(['codeblock'])))
 
-    // the code block was historically menu-less (markdown fence only); the
-    // slash entry exists so trimmed comment surfaces can insert it
+    // the slash entry exists so trimmed comment surfaces can insert a code
+    // block (markdown fence is the other path)
     expect(cards.get('codeblock')?.cardMenu?.[0]?.label).toBe('Code')
     expect(cards.get('codeblock')?.uploadType).toBeUndefined()
   })

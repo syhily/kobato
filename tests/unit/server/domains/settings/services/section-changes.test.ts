@@ -6,9 +6,8 @@ import {
   sectionChangeHandler,
 } from '@/server/domains/settings/services/section-changes'
 
-// The registry is inert on import — handlers arrive from the
-// bootstrap composition root (the db-lifecycle wiring is covered by
-// the bootstrap tests, not here).
+// The registry is inert on import — handlers arrive from the bootstrap composition root
+// (db-lifecycle wiring is covered by the bootstrap tests).
 describe('server/domains/settings/services/section-changes', () => {
   beforeEach(() => {
     __clearSectionChangeHandlersForTests()

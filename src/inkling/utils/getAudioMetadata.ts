@@ -1,5 +1,3 @@
-// gets audio duration from a given URL
-
 import { awaitMediaEvents } from '@/inkling/utils/awaitMediaEvents'
 
 export interface AudioMetadata {

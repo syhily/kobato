@@ -11,22 +11,18 @@ import {
   KEY_ENTER_COMMAND,
 } from 'lexical'
 
-// Enter inside a blockquote. Upstream's QuoteNode.insertNewAfter always opens
-// a plain paragraph AFTER the quote, so a single Enter ejects the caret from
-// the blockquote — the behaviour this module replaces:
+// Enter inside a blockquote: plain Enter opens a new paragraph inside the SAME
+// blockquote, Enter on an empty quote leaves it. Upstream's QuoteNode.insertNewAfter
+// always opens a plain paragraph after the quote.
 //
-//   Enter          → new paragraph inside the SAME blockquote
-//   Enter on empty → leave the blockquote (paragraph after it)
-//
-// "Paragraph inside a blockquote" is a DOUBLE LINE BREAK, not a paragraph
-// node: the denest transform (src/inkling/transforms/transforms/denest.ts)
-// evicts non-inline children from element nodes, and the HTML import
-// converter (ExtendedQuoteNode) flattens blockquote paragraphs into two line
-// breaks for exactly that reason. Two breaks are also what makes the markdown
-// export keep the quote contiguous (a blank '>' line between text lines).
+// "Paragraph inside a blockquote" must be a DOUBLE LINE BREAK, not a paragraph node:
+// the denest transform evicts non-inline children from element nodes, and the HTML
+// import converter (ExtendedQuoteNode) flattens blockquote paragraphs into two line
+// breaks for that reason. Two breaks also keep the markdown export's quote contiguous
+// (a blank '>' line).
 
-// Leave the quote: drop the caret into a fresh paragraph after it, or replace
-// the quote outright when nothing worth keeping is left inside.
+// Leave the quote: drop the caret into a fresh paragraph after it, or replace the
+// quote outright when nothing worth keeping is left inside.
 function $exitQuote(quote: QuoteNode): void {
   const paragraph = $createParagraphNode()
   paragraph.setDirection(quote.getDirection())
@@ -39,9 +35,8 @@ function $exitQuote(quote: QuoteNode): void {
 }
 
 function $handleQuoteEnter(event: KeyboardEvent | null): boolean {
-  // null event is the IME/mobile Enter path; shift+enter stays a soft line
-  // break, cmd/ctrl+enter stays with the card edit-mode toggle (enter.ts runs
-  // first and owns it)
+  // A null event is the IME/mobile Enter path; shift+enter is a soft line break and
+  // cmd/ctrl+enter belongs to the card edit-mode toggle (enter.ts runs first).
   if (!event || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) {
     return false
   }
@@ -60,14 +55,13 @@ function $handleQuoteEnter(event: KeyboardEvent | null): boolean {
 
   event.preventDefault()
 
-  // an empty blockquote has nothing to break — a single Enter leaves it
   if (quote.getTextContent().trim() === '') {
     $exitQuote(quote)
     return true
   }
 
-  // second Enter: the caret sits at the quote end right after the paragraph
-  // break the previous Enter inserted — remove the break and leave the quote
+  // Second Enter: the caret sits at the quote end right after the break pair the
+  // previous Enter inserted — remove both breaks and leave the quote.
   if (anchor.type === 'element' && anchorNode === quote && anchor.offset === quote.getChildrenSize()) {
     const last = quote.getLastChild()
     const previous = last?.getPreviousSibling()
@@ -79,7 +73,6 @@ function $handleQuoteEnter(event: KeyboardEvent | null): boolean {
     }
   }
 
-  // plain Enter: split out a new paragraph inside the same blockquote
   selection.insertNodes([$createLineBreakNode(), $createLineBreakNode()])
   return true
 }

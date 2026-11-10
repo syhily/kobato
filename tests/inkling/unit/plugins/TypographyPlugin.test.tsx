@@ -30,7 +30,7 @@ function getEditorText(editor: ReturnType<typeof createTestEditor>): string {
 }
 
 // Types each character as its own keystroke. The typography grammar itself
-// is pinned synchronously in test/unit/plugins/behaviour/typography.test.ts;
+// is pinned synchronously in behaviour/typography.test.ts;
 // these tests pin the plugin wiring — the registered scan, the
 // 'history-push' tag that keeps the replacement a separate undo entry, and
 // the update-scan seam's composing skip that protects IME input.

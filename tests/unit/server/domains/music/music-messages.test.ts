@@ -8,8 +8,6 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Music add/write errors across all four locales. The asset noun
-// (`audio`/`cover`) is a machine kind rendered by ICU `select`.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

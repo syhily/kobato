@@ -22,11 +22,10 @@ export interface SerializedMathInlineNode extends SerializedLexicalNode {
 }
 
 /**
- * Inline math (CONTEXT.md: cards are block-level, so this cannot join the
- * card pipeline): one hand-written inline decorator carrying the TeX source
- * plus the host's server-prerendered artifacts (`mathml`/`svg` slots, default
- * ''). Not a mark/format — Lexical formats are bit flags and cannot carry the
- * `tex` payload; an inline node is the markDef's only tree-side counterpart.
+ * Inline math (cards are block-level, so this cannot join the card pipeline): one
+ * hand-written inline decorator carrying the TeX source plus the host's
+ * server-prerendered artifacts (`mathml`/`svg` slots, default ''). Not a
+ * mark/format — Lexical formats are bit flags and cannot carry the `tex` payload.
  *
  * The editor preview renders the stored artifacts straight from createDOM
  * (CSP-safe: no wasm, no render runtime in the browser); the host owns the
@@ -68,10 +67,9 @@ export class MathInlineNode extends DecoratorNode<null> {
     return this.getLatest().__tex
   }
 
-  // The artifact-slot invariant the generated nodes keep as spec data —
-  // this hand-written node shares the one implementation:
-  // construction/importJSON assign the private fields directly, so
-  // host-filled slots survive; only edits clear them.
+  // The artifact-slot invariant the generated nodes keep as spec data, shared
+  // with this hand-written node: construction/importJSON assign the private
+  // fields directly, so host-filled slots survive; only edits clear them.
   set tex(value: string) {
     const writable = this.getWritable()
     applyArtifactSlotInvalidation(writable.__tex !== value, writable, ['__mathml', '__svg'])
@@ -131,8 +129,8 @@ export class MathInlineNode extends DecoratorNode<null> {
     return null
   }
 
-  // Priority svg > mathml > <code>tex</code> (kobato pt-html.ts:150-154,
-  // 254-265); the artifacts pass through the render-context sanitize.
+  // Priority svg > mathml > <code>tex</code>; the artifacts pass through the
+  // render-context sanitize.
   exportDOM(_editor: LexicalEditor, options: ExportDOMOptions = {}): DOMExportOutput {
     const context = createRenderContext(options)
     const document = context.createDocument()

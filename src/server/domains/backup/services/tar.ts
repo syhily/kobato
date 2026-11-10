@@ -7,13 +7,12 @@ import { ActionFailure } from '@/server/infra/http/errors'
 
 /**
  * Minimal USTAR writer/reader for the backup archive (content DB, optional
- * analytics sidecar, optional config file), no deps;
- * production paths stream, the buffer-tier pack/unpack lives in
- * tests/_helpers/backup-buffer.ts.
+ * analytics sidecar, optional config file), no deps; the buffer-tier
+ * pack/unpack lives in tests/_helpers/backup-buffer.ts.
  */
 
-/** The tar block size — exported for the test-tier reader in
- *  tests/_helpers/backup-buffer.ts (its offset math shares the constant). */
+/** The tar block size — exported so the test-tier reader in
+ *  tests/_helpers/backup-buffer.ts shares the offset math. */
 export const TAR_BLOCK = 512
 const BLOCK = TAR_BLOCK
 const USTAR_OFFSET = 257
@@ -50,7 +49,7 @@ export function tarEntryHeader(name: string, size: number): Buffer {
   writeString(header, 263, 2, '00')
   writeString(header, 265, 6, 'kobato')
   writeString(header, 297, 6, 'kobato')
-  // Checksum: the header with the chksum field as eight spaces.
+  // USTAR checksum: the header summed with the chksum field as eight spaces.
   writeString(header, 148, 8, '        ')
   let sum = 0
   for (const byte of header) {

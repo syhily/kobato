@@ -6,8 +6,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * Deep-merge a Section patch into a base settings object. Records merge
- * recursively; arrays / non-records REPLACE. The single merge for the
- * settings write path — do not fork it.
+ * recursively; arrays / non-records REPLACE. The single merge for the settings
+ * write path — do not fork it.
  */
 export function mergeSectionPatch<T extends object>(
   base: T,

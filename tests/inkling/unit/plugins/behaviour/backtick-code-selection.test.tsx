@@ -33,8 +33,8 @@ import { registerModifierCommand } from '@/inkling/plugins/behaviour/keyboard-na
 import { registerKeyboardNavigation } from '@/inkling/plugins/behaviour/registerKeyboardNavigation'
 
 // Typing an unmodified backtick over a range selection formats it as inline
-// code through the same FORMAT_TEXT_COMMAND path as ctrl+shift+K
-// (upstream Ghost c19173beb59e). These are real-editor specs: FormatText is
+// code through the same FORMAT_TEXT_COMMAND path as ctrl+shift+K. These are
+// real-editor specs: FormatText is
 // wired by registerRichText, undo by the real HistoryPlugin, and the nested
 // mount goes through the production registerKeyboardNavigation seam.
 

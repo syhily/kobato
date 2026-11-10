@@ -4,9 +4,8 @@ import type { DeviceEnvServerRow } from '@/server/domains/analytics/services/dev
 import type { EnrichedAccessEvent, RawAccessEvent } from '@/server/domains/analytics/types'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
-// Spy-level complement to the integration suite
-// (tests/it/server/domains/analytics/track.test.ts): that suite pins WHAT
-// lands in the engine, this one pins that a dropped bot never pays for
+// Spy-level complement to tests/it/server/domains/analytics/track.test.ts: that suite
+// pins what lands in the engine, this one pins that a dropped bot never pays for
 // enrichment — the GeoIP lookup + salted IP hash live behind enrichEvent.
 const enrichMock = vi.hoisted(() => ({
   enrichEvent: vi.fn<(raw: RawAccessEvent) => Promise<EnrichedAccessEvent>>(),

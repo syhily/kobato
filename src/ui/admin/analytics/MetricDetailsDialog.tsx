@@ -7,10 +7,6 @@ import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Full-set modal behind the card footer's 详情 button — same row rendering
-// as the card, scrollable up to the 500-row fetch limit (Slite's
-// `metrics/MetricDetailsDialog.vue`).
-
 export interface MetricDetailsDialogProps {
   title: string
   rows: MetricRow[]

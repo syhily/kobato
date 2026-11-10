@@ -9,17 +9,15 @@ import { cx } from '@/inkling/utils/cx'
 
 /**
  * Upload chrome — the visual half of the media cards' upload UI (the headless
- * flow is "upload intent", src/nodes/upload-intent.ts; this module never
- * touches it). It owns the pieces that were copy-pasted across AudioCard,
- * FileCard, ImageCard, VideoCard, GalleryCard, and MediaUploader: the
- * empty↔uploading swap (UploadPlaceholder), the hidden file input
- * (UploadFileInput), the progress-width rule (uploadProgressStyle — the only
- * `toFixed(0)` left), the two uploading indicators (UploadingPanel for the
- * empty state, UploadingOverlay for the populated one), and the
- * file-input-ref tunnelling (useFileInputRefTunnel). Per-card variance —
- * icon, description, input name, mimeTypes, overlay track, and the input's
- * click propagation (see UploadFileInputProps.stopClickPropagation) — arrives
- * as data, never as a copied skeleton.
+ * flow is "upload intent" in nodes/upload-intent.ts; this module never touches
+ * it). It owns the shared pieces: the empty↔uploading swap
+ * (UploadPlaceholder), the hidden file input (UploadFileInput), the
+ * progress-width rule (uploadProgressStyle — the only `toFixed(0)`), the two
+ * uploading indicators (UploadingPanel for the empty state, UploadingOverlay for
+ * the populated one), and the file-input-ref tunnelling (useFileInputRefTunnel).
+ * Per-card variance — icon, description, input name, mimeTypes, overlay track,
+ * and the input's click propagation (see
+ * UploadFileInputProps.stopClickPropagation) — arrives as data.
  */
 
 /** The one progress-width rule: whole-percent width, 0 when the host does not report progress. */
@@ -41,10 +39,10 @@ export interface UploadFileInputProps {
    * `hasEditMode() === true`, no `openInEditMode` on their insert spec) enter
    * edit mode on insert BECAUSE the triggerFileDialog click on this input
    * propagates through the editor's CLICK_COMMAND → EDIT_CARD_COMMAND chain;
-   * standardizing stopPropagation onto them leaves inserted cards selected
-   * but not editing (12 e2e failures). The image card is the inverse —
-   * `hasEditMode() === false`, and its legacy ImageUploadForm carried the
-   * stopPropagation — so only the ex-ImageUploadForm call sites pass true.
+   * standardizing stopPropagation onto them leaves inserted cards selected but
+   * not editing (12 e2e failures). The image card is the inverse —
+   * `hasEditMode() === false`, and its upload form carries the stopPropagation —
+   * so only the image call sites pass true.
    */
   stopClickPropagation?: boolean
   /** Fires with the picked files — the chrome adapts the DOM event at this boundary, so cards carry files only. */

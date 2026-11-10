@@ -107,16 +107,12 @@ const SHIKI_LANGUAGE_MODULES = [
 
 const SHIKI_THEME_MODULES = [solarizedLight, solarizedDark]
 
-/**
- * Lookup view of `HIGHLIGHT_LANGUAGES`; a shiki release dropping a grammar
- * fails at build time instead of silently degrading to plain text.
- */
+/** Lookup view of `HIGHLIGHT_LANGUAGES`; a shiki release dropping a grammar fails at
+ *  build time instead of silently degrading to plain text. */
 export const SHIKI_SUPPORTED_LANGUAGES: ReadonlySet<string> = new Set(HIGHLIGHT_LANGUAGES)
 
-/**
- * The 36 languages + two solarized themes on the Oniguruma engine.
- * Callers wrap this in their own lazy singleton (`createPromiseMemo`).
- */
+/** The 36 languages + two solarized themes on the Oniguruma engine; callers wrap it in
+ *  their own lazy singleton (`createPromiseMemo`). */
 export function createShikiHighlighter() {
   return createHighlighterCore({
     langs: SHIKI_LANGUAGE_MODULES,

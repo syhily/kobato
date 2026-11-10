@@ -6,9 +6,8 @@ import type { Env } from '@/server/http/context'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { requestContext } from '@/server/http/request-context'
 
-// Contract test for the four hand-written glue seams between Hono, oRPC,
-// and React Router (ADR-0003 / ADR-0005): "touch the glue, break a test".
-// Bridge header-merge behavior is pinned separately in app.test.ts.
+// Contract test for the four hand-written glue seams between Hono, oRPC, and React Router:
+// touch the glue, break a test. Bridge header-merge behavior is pinned in app.test.ts.
 
 const handlerHandleMock = vi.fn<(_req: Request, opts: { context: any }) => Promise<{ matched: boolean }>>()
 
@@ -68,8 +67,8 @@ describe('glue contract / middleware pipeline order', () => {
     // consumers, decoys short-circuit first.
     expect(uses).toHaveLength(13)
     expect(uses[0][0]).toBe(trustProxy)
-    // ADR-0012: the request span mounts after trust-proxy/requestId and
-    // before compression so it covers the complete application pipeline.
+    // The request span mounts after trust-proxy/requestId and before compression, so it
+    // covers the complete application pipeline.
     expect(uses[2][0]).toBeInstanceOf(Function)
     expect(uses[8][0]).toBe(trailingSlashNormaliser)
     expect(uses[9][0]).toBe(honoWpDecoyMiddleware)
@@ -107,7 +106,7 @@ describe('glue contract / oRPC bridge projection', () => {
       'settings',
       'viewer',
     ])
-    // The dirty-marking channel must never leak into the oRPC surface (ADR-0003).
+    // The dirty-marking channel must never leak into the oRPC surface.
     expect('markSessionDirty' in captured!).toBe(false)
     expect(captured!.responseHeaders).toBeInstanceOf(Headers)
   })
@@ -146,7 +145,7 @@ describe('glue contract / entry.server export surface', () => {
 
     expect(typeof entry.default).toBe('function')
     expect(entry.streamTimeout).toBe(5_000)
-    // Pinned by ADR-0005 — replaces React Router's default console.error handler.
+    // Replaces React Router's default console.error handler.
     expect(typeof entry.handleError).toBe('function')
   })
 })

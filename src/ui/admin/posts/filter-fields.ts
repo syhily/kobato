@@ -107,7 +107,7 @@ export function postFiltersFromSearch(search: string, t: I18nValue['t']): Active
   const params = new URLSearchParams(search)
   const pills: ActiveFilter<PostFilterFieldKey>[] = []
   const status = params.get('status')
-  // Deep links bookmarked before the P2-11 rename carry `hidden` — map to `unlisted` (fix-review).
+  // Deep links bookmarked with the old `hidden` status value map to `unlisted`.
   const normalizedStatus = status === 'hidden' ? 'unlisted' : status
   if (
     normalizedStatus === 'published' ||

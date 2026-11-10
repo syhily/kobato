@@ -5,8 +5,6 @@ import { callE2eRpc } from '#/_helpers/e2e-rpc'
 
 const env = e2eEnv()
 
-// Settings write path over RPC: a section patch must validate, merge,
-// persist, refresh the live snapshot, and project back to the admin.
 describe('admin settings write (HTTP e2e)', () => {
   it('updates the site title and the public site reflects it immediately', async () => {
     const admin = new E2eClient(env.baseUrl)
@@ -26,7 +24,6 @@ describe('admin settings write (HTTP e2e)', () => {
       // The response is the authoritative merged section projection.
       expect(JSON.stringify(updated.json.section)).toContain(renamed)
 
-      // The live settings snapshot refreshed: anonymous SSR shows it.
       const anon = new E2eClient(env.baseUrl)
       const home = await anon.get('/')
       expect(home.status).toBe(200)

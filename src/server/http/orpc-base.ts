@@ -24,14 +24,12 @@ export interface HandlerContext {
   /** Transport-agnostic facts extracted by the bridge; services never touch the raw `Request`. */
   requestFacts: RequestFacts
   session: BlogSession
-  /** The session's identity projection (full `SessionUser`); `null` when anonymous. */
   viewer: SessionUser | null
   clientAddress: string
   responseHeaders: Headers
   db: Database
   /** The request's pinned settings bundle (same capture as `localization`). */
   settings: BlogSettingsBundle | null
-  /** UI locale + site time zone + time format + settings revision, projected from the canonical RequestContext. */
   localization: AppLocalization
 }
 
@@ -55,8 +53,7 @@ export type OrpcErrorCode =
   | 'SERVICE_UNAVAILABLE'
 
 /**
- * A localized `ORPCError` for gates and controllers that bypass the domain
- * guard: the message is formatted for the request locale and the structured
+ * A localized `ORPCError` for gates and controllers that bypass the domain guard: the
  * descriptor rides `data`, so the client never has to know the copy.
  */
 export function localizedOrpcError(
@@ -95,8 +92,8 @@ const domainErrorGuard = root.middleware(async ({ context, next }) => {
           context.responseHeaders.append(key, value)
         })
       }
-      // The server-localized message names the failing fields; the structured
-      // descriptor + issue paths ride `data` for consumers that map fields.
+      // The server-localized message names the failing fields; the descriptor and issue
+      // paths ride `data` for consumers that map fields.
       throw new ORPCError(error instanceof DomainError ? error.code : 'INTERNAL_SERVER_ERROR', {
         status: translated.status,
         message: summarizeApiError(translated, translator),
@@ -114,7 +111,6 @@ function ensureViewer(context: HandlerContext): SessionUser {
   return context.viewer
 }
 
-// Throws ORPCError('UNAUTHORIZED') if no session user.
 const requireAuth = root.middleware(({ context, next }) => {
   const viewer = ensureViewer(context)
   return next({
@@ -151,11 +147,8 @@ export const resourceRateLimit = root.middleware(async ({ context, next }) => {
 })
 
 /**
- * Comment submissions carry a whole Lexical state — oRPC validates that
- * input before the handler runs, so the per-IP comment bucket must be a
- * middleware placed BEFORE `.input(...)` to gate a ≤10 MB schema parse.
- * Admins are exempt (the same rule the handler applied when this check
- * lived inline).
+ * Must be placed BEFORE `.input(...)`: comment bodies carry a whole Lexical state, so
+ * oRPC would otherwise parse a ≤10 MB schema before the bucket is consulted. Admins exempt.
  */
 export const commentPostRateLimit = root.middleware(async ({ context, next }) => {
   if (context.viewer?.role === 'admin') {
@@ -169,10 +162,8 @@ export const commentPostRateLimit = root.middleware(async ({ context, next }) =>
 })
 
 /**
- * Per-user reply throttle — the per-IP resource bucket cannot stop one
- * invited account from fanning replies into every inbox and mailing the
- * whole admin team. Placed after `requireAuth`, so `viewer` is non-null;
- * admins are exempt (same rule as `commentPostRateLimit`).
+ * Per-user reply throttle: the per-IP pool cannot stop one invited account from fanning
+ * replies into every inbox and mailing the whole admin team. Requires `requireAuth`.
  */
 export const notificationReplyRateLimit = root.middleware(async ({ context, next }) => {
   if (context.viewer?.role === 'admin') {
@@ -193,7 +184,8 @@ export const passkeyGuard = root.middleware(({ next }) => {
   return next({})
 })
 
-// Single owner of the `__comment_tokens` parse → Set-Cookie dance; the write-back runs in a `finally` so it survives throws.
+// Single owner of the `__comment_tokens` parse → Set-Cookie dance; the write-back runs
+// in a `finally` so it survives throws.
 export interface CommentTokenCookieJar {
   cookie: CommentTokenCookie
   /** Assign the cleaned cookie here to schedule the `Set-Cookie` refresh. */
@@ -213,12 +205,9 @@ export const commentTokenCookie = root.middleware(async ({ context, next }) => {
   }
 })
 
-// No auth gate — public mutations rely on session authentication.
 export const publicProc = root.use(domainErrorGuard)
 
-// Any logged-in user; narrows `context.viewer` to `SessionUser`.
 export const authedProc = root.use(requireAuth).use(domainErrorGuard)
 
-// `adminProc` is admin-only; `authorProc` requires author or admin.
 export const adminProc = root.use(requireRole('admin')).use(domainErrorGuard)
 export const authorProc = root.use(requireRole('author')).use(domainErrorGuard)

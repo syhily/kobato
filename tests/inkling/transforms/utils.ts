@@ -45,12 +45,12 @@ export const assertTransform = function (
   const beforeState = editor.parseEditorState(serializedBefore)
   editor.setEditorState(beforeState)
 
-  // - setEditorState does not trigger transforms as expected
-  //   so we need to register them here instead then they are called as they're registers
+  // setEditorState does not trigger transforms as expected, so register them
+  // here; they then run as they are registered
   registerTransforms(editor)
 
-  // trigger a discrete update to make sure we're comparing finalised editor state
-  // because the transforms get batched and run "async"
+  // trigger a discrete update so the comparison sees the finalised editor
+  // state: transforms get batched and run "async"
   editor.update(() => {}, { discrete: true })
 
   // Normalize through the persisted form: Lexical 0.51+ schema-driven export

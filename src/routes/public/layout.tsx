@@ -11,11 +11,8 @@ import { ErrorView } from '@/ui/public/chrome/ErrorView'
 
 import type { Route } from './+types/layout'
 
-// Pathless layout wrapping every public-facing route. `BaseLayout` statically
-// imports `public.css`, so the compiled stylesheet lands in the SSR `<Links />`
-// output for every public URL, while the admin SPA sits OUTSIDE this layout and
-// never pulls `public.css` into admin chunks. Routes opt out of the site footer
-// via `handle.footer = false`.
+// `BaseLayout` statically imports `public.css`, so the compiled stylesheet lands in the SSR `<Links />` output
+// for every public URL, while the admin SPA sits outside this layout and never pulls `public.css` into admin chunks.
 
 interface RootChromeData {
   currentUser?: { id: string; name: string; role: 'admin' | 'author' | 'visitor' } | null
@@ -47,7 +44,7 @@ function useResolvedChromeProps(): {
 export default function PublicLayoutRoute() {
   const { currentUser, footer } = useResolvedChromeProps()
   const { pathname, search } = useLocation()
-  // One device-environment beacon per page view (ADR-0006); DNT silences it.
+  // One device-environment beacon per page view; DNT silences it.
   useDeviceEnvBeacon()
 
   return (
@@ -57,15 +54,12 @@ export default function PublicLayoutRoute() {
   )
 }
 
-// This layout is the nearest error boundary for public routes, so RR hands
-// loader-thrown 304 headers here as `errorHeaders`; without this export the
-// document 304 loses ETag/Content-Language/Cache-Control (entry.server never
-// runs for a no-body status).
+// Nearest error boundary for public routes: RR hands loader-thrown 304 headers here as `errorHeaders`, so without
+// this export the document 304 loses ETag/Content-Language/Cache-Control (entry.server never runs for no-body).
 export const headers = documentHeaders
 
-// `ErrorBoundary` lives on this layout so 404s still render INSIDE
-// `<BaseLayout>` synchronously — the root boundary would need a lazy chunk
-// and re-introduce FOUC.
+// `ErrorBoundary` lives here so 404s render inside `<BaseLayout>` synchronously; the root boundary would need a
+// lazy chunk and reintroduce FOUC.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   useReloadOnChunkError(error)
 

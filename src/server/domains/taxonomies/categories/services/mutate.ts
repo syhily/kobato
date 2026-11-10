@@ -60,7 +60,7 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
     invalidateContent({ entity: 'category' })
-    // Warm the new content-hash OG key now, not on first crawler request (audit P1-12).
+    // Warm the new content-hash OG key now, not on first crawler request.
     warmContentRenderCaches(categoryOgTarget(row))
     const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: row.name })
     return toAdminCategoryDto(row, counts.get(row.name) ?? 0)

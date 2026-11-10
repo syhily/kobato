@@ -160,7 +160,6 @@ export function TagsView() {
             </TableBody>
           </Table>
 
-          {/* Bottom status */}
           <AdminInfiniteListFooter
             noun={t('admin.list.noun.tags')}
             rowCount={rows.length}

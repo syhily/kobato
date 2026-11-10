@@ -9,13 +9,13 @@ import trackEvent from '@/inkling/utils/analytics'
 import { POPUP_LIST_MAX_HEIGHT } from '@/inkling/utils/selection-anchored-popup'
 
 /**
- * The link-dropdown suggestion chrome — the one home of the render wiring
- * the three URL surfaces (UrlInput, LinkInput, AtLinkResultsPopup) used to
- * copy: the `getItem`/`getGroup` mapping onto LinkInputSearchItem, the
- * loading item, the opened-tracking mount effect, and the window-level
- * Escape-to-close gesture. The search coordinator owns the behaviour; this
- * module owns the chrome. Per-surface variance (test id, highlight string,
- * tracking context, the Escape swallow) arrives as data.
+ * The link-dropdown suggestion chrome — the one home of the render wiring shared
+ * by the three URL surfaces (UrlInput, LinkInput, AtLinkResultsPopup): the
+ * `getItem`/`getGroup` mapping onto LinkInputSearchItem, the loading item, the
+ * opened-tracking mount effect, and the window-level Escape-to-close gesture. The
+ * search coordinator owns the behaviour; this module owns the chrome. Per-surface
+ * variance (test id, highlight string, tracking context, the Escape swallow)
+ * arrives as data.
  */
 
 /** The opened-tracking mount effect, fired once when the gate holds. */
@@ -56,7 +56,7 @@ export function useLinkDropdownEscape(
   }, [onClose, swallow])
 }
 
-/** The shared `getItem` factory — the LinkInputSearchItem mapping all three surfaces used to hand-type. */
+/** The shared `getItem` factory — the LinkInputSearchItem mapping all three surfaces share. */
 export function createLinkSuggestionGetItem({
   dataTestId,
   highlightString,

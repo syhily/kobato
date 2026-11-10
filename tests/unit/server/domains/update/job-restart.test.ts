@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Regression for audit P0-7: close the listen socket before spawning, then request shutdown.
-// Audit V3-01: spawn failures arrive via the child's 'error' event, not a synchronous throw;
-// the restart must listen, fail the job, and release the slot.
+// The listen socket closes before spawning, then shutdown is requested.
+// Spawn failures arrive via the child's 'error' event, not a synchronous throw; the restart
+// must listen, fail the job, and release the slot.
 
 const calls = vi.hoisted(() => ({ order: [] as string[] }))
 

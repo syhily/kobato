@@ -2,10 +2,9 @@ import { createContext, type ReactNode, use } from 'react'
 
 import type { AnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 
-// Dashboard-wide analytics state. The ROUTE module owns the useSearchParams
-// read (`useAnalyticsState`) and passes the state object down explicitly;
-// the dashboard's deep panels subscribe here instead of re-reading the URL,
-// keeping every ui/ component free of hidden route-param reads.
+// The ROUTE module owns the `useSearchParams` read (`useAnalyticsState`) and
+// passes the state down; deep panels subscribe here instead of re-reading the
+// URL, so no ui/ component hides a route-param read.
 const AnalyticsStateContext = createContext<AnalyticsState | null>(null)
 
 export function AnalyticsStateProvider({ state, children }: { state: AnalyticsState; children: ReactNode }) {

@@ -1,9 +1,8 @@
-// React Router root middleware span (ADR-0012).
+// React Router root middleware span: one per document or `.data` request.
 //
-// One span per document or `.data` request. React Router's `next()` returns
-// error responses instead of throwing, so the status comes from the response;
-// a thrown Response stays control flow and a real error is projected to a
-// name + stable category by the facade.
+// React Router's `next()` returns error responses instead of throwing, so the
+// status comes from the response; a thrown Response stays control flow and a
+// real error is projected to a name plus a stable category by the facade.
 
 import type { MiddlewareFunction } from 'react-router'
 

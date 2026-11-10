@@ -14,12 +14,10 @@ type HeaderColorPairField = 'backgroundColor' | 'buttonColor'
 type HeaderPairTextColorField = 'buttonTextColor' | 'textColor'
 
 /**
- * Field-name-as-data write handlers over the card write seam (CONTEXT.md
- * "card write seam"): the header component's copied
- * `handleX = (v) => write((node) => { node.x = v })` handlers collapse into
- * these factories — the field names are the only variance, and the closed
- * literal unions keep them constrained to the node's writable fields (an
- * unknown field is a compile error).
+ * Field-name-as-data write handlers over the card write seam: per-field write
+ * factories where the field names are the only variance, and the closed literal
+ * unions keep them constrained to the node's writable fields (an unknown field is
+ * a compile error).
  */
 export function headerFieldWriter(write: HeaderNodeWriter) {
   return {

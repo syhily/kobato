@@ -7,9 +7,9 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { drawOpenGraph } from '@/server/render/og/render'
 
-// We don't pin a byte-for-byte PNG hash because that would break on every
-// node-canvas / sharp / OS font-hinting upgrade. Instead pin the structural
-// invariants: it actually returns a PNG buffer of the configured size.
+// No byte-for-byte PNG hash: it would break on every node-canvas / sharp / OS font-hinting
+// upgrade. The structural invariants are pinned instead — a PNG buffer of the configured
+// size.
 
 async function makeCoverBuffer(): Promise<Buffer> {
   return sharp({

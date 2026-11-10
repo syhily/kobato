@@ -68,7 +68,7 @@ beforeEach(async () => {
   __clearLogCaptureForTests()
 })
 
-describe('notifications / retention prune (ADR-0010)', () => {
+describe('notifications / retention prune', () => {
   it('never prunes unread rows, however old the message', async () => {
     const adminId = await seedUser('admin', 'admin')
     const visitorId = await seedUser('visitor', 'visitor')

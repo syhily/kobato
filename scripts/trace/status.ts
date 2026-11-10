@@ -1,8 +1,7 @@
 // `pnpm run trace:status` — inspect the local OpenObserve instance without
-// printing credentials. Dashboards and the RUM privacy pipeline are installed
-// by the SERVER during the admin connection test (ADR-0014); this command only
-// observes them, so a missing asset means the panel has not been configured and
-// tested yet.
+// printing credentials. Dashboards and the RUM privacy pipeline are installed by
+// the SERVER during the admin connection test; this command only observes them,
+// so a missing asset means the panel has not been configured and tested yet.
 
 import { RUM_PRIVACY_PIPELINE_NAME } from '../../src/shared/contracts/trace-pipeline.ts'
 import {

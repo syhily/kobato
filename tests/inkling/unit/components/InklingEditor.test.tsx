@@ -15,9 +15,9 @@ vi.mock('@lexical/react/LexicalMarkdownShortcutPlugin', () => ({
   MarkdownShortcutPlugin: vi.fn(() => null),
 }))
 
-// plan C5: MarkdownShortcutPlugin's default is the card-free MINIMAL set;
-// InklingEditor pins the full DEFAULT set explicitly so the `.` surface's
-// shortcut behaviour is unchanged.
+// MarkdownShortcutPlugin's default is the card-free MINIMAL set; InklingEditor
+// pins the full DEFAULT set explicitly so the `.` surface's shortcut
+// behaviour is unchanged.
 
 function lastTransformersArg() {
   const calls = vi.mocked(LexicalMarkdownShortcutPlugin).mock.calls

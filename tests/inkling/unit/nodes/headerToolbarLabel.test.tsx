@@ -37,8 +37,7 @@ function addHeaderNode(editor: LexicalEditor) {
 // The toolbar label (data-inkling-card-toolbar) is a live e2e selector
 // contract and declaration data: CardActionToolbar resolves it from the
 // declaration by the node's own type, so a hardcoded per-component literal
-// can never ship the wrong label again — a copy-paste from
-// SignupNodeComponent once labeled the header card "signup" on both toolbars.
+// can never ship the wrong label.
 describe('card toolbar labels as a derived view over the declarations', () => {
   it('gives every declaration a non-empty toolbar label', () => {
     for (const declaration of CARD_DECLARATIONS) {

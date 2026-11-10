@@ -8,21 +8,12 @@ import type { PanelPosition, PanelSpacing, PanelViewport } from '@/inkling/utils
 import { createPanelDomWiring } from '@/inkling/utils/panel-resize-choreography'
 import { createPanelSuppression } from '@/inkling/utils/panel-suppression'
 
-// React adapter over the floating panel's headless modules
-// (@/utils/floating-panel's layout math, @/utils/panel-drag-session's
-// grab/listener choreography, @/utils/panel-resize-choreography's re-clamp
-// resolutions AND its DOM assembly createPanelDomWiring, @/utils/panel-
-// suppression's drag side effects): this hook keeps the refs (position
-// state slots, viewport/card-width transition memory), the measurement
-// closures (element/viewport/position read-write), and the effect triggers;
-// every DOM consequence — body-level pointer listeners, the user-select
-// stylesheet, click suppression, the ResizeObservers, the wide-card origin
-// shift — lives in the wiring. Position and constraints go in, the committed
-// position comes out as the element's transform. Replaces the former
-// useMovable/useSettingsPanelReposition stack: both were single-consumer
-// seams over this behaviour, and the drag session no longer captures its
-// adjust callbacks mount-only, so the resolveCardElementRef dance is gone —
-// every callback reads the latest resolver through the wiring ports.
+// React adapter over the headless floating-panel modules: this hook keeps the
+// refs, measurement closures, and effect triggers; every DOM consequence (body
+// pointer listeners, user-select stylesheet, click suppression, ResizeObservers,
+// wide-card origin shift) lives in createPanelDomWiring. Position and constraints
+// go in, the committed position comes out as the element's transform. Wiring ports
+// read the latest resolvers through callbacks, so nothing is captured mount-only.
 
 interface UseFloatingPanelOptions {
   positionToRef?: RefObject<HTMLElement | null>
@@ -62,7 +53,7 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
   const lastSpacing = useRef<PanelSpacing | null>(null)
 
   // the drag stylesheet id only needs document uniqueness — React's useId
-  // supplies it without a module counter (replaces the ember-port guidFor shim)
+  // supplies it without a module counter
   const stylesheetId = `inkling-floating-panel-drag-${useId()}`
 
   // transition-memory slots read by the wiring (viewport drift, wide-card
@@ -140,9 +131,8 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
   )
 
   // the wiring (drag session + suppression + DOM assembly) is created in the
-  // mount effect — matching the former session-in-effect pattern — and held in
-  // a ref; the other effects trigger its methods, so the factory never runs
-  // during render
+  // mount effect and held in a ref; the other effects trigger its methods, so
+  // the factory never runs during render
   const wiringRef = useRef<ReturnType<typeof createPanelDomWiring> | null>(null)
 
   // mount: mark the panel draggable, hand the DOM assembly the body
@@ -193,10 +183,10 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
     isInteractiveElement,
   ])
 
-  // account for wide cards using a transform so we need to adjust the origin
-  // position. previousCardWidth starts at cardWidth so the first render never
+  // wide cards position through a transform, so the origin needs the width
+  // adjustment. previousCardWidth starts at cardWidth so the first render never
   // shifts the origin. The transition policy (origin re-base + settle clamp)
-  // lives in @/utils/floating-panel's resolveCardWidthTransition; this effect
+  // lives in resolveCardWidthTransition (utils/floating-panel); this effect
   // only re-fires it when the committed width changes.
   useLayoutEffect(() => {
     cardWidthRef.current = cardWidth

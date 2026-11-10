@@ -1,7 +1,7 @@
 import type { BookmarkEmbedOptions, BookmarkEmbedResponse } from '@/inkling'
 
-// 1x1 transparent GIF data URL used so e2e bookmark image assertions do not
-// depend on network fetches for https://inkling.local assets.
+// 1x1 transparent GIF data URL so e2e bookmark image assertions do not depend on network fetches for
+// https://inkling.local assets.
 const BOOKMARK_ICON = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
 const BOOKMARK_THUMBNAIL = BOOKMARK_ICON
 

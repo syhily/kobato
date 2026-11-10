@@ -235,7 +235,7 @@ describe('compact storage dialect', () => {
 
     const fullBytes = JSON.stringify(full).length
     const compactBytes = JSON.stringify(compact).length
-    // regression floor, not a target: the corpus ratio was ~0.72 when pinned
+    // regression floor, not a target
     expect(compactBytes).toBeLessThan(fullBytes * 0.8)
   })
 })

@@ -1,12 +1,5 @@
-// Panel drag suppression — the drag-lifetime side effects of the settings
-// panel as a headless module: the click-capture suppression (a click after
-// the drag finishes must not reach panel-closing handlers), scroll locking
-// (body overflow swap), the user-select stylesheet, and pointer-event
-// disabling (inputs must not activate when the drag ends). The React adapter
-// (@/hooks/useFloatingPanel) owns none of this: it creates the suppression
-// once and hands activate/deactivate to the drag session's effect ports.
-// Every DOM read goes through the injected getElement port, so the module is
-// testable without a mounted panel.
+// The settings panel's drag-lifetime side effects as a headless module; `useFloatingPanel`
+// only creates the suppression and wires activate/deactivate to the drag session's effect ports.
 
 export interface PanelSuppressionPorts {
   /** The panel element; null-safe (the panel may unmount mid-drag). */
@@ -20,12 +13,11 @@ export interface PanelSuppression {
   cancelClick: (event: Event) => void
   /** Suppress scroll, selection, and pointer events for the drag's duration. */
   activate: () => void
-  /** Restore everything; the click-capture removal is deferred a tick so the
-   * immediate click event stays suppressed (the drag-out-of-canvas case). */
+  /** Restore everything; the click-capture removal is deferred a tick so the immediate
+   * click event stays suppressed (the drag-out-of-canvas case). */
   deactivate: () => void
-  /** Synchronous unmount cleanup: restore scroll/selection/pointer-events and
-   * drop the click capture without the deferred timing (the adapter calls
-   * this from its destroy path as a belt-and-braces recovery). */
+  /** Synchronous unmount cleanup: restore scroll/selection/pointer-events and drop the
+   * click capture without the deferred timing. */
   dispose: () => void
 }
 
@@ -66,9 +58,8 @@ export function createPanelSuppression({ getElement, stylesheetId }: PanelSuppre
     document.getElementById(stylesheetId)?.remove()
   }
 
-  // disabling pointer events prevents inputs being activated when drag finishes,
-  // preventing clicks stops any event handlers that may otherwise result in the
-  // panel being closed when the drag finishes
+  // Disabling pointer events stops inputs activating when the drag finishes; catching
+  // clicks stops handlers that would otherwise close the panel on the finishing click.
   const disablePointerEvents = () => {
     const elem = getElement()
     if (elem) {
@@ -93,9 +84,8 @@ export function createPanelSuppression({ getElement, stylesheetId }: PanelSuppre
       disablePointerEvents()
     },
     deactivate() {
-      // Removing click suppression immediately re-enables the click behind in the
-      // same event loop, losing the suppression when dragging out of the canvas.
-      // The next tick stops the immediate click event firing when finishing drag.
+      // Removing click suppression immediately re-enables the click in the same event
+      // loop, losing the suppression when dragging out of the canvas; defer a tick.
       setTimeout(() => {
         window.removeEventListener('click', cancelClick, { capture: true })
       }, 1)
@@ -103,7 +93,7 @@ export function createPanelSuppression({ getElement, stylesheetId }: PanelSuppre
       enableScroll()
       enableSelection()
 
-      // timeout required so immediate events stay blocked until the drag end has fully realised
+      // keep immediate events blocked until the drag end has fully realised
       setTimeout(() => {
         enablePointerEvents()
       }, 5)

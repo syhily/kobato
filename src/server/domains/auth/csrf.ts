@@ -13,7 +13,6 @@ export const CSRF_HEADER = 'x-csrf-token'
 export const CSRF_COOKIE_NAME = '__csrf'
 
 function generateAndStore(session: BlogSession): string {
-  // 32 bytes = 256 bits of entropy, hex-encoded.
   const token = randomBytes(32).toString('hex')
   session.set(CSRF_SESSION_KEY, token)
   return token
@@ -27,9 +26,8 @@ export function ensureCsrfToken(session: BlogSession): string {
   return generateAndStore(session)
 }
 
-// Cookieless requests get a stateless token: HMAC(sessionSecret,
-// __csrf cookie), a signed double-submit variant — persisting per-request
-// rows would flood the session table (P1-4).
+// Cookieless requests get a stateless HMAC(sessionSecret, __csrf cookie)
+// double-submit token; per-request session rows would flood the session table.
 
 const CSRF_COOKIE_VALUE_RE = /^[a-f0-9]{64}$/i
 
@@ -38,7 +36,6 @@ export function isCsrfCookieValue(value: string): boolean {
 }
 
 export function mintCsrfCookieValue(): string {
-  // Same strength as the session-persisted tokens.
   return randomBytes(32).toString('hex')
 }
 
@@ -60,7 +57,6 @@ export function validateCsrfToken(session: BlogSession, headerValue: string | nu
   if (!expected || !headerValue) {
     return false
   }
-  // Constant-time comparison to prevent timing attacks.
   const enc = new TextEncoder()
   const expectedBuf = enc.encode(expected)
   const headerBuf = enc.encode(headerValue)
@@ -72,8 +68,7 @@ export function validateCsrfToken(session: BlogSession, headerValue: string | nu
 
 export function isPathExempt(path: string): boolean {
   const exemptPaths = getBlogSettingsBundleSync()?.security?.csrf.exemptPaths ?? []
-  // Segment-boundary match: `/api/admin` covers `/api/admin/...` but not
-  // `/api/adminx` (P1-6); list exact paths for non-slash continuations.
+  // Segment-boundary match: `/api/admin` covers `/api/admin/...` but not `/api/adminx`.
   return exemptPaths.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
 }
 
@@ -81,10 +76,7 @@ const log = getLogger('auth.csrf')
 
 let csrfDisabledWarned = false
 
-/**
- * True when the admin disabled `security.csrf.enabled` (P1-7); the first
- * skip warns, later ones log at debug. Pre-install fails closed.
- */
+/** True when the admin disabled `security.csrf.enabled`; pre-install fails closed. */
 export function isCsrfValidationSkipped(): boolean {
   const enabled = getBlogSettingsBundleSync()?.security?.csrf.enabled ?? true
   if (enabled) {
@@ -99,7 +91,6 @@ export function isCsrfValidationSkipped(): boolean {
   return true
 }
 
-/** Validate a CSRF token for a React Router form action. */
 export function validateCsrfForAction(session: BlogSession, request: Request, formData: FormData): boolean {
   if (isCsrfValidationSkipped()) {
     return true

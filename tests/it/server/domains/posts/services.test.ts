@@ -120,7 +120,7 @@ describe('posts/services/admin-query — getPostDetailForAdmin', () => {
     await expect(getPostDetailForAdmin(db, 9999)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
   it('returns the post with revision + tags', async () => {
-    // Admin revision DTOs are Lexical-bodied since R9a; seed a Lexical state.
+    // Admin revision DTOs are Lexical-bodied; seed a Lexical state.
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published', body: emptyLexicalBody() })
     const pid = await seedPost({ slug: 'det', publishedRevisionId: revId })
     const { getPostDetailForAdmin } = await import('@/server/domains/posts/services/admin-query')
@@ -193,7 +193,7 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
     expect(r.processed).toBe(1)
     expect(r.failed).toBe(0)
   })
-  it('counts legacy pre-Lexical array bodies as failed (the R15 backfill re-derives them)', async () => {
+  it('counts legacy pre-Lexical array bodies as failed (the backfill re-derives them)', async () => {
     const revId = await seedContent({
       type: 'post',
       revisionNo: 1,
@@ -328,7 +328,6 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
     const { createPost } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Force Audit' }, null)
     const pid = Number(created.id)
-    // Force-save audits the latest revision of ANY status, not just drafts.
     await seedContent({
       type: 'post',
       ownerId: pid,

@@ -6,7 +6,7 @@ import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'l
 /**
  * Demo-content regenerator — skipped in the suite; run manually with:
  *
- *   GENERATE_DEMO_CONTENT=1 pnpm vitest run test/utils/gen-demo-content.test.ts
+ *   GENERATE_DEMO_CONTENT=1 pnpm vitest run tests/inkling/utils/gen-demo-content.test.ts
  *
  * Builds the showcase document through the real node factories so the
  * serialized shapes are guaranteed valid, and writes demo/content/content.json.

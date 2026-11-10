@@ -9,12 +9,11 @@ import { INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
 
 // Selector insertion — the headless surgery behind the gif and image-library
-// selector overlays: build the card from the
-// picked dataset, insert it through the shared card insert command, and
-// remove the placeholder node the overlay rode on.
-// INSERT_FROM_GIF_COMMAND and INSERT_FROM_LIBRARY_COMMAND share the one
-// surgery; both commands keep their own names so menu/analytics semantics
-// stay distinct — if either ever diverges, split the function back out.
+// selector overlays: build the card from the picked dataset, insert it through
+// the shared card insert command, and remove the placeholder node the overlay
+// rode on. INSERT_FROM_GIF_COMMAND and INSERT_FROM_LIBRARY_COMMAND share the
+// one surgery; both keep their own names so menu/analytics semantics stay
+// distinct — if either ever diverges, split the function back out.
 // InklingSelectorPlugin keeps only the OPEN_* placeholder dispatches (they
 // name the React overlay components).
 

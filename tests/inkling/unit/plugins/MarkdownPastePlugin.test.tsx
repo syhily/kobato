@@ -20,14 +20,13 @@ import { $isHorizontalRuleNode, HorizontalRuleNode } from '@/inkling/nodes/Horiz
 import { PASTE_MARKDOWN_COMMAND } from '@/inkling/plugins/behaviour/clipboard-protocol'
 import { MarkdownPastePlugin } from '@/inkling/plugins/MarkdownPastePlugin'
 
-// This spec creates its own editor (not test/utils/test-editor.ts), so it
-// must register the decorate adapter itself — the card nodes registered below
-// reach decorate() during the paste round trips.
+// This spec creates its own editor, so it must register the decorate adapter
+// itself: the card nodes below reach decorate() during the paste round trips.
 registerCardDecorateAdapter()
 
-// jsdom does not implement DataTransfer (verified on jsdom 29); the plugin
-// builds one inside its command handler, so shim the minimal setData/getData
-// surface the handler and $insertDataTransferForRichText rely on
+// jsdom does not implement DataTransfer; the plugin builds one inside its
+// command handler, so shim the minimal setData/getData surface that handler
+// and $insertDataTransferForRichText rely on.
 class MockDataTransfer {
   private readonly data = new Map<string, string>()
 
@@ -45,10 +44,9 @@ const originalDataTransfer = globalThis.DataTransfer
 function createTestEditor() {
   return createEditor({
     namespace: 'test',
-    // CodeBlockNode is registered so the paste-dialect card-fence pin below
-    // exercises the real import path (pre/code → code block card);
-    // HorizontalRuleNode so the footnote <hr> imports the way it does in the
-    // real editor (DEFAULT_NODES registers both).
+    // CodeBlockNode and HorizontalRuleNode are registered so the paste-dialect
+    // pins exercise the real import paths (pre/code → code block card, footnote
+    // <hr> → rule card), matching DEFAULT_NODES.
     nodes: [HeadingNode, CodeBlockNode, HorizontalRuleNode],
     onError: () => {},
     theme: {},
@@ -77,9 +75,9 @@ describe('MarkdownPastePlugin', () => {
   beforeEach(async () => {
     globalThis.DataTransfer = MockDataTransfer as unknown as typeof DataTransfer
 
-    // the spec dispatches PASTE_MARKDOWN_COMMAND directly; the handler reads
-    // the dialect engine from the lazy port's sync cache, so warm it here
-    // rather than relying on the plugin's mount pre-warm having landed
+    // The spec dispatches PASTE_MARKDOWN_COMMAND directly and the handler reads
+    // the dialect engine from the lazy port's sync cache, so warm it here rather
+    // than relying on the plugin's mount pre-warm having landed.
     await loadPasteDialect()
 
     editor = createTestEditor()
@@ -162,10 +160,10 @@ describe('MarkdownPastePlugin', () => {
     })
   })
 
-  // The paste dialect (plan 050): markdown-it + plugins → sanitizeHtml →
-  // Lexical HTML import. It speaks ==mark==, ~sub~, ^sup^, and footnotes —
-  // but has no card-fence grammar. The card-aware round-trip dialect's
-  // coverage is pinned separately in test/markdown/round-trip.test.ts.
+  // The paste dialect (markdown-it + plugins → sanitizeHtml → Lexical HTML
+  // import) speaks ==mark==, ~sub~, ^sup^, and footnotes, but has no card-fence
+  // grammar: a fence becomes a code block. The card-aware round-trip dialect is
+  // pinned in tests/markdown/round-trip.test.ts.
   describe('paste dialect coverage', () => {
     it('turns a pasted inkling:* card fence into a code block card, not the named card', async () => {
       const json = '{"url":"https://example.com","title":"Example"}'
@@ -173,10 +171,9 @@ describe('MarkdownPastePlugin', () => {
 
       editor.getEditorState().read(() => {
         // markdown-it renders the fence as <pre><code class="language-inkling:bookmark">,
-        // which CodeBlockNode.importDOM claims — the JSON body becomes the
-        // code, trailing newline included. The card-aware round-trip dialect
-        // recreates a BookmarkNode from the same string instead (pinned in
-        // test/markdown/round-trip-cards.test.ts).
+        // which CodeBlockNode.importDOM claims, so the JSON body becomes the code
+        // (trailing newline included). The card-aware round-trip dialect recreates
+        // a BookmarkNode from the same string instead.
         const children = $getRoot().getChildren()
         expect(children).toHaveLength(1)
 
@@ -234,8 +231,8 @@ describe('MarkdownPastePlugin', () => {
         expect(children).toHaveLength(3)
 
         // markdown-it-footnote renders <sup class="footnote-ref"><a href="#fn1">[1]</a></sup>;
-        // the href fails sanitizeHtml's ALLOWED_URI_REGEXP, so the ref lands
-        // as superscript text without a link.
+        // the href fails sanitizeHtml's ALLOWED_URI_REGEXP, so the ref becomes
+        // superscript text without a link.
         const lead = children[0]
         expect($isParagraphNode(lead)).toBe(true)
         if ($isParagraphNode(lead)) {
@@ -250,7 +247,7 @@ describe('MarkdownPastePlugin', () => {
         expect($isHorizontalRuleNode(children[1])).toBe(true)
 
         // The footnote body unwraps out of <section>/<ol>/<li> (unregistered
-        // here) into plain text; the ↩︎ backlink loses its href the same way.
+        // here) into plain text; the ↩︎ backlink loses its href too.
         const body = children[2]
         expect($isParagraphNode(body)).toBe(true)
         if ($isParagraphNode(body)) {

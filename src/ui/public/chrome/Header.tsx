@@ -28,14 +28,11 @@ export interface HeaderCurrentUser {
 
 export interface HeaderProps {
   navigation: NavigationItem[]
-  /** Logged-in user identity, or `null` for anonymous visitors. */
   currentUser: HeaderCurrentUser | null
   pathname: string
-  /** Where the logout flow returns to — built once by BaseLayout (which
-   *  also serves the desktop menu) and threaded to the mobile UserMenu. */
+  /** Where the logout flow returns to; built once by BaseLayout and threaded down. */
   logoutRedirectTo: string
-  /** BaseLayout owns the shell's one unread-count subscription — threaded
-   *  down, never re-subscribed in the chrome.
+  /** BaseLayout owns the shell's one unread-count subscription — never re-subscribe here.
    *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
   onOpenNotifications: () => void

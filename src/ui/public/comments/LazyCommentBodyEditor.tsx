@@ -9,36 +9,28 @@ import { acquireViewportZoomLock, releaseViewportZoomLock } from '@/client/lib/v
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// The comment composer rides a lazy chunk (the inkling island + its CSS) so
-// the public post page's static import graph stays editor-free — see the
-// header comment in ./CommentBodyEditor.tsx.
+// The composer rides a lazy chunk (inkling island + CSS) so the public post page's
+// static import graph stays editor-free.
 const CommentBodyEditor = lazy(() =>
   import('@/ui/public/comments/CommentBodyEditor').then((module) => ({ default: module.CommentBodyEditor })),
 )
 
-// Hover-intent prefetch: the browser dedupes this against the lazy boundary's
-// own import, so pointerdown activation almost never waits on the network.
+// Hover-intent prefetch; the browser dedupes this against the lazy boundary's own import.
 const warmEditorChunk = () => void import('@/ui/public/comments/CommentBodyEditor')
 
-/** Intent prefetch for surfaces that MOUNT the composer on a click (the
- *  reply / edit buttons under a comment): warms the same two chunks the
- *  placeholder's hover prefetch reaches — the composer island and the
- *  active locale's label table — so the eager mount lands ready for input. */
+/** Intent prefetch for surfaces that mount the composer on a click: warms the composer
+ *  chunk and the active locale's label table, so the eager mount lands ready for input. */
 export function warmCommentEditorChunks(locale: AppLocale): void {
   warmEditorChunk()
   void loadInklingLabels(locale).catch(() => null)
 }
 
 export interface LazyCommentBodyEditorProps extends Omit<CommentBodyEditorProps, 'labels'> {
-  /** Mount the real editor immediately (edit forms / admin dialogs — the
-   *  click that opened the surface WAS the interaction). Default: wait for
-   *  the user to point at or focus the placeholder (the always-visible reply
-   *  form). */
+  /** Mount the real editor immediately (edit forms, admin dialogs). Default: wait for the
+   *  user to point at or focus the placeholder (the always-visible reply form). */
   eager?: boolean
-  /** Hand focus to the contenteditable once the editor mounts (the inline
-   *  reply / edit forms — the click that opened the surface was already the
-   *  interaction, so the composer must land ready for input). Evaluated at
-   *  mount; remount the surface to focus again. */
+  /** Hand focus to the contenteditable once the editor mounts (inline reply / edit
+   *  forms). Evaluated at mount; remount the surface to focus again. */
   focusOnMount?: boolean
 }
 
@@ -51,19 +43,17 @@ export function LazyCommentBodyEditor({
 }: LazyCommentBodyEditorProps) {
   const { locale } = useI18n()
   const [active, setActive] = useState(eager)
-  // Workspace documents ship the active locale's table in the root payload;
-  // public documents do not, and load only the ACTIVE locale's chunk after the
-  // interaction that mounts the composer.
+  // Workspace documents ship the table in the root payload; public documents load only
+  // the active locale's chunk after the interaction that mounts the composer.
   const payloadLabels = useKobatoInklingLabels()
   const [labels, setLabels] = useState<InklingLabelsInput | undefined>(payloadLabels)
   const labelsReady = payloadLabels !== undefined || labels !== undefined
-  // display:contents keeps the wrapper out of the layout box tree while still
-  // scoping the contenteditable lookup to THIS editor instance.
+  // display:contents keeps the wrapper out of the layout box tree while scoping the
+  // contenteditable lookup to this editor instance.
   const shellRef = useRef<HTMLDivElement | null>(null)
   const focusOnLoadRef = useRef(focusOnMount)
-  // iOS: the input auto-zoom is decided when focus lands, so the viewport
-  // stays locked from the activation intent (the tap, or the eager mount of
-  // a reply/edit form) until the contenteditable has actually taken focus.
+  // iOS decides the input auto-zoom when focus lands, so the viewport stays locked from
+  // the activation intent until the contenteditable has actually taken focus.
   const zoomLockHeldRef = useRef(false)
   const releaseTimerRef = useRef<number | null>(null)
 
@@ -82,9 +72,8 @@ export function LazyCommentBodyEditor({
     releaseViewportZoomLock()
   }, [])
 
-  // Release one task AFTER focus() so WebKit's zoom decision has already
-  // seen the locked viewport — the activation stays zoom-free while
-  // pinch-zoom returns for the editing session.
+  // Release one task after focus() so WebKit's zoom decision already saw the locked
+  // viewport; pinch-zoom then returns for the editing session.
   const scheduleZoomLockRelease = useCallback(() => {
     if (releaseTimerRef.current !== null) {
       return
@@ -95,8 +84,7 @@ export function LazyCommentBodyEditor({
     }, 0)
   }, [dropZoomLock])
 
-  // Never leak the lock: an unmount before the focus handoff cancels the
-  // activation (the composer chunk or labels never resolved).
+  // Never leak the lock: an unmount before the focus handoff cancels the activation.
   useEffect(
     () => () => {
       if (releaseTimerRef.current !== null) {
@@ -108,30 +96,26 @@ export function LazyCommentBodyEditor({
     [dropZoomLock],
   )
 
-  // The activating pointerdown/focus landed on the placeholder, which is gone
-  // by the time the editor mounts — hand focus over once the contenteditable
-  // exists (a replayed untrusted event would never focus it natively).
+  // The activating pointerdown/focus landed on the placeholder, which is gone by mount;
+  // hand focus over once the contenteditable exists (a replayed event would not).
   const handleEditorMounted = useCallback(() => {
     if (!focusOnLoadRef.current) {
       return
     }
     focusOnLoadRef.current = false
-    // The zoom lock must be in place before the focus call — iOS reads the
-    // viewport meta when the editable becomes the active element.
+    // The lock must be in place before the focus call: iOS reads the viewport meta
+    // when the editable becomes the active element.
     holdZoomLock()
     shellRef.current?.querySelector<HTMLElement>('[contenteditable]')?.focus({ preventScroll: true })
     scheduleZoomLockRelease()
   }, [holdZoomLock, scheduleZoomLockRelease])
 
-  // Hover-intent prefetch reaches BOTH chunks the activation needs: the
-  // composer island and the active locale's label table. Without the label
-  // prefetch, a touch device's first tap would serialize the composer import
-  // behind a second chunk request before the composer can mount.
+  // Prefetch both chunks activation needs: without the label table, a touch device's
+  // first tap serializes the composer import behind a second chunk request.
   const warmChunks = useCallback(() => {
     warmEditorChunk()
     if (payloadLabels === undefined) {
-      // A failed prefetch is harmless — activation retries and degrades to
-      // Inkling's English defaults.
+      // A failed prefetch is harmless: activation retries and degrades to English defaults.
       void loadInklingLabels(locale).catch(() => null)
     }
   }, [locale, payloadLabels])
@@ -141,17 +125,13 @@ export function LazyCommentBodyEditor({
       return
     }
     focusOnLoadRef.current = true
-    // iOS: lock zoom from the tap itself — the composer chunk and the label
-    // table may still be in flight when the editor mounts and takes focus.
+    // Lock zoom from the tap itself: both chunks may still be in flight when the
+    // editor mounts and takes focus.
     holdZoomLock()
-    // Start both chunks now: the composer chunk and the active locale's label
-    // table load in parallel; the composer mounts only once the labels arrive.
     warmChunks()
     setActive(true)
   }, [disabled, holdZoomLock, warmChunks])
 
-  // Fetch the active locale's table once activated. A failed import degrades to
-  // Inkling's English defaults instead of blocking the composer.
   useEffect(() => {
     if (!active || labelsReady) {
       return
@@ -192,8 +172,8 @@ export function LazyCommentBodyEditor({
           />
         </Suspense>
       ) : (
-        // The interaction is already committed; the placeholder stays inert
-        // while the labels chunk resolves (the composer chunk loads alongside).
+        // The interaction is committed; the placeholder stays inert while the labels
+        // chunk resolves.
         <EditorPlaceholder disabled={disabled} className={className} />
       )}
     </div>
@@ -214,10 +194,9 @@ interface EditorPlaceholderProps {
   onPrefetch?: () => void
 }
 
-/** SSR/hydration-stable stand-in for the unloaded composer: the same shell
- *  chrome and the same canvas box (the 96px min-height + canvas padding that
- *  `inkling-comment-editor.css` puts on the real contentEditable, duplicated
- *  here because that stylesheet rides the lazy chunk). */
+/** SSR/hydration-stable stand-in for the unloaded composer. It duplicates the 96px
+ *  min-height and canvas padding that `inkling-comment-editor.css` puts on the real
+ *  contentEditable, because that stylesheet rides the lazy chunk. */
 function EditorPlaceholder({ disabled, className, onActivate, onPrefetch }: EditorPlaceholderProps) {
   const { t } = useI18n()
   const interactive = onActivate !== undefined && disabled !== true
@@ -231,8 +210,7 @@ function EditorPlaceholder({ disabled, className, onActivate, onPrefetch }: Edit
             'aria-label': t('public.comments.editorLabel'),
             tabIndex: 0,
             onPointerEnter: onPrefetch,
-            // preventDefault keeps the browser from focusing a node that is
-            // about to unmount; focus is handed over after the editor mounts.
+            // preventDefault keeps the browser from focusing a node about to unmount.
             onPointerDown: (event: React.PointerEvent) => {
               event.preventDefault()
               onActivate()

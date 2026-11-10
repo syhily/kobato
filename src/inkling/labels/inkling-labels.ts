@@ -1,14 +1,12 @@
 /**
- * The labels table — every user-visible string
- * the editor chrome renders, as one flat, closed table of dotted keys with
- * English defaults. A host overrides a subset through
- * `<InklingComposer labels={...}>`; missing keys fall back to the English
- * default. The interface is closed on purpose — an unknown key in an
- * override table is a compile error (the same closed-bag philosophy as
- * `CardConfig`, CONTEXT.md "Host config"). The one deliberate opening is the
- * host menu-label namespace (`menu.host.*`, see `InklingHostMenuLabelKey`
- * below): host card menu entries resolve their `host.<name>` labelKeys
- * through it.
+ * The labels table — every user-visible string the editor chrome renders, as
+ * one flat, closed table of dotted keys with English defaults. A host
+ * overrides a subset through `<InklingComposer labels={...}>`; missing keys
+ * fall back to the English default. The interface is closed on purpose: an
+ * unknown key in an override table is a compile error (the same closed-bag
+ * shape as `CardConfig`). The one deliberate opening is the host menu-label
+ * namespace (`menu.host.*`, see `InklingHostMenuLabelKey` below): host card
+ * menu entries resolve their `host.<name>` labelKeys through it.
  *
  * Flat, not nested: no deep-merge helper, the types stay flat, and the key
  * is its own documentation. Interpolation values use `string.replace` at
@@ -226,8 +224,7 @@ export interface InklingLabels {
 }
 
 /**
- * The English defaults — the values the components carried before the table
- * existed, migrated verbatim. `test/unit/labels.test.ts` snapshots the key
+ * The English defaults. `tests/inkling/unit/labels.test.ts` snapshots the key
  * list: renaming a key is a breaking contract change.
  */
 export const DEFAULT_LABELS: InklingLabels = {
@@ -418,14 +415,14 @@ export const DEFAULT_LABELS: InklingLabels = {
 }
 
 /**
- * The host menu-label namespace (CONTEXT.md: "host card"): a host card's menu
- * entries name their `labelKey` `host.<name>` (built-in keys stay bare), so
- * the menu-build resolver looks up `menu.host.<name>.label` / `.desc`
- * through the same `<InklingComposer labels={...}>` merge channel. The
- * namespace opens on the INPUT side only — the shipped `InklingLabels`
- * table (and its snapshot pin) stays closed, while a host's override keys
- * are compile-checked by the template-literal pattern. Absent an override,
- * the entry's own spec text stays the fallback.
+ * The host menu-label namespace: a host card's menu entries name their
+ * `labelKey` `host.<name>` (built-in keys stay bare), so the menu-build
+ * resolver looks up `menu.host.<name>.label` / `.desc` through the same
+ * `<InklingComposer labels={...}>` merge channel. The namespace opens on the
+ * INPUT side only — the shipped `InklingLabels` table (and its snapshot pin)
+ * stays closed, while a host's override keys are compile-checked by the
+ * template-literal pattern. Absent an override, the entry's own spec text
+ * stays the fallback.
  */
 export type InklingHostMenuLabelKey = `menu.host.${string}.label` | `menu.host.${string}.desc`
 
@@ -471,9 +468,8 @@ export type InklingLabelToken = 'max' | 'cardType' | 'name' | 'progress'
 
 /**
  * The one interpolation seam: replaces the `{token}` placeholders a label
- * carries with the given values. Owns the token contract the consumption
- * sites used to re-do as raw `.replace` calls — a mistyped token is now a
- * compile error at the call site, and the table stays the single owner of
+ * carries with the given values. Owns the token contract — a mistyped token is
+ * a compile error at the call site, and the table stays the single owner of
  * its format.
  */
 export function interpolateLabel(text: string, vars: Partial<Record<InklingLabelToken, string>>): string {

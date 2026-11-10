@@ -8,8 +8,8 @@ export interface QuickOption {
   seconds: number
 }
 
-// Three shared quick-pick profiles cover every scenario — the per-bucket
-// copies used to be duplicated across the whole table.
+// Three shared quick-pick profiles cover every scenario; each bucket references
+// one by name instead of carrying its own copy.
 const QUICK_AUTH: QuickOption[] = [
   { labelId: 'admin.settings.rateLimit.quick.5m', seconds: 300 },
   { labelId: 'admin.settings.rateLimit.quick.15m', seconds: 900 },
@@ -99,7 +99,7 @@ export const BUCKET_META: Record<
 /** Everyday scenarios — always visible in the card. */
 export const COMMON_KEYS: readonly BucketKey[] = ['signIn', 'comment', 'like', 'resource']
 
-/** Advanced scenarios — grouped behind the 高级选项 disclosure. */
+/** Advanced scenarios — grouped behind the advanced-options disclosure. */
 export const ADVANCED_GROUPS: readonly { labelId: UiMessageId; keys: readonly BucketKey[] }[] = [
   { labelId: 'admin.settings.rateLimit.group.auth', keys: ['otpSend', 'otpVerify', 'passkeyAuth', 'passkeyManage'] },
   { labelId: 'admin.settings.rateLimit.group.passwordReset', keys: ['passwordReset', 'passwordResetTarget'] },

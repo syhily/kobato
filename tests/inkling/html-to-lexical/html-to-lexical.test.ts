@@ -721,9 +721,8 @@ describe('HTMLtoLexical', function () {
       const lexical = htmlToLexical(html, options)
       assert.ok(lexical.root)
       assert.equal(lexical.root.children.length, 3)
-      // empty list item is left after extracting invalid children
-      // NOTE: if we don't want this it needs to be fixed in the denest transform but we need
-      //       to be careful not to break general editing
+      // empty list item is left after extracting invalid children; removing
+      // it means fixing the denest transform without breaking general editing
       assert.equal(lexical.root.children[0].type, 'list')
       assert.equal(lexical.root.children[0].children[0].type, 'listitem')
       assert.equal(lexical.root.children[0].children[0].children.length, 0)
@@ -737,7 +736,7 @@ describe('HTMLtoLexical', function () {
 
   describe('HTML from Lexical cards', function () {
     // note: some cards are not intended to convert from html: markdown and other web-only cards
-    //  this test is to make sure our parser methods do not intercept the cards they are not intended to handle
+    //  this test pins that parser methods do not intercept cards they are not intended to handle
     it('can convert a post containing one of each card type', function () {
       const html = `
             <figure class="inkling-card inkling-image-card inkling-card-hascaption">

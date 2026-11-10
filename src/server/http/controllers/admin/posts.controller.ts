@@ -43,7 +43,6 @@ import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
 
-// Lockstep with the dashboard's `RECENT_DRAFTS_LIMIT` / `RECENT_PUBLISHED_LIMIT` (routes/admin/dashboard.tsx).
 const RECENT_DRAFTS_LIMIT = 5
 const RECENT_PUBLISHED_LIMIT = 5
 
@@ -174,8 +173,8 @@ const listRevisions = authorProc
     return { revisions }
   })
 
-// Dashboard card data (counts + recent-5), scoped to the author — the
-// projections match `loaders/dashboard.ts` bit-identical.
+// Dashboard card data (counts + recent-5), scoped to the author — consumed
+// verbatim by `routes/admin/dashboard.tsx`.
 const mySummary = authorProc
   .route({ method: 'GET', path: '/admin/posts/my-summary' })
   .output(adminPostsMySummaryOutputSchema)
@@ -217,8 +216,8 @@ const mySummary = authorProc
     }
   })
 
-// Per-post analytics behind both admin/editor analytics routes — semantics
-// replicated from `loaders/post-analytics.ts`; `search` is parsed server-side.
+// Per-post analytics behind both admin/editor analytics routes; `search` is
+// parsed server-side.
 const analytics = authorProc
   .route({ method: 'GET', path: '/admin/posts/analytics' })
   .input(adminPostAnalyticsInputSchema)

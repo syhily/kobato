@@ -30,8 +30,7 @@ export const webmentionReceiveSchema = z.object({
 export type WebmentionReceiveInput = z.infer<typeof webmentionReceiveSchema>
 
 // Public display list (headless API, `public.webmention.list`) — keyed by
-// `page_key` (same flow as `public.comments.list`, split-plan notes-6 §3.1);
-// a miss resolves to NOT_FOUND.
+// `page_key` (same flow as `public.comments.list`); a miss resolves to NOT_FOUND.
 export const webmentionPublicListSchema = z.object({
   page_key: z.string(),
 })

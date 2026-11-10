@@ -16,12 +16,10 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('pt.lexical-prerender')
 
-// Lexical counterpart of `prerenderPortableTextBody` (same module's
-// `prerender.ts`): fills the host-owned artifact slots at save time so SSR
-// never pays the Shiki/KaTeX bootstrap. Mutates in place. Only EMPTY slots
-// are recomputed — canonicalize strips client-supplied artifacts first, so
-// a filled slot here is always server-computed. `svg` is legacy and never
-// recomputed (PT parity): it stays stripped.
+// Fills the host-owned artifact slots at save time so SSR never pays the Shiki/KaTeX
+// bootstrap. Mutates in place; only EMPTY slots are recomputed — canonicalize strips
+// client-supplied artifacts first, so a filled slot here is always server-computed.
+// `svg` stays stripped and is never recomputed.
 
 interface MathNodeView extends LexicalNodeJson {
   tex: string

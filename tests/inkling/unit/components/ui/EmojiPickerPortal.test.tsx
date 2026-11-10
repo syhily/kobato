@@ -63,8 +63,6 @@ describe('EmojiPickerPortal', () => {
   })
 
   it('does not forward unknown props to the picker', () => {
-    // before the props were tightened, an unknown prop (e.g. CalloutCard's dead
-    // `togglePortal`) leaked through the index signature all the way to emoji-mart
     const positionRef = createAnchor({ top: 300, left: 400 })
 
     render(

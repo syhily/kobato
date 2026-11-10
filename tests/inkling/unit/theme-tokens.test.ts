@@ -11,9 +11,8 @@ const stylesDir = path.resolve(__dirname, '../../../src/inkling/styles')
 // - src/inkling/styles/index.css hand-writes the same tokens as runtime defaults
 //   under `@layer theme { .inkling-lexical { … } }`, which is where hosts
 //   override them.
-// This suite parses both and pins name/value parity per token, plus a
-// snapshot of the full token list: adding or removing a token turns the
-// suite red and is an explicit contract change.
+// This suite parses both and pins name/value parity per token plus a snapshot
+// of the full token list: changing a token is an explicit contract change.
 
 /** Plain variables bridged to tokens inside the scoped defaults block. */
 const BRIDGE_VARIABLES = [

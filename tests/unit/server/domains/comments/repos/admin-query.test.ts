@@ -2,9 +2,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Covers RBAC-RECTIFICATION-PLAN §1.7 (O7).
-// Pins the source contract: both listMyComments and countMyComments route
-// through mineWhere → mineVisibleClause; the grace constant is 7 days.
+// Pins the source contract: listMyComments and countMyComments both route through
+// mineWhere → mineVisibleClause, and the grace constant is 7 days.
 
 const commentQueryPath = resolve(process.cwd(), 'src/server/domains/comments/repos/admin-query.ts')
 const commentSharedPath = resolve(process.cwd(), 'src/server/domains/comments/repos/shared.ts')

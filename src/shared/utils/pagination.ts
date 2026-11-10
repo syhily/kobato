@@ -2,7 +2,7 @@
 // the same chip ladder so `/page/3` reads identically in both.
 // Inputs / outputs are 1-based; admin callers `+1` / `-1` around calls.
 
-/** Threshold above which we switch from dense to windowed layout. */
+/** Threshold above which the layout switches from dense to windowed. */
 export const DENSE_THRESHOLD = 6
 
 /** A single chip in the rendered ladder: a 1-based page number, or the
@@ -23,7 +23,6 @@ export function computePageWindow({ current, total }: PageWindowOptions): PageWi
   if (total <= DENSE_THRESHOLD) {
     return Array.from({ length: total }, (_, i) => i + 1)
   }
-  // Windowed layout — three branches: near the start, near the end, or the middle (total >= 7).
   const nearStart = current < 5
   const nearEnd = current > total - 4
 

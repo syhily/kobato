@@ -3,38 +3,26 @@ import type { SessionUser } from '@/server/domains/auth/session-storage'
 import { ActionFailure, ErrorMessages } from '@/server/infra/http/errors'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
-/**
- * Structural minimum a viewer identity must carry for permission
- * predicates; `RequestContext.viewer` satisfies it.
- */
+/** Structural minimum a viewer identity must carry; `RequestContext.viewer` satisfies it. */
 export interface ViewerIdentity {
   id: string
   role: Role
 }
 
-/**
- * Asserts `user is SessionUser` AND `user.role >= min`; throws
- * `ActionFailure(403)` otherwise.
- */
 export function requireUserRole(user: SessionUser | undefined, min: Role): asserts user is SessionUser {
   if (!user || !hasAtLeast(user.role, min)) {
     throw new ActionFailure(403, ErrorMessages.FORBIDDEN)
   }
 }
 
-/**
- * Convenience façade for route loaders: asserts on the viewer identity the
- * loader already holds; delegates to `requireUserRole`.
- */
 export function requireRole(user: SessionUser | undefined, min: Role): asserts user is SessionUser {
   requireUserRole(user, min)
 }
 
-// Two predicate families, kept separate on purpose (RBAC-REVIEW §R1):
+// Two predicate families, kept separate on purpose:
 // `is{Entity}Owner` — strict ownership, no admin bypass (own-routes);
 // `canEdit{Entity}` — admin OR owner (admin surfaces).
 
-// Factory: ownership predicate keyed off one `number | null` column.
 function ownerOf<K extends string>(field: K) {
   return (viewer: ViewerIdentity, row: Record<K, number | null>): boolean => {
     const owner = row[field]

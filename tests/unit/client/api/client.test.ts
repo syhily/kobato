@@ -76,7 +76,7 @@ describe('client/api/client — error handling', () => {
     await import('@/client/api/client')
   })
 
-  /** Run a rejection through whatever interceptors the link registers (none today). */
+  /** Run a rejection through whatever interceptors the link registers. */
   async function rejectThroughLink(error: unknown): Promise<unknown> {
     const chain = [...lastInterceptors.current]
     const run = async (index: number): Promise<unknown> => {

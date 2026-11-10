@@ -156,7 +156,7 @@ describe('analytics batcher (DuckDB appender)', () => {
   it('replays a legacy flat dead-letter line: mints an event id and skips the sidecar', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'kobato-dead-letter-'))
     const path = join(dir, 'access-log.ndjson')
-    // Pre-ADR-0006 shape: a flat EnrichedAccessEvent with an ISO-string ts.
+    // Legacy flat shape: an EnrichedAccessEvent with an ISO-string ts.
     writeFileSync(
       path,
       `${JSON.stringify({ ...makeEvent(), eventId: undefined, ts: '2024-01-01T00:00:00.000Z' })}\n`,

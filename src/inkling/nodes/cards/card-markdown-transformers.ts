@@ -18,27 +18,20 @@ import { $createToggleNode, type ToggleNode } from '@/inkling/nodes/ToggleNode'
 import { $createVideoNode, type VideoNode } from '@/inkling/nodes/VideoNode'
 
 /**
- * The per-card markdown transformer vocabulary, attached to the card
- * declarations one layer up (mirroring `@/inkling/nodes/cards/card-wrappers`): a
- * payload table keyed EXHAUSTIVELY by the fence-eligible declarations' node
- * types (`FenceCardNodeType` below — derived from the declarations'
- * `markdown: { kind: 'fence' }` entries), projected into the card
- * transformers by `CARD_MARKDOWN_DECLARATIONS` below. Eligibility and
- * exemption are declaration data (`CardMarkdownSpec`); this module holds
- * only the payload vocabulary.
+ * The per-card markdown transformer vocabulary: a payload table keyed exhaustively
+ * by the fence-eligible declarations' node types, projected into transformers by
+ * `CARD_MARKDOWN_DECLARATIONS`. Eligibility and exemption are declaration data
+ * (`CardMarkdownSpec`); this module holds only the payload vocabulary.
  *
- * The payloads cannot live in the declaration modules: the markdown
- * round-trip editor registers the wrapper node classes — `DEFAULT_TRANSFORMERS`' `HR`
- * and `CODE_BLOCK` construct wrapper instances, and Lexical requires every
- * node constructed inside an editor to match the registered class exactly —
- * so each transformer's `createNode`/`replace` must construct the wrapper
- * class. Declarations are React-free and must never import wrappers.
+ * The payloads cannot live in the declaration modules: Lexical requires every node
+ * constructed inside an editor to match the registered class exactly, so each
+ * transformer's `createNode`/`replace` must construct the wrapper class, and the
+ * declarations must never import wrappers.
  */
 
 /**
- * The named fence exception: image speaks standard `![alt](src)` markdown, so
- * its transformer is a hand-written element transformer, not a projected
- * `inkling:image` fence transformer.
+ * The named fence exception: image speaks standard `![alt](src)` markdown, so its
+ * transformer is a hand-written element transformer, not an `inkling:image` fence one.
  */
 export const IMAGE_CARD_TRANSFORMER: ElementTransformer = {
   dependencies: [ImageNode],
@@ -58,19 +51,16 @@ export const IMAGE_CARD_TRANSFORMER: ElementTransformer = {
 }
 
 /**
- * One card's ` ```inkling:<card>``` ` fence vocabulary — the only per-card
- * knowledge the payload table carries: which node fields the fence body holds
- * (`getData`) and how to rebuild the node from the parsed body (`createNode`).
- * The fence tag and the constructed class are deliberately NOT part of the
- * vocabulary: the projection derives them from the declaration's own
- * `nodeType` and wrapper class, so they can never drift from the registry.
- * Exported for `defineCard` (`@/inkling/nodes/cards/host-cards`): a host card's
+ * One card's ` ```inkling:<card>``` ` fence vocabulary: which node fields the fence
+ * body holds (`getData`) and how to rebuild the node from the parsed body
+ * (`createNode`). The fence tag and constructed class are deliberately absent — the
+ * projection derives them from the declaration's `nodeType` and wrapper class, so they
+ * cannot drift from the registry. Exported for `defineCard`: a host card's
  * `markdownFence` speaks the same vocabulary.
  *
- * The method-shorthand signatures keep each table entry's `getData` parameter
- * at the card's own node type (method parameters are bivariant under
- * `strictFunctionTypes`); the projection consumes the widened `LexicalNode`
- * signature.
+ * Method-shorthand signatures keep each entry's `getData` parameter at the card's own
+ * node type (method parameters are bivariant under `strictFunctionTypes`); the
+ * projection consumes the widened `LexicalNode` signature.
  */
 export interface CardFencePayload {
   getData(node: LexicalNode): Record<string, unknown>
@@ -78,13 +68,11 @@ export interface CardFencePayload {
 }
 
 /**
- * Builds one card's fence transformer from the declaration-derived fence tag
- * (`card`) and wrapper class (`nodeClass`) plus the card's payload vocabulary.
- * Every node the transformer constructs gets its declared nested editors
- * detached (`$detachNestedEditorsForRoundTrip`), so a fence-imported card
- * keeps the payload's plain-text fields verbatim. Exported for `defineCard`
- * (`@/inkling/nodes/cards/host-cards`), which builds host fence transformers through
- * the same path with the assembled host class as `nodeClass`.
+ * Builds one card's fence transformer from the declaration-derived fence tag (`card`)
+ * and wrapper class (`nodeClass`) plus the card's payload vocabulary. Every constructed
+ * node gets its nested editors detached (`$detachNestedEditorsForRoundTrip`), so a
+ * fence-imported card keeps the payload's plain-text fields verbatim. Exported for
+ * `defineCard`, which builds host fence transformers through the same path.
  */
 export function createCardTransformer({
   card,
@@ -135,12 +123,10 @@ export function createCardTransformer({
 }
 
 /**
- * Detaches a markdown-imported card's nested editors: nulls every `__<name>`
- * field the class's adopted `nestedEditors` spec declares. The fence payload
- * carries the card's text as plain data properties; a live nested editor
- * would re-serialize its HTML over those properties on `exportJSON`
- * (`serializeNestedEditorHtml`). Runs on the freshly constructed node inside
- * the transformer's `replace`, before it is appended.
+ * Detaches a markdown-imported card's nested editors: nulls every `__<name>` field the
+ * class's adopted `nestedEditors` spec declares. The fence payload carries the card's
+ * text as plain data properties; a live nested editor would re-serialize its HTML over
+ * those properties on `exportJSON`.
  */
 function $detachNestedEditorsForRoundTrip(node: LexicalNode): void {
   // the spec-declared `__<name>` fields exist on the node at runtime but are
@@ -156,11 +142,9 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-// `createNode` receives JSON.parse output from the card fence body: validate
-// the fields it reads instead of asserting them, so malformed markdown throws
-// a clear TypeError at the transformer boundary naming the card and field
-// instead of failing confusingly downstream (the same honest-boundary idiom
-// as asBookmarkMetadata in base/nodes/bookmark/BookmarkNode.ts).
+// `createNode` receives JSON.parse output from the card fence body: validate the fields
+// it reads instead of asserting them, so malformed markdown throws a clear TypeError at
+// the transformer boundary naming the card and field.
 function describeValue(value: unknown): string {
   return value === null ? 'null' : Array.isArray(value) ? 'an array' : typeof value
 }
@@ -172,15 +156,14 @@ function str(value: unknown, field: string): string {
   return value
 }
 
-// GalleryImage's scalar fields, checked with the same str-style guards the
-// neighbouring payloads use — the object check alone used to let
-// {"src": 42} land a number in __images
+// GalleryImage's scalar fields, type-checked so a malformed fence body cannot land a
+// number in `__images`
 const GALLERY_IMAGE_STRING_FIELDS = ['src', 'fileName', 'alt', 'caption', 'href', 'previewSrc', 'title'] as const
 const GALLERY_IMAGE_NUMBER_FIELDS = ['width', 'height', 'row'] as const
 
 function galleryImageEntry(image: object, field: string, index: number): GalleryImage {
-  // object literals from JSON.parse are plain records; the const binding is
-  // the honest bridge (an assertion would warn, a binding does not)
+  // object literals from JSON.parse are plain records; the const binding
+  // narrows without an assertion warning
   const entry: Record<string, unknown> = { ...image }
   for (const key of GALLERY_IMAGE_STRING_FIELDS) {
     const value = entry[key]
@@ -218,11 +201,9 @@ function galleryImages(value: unknown, field: string): GalleryImage[] {
 }
 
 /**
- * The fence-eligible card node types, DERIVED from the declarations'
- * `markdown: { kind: 'fence' }` entries — the payload table below is keyed
- * by this union with an exhaustive `Record`, so declaring a card
- * fence-eligible without its payload (or retiring a fence without removing
- * the payload) is a compile error here, not a silent drift.
+ * The fence-eligible card node types, derived from the declarations' `markdown: { kind:
+ * 'fence' }` entries: the payload table is keyed by this union with an exhaustive
+ * `Record`, so declaring a fence-eligible card without its payload is a compile error.
  */
 type FenceCardNodeType = Extract<(typeof CARD_DECLARATIONS)[number], { markdown: { kind: 'fence' } }>['nodeType']
 
@@ -331,21 +312,12 @@ const CARD_FENCE_PAYLOADS: Record<FenceCardNodeType, CardFencePayload> = {
 }
 
 /**
- * Wrapper-layer projection of the card declarations: each declaration paired
- * with its wrapper node class and (for markdown-eligible cards whose markdown
- * form is not covered by `DEFAULT_TRANSFORMERS`) its card transformer.
+ * Wrapper-layer projection of the card declarations: each declaration paired with its
+ * wrapper node class and, for markdown-eligible cards whose markdown form
+ * `DEFAULT_TRANSFORMERS` does not cover, its card transformer.
  * `@/inkling/markdown/round-trip` derives `MARKDOWN_NODES` and `CARD_TRANSFORMERS`
- * from this list.
- *
- * The fence tag and node class are derived by construction — the projection
- * passes the declaration's own `nodeType` and wrapper class to
- * `createCardTransformer`, so the table above states only the per-card
- * payload vocabulary. Eligibility and exemption are the declaration's own
- * `markdown` spec (`CardMarkdownSpec`); the throw below is the runtime
- * backstop behind the payload table's exhaustive-`Record` compile-time
- * guarantee. Image's `![alt](src)` transformer is the named exception
- * among the exemptions — the only exempt card with a hand-written
- * transformer.
+ * from this list. The throw below is the runtime backstop behind the payload
+ * table's exhaustive-`Record` compile-time guarantee.
  */
 export const CARD_MARKDOWN_DECLARATIONS = CARD_WRAPPER_NODES.map((card) => {
   // `in` narrows the union to the declarations carrying the optional markdown entry

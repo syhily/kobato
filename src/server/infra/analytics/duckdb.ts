@@ -11,10 +11,9 @@ import { getLogger } from '@/server/infra/logger'
  * The embedded DuckDB analytics sidecar: one file, one instance, one
  * reader + one writer connection, hosting the analytics tables (schema
  * injected by the caller). Backups archive it with the content DB, but a
- * missing file is recreated empty — restore is a bonus. Files written by
- * a pre-2.0 DuckDB are upgraded to the 2.0 storage format at open (Kobato
- * 8.0 treats the engine bump as a breaking change — a `kobato rollback`
- * across it can no longer read the sidecar).
+ * missing file is recreated empty — restore is a bonus. A pre-2.0 file is
+ * upgraded to the 2.0 storage format at open, after which a rollback to a
+ * pre-2.0 build can no longer read the sidecar.
  */
 export interface AnalyticsHandle {
   instance: DuckDBInstance

@@ -35,20 +35,18 @@ export interface UseHeaderBackgroundImageResult {
 }
 
 /**
- * The header card's background-image show/hide/remove policy (one named home
- * for the `showBackgroundImage`/`lastBackgroundImage`/`imageRemoved` triad
- * the component used to coordinate across effects):
+ * The header card's background-image show/hide/remove policy:
  *
- * - mount/layout transition: a non-split layout re-derives visibility from
- *   the node src; switching TO `split` with no src but a remembered image
- *   re-runs the show transition (which may open the file dialog).
- * - show: restore the remembered src through the write seam, or open the
- *   file dialog when there is nothing (restorable) to restore.
+ * - mount/layout transition: a non-split layout re-derives visibility from the
+ *   node src; switching TO `split` with no src but a remembered image re-runs the
+ *   show transition (which may open the file dialog).
+ * - show: restore the remembered src through the write seam, or open the file
+ *   dialog when there is nothing (restorable) to restore.
  * - hide vs clear: hide keeps the remembered src; clear marks the removal
  *   deliberate, cutting the restore path.
  *
- * Also owns the mount-time accent-color backfill (getAccentColor → node), so
- * the component carries no node-write effects at all.
+ * Also owns the mount-time accent-color backfill, so the component carries no
+ * node-write effects.
  */
 export function useHeaderBackgroundImage({
   layout,
@@ -64,8 +62,6 @@ export function useHeaderBackgroundImage({
 
   const [showBackgroundImage, setShowBackgroundImage] = useState<boolean>(Boolean(backgroundImageSrc))
   const [lastBackgroundImage, setLastBackgroundImage] = useState<string>(backgroundImageSrc)
-
-  // this is used to determine if the image was deliberately removed by the user or not, for some UX finesse
   const [imageRemoved, setImageRemoved] = useState<boolean>(false)
 
   const showImage = (): void => {
@@ -125,7 +121,7 @@ export function useHeaderBackgroundImage({
         openFileDialog()
       }
     }
-    // We just want to reset the show background image state when the layout changes, not when the image changes
+    // Deps stay [layout]: visibility resets on layout change, not on image changes.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [layout])
 

@@ -1,29 +1,11 @@
 /**
- * The request track — the one home of the async-flow skeleton behind the
- * editor's debounced search flows (CONTEXT.md "request track"). Two
- * primitives, each previously hand-copied per flow:
- *
- * - the scheduler port (`RequestScheduler` + `defaultScheduler`) — tests
- *   inject a manual one, so every race matrix below is a synchronous test
- *   table instead of renderHook + wall-clock sleeps;
- * - the latest-wins request guard (`createRequestTrack`) — a newer request
- *   supersedes every in-flight one, so a slow response can never overwrite
- *   newer results, plus the scheduled-dispatch cancellation and the dispose
- *   lifecycle (cancel pending + supersede in-flight).
- *
- * The snapshot store the flows publish through lives in its own module
- * (src/utils/services/snapshot-store.ts) — it is shared with state modules
- * that have no request line (the menu navigator, the gallery images
- * mirror, the composer handle).
- *
- * The gif browser (src/utils/services/gif-browser.ts), the library browser
- * (src/utils/services/library-browser.ts), and the link-search coordinator
- * (src/hooks/search-coordinator.ts) compose their own policy on top —
- * pagination, the prefetch track, the URL short-circuit stay per-module
- * data — over the shared tracked-request skeleton and dispatch protocol in
- * src/utils/services/service-machine.ts. Their per-module scheduler type
- * names survive as aliases of `RequestScheduler` (the public
- * `LibraryScheduler` must not break).
+ * The request track — the async-flow skeleton behind the editor's debounced search flows:
+ * the scheduler port (`RequestScheduler` + `defaultScheduler`; tests inject a manual one so
+ * every race matrix is a synchronous test table) and the latest-wins request guard
+ * (`createRequestTrack`). The snapshot store lives in snapshot-store.ts; the gif browser,
+ * the library browser, and the link-search coordinator compose their own policy on top.
+ * Per-module scheduler aliases of `RequestScheduler` survive (the public `LibraryScheduler`
+ * must not break).
  */
 
 /** Scheduler port for debounced dispatches — tests inject a manual one. */

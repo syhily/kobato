@@ -45,9 +45,8 @@ export function closeAllTestAnalyticsDbs(): void {
   }
 }
 
-/** Minimal access-events seed row: ts required, visitorHash/path default to
- *  constants, everything else optional — mirrors `EnrichedAccessEvent`
- *  (the helper writes through the same blobsMap mapping as production). */
+/** Minimal access-events seed row: ts required, visitorHash/path default to constants,
+ *  the rest optional. Mirrors `EnrichedAccessEvent` through the production mapping. */
 export interface SeedAccessEvent {
   /** Pin the primary key so a device_env_client row can join on it. */
   eventId?: string

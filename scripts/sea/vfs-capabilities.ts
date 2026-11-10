@@ -88,9 +88,7 @@ function runUserlandProbe(script: string, args: string[] = []): Record<string, u
   return JSON.parse(result.stdout.trim())
 }
 
-// ---------------------------------------------------------------------------
 // Group A — userland node:vfs probes
-// ---------------------------------------------------------------------------
 
 const PROBE_MOUNT_LIFECYCLE = `
 import * as vfs from 'node:vfs'
@@ -388,9 +386,7 @@ function runUserlandGroup() {
   })
 }
 
-// ---------------------------------------------------------------------------
 // Group B — mini SEA with "useVfs": true
-// ---------------------------------------------------------------------------
 
 /** Find a platform package directory inside node_modules/.pnpm (e.g. /^@napi-rs\+canvas-/). */
 function findPnpmPackageDir(pattern: RegExp) {
@@ -805,8 +801,6 @@ function runSeaGroup() {
     rmSync(tempDir, { recursive: true, force: true })
   }
 }
-
-// ---------------------------------------------------------------------------
 
 console.log(`VFS capability suite — node binary: ${nodeBinary}`)
 runUserlandGroup()

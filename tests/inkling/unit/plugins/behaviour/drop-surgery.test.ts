@@ -489,10 +489,10 @@ describe('$mergeImagesIntoGallery', () => {
 })
 
 describe('$insertDraggedImage without the image card registered', () => {
-  // plan C5: the class comes from the editor's registered-node map, so a
-  // card-free composition (the ./core entry — no gallery card, so this path
-  // is unreachable there in practice) resolves to null instead of importing
-  // the shim
+  // The class comes from the editor's registered-node map, so a card-free
+  // composition (the ./core entry has no gallery card, so this path is
+  // unreachable there in practice) resolves to null instead of importing
+  // the shim.
   it('returns null and leaves the tree untouched', async () => {
     const editor = createEditor({ namespace: 'test', nodes: [], onError: () => {} })
 

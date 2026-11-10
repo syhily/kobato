@@ -6,10 +6,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { rollbackBinary } from '@/server/infra/binary-rollback'
 
-// Interface test for the rollback swap: real tmpdir, real fs — only the
-// `<bak> --version` probe is injected (tests never exec a real binary).
-// Exercises preflight checks → park → swap → cleanup through
-// `rollbackBinary`, never its internals.
+// Interface test for the rollback swap: real tmpdir, real fs — only the `<bak> --version`
+// probe is injected (tests never exec a real binary). Drives preflight → park → swap →
+// cleanup through `rollbackBinary`, never its internals.
 
 const RUNNING_BINARY = 'running-binary-v2-bad'
 const BACKUP_BINARY = 'backup-binary-v1-good'

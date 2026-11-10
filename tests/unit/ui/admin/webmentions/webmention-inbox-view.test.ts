@@ -50,8 +50,7 @@ function makeData(mentions: AdminWebmentionWire[]): InfiniteData<AdminWebmention
   }
 }
 
-// The inbox's local cache patch after a moderation mutation (no refetch)
-// — the UI logic half of what used to sit in the contracts test file.
+// The inbox's local cache patch after a moderation mutation (no refetch).
 describe('ui / moderateMentionInPages (admin inbox cache patch)', () => {
   it('updates the row in place under the `all` filter and shifts the counts', () => {
     const data = makeData([makeMention({ id: '1' }), makeMention({ id: '2', status: 'approved' })])

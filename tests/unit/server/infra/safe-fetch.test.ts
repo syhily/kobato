@@ -8,8 +8,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createDialLookup, safeFetch } from '@/server/infra/safe-fetch'
 
-// Unit surface for the SSRF invariant (plan 042): allowlist, per-hop
-// host revalidation, redirect budget, timeout, size cap.
+// Unit surface for the SSRF invariant: allowlist, per-hop host revalidation, redirect
+// budget, timeout, size cap.
 // `isBlockedFetchHost` stays real — only `fetch` is stubbed; DNS defaults to a public address.
 
 interface DnsAddress {

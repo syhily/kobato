@@ -12,8 +12,8 @@ function whereTarget(target: EntityTarget) {
 }
 
 /**
- * Ensure-once read, read-first/insert-only-when-missing (audit P1-14);
- * the `ON CONFLICT` no-op is the concurrent-create race fallback.
+ * Ensure-once: read first, insert only when missing; the `ON CONFLICT` no-op
+ * is the concurrent-create race fallback.
  */
 export async function ensureMetric(db: Database, target: EntityTarget): Promise<MetricRow> {
   const existing = await findMetricByTarget(db, target)

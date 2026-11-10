@@ -13,9 +13,9 @@ import { pasteDialect } from '@/inkling/markdown/paste-dialect'
 import { type DefaultTransformsOptions } from '@/inkling/transforms'
 
 // The markdown card's exportDOM reads the paste dialect through the lazy
-// port's sync cache (`@/inkling/markdown/lazy-paste-dialect`); this surface is
-// server-only at runtime, so it holds the engine statically and seeds the
-// port at module eval — the headless export path can never await a chunk.
+// port's sync cache (`@/inkling/markdown/lazy-paste-dialect`); this surface
+// holds the engine statically and seeds the port at module eval — the headless
+// export path can never await a chunk.
 registerLoadedPasteDialect({ pasteDialect })
 
 export { DEFAULT_HTML_NODES } from '@/inkling/html/default-html-nodes'
@@ -29,12 +29,10 @@ export interface LexicalStateToHtmlOptions extends ExportDOMOptions {
 
 /**
  * Convert a serialized Lexical editor state to an HTML string — the headless
- * export half of the public HTML surface, one stateless function over the
- * internal renderer, mirroring the markdown pair's naming. The DOM resolves
- * through the headless DOM port: `options.dom`, then a global
- * `window.document`, then the bundled jsdom (a root devDependency inlined
- * into the SEA binary — the missing-jsdom failure leg is unreachable in
- * shipped artifacts; hitting it means the bundle/environment is broken).
+ * export half of the public HTML surface. The DOM resolves through the
+ * headless DOM port: `options.dom`, then a global `window.document`, then the
+ * bundled jsdom; the missing-jsdom failure leg means the bundle/environment is
+ * broken, not that jsdom needs installing.
  */
 export async function lexicalStateToHtml(
   state: SerializedEditorState | string,
@@ -64,8 +62,8 @@ export interface HtmlToLexicalStateOptions {
 
 /**
  * Convert an HTML string to a serialized Lexical editor state — the import
- * half of the pair. Both directions are async so the lazy jsdom load stays
- * the single DOM story; an empty string imports as `MINIMAL_DOCUMENT`.
+ * half of the pair. Both directions are async so the lazy jsdom load stays the
+ * single DOM story; an empty string imports as `MINIMAL_DOCUMENT`.
  */
 export async function htmlToLexicalState(
   html: string,

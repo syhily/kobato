@@ -4,9 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'
-// SSR-render every admin route Component export with fixture loaderData;
-// assert real rendered content, so a route that degrades into the
-// router's error boundary fails instead of a vacuous length check.
+// SSR-render every admin route Component export with fixture loaderData and assert real
+// rendered content, so a route that degrades into the error boundary fails loudly.
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
@@ -37,9 +36,8 @@ import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { I18nProvider } from '@/ui/lib/I18nProvider'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
-// `asRoute` widens the strict `Route.ComponentProps` so tests pass only
-// the fields each branch reads; the settings layout's loader transitively
-// pulls in the DB bootstrap — irrelevant to these snapshots.
+// `asRoute` widens the strict `Route.ComponentProps` so tests pass only the fields each
+// branch reads; the settings layout's loader pulls in the DB bootstrap, irrelevant here.
 const AnalyticsLayoutRoute = asRoute(AnalyticsLayoutRouteRaw)
 const AnalyticsOverviewRoute = asRoute(AnalyticsOverviewRouteRaw)
 const AnalyticsRealtimeRoute = asRoute(AnalyticsRealtimeRouteRaw)

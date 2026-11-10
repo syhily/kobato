@@ -2,9 +2,8 @@ import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 import type { PublicMusicMeta } from '@/shared/contracts/music'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
-// Lexical editor-state fixtures for the R9a save pipeline. Shapes pin the
-// storage wire format the inkling composer produces: element nodes always
-// carry children/direction/format/indent, text nodes carry
+// Lexical editor-state fixtures pinning the storage wire format the inkling composer
+// produces: element nodes always carry children/direction/format/indent, text nodes
 // detail/format/mode/style/text (lexical 0.53 exporters). Mirrored from
 // tests/unit/shared/lexical/schema.test.ts — keep both in sync.
 

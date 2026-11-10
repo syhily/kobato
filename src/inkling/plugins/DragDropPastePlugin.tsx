@@ -5,8 +5,8 @@ import { useInklingHostEssentials } from '@/inkling/context/InklingHostIntegrati
 import { registerDragOverSuppression, registerFileDropCommands } from '@/inkling/plugins/behaviour/file-drop'
 
 // The drop policies (claim flow, cursor suppression, html fallback, the
-// DRAG_DROP_PASTE bus) live in @/plugins/behaviour/file-drop; this plugin
-// keeps only the uploader context and mounts the registrations.
+// DRAG_DROP_PASTE bus) live in @/inkling/plugins/behaviour/file-drop; this
+// plugin keeps only the uploader context and mounts the registrations.
 function DragDropPastePlugin() {
   const [editor] = useLexicalComposerContext()
   const { fileUploader } = useInklingHostEssentials()

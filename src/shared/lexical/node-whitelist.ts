@@ -1,106 +1,78 @@
-// Node-type whitelist for the Lexical storage format (plan
-// docs/plans/inkling-editor-replacement.md, round R7). Single source of
-// truth: both zod schemas (`schema.ts` / `comment-schema.ts`) and the R11
-// composer contract test consume these constants — the editor must never
-// produce a node the server rejects, nor vice versa.
+// Node-type whitelist for the Lexical storage format. Single source of truth:
+// both zod schemas (`schema.ts` / `comment-schema.ts`) and the composer
+// contract test consume these constants — the editor must never produce a node
+// the server rejects, nor vice versa.
 //
-// Every type string was verified against the node class that serializes it
-// (source cited per entry). Two families:
-//
-// - Upstream Lexical 0.53 (`lexical` / `@lexical/*`; verified against the
-//   installed dist bundles and .d.ts files under node_modules).
-// - inkling node classes (src/inkling/nodes/**). inkling's three
-//   extended nodes REPLACE their upstream base via Lexical's node
-//   replacement mechanism (src/nodes/base/nodes/extended-node-pairs.ts) and
-//   their exportJSON rewrites `type`, so serialized payloads only ever carry
-//   the `extended-*` strings — never upstream `text` / `heading` / `quote`.
+// Families: upstream Lexical (`lexical` / `@lexical/*`) core/list/link/table
+// classes, and inkling classes (`src/inkling/nodes/**`). inkling's three
+// extended nodes REPLACE their upstream base via Lexical's node replacement
+// (`src/inkling/nodes/base/nodes/extended-node-pairs.ts`) and their exportJSON
+// rewrites `type`, so serialized payloads only ever carry the `extended-*`
+// strings — never upstream `text` / `heading` / `quote`.
 
-/** Serialized only as the state's top-level container, never as a child —
- * lexical core RootNode (`lexical` dist Lexical.dev.mjs `getType`). */
+/** Serialized only as the state's top-level container, never as a child. */
 export const ROOT_NODE_TYPE = 'root'
 
 /**
- * kobato host cards (plan M3, landed in R10 via `defineCard`): the type
- * strings are pinned HERE and the card spec modules under
- * `@/shared/lexical/cards/` consume these named constants verbatim; the R11
- * contract test then pins composer ↔ whitelist. Named separately because the
- * save-time projections (`projection-state.ts`) special-case them.
+ * Kobato host cards. Named constants because the card spec modules under
+ * `@/shared/lexical/cards/` consume them verbatim and `projection-state.ts`
+ * special-cases the set.
  */
 export const SOLUTION_NODE_TYPE = 'solution'
 export const TWO_COLUMN_NODE_TYPE = 'two-column'
 export const MUSIC_PLAYER_NODE_TYPE = 'music-player'
 export const KOBATO_HOST_CARD_NODE_TYPES = [SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE, MUSIC_PLAYER_NODE_TYPE] as const
 
-/**
- * Article/page editing state — kobato's full target node set.
- */
 export const FULL_EDITOR_NODE_TYPES = [
-  // lexical core ParagraphNode / LineBreakNode (dist Lexical.dev.mjs).
+  // Lexical core ParagraphNode / LineBreakNode.
   'paragraph',
   'linebreak',
-  // src/inkling/nodes/base/nodes/ExtendedTextNode.ts:23 —
-  // replaces TextNode (carries format/mode/detail/style like upstream).
+  // src/inkling/nodes/base/nodes/ExtendedTextNode.ts — replaces TextNode.
   'extended-text',
-  // src/inkling/nodes/base/nodes/ExtendedHeadingNode.ts:28 —
-  // replaces HeadingNode (`tag` h1–h6).
+  // src/inkling/nodes/base/nodes/ExtendedHeadingNode.ts — replaces HeadingNode (h1–h6).
   'extended-heading',
-  // src/inkling/nodes/base/nodes/ExtendedQuoteNode.ts:23 —
-  // replaces QuoteNode.
+  // src/inkling/nodes/base/nodes/ExtendedQuoteNode.ts — replaces QuoteNode.
   'extended-quote',
-  // @lexical/list ListNode / ListItemNode (dist LexicalList.dev.js
-  // `config('list')` / `config('listitem')`); lists nest via
-  // list > listitem > list.
+  // @lexical/list ListNode / ListItemNode; lists nest via list > listitem > list.
   'list',
   'listitem',
-  // @lexical/link LinkNode / AutoLinkNode (dist LexicalLink.dev.mjs);
-  // autolink nodes appear because inkling's CorePlugins mount
-  // registerAutoLink (R4) — imported `<a>` markup stays plain `link`.
+  // @lexical/link LinkNode / AutoLinkNode; autolink appears because inkling's
+  // CorePlugins mount registerAutoLink — imported `<a>` markup stays plain `link`.
   'link',
   'autolink',
-  // inkling image card: src/inkling/nodes/cards/
-  // image.declaration.ts:50. The R3 verdict subclasses it as
-  // KobatoImageNode via same-type replacement, so the type stays `image`
-  // (the kobato pass-through keys ride the dataset — see schema.ts).
+  // inkling image card (src/inkling/nodes/cards/image.declaration.ts).
+  // KobatoImageNode subclasses it via same-type replacement, so the type stays
+  // `image` (the kobato pass-through keys ride the dataset — see schema.ts).
   'image',
-  // inkling code card: src/inkling/nodes/cards/
-  // codeblock.declaration.ts:25.
+  // inkling code card.
   'codeblock',
-  // inkling block-math card: src/inkling/nodes/cards/
-  // math.declaration.ts:6.
+  // inkling block-math card.
   'math',
-  // src/inkling/nodes/math/MathInlineNode.ts:42 — inline
-  // decorator (cards are block-level, so this one is hand-written).
+  // src/inkling/nodes/math/MathInlineNode.ts — inline decorator (cards are
+  // block-level, so this one is hand-written).
   'math-inline',
-  // Footnote pair: src/inkling/nodes/footnote/
-  // FootnoteRefNode.ts:28 (TextNode entity) and src/inkling/
-  // nodes/cards/footnotedefinition.declaration.ts:23 (menu-less card at
-  // the doc-end definition run).
+  // Footnote pair: FootnoteRefNode (TextNode entity) and the menu-less
+  // footnotedefinition card at the doc-end definition run.
   'footnote-ref',
   'footnotedefinition',
-  // src/inkling/nodes/cards/horizontalrule.declaration.ts:6.
   'horizontalrule',
-  // @lexical/table TableNode / TableRowNode / TableCellNode (dist
-  // LexicalTable.dev.mjs `getType` returns), mounted by inkling as
-  // INKLING_TABLE_NODES.
+  // @lexical/table TableNode / TableRowNode / TableCellNode, mounted by inkling
+  // as INKLING_TABLE_NODES.
   'table',
   'tablerow',
   'tablecell',
-  // See the pinned comment on the constant itself.
   ...KOBATO_HOST_CARD_NODE_TYPES,
 ] as const
 
 export type FullEditorNodeType = (typeof FULL_EDITOR_NODE_TYPES)[number]
 
 /**
- * Comment editing state — the restricted subset mirroring the PT
- * `comment-schema.ts` capability set (multi-paragraph, blockquote, nested
- * lists, code block, link). `math` / `math-inline` are STORAGE-ONLY legacy
- * entries: the composer no longer mounts them (formulas are authored as
- * ```math fences and rendered to KaTeX MathML by the comment projection),
- * but R12-era bodies still validate here and are downgraded to the fence
- * dialect at editor seed time (`@/client/editor/comment-legacy-math`).
- * `autolink` is included because typed URLs autolink wherever the plugin is
- * mounted; the contract test keeps both sides in sync.
+ * Comment editing state — the restricted subset (multi-paragraph, blockquote,
+ * nested lists, code block, link). `math` / `math-inline` are STORAGE-ONLY: the
+ * composer does not mount them (formulas are ```math fences), but older bodies
+ * still validate and are downgraded to the fence dialect at editor seed time
+ * (`@/client/editor/comment-legacy-math`). `autolink` rides wherever the plugin
+ * is mounted; the contract test keeps both sides in sync.
  */
 export const COMMENT_NODE_TYPES = [
   'paragraph',

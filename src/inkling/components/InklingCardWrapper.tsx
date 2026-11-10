@@ -45,7 +45,7 @@ const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, child
       setCardType(cardNode ? cardNode.getType() : null)
     })
 
-    // We only do this for init
+    // init-only read — mount-only deps are deliberate
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -67,8 +67,8 @@ const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, child
   }, [editor, historyState])
 
   React.useEffect(() => {
-    // add a property to the parent element that's added directly by Lexical
-    // so we can target it via CSS for things like spacing between stacked full-width cards
+    // Mark the Lexical-created parent element so CSS can target it (spacing
+    // between stacked full-width cards)
     if (containerRef.current?.parentElement) {
       // avoid setting property when 'regular' so there's less test churn
       if (normalizedWidth === 'regular') {

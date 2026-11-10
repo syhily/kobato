@@ -3,12 +3,10 @@ import { FastAverageColor } from 'fast-average-color'
 import { Color, textColorForBackgroundColor } from '@/inkling/utils'
 import { getAccentColor } from '@/inkling/utils/getAccentColor'
 
-// Header accent color — the one owner of the header card's color policy
-// (previously inline in HeaderCard, reachable only through the full settings
-// panel): the 'accent' keyword resolution, the transparency-over-white
-// merge, the readable-counterpart pick, and the async background-image
-// resolution behind it all. HeaderCard keeps only the race guard and the
-// write.
+// Header accent color — the one owner of the header card's color policy: the
+// 'accent' keyword resolution, the transparency-over-white merge, the
+// readable-counterpart pick, and the async background-image resolution behind
+// it all. HeaderCard keeps only the race guard and the write.
 
 /**
  * Resolves a header color token to a hex value: the 'accent' keyword reads

@@ -53,7 +53,7 @@ export interface SearchFilterField<K extends string> extends FilterFieldBase<K> 
   toQuery: (value: string) => FilterQueryPatch
 }
 
-/** Operator dropdown + free text, committed on blur / Enter (内容). */
+/** Operator dropdown + free text, committed on blur / Enter (comments text filter). */
 export interface TextFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'text'
   operators: readonly TextFilterOperatorOption[]
@@ -71,13 +71,13 @@ export interface FreetextFilterField<K extends string> extends FilterFieldBase<K
   toQuery: (value: string) => FilterQueryPatch
 }
 
-/** Single date + operator (comments 时间). */
+/** Single date + operator (comments date filter). */
 export interface DateSingleFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'date-single'
   toQuery: (value: SingleDateFilterValue) => FilterQueryPatch
 }
 
-/** From/to range picker (audit 时间). */
+/** From/to range picker (audit date range). */
 export interface DateRangeFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'date-range'
   toQuery: (value: DateFilterValue) => FilterQueryPatch

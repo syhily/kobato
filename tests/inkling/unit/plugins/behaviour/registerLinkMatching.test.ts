@@ -79,8 +79,8 @@ describe('registerLinkMatching bookmark card path', () => {
   })
 
   it('degrades to a plain link when the bookmark card is not registered', async () => {
-    // plan C5: a card-free composition (the ./core entry) pastes a bare URL
-    // into a blank paragraph as a link, not a bookmark card
+    // A card-free composition (the ./core entry) pastes a bare URL into a
+    // blank paragraph as a link, not a bookmark card.
     const editor = createEditor({ namespace: 'test', nodes: [LinkNode], onError: () => {} })
     registerLinkMatching(editor, { isShiftPressed: { current: false } })
     await placeCaretInBlankParagraph(editor)

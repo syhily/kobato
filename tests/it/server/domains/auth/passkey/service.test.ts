@@ -665,7 +665,7 @@ describe('passkey — passkey login method blocks password login', () => {
     if (result.type === 'error') {
       expect(result.descriptor).toMatchObject({ messageKey: 'auth.signin.error.passkeyRequired' })
     }
-    // loginMethod='passkey' 是「无 mutation 的错误结果」：既不携带 setCookie，也不标脏会话。
+    // loginMethod='passkey' makes this a mutation-free error: no setCookie, no dirty session.
     expect(result.setCookie).toBeUndefined()
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
@@ -708,7 +708,6 @@ describe('passkey — deleting last credential reverts to password login', () =>
   it('reverts loginMethod to password when the user deletes their only credential', async () => {
     const userId = await seedUser({ loginMethod: 'passkey' })
 
-    // Register one credential
     swaMocks.generateRegistrationOptions.mockResolvedValue({
       challenge: 'reg-c-force',
       rp: { name: 'Test', id: 'example.com' },
@@ -841,7 +840,6 @@ describe('passkey — replay attack prevention', () => {
     )
     expect(firstResult.authMethod).toBe('passkey')
 
-    // Second use with the same challenge must fail
     await expect(
       passkeyService.verifyAuthenticationResponse(
         db,

@@ -12,8 +12,8 @@ interface NavNotificationsProps {
   onOpen: () => void
 }
 
-//「消息通知」renders as a bare menu item — AppSidebarContent groups it with
-// 系统设置 in one menu so the bottom entries share item spacing. It is a
+// The notifications entry renders as a bare menu item — AppSidebarContent groups it with
+// the settings entry in one menu so the bottom entries share item spacing. It is a
 // button opening the global right-side drawer, not a route.
 export function NavNotifications({ unreadCount, onOpen }: NavNotificationsProps) {
   const { t } = useI18n()

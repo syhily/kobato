@@ -7,13 +7,12 @@ import { createWordCounter, type WordCounter } from '@/inkling/plugins/behaviour
 import { publishWordCountCallback } from '@/inkling/plugins/behaviour/wordCountHandle'
 
 // `language` selects the Intl.Segmenter word-granularity path in countWords;
-// with no language the counter keeps Inkling's original regex path (never an
-// implicit English segmenter), so a host that names nothing keeps its old
-// counts. It is published on the composer handle alongside the callbacks so
-// nested composers count with the same language — the top-level-only publish
-// gate lives in publishWordCountCallback beside the handle (mirroring
-// registerTkNodeTracking). The explicit prop wins over the composer's
-// `wordCountLanguage` (the host's UI locale).
+// with no language the counter keeps Inkling's regex path (never an implicit
+// English segmenter), so a host that names nothing keeps regex-based counts.
+// It is published on the composer handle alongside the callbacks so nested
+// composers count with the same language — the top-level-only publish gate
+// lives in publishWordCountCallback beside the handle. The explicit prop wins
+// over the composer's `wordCountLanguage` (the host's UI locale).
 //
 // `onSelectionChange` is the optional selection channel: it receives the
 // active selection's word count (0 is valid), or null while nothing is

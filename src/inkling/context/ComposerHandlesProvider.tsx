@@ -13,13 +13,10 @@ import { createFootnoteHandle } from '@/inkling/plugins/behaviour/footnoteHandle
 import { createTKHandle } from '@/inkling/plugins/behaviour/tkHandle'
 import { createWordCountHandle } from '@/inkling/plugins/behaviour/wordCountHandle'
 
-// The one owner of the composer's handle stack (CONTEXT.md: "composer
-// handle"): creates the six per-top-level-composer handles and nests their
-// providers, so the composer tree declares one wrapper instead of a
-// hand-nested pyramid. One instance per handle per mounted provider (the
-// useState initializers keep them stable); nested composers share the
-// top-level handles exactly as before. The handle providers never read each
-// other's context, so their nesting order carries no semantics.
+// Owns the composer's handle stack: one instance per handle per mounted
+// provider (the useState initializers keep them stable), and nested composers
+// share the top-level handles. The providers never read each other's context,
+// so their nesting order carries no semantics.
 export function ComposerHandlesProvider({ children }: { children: React.ReactNode }) {
   const [dragDropHandle] = React.useState(createDragDropHandle)
   const [wordCountHandle] = React.useState(createWordCountHandle)

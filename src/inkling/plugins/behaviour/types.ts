@@ -1,13 +1,11 @@
 import type { LexicalNode } from 'lexical'
 
 /**
- * The INSERT_CARD_COMMAND payload: the constructed node plus the insert-time
+ * INSERT_CARD_COMMAND payload: the constructed node plus the insert-time
  * intent flags the insert choreography (`registerCardCommands`) honors —
- * `openInEditMode` enters edit mode on the fresh card (the five edit-mode
- * declarations), `openPicker` opens the card's registered picker on it
- * (CONTEXT.md: "pick seam" — set by the insert registrar for
- * `picker.autoOpenOnInsert` host cards, or by a host's own intent command,
- * e.g. kobato's image-library entry).
+ * `openInEditMode` enters edit mode on the fresh card, `openPicker` opens the
+ * card's registered picker on it (set by the insert registrar for
+ * `picker.autoOpenOnInsert` host cards, or by a host's own intent command).
  */
 export interface InsertCardPayload {
   cardNode: LexicalNode

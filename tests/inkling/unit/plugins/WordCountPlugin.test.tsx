@@ -23,7 +23,7 @@ import { countWords } from '@/inkling/utils'
 // counting behaviour itself (initial count, incremental flushes, dirty-key
 // remapping, nested-editor fallback, focus/editable selection state, detach)
 // is pinned headlessly and without wall-clock sleeps in
-// test/unit/plugins/behaviour/word-counter.test.ts.
+// behaviour/word-counter.test.ts.
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

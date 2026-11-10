@@ -1,15 +1,12 @@
 import React from 'react'
 
-// The headless keyboard-selection machine behind the option-list render
-// shells (KeyboardSelectionWithGroups; the flat list is one degenerate
-// group): the window keydown listener with the Safari preventDefault
-// triad, the clamped arrow-step policy, the render-time re-sync when the
-// default changes or the items shrink, the scroll-request latch, and the
-// hasNavigated gate — before the user navigates, Enter over a flagged
-// link input (data-inkling-link-input) stays with the input's own submit
-// instead of selecting the default suggestion. Previously this machine
-// existed twice (KeyboardSelection and KeyboardSelectionWithGroups
-// carried ~50 near-identical lines).
+// The headless keyboard-selection machine behind the option-list render shells
+// (KeyboardSelectionWithGroups; the flat list is one degenerate group): the
+// window keydown listener with the Safari preventDefault triad, the clamped
+// arrow-step policy, the render-time re-sync when the default changes or the
+// items shrink, the scroll-request latch, and the hasNavigated gate — before the
+// user navigates, Enter over a flagged link input (data-inkling-link-input) stays
+// with the input's own submit instead of selecting the default suggestion.
 
 export interface UseKeyboardListSelectionOptions<T> {
   items: T[]
@@ -66,7 +63,6 @@ export function useKeyboardListSelection<T>({
         setScrollSelectedIntoView(true)
       }
       if (event.key === 'ArrowUp') {
-        // The stop propagation is required for Safari
         event.preventDefault()
         event.stopPropagation()
         setHasNavigated(true)
@@ -91,7 +87,6 @@ export function useKeyboardListSelection<T>({
           return
         }
 
-        // The stop propagation is required for Safari
         event.preventDefault()
         event.stopPropagation()
 

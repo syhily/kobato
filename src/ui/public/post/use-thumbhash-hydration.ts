@@ -24,15 +24,11 @@ function decodeThumbhash(hash: string): string | undefined {
   }
 }
 
-// The dSHI twin of `useThumbhashBackground`: exported body images carry their
-// placeholder as a `data-thumbhash` attribute (KobatoImageNode exportDOM), so
-// the hook paints the decoded blur as a background until the real image has
-// loaded. Additive over the SSR `style="aspect-ratio:…"` placeholder.
+// Exported body images carry their placeholder as a `data-thumbhash` attribute
+// (KobatoImageNode exportDOM); the hook paints the decoded blur as a background until the real
+// image loads, additive over the SSR `style="aspect-ratio:…"` placeholder.
 //
-// `bodyHtml` is the effect's re-scan key: the container div is REUSED across
-// client-side navigations (only its innerHTML is swapped), so without it the
-// new article's images would never get their blur placeholder (see
-// useMusicPlayers for the full rationale).
+// `bodyHtml` is the effect's re-scan key (rationale in useMusicPlayers).
 export function useThumbhashHydration(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current

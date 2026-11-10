@@ -5,8 +5,8 @@ export function isPasskeyEnabled(): boolean {
 }
 
 /**
- * Whether this user row must authenticate with a passkey right now;
- * false when the global passkey switch is off.
+ * Whether this user must authenticate with a passkey right now; false when the global
+ * switch is off.
  */
 export function isPasskeySigninUser(
   user: { loginMethod: string; role: string | null; deletedAt: Date | null } | null,

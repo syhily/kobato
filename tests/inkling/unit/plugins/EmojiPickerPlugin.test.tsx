@@ -18,8 +18,8 @@ vi.mock('emoji-mart', () => ({
   SearchIndex: { search: vi.fn(() => Promise.resolve([])) },
 }))
 
-// captures the props the plugin hands to the typeahead so tests can drive
-// queries and inspect the offered options without a DOM selection
+// Captures the props the plugin hands to the typeahead so tests can drive
+// queries and inspect the offered options without a DOM selection.
 const typeaheadCapture = vi.hoisted(() => ({
   props: null as {
     onQueryChange: (query: string | null) => void
@@ -75,10 +75,9 @@ function renderPlugin(editor: ReturnType<typeof createTestEditor>) {
 }
 
 describe('EmojiPickerPlugin', () => {
-  // the index chunk loads lazily on the first typeahead query; its module
-  // eval runs emoji-mart's init side effect, and the port's cached promise
-  // makes that exactly-once per module registry no matter how many editors
-  // mount or queries fire
+  // The index chunk loads lazily on the first query and its module eval runs
+  // emoji-mart's init side effect; the port caches the promise per module
+  // registry.
   it('initializes emoji-mart data once, not per mount', async () => {
     const editor = createTestEditor()
     const first = renderPlugin(editor)
@@ -123,8 +122,8 @@ describe('EmojiPickerPlugin', () => {
     try {
       const editor = createTestEditor()
       const { unmount } = renderPlugin(editor)
-      // the first query in a test file awaits the emoji-mart chunk import
-      // before the search fires — settle it, then flush the search microtasks
+      // The first query in a test file awaits the emoji-mart chunk import before
+      // the search fires: settle it, then flush the search microtasks.
       await act(async () => typeaheadCapture.props?.onQueryChange('smi'))
       await act(async () => typeaheadCapture.props?.onQueryChange('smile'))
       await vi.dynamicImportSettled()
@@ -134,13 +133,12 @@ describe('EmojiPickerPlugin', () => {
       expect(pending.has('smi')).toBe(true)
       expect(pending.has('smile')).toBe(true)
 
-      // the newer query resolves first
       await act(async () => {
         pending.get('smile')?.([{ id: 'smile', skins: [{ native: '😄' }] }])
       })
       expect(typeaheadCapture.props?.options.map((option) => option.id)).toEqual(['smile'])
 
-      // the stale response arrives late and must not overwrite the newer one
+      // The stale response arrives late and must not overwrite the newer one.
       await act(async () => {
         pending.get('smi')?.([{ id: 'smirk', skins: [{ native: '😏' }] }])
       })
@@ -163,7 +161,7 @@ describe('EmojiPickerPlugin', () => {
       await act(async () => {
         typeaheadCapture.props?.onQueryChange('smi')
       })
-      // a cold file settles the chunk import before the search resolves
+      // A cold file settles the chunk import before the search resolves.
       await vi.dynamicImportSettled()
       await act(async () => {
         await Promise.resolve()
@@ -174,7 +172,7 @@ describe('EmojiPickerPlugin', () => {
       await act(async () => {
         typeaheadCapture.props?.onQueryChange('smile')
       })
-      // flush the rejection's microtask chain
+      // Flush the rejection's microtask chain.
       await act(async () => {
         await Promise.resolve()
       })

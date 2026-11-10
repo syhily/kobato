@@ -29,7 +29,7 @@ function TKIndicator({
   nodeKeys: string[]
 }) {
   const theme = getEditorTheme(editor)
-  // the custom keys are typed at the boundary in @/themes/inkling-theme-classes
+  // the custom keys are typed at the boundary in @/inkling/themes/inkling-theme-classes
   const tkClasses = themeClassList(theme, 'tk')
   const tkHighlightClasses = themeClassList(theme, 'tkHighlighted')
 
@@ -141,7 +141,7 @@ export default function TKPlugin() {
 
   useInklingTextEntity(getTKMatch, TKNode, createTKNode, nodeType)
 
-  // we only want to render TK indicators for the top level editor
+  // only the top-level editor renders TK indicators
   if (parentEditorNodeKey) {
     return null
   }

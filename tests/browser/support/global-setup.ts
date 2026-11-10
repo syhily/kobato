@@ -1,9 +1,7 @@
-// Playwright global setup: stage the public fixture (one published post with
-// comments enabled and `contentLanguage: 'ar'`) and the deterministic general
-// settings baseline. The returned teardown removes what the run created.
-//
-// Everything goes through the admin HTTP surface — the same instance the
-// browser drives, no database seam, no real config file, no secrets.
+// Playwright global setup: stage the public fixture (one published post with comments
+// enabled and `contentLanguage: 'ar'`) plus the deterministic general settings baseline;
+// the returned teardown removes what the run created. Everything goes through the admin
+// HTTP surface of the instance the browser drives — no database seam, config file or secret.
 
 import { browserEnv } from './env'
 import { SettingsApi } from './settings-api'

@@ -157,7 +157,6 @@ export function ScrollSpyProvider({ children }: { children: ReactNode }) {
     }, 600)
   }, [])
 
-  // Scroll-based section detection
   useEffect(() => {
     const root = getContentScroller()
     if (!root) {
@@ -192,7 +191,6 @@ export function ScrollSpyProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Auto-scroll sidebar nav when current section changes
   useEffect(() => {
     if (currentSection && navElements.current[currentSection]) {
       scrollSidebarNav(navElements.current[currentSection], true)

@@ -20,8 +20,7 @@ interface PlayerPosition {
 
 function loadPosition(): PlayerPosition {
   if (typeof window === 'undefined') {
-    // SSR: reading Node's experimental `localStorage` getter would only emit
-    // an ExperimentalWarning — storage reads belong to the browser.
+    // SSR: reading Node's experimental `localStorage` getter only emits an ExperimentalWarning — storage reads belong to the browser.
     return { x: 0, y: 0 }
   }
   try {
@@ -178,7 +177,6 @@ export function AdminMusicPlayerFloat() {
               'w-56 pr-4 pl-1',
             )}
           >
-            {/* Spinning cover */}
             <div className="relative shrink-0">
               {currentTrack.coverUrl ? (
                 <LazyMotionDiv
@@ -242,7 +240,6 @@ export function AdminMusicPlayerFloat() {
               'bg-canvas/80 shadow-xl ring-1 ring-line-muted backdrop-blur-2xl',
             )}
           >
-            {/* Header */}
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-ink-4">{t('music.nowPlaying')}</span>
               <div className="flex items-center gap-1">
@@ -269,7 +266,6 @@ export function AdminMusicPlayerFloat() {
               </div>
             </div>
 
-            {/* Cover + Info */}
             <div className="flex items-center gap-3">
               {currentTrack.coverUrl ? (
                 <Image
@@ -289,7 +285,6 @@ export function AdminMusicPlayerFloat() {
               </div>
             </div>
 
-            {/* Controls */}
             <div className="flex items-center justify-center gap-4">
               <button
                 type="button"
@@ -326,7 +321,6 @@ export function AdminMusicPlayerFloat() {
               </button>
             </div>
 
-            {/* Progress */}
             <div className="flex items-center gap-2">
               <span className="w-9 text-right text-nano text-ink-4">{formatTime(currentTime)}</span>
               <ProgressSlider
@@ -340,7 +334,6 @@ export function AdminMusicPlayerFloat() {
               <span className="w-9 text-nano text-ink-4">{formatTime(duration)}</span>
             </div>
 
-            {/* Volume */}
             <div className="flex items-center gap-2">
               <button
                 type="button"

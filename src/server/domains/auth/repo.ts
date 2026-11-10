@@ -1,6 +1,4 @@
-// Session metadata data-access layer: raw reads/writes on the `session`
-// row's meta columns (`user_agent` / `platform_hint` / `ip` / `login_at`
-// / `last_active_at`); orchestration lives in `services/sessions.ts`.
+// Session meta data access; orchestration lives in `services/sessions.ts`.
 
 import { and, eq, gt, isNotNull, ne } from 'drizzle-orm'
 
@@ -51,8 +49,8 @@ function truncateUserAgent(ua: string | null): string {
 }
 
 /**
- * Stamp login metadata on a session row. Must run AFTER the row is
- * committed; the UPDATE is a no-op when the row is gone.
+ * Stamp login metadata on a session row; must run AFTER the row is committed
+ * (the UPDATE is a no-op when the row is gone).
  */
 export async function recordSessionLogin(db: Database, input: RecordLoginInput): Promise<void> {
   const now = input.loginAt ?? new Date()
@@ -68,10 +66,7 @@ export async function recordSessionLogin(db: Database, input: RecordLoginInput):
     .where(eq(sessionTable.id, input.sid))
 }
 
-/**
- * Fire-and-forget bump of `last_active_at`/`expires_at`; must stay off
- * the synchronous request path.
- */
+/** Fire-and-forget bump of `last_active_at`/`expires_at`; must stay off the request path. */
 export function recordSessionActivity(db: Database, sid: string): void {
   const now = new Date()
   const expiresAt = new Date(now.getTime() + resolveSessionMaxAge() * 1000)
@@ -104,17 +99,12 @@ function sessionRowToMeta(row: SessionRow | undefined): SessionMeta | null {
   }
 }
 
-/**
- * Revoke one session; the DELETE carries the owner match in its WHERE.
- * Role-blind — the perimeter check lives in `session-guard.ts`.
- */
+/** Revoke one session; role-blind, the perimeter check lives in `session-guard.ts`. */
 export async function revokeSessionById(db: Database, sid: string, userId: number): Promise<void> {
   await db.delete(sessionTable).where(and(eq(sessionTable.id, sid), eq(sessionTable.userId, userId)))
 }
 
-/**
- * Fetch one session's meta by id; null when gone, expired, or unstamped.
- */
+/** Fetch one session's meta by id; null when gone, expired, or unstamped. */
 export async function findSessionMeta(db: Database, sid: string): Promise<SessionMeta | null> {
   const rows = await db
     .select()
@@ -143,7 +133,6 @@ export async function listLiveSessions(db: Database, maxRows: number): Promise<S
   return rows.map(sessionRowToMeta).filter((meta): meta is SessionMeta => meta !== null)
 }
 
-/** Delete every session of a user, optionally exempting one sid. */
 export async function deleteSessionsOfUser(db: Database, userId: number, exceptSessionId?: string): Promise<number> {
   const result = await db
     .delete(sessionTable)

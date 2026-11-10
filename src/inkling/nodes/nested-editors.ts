@@ -11,7 +11,7 @@ import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
 import generateEditorState from '@/inkling/utils/generateEditorState'
 import { MINIMAL_DOCUMENT_LEGACY_PAYLOAD } from '@/inkling/utils/initial-document'
 
-// nested editors bootstrap from the historical payload dialect (src/utils/initial-document.ts)
+// nested editors bootstrap from the legacy payload dialect (@/inkling/utils/initial-document)
 const BLANK_EDITOR_STATE = JSON.stringify(MINIMAL_DOCUMENT_LEGACY_PAYLOAD)
 
 export interface SetupNestedEditorOptions {

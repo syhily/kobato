@@ -13,12 +13,11 @@ import {
 import { CARD_WRAPPER_NODES } from '@/inkling/nodes/cards/card-wrappers'
 import { INKLING_TABLE_NODES } from '@/inkling/nodes/table/TableNodes'
 
-// Cards join the set from their declarations; declaration order reproduces
-// the pre-refactor card run below LinkNode.
+// Cards join the set from their declarations.
 const CARDS = CARD_WRAPPER_NODES
 
 // The non-card base run the editor's node set starts from. The table
-// element family (CONTEXT.md — not cards) closes the run, after LinkNode.
+// element family closes the run, after LinkNode.
 export const EDITOR_BASE_NODES = [
   ...EXTENDED_TEXT_NODE_PAIR,
   HeadingNode,

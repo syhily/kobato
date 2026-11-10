@@ -9,18 +9,14 @@ import type { FileUploader } from '@/inkling/context/InklingHostIntegrationConte
 import { INSERT_MEDIA_COMMAND, MIME_TEXT_HTML } from '@/inkling/plugins/behaviour/clipboard-protocol'
 import { claimDroppedFiles, getEditorAcceptableMimeTypes } from '@/inkling/plugins/behaviour/file-drop-routing'
 
-// File drop — the headless policies behind DragDropPastePlugin (the
-// mime-claim RULES stay in file-drop-routing; this module owns the flow
-// around them): dropped files always insert at the selection left behind —
-// never the drop point — the dragover cursor suppression with its card
-// carve-out, the html-drop fallback, and the DRAG_DROP_PASTE handler. The
-// plugin keeps only the uploader context and mounts the registration.
+// File drop: the headless policies behind DragDropPastePlugin (the mime-claim rules
+// live in file-drop-routing). Dropped files always insert at the selection left
+// behind, never at the drop point.
 //
-// DRAG_DROP_PASTE ownership: upstream defines the command but registers no
-// handler — inkling borrows it as the public files-arrived bus
-// (ExternalControlPlugin.insertFiles and hosts dispatch it), and the
-// registration below is its single handler. The false return is deliberate:
-// it lets any host-registered lower-priority handler also run.
+// DRAG_DROP_PASTE: upstream defines the command but registers no handler — inkling
+// borrows it as the public files-arrived bus (ExternalControlPlugin.insertFiles and
+// hosts dispatch it), and the registration below is its single handler. The false
+// return is deliberate: it lets host-registered lower-priority handlers also run.
 
 export interface FileDropPorts {
   /** The host uploader's presence — drops are ignored without one. */
@@ -30,9 +26,8 @@ export interface FileDropPorts {
 }
 
 /**
- * Claims dropped files per acceptable mime type and dispatches each claim
- * through INSERT_MEDIA_COMMAND (the shared media insert path — the card
- * declarations' media claiming resolves there).
+ * Claims dropped files per acceptable mime type and dispatches each claim through
+ * INSERT_MEDIA_COMMAND, the shared media insert path.
  */
 export function handleFileDrop(editor: LexicalEditor, files: File[], ports: FileDropPorts): void {
   if (!ports.hasUploader()) {
@@ -47,10 +42,9 @@ export function handleFileDrop(editor: LexicalEditor, files: File[], ports: File
 }
 
 /**
- * The drop-command half: DROP_COMMAND routes file drops onto the
- * DRAG_DROP_PASTE bus (pre-empting Lexical's default, which would insert at
- * the drop point), and the bus's single handler focuses the editor and
- * claims the files.
+ * DROP_COMMAND routes file drops onto the DRAG_DROP_PASTE bus, pre-empting
+ * Lexical's default, which would insert at the drop point; the bus's handler
+ * focuses the editor and claims the files.
  */
 export function registerFileDropCommands(editor: LexicalEditor, ports: FileDropPorts): () => void {
   const unregisterDrop = editor.registerCommand(
@@ -90,12 +84,11 @@ export function registerFileDropCommands(editor: LexicalEditor, ports: FileDropP
 }
 
 /**
- * The DOM half: the dragover/dragleave suppression (drops keep the original
- * selection, so the cursor must not track the drag — except over a card,
- * whose own drop targets keep their native behavior) and the html-drop
- * fallback (rich-text insert at the current selection, defaulting to the
- * document end). Attaches to the editor root; returns the teardown (a no-op
- * when the editor has no root element).
+ * The DOM half: dragover/dragleave suppression (drops keep the original selection, so
+ * the cursor must not track the drag — except over a card, whose own drop targets keep
+ * native behaviour) and the html-drop fallback, which inserts rich text at the current
+ * selection, defaulting to the document end. Returns the teardown; a no-op when the
+ * editor has no root element.
  */
 export function registerDragOverSuppression(editor: LexicalEditor): () => void {
   const rootElement = editor.getRootElement()
@@ -120,7 +113,7 @@ export function registerDragOverSuppression(editor: LexicalEditor): () => void {
   }
 
   const handleDrop = (event: DragEvent) => {
-    // handle image drop from a browser window
+    // image dragged in from a browser window
     const { dataTransfer } = event
     if (!dataTransfer) {
       return

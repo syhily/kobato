@@ -18,15 +18,14 @@ export interface htmlToLexicalOptions {
 /* c8 ignore next -- V8 creates a phantom branch for the export */
 export function htmlToLexical(html: string, options: htmlToLexicalOptions): SerializedEditorState {
   // `html` is typed as required, but hosts do pass null — the null-tolerance
-  // is a tested contract (test/html-to-lexical "can convert null document")
+  // is a tested contract
   if (!html?.trim()) {
     return MINIMAL_DOCUMENT
   }
 
   // The importer replaces the defaults wholesale when the caller passes
-  // editorConfig.nodes; the renderer intentionally uses additive semantics
-  // instead — the named merge modes in @/html/headless-editor make the
-  // asymmetry structural, so do not "unify" the two.
+  // editorConfig.nodes; the renderer uses additive semantics instead (see
+  // @/inkling/html/headless-editor) — do not "unify" the two.
   const editor = createHeadlessHtmlEditor({ merge: 'wholesale', editorConfig: options.editorConfig })
 
   // Standard parser entry — jsdom and browsers both support it, so the
@@ -35,7 +34,7 @@ export function htmlToLexical(html: string, options: htmlToLexicalOptions): Seri
   doc.body.innerHTML = html.trim()
 
   // one-shot headless editor, so the default transforms only normalize this
-  // import — see the transform-policy note in src/utils/initial-document.ts
+  // import — see the transform-policy note in @/inkling/utils/initial-document
   registerDefaultTransforms(editor, { alignment: options.alignment })
 
   editor.update(

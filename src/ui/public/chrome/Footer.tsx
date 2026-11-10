@@ -7,7 +7,6 @@ export function Footer() {
   const siteIdentity = useSiteIdentity()
   const { t } = useI18n()
   const { website, title } = siteIdentity
-  // Hydration-safe live clock (see useChromeClock).
   const thisYear = formatLocalDate(useChromeClock(), 'yyyy', siteIdentity)
   const { icpNo, moeIcpNo, initialYear } = siteIdentity
   const hasIcp = icpNo || moeIcpNo

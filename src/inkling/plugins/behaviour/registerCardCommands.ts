@@ -78,7 +78,7 @@ export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDep
       ({ cardKey }) => {
         const { selectedCardKey, isEditingCard } = store.getState()
 
-        // already selected, delete if empty as we're exiting edit mode
+        // already selected: delete when empty (exiting edit mode)
         if (selectedCardKey === cardKey && isEditingCard) {
           const cardNode = $getNodeByKey(cardKey)
           if (cardNode && $isInklingCard(cardNode) && cardNode.isEmpty?.()) {
@@ -155,7 +155,7 @@ export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDep
             nextSibling.selectStart()
           }
         } else {
-          // ensure we still have a paragraph if the deleted card was the only node
+          // keep a paragraph when the deleted card was the only node
           $ensureParagraphAfterCard(cardNode, { select: true })
         }
 

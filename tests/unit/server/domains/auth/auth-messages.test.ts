@@ -8,8 +8,8 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Every migrated auth-flow message must exist, translated, in all four locales —
-// the English fallback is only for logs and old clients, never what a reader sees.
+// Every auth-flow message exists, translated, in all four locales; the English fallback
+// is only for logs and old clients, never what a reader sees.
 
 interface Case {
   key: UiMessageId

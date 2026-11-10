@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_FONT_STACKS } from '@/shared/config/font-stacks'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Plan 001, 5c: the locale default font chains exist twice by necessity —
-// once in CSS (`:lang()` branches in tailwind.css) and once in the shared map
+// The locale default font chains exist twice by necessity — once in CSS
+// (`:lang()` branches in tailwind.css) and once in the shared map
 // root.tsx prepends custom families to. This contract keeps them identical.
 
 const CSS = readFileSync('src/styles/tailwind.css', 'utf8')

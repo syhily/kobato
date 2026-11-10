@@ -134,9 +134,9 @@ describe('snapshot: PasskeyManagementCard', () => {
 })
 
 describe('snapshot: LoginMethodCard', () => {
-  // The passkeyList query stays pending under SSR (no queryFn runs), so the
-  // passkey option always renders its "register a passkey first" disabled
-  // hint; only the mailReady / passkeyEnabled branches are exercisable here.
+  // The passkeyList query stays pending under SSR (no queryFn runs), so the passkey
+  // option always renders its disabled "register a passkey first" hint; only the
+  // mailReady / passkeyEnabled branches are exercisable here.
   it('renders the disabled hints when mail is not ready', () => {
     const html = stableHtml(
       renderInRouter(<LoginMethodCard loginMethod="password" passkeyEnabled={true} mailReady={false} />),

@@ -16,7 +16,7 @@ import { $isCodeBlockNode, CodeBlockNode } from '@/inkling/nodes/CodeBlockNode'
 
 // Direct pins for the enter/tab fence trigger body (the card-shortcut seam).
 // The full keyboard dispatch paths — enter, tab, and the isNested guard — are
-// pinned in test/unit/plugins/behaviour/registerKeyboardNavigation.test.ts.
+// pinned in tests/inkling/unit/plugins/behaviour/registerKeyboardNavigation.test.ts.
 
 async function setupParagraph(editor: LexicalEditor, text: string) {
   await updateEditor(editor, () => {
@@ -121,7 +121,7 @@ describe('$fireFenceKeyboardShortcut', () => {
 })
 
 describe('$fireFenceKeyboardShortcut without the code card registered', () => {
-  // plan C5: the class comes from the editor's registered-node map, so a
+  // The class comes from the editor's registered-node map, so a
   // card-free composition (the ./core entry) gets no fence shortcut — the
   // paragraph stays untouched and the event is NOT consumed, letting the
   // caller fall through to its other key handling.

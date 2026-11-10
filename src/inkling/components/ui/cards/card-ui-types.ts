@@ -5,11 +5,8 @@ import type { UseFileDragAndDropResult } from '@/inkling/hooks/useFileDragAndDro
 import type { UseGalleryReorderResult } from '@/inkling/hooks/useGalleryReorder'
 
 /**
- * The structural types shared by the card UI (CONTEXT.md: "card"), aliased
- * from the hooks and context that own the truth rather than re-declared per
- * card. Previously these lived in AudioCard.tsx and were copied with shape
- * drift (`setRef` optional here, required there, an `upload`-less uploader)
- * into FileNodeComponent, GalleryNodeComponent, and GalleryCard.
+ * The structural types shared by the card UI, aliased from the hooks and context
+ * that own the truth rather than re-declared per card.
  */
 
 /** The `useFileDragAndDrop` result a card receives as its drag handler. */
@@ -19,12 +16,11 @@ export type DragHandlerLike = UseFileDragAndDropResult
 export type ReorderHandlerLike = UseGalleryReorderResult
 
 /**
- * One `fileUploader.useFileUpload(type)` result; `progress` is provided only
- * by some hosts. `errors` is widened from the context's `Error[]` to the
- * message-only shape — typecheck proved hosts and story fixtures pass plain
- * `{ message }` objects (plan 044's recorded widening; `Error` is
- * structurally assignable to `{ message?: string }`, so real hook results
- * still fit).
+ * One `fileUploader.useFileUpload(type)` result; `progress` is provided only by
+ * some hosts. `errors` is widened from the context's `Error[]` to the
+ * message-only shape — hosts and fixtures pass plain `{ message }` objects, and
+ * `Error` is structurally assignable to `{ message?: string }`, so real hook
+ * results still fit.
  */
 export type FileUploaderLike = Omit<ReturnType<FileUploader['useFileUpload']>, 'errors'> & {
   progress?: number

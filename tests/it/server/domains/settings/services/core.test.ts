@@ -100,7 +100,7 @@ describe('server/domains/settings/services/core', () => {
   })
 
   it('surfaces a section change handler failure as a save warning', async () => {
-    // The row commits before the handler runs, so failures surface as warnings, not errors (P1-5).
+    // The row commits before the handler runs, so failures surface as warnings, not errors.
     registerSectionChangeHandler('limits', () => {
       throw new Error('reschedule blew up')
     })

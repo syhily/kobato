@@ -9,7 +9,7 @@ import { useEventStream } from '@/ui/admin/analytics/use-event-stream'
 
 // The hook subscribes through the native EventSource; the fake records
 // every instance so tests can drive 'events' by hand, including the
-// stale-`since` reconnect resend (audit P1-20).
+// stale-`since` reconnect resend.
 
 class FakeEventSource {
   static instances: FakeEventSource[] = []

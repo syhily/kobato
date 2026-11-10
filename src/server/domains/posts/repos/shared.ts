@@ -74,7 +74,6 @@ export interface ListPublicPostsFilters {
   offset?: number
 }
 
-/** Public `date` is first publication time; falls back to `published_at` before the first publish. */
 function defaultOpenGraphSuffix(): string {
   return brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.openGraph)
 }

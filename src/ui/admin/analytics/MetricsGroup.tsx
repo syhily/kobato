@@ -9,9 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Tabbed metric card per Slite's `metrics/Group.vue` — one tab per
-// dimension of the group, each fetching its own top-N list.
-
 export interface MetricsGroupProps {
   group: MetricGroup
   initial?: Partial<Record<MetricType, MetricRow[]>>

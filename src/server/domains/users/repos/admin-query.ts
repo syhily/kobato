@@ -90,7 +90,7 @@ interface CommentStats {
 
 const EMPTY_COMMENT_STATS: CommentStats = { commentCount: 0, pendingCount: 0, lastCommentAt: null }
 
-// One grouped scan over just these users' comments (audit P1-13). `lastCommentAt`
+// One grouped scan over just these users' comments. `lastCommentAt`
 // intentionally counts soft-deleted comments.
 async function aggregateCommentStats(db: Database, userIds: readonly number[]): Promise<Map<number, CommentStats>> {
   const stats = new Map<number, CommentStats>()

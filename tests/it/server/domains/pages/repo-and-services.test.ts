@@ -50,8 +50,8 @@ async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'pu
       ownerId,
       revisionNo: 1,
       status,
-      // Rows seeded here are read through the admin revision projection
-      // (Lexical since R9a).
+      // Rows seeded here are read through the admin revision projection,
+      // which expects a Lexical body.
       body: body ?? emptyLexicalBody(),
       imageSources: [],
       headings: [],

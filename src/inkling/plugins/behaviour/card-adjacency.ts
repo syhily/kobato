@@ -21,16 +21,12 @@ import { $ensureParagraphAfterCard } from '@/inkling/utils/$ensureParagraphAfter
 
 export const RANGE_TO_ELEMENT_BOUNDARY_THRESHOLD_PX = 10
 
-// Card adjacency (see CONTEXT.md) comes in two notions: visual adjacency — the
-// caret's rendered position, derived from geometry, which arrow keys use — and
-// logical adjacency — the selection anchor's offset, which backspace and delete
-// use. Each notion has one named query below; they deliberately do not share a
-// derivation.
+// Two adjacency notions: visual (caret geometry, arrow keys) and logical
+// (anchor offset, backspace/delete); they deliberately do not share a derivation.
 
 /**
- * Geometry seam for the adjacency queries. The default implementation performs
- * the real DOM reads; tests inject a fake so no layout stubbing is needed.
- * Exported for tests only — production call sites pass nothing.
+ * Geometry seam for the adjacency queries: the default implementation does the
+ * real DOM reads, tests inject a fake. Exported for tests only.
  */
 export interface CardAdjacencyGeometry {
   /** Whether a native window selection exists at all (arrow down bails out before its shortcuts when it doesn't). */
@@ -39,7 +35,7 @@ export interface CardAdjacencyGeometry {
   getCaretClientRects(): ArrayLike<DOMRect>
   /** Bounding rect of the top-level block element containing the caret. */
   getTopLevelBlockRect(): DOMRect | null
-  /** Whether the caret sits on the first visual line of its block (delegates to $isAtTopOfNode). */
+  /** Whether the caret sits on the first visual line of its block. */
   isCaretAtBlockTop(): boolean
   /** Whether the native caret sits at the end of its top-level block element. */
   isCaretAtBlockEnd(): boolean
@@ -85,8 +81,8 @@ const defaultCardAdjacencyGeometry: CardAdjacencyGeometry = {
 /**
  * Visual adjacency: the card rendered immediately above ('up') or below
  * ('down') the caret, when the caret is visually at the boundary of its
- * top-level block. Mirrors the arrow-key derivations, including their
- * empty-paragraph/offset shortcuts (an empty paragraph has no caret rect).
+ * top-level block. Includes the arrow keys' empty-paragraph/offset shortcuts
+ * (an empty paragraph has no caret rect).
  */
 export function $getVisuallyAdjacentCard(
   direction: 'up' | 'down',
@@ -105,7 +101,6 @@ export function $getVisuallyAdjacentCard(
     return null
   }
 
-  // empty paragraphs are odd because the native range won't have a rect to compare positioning
   const onEmptyNode = topLevelElement.getTextContent().trim() === '' && selection.anchor.offset === 0
 
   if (direction === 'up') {
@@ -116,7 +111,6 @@ export function $getVisuallyAdjacentCard(
     return geometry.isCaretAtBlockTop() ? sibling : null
   }
 
-  // arrow down returns early when there is no native selection, before its shortcuts
   if (!geometry.hasNativeSelection()) {
     return null
   }
@@ -128,8 +122,7 @@ export function $getVisuallyAdjacentCard(
   if (rects.length === 0) {
     return null
   }
-  // rects.length will be 2 if at the start/end of a line and we should default to the new/second line for
-  // determining if a card is below the cursor
+  // A caret at a line start/end yields two rects; use the second (new line) to test for a card below.
   const rangeRect = rects.length > 1 ? rects[1] : rects[0]
   const elemRect = geometry.getTopLevelBlockRect()
   if (!elemRect) {
@@ -140,14 +133,9 @@ export function $getVisuallyAdjacentCard(
 
 /**
  * Logical adjacency: the card immediately before ('previous') or after ('next')
- * a reference point in document order.
- *
- * With `from` omitted, the reference point is the current collapsed range
- * selection, gated on the anchor sitting at the boundary of its top-level
- * element (start for 'previous', end for 'next') — the derivation backspace
- * and delete use. With `from`, the reference point is that node and the
- * sibling lookup is ungated — for callers that resolve their own reference (a
- * selected node, a command payload node, the caret's top-level element).
+ * a reference point in document order. Without `from` the reference is the
+ * collapsed range selection, gated on the anchor sitting at the boundary of its
+ * top-level element; with `from` the sibling lookup is ungated.
  */
 export function $getLogicallyAdjacentCard(
   direction: 'previous' | 'next',
@@ -185,21 +173,12 @@ function getCardSibling(node: LexicalNode, direction: 'previous' | 'next'): Deco
   return $isDecoratorNode(sibling) ? sibling : null
 }
 
-// The two destructive-key surgeries below were the backspace/delete mirror
-// blocks — same body, flipped direction ('previous'/'next') — merged into
-// direction-parameterized $ functions on the selection-extension precedent
-// (see ./keyboard-navigation/selection-extension.ts's header note). The
-// handlers keep their event choreography (which branch preventDefaults) and
-// their position in the policy cascade; the tree reads and writes live here.
-
 /**
- * The "key eats the adjacent card, the caret stays put" surgery: remove the
- * card logically before ('previous', backspace) or after ('next', forward
- * delete) the collapsed caret. The 'previous' direction keeps its two extra
- * guards from the backspace handler — the anchor's parent must BE the
- * top-level element (lists, where the parent is not the paragraph) and the
- * anchor must be its first child (LinkNode / HorizontalRule children in
- * paragraphs). Returns true when a card was removed.
+ * The "key eats the adjacent card, the caret stays put" surgery: remove the card
+ * logically before ('previous', backspace) or after ('next', forward delete) the
+ * collapsed caret. 'previous' needs two extra guards: the anchor's parent must BE
+ * the top-level element (lists) and the anchor must be its first child
+ * (LinkNode/HorizontalRule children). Returns true when a card was removed.
  */
 export function $removeLogicallyAdjacentCard(direction: 'previous' | 'next'): boolean {
   const selection = $getSelection()
@@ -228,27 +207,16 @@ export function $removeLogicallyAdjacentCard(direction: 'previous' | 'next'): bo
 }
 
 /**
- * How the empty-block surgery reads emptiness — the deliberate divergence
- * between the two mirror sites, kept as a named policy:
- *
- * - 'paragraph-is-empty' (backspace): the anchor node itself must be an
- *   empty ParagraphNode.
- * - 'from-mode-blank' (forward delete): the whole top-level block's text is
- *   blank and the caret sits at offset 0. From-mode, not selection-mode:
- *   selection-mode's 'next' boundary requires an element anchor at
- *   offset === getChildrenSize(), which a whitespace-only block with
- *   zero-text children (e.g. a lone LineBreakNode, caret at element
- *   offset 0) does not satisfy — this policy still removes the block and
- *   selects the card there.
+ * How the empty-block surgery reads emptiness (a deliberate divergence):
+ * 'paragraph-is-empty' (backspace) requires the anchor itself to be an empty
+ * ParagraphNode; 'from-mode-blank' (forward delete) requires blank top-level
+ * text with the caret at offset 0, because selection-mode's 'next' boundary
+ * needs an element anchor at getChildrenSize(), which a whitespace-only block
+ * with zero-text children (a lone LineBreakNode) does not satisfy.
  */
 export type EmptyBlockCheck = 'paragraph-is-empty' | 'from-mode-blank'
 
-/**
- * The "delete the empty block, select the adjacent card" surgery: remove
- * the caret's top-level block when `check` judges it empty and select the
- * card logically adjacent to it ('previous' for backspace, 'next' for
- * forward delete). Returns true when the block was removed.
- */
+/** Removes the caret's top-level block when `check` judges it empty and selects the adjacent card. */
 export function $removeEmptyBlockAndSelectCard(direction: 'previous' | 'next', check: EmptyBlockCheck): boolean {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -282,19 +250,16 @@ export function $isCaretAtBlockTop(geometry: CardAdjacencyGeometry = defaultCard
   return geometry.isCaretAtBlockTop()
 }
 
-/** Single home for the "editor root has focus" guard copied across the behaviour handlers. */
+/** Shared "editor root has focus" guard for the behaviour handlers. */
 export function editorOwnsFocus(editor: LexicalEditor): boolean {
   return document.activeElement === editor.getRootElement()
 }
 
 /**
- * The "selected card eats the destructive key" gate — the one home of the
- * policy the backspace/delete/delete-line handlers share: while the editor
- * owns focus and a top-level (non-nested) card is selected, the key deletes
- * the card with the handler's direction instead of touching text. Returns
- * true when the key was claimed. Each handler keeps its own focus-swallow
- * policy (backspace/delete swallow early; delete-line falls through to its
- * caret-adjacent branches); this gate owns only the selected-card branch.
+ * The "selected card eats the destructive key" gate shared by the
+ * backspace/delete/delete-line handlers: while the editor owns focus and a
+ * top-level card is selected, the key deletes the card. Each handler keeps its
+ * own focus-swallow policy. Returns true when the key was claimed.
  */
 export function dispatchSelectedCardDeletion(
   editor: LexicalEditor,
@@ -312,34 +277,21 @@ export function dispatchSelectedCardDeletion(
   return true
 }
 
-// Card selection operations — the commands half of the module; the queries above find the cards these act on.
-
 /**
- * Focus the editor's root element by hand — the focus repair after
- * selecting chrome-less UI or before a card's chrome dismounts. Never
- * scrolls the viewport: focus repair must not yank it. $selectCard's
- * policy legs run it internally; direct callers are the snippet toolbars,
- * the bookmark flow's pre-dismount focus, nested-editor Escape, and the
- * delete handler's caret-selection paths.
+ * Focus the editor's root element by hand — the focus repair after selecting
+ * chrome-less UI or before a card's chrome dismounts. `preventScroll` matters:
+ * repair must not yank the viewport.
  */
 export function focusEditorRoot(editor: LexicalEditor): void {
   editor.getRootElement()?.focus({ preventScroll: true })
 }
 
 /**
- * The focus repair after selecting a card: a decorator selection has no
- * caret, so it does not move the window selection — focus must go to the
- * editor element by hand, and never scrolling (focus repair must not yank
- * the viewport).
- *
- * - 'if-blurred' (default): focus only when the editor is not already the
- *   active element — pointer-driven selection (click, menu insert).
- * - 'always': focus unconditionally — the caller just removed the focused
- *   card's chrome, or a headless host asked for focus (removal,
- *   external-control).
- * - 'never': no focus repair — keyboard navigation already owns focus
- *   (its callers use the bare `$selectDecoratorNode` primitive), or the
- *   caller already repaired focus itself (root-first removal).
+ * Focus repair after selecting a card: a decorator selection has no caret, so
+ * focus must go to the editor element by hand. 'if-blurred' (default) serves
+ * pointer-driven selection; 'always' when the caller just removed the focused
+ * card's chrome or a headless host asked for focus; 'never' when the caller
+ * already owns focus or repaired it.
  */
 export type CardSelectionFocus = 'if-blurred' | 'always' | 'never'
 
@@ -357,8 +309,7 @@ export function $selectCard(
   }
 }
 
-// remove empty cards when they are deselected
-// (cards without an isEmpty method are never auto-removed)
+// Remove empty cards on deselect; cards without isEmpty are never auto-removed.
 export function $deselectCard(editor: LexicalEditor, nodeKey: string) {
   const cardNode = $getNodeByKey(nodeKey)
   if (cardNode && $isInklingCard(cardNode) && cardNode.isEmpty?.()) {
@@ -367,13 +318,12 @@ export function $deselectCard(editor: LexicalEditor, nodeKey: string) {
 }
 
 /**
- * The focus choreography of `$removeOrReplaceNodeWithParagraph`:
- * - `'decorator-next'` (default, deselect-driven removal): focus moves to the
- *   root element only when the next sibling is a decorator, because selecting
- *   one leaves no caret to carry focus.
- * - `'root-first'` (ctrl/cmd+Enter leaving edit mode): focus returns to the
- *   editor BEFORE the card's chrome unmounts — otherwise it stays on removed
- *   elements and swallows further key events.
+ * Focus choreography of $removeOrReplaceNodeWithParagraph: 'decorator-next'
+ * (default) moves focus to the root element only when the next sibling is a
+ * decorator, since selecting one leaves no caret to carry focus; 'root-first'
+ * (ctrl/cmd+Enter leaving edit mode) returns focus to the editor BEFORE the
+ * card's chrome unmounts — otherwise it stays on removed elements and swallows
+ * further key events.
  */
 export type CardRemovalFocus = 'decorator-next' | 'root-first'
 

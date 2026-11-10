@@ -39,9 +39,8 @@ mocks.query = {
   refetch: vi.fn(),
 }
 
-// PostsView's list query, pill hook and option-list queries are bypassed
-// via hoisted singletons — the pill mock swaps ONLY the hook, so the real
-// FilterPillBar still renders the pills.
+// PostsView's list, pill hook and option-list queries are hoisted singletons; only the
+// hook is mocked, so the real FilterPillBar still renders the pills.
 
 vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   const { buildPostFilterFields } = await vi.importActual<typeof import('@/ui/admin/posts/filter-fields')>(

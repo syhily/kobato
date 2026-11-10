@@ -7,8 +7,8 @@ import { AtLinkNode } from '@/inkling/nodes/base'
 import { registerNodeTransformIfPresent } from '@/inkling/transforms/register-node-transform'
 /* c8 ignore stop */
 
-// used when rendering to make sure we're not rendering the temporary
-// nodes used for searching internal links
+// render-path cleanup: strips the temporary nodes used while searching
+// internal links
 export function removeAtLinkNodesTransform(node: AtLinkNode) {
   const prevSibling = node.getPreviousSibling()
   const nextSibling = node.getNextSibling()
@@ -28,8 +28,7 @@ export function removeAtLinkNodesTransform(node: AtLinkNode) {
   node.remove()
 }
 
-// installs only when the editor registers AtLinkNode (the shared gate —
-// a ./core-style surface has no at-link nodes to remove)
+// installs only when the editor registers AtLinkNode
 export function registerRemoveAtLinkNodesTransform(editor: LexicalEditor) {
   return registerNodeTransformIfPresent(editor, AtLinkNode, removeAtLinkNodesTransform)
 }

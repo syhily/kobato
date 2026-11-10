@@ -19,10 +19,9 @@ import { FilterPill } from '@/ui/admin/shared/filter-bar/pill'
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
-// SSR snapshots for the shared filter-pill chrome. Popover / combobox
-// contents mount through portals that Base UI does not emit during
-// synchronous SSR, so the assertions target the trigger chrome and the
-// standalone list/editor leaves rendered directly.
+// SSR snapshots for the shared filter-pill chrome. Popover and combobox contents mount
+// through portals Base UI does not emit during synchronous SSR, so assertions target the
+// trigger chrome and the list/editor leaves rendered directly.
 
 const AUDIT_ACTORS = [
   { actorId: 'user-1', actorName: '雨帆', email: 'admin@example.com' },
@@ -147,8 +146,6 @@ describe('snapshot: SearchableOptionList', () => {
   })
 })
 
-// DateSingleFilterEditor and its pure helpers, moved from the comments suite.
-
 describe('DateSingleFilterEditor helpers', () => {
   it('parseDateInput returns undefined for empty input', () => {
     expect(parseDateInput('')).toBeUndefined()
@@ -190,8 +187,6 @@ describe('snapshot: DateSingleFilterEditor', () => {
     expect(html).toContain('placeholder="YYYY-MM-DD"')
   })
 })
-
-// TextFilterEditor, moved from the comments suite.
 
 describe('snapshot: TextFilterEditor', () => {
   const commentsTextField = COMMENT_FILTER_FIELDS.find((f) => f.key === 'text')

@@ -8,10 +8,9 @@ import {
   useCommentsTree,
 } from '@/ui/public/comments/comments-context'
 
-// The split leaf hooks replace the old `useCommentsLeafContext`, which
-// silently fell back to an all-noop bag outside `<Comments>` (hiding
-// test-setup mistakes behind dead callbacks). They now fail loudly, and
-// the tests wrap bare leaves in the `makeLeafContext` provider instead.
+// The leaf hooks fail loudly outside `<Comments>` (an all-noop bag would
+// hide test-setup mistakes behind dead callbacks); wrap bare leaves in the
+// `makeLeafContext` provider.
 
 function IdentityProbe() {
   useCommentsIdentity('IdentityProbe')

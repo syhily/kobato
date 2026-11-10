@@ -105,7 +105,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
     }
   }, [])
 
-  // Initialise / resize: fill grid with shuffled covers
   useEffect(() => {
     if (allCoverUrls.length === 0 || grid.count === 0) {
       return
@@ -126,7 +125,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
     )
   }, [allCoverUrls, grid.count, cells.length])
 
-  // Random refresh loop: randomly swap 1–N cells at a time
   useEffect(() => {
     if (grid.count === 0) {
       return
@@ -153,7 +151,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
           return
         }
 
-        // Decide how many cells to swap this round (1–4)
         const batchSize = 1 + Math.floor(Math.random() * 4)
         const indices = shuffle(Array.from({ length: currentGrid.count }, (_, i) => i)).slice(0, batchSize)
 
@@ -208,7 +205,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
         </div>
       )}
 
-      {/* Dim overlay */}
       <div className="absolute inset-0 bg-black/40" />
     </div>
   )

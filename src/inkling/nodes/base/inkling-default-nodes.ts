@@ -19,7 +19,6 @@ import { CARD_DECLARATIONS } from '@/inkling/nodes/cards'
 import { FootnoteRefNode } from '@/inkling/nodes/footnote/FootnoteRefNode'
 import { MathInlineNode } from '@/inkling/nodes/math/MathInlineNode'
 
-// re-export everything for easier importing
 export * from '@/inkling/nodes/base/InklingDecoratorNode'
 export * from '@/inkling/nodes/base/nodes/image/ImageNode'
 export * from '@/inkling/nodes/base/nodes/codeblock/CodeBlockNode'
@@ -59,27 +58,19 @@ export const DEFAULT_CONFIG = {
   },
 }
 
-// The named node runs every surface composes — the facts used to be spelled
-// per surface (FootnoteRefNode once had to be added to two lists). The
-// extended-node pairs live in a cycle-free leaf (extended-node-pairs.ts) so
+// The extended-node pairs live in a cycle-free leaf (extended-node-pairs.ts) so
 // MINIMAL_NODES can compose them; the barrel re-exports them here.
 export { EXTENDED_HEADING_NODE_PAIR, EXTENDED_QUOTE_NODE_PAIR, EXTENDED_TEXT_NODE_PAIR }
 
 /** The entity-node tail closing the editor's node sets. */
 export const ENTITY_TAIL_NODES = [TKNode, AtLinkNode, AtLinkSearchNode, ZWNJNode, MathInlineNode, FootnoteRefNode]
 
-// DEFAULT_BASE_NODES: the React-free base-class node set — the extended-node
-// pairs, then every declaration's base node in DECLARATION order, closing with
-// the entity tail. The headless HTML import/render surfaces compose it
-// (`DEFAULT_HTML_NODES`), registering the base classes the converters construct
-// directly. It deliberately excludes the assembled wrapper cards: the editor
-// surface composes from EDITOR_BASE_NODES (`src/inkling/nodes/DefaultNodes.ts`)
-// instead, which starts from its own base run and appends the assembled card
-// classes. MarkdownNode and AsideNode are base-only nodes with no declaration to
-// derive from, so they head the card run. Registration order carries no runtime
-// semantics (node types are unique; replacements ride the named pairs), so no
-// legacy rank is preserved — the pinned literal in
-// `tests/inkling/unit/nodes/derived-node-sets.test.ts` guards drift, not history.
+// The React-free base-class node set: the extended-node pairs, then every
+// declaration's base node in declaration order (MarkdownNode/AsideNode head the
+// run — no declaration), closing with the entity tail. Excludes the assembled
+// wrapper cards, which only the editor surface composes (`EDITOR_BASE_NODES`);
+// registration order carries no runtime semantics. Pinned by
+// `tests/inkling/unit/nodes/derived-node-sets.test.ts`.
 export const DEFAULT_BASE_NODES = [
   ...EXTENDED_TEXT_NODE_PAIR,
   ...EXTENDED_HEADING_NODE_PAIR,

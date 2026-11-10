@@ -8,15 +8,13 @@ import { $isInklingCard } from '@/inkling/nodes/base'
 import { EDIT_CARD_COMMAND, SELECT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 
 // Card interaction — the headless select→edit choreography behind
-// InklingCardWrapper, the last card-behaviour family that lived
-// component-side (its siblings — card-menu session, toolbar session, emoji
-// completion — already have their modules). One registration per card
-// nodeKey: the editor-level CLICK_COMMAND handler (editor-level so the
-// card can prevent the editor's default click behaviour without preventing
-// React components inside the card from handling their own) and the
-// container's mousedown select-and-swallow. Selection/edit truth is read
-// from the card selection store AT EVENT TIME, so the registration is
-// stable for the card's lifetime — no re-registration per render.
+// InklingCardWrapper. One registration per card nodeKey: the editor-level
+// CLICK_COMMAND handler (editor-level so the card can prevent the editor's
+// default click behaviour without preventing React components inside the
+// card from handling their own) and the container's mousedown
+// select-and-swallow. Selection/edit truth is read from the card selection
+// store AT EVENT TIME, so the registration is stable for the card's
+// lifetime — no re-registration per render.
 
 // InklingCardWrapper is only rendered for generated card nodes (decorateCard
 // throws otherwise), but the type system can't see that — $isInklingCard's
@@ -68,13 +66,11 @@ export function registerCardInteraction(
     if (selectedKeyBeforeMousedown !== nodeKey && !isEditing()) {
       editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey: nodeKey })
 
-      // skip CLICK_COMMAND behaviour otherwise we'll immediately enter edit mode
+      // skip CLICK_COMMAND behaviour or the click would immediately enter edit mode
       skipClick = true
 
-      // in most situations we want to prevent default behaviour which
-      // can cause an underlying cursor position change but inputs and
-      // textareas are different and we want the focus to move to them
-      // immediately when clicked
+      // Prevent the default caret move, except over inputs/textareas and
+      // click-through zones, where focus must land immediately.
       const target = event.target
       if (target instanceof HTMLElement) {
         const targetTagName = target.tagName
@@ -124,7 +120,6 @@ export function registerCardInteraction(
         }
 
         if (clickedDifferentEditor) {
-          // click is in a different editor
           return false
         }
 

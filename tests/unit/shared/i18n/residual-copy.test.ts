@@ -6,9 +6,7 @@ import { uiMessagesZhTW } from '@/shared/i18n/messages/ui/zh-TW'
 
 // Regional Traditional Chinese must read naturally on its own — no runtime
 // simplified→traditional conversion, and no rule that forces HK/TW to differ
-// from zh-CN everywhere (identical wording is often correct). These assertions
-// pin only the copy that was actually wrong: the admin comment count still
-// carried simplified 条评论 in both Traditional catalogs.
+// from zh-CN everywhere (identical wording is often correct).
 describe('UI catalog — regional Traditional comment wording', () => {
   it('uses 則留言 (not 条评论) for the admin comment count in zh-HK and zh-TW', () => {
     for (const [locale, messages] of [

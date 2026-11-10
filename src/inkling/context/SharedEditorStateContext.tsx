@@ -7,19 +7,15 @@ import React from 'react'
 /**
  * Shared per-top-level-editor state: one undo stack and the host's onChange.
  *
- * Composition rule (previously unwritten convention):
- * - The provider wraps the **top-level** editor tree exactly once — it lives
- *   in InklingEditor, never inside InklingComposableEditor, which
- *   also renders inside nested card composers and must not re-provide.
- * - Every InklingComposableEditor instance — top-level or nested — mounts
- *   HistoryPlugin with this externalHistoryState, so nested card edits join
- *   the top-level undo stack (skipped while collab is active; yjs owns
- *   undo/redo there). An instance with no provider above it falls back to the
- *   per-consumer history state created by the hook.
- * - InklingComposableEditor's change handler routes this shared onChange
- *   through `(parentEditor || editor).getEditorState()`, so a nested editor's
- *   change serializes the full top-level document, while a per-instance
- *   onChange prop receives only that instance's state.
+ * - The provider wraps the top-level tree exactly once (InklingEditor), never
+ *   InklingComposableEditor, which also renders inside nested card composers
+ *   and must not re-provide.
+ * - Every composable editor, nested included, mounts HistoryPlugin with this
+ *   externalHistoryState, so nested edits join the top-level undo stack
+ *   (skipped under collab: yjs owns undo/redo there).
+ * - The shared onChange routes through `(parentEditor || editor).getEditorState()`,
+ *   so a nested change serializes the full document; a per-instance onChange
+ *   prop receives only that instance's state.
  */
 export interface SharedEditorStateContextValue {
   historyState: HistoryState

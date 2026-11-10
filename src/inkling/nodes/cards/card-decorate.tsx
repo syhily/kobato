@@ -22,12 +22,10 @@ import { renderToggleCard } from '@/inkling/nodes/ToggleNodeComponent'
 import { renderVideoCard } from '@/inkling/nodes/VideoNodeComponent'
 
 /**
- * The React-bearing half of a card's decorate-target: the node→component
- * render (and the indicator icon, for the one card that has one). Each lives
- * beside its card component in the `*NodeComponent` files — it cannot live
- * in the declaration modules, which must stay React-free. Method-syntax
- * `render` keeps the per-card node parameter types (each card's `render`
- * takes its own wrapper node type) assignable here.
+ * The React-bearing half of a card's decorate-target: the node→component render and,
+ * for Html, the indicator icon. Lives beside each card component in the
+ * `*NodeComponent` files because the declaration modules must stay React-free.
+ * Method-syntax `render` keeps each card's node parameter type assignable here.
  */
 interface CardDecorateModule {
   render(node: LexicalNode): ReactNode
@@ -36,9 +34,8 @@ interface CardDecorateModule {
 
 /**
  * The per-card decorate modules, keyed by card node type with an exhaustive
- * `Record` so adding a declaration without its module fails typecheck. The
- * only hand-maintained pairing left; everything else is derived from
- * `CARD_DECLARATIONS`.
+ * `Record`, so a declaration added without its module fails typecheck. The only
+ * hand-maintained pairing; everything else derives from `CARD_DECLARATIONS`.
  */
 const CARD_DECORATE_MODULES: Record<CardNodeType, CardDecorateModule> = {
   audio: { render: renderAudioCard },
@@ -59,20 +56,18 @@ const CARD_DECORATE_MODULES: Record<CardNodeType, CardDecorateModule> = {
 }
 
 /**
- * Wrapper-layer projection of the card declarations: each declaration paired
- * with the React-bearing half of its decorate-target. The indicator icon is
- * gated by the declaration's `decorateTarget.hasIndicatorIcon` flag (Html is
- * the only card with one). The shared adapter (`@/inkling/nodes/decorate-card`)
- * renders these through `InklingCardWrapper`.
+ * Wrapper-layer projection of the card declarations: each declaration paired with
+ * the React-bearing half of its decorate-target, the indicator icon gated by the
+ * declaration's `decorateTarget.hasIndicatorIcon` flag (Html only). The shared
+ * adapter (`@/inkling/nodes/decorate-card`) renders these through
+ * `InklingCardWrapper`.
  */
 export const CARD_DECORATE_TARGETS = CARD_DECLARATIONS.map((declaration) => {
   // `in` narrows the union to the declarations carrying the optional decorate-target entry
   const decorateTarget: DecorateTargetSpec | undefined =
     'decorateTarget' in declaration ? declaration.decorateTarget : undefined
   const module = CARD_DECORATE_MODULES[declaration.nodeType]
-  // Object.assign into a fresh object: a shallow copy of the shared
-  // declaration, so the projection's added keys can never mutate the
-  // registry object
+  // Fresh object: the projection's added keys must never mutate the shared declaration
   return Object.assign({}, declaration, {
     decorateTarget,
     render: (node: LexicalNode) => module.render(node),
@@ -85,12 +80,9 @@ const CARD_DECORATE_TARGETS_BY_TYPE = new Map(
 )
 
 /**
- * The structural decorate-target type `getCardDecorateTarget` returns. The
- * built-in targets keep their precise per-card types in
- * `CARD_DECORATE_TARGETS` (the exhaustive `Record<CardNodeType, …>` guard
- * above is unchanged); the widened return type admits the host card
- * projections (CONTEXT.md: "host card"), which carry the same facts derived
- * from the raw registry spec.
+ * The structural decorate-target type `getCardDecorateTarget` returns: it admits both
+ * the precise built-in targets in `CARD_DECORATE_TARGETS` and the host card
+ * projections, which carry the same facts derived from the raw registry spec.
  */
 export interface CardDecorateTarget {
   nodeType: string
@@ -100,11 +92,10 @@ export interface CardDecorateTarget {
 }
 
 /**
- * The one decorate-target projection every consumer shares: built-in
- * declarations resolve to their paired `CARD_DECORATE_TARGETS` entry; a host
- * spec carries the same facts in one place (its `render`, its
- * `decorateTarget`, its indicator icon) and projects through the same
- * `hasIndicatorIcon` gate — there is no host-side copy of the gating.
+ * The one decorate-target projection every consumer shares: built-in declarations
+ * resolve to their paired `CARD_DECORATE_TARGETS` entry; a host spec projects its own
+ * `render`, `decorateTarget`, and indicator icon through the same `hasIndicatorIcon`
+ * gate.
  */
 export function resolveCardDecorateTarget(facts: CardFacts): CardDecorateTarget | undefined {
   if (facts.source === 'builtin') {

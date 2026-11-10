@@ -22,8 +22,8 @@ export interface ListingPageLoaderData<TExtra = undefined> {
 
 /**
  * Route-layer listing data: the content payload plus the request's minted
- * analytics event id, published for the client beacon (ADR-0006). The
- * content API payload itself stays event-id-free — the route attaches it.
+ * analytics event id for the client beacon. The content API payload itself
+ * stays event-id-free — the route attaches the id.
  */
 export interface PublicListingLoaderData<TExtra = undefined> extends ListingPageLoaderData<TExtra> {
   eid: string | null

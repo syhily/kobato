@@ -24,16 +24,12 @@ import {
 } from '@/inkling/plugins/behaviour/card-adjacency'
 import { $unwrapSpecialMarkupFormat } from '@/inkling/plugins/behaviour/markdown-unwrap'
 
-// Convert a top-level list item to a paragraph when backspace lands at the
-// item's start boundary — two anchor shapes, one policy:
-// - the cursor sits directly in an EMPTY item (no text node exists, so the
-//   selection anchor IS the item): ride Lexical's INSERT_PARAGRAPH_COMMAND so
-//   the surrounding list structure stays correct;
-// - the cursor is at the start of a POPULATED item (the anchor is the item's
-//   child): replace the item with a paragraph carrying its children.
-// Placed AFTER the firefox-workaround and empty-block checks in the handler:
-// neither applies to a ListItemNode anchor, so the merge preserves the exact
-// evaluation order the two former branches had.
+// Convert a top-level list item to a paragraph when backspace lands at the item's
+// start boundary. Two anchor shapes: an EMPTY item (the selection anchor IS the
+// item) rides Lexical's INSERT_PARAGRAPH_COMMAND so list structure stays correct;
+// a POPULATED item (the anchor is its child) is replaced by a paragraph carrying
+// its children. Runs after the firefox-workaround and empty-block checks, which
+// cannot match a ListItemNode anchor.
 function $convertListItemToParagraph(anchorNode: LexicalNode, editor: LexicalEditor): boolean {
   if ($isListItemNode(anchorNode) && anchorNode.getIndent() === 0 && anchorNode.isEmpty()) {
     editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined)
@@ -56,12 +52,11 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
   return editor.registerCommand(
     KEY_BACKSPACE_COMMAND,
     (event) => {
-      // avoid processing card behaviours when an inner element has focus
+      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
 
-      // delete selected card if we have one
       if (dispatchSelectedCardDeletion(editor, store, isNested, 'backward', event)) {
         return true
       }
@@ -75,29 +70,25 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
 
           const atStartOfElement = selection.anchor.offset === 0 && selection.focus.offset === 0
 
-          // see https://github.com/facebook/lexical/issues/5226
-          // upstream bug with firefox only
+          // Firefox-only upstream bug: https://github.com/facebook/lexical/issues/5226
           if (atStartOfElement && $isLinkNode(anchorNode.getPreviousSibling())) {
             const linkNode = anchorNode.getPreviousSibling()
             if ($isLinkNode(linkNode)) {
               const lastDescendent = linkNode.getLastDescendant()
               if ($isTextNode(lastDescendent)) {
-                // spliceText keeps slice(0, offset) + slice(offset + delCount), so deleting
-                // the last character means offsetting one before the end; an empty text node
-                // passes -1, which lexical clamps to a no-op
+                // spliceText keeps slice(0, offset) + slice(offset + delCount), so deleting the
+                // last character means offsetting one before the end; an empty text node passes
+                // -1, which lexical clamps to a no-op
                 lastDescendent.spliceText(lastDescendent.getTextContentSize() - 1, 1, '', true)
                 return true
               }
             }
           }
 
-          // delete empty paragraphs and select card if preceded by card
           if ($removeEmptyBlockAndSelectCard('previous', 'paragraph-is-empty')) {
             return true
           }
 
-          // convert top level list items to paragraphs when cursor is at beginning
-          // (empty and populated items — see $convertListItemToParagraph)
           if (atStartOfElement && $convertListItemToParagraph(anchorNode, editor)) {
             event.preventDefault()
             return true
@@ -105,7 +96,6 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
 
           const anchorNodeParent = anchorNode.getParent()
 
-          // convert to paragraph if backspace is at start of the quote/aside block
           if (
             atStartOfElement &&
             anchorNodeParent &&
@@ -121,8 +111,7 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
             return true
           }
 
-          // delete any previous card keeping caret in place
-          // (selection-mode 'previous' is gated on exactly atStartOfElement inside the surgery)
+          // Selection-mode 'previous' is gated on exactly atStartOfElement inside the surgery.
           if ($removeLogicallyAdjacentCard('previous')) {
             event.preventDefault()
             return true
@@ -132,7 +121,7 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
           const atEndOfElement =
             selection.anchor.offset === anchorNodeLength && selection.focus.offset === anchorNodeLength
 
-          // undo any markdown special formats when deleting at the end of a formatted text node
+          // Undo markdown special formats when deleting at the end of a formatted text node.
           if (atEndOfElement && $isTextNode(anchorNode) && $unwrapSpecialMarkupFormat(anchorNode, selection)) {
             event.preventDefault()
             return true

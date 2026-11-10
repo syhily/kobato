@@ -1,18 +1,17 @@
 // The single aggregation of every message catalog, plus the ICU contract the
 // catalogs are held to. Server-only value import surface: `messages/ui/**` and
-// `messages/server/**` reach the client exclusively through the root loader,
-// never through this module's static graph.
+// `messages/server/**` reach the client exclusively through the root loader, never
+// through this module's static graph.
 //
-// Validation compares VARIABLES and LOGICAL OPTIONS, not plural categories:
-// English may need one/other where Chinese only needs other. The rules are
-//   · every argument name (including rich-text tag names) matches the English
-//     baseline, and so does its kind (plain / plural / select / number …);
-//   · every plural/select carries `other` (the ICU parser itself rejects a
-//     message without it: MISSING_OTHER_CLAUSE), and every plural category it
-//     uses is legal for that locale's `Intl.PluralRules`;
-//   · every select covers the baseline's option values.
-// A violation throws {@link CatalogValidationError}; `shared/` has no logger,
-// so the root-loader / server-translator boundaries catch, log, and degrade.
+// Validation compares VARIABLES and LOGICAL OPTIONS, not plural categories: English
+// may need one/other where Chinese only needs other. Every argument name (including
+// rich-text tag names) must match the English baseline, and so must its kind
+// (plain / plural / select / number …); every plural/select must carry `other` (the
+// ICU parser itself rejects a message without it: MISSING_OTHER_CLAUSE) and use only
+// categories legal for that locale's `Intl.PluralRules`; every select must cover
+// the baseline's option values. A violation throws {@link CatalogValidationError};
+// `shared/` has no logger, so the root-loader / server-translator boundaries catch,
+// log and degrade.
 //
 // Scope: `content.bootstrap` ships `uiMessagesForScope(locale, scope)` — the
 // workspace catalog for /admin + /editor, and the `admin.*`-free public subset
@@ -61,18 +60,18 @@ const SERVER_CATALOGS = {
 } as const satisfies Record<AppLocale, ServerMessages>
 
 /**
- * The UI messages one document can render: the full catalog for the workspace,
- * the allowlisted public namespaces for every other pathname. Readonly — every
- * caller shares the frozen memoized object and must never mutate it.
+ * The UI messages one document can render: the full catalog for the workspace, the
+ * allowlisted public namespaces for every other pathname. Readonly — every caller
+ * shares the frozen memoized object and must never mutate it.
  */
 export type ScopedUiMessages = Readonly<Record<string, string>>
 
 /**
  * The locale's UI catalog merged over the English baseline, restricted to the
  * messages a document scope actually renders. Memoized per `locale:scope`: the
- * payload the root loader serializes is the SAME frozen object on every
- * request, and a caller that tried to patch it would throw instead of leaking
- * one request's edit into the next.
+ * payload the root loader serializes is the SAME frozen object on every request, and
+ * a caller that tried to patch it would throw instead of leaking one request's edit
+ * into the next.
  */
 const SCOPE_CACHED_UI_CATALOGS = new Map<string, ScopedUiMessages>()
 
@@ -85,8 +84,8 @@ export function uiMessagesForScope(locale: AppLocale, scope: CatalogScope): Scop
   if (cached !== undefined) {
     return cached
   }
-  // The baseline itself stays the shared module object (workspace default), and
-  // the merged zh catalogs are the cheap spread every caller already did.
+  // The baseline stays the shared module object (workspace default); other locales
+  // are a plain spread over it.
   const full: Record<string, string> =
     locale === BASE_LOCALE ? uiMessagesEnUS : { ...uiMessagesEnUS, ...UI_CATALOGS[locale] }
   const value: Record<string, string> =
@@ -98,9 +97,9 @@ export function uiMessagesForScope(locale: AppLocale, scope: CatalogScope): Scop
 
 /**
  * The locale's complete UI catalog merged over the English baseline. The type
- * already proves completeness; the merge is the runtime safety net for a
- * catalog patched outside the type system. Frozen and memoized — callers share
- * the object and must not modify it.
+ * already proves completeness; the merge is the runtime safety net for a catalog
+ * patched outside the type system. Frozen and memoized — callers share the object
+ * and must not modify it.
  */
 export function uiMessagesFor(locale: AppLocale): UiMessages {
   return uiMessagesForScope(locale, 'workspace')

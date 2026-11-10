@@ -21,15 +21,10 @@ export const LOCALE_LABELS = {
 export type JourneyLocale = keyof typeof LOCALE_LABELS
 
 /**
- * Establish a real server session for the worker's browser context.
- *
- * The sign-in form is deliberately NOT driven through the UI here: its
- * two-step flow keeps the email in React state, and filling the first step
- * before hydration completes loses it — the hidden email on the password step
- * then posts empty. Sign-in is setup for the i18n journeys, not one of them;
- * this is the same credential POST the HTTP e2e suite uses, issued through the
- * context's own request client, so the resulting cookies (and storage state)
- * are exactly those a completed browser login holds.
+ * Establish a real server session for the worker's browser context. The sign-in form
+ * is not driven through the UI: its two-step flow keeps the email in React state, and
+ * filling step one before hydration lands posts an empty email. This is the same
+ * credential POST the HTTP e2e suite issues, so the cookies match a browser login.
  */
 export async function signInAdmin(context: BrowserContext, env: BrowserEnv): Promise<void> {
   const request = context.request
@@ -53,13 +48,11 @@ export async function signInAdmin(context: BrowserContext, env: BrowserEnv): Pro
 export async function waitForSettingsReady(page: Page): Promise<void> {
   await expect(page.locator('#general-locale')).toBeVisible()
   await waitForHydration(page, '#general-description')
-  // RHF applies `defaultValues` to its uncontrolled inputs from a mount effect,
-  // which can land after hydration; filling before that is silently reverted.
-  // The deterministic baseline proves the seeding effect has run.
+  // RHF seeds `defaultValues` from a mount effect that can land after hydration;
+  // filling earlier is silently reverted. The baseline proves the seeding ran.
   await expect(page.locator('#general-title')).toHaveValue(BASELINE_GENERAL.title)
   await expect(page.locator('#general-description')).toHaveValue(BASELINE_GENERAL.description)
-  // Let the post-hydration re-render pass that can replace the SSR inputs (and
-  // the select's portal items) settle before the next interaction.
+  // A post-hydration re-render can replace the SSR inputs and the select's portal items.
   await page.waitForTimeout(400)
 }
 
@@ -70,11 +63,9 @@ export async function openSettings(page: Page): Promise<void> {
 }
 
 /**
- * Wait for React to hydrate the node behind `selector`. Before hydration the
- * server markup has no React expando properties, so a native `fill` would
- * update the DOM without the controlled component's state (and the next
- * render would silently drop the input). Settings forms are SSR-rendered, so
- * this is the only reliable "the events are live" signal.
+ * Wait for React to hydrate the node behind `selector`: before hydration the server
+ * markup carries no React expando properties, so a `fill` would update the DOM without
+ * the component's state and the next render would drop the input.
  */
 export async function waitForHydration(page: Page, selector: string): Promise<void> {
   await page.waitForFunction(
@@ -88,10 +79,8 @@ export async function waitForHydration(page: Page, selector: string): Promise<vo
 }
 
 /**
- * Pick a language in the General card. The option lives in a Base UI portal;
- * the locale switch flushes dirty cards, commits, broadcasts and reloads, so
- * callers that care about the reload arm their own `page.waitForEvent('load')`
- * BEFORE calling this.
+ * Pick a language in the General card. The locale switch flushes dirty cards, commits,
+ * broadcasts and reloads, so callers that care arm `page.waitForEvent('load')` first.
  */
 export async function switchLocale(page: Page, locale: JourneyLocale): Promise<void> {
   await page.locator('#general-locale').click()
@@ -99,12 +88,8 @@ export async function switchLocale(page: Page, locale: JourneyLocale): Promise<v
 }
 
 /**
- * Replace an input's value with real keyboard input.
- *
- * `locator.fill()` updates the DOM value but does not drive React Hook Form's
- * uncontrolled field state here (the form stays "clean" and the next render
- * restores the baseline). Keyboard events are what a user produces and they
- * always reach the registered `onChange`.
+ * Replace an input's value with real keyboard input: `locator.fill()` updates the DOM
+ * but leaves the RHF field clean, so the next render restores the baseline.
  */
 export async function replaceInput(page: Page, locator: Locator, value: string): Promise<void> {
   let lastError: unknown = null

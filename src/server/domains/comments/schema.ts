@@ -15,7 +15,7 @@ export const commentReplySchema = z
     email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
     body: commentEditorStateSchema,
-    /** Retained for schema compatibility; no longer used. */
+    /** Unused; retained for wire compatibility. */
     rid: z.number().optional(),
     /** Leave blank — used for bot filtering only; stripped before `createComment`. */
     subtitle: commentHoneypot.schema,

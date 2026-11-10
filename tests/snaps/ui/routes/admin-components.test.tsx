@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-// SSR-render a selection of admin route Component exports: each is pure
-// given loaderData, so drive it directly with fixtures and assert the page
-// chrome — no loader/DB chain.
+// SSR-render a selection of admin route Component exports; each is pure given loaderData,
+// so fixtures suffice and no loader/DB chain is needed.
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { asRoute } from '#/_helpers/route-test-utils'

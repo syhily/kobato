@@ -2,9 +2,8 @@ import { defineCard, type DecoratorNodeProperty, generateDecoratorNode } from '@
 
 const musicPlayerProperties = [{ name: 'src', default: '' }] as const satisfies readonly DecoratorNodeProperty[]
 
-// The host-side base node, built through the same generateDecoratorNode entry
-// the built-in cards use — a stub defaultRenderFn keeps the exportDOM
-// contract honest without vendoring a renderer.
+// Host-side base node built through the same generateDecoratorNode entry the built-in cards use; a stub
+// defaultRenderFn keeps the exportDOM contract honest without vendoring a renderer.
 const BaseMusicPlayerNode = generateDecoratorNode({
   nodeType: 'musicPlayer',
   properties: musicPlayerProperties,
@@ -25,11 +24,8 @@ function MusicPlayerCard() {
   )
 }
 
-// A host card (CONTEXT.md: "host card") declared through the public seam:
-// this single defineCard call registers the assembled node class, the slash
-// menu entry, the insert command (derived from the node type — the spec
-// names it by string, never by object), the decorate render, and the
-// toolbar label. Runs at module top level, before the composer mounts.
+// Host card (CONTEXT.md: "host card") via the public seam: one defineCard call registers the node class, slash
+// menu entry, insert command, decorate render, and toolbar label. Must run before the composer mounts.
 export const musicPlayer = defineCard({
   nodeType: 'musicPlayer',
   baseNode: BaseMusicPlayerNode,

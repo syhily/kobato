@@ -1,15 +1,11 @@
-// Native color helpers (replacing the `color` package): hex parsing,
-// UPPERCASE hex serialization, the Lab b-channel the upstream contrast
-// formula relies on, and the `Color` call signature its consumers use.
-// Behavior is pinned byte-for-byte by test/utils/colorUtils.test.ts —
-// including the quirk that `b()` returns the Lab b-channel, NOT RGB blue
-// (intentional; it flips #cccccc to white text).
+// Drop-in replacement for the `color` library's call signature: uppercase hex serialization
+// and the Lab b-channel `b()` its consumers read. Pinned byte-for-byte by tests/inkling/utils/colorUtils.test.ts.
 
 export interface ColorInstance {
   hex(): string
   red(): number
   green(): number
-  /** The Lab b-channel (NOT RGB blue) — the upstream quirk, preserved. */
+  /** The Lab b-channel, not RGB blue: an intentional upstream quirk that flips #cccccc to white text. */
   b(): number
 }
 
@@ -115,17 +111,12 @@ class NativeColor implements ColorInstance {
   }
 }
 
-/** The `color` package's call signature: hex string, `{ r, g, b }`, or another instance. */
+/** Accepts a hex string, `{ r, g, b }`, or another color instance. */
 export function Color(input: string | Rgb | ColorInstance): ColorInstance {
   return new NativeColor(input)
 }
 
-/**
- * Returns black or white depending on which has better contrast against the
- * given background. Shared with the original upstream implementation.
- *
- * NOTE: `.b()` returns the Lab b-channel, not RGB blue — this is intentional.
- */
+/** Returns black or white, whichever has better contrast against the given background. */
 export function textColorForBackgroundColor(background: string | ColorInstance): ColorInstance {
   const backgroundColor = Color(background)
 

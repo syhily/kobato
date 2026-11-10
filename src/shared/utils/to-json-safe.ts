@@ -1,7 +1,7 @@
 /**
  * Recursively convert `Date`s to epoch-ms so a payload survives
- * `JSON.stringify` without a reviver. Plain objects/arrays are walked;
- * class instances (Buffer, Map, …) are NOT supported by design.
+ * `JSON.stringify` without a reviver. Plain objects/arrays are walked; class
+ * instances (Buffer, Map, …) are unsupported by design.
  */
 export function toJsonSafe(value: unknown): unknown {
   if (value instanceof Date) {

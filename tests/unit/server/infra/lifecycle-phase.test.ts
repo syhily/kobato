@@ -37,7 +37,6 @@ describe('server/infra/lifecycle — setServerPhase transition table', () => {
   })
 
   it('rejects an invalid booting→booting self-transition silently (no-op)', () => {
-    // booting→booting is the same-phase short-circuit, not a transition.
     resetTo('booting')
     setServerPhase('booting')
     expect(getServerPhase()).toBe('booting')
@@ -50,11 +49,9 @@ describe('server/infra/lifecycle — setServerPhase transition table', () => {
       setServerPhase(target)
       expect(getServerPhase()).toBe(target)
     }
-    // running→booting is invalid.
     resetTo('running')
     setServerPhase('booting' as ServerPhase)
     expect(getServerPhase()).toBe('running')
-    // running→failed is invalid.
     resetTo('running')
     setServerPhase('failed' as ServerPhase)
     expect(getServerPhase()).toBe('running')
@@ -66,7 +63,6 @@ describe('server/infra/lifecycle — setServerPhase transition table', () => {
       setServerPhase(target)
       expect(getServerPhase()).toBe(target)
     }
-    // restarting→booting is invalid.
     resetTo('restarting')
     setServerPhase('booting' as ServerPhase)
     expect(getServerPhase()).toBe('restarting')
@@ -78,11 +74,10 @@ describe('server/infra/lifecycle — setServerPhase transition table', () => {
       setServerPhase(target)
       expect(getServerPhase()).toBe(target)
     }
-    // failed→running is invalid (must go through restarting).
+    // Recovering from failed must go through restarting.
     resetTo('failed')
     setServerPhase('running' as ServerPhase)
     expect(getServerPhase()).toBe('failed')
-    // failed→booting is invalid.
     resetTo('failed')
     setServerPhase('booting' as ServerPhase)
     expect(getServerPhase()).toBe('failed')
@@ -94,7 +89,6 @@ describe('server/infra/lifecycle — setServerPhase transition table', () => {
       setServerPhase(target)
       expect(getServerPhase()).toBe('shutting-down')
     }
-    // shutting-down→shutting-down is a no-op via the same-phase short-circuit.
     resetTo('shutting-down')
     setServerPhase('shutting-down')
     expect(getServerPhase()).toBe('shutting-down')

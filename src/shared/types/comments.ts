@@ -11,14 +11,12 @@ export type AdminPendingKind = 'all' | 'approval' | 'deletion'
 import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@/shared/contracts/comments'
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 
-// Canonical wire-facing comment row shape, in select-map naming (`createAt` /
-// `deleteAt`, not the DB's `createdAt` / `deletedAt`). `shared/` cannot import
-// the drizzle schema (layering), so this stays a hand declaration — but it
-// cannot drift: `@/server/domains/comments/repos/shared` asserts key and type
-// parity against the `commentWithUser` select map at compile time (its
-// server-only `deleteRequestedBy` column is deliberately absent here), and
-// `@/shared/contracts/comments` pins the public wire DTO to exactly this field
-// set minus the PII keys (`content` / `ua` / `ip` / `email`).
+// Canonical comment row shape in select-map naming (`createAt` / `deleteAt`, not
+// the DB's `createdAt` / `deletedAt`). Hand-written because `shared/` cannot
+// import the drizzle schema, but pinned by `@/server/domains/comments/repos/shared`
+// (compile-time parity with the `commentWithUser` select map) and by
+// `@/shared/contracts/comments` (public wire DTO = this set minus the PII keys
+// `content` / `ua` / `ip` / `email`).
 export interface CommentAndUser {
   id: number
   createAt: Date

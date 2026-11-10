@@ -1,9 +1,7 @@
-// Session-scoped RUM event budget (ADR-0012).
-//
-// The SDK can emit thousands of resource events on a noisy page. This module
-// owns the accepted-event counters, the session-id reset rule, and the optional
-// browser-storage snapshot so a reload in the same tab continues the cap.
-// Dropped events never consume budget.
+// Session-scoped RUM event budget: the SDK can emit thousands of resource
+// events on a noisy page. This module owns the accepted-event counters, the
+// session-id reset rule, and the optional browser-storage snapshot so a reload
+// in the same tab continues the cap. Dropped events never consume budget.
 
 export const RUM_EVENT_LIMITS = {
   resourcesPerSession: 500,

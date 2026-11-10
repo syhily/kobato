@@ -46,7 +46,6 @@ function CaptionPlugin({ parentEditor }: { parentEditor: LexicalEditor }) {
     })
   }, [editor, isSelected, captionHasFocus])
 
-  // handle focus/blur and enter key commands
   React.useEffect(() => {
     return mergeRegister(
       editor.registerCommand(

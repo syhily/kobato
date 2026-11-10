@@ -47,11 +47,10 @@ describe('shared/lexical/projection-state — artifact stripping', () => {
   })
 })
 
-// R10 renders all three host cards through their own node classes (the
-// server passes them via `renderableHostCardTypes`), so the substitution
-// below is a DEFENSIVE path: it fires only for a card type the projection
-// was not told to render (a surface that omits the option, or a future
-// card type).
+// Host cards render through their own node classes (the server passes them via
+// `renderableHostCardTypes`), so the substitution below is a DEFENSIVE path: it
+// fires only for a card type the projection was not told to render (a surface
+// that omits the option, or a future card type).
 describe('shared/lexical/projection-state — host card substitution', () => {
   it('replaces a meta-carrying music-player with a labeled paragraph', () => {
     const state = parse(

@@ -5,10 +5,9 @@ import { uiMessagesFor } from '@/shared/i18n/catalog'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 import { ContentLanguageField } from '@/ui/admin/editor-shared/ContentLanguageField'
 
-// The editor's one content-language control: label + hint + error must exist in
-// every UI locale, while the VALUE is author data (never translated). Each
-// locale renders its own catalog copy — a missing translation would fall back
-// to English and fail the "differs from the baseline" leg.
+// The editor's one content-language control: label, hint and error exist in every UI
+// locale while the value is author data (never translated). A missing translation falls
+// back to English, so the "differs from the baseline" leg fails.
 
 function render(value: string, locale: (typeof SUPPORTED_LOCALES)[number]): string {
   return renderInRouter(

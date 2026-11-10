@@ -8,19 +8,16 @@ import { getLogger } from '@/server/infra/logger'
 
 /**
  * Encrypted uploads parked between the two restore calls: `upload-restore`
- * stages the raw bytes, detects the encryption magic, and parks the temp
- * dir here; the follow-up `upload-restore/decrypt` call resolves the entry
- * by token and stages WITH the password. Entries expire after 10 minutes
- * (lazy sweep on write); the dirs use RESTORE_TEMP_PREFIX so a crash leaves
+ * stages the raw bytes and parks the temp dir here; `upload-restore/decrypt`
+ * resolves the entry by token. Dirs use RESTORE_TEMP_PREFIX so a crash leaves
  * them to the boot-time sweep.
  */
 
 const log = getLogger('backup.pending-uploads')
 
 const TTL_MS = 10 * 60 * 1000
-/** Each parked upload holds up to MAX_BACKUP_FILE_SIZE on the temp disk —
- *  cap the count so repeated uploads without a decrypt can't accumulate
- *  unboundedly. The oldest (earliest expiring) entry is evicted first. */
+/** Each parked upload can hold MAX_BACKUP_FILE_SIZE on the temp disk, so the
+ *  count is capped; the earliest-expiring entry is evicted first. */
 const MAX_PENDING = 4
 
 export interface PendingEncryptedUpload {
@@ -29,18 +26,17 @@ export interface PendingEncryptedUpload {
   uploadPath: string
   fileName: string
   expiresAt: number
-  /** A decrypt call is staging from this entry right now — concurrent
-   *  decrypts of the same token must not interleave (the first finisher's
-   *  release would rm the dir under the second one's read stream). */
+  /** A decrypt is staging from this entry — concurrent decrypts of the same
+   *  token must not interleave (a release would rm the dir under the other
+   *  reader). */
   inFlight: boolean
 }
 
 const pending = new Map<string, PendingEncryptedUpload>()
 
 function sweepDir(dir: string): void {
-  // Best-effort: the boot-time sweep is the backstop. A decrypt's open read
-  // stream can pin the dir (Windows file locks) — that must never fail an
-  // unrelated park call.
+  // Best-effort: the boot-time sweep is the backstop. An open read stream can
+  // pin the dir (Windows file locks) and must never fail an unrelated park.
   try {
     rmSync(dir, { recursive: true, force: true })
   } catch (error) {
@@ -72,9 +68,8 @@ function sweepExpired(): void {
 export function parkEncryptedUpload(entry: { dir: string; uploadPath: string; fileName: string }): string {
   sweepExpired()
   while (pending.size >= MAX_PENDING) {
-    // Evict the earliest-expiring entry, but NEVER one mid-decrypt: its
-    // read stream opens lazily, so sweeping its dir would fail the
-    // in-flight decrypt with a bare ENOENT.
+    // Never evict an entry mid-decrypt: its read stream opens lazily, so
+    // sweeping the dir would fail the in-flight decrypt with a bare ENOENT.
     let oldest: PendingEncryptedUpload | null = null
     for (const candidate of pending.values()) {
       if (candidate.inFlight) {
@@ -85,8 +80,7 @@ export function parkEncryptedUpload(entry: { dir: string; uploadPath: string; fi
       }
     }
     if (oldest === null) {
-      // Every parked upload is mid-decrypt (vanishingly unlikely on an
-      // admin-only surface) — refuse the park instead of killing one.
+      // Every parked upload is mid-decrypt — refuse rather than kill one.
       throw new ActionFailure(429, descriptorFor('backup.error.decryptQueueFull'))
     }
     dropEntry(oldest.token)
@@ -114,9 +108,9 @@ export type DecryptClaim =
   | { ok: true; entry: PendingEncryptedUpload }
   | { ok: false; reason: 'missing' | 'expired' | 'in-flight' }
 
-/** Atomically mark the entry as being decrypted (synchronous — no await
- *  between read and mark, so no interleaving). The caller MUST pair this
- *  with `endDecryptClaim` unless it releases the entry outright. */
+/** Atomically marks the entry as being decrypted (synchronous — no await
+ *  between read and mark). Callers MUST pair this with `endDecryptClaim`
+ *  unless they release the entry outright. */
 export function claimEncryptedUploadForDecrypt(token: string): DecryptClaim {
   const entry = pending.get(token)
   if (entry === undefined) {
@@ -133,7 +127,7 @@ export function claimEncryptedUploadForDecrypt(token: string): DecryptClaim {
   return { ok: true, entry }
 }
 
-/** Clear the in-flight mark after a decrypt attempt that KEPT the entry
+/** Clears the in-flight mark after a decrypt attempt that KEPT the entry
  *  (wrong password — the user retries). No-op when the entry is gone. */
 export function endDecryptClaim(token: string): void {
   const entry = pending.get(token)
@@ -142,9 +136,6 @@ export function endDecryptClaim(token: string): void {
   }
 }
 
-/** Drop the entry and sweep its temp dir. Call after a successful claim of
- *  the restore slot (the staged copy lives in its own dir by then) or when
- *  giving up. */
 export function releaseEncryptedUpload(token: string): void {
   dropEntry(token)
 }
@@ -156,9 +147,8 @@ export function resetPendingEncryptedUploads(): void {
   }
 }
 
-// The lazy sweep on park() alone leaves an abandoned token's dir on disk
-// until the NEXT park (or process exit) — sweep on a timer so a parked
-// 500 MB upload never outlives its TTL by more than a minute.
+// The lazy sweep on park() alone would leave an abandoned token's dir on disk
+// until the next park, so the TTL overrun is bounded by this timer.
 registerJob({
   name: 'backup.pending-upload-sweep',
   nextDelayMs: () => 60 * 1000,

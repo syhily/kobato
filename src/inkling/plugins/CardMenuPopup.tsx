@@ -22,8 +22,7 @@ import trackEvent from '@/inkling/utils/analytics'
 import { resolveAnchoredPopupPlacement } from '@/inkling/utils/selection-anchored-popup'
 
 // CardMenuPopup — the one card-menu popup, parameterized over the two
-// trigger/anchor pairings the slash and plus menus used to re-implement as
-// near-duplicate skeletons. It owns the whole stack end-to-end: the session
+// trigger/anchor pairings. It owns the whole stack end-to-end: the session
 // (cursor lease, close policy, insert-and-close), the slash trigger binding,
 // the keyboard navigator, the menu data (useCardMenu), the single type-erased
 // insert adapter, the anchor chrome, and the rendering. The plugins keep only
@@ -212,8 +211,6 @@ export function CardMenuPopup({
     [sessionInsert, insertCardItem],
   )
 
-  // --- button anchor chrome (button policy only) -----------------------------
-
   const showButton = React.useCallback(
     (paragraph: Element) => {
       const positioningParent = getPositioningParent(paragraph.parentElement)
@@ -298,11 +295,9 @@ export function CardMenuPopup({
     [openMenu, applyButtonVerdict, applyHoverButtonVerdict, hideButtonOnOutsideSelection],
   )
 
-  // --- keyboard policy --------------------------------------------------------
-
   // slash: capture key navigation to move/insert the selected card item — the
-  // policy is headless in @/plugins/behaviour/card-menu-keyboard; this effect
-  // only mounts the registration while the slash menu is open
+  // policy is headless in @/inkling/plugins/behaviour/card-menu-keyboard; this
+  // effect only mounts the registration while the slash menu is open
   React.useEffect(() => {
     if (!isSlash || !isOpen) {
       return

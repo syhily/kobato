@@ -3,12 +3,8 @@ import { vi } from 'vitest'
 import type { FileUploaderLike } from '@/inkling/components/ui/cards/card-ui-types'
 import type { UseFileDragAndDropResult } from '@/inkling/hooks/useFileDragAndDrop'
 
-// Shared stand-ins for the card UI's uploader/drag-handler props, previously
-// copy-pasted into the Audio/File/Header/Image/Video card tests. The
-// VideoCard/HeaderCard locals also seeded `errors: []` — dropped here because
-// every consumer treats undefined and [] alike (MediaPlaceholder defaults
-// `errors = []` and only renders when `errors.length > 0`; AudioCard guards
-// `errors && errors.length > 0`).
+// Shared stand-ins for the card UI's uploader/drag-handler props. `errors` is
+// intentionally omitted: consumers treat undefined and [] alike.
 export function createUploader(overrides: Partial<FileUploaderLike> = {}): FileUploaderLike {
   return { isLoading: false, upload: async () => undefined, ...overrides }
 }

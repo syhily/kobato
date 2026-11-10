@@ -19,13 +19,10 @@ import DEFAULT_NODES from '@/inkling/nodes/DefaultNodes'
 import { createFootnoteHandle, type FootnoteHandle } from '@/inkling/plugins/behaviour/footnoteHandle'
 import { $collectFootnoteSnapshot, registerFootnotes } from '@/inkling/plugins/behaviour/footnotes'
 
-// The undo-merge pin:
-// the caret-trigger insertion commits untagged, so it merges into the typing
-// history entry — ONE undo reverts the whole footnote insertion (ref +
-// definition) together with the `^ ` typing, kobato's `addToHistory: false`
-// analogue. The undo-resurrection guard (the restored text must not re-fire
-// the trigger) is the update-scan gate's history-tag skip, pinned at the
-// gate level in update-scan.test.ts.
+// The undo-merge pin: the caret-trigger insertion commits untagged, so it
+// merges into the typing history entry and one undo reverts the whole footnote
+// insertion (ref + definition) along with the `^ ` typing. The
+// undo-resurrection guard is pinned at the gate level in update-scan.test.ts.
 
 function createTestEditor() {
   return createEditor({
@@ -127,15 +124,10 @@ describe('FootnotePlugin undo semantics', () => {
     })
     await tick()
 
-    // the untagged conversion commit merges into the typing transaction
-    // (kobato's addToHistory: false analogue): ONE undo reverts trigger text
-    // and insertion together — ref, definition, and the `^ ` are all gone
     expect(rootChildTypes()).toEqual(['paragraph'])
     expect(footnoteCounts()).toEqual({ refs: 0, definitions: 0 })
     expect(firstParagraphText()).toBe('hello')
 
-    // no resurrection on the historic commit itself (the gate's history-tag
-    // skip is pinned at the gate level in update-scan.test.ts)
     await tick()
     expect(footnoteCounts()).toEqual({ refs: 0, definitions: 0 })
   })

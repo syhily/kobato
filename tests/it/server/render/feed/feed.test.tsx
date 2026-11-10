@@ -92,7 +92,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
   })
 
   it('limits the selection to the configured feed page size', async () => {
-    // Visibility policy is pinned separately in tests/unit/server/domains/posts/services/feed.test.ts.
+    // Visibility policy is pinned separately in tests/it/server/domains/posts/services/feed.test.ts.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: { ...TEST_BLOG_SETTINGS_BUNDLE.content!, feed: { full: true, size: 1 } },
@@ -122,9 +122,8 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
   })
 
   it('resolves scopes by slug-or-name through the wired taxonomy resolvers', async () => {
-    // Scoping by the display NAME (not the slug) only works when the
-    // generator wires the real slug-or-name resolvers into the domain
-    // selection.
+    // Scoping by display NAME only works when the generator wires the real slug-or-name resolvers
+    // into the domain selection.
     const techId = await seedCategory('技术', 'tech')
     const tagId = await seedTag('React', 'react')
     await seedPost({ slug: 'in-tech', title: 'In Tech', categoryId: techId })
@@ -163,7 +162,6 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
 
   it('uses /tags/<slug>/feed and /tags/<slug>/feed/atom URLs when scoped to a tag', async () => {
     const feeds = await generateFeeds(db, { locale: 'zh-CN', tag: 'react' })
-    // The feedLinks self-references appear in the channel header.
     expect(feeds.atom).toContain('/tags/react/feed')
   })
 

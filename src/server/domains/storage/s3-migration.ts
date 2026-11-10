@@ -35,27 +35,15 @@ import {
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
- * Storage migration task — copies every object from the current primary
- * backend to a target (new S3 bucket / another provider / local fallback),
- * THEN flips the config and per-asset driver columns. Three directions:
- * `local-to-s3` (first enable), `s3-to-s3` (bucket/provider change),
- * `s3-to-local` (back to local).
+ * Storage migration task: copies every object from the current primary backend
+ * to a target (`local-to-s3`, `s3-to-s3`, or `s3-to-local`), THEN flips the
+ * config and the per-asset driver columns.
  *
- * State lives in the single-row `storage_migration` table (cursor +
- * counters) so a failed/cancelled/interrupted run resumes from the last
- * completed batch; the in-memory `running` slot only holds the cancel flag
- * and the single-flight guarantee. Source objects are never deleted. A
- * completed run records a final source/target consistency verification
- * (counts + bytes) on the row.
- *
- * `skippedObjects` counts objects already present on the target during the
- * INITIAL copy phase only; post-switch catch-up rounds never re-count
- * converged objects.
- *
- * Cross-domain collaborators (settings flip, branding drivers, image-meta
- * cache, content backfill) are injected through {@link wireS3Migration} at
- * the composition root — Platform domains are leaves of the domain DAG and
- * must not statically import Core/Feature domains.
+ * State lives in the single-row `storage_migration` table (cursor + counters) so
+ * a failed/cancelled/interrupted run resumes from the last completed batch; the
+ * in-memory `running` slot only holds the cancel flag and the single-flight
+ * guarantee. Source objects are never deleted. A completed run records a final
+ * source/target consistency verification (counts + bytes) on the row.
  */
 
 const log = getLogger('storage.migration.task')
@@ -311,8 +299,7 @@ export async function startStorageMigration(db: Database, input: StartMigrationI
 
     const currentStorage = requireBlogSettingsSection('assets').storage
     const s3Active = currentStorage.enabled
-    // Pre-flip source snapshot: the source backend must keep reading the OLD
-    // bucket after `switchStorage` flips the live config (catch-up + verification).
+    // Pre-flip source snapshot.
     sourceConfig = s3Active ? { ...currentStorage } : null
 
     if (input.target === 'local') {
@@ -424,8 +411,8 @@ export async function resumeStorageMigration(db: Database): Promise<StorageMigra
 
   const sourceConfig =
     readSourceConfig(row) ??
-    // Rows written before source snapshots existed: fall back to live settings
-    // (still the old config when the run never reached the flip).
+    // Legacy row without a source snapshot: fall back to live settings (still
+    // the old config when the run never reached the flip).
     (row.direction === 'local-to-s3' ? null : requireBlogSettingsSection('assets').storage)
   launch(db, row.direction, sourceConfig, readTargetConfig(row), row.cursor, handle)
   return rowToStatus(await readRow(db))
@@ -466,9 +453,8 @@ function launch(
 }
 
 /**
- * Backends resolved once per run. Non-nullness follows from the direction
- * enum instead of non-null assertions: local-to-s3 has no S3 source snapshot,
- * s3-to-local has no target config.
+ * Backends resolved once per run; the direction enum carries non-nullness, so no
+ * assertions are needed (local-to-s3 has no S3 source, s3-to-local no target).
  */
 type ResolvedEndpoints =
   | {
@@ -498,9 +484,6 @@ function resolveEndpoints(
   sourceConfig: S3TargetConfig | null,
   targetConfig: S3TargetConfig | null,
 ): ResolvedEndpoints {
-  // S3 sources are bound ONCE to the pre-flip snapshot — the settings-driven
-  // singleton would re-resolve the NEW bucket after the flip, stranding
-  // objects written to the old bucket during the copy/switch window.
   const source =
     direction === 'local-to-s3' ? backendFor('local') : sourceS3BackendFactory(requireSnapshot(sourceConfig, 'source'))
   const target =
@@ -566,11 +549,6 @@ async function runMigration(
       resourceId: direction,
       details: { ...counters, verified: verification.matches },
     })
-    // Content baked under the previous CDN base re-points to the site-owned
-    // `/storage/<key>` form at switch time. Idempotent and ALWAYS run on
-    // completion — independent of the boot-time one-shot flag, so a failed
-    // earlier attempt is retried at every completed migration. Never fails
-    // the run.
     try {
       const backfill = await requireHooks().postSwitchBackfill(db)
       log.info('Post-migration asset URL backfill finished', { result: backfill })
@@ -730,8 +708,7 @@ async function copyOne(
         key: object.key,
         body: meta.body,
         // Stored headers copy verbatim when the source reports them (S3);
-        // otherwise the target derives Cache-Control from the key's
-        // visibility class (`key-policy`) and the type from the extension.
+        // otherwise the target derives them from `key-policy` + the extension.
         contentType: meta.contentType ?? contentTypeForKey(object.key),
         cacheControl: meta.cacheControl,
         visibility: visibilityForKey(object.key),

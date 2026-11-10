@@ -3,28 +3,21 @@ import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * The card pipeline's layering rule, pinned statically (CONTEXT.md: "card
- * declaration"). The pipeline works because declarations are React-free and
- * the registry layer never pulls the wrapper layer at runtime — the shim →
- * card-wrappers → decorate tree → plugins/components → shim import cycle is
- * avoided by convention today (documented piecemeal across
- * assemble-card-node, card-declaration, card-wrappers, card-commands,
- * host-card-registry, card-markdown-transformers, getEditorCardNodes); this
- * guard makes the convention fail CI instead of code review. Same pattern
- * as the render-policy guard (tests/inkling/unit/nodes-base/nodes/render-policy-imports).
+ * Pins the card pipeline's layering rule statically: declarations are
+ * React-free, and the registry layer never value-imports the wrapper layer
+ * (card-wrappers, card-decorate, card-menus, card-markdown-transformers,
+ * card-insert-commands, decorate-card), the components/hooks/plugins layers,
+ * or the per-card shim modules — that is the assembler's job.
  *
- * Specifiers are normalized onto the inkling layer root before judgment (the
- * same idiom as tests/inkling/unit/utils/utils-import-guard.test.ts), so a
- * relative drift import (`../AudioNode` from a declaration) is caught exactly
- * like its `@/inkling/` alias twin. The two self-check tests at the bottom pin
- * the patterns against the REAL shim/component modules on disk — a guard
- * whose patterns silently match nothing (the package-era `@/nodes/...` alias
- * outlived the dissolution here) must fail loudly, not pass vacuously.
+ * Specifiers are normalized onto the inkling layer root before judgment, so a
+ * relative drift import is caught like its `@/inkling/` alias twin. The
+ * self-check tests pin the patterns against the real modules on disk, so a
+ * guard that silently matches nothing fails loudly.
  */
 
 // modules the registry layer must never VALUE-import, normalized onto the
 // layer root: the wrapper projections, the components/plugins layer, and the
-// shim modules (by pattern — 'nodes/<Card>Node' etc.)
+// per-card shim modules (by pattern)
 const WRAPPER_LAYER_TARGETS = new Set([
   'nodes/cards/card-wrappers',
   'nodes/cards/card-decorate',
@@ -43,12 +36,9 @@ function listSourceFiles(dir: string): string[] {
 
 /**
  * Runtime (non-type-only) import specifiers of a source string. Two erasure
- * passes strip type-only imports before matching, so the guard checks only
- * what the runtime module graph pulls:
- * - whole-statement type imports (`import type { A } from 'x'`, multiline ok);
- * - inline type modifiers in named imports (`import { type A } from 'x'`) —
- *   when the braces are left empty the import is type-only and erased;
- *   `import { type A, b } from 'x'` keeps its runtime binding and survives.
+ * passes strip type-only imports first, so only what the runtime module graph
+ * pulls is judged: whole-statement `import type`, and named imports whose
+ * braces hold only `type X` bindings (`{ type A, b }` keeps `b` and survives).
  */
 function runtimeImportSpecifiers(source: string): string[] {
   const withoutTypeImports = source
@@ -66,16 +56,11 @@ function runtimeImportSpecifiers(source: string): string[] {
 }
 
 /**
- * Resolves an import specifier to its layer-relative target ('nodes/...',
- * 'components/...', …), or null for specifiers that do not reach into the
- * inkling layer (bare packages, node: builtins). Both alias and relative
- * forms are normalized: `@/inkling/nodes/foo` and `../nodes/foo` from a
- * src/inkling/utils file land on the same target (the repo convention is
- * `@/inkling/` — a relative path into another layer is a drift vector, not a
- * style choice). `fromFile` is a cwd-relative src path
- * ('src/inkling/nodes/cards/x.declaration.ts'). The resolution is pure string
- * math — no cwd, no filesystem — so tests can hand it any path and the
- * verdict never depends on where vitest runs from.
+ * Resolves a specifier to its layer-relative target ('nodes/...',
+ * 'components/...'), or null for specifiers outside the inkling layer. Alias
+ * and relative forms both normalize, so `@/inkling/nodes/foo` and
+ * `../nodes/foo` from a utils file land on the same target. Pure string math
+ * (no cwd, no filesystem), so the verdict never depends on where vitest runs.
  */
 function normalizeSpecifier(fromFile: string, specifier: string): string | null {
   if (specifier.startsWith('@/inkling/')) {
@@ -154,10 +139,9 @@ describe('card pipeline layering guard', () => {
 
   it('card declarations never import the command table — the direction is reversed', () => {
     // card-commands is a DERIVED VIEW over the declarations: menu entries and
-    // insert specs name commands by string (CardMenuCommand), and
-    // card-commands keys its command objects by node type. A declaration
-    // importing card-commands (even type-only) restores the old reverse
-    // dependency — fail here, not in code review.
+    // insert specs name commands by string, and card-commands keys its command
+    // objects by node type. A declaration importing it — even type-only —
+    // reverses that direction.
     const declarationsDir = join('src', 'inkling', 'nodes', 'cards')
     const offenders: string[] = []
 
@@ -193,11 +177,9 @@ describe('card pipeline layering guard', () => {
   })
 
   it('self-check: the patterns match the real shim/component modules on disk', () => {
-    // Non-vacuous proof — the failure mode this guards against is a pattern
-    // anchored to a dead alias that matches nothing and passes forever.
-    // Every top-level node shim and card component module must exist AND be
-    // judged wrapper-layer; if a future refactor renames the layer alias or
-    // moves these modules, this test fails before the guard goes silent.
+    // Non-vacuous proof: a pattern anchored to a dead alias matches nothing and
+    // passes forever. Every top-level node shim and card component must exist
+    // AND be judged wrapper-layer.
     const nodesDir = join('src', 'inkling', 'nodes')
     const shims = readdirSync(nodesDir).filter((name) => /^[A-Z][A-Za-z]*Node\.ts$/.test(name))
     const components = readdirSync(nodesDir).filter((name) => /^[A-Z][A-Za-z]*NodeComponent\.tsx$/.test(name))

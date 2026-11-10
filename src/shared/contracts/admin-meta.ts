@@ -2,12 +2,9 @@ import { z } from 'zod'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
-// The admin-DTO fields every content entity (post / page) shares,
-// projected from the shared meta columns. Bigint ids are stringified —
-// the admin contract declares strings up front. The entity DTOs
-// (`adminPostDto` / `adminPageDto`) `.extend()` this base with their
-// entity-only fields; the server-side mapper is `toAdminMetaDto` in
-// `@/server/domains/content/entities/projection`.
+// Fields every content entity (post / page) shares, projected from the shared
+// meta columns. Bigint ids are stringified — the admin contract declares
+// strings up front. Entity DTOs `.extend()` this base with their own fields.
 export const adminMetaBaseDto = z.object({
   id: idString,
   slug: z.string(),
@@ -19,14 +16,13 @@ export const adminMetaBaseDto = z.object({
   commentsEnabled: z.boolean(),
   webmentionsEnabled: z.boolean(),
   showToc: z.boolean(),
-  // Opts the entity into rendering「修改于 XXXX」on the public detail
-  // page; toggled from the editor meta sidebar, defaults `false`.
+  // Opts the entity into rendering「修改于 XXXX」on the public detail page;
+  // toggled from the editor meta sidebar, defaults `false`.
   showUpdated: z.boolean(),
   // Author-declared BCP 47 tag of the prose, CANONICALIZED on write (any
   // well-formed tag — not limited to the four UI locales). `null` renders no
   // `lang` on the body container, so it inherits the document language.
   contentLanguage: z.string().nullable(),
-  /** ISO-8601. Editable from the metadata panel. */
   publishedAt: isoDateTime,
   /** `null` while the entity has never been published. */
   publishedRevisionId: idString.nullable(),
@@ -36,8 +32,8 @@ export const adminMetaBaseDto = z.object({
   deletedAt: isoDateTime.nullable(),
   authorId: idString.nullable(),
   authorName: z.string().nullable(),
-  // Approved comment count for the row's metric row. Populated by
-  // the admin list endpoint; `0` on detail / save paths.
+  // Approved comment count for the row's metric row. Populated by the admin
+  // list endpoint; `0` on detail / save paths.
   commentCount: z.number().int().nonnegative(),
   // The row's `metric.public_id` UUID — the wire identifier the admin
   // comment-count link deep-links with. Empty on detail / save paths.

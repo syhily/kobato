@@ -125,8 +125,8 @@ describe('Utils: generateEditorState', () => {
 
     function testGenerateNodesFromHTML(html: string, callback: (nodes: LexicalNode[]) => void) {
       const editor = createEditor({
-        // lexical swallows errors inside updates by default,
-        // so we need to throw them to fail the test
+        // lexical swallows errors inside updates by default;
+        // onError rethrows so the test fails
         onError: (error) => {
           throw error
         },

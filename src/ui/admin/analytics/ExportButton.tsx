@@ -8,9 +8,6 @@ import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// CSV export for the current view: pulls `analytics.export` and downloads
-// it as a Blob (client-side only — the button disables itself in flight).
-
 export interface ExportButtonProps {
   state: AnalyticsState
   className?: string

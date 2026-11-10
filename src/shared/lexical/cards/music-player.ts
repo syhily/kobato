@@ -1,20 +1,15 @@
-// The `music-player` host card (plan docs/plans/inkling-editor-replacement.md,
-// round R10): kobato's 音乐播放器. The serialized dataset is `playerId` plus
-// the save-time meta snapshot (`name` / `artist` / `cover` / `audioUrl` /
-// `lyric` — the server-owned keys pinned in `@/shared/lexical/artifacts`
-// `MUSIC_PLAYER_META_KEYS`, filled by
-// `@/server/domains/pt/lexical-music-snapshot`); unlike PT, nothing resolves
-// at request time. Same dual-entry sharing contract as `./solution`.
+// The `music-player` host card: kobato's 音乐播放器. Serialized dataset:
+// `playerId` plus the save-time meta snapshot (the server-owned
+// `MUSIC_PLAYER_META_KEYS` from `@/shared/lexical/artifacts`, filled by
+// `@/server/domains/pt/lexical-music-snapshot`); nothing resolves at request
+// time. Same dual-entry contract as `./solution`.
 //
-// Full-fidelity markup mirrors the retired PT public renderer (R13 deleted
-// `src/ui/pt/`): the wrapper div plus the `.aplayer`
-// mount point — carried as data attributes (`data-id` + the meta snapshot)
-// so the hydration-enhancement hook (`useMusicPlayers`) builds the
-// MusicPlayerCard without a
-// server round-trip — plus a static fallback card inside the mount point so
-// the no-JS render shows the song instead of an empty box. The feed variant
-// reproduces the retired PT rssMode figure (cover/audio absolutized against
-// the site origin), or the placeholder paragraph when the snapshot is absent.
+// The markup is the public render: a wrapper div plus the `.aplayer` mount
+// point carrying `data-id` + the meta snapshot as data attributes, so the
+// hydration hook (`useMusicPlayers`) builds the `MusicPlayerCard` without a
+// server round-trip; the static fallback inside shows the song when JS is off.
+// The feed variant emits the feed figure (cover/audio absolutized against the
+// site origin) or the placeholder paragraph when the snapshot is absent.
 
 import type { DecoratorNodeProperty } from '@/inkling/headless'
 
@@ -70,7 +65,6 @@ export interface MusicPlayerCardMeta {
   lyric: string
 }
 
-/** Reads the meta snapshot off the generated node (its dataset type). */
 export function musicPlayerCardMeta(node: MusicPlayerCardMeta): MusicPlayerCardMeta {
   return {
     playerId: node.playerId,
@@ -89,14 +83,11 @@ export function hasMusicPlayerMeta(meta: MusicPlayerCardMeta): boolean {
 }
 
 /**
- * The static fallback card markup (inside the `.aplayer` mount point,
- * replaced by the hydrated `MusicPlayerCard`; the decorate chrome renders the
- * same structure from these constants). It mirrors the player's paused
- * initial render — cover/glyph + meta + an inert progress row (`00:00` /
- * `--:--` + empty track) — so the hydration swap does not shift layout.
+ * Static fallback markup inside the `.aplayer` mount point; mirrors the
+ * player's paused initial render so the hydration swap does not shift layout.
  * `escape` is the caller's text escaper — the server renderer passes
- * `context.escapeText`, the React side relies on JSX escaping and never
- * calls this.
+ * `context.escapeText`; the React side relies on JSX escaping and never calls
+ * this.
  */
 export function musicPlayerFallbackHtml(meta: MusicPlayerCardMeta, escape: (value: string) => string): string {
   const cover =
@@ -125,9 +116,6 @@ export function renderMusicPlayerCard(node: MusicPlayerCardMeta, context: CardRe
         type: 'outer',
       }
     }
-    // PT rssMode parity (the retired pt-html renderMusicPlayer): cover and
-    // audio join the site origin — feed readers resolve URLs off-origin. The
-    // origin arrives through the image render env (answered for both passes).
     const siteOrigin = resolveKobatoImageRenderEnv(context)?.siteOrigin
     const name = escape(meta.name)
     const cover = escape(absolutizeAssetSrcForFeed(meta.cover, siteOrigin))
@@ -141,7 +129,6 @@ export function renderMusicPlayerCard(node: MusicPlayerCardMeta, context: CardRe
   }
 
   if (!hasMusicPlayerMeta(meta)) {
-    // Today's SSR placeholder for an unresolved player (MusicPlayer.tsx).
     const element = elementFromHtml(
       document,
       `<div class="${MUSIC_PLAYER_CARD_CLASSES.wrapper}"><div class="aplayer" data-id="${escape(meta.playerId)}"></div></div>`,

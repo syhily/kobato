@@ -1,8 +1,7 @@
 // Connection gate + test-connection orchestrator for the observability section.
-//
 // The test uses the CURRENTLY SAVED settings only (the request-pinned bundle),
-// never an unsaved draft: proving a credential the admin has not persisted
-// would let a typo unlock a configuration that was never written.
+// never an unsaved draft: proving a credential the admin has not persisted would
+// let a typo unlock a configuration that was never written.
 
 import type { ObservabilitySettingsSlice } from '@/server/domains/observability/config'
 import type { O2Client } from '@/server/domains/observability/o2-client'
@@ -37,7 +36,7 @@ function incomplete(field: 'endpoint' | 'organization' | 'username' | 'password'
 
 /**
  * Validate the saved connection parameters with the SAME grammar the runtime
- * resolver enforces. Throws the actionable field descriptor instead of a
+ * resolver enforces, throwing the actionable field descriptor instead of a
  * generic "invalid configuration".
  */
 export function assertObservabilityConnectionConfig(site: ObservabilitySettingsSlice): void {

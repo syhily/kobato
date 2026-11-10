@@ -47,7 +47,7 @@ function exportMarkdown(editor: LexicalEditor, transformers: Transformer[] = DEF
 
 describe('MarkdownShortcutPlugin transformers', () => {
   it('exports the shared transformer sets wired into the public API', () => {
-    // the element transformers include the custom hr and code block transformers
+    // The element transformers include the custom hr and code block transformers.
     expect(ELEMENT_TRANSFORMERS.map((t) => t.type)).toEqual([
       'element',
       'element',
@@ -57,7 +57,7 @@ describe('MarkdownShortcutPlugin transformers', () => {
       'element',
     ])
     expect(DEFAULT_TRANSFORMERS.length).toBeGreaterThan(ELEMENT_TRANSFORMERS.length)
-    // minimal/basic sets exclude the heading element transformer
+    // Minimal and basic sets exclude the heading element transformer.
     expect(MINIMAL_TRANSFORMERS.some((t) => t === ELEMENT_TRANSFORMERS[0])).toBe(false)
     expect(BASIC_TRANSFORMERS.some((t) => t === ELEMENT_TRANSFORMERS[0])).toBe(false)
   })
@@ -130,9 +130,9 @@ describe('MarkdownShortcutPlugin transformers', () => {
   })
 
   it('does not import code fences as code blocks (fence regexp requires trailing whitespace)', () => {
-    // the CODE_BLOCK regExp /^```(\w{1,10})?\s/ only matches once a space is
-    // typed after the fence, so `$convertFromMarkdownString` leaves the fence
-    // as plain text — the same limitation documented for the round-trip API
+    // The CODE_BLOCK regExp /^```(\w{1,10})?\s/ only matches once a space is
+    // typed after the fence, so $convertFromMarkdownString leaves the fence as
+    // plain text.
     const editor = importMarkdown('```js\nconst x = 1\n```')
     editor.getEditorState().read(() => {
       expect(
@@ -145,9 +145,9 @@ describe('MarkdownShortcutPlugin transformers', () => {
   })
 
   it('transforms a typed fence into a code block on the trailing space keystroke (typing path)', async () => {
-    // plan 052 Step 1: pins the transformer trigger semantics — the fence
-    // fires on the space keystroke after ```lang, producing a code block in
-    // edit mode with the language from the match capture
+    // Pins the transformer trigger semantics: the fence fires on the space
+    // keystroke after ```lang, producing a code block in edit mode with the
+    // language from the match capture.
     const editor = createTestEditor({
       nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, CodeBlockNode, HorizontalRuleNode],
       onError: (error) => {
@@ -166,9 +166,9 @@ describe('MarkdownShortcutPlugin transformers', () => {
 
     for (const char of '```js ') {
       editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, char)
-      // headless editors defer non-discrete commits; flush per keystroke so
-      // each one lands as its own update, the way real typing reaches the
-      // markdown shortcut listener
+      // Headless editors defer non-discrete commits: flush per keystroke so each
+      // one lands as its own update, the way real typing reaches the shortcut
+      // listener.
       await tick()
     }
 

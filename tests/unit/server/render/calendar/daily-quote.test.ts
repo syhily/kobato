@@ -7,10 +7,9 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { getDailyQuote, pickForDate } from '@/server/render/calendar/daily-quote'
 import { LOCAL_QUOTES } from '@/server/render/calendar/local-quotes'
 
-// `getDailyQuote` dispatches on the `sidebar.dailyQuote.source` setting and
-// never throws — a remote outage must fall back to the deterministic local
-// bank. We seed the settings snapshot per test and stub fetch (safeFetch
-// runs on the global fetch), keeping the suite hermetic.
+// `getDailyQuote` dispatches on `sidebar.dailyQuote.source` and never throws — a remote
+// outage falls back to the deterministic local bank. The settings snapshot is seeded per
+// test and the global fetch stubbed (safeFetch runs on it), keeping the suite hermetic.
 
 const DATE = parseISO('2024-04-24')
 const originalFetch = globalThis.fetch

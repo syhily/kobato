@@ -4,12 +4,8 @@ import { getImageFilenameFromSrc } from '@/inkling/nodes/base/utils/content-imag
 
 /**
  * The one fill policy mapping an image card's drag dataset onto the
- * GalleryImage shape (CONTEXT.md "gallery images mirror" persists only
- * ALLOWED_IMAGE_PROPS — this mapping is what decides which dataset fields
- * survive a drop). Previously in two homes — the drop surgery (alt, no
- * row, the filename fallback applied to the dataset beforehand) and the
- * gallery drop (row, the probe fallback, no alt) — so which fields
- * survived depended on the drag direction.
+ * GalleryImage shape (the mirror persists only ALLOWED_IMAGE_PROPS — this
+ * mapping is what decides which dataset fields survive a drop).
  *
  * Policy: src is required (a dataset without one is not an image, and the
  * caller rejects the drop); the filename falls back to the src-derived one

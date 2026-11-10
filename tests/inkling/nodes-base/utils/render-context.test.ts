@@ -204,10 +204,6 @@ describe('createRenderContext', () => {
     })
 
     it('rejects non-allowlisted schemes for both kinds', () => {
-      // `unsupported-scheme:payload` was the rejected media source pinned per
-      // card by the retired test/nodes-base/nodes/media-url-policy.test.ts
-      // drift guard; the seam makes the policy structural, so the adversarial
-      // input is pinned here directly.
       expect(context.safeUrl('navigation', 'unsupported-scheme:payload')).toBe('')
       expect(context.safeUrl('media', 'unsupported-scheme:payload')).toBe('')
       expect(context.safeUrl('media', 'javascript:alert(1)')).toBe('')
@@ -216,9 +212,8 @@ describe('createRenderContext', () => {
 
   describe('isLocalContentImage', () => {
     it("forwards the context's own siteUrl and imageBaseUrl", () => {
-      // The seam property (plan 040 Step 3b): renderers cannot forget to
-      // forward the site config — the b87ecc1 bug class — because the context
-      // carries it.
+      // Seam property: renderers cannot forget to forward the site config —
+      // the context carries it.
       const context = createRenderContext({
         dom,
         siteUrl: 'https://example.com',

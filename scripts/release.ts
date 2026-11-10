@@ -106,7 +106,6 @@ function cmdTag(args: string[]): void {
     throw new Error('gh CLI is required. Install from https://cli.github.com/')
   }
 
-  // Resolve notes file (agent writes release notes here)
   const notesIndex = args.indexOf('--notes-file')
   const notesFile = notesIndex !== -1 && args[notesIndex + 1] ? args[notesIndex + 1] : null
   const notesFlag = notesFile && existsSync(notesFile) ? `--notes-file "${notesFile}"` : '--notes ""'

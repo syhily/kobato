@@ -119,7 +119,7 @@ describe('real SDK assembly: view events cannot be dropped', () => {
     expect(serialized).not.toContain('draft=true')
     expect(serialized).not.toContain('#body')
     // SDK limitation: non-modifiable fields survive and belong to the O2
-    // ingest allowlist (phase 5).
+    // ingest allowlist.
     expect(sent!.device).toBeDefined()
     expect(sent!.context).toBeUndefined()
   })

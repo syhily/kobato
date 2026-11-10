@@ -8,9 +8,8 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// The content/taxonomy noun is a MACHINE kind ('post' | 'page' | 'category' |
-// 'tag') — the catalog's ICU `select` renders it per locale. These cases pin
-// the select/plural output in all four locales and the English fallbacks.
+// The content/taxonomy noun is a machine kind ('post' | 'page' | 'category' | 'tag');
+// the catalog's ICU `select` renders it per locale, in all four locales.
 
 interface Case {
   key: UiMessageId

@@ -7,12 +7,10 @@ import { lexicalStateToHtml } from '@/inkling/headless'
 import { collectLexicalHeadings } from '@/shared/lexical/collect'
 import { createHeadingSlugTracker, slugifyHeadingText } from '@/shared/lexical/heading-slug'
 
-// Contract test (plan docs/plans/inkling-editor-replacement.md, R3
-// consistency obligation): the `headings` derived column written at save
-// time must carry slugs byte-identical to the ids inkling's HTML export
-// stamps on `<hN>` tags — feed/TOC anchors join on them. The kobata side is
-// the port in `@/shared/lexical/heading-slug`; this test runs both sides
-// over the same state and compares.
+// The `headings` derived column written at save time must carry slugs
+// byte-identical to the ids inkling's HTML export stamps on `<hN>` tags —
+// feed/TOC anchors join on them. This test runs both sides over the same
+// state and compares.
 
 const HEADING_TEXTS = [
   'Hello World',

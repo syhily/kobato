@@ -394,8 +394,8 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          // batch-2 image-renderer honesty fix: the old code divided by null and
-          // emitted height="0"; the resize block now requires both dimensions
+          // the resize block requires both dimensions: a missing height must
+          // not emit height="0"
           dataset.width = 3000
           dataset.height = null
           ;(exportOptions.imageOptimization as Record<string, unknown>).defaultMaxWidth = 2000

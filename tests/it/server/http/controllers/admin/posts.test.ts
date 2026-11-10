@@ -63,7 +63,7 @@ async function seedPost(overrides: Partial<typeof postTable.$inferInsert> = {}) 
 async function seedPublishedRevision(postId: number): Promise<number> {
   const [rev] = await db
     .insert(contentTable)
-    // The admin detail DTO reads the revision body as a Lexical state (R9a).
+    // The admin detail DTO reads the revision body as a Lexical state.
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: emptyLexicalBody() })
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: rev.id }).where(eq(postTable.id, postId))

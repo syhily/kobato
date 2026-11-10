@@ -37,8 +37,6 @@ function isComposeMode(value: unknown): value is ComposeMode {
   return value === 'direct' || value === 'broadcast'
 }
 
-// Admin-only compose dialog: a private message to one user, or a broadcast
-// to everyone (optionally answerable).
 export function ComposeNotificationDialog({ open, onOpenChange }: ComposeNotificationDialogProps) {
   const { t } = useI18n()
   const [mode, setMode] = useState<ComposeMode>('broadcast')

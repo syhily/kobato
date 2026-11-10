@@ -21,9 +21,8 @@ const { __resetNotificationMessageWarningsForTests, encodeNotificationDescriptor
 const { createServerTranslator } = await import('@/server/infra/i18n')
 const { SUPPORTED_LOCALES } = await import('@/shared/i18n/locales')
 
-// The resolver is the single read-side seam for every notification surface
-// (inbox, thread, email). These tests pin the fallback contract and the
-// write-time validation; the integration suite pins the read paths.
+// The resolver is the single read-side seam for every notification surface (inbox,
+// thread, email): these tests pin the fallback contract and write-time validation.
 
 function row(overrides: Partial<NotificationRow>): NotificationRow {
   return {
@@ -227,9 +226,8 @@ describe('notification message — write-time validation', () => {
 })
 
 describe('notification message — HTML-shaped params render as plain text', () => {
-  // A production job error such as `Unexpected token '<'` used to throw inside
-  // notifyAdmins and swallow the whole failure notification. Encoding must
-  // accept it, and every read path must return it literally.
+  // A job error such as `Unexpected token '<'` must encode, and every read path must
+  // return it literally — a throw here drops the whole failure notification.
   const SCRIPT = '<script>alert(1)</script>'
   const SYNTAX_ERROR = "Unexpected token '<'"
 

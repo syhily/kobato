@@ -3,11 +3,9 @@ import React from 'react'
 import { createPreviewLease, type PreviewLease } from '@/inkling/utils/preview-lease'
 
 /**
- * Bridges the preview lease (src/utils/preview-lease.ts) to React state: the
- * state holds the current preview URL, replacing or clearing it releases the
- * previous lease, and unmounting releases whatever is still held. Replaces
- * video's hand-rolled `previewThumbnailUrlRef` + replace-and-revoke callback
- * + unmount-cleanup effect.
+ * Bridges the preview lease to React state: the state holds the current preview
+ * URL, replacing or clearing it releases the previous lease, and unmounting
+ * releases whatever is still held.
  */
 export function usePreviewLease(): [string, (blob: Blob | null) => void] {
   const [previewUrl, setPreviewUrl] = React.useState('')

@@ -9,9 +9,9 @@ import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 import { serverMessagesEnUS } from '@/shared/i18n/messages/server/en-US'
 
-// Every system-email string (layout, subjects, bodies, labels and CTA copy)
-// must exist, translated, in all four server catalogs. Server-only on purpose:
-// this copy never enters the client UI payload.
+// Every system-email string (layout, subjects, bodies, labels, CTA copy) must exist,
+// translated, in all four server catalogs. Server-only on purpose: this copy never enters
+// the client UI payload.
 interface Case {
   key: ServerMessageId
   params?: Record<string, string | number>

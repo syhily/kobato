@@ -6,16 +6,16 @@ import type { AvatarSource } from '@/shared/utils/avatar'
 
 import { AVATAR_SOURCES } from '@/shared/utils/avatar'
 
-// Per-slot status surfaced to the admin form. `etag` drives cache-busting
-// and the "is configured?" check; we send the hash, NOT the bytes.
+// Per-slot status surfaced to the admin form. `etag` drives cache-busting and the
+// "is configured?" check; only the hash is sent, never the bytes.
 export interface BrandingSlotStatus {
   /** Empty string when the slot has no custom upload. */
   etag: string
 }
 
-// Zod twins of the two masked loader shapes — the runtime gate of the
-// settings save response (see `projectSectionForAdmin`): the save
-// round-trip must produce exactly the shape the loader serves.
+// Zod twins of the two masked loader shapes — the runtime gate of the settings save
+// response (see `projectSectionForAdmin`): the save round-trip must produce exactly
+// the shape the loader serves.
 
 const brandingSlotStatusSchema = z.object({ etag: z.string() })
 
@@ -129,9 +129,8 @@ export interface AssetsLoaderShape {
   }
 }
 
-// Mirrors `MailSettings` with the two secrets swapped for their masks;
-// the outer `mail:` wrapper matches `mailSchema` so card patches validate
-// without translation.
+// Mirrors `MailSettings` with the two secrets swapped for their masks; the outer
+// `mail:` wrapper matches `mailSchema` so card patches validate without translation.
 export interface MailLoaderShape {
   mail: {
     enabled: boolean
@@ -150,9 +149,9 @@ export interface MailLoaderShape {
   }
 }
 
-// Mirrors `CommentsSettings` with the GitHub token swapped for its mask;
-// the outer `comments:` wrapper matches `commentsSchema` so card patches
-// validate without translation.
+// Mirrors `CommentsSettings` with the GitHub token swapped for its mask; the outer
+// `comments:` wrapper matches `commentsSchema` so card patches validate without
+// translation.
 export interface CommentsLoaderShape {
   comments: {
     size: number
@@ -166,7 +165,6 @@ export interface CommentsLoaderShape {
   }
 }
 
-/** Project raw `AssetsSettings` into the shape `<AssetsForm>` expects (secret masking, defaulted upload limits). */
 interface RawBrandingRef {
   etag?: string
 }
@@ -175,6 +173,7 @@ function statusOf(ref: RawBrandingRef | undefined | null): BrandingSlotStatus {
   return { etag: typeof ref?.etag === 'string' ? ref.etag : '' }
 }
 
+/** Project raw `AssetsSettings` into the shape `<AssetsForm>` expects (secret masking, defaulted upload limits). */
 export function projectAssetsForAdmin(
   assets: {
     asset: { host: string; scheme: 'http' | 'https' }
@@ -295,8 +294,8 @@ export function projectCommentsForAdmin(
 }
 
 // Mirrors `BackupSettings` plus the password mask slot; the redacted
-// `encryption.password` ('') rides along so card patches keep validating
-// against the section schema.
+// `encryption.password` ('') rides along so card patches keep validating against
+// the section schema.
 export interface BackupLoaderShape {
   scheduled: BackupSettings['scheduled']
   retention: BackupSettings['retention']
@@ -314,8 +313,8 @@ export function projectBackupForAdmin(backup: BackupSettings, passwordMask?: str
   }
 }
 
-// Compile-time parity: the Zod twins must stay isomorphic to the
-// hand-written interfaces the forms consume.
+// Compile-time parity: the Zod twins must stay isomorphic to the hand-written
+// interfaces the forms consume.
 type _assetsShapeParity = Assert<Equals<z.infer<typeof assetsLoaderShapeSchema>, AssetsLoaderShape>>
 type _mailShapeParity = Assert<Equals<z.infer<typeof mailLoaderShapeSchema>, MailLoaderShape>>
 type _commentsShapeParity = Assert<Equals<z.infer<typeof commentsLoaderShapeSchema>, CommentsLoaderShape>>

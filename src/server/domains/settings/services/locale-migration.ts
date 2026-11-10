@@ -1,15 +1,11 @@
-// One-time, idempotent normalization of the persisted `siteIdentity.locale`.
-//
-// Rows written before the four-locale set existed carry bare or
-// script-qualified BCP 47 tags. The read schema canonicalizes them too, so a
-// legacy value can never drop the section (and with it the whole install); this
-// pass is the first line, rewriting the stored value once BEFORE the settings
-// snapshot is built so every downstream consumer (cache keys, ETag inputs,
-// feed/email rendering) sees exactly one canonical tag.
-//
-// No `system.*` flag row: settings are single-row data, unlike the corpus-wide
-// backfills that need a flag. Re-running is safe — a canonical value performs
-// zero writes and logs nothing.
+// One-time, idempotent normalization of the persisted `siteIdentity.locale`: legacy
+// bare or script-qualified BCP 47 tags are rewritten once BEFORE the settings snapshot
+// is built, so every downstream consumer (cache keys, ETag inputs, feed/email rendering)
+// sees exactly one canonical tag. The read schema canonicalizes the same aliases, so a
+// legacy value can never drop the section (and with it the whole install). No
+// `system.*` flag row: settings are single-row data, unlike the corpus-wide backfills
+// that need a flag — re-running is safe, a canonical value performs zero writes and
+// logs nothing.
 
 import type { Database } from '@/server/infra/db/database'
 import type { AppLocale } from '@/shared/i18n/locales'

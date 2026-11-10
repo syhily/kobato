@@ -4,9 +4,9 @@
 // ETags) goes through this module — never a per-call re-derivation, never a
 // locale → time zone inference.
 //
-// UI locale and site time zone are separate facts: `en-US` + `Asia/Shanghai`
-// is a valid configuration, and the browser time zone stays analytics-only.
-// The boot token (`revision`) is request identity; the per-scope content hashes
+// UI locale and site time zone are separate facts: `en-US` + `Asia/Shanghai` is a
+// valid configuration, and the browser time zone stays analytics-only. The boot
+// token (`revision`) is request identity; the per-scope content hashes
 // (`revisions`) are what cache keys and ETags consume.
 
 import type { RepresentationRevisions } from '@/shared/config/representation-scopes'
@@ -48,10 +48,10 @@ export interface AppSnapshot {
 export const PRE_INSTALL_TIME_ZONE = 'UTC'
 
 /**
- * Resolve the localization from an explicit settings snapshot. Omit the
- * argument for the current process snapshot (background jobs: the send-time
- * snapshot). A request must pass the SAME captured snapshot it renders with,
- * so the cache key's revision and the rendered bytes can never disagree.
+ * Resolve the localization from an explicit settings snapshot. Omit the argument
+ * for the current process snapshot (background jobs: the send-time snapshot). A
+ * request must pass the SAME captured snapshot it renders with, so the cache key's
+ * revision and the rendered bytes can never disagree.
  */
 export function resolveAppLocalization(
   snapshot: BlogSettingsSnapshot = getBlogSettingsSnapshotSync(),
@@ -83,10 +83,9 @@ export function captureAppSnapshot(): AppSnapshot {
 
 /**
  * Per-request lazy memo: capture on FIRST access, then pin bundle + revision +
- * localization for that request. Request context is derived before settings
- * hydrate, so the accessor must not read the snapshot eagerly — every surface
- * that builds a RequestContext projects this accessor instead of resolved
- * values. Both `settings` and `localization` MUST come from this one capture.
+ * localization for that request. Request context is derived before settings hydrate,
+ * so the accessor must not read the snapshot eagerly. Both `settings` and
+ * `localization` MUST come from this one capture.
  */
 export function createLazyAppSnapshot(): () => AppSnapshot {
   let captured: AppSnapshot | null = null

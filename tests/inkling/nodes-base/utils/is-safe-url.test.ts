@@ -33,7 +33,7 @@ describe('isSafeUrl', () => {
     // export-side navigation policy keeps only http/https/relative. The input
     // side (`isPasteableLinkUrl` in `@/inkling/plugins/behaviour/clipboard-protocol`)
     // deliberately accepts these schemes; the divergence is pinned in
-    // `test/unit/plugins/behaviour/clipboard-protocol.test.tsx`.
+    // `tests/inkling/unit/plugins/behaviour/clipboard-protocol.test.tsx`.
     expect(isSafeUrl('mailto:test@example.com')).toBe(false)
     expect(isSafeUrl('tel:+1234567890')).toBe(false)
     expect(isSafeUrl('ftp://example.com/file.txt')).toBe(false)

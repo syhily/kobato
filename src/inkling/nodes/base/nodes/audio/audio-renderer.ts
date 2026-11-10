@@ -153,7 +153,7 @@ function frontendTemplate(
   const playbackRate = document.createElement('button')
   playbackRate.setAttribute('class', 'inkling-audio-playback-rate')
   playbackRate.setAttribute('aria-label', 'Adjust playback speed')
-  playbackRate.innerHTML = '1&#215;' // innerHTML not textContent because we need the HTML entity
+  playbackRate.innerHTML = '1&#215;' // innerHTML, not textContent: the &#215; entity must be parsed
   audioPlayer.appendChild(playbackRate)
 
   const unmuteIcon = document.createElement('button')

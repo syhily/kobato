@@ -95,9 +95,8 @@ describe('integration / webmention outbox enqueue on publish', () => {
     expect(added?.status).toBe('pending')
   })
 
-  // R14: the publish hook extracts links from the Lexical state directly, so
-  // the RPC publish path enqueues for real again (the R9a interregnum degraded
-  // it to a warning).
+  // The publish hook extracts links from the Lexical state directly, so the RPC
+  // publish path enqueues outbox rows for real.
   it('the RPC publish path enqueues the outbox rows for real', async () => {
     const ctx = makeAuthedCtx({ role: 'admin', db })
     const createRes = await callRpc('/admin/posts/upsertMeta', { title: 'Hook Real', summary: '', tags: [] }, ctx)

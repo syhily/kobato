@@ -10,9 +10,8 @@ export const adminCategoryDto = z.object({
   og: z.string().nullable(),
   description: z.string(),
   sortOrder: z.number().int(),
-  // Live post count referencing this row — mirrors the delete-block
-  // guard's view (postCount > 0 → 409). Computed by the service, not
-  // persisted.
+  // Live post count; mirrors the delete-block guard (postCount > 0 → 409).
+  // Computed by the service, not persisted.
   postCount: z.number().int().nonnegative(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,

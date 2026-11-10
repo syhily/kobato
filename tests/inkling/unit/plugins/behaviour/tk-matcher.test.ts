@@ -2,11 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import { getTKMatch } from '@/inkling/plugins/behaviour/tk-matcher'
 
-// Data-driven pins for the TK entity matcher
-// (src/plugins/behaviour/tk-matcher.ts). Offsets are UTF-16 code-unit indexes
-// into the input; the match spans the TK plus any adjacent symbol chars.
-// Editor wiring (useInklingTextEntity transforms, indicators) lives in
-// test/unit/plugins/TKPlugin.test.tsx.
+// Data-driven pins for the TK entity matcher. Offsets are UTF-16 code-unit
+// indexes into the input; the match spans the TK plus any adjacent symbol
+// chars. Editor wiring (useInklingTextEntity transforms, indicators) lives
+// in TKPlugin.test.tsx.
 
 const MATCH_CASES: Array<[string, { start: number; end: number } | null]> = [
   // empty / no match

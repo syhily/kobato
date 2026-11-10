@@ -1,8 +1,7 @@
 import { normalizeForMatch } from '@/server/domains/webmentions/verify'
 import { WEBMENTION_TYPES } from '@/shared/contracts/webmentions'
 
-// mf2 response-type classification for received webmentions (async-inbox
-// design, docs/plans/2026-08-02-webmention-async-inbox-design.md). Only
+// mf2 response-type classification for received webmentions. Only
 // markers carried ON the anchor count — a marker on a wrapper element
 // classifies as `mention`; verification never depends on the type, so a
 // miss costs presentation grouping, never acceptance.

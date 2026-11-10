@@ -3,8 +3,6 @@ import { z } from 'zod'
 import { adminMetaBaseDto } from '@/shared/contracts/admin-meta'
 import { adminRevisionDto } from '@/shared/contracts/revision'
 
-// Shared content meta fields come from `adminMetaBaseDto`; only the
-// page-only field is stated here.
 export const adminPageDto = adminMetaBaseDto.extend({
   /** Render the global friends grid at the bottom of the page detail route. */
   showFriends: z.boolean(),

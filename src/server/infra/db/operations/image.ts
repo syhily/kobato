@@ -182,7 +182,6 @@ export async function updateImageNote(db: Database, id: number, note: string | n
   return rows[0] ?? null
 }
 
-/** Re-reads joined with `user` so the admin shell gets the full DTO in one call. */
 export async function updateImageNoteWithUploader(
   db: Database,
   id: number,
@@ -196,7 +195,6 @@ export async function updateImageThumbhash(db: Database, id: number, thumbhash: 
   return rows[0] ?? null
 }
 
-/** Re-reads joined with `user` so the admin shell gets the full DTO in one call. */
 export async function updateImageThumbhashWithUploader(
   db: Database,
   id: number,

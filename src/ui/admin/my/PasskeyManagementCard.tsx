@@ -24,8 +24,8 @@ function isPublicKeyCredentialCreationOptionsJSON(value: unknown): value is Publ
   return isRecord(value) && typeof value.challenge === 'string'
 }
 
-// Module scope because React Compiler can't lower `throw` inside a
-// component's try/catch; the caller's catch maps failures to user-facing copy.
+// Module scope: React Compiler can't lower `throw` inside a component's try/catch;
+// the caller's catch maps failures to user-facing copy.
 function resolveRegistrationOptions(response: unknown): PublicKeyCredentialCreationOptionsJSON {
   if (!isRecord(response) || !('options' in response)) {
     throw new Error('Invalid registration response')

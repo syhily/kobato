@@ -24,12 +24,10 @@ import { serverMessagesZhCN } from '@/shared/i18n/messages/server/zh-CN'
 import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
 import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
 
-// The `content.*` read procedures over the real RPCHandler JSON round-trip:
-// union signals (redirect / not-modified), NOT_FOUNDs, and happy-path payloads.
+// The `content.*` read procedures over the real RPCHandler JSON round-trip.
 
 const db = getTestDb()
 
-/** A public document's message ids: the shared public allowlist. */
 function publicUiKeys(catalog: Record<string, string>): string[] {
   return Object.keys(catalog)
     .filter((key) => isPublicMessageKey(key))
@@ -78,7 +76,6 @@ async function seedPost(
   return postId
 }
 
-/** A draft post: unpublished, hidden, no published revision pointer, one draft revision. */
 async function seedDraftPost(slug: string, title: string, authorId: number | null = null): Promise<number> {
   const rows = await db
     .insert(postTable)
@@ -208,7 +205,7 @@ describe('content.bootstrap', () => {
 
     expect(json.i18n.locale).toBe('zh-CN')
     expect(json.i18n.messages['common.action.save']).toBe('保存')
-    // Workspace-only families stay home — not just `admin.*`:
+    // Workspace-only families are excluded, not just `admin.*`:
     expect(json.i18n.messages['admin.settings.general.title']).toBeUndefined()
     expect(json.i18n.messages['backup.error.notFound']).toBeUndefined()
     expect(json.i18n.messages['storage.error.invalidPath']).toBeUndefined()
@@ -511,9 +508,7 @@ describe('content.posts.bySlug', () => {
   })
 
   it('never 304s a draft preview against the stale published ETag (unpublish keeps published_at)', async () => {
-    // Published once (the browser cached ETag(id, 2024-01-01)), then
-    // unpublished: `published_at` survives, so the old re-check minted the
-    // SAME etag for the swapped draft body and wrongly answered 304.
+    // `published_at` survives an unpublish, so the published ETag must never revalidate a draft body.
     const rows = await db
       .insert(postTable)
       .values({
@@ -545,8 +540,7 @@ describe('content.posts.bySlug', () => {
   })
 
   it('never 304s a first-draft preview (constant etag over null published_at)', async () => {
-    // Never published: `post.updated` is null, so the old etag never moved
-    // between draft edits — a repeat preview revalidated into a stale draft.
+    // Never published: `updated` is null, so a constant ETag would revalidate a stale draft.
     const postId = await seedDraftPost('fresh', 'Fresh', 1)
     const firstPreviewEtag = weakEtag(['post', String(postId), undefined])
 
@@ -563,10 +557,8 @@ describe('content.posts.bySlug', () => {
   })
 
   it('serves the saved body_html projection raw — sanitization is the render boundary', async () => {
-    // Raw-at-rest invariant: the wire DTO carries the UNSANITIZED projection
-    // and the public body renderer owns the 'body'-strategy sanitize pass.
-    // Pin both directions — no server-side stripping (the payload survives
-    // verbatim) and no server-side escaping (markup stays markup).
+    // Raw-at-rest invariant: the wire DTO carries the UNSANITIZED projection and the public body
+    // renderer owns the 'body'-strategy sanitize pass — no server-side stripping or escaping.
     const raw = '<p>raw <strong>body</strong></p><form action="https://evil.example"><button>x</button></form>'
     await seedPost({ slug: 'raw-body', publishedAt: new Date('2024-01-01') })
     await db.update(contentTable).set({ bodyHtml: raw })
@@ -620,8 +612,7 @@ describe('content.pages.bySlug', () => {
     expect(typeof json.etag).toBe('string')
     expect(json.payload.page.permalink).toBe('/about')
     expect(json.payload.showFriends).toBe(false)
-    // Seeded with an empty Lexical body and no projection columns, so the
-    // compute-on-read fallback resolves to the empty string.
+    // Empty Lexical body and no projection columns: the compute-on-read fallback yields ''.
     expect(json.payload.bodyHtml).toBe('')
   })
 
@@ -684,7 +675,8 @@ describe('content.pages.bySlug', () => {
     const first = await callRpc('/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
     const publishedEtag = (await parseRpcJson<{ etag: string }>(first)).etag
 
-    // `draft: true` must skip revalidation, or a match answers `not-modified` and the draft never renders.
+    // `draft: true` must skip revalidation, or a match answers `not-modified` and the draft never
+    // renders.
     const res = await callRpc(
       '/content/pages/bySlug',
       { slug: 'about', draft: true, ifNoneMatch: publishedEtag },

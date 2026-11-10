@@ -22,10 +22,9 @@ import { resolveCardMenuCommand } from '@/inkling/nodes/cards/card-commands'
 import { resolveCardFacts } from '@/inkling/nodes/cards/card-facts'
 
 /**
- * The menu/drag icons the declarations name by `CardIconId`. This is the one
- * React-bearing attachment point for card menu data: every icon is an SVGR
- * component (`*.svg?react`), so the map cannot live in the React-free
- * declaration modules.
+ * The menu/drag icons the declarations name by `CardIconId`: every icon is an SVGR
+ * component (`*.svg?react`), so the map cannot live in the React-free declaration
+ * modules.
  */
 const CARD_ICONS = {
   audio: AudioCardIcon,
@@ -46,23 +45,19 @@ const CARD_ICONS = {
 } satisfies Record<CardIconId, NonNullable<MenuItem['Icon']>>
 
 /**
- * Resolves a menu/drag icon named by `CardIconId` to its SVGR component —
- * the same table the built-in menu projection reads. Exported for
- * `defineCard` (`@/inkling/nodes/cards/host-cards`): host menu entries may name a
- * built-in icon by id instead of passing a component.
+ * Resolves a menu/drag icon named by `CardIconId` to its SVGR component. Exported
+ * for `defineCard`: host menu entries may name a built-in icon by id instead of
+ * passing a component.
  */
 export function resolveCardIcon(id: CardIconId): NonNullable<MenuItem['Icon']> {
   return CARD_ICONS[id]
 }
 
 /**
- * The one menu projection every view shares: a card's menu spec resolved to
- * `MenuItem[]` — the icon (a built-in `CardIconId` or, for host cards, an
- * SVG component directly) becomes the SVGR component and the entry's named
- * `command` (`CardMenuCommand`, or a raw `LexicalCommand` on host entries)
- * becomes its `insertCommand` through `resolveCardMenuCommand`. Built-in
- * declarations and host specs flow through this same function; there is no
- * host-side copy.
+ * The one menu projection every view shares: the icon (a built-in `CardIconId` or,
+ * for host cards, an SVG component directly) becomes the SVGR component and the
+ * entry's named `command` becomes its `insertCommand`. Built-in declarations and
+ * host specs flow through the same function.
  */
 function projectMenuEntries(
   nodeType: string,
@@ -76,10 +71,8 @@ function projectMenuEntries(
 }
 
 /**
- * Resolves a card's slash/plus menu entries from its merged facts — what the
- * hand-written `CARD_MENUS` map keyed by node type used to hold. A card whose
- * declaration carries no `menu` resolves none. Consumed by `getCardDragIcon`
- * and `getEditorCardNodes`.
+ * Resolves a card's slash/plus menu entries from its merged facts. A card whose
+ * declaration carries no `menu` resolves none.
  */
 export function resolveCardMenuEntries(facts: CardFacts): MenuItem[] | undefined {
   // `in` narrows the built-in union to the declarations carrying the
@@ -94,12 +87,10 @@ export function resolveCardMenuEntries(facts: CardFacts): MenuItem[] | undefined
 }
 
 /**
- * Resolves a card's drag-preview icon from its merged facts — what the
- * thirteen `getIcon()` copies returned. An explicit `dragIcon` on the
- * declaration wins; otherwise menu-bearing cards use their first menu entry's
- * icon (Image's two-entry menu keeps the Image icon, not the GIF one). The
- * menu-less footnote definition resolves no icon — it lives in the doc-end
- * run and the run-invariant transform re-parks it anyway.
+ * Resolves a card's drag-preview icon from its merged facts. An explicit `dragIcon`
+ * on the declaration wins; otherwise menu-bearing cards use their first menu entry's
+ * icon (Image's two-entry menu keeps the Image icon, not the GIF one). The menu-less
+ * footnote definition resolves no icon.
  */
 export function resolveCardDragIcon(facts: CardFacts): MenuItem['Icon'] {
   const raw =

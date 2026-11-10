@@ -4,8 +4,8 @@ import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
-// The login / install screen shares the admin Tailwind entry (`admin.css`),
-// keeping the public site's `public.css` out of this route's chunk.
+// Login / install share the admin Tailwind entry (`admin.css`), keeping the public site's `public.css` out of
+// this route's chunk.
 import '@/styles/admin.css'
 
 // Skips `<BaseLayout>` for this tree so the admin/login stack owns its own chrome.

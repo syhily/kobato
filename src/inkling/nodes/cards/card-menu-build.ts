@@ -37,11 +37,10 @@ export interface MenuItem extends MenuItemBase {
   insertParams?: Record<string, unknown> | (() => Record<string, unknown>)
 }
 
-/** The menu data one card contributes — historically the node class's static
- * `cardMenu`; now declaration-derived data (see `getEditorCardNodes`). The
- * card declarations normalize menus to arrays; a bare object is still
- * tolerated as a single entry — the shape is part of the buildCardMenu
- * contract (pinned by test/unit/buildCardMenu.test.ts). */
+/** The menu data one card contributes — declaration-derived data (see
+ * `getEditorCardNodes`). The card declarations normalize menus to arrays; a bare
+ * object is still tolerated as a single entry — the shape is part of the
+ * buildCardMenu contract (pinned by tests/inkling/unit/buildCardMenu.test.ts). */
 export type CardMenu = MenuItem | MenuItem[]
 
 /** What buildCardMenu reads from each registered card: its menu entries.
@@ -64,10 +63,9 @@ export type CardMenuInsertParams = Pick<ResolvedMenuItem, 'insertParams' | 'quer
 
 /**
  * What the menu build reads from the host config — the FLAT subset of
- * `CardConfig`'s feature slices the declarations' `isHidden` gates and the
- * snippet list consume. Typed as this closed subset (never the whole
- * `CardConfig`), so a host menu entry cannot smuggle a slice the build does
- * not read, and the caller composes exactly these keys.
+ * `CardConfig`'s feature slices the declarations' `isHidden` gates and the snippet
+ * list consume. Typed as this closed subset, so a host menu entry cannot smuggle a
+ * slice the build does not read.
  */
 export interface MenuBuildConfig {
   /** GifSettings keys — the gif menu entry's hide gate. */
@@ -108,8 +106,7 @@ export interface BuildCardMenuResult {
   /** Every resolved item in render order — `items[i]` is exactly what CardMenu
    * renders with `data-inkling-cardmenu-idx="i"`, so keyboard selection reads
    * the list instead of scraping the DOM. Derived from the final sorted
-   * `sections` and sharing item identity with them, so the two views can't
-   * drift. */
+   * `sections`, sharing item identity with them so the two views can't drift. */
   items: ResolvedMenuItem[]
   maxItemIndex: number
 }
@@ -128,10 +125,10 @@ export function buildCardMenu(
       return
     }
 
-    // labels resolve at build time (C7): the declaration's English text is the
-    // fallback, so the default path (no resolver) is byte-identical. Function-
-    // form `matches` receives the RESOLVED label; array-form `matches` stays
-    // as declared (English aliases).
+    // labels resolve at build time: the declaration's English text is the fallback,
+    // so the default path (no resolver) is byte-identical. Function-form `matches`
+    // receives the RESOLVED label; array-form `matches` stays as declared (English
+    // aliases).
     const label = item.labelKey ? (resolveLabel?.(`menu.${item.labelKey}.label`, item.label) ?? item.label) : item.label
 
     const matches =
@@ -153,7 +150,7 @@ export function buildCardMenu(
     if (resolvedItem.insertParams === undefined) {
       // the spread above always writes the key; the pre-resolution shape only
       // carries insertParams when the declaration set it (item deep-equality
-      // in test/unit/buildCardMenu.test.ts pins key absence)
+      // in tests/inkling/unit/buildCardMenu.test.ts pins key absence)
       delete resolvedItem.insertParams
     }
     if (resolvedItem.desc !== undefined && item.labelKey) {
@@ -171,7 +168,6 @@ export function buildCardMenu(
   }
 
   for (const [nodeType, source] of nodes) {
-    // a card whose declaration carries no `menu` contributes no items
     if (!source.cardMenu) {
       continue
     }
@@ -184,7 +180,6 @@ export function buildCardMenu(
     addMenuItem(snippetMenuItem)
   })
 
-  // sort each menu section by priority
   menu = new Map(
     [...menu.entries()].map(([section, items]) => {
       return [
@@ -203,7 +198,6 @@ export function buildCardMenu(
     }),
   )
 
-  // sort primary section to always display first
   menu = new Map(
     [...menu.entries()].sort((a, b) => {
       if (a[0] === 'Primary') {

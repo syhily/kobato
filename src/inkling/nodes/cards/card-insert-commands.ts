@@ -13,23 +13,20 @@ export interface CardInsertRegistration {
   command: AnyLexicalCommand
   insert: CardInsertSpec
   /**
-   * Host cards whose picker spec carries `autoOpenOnInsert` (CONTEXT.md:
-   * "pick seam"): the registrar opens the card's picker on the freshly
-   * inserted node. Built-in entries never carry it — pickers are host-only.
+   * Host cards whose picker spec carries `autoOpenOnInsert`: the registrar opens
+   * the picker on the freshly inserted node. Built-in entries never carry it —
+   * pickers are host-only.
    */
   pickerAutoOpen?: boolean
 }
 
 /**
- * Wrapper-layer projection of the card declarations (plan 043): each
- * insert-bearing declaration paired with the wrapper node class the
- * registration guards and constructs (from the `card-wrappers` projection)
- * and the card's insert command, derived from its node type by
- * `resolveCardInsertCommand` — the declaration's insert spec carries only
- * flags, never a command object. Kept out of the declaration modules so they
- * stay React-free; the registrar (`@/inkling/plugins/CardInsertPlugin`) is the
- * derived view over this list. Cards whose declaration carries no `insert`
- * (HorizontalRule, the footnote definition) drop out here.
+ * Wrapper-layer projection of the card declarations: each insert-bearing declaration
+ * paired with the wrapper node class the registration constructs and the card's
+ * insert command, derived from its node type by `resolveCardInsertCommand` (the
+ * insert spec carries only flags, never a command object). Kept out of the
+ * declaration modules so they stay React-free; the registrar
+ * (`@/inkling/plugins/CardInsertPlugin`) is the derived view over this list.
  */
 export const CARD_INSERT_COMMANDS: CardInsertRegistration[] = CARD_WRAPPER_NODES.flatMap((declaration) => {
   // `in` narrows the union to the declarations carrying the optional insert entry
@@ -53,14 +50,11 @@ const CARD_INSERT_COMMANDS_BY_TYPE = new Map(
 
 /**
  * The full insert-registration view the registrar (`@/inkling/plugins/CardInsertPlugin`)
- * reads: every card's insert projection in the merged card order — built-in
- * declarations first, host cards (CONTEXT.md: "host card") after — owned by
- * `@/inkling/nodes/cards/card-facts`; this view only projects each side to its
- * registration (the built-in side reusing the `CARD_INSERT_COMMANDS` entries
- * verbatim). A function rather than a constant so host cards defined after
- * module init still join — the per-card `hasNodes` guard at the registration
- * site keeps a surface that did not compose the card's node from registering
- * its command.
+ * reads: every card's insert projection in the merged card order (built-ins first,
+ * host cards after), with built-in entries reused from `CARD_INSERT_COMMANDS`
+ * verbatim. A function rather than a constant so host cards defined after module
+ * init still join; the per-card `hasNodes` guard at the registration site keeps a
+ * surface that did not compose the card's node from registering its command.
  */
 export function getCardInsertRegistrations(): CardInsertRegistration[] {
   return resolveAllCardFacts().flatMap((facts) => {
@@ -75,11 +69,9 @@ export function getCardInsertRegistrations(): CardInsertRegistration[] {
     return [
       {
         nodeType: facts.nodeType,
-        // the registry stores the raw spec; the class comes from the same
-        // memoized assembler defineCard used, so the registration guards and
-        // constructs the exact class the host composed — and the insert
-        // command derives from the node type through the same resolver the
-        // menu projection uses, so dispatch and registration name one object
+        // the class comes from the same memoized assembler defineCard used, and the
+        // command from the same resolver the menu projection uses, so dispatch and
+        // registration agree
         node: assembleCardNodeOnce<LexicalNode>(facts.host.spec),
         command: resolveCardInsertCommand(facts.nodeType),
         insert,

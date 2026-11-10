@@ -125,9 +125,8 @@ describe('db-lifecycle', () => {
   })
 
   it('reopens a closed handle, reinitializes batchers, and stays idempotent', async () => {
-    // The previous case left the engine closed (module state persists
-    // across cases in a file) — bring it back before exercising the
-    // close/reopen cycle, and discount its wiring from the counts.
+    // The prior case left the engine closed (module state persists across cases) — reopen
+    // before exercising the cycle, and discount that wiring from the counts.
     await reopenDatabase()
     initAllBatchers.mockClear()
     const handle = getDatabaseHandle()

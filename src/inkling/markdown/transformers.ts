@@ -36,8 +36,7 @@ export const HR = {
   export: (node: LexicalNode) => {
     return $isHorizontalRuleNode(node) ? '---' : null
   },
-  // trigger only: the regex and replace-and-select live in the card-shortcut
-  // seam (@/markdown/card-shortcuts)
+  // trigger only: the regex and replace-and-select live in the card-shortcut seam
   regExp: DIVIDER_REGEXP,
   replace: (parentNode: ElementNode, _children: LexicalNode[], _match: string[], isImport: boolean) => {
     $insertHorizontalRuleForMarkdownTrigger(parentNode, isImport ? 'import' : 'typing')
@@ -51,13 +50,10 @@ export const CODE_BLOCK = {
     if (!$isCodeBlockNode(node)) {
       return null
     }
-    // the fence shape is single-sourced in the card-shortcut seam; this
-    // transformer's variance is the text source (getTextContent)
     return codeBlockFence(node.language, node.getTextContent())
   },
-  // trigger only: the regex lives in the shared grammar table
-  // (`@/inkling/markdown/grammar`), and the trailing `\s` there is what makes the
-  // fence fire on the space keystroke
+  // trigger only: the trailing `\s` in the shared grammar regex is what makes
+  // the fence fire on the space keystroke
   regExp: FENCE_TRANSFORMER_REGEXP,
   replace: (parentNode: ElementNode, _children: LexicalNode[], match: string[]) => {
     $insertCodeBlockForShortcut(parentNode, match[1])

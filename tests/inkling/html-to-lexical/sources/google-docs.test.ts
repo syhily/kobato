@@ -18,8 +18,8 @@ const wrapperMap = {
   },
 }
 
-// This function does not suppose to do anything, it's only used as a trigger
-// for auto-formatting and syntax highlighting in vscode.
+// Editor-only helper: exists solely to trigger auto-formatting and syntax
+// highlighting in VS Code.
 export function html(strings: TemplateStringsArray, ...params: unknown[]) {
   let output = ''
   for (let i = 0; i < strings.length; i++) {

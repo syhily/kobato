@@ -12,8 +12,7 @@ import { Image } from '@/ui/public/widgets/Image'
 
 interface PostRowProps {
   post: AdminPostDto
-  /** Receives the category ID + display name — the posts-list filter pill
-   *  keys by id and shows the name. */
+  /** Receives the category ID + display name — the filter pill keys by id and shows the name. */
   onFilterCategory?: (categoryId: string, categoryName: string) => void
 }
 
@@ -84,7 +83,6 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       )}
       data-deleted={isDeleted || undefined}
     >
-      {/* Thumbnail */}
       <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {post.cover ? (
           <Image src={post.cover} alt="" width={200} height={125} className="size-full object-cover" loading="lazy" />
@@ -95,9 +93,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
         )}
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
-        {/* Title */}
         <div className="flex items-center gap-1.5">
           <Link
             to={`/editor/post/${post.id}`}
@@ -108,7 +104,6 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
           {post.pinnedAt !== null && <PinIcon className="size-3.5 shrink-0 text-status-warn-fg" />}
         </div>
 
-        {/* Meta */}
         <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
           {tRich('admin.posts.row.authorIn', {
             author: post.authorName || '—',
@@ -131,13 +126,11 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
           {dateText}
         </p>
 
-        {/* Status */}
         <div className="mt-1">
           <PostStatusText post={post} />
         </div>
       </div>
 
-      {/* Comment count */}
       <Link
         to={`/admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}
         className="hidden w-(--spacing-admin-col-narrow) shrink-0 items-center gap-1 text-(--text-admin-sm) text-muted-foreground transition-colors hover:text-foreground md:flex"
@@ -146,7 +139,6 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
         <span className="tabular-nums">{post.commentCount}</span>
       </Link>
 
-      {/* CTA button */}
       <Link
         to={`/editor/post/${post.id}`}
         className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"

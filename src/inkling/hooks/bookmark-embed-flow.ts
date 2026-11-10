@@ -1,14 +1,10 @@
 /**
- * The bookmark embed flow — the headless module behind `useBookmarkMetadata`
- * (the fetch choreography for a bookmark card's metadata): the loading/
- * urlError machine, the init-vs-submit divergence, and the defensive
- * `isEmbedResponse` classifier, composed from the tracked-request skeleton
- * (src/utils/services/service-machine.ts) over the request-track guard
- * (CONTEXT.md "request track") so the latest ISSUED fetch wins — an
- * impatient `submitUrl` supersedes a slower mount-time fetch, which
- * previously could resolve last and patch the node (or paste-as-link) over
- * the newer result. The React hook is the thin adapter: snapshot out,
- * intents in.
+ * The bookmark embed flow — headless module behind `useBookmarkMetadata`: the
+ * loading/urlError machine, the init-vs-submit divergence, and the defensive
+ * `isEmbedResponse` classifier, composed from the tracked-request skeleton over
+ * the request-track guard so the latest ISSUED fetch wins — an impatient
+ * `submitUrl` supersedes a slower mount-time fetch that would otherwise resolve
+ * last and patch the node (or paste-as-link) over the newer result.
  */
 
 import type { LexicalEditor, NodeKey } from 'lexical'
@@ -23,8 +19,8 @@ import { createRequestTrack } from '@/inkling/utils/services/request-track'
 import { runTrackedRequest } from '@/inkling/utils/services/service-machine'
 import { createSnapshotStore } from '@/inkling/utils/services/snapshot-store'
 
-// Keep the runtime boundary defensive for untyped JavaScript hosts even though
-// TypeScript hosts now receive the closed bookmark response contract.
+// The runtime boundary stays defensive: untyped JavaScript hosts bypass the
+// closed response contract's type checking.
 export function isEmbedResponse(value: unknown): value is BookmarkEmbedResponse {
   if (typeof value !== 'object' || value === null) {
     return false
@@ -139,11 +135,9 @@ export function createBookmarkEmbedFlow({
 
     if (init) {
       // re-apply the selection once the populated card has rendered: the
-      // loading-false render mounts the URL input, whose autoFocus steals
-      // focus and drops the block cursor the selectNext caret earns. Focus
-      // plus a dirty-selection no-op makes the reconciler re-render it. The
-      // pre-race-guard code got this second application for free from
-      // StrictMode's double fetch; with exactly one patch it must be said.
+      // loading-false render mounts the URL input, whose autoFocus steals focus
+      // and drops the block cursor the selectNext caret earns. Focus plus a
+      // dirty-selection no-op makes the reconciler re-render it.
       setTimeout(() => {
         focusEditorRoot(editor)
         editor.update(() => {

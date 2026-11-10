@@ -18,8 +18,8 @@ export function insertComment(db: Database, values: NewComment): Comment | null 
   return row
 }
 
-// Same inline invalidation as the moderation mutations; the optimistic-lock
-// pair emits only when a row was actually updated (a 0-row conflict leaves caches alone).
+// The optimistic-lock pair below emits invalidation only when a row was
+// actually updated — a 0-row conflict leaves caches alone.
 export async function updateCommentBodyAndContent(
   db: Database,
   id: number,

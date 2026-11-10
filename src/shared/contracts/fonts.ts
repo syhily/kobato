@@ -6,8 +6,8 @@ import { isoDateTime } from '@/shared/contracts/primitives'
 export const fontSlot = z.enum(['global', 'post', 'code'])
 export type FontSlot = z.infer<typeof fontSlot>
 
-// The `font` table's PK is `uuid` (not the numeric `idString`), so the
-// id is validated inline.
+// The `font` table's PK is a uuid (not the numeric `idString`), so the id is
+// validated inline.
 export const adminFontDto = z.object({
   id: z.uuid(),
   familyName: z.string(),

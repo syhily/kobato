@@ -23,7 +23,6 @@ import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Infinite-scroll image library: filter state in `useImagesReducer`, rows cached via `useInfiniteQuery`.
 export function ImagesView() {
   const { t } = useI18n()
   const { q, kind, dispatch, pageSize, activeFilters } = useImagesReducer()

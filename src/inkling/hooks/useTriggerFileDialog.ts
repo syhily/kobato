@@ -18,12 +18,10 @@ export interface UseTriggerFileDialogOptions<TNode extends TriggerFileDialogCard
 }
 
 /**
- * The one open-picker-on-insert effect (plan 045), replacing four
- * near-verbatim copies with three dependency-array idioms. The hook checks
- * the prop on every render — the audio/video semantics, which subsume
- * image's deps-pinned and file's mount-only variants for the insert flow —
- * keeps the setTimeout + cleanup, and clears the flag through plan 044's
- * write seam.
+ * The one open-picker-on-insert effect: checks the prop on every render (the
+ * audio/video semantics subsume image's deps-pinned and file's mount-only
+ * variants for the insert flow), keeps the setTimeout + cleanup, and clears the
+ * flag through the card write seam.
  */
 export function useTriggerFileDialog<TNode extends TriggerFileDialogCardNode>({
   editor,
@@ -32,18 +30,17 @@ export function useTriggerFileDialog<TNode extends TriggerFileDialogCardNode>({
   fileInputRef,
   triggerFileDialog,
 }: UseTriggerFileDialogOptions<TNode>): void {
-  // when card is inserted from the card menu or slash command we want to show the file picker immediately
-  // uses a setTimeout to avoid issues with React rendering the component twice in dev mode 🙈
+  // a card inserted from the card menu or slash command shows the file picker
+  // immediately; the setTimeout avoids React's dev-mode double render
   React.useEffect(() => {
     if (!triggerFileDialog) {
       return
     }
 
     const renderTimeout = setTimeout(() => {
-      // trigger dialog
       fileInputRef.current?.click()
 
-      // clear the property on the node so we don't accidentally trigger anything with a re-render
+      // Clear the flag on the node so a re-render cannot re-trigger the dialog.
       editor.update(() => {
         $updateCardNode(nodeKey, guard, (node) => {
           node.triggerFileDialog = false

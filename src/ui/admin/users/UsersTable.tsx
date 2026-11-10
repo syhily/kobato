@@ -31,9 +31,9 @@ interface UsersTableProps {
 
 export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableProps) {
   const { t } = useI18n()
-  // One clock for the whole table so the relative "registered" dates share the
-  // render instant: the root loader's `nowIso` during SSR + hydration, the live
-  // clock after mount (a midnight rollover would otherwise mismatch).
+  // One clock for the whole table so the relative "registered" dates share the render
+  // instant: the root loader's `nowIso` during SSR + hydration, the live clock after mount
+  // (a midnight rollover would otherwise mismatch).
   const now = useChromeClock()
   return (
     <Table>

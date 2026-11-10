@@ -9,7 +9,7 @@ import { $createBaseImageNode, BaseImageNode } from '@/inkling/nodes/base/nodes/
 import { $createBaseVideoNode, BaseVideoNode } from '@/inkling/nodes/base/nodes/video/VideoNode'
 
 /**
- * Drift guard for the cards whose `exportJSON` is (or was) a hand-written key
+ * Drift guard for the cards whose `exportJSON` is a hand-written key
  * list: the serialized vocabulary must stay tied to the card's declared
  * `properties`. Video/File derive `exportJSON` from the generated path, so
  * this pins the agreement for them; Image keeps a hand-written override

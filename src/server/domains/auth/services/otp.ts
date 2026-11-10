@@ -1,6 +1,4 @@
-// OTP signin flow — staging (issue + send + session), verify, resend,
-// and cancel. The `pendingOtpUser` / `otpFailCount` session keys are
-// read and written ONLY by this module.
+// OTP signin flow. The `pendingOtpUser` / `otpFailCount` session keys are read and written ONLY here.
 
 import type { BlogSession, PendingOtpUser } from '@/server/domains/auth/session-storage'
 import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
@@ -30,8 +28,8 @@ import { idFromString } from '@/shared/utils/id'
 const log = getLogger('auth.signin')
 
 /**
- * Loader-facing projection of the OTP pending state; clears both keys
- * and reports `expired` past TTL. The ONLY place the expiry rule exists.
+ * Loader-facing projection of the OTP pending state; clears both keys and reports
+ * `expired` past TTL. The ONLY place the expiry rule exists.
  */
 export function readLivePendingOtp(session: BlogSession): { pending: PendingOtpUser | null; expired: boolean } {
   const pending = session.get('pendingOtpUser')
@@ -62,8 +60,7 @@ function parsePendingUserId(ctx: SigninFlowContext, pendingOtpUser: PendingOtpUs
 }
 
 /**
- * Send the OTP email; upstream failures and exceptions funnel into the
- * same user-facing error result.
+ * Send the OTP email; upstream failures and exceptions funnel into the same error result.
  */
 async function sendOtpSafely(
   user: { name: string; email: string },
@@ -82,8 +79,8 @@ async function sendOtpSafely(
 }
 
 /**
- * Issue + send + stage + audit, shared by initial staging and resend;
- * returns an error result on failure, null on success.
+ * Issue + send + stage + audit, shared by initial staging and resend; returns an error
+ * result on failure, null on success.
  */
 async function issueAndSendOtp(
   ctx: SigninFlowContext,

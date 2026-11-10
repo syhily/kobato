@@ -36,7 +36,6 @@ export function SearchAlbumCard({ hit, adding, added, isCurrent, isPlaying, onAd
 
   return (
     <div className="group">
-      {/* Cover */}
       <div
         className={cn(
           'relative aspect-square overflow-hidden rounded-lg shadow-md transition-shadow duration-200 group-hover:shadow-xl',
@@ -54,9 +53,7 @@ export function SearchAlbumCard({ hit, adding, added, isCurrent, isPlaying, onAd
           <div className="h-full w-full bg-surface-dim" />
         )}
 
-        {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 p-3 transition-all duration-200 group-hover:bg-black/40">
-          {/* Play button — bottom-right, matches AlbumCard */}
           {hasPreview && (
             <button
               type="button"
@@ -73,7 +70,6 @@ export function SearchAlbumCard({ hit, adding, added, isCurrent, isPlaying, onAd
             </button>
           )}
 
-          {/* Add button — bottom-left */}
           <button
             type="button"
             onClick={handleAdd}
@@ -90,18 +86,15 @@ export function SearchAlbumCard({ hit, adding, added, isCurrent, isPlaying, onAd
           </button>
         </div>
 
-        {/* Playing indicator */}
         {isCurrentPlaying && (
           <div className="absolute bottom-2 left-2">
             <Equalizer />
           </div>
         )}
 
-        {/* Active ring */}
         {isCurrent && <div className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-primary" />}
       </div>
 
-      {/* Info */}
       <div className="mt-3 min-w-0">
         <p className="truncate text-sm font-semibold text-ink-1">{hit.name}</p>
         <p className="truncate text-xs text-ink-3">{hit.artist.join(' / ')}</p>

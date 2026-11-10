@@ -17,9 +17,9 @@ queryMocks.query = {
   refetch: vi.fn(),
 }
 
-// DateTimePicker is props-driven; its calendar popover only mounts on click
-// (client-only) — assert the trigger label. RevisionsDrawer's Sheet body
-// mounts only after open; cover the trigger + query-wired list via the stub.
+// DateTimePicker is props-driven; its calendar popover mounts only on click
+// (client-only), so assert the trigger label. RevisionsDrawer's Sheet body mounts only
+// after open.
 
 const noop = () => undefined
 

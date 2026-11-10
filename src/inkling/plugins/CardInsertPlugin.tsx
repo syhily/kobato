@@ -73,15 +73,14 @@ function registerCardInsert(
 }
 
 /**
- * The derived view of the card declarations' insert specs (plan 043) — one
- * registrar replacing the eleven hand-written card insert plugins. Every
- * registration fact (command, payload guard, `openInEditMode`, media
- * claiming, priority, bookmark's selection quirk, the picker auto-open) comes
- * from the card declarations via the `@/inkling/nodes/cards/card-insert-commands`
- * projection, which also carries the host cards' insert registrations
- * (CONTEXT.md: "host card"). The per-card `hasNodes` guard against the
- * wrapper class reproduces the mounting matrix: the web editor registers all
- * eleven cards, nested composers none.
+ * The derived view of the card declarations' insert specs — one registrar for
+ * every card's insert command. Every registration fact (command, payload
+ * guard, `openInEditMode`, media claiming, priority, bookmark's selection
+ * quirk, the picker auto-open) comes from the card declarations via the
+ * `@/inkling/nodes/cards/card-insert-commands` projection, which also carries
+ * the host cards' insert registrations (CONTEXT.md: "host card"). The
+ * per-card `hasNodes` guard against the wrapper class reproduces the
+ * mounting matrix: the web editor registers every card, nested composers none.
  */
 export const CardInsertPlugin = () => {
   const [editor] = useLexicalComposerContext()

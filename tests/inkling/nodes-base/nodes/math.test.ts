@@ -249,8 +249,8 @@ describe('BaseMathNode', function () {
   })
 
   describe('exportDOM', function () {
-    // The render priority mirrors kobato pt-html.ts:254-265:
-    // svg verbatim > mathml verbatim > escaped <pre><code>tex</code></pre>.
+    // Render priority: svg verbatim > mathml verbatim >
+    // escaped <pre><code>tex</code></pre>.
 
     it(
       'renders the svg artifact verbatim when provided',

@@ -47,9 +47,8 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
 
   const userQuery = useQuery({
     ...orpcQuery.admin.users.get.queryOptions({ input: { id: userId } }),
-    // Seed from any cached users-list page so the hero card (and its
-    // shared-element transition partner in UsersTable) renders inside the
-    // navigation transition instead of after a skeleton round-trip.
+    // Seed from any cached users-list page so the hero card (and its shared-element
+    // transition partner in UsersTable) renders inside the navigation transition.
     placeholderData: () => {
       for (const [, data] of queryClient.getQueriesData<InfiniteData<UsersListPage, number>>({
         queryKey: orpcQuery.admin.users.list.key(),

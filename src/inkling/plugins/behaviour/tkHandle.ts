@@ -8,8 +8,7 @@ import { throttle } from '@/inkling/utils'
 // synchronously instead of closing over a stale React mirror. Fed by
 // TKPlugin's mutation listener and unmount cleanup; React subscribes
 // render-only via useTKHandleState. One instance per top-level composer
-// (created in InklingComposer) — nested composers share the top-level
-// handle, exactly as the shared context value worked before.
+// (created in InklingComposer); nested composers share the top-level handle.
 
 export interface TKHandleState {
   tkNodeMap: Record<string, string[]>
@@ -31,19 +30,15 @@ export function createTKHandle(): TKHandle {
   //   )
   // )
   //
-  // We store under the editor key because a top level node (i.e. a decorator)
-  // may contain multiple nested editors and it's easier for the plugin in each
-  // editor to only know about it's own nodes
+  // Stored under the editor key because a top-level node (i.e. a decorator)
+  // may contain multiple nested editors; the plugin in each editor only knows
+  // its own nodes.
   const editorTkNodeMap = new Map<string, Map<string, { topLevelNodeKey: string }>>()
 
-  // throttled update function to update the top-level node map
-  //
-  // this is throttled because the add/remove functions are called many times
-  // in succession when the editor is opened or large blocks of TK-containing
-  // content is added/removed (e.g. delete and undo)
+  // Throttled: add/remove fire many times in succession when the editor opens
+  // or large blocks of TK-containing content are added/removed (delete, undo).
   const updateTkNodeMap = throttle(
     () => {
-      // derive a top-level tk node map to use for rendering indicators
       const tkNodeMap: Record<string, string[]> = {}
       let tkCount = 0
 

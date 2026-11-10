@@ -124,8 +124,7 @@ export async function hydrateBlogSettings(db: Database): Promise<BlogSettingsBun
 
   const newPending = (async () => {
     try {
-      // Before the snapshot is built: canonicalize a legacy `siteIdentity.locale`
-      // so every consumer below sees one of the four supported tags. The read
+      // Before the snapshot is built: canonicalize a legacy `siteIdentity.locale`; the read
       // schema normalizes the same aliases, so a failure here still hydrates.
       try {
         migrateLegacySiteIdentityLocale(db)

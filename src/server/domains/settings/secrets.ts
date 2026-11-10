@@ -8,8 +8,8 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 export interface SecretFieldConfig {
   section: SettingsSection
   bundleKey: keyof BlogSettingsBundle
-  // The literal pin holds only via `declareSecret`'s generics — the SECRET_FIELDS
-  // array plus the `_secretFieldConfigShape` assert below are the defence.
+  // The literal pin holds only via `declareSecret`'s generics; the SECRET_FIELDS array
+  // plus the `_secretFieldConfigShape` assert below are the defence.
   path: string
   field: string
   maskKey: keyof SecretMasks
@@ -73,7 +73,7 @@ export function declareSecret<
   return { ...decl, bundleKey, read, redact }
 }
 
-// Single source of truth for settings sections that contain encrypted secrets: the
+// Single source of truth for settings sections that contain encrypted secrets; the
 // snapshot reader, the write path, and the admin mask projection all derive from it.
 export const SECRET_FIELDS = [
   declareSecret({ section: 'mail', path: 'mail', field: 'smtpPass', maskKey: 'mailSmtpPassMask' }),
@@ -95,8 +95,8 @@ export const SECRET_FIELDS = [
   }),
 ]
 
-// Post-hoc assert, not `satisfies` — a contextual element type would widen the
-// generic inference and break the literal pin.
+// Post-hoc assert, not `satisfies`: a contextual element type would widen the generic
+// inference and break the literal pin.
 type _secretFieldConfigShape = Assert<(typeof SECRET_FIELDS)[number] extends SecretFieldConfig ? true : false>
 
 // Compile-time parity: every SecretMasks key maps 1:1 to a SECRET_FIELDS entry.

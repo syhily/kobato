@@ -1,6 +1,5 @@
-// An `HTTPException` whose user-facing copy is a typed descriptor. The Hono
-// perimeter (`onErrorHandler`) translates it for the request locale; the
-// perimeter middlewares use it because they have no `DomainError` channel.
+// An `HTTPException` whose copy is a typed descriptor: the Hono perimeter translates it
+// for the request locale, which the perimeter middlewares need (no `DomainError` channel).
 
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 

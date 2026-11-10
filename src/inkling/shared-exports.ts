@@ -1,15 +1,11 @@
-/* The shared contract of the public barrel — single-sourced so shared names
- * have one home (no gate named most of these). The barrel `export * from`s
- * this module and keeps only its entry-specific exports: the card family,
- * feature plugins, node sets, and the defaulted `InklingComposer`.
- * Everything here must stay free of the card NODE classes — the card-free
- * composition pieces (InklingComposerBase and friends) are the subset a
- * card-free host surface consumes; the pick-seam/card-chrome exports below
- * name only registry facts, contexts, and chrome components, so they never
- * drag the card declarations into a card-free graph. */
+/* The public barrel's shared contract, single-sourced so shared names have one
+ * home. Must stay free of the card NODE classes: these are the card-free
+ * composition pieces a card-free host surface consumes, and the pick-seam /
+ * card-chrome exports below name only registry facts, contexts, and chrome
+ * components. */
 
-/* Types re-exported from bundled runtimes so consumers can name the shapes
- * that appear in public prop/command signatures without installing Lexical. */
+/* Types re-exported from bundled runtimes so consumers can name shapes that
+ * appear in public prop/command signatures. */
 export type { Transformer } from '@lexical/markdown'
 export type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 
@@ -38,16 +34,14 @@ export type {
 } from '@/inkling/context/InklingHostIntegrationContext'
 export type { ListOptionItem, SearchResult } from '@/inkling/hooks/useSearchLinks'
 
-/* Labels: the closed labels table a host
- * overrides through <InklingComposer labels={...}> — `labels` is a composer
- * prop on both entries. Host card menu labels ride the `menu.host.*`
- * namespace (`InklingHostMenuLabelKey`), opened on the input side only. */
+/* Labels: the closed labels table a host overrides through
+ * <InklingComposer labels={...}>, a prop on both entries. Host card menus ride
+ * the `menu.host.*` namespace, opened on the input side only. */
 export { DEFAULT_LABELS } from '@/inkling/labels/inkling-labels'
 export type { InklingHostMenuLabelKey, InklingLabels, InklingLabelsInput } from '@/inkling/labels/inkling-labels'
 
-/* Media library: the picker's headless state
- * machine rides both entries — a host building its own library-backed card
- * (e.g. music) on either composer reuses it. */
+/* Media library: the picker's headless state machine rides both entries, so a
+ * host building its own library-backed card (e.g. music) reuses it. */
 export { createLibraryBrowser } from '@/inkling/utils/services/library-browser'
 export type {
   LibraryBrowser,
@@ -63,15 +57,14 @@ export { CORE_PLUGINS, default as CorePlugins } from '@/inkling/plugins/CorePlug
 export type { CorePluginEntry, CorePluginScope } from '@/inkling/plugins/CorePlugins'
 export { default as RestrictContentPlugin } from '@/inkling/plugins/RestrictContentPlugin'
 
-/* The pick seam (CONTEXT.md: "pick seam"): a host card declares its picker on
- * the defineCard spec; the card component opens it through `useCardPicker`
- * and the picker host core plugin renders it. A same-type VARIANT of a
- * built-in card (no defineCard spec — the nodeType collides) registers its
- * picker through `registerCardPicker` instead; both channels share one
- * dispatch. `useCardChrome` is the card
- * chrome prologue (editor + the card write seam) a host card's picker render
- * and editing chrome write through, and `CardActionToolbar` is the layer's
- * selection-driven card chrome the host card mounts its affordances on. */
+/* The pick seam: a host card declares its picker on the defineCard spec; the
+ * card component opens it through `useCardPicker` and the picker host core
+ * plugin renders it. A same-type VARIANT of a built-in card (no defineCard
+ * spec — the nodeType collides) registers through `registerCardPicker`
+ * instead; both channels share one dispatch. `useCardChrome` is the card chrome
+ * prologue a host card's picker and editing chrome write through, and
+ * `CardActionToolbar` is the selection-driven chrome host cards mount their
+ * affordances on. */
 export { useCardPicker } from '@/inkling/hooks/useCardPicker'
 export type { CardPickerHandle } from '@/inkling/hooks/useCardPicker'
 export { registerCardPicker } from '@/inkling/nodes/cards/host-card-registry'
@@ -83,8 +76,7 @@ export { CardActionToolbar } from '@/inkling/components/ui/CardActionToolbar'
 export type { CardActionToolbarProps, CardToolbarItem } from '@/inkling/components/ui/CardActionToolbar'
 
 /* Lexical's command-priority constants — a host intercepting a stock command
- * (kobato's HIGH-priority insert overrides) names the level instead of
- * hardcoding the number. */
+ * names the level instead of hardcoding the number. */
 export {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
@@ -92,7 +84,7 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
 } from 'lexical'
-/* Writing-focus mode: the plugin the `focusMode` surface prop mounts and the
+/* Writing-focus mode: the plugin the `focusMode` surface prop mounts, plus the
  * class/attribute contract host CSS keys on. */
 export { default as FocusModePlugin } from '@/inkling/plugins/FocusModePlugin'
 export { FOCUS_ACTIVE_ATTRIBUTE, FOCUS_MODE_CLASS } from '@/inkling/plugins/behaviour/focus-mode'

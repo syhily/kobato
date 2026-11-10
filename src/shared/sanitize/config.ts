@@ -1,5 +1,5 @@
-// Strategy data shared by the two sanitize engines. Dependency-free so both
-// engines and the facade can import it in either bundle.
+// Strategy data shared by the two sanitize engines; dependency-free so the
+// facade and both engines can import it in either bundle.
 
 export type SafeHtmlStrategy =
   | 'shiki'
@@ -19,27 +19,20 @@ export interface SanitizeStrategyConfig {
   /** Per-property CSS allowlist (shiki + body); values must match one pattern. */
   styles?: Readonly<Record<string, readonly RegExp[]>>
   /**
-   * Per-tag attribute allowlist ADDED on top of the global `attributes` list
-   * (sanitize-html's `allowedAttributes` shape): the DOMPurify ALLOWED_ATTR
-   * gets the union, and a hook narrows non-global attributes back down by
-   * tagName so e.g. `src` survives on <img> but not on <p>.
+   * Per-tag attribute allowlist added on top of the global `attributes`; a
+   * hook narrows non-global attributes by tagName so e.g. `src` survives on
+   * <img> but not on <p>.
    */
   tagAttributes?: Readonly<Record<string, readonly string[]>>
-  /**
-   * Reject protocol-relative URLs (`//host/path`) — swaps in a stricter URI
-   * regexp with a `(?!\/\/)` negative lookahead (sanitize-html's
-   * `allowProtocolRelative: false`).
-   */
+  /** Reject protocol-relative URLs (`//host/path`) via a stricter URI regexp
+   * with a `(?!\/\/)` negative lookahead. */
   noProtocolRelative?: boolean
-  /**
-   * Rewrite rel="noopener noreferrer nofollow" on every <a target="_blank">
-   * (sanitize-html's transformTags overwrite semantics: the whole rel value
-   * is replaced, not merged).
-   */
+  /** Rewrite rel="noopener noreferrer nofollow" on every <a target="_blank">,
+   * replacing the whole rel value rather than merging into it. */
   noopenerOnBlankTarget?: boolean
 }
 
-// `data-*` attributes drive Tiptap, Base UI, and shiki state on inline nodes.
+// `data-*` attributes carry card, Base UI, and shiki state on inline nodes.
 const DATA_ATTR = /^data-.*$/
 
 const BASE_TAGS = [
@@ -172,11 +165,9 @@ const EMAIL_ATTRIBUTES = [
   'src',
 ] as const
 
-// Tags the comment feed-variant projection can actually emit — the comment
-// editor's node whitelist (`shared/lexical/node-whitelist`'s
-// COMMENT_NODE_TYPES) admits paragraphs, inline marks, blockquote, lists,
-// code blocks, and links; math degrades to TeX text in the feed variant.
-// Shared by the 'comment' and 'comment-email' strategies.
+// Tags the comment feed-variant projection can emit (per the comment editor's
+// node whitelist, COMMENT_NODE_TYPES; math degrades to TeX text in the feed
+// variant). Shared by the 'comment' and 'comment-email' strategies.
 const COMMENT_TAGS = [
   'p',
   'br',
@@ -198,9 +189,9 @@ const COMMENT_TAGS = [
 
 // inkling `exportDOM` additions over BASE: inline marks (u/s/sup/sub/mark),
 // media wrappers (figure/figcaption/audio), the footnotes <section>, and the
-// solution card's inline SVG QED mark. `viewbox` matches sanitize-html's
-// lowercased attribute names AND DOMPurify's case-insensitive check against
-// the HTML parser's camelCase-adjusted SVG attributes.
+// solution card's inline SVG QED mark. `viewbox` is spelled lowercase because
+// DOMPurify matches attributes case-insensitively against the HTML parser's
+// camelCase-adjusted SVG attribute names.
 const BODY_TAGS = ['u', 's', 'sup', 'sub', 'mark', 'figure', 'figcaption', 'section', 'audio', 'svg', 'rect'] as const
 
 const BODY_ATTRIBUTES = [
@@ -279,10 +270,9 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
       return {
         tags: [...BASE_TAGS, ...BODY_TAGS, ...MATH_TAGS],
         attributes: [...BASE_ATTRIBUTES, ...BODY_ATTRIBUTES, ...MATH_ATTRIBUTES],
-        // `id` only where the projection actually emits one: heading anchors
-        // (inkling's heading transformer) and the footnote ref/definition
-        // anchors. A free-floating id on any other tag is DOM-clobbering
-        // surface with no legitimate producer.
+        // `id` only where the projection emits one: heading anchors and the
+        // footnote ref/definition anchors. A free-floating id elsewhere is
+        // DOM-clobbering surface with no legitimate producer.
         tagAttributes: {
           h1: ['id'],
           h2: ['id'],
@@ -297,14 +287,13 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
         styles: BODY_ALLOWED_STYLES,
       }
 
-    // Server-only boundary for feed XML output (`render/feed/generator`).
-    // The tag set mirrors the feed-variant projection's real output
+    // Server-only boundary for feed XML output (`render/feed/generator`). The
+    // tag set mirrors the feed-variant projection's real output
     // (`infra/pt/lexical-projection` — inkling exportDOM, artifacts stripped):
-    // inline marks strong/em/u/s/code/mark, sup/sub footnote refs, the
-    // footnotes <section>, media figure/figcaption/audio, and the table
-    // family. `id` on `*` covers headings, footnote anchors, and the
-    // footnotes section. img's data: scheme rides DOMPurify's default
-    // DATA_URI_TAGS (sanitize-html's allowedSchemesByTag equivalent).
+    // inline marks, sup/sub footnote refs, the footnotes <section>, media
+    // figure/figcaption/audio, and the table family. `id` on `*` covers
+    // headings, footnote anchors, and the footnotes section. img's data: scheme
+    // rides DOMPurify's default DATA_URI_TAGS.
     case 'feed':
       return {
         tags: [
@@ -365,9 +354,8 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
 
     // Server-only boundary for the comment `content` column at the email
     // boundary (`domains/comments/services/email`). Tags mirror the comment
-    // feed-variant projection's real output: paragraphs, inline marks
-    // (inkling exportDOM: strong/em/u/s/mark/code, sup/sub), blockquote,
-    // lists, plain pre/code (artifacts stripped), and links.
+    // feed-variant projection: paragraphs, inline marks, blockquote, lists,
+    // plain pre/code (artifacts stripped), and links.
     case 'comment-email':
       return {
         tags: COMMENT_TAGS,
@@ -381,9 +369,8 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
 
     // Public-site render boundary for the same comment `content` column
     // (`ui/public/comments/CommentContentHtml`). Same tag set as
-    // 'comment-email' — the comment editor's node whitelist
-    // (COMMENT_NODE_TYPES) admits no media or heading nodes — plus the
-    // blank-target rel rewrite for untrusted commenter links.
+    // 'comment-email' — the comment node whitelist admits no media or heading
+    // nodes — plus the blank-target rel rewrite for untrusted commenter links.
     case 'comment':
       return {
         tags: COMMENT_TAGS,

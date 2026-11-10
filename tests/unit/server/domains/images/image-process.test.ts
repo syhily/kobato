@@ -4,9 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 
-// Generate a tiny in-memory PNG so we don't need any test fixtures on
-// disk. sharp can decode whatever we give it; the pipeline re-encodes
-// to JPEG and reports the post-encoding dimensions.
+// Generate a tiny in-memory PNG so no fixture file is needed; the pipeline re-encodes to
+// JPEG and reports post-encoding dimensions.
 async function syntheticPng(
   width: number,
   height: number,

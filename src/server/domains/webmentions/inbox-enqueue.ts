@@ -20,10 +20,9 @@ export const INBOX_MAX_QUEUED = 5000
 export const INBOX_MAX_QUEUED_PER_SOURCE_HOST = 50
 
 /**
- * The receive endpoint's synchronous half (async-inbox design,
- * docs/plans/2026-08-02-webmention-async-inbox-design.md): unknown targets
- * 404 at the route; verification happens in the inbox worker. A full queue
- * backpressures with RATE_LIMITED (429) instead of absorbing unboundedly.
+ * The receive endpoint's synchronous half: unknown targets 404 at the route;
+ * verification happens in the inbox worker. A full queue backpressures with
+ * RATE_LIMITED (429) instead of absorbing unboundedly.
  */
 export async function enqueueWebmention(db: Database, input: WebmentionReceiveInput): Promise<void> {
   const target = await resolveWebmentionTargetOrThrow(db, input.target)

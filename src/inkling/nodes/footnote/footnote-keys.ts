@@ -4,7 +4,7 @@
 // shape) — short enough to read in DevTools, unique enough to never collide
 // within a document.
 //
-// The recast map implements the reviewed import policy (导入即新实体):
+// The recast map implements the import policy (a paste mints new entities):
 // pasting or importing footnotes mints FRESH targetKeys — two pastes of the
 // same source must not share keys, or the renumber engine's dedup would
 // merge them into one footnote. Ref and definition conversions run

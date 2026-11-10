@@ -1,32 +1,10 @@
-// Root-level cross-tab locale sync.
-//
-// The General language selector announces a committed locale over a
-// `BroadcastChannel` (transport in `@/client/lib/locale-sync`). The listener
-// lives HERE — mounted once by the root route — so every open document follows
-// the announcement: the settings workspace, an editor page, a comment composer,
-// an analytics page, or a public page. A settings-card-level subscription could
-// only ever cover /admin/settings.
-//
-// The receiver never commits the locale (the sender already persisted it) and
-// never re-publishes, so there is no announcement loop.
-//
-// Reload policy:
-//  · A settings workspace registers a flush host. The provider runs the SAME
-//    transaction shape as a local switch — `inert`, flush every dirty card,
-//    then one reload — and reloads automatically only after the flush
-//    succeeded.
-//  · Any other document (editor, comment composer, setup, analytics, public)
-//    has unsaved input this app cannot inspect. It is NEVER reloaded
-//    automatically: a localized notice offers an explicit Reload action, and
-//    the page keeps its state until the user takes it.
-//  · A failed flush also keeps the edits and shows a notice with Retry (flush
-//    again, then reload) and an explicit Reload (discard the unsaved state).
-//
-// Dedupe: a repeated announcement for the locale already loaded is ignored; so
-// is a repeat while a notice for the same announcement is still open, while a
-// local/remote transaction is in flight, and — only after a reload was actually
-// attempted — a repeat carrying the already-consumed revision token. A failed
-// attempt never consumes the token, so Retry and a repeat can run again.
+// Root-level cross-tab locale sync over `@/client/lib/locale-sync`'s BroadcastChannel (a
+// settings-card subscription could only cover /admin/settings). The receiver never commits
+// the locale (the sender persisted it) and never re-publishes, so there is no echo loop.
+// Only a registered settings workspace reloads automatically, after every dirty card has
+// flushed; any other document may hold unsaved input this app cannot inspect and is never
+// reloaded behind the user's back — it gets a localized notice with an explicit Reload,
+// and a failed flush keeps the edits and offers Retry.
 
 import type { ReactNode } from 'react'
 
@@ -149,9 +127,9 @@ export function LocaleSyncProvider({ locale, revision, children }: LocaleSyncPro
       try {
         const host = hostRef.current
         if (host === null) {
-          // No flush host: this document may hold editor/comment/setup input we
-          // cannot safely persist or inspect. Never reload it behind the user's
-          // back — offer the explicit action instead.
+          // No flush host: this document may hold editor/comment/setup input that cannot
+          // be safely persisted or inspected. Never reload it behind the user's back —
+          // offer the explicit action instead.
           showNotice({ kind: 'reload-required', ...announcement })
           return
         }

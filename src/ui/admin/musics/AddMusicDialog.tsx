@@ -86,7 +86,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   })
   const { mutate: submitAdd } = addMutation
 
-  // Reset on dialog close
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) {
     setWasOpen(open)

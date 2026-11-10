@@ -1,6 +1,5 @@
-// Password reset / claim flows — `lostpassword` (request a reset email,
-// enumeration-safe) and `resetpassword` / `accept-invite` (consume the
-// single-use token and set a new password).
+// Password reset / claim flows: `lostpassword` (enumeration-safe reset email) and
+// `resetpassword` / `accept-invite` (consume the single-use token, set a new password).
 
 import bcrypt from 'bcryptjs'
 
@@ -25,16 +24,16 @@ import { resolveSiteOrigin } from '@/shared/config/site-origin'
 import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 
 /**
- * Cross-domain dependency wired by the caller: the claim path needs the
- * comments domain's approved-commenter check, which auth must not import.
+ * Cross-domain dependency wired by the caller: the claim path needs the comments
+ * domain's approved-commenter check, which auth must not import.
  */
 export interface PasswordResetFlowDeps {
   hasApprovedComments(db: Database, userId: number): Promise<boolean>
 }
 
 /**
- * Issue a single-use reset token, email the link, and audit the request.
- * Shared by the existing-user and commenter-claim paths.
+ * Issue a single-use reset token, email the link, and audit the request; shared by the
+ * existing-user and commenter-claim paths.
  */
 async function issueTokenAndEmail(
   db: Database,
@@ -59,8 +58,8 @@ async function issueTokenAndEmail(
 }
 
 /**
- * `lostpassword` — request a password-reset email. Always appears to
- * succeed: no account and tripped rate limits yield the same message.
+ * `lostpassword`: always appears to succeed — an unknown account and a tripped rate
+ * limit yield the same message.
  */
 export async function requestPasswordReset(
   db: Database,
@@ -71,7 +70,6 @@ export async function requestPasswordReset(
 ): Promise<AuthFlowResult> {
   const email = formData.get('email')
   const emailStr = typeof email === 'string' ? email : ''
-  // Either rate limit tripping silently returns the generic success message.
   const [ipLimit, emailLimit] = await Promise.all([
     tryPasswordResetRateLimit(clientAddress),
     emailStr ? tryPasswordResetByEmailRateLimit(emailStr) : Promise.resolve(null),
@@ -95,9 +93,8 @@ export async function requestPasswordReset(
 }
 
 /**
- * `resetpassword` / `accept-invite` — consume a single-use token and set
- * a new password. The two intents share this path; only the token
- * `purpose` differs.
+ * `resetpassword` / `accept-invite`: consume a single-use token and set a new password.
+ * Both intents share this path; only the token `purpose` differs.
  */
 export async function resetPasswordWithToken(
   ctx: SigninFlowContext,
@@ -130,9 +127,8 @@ export async function resetPasswordWithToken(
   const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
   // Password reset also returns the account to password signin.
   await updateUserById(db, result.userId, { password: hashed, loginMethod: 'password' })
-  // Rotating the password kills every other outstanding credential-bypass
-  // token on the account: remaining reset links, magic signin links, and
-  // pending OTPs.
+  // Rotating the password kills every other credential-bypass token on the account:
+  // remaining reset links, magic signin links, and pending OTPs.
   await revokeTokensFor(db, result.userId, 'password-reset')
   await revokeTokensFor(db, result.userId, 'signin-link')
   await revokeTokensFor(db, result.userId, 'signin-otp')
@@ -146,8 +142,8 @@ export async function resetPasswordWithToken(
   if (!dbUser?.role || dbUser.deletedAt) {
     return authFlowError('auth.signin.error.accountCannotSignIn')
   }
-  // Use the returned `setCookie` — a later `commitSession` would mint a
-  // second sid and orphan the one just written.
+  // Use the returned `setCookie`: a later `commitSession` would mint a second sid and
+  // orphan the one just written.
   const established = await establishLoginSession(db, session, dbUser, request, clientAddress, {
     revokeOtherSessions: true,
   })

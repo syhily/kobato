@@ -1,10 +1,7 @@
 /**
- * Single owner of the site-owned asset-URL path grammar — the shared core
- * behind `resolveAssetUrl` (forward) and `parseAssetUrl` (inverse) in
- * `src/server/infra/storage/public-url.ts`. Two route shapes exist:
- * `/storage/<key>` (every stored asset) and `/fonts/embedded/<hash>/<file>`
- * (self-hosted web-font packages, key `fonts/<hash>/<file>`). Both sides of
- * the pair compose this module, so the shapes can never drift.
+ * Single owner of the site-owned asset-URL path grammar; the forward and
+ * inverse resolvers in `src/server/infra/storage/public-url.ts` both compose
+ * this module so the route shapes cannot drift.
  */
 
 export const STORAGE_ROUTE_PREFIX = '/storage/'
@@ -15,19 +12,13 @@ export type AssetUrlRoute = typeof STORAGE_ROUTE_PREFIX | typeof EMBEDDED_FONT_R
 export interface ParsedAssetUrl {
   /** Storage key the URL maps to (`fonts/<hash>/<file>` on the embedded-font route). */
   key: string
-  /** The route shape the URL matched. */
   route: AssetUrlRoute
 }
 
 // Content-addressed font packages: the hash is a lowercase sha256 hex digest.
 const EMBEDDED_FONT_HASH = /^[0-9a-f]{64}$/
 
-/**
- * Parse a URL PATH (no query string — strip it beforehand) against the
- * site-owned asset grammar. Returns `null` for anything else: other
- * prefixes, an empty `/storage/` key, a malformed embedded-font shape (hash
- * must be 64 lowercase hex; no empty or dot-prefixed filename segments).
- */
+/** Parse a URL PATH (no query string — strip it beforehand) against the site-owned grammar; `null` for anything else. */
 export function parseAssetUrlPath(pathname: string): ParsedAssetUrl | null {
   if (pathname.startsWith(STORAGE_ROUTE_PREFIX)) {
     const key = pathname.slice(STORAGE_ROUTE_PREFIX.length)

@@ -26,8 +26,8 @@ export function requireBlogSettingsBundle(): BlogSettingsBundle {
 /**
  * Section read from an explicit snapshot bundle (a request-pinned capture or a
  * background task's send-time resolve). Omit `bundle` to read the process
- * snapshot. Passing `null` means "captured before install" and throws instead
- * of silently mixing the two sources.
+ * snapshot. Passing `null` means "captured before install" and throws instead of
+ * silently mixing the two sources.
  */
 export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(
   section: K,
@@ -48,7 +48,11 @@ export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(
   return value
 }
 
-/** The ONE receive-switch read for every webmention surface (root `<link>`, SSR `Link` header, the 410 gate, the inbox worker): a missing section reads as the schema default ON so discovery and the receive endpoint never disagree. */
+/**
+ * The ONE receive-switch read for every webmention surface (root `<link>`, SSR
+ * `Link` header, the 410 gate, the inbox worker): a missing section reads as the
+ * schema default ON so discovery and the receive endpoint never disagree.
+ */
 export function isWebmentionReceiveEnabled(
   bundle: { webmentions?: { webmention?: { receiveEnabled?: boolean } } | null } | null | undefined,
 ): boolean {

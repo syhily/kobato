@@ -46,9 +46,9 @@ vi.stubGlobal(
   },
 )
 
-// `CommentsView` reads its list from `useCommentsController`; queries never
-// fetch under SSR, so the controller is swapped via this hoisted singleton.
-// Targets: filter-pill derivations, selected-value pinning, sentinel branches.
+// `CommentsView` reads its list from `useCommentsController`, and queries never fetch
+// under SSR, so the controller is swapped via this hoisted singleton. Targeted
+// branches: filter-pill derivation, selected-value pinning, sentinels.
 
 const controllerState = vi.hoisted(() => ({
   comments: [] as AdminComment[],

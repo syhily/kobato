@@ -4,11 +4,9 @@ import type { LexicalNode } from 'lexical'
 import { QuoteNode } from '@lexical/rich-text'
 import { $createLineBreakNode, $isParagraphNode, $setFormatFromDOM } from 'lexical'
 
-// Since the QuoteNode is foundational to Lexical rich-text, only using a
-// custom QuoteNode is undesirable as it means every package would need to
-// be updated to work with the custom node. Instead we can use Lexical's node
-// override/replacement mechanism to extend the default with our custom parsing
-// logic.
+// QuoteNode is foundational to Lexical rich-text, so replacing it outright
+// would force every package to work with a custom node. Extend the default
+// with custom parsing via Lexical's node override/replacement mechanism.
 //
 // https://lexical.dev/docs/concepts/serialization#handling-extended-html-styling
 
@@ -31,7 +29,6 @@ export class ExtendedQuoteNode extends QuoteNode {
   }
 
   static importJSON(serializedNode: SerializedQuoteNode) {
-    // construct our own class (the sibling ExtendedHeadingNode pattern):
     // delegating to QuoteNode.importJSON builds a genuine QuoteNode in any
     // editor where the replacement registration is absent
     return new ExtendedQuoteNode().updateFromJSON(serializedNode)
@@ -67,10 +64,9 @@ function convertBlockquoteElement() {
       return {
         node,
         after: (childNodes: LexicalNode[]) => {
-          // Blockquotes can have nested paragraphs. In our original mobiledoc
-          // editor we parsed all of the nested paragraphs into a single blockquote
-          // separating each paragraph with two line breaks. We replicate that
-          // here so we don't have a breaking change in conversion behaviour.
+          // Blockquotes can have nested paragraphs. Collapse each nested
+          // paragraph into the single blockquote, separated by two line
+          // breaks — the established conversion behaviour.
           const newChildNodes: LexicalNode[] = []
 
           childNodes.forEach((child: LexicalNode) => {

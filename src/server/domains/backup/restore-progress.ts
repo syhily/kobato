@@ -4,11 +4,10 @@ import { peekRestoreJobPhase } from '@/server/domains/backup/restore-machine'
 
 /**
  * Pre-claim staging progress (decrypt / extract), merged with the restore
- * machine's post-claim phases by the restore-progress endpoint. Staging
- * happens BEFORE the machine slot is claimed, so the machine cannot report
- * it; this module owns that window. A single active slot: a second
- * concurrent staging simply goes unreported (`beginStagingProgress` = false)
- * rather than interleaving nonsense percentages.
+ * machine's post-claim phases by the restore-progress endpoint. Staging runs
+ * BEFORE the slot is claimed, so the machine cannot report it. A single active
+ * slot: a concurrent staging goes unreported (`beginStagingProgress` = false)
+ * rather than interleaving meaningless percentages.
  */
 
 interface StagingProgress {
@@ -30,8 +29,7 @@ export function beginStagingProgress(): boolean {
   return true
 }
 
-/** Report a byte total for the current leg; the stage transition (decrypt →
- *  extract) is driven by whichever report arrives. */
+/** Report a byte total for the current leg. */
 export function reportStagingProgress(
   stage: 'decrypting' | 'extracting',
   doneBytes: number,

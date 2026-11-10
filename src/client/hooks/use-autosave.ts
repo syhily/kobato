@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef } from 'react'
 
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Autosave engine: debounce + hard cap, force-flush on tab hide/pagehide, no-op when the body is unchanged.
-
 export type AutosaveStatus =
   | { kind: 'idle' }
   | { kind: 'saving' }

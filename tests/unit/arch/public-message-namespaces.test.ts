@@ -1,5 +1,5 @@
 /**
- * Public message-namespace architecture guard (plan 002 §3).
+ * Public message-namespace architecture guard.
  *
  * The public bootstrap ships an explicit allowlist (`PUBLIC_MESSAGE_PREFIXES`),
  * not "everything except `admin.*`". This scan is the other half of that

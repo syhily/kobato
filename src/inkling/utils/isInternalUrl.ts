@@ -1,8 +1,4 @@
-// "Own URL" checks come in an input/export pair: `isInternalUrl` decides
-// whether a link points at our own site (at-link labeling); the export-side
-// counterpart is `isLocalContentImage`
-// (`@/inkling/nodes/base/utils/content-image-url`, behind the render context),
-// which recognizes our own content images in exported markup.
+// Input-side counterpart of `isLocalContentImage` (`@/inkling/nodes/base/utils/content-image-url`); used for at-link labeling.
 export function isInternalUrl(url: string, siteUrl?: string): boolean {
   if (!url || !siteUrl) {
     return false

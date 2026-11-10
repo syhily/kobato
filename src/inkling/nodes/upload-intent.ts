@@ -20,22 +20,14 @@ import prettifyFileName from '@/inkling/utils/prettifyFileName'
 import { createPreviewLease, type PreviewLeasePool } from '@/inkling/utils/preview-lease'
 
 /**
- * The one upload-intent module (plan 045): file(s) + per-card metadata
- * extraction in, typed node patch out through plan 044's write seam
- * ($updateCardNode). The object-URL preview lifecycle is leased from the
- * preview-lease module — each intent leases its preview on start and
- * releases it on settle. The six near-clone upload flows (image/audio/
- * file/thumbnail handlers plus video's and gallery's inline
- * re-implementations) are configurations of these primitives — per-card
- * variance (metadata extraction, empty-result policy, the pre-upload src
- * reset) stays per-card data, never a copied skeleton.
- *
- * The variance is expressed as three small policy unions (preview /
- * metadata / empty-result). Each union is closed over its valid shapes, so
- * combinations the runner would silently ignore — a publish without a lease,
- * an after-upload timing without an extractor, an `onBail` hook under the
- * patch policy, pre-extracted metadata alongside an extractor — do not
- * compile (pinned by tests/inkling/typecheck/upload-intent-options.ts).
+ * The one upload-intent module: file(s) + per-card metadata extraction in, typed node
+ * patch out through the write seam ($updateCardNode). Previews lease from the
+ * preview-lease module (lease on start, release on settle). Per-card variance is
+ * expressed as three small policy unions (preview / metadata / empty-result), each
+ * closed over its valid shapes, so combinations the runner would silently ignore — a
+ * publish without a lease, an after-upload timing without an extractor, an `onBail`
+ * hook under the patch policy, pre-extracted metadata alongside an extractor — do not
+ * compile (tests/inkling/typecheck/upload-intent-options.ts).
  */
 
 export interface UploadResultItem {
@@ -148,25 +140,19 @@ export interface RunUploadIntentOptions<
   metadata?: UploadMetadataPolicy<TMeta>
   /** Required: every card declares what an empty result means. */
   emptyResult: UploadEmptyResultPolicy
-  /** The result patch, applied through plan 044's write seam. */
+  /** The result patch, applied through the write seam. */
   patch: (node: TNode, context: PatchContext<TMeta>) => void
 }
 
 /**
  * Runs one upload intent: null/file guard → `prePatch` → preview lease (+
  * publish) → `beforeUpload` extraction → upload → empty-result policy →
- * `afterUpload` extraction → `patch` through 044's seam. The lease is
- * released in a `finally` around the whole flow, and rejections always
- * propagate (per-card pinned policy).
+ * `afterUpload` extraction → `patch` through the write seam. The lease is
+ * released in a `finally` around the whole flow; rejections always propagate.
  *
- * This is the INTERNAL seam the per-card factories below are bound to, and it
- * is deliberately not part of the public `@/inkling` surface. Tests pin the
- * ordering matrix directly against it (rather than only through the
- * factories) because the ordering — not just each card's end state — is the
- * contract; production callers use the factories.
- *
- * Returns the first result URL (`undefined` when the flow bailed) so callers
- * can compose follow-up intents imperatively (video's thumbnail sub-flow).
+ * INTERNAL seam the per-card factories bind to, deliberately not on the public
+ * `@/inkling` surface. Returns the first result URL (`undefined` when the flow
+ * bailed) so callers can compose follow-up intents imperatively.
  */
 export async function runUploadIntent<TNode extends LexicalNode, TMeta = undefined>({
   editor,
@@ -192,9 +178,8 @@ export async function runUploadIntent<TNode extends LexicalNode, TMeta = undefin
 
   if (prePatch) {
     // the microtask yields are load-bearing: Lexical commits non-discrete
-    // updates on a microtask, and the reset must be visible BEFORE the upload begins
-    // (the prePatch is the early src reset the preview/progress UX reads —
-    // pinned by headerBackgroundUploadIntent.test.ts)
+    // updates on a microtask, and the reset must be visible BEFORE the upload
+    // begins (the prePatch is the early src reset the preview/progress UX reads)
     editor.update(() => {
       $updateCardNode(nodeKey, guard, prePatch)
     })
@@ -264,12 +249,10 @@ function requireUploadValue<T>(value: T | null | undefined, description: string)
   return value
 }
 
-/* ------------------------------------------------------------------------ */
-/* Per-card intent configurations: each factory binds one card's preview /   */
-/* metadata / empty-result policies (plus the pre-upload src reset where the */
-/* card has one) to the runner. Card variance stays data here; the write     */
-/* order and the preview-lease lifecycle stay in the runner above.           */
-/* ------------------------------------------------------------------------ */
+// Per-card intent configurations: each factory binds one card's preview /
+// metadata / empty-result policies (plus the pre-upload src reset where the
+// card has one) to the runner. Card variance stays data here; the write order
+// and the preview-lease lifecycle stay in the runner above.
 
 export interface CardUploadIntentDeps {
   editor: LexicalEditor
@@ -279,10 +262,9 @@ export interface CardUploadIntentDeps {
 }
 
 /**
- * Image: object-URL preview published as `previewSrc`, dimensions extracted
- * from the preview before the upload, and the patch ALWAYS lands — an empty
- * result still writes `src: ''` and clears the preview. Rejections propagate;
- * the lease is released in `finally`.
+ * Image: preview published as `previewSrc`, dimensions extracted from the preview
+ * before the upload; the patch ALWAYS lands — an empty result still writes `src: ''`
+ * and clears the preview.
  */
 export function imageUploadIntent({
   editor,
@@ -320,10 +302,8 @@ export function imageUploadIntent({
 }
 
 /**
- * Audio: object URL leased for metadata only (never published on the node),
- * upload FIRST, and bail with the node untouched when no url comes back; only
- * then extract duration/title/mimeType and patch. Rejections propagate; the
- * lease is released in `finally`.
+ * Audio: object URL leased for metadata only (never published on the node), upload
+ * FIRST, bail with the node untouched when no url comes back, then extract and patch.
  */
 export function audioUploadIntent({
   editor,
@@ -369,9 +349,9 @@ const stripFileExtension = (fileName: string): string => {
 }
 
 /**
- * File: no object URL at all. Bails (node untouched beyond `prePatch`) when
- * the result is missing or has no first item, but a first item without a url
- * still patches with `src: ''`.
+ * File: no object URL. Bails (node untouched beyond `prePatch`) when the result is
+ * missing or has no first item, but a first item without a url still patches with
+ * `src: ''`.
  */
 export function fileUploadIntent({
   editor,
@@ -433,12 +413,10 @@ export interface VideoUploadMetadata {
 }
 
 /**
- * Video main flow: metadata arrives pre-extracted (`extractVideoMetadata`
- * runs in the component, where its failure is caught and surfaced). An empty
- * result bails with the node untouched and clears the component-owned preview
- * via `onEmptyPreview`; the patch backfills thumbnail dimensions only when no
- * custom thumbnail is set. Returns the uploaded video url for the thumbnail
- * sub-flow.
+ * Video main flow: metadata arrives pre-extracted (`extractVideoMetadata` runs in
+ * the component, where its failure is caught and surfaced). An empty result bails
+ * and clears the component-owned preview via `onEmptyPreview`; the patch backfills
+ * thumbnail dimensions only when no custom thumbnail is set.
  */
 export function videoUploadIntent({
   editor,
@@ -526,8 +504,7 @@ export interface VideoFlowUploadIntentDeps {
  * The one video upload flow: main upload first, then — only when the main
  * upload produced a url AND the metadata carries a thumbnail blob — the
  * thumbnail sub-flow. An empty main result bails both flows and clears the
- * component-owned preview via `onEmptyPreview` (the ordering the video
- * component used to own inline). Returns the uploaded video url.
+ * component-owned preview via `onEmptyPreview`. Returns the uploaded video url.
  */
 export async function videoFlowUploadIntent({
   editor,
@@ -569,9 +546,8 @@ export async function videoFlowUploadIntent({
 }
 
 /**
- * Video custom thumbnail: no preview lease; dimensions come from the RESULT
- * url after a non-empty upload; writes `customThumbnailSrc` plus the
- * thumbnail dimensions.
+ * Video custom thumbnail: no preview lease; dimensions come from the RESULT url
+ * after a non-empty upload.
  */
 export function customThumbnailUploadIntent({
   editor,
@@ -602,10 +578,8 @@ export function customThumbnailUploadIntent({
 
 /**
  * Header background image: the pre-upload src reset clears the node's
- * `backgroundImageSrc`; dimensions come from the RESULT url after a
- * non-empty upload; the patch ALWAYS lands — an empty result still writes
- * `src: ''` with zeroed dimensions (the replaced handler's bail path).
- * Rejections propagate.
+ * `backgroundImageSrc`; dimensions come from the RESULT url; the patch ALWAYS
+ * lands — an empty result still writes `src: ''` with zeroed dimensions.
  */
 export function headerBackgroundUploadIntent({
   editor,
@@ -627,7 +601,7 @@ export function headerBackgroundUploadIntent({
       kind: 'extract',
       timing: 'afterUpload',
       // the patch-always policy means extraction also sees the empty result —
-      // like the replaced handler, dimensions are only read from a real url
+      // dimensions are only read from a real url
       extract: ({ resultUrl }) => (resultUrl ? getImageDimensions(resultUrl) : Promise.resolve(undefined)),
     },
     emptyResult: { kind: 'patch' },
@@ -639,17 +613,13 @@ export function headerBackgroundUploadIntent({
   })
 }
 
-/* ------------------------------------------------------------------------ */
-/* Gallery's multi-file adapter. The single-intent runner cannot express     */
-/* this flow without distortion: previews are per-file, publish to the       */
-/* gallery images mirror's LOCAL overlay (never the node) before the batched */
-/* upload, results merge back by fileName, and the failure path cleans up    */
-/* in-flow instead of propagating. The adapter keeps the pinned ordering —   */
-/* previews to the overlay first, the node write (the mirror's setImages,    */
-/* through 044's seam) only after the upload resolves — so in-flight         */
-/* uploads stay reorderable by previewSrc with stable image identity         */
-/* (useGalleryReorder).                                                      */
-/* ------------------------------------------------------------------------ */
+// Gallery's multi-file adapter. The single-intent runner cannot express this
+// flow: previews publish to the gallery images mirror's LOCAL overlay (never
+// the node) before the batched upload, results merge back by fileName, and
+// the failure path cleans up in-flow instead of propagating. The node write
+// (the mirror's setImages) lands only after the upload resolves, so in-flight
+// uploads stay reorderable by previewSrc with stable image identity
+// (useGalleryReorder).
 
 export interface GalleryUploadIntentDeps {
   upload: UploadFn
@@ -660,7 +630,7 @@ export interface GalleryUploadIntentDeps {
   previews: PreviewLeasePool
   /** Preview publication lands here FIRST — the mirror's local overlay, never the node. */
   setPreviewImages: (images: GalleryImage[]) => void
-  /** The result merge lands here — the mirror's local-and-node setter (044's seam). */
+  /** The result merge lands here — the mirror's local-and-node setter. */
   setImages: (images: GalleryImage[]) => void
   setErrorMessage: (message: string) => void
 }
@@ -722,10 +692,8 @@ export async function galleryUploadIntent({
 
   recalculateImageRows(newImages)
 
-  // show preview images immediately
   setPreviewImages(newImages)
 
-  // start uploads
   const uploadResult = await upload(strippedFiles)
 
   if (!uploadResult) {
@@ -759,6 +727,5 @@ export async function galleryUploadIntent({
     })
   })
 
-  // merge the results into the rendered list and write the node
   setImages(uploadedImages)
 }

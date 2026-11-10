@@ -104,9 +104,8 @@ describe('secret-encryption', () => {
 
     it('the decryption error names the encryption key and the backup-restore remedy', async () => {
       const { decryptIfNeeded } = await importModule(MOCK_KEY)
-      // A wrong encryptionKey fails the same way as corrupted ciphertext;
-      // the message must point the operator at the mismatch (the common
-      // case: a backup restored onto an instance with a different key).
+      // A wrong encryptionKey fails like corrupted ciphertext, so the message must point
+      // at the key mismatch (common case: a backup restored onto another instance).
       const fake = 'enc2:' + '00'.repeat(12) + ':' + '00'.repeat(16) + ':' + '00'.repeat(16)
       expect(() => decryptIfNeeded(fake)).toThrow(/security\.encryptionKey/)
       expect(() => decryptIfNeeded(fake)).toThrow(/restoring a backup/)

@@ -10,8 +10,7 @@ import {
 // Test stand-in for the per-composer provider InklingComposer mounts: wraps
 // children in a CardSelectionStoreContext.Provider backed by a real store.
 // Returns the store alongside the wrapper so tests can seed or inspect state;
-// pass initialState to seed selection/edit-mode up front (the store equivalent
-// of the old per-test CardContext factories).
+// pass initialState to seed selection/edit-mode up front.
 export function createCardSelectionStoreWrapper({
   store = createCardSelectionStore(),
   initialState = {},

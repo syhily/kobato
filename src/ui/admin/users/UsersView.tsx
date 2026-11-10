@@ -89,7 +89,6 @@ export function UsersView() {
 
         <UsersTable rows={rows} config={config} isLoading={isLoading} sentinelRef={sentinelRef} />
 
-        {/* Bottom status */}
         <AdminInfiniteListFooter
           noun={t('admin.list.noun.users')}
           rowCount={rows.length}

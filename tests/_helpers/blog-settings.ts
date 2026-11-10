@@ -112,7 +112,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       searchResult: { ...CACHE_BUCKET_FALLBACKS.searchResult },
     },
   },
-  // Historical 429 thresholds — suites assert against them; override per test when needed.
+  // Rate-limit thresholds suites assert against; override per test when needed.
   rateLimit: rateLimitDefaults,
   fonts: {
     og: { family: '' },
@@ -133,9 +133,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   observability: observabilityDefaults,
 }
 
-/** Seed (or clear) the snapshot. Custom bundles are cloned + frozen; the
- *  shared fixture keeps identity (`toBe`). `undefined` = no hydration,
- *  `null` = "no settings". */
+/** Seed (or clear) the snapshot. Custom bundles are cloned + frozen; the shared fixture
+ *  keeps identity (`toBe`). `undefined` = no hydration, `null` = "no settings". */
 export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null | undefined): void {
   const frozen =
     value == null ? value : value === TEST_BLOG_SETTINGS_BUNDLE ? deepFreeze(value) : deepFreeze(structuredClone(value))

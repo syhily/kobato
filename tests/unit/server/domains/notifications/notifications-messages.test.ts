@@ -8,7 +8,6 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Notification service validation across all four locales (message title/body are user content).
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

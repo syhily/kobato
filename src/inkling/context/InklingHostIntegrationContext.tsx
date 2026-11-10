@@ -8,8 +8,8 @@ export interface FileUploader {
   useFileUpload: (type: 'image' | 'video' | 'audio' | 'file' | 'mediaThumbnail') => {
     isLoading?: boolean
     // `fileName` lets multi-file uploads (gallery) map results back to the
-    // original file — the reference host (demo/utils/useFileUpload.ts) always
-    // returns it, and `GalleryNodeComponent` reads it
+    // original file; the reference host returns it and GalleryNodeComponent
+    // reads it
     upload: (
       files: FileList | File[],
       options?: { formData?: Record<string, string> },
@@ -24,8 +24,8 @@ export interface FileUploader {
   }
 }
 
-// accepted by <InklingComposer>: a full uploader, a partial one missing the
-// `useFileUpload` hook (a fallback is installed), or any legacy object
+// Accepted by <InklingComposer>: a full uploader, one missing `useFileUpload`
+// (a fallback is installed), or any legacy object
 export type FileUploaderInput = Partial<FileUploader> | Record<string, unknown>
 
 export interface GifSettings {
@@ -81,7 +81,7 @@ export interface LibraryImageItem {
   height?: number | null
   /* Host-schema pass-through keys: carried on the insert dataset, ignored by
      the stock image declaration, persisted only when the host's own card
-     declaration declares them as properties (CONTEXT.md: "host card"). */
+     declaration declares them as properties. */
   thumbhash?: string
   storagePath?: string
   imageId?: string
@@ -90,55 +90,50 @@ export interface LibraryImageItem {
 export interface ImageLibrarySettings {
   /**
    * Empty query = the default (unfiltered) listing, fetched immediately on
-   * picker open; non-empty queries are debounced. Resolving `undefined`
-   * means "transient failure / cancelled" — the picker keeps its last items
-   * (same convention as LinkingSettings.searchLinks).
+   * picker open; non-empty queries are debounced. `undefined` means
+   * "transient failure / cancelled": the picker keeps its last items (the same
+   * convention as LinkingSettings.searchLinks).
    */
   search: (query: string) => Promise<LibraryImageItem[] | undefined>
   /**
-   * Optional in-picker upload entry. The host owns the whole upload UX
-   * (e.g. kobato's UploadImageDialog, which creates the library row) and
-   * resolves with the uploaded item — treated as the selection — or
-   * `undefined` when cancelled. Absent = no upload button.
+   * Optional in-picker upload entry; the host owns the whole upload UX and
+   * resolves with the uploaded item (treated as the selection) or `undefined`
+   * when cancelled. Absent = no upload button.
    */
   upload?: () => Promise<LibraryImageItem | undefined>
 }
 
 export interface LibrarySettings {
   /**
-   * The host's image media library. Present =
-   * the image card's menu gains an "Image library" entry opening the picker.
-   * The three host-schema keys (`thumbhash`/`storagePath`/`imageId`) ride the
-   * insert dataset and are silently ignored by the stock image declaration —
-   * they persist only when the host declares them as properties on its own
-   * card declaration.
+   * The host's image media library. Present = the image card's menu gains an
+   * "Image library" entry opening the picker; the host-schema keys ride the
+   * insert dataset (see LibraryImageItem).
    */
   imageLibrary?: ImageLibrarySettings
 }
 
 export interface MathSettings {
   /**
-   * The host's server-side render channel (kobato: oRPC admin.renderMath;
-   * the 200ms debounce stays host-owned). Used for in-editor previews only —
-   * the artifacts persisted on the node are filled by the host's save
-   * pipeline, never written back by the editor.
+   * The host's server-side render channel (kobato: oRPC admin.renderMath; the
+   * 200ms debounce stays host-owned). In-editor previews only — the artifacts
+   * persisted on the node are filled by the host's save pipeline and never
+   * written back by the editor.
    */
   renderMath?: (args: { tex: string; display: boolean }) => Promise<{ mathml?: string; svg?: string; error?: string }>
 }
 
 export interface TelemetrySettings {
   /**
-   * The host's telemetry handler (CONTEXT.md: "host config"). The editor's
-   * `trackEvent` events route here instead of the default adapter (the
-   * plausible/posthog fan-out). Page-global by nature — analytics abstracts
-   * window-global vendors — so the last registered handler wins page-wide.
+   * The host's telemetry handler. Editor `trackEvent` events route here instead
+   * of the default plausible/posthog fan-out. Page-global by nature, so the
+   * last registered handler wins page-wide.
    */
   telemetry?: TelemetryHandler
 }
 
-// The host's card-behaviour contract, closed (plan 048): every key the editor
-// reads is declared on a per-area slice and nothing else is accepted, so
-// renaming or tightening a key breaks host code loudly at compile time.
+// The host's card-behaviour contract, closed: every key the editor reads is
+// declared on a per-area slice and nothing else is accepted, so renaming or
+// tightening a key breaks host code loudly at compile time.
 export interface CardConfig
   extends
     GifSettings,
@@ -149,13 +144,12 @@ export interface CardConfig
     LibrarySettings,
     TelemetrySettings {}
 
-// Host-integration lifecycle (plan 047): the values the host application
-// hands the editor — uploads, card behaviour flags, and the error sink.
-// This is the WHOLE-value transport shape: the composer props and the
-// `InklingHostIntegrationProvider` facade speak it, but no component
-// subscribes to it — consumers subscribe to the per-lifecycle channels
-// below (plan C4), so one feature config's identity change re-renders only
-// that feature's consumers instead of every host-integration consumer.
+// Host-integration lifecycle: the values the host application hands the editor
+// — uploads, card behaviour flags, and the error sink. This is the WHOLE-value
+// transport shape: the composer props and the provider facade speak it, but no
+// component subscribes to it — consumers subscribe to the per-lifecycle
+// channels below, so one feature config's identity change re-renders only that
+// feature's consumers.
 export interface InklingHostIntegrationContextValue {
   fileUploader: FileUploader
   cardConfig: CardConfig
@@ -169,9 +163,10 @@ export interface InklingHostIntegrationContextValue {
   dragScrollContainerSelector?: string
 }
 
-/* The editor-level channel: the uploader and the error sink — stable for
- * the editor's lifetime (the `useFileUpload` identity contract in
- * src/hooks/useMediaCardUpload.ts), so one context serves every consumer. */
+/* The editor-level channel: uploader and error sink, stable for the editor's
+ * lifetime (the `useFileUpload` identity contract in
+ * src/inkling/hooks/useMediaCardUpload.ts), so one context serves every
+ * consumer. */
 export interface InklingHostEssentials {
   fileUploader: FileUploader
   onError: (error: unknown, info: React.ErrorInfo) => void
@@ -191,10 +186,10 @@ export function useInklingHostEssentials(): InklingHostEssentials {
   return React.useContext(InklingHostEssentialsContext)
 }
 
-/* The feature-level channels: one context per CardConfig slice (telemetry
- * excepted — it never enters a context; the composer reads it from props
- * and hands it to the page-global telemetry port directly). A slice's
- * identity changing re-renders only that channel's consumers. */
+/* The feature-level channels: one context per CardConfig slice, so a slice's
+ * identity change re-renders only that channel's consumers. Telemetry is
+ * excepted — it is page-global, read from props, and handed to the telemetry
+ * port directly. */
 const InklingGifSettingsContext = React.createContext<GifSettings>({})
 const InklingLinkingSettingsContext = React.createContext<LinkingSettings>({})
 const InklingSnippetSettingsContext = React.createContext<SnippetSettings>({})
@@ -232,9 +227,9 @@ export function useInklingLibrarySettings(): LibrarySettings {
   return React.useContext(InklingLibrarySettingsContext)
 }
 
-/* The drag-scroll narrow channel: a single consumer
- * (DragDropReorderPlugin), so it rides its own context instead of
- * re-rendering the editor-level channel's consumers on identity changes. */
+/* The drag-scroll narrow channel: a single consumer (DragDropReorderPlugin), so
+ * it rides its own context instead of re-rendering the editor-level channel's
+ * consumers on identity changes. */
 const InklingDragScrollContext = React.createContext<string | undefined>(undefined)
 
 /** The host's drag auto-scroll container selector (undefined = the document default). */
@@ -243,14 +238,11 @@ export function useInklingDragScrollContainerSelector(): string | undefined {
 }
 
 /**
- * The whole-value facade over the per-lifecycle channels: the composer
- * (and tests, which build whole values through
- * `test/utils/host-integration-context.ts`) mounts this once; every slice
- * is memoized on its own leaf references, so a host rebuilding `cardConfig`
- * every render only invalidates the channels whose leaves actually
- * changed. `cardConfig.telemetry` is deliberately dropped here — telemetry
- * is page-global and stays a composer-prop concern
- * (src/components/InklingComposerBase.tsx).
+ * The whole-value facade over the per-lifecycle channels: the composer mounts
+ * this once. Every slice is memoized on its own leaf references, so a host
+ * rebuilding `cardConfig` every render invalidates only the channels whose
+ * leaves actually changed. `cardConfig.telemetry` is deliberately dropped —
+ * telemetry is page-global and stays a composer-prop concern.
  */
 export function InklingHostIntegrationProvider({
   value,

@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 
 // Shared token primitives: 32 random bytes → 43-char base64url. Anything
-// outside that length is not one of our tokens — fail fast before the DB.
+// outside that length was not minted here — fail fast before the DB.
 const TOKEN_BYTES = 32
 
 export const TOKEN_LEN_RE = /^[A-Za-z0-9_-]{43}$/

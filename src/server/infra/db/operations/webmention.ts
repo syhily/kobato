@@ -11,8 +11,8 @@ import { isUniqueConstraintError } from '@/server/infra/http/errors'
 export type WebmentionStatus = WebmentionRow['status']
 
 /**
- * Re-mention upsert outcome (plan: webmention v3 R13/R15): `inserted` new pair,
- * `updated` metadata refresh, `demoted` when an approved row's source changed.
+ * Re-mention upsert outcome: `inserted` new pair, `updated` metadata refresh,
+ * `demoted` when an approved row's source changed.
  */
 export type WebmentionUpsertOutcome = 'inserted' | 'updated' | 'demoted'
 
@@ -270,9 +270,8 @@ export async function pickWebmentionsDueForReverify(db: Database, now: Date, lim
     .limit(limit)
 }
 
-/** Repairs legacy rows that reached the hide threshold while `pending`
- *  (before failed verifications hid non-approved rows): hide them without
- *  fetching. Self-healing — the picker already excludes them. */
+/** Repairs rows that reached the hide threshold while `pending`: hide them
+ *  without fetching. Self-healing — the picker already excludes them. */
 export async function hideExhaustedPendingWebmentions(db: Database): Promise<number> {
   const rows = await db
     .update(webmention)

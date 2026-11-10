@@ -5,13 +5,9 @@ import { describe, expect, it } from 'vitest'
 import { KOBATO_HOST_CARD_NODE_TYPES } from '@/shared/lexical/node-whitelist'
 
 // Host cards render kobato-chrome components whose Tailwind utilities resolve
-// var(--text-*) at RUNTIME — but inkling's scoped theme (@layer theme on
+// var(--text-*) at RUNTIME, but inkling's scoped theme (@layer theme on
 // .inkling-lexical in src/inkling/styles/index.css) re-declares that whole
-// scale with its own 10px-root values. Inside the editor canvas the music
-// player's text-xs therefore ballooned 0.75rem → 1.25rem while its w-9 time
-// columns (spacing, unshadowed) stayed 36px, and the inherited
-// overflow-wrap:break-word split "00:00" at the colon — the editor/public
-// render mismatch this restore guards. The restore rule in
+// scale with its own values. The restore rule in
 // src/styles/inkling-editor.css re-declares the kobato scale on every host
 // card chrome; this contract pins (a) the selector list against
 // KOBATO_HOST_CARD_NODE_TYPES and (b) coverage + value of every text token

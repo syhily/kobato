@@ -5,7 +5,7 @@ import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@/server/domains/comments/projection'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
-// Wire helpers bridge `CommentAndUser` (number ids, Date timestamps) onto
+// Wire helpers bridge `CommentAndUser` (number ids, Date timestamps) to
 // `CommentItemWire` (string ids, ISO timestamps).
 
 function makeRow(overrides: Partial<CommentAndUser> = {}): CommentAndUser {

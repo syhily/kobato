@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { toImageDataset } from '@/inkling/components/ui/LibraryPlugin'
 
-// toImageDataset is the library flow's only field-mapping point (plan C8
-// §3.4): the four card fields always land (with their defaults), the three
+// toImageDataset is the library flow's only field-mapping point: the four
+// card fields always land (with their defaults), the three
 // host-schema keys ride along only when the item carries them.
 describe('toImageDataset', () => {
   it('maps every field, including the host-schema pass-through keys', () => {

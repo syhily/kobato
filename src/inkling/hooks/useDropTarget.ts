@@ -11,13 +11,10 @@ import type { DraggableContainerHandle } from '@/inkling/utils/draggable/DragDro
 import { useDragDropContainer } from '@/inkling/utils/draggable/useDragDropContainer'
 
 // Drop target — the one owner of the drop-target hover seam: the container
-// element state, the isDraggedOver hover flag (lit by the hover policy,
-// cleared on leave and on drag end), and the drag-start enablement policy.
-// Previously this choreography existed twice: as the one-consumer
-// useCardDragAndDrop hook and inlined in useGalleryReorder. Both are now
-// adapters over this module (the gallery keeps its own predicates — its hover
-// policy accepts every drag, its enablement policy only enables, matching the
-// historical asymmetry).
+// element state, the isDraggedOver hover flag (lit by the hover policy, cleared
+// on leave and on drag end), and the drag-start enablement policy. Adapters
+// supply their own predicates (the gallery's hover policy accepts every drag,
+// its enablement policy only enables).
 
 export interface UseDropTargetOptions {
   /** Master toggle, flows through the container's enable/disable pair. */

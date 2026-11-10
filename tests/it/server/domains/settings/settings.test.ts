@@ -155,8 +155,9 @@ const fixtureBundle: BlogSettingsBundle = {
       password: '',
       sampleRate: 1,
       includeRedactedSql: false,
+      retentionDays: 0,
       logs: { enabled: false },
-      frontend: { enabled: false, sessionSampleRate: 100 },
+      frontend: { enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' },
       rumClientToken: '',
       verifiedFingerprint: '',
       provisionedFingerprint: '',
@@ -487,7 +488,6 @@ describe('services/settings — mail section', () => {
     const mail = readBucket('blog.mail', 'mail')
     expect(mail.mailgunDomain).toBe('mg.example.com')
     expect(mail.sender).toBe('noreply@mg.example.com')
-    // mailgunApiKey omitted from the patch and preserved from the existing row.
     expect(mail.mailgunApiKey).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.mailgunApiKey as string)).toBe('STOREDMAILGUNKEY')
   })
@@ -876,7 +876,6 @@ describe('services/settings — security section', () => {
 
 describe('services/settings — section patch merge', () => {
   it('keeps the stored SMTP TLS flags when a focused patch only carries the sender', async () => {
-    // A focused patch must never reset the stored row's untouched fields.
     await seedSections(fixtureBundle, { except: ['blog.mail'] })
     await db.insert(setting).values({
       scope: 'blog.mail',

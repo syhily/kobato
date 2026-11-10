@@ -5,28 +5,22 @@ import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/
 import { getLogger } from '@/server/infra/logger'
 
 /**
- * One-time conversion of the legacy `access_log` table (named columns) to
- * the generic-slot `access_events` schema. Runs once per database at boot
- * (flag-gated on a `system.`-scoped `setting` row), before the batcher
- * accepts writes and under the analytics mutation lock. The whole rewrite
- * is one DuckDB transaction, so a failed/interrupted run leaves `access_log`
- * intact and retries on the next boot; the flag is written only after the
- * old table is dropped. Old backups restore both engines without the flag,
- * so their legacy sidecars upgrade through this same path. The legacy table
- * is probed BEFORE the flag: an analytics-only restore of a pre-rewrite
- * backup into an install whose content DB already carries the flag must
- * still migrate. In-memory sidecars (tests) skip gracefully.
+ * One-time conversion of the legacy `access_log` table (named columns) to the
+ * generic-slot `access_events` schema, in one DuckDB transaction under the
+ * analytics mutation lock: a failed run leaves `access_log` intact and retries
+ * at next boot, and the flag is written only after the old table is dropped.
+ * The legacy table is probed BEFORE the flag, so an analytics-only restore of a
+ * pre-rewrite backup still migrates.
  */
 
 const log = getLogger('analytics.blob-migration')
 
 const BOOT_FLAG_SCOPE = 'system.analytics-blob-migration'
 
-// Old → new column mapping. The raw `ip` column is DISCARDED (it was
-// always written NULL), `visitor_hash` becomes blob5, entity scoping
-// becomes the `index1` key, and the naive old `ts` round-trips through
-// epoch seconds into TIMESTAMPTZ. `browserType` (blob13) has no old
-// source and stays ''.
+// Old → new column mapping: the raw `ip` column is DISCARDED (it was always
+// written NULL), `visitor_hash` becomes blob5, entity scoping becomes the
+// `index1` key, and the old `ts` round-trips through epoch seconds into
+// TIMESTAMPTZ. blob13 has no old source and stays ''.
 const MIGRATION_SQL = `
 INSERT INTO access_events (
   event_id, index1, timestamp, is_bot,
@@ -76,12 +70,10 @@ export async function migrateLegacyAccessLog(handle: AnalyticsHandle): Promise<n
   }
   await handle.writer.run('BEGIN TRANSACTION')
   try {
-    // Retry-safe by construction: a failed run rolls the whole transaction
-    // back, leaving `access_log` intact and `access_events` untouched, so a
-    // plain re-run is correct — never DELETE live events here.
+    // Retry-safe by construction: a failed run rolls the transaction back,
+    // leaving `access_log` intact — never DELETE live events here.
     await handle.writer.run(MIGRATION_SQL)
-    // Count the SOURCE rows — access_events may already hold live events
-    // written while a previous failed migration was being retried.
+    // Count the SOURCE rows — access_events may already hold live events.
     const count = await handle.writer.runAndReadAll('SELECT count(*) AS c FROM access_log')
     await handle.writer.run('DROP TABLE access_log')
     await handle.writer.run('COMMIT')
@@ -97,9 +89,6 @@ export async function runAnalyticsBlobMigrationAtBoot(db: Database, handle: Anal
     if (handle.inMemory) {
       return
     }
-    // Probe first, gate second: an analytics-only restore of a pre-rewrite
-    // backup into an install whose flag row already exists must still
-    // migrate — the flag alone can never prove the legacy table is gone.
     if (!(await legacyTableExists(handle))) {
       if (findSettingByScope(db, BOOT_FLAG_SCOPE) === null) {
         upsertSetting(db, { completedAt: new Date().toISOString(), migratedRows: 0 }, null, BOOT_FLAG_SCOPE)

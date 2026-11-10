@@ -1,6 +1,6 @@
-// Survives hand-written (no import spec, CONTEXT.md: "import spec"): the
-// conversion-abort guards on child presence and the first-child-must-be-CODE
-// check are structural, not flat per-property reads.
+// Hand-written (no import spec): the conversion-abort guards on child presence
+// and the first-child-must-be-CODE check are structural, not flat per-property
+// reads.
 import type { LexicalNode } from 'lexical'
 
 import { readCaptionFromElement } from '@/inkling/nodes/base/utils/read-caption-from-element'

@@ -138,7 +138,7 @@ process.once('SIGBREAK', () => requestShutdown('SIGBREAK'))
 
 // Un-awaited streamed loader promises have no rejection listener until
 // turbo-stream serializes them — the default 'throw' mode would kill the
-// process (ADR-0005). Do NOT remove while any loader returns one.
+// process. Do NOT remove while any loader returns one.
 export function handleUnhandledRejection(error: unknown): void {
   log.error('Unhandled promise rejection', { err: error instanceof Error ? error.message : String(error) })
 }

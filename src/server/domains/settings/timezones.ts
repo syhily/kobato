@@ -1,6 +1,5 @@
-// Canonical IANA zone list from `Intl.supportedValuesOf('timeZone')`. The runtime's
-// own tzdata is the single source of truth — the dropdown can never offer a
-// zone the runtime would reject.
+// Canonical IANA zone list from `Intl.supportedValuesOf('timeZone')`: the runtime's own
+// tzdata is the single source of truth, so the dropdown cannot offer a zone it rejects.
 
 const ZONES: readonly string[] = Object.freeze([...Intl.supportedValuesOf('timeZone')].sort())
 const ZONE_SET: ReadonlySet<string> = new Set(ZONES)

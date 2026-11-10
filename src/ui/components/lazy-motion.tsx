@@ -5,9 +5,9 @@ import { createElement, lazy, Suspense, type ComponentProps, type CSSProperties,
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 
-// Shared lazy handles on the `motion/react` runtime — one dynamic import, one
-// shared chunk. Until it resolves (incl. SSR) elements render a static DOM
-// fallback: DOM props forwarded, animation-only props stripped, enter animation lost.
+// Shared lazy handles on the `motion/react` runtime: one dynamic import, one shared chunk.
+// Until it resolves (including SSR) elements render a static DOM fallback — DOM props
+// forwarded, animation-only props stripped, enter animation lost.
 const MotionDiv = lazy(() => import('motion/react').then((module) => ({ default: module.motion.div })))
 const MotionButton = lazy(() => import('motion/react').then((module) => ({ default: module.motion.button })))
 const MotionSpan = lazy(() => import('motion/react').then((module) => ({ default: module.motion.span })))
@@ -67,8 +67,7 @@ function staticFallback(tag: FallbackTag, props: object, children: ReactNode): R
 // Static fallback cannot render MotionValue children; no consumer passes them.
 type LazyMotionElementProps<Props> = Omit<Props, 'children'> & {
   children?: ReactNode
-  /** Extra styles applied ONLY to the static fallback (e.g. the ToC drawer's
-   *  off-screen resting transform); ignored once the motion element takes over. */
+  /** Styles applied only to the static fallback; ignored once motion takes over. */
   fallbackStyle?: CSSProperties
 }
 
@@ -118,10 +117,7 @@ export function LazyMotionP({ children, fallbackStyle, ...props }: LazyMotionPPr
   )
 }
 
-/**
- * `AnimatePresence` behind the same lazy boundary; only exit animations wait
- * for the motion chunk.
- */
+/** `AnimatePresence` behind the same lazy boundary; only exit animations wait for the chunk. */
 export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeof AnimatePresence>) {
   return (
     <Suspense fallback={<>{children}</>}>
@@ -133,16 +129,12 @@ export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeo
 const LazyMotionConfigImpl = lazy(() => import('motion/react').then((module) => ({ default: module.MotionConfig })))
 
 /**
- * `MotionConfig` behind the same lazy boundary — no DOM, so the fallback
- * renders children bare.
+ * `MotionConfig` behind the same lazy boundary; no DOM, so the fallback renders children bare.
  *
- * The boundary must NOT exist during SSR/hydration: it wraps the entire app,
- * so a motion chunk still loading at hydration time (cold visit) makes the
- * client render the boundary pending against the server's streamed (resolved)
- * markup — a whole-tree structural mismatch surfacing as React error #418 on
- * every cold load. Children render bare until the first client commit; the
- * provider then mounts behind the lazy boundary exactly as the chunk-resolve
- * swap did before.
+ * The boundary must NOT exist during SSR/hydration: it wraps the entire app, so a chunk still
+ * loading at hydration (cold visit) would render pending against the server's resolved
+ * markup — a whole-tree mismatch surfacing as React error #418. Children render bare until
+ * the first client commit, then the provider mounts behind the boundary.
  */
 export function LazyMotionConfig({ children, ...props }: ComponentProps<typeof MotionConfig>) {
   const ready = useHydrated()

@@ -1,24 +1,17 @@
-/**
- * The one media-load wait (round 3, C6): every metadata loader
- * (`getImageDimensions`, `getAudioMetadata`, `extractVideoMetadata`) is a
- * thin config over this primitive — collect the element's success events,
- * fail on `error` or a bounded timeout, and clean all of it up on settle.
- * `start` runs after the listeners attach so the load (assigning `src`,
- * calling `.load()`) can never race ahead of them, and listing several
- * events covers loads whose signals can arrive in one task (a local blob's
- * `loadedmetadata` + `canplay`).
- */
+// The one media-load wait: every metadata loader is a thin config over this primitive.
+// `start` runs after the listeners attach so the load cannot race ahead of them; listing
+// several events covers loads whose signals arrive in one task (a local blob's
+// `loadedmetadata` + `canplay`).
 
 export const MEDIA_LOAD_TIMEOUT_MS = 15_000
 
 export interface AwaitMediaEventsOptions {
-  /** Element events the wait collects; resolves once each has fired. */
+  /** Element events the wait collects; resolves once all of them have fired. */
   events: string[]
-  /** Message of the Error the wait rejects with on the element's `error` event. */
+  /** Message of the Error rejected on the element's `error` event. */
   errorMessage: string
   /** Starts the load after the listeners attach — assign `src`, call `.load()` here. */
   start?: () => void
-  /** Bounded wait in ms before the wait rejects on its own; defaults to MEDIA_LOAD_TIMEOUT_MS. */
   timeoutMs?: number
 }
 

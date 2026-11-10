@@ -8,12 +8,10 @@ import { DetailBodyChrome } from '@/ui/public/post/DetailBodyChrome'
 
 const siteIdentity = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 
-// SSR parity for the content-language boundary: the UI renders in en-US while
-// the prose is whatever the author declared. Only the body container takes the
-// author's `lang` (and `dir="auto"` so RTL prose lays out correctly) — every
-// chrome string and EVERY other element stays in the UI locale/direction, and
-// an unset value renders neither attribute (the container inherits the
-// document language and direction).
+// SSR parity for the content-language boundary: the UI renders in en-US while the prose
+// is whatever the author declared. Only the body container takes the author's `lang` and
+// `dir="auto"` (so RTL prose lays out correctly); every other element keeps the UI
+// locale/direction, and an unset value renders neither attribute.
 
 // `comments={false}` keeps the streamed promise out of the SSR tree.
 const neverSettles = new Promise<never>(() => undefined)

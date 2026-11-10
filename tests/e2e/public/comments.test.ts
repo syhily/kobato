@@ -5,8 +5,7 @@ import { callE2eRpc } from '#/_helpers/e2e-rpc'
 
 const env = e2eEnv()
 
-// R12: comment bodies are Lexical editor states (the comment editor switched
-// to the trimmed inkling surface); article bodies have been Lexical since R9a.
+// Comment and article bodies are Lexical editor states (same wire format).
 const COMMENT_BODY = {
   root: {
     type: 'root',
@@ -74,8 +73,6 @@ function scrapePageKey(html: string): string {
   return value[1]
 }
 
-// The comment journey across all three actors: guest reply held for
-// moderation, admin approves, then the public thread and post show it.
 describe('public comments flow (HTTP e2e)', () => {
   it('guest reply → moderation hold → admin approve → publicly visible', async () => {
     const admin = new E2eClient(env.baseUrl)
@@ -105,7 +102,6 @@ describe('public comments flow (HTTP e2e)', () => {
     expect(published.status).toBe(200)
 
     try {
-      // The page_key the public thread is keyed by comes from the page itself.
       const guest = new E2eClient(env.baseUrl)
       const detail = await guest.get('/posts/e2e-comments')
       expect(detail.status).toBe(200)
@@ -113,7 +109,6 @@ describe('public comments flow (HTTP e2e)', () => {
       // /rpc POSTs pass the csrfGuard — anonymous clients need their own session-bound token.
       const guestCsrf = await getPublicCsrfToken(guest, '/posts/e2e-comments')
 
-      // Guest reply — a first-time commenter is held pending.
       const reply = await callE2eRpc<{ comment: { id: string; isPending: boolean | null } }>(
         guest,
         '/comments/replyComment',
@@ -125,7 +120,6 @@ describe('public comments flow (HTTP e2e)', () => {
       expect(reply.json.comment.isPending).toBe(true)
       const commentId = reply.json.comment.id
 
-      // Anonymous readers must not see the held comment…
       const anon = new E2eClient(env.baseUrl)
       const anonCsrf = await getPublicCsrfToken(anon, '/')
       const hidden = await callE2eRpc<CommentListJson>(
@@ -137,7 +131,6 @@ describe('public comments flow (HTTP e2e)', () => {
       expect(hidden.status).toBe(200)
       expect(hidden.json.comments.map((c) => c.id)).not.toContain(commentId)
 
-      // …but the admin moderation queue does, and approves it.
       const queue = await callE2eRpc<{ comments: Array<{ id: string; content: string | null }> }>(
         admin,
         '/admin/comments/loadAll',
@@ -150,7 +143,6 @@ describe('public comments flow (HTTP e2e)', () => {
       const approved = await callE2eRpc(admin, '/admin/comments/approve', { commentId }, csrfToken)
       expect(approved.status).toBe(200)
 
-      // Now the public thread shows it…
       const visible = await callE2eRpc<CommentListJson>(
         anon,
         '/comments/loadComments',
@@ -160,7 +152,6 @@ describe('public comments flow (HTTP e2e)', () => {
       expect(visible.status).toBe(200)
       expect(visible.json.comments.map((c) => c.id)).toContain(commentId)
 
-      // …and so does the streamed SSR of the post page.
       const rerendered = await anon.get('/posts/e2e-comments')
       expect(await rerendered.text()).toContain('e2e 评论旅程标记')
     } finally {

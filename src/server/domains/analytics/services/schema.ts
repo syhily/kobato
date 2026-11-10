@@ -2,9 +2,8 @@ import { ACCESS_EVENTS_DDL } from '@/server/domains/analytics/services/access-lo
 import { DEVICE_ENV_CLIENT_DDL, DEVICE_ENV_SERVER_DDL } from '@/server/domains/analytics/services/device-env'
 
 /**
- * Every table the DuckDB sidecar owns, in creation order. The DDL list and
- * the table-name list both derive from here, so the boot lifecycle, the
- * retention job, and the test harness cannot drift apart.
+ * Every DuckDB table, in creation order — the single source both the DDL list
+ * and the table-name list derive from.
  */
 const ANALYTICS_SCHEMA = [
   { name: 'access_events', ddl: ACCESS_EVENTS_DDL },

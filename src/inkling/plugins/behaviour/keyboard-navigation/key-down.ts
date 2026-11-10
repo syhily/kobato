@@ -10,9 +10,8 @@ export function registerKeyDownPassthrough(editor: LexicalEditor, _deps: Keyboar
   return editor.registerCommand(
     KEY_DOWN_COMMAND,
     (event) => {
-      // Avoid processing custom commands when inside a card's editor.
-      // This also prevents Lexical calling event.preventDefault on
-      // cut/copy/paste events letting the browser/inner editors do their thing
+      // Swallow keys inside a card's editor; this also stops Lexical calling
+      // preventDefault on cut/copy/paste, letting the browser or inner editor act.
       if (shouldIgnoreEvent(event)) {
         return true
       }

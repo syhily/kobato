@@ -1,12 +1,8 @@
-// The `two-column` host card (plan docs/plans/inkling-editor-replacement.md,
-// round R10): kobato's 双栏块 — two nested Lexical editors (left/right
-// panes), each serialized as cleaned HTML on its dataset key. Same
-// dual-entry sharing contract as `./solution`: one React-free spec consumed
-// by the headless projection class and the `.`-entry editing class.
-//
-// The full-fidelity markup mirrors the retired PT public renderer (R13
-// deleted `src/ui/pt/`) attribute-for-attribute; the feed variant flattens
-// to left + right content concatenated (retired PT rssMode parity).
+// The `two-column` host card: kobato's 双栏块 — two nested Lexical editors
+// (left/right panes), each serialized as cleaned HTML on its dataset key. Same
+// dual-entry contract as `./solution` (one React-free spec, two class objects).
+// The full-fidelity markup is the public render; the feed variant flattens to
+// left + right content concatenated.
 
 import type { DecoratorNodeProperty } from '@/inkling/headless'
 

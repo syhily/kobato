@@ -111,7 +111,7 @@ export function ImageNodeComponent({
   const hasMultipleImageCardWidths = allowedImageCardWidths.length > 1
 
   // the mount-time document migrations (data:-URL upload, dimension
-  // backfill, width clamp) live in @/plugins/behaviour/image-lifecycle
+  // backfill, width clamp) live in @/inkling/plugins/behaviour/image-lifecycle
   React.useEffect(() => {
     let isMounted = true
     void migrateImageDataUrl(
@@ -131,7 +131,7 @@ export function ImageNodeComponent({
       { write, onError: (error) => onError(error, {}) },
     )
 
-    // We only do this for init
+    // init only
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

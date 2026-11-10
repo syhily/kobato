@@ -14,15 +14,14 @@ import { useInitialFileUpload } from '@/inkling/hooks/useInitialFileUpload'
 import { useTriggerFileDialog } from '@/inkling/hooks/useTriggerFileDialog'
 
 // Media-card upload wiring — the one owner of the per-channel skeleton the
-// media cards used to hand-copy: the host uploader for one media kind, the
-// file-drag handler, the initial-file kickoff, the insert-time file-dialog
-// trigger, the hidden-input ref, and the change-event adapter. Per-card
-// variance arrives as data: the card's intent call (`onFiles`, told which
-// of the three sources fired — the input reset policies diverge per
-// source), the initial-file readiness guard, the dialog trigger, and the
-// drag-disabled gate. A card with several upload channels (audio's
-// thumbnail, video's custom thumbnail) composes one hook per channel; the
-// card's own intent calls stay with the card.
+// media cards share: the host uploader for one media kind, the file-drag
+// handler, the initial-file kickoff, the insert-time file-dialog trigger, the
+// hidden-input ref, and the change-event adapter. Per-card variance arrives as
+// data: the card's intent call (`onFiles`, told which of the three sources
+// fired — the input reset policies diverge per source), the initial-file
+// readiness guard, the dialog trigger, and the drag-disabled gate. A card with
+// several upload channels (audio's thumbnail, video's custom thumbnail) composes
+// one hook per channel; the card's own intent calls stay with the card.
 
 export type MediaUploadKind = 'image' | 'video' | 'audio' | 'file' | 'mediaThumbnail'
 export type MediaUploader = ReturnType<FileUploader['useFileUpload']>
@@ -108,14 +107,12 @@ export function useMediaCardUpload<TNode>({
   useTriggerFileDialog({
     editor,
     nodeKey,
-    // composed runtime narrowing instead of a cast: `TNode` can't be
-    // constrained to `TriggerFileDialogCardNode` — gallery/header guards
-    // narrow to node types without `triggerFileDialog`, and the cards'
-    // `triggerFileDialog?: boolean | undefined` property isn't assignable to
-    // the interface's write-only setter under strict mode. The probe matches
-    // the accessor the assembled card classes generate from the spec's
-    // `accessor: true` entry, which every card passing `triggerFileDialog`
-    // (image, audio, video, file, gallery) adopts.
+    // composed runtime narrowing instead of a cast: `TNode` can't be constrained
+    // to `TriggerFileDialogCardNode` — gallery/header guards narrow to node types
+    // without `triggerFileDialog`, and the cards' `triggerFileDialog?: boolean |
+    // undefined` property isn't assignable to the interface's write-only setter
+    // under strict mode. The probe matches the accessor the assembled card classes
+    // generate from the spec's `accessor: true` entry.
     guard: (node: unknown): node is TriggerFileDialogCardNode =>
       typeof node === 'object' && node !== null && 'triggerFileDialog' in node && guard(node),
     fileInputRef,

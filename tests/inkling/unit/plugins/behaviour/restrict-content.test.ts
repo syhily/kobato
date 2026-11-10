@@ -20,7 +20,7 @@ import { $enforceParagraphRestriction } from '@/inkling/plugins/behaviour/restri
 // (decorator strip, list unwrap, non-paragraph conversion, truncation,
 // selection repair) and the two gating no-ops (clean root, non-collapsed /
 // missing selection). The plugin mount smoke test lives in
-// test/unit/plugins/RestrictContentPlugin.test.ts.
+// RestrictContentPlugin.test.ts.
 
 class TestDecoratorNode extends DecoratorNode<null> {
   static getType() {

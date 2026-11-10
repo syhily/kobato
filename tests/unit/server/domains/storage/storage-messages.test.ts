@@ -8,9 +8,8 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Storage locking / S3 migration / backend copy errors across all four locales.
-// The descriptor key is the stable identity the client and the migration UI
-// match; no locale sees a raw id.
+// The descriptor key is the stable identity the client and the migration UI match;
+// no locale sees a raw id.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

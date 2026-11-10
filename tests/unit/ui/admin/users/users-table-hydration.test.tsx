@@ -3,7 +3,7 @@
  * `formatShowDate` is RELATIVE ("today" / "yesterday"), so a render-time
  * `new Date()` reads the server clock on the server and the browser clock on
  * the client. A hydration that crosses local midnight therefore renders
- * different copy and React reports a mismatch (P2-23 class bug). The table must
+ * different copy and React reports a mismatch. The table must
  * read the root loader's `nowIso` during SSR + hydration (the `useChromeClock`
  * pattern) and only advance after mount.
  */

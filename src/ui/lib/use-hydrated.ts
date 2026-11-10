@@ -4,15 +4,10 @@ import { useSyncExternalStore } from 'react'
 const emptySubscribe = () => () => undefined
 
 /**
- * Hydration gate for lazy `<Suspense>` boundaries whose fallback differs from
- * the resolved content. Returns `false` during SSR and the first client
- * render (so server markup and hydrating markup are byte-identical), then
- * `true` after hydration commits, when the lazy content may mount.
- *
- * Without this gate, a lazy chunk still loading at hydration time makes the
- * client render the boundary's fallback against the server's streamed
- * (resolved) markup — a whole-tree structural mismatch surfacing as React
- * error #418 (root AGENTS.md defensive constraints).
+ * Hydration gate for lazy `<Suspense>` boundaries whose fallback differs from the resolved
+ * content: `false` through SSR and the first client render (byte-identical markup), `true`
+ * after hydration commits. Without the gate a chunk still loading at hydration renders the
+ * fallback against the server's resolved markup — a whole-tree mismatch (React error #418).
  */
 export function useHydrated(): boolean {
   return useSyncExternalStore(

@@ -12,7 +12,7 @@ const leakedResponseLog = getLogger('http.leaked-response')
  */
 export function wrapFetchWithLeakedResponseHandler<E extends BlankEnv>(app: Hono<E>): void {
   const originalFetch = app.fetch.bind(app)
-  // Log the path only — query strings can carry one-time tokens (audit P0-9).
+  // Log the path only — query strings can carry one-time tokens.
   const logLeaked = (request: unknown, e: Response) => {
     leakedResponseLog.warn('leaked-response', {
       path: request instanceof Request ? new URL(request.url).pathname : undefined,

@@ -1,20 +1,16 @@
 // The paste dialect's lazy-engine port (same import-port shape as
 // `@/inkling/utils/services/lazy-collaboration`): markdown-it + its plugin
 // stack stay out of the editor island, loading through `loadPasteDialect` —
-// kicked on editor mount by MarkdownPastePlugin (pre-warm) and awaited on the
-// cold paste path before the markdown command dispatches.
+// pre-warmed on editor mount by MarkdownPastePlugin and awaited on the cold
+// paste path before the markdown command dispatches.
 //
-// Two consumers cannot await, so they read the loaded engine synchronously
-// through `getLoadedPasteDialect`:
-// - the paste command handler (`@/inkling/plugins/behaviour/markdownPaste`) —
-//   a Lexical command handler runs synchronously inside the editor update
-// - the markdown card's HTML export
-//   (`@/inkling/nodes/base/nodes/markdown/markdown-renderer`) — exportDOM is a
-//   sync pipeline
-// Both are covered by the pre-warm (browser) and the static seed (the
-// headless HTML surface registers its bundled engine through
-// `registerLoadedPasteDialect` — server bundle size is irrelevant there, and
-// its exportDOM path cannot await a chunk).
+// Two consumers cannot await — the paste command handler
+// (`@/inkling/plugins/behaviour/markdownPaste`), which runs synchronously
+// inside the editor update, and the markdown card's HTML export
+// (`@/inkling/nodes/base/nodes/markdown/markdown-renderer`), whose exportDOM is
+// a sync pipeline — so they read the loaded engine through
+// `getLoadedPasteDialect`. The pre-warm covers the browser; the headless HTML
+// surface seeds its bundled engine via `registerLoadedPasteDialect`.
 import type { pasteDialect } from '@/inkling/markdown/paste-dialect'
 
 /** The lazy chunk's public shape — the dialect handle is all consumers use. */

@@ -17,9 +17,9 @@ interface AppSidebarProps {
   userCount?: number
 }
 
-// The admin shell's ONE notification owner: the「消息通知」nav item opens this
-// drawer, and the badge count is subscribed here once instead of per entry
-// point — interval refetches are per-observer and do not dedupe (ADR-0009).
+// The admin shell's ONE notification owner: the notifications nav item opens this
+// drawer, and the badge count is subscribed here once instead of per entry point —
+// interval refetches are per-observer and do not dedupe.
 export function AppSidebar({
   currentUser,
   siteTitle,

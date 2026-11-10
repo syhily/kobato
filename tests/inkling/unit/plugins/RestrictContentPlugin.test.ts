@@ -60,9 +60,8 @@ describe('RestrictContentPlugin', () => {
     renderHook(() => RestrictContentPlugin({ paragraphs: 2 }))
 
     // jsdom has no ClipboardEvent implementation and the plugin's PASTE
-    // listener narrows PasteCommandType with an instanceof guard, so stub
-    // the global to let the dispatched payload through (same documented
-    // limitation as test/unit/plugins/behaviour/at-link.test.ts)
+    // listener narrows PasteCommandType with an instanceof guard, so stub the
+    // global to let the dispatched payload through.
     vi.stubGlobal('ClipboardEvent', class extends Event {})
 
     const preventDefault = vi.fn()
@@ -81,13 +80,10 @@ describe('RestrictContentPlugin', () => {
   })
 
   it('wins over an earlier-registered low-priority general paste handler', () => {
-    // InklingBehaviourPlugin mounts before RestrictContentPlugin in
-    // InklingComposableEditor and registers the general plain-text paste
-    // handler at COMMAND_PRIORITY_LOW. Same-priority listeners run in
-    // registration order, so without a higher priority the restriction would
-    // never see the paste and the general handler's allowBr: true would leak
-    // <br> into restricted editors (e2e: pasting plain text keeps one
-    // flattened paragraph).
+    // InklingBehaviourPlugin mounts first and registers the general plain-text
+    // paste handler at COMMAND_PRIORITY_LOW; same-priority listeners run in
+    // registration order, so the restriction needs a higher priority or it
+    // never sees the paste and allowBr: true leaks <br> into restricted editors.
     const generalHandler = vi.fn(() => true)
     editor.registerCommand(PASTE_COMMAND, generalHandler, COMMAND_PRIORITY_LOW)
 
@@ -105,8 +101,7 @@ describe('RestrictContentPlugin', () => {
       COMMAND_PRIORITY_LOW,
     )
 
-    // jsdom has no ClipboardEvent implementation; see the plain-text paste
-    // test above for the stub rationale.
+    // jsdom has no ClipboardEvent implementation; see the plain-text paste test.
     vi.stubGlobal('ClipboardEvent', class extends Event {})
 
     const event = new ClipboardEvent('paste')

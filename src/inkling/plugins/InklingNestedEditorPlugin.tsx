@@ -33,8 +33,8 @@ function InklingNestedEditorPlugin({
   const { nodeKey: parentCardNodeKey } = React.useContext(CardContext)
   const isParentCardEditing = useCardIsEditing(parentCardNodeKey)
 
-  // using state here because this component can get re-rendered after the
-  // editor's editable state changes so we need to re-focus on re-render
+  // state, not a ref: the component re-renders when the editor's editable
+  // state changes and must re-focus then
   const [shouldFocus, setShouldFocus] = React.useState(autoFocus)
 
   // Sync the nested editor's editable state with the parent card's editing
@@ -49,7 +49,6 @@ function InklingNestedEditorPlugin({
   }, [editor, isParentCardEditing, parentCardNodeKey])
 
   React.useEffect(() => {
-    // prevent nested editor getting focus when its card isn't being edited
     if (!isParentCardEditing) {
       return
     }
@@ -65,7 +64,7 @@ function InklingNestedEditorPlugin({
     return mergeRegister(
       // watch for editor becoming editable rather than relying on an `isEditing` prop
       // because the prop will change before the contenteditable becomes editable, meaning
-      // we try to focus a non-editable editor which puts focus on the main editor instead
+      // the focus attempt hits a non-editable editor and focus lands on the main editor
       editor.registerEditableListener((isEditable) => {
         if (!autoFocus) {
           return
@@ -88,7 +87,7 @@ function InklingNestedEditorPlugin({
             return false
           }
 
-          // let the parent editor handle the edit mode product
+          // meta/ctrl+Enter belongs to the parent editor: re-dispatch there
           if (event && (event.metaKey || event.ctrlKey)) {
             if (!parentEditor) {
               return true

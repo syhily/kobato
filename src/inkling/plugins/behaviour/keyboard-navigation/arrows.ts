@@ -26,14 +26,9 @@ import {
 import { $isAtStartOfDocument, $selectDecoratorNode } from '@/inkling/utils'
 import { $ensureParagraphAfterCard } from '@/inkling/utils/$ensureParagraphAfterCard'
 
-// The vertical-arrow pair shares one skeleton — shift-selection extension,
-// the caption-arrow gate, the focus gate, the node-selection sibling walk,
-// the collapsed-range visual probe (the same genus selection-extension
-// merged for the shift-arrow pair). The directions diverge in exactly two
-// one-sided policies, kept as data per direction:
-// - up exits the editor at the document start (cursorDidExitAtTop), from
-//   both the node-selection and the collapsed-range shapes;
-// - down ensures a trailing paragraph after a doc-end card.
+// The vertical-arrow pair shares one skeleton; the directions diverge in two
+// one-sided policies: up exits the editor at the document start
+// (`cursorDidExitAtTop`), down ensures a trailing paragraph after a doc-end card.
 function registerVerticalArrowCommand(
   editor: LexicalEditor,
   deps: KeyboardNavigationDeps,
@@ -55,22 +50,21 @@ function registerVerticalArrowCommand(
     (event) => {
       const selection = $getSelection()
 
-      // if a selection is being made, we need to handle it ourselves (lexical does not handle decorator nodes at this time)
+      // Lexical does not extend selections over decorator nodes.
       if (event.shiftKey) {
         if ($isRangeSelection(selection)) {
           return $extendSelectionAcrossCardBoundary(direction, selection, event)
         }
-        // use default behavior for other selection
         return false
       }
 
-      // if we're in a nested editor, we need to move selection back to the parent editor
+      // A caption arrow in a nested editor moves selection back to the parent editor.
       const { selectedCardKey } = store.getState()
       if ($selectCardFromCaptionArrow(editor, selectedCardKey, event)) {
         return true
       }
 
-      // avoid processing card behaviours when an inner element has focus (e.g. nested editors)
+      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
@@ -83,27 +77,24 @@ function registerVerticalArrowCommand(
         const sibling = isUp ? currentNode.getPreviousSibling() : currentNode.getNextSibling()
 
         if (!sibling) {
-          // up-only: leave the editor at the document start
           if (isUp && cursorDidExitAtTop) {
             selection.clear()
             cursorDidExitAtTop()
             return true
           }
-          // down-only: create a new paragraph and select it if the selected card is at end of document
           if (!isUp) {
             $ensureParagraphAfterCard(currentNode, { select: true })
             return true
           }
         }
 
-        // if the sibling is a card, select it (default Lexical behaviour skips over cards)
+        // Default Lexical behaviour skips over cards.
         const adjacentCard = $getLogicallyAdjacentCard(logicalDirection, currentNode)
         if (adjacentCard) {
           $selectDecoratorNode(adjacentCard)
           return true
         }
 
-        // move cursor to the sibling's near edge
         event.preventDefault()
         if (isUp) {
           sibling?.selectEnd()
@@ -115,7 +106,7 @@ function registerVerticalArrowCommand(
 
       if ($isRangeSelection(selection)) {
         if (selection.isCollapsed()) {
-          // up-only: leave the editor at the document start
+          // `cursorDidExitAtTop` is up-only; document start clears the cursor.
           if (isUp && cursorDidExitAtTop && $isAtStartOfDocument(selection)) {
             cursorDidExitAtTop()
             return true
@@ -157,7 +148,7 @@ export function registerArrowLeftCommand(editor: LexicalEditor, deps: KeyboardNa
   return editor.registerCommand(
     KEY_ARROW_LEFT_COMMAND,
     (event) => {
-      // avoid processing card behaviours when an inner element has focus
+      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
@@ -193,7 +184,7 @@ export function registerArrowLeftCommand(editor: LexicalEditor, deps: KeyboardNa
       if (!firstNode) {
         return false
       }
-      // non-card selections resolve their top-level element; cards resolve themselves
+      // Cards resolve themselves; other nodes resolve their top-level element.
       const referenceNode = $isInklingCard(firstNode) ? firstNode : firstNode.getTopLevelElement()
       const previousCard = referenceNode ? $getLogicallyAdjacentCard('previous', referenceNode) : null
 
@@ -213,7 +204,7 @@ export function registerArrowRightCommand(editor: LexicalEditor, _deps: Keyboard
   return editor.registerCommand(
     KEY_ARROW_RIGHT_COMMAND,
     (event) => {
-      // avoid processing card behaviours when an inner element has focus
+      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
@@ -230,7 +221,7 @@ export function registerArrowRightCommand(editor: LexicalEditor, _deps: Keyboard
         return false
       }
 
-      // cards resolve themselves; other selections resolve their top-level element
+      // Cards resolve themselves; other nodes resolve their top-level element.
       const referenceNode = $isInklingCard(lastNode) ? lastNode : lastNode.getTopLevelElement()
       const nextCard = referenceNode ? $getLogicallyAdjacentCard('next', referenceNode) : null
 

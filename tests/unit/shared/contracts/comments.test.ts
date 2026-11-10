@@ -12,9 +12,7 @@ import {
 
 const mockBody = makeCommentBody('hello')
 
-// Minimal mock — the patches only touch a handful of fields so we
-// don't need a full wire object. Cast through `as` avoids listing every
-// nullable field from the DTO.
+// Minimal wire object — the patches only touch a handful of fields.
 function mockComment(overrides: Partial<AdminComment> = {}): AdminComment {
   return {
     id: '1',
@@ -83,8 +81,8 @@ describe('removeCommentFromPages', () => {
   })
 
   it('still decrements the aggregate count when the id is not found', () => {
-    // Mirrors the retired reducer action: `all` always steps down by one —
-    // the caller only removes rows it just deleted server-side.
+    // `all` always steps down by one — the caller only removes rows it just
+    // deleted server-side.
     const comments = [mockComment({ id: '1' })]
     const data = makeData(comments, { all: 1, pending: 1, approved: 0, deleteRequested: 0 })
 

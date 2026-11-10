@@ -11,19 +11,15 @@ export interface InsertBatcherOptions {
   flushIntervalMs: number
   flushThreshold: number
   /**
-   * Hard cap on buffered events, `DEFAULT_MAX_BUFFER_SIZE` when omitted.
-   * A writer that stalls (DuckDB append, the flush singleflight) would
-   * otherwise let an event flood grow the heap without bound — past this
-   * point incoming events are dropped and counted instead.
+   * Hard cap on buffered events (`DEFAULT_MAX_BUFFER_SIZE` when omitted): a
+   * stalled writer would otherwise let a flood grow the heap without bound —
+   * past this point events are dropped and counted.
    */
   maxBufferSize?: number
 }
 
-/**
- * Five 2048-row DuckDB append chunks. At the 100-event flush threshold the
- * buffer only reaches this size while the writer is stalled — precisely the
- * flood the cap defends against.
- */
+/** Five 2048-row DuckDB append chunks; at the normal flush threshold the
+ *  buffer only gets this deep while the writer is stalled — the flood the cap defends against. */
 export const DEFAULT_MAX_BUFFER_SIZE = 10_000
 
 export interface FlushResult {
@@ -33,8 +29,7 @@ export interface FlushResult {
 
 // Shared flush-loop for buffered writers: lazy unref'd interval timer, singleflight
 // drain with snapshot detach, shutdown-hook disposal. Teardown flushes ignore the
-// pause gate; a flush drains until the payload is empty. Subclasses own takePending /
-// writePending / onWriteFailed.
+// pause gate; a flush drains until the payload is empty.
 export abstract class FlushLoop<Pending, Result> {
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<Result> | null = null
@@ -105,7 +100,6 @@ export abstract class FlushLoop<Pending, Result> {
       clearTimeout(this.timer)
       this.timer = null
     }
-    // Join an in-flight flush, then drain events that arrived while it was parked.
     if (this.flushing !== null) {
       await this.flushing
     }
@@ -188,16 +182,15 @@ export abstract class FlushLoop<Pending, Result> {
   }
 }
 
-// Generic in-memory batcher: one multi-row INSERT per batch in a single
-// sync transaction. The writer is a LAZY GETTER, not a captured handle —
-// the DuckDB sidecar opens after registration, and restore reopens it.
+// Generic in-memory batcher: one multi-row INSERT per batch in a single sync
+// transaction. The writer is a LAZY GETTER, not a captured handle — the DuckDB
+// sidecar opens after registration, and restore reopens it.
 export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], FlushResult> {
   private buffer: T[] = []
   private readonly maxBufferSize: number
   /** Cumulative drops since construction — rides every overflow warning. */
   private dropped = 0
-  /** True while the buffer is saturated; one warning per drop burst instead
-   *  of one per event, so a flood cannot become a log flood. */
+  /** True while the buffer is saturated — one warning per drop burst, so a flood cannot become a log flood. */
   private overflowing = false
 
   constructor(
@@ -245,8 +238,7 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
       if (!this.overflowing) {
         this.overflowing = true
         // No dead-letter here: a page view lost to backpressure is not worth
-        // replaying, and writing every dropped event would just move the
-        // flood to the disk. One warning per burst keeps the count visible.
+        // replaying, and writing every drop would just move the flood to disk.
         this.log.warn('insert batcher buffer full; dropping incoming events', {
           maxBufferSize: this.maxBufferSize,
           dropped: this.dropped,

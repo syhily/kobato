@@ -9,7 +9,7 @@ const adminMusicDto = z.object({
   id: idString,
   source: metingSource,
   sourceId: z.string(),
-  // Opaque 16-char `[a-z0-9]` handle. Referenced by `musicPlayer` PortableText blocks as `playerId`.
+  // Opaque 16-char `[a-z0-9]` handle referenced by `musicPlayer` blocks as `playerId`.
   playerId: z.string(),
   name: z.string(),
   artist: z.array(z.string()),
@@ -36,15 +36,13 @@ const metingSearchHitDto = z.object({
   album: z.string(),
   /** Pre-resolved cover URL for the search result thumbnail. */
   coverUrl: z.string(),
-  // Direct streaming URL from the upstream provider — short-lived
-  // (token-signed, ~1h on netease) and NOT persisted; only for the
-  // dialog's `<audio>` preview.
+  // Direct streaming URL from the upstream provider — short-lived (token-signed,
+  // ~1h on netease) and NOT persisted; only for the dialog's `<audio>` preview.
   previewUrl: z.string(),
 })
 export type MetingSearchHit = z.infer<typeof metingSearchHitDto>
 
-// Public GET payload — what the music `get` procedure returns to the
-// browser-side `<MusicPlayer />` so APlayer can render.
+// Public GET payload for the browser-side `<MusicPlayer />` so APlayer can render.
 export const publicMusicMetaDto = z.object({
   id: z.string(),
   name: z.string(),

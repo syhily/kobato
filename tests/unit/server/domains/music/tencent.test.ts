@@ -185,14 +185,13 @@ describe('tencent provider resolveAudioUrl', () => {
       vi.fn(async () => {
         callCount++
         if (callCount === 1) {
-          // Song detail
           return {
             ok: true,
             json: () => Promise.resolve({ songinfo: { data: { track_info: rawSong } } }),
             text: () => Promise.resolve(''),
           }
         }
-        // Vkey response - only 128 tier has a key
+        // Vkey response: only the 128 tier carries a key.
         return {
           ok: true,
           json: () =>

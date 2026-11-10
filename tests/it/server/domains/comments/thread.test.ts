@@ -51,7 +51,6 @@ describe('integration / comment threading', () => {
     const comment = await parseRpcJson<{ comment: { id: string; name: string } }>(commentRes)
     expect(comment.comment.name).toBe('Alice')
 
-    // Load comments as admin (to see pending comments)
     const loadRes = await callRpc(
       '/comments/loadComments',
       { page_key: page.commentPublicId, offset: 0, limit: 10 },

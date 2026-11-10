@@ -6,11 +6,9 @@ import { HeadingNode } from '@lexical/rich-text'
 // the aria-level → tag mapping as data: HEADING_TAGS[level - 1], no assertion
 const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const satisfies readonly HeadingTagType[]
 
-// Since the HeadingNode is foundational to Lexical rich-text, only using a
-// custom HeadingNode is undesirable as it means every package would need to
-// be updated to work with the custom node. Instead we can use Lexical's node
-// override/replacement mechanism to extend the default with our custom parsing
-// logic.
+// HeadingNode is foundational to Lexical rich-text, so replacing it outright
+// would force every package to work with a custom node. Extend the default
+// with custom parsing via Lexical's node override/replacement mechanism.
 //
 // https://lexical.dev/docs/concepts/serialization#handling-extended-html-styling
 
@@ -34,7 +32,6 @@ export class ExtendedHeadingNode extends HeadingNode {
   }
 
   static importJSON(serializedNode: SerializedHeadingNode): ExtendedHeadingNode {
-    // construct our own class (the sibling ExtendedQuoteNode pattern):
     // updateFromJSON restores the full element-level shape (textFormat /
     // textStyle included), which the manual setFormat/setIndent/setDirection
     // trio dropped

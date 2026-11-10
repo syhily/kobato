@@ -15,11 +15,11 @@ import { visitLexicalNodes } from '@/shared/lexical/walk'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // A comment using every capability the surface advertises (node whitelist:
-// paragraph, quote, nested list, link, code block) PLUS the retired R12-era
-// math pair, which legacy bodies may still carry. The math nodes are
-// downgraded to the fence dialect at seed time (`downgradeLegacyCommentMath`)
-// BEFORE the composer parses — the round-trip below runs on the downgraded
-// state, so no content is lost when a legacy comment opens in the editor.
+// paragraph, quote, nested list, link, code block) PLUS the legacy math pair,
+// which stored bodies may still carry. The math nodes are downgraded to the
+// fence dialect at seed time (`downgradeLegacyCommentMath`) BEFORE the composer
+// parses — the round-trip below runs on the downgraded state, so no content is
+// lost when a legacy comment opens in the editor.
 const RICH_COMMENT = unsafeCast<CommentEditorState>({
   root: {
     type: 'root',
@@ -158,7 +158,7 @@ describe('COMMENT_EDITOR_NODES round-trip', () => {
 
   it('parses a stored comment through the composer node set without dropping a node', () => {
     const seeded = downgradeLegacyCommentMath(RICH_COMMENT)
-    // The downgrade maps the retired pair onto the fence dialect: the math
+    // The downgrade maps the legacy pair onto the fence dialect: the math
     // block becomes a ```math codeblock, the inline formula `$…$` text.
     expect(collectTypes(seeded)).not.toContain('math')
     expect(collectTypes(seeded)).not.toContain('math-inline')

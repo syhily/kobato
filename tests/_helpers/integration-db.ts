@@ -17,9 +17,9 @@ const MIGRATIONS_FOLDER = './drizzle'
 const MIGRATIONS_TABLE = '__drizzle_migrations'
 
 /**
- * Shared in-memory DB harness (no server/docker). `getTestDb` is the
- * migrated lifecycle global (`:memory:` is per-connection — one handle,
- * shared data). `createTestDatabaseFile` opts into a real temp file.
+ * Shared in-memory DB harness. `getTestDb` is the migrated lifecycle global (`:memory:`
+ * is per-connection, so one handle shares the data); `createTestDatabaseFile` opts into a
+ * real temp file.
  */
 const openHandles: DatabaseHandle[] = []
 const tempDirs: string[] = []
@@ -73,13 +73,12 @@ export async function clearAllTables(db: Database): Promise<void> {
     for (const { name } of rows) {
       db.run(sql.raw(`DELETE FROM "${name}"`))
     }
-    // Reset AUTOINCREMENT high-water marks so seeded ids restart at 1.
     db.run(sql`DELETE FROM sqlite_sequence`)
   } finally {
     db.run(sql`PRAGMA foreign_keys = ON`)
   }
-  // The cache lives outside SQLite (ADR-0013): wipe its tree, its process-local
-  // L1, and the generation memo so every test starts cold.
+  // The cache lives outside SQLite: wipe its tree, its process-local L1 and the
+  // generation memo so every test starts cold.
   await wipeCache()
   __resetMemoryCacheForTests()
   resetCacheCounterMemo()

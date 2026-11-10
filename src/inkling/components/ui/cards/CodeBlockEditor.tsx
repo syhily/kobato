@@ -12,9 +12,8 @@ import InklingUiPrefsContext from '@/inkling/context/InklingUiPrefsContext'
 import { useInklingLabels } from '@/inkling/hooks/useInklingLabels'
 import { darkBaseExtensions, lightBaseExtensions } from '@/inkling/utils/codemirror-config'
 
-// The CodeMirror-backed code editor, split out of CodeBlockCard.tsx so the
-// CodeMirror family loads in its own chunk behind the card's lazy boundary —
-// this module must only be reached through React.lazy.
+// The CodeMirror-backed code editor: it loads in its own chunk behind the card's
+// lazy boundary, so this module must only be reached through React.lazy.
 
 const languageMap = new Map<string, () => LanguageSupport>([
   ['javascript', javascript],

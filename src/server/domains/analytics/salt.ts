@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto'
 
-// Daily-rotating salt for `visitorHash`, in-memory only — UV counts
-// reset across restarts, acceptable for a single-process personal blog.
-// Fresh salt every UTC day: stable WITHIN a day, anonymous ACROSS days.
+// Daily-rotating salt for `visitorHash`, in-memory only: UV counts reset across
+// restarts, acceptable for a single-process personal blog. Stable WITHIN a UTC
+// day, anonymous ACROSS days.
 
 let currentSalt = randomBytes(32).toString('hex')
 let currentDay = currentUtcDay()

@@ -1,10 +1,10 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Release-chain acceptance contract (D-1 / P0-1): the flow is a single
-// chain — tag push → sea.yml build matrix → release-upload — ending with
-// the draft flipping public. These tests pin each handoff as text so a
-// re-break fails here, not during a release.
+// Release-chain acceptance contract: the flow is a single chain — tag push →
+// sea.yml build matrix → release-upload — ending with the draft flipping
+// public. These tests pin each handoff as text so a re-break fails here, not
+// during a release.
 
 const sea = readFileSync('.github/workflows/sea.yml', 'utf-8')
 const releaseTs = readFileSync('scripts/release.ts', 'utf-8')
@@ -77,8 +77,8 @@ describe('release chain: the draft-release flow stays triggerable', () => {
   })
 
   it('no workflow consumes the `published` release event — the chain ends at release-upload (M2: the ghcr chain is gone)', () => {
-    // The retired docker.yml rode `release: [published]`; a workflow
-    // re-adding that trigger silently forks the release chain again.
+    // A workflow that also triggers on `release: published` silently forks the
+    // release chain.
     for (const file of readdirSync('.github/workflows')) {
       if (!file.endsWith('.yml') && !file.endsWith('.yaml')) {
         continue

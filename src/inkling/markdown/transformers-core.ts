@@ -1,4 +1,4 @@
-// The card-free transformer sets (plan C5). Everything here depends only on
+// The card-free transformer sets. Everything here depends only on
 // `@lexical/markdown`, so a card-less composition (`InklingComposerBase` —
 // `MarkdownShortcutPlugin`'s default transformer set is this module's
 // MINIMAL_TRANSFORMERS) gets markdown shortcuts without importing the card
@@ -16,9 +16,9 @@ import {
 
 import { inlineDelimiterTag } from '@/inkling/markdown/grammar'
 
-// custom text format transformers — the `@lexical/markdown` engine's
-// projection of the shared grammar table (`@/inkling/markdown/grammar`);
-// HIGHLIGHT's `==` rides upstream's TEXT_FORMAT_TRANSFORMERS.
+// The `@lexical/markdown` engine's projection of the shared grammar table
+// (`@/inkling/markdown/grammar`); HIGHLIGHT's `==` rides upstream's
+// TEXT_FORMAT_TRANSFORMERS.
 export const SUBSCRIPT = {
   format: ['subscript'] as const,
   tag: inlineDelimiterTag('subscript'),

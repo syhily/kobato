@@ -6,12 +6,11 @@ import type { MetricType } from '@/shared/contracts/analytics'
 
 /**
  * The metric dimension registry: every dimension owns BOTH its display
- * expression (SELECT / GROUP BY) and the predicate used to filter by a
- * displayed value (WHERE) — the filter reuses the display expression, so a
- * clicked row's label round-trips exactly. `events` dimensions read
- * `access_events` blob slots; `env` dimensions read `device_env_client`
- * (ADR-0006), which the metric query INNER JOINs. Every SQL fragment here is
- * server-owned; user values always travel as bound parameters.
+ * expression (SELECT / GROUP BY) and the predicate used to filter by a displayed
+ * value (WHERE) — the filter reuses the display expression, so a clicked row's
+ * label round-trips exactly. `events` dimensions read `access_events` blob slots;
+ * `env` dimensions read `device_env_client`, which the metric query INNER JOINs.
+ * Every SQL fragment here is server-owned; user values travel as bound parameters.
  */
 
 export interface EventsDimension {
@@ -34,13 +33,12 @@ const env = (column: string) => sql.ref(`device_env_client.${column}`)
 const events = (column: string): EventsDimension => ({ source: 'events', column })
 
 // Bucket values are LOCALE-NEUTRAL machine tokens (never copy): the admin UI
-// resolves them through `admin.analytics.metrics.value.*`, and the filter
-// predicate compares the SAME expression, so a clicked row round-trips exactly.
+// resolves them through `admin.analytics.metrics.value.*`.
 
 /**
- * Screen resolution is session-static (ADR-0006): only `has_static = true`
- * rows carry it, so this dimension aggregates over the beacon-covered
- * subset. Nulls stay OUT of the aggregation (never an `(unknown)` bucket).
+ * Screen resolution is session-static: only `has_static = true` rows carry it, so
+ * this dimension aggregates over the beacon-covered subset. Nulls stay OUT of the
+ * aggregation (never an `(unknown)` bucket).
  */
 const screen: EnvDimension = {
   source: 'env',
@@ -119,8 +117,8 @@ export const METRIC_DIMENSIONS: Record<MetricType, MetricDimension> = {
 /**
  * Equality filter for a dimension's displayed values. Environment dimensions
  * filter through a semi-join (`event_id IN (SELECT …)`) built from the SAME
- * expression the panel groups by, so any dashboard query can honor an env
- * filter without joining the sidecar itself.
+ * expression the panel groups by, so any dashboard query can honor an env filter
+ * without joining the sidecar itself.
  */
 export function dimensionWhere(dimension: MetricDimension, values: string[]): RawBuilder<boolean> {
   const list = sql.join(values)

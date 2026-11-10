@@ -118,13 +118,11 @@ describe('backup and restore integration', () => {
       expect(rows).toHaveLength(1)
       expect(rows[0]!.name).toBe('BackupCat')
 
-      // Content language survives restore — no schema-only field is dropped.
       const restoredPosts = restored.db.select().from(post).where(eq(post.slug, 'backup-post')).all()
       expect(restoredPosts).toHaveLength(1)
       expect(restoredPosts[0]!.contentLanguage).toBe('ja')
       expect(restoredPosts[0]!.title).toBe('バックアップ')
 
-      // The restored DB keeps the English fallback AND the readable descriptor.
       const notices = restored.db.select().from(notification).all()
       expect(notices).toHaveLength(1)
       expect(notices[0]).toMatchObject({
@@ -171,9 +169,9 @@ describe('backup and restore integration', () => {
   })
 
   it('records the exact stored byte count and a complete gzip header (stream-pipeline regression)', async () => {
-    // Regression: a gzip 'data' byte counter forced flowing mode and lost
-    // the first chunk before the drain attached. The 20ms below is
-    // WALL-CLOCK on purpose — must not become a fake timer.
+    // The 20ms is WALL-CLOCK on purpose — must not become a fake timer: it lets
+    // the stream switch to flowing mode before the drain attaches, which is where
+    // a 'data' byte counter loses the first chunk.
     __setStorageBackendForTests('s3', {
       ...mem.backend,
       async putStream(input) {
@@ -224,7 +222,6 @@ describe('encrypted backups', () => {
 
     const { fileName, timestamp } = await createBackup(db, null, { passwordOverride: 'correct horse battery staple' })
 
-    // The key carries the .enc suffix and the payload the encryption magic.
     expect(fileName).toMatch(/\.db\.tar\.gz\.enc$/)
     const buffer = mem.store.get(`backup/${fileName}`)?.body
     expect(buffer).toBeDefined()

@@ -4,9 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { TRADITIONAL_YI_TERM_MAP, auspiciousLabel, calendarCopyFor, lunarLabel } from '@/server/render/calendar/locale'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Calendar copy is STATIC per-locale data (plan 001, 5c): en-US renders no
-// lunar / 宜 lines, zh-TW + zh-HK use a hand-reviewed traditional table, and
-// nothing is converted at runtime.
+// Calendar copy is static per-locale data: en-US renders no lunar / 宜 lines, zh-TW + zh-HK
+// use a hand-reviewed traditional table, and nothing is converted at runtime.
 
 describe('calendar locale copy', () => {
   it('labels months and weekdays per locale', () => {

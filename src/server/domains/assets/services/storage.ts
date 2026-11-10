@@ -32,8 +32,8 @@ export function isSvgSlot(slot: BrandingSlot): slot is SvgSlot {
   return (SVG_SLOTS as readonly string[]).includes(slot)
 }
 
-// SVG uploads are served AS-IS — no sanitization (accepted risk, audit P1-9,
-// docs/plans/2026-08-01-full-codebase-audit.md).
+// SVG uploads are served AS-IS — no sanitization (accepted risk; the
+// dangerous-construct rejection in `validateSvg` is the only guard).
 
 // Per-slot expected MIME type: rejects mismatched uploads, sets response Content-Type.
 export const SLOT_CONTENT_TYPE: Readonly<Record<BrandingSlot, string>> = {

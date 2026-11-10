@@ -24,15 +24,12 @@ import {
 import { CARD_MARKDOWN_DECLARATIONS } from '@/inkling/nodes/cards/card-markdown-transformers'
 
 /**
- * Cross-registry consistency guard (CONTEXT.md: "card declaration"). The
- * declaration pipeline's derived views are each pinned in their own tests;
- * this file pins the AGREEMENT between the hand-keyed tables that remain —
- * the command constants keyed by node type in `card-commands`, and the
- * fence payload table in `card-markdown-transformers` — and the
- * declarations they derive from, so a new card cannot land in one table and
- * drift in another. The mechanically checkable legs of the "adding a card"
- * checklist in `src/nodes/cards/index.ts` live here and in
- * `card-declarations.test.ts` / `card-layering-imports.test.ts`.
+ * Cross-registry consistency guard. The declaration pipeline's derived views
+ * are each pinned in their own tests; this file pins the AGREEMENT between the
+ * hand-keyed tables that remain — the command constants keyed by node type in
+ * `card-commands`, and the fence payload table in
+ * `card-markdown-transformers` — and the declarations they derive from, so a
+ * new card cannot land in one table and drift in another.
  */
 
 // The per-card insert command the public barrel (via the shims) exports —

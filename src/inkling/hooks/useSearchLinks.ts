@@ -3,12 +3,11 @@ import React from 'react'
 import { createSearchCoordinator, type ListOptionSection, type SearchLinksFn } from '@/inkling/hooks/search-coordinator'
 import { useInklingLabels } from '@/inkling/hooks/useInklingLabels'
 
-// React adapter over @/hooks/search-coordinator (the deep module — request
-// tracks, URL short-circuit, and race policy live there). The coordinator is
-// recreated when the search function or options change, which both restarts
-// the default prefetch and re-issues the current query, matching the previous
-// effect-per-input wiring. The labels table's URL-option strings are resolved
-// here and injected into the coordinator, which keeps its own English
+// React adapter over search-coordinator (the deep module — request tracks, URL
+// short-circuit, and race policy live there). The coordinator is recreated when
+// the search function or options change, which both restarts the default prefetch
+// and re-issues the current query. The labels table's URL-option strings are
+// resolved here and injected into the coordinator, which keeps its own English
 // fallbacks for headless consumers.
 
 export type { ListOptionItem, ListOptionSection, SearchLinksFn, SearchResult } from '@/inkling/hooks/search-coordinator'

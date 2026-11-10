@@ -166,8 +166,8 @@ export async function action({ request, context }: Route.ActionArgs) {
 
 export const meta = titleMeta('meta.title.auth.signin')
 
-// Stable query-string codes → catalog ids. Unknown codes keep the legacy raw
-// rendering (external callers may pass their own diagnostic text).
+// Stable query-string codes → catalog ids. Unknown codes render the raw value
+// (external callers may pass their own diagnostic text).
 const AUTH_ERROR_MESSAGE_IDS: Record<string, UiMessageId> = {
   invalid_credentials: 'auth.signin.error.invalidCredentials',
 }

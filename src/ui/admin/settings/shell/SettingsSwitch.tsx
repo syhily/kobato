@@ -2,9 +2,7 @@ import type { ComponentProps } from 'react'
 
 import { Switch } from '@/ui/components/switch'
 
-// `<Switch>` + automatic immediate save: the upstream `onCheckedChange`
-// fires first, then `save(name)` commits — scoped to just this field
-// (P1-13 — see `useSettingsCard.save`).
+// `<Switch>` + immediate save: upstream `onCheckedChange` fires first, then `save(name)` commits this field.
 
 type SwitchProps = ComponentProps<typeof Switch>
 

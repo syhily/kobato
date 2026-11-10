@@ -31,9 +31,9 @@ async function openReader(): Promise<ReaderModel | null> {
 
 export function getGeoReader(): Promise<ReaderModel | null> {
   readerPromise ??= openReader().catch((err: unknown) => {
-    // A failed open (transient I/O error, a read racing a database swap)
-    // is NOT memoized — caching it would silently disable geo enrichment
-    // until the next reset; 'not installed' results stay memoized.
+    // A failed open (transient I/O, a read racing a database swap) is NOT
+    // memoized — that would disable geo enrichment until the next reset;
+    // 'not installed' results stay memoized.
     readerPromise = undefined
     log.warn('MaxMind reader failed to open; will retry on next lookup', {
       err: err instanceof Error ? err.message : String(err),

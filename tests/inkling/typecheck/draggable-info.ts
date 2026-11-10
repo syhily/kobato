@@ -1,22 +1,18 @@
 /**
  * Compile-time pins for the closed drag-payload union.
  *
- * `DraggableInfo` used to be one interface with an optional open-string
- * discriminant and a `Record<string, unknown>` dataset, which forced the
- * image-drop surgery to assert `as ImageNodeDataset`. The producers are
- * exactly two (the card drag in DragDropReorderPlugin and the gallery image
- * drag in useGalleryReorder), so the representation is closed: card payloads
- * carry the heterogeneous card dataset plus the source node key, image
- * payloads carry the precise image construction dataset.
+ * The producers are exactly two (the card drag in DragDropReorderPlugin and
+ * the gallery image drag in useGalleryReorder), so `DraggableInfo` is closed:
+ * card payloads carry the heterogeneous card dataset plus the source node key,
+ * image payloads carry the precise image construction dataset.
  *
- * This file is included by the root tsconfig and is only type-checked — it is
- * never executed.
+ * Type-checked only, never executed.
  */
 import type { Equal, Expect } from '#/inkling/utils/type-pins'
 import type { ImageNodeDataset } from '@/inkling/nodes/ImageNode'
 import type { CardDraggableInfo, DraggableInfo, ImageDraggableInfo } from '@/inkling/utils/draggable/DragDropContainer'
 
-// --- the union's two branches carry their own dataset -----------------------
+// The union's two branches carry their own dataset
 
 type CardBranch = Extract<DraggableInfo, { type: 'card' }>
 type ImageBranch = Extract<DraggableInfo, { type: 'image' }>
@@ -32,7 +28,7 @@ type _ImageHasNoSourceKey = Expect<Equal<Extract<keyof ImageBranch, 'nodeKey'>, 
 // the card-only preview affordances do not leak onto the image payload
 type _ImageHasNoCardName = Expect<Equal<Extract<keyof ImageBranch, 'cardName' | 'Icon'>, never>>
 
-// --- narrowing in value position, without a cast ----------------------------
+// Narrowing in value position, without a cast
 
 declare const info: DraggableInfo
 const imageDatasetFor = (value: DraggableInfo): ImageNodeDataset | null =>
@@ -40,7 +36,7 @@ const imageDatasetFor = (value: DraggableInfo): ImageNodeDataset | null =>
 void imageDatasetFor
 void info
 
-// --- construction: the built-in payloads, and what no longer compiles -------
+// Construction: the built-in payloads, and the rejected shapes
 
 const imagePayload: DraggableInfo = {
   type: 'image',
@@ -74,7 +70,7 @@ const cardWithoutKey: DraggableInfo = {
 void cardWithoutKey
 
 const foreignType: DraggableInfo = {
-  // @ts-expect-error - the open-string discriminant is gone: built-in drags are card or image
+  // @ts-expect-error - built-in drags are card or image only; the discriminant is closed
   type: 'file',
   element: null,
   target: null,
@@ -83,7 +79,7 @@ const foreignType: DraggableInfo = {
 }
 void foreignType
 
-// --- an image drag cannot smuggle card-only fields --------------------------
+// An image drag cannot smuggle card-only fields
 //
 // Excess-property checking on a fresh literal is the only place structural
 // assignability refuses them: a widened variable would strip the extra keys,

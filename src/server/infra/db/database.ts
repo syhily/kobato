@@ -5,10 +5,7 @@ import { DatabaseSync } from 'node:sqlite'
 
 import { serverConfig } from '@/server/infra/config'
 
-/**
- * The canonical database handle every consumer imports — the single
- * owner of the drizzle driver choice (node:sqlite sync API).
- */
+/** The canonical database handle; this module owns the drizzle driver choice (node:sqlite sync API). */
 export type Database = NodeSQLiteDatabase
 
 export interface DatabaseHandle {
@@ -42,8 +39,8 @@ export function resolveDatabasePath(): string {
 }
 
 /**
- * Open the per-process database connection and apply the pragma set.
- * `auto_vacuum` must come first — ignored once WAL mode is active.
+ * Open the per-process connection. `auto_vacuum` must be set first —
+ * it is ignored once WAL mode is active.
  */
 export function openDatabase(databasePath: string): DatabaseHandle {
   const inMemory = isInMemoryPath(databasePath)

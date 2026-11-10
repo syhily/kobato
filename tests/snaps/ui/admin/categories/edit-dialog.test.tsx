@@ -12,9 +12,8 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
-// useMutation is stubbed via a hoisted singleton so the pending and error
-// branches are reachable per-test. categories.test.tsx covers the base
-// create/edit paths; this file adds the pending branch.
+// useMutation is stubbed via a hoisted singleton so the pending and error branches are
+// reachable per-test; the base create/edit paths live in categories.test.tsx.
 
 // The stubbed dialog renders inline (the real portal never mounts under SSR);
 // open = category !== undefined.

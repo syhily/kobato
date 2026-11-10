@@ -49,8 +49,8 @@ async function entryFileSizes(bucket: string): Promise<number[]> {
 
 describe('service: cache admin', () => {
   beforeEach(async () => {
-    // Wipe the content DB and the filesystem cache so no leftover entries
-    // from other tests pollute the bucket counts.
+    // Wipe the content DB and the filesystem cache so leftovers from other
+    // tests cannot pollute the bucket counts.
     await clearAllTables(db)
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
@@ -259,7 +259,7 @@ describe('service: cache admin', () => {
     const stats = await getAdminCacheStats(db)
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.pattern).toBe('opengraph:*')
     // Both entries live in the `og` directory — counting follows the bucket,
-    // not the key prefix, so a rename no longer orphans old entries.
+    // not the key prefix, so a renamed key still counts here.
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(2)
 
     const cleared = await clearAdminCache(db, 'og')

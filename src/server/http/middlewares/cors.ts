@@ -6,9 +6,8 @@ import type { Env } from '@/server/http/context'
 
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-// CORS from `security` settings (live, no restart). No-op when disabled or
-// pre-install; when enabled, only listed origins get headers — never reflect
-// the request origin with credentials: true.
+// CORS from `security` settings, read live. No-op when disabled or pre-install; when
+// enabled only listed origins get headers — never reflect the origin with credentials on.
 export function corsMiddleware(): MiddlewareHandler<Env> {
   const handler = cors({
     origin: (origin) => {

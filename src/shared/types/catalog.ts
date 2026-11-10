@@ -193,7 +193,7 @@ export interface CommentFormUser {
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 export interface Post extends ClientPost {
-  /** Saved full-fidelity projection column; NULL for pre-R9b rows until the R15 backfill. */
+  /** Saved full-fidelity projection column; NULL when only the parsed state exists (compute-on-read). */
   bodyHtml: string | null
   /** Saved feed-variant projection column (rssMode parity); NULL alongside `bodyHtml`. */
   bodyHtmlFeed: string | null
@@ -204,7 +204,7 @@ export interface Post extends ClientPost {
 }
 
 export interface Page extends ClientPage {
-  /** Saved full-fidelity projection column; NULL for pre-R9b rows until the R15 backfill. */
+  /** Saved full-fidelity projection column; NULL when only the parsed state exists (compute-on-read). */
   bodyHtml: string | null
   /** Saved feed-variant projection column (rssMode parity); NULL alongside `bodyHtml`. */
   bodyHtmlFeed: string | null

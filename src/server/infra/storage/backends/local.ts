@@ -52,10 +52,9 @@ export function resolveLocalPath(key: string): string {
   return abs
 }
 
-// Private namespaces (backup/, branding/, audit-log/ — DB dumps, originals)
-// are owner-only on disk: a shared host or a readable container volume must
-// not expose them through default 0644/0755 permissions. Public objects keep
-// the process defaults.
+// Private namespaces (backup/, branding/, audit-log/ — DB dumps, originals) are
+// owner-only on disk so a shared host or readable volume cannot expose them through
+// default 0644/0755 permissions. Public objects keep the process defaults.
 const PRIVATE_FILE_MODE = 0o600
 const PRIVATE_DIR_MODE = 0o700
 
@@ -64,10 +63,9 @@ function isPrivate(visibility: PutObjectInput['visibility']): boolean {
 }
 
 /**
- * Write via a sibling temp file + atomic rename: readers never see a partial
- * file. Temp lives in the same directory so the rename stays on one filesystem.
- * A private object's directory is created 0700 (existing dirs keep their mode)
- * and the file is created 0600.
+ * Write via a sibling temp file + atomic rename, so readers never see a partial file.
+ * The temp lives in the same directory to keep the rename on one filesystem. A private
+ * object's directory is created 0700 (existing dirs keep their mode) and the file 0600.
  */
 async function atomicWrite(
   abs: string,

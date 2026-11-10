@@ -1,12 +1,9 @@
-// Legacy comment bodies may still carry the retired math card pair (the R12
-// comment surface mounted MathNode / MathInlineNode): the composer no longer
-// registers those classes, so a stored `math` / `math-inline` node would
-// abort `parseEditorState` at seed time (Lexical error #17) and the comment
-// would fail to open for editing. The downgrade maps the pair onto the fence
-// dialect ahead of parsing — `math` becomes a ```math codeblock (tex → code),
-// `math-inline` becomes `$tex$` plain text — so the seed parses through the
-// trimmed node set and the next save persists the fence form. Pure state →
-// state; the input is never mutated.
+// Legacy comment bodies may still carry `math` / `math-inline` nodes, which the
+// trimmed composer does not register: `parseEditorState` would abort at seed
+// time (Lexical error #17) and the comment would fail to open. Downgrade ahead of
+// parsing — `math` → ```math codeblock (tex → code), `math-inline` → `$tex$` text
+// — so the seed parses through the trimmed node set and the next save persists
+// the fence form. Pure state → state; the input is never mutated.
 
 import type { CommentEditorState } from '@/shared/lexical/comment-schema'
 import type { LexicalNodeJson } from '@/shared/lexical/schema'

@@ -21,26 +21,23 @@ export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNaviga
     (event) => {
       const { selectedCardKey, isEditingCard } = store.getState()
 
-      // toggle edit mode if a card is selected and ctrl/cmd+enter is pressed
+      // Ctrl/Cmd+Enter toggles edit mode regardless of selection.
       if (selectedCardKey && event && (event.metaKey || event.ctrlKey)) {
         const cardNode = $getNodeByKey(selectedCardKey)
 
         if ($isInklingCard(cardNode) && cardNode.hasEditMode()) {
           event.preventDefault()
 
-          // when leaving edit mode, ensure focus moves back to the editor
-          // otherwise focus can be left on removed elements preventing further key events
+          // Leaving edit mode must move focus back to the editor: focus left on removed
+          // elements swallows further key events.
           if (isEditingCard) {
             if (cardNode.isEmpty?.()) {
-              // the removal surgery (and its root-first focus choreography)
-              // lives in the card-adjacency module; selecting the next block
-              // directly rather than dispatching KEY_ARROW_DOWN_COMMAND
-              // avoids its bail-out when focus is still inside the card's
-              // nested editor
+              // Root-first focus choreography lives in card-adjacency; selecting the next
+              // block directly avoids KEY_ARROW_DOWN_COMMAND's bail-out while focus is
+              // still inside the card's nested editor.
               $removeOrReplaceNodeWithParagraph(editor, cardNode, { focus: 'root-first' })
             } else {
-              // re-create the node selection because the focus will place the cursor at
-              // the beginning of the doc
+              // Re-create the node selection: focusing places the cursor at the doc start.
               $selectCard(editor, selectedCardKey)
             }
 
@@ -53,15 +50,13 @@ export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNaviga
         }
       }
 
-      // let the browser handle selection when in a card inner element (e.g. nested editor)
-      // NOTE: must come after ctrl/cmd+enter because that always toggles no matter the selection
+      // Let the browser handle selection inside a card inner element (e.g. nested editor).
+      // Must come after ctrl/cmd+enter, which toggles regardless of selection.
       if (event && getEventProvenance(event) !== 'nested-editor' && !editorOwnsFocus(editor)) {
         return true
       }
 
-      // if a card is selected, insert a new paragraph after it
-      // the selected key may point at a card that has since been removed —
-      // only intercept enter when the card actually still exists
+      // The selected key may point at a card since removed: only intercept then.
       if (!isNested && selectedCardKey) {
         const cardNode = $getNodeByKey(selectedCardKey)
         if ($isInklingCard(cardNode)) {
@@ -73,8 +68,8 @@ export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNaviga
         }
       }
 
-      // code card shortcut — trigger only; the regex, language extraction, and
-      // replace-and-select live in the card-shortcut seam (@/markdown/card-shortcuts)
+      // Code card shortcut: trigger only; regex, language extraction and
+      // replace-and-select live in @/inkling/markdown/card-shortcuts.
       if (!isNested && event && $fireFenceKeyboardShortcut(event)) {
         return true
       }

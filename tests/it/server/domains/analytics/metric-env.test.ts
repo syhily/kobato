@@ -12,9 +12,8 @@ import {
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-filter'
 
-// ADR-0006 environment dimensions against the real engine: the metric query
-// INNER JOINs device_env_client, excludes NULL / '' bucket rows, keeps the
-// shared blob/geo filters, and the clicked label round-trips as a filter.
+// Environment dimensions against the real engine: the metric query INNER JOINs
+// device_env_client, excludes NULL / '' bucket rows, and keeps blob/geo filters.
 
 const handle = await createTestAnalyticsDb()
 const TS = new Date('2026-01-15T11:00:00Z')

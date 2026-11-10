@@ -1,7 +1,6 @@
 // SEA injection: get the blob into a copy of the Node executable.
-// `node --build-sea` is the only injector: it regenerates the blob from the
-// sea-config (whose `output` is the FINAL binary path) and does NOT codesign
-// on darwin — the modified copy must get the remove + ad-hoc re-sign treatment.
+// `node --build-sea` is the only injector, and it does not codesign on darwin,
+// so the modified copy must be re-signed ad-hoc afterwards.
 
 import { mkdir, readFile } from 'node:fs/promises'
 
@@ -10,12 +9,10 @@ import { fail, run, tryRun } from './exec.ts'
 import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir } from './paths.ts'
 
 /**
- * Official Node.js builds carry the SEA sentinel fuse; shared-library builds
- * (Homebrew, some distro packages) do not. Fail early with a pointer
- * instead of surfacing the injector's raw "sentinel not found" error. A
- * universal/multi-architecture binary carries one sentinel per slice, which
- * `--build-sea` also rejects ("found more than one occurrence") — point at
- * the single-architecture official dist instead of failing mid-inject.
+ * Official Node.js builds carry the sentinel fuse; shared-library builds
+ * (Homebrew, some distro packages) do not.
+ * A universal binary carries one sentinel per slice, which `--build-sea`
+ * also rejects.
  */
 async function ensureSentinelFuse() {
   const binary = await readFile(process.execPath)
@@ -60,12 +57,10 @@ export async function runInjectStep(assets: Map<string, string>) {
   await ensureSentinelFuse()
   const out = seaBinaryPath()
   await mkdir(seaDistDir(), { recursive: true })
-  // `--build-sea` builds the blob itself; `output` is the final executable path.
   await writeSeaConfig(assets, out)
   run(process.execPath, ['--build-sea', seaConfigPath()])
   if (process.platform === 'darwin') {
     resignDarwinBinary(out)
   }
-  // Sanity check: the produced binary must run with zero environment.
   run(out, ['--version'])
 }

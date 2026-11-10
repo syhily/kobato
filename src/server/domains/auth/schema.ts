@@ -10,20 +10,16 @@ import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 export const MAX_PASSWORD_LENGTH = 128
 
 /**
- * bcrypt silently truncates at 72 BYTES — a longer "password" is really
- * just its 72-byte prefix, so two distinct secrets could compare equal.
- * Creation paths therefore cap by byte length (multi-byte runes count
- * fully). Signin keeps the plain 128-char DoS cap instead: bcrypt
- * truncates both sides of a compare identically, so legacy long passwords
- * keep working there.
+ * bcrypt silently truncates at 72 BYTES, so a longer "password" is really just its
+ * 72-byte prefix and two distinct secrets could compare equal. Creation paths cap by
+ * byte length; signin keeps the 128-char DoS cap because a compare truncates both
+ * sides identically, keeping legacy long passwords working.
  */
 export const MAX_PASSWORD_BYTES = 72
 
 /**
- * Custom validation-rule messages are typed UI-catalog ids (never prose): the
- * server maps them into wire descriptors at the boundary (`zodIssuesToWire`,
- * or `authFlowValidationError` for the route-form flows), and numeric bounds
- * like `{min}`/`{max}` ride the issue's derived params.
+ * Custom validation-rule messages are typed UI-catalog ids, never prose: the server maps
+ * them into wire descriptors at the boundary (`zodIssuesToWire`, `authFlowValidationError`).
  */
 export const authValidationMessages = {
   siteNameRequired: 'auth.validation.siteNameRequired',
@@ -39,13 +35,9 @@ export function passwordWithinBcryptLimit(value: string): boolean {
   return new TextEncoder().encode(value).byteLength <= MAX_PASSWORD_BYTES
 }
 
-/** Password complexity regex, applied on top of the minimum length. */
 export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 
-/**
- * The one new-password rule set (bcrypt byte ceiling + complexity), shared by
- * the setup form, the reset flow and the account password change.
- */
+/** The one new-password rule set (bcrypt byte ceiling + complexity), shared by setup, reset and account change. */
 export function newPasswordSchema() {
   return z
     .string()
@@ -87,8 +79,7 @@ export const updateUserSchema = z
     link: httpUrlOrEmptyStringSchema.optional(),
     badgeName: z.string().optional(),
     badgeColor: z.string().optional(),
-    // Manual override: string (picker output), `null` ("clear"), or
-    // `undefined` ("don't touch"); empty strings normalise to `null`.
+    // Manual override: string (picker output), `null` = clear, `undefined` = don't touch.
     badgeTextColor: z
       .union([z.string(), z.null()])
       .optional()

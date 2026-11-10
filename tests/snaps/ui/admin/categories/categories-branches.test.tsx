@@ -7,9 +7,8 @@ import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 
-// CategoriesView reads rows from the list useQuery + delete/reorder
-// mutations (dnd-kit). categories-view.test.tsx covers loading/empty; this
-// adds populated rows, the error state and mutation side effects.
+// Populated rows, the error state and mutation side effects for CategoriesView, which
+// reads the list useQuery plus delete/reorder mutations (dnd-kit).
 
 interface CapturedMutationOptions {
   onMutate?: (variables: { orderedIds: string[] }) => void

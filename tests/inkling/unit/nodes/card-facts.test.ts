@@ -7,10 +7,9 @@ import { resolveAllCardFacts, resolveCardFacts } from '@/inkling/nodes/cards/car
 import { registerHostCard } from '@/inkling/nodes/cards/host-card-registry'
 import { defineCard } from '@/inkling/nodes/cards/host-cards'
 
-// The merge policy's single home: the built-in declarations answer first,
-// the host card registry (CONTEXT.md: "host card") is a fallback, never an
-// override. Registered at module scope, mirroring the host's own
-// module-top-level `defineCard` idiom.
+// The merge policy's single home: the built-in declarations answer first, the
+// host card registry is a fallback, never an override. Registered at module
+// scope, mirroring the host's own module-top-level `defineCard` idiom.
 const FACTS_PROBE_COMMAND = createCommand('FACTS_PROBE_COMMAND')
 
 defineCard({

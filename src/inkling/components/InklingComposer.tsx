@@ -9,10 +9,9 @@ import DEFAULT_NODES from '@/inkling/nodes/DefaultNodes'
 export type { InklingInitialEditorState }
 
 /**
- * The full-entry composer (`.`): identical to the core variant
- * (`@/inkling/components/InklingComposerBase`) except `nodes` defaults to the full
- * DEFAULT_NODES card set. The core entry exports the base under the same
- * `InklingComposer` name with `nodes` required.
+ * The full-entry composer: identical to the core variant
+ * (`@/inkling/components/InklingComposerBase`) except `nodes` defaults to the
+ * full DEFAULT_NODES card set.
  */
 export interface InklingComposerProps extends Omit<InklingComposerBaseProps, 'nodes'> {
   nodes?: CreateEditorArgs['nodes']

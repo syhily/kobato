@@ -3,9 +3,9 @@ import { z } from 'zod'
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
 // Notification kinds: `direct` (admin ↔ user private thread, always
-// replyable), `admin` (system-generated, fanned out to every admin at
-// creation, never replyable), `broadcast` (system- or admin-created, fanned
-// out to every user at creation; only the admin-created flavor is replyable).
+// replyable), `admin` (system-generated, fanned out to every admin at creation,
+// never replyable), `broadcast` (system- or admin-created, fanned out to every
+// user at creation; only the admin-created flavor is replyable).
 export const NOTIFICATION_KINDS = ['direct', 'admin', 'broadcast'] as const
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
 
@@ -116,8 +116,8 @@ export const adminSendOutput = z.object({
   id: idString,
 })
 
-// Soft-delete recall (ADR-0007). Broadcasts and admin-kind system messages
-// are recallable; direct messages are not. Idempotent on the server side.
+// Soft-delete recall: broadcasts and admin-kind system messages are recallable,
+// direct messages are not. Idempotent on the server side.
 export const adminRecallNotificationInput = z.object({
   id: idString,
 })

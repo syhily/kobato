@@ -64,7 +64,6 @@ describe('server/images/render-enhance — resolveImageRef', () => {
       expect(await get('imageMeta', { storagePath: 'images/categories/coding.jpg' })).not.toBeNull()
     })
 
-    // Second call should return the same result (cache hit)
     const result2 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result2).toEqual(result1)
   })

@@ -8,8 +8,6 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Brand-asset slot validation (branding uploads) + the shared upload keys the
-// branding/fonts/maxmind resource routes use.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

@@ -14,9 +14,8 @@ import {
 } from '@/server/domains/analytics/services/device-env'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 
-// The device-environment sidecars own their schema: DDL idempotency (old
-// sidecars upgrade in place on boot) and full column round-trips through
-// the Appender protocol, NULLs and defaults included.
+// DDL is idempotent (old sidecars upgrade in place on boot) and columns round-trip
+// through the Appender protocol, NULLs and defaults included.
 
 const dirs: string[] = []
 const handles: AnalyticsHandle[] = []
@@ -329,8 +328,7 @@ describe('device_env append', () => {
     const handle = await openAt(join(tempDir(), 'analytics.duckdb'))
     await appendDeviceEnvClientRows(handle.writer, [
       clientRow(),
-      // Dynamic-only beacon: static block already sent this session, and
-      // several dynamic fields are simply unavailable.
+      // Dynamic-only beacon: the static block already went out this session and several dynamic fields are unavailable.
       clientRow({
         eventId: '00000000-0000-4000-8000-000000000002',
         timestamp: new Date('2026-01-02T00:00:00Z'),

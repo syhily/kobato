@@ -74,9 +74,8 @@ describe('usePinturaEditor', () => {
   })
 
   it('sets error when the script URL is invalid', async () => {
-    // 'http://' is invalid even with a base URL; note a RELATIVE jsUrl is
-    // no longer an error — it resolves against window.location (pinned in
-    // the pintura-session test table)
+    // 'http://' is invalid even with a base URL; a RELATIVE jsUrl is valid and
+    // resolves against window.location (pinned in the pintura-session test table)
     const { result } = renderHook(() => usePinturaEditor({ config: { jsUrl: 'http://' } }))
 
     await waitFor(() => {

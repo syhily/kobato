@@ -85,8 +85,7 @@ describe('resourceRateLimit oRPC middleware', () => {
 
     const res = await callPing({ msg: '' })
 
-    // The guard used to be the first statement of the handler — after
-    // input validation. Invalid input must still see the validation
+    // Input validation runs before the guard: invalid input must see the validation
     // error, not 429, and never reach the counter.
     expect(res.status).not.toBe(429)
     expect(res.status).toBeGreaterThanOrEqual(400)

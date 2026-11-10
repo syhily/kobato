@@ -4,8 +4,8 @@ import type { Database } from '@/server/infra/db/database'
 
 import { hasAdmin } from '@/server/infra/db/operations/user'
 
-// Gate that decides whether the deployment is "installed": "has admin" is
-// equivalent to "installed" (user creation and settings seeding are atomic).
+// "Has admin" is equivalent to "installed" (user creation and settings seeding are
+// atomic).
 
 export type InstallState = 'noAdmin' | 'installed'
 

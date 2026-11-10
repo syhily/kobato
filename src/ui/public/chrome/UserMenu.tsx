@@ -32,10 +32,8 @@ interface Props {
   defaultOpen?: boolean
 }
 
-// User menu in the public chrome's site-nav; a single avatar-button trigger
-// nests next to the other site-nav links without taking a full row. Reaches
-// the browser only through LazyUserMenu's interaction-gated lazy chunk —
-// never import statically from the public chrome.
+// Public chrome's user menu. Reaches the browser only through LazyUserMenu's
+// interaction-gated lazy chunk — never import it statically from the public chrome.
 export function UserMenu({
   currentUser,
   logoutRedirectTo,

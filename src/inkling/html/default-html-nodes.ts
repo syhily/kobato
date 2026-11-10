@@ -31,6 +31,6 @@ export const DEFAULT_HTML_NODES = [
   // Inkling nodes
   ...DEFAULT_BASE_NODES,
 
-  // table element family (CONTEXT.md — not cards)
+  // table element family (not cards)
   ...INKLING_TABLE_NODES,
 ] satisfies NonNullable<CreateEditorArgs['nodes']>

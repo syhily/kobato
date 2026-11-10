@@ -2,7 +2,6 @@ import { LoaderIcon } from 'lucide-react'
 
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Bottom status for admin infinite lists: spinner / exhausted line / nothing.
 export function AdminInfiniteListFooter({
   noun,
   rowCount,

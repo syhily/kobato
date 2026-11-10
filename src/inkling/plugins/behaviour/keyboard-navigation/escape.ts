@@ -30,8 +30,8 @@ export function registerEscapeCommand(editor: LexicalEditor, deps: KeyboardNavig
         handled = true
       }
 
-      // only claim the event when something acted so Escape can propagate to
-      // lower-priority listeners otherwise
+      // Claim the event only when something acted, so Escape can propagate to
+      // lower-priority listeners otherwise.
       return handled
     },
     COMMAND_PRIORITY_LOW,

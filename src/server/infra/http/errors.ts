@@ -27,9 +27,9 @@ export function domainStatus(error: DomainError): number {
 }
 
 /**
- * One structured issue. A descriptor (transports localize it) or legacy raw
- * text (rendered verbatim until the producing domain migrates); `code`/`path`
- * let API consumers map the issue back to a field.
+ * One structured issue: either a descriptor (transports localize it) or raw
+ * text (rendered verbatim). `code`/`path` let API consumers map the issue back
+ * to a field.
  */
 export type DomainErrorIssue =
   | { message: string; path?: string[]; code?: string }
@@ -52,15 +52,15 @@ const DEFAULT_DESCRIPTORS = {
 
 /**
  * `message` stays the log/technical fallback: pass a descriptor to state the
- * user-facing copy (translated at the transport boundary), or a raw string for
- * a domain that has not migrated yet (rendered unchanged).
+ * user-facing copy (translated at the transport boundary), or a raw string
+ * (rendered unchanged).
  */
 export class DomainError extends Error {
   readonly code: DomainErrorCode
   readonly issues?: DomainErrorIssue[]
   /**
-   * Localizable user-facing copy. Absent on legacy raw-message errors, where
-   * the transports wrap `message` in the passthrough key instead.
+   * Localizable user-facing copy. Absent for raw-string messages, where the
+   * transports wrap `message` in the passthrough key instead.
    */
   readonly descriptor?: ErrorMessageDescriptor
   /**

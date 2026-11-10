@@ -28,10 +28,10 @@ import { strOr } from '@/inkling/utils/value-guards'
 const isSelectorComponent = (value: unknown): value is ComponentType<{ nodeKey: NodeKey }> =>
   typeof value === 'function'
 
-// The card's spec arrays (CONTEXT.md: "card spec") live here, beside the
-// class they type — the declaration imports them from this module. `as const`
-// keeps the literal `name`s and value types on the arrays' types so the `__*`
-// field maps derive both (CardSpecFieldMap / CardSpecFieldMapFor).
+// The card's spec arrays live here, beside the class they type — the
+// declaration imports them from this module. `as const` keeps the literal
+// `name`s and value types on the arrays' types so the `__*` field maps derive
+// both (CardSpecFieldMap / CardSpecFieldMapFor).
 export const imageNestedEditors = [
   { ...captionEditorSpecBase, cleanBasicHtml: { firstChildInnerContent: true } },
 ] as const satisfies readonly NestedEditorSpec[]
@@ -42,7 +42,7 @@ export const imageTransientProps = [
     // the `string | null` annotation is the type source for the `__previewSrc`
     // field (CardSpecFieldMap) — `strOr` itself returns string, but the field
     // must stay nullable because the upload lifecycle clears it by writing
-    // `node.previewSrc = null` (src/nodes/upload-intent.ts)
+    // `node.previewSrc = null` (src/inkling/nodes/upload-intent.ts)
     initial: (dataset): string | null => strOr(dataset.previewSrc, ''),
     datasetKey: '__previewSrc',
     accessor: true,

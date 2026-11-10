@@ -1,7 +1,7 @@
 /**
- * All database ids are SQLite `integer` (JS `number`); the wire format uses `idString`
- * so clients never care about the representation. Centralised conversion at the controller
- * perimeter validates the shape (clear early error instead of a `NaN` in a query).
+ * Database ids are SQLite `integer` (JS `number`) while the wire uses `idString`;
+ * this converts at the perimeter so a bad shape throws early instead of putting
+ * `NaN` into a query.
  */
 export function idFromString(value: string | number): number {
   if (typeof value === 'number') {

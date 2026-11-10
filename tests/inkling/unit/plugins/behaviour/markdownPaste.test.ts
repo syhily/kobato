@@ -5,7 +5,7 @@ import { markdownToSanitizedHtml } from '@/inkling/plugins/behaviour/markdownPas
 
 // The headless leg of the paste markdown dialect: markdown text in, sanitized
 // HTML out — no composer, no DataTransfer. The Lexical HTML import that
-// consumes this output is pinned in test/unit/plugins/MarkdownPastePlugin.test.tsx.
+// consumes this output is pinned in MarkdownPastePlugin.test.tsx.
 describe('markdownToSanitizedHtml', () => {
   // the engine rides the lazy port; the sync API reads the loaded cache
   beforeAll(() => loadPasteDialect())

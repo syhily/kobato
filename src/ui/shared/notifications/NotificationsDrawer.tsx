@@ -40,8 +40,6 @@ function isNotificationTab(value: unknown): value is NotificationTab {
   return TAB_VALUES.some((tab) => tab === value)
 }
 
-// The global right-side drawer behind every「消息通知」entry: list ↔ detail
-// panes, mark-read actions, and the admin compose dialog.
 export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }: NotificationsDrawerProps) {
   const { t } = useI18n()
   const [tab, setTab] = useState<NotificationTab>('all')

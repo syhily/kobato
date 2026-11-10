@@ -18,8 +18,8 @@ import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 const db = getTestDb()
 
-// The endpoint must NEVER fetch the source (verification lives in the inbox worker, plan 026 Phase 2);
-// the mock surfaces any regression that reaches for globalThis.fetch in `calls`.
+// The endpoint must NEVER fetch the source (verification lives in the inbox worker); the mock
+// surfaces any regression that reaches for globalThis.fetch in `calls`.
 const mockFetch = installFetch()
 
 beforeEach(async () => {

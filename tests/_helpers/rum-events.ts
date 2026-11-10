@@ -1,8 +1,5 @@
-// Realistic OpenObserve slim RUM event fixtures (ADR-0012).
-//
-// Shapes mirror the SDK's `RumEvent` union (0.4.3) so policy tests exercise the
-// same fields the browser emits: common context, view metrics, resource
-// timing/phases, trace ids, and error resource/stack data.
+// Realistic OpenObserve slim RUM event fixtures. Shapes mirror the SDK's `RumEvent`
+// union (0.4.3) so policy tests exercise the same fields the browser emits.
 
 export const RUM_TEST_APP_ID = 'kobato-dev'
 export const RUM_TEST_SESSION_ID = '018f2b6c-7d4e-7a3b-9c1d-2e3f4a5b6c7d'

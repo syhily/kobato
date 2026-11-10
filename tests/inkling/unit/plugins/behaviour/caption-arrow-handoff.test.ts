@@ -10,9 +10,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { getEventProvenance, registerCaptionArrowHandoff } from '@/inkling/plugins/behaviour/nested-editor-protocol'
 
-// Unit pins for the caption arrow hand-off, folded into the protocol beside
-// the Enter hand-off it mirrors — previously two identical-twin handlers in
-// CaptionPlugin with e2e-only coverage. The parent editor is NOT linked
+// Unit pins for the caption arrow hand-off, beside the Enter hand-off it
+// mirrors in the protocol module. The parent editor is NOT linked
 // (no parentEditor), so every event it sees came through the hand-off.
 function createTestEditor(): LexicalEditor {
   return createEditor({ namespace: 'test', onError: () => {} })

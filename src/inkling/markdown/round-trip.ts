@@ -43,28 +43,22 @@ import {
  * (the paste dialect is `@/inkling/markdown/paste-dialect`) and the public markdown
  * import/export API (`markdownToLexicalState` / `lexicalStateToMarkdown`).
  *
- * What the dialect speaks: ```inkling:<card>``` fences, standard
- * `![alt](src)` image syntax, and the shared grammar table's inline
- * delimiters (`@/inkling/markdown/grammar`: `==mark==` rides upstream's
- * TEXT_FORMAT_TRANSFORMERS HIGHLIGHT, `~`/`^` sub/sup are projected in
- * `@/inkling/markdown/transformers-core`) — but not footnotes. Conversion runs
- * through `@lexical/markdown`'s `$convertFromMarkdownString` /
+ * It speaks ```inkling:<card>``` fences, standard `![alt](src)` image syntax,
+ * and the shared grammar table's inline delimiters
+ * (`@/inkling/markdown/grammar`) — but not footnotes. Conversion runs through
+ * `@lexical/markdown`'s `$convertFromMarkdownString` /
  * `$convertToMarkdownString` on a temporary headless editor with the
  * constrained node set below.
  */
 
-// The markdown-eligible cards in declaration order — the same order the
-// node sets compose (the declaration's `markdown` eligibility spec is the
-// filter). Transformer order among cards is unobservable (each
-// card transformer's export matches only its own node type; the import
-// regexes are per-card distinct), so no legacy rank is preserved; the
-// pinned literal in test/unit/nodes/derived-node-sets.test.ts guards drift.
-// MarkdownNode is a base-only node, not a card — it and
-// MARKDOWN_CARD_TRANSFORMER stay manual.
+// The markdown-eligible cards in declaration order — the same order the node
+// sets compose (the declaration's `markdown` eligibility spec is the filter).
+// Transformer order among cards is unobservable (each card transformer exports
+// only its own node type; the import regexes are per-card distinct), pinned by
+// tests/inkling/unit/nodes/derived-node-sets.test.ts.
 const MARKDOWN_CARDS = CARD_MARKDOWN_DECLARATIONS.filter((card) => 'markdown' in card && card.markdown !== undefined)
 
-// Exported (not part of the public `@/inkling/markdown` barrel) so the node-set diff
-// test can pin the derived arrays against the pre-refactor literals.
+// Exported for the node-set diff test, not part of the public `@/inkling/markdown` barrel.
 export const MARKDOWN_NODES = [
   HeadingNode,
   QuoteNode,
@@ -102,14 +96,12 @@ export const CARD_TRANSFORMERS: Transformer[] = [
   MARKDOWN_CARD_TRANSFORMER,
 ]
 
-// Fenced code blocks are this dialect's grammar, so the dialect carries its
-// own multiline transformer. The shared `CODE_BLOCK` element transformer
-// (`@/inkling/markdown/transformers`) is a typing-shortcut trigger: its regex only
-// fires on the trailing-space keystroke and deliberately never claims fences
-// on import — which used to leave imported fences as literal paragraphs that
-// export then re-escaped to \`\`\`. The export here reads `node.code` rather
-// than `getTextContent()`, which pads word-count text (caption included)
-// with trailing newlines. Ordered after the card transformers so
+// Fenced code blocks are this dialect's grammar, so the dialect carries its own
+// multiline transformer: the shared `CODE_BLOCK` transformer
+// (`@/inkling/markdown/transformers`) is a typing-shortcut trigger whose regex
+// never claims fences on import. The export reads `node.code` rather than
+// `getTextContent()`, which pads word-count text (caption included) with
+// trailing newlines. Ordered after the card transformers so
 // ```inkling:<card>``` fences match their card transformer first.
 const CODE_FENCE: MultilineElementTransformer = {
   dependencies: [CodeBlockNode],
@@ -117,20 +109,9 @@ const CODE_FENCE: MultilineElementTransformer = {
     if (!$isCodeBlockNode(node)) {
       return null
     }
-    // the fence shape is single-sourced in the card-shortcut seam; this
-    // transformer's variance is the text source (node.code)
     return codeBlockFence(node.language, node.code)
   },
   regExpEnd: FENCE_END_REGEXP,
-  // the import policy lives in the shared grammar table (`@/inkling/markdown/grammar`):
-  // language names are free input on export (codeBlockFence emits them
-  // verbatim), so the import side must accept more than \w — c++,
-  // shell-session, etc. used to fall back to literal paragraphs. Card fences
-  // (```inkling:<card>```) still win: buildTransformers orders
-  // CARD_TRANSFORMERS before CODE_FENCE. One accepted tradeoff: an unclosed
-  // ```inkling:xxx fence is malformed input no card transformer claims, and
-  // it now imports as a code block with language 'inkling:xxx' instead of a
-  // literal paragraph.
   regExpStart: FENCE_IMPORT_REGEXP,
   replace: (rootNode, _children, startMatch, _endMatch, linesInBetween, _isImport) => {
     rootNode.append($createCodeBlockNode({ code: stripFenceLines(linesInBetween), language: startMatch[1] }))
@@ -138,8 +119,8 @@ const CODE_FENCE: MultilineElementTransformer = {
   type: 'multiline-element',
 }
 
-// GFM pipe-table transformer, hand-written: @lexical/markdown 0.53 still ships no
-// upstream TABLE transformer — only the row/divider regexes that
+// GFM pipe-table transformer, hand-written: @lexical/markdown 0.53 ships no
+// TABLE transformer — only the row/divider regexes that
 // normalizeMarkdown uses. Import claims a header row only when a divider
 // line follows it (otherwise the line stays a literal paragraph); cell
 // markdown converts through the dialect's minimal inline-only set, so a
@@ -202,9 +183,7 @@ const GFM_TABLE: MultilineElementTransformer = {
       return null
     }
 
-    // the pipe-table shape — row 0 + divider + body — is declared in
-    // @/nodes/table/table-facts (the GFM direction forges the header; the
-    // HTML direction reads it)
+    // the pipe-table shape is declared in @/inkling/nodes/table/table-facts
     return resolveGfmPipeTableLines(rows, (cell) =>
       exportChildren(cell).replace(/\n/g, ' ').replace(/\|/g, '\\|').trim(),
     ).join('\n')
@@ -214,7 +193,9 @@ const GFM_TABLE: MultilineElementTransformer = {
 
 // The one home of the transformer precedence rule: card fences (built-in,
 // then host) match before GFM_TABLE and CODE_FENCE, so an inkling:<card>
-// fence is always a card, never a code block.
+// fence is always a card, never a code block. An unclosed ```inkling:xxx fence
+// is malformed input no card transformer claims and imports as a code block
+// with language 'inkling:xxx' — accepted tradeoff.
 function buildTransformers(hostTransformers: Transformer[] = []): Transformer[] {
   return [...CARD_TRANSFORMERS, ...hostTransformers, GFM_TABLE, CODE_FENCE, ...DEFAULT_TRANSFORMERS]
 }
@@ -231,14 +212,12 @@ interface HostRoundTripCard {
 }
 
 /**
- * The host cards the round-trip composes (CONTEXT.md: "host card") —
- * registry-default wiring: every `defineCard`-registered card joins by
- * default (its assembled class registers on the conversion editor; with
- * `markdownFence`, its fence transformer is derived from the stored spec
- * through the same `createCardTransformer` the handle used). The `cards`
- * option AUGMENTS the registry default — its purpose is handles built
- * WITHOUT `defineCard` — and on a nodeType collision the explicit handle
- * replaces the registry-derived wiring for that type. There is deliberately
+ * The host cards the round-trip composes: every `defineCard`-registered card
+ * joins by default (its assembled class registers on the conversion editor;
+ * `markdownFence` derives its transformer from the stored spec through
+ * `createCardTransformer`). The `cards` option AUGMENTS that default — it
+ * exists for handles built WITHOUT `defineCard` — and on a nodeType collision
+ * it replaces the registry-derived wiring for that type. There is deliberately
  * no opt-out flag: a registered card leaves the round-trip by not declaring
  * `markdownFence`.
  */
@@ -260,13 +239,9 @@ function resolveRoundTripHostCards(cards: readonly HostCard[]): HostRoundTripCar
 }
 
 /**
- * The options the round-trip pair accepts: `cards` AUGMENTS the
- * registry-default host wiring (see `resolveRoundTripHostCards`) — compose a
- * HostCard handle that was built without `defineCard`, or override a
- * registered type's wiring with an explicit handle. Registered cards need no
- * `cards` entry; every host fence transformer joins the card run ordered
- * before CODE_FENCE either way, so `inkling:<card>` fences match their card
- * transformer first (the same precedence the built-in cards get).
+ * `cards` AUGMENTS the registry-default host wiring (see
+ * `resolveRoundTripHostCards`): compose a HostCard handle built without
+ * `defineCard`, or override a registered type's wiring.
  */
 export interface MarkdownRoundTripOptions {
   cards?: readonly HostCard[]
@@ -281,9 +256,7 @@ function createMarkdownEditor(hostCards: readonly HostRoundTripCard[]) {
   })
 }
 
-// Host card fences join the card run — ahead of CODE_FENCE. With no fenced
-// host cards the shared constant is reused, so the default conversion is
-// byte-identical to the pre-options behavior.
+// Host card fences join the card run — ahead of CODE_FENCE.
 function resolveTransformers(hostCards: readonly HostRoundTripCard[]): Transformer[] {
   const hostTransformers = hostCards.flatMap((card) => (card.transformer ? [card.transformer] : []))
   if (hostTransformers.length === 0) {
@@ -293,11 +266,8 @@ function resolveTransformers(hostCards: readonly HostRoundTripCard[]): Transform
 }
 
 /**
- * Convert a markdown string to a serialized Lexical editor state.
- *
- * Uses `@lexical/markdown`'s `$convertFromMarkdownString` together with the
- * existing Inkling shortcut transformers (headings, lists, quotes, links, code
- * blocks, horizontal rules, sub/superscript, etc.).
+ * Convert a markdown string to a serialized Lexical editor state, through
+ * `@lexical/markdown`'s `$convertFromMarkdownString`.
  */
 export function markdownToLexicalState(
   markdown: string,
@@ -317,10 +287,8 @@ export function markdownToLexicalState(
 }
 
 /**
- * Convert a serialized Lexical editor state back to a markdown string.
- *
- * Uses `@lexical/markdown`'s `$convertToMarkdownString` with the same
- * transformer set used by `markdownToLexicalState`.
+ * Convert a serialized Lexical editor state back to a markdown string, using
+ * the same transformer set as `markdownToLexicalState`.
  */
 export function lexicalStateToMarkdown(state: SerializedEditorState, options: MarkdownRoundTripOptions = {}): string {
   const hostCards = resolveRoundTripHostCards(options.cards ?? [])

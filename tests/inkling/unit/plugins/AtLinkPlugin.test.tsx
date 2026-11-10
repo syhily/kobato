@@ -34,18 +34,11 @@ vi.mock('@/inkling/utils/analytics', () => ({
   default: vi.fn(),
 }))
 
-// AtLinkPlugin is a pure adapter over src/plugins/behaviour/at-link.ts — the
-// removal/normalization/backspace/composition/selection-clamp matrix is
-// pinned headlessly in test/unit/plugins/behaviour/at-link.test.ts. This
-// suite pins only the gating (searchLinks, registered nodes) and the wiring
-// (session snapshot → popup props, popup onSelect → delegated commit +
-// analytics).
+// The substitution matrix lives in behaviour/at-link.test.ts; this suite pins
+// the gating and wiring only.
 //
-// Harness note: the Portal's children never commit to document.body under
-// jsdom + renderHook — true at HEAD too, not a regression — so popup DOM
-// behavior is not pinned here — the wiring pins read
-// the rendered element tree instead: the Portal's AtLinkResultsPopup element
-// carries query/listOptions in and delegates onSelect back to the component.
+// The Portal's children never commit to document.body under jsdom + renderHook,
+// so assertions read the AtLinkResultsPopup element's props instead of the DOM.
 
 function createTestEditor() {
   return createEditor({
@@ -83,8 +76,7 @@ interface PopupProps {
   onSelect: (item?: ListOptionItem) => void
 }
 
-// The AtLinkResultsPopup element props carried by the hook's returned Portal
-// element, or null while the hook renders nothing.
+// The AtLinkResultsPopup props carried by the hook's Portal element, or null when nothing renders.
 function popupProps(result: { current: unknown }): PopupProps | null {
   const portal = result.current as React.ReactElement | null
   const popup = (portal?.props as { children?: React.ReactElement } | undefined)?.children
@@ -103,8 +95,8 @@ describe('AtLinkPlugin', () => {
   }
 
   async function actFlush() {
-    // Lexical 0.53 defers commits (and listener cascades) to microtasks —
-    // drain the queue inside act so assertions see the settled state
+    // Lexical defers commits (and listener cascades) to microtasks, so
+    // drain the queue inside act or assertions read unsettled state.
     await act(async () => {
       await tick()
     })
@@ -126,7 +118,6 @@ describe('AtLinkPlugin', () => {
     return result
   }
 
-  // Focuses an at-link node ('hello ' paragraph, '@' converted, query typed).
   async function buildFocusedAtLink(query: string) {
     await actUpdate(() => {
       const root = $getRoot()
@@ -245,17 +236,14 @@ describe('AtLinkPlugin', () => {
         expect(link.getURL()).toBe('https://example.com/emoji')
         expect(link.getTextContent()).toBe('Emoji autocomplete')
       }
-      // the caret collapsed to the end of the inserted link
       const selection = $getSelection()
       expect($isRangeSelection(selection) && selection.isCollapsed()).toBe(true)
     })
-    // analytics is the component's half of the commit (product glue)
     expect(trackEvent).toHaveBeenCalledWith('Link dropdown: Internal link chosen', {
       context: 'at-link',
       fromLatest: false,
       isBookmark: false,
     })
-    // the session reset closed the popup
     expect(result.current).toBeNull()
   })
 

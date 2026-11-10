@@ -45,7 +45,7 @@ export function Input({
 
   React.useEffect(() => {
     // setting a value via state immediately after mounting results in React's
-    // autoFocus not working, so we need to manually focus the input
+    // autoFocus not working, so the input is focused manually
     if (shouldFocusOnUpdate.current) {
       const timeoutId = setTimeout(() => {
         if (inputRef.current) {
@@ -54,7 +54,6 @@ export function Input({
         }
       }, 0)
 
-      // Cleanup
       return () => clearTimeout(timeoutId)
     }
   }, [])

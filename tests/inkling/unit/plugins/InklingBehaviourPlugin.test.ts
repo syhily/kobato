@@ -30,9 +30,8 @@ function createTestEditor(nodes: LexicalNodeConfig[] = []) {
   })
 }
 
-// Mount the plugin under a per-composer card selection store provider, the
-// same store InklingComposer provides in production (plan 038 — no
-// whole-context mock).
+// Mount under a per-composer card selection store provider, matching what
+// InklingComposer provides in production instead of a whole-context mock.
 function renderPlugin() {
   return renderHook(() => InklingBehaviourPlugin({}), { wrapper: createCardSelectionStoreWrapper().wrapper })
 }
@@ -49,8 +48,6 @@ describe('InklingBehaviourPlugin', () => {
   it('renders and registers commands as an aggregator', async () => {
     renderPlugin()
 
-    // Smoke test: ensure the plugin registered the command listeners by
-    // dispatching a few commands with valid editor state.
     let imageNode: ImageNode
     await updateEditor(editor, () => {
       const root = $getRoot()
@@ -92,8 +89,7 @@ describe('InklingBehaviourPlugin', () => {
     rerender()
 
     // Handlers read card selection synchronously from the store, so forced
-    // re-renders must not tear down and re-register the listeners (plan 038
-    // step 5).
+    // re-renders must not tear down and re-register the listeners.
     expect(registerCommandSpy.mock.calls.length).toBe(registrationsAfterMount)
 
     unmount()
@@ -138,7 +134,7 @@ describe('InklingBehaviourPlugin', () => {
     outsideElement.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
 
     expect(deselected).toEqual([cardKey])
-    // the fallback must not resurrect the legacy .inkling-editor lookup
+    // the fallback must not look the editor up through the .inkling-editor selector
     expect(querySelectorSpy).not.toHaveBeenCalledWith('.inkling-editor')
 
     unregister()

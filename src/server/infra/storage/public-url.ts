@@ -4,10 +4,9 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@/shared/types/asset-url'
 
 /**
- * Public base URL for S3 assets, or `null` when unconfigured. Stays non-null
- * while the upload toggle is OFF so existing `s3` rows keep rendering. This is
- * the 302 TARGET for the site-owned `/storage/*` routes — asset URLs stored
- * in content never carry it.
+ * Public base URL for S3 assets, or `null` when unconfigured. Stays non-null while
+ * the upload toggle is OFF so existing `s3` rows keep rendering; it is the 302 target
+ * of the site-owned `/storage/*` routes and never appears in stored asset URLs.
  */
 export function getPublicBaseUrl(): string | null {
   const assets = requireBlogSettingsSection('assets')
@@ -50,10 +49,10 @@ export interface ResolveAssetUrlOptions {
 }
 
 /**
- * Site-owned absolute URL for a stored asset: `${website}/storage/<key>`
- * (or `options.route`), so a storage-backend switch never breaks stored
- * links — the `/storage/*` route 302s to the current backend when S3 is
- * active. Throws 503 when the site origin is unset; appends `?v=<updatedAtMs>`.
+ * Site-owned absolute URL for a stored asset: `${website}/storage/<key>` (or
+ * `options.route`), so a storage-backend switch never breaks stored links — the
+ * `/storage/*` route 302s to the current backend when S3 is active. Throws 503 when
+ * the site origin is unset; appends `?v=<updatedAtMs>`.
  */
 export function resolveAssetUrl(storagePath: string, updatedAtMs?: number, options?: ResolveAssetUrlOptions): string {
   const website = getGeneralWebsite()
@@ -100,13 +99,11 @@ function stripQueryAndFragment(url: string): string {
 }
 
 /**
- * Inverse of `resolveAssetUrl`: site-owned asset URL → `{ key, route }`.
- * Accepts the origin-relative forms (`/storage/<key>`,
- * `/fonts/embedded/<hash>/<file>`) and — per `options` — the absolute form;
- * the `?v=<updatedAt>` cache-buster (and any other query/fragment) is
- * stripped. Returns `null` for absolute CDN URLs, foreign origins, malformed
- * URLs, and anything outside the grammar. The path grammar itself is owned
- * by `@/shared/types/asset-url` — this wrapper adds the origin policy.
+ * Inverse of `resolveAssetUrl`: site-owned asset URL → `{ key, route }`. Accepts the
+ * origin-relative forms (`/storage/<key>`, `/fonts/embedded/<hash>/<file>`) and — per
+ * `options` — the absolute form, with any query/fragment stripped. Returns `null` for
+ * CDN URLs, foreign origins, malformed URLs, and anything outside the grammar owned by
+ * `@/shared/types/asset-url`; this wrapper adds the origin policy.
  */
 export function parseAssetUrl(url: string, options: ParseAssetUrlOptions = {}): ParsedAssetUrl | null {
   if (url.startsWith('/') && !url.startsWith('//')) {

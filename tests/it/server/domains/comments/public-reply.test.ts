@@ -69,7 +69,6 @@ describe('integration / public comments', () => {
     const adminCtx = makeAuthedCtx({ role: 'admin', db })
     const publicCtx = makePublicCtx({ db })
 
-    // Create a page so the comment target exists
     const pageRes = await callRpc(
       '/admin/pages/upsertMeta',
       { title: 'Commentable Page', summary: '', slug: 'commentable' },

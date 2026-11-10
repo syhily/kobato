@@ -82,10 +82,10 @@ describe('shared/i18n/catalog', () => {
   })
 
   it('keeps the persisted server namespaces (notification.*, email.*) out of the UI catalog', () => {
-    // Plan 001 §5.2: `notification.*` keys are persisted in notification rows
-    // and `email.*` keys render server-side mail — both live ONLY in the server
-    // catalog. The plural `notifications.*` namespace is the UI one and stays
-    // allowed; only an exact `notification.` / `email.` prefix is a violation.
+    // `notification.*` keys are persisted in notification rows and `email.*`
+    // keys render server-side mail — both live ONLY in the server catalog. The
+    // plural `notifications.*` namespace is the UI one and stays allowed; only
+    // an exact `notification.` / `email.` prefix is a violation.
     const PERSISTED_SERVER_PREFIX = /^(?:notification|email)\./
     for (const locale of SUPPORTED_LOCALES) {
       const leaked = Object.keys(uiMessagesFor(locale)).filter((key) => PERSISTED_SERVER_PREFIX.test(key))
@@ -221,7 +221,6 @@ describe('shared/i18n/catalog-scope', () => {
   })
 
   it('never ships a workspace-only family on the public wire', () => {
-    // The exact families the old "drop admin.*" filter left behind.
     const WORKSPACE_ONLY_PREFIXES = [
       'admin.settings.',
       'admin.editor.',
@@ -266,10 +265,9 @@ describe('shared/i18n/catalog-scope', () => {
 
   it('keeps the public wire payload materially smaller (gzip regression)', () => {
     const gzipBytes = (catalog: Record<string, string>): number => gzipSync(JSON.stringify(catalog)).length
-    // Actual values at the allowlist's introduction: ~8.5 KB public vs ~48–52 KB
-    // workspace over the wire. Both bounds are deliberately loose — a copy edit
-    // must not fail the suite, while re-leaking a workspace family (ratio → 1)
-    // or a second catalog riding along (public > 2× today) does.
+    // Both bounds are deliberately loose — a copy edit must not fail the
+    // suite, while re-leaking a workspace family (ratio → 1) or a second
+    // catalog riding along (public > 2× today) does.
     const PUBLIC_GZIP_CEILING = 12_000
     const PUBLIC_SHARE_CEILING = 0.3
 

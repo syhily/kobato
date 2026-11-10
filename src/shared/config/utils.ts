@@ -33,11 +33,11 @@ export function extractXHandle(socials: Array<{ network: SocialNetwork; link: st
   }
 }
 
-// Per-slot cache-buster suffix from the branding ref's `updatedAt`, appended
-// to the fixed branding asset paths (`/favicon.svg`, `/logo.svg`, …) so a
-// re-upload changes the URL and browsers skip the stale cached copy.
-// No ref (bundled default asset) → '' — the bare path serves. Matches the
-// `?v=<updatedAtMs>` convention of `resolveAssetUrl` for /storage/ URLs.
+// Per-slot cache-buster suffix from the branding ref's `updatedAt`, appended to
+// the fixed branding asset paths (`/favicon.svg`, `/logo.svg`, …) so a re-upload
+// changes the URL and browsers skip the stale copy. No ref (bundled default
+// asset) → '' — the bare path serves. Matches `resolveAssetUrl`'s `?v=<ms>`
+// convention for /storage/ URLs.
 export function brandingVersionSuffix(ref: BrandingObjectRef | undefined | null): string {
   const ms = ref?.updatedAt ? Date.parse(ref.updatedAt) : Number.NaN
   return Number.isFinite(ms) ? `?v=${ms}` : ''

@@ -6,12 +6,9 @@ import { callE2eRpc } from '#/_helpers/e2e-rpc'
 
 const env = e2eEnv()
 
-// Real-HTTP four-locale journey: switch the site language through the admin
-// settings RPC and verify every public representation follows — HTML (chrome
-// copy and the localized 404), RSS/Atom, manifest, an actual calendar PNG
-// paint, and the conditional-request semantics (a stale tag must NEVER answer
-// 304 with an old language). Every expected string is a literal from the
-// catalog, never computed with the same Intl call the implementation uses.
+// Every expected string is a literal from the catalog, never computed with
+// the same Intl call the implementation uses; a stale tag must never answer
+// 304 with an old language.
 const LOCALES = ['en-US', 'zh-HK', 'zh-TW', 'zh-CN'] as const
 type Locale = (typeof LOCALES)[number]
 
@@ -135,8 +132,7 @@ describe('four-locale public representations (HTTP e2e)', () => {
         await setLocale(admin, csrfToken, locale)
         const copy = UI_COPY[locale]
 
-        // 1. HTML document: lang, Content-Language, og:locale, and real chrome
-        //    copy rendered through the UI catalog (never a fallback catalog).
+        // Real chrome copy rendered through the UI catalog, never a fallback.
         const home = await anon.get('/')
         expect(home.status).toBe(200)
         expect(home.headers.get('content-language')).toBe(locale)
@@ -145,16 +141,14 @@ describe('four-locale public representations (HTTP e2e)', () => {
         expect(homeHtml).toContain(copy.skipToContent)
         expect(homeHtml).toContain(copy.themeToDark)
 
-        // 1b. The localized 404 body — a whole page rendered from the catalog.
         const missing = await anon.get(MISSING_PATH)
         expect(missing.status).toBe(404)
         const missingHtml = await missing.text()
         expect(missingHtml).toContain(copy.notFoundTitle)
         expect(missingHtml).toContain(copy.notFoundDescription)
 
-        // 2. RSS: language element + header + ETag. `<language>` is the
-        //    feed's locale-bearing field; titles/descriptions are site-authored
-        //    content and deliberately never translated.
+        // `<language>` is the feed's locale-bearing field; titles/descriptions
+        // are site-authored content and deliberately never translated.
         const feed = await anon.get('/feed')
         expect(feed.status).toBe(200)
         expect(feed.headers.get('content-language')).toBe(locale)
@@ -166,9 +160,8 @@ describe('four-locale public representations (HTTP e2e)', () => {
         expect(currentTag).toMatch(/^(?:W\/)?"[0-9a-f]{32}"$/)
         feedTags.set(locale, currentTag!)
 
-        // 3. Conditional requests: a tag from the PREVIOUS locale must be a
-        //    miss (200 + current language), the current tag a 304 that still
-        //    advertises the current language.
+        // A tag from the PREVIOUS locale must be a miss (200 + current
+        // language), the current tag a 304 that still advertises it.
         const stale = await anon.get('/feed', { headers: { 'if-none-match': previousTag! } })
         expect(stale.status).toBe(200)
         expect(stale.headers.get('content-language')).toBe(locale)
@@ -182,14 +175,13 @@ describe('four-locale public representations (HTTP e2e)', () => {
         await fresh.text()
         previousTag = currentTag
 
-        // 4. Atom: xml:lang on the root feed element.
         const atom = await anon.get('/feed/atom')
         expect(atom.status).toBe(200)
         expect(atom.headers.get('content-language')).toBe(locale)
         expect(await atom.text()).toContain(`xml:lang="${locale}"`)
 
-        // 5. Manifest: the full body — `lang` is its locale-bearing field,
-        //    name/short_name stay the site's authored title.
+        // `lang` is the manifest's locale-bearing field; name/short_name stay
+        // the site's authored title.
         const manifest = await anon.get('/manifest.webmanifest')
         expect(manifest.status).toBe(200)
         expect(manifest.headers.get('content-language')).toBe(locale)
@@ -202,8 +194,6 @@ describe('four-locale public representations (HTTP e2e)', () => {
         })
         manifestTags.set(locale, manifest.headers.get('etag')!)
 
-        // 6. Calendar PNG: real locale-specific render, current language
-        //    header, byte ETag.
         const calendar = await anon.get(CALENDAR_PATH)
         expect(calendar.status).toBe(200)
         expect(calendar.headers.get('content-type')).toBe('image/png')

@@ -8,7 +8,6 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Font table validation + upload/resource errors across all four locales.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

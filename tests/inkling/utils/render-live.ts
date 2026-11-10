@@ -8,17 +8,8 @@ import $convertToHtmlString from '@/inkling/html/renderer/convert-to-html-string
 import DEFAULT_NODES from '@/inkling/nodes/DefaultNodes'
 import defaultTheme from '@/inkling/themes/default'
 
-// The HTML render harness — the one home of the two render paths the suite
-// pins against, each previously hand-copied per spec:
-//
-// - renderLive: an editor configured like InklingComposer (DEFAULT_NODES +
-//   defaultTheme), a parsed state, $convertToHtmlString.
-// - renderHeadless: the headless route through the public seam
-//   (lexicalStateToHtml), so the default headless node set carries the
-//   family under test.
-//
-// createTestDom is the suite's single jsdom construction site (jsdom is
-// the pinned optional peer).
+// The HTML render harness: the two render paths the suite pins against, plus
+// the single jsdom construction site (jsdom is the pinned optional peer).
 
 /** The suite's single jsdom construction site — pass a document string when the test needs one. */
 export function createTestDom(html?: string): JSDOM {

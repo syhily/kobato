@@ -29,6 +29,8 @@ const EXEMPT_PATH_PREFIXES = [
   '/robots.txt',
   '/sitemap.xml',
   '/__manifest',
+  // The RUM intake relay answers its own gated JSON error, never a redirect.
+  '/api/rum/intake/',
 ]
 
 function isExempt(pathname: string): boolean {

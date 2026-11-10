@@ -5,8 +5,8 @@ import { useRouteLoaderData } from 'react-router'
 const REFRESH_MS = 60_000
 
 /**
- * Hydration-safe clock (audits P2-23 / V3-08): SSR + first hydration use the root
- * loader's `nowIso`; after mount, switch to the live clock — the loader never re-runs.
+ * Hydration-safe clock: SSR and first hydration use the root loader's `nowIso`; after mount,
+ * switch to the live clock, since the loader never re-runs.
  */
 export function useChromeClock(): Date {
   const nowIso = useRouteLoaderData<{ nowIso?: string }>('root')?.nowIso

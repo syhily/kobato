@@ -11,8 +11,8 @@ import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
-// Listing routes pin the public 404/redirect contracts (URL surface,
-// AGENTS.md: must remain stable forever) against the real engine.
+// Listing routes pin the public 404/redirect contracts (the URL surface must
+// remain stable forever) against the real engine.
 
 const db = getTestDb()
 

@@ -14,16 +14,8 @@ import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { useHydrated } from '@/ui/lib/use-hydrated'
 
-// Views time series behind the hydration-safe chart gate (Slite's
-// `analysis/ChartBody.vue`): the server and the client's first render both
-// emit the static skeleton (the @unovis chunk is client-only); after
-// hydration the lazy inner chart mounts behind an identical fallback.
-// Like Heatmap, no loader payload is threaded through: it would be bucketed
-// in Etc/UTC, so the skeleton stays up until the client-timezone-aware
-// `analytics.views` query resolves — no UTC first-paint flash, and no stale
-// labels to re-parse under a new unit on range change. The query sends the
-// derived `unit` + `clientTimezone`; bucket labels are parsed per that unit,
-// never as ISO instants.
+// The @unovis chunk is client-only: SSR and the first client render emit the
+// static skeleton; the lazy chart mounts behind an identical fallback.
 
 const LazyViewsChartInner = lazy(() =>
   import('@/ui/admin/analytics/ViewsChartInner').then((module) => ({ default: module.ViewsChartInner })),
@@ -69,8 +61,7 @@ export function ViewsChart({ className, scope }: ViewsChartProps) {
   )
 }
 
-// Static pre-chart placeholder — byte-identical between SSR, the first
-// client render, and the lazy-boundary fallback (React #418 rule).
+// Byte-identical between SSR, first client render and the lazy fallback (React #418).
 function ViewsChartSkeleton({ className }: { className?: string }) {
   const { t } = useI18n()
   return (

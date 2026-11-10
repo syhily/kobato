@@ -14,12 +14,11 @@ import {
 // not at module import), the menu query policy (searchEmojis — including
 // the emoticon alias table), the exact-match `:shortcode:` completion
 // registration, and the two insertion surgeries. The React half
-// (src/plugins/EmojiPickerPlugin.tsx) is a pure adapter: it owns the
-// typeahead menu rendering, the query state, and product analytics — the
-// surgeries here return commit results and the plugin attaches trackEvent
-// calls to them (the at-link module's analytics-on-the-commit-result split).
+// (EmojiPickerPlugin.tsx) is a pure adapter: it owns the typeahead menu
+// rendering, the query state, and product analytics — the surgeries here
+// return commit results and the plugin attaches trackEvent calls to them.
 //
-// The two search paths differ deliberately (document why, don't flatten):
+// The two search paths differ deliberately:
 // - the menu query (searchEmojis) maps emoticon aliases before searching —
 //   `:)` should list smileys
 // - the exact-match completion searches the LITERAL query: its completion
@@ -111,7 +110,6 @@ async function searchEmojiIndex(query: string): Promise<EmojiSearchResult[]> {
   return results.filter(isEmojiSearchResult)
 }
 
-// The typeahead menu's query policy.
 export async function searchEmojis(query: string): Promise<EmojiSearchResult[]> {
   const alias = EMOTICON_SEARCH_ALIASES[query]
   return searchEmojiIndex(alias ?? query)
@@ -236,7 +234,7 @@ export function registerEmojiExactMatchCompletion(
           return
         }
         if (emojis[0].id !== query) {
-          return // only look for exact match
+          return
         }
         editor.update(() => {
           const committed = $insertEmojiCompletion(emojis[0])

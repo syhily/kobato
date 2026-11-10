@@ -26,8 +26,8 @@ Object.defineProperty(globalThis, 'window', {
 beforeEach(async () => {
   localStorageData.clear()
 
-  // fake-indexeddb's deleteDatabase does not resolve reliably,
-  // so we open the DB and clear the store instead.
+  // fake-indexeddb's deleteDatabase does not resolve reliably;
+  // open the DB and clear the store instead.
   try {
     const db = await openDB('kobato-drafts', 1, {
       upgrade(db) {
@@ -126,7 +126,7 @@ describe('draft-store', () => {
     expect(localStorageData.get('other-key')).toBe('should-stay')
   })
 
-  it('drops v1 PortableText-era localStorage drafts instead of migrating them (R11)', async () => {
+  it('drops v1 PortableText-era localStorage drafts instead of migrating them', async () => {
     // A v1 draft's body is a PT block array — unloadable into the Lexical
     // composer, so the migration skips it (and leaves the key in place).
     localStorageData.set(
@@ -163,7 +163,7 @@ describe('draft-store', () => {
   })
 
   it('removeDraftsByPrefix removes every rotated-token draft for the entity and keeps other entities', async () => {
-    // Audit P1-15: the draft key embeds the clientRevisionToken, so every
+    // The draft key embeds the clientRevisionToken, so every
     // token rotation leaves an orphan full-body draft behind. Clearing must
     // sweep ALL of the entity's keys, not just the current-token one.
     const seed = (key: string, type: 'post-edit' | 'page-edit') =>

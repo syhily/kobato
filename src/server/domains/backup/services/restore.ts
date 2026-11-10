@@ -37,10 +37,9 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('backup.service')
 
-// Decompressed backup size cap: 500 MB.
+// Cap on the DECOMPRESSED payload.
 export const MAX_BACKUP_FILE_SIZE = 500 * 1024 * 1024
 
-/** The 16-byte magic header every SQLite database file starts with. */
 const SQLITE_MAGIC = Buffer.from('SQLite format 3\0', 'latin1')
 
 /** DuckDB's storage magic: 4 ASCII bytes after the 8-byte checksum. */
@@ -54,12 +53,10 @@ const HEAD_BYTES = 600
 /** mkdtemp prefix staged-restore temp dirs carry — the boot-time sweep keys on it (and nothing else may). */
 export const RESTORE_TEMP_PREFIX = 'kobato-restore-'
 
-/** Whether a (prefix of a) payload starts with the SQLite header magic. */
 export function hasSqliteMagic(buffer: Buffer): boolean {
   return buffer.length >= SQLITE_MAGIC.length && buffer.subarray(0, SQLITE_MAGIC.length).equals(SQLITE_MAGIC)
 }
 
-/** Whether a (prefix of a) payload carries DuckDB's storage magic. */
 export function hasDuckdbMagic(buffer: Buffer): boolean {
   return (
     buffer.length >= DUCKDB_MAGIC_OFFSET + DUCKDB_MAGIC.length &&
@@ -67,8 +64,7 @@ export function hasDuckdbMagic(buffer: Buffer): boolean {
   )
 }
 
-/** Validate a payload as a real SQLite database file — a DB file is data,
- * never executed as SQL by the restore path. */
+/** A restored database is data only — never executed as SQL by the restore path. */
 export function assertSqliteBackup(buffer: Buffer): void {
   if (buffer.length > MAX_BACKUP_FILE_SIZE) {
     throw new ActionFailure(400, descriptorFor('backup.error.fileTooLarge'))
@@ -86,11 +82,9 @@ export function assertDuckdbBackup(buffer: Buffer): void {
 
 // Production path streams to disk; the in-memory buffer tier lives in tests/_helpers/backup-buffer.ts.
 
-/** The upload is an encrypted archive and no password was supplied — the
- *  perimeter maps this to a "password required" response, never a 400.
- *  Carries the staged temp dir + raw upload path so the perimeter can park
- *  the upload for a follow-up decrypt call (the dir is deliberately NOT
- *  swept on this throw). */
+/** The upload is encrypted and no password was supplied — the perimeter maps
+ *  this to a "password required" response and parks the staged dir for the
+ *  follow-up decrypt call (deliberately NOT swept on this throw). */
 export class EncryptedBackupPasswordRequired extends Error {
   constructor(
     readonly dir: string,
@@ -101,10 +95,8 @@ export class EncryptedBackupPasswordRequired extends Error {
   }
 }
 
-/** The supplied password failed the GCM tag check. Distinct from every
- *  OTHER staging failure (structure, size, tar validation): only this one
- *  is retryable with a different password, so the decrypt endpoint keeps
- *  the parked upload for it and releases on the rest. */
+/** The supplied password failed the GCM tag check — the only retryable
+ *  staging failure, so the decrypt endpoint keeps the parked upload for it. */
 export class BackupPasswordError extends ActionFailure {
   constructor() {
     super(400, descriptorFor('backup.error.passwordWrong'))
@@ -113,13 +105,9 @@ export class BackupPasswordError extends ActionFailure {
 }
 
 export interface StagedBackup {
-  /** Temp dir holding the decompressed payload + extracted entries. */
   dir: string
-  /** Extracted content file path (inside `dir`), null for analytics-only uploads. */
   content: string | null
-  /** Extracted analytics file path, null when the upload carries none. */
   analytics: string | null
-  /** Extracted config file path, null when the archive carries none. */
   config: string | null
 }
 
@@ -144,7 +132,7 @@ async function copyRange(sourcePath: string, offset: number, size: number, destP
   await pipeline(createReadStream(sourcePath, { start: offset, end: offset + size - 1 }), createWriteStream(destPath))
 }
 
-/** Fails the pipeline once bytes passed exceed `maxBytes` — exported for unit tests. */
+/** Exported for unit tests. */
 export function decompressedSizeGuard(maxBytes: number): Transform {
   let total = 0
   return new Transform({
@@ -160,11 +148,9 @@ export function decompressedSizeGuard(maxBytes: number): Transform {
 }
 
 /** The staged config must pass the SAME checks the next boot applies — it
- *  overwrites the live `kobato.config.json` verbatim, and a config the boot
- *  parse rejects exits the process AFTER the databases were swapped. Reuses
- *  `parseRestorableConfigJson` (migration + strict file schema + the
- *  env-over-file merged per-entry parse `loadServerConfig` runs) so there is
- *  one definition of "bootable config", never a second copy here. */
+ *  overwrites the live `kobato.config.json` verbatim and a config the boot
+ *  parse rejects would exit the process AFTER the databases were swapped.
+ *  Reuses `parseRestorableConfigJson` so "bootable config" has one definition. */
 async function assertConfigBackup(configPath: string): Promise<void> {
   try {
     parseRestorableConfigJson(await readFile(configPath, 'utf8'))
@@ -183,17 +169,15 @@ async function assertConfigBackup(configPath: string): Promise<void> {
 }
 
 export interface StageBackupOptions {
-  /** Backup encryption password — required when the upload is an encrypted
-   *  archive (`EncryptedBackupPasswordRequired` otherwise). */
+  /** Required when the upload is an encrypted archive (`EncryptedBackupPasswordRequired` otherwise). */
   password?: string
-  /** Cap on the DECOMPRESSED payload (default MAX_BACKUP_FILE_SIZE). */
+  /** Defaults to MAX_BACKUP_FILE_SIZE. */
   maxBytes?: number
   /** Byte-progress callback for the decrypt/extract legs (doneBytes so far;
    *  totalBytes known only for decrypting — the encrypted file size). */
   onProgress?: (stage: 'decrypting' | 'extracting', doneBytes: number, totalBytes: number | null) => void
 }
 
-/** Counts bytes flowing through, reporting the running total per chunk. */
 function byteCounter(onBytes: (doneBytes: number) => void): Transform {
   let total = 0
   return new Transform({
@@ -205,9 +189,7 @@ function byteCounter(onBytes: (doneBytes: number) => void): Transform {
   })
 }
 
-/** Stage an uploaded backup to a temp dir: stream, optionally decrypt,
- * decompress, extract payloads (magic-validated). Caller owns `dir`
- * cleanup. */
+/** Stage an uploaded backup to a temp dir (decrypt/decompress/extract). Caller owns `dir` cleanup. */
 export async function stageBackup(source: Buffer | Readable, options: StageBackupOptions = {}): Promise<StagedBackup> {
   const maxBytes = options.maxBytes ?? MAX_BACKUP_FILE_SIZE
   const dir = await mkdtemp(join(tmpdir(), RESTORE_TEMP_PREFIX))
@@ -241,11 +223,8 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
         )
       } catch (error) {
         if (error instanceof BackupDecryptionError) {
-          // Only an AUTH failure (the GCM tag check) is retryable with a
-          // different password; format failures (header, framing,
-          // truncation) fail identically on every retry.
+          // Only an 'auth' (GCM tag) failure is retryable with a different password.
           if (error.kind === 'auth') {
-            // Message is the technical detail; the descriptor carries the copy.
             throw new BackupPasswordError()
           }
           log.warn('backup decrypt failed (format)', { error: error.message })
@@ -322,8 +301,7 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
   }
 }
 
-/** Boot-time sweep of staged-restore temp dirs orphaned by a crash — only
- * exact-prefix dirs directly in the OS temp dir, best-effort per entry. */
+/** Boot-time sweep of staged-restore temp dirs orphaned by a crash; best-effort per entry. */
 export async function sweepStaleRestoreDirs(): Promise<void> {
   let entries
   try {
@@ -350,8 +328,7 @@ export async function sweepStaleRestoreDirs(): Promise<void> {
   }
 }
 
-/** Pre-swap check: the backup must contain an admin row, or restoring it
- * soft-locks the instance behind the install gate. */
+/** The backup must contain an admin row, or restoring it soft-locks the instance behind the install gate. */
 export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Promise<void> {
   if (staged.content === null) {
     throw new ActionFailure(400, descriptorFor('backup.error.noAdmin'))
@@ -371,8 +348,7 @@ export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Pro
   }
 }
 
-/** Move a staged engine file into place over the live one (copy + rename);
- *  the live file is moved aside to `.pre-restore` for the rollback path. */
+/** Swap a staged engine file over the live one; the live file moves aside to `.pre-restore` for rollback. */
 async function swapStagedFile(sourcePath: string, targetPath: string): Promise<void> {
   const stagingPath = `${targetPath}.restore-staging`
   const preRestorePath = `${targetPath}${PRE_RESTORE_SUFFIX}`
@@ -388,7 +364,6 @@ async function swapStagedFile(sourcePath: string, targetPath: string): Promise<v
   } catch (error) {
     await rm(stagingPath, { force: true })
     if (movedAside) {
-      // The swap never completed — put the original back.
       await rename(preRestorePath, targetPath).catch(() => undefined)
     }
     throw error
@@ -398,25 +373,21 @@ async function swapStagedFile(sourcePath: string, targetPath: string): Promise<v
 const PRE_RESTORE_SUFFIX = '.pre-restore'
 const RESTORE_STAGING_SUFFIX = '.restore-staging'
 
-/** Apply the staged config file: park the live copy at the `.pre-restore`
- *  sibling, then rename a staged copy straight over it. Unlike the engine
- *  swap this has NO missing-target window — the config is read at module
- *  load (before `recoverPreRestoreFiles` can run), so a momentarily absent
- *  file would be auto-created with defaults and the sibling then dropped as
- *  "stale". A missing live file skips the park step. */
+/** Unlike the engine swap this has NO missing-target window — the config is
+ *  read at module load, before `recoverPreRestoreFiles` can run, so a
+ *  momentarily absent file would be auto-created with defaults and the
+ *  sibling then dropped as "stale". */
 async function swapStagedConfig(sourcePath: string, targetPath: string): Promise<void> {
   const stagingPath = `${targetPath}${RESTORE_STAGING_SUFFIX}`
   const preRestorePath = `${targetPath}${PRE_RESTORE_SUFFIX}`
   try {
     await copyFile(sourcePath, stagingPath)
-    // The config carries `security.*` secrets — never let the restored copy
-    // be more permissive than the 0600 `writeConfigFile` produces at boot.
-    // A chmod failure aborts the config leg BEFORE the rename: the live file
-    // stays untouched (the caller keeps config-leg failures warn-only).
+    // The config carries `security.*` secrets — keep the 0600 mode the
+    // boot-time write produces. A chmod failure aborts BEFORE the rename,
+    // so the live file stays untouched.
     await chmod(stagingPath, 0o600)
     await copyFile(targetPath, preRestorePath).catch((error: unknown) => {
-      // Nothing to park (a first install, or a target whose parent dir is
-      // missing) — the replace below still applies the archive's config.
+      // Nothing to park (a first install, or a missing parent dir).
       if (!isMissingFileError(error)) {
         throw error
       }
@@ -432,7 +403,6 @@ function isMissingFileError(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
 
-/** Live engine files the swap touches (skipped when in-memory). */
 function engineTargets(): string[] {
   const targets: string[] = []
   const dbPath = resolveDatabasePath()
@@ -446,10 +416,7 @@ function engineTargets(): string[] {
   return targets
 }
 
-/** Every live file a restore may replace — the engine files plus the config
- *  file. The `.pre-restore` / `.restore-staging` machinery below owns all of
- *  them uniformly (recovery, rollback, cleanup, leftover sweep); null in the
- *  VITEST env-only mode, where no config file exists. */
+/** Engine files plus the config file; null config path in the env-only (VITEST) mode. */
 function restoreTargets(): string[] {
   const targets = engineTargets()
   const configPath = resolveConfigFilePath()
@@ -468,20 +435,12 @@ async function pathExists(path: string): Promise<boolean> {
   }
 }
 
-/** Boot-time crash recovery for the swap window — MUST run before the
- *  engines open (openDatabase creates an empty file when the target is
- *  missing, which would masquerade as a healthy target). The two renames
- *  of a swap are not atomic, so a crash can leave:
- *    target missing + `.pre-restore` present  → died mid-swap: the
- *      `.pre-restore` sibling is the LAST GOOD copy — rename it back
- *      (booting into an empty database would look like data loss);
- *    target present + `.pre-restore` present  → the swap completed (or
- *      never started): the sibling is stale and safe to drop;
- *    `.restore-staging` orphans               → always safe to drop.
- *  Also covers the config file (`restoreTargets`). That leg can't crash into
- *  a missing target (see `swapStagedConfig`), so for it the "target present"
- *  branch is the only reachable one.
- *  Best-effort per file with loud logs. */
+/** Boot-time crash recovery for the swap window — MUST run before the engines
+ *  open (openDatabase would create an empty file that masquerades as a healthy
+ *  target). The two renames of a swap are not atomic: target missing +
+ *  `.pre-restore` present = died mid-swap, rename the sibling (last good copy)
+ *  back; target present = stale sibling, safe to drop; `.restore-staging`
+ *  orphans are always dropped. Best-effort per file with loud logs. */
 export async function recoverPreRestoreFiles(): Promise<void> {
   for (const target of restoreTargets()) {
     const preRestorePath = `${target}${PRE_RESTORE_SUFFIX}`
@@ -509,15 +468,14 @@ export async function recoverPreRestoreFiles(): Promise<void> {
   }
 }
 
-/** Roll the `.pre-restore` originals back — must run before the recovery
- * reopen. Best-effort per file: a missing sibling is skipped. */
+/** Roll the `.pre-restore` originals back — must run before the recovery reopen; best-effort per file. */
 export async function rollbackPreRestoreFiles(): Promise<void> {
   for (const target of restoreTargets()) {
     const backupPath = `${target}${PRE_RESTORE_SUFFIX}`
     try {
       await access(backupPath)
     } catch {
-      // No `.pre-restore` sibling — nothing to roll back; the live file must not be touched.
+      // No sibling — nothing to roll back; never touch the live file.
       continue
     }
     try {
@@ -533,8 +491,7 @@ export async function rollbackPreRestoreFiles(): Promise<void> {
   }
 }
 
-/** Delete the `.pre-restore` originals (and any staging orphan) after a
- *  successful restore chain. Best-effort. */
+/** Best-effort cleanup of the `.pre-restore` originals after a successful restore chain. */
 export async function cleanupPreRestoreFiles(): Promise<void> {
   for (const target of restoreTargets()) {
     await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true }).catch(() => undefined)
@@ -543,9 +500,8 @@ export async function cleanupPreRestoreFiles(): Promise<void> {
 }
 
 /** Pre-restore sweep of swap leftovers — STRICT: the rollback path keys on
- *  the mere existence of a `.pre-restore` sibling, so proceeding with a
- *  leftover a best-effort delete could not remove would roll a later
- *  failure back to a ghost database. Failure aborts the restore. */
+ *  the mere existence of a `.pre-restore` sibling, so an undeletable leftover
+ *  would roll a later failure back to a ghost database. */
 async function discardSwapLeftovers(): Promise<void> {
   for (const target of restoreTargets()) {
     await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true })
@@ -554,25 +510,18 @@ async function discardSwapLeftovers(): Promise<void> {
 }
 
 export interface RestoreOptions {
-  /**
-   * Apply the analytics payload when the upload carries one (default
-   * true; the setup restore passes false).
-   */
+  /** Apply the analytics payload when the upload carries one (default true; setup passes false). */
   withAnalytics?: boolean
 }
 
 export interface RestoreResult {
-  /** The staged config overwrote the live `kobato.config.json` (takes
-   *  effect on the next process restart — config is a process-level snapshot). */
+  /** Takes effect only on the next process restart — config is a process-level snapshot. */
   configApplied: boolean
 }
 
-/** Swap the staged payloads into place IN ORDER — content database, then
- * analytics sidecar, then the config file — and clean the temp dir. The
- * sidecar applies only when the upload carries it AND `withAnalytics`; the
- * config applies whenever the archive carried one (write failure is
- * warn-only and never rolls back the completed engine swaps — the swap
- * itself never leaves a torn or missing config). */
+/** Swap the staged payloads IN ORDER — content DB, analytics sidecar, config
+ * file — then clean the temp dir. A config write failure is warn-only and
+ * never rolls back the completed engine swaps. */
 export async function restoreFromStagedBackup(
   staged: StagedBackup,
   fileName: string,
@@ -586,18 +535,12 @@ export async function restoreFromStagedBackup(
     hasConfig: staged.config !== null,
     withAnalytics,
   })
-  // Point of no return below — re-validate the staged config against the
-  // boot-time schema first. `stageBackup` already rejected an invalid one;
-  // this covers any caller that hands over a StagedBackup directly. A config
-  // the next boot would reject is fatal (`process.exit(1)`) AFTER the swap.
+  // Re-validate before the point of no return: a caller may hand over a
+  // StagedBackup directly, and a config the next boot rejects is fatal after
+  // the swap.
   if (staged.config !== null) {
     await assertConfigBackup(staged.config)
   }
-  // Drop any stale swap leftovers BEFORE creating new ones — the rollback
-  // path keys on the mere existence of a `.pre-restore` sibling, so a
-  // leftover from an earlier restore (best-effort cleanup missed it) would
-  // be rolled back to, reverting the live engine files to a ghost. Strict:
-  // a cleanup failure aborts THIS restore rather than risking the ghost.
   await discardSwapLeftovers()
   try {
     if (staged.content !== null) {

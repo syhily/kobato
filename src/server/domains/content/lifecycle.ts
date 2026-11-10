@@ -26,19 +26,13 @@ import { compactLexicalEditorState } from '@/shared/lexical/dialect'
 
 const log = getLogger('content.lifecycle')
 
-/**
- * Entity-agnostic draft→publish lifecycle for content revisions;
- * entity-specific behavior attaches through this adapter.
- */
+/** Entity-agnostic draft→publish lifecycle for content revisions; entity behavior attaches through this adapter. */
 export interface ContentEntityAdapter<TMeta, TPreview> {
   entityType: ContentType
   findMetaById(db: Database, id: number): TMeta | null
   findPublicMetaBySlug(db: Database, slug: string): TMeta | null
   assertAccess(meta: TMeta | null, viewer?: ViewerIdentity): asserts meta is TMeta
-  /**
-   * Draft-preview gate (row-level, owned by the entity descriptor). Callers
-   * fall through to the published page when rights are missing.
-   */
+  /** Draft-preview gate, owned by the entity descriptor; callers fall through to the published page when it refuses. */
   canPreviewDraft(viewer: ViewerIdentity | undefined, meta: TMeta): boolean
   getId(meta: TMeta): number
   getPublishedRevisionId(meta: TMeta): number | null
@@ -57,10 +51,7 @@ export interface ForceOverwriteEntry<TMeta> {
   resultRow: ContentRow
 }
 
-/**
- * Shared `force_overwrite_save` audit payload; the logger scope and meta
- * id key stay with the caller so the emitted context keeps its shape.
- */
+/** Shared `force_overwrite_save` audit payload; the logger scope and meta id key stay with the caller. */
 export function recordForceOverwriteAudit<TMeta extends { id: number }>(
   auditLog: Logger,
   metaIdKey: 'postMetaId' | 'pageMetaId',
@@ -81,9 +72,8 @@ export interface SaveBodyInput {
   entityId: number
   body: unknown
   /**
-   * Music-domain resolver wired by the controller (the pt domain must not
-   * depend on the music domain) — resolves `music-player` node playerIds
-   * into the meta snapshot embedded at save time.
+   * Music-domain resolver wired by the controller (pt must not depend on music);
+   * resolves `music-player` playerIds into the snapshot embedded at save time.
    */
   resolveMusicEmbeds: MusicEmbedResolver
   expectedClientRevisionToken?: string | null
@@ -104,17 +94,11 @@ export type SaveBodyResult =
 
 export interface DraftPreviewResult<TPreview> {
   preview: TPreview
-  /**
-   * True when a `status='draft'` revision is newer than
-   * `publishedRevisionId` — `preview` holds the draft when so.
-   */
+  /** True when a draft revision is newer than `publishedRevisionId`; `preview` holds the draft then. */
   hasNewerDraft: boolean
 }
 
-/**
- * The save outcome plus its non-fatal side-effect notices as descriptors — the
- * oRPC boundary localizes them into the wire `warning` string.
- */
+/** Save outcome plus its non-fatal side-effect notices; the oRPC boundary localizes them into the wire `warning`. */
 export type SaveBodyOutcome = SaveBodyResult & { warningDescriptors: ErrorMessageDescriptor[] }
 
 export async function saveBody<TMeta, TPreview>(
@@ -145,17 +129,15 @@ export async function saveBody<TMeta, TPreview>(
   const imageSources = collectLexicalImageStoragePaths(body)
   const headings = collectLexicalHeadings(body)
 
-  // Audit context = the latest revision of any status; a read ERROR here
-  // propagates and aborts the save (audit P1-25) rather than drop the
-  // overwrite's audit row.
+  // Audit context = the latest revision of any status. A read error here
+  // propagates and aborts the save rather than drop the overwrite's audit row.
   const overwriteContext =
     input.force === true ? await findLatestRevision(db, adapter.entityType, adapter.getId(meta)) : null
 
   const repoInput = {
     ownerId: adapter.getId(meta),
-    // Stored in the compact dialect (src/shared/lexical/dialect.ts): every
-    // read heals through the schema's normalize preprocess, so the no-op
-    // short-circuit and revision DTOs see the full dialect regardless.
+    // Stored in the compact dialect; every read heals through the schema's normalize
+    // preprocess, so the no-op short-circuit and revision DTOs see the full dialect.
     body: compactLexicalEditorState(body),
     imageSources,
     headings,
@@ -164,13 +146,11 @@ export async function saveBody<TMeta, TPreview>(
     force: input.force,
   }
 
-  // Save-time projections (plan round R9b): the three body_html*/body_text
-  // columns. Skipped when the repo's no-op short-circuit will fire anyway —
-  // the pre-check mirrors `isEquivalentToPublishedLatest` so an equivalent
-  // save never re-pays the jsdom render (the repo re-checks under lock; a
-  // raced flip just leaves the columns stale, which the nullable schema
-  // tolerates). Best-effort: a render failure degrades to untouched columns
-  // plus a warning — the save itself must succeed.
+  // Save-time projections of the three body_html*/body_text columns. Skipped when
+  // the repo's no-op short-circuit will fire anyway: the pre-check mirrors
+  // `isEquivalentToPublishedLatest` so an equivalent save never re-pays the jsdom
+  // render. The repo re-checks under lock; a raced flip only leaves the columns
+  // stale, which the nullable schema tolerates. Best-effort — the save must succeed.
   const latestForProjectionCheck =
     overwriteContext ??
     (mode === 'draft' ? ((await findLatestRevision(db, adapter.entityType, adapter.getId(meta))) ?? undefined) : null)
@@ -225,9 +205,8 @@ export async function saveBody<TMeta, TPreview>(
 }
 
 /**
- * Draft preview by slug: latest draft, else the published revision;
- * soft-deleted rows and viewers the entity's `canPreviewDraft` rule does
- * not admit return `null`.
+ * Draft preview by slug: latest draft, else the published revision; soft-deleted
+ * rows and viewers refused by `canPreviewDraft` return `null`.
  */
 export async function loadDraftPreviewBySlug<TMeta, TPreview>(
   db: Database,

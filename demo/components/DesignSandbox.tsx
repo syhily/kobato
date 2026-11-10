@@ -33,15 +33,9 @@ import ReplaceIcon from '@/inkling/assets/icons/inkling-replace.svg?react'
 import SnippetIcon from '@/inkling/assets/icons/inkling-snippet.svg?react'
 import PlusIcon from '@/inkling/assets/icons/plus.svg?react'
 
-/* Component title
-/* ---------------------------------------------------------- */
-
 function ComponentTitle({ label }: { label: string }) {
   return <h3 className="mt-20 mb-4 text-xl font-bold first-of-type:mt-8">{label}</h3>
 }
-
-/* Floating toolbar
-/* ---------------------------------------------------------- */
 
 function ToolbarItem({ label, Icon }: { label: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }) {
   return (
@@ -104,9 +98,6 @@ function GalleryToolbar() {
   )
 }
 
-/* Plus button
-/* ---------------------------------------------------------- */
-
 function PlusButton() {
   return (
     <button
@@ -118,9 +109,6 @@ function PlusButton() {
     </button>
   )
 }
-
-/* Card menu
-/* ---------------------------------------------------------- */
 
 function CardMenuSection({ label }: { label: string }) {
   return (
@@ -200,9 +188,6 @@ function CardMenu() {
   )
 }
 
-/* Divider card
-/* ---------------------------------------------------------- */
-
 function DividerCard() {
   return (
     <div>
@@ -210,9 +195,6 @@ function DividerCard() {
     </div>
   )
 }
-
-/* Code block
-/* ---------------------------------------------------------- */
 
 function CodeBlock() {
   return (
@@ -224,9 +206,6 @@ function CodeBlock() {
     </div>
   )
 }
-
-/* Image card
-/* ---------------------------------------------------------- */
 
 function MediaPlaceholder({ desc, Icon }: { desc: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }) {
   return (
@@ -289,9 +268,6 @@ function ImageCard() {
     </div>
   )
 }
-
-/* Gallery card
-/* ---------------------------------------------------------- */
 
 function GalleryCard() {
   return (

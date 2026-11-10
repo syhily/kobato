@@ -54,7 +54,7 @@ export interface SafeFetchOptions {
    * guarded. Never derive it from an inbound request or a redirect Location.
    */
   trustedOrigin?: string
-  /** Closed telemetry operation name (ADR-0012). The URL/host/query are never
+  /** Closed telemetry operation name. The URL/host/query are never
    *  recorded; omit and the span uses the fixed `unspecified` label. */
   operation?: SafeFetchOperation
 }
@@ -514,7 +514,7 @@ async function performSafeFetch(
 }
 
 /**
- * Telemetry wrapper around the SSRF-guarded fetch (ADR-0012). The span only
+ * Telemetry wrapper around the SSRF-guarded fetch. The span only
  * carries the caller's closed operation name, the request method, and (when
  * known) the upstream status — never the URL, host, path, or query. Fetch,
  * redirect, streaming, and SSRF semantics are entirely owned by

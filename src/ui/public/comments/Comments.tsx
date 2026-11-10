@@ -39,7 +39,6 @@ function asKey(value: number | string): string {
   return String(value)
 }
 
-// Replace a comment by id anywhere in the tree (root or nested).
 function mapTree(items: CommentItemType[], fn: (item: CommentItemType) => CommentItemType): CommentItemType[] {
   return items.map((item) => {
     const next = fn(item)
@@ -127,7 +126,6 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
       return { ...state, replyToId: action.rid }
     case 'mergeMyComments': {
       const incomingIds = new Set(action.comments.map((c) => asKey(c.id)))
-      // 1) Update any comments that already exist in the tree.
       let items = mapTree(state.items, (item) => {
         if (!incomingIds.has(asKey(item.id))) {
           return item
@@ -135,7 +133,7 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
         const replacement = action.comments.find((c) => asKey(c.id) === asKey(item.id))!
         return { ...replacement, children: item.children }
       })
-      // 2) New roots pin to the top so pending posts are visible; children stay under parent.
+      // New roots pin to the top so pending posts are visible; children stay under parent.
       const newRoots: CommentItemType[] = []
       const newChildren: CommentItemType[] = []
       for (const c of action.comments) {
@@ -158,7 +156,7 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
           return { ...item, children: [...children, c] }
         })
       }
-      // 3) Fold token ownership into the same dispatch so tree and ownership map land atomically.
+      // Ownership folds into the same dispatch so the tree and map land atomically.
       const myComments = new Map(state.myComments)
       for (const c of action.comments) {
         const key = asKey(c.id)
@@ -270,7 +268,7 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     dispatch({ type: 'insertReply', comment, rid })
     dispatch({ type: 'setReplyTo', rid: 0 })
   }, [])
-  // Load the viewer's own comments (incl. pending) via token cookie; one dispatch folds in both.
+  // Load the viewer's own comments (incl. pending) via the token cookie; one dispatch folds in both.
   const myComments = useMutation({
     ...orpcQuery.comments.myComments.mutationOptions(),
     onSuccess: (payload: MyCommentsOutput) => {

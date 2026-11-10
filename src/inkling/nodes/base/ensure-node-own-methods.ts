@@ -1,26 +1,12 @@
 /**
- * Lexical validates node classes using `hasOwnProperty`, which only checks
- * for own properties — not inherited ones. When an outer node class extends a base
- * class (e.g. CodeBlockNode extends BaseCodeBlockNode), the static methods
- * (getType, clone, importJSON) and prototype methods (exportJSON) are inherited
- * via the prototype chain but are NOT own properties on the subclass.
- *
- * This function copies inherited methods as own properties so Lexical's
- * validation passes without warnings.
- *
- * Lexical checks (still present in the shipped Lexical 0.53:
- * `hasOwnStaticMethod` → `hasOwn(klass, k)` in Lexical.dev.js):
- * - `klass.hasOwnProperty('getType')`  — static
- * - `klass.hasOwnProperty('clone')`    — static
- * - `klass.hasOwnProperty('importJSON')` — static
- * - `proto.hasOwnProperty('exportJSON')` — instance
+ * Lexical validates node classes with `hasOwnProperty`, so methods a subclass
+ * only inherits fail validation; copy them on as own properties.
  */
 export function ensureLexicalNodeOwnMethods(nodeClass: unknown) {
   if (typeof nodeClass !== 'function') {
     return
   }
 
-  // Ensure required static methods are own properties on the class
   for (const method of ['getType', 'clone', 'importJSON']) {
     const value: unknown = Reflect.get(nodeClass, method)
     if (typeof value === 'function' && !Object.hasOwn(nodeClass, method)) {
@@ -32,7 +18,6 @@ export function ensureLexicalNodeOwnMethods(nodeClass: unknown) {
     }
   }
 
-  // Ensure required instance methods are own properties on the prototype
   const proto: unknown = Reflect.get(nodeClass, 'prototype')
   if (typeof proto !== 'object' || proto === null) {
     return

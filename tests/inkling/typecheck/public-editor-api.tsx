@@ -13,14 +13,14 @@ import {
   BASIC_NODES,
   BASIC_TRANSFORMERS,
   type CardConfig,
-  // @ts-expect-error - DesignSandbox was removed from the public barrel in 2.0.0
+  // @ts-expect-error - DesignSandbox is not exported from the public barrel
   DesignSandbox,
   DefaultFeaturePlugins,
   type ExternalControlAPI,
   type FileUploader,
   type FileUploaderInput,
   type GifSettings,
-  // @ts-expect-error - InklingCardWrapper was removed from the public barrel in 2.0.0
+  // @ts-expect-error - InklingCardWrapper is not exported from the public barrel
   InklingCardWrapper,
   InklingComposableEditor,
   type InklingComposableEditorProps,
@@ -48,7 +48,7 @@ declare const handleApi: (api: ExternalControlAPI | null) => void
 
 const customTransformers: readonly Transformer[] = [ORDERED_LIST, ...BASIC_TRANSFORMERS]
 
-// --- positive cases ---------------------------------------------------------
+// Positive cases
 
 // every InklingInitialEditorState shape is accepted
 const stateFromString: InklingInitialEditorState =
@@ -127,7 +127,7 @@ const customSurface = (
 )
 void customSurface
 
-// --- negative cases ---------------------------------------------------------
+// Negative cases
 
 // @ts-expect-error - node lists must contain Lexical node classes or replacements
 const invalidNodes = <InklingComposer nodes={[42]} />
@@ -145,7 +145,7 @@ void wrongCallback
 const wrongSurfaceCallback = <InklingSurface onChange={(state: string) => void state} />
 void wrongSurfaceCallback
 
-// --- host-config type family (2.0.0) -----------------------------------------
+// Host-config type family
 
 const gifSettings: GifSettings = {
   klipy: { apiKey: 'key', contentFilter: 'high' },

@@ -18,8 +18,8 @@ import { webmentionOutbox } from '@/server/infra/db/schema/webmention'
 import { scheduleRegisteredJob } from '@/server/infra/job-registry'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
-// The webmention outbox job against the real engine; only
-// The registered outbox job is started explicitly, like server.ts.
+// The webmention outbox job against the real engine; the registered job is
+// started explicitly, like server.ts.
 const db = getTestDb()
 
 const mockFetch = installFetch()

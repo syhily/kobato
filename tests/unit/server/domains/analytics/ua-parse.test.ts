@@ -27,8 +27,7 @@ describe('analytics/ua-parse — parseUaFields', () => {
     expect(fields.os).toBe('Windows')
     expect(fields.browser).toBe('Chrome')
     expect(fields.deviceType).toBe('desktop')
-    // A desktop UA carries no hardware identifier — the model must stay
-    // empty (ua-parser-js used to fabricate "Macintosh" here).
+    // A desktop UA carries no hardware identifier — the model must stay empty.
     expect(fields.device).toBeNull()
     expect(fields.browserType).toBeNull()
   })

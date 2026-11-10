@@ -141,10 +141,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
               className="h-9 p-1"
             />
           </div>
-          {/*
-           * Optional badge text-colour override — same checkbox-gated picker +
-           * live preview chip UX as the user detail page (`UserDetailView.tsx`).
-           */}
+          {/* Optional badge text-color override — same checkbox-gated picker + preview chip UX as `UserDetailView.tsx`. */}
           <div className="flex flex-col gap-2 sm:col-span-2">
             <div className="flex items-center gap-2">
               <Checkbox

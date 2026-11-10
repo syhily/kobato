@@ -26,9 +26,9 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// TagsView rows come from useAdminInfiniteList's internal useInfiniteQuery,
-// search via useDebouncedSearch. tags-view.test.tsx covers loading/empty;
-// this adds populated rows, the error state and search-active.
+// Adds populated rows, the error state and the search-active case to TagsView, whose
+// rows come from useAdminInfiniteList's useInfiniteQuery and search from
+// useDebouncedSearch.
 
 vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
   // Hoisted pair so each test drives the search-input value.

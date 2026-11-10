@@ -4,9 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { SHIKI_SUPPORTED_LANGUAGES, SHIKI_THEMES, createShikiHighlighter } from '@/server/infra/pt/shiki'
 import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
 
-// Real-shiki contract for `src/server/infra/pt/shiki.ts`: the fine-grained
-// registrations must produce BYTE-IDENTICAL HTML to the full bundle, and
-// the language gate must match `lang in bundledLanguages`.
+// Real-shiki contract: the fine-grained registrations must produce byte-identical HTML to
+// the full bundle, and the language gate must match `lang in bundledLanguages`.
 
 const SAMPLES: { language: string; code: string }[] = [
   { language: 'typescript', code: 'const x: number = 42\n' },

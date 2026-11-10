@@ -16,7 +16,6 @@ import { SearchBar } from '@/ui/public/Search'
 
 const sidebarInnerClass = cn('mb-7 px-7 py-8', 'bg-canvas shadow-card', 'xl:sticky xl:top-[30px]')
 
-// Widget container — 2.5rem bottom spacing (legacy `.widget`).
 const widgetClass = 'mb-10'
 
 const widgetTitleClass = cn(
@@ -215,7 +214,6 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 function TodayCalendar() {
   const siteIdentity = useSiteIdentity()
   const { t } = useI18n()
-  // Hydration-safe live clock (see useChromeClock).
   const today = useChromeClock()
   const year = formatLocalDate(today, 'yyyy', siteIdentity)
   const monthDay = formatLocalDate(today, 'LLdd', siteIdentity)

@@ -5,10 +5,9 @@
 // English `fallbackMessage` is rendered eagerly — params included — so logs, old
 // clients and diagnostics read a finished sentence instead of a template.
 //
-// Legacy raw messages (an un-migrated domain's Chinese prose, Zod's own English
-// issue text) wrap the raw text in the `error.api.rawMessage` passthrough key:
-// every locale formats it as `{message}`, so the wire shape is uniform while the
-// text renders unchanged.
+// Raw technical text (a domain's own prose, Zod's English issue text) is wrapped
+// in the `error.api.rawMessage` passthrough key: every locale formats it as
+// `{message}`, so the wire shape is uniform while the text renders unchanged.
 
 import type { z } from 'zod'
 
@@ -21,7 +20,7 @@ import { BASE_LOCALE } from '@/shared/i18n/locales'
 import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
 import { zodIssueParams } from '@/shared/utils/zod-issue-bounds'
 
-/** The passthrough catalog key wrapping a legacy raw message. */
+/** The passthrough catalog key wrapping raw text. */
 export const RAW_MESSAGE_KEY = 'error.api.rawMessage'
 
 /** Runtime membership test against the English baseline (the closed key set). */
@@ -48,7 +47,7 @@ export function carriesErrorMessageDescriptor(value: unknown): value is { descri
   )
 }
 
-/** Wrap raw (legacy / technical) text so every transport still emits a descriptor. */
+/** Wrap raw technical text so every transport still emits a descriptor. */
 export function rawMessageDescriptor(message: string): ErrorMessageDescriptor {
   return { messageKey: RAW_MESSAGE_KEY, params: { message }, fallbackMessage: message }
 }

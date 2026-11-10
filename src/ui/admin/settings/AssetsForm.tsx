@@ -14,7 +14,7 @@ interface AssetsFormProps {
   assets: AssetsLoaderShape
 }
 
-// Upload limits: 资源域名 / S3 存储 / 存储迁移 live in `StorageCards` above.
+// Upload limits: the asset domain / S3 storage / storage migration live in `StorageCards` above.
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
   const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<

@@ -12,10 +12,7 @@ export interface EntitySlugTitle {
   title: string
 }
 
-/**
- * Look up the live `(slug, title)` of an entity target. Returns `null`
- * when the entity is hard-deleted or the target is an orphan.
- */
+/** Live `(slug, title)` of an entity target; `null` when hard-deleted or an orphan. */
 export async function findEntitySlugTitle(
   db: Database,
   target: { type: 'post' | 'page'; ownerId: number },
@@ -36,10 +33,7 @@ export async function findEntitySlugTitle(
   return rows[0] ?? null
 }
 
-/**
- * Batch-resolve the `(slug, title)` of a comment list's targets. Map
- * keyed by `type:ownerId`; orphan pairs are absent.
- */
+/** Batch-resolve `(slug, title)` for a comment list's targets, keyed by `type:ownerId`; orphan pairs are absent. */
 export async function resolveEntitiesForComments(
   db: Database,
   pairs: ReadonlyArray<{ type: EntityType; ownerId: number }>,

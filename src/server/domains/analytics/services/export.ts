@@ -16,14 +16,11 @@ interface ExportRow {
   referers?: number
 }
 
-// Spreadsheet formula triggers: a cell whose first character (after leading
-// TAB/CR/space) is = + - @ executes as a formula in Excel/LibreOffice — prefix it.
+// Spreadsheet formula triggers: a cell starting (after leading TAB/CR/space) with
+// = + - @ executes as a formula in Excel/LibreOffice — prefix it with a quote.
 const FORMULA_PREFIX = /^[\t\r ]*[=+\-@]/
 
-/**
- * RFC 4180 cell escaping: quote when the value carries a comma, quote, or
- * newline; neutralize formula-triggering prefixes with a leading `'`.
- */
+/** RFC 4180 cell escaping: quote values carrying a comma, quote, or newline. */
 export function csvCell(value: string | number | null | undefined): string {
   let text = value === null || value === undefined ? '' : String(value)
   if (FORMULA_PREFIX.test(text)) {

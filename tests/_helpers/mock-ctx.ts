@@ -6,9 +6,8 @@ import type { AppLocalization } from '@/shared/i18n/app-localization'
 import { extractRequestFacts } from '@/server/http/utils/request-facts'
 import { createLazyAppSnapshot } from '@/shared/i18n/app-localization'
 
-// Builders for the oRPC `context` argument. Authed procedures gate on
-// `context.viewer` via requireAuth/requireRole; this seeds both the
-// viewer and the session-stub so tests drive procedures end-to-end.
+// Builders for the oRPC `context` argument. Authed procedures gate on `context.viewer`
+// via requireAuth/requireRole, so the viewer and session stub are both seeded.
 
 export interface MockCtxOptions {
   userId?: string

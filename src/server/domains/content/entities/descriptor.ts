@@ -7,9 +7,8 @@ import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
 /**
- * The 17 columns `post` and `page` meta tables declare identically.
- * Entity extras attach through `mutations.insertExtras` / `updateExtras`;
- * structural, so both row types satisfy it.
+ * The 17 columns `post` and `page` meta tables declare identically; entity
+ * extras attach through `mutations.insertExtras` / `updateExtras`.
  */
 export interface MetaRowBase {
   id: number
@@ -57,8 +56,8 @@ export interface UpsertMetaInputBase {
 }
 
 /**
- * Meta-table persistence behind the descriptor — one implementation
- * serves both entities, wired per-entity to keep unit-test mock seams.
+ * Meta-table persistence behind the descriptor; one implementation serves both
+ * entities, wired per-entity to keep unit-test mock seams.
  */
 // Sync returns (node:sqlite): these run inside entity transactions.
 export interface MetaCrud<TMeta extends MetaRowBase, TNew> {
@@ -81,9 +80,8 @@ export type MutationExtrasSource<TInput> = { kind: 'upsert'; input: TInput } | {
 export type MetaMutationEvent = 'create' | 'update' | 'delete' | 'unpublish'
 
 /**
- * One descriptor per meta entity drives both the body lifecycle and the
- * meta CRUD skeleton; posts and pages keep only this declaration plus
- * their genuinely-specific services.
+ * One descriptor per meta entity drives both the body lifecycle and the meta
+ * CRUD skeleton; posts and pages declare only this plus their own services.
  */
 export interface MetaEntityDescriptor<
   TMeta extends MetaRowBase,
@@ -103,9 +101,8 @@ export interface MetaEntityDescriptor<
     /** The entity's access gate (body lifecycle, meta mutations, admin queries); throws NOT_FOUND. */
     assertAccess: (meta: TMeta | null, viewer?: ViewerIdentity) => asserts meta is TMeta
     /**
-     * Draft-preview access rule (CONTEXT.md "Draft preview"): posts require
-     * author+ AND ownership (admins preview anyone's), pages admin only.
-     * Row-aware so the ownership leg can read `authorId`.
+     * Draft-preview access rule: posts require author+ AND ownership (admins
+     * preview anyone's), pages admin only. Row-aware for the ownership leg.
      */
     canPreviewDraft: (viewer: ViewerIdentity | undefined, meta: TMeta) => boolean
     /** Narrow the admin-list filters for a non-admin viewer. */
@@ -157,15 +154,9 @@ export interface MetaEntityDescriptor<
     deleteRelations?: (tx: Database, metaId: number) => void
     /** DTO extras after a mutation (posts: tags + category name). */
     mutationExtras?: (db: Database, meta: TMeta, source: MutationExtrasSource<TInput>) => Promise<TExtras>
-    /**
-     * Post-commit side effects. Pages invalidate on every event; posts
-     * only on delete/unpublish.
-     */
+    /** Post-commit side effects. Pages invalidate on every event; posts only on delete/unpublish. */
     afterMutation?: (db: Database, meta: TMeta, event: MetaMutationEvent) => Promise<void>
-    /**
-     * In-transaction restore gathering (posts: the published body for
-     * re-indexing). Runs after the slug reclaim.
-     */
+    /** In-transaction restore gathering (posts: the published body for re-indexing). Runs after the slug reclaim. */
     prepareRestore?: (tx: Database, meta: TMeta) => TRestore | null
     /** Post-commit restore side effects; may return a warning that follows the slug warning. */
     afterRestore?: (db: Database, ctx: TRestore) => Promise<ErrorMessageDescriptor | undefined>

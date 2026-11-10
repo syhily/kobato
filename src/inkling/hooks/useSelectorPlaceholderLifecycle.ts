@@ -4,14 +4,12 @@ import React from 'react'
 
 import { DELETE_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 
-// The selector-placeholder lifecycle (CONTEXT.md: "media library"): the
-// overlay is open while its placeholder node exists — Escape and
-// click-outside delete the placeholder, and a pick that resolves after
-// cancellation is a no-op (the host upload UX can land after the picker is
-// gone; the insert surgery replaces the placeholder, so there is nothing to
-// do once it is gone). One owner for the policy GifPlugin and LibraryPlugin
-// used to copy — and drift on (only the library guarded the async pick);
-// the plugins keep only their config gate, browser, and selector wiring.
+// The selector-placeholder lifecycle: the overlay is open while its placeholder
+// node exists — Escape and click-outside delete the placeholder, and a pick that
+// resolves after cancellation is a no-op (the host upload UX can land after the
+// picker is gone; the insert surgery replaces the placeholder, so there is
+// nothing to do once it is gone). The plugins keep only their config gate,
+// browser, and selector wiring.
 export function useSelectorPlaceholderLifecycle(nodeKey: NodeKey) {
   const [editor] = useLexicalComposerContext()
 

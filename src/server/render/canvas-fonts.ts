@@ -10,10 +10,9 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 
-// Shared by the OG and calendar renderers: fixed filenames
-// (`og|calendar.{ttf,otf}`) under FONT_DIR, probed `.ttf` first;
-// process-level buffer cache cleared by resetFontCache/resetCanvasFont.
-// Failure mode is null, not throw.
+// Shared by the OG and calendar renderers: fixed filenames (`og|calendar.{ttf,otf}`)
+// under FONT_DIR, probed `.ttf` first, with a process-level buffer cache cleared by
+// resetFontCache/resetCanvasFont. Failure mode is null, never throw.
 
 const log = getLogger('images.assets')
 
@@ -81,7 +80,7 @@ async function loadFontSlot(slot: 'og' | 'calendar', family: string): Promise<Lo
 
   try {
     const buffer = await readFile(fullPath)
-    // Cache write happens in the caller's generation-guarded commit (audit P1-18).
+    // Cache write happens in the caller's generation-guarded commit.
     log.info('Loaded Canvas font slot', { slot, path: fullPath, family, bytes: buffer.byteLength })
     return { buffer, family, path: fullPath }
   } catch (err) {
@@ -106,17 +105,16 @@ const canvasFontFlights: Record<'og' | 'calendar', Promise<FontSlot | null> | nu
   og: null,
   calendar: null,
 }
-// Generation per slot (audit P1-18): a flight started before the bump must not commit its stale result.
+// Generation per slot: a flight started before the bump must not commit its stale result.
 const canvasFontGenerations: Record<'og' | 'calendar', number> = { og: 0, calendar: 0 }
 // The family each in-flight load is resolving — a caller pinned to a different
 // settings generation must not join (and render with) that family.
 const canvasFontFlightFamily: Record<'og' | 'calendar', string | null> = { og: null, calendar: null }
 
 /**
- * `settings` is the caller's PINNED snapshot (request capture / send-time
- * resolve); omitted = the current process snapshot. The family check uses the
- * same bundle the caller renders with, so a settings save mid-request can
- * never swap the font behind an already-keyed representation.
+ * `settings` is the caller's PINNED snapshot (request capture / send-time resolve); omitted =
+ * the current process snapshot. The family check uses the same bundle the caller renders
+ * with, so a settings save mid-request can never swap the font behind a keyed representation.
  */
 export function ensureCanvasFont(
   slot: 'og' | 'calendar',

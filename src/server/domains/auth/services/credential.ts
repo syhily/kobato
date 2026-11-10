@@ -68,8 +68,7 @@ export async function handleCredentialLogin(
       details: { email: input.email, reason: 'invalid_credentials' },
     })
     if (isMailLoginReady()) {
-      // Stable machine code in the query string; the route maps it to a catalog
-      // message (`AUTH_ERROR_MESSAGE_IDS`), never to raw text.
+      // Stable machine code; the route maps it to a catalog message (`AUTH_ERROR_MESSAGE_IDS`), never raw text.
       return {
         type: 'redirect',
         to: `/admin/signin?error=invalid_credentials&redirect_to=${encodeURIComponent(redirectTo)}`,

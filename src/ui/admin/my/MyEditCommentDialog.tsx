@@ -21,9 +21,8 @@ import { Label } from '@/ui/components/label'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
-// Self-edit dialog for `/admin/me/comments`: posts to `comment.updateOwn`
-// (visitor-allowed), takes the body from the loader item, and the server
-// enforces the 30-min auto-approve vs re-pend rule.
+// Self-edit dialog for `/admin/me/comments`: posts to `comment.updateOwn` (visitor-allowed);
+// the server enforces the 30-min auto-approve vs re-pend rule.
 export interface MyEditCommentDialogProps {
   target: { id: string; body: CommentEditorState } | null
   onClose: () => void

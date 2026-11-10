@@ -7,9 +7,8 @@ import { makeCommentBody } from '#/_helpers/catalog'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
 
-// user-detail.test.tsx + user-cards.test.tsx cover the skeleton, resolved
-// user and most operations branches; this adds the recent-comments list,
-// the user-query error branch and the admin badge.
+// Adds the recent-comments list, the user-query error branch and the admin badge on top
+// of the skeleton, resolved user and operations branches covered elsewhere.
 
 // useQuery call order: 1st = user, 2nd = comments.
 

@@ -37,7 +37,6 @@ export function DropdownContainer({
       return
     }
 
-    // Get the position of the list's parent on the screen
     const box = parent.getBoundingClientRect()
     const bottom = box.bottom
     const spaceBelow = window.innerHeight - bottom
@@ -53,14 +52,12 @@ export function DropdownContainer({
     updatePlacement()
   }, [updatePlacement])
 
-  // Add event listeners
   React.useEffect(() => {
     const updatePlacementDebounced = debounce(() => {
       updatePlacement()
     }, 250)
 
-    // For now we don't listen for scroll because all the panels are positioned fixed
-    // Can add it here if needed
+    // no scroll listener: every panel is positioned fixed
     const handler = () => updatePlacementDebounced()
     window.addEventListener('resize', handler, { passive: true })
 

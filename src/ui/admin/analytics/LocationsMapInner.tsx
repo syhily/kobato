@@ -10,8 +10,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { regionDisplayName } from '@/ui/admin/analytics/MetricName'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// The @unovis choropleth — CLIENT ONLY. Lazy-loaded behind the hydration
-// gate in `LocationsMap.tsx`; WorldMapTopoJSON rides this chunk.
+// CLIENT ONLY: lazy-mounted behind the hydration gate in LocationsMap.tsx; WorldMapTopoJSON rides this chunk.
 
 interface AreaDatum {
   id: string
@@ -41,7 +40,6 @@ export function LocationsMapInner({ rows }: LocationsMapInnerProps) {
   const totalVisits = areas.reduce((sum, area) => sum + area.count, 0)
   const topAreas = [...areas].sort((a, b) => b.count - a.count).slice(0, 5)
 
-  // Choropleth: chart-1 intensity scaled by share of the maximum.
   const areaColor = (area: AreaDatum) => {
     if (!area || maxCount === 0 || !area.count) {
       return undefined

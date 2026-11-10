@@ -22,41 +22,33 @@ export interface FeedOptions {
   locale: AppLocale
   category?: string
   tag?: string
-  /**
-   * The settings snapshot the caller pinned (request capture / background
-   * send-time resolve). Omitted = the current process snapshot. The feed
-   * resource always passes it, so the rendered bytes match the cache key's
-   * `settingsRevision`.
-   */
+  /** The settings snapshot the caller pinned (request capture / background send-time
+   *  resolve); omitted = the current process snapshot. The feed resource always passes
+   *  it, so the rendered bytes match the cache key's `settingsRevision`. */
   settings?: BlogSettingsBundle | null
 }
 
-// Allowlist HTML sanitizer for feed output — a thin wrapper over the shared
-// DOMPurify stack's 'feed' strategy (src/shared/sanitize/config.ts owns the
-// tag/attribute allowlist, which mirrors the feed-variant projection's real
-// output: `infra/pt/lexical-projection` — inkling exportDOM, artifacts
+// Allowlist HTML sanitizer for feed output — a thin wrapper over the shared DOMPurify
+// 'feed' strategy; `src/shared/sanitize/config.ts` owns the tag/attribute allowlist, which
+// mirrors the feed-variant projection's real output (inkling exportDOM, artifacts
 // stripped).
 export function sanitizeFeedHtml(html: string): string {
   return sanitizeHtmlString(html, 'feed')
 }
 
-// xml-js (the feed library's serializer) CDATA-wraps title/description/
-// content but splits only the FIRST `]]>` a payload contains — a second
-// occurrence would terminate the CDATA early and invalidate the whole
-// document. Escape every occurrence up front: inside the HTML payload
-// (`content:encoded`) the entity decodes back to `>` in the reader, and a
-// literal `]]>` in a title is pathological anyway — either beats shipping
-// unparseable XML to every subscriber.
+// xml-js (the feed library's serializer) CDATA-wraps content but splits only the FIRST `]]>`
+// a payload contains — a second occurrence would end the CDATA early and invalidate the
+// document. Escaping every occurrence up front decodes back to `>` in the reader and always
+// yields parseable XML.
 /** Exported for unit tests. */
 export function escapeCdataPayload(value: string): string {
   return value.replaceAll(']]>', ']]&gt;')
 }
 
 async function renderEntryContent(entry: Post | Page): Promise<string> {
-  // The saved `body_html_feed` projection already carries the rssMode
-  // degradations (math→TeX, code→plain pre, host cards flattened) and
-  // origin-absolutized media srcs; the sanitize allowlist below is the last
-  // boundary before the XML.
+  // The saved `body_html_feed` projection already carries the rssMode degradations
+  // (math→TeX, code→plain pre, host cards flattened) and origin-absolutized media srcs;
+  // the sanitize allowlist is the last boundary before the XML.
   const html = await resolveBodyHtmlFeed(entry)
   return escapeCdataPayload(sanitizeFeedHtml(html))
 }
@@ -98,7 +90,7 @@ export async function generateFeeds(db: Database, options: FeedOptions) {
     // No XML stylesheet — browsers are deprecating XSLT for XML documents.
   })
 
-  // Batch-resolve tags and categories so we don't N+1 inside the loop.
+  // Batch-resolve tags and categories to avoid N+1 queries inside the loop.
   const allTagNames = [...new Set(feedPosts.flatMap((p) => p.tags))]
   const allCategoryNames = [...new Set(feedPosts.map((p) => p.category).filter(Boolean))]
 
@@ -157,7 +149,6 @@ export async function generateFeeds(db: Database, options: FeedOptions) {
 
   return {
     rss: feed.rss2(),
-    // Atom: inject the xml:lang attribute into the root element.
     atom: feed
       .atom1()
       .replace(

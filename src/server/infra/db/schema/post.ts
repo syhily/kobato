@@ -37,11 +37,7 @@ export const post = sqliteTable(
     alias: text('alias', { mode: 'json' })
       .notNull()
       .$defaultFn(() => []),
-    /**
-     * Author-declared BCP 47 language of the prose (any well-formed tag, not
-     * limited to the four UI locales). Rendered as the detail body container's
-     * `lang`; NULL means "inherit the document language". Never auto-detected.
-     */
+    /** Author-declared BCP 47 language of the prose; NULL inherits the document language. Never auto-detected. */
     contentLanguage: text('content_language'),
     /** When set, the post is pinned to the home feature area. */
     pinnedAt: integer('pinned_at', { mode: 'timestamp_ms' }),
@@ -54,7 +50,7 @@ export const post = sqliteTable(
     index('idx_post_first_published_at').on(table.firstPublishedAt),
     index('idx_post_pinned_at').on(table.pinnedAt),
     index('idx_post_catalog').on(table.deletedAt, table.published, table.firstPublishedAt),
-    // Covering index for the public live-gate COUNT (`countPublicPosts`, audit P1-23) — makes it index-only.
+    // Covering index for the public live-gate COUNT (`countPublicPosts`) — makes it index-only.
     index('idx_post_live_gate').on(
       table.deletedAt,
       table.published,

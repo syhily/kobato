@@ -1,6 +1,6 @@
-// Analytics wire types, the shared query schema, and time-range
-// primitives. Consumed by both the server query layer and the React
-// dashboard — isomorphic, no server-only imports.
+// Analytics wire types, the shared query schema and time-range primitives.
+// Consumed by the server query layer and the React dashboard — isomorphic, no
+// server-only imports.
 
 import { z } from 'zod'
 
@@ -81,7 +81,7 @@ export const METRIC_TYPES = [
   'browserType',
   'device',
   'deviceType',
-  // ADR-0006 environment dimensions (device_env_client, joined by event id).
+  // Environment dimensions read from `device_env_client`, joined by event id.
   'screen',
   'viewport',
   'dpr',
@@ -127,12 +127,12 @@ const dimensionFilter = z
   .optional()
 
 /**
- * The single source for every analytics query wire shape. Timestamps are
- * unix seconds; `clientTimezone` is an IANA zone name validated against
- * the shape here and against `Intl.DateTimeFormat` server-side (fallback
- * `Etc/UTC`); dimension filters are comma-separated equality lists.
- * `includeUnknown` opts back into geo-unknown events (country blob = '') —
- * queries exclude them by default while writes always keep them.
+ * The single source for every analytics query wire shape. Timestamps are unix
+ * seconds; `clientTimezone` is an IANA zone name validated against the shape here
+ * and against `Intl.DateTimeFormat` server-side (fallback `Etc/UTC`); dimension
+ * filters are comma-separated equality lists. `includeUnknown` opts back into
+ * geo-unknown events (country blob = '') — queries exclude them by default while
+ * writes always keep them.
  */
 export const analyticsQuerySchema = z.object({
   preset: z.enum(PRESET_KEY_VALUES).optional(),
@@ -170,9 +170,8 @@ export const analyticsQuerySchema = z.object({
 
 export type AnalyticsQuery = z.infer<typeof analyticsQuerySchema>
 
-/** A query with its time range resolved to concrete unix seconds.
- *  Optional fields keep their `analyticsQuerySchema` meanings; services
- *  apply the same defaults when they're absent. */
+/** A query with its time range resolved to concrete unix seconds; services apply
+ *  the `analyticsQuerySchema` defaults to absent optional fields. */
 export interface ResolvedAnalyticsQuery extends Partial<AnalyticsQuery> {
   range: DateRange
 }
@@ -259,14 +258,13 @@ const deviceEnvDynamicFields = {
 }
 
 /**
- * Client device-environment beacon (ADR-0006). One beacon per page view,
- * keyed by the event id published in the loader data; the columns land in
- * `device_env_client`. Static fields (screen geometry, touch capability,
- * locale, hardware) are sent only once per browser session — the
- * `hasStatic` flag tells the panels which rows carry them, so static
+ * Client device-environment beacon: one beacon per page view, keyed by the event
+ * id published in the loader data, landing in `device_env_client`. Static fields
+ * (screen geometry, touch capability, locale, hardware) are sent only once per
+ * browser session — `hasStatic` tells the panels which rows carry them, so static
  * dimensions aggregate over the beacon-covered subset. Every dimension is
- * optional: the client reports what the browser exposes. Values are raw —
- * panels bucket at query time.
+ * optional (the client reports what the browser exposes) and raw (panels bucket
+ * at query time).
  */
 export const deviceEnvBeaconSchema = z.object({
   eventId: z.uuid(),

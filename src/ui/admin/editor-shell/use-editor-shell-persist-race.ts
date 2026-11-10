@@ -1,8 +1,6 @@
 // The owned revision-race slice of the persist module: the expected
-// client-revision token plus the latest/published revisions advance ONLY
-// through `updateAfterSave`, and the `server` leg of the autosave freeze
-// rides the same race — set on a revision conflict, cleared by the next
-// clean body save.
+// client-revision token plus the latest/published revisions advance ONLY through
+// `updateAfterSave`; the `server` autosave freeze rides the same race.
 
 import { useCallback, useState } from 'react'
 

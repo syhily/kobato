@@ -14,23 +14,18 @@ interface ParentContext {
 
 export interface SettingsOutletContext extends ParentContext {
   /**
-   * Bucketed settings document straight from the storage layer; every bucket
-   * is non-null (loader-enforced). Secrets are redacted — use `masks`.
+   * Bucketed settings document; every bucket is non-null (loader-enforced). Secrets are redacted — use `masks`.
    */
   bundle: SettingsBundle
-  /**
-   * Canonical IANA timezone list for every timezone picker; resolved once
-   * per process.
-   */
+  /** Canonical IANA timezone list for every timezone picker; resolved once per process. */
   timeZones: readonly string[]
   /** Pre-computed secret masks so the admin UI can show "…last4" hints without receiving plaintext keys. */
   masks: SecretMasks
 }
 
-// Single loader read shared by every section route; saves don't revalidate
-// it — cards adopt the authoritative save response as their baseline. The 503
-// guard lives ONCE in `admin.settings.bootstrap`; this loader only translates
-// it back to the thrown Response.
+// Single loader read shared by every section route; saves don't revalidate it — cards adopt the authoritative
+// save response as their baseline. The 503 guard lives once in `admin.settings.bootstrap`; this loader only
+// translates it back to the thrown Response.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller } = createSsrCaller({ request, context })
   try {

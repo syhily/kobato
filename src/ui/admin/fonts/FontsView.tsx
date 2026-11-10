@@ -42,8 +42,6 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Web-font library + slot assignment: draggable grid, upload dialog, and
-// three slot columns persisted via `admin.fonts.setSlot` + revalidate.
 const SLOT_LABEL_IDS: Record<FontSlot, UiMessageId> = {
   global: 'admin.fonts.slot.global',
   post: 'admin.fonts.slot.post',
@@ -131,7 +129,6 @@ export function FontsView() {
     }
 
     if (activeData.type === 'library') {
-      // Library → slot: append at the resolved position (dedupe + cap).
       if (!targetSlot) {
         return
       }
@@ -323,8 +320,7 @@ function SlotColumn({
                   ))}
                 </ol>
               </SortableContext>
-              {/* Trailing drop region for "append at the end" — the dashed
-                  outline only surfaces while dragging over. */}
+              {/* Trailing drop region for "append at the end". */}
               <div
                 className={
                   'min-h-10 rounded px-2 py-1.5 text-center text-xs transition-colors' +

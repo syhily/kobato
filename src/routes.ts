@@ -1,8 +1,6 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
-// See `src/routes/README.md` for the rationale behind every block.
 export default [
-  // Public layout — see README.md §A (and §B for the splat).
   layout('routes/public/layout.tsx', [
     index('routes/public/home.tsx'),
     route('page/:num', 'routes/public/home.tsx', { id: 'home-page' }),
@@ -16,11 +14,10 @@ export default [
     route('search/:keyword/page/:num', 'routes/public/search/list.tsx', { id: 'search-list-page' }),
     route('posts/:slug', 'routes/public/post/detail.tsx'),
     route(':slug', 'routes/public/page/detail.tsx'),
-    // Splat MUST stay last — see README.md §B.
+    // Splat must stay last: `*` is the lowest-priority match and only fires for paths nothing else handles.
     route('*', 'routes/public/not-found.tsx'),
   ]),
 
-  // Auth split-screen layout — see README.md §F.
   layout('routes/auth/layout.tsx', [
     route('admin/signin', 'routes/auth/signin.tsx'),
     route('admin/setup', 'routes/auth/setup/index.tsx'),
@@ -32,7 +29,6 @@ export default [
     route('editor/page/new', 'routes/editor/page/new.tsx'),
     route('editor/page/:id', 'routes/editor/page/edit.tsx'),
   ]),
-  // Admin SPA shell — see README.md §G.
   layout('routes/admin/layout.tsx', [
     route('admin', 'routes/admin/dashboard.tsx'),
     route('admin/posts', 'routes/admin/posts/index.tsx'),
@@ -62,7 +58,6 @@ export default [
       route('realtime', 'routes/admin/analytics/realtime.tsx'),
       route('mentions', 'routes/admin/analytics/mentions.tsx'),
     ]),
-    // Settings single-page panel — see README.md §H.
     layout('routes/admin/settings/layout.tsx', [route('admin/settings', 'routes/admin/settings/index.tsx')]),
   ]),
 ] satisfies RouteConfig

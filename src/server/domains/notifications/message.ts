@@ -1,5 +1,3 @@
-// System-notification i18n descriptor (plan 001, 5b-ii).
-//
 // A SYSTEM notification persists an English fallback in `title`/`body` plus a
 // nullable descriptor (`titleKey`/`titleParams`, `bodyKey`/`bodyParams`). Read
 // paths translate the descriptor with the reader's locale; a missing or

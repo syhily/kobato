@@ -11,18 +11,15 @@ const backends: Record<StorageDriver, StorageBackend> = {
 }
 
 /**
- * Resolve the backend an existing asset lives in (for reads, deletes, and
- * migration). Driver values come from each asset's `storage_driver` /
- * `BrandingObjectRef.driver` field.
+ * Backend an existing asset lives in (reads, deletes, migration), resolved from the
+ * asset's `storage_driver` / `BrandingObjectRef.driver` value.
  */
 export function backendFor(driver: StorageDriver): StorageBackend {
   return backends[driver]
 }
 
-/**
- * Backend for new uploads: S3 when enabled and fully configured, local otherwise
- * (the always-on fallback).
- */
+/** Backend for new uploads: S3 when enabled and fully configured, local otherwise
+ *  (the always-on fallback). */
 export function activeBackend(): { backend: StorageBackend; driver: StorageDriver } {
   try {
     // Via the registry (not the import) so the test seam can substitute a backend.
@@ -35,10 +32,8 @@ export function activeBackend(): { backend: StorageBackend; driver: StorageDrive
   return { backend: backends.local, driver: 'local' }
 }
 
-/**
- * Every registered backend in stable order (s3 first), for operations spanning
- * all backends (backup reconcile). On key collisions the earlier driver wins.
- */
+/** Every registered backend in stable order (s3 first), for operations spanning all
+ *  backends (backup reconcile); on key collisions the earlier driver wins. */
 export function allBackends(): { driver: StorageDriver; backend: StorageBackend }[] {
   // `Object.entries` widens keys to `string`; they are `StorageDriver` by construction.
   return Object.entries(backends).map(([driver, backend]) => ({

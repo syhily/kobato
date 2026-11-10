@@ -488,7 +488,7 @@ describe('comments/repos/public-query/digest — latestDistinctCommentIds', () =
     expect(ids).toHaveLength(2)
   })
 
-  it('pins the access path: deleted_at index search, no full table scan (audit P1-21)', () => {
+  it('pins the access path: deleted_at index search, no full table scan', () => {
     // Pins the `idx_comment_deleted_at` index search; losing it degrades
     // the window scan to a full table scan.
     const plan = db.all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${latestDistinctCommentIdsQuery([1], 10)}`)

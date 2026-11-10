@@ -54,7 +54,6 @@ describe('server/http/restart — restartServer', () => {
     const p2 = restartServer()
     await Promise.all([p1, p2])
 
-    // Only the first one should have attempted to close the server
     expect(closeMock).toHaveBeenCalledTimes(1)
     expect(serveMock).toHaveBeenCalledTimes(1)
   })

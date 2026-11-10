@@ -18,9 +18,8 @@ export function hasAtLeast(role: RoleOrNull | undefined, min: Role): boolean {
 }
 
 /**
- * Message ids for the role names — the localized surface every UI consumer
- * reads (public chrome + admin views). There is no hardcoded label helper: the
- * registry stays neutral and the component supplies its `t`.
+ * Message ids for the role names: the registry stays locale-free, and each
+ * component resolves these with its own `t`.
  */
 export const ROLE_LABEL_KEYS = {
   admin: 'common.role.admin',

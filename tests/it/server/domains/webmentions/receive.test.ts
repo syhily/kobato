@@ -7,7 +7,7 @@ import { receiveWebmention } from '@/server/domains/webmentions/receive'
 import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
 
-// Notification seam only: WHEN to notify (R11 rules); the email mapping is covered by its unit suite.
+// Notification seam only: when to notify; the email mapping is covered by its unit suite.
 vi.mock('@/server/domains/webmentions/email', () => ({
   sendNewWebmention: vi.fn(async () => ({ ok: true })),
 }))
@@ -46,7 +46,7 @@ beforeEach(async () => {
   vi.mocked(sendNewWebmention).mockClear()
 })
 
-describe('integration / receiveWebmention — source key convergence (R12)', () => {
+describe('integration / receiveWebmention — source key convergence', () => {
   it('folds fragment / trailing-slash / default-port source variants into one row', async () => {
     await seedLivePost('wm-target')
     for (const source of [
@@ -79,7 +79,7 @@ describe('integration / receiveWebmention — source key convergence (R12)', () 
   })
 })
 
-describe('integration / receiveWebmention — response type classification (Phase 2)', () => {
+describe('integration / receiveWebmention — response type classification', () => {
   it('stores the mf2 marker type detected on the source anchor', async () => {
     await seedLivePost('wm-target')
     const cases: Array<[marker: string, expected: string]> = [
@@ -120,7 +120,7 @@ describe('integration / receiveWebmention — response type classification (Phas
   })
 })
 
-describe('integration / receiveWebmention — notification rules (R11/R14)', () => {
+describe('integration / receiveWebmention — notification rules', () => {
   it('notifies again with the updated flag when an approved mention demotes', async () => {
     await seedLivePost('wm-target')
     enqueueSource('https://sender.example/post')

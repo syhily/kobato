@@ -3,12 +3,10 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const pkg = require('../package.json')
 
-// The compile-time app globals, mirroring the root vite.config.ts define
-// block — shared by the unit/it/snaps project configs so route modules
-// that transitively import `@/shared/config/version` (e.g. AdminShell →
-// VersionDialog) resolve the globals under the test bundler instead of
-// throwing ReferenceError. One owner: change the shape here, not in
-// three configs.
+// Compile-time app globals mirroring the root vite.config.ts define block, shared by the
+// unit/it/snaps project configs: route modules that import `@/shared/config/version`
+// resolve them under the test bundler instead of throwing ReferenceError. Change the
+// shape here, not in three configs.
 export const testDefine = {
   __APP_NAME__: JSON.stringify(pkg.name),
   __APP_VERSION__: JSON.stringify(pkg.version),

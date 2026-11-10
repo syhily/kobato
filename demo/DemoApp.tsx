@@ -45,10 +45,9 @@ const params = new URLSearchParams(url.search)
 const WEBSOCKET_ENDPOINT = params.get('multiplayerEndpoint') || 'ws://localhost:1234'
 const WEBSOCKET_ID = params.get('multiplayerId') || '0'
 
-// e2e seam: `?renderMath=stub` installs a deterministic stand-in for the
-// host's server-side KaTeX channel, so the math card's preview flow is
-// exercised without a real backend. The default demo host deliberately has
-// no renderMath — its preview shows the TeX source.
+// e2e seam: `?renderMath=stub` installs a deterministic stand-in for the host's server-side KaTeX channel, so the
+// math card's preview flow is exercised without a backend. The default demo host has no renderMath — its preview
+// shows the TeX source.
 const stubRenderMath: NonNullable<CardConfig['renderMath']> = () =>
   Promise.resolve({
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 16" width="40" height="16" data-math-stub="true"><rect width="40" height="16" fill="currentColor"/></svg>',
@@ -73,10 +72,9 @@ const defaultCardConfig: CardConfig = {
       },
     ]),
   siteUrl: window.location.origin,
-  // this enables the internal linking feature, can be disabled with `/#/?searchLinks=false`
+  // Enables the internal linking feature; disable with `/#/?searchLinks=false`.
   searchLinks: async (term?: string): Promise<SearchResult[]> => {
-    // default to showing latest posts when search is empty
-    // no delay to simulate posts being pre-loaded in editor
+    // Default to showing latest posts when the term is empty; no delay simulates pre-loaded posts.
     if (!term) {
       return [
         {
@@ -113,8 +111,8 @@ const defaultCardConfig: CardConfig = {
       ]
     }
 
-    // actual search, simulate a network request delay
     const query = term.toLowerCase()
+
     return new Promise((resolve) => {
       setTimeout(
         () => {
@@ -178,8 +176,7 @@ function getAllowedNodes({ editorType }: { editorType?: string }) {
   } else if (editorType === 'minimal') {
     return MINIMAL_NODES
   }
-  // the full surface composes the demo host card (CONTEXT.md: "host card")
-  // alongside the built-in set instead of forking DEFAULT_NODES
+  // The full surface adds the demo host card to DEFAULT_NODES rather than forking the built-in set.
   return [...DEFAULT_NODES, musicPlayer.node]
 }
 
@@ -333,11 +330,11 @@ function DemoComposer({
     deleteSnippet,
     searchLinks: searchParams.get('searchLinks') === 'false' ? undefined : defaultCardConfig.searchLinks,
     renderMath: searchParams.get('renderMath') === 'stub' ? stubRenderMath : undefined,
-    // e2e seam: `?imageLibrary=fixture[-upload]` installs the fixture adapter
-    // (demo/utils/imageLibrary.ts); absent = no library menu entry
+    // e2e seam: `?imageLibrary=fixture[-upload]` installs the fixture adapter (demo/utils/imageLibrary.ts);
+    // absent = no library menu entry
     imageLibrary: getDemoImageLibrary(searchParams.get('imageLibrary')),
-    // Pintura is a runtime CDN import — point the demo at a licensed build
-    // with VITE_PINTURA_JS_URL / VITE_PINTURA_CSS_URL to test image editing
+    // Pintura is a runtime CDN import — point the demo at a licensed build with VITE_PINTURA_JS_URL /
+    // VITE_PINTURA_CSS_URL to test image editing.
     pinturaConfig: {
       jsUrl: import.meta.env.VITE_PINTURA_JS_URL || undefined,
       cssUrl: import.meta.env.VITE_PINTURA_CSS_URL || undefined,
@@ -346,9 +343,7 @@ function DemoComposer({
 
   const fileUploader: FileUploader = { useFileUpload: useFileUpload({ isMultiplayer }), fileTypes }
 
-  // the focus-below-canvas choreography and the sidebar/chrome block live in
-  // the shared demo chrome (DemoChrome + useFocusBelowCanvas); the sidebar
-  // state stays here because the breakout adjustment reads it
+  // Sidebar state stays here because the breakout adjustment below reads it; the chrome itself lives in DemoChrome.
   const { onMouseDown, onClick } = useFocusBelowCanvas({ editorAPI, containerRef })
 
   // Sidebar uses useLexicalComposerContext so it must be inside a InklingComposer.
@@ -423,13 +418,12 @@ function DemoApp({ editorType, isMultiplayer }: DemoAppProps) {
   const [selectionWordCount, setSelectionWordCount] = useState<number | null>(null)
   const [tkCount, setTKCount] = useState(0)
 
-  // used to force a re-initialization of the editor when URL changes, otherwise
-  // content is memoized and causes issues when switching between editor types
+  // Forces re-initialization when the URL changes; content is memoized and goes stale when switching editor types.
   const location = useLocation()
 
   return (
     <div key={location.key} className={`inkling-lexical top`}>
-      {/* outside of DemoComposer to avoid re-renders and flaky tests when word count changes */}
+      {/* Outside DemoComposer to avoid re-renders and flaky tests when word count changes. */}
       <WordCount selectionWordCount={selectionWordCount} tkCount={tkCount} wordCount={wordCount} />
 
       <MemoizedDemoComposer

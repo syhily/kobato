@@ -14,18 +14,10 @@ import { Switch } from '@/ui/components/switch'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// The full analytics dashboard body shared by the site-wide overview and the
-// per-post analytics shells (Slite's `analysis/Index.vue` + `metrics/Index.vue`
-// composition): range picker + filters, counters, the trend/heatmap tabs,
-// then the lg:grid-cols-12 metrics section (map col-span-8, location group
-// col-span-4, the remaining four groups col-span-6).
-//
-// The URL state arrives as an explicit prop from the route module (the only
-// place useSearchParams may be read) and is re-published to the deep panels
-// through AnalyticsStateProvider. Neither the views nor the heatmap loader
-// payload is threaded through: both would be bucketed in Etc/UTC while the
-// client queries refetch with the real clientTimezone, so ViewsChart and
-// Heatmap render their skeletons until those queries resolve.
+// Shared by the site-wide overview and the per-post shells. URL state arrives as a
+// prop from the route module (the only place useSearchParams may be read). Views/heatmap
+// loader payloads are not threaded through — they would be bucketed in Etc/UTC while
+// client queries refetch with the real clientTimezone.
 
 export interface AnalyticsDashboardData {
   counters: CountersDto

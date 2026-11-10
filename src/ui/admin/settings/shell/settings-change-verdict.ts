@@ -1,13 +1,8 @@
 /**
  * Explicit opt-out a discrete-control guard returns to suppress the wrapper's
- * `save(name)` — either because the change was vetoed, or because the guard
- * committed the field itself.
- *
- * A plain boolean cannot carry this contract: RHF's `field.onChange` is async
- * and may itself resolve to `false` (its internal `state.next` result), so an
- * existing `onValueChange={field.onChange}` call site would look like a veto.
- * Guards therefore return this sentinel object; any other return value (or
- * none) lets the wrapper commit.
+ * `save(name)` — the change was vetoed, or the guard committed the field itself.
+ * A plain boolean cannot carry this: RHF's async `field.onChange` may resolve to
+ * `false` (its `state.next`), which would look like a veto.
  */
 export interface SettingsChangeVerdict {
   readonly commit: false

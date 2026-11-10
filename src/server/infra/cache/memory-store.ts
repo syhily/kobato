@@ -3,23 +3,16 @@ import { Buffer } from 'node:buffer'
 import type { CacheBucketId } from '@/shared/types/cache'
 
 /**
- * Process-local L1 in front of the file cache (ADR-0013).
+ * Process-local L1 in front of the file cache: DECODED values, so a hot entry
+ * costs a Map lookup instead of a file read plus a `JSON.parse`. Each bucket
+ * owns an LRU bounded on entry count AND estimated bytes; a value above
+ * `MAX_ENTRY_BYTES` is never admitted (it would displace many small entries
+ * for a single hit).
  *
- * The behavior plane (`registry`) reads and writes DECODED values here before
- * it touches disk, so a hot entry costs a Map lookup instead of a file read
- * plus a `JSON.parse`. Each bucket owns an LRU bounded on BOTH entry count and
- * estimated bytes; a single value above `MAX_ENTRY_BYTES` is never admitted —
- * one oversized payload would evict many small ones for a single hit.
- *
- * Invariants:
- * - Expiry is the deadline the disk envelope carries (`0` = never). A read past
- *   it evicts lazily, exactly like `file-store`; the registry never derives a
- *   fresh deadline here, so L1 can never outlive the file it mirrors.
- * - Process-local is safe: kobato ships as a single-process SEA binary, and
- *   every invalidation verb in the registry evicts synchronously.
- * - A hit returns the SAME decoded value to every caller (skipping the parse is
- *   the point), so cached values are read-only by contract — consumers must
- *   never mutate a cache result in place.
+ * - Expiry is the disk envelope's own deadline (`0` = never); L1 never derives
+ *   a fresh one, so a memory copy can never outlive the file it mirrors.
+ * - A hit returns the SAME decoded object to every caller — cached values are
+ *   read-only by contract; consumers must never mutate a result in place.
  * - Best-effort: nothing here does I/O or throws into a request path.
  */
 
@@ -62,7 +55,6 @@ interface MemoryEntry {
   value: unknown
   /** Absolute deadline (epoch ms), `0` = never — the disk envelope's value. */
   expiresAtMs: number
-  /** Estimated retained bytes (serialized JSON length or Buffer byteLength). */
   bytes: number
 }
 
@@ -99,8 +91,7 @@ function estimateBytes(value: unknown): number {
   try {
     return Buffer.byteLength(JSON.stringify(value) ?? '', 'utf8')
   } catch {
-    // Circular/BigInt values are not cacheable JSON; report them as unbounded
-    // so they stay out of L1 (the disk write rejects them too).
+    // Not cacheable JSON (circular/BigInt): report unbounded so it stays out of L1.
     return Number.POSITIVE_INFINITY
   }
 }
@@ -126,19 +117,13 @@ export function getMemoryItem(id: CacheBucketId, key: string): unknown {
 export interface MemoryEntryMeta {
   /** Absolute deadline (epoch ms), `0` = never — the disk envelope's value. */
   expiresAtMs: number
-  /** Encoded payload size for binary entries: a Buffer nested in a decoded
-   *  shape cannot be measured by serializing the wrapper. Omit for JSON values,
-   *  which are measured by their serialized length. */
+  /** Encoded payload size for binary entries (a nested Buffer can't be
+   *  measured by serializing the wrapper); omit for JSON values. */
   bytes?: number
 }
 
-/**
- * `meta.bytes` overrides the size estimate for binary entries; JSON values are
- * measured by their serialized length.
- */
 export function setMemoryItem(id: CacheBucketId, key: string, value: unknown, meta: MemoryEntryMeta): void {
-  // A JSON `null` reads as a miss on the disk plane as well, so it never
-  // becomes an L1 entry worth keeping.
+  // `null` reads as a miss on the disk plane too, so it never enters L1.
   if (value === null || value === undefined) {
     return
   }

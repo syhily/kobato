@@ -89,10 +89,9 @@ export function useEditorShellState<
   const createDraft = useCreateDraft(createDraftConfig, { body, meta })
 
   // Render-phase state adjustment (react-compiler-safe pattern): hydrate once
-  // when the create draft resolves. The load is async (IndexedDB in
-  // useEffect), so only latch when a stored draft actually arrived — latching
-  // on the first null render would skip the restore while the banner still
-  // claims 已恢复本地草稿.
+  // when the create draft resolves. Latch only when a stored draft actually
+  // arrived — the load is async, so latching on the first null render would skip
+  // the restore while the banner still claims a restored local draft.
   const [createDraftHydrated, setCreateDraftHydrated] = useState(false)
   if (!isEditing && !createDraftHydrated && createDraft.loadedDraft !== null) {
     setCreateDraftHydrated(true)

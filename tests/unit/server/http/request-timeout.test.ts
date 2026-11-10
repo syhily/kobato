@@ -43,7 +43,6 @@ describe('requestTimeout', () => {
       signal.addEventListener('abort', () => {
         signalAborted = true
       })
-      // Wait longer than the timeout so the abort has time to fire.
       await new Promise((r) => setTimeout(r, 150))
       return c.json({ aborted: signalAborted })
     })

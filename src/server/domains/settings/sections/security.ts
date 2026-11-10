@@ -10,7 +10,7 @@ export const securityValidationMessages = {
 } as const satisfies Record<string, UiMessageId>
 
 // Prefixes an admin must never be able to CSRF-exempt — exempting either silently
-// disables CSRF on state-changing routes (P1-16). Segment-boundary aware,
+// disables CSRF on state-changing routes. Segment-boundary aware,
 // mirroring `isPathExempt`'s match semantics in `@/server/domains/auth/csrf`.
 const DANGEROUS_EXEMPT_PREFIXES = ['/rpc', '/api'] as const
 

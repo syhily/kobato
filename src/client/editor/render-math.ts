@@ -1,9 +1,9 @@
-// The `cardConfig.renderMath` adapter (plan M3): inkling previews block and
-// inline math through this channel while editing; the persisted mathml/svg
-// artifacts are filled by the save pipeline, never written back. Kobato's
-// channel is `orpc.admin.renders.math` (server-side KaTeX) behind a 200ms
-// trailing-edge debounce keyed by (tex, display) — retyping coalesces, and
-// concurrent callers editing the same formula share one round-trip.
+// The `cardConfig.renderMath` adapter: inkling previews block and inline math
+// through this channel while editing; the persisted mathml/svg artifacts are
+// filled by the save pipeline, never written back. `orpc.admin.renders.math`
+// (server-side KaTeX) sits behind a 200ms trailing-edge debounce keyed by
+// (tex, display) — retyping coalesces, and concurrent callers on the same
+// formula share one round-trip.
 
 import type { CardConfig } from '@/inkling'
 import type { ErrorMessageDescriptor } from '@/shared/contracts/api-error'
@@ -14,21 +14,18 @@ const MATH_RENDER_DEBOUNCE_MS = 200
 
 type MathRenderResult = { mathml?: string; error?: string }
 
-/** Resolve a wire error descriptor with the caller's active locale. */
+/** Resolves a wire error descriptor with the caller's active locale. */
 export type MathErrorResolver = (descriptor: ErrorMessageDescriptor) => string
 
-/** The caller's `useI18n().localizeMessage` seam (kept structural so this module stays ui-free). */
+/** The caller's `useI18n().localizeMessage` seam, kept structural so this module stays ui-free. */
 export type MathErrorLocalizer = (
   value: string,
   params?: Record<string, string | number | boolean | null | undefined>,
 ) => string
 
-/**
- * Resolve a server math-error descriptor for the Inkling host, which accepts
- * only a display string. `localizeMessage` passes an id it does not know
- * through unchanged; in that case show the descriptor's English
- * `fallbackMessage` rather than the raw catalog key.
- */
+// Inkling accepts only a display string. `localizeMessage` passes an id it does
+// not know through unchanged; a raw catalog key must never reach the editor, so
+// that case shows the descriptor's English `fallbackMessage` instead.
 export function resolveMathError(descriptor: ErrorMessageDescriptor, localizeMessage: MathErrorLocalizer): string {
   const localized = localizeMessage(descriptor.messageKey, descriptor.params)
   return localized === descriptor.messageKey ? descriptor.fallbackMessage : localized

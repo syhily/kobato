@@ -2,24 +2,14 @@ import type { LexicalNode } from 'lexical'
 import type { ReactNode } from 'react'
 
 /**
- * The decorate() injection port — the one edge that keeps the assembled card
- * node classes React-free. Assembly (`@/inkling/nodes/assemble-card-node`) used to
- * statically import the shared decorate adapter (`@/inkling/nodes/decorate-card`),
- * which pulls the entire wrapper layer (InklingCardWrapper + every card
- * component) into ANY graph that touches a card shim — including the
- * markdown round-trip, and through it the `@/inkling/headless` surface.
- * Inverting the edge (the wrapper layer registers here; assembly reads the
- * slot) keeps the headless conversion surface free of the React component
- * tree.
- *
- * The wrapper layer (`@/inkling/nodes/decorate-card`) does NOT register at
- * module scope — a bare side-effect import would be tree-shaken away, so it
- * exports `registerCardDecorateAdapter()` and the `@/inkling` barrel
- * (`src/inkling/index.ts`) named-imports and calls it as an explicit
- * top-level statement. Every barrel consumer therefore has the slot filled
- * before Lexical ever reconciles a card node. Headless graphs never call
- * decorate() (no React reconciliation), so the empty-slot throw below is
- * unreachable there; it exists to fail loudly if a custom surface renders
+ * The decorate() injection port — the one edge that keeps the assembled card node
+ * classes React-free: the wrapper layer (`@/inkling/nodes/decorate-card`) registers
+ * here, and assembly (`@/inkling/nodes/assemble-card-node`) reads the slot. A static
+ * import of the adapter from assembly would pull the entire wrapper layer
+ * (InklingCardWrapper + every card component) into any graph that touches a card
+ * shim — including the markdown round-trip and, through it, the `@/inkling/headless`
+ * surface. Headless graphs never call decorate() (no React reconciliation), so the
+ * empty-slot throw is unreachable there; it fails loudly if a custom surface renders
  * cards without the barrel's wiring.
  */
 

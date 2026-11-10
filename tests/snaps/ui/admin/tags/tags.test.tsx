@@ -30,10 +30,9 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// TagsView drives its rows from `useAdminInfiniteList` (server state lives
-// in the TanStack cache, via an internal `useInfiniteQuery`). The list query
-// is stubbed through a hoisted slot so each test can pick the branch; the
-// delete mutation and the query client are stubbed alongside.
+// TagsView drives rows from `useAdminInfiniteList` (server state lives in the TanStack
+// cache via an internal `useInfiniteQuery`). The list query, delete mutation and query
+// client are stubbed through hoisted slots so each test picks the branch.
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 

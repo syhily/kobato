@@ -33,7 +33,6 @@ interface ImageDetailDialogProps {
   onRecalculateThumbhash: (image: AdminImageDto) => void
 }
 
-// Library detail dialog: full preview + meta fields, note edited inline (click → reveal → save/cancel).
 export function ImageDetailDialog({
   image,
   open,
@@ -101,9 +100,7 @@ export function ImageDetailDialog({
 
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2 sm:gap-4 sm:px-6">
             <div className="flex items-center justify-center rounded-xl border bg-muted">
-              {/* Plain <img>: this is the admin library, lazy-loaded
-                  remote URL, alt="" because the file path + meta
-                  fields below already convey the image identity. */}
+              {/* Plain <img>: lazy remote URL; alt="" because the path and meta fields convey identity. */}
               <img
                 src={image.publicUrl}
                 alt=""

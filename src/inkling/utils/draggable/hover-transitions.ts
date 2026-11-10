@@ -1,16 +1,9 @@
 import type { DroppablePosition } from '@/inkling/utils/draggable/DragDropContainer'
 
-// Hover transitions — the pure state machine behind DragDropHandler's drag
-// move, extracted so the handler only interprets effects. One frame in
-// (what is under the pointer, resolved to plain data), the next hover state
-// plus the ordered effects out; the handler fires container callbacks, the
-// indicator, and the drop resolution in exactly that order. Same shape as
-// reorder-rules: everything DOM-measured (elementFromPoint, rects) stays at
-// the caller's edges, so the transition matrix is a synchronous test table.
-//
-// The machine is generic over the container type so it never imports the
-// registry — the caller resolves "which registered container owns this
-// element" into the frame.
+// The pure hover state machine behind DragDropHandler's drag move: one frame in (what is
+// under the pointer, resolved to plain data), the next hover state plus the ordered effects
+// out. Everything DOM-measured stays at the caller's edges; the machine is generic over the
+// container type so it never imports the registry.
 
 export interface HoverPoint {
   x: number
@@ -24,17 +17,14 @@ export interface HoverRect {
   height: number
 }
 
-// one drag-move frame: the pointer's hit resolved to plain data. container
-// is the registered container for containerElem (null when the element is a
-// container-shaped element no registered container owns — the machine then
-// tracks the hover but emits no container effects, matching the handler's
-// historical gating)
+// One drag-move frame: the pointer's hit resolved to plain data. `container` is the
+// registered container for `containerElem` (null when the element is container-shaped but no
+// registered container owns it — the machine tracks the hover but emits no container
+// effects).
 export interface HoverFrame<C> {
   containerElem: Element | null
   container: C | null
-  // the raw droppable hit; the dead-area rule (a droppable not contained by
-  // the hovered container is no droppable — e.g. the pointer is over the
-  // drop indicator) applies inside the machine
+  // filtered by the dead-area rule inside the machine (see resolveHoverTransition)
   droppableElem: HTMLElement | null
   droppableRect: HoverRect | null
   mouse: HoverPoint
@@ -47,10 +37,9 @@ export interface HoverState<C> {
   droppablePosition: DroppablePosition | null
 }
 
-// the ordered intents the caller interprets. leave-container carries the
-// indicator hide + resolution clear; resolve-drop carries the
-// over-callback, the getIndicatorPosition call, and the indicator
-// show/hide with the resolution write
+// The ordered intents the caller interprets; leave-container carries the indicator hide and
+// resolution clear, resolve-drop the over-callback, the getIndicatorPosition call, and the
+// indicator show/hide with the resolution write.
 export type HoverEffect =
   | { kind: 'leave-container' }
   | { kind: 'enter-container' }
@@ -62,8 +51,6 @@ export function initialHoverState<C>(): HoverState<C> {
   return { container: null, containerElem: null, droppableElem: null, droppablePosition: null }
 }
 
-// top/bottom from the pointer's half of the droppable's height, left/right
-// from its half of the width
 export function resolveDroppablePosition(rect: HoverRect, mouse: HoverPoint): DroppablePosition {
   const inTop = mouse.y < rect.y + rect.height / 2
   const inLeft = mouse.x < rect.x + rect.width / 2
@@ -74,8 +61,8 @@ export function resolveHoverTransition<C>(
   prev: HoverState<C>,
   frame: HoverFrame<C>,
 ): { state: HoverState<C>; effects: HoverEffect[] } {
-  // the dead-area rule: a droppable the hovered container does not contain
-  // (the drop indicator sits between droppables) is no droppable
+  // Dead-area rule: a droppable the hovered container does not contain (the drop indicator
+  // sits between droppables) is no droppable.
   const droppableElem =
     frame.containerElem && frame.droppableElem && frame.containerElem.contains(frame.droppableElem)
       ? frame.droppableElem
@@ -92,9 +79,8 @@ export function resolveHoverTransition<C>(
     effects.push({ kind: 'leave-container' })
     state.container = null
     state.containerElem = null
-    // drop the droppable too: re-entering the same droppable in the same
-    // quadrant must re-fire enter-droppable + resolve-drop, otherwise the
-    // stale identity/position match swallows the resolution
+    // Re-entering the same droppable in the same quadrant must re-fire enter-droppable +
+    // resolve-drop; a stale identity/position match would swallow the resolution.
     state.droppableElem = null
     state.droppablePosition = null
   }

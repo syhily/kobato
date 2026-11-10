@@ -7,8 +7,8 @@ import { makeLeafContext } from '#/_helpers/comments-leaf'
 import { renderInRouter } from '#/_helpers/render'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 
-// Divergent defaults preserved from this file's former local factory (the
-// shared catalog factory is seq-based with 2024-03-12 dates).
+// Local fixture defaults deliberately differ from the shared catalog factory (seq-based,
+// 2024-03-12 dates).
 const aliceComment: Partial<CommentItemType> = {
   id: '1',
   createAt: '2024-01-15T08:30:00.000Z',

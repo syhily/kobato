@@ -141,7 +141,7 @@ describe('ui/admin/settings/CommentsForm — avatar card', () => {
     expect(labels.some((label) => label.includes('Gravatar official (www.gravatar.com)'))).toBe(true)
     expect(labels.some((label) => label.includes('Geekzu (sdn.geekzu.org)'))).toBe(true)
     expect(labels.some((label) => label.includes('mirrorPreset.'))).toBe(false)
-    // The pre-i18n literals must not survive in an English render.
+    // Hardcoded literals must not survive in an English render.
     expect(labels.join('\n')).not.toMatch(/[\u3400-\u4DBF\u4E00-\u9FFF]/)
   })
 })

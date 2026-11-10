@@ -1,10 +1,9 @@
 // Pure TK indicator geometry and click-to-cycle policy behind TKPlugin: the
 // indicator placement against the editor root rect (below-the-containing-element
 // top with an overflow-right adjustment) and the cycle order through a card's
-// TK nodes. Rects arrive as plain data (the ReorderGeometry pattern from
-// @/utils/draggable/reorder-rules), so both tables are unit-testable without
-// layout; TKPlugin stays the adapter owning measuring, rendering, and editor
-// wiring.
+// TK nodes. Rects arrive as plain data, so both tables are unit-testable
+// without layout; TKPlugin stays the adapter owning measuring, rendering, and
+// editor wiring.
 
 /** Base right offset placing the indicator left of the editor root's right edge. */
 export const TK_INDICATOR_BASE_RIGHT = -56

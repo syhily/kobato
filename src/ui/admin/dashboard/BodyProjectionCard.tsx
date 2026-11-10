@@ -16,10 +16,8 @@ interface ReprojectProgress {
 
 const IDLE: ReprojectProgress = { phase: 'idle', total: 0, processed: 0, rewritten: 0, failed: 0 }
 
-/** Manual body-projection rebuild — the recovery hatch after a renderer-side
- *  fix (card markup, sanitize allowlist) leaves the saved body_html /
- *  body_text / body_html_feed columns stale; the save pipeline maintains
- *  them otherwise. */
+/** Manual rebuild hatch for stale body_html / body_text / body_html_feed
+ *  columns after a renderer-side fix; the save pipeline maintains them otherwise. */
 export function BodyProjectionCard() {
   const { t } = useI18n()
   const [reproject, setReproject] = useState<ReprojectProgress>(IDLE)

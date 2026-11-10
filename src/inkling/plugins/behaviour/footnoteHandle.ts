@@ -6,11 +6,11 @@ import { createComposerHandle, type ComposerHandle } from '@/inkling/plugins/beh
 // on the composer handle factory (same shape as tkHandle/wordCountHandle).
 // Holds the render-time maps the definition rows subscribe to — the rows are
 // chrome and must not walk the tree themselves — plus the focus-handoff
-// request the caret trigger files for the freshly created definition (the
-// row's nested editor does not exist at insert time, so the request waits
-// for the row to mount and claim it). Fed by FootnotePlugin; React
-// subscribes render-only via useFootnoteHandleState. One instance per
-// top-level composer (created in InklingComposer).
+// request for the freshly created definition: the row's nested editor does
+// not exist at insert time, so the request waits for the row to mount and
+// claim it. Fed by FootnotePlugin; React subscribes render-only via
+// useFootnoteHandleState. One instance per top-level composer
+// (created in InklingComposer).
 
 export interface FootnoteHandleState {
   /** targetKey → 1-based visible index — the definition's rank in the doc-end run, matching the exported `<li>` anchor. */

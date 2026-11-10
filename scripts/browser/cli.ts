@@ -1,6 +1,3 @@
-// `pnpm run test:browser` entry: managed SEA boot when no
-// KOBATO_BROWSER_BASE_URL is exported, external instance otherwise.
-
 import { fail } from '../sea/exec.ts'
 import { runBrowserSuite } from './run.ts'
 

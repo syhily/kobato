@@ -1,27 +1,18 @@
-// The comment editor's composer node set (plan
-// docs/plans/inkling-editor-replacement.md, R12): EDITOR_BASE_NODES minus the
-// heading family (HeadingNode + its extended replacement pair), AsideNode,
-// and the table element family, plus the CodeBlock class. Every mounted type
-// must stay inside COMMENT_NODE_TYPES (`@/shared/lexical/node-whitelist`) —
-// the editor must never produce a node the storage schema rejects; the
-// contract test (tests/unit/shared/contracts/lexical-node-whitelist.test.ts)
-// pins this list's types against the whitelist and
-// `COMMENT_COMPOSER_NODE_TYPES`.
+// Every mounted type must stay inside COMMENT_NODE_TYPES
+// (`@/shared/lexical/node-whitelist`): the editor must never produce a node the
+// storage schema rejects. `tests/unit/shared/contracts/lexical-node-whitelist.test.ts`
+// pins the list against the whitelist and COMMENT_COMPOSER_NODE_TYPES.
 //
-// Formulas have no dedicated node on this surface: they are authored as
-// ```math code fences (the CODE_BLOCK shortcut captures the info string) and
-// rendered to KaTeX MathML by the server-side comment projection
-// (`computeCommentContentProjection`). The retired MathNode / MathInlineNode
-// pair stays in the STORAGE whitelist so legacy bodies still validate;
-// `comment-legacy-math.ts` downgrades them to the fence dialect at seed time.
+// Formulas are ```math code fences (the CODE_BLOCK shortcut captures the info
+// string) rendered to KaTeX MathML by the server-side comment projection.
+// MathNode/MathInlineNode stay in the storage whitelist so legacy bodies still
+// validate; `comment-legacy-math.ts` rewrites them at seed time.
 //
-// The QuoteNode + extended-quote replacement pair stays (blockquote is a
-// comment capability); only `extended-quote` ever serializes. AutoLinkNode
-// stays because CorePlugins' InklingAutoLinkPlugin is always mounted, so
-// typed URLs autolink. AsideNode is filtered out (as on the page composer)
-// because inkling's Ctrl+Q quote→aside→paragraph cycle would construct one —
-// the comment editor captures the chord host-side before inkling sees it
-// (`@/client/editor/block-quote-aside-cycle`).
+// QuoteNode keeps its extended-quote replacement pair (blockquote is a comment
+// capability; only `extended-quote` serializes). AutoLinkNode stays because
+// InklingAutoLinkPlugin is always mounted. AsideNode is excluded because
+// inkling's Ctrl+Q cycle would construct one; the chord is captured host-side
+// (`block-quote-aside-cycle`).
 
 import { excludeBaseNodes } from '@/client/editor/base-node-filter'
 import { CodeBlockNode, EDITOR_BASE_NODES } from '@/inkling'

@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { SearchBar, SearchIconButton } from '@/ui/public/Search'
 
-// First snapshot coverage for the public Search: SearchBar renders the
-// sidebar form; SearchIconButton's popup is portal-based and returns null under SSR.
+// SearchBar renders the sidebar form; SearchIconButton's popup is portal-based and
+// returns null under SSR.
 
 describe('snapshot: Search branches', () => {
   it('renders the sidebar search bar', () => {

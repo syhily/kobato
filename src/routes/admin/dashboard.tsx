@@ -24,8 +24,7 @@ export const meta = titleMeta('meta.title.admin.dashboard')
 // Keep in lockstep with the `PAGE_SIZE` constant in `PendingModerationPanel.tsx` — the panel's pagination assumes this size.
 const PENDING_PAGE_SIZE = 3
 
-// The `analytics.*` inputs are strings (`parseAnalyticsInput` parseInts them);
-// `computeDateRange` yields unix seconds, so stringify.
+// `analytics.*` inputs are strings (`parseAnalyticsInput` parseInts them); `computeDateRange` yields unix seconds.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   const user = viewer ?? undefined
@@ -90,8 +89,7 @@ function greetingForHour(hour: number, t: I18nValue['t']): string {
 function Greeting({ name }: { name: string }) {
   use(browser())
   const { t } = useI18n()
-  // Client-only once the recoverable boundary above resolves, so the hour
-  // initializes once from the client clock instead of reading it per render.
+  // Client-only once the boundary above resolves, so the hour initializes once from the client clock.
   const [hour] = useState(() => new Date().getHours())
   return <>{t('admin.dashboard.greeting.line', { greeting: greetingForHour(hour, t), name })}</>
 }

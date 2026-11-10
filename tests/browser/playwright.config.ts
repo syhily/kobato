@@ -1,12 +1,8 @@
-// Playwright config for the real-browser i18n journeys. Never boots a server
-// itself: `pnpm run test:browser` / `pnpm run sea:browser` start a throwaway SEA
-// instance (or point at an external one) and inject the KOBATO_BROWSER_* env
-// contract — see `scripts/browser/run.ts`.
-//
-// Browser selection: local runs use the system Google Chrome channel (by
-// default), CI installs Playwright's bundled Chromium and sets
-// KOBATO_BROWSER_CHANNEL=chromium. Override with KOBATO_BROWSER_CHANNEL and
-// use KOBATO_BROWSER_HEADLESS=0 for a headed debugging run.
+// Playwright config for the real-browser i18n journeys. It never boots a server itself:
+// `pnpm run test:browser` / `pnpm run sea:browser` start a throwaway SEA instance (or point
+// at an external one) and inject the KOBATO_BROWSER_* env contract — see
+// `scripts/browser/run.ts`. Local runs use the system Chrome channel; CI sets
+// KOBATO_BROWSER_CHANNEL=chromium, and KOBATO_BROWSER_HEADLESS=0 gives a headed run.
 
 import { defineConfig } from '@playwright/test'
 

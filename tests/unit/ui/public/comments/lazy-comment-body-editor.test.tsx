@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /**
- * Public comment composer labels (plan 002 §3): the public bootstrap carries NO
+ * Public comment composer labels: the public bootstrap carries NO
  * Inkling label table, so the interaction-gated wrapper loads exactly the
  * ACTIVE locale's table after activation and only then mounts the composer.
  * Workspace documents keep their payload table and never fetch a chunk. The

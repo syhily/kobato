@@ -18,8 +18,8 @@ import {
 } from '@/server/domains/analytics/services/env-beacon'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 
-// The env-beacon batcher writes `device_env_client` on its own dead-letter
-// file/format — separate from the access-log batcher and its rows.
+// The env-beacon batcher writes `device_env_client` on its own dead-letter file/format,
+// separate from the access-log batcher and its rows.
 
 const EVENT_ID = '00000000-0000-4000-8000-0000000000be'
 

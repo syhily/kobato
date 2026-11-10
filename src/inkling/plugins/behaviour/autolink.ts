@@ -1,9 +1,8 @@
 /**
  * The autolink policy behind `InklingAutoLinkPlugin`: the matcher set plus
  * the boundary separators, headless so the semantics are a synchronous test
- * table instead of e2e-only. Aligned with the host's previous tiptap
- * `Link.configure({ autolink: true })` surface (tiptap 3.31, linkify
- * defaults):
+ * table. Matches the host's tiptap `Link.configure({ autolink: true })`
+ * surface (tiptap 3.31, linkify defaults):
  *
  * - Scheme URLs (`http(s)`/`ftp(s)://…`) link verbatim.
  * - `www.`-prefixed and bare domains with an alpha TLD (2+ letters) link with

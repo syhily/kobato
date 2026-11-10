@@ -1,17 +1,13 @@
-// Heading-anchor slug policy for the Lexical storage format (plan
-// docs/plans/inkling-editor-replacement.md, round R9a). Single source of
-// truth on the kobato side: a byte-exact port of inkling's `slugify`
-// (`src/inkling/utils/slugify.ts`, the >=4.0 branch every current
-// document takes) plus its per-render dedup tracker
-// (`src/inkling/utils/heading-id-tracker.ts`). The contract test
-// `tests/unit/shared/contracts/lexical-heading-slug.test.ts` pins this
-// module against inkling's real `lexicalStateToHtml` export, so the
-// `headings` derived column can never drift from the ids the exported
-// `bodyHtml` carries (R3 consistency obligation).
+// Heading-anchor slug policy for the Lexical storage format: a byte-exact port
+// of inkling's `slugify` (`src/inkling/utils/slugify.ts`) plus its per-render
+// dedup tracker (`src/inkling/utils/heading-id-tracker.ts`), pinned by
+// tests/unit/shared/contracts/lexical-heading-slug.test.ts against inkling's
+// real `lexicalStateToHtml` export so the `headings` column cannot drift from
+// the ids the exported `bodyHtml` carries.
 //
-// Do NOT route this through `@/shared/slug` (github-slugger parity with a
-// pinyin charmap): inkling keeps CJK characters and percent-encodes, which
-// is the export contract the feed/TOC anchors must match.
+// Do NOT route through `@/shared/slug` (github-slugger with a pinyin charmap):
+// inkling keeps CJK characters and percent-encodes — the export contract the
+// feed/TOC anchors must match.
 
 const SYMBOL_PATTERN = /[\][!"#$%&'()*+,./:;<=>?@\\^_{|}~]/g
 
@@ -28,9 +24,8 @@ export function slugifyHeadingText(text: string): string {
 }
 
 /**
- * Per-document dedup tracker, identical to inkling's
- * `createHeadingIdTracker`: the first use of a slug gets the base id,
- * repeats get `<base>-<n>` with n counting from 1. Build one tracker per
+ * Per-document dedup tracker (inkling's `createHeadingIdTracker`): first use
+ * gets the base id, repeats get `<base>-<n>` counting from 1. Build one per
  * collection pass — dedup state must never leak across documents.
  */
 export function createHeadingSlugTracker(): (base: string) => string {

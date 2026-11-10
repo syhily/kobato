@@ -58,8 +58,7 @@ export const imageDeclaration = checkedCardDeclaration({
   insert: { claimsMediaInsert: true },
   uploadType: 'image',
   toolbarLabel: 'image',
-  // Markdown-eligible with no card fence: image speaks standard `![alt](src)`
-  // syntax via the hand-written IMAGE_CARD_TRANSFORMER
-  // (`@/inkling/nodes/cards/card-markdown-transformers`).
+  // Markdown-eligible without a card fence: `IMAGE_CARD_TRANSFORMER` in
+  // `@/inkling/nodes/cards/card-markdown-transformers` owns `![alt](src)`.
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)

@@ -48,9 +48,8 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// Render-path companion to `musics-view.test.tsx` (same query stubs, no
-// event handlers — SSR can't drive them). `SortIcon` renders directly
-// because the view inlines its sort state via `useState`.
+// Render-path cases for `MusicsView` (same query stubs, no event handlers — SSR cannot
+// drive them). `SortIcon` renders directly since the view inlines its sort state.
 
 // `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the
 // machine's state directly.
@@ -212,9 +211,8 @@ describe('MusicsView render branches', () => {
   })
 })
 
-// `SortIcon` switches over (sortBy, sortOrder) picking a lucide icon; the
-// view's sort state only flips via event handlers SSR can't drive, so every
-// combo renders directly. Trigger label/order text stays in the full-view tests.
+// `SortIcon` picks a lucide icon per (sortBy, sortOrder); the view's sort state only
+// flips via event handlers SSR cannot drive, so every combo renders directly.
 
 describe('MusicsView SortIcon matrix', () => {
   it.each([

@@ -15,8 +15,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// the store equivalent of the old per-test CardContext factory: the card is
-// selected and not editing unless a test says otherwise
+// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'audio-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -235,9 +234,6 @@ describe('AudioNodeComponent', () => {
       const toolbar = toolbars[0]
       expect(toolbar.querySelectorAll('li')).toHaveLength(3)
 
-      // plan 046 step 3 deliberate change: audio's snippet item read
-      // "Snippet" before the migration; it now reads "Save as snippet"
-      // like the other ten cards
       const labels = Array.from(toolbar.querySelectorAll('button')).map((button) => button.getAttribute('aria-label'))
       expect(labels).toEqual(['Edit', 'Save as snippet'])
       expect(toolbar.querySelectorAll('button svg')).toHaveLength(2)

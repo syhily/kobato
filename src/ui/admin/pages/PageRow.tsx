@@ -73,7 +73,6 @@ export function PageRow({ page }: PageRowProps) {
       )}
       data-deleted={isDeleted || undefined}
     >
-      {/* Thumbnail */}
       <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {page.cover ? (
           <Image src={page.cover} alt="" width={200} height={125} className="size-full object-cover" loading="lazy" />
@@ -84,9 +83,7 @@ export function PageRow({ page }: PageRowProps) {
         )}
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
-        {/* Title */}
         <Link
           to={`/editor/page/${page.id}`}
           className="truncate font-semibold text-(--text-admin-base) hover:underline"
@@ -94,7 +91,6 @@ export function PageRow({ page }: PageRowProps) {
           {page.title}
         </Link>
 
-        {/* Meta */}
         <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
           <span className="font-mono">/{page.slug}</span>
           {' · '}
@@ -103,13 +99,11 @@ export function PageRow({ page }: PageRowProps) {
           {dateText}
         </p>
 
-        {/* Status */}
         <div className="mt-1">
           <PageStatusText page={page} />
         </div>
       </div>
 
-      {/* Comment count */}
       <Link
         to={`/admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}
         className="hidden w-(--spacing-admin-col-narrow) shrink-0 items-center gap-1 text-(--text-admin-sm) text-muted-foreground transition-colors hover:text-foreground md:flex"
@@ -118,7 +112,6 @@ export function PageRow({ page }: PageRowProps) {
         <span className="tabular-nums">{page.commentCount}</span>
       </Link>
 
-      {/* CTA button */}
       <Link
         to={`/editor/page/${page.id}`}
         className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"

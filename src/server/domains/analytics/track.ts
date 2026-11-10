@@ -9,12 +9,10 @@ import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { isBot } from '@/shared/utils/is-bot'
 
-// Single owner of "what counts as a view": one call fans out to the
-// per-entity counter and the time-series access log. Prefetch and admin
-// visits (unless `trackAdmin`) never write; bots land in the time-series
-// only when `keepBotRows` is on (the counter still bumps). Every gate is
-// synchronous; only the enrich → push tail is async, so the caller gets
-// the event id (the ADR-0006 beacon join key) back immediately.
+// Single owner of "what counts as a view": one call fans out to the per-entity
+// counter and the time-series access log. Every gate is synchronous; only the
+// enrich → push tail is async, so the caller gets the event id (the client
+// beacon's join key) back immediately.
 
 const log = getLogger('analytics.track')
 
@@ -49,21 +47,13 @@ export async function flushTrackedEvents(): Promise<void> {
 }
 
 export interface TrackPageViewOptions {
-  /** Override the event id; defaults to the request's minted id (tests only). */
+  /** Tests only: override the request's minted event id. */
   eventId?: string
-  /** Override the request timestamp; defaults to `new Date()` at call time. */
   now?: Date
-  /** Skip the bot check (useful in tests). */
+  /** Skip the bot check (tests only). */
   skipBotFilter?: boolean
-  /**
-   * Pre-resolved session role; admin visits are skipped unless
-   * "记录管理员访问" (`trackAdmin`) is on. Covers BOTH signals.
-   */
+  /** Admin visits are skipped unless `trackAdmin` is on. */
   isAdmin?: boolean
-  /**
-   * Pre-resolved client address from the Hono middleware context.
-   * Falls back to `'unknown'` when not provided.
-   */
   clientAddress?: string
 }
 
@@ -89,7 +79,6 @@ export function trackPageView(
       return null
     }
 
-    // Counter signal — the gates above have already passed.
     if (target !== null) {
       bumpPageView(target)
     }
@@ -97,8 +86,8 @@ export function trackPageView(
     const ip = options.clientAddress ?? 'unknown'
     const ua = facts.userAgent ?? ''
 
-    // Bot gate BEFORE enrichment: rows `keepBotRows` would drop anyway
-    // must not pay for the GeoIP lookup + salted IP hash.
+    // Bot gate BEFORE enrichment: rows `keepBotRows` would drop anyway must
+    // not pay for the GeoIP lookup + salted IP hash.
     if (isBot(ua) && !analytics.keepBotRows && !options.skipBotFilter) {
       return null
     }

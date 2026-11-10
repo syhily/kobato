@@ -13,9 +13,7 @@ function isRealtimeEvent(value: unknown): value is RealtimeEvent {
   )
 }
 
-// EventSource hook for the realtime tail: rolling buffer + connecting / live /
-// lost state; native reconnects resend from a stale `since`, so the merge dedupes.
-/** Identity of one event for reconnect dedup (audit P1-20). */
+/** Identity of one event for reconnect dedup. */
 function eventKey(event: RealtimeEvent): string {
   return [event.ts, event.path, event.country, event.city, event.browser, event.os, event.deviceType, event.isBot].join(
     '\n',
@@ -31,7 +29,7 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
   const [events, setEvents] = useState<RealtimeEvent[]>([])
   const [state, setState] = useState<'connecting' | 'live' | 'lost'>('connecting')
   const lastSeenRef = useRef<string | null>(null)
-  // Floor at the server replay tail (queryRealtimeTail's LIMIT 50) — a smaller buffer would truncate a reconnect's replay (fix-review).
+  // Floor at the server replay tail (queryRealtimeTail's LIMIT 50) — a smaller buffer truncates a reconnect's replay.
   const size = Math.max(bufferSize, 50)
 
   useEffect(() => {

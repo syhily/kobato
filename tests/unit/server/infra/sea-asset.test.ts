@@ -5,9 +5,8 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { readAssetTextOrDisk } from '@/server/infra/sea-asset'
 
-// Unit tests for the SEA/disk asset text reader. Vitest never runs as a
-// single executable, so `readAssetTextOrDisk` always takes the disk path
-// here (the VFS branch only exists inside the binary's mount).
+// Vitest never runs as a single executable, so `readAssetTextOrDisk` always takes the disk
+// path here; the VFS branch only exists inside the binary's mount.
 
 const tmpDirs: string[] = []
 

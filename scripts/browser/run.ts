@@ -1,15 +1,8 @@
-// Real-browser journey orchestrator (`pnpm run test:browser`).
-//
-// Two modes, one contract:
-//  - external: KOBATO_BROWSER_BASE_URL points at an already-running instance
-//    (e.g. `pnpm run dev`); admin credentials come from the same env block.
-//  - managed: no external URL → boot the built SEA binary against per-run
-//    temp dirs (the same lifecycle as `scripts/sea/e2e.ts`), seed a known
-//    admin, and run Playwright against it. Nothing reads a real kobato config
-//    or a secret from the user's machine.
-//
-// Playwright itself is invoked with the KOBATO_BROWSER_* env contract; the
-// tests reach the instance over real HTTP and drive a real Chromium.
+// Real-browser journey suite (`pnpm run test:browser`). Two modes:
+// external — KOBATO_BROWSER_BASE_URL points at an already-running instance,
+// admin credentials from the same env block; managed — no URL, boot the built
+// SEA binary against per-run temp dirs. Nothing reads a real kobato config or
+// a secret from the user's machine.
 
 import bcrypt from 'bcryptjs'
 import { spawnSync } from 'node:child_process'
@@ -45,10 +38,9 @@ function uniquePostSlug() {
 }
 
 /**
- * Relax the rate-limit buckets the suite would trip mid-run (one shared
- * instance, one source IP, repeated page loads): sign-in, OTP, resource. The
- * row carries the full bucket table because hydration validates it against the
- * section schema. Same rationale as `scripts/sea/e2e.ts`.
+ * Relax the rate-limit buckets the suite would trip (one shared instance, one
+ * source IP, repeated page loads). The row carries the full bucket table
+ * because hydration validates it against the section schema.
  */
 function relaxRateLimits(databasePath: string) {
   const relaxed = {
@@ -78,7 +70,7 @@ function runPlaywright(extraEnv: Record<string, string>) {
   const result = spawnSync('pnpm', args, {
     cwd: repoRoot,
     stdio: 'inherit',
-    // pnpm is a .cmd shim on Windows — see scripts/sea/exec.ts.
+    // pnpm is a .cmd shim on Windows.
     shell: process.platform === 'win32',
     env: {
       ...process.env,

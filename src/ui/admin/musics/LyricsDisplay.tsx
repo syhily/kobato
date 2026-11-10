@@ -61,14 +61,11 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
     return 0
   }, [currentTime, lines])
 
-  // Scroll position the in-flight programmatic smooth scroll is heading to;
-  // `null` when no auto-scroll is active. A boolean flag fails here because a
-  // smooth scroll fires a whole stream of scroll events — only the first one
-  // would be ignored and the rest would read as user scrolls, suppressing
-  // auto-scroll for 3s after every programmatic jump.
+  // Target of the in-flight programmatic smooth scroll; `null` when idle. A
+  // boolean flag fails: a smooth scroll fires a stream of scroll events, and
+  // all but the first would read as user scrolls.
   const autoScrollTargetRef = useRef<number | null>(null)
 
-  // Detect user manual scroll and pause auto-scroll briefly
   useEffect(() => {
     const container = containerRef.current
     if (!container) {
@@ -77,8 +74,7 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
 
     const handleScroll = () => {
       if (autoScrollTargetRef.current !== null) {
-        // Programmatic smooth scroll in flight: keep ignoring events until
-        // the container lands on the target.
+        // Smooth scroll in flight: ignore events until the container lands on the target.
         if (Math.abs(container.scrollTop - autoScrollTargetRef.current) > 1) {
           return
         }
@@ -94,8 +90,7 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
       }, 3000)
     }
 
-    // Direct user input during a smooth scroll cancels the programmatic
-    // suppression, so the user's own scroll events start the 3s pause.
+    // Direct user input during a smooth scroll cancels the suppression, so the user's own scrolls start the 3s pause.
     const cancelAutoScroll = () => {
       autoScrollTargetRef.current = null
     }
@@ -113,7 +108,6 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
     }
   }, [])
 
-  // Auto-scroll to keep current line centered
   useEffect(() => {
     if (isUserScrollingRef.current) {
       return
@@ -123,8 +117,7 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
     if (!container) {
       return
     }
-    // The rendered <p> order matches `lines`, so the index addresses the
-    // current line's element directly — no ref needed.
+    // The rendered <p> order matches `lines`, so the index addresses the current line's element directly.
     const lineEl = container.querySelectorAll<HTMLParagraphElement>('p')[currentLineIndex]
     if (!lineEl) {
       return
@@ -133,8 +126,7 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
     const containerRect = container.getBoundingClientRect()
     const lineRect = lineEl.getBoundingClientRect()
     const relativeTop = lineRect.top - containerRect.top + container.scrollTop
-    // Clamp to the reachable range so the suppression target matches the
-    // position the browser actually scrolls to.
+    // Clamp to the reachable range so the suppression target matches where the browser actually lands.
     const maxScroll = container.scrollHeight - container.clientHeight
     const targetScroll = Math.max(0, Math.min(relativeTop - containerRect.height / 2 + lineRect.height / 2, maxScroll))
 

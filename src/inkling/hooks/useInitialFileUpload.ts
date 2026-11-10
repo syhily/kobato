@@ -12,9 +12,8 @@ export interface UseInitialFileUploadOptions {
 }
 
 /**
- * The one initial-file kickoff effect (plan 045), replacing four copies with
- * four divergent guards. Fires once on mount when an `initialFile` was handed
- * to the card and the card's guard allows it.
+ * The one initial-file kickoff effect: fires once on mount when an `initialFile`
+ * was handed to the card and the card's guard allows it.
  */
 export function useInitialFileUpload({ initialFile, isReady, run }: UseInitialFileUploadOptions): void {
   React.useEffect(() => {
@@ -22,7 +21,7 @@ export function useInitialFileUpload({ initialFile, isReady, run }: UseInitialFi
       run(initialFile)
     }
 
-    // We only do this for init
+    // init-only kickoff — mount-only deps are deliberate
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }

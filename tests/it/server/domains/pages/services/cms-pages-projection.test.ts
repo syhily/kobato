@@ -5,8 +5,7 @@ import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 
 // Projection-layer tests, mock-free (pure data shaping): legacy/malformed
-// bodies degrade without throwing (no read path renders them anymore; the
-// R15 backfill converts them) and the DTO shape stays stable (id
+// bodies degrade without throwing, and the DTO shape stays stable (id
 // stringification, ISO dates).
 
 const { toCmsPage } = await import('@/server/domains/pages/projection')

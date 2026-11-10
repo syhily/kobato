@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { renderToHtml } from '#/_helpers/render'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
-// Base UI's `<Select.Value>` renders the RAW value by default, so call sites
-// must resolve a label via `items` on `<Select>` or a `<SelectValue>` child
-// function — these tests pin the mechanism (see the static contract test in
-// tests/unit/contract/select-value-label.test.ts).
+// Base UI's `<Select.Value>` renders the RAW value by default, so call sites resolve a
+// label via `items` on `<Select>` or a `<SelectValue>` child function. Pinned statically
+// in tests/unit/contract/select-value-label.test.ts.
 
 describe('Select value label resolution', () => {
   it('renders the selected item label when `items` is provided', () => {

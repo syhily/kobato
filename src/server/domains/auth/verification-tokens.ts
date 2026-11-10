@@ -12,8 +12,7 @@ const log = getLogger('verification-tokens')
 const RESET_TTL_MS = 15 * 60 * 1000
 const SETUP_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
-// Purpose tags persisted to `verification.purpose`; new values must be
-// added here so the type system catches typos at call sites.
+// Purpose tags persisted to `verification.purpose`; new values go here so typos fail type-check.
 export type TokenPurpose = 'password-reset' | 'author-invite' | 'signin-otp' | 'signin-link'
 
 export interface TokenResult {
@@ -77,8 +76,7 @@ function validatedTokenRow(
 }
 
 /**
- * Read-only token check — does NOT delete the row; the destructive
- * {@link consumeToken} is reserved for the action.
+ * Read-only token check; the destructive {@link consumeToken} is reserved for the action.
  */
 export async function peekToken(db: Database, rawToken: string, purpose: TokenPurpose): Promise<ValidatedToken | null> {
   if (!TOKEN_LEN_RE.test(rawToken)) {
@@ -103,8 +101,8 @@ export async function peekToken(db: Database, rawToken: string, purpose: TokenPu
 }
 
 /**
- * Delete the row matching `rawToken`; returns `{ userId }` only when the
- * row exists, is unexpired, and matches the purpose. Single-shot.
+ * Delete the row matching `rawToken` and return `{ userId }` only when it existed,
+ * was unexpired, and matched the purpose. Single-shot.
  */
 export async function consumeToken(
   db: Database,
@@ -137,8 +135,8 @@ export async function purgeExpired(db: Database): Promise<number> {
   return Number(result.changes)
 }
 
-// 6-digit OTPs (~20 bits) must not be stored as bare sha256 — each is
-// salted with a per-token random 16-byte hex string.
+// 6-digit OTPs (~20 bits) must not be stored as bare sha256; each is salted with
+// a per-token random 16-byte hex string.
 
 export const OTP_TTL_MS = 5 * 60 * 1000
 export const OTP_TTL_MINUTES = OTP_TTL_MS / (60 * 1000)
@@ -163,7 +161,7 @@ export interface OtpTokenResult {
 }
 
 /**
- * Issue a 6-digit OTP; stored as `salt:hash`, looked up by
+ * Issue a 6-digit OTP stored as `salt:hash`; the row is looked up by
  * `(purpose='signin-otp', userId)`, never by value.
  */
 export async function issueOtpToken(db: Database, userId: number): Promise<OtpTokenResult> {

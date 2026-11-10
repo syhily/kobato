@@ -4,12 +4,10 @@ import type { Logger } from '@/server/infra/logger'
 import { jobDb, registerJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
 
-// Single owner of the webmention queue-loop mechanics; the outbox / inbox /
-// reverify scheduler modules were line-for-line clones of this. They keep
-// their own exported seams (MIN_DELAY_MS constants + enqueue-path nudges)
-// and supply policy through the closures below — `name` must stay
-// `webmentions.<queue>`: the logger scope and the batch log line derive
-// from it.
+// Single owner of the webmention queue-loop mechanics. Callers keep their own
+// exported seams (MIN_DELAY_MS constants + enqueue-path nudges) and supply
+// policy through the closures below — `name` must stay `webmentions.<queue>`:
+// the logger scope and the batch log line derive from it.
 
 export interface QueueSchedulerOptions {
   /** `webmentions.<queue>` — logger scope is `${name}-scheduler`. */

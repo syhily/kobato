@@ -1,10 +1,7 @@
-// Date formatter primitives shared between SSR and the client bundle.
-// Built on date-fns + @date-fns/tz: `TZDate` carries the site-configured
-// time zone (runtime DB-backed config), so callers thread it in.
-//
-// Display formatting (relative-time buckets, numbers, byte sizes, durations)
-// lives in `@/shared/i18n/format` (explicit locale); this module keeps the
-// site-zone date primitives and the `formatShowDate` compatibility wrapper.
+// Site-zone date primitives on date-fns + @date-fns/tz: `TZDate` carries the
+// runtime settings time zone. Display formatting (relative buckets, numbers,
+// byte sizes, durations) lives in `@/shared/i18n/format`; this module keeps
+// `formatShowDate` and the primitives below.
 
 import { TZDate } from '@date-fns/tz'
 import { format as formatZonedDate } from 'date-fns'
@@ -49,10 +46,9 @@ export function localDateParts(source: Date, locale: string, timeZone: string): 
 
 /**
  * Compatibility wrapper for the post-list/user-table date column. The relative
- * bucket policy (today/yesterday, 2/7/30/210-day thresholds) lives in
- * `formatRecentDate`; only the configured-pattern fallback is site-local.
- * `now` defaults to the runtime clock; pass an ISO string from the route
- * loader so SSR and hydration agree.
+ * bucket policy lives in `formatRecentDate`; only the configured-pattern
+ * fallback is site-local. Pass `now` as an ISO string from the route loader so
+ * SSR and hydration agree.
  */
 export function formatShowDate(date: Date, config: FormatterLocale, now?: Date | string): string {
   const { locale, timeZone } = pickLocale(config)
@@ -69,12 +65,10 @@ export function formatLocalDate(source: string | Date, format: string | undefine
   if (pattern === null) {
     return zonedDateFormatter(locale, timeZone).format(zoned)
   }
-  // The format string is USER-SUPPLIED (stored in settings): only the nine
-  // documented tokens are substituted, and only inside maximal ASCII letter
-  // runs (punctuation, whitespace and non-ASCII letters delimit them), so it
-  // never reaches date-fns — every other character renders verbatim. One fixed
-  // canonical pattern computes all nine values (the dayPeriod needs the locale,
-  // everything else does not).
+  // User-supplied settings pattern: only the nine documented tokens are
+  // substituted, and only inside maximal ASCII letter runs — it never reaches
+  // date-fns, so every other character renders verbatim. One canonical pattern
+  // computes all nine values (only the dayPeriod needs the locale).
   const canonical = formatZonedDate(zoned, 'yyyy MM dd HH hh mm ss a', { locale: dateFnsLocaleFor(locale) })
   const [year, month, day, hour24, hour12, minute, second, dayPeriod] = canonical.split(' ')
   const values = {
@@ -112,18 +106,10 @@ function matchTokenAt(run: string, index: number): MultiCharacterToken | undefin
   return MULTI_CHARACTER_TOKENS.find((token) => run.startsWith(token, index))
 }
 
-/**
- * Substitution inside one maximal `[A-Za-z]+` run.
- *
- * A run is parsed greedily from its first character. `a` is a token only when
- * the WHOLE run is `a`; the other tokens are matched longest-first at the
- * current position. Runs that do not begin with a token are literal words
- * (`add`, `summary`, `ALLOW`, `class`) and stay verbatim. After at least one
- * token, an unmatched character is emitted verbatim and scanning continues:
- * fully adjacent runs substitute every token (`yyyyMMdd`, `HHmm`, `ssLL`) and
- * a literal letter inside a compact run does not stop it (`ddTHH` → day + `T` +
- * hour, as in `yyyy-MM-ddTHH:mm`).
- */
+// Substitution inside one maximal `[A-Za-z]+` run: `a` is a token only when the
+// whole run is `a`, other tokens match longest-first, a non-token run stays a
+// literal word; after a token, unmatched characters are emitted verbatim and
+// scanning continues (`ddTHH` → day + `T` + hour).
 function formatLetterRun(run: string, values: Record<DateToken, string>): string {
   if (run === 'a') {
     return values.a
@@ -151,8 +137,8 @@ function formatLetterRun(run: string, values: Record<DateToken, string>): string
 const ASCII_LETTER_RUN = /[A-Za-z]+/g
 
 // Construction reads locale data, so it is cached per immutable
-// (locale, timeZone) pair rather than rebuilt for every list row. FIFO-evict
-// bounded like the other process-level Intl caches (ADR-0002).
+// (locale, timeZone) pair rather than rebuilt for every list row; FIFO-evict
+// bounded like the other process-level Intl caches.
 const ZONED_DATE_FORMATTER_CAP = 8
 const zonedDateFormatters = createBoundedMap<string, Intl.DateTimeFormat>(ZONED_DATE_FORMATTER_CAP)
 

@@ -16,7 +16,7 @@ interface PendingFriendRowProps {
   onDelete: () => void
 }
 
-// Pending-review row: poster fallback, 待审核 badge, approve action (disabled until a valid poster exists).
+// Approve stays disabled until a valid poster exists.
 export const PendingFriendRow = memo(function PendingFriendRow({
   friend,
   disabled,
@@ -31,7 +31,6 @@ export const PendingFriendRow = memo(function PendingFriendRow({
 
   return (
     <div className="group relative flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50">
-      {/* Cover (or placeholder when the applicant had none) */}
       <div className="relative aspect-3/1 w-40 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {hasPoster ? (
           <img
@@ -48,7 +47,6 @@ export const PendingFriendRow = memo(function PendingFriendRow({
         )}
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
         <button
           type="button"
@@ -82,14 +80,12 @@ export const PendingFriendRow = memo(function PendingFriendRow({
         </p>
       </div>
 
-      {/* Status */}
       <div className="hidden w-admin-col-narrow shrink-0 justify-end md:flex">
         <Badge variant="outline" className="gap-1 text-muted-foreground">
           {t('admin.friends.row.pending')}
         </Badge>
       </div>
 
-      {/* Approve */}
       <button
         type="button"
         onClick={onApprove}
@@ -101,7 +97,6 @@ export const PendingFriendRow = memo(function PendingFriendRow({
         <CheckIcon className="size-4" />
       </button>
 
-      {/* Edit */}
       <button
         type="button"
         onClick={onEdit}
@@ -112,7 +107,6 @@ export const PendingFriendRow = memo(function PendingFriendRow({
         <SquarePenIcon className="size-4" />
       </button>
 
-      {/* Delete */}
       <button
         type="button"
         onClick={onDelete}

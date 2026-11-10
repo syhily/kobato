@@ -18,8 +18,8 @@ import { createRenderContext } from '@/inkling/nodes/base/render-context'
 
 /**
  * The capability probe half of the guard below: the opt-in method existing
- * as a function is the runtime narrowing, so the predicate needs no
- * assertion (a plain entity like TKNode carries no such method).
+ * as a function is the runtime narrowing (a plain entity like TKNode carries
+ * no such method).
  */
 function hasInlineMarkupProbe(node: LexicalNode): node is LexicalNode & InlineMarkupTextEntity {
   return 'isInlineMarkupEntity' in node && typeof node.isInlineMarkupEntity === 'function'
@@ -28,30 +28,24 @@ function hasInlineMarkupProbe(node: LexicalNode): node is LexicalNode & InlineMa
 /**
  * The inline-markup-entity protocol guard (`@/inkling/nodes/base/export-dom`): a
  * TextNode entity that opts in exports element markup spliced into the text
- * flow instead of joining the pending text run. FootnoteRefNode is the
- * first implementor; TKNode (a plain text entity) does not opt in and keeps
- * flowing through TextContent.
+ * flow instead of joining the pending text run. TKNode does not opt in and
+ * keeps flowing through TextContent.
  */
 function $isInlineMarkupTextEntity(node: LexicalNode): node is TextNode & InlineMarkupTextEntity {
   return $isTextNode(node) && hasInlineMarkupProbe(node) && node.isInlineMarkupEntity() === true
 }
 
 export default function $convertToHtmlString(editor: LexicalEditor, options: ExportDOMOptions = {}): string {
-  // One read-only render context per string render — the only export-time
-  // view the element transformers and TextContent receive (plan 042). Card
-  // exportDOM builds its own context per call.
+  // One read-only render context per string render — the only export-time view
+  // the element transformers and TextContent receive. Card exportDOM builds its
+  // own context per call.
   //
-  // The string layer itself stays verbatim — that is a deliberate design
-  // decision, not an oversight. Sanitization happens inside the card
-  // renderers via the render context (`sanitizeBasicHtml` / `sanitizeCardHtml`
-  // / `escapeText`) before markup reaches this layer, so the innerHTML /
-  // outerHTML / value concatenation below needs no sanitize pass of its own.
-  // Do NOT add a blanket sanitize here: it would double-escape markup the
-  // renderers already sanitized.
+  // The string layer itself stays verbatim: sanitization happens inside the card
+  // renderers via the render context (`sanitizeBasicHtml` / `sanitizeCardHtml` /
+  // `escapeText`) before markup reaches this layer. Do NOT add a blanket
+  // sanitize here — it would double-escape markup the renderers already
+  // sanitized.
   const context = createRenderContext(options)
-
-  // The recursion closes over the per-render triple (editor, options,
-  // context): fixed for the whole pass, so it is not re-passed per level.
 
   // The one type dispatch every exportDOM splice goes through — top-level
   // cards and inline markup (entities and decorators) alike: 'inner' takes
@@ -79,10 +73,10 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
   // Inline markup (text entities and inline decorators) exports through the
   // same per-node exportDOM dispatch the cards get, with the options bag
   // flowing so headless renders resolve their DOM. The base-class exportDOM
-  // signature takes no options parameter; inkling's inline exporters
-  // (FootnoteRefNode/MathInlineNode) declare the two-parameter form, and the
-  // protocol interface (`@/inkling/nodes/base/export-dom`) carries it, so
-  // both call sites below reach the exporter through plain narrowing.
+  // signature takes no options parameter; inkling's inline exporters declare
+  // the two-parameter form and the protocol interface
+  // (`@/inkling/nodes/base/export-dom`) carries it, so both call sites below
+  // reach the exporter through plain narrowing.
   function exportInlineMarkup(node: LexicalNode & InlineMarkupExporter): string {
     return renderExportOutput(node.exportDOM(editor, options))
   }
@@ -140,8 +134,8 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
       } else if ($isLineBreakNode(child) || $isTextNode(child) || $isLinkNode(child)) {
         textContent.addNode(child)
       } else if ($isDecoratorNode(child) && child.isInline()) {
-        // Inline decorators (the math inline node is the first) splice into
-        // the text flow through the same exportDOM dispatch.
+        // Inline decorators splice into the text flow through the same
+        // exportDOM dispatch.
         output.push(exportInlineMarkup(child))
       } else if ($isElementNode(child)) {
         output.push(exportChildren(child))
@@ -157,12 +151,12 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
 
   const output: string[] = []
   const children: LexicalNode[] = $getRoot().getChildren()
-  // null results (bare inline nodes as root children, :65) never reach
-  // output, so children indices and output indices diverge — keep the map
-  // for the trailing-paragraph splice below and the post-processors (the
-  // seam's contract, `@/inkling/html/renderer/post-process`). Dev Lexical
-  // rejects such trees at RootNode.splice, but prod builds strip that
-  // guard, so a malformed headless import can still produce them there.
+  // null results (bare inline nodes as root children) never reach output, so
+  // children indices and output indices diverge — keep the map for the
+  // trailing-paragraph splice below and the post-processors (the seam's
+  // contract, `@/inkling/html/renderer/post-process`). Dev Lexical rejects
+  // such trees at RootNode.splice, but prod builds strip that guard, so a
+  // malformed headless import can still produce them there.
   const outputIndexByChild: number[] = []
 
   for (const child of children) {
@@ -174,10 +168,10 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     }
   }
 
-  // Inkling keeps a blank paragraph at the end of a doc but we want to
-  // make sure it doesn't get rendered. A post-processor's doc-end trailing
-  // run (the footnote definition run) sits after it, so walk back past the
-  // claimed run nodes to the last prose element before checking.
+  // Inkling keeps a blank paragraph at the end of a doc; it must not render.
+  // A post-processor's doc-end trailing run (the footnote definition run)
+  // sits after it, so walk back past the claimed run nodes to the last prose
+  // element before checking.
   let lastProseIndex = children.length - 1
   while (lastProseIndex >= 0 && isTrailingRunNode(children[lastProseIndex])) {
     lastProseIndex -= 1
@@ -198,9 +192,9 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     }
   }
 
-  // Declarative post-processing: each subsystem's registered post-processor
-  // gets one pass over the assembled outputs (the footnotes `<section>` wrap
-  // lives in `@/inkling/nodes/footnote/footnote-html-export`).
+  // Each subsystem's registered post-processor gets one pass over the
+  // assembled outputs (the footnotes `<section>` wrap lives in
+  // `@/inkling/nodes/footnote/footnote-html-export`).
   for (const processor of HTML_POST_PROCESSORS) {
     processor.process({ children, output, outputIndexByChild, context })
   }

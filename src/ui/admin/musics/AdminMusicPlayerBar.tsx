@@ -56,7 +56,6 @@ export function AdminMusicPlayerBar() {
   return (
     <div className={cn('relative z-[1100] h-20 shrink-0 border-t border-line', 'bg-canvas/95 backdrop-blur-xl')}>
       <div className="flex h-full items-center px-4">
-        {/* Left: Cover + Info */}
         <LazyAnimatePresence mode="wait" initial={false} custom={direction}>
           <LazyMotionDiv
             key={currentTrack.id}
@@ -86,7 +85,6 @@ export function AdminMusicPlayerBar() {
           </LazyMotionDiv>
         </LazyAnimatePresence>
 
-        {/* Center: Controls + Progress */}
         <div className="flex flex-1 flex-col items-center gap-1">
           <div className="flex items-center gap-4">
             <button
@@ -132,7 +130,6 @@ export function AdminMusicPlayerBar() {
           </div>
         </div>
 
-        {/* Right: Volume + Close */}
         <div className="flex w-auto min-w-0 items-center justify-end gap-3 md:w-[30%]">
           <div className="group/volume relative flex items-center">
             <button
@@ -143,7 +140,6 @@ export function AdminMusicPlayerBar() {
             >
               {muted || volume === 0 ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
             </button>
-            {/* Vertical volume slider — appears on hover with delay */}
             <div className="pointer-events-none absolute right-1/2 bottom-full translate-x-1/2 pb-2 opacity-0 transition-opacity delay-100 duration-200 group-hover/volume:pointer-events-auto group-hover/volume:opacity-100">
               <div className="flex h-28 w-8 flex-col items-center justify-center rounded-lg bg-surface-dim p-2 shadow-lg">
                 <ProgressSlider

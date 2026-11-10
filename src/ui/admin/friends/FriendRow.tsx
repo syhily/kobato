@@ -22,14 +22,9 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
 
   return (
     <div className="group relative flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50">
-      {/* Cover */}
       <div className="relative aspect-3/1 w-40 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
-        {/* Plain <img> instead of the public `<Image>` primitive: the
-            admin list is a low-frequency view and we'd rather not
-            depend on the localization context (`asset.host`) for
-            something this small — the friend's `poster` is already
-            an absolute URL, and the browser handles the lazy
-            decoding. */}
+        {/* Plain <img>: `poster` is already an absolute URL, so the `<Image>`
+            primitive's `asset.host` localization adds nothing here. */}
         <img
           src={friend.poster}
           alt={friend.website}
@@ -39,7 +34,6 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         />
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
         <button
           type="button"
@@ -73,7 +67,6 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         </p>
       </div>
 
-      {/* Visibility */}
       <div className="hidden w-admin-col-narrow shrink-0 justify-end md:flex">
         {friend.visible ? (
           <Badge variant="secondary" className="gap-1">
@@ -86,7 +79,6 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         )}
       </div>
 
-      {/* Edit */}
       <button
         type="button"
         onClick={onEdit}
@@ -97,7 +89,6 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         <SquarePenIcon className="size-4" />
       </button>
 
-      {/* Delete */}
       <button
         type="button"
         onClick={onDelete}

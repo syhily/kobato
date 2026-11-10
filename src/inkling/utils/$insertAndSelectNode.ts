@@ -22,6 +22,5 @@ export const $insertAndSelectNode = ({
   nodeSelection.add(newNode.getKey())
   $setSelection(nodeSelection)
 
-  // an inserted card at the end of the document still needs a trailing paragraph
   $ensureParagraphAfterCard(newNode)
 }

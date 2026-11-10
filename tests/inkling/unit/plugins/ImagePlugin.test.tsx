@@ -77,7 +77,6 @@ describe('Image insert commands (CardInsertPlugin)', () => {
       })
     })
 
-    // Only the original INSERT_MEDIA_COMMAND should have been dispatched
     expect(dispatchCommandSpy).toHaveBeenCalledTimes(1)
   })
 

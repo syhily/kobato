@@ -1,22 +1,16 @@
 import DeviceDetector from 'node-device-detector'
 import ClientHints from 'node-device-detector/client-hints'
 
-// Pure UA → analytics-fields mapping (node-device-detector port). This
-// module deliberately has ZERO kobato-internal imports so the offline
-// history-repair tooling can import it directly by relative path and
-// re-parse stored UAs with the exact production logic.
+// Pure UA → analytics-fields mapping (node-device-detector port) with ZERO
+// kobato-internal imports, so offline history-repair tooling can import it by
+// relative path and re-parse stored UAs with the exact production logic.
 //
-// Field vocabularies continue the ua-parser-js era so historical and new
-// rows stay comparable on the dashboard:
-// - os/browser names normalized to the historical spellings (macOS, Edge,
-//   Mobile Chrome, …) where node-device-detector diverges
-// - deviceType: mobile / tablet / desktop / wearable / smarttv / console /
-//   embedded — node-device-detector detects `desktop` natively, which the
-//   old parser never reported
-// - browserType keeps the crawler/fetcher/inapp/email/mediaplayer/library
-//   vocabulary the bot gate in `enrich.ts` consumes
-// - device is the marketing name ("Samsung Galaxy S20 5G"), never a raw
-//   model number, and never ua-parser-js's bogus "Macintosh" / "K"
+// Field vocabularies must stay comparable with historical rows: os/browser
+// names normalized to the historical spellings (macOS, Edge, Mobile Chrome, …),
+// deviceType from mobile/tablet/desktop/wearable/smarttv/console/embedded,
+// browserType from crawler/fetcher/inapp/email/mediaplayer/library (consumed by
+// the bot gate in `enrich.ts`), and device is the marketing name, never a raw
+// model number.
 
 export interface UaClientHints {
   /** `Sec-CH-UA-Model` — high-entropy, sent only after an `Accept-CH` opt-in. */
@@ -119,13 +113,10 @@ function normalizePlatformHint(hint: string | null | undefined): string | null {
 export const UNKNOWN_UA_LABEL = 'Unknown device'
 
 /**
- * Short session-list label, rendered server-side because the full
- * node-device-detector dataset must never enter the browser bundle. Shares
- * this module's detector instance with the analytics dimension parser — one
- * configured engine for the whole server. `platformHint` (`Sec-CH-UA-Platform`)
- * wins over the parsed OS because desktop-mode iOS sends a macOS-like UA.
- * Browser/OS names run through the same normalization maps as the analytics
- * dimensions so both surfaces spell them identically.
+ * Short session-list label, rendered server-side because the detector dataset
+ * must never enter the browser bundle. Shares this module's configured detector
+ * instance. `platformHint` (`Sec-CH-UA-Platform`) wins over the parsed OS
+ * because desktop-mode iOS sends a macOS-like UA.
  */
 export function formatUaLabel(
   ua: string | null | undefined,
@@ -210,9 +201,8 @@ function toRawHints(hints: UaClientHints): Record<string, string> {
 
 const EMPTY_RESULT: ParsedUaFields = { os: null, browser: null, browserType: null, device: null, deviceType: null }
 
-// UA strings repeat heavily across requests (production: ~2.2k distinct
-// values); node-device-detector runs thousands of regexes per parse, so a
-// small LRU is the difference between negligible and hot.
+// UA strings repeat heavily (~2.2k distinct values in production) and the
+// detector runs thousands of regexes per parse, so a small LRU pays off.
 const CACHE_CAP = 5000
 const cache = new Map<string, ParsedUaFields>()
 
@@ -229,8 +219,8 @@ export function parseUaFields(ua: string, hints?: UaClientHints): ParsedUaFields
 
   const parsedHints = withHints ? hintsParser.parse(toRawHints(withHints), {}) : {}
   const result = detector.detect(ua, parsedHints)
-  // Bot classification lives in a separate parser (`detect()` never merges
-  // it); its category maps onto the historical crawler/fetcher vocabulary.
+  // Bot classification lives in a separate parser (`detect()` never merges it);
+  // its category maps onto the historical crawler/fetcher vocabulary.
   const bot = detector.parseBot(ua, {}) as { name?: string; category?: string }
 
   const osName = result.os?.name || null

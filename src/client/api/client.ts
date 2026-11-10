@@ -11,18 +11,11 @@ export function setCsrfToken(token: string) {
   csrfStore.token = token
 }
 
-/**
- * Typed oRPC client: every `apiRouter` procedure is a strongly-typed async
- * function; errors normalize as `ORPCError`.
- *
- * Error copy is folded SERVER-side: a domain error's localized issue summary is
- * already part of `ORPCError.message` (and the structured descriptor rides
- * `data`). The client therefore installs no rejection interceptor — re-appending
- * issues here would duplicate the text and drop the request locale.
- */
+// Server folds error copy into ORPCError.message; a rejection interceptor
+// here would duplicate the text and drop the request locale.
 const link = new RPCLink({
-  // RPCLink's `new URL(baseUrl)` throws on relative inputs, so resolve `/rpc`
-  // against `location.origin` lazily per call — never at module load.
+  // RPCLink's new URL() throws on relative inputs; resolve /rpc against
+  // location.origin lazily per call, never at module load.
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
   headers: () => {
     const h: Record<string, string> = {}

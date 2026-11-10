@@ -283,7 +283,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
     expect(control.mutation.mutate).not.toHaveBeenCalledWith({ id: '1' })
     // happy-dom never fires `transitionend`, so Base UI keeps the popup mounted
-    // in its exit phase rather than removing it — assert we entered that phase.
+    // in its exit phase rather than removing it — assert that phase was entered.
     expect(dialog.hasAttribute('data-ending-style')).toBe(true)
   })
 
@@ -353,7 +353,7 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     // The row's accessible name carries the state via the sr-only prefix.
     const rowButton = screen.getByRole('button', { name: /未读/ })
     expect(within(rowButton).getByText('未读：')).toBeTruthy()
-    // The dot is decorative — it no longer carries a label of its own.
+    // The dot is decorative — it carries no label of its own.
     const row = rowButton.closest('li') as HTMLElement
     expect(row.querySelector('span.size-2')?.getAttribute('aria-hidden')).toBe('true')
     expect(screen.queryByLabelText('未读')).toBeNull()

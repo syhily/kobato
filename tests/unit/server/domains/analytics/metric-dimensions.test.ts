@@ -8,9 +8,8 @@ import {
 import { METRIC_DIMENSIONS, dimensionWhere } from '@/server/domains/analytics/services/metric-dimensions'
 import { METRIC_TYPES } from '@/shared/contracts/analytics'
 
-// The dimension registry is the single owner of each metric's display and
-// filter expressions: one entry per MetricType (a new type cannot compile
-// without one), and user values always bind as parameters.
+// One registry entry per MetricType (a new type cannot compile without one); user values
+// always bind as parameters.
 
 const ENV_DIMENSIONS = ['screen', 'viewport', 'dpr', 'touch', 'colorScheme', 'netEffectiveType']
 

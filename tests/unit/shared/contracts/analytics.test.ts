@@ -151,7 +151,7 @@ describe('analytics metric dimensions contract', () => {
   ]
   const ENV_METRICS = ['screen', 'viewport', 'dpr', 'touch', 'colorScheme', 'netEffectiveType']
 
-  it('pins the metric type inventory (blob slots + ADR-0006 environment dims)', () => {
+  it('pins the metric type inventory (blob slots + device-environment dims)', () => {
     expect([...METRIC_TYPES]).toEqual([...BLOB_METRICS, ...ENV_METRICS, 'path'])
   })
 

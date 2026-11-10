@@ -21,8 +21,7 @@ vi.mock('@/inkling/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => <div data-testid="card-caption-editor" />,
 }))
 
-// the store equivalent of the old per-test CardContext factory: the card is
-// selected and not editing unless a test says otherwise
+// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'code-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -33,7 +32,7 @@ function createSelection(
 }
 
 // the code preview's dark/light styling reads the UI-prefs context, a
-// separate lifecycle from the host-integration value (plan 047)
+// separate lifecycle from the host-integration value
 function createUiPrefsValue(darkMode: boolean) {
   return { darkMode, labels: DEFAULT_LABELS }
 }

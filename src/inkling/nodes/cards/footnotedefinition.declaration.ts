@@ -11,12 +11,10 @@ export const footnoteDefinitionDeclaration = checkedCardDeclaration({
   decorateTarget: {
     width: 'regular',
   },
-  // No menu, no insert — the footnote behaviour module
-  // (`@/inkling/plugins/behaviour/footnotes`) creates and orders definitions; the
-  // writer never inserts one from the slash menu.
+  // No menu and no insert entry: the footnote behaviour module creates and orders
+  // definitions, so the writer never inserts one from the slash menu.
   toolbarLabel: 'footnote',
-  // Not in the markdown round-trip —
-  // kobato interop goes through the wire dialect, not public markdown.
+  // Absent from the markdown round-trip: kobato interop uses the wire dialect.
 } satisfies CardDeclaration<
   'footnotedefinition',
   typeof BaseFootnoteDefinitionNode,

@@ -35,7 +35,7 @@ interface EmojiMenuItemProps {
 
 const EmojiMenuItem = function ({ index, isSelected, onClick, onMouseEnter, emoji }: EmojiMenuItemProps) {
   // the typeahead scrolls the selected option into view via option.ref; with a
-  // custom menuRenderFn we must attach each option's ref ourselves — through
+  // custom menuRenderFn each option's ref must be attached manually — through
   // the option's own callback ref, invoked at commit (no render-time mutation)
   const attachRef = React.useCallback(
     (element: HTMLLIElement | null) => {
@@ -139,8 +139,8 @@ export function EmojiPickerPlugin() {
     queryRef.current = queryString
   }, [queryString])
 
-  // handle exact match typed like :emoji:
-  //  the typeahead menu does not account for exact matches/closing characters
+  // the typeahead menu does not account for an exact match typed like
+  // :emoji: — this closes it
   React.useEffect(() => {
     return registerEmojiExactMatchCompletion(editor, {
       getQuery: () => queryRef.current,

@@ -15,7 +15,7 @@ fi
 cd "$INCOMING"
 # A cancelled or failed earlier upload can leave stale debs behind, so the
 # glob may match several files — take the newest (the one just rsynced) and
-# sweep the rest so they can never shadow a fresh upload again.
+# sweep the rest so they cannot shadow a fresh upload.
 DEB="$(ls -t kobato_*_amd64.deb 2>/dev/null | head -n 1 || true)"
 if [ -z "$DEB" ] || [ ! -f "$DEB" ]; then
   echo "no kobato_*_amd64.deb in $INCOMING" >&2
@@ -56,7 +56,7 @@ wait_healthy() {
       echo "kobato.service entered the failed state"
       return 1
     fi
-    # Activating (or not yet started) is transient — keep polling.
+    # Activating (or not yet started) is transient.
     sleep 2
   done
   echo "no HTTP response within ${HEALTH_TIMEOUT_S}s"

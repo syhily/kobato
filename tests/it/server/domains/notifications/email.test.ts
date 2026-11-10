@@ -16,8 +16,8 @@ import { user } from '@/server/infra/db/schema/user'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// ADR-0008 delivery: real in-app fan-out + real notification rows; only the
-// Mailgun `fetch` edge is stubbed (same seam as comments/services/email.test.ts).
+// Real in-app fan-out + real notification rows; only the Mailgun `fetch` edge is
+// stubbed (same seam as comments/services/email.test.ts).
 
 const logWarn = vi.hoisted(() => vi.fn())
 const logError = vi.hoisted(() => vi.fn())
@@ -188,7 +188,6 @@ describe('notifications email — direct and admin kinds', () => {
     expect(html).toContain(ZH_NOTICE.format('notification.mail.zeaburCleanup.body'))
     expect(html).toContain('href="https://example.com/admin"')
     expect(html).toContain(NOTIFICATION_EMAIL_FOOTER)
-    // Both admins were resolved as recipients; the author was not.
     expect(secondAdminId).toBeGreaterThan(0)
     expect(authorId).toBeGreaterThan(0)
   })
@@ -215,7 +214,6 @@ describe('notifications email — replies', () => {
     replyToThread(db, viewer(visitorId, 'visitor', 'visitor'), { threadId: root.threadId, body: '回复' })
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
-    // The replier does not email themselves; the admin receives the reply.
     expect(sentMessage(0).get('to')).toBe('admin-1@example.com')
     expect(sentMessage(0).get('subject')).toBe(`您在【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】收到一条新私信`)
     expect(sentMessage(0).get('html')).toContain('回复')
@@ -273,8 +271,6 @@ describe('notifications email — failure isolation', () => {
     const attempted = fetchMock.mock.calls.map((_, index) => String(sentMessage(index).get('to')))
     expect(new Set(attempted)).toEqual(new Set(['admin-1@example.com', 'admin2-2@example.com']))
 
-    // Exactly ONE failure — the first attempt — and the second recipient's
-    // send still happened: one bad address never starves the fan-out.
     expect(logWarn).toHaveBeenCalledTimes(1)
     const warned = logWarn.mock.calls[0]![1] as { reason: string; userId: number }
     expect(warned.reason).toBe('network')
@@ -299,7 +295,6 @@ describe('notifications email — failure isolation', () => {
 
       await vi.waitFor(() => expect(logError).toHaveBeenCalledTimes(1))
       expect(logError.mock.calls[0]![0]).toBe('failed to send notification email')
-      // The remaining recipient was still attempted and delivered.
       await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
       expect(rejectOnce).toHaveBeenCalledTimes(2)
       expect(logWarn).not.toHaveBeenCalled()
@@ -456,8 +451,8 @@ describe('notifications email — descriptor resolution', () => {
     setSiteLocale('en-US')
     await seedUser('admin', 'admin')
 
-    // `Unexpected token '<'` is ordinary job-error text. Encoding used to throw
-    // and swallow the notification; the row and its email must both exist.
+    // `Unexpected token '<'` is ordinary job-error text: encoding must not throw
+    // and swallow the notification, so the row and its email both exist.
     const row = notifyAdmins(db, {
       titleKey: 'notification.job.failed.title',
       titleParams: { taskKey: '<script>alert(1)</script>' },

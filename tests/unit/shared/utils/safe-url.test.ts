@@ -137,7 +137,7 @@ describe('client: safe-url utilities', () => {
     })
 
     it('blocks CGNAT, benchmarking, and IETF assignment ranges', () => {
-      // Aliyun ECS metadata — a plain IPv4 literal that used to pass.
+      // Aliyun ECS metadata — a plain IPv4 literal.
       expect(isBlockedFetchHost('100.100.100.200')).toBe(true)
       expect(isBlockedFetchHost('100.64.0.1')).toBe(true)
       expect(isBlockedFetchHost('100.127.255.255')).toBe(true)

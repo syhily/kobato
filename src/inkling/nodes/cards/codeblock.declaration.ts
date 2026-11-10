@@ -13,9 +13,8 @@ export const codeBlockDeclaration = checkedCardDeclaration({
   decorateTarget: {
     wrapperStyle: 'code-card',
   },
-  // The slash menu entry exists so hosts that compose a trimmed comment-level
-  // surface (no markdown fence typing habit) can still insert a code card;
-  // typing a markdown code fence keeps working on the full surface.
+  // Trimmed comment-level surfaces have no fence-typing habit, so the menu entry
+  // stays available there; the full surface keeps the markdown fence path.
   menu: [
     {
       label: 'Code',
@@ -30,11 +29,10 @@ export const codeBlockDeclaration = checkedCardDeclaration({
   ],
   insert: { openInEditMode: true },
   dragIcon: 'codeblock',
-  // diverges from the node type: the toolbar label is a live e2e selector
-  // contract ("code-block"), not a transform of "codeblock"
+  // Live e2e selector contract ("code-block"), deliberately not a transform of "codeblock"
   toolbarLabel: 'code-block',
-  // Markdown-eligible with no card fence: the code fence is handled
-  // by DEFAULT_TRANSFORMERS (`CODE_BLOCK` in `@/inkling/markdown/transformers`).
+  // Markdown-eligible without a card fence: `CODE_BLOCK` in
+  // `@/inkling/markdown/transformers` owns the fence.
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<
   'codeblock',

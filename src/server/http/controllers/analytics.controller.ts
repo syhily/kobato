@@ -77,8 +77,7 @@ const overview = adminProc
     loadAnalyticsOverview(getAnalyticsReader(), parseAnalyticsSearch(new URLSearchParams(input.search))),
   )
 
-// Mentions page data: top 50 referers for the parsed range — the same
-// `queryMetric('referer', 50)` shape `loaders/mentions.ts` produced.
+// Mentions page data: top 50 referers for the parsed range.
 const mentions = adminProc
   .route({ method: 'GET', path: '/analytics/mentions' })
   .input(adminAnalyticsSearchInputSchema)

@@ -2,9 +2,9 @@ import type { EditorConfig, SerializedTextNode } from 'lexical'
 
 import { TextNode } from 'lexical'
 
-// This is used in places where we need an extra cursor position at the
-// beginning of an element node as it prevents Lexical normalizing the
-// cursor position to the end of the previous node.
+// Used where an element node needs an extra cursor position at its start:
+// it prevents Lexical normalizing the cursor position to the end of the
+// previous node.
 export class ZWNJNode extends TextNode {
   static getType() {
     return 'zwnj'

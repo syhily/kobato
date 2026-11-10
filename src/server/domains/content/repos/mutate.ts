@@ -31,8 +31,8 @@ export interface LockedMeta {
 }
 
 /**
- * Shared transaction prologue for the revision mutations: load the owner
- * meta row (throwing NOT_FOUND when gone) and the latest revision.
+ * Shared transaction prologue for the revision mutations: load the owner meta row
+ * (NOT_FOUND when gone) and the latest revision.
  */
 export function lockMetaAndLoadLatest(
   tx: RevisionTx,
@@ -66,10 +66,7 @@ export interface TokenConflict {
   expectedToken: string
 }
 
-/**
- * The optimistic-concurrency check both mutations run before writing.
- * `undefined` expectation = "no expectation" (skip); `null` never matches.
- */
+/** Optimistic-concurrency check both mutations run before writing. `undefined` expectation = skip; `null` never matches. */
 export function checkTokenConflict(
   latest: ContentRow | undefined,
   input: { expectedClientRevisionToken?: string | null; force?: boolean },
@@ -84,11 +81,9 @@ export function checkTokenConflict(
 }
 
 /**
- * The draft-save no-op short-circuit, shared between the repo's
- * in-transaction check (authoritative) and the lifecycle's projection-skip
- * pre-check (optimization — an equivalent save must not re-pay the jsdom
- * render). Only a PUBLISHED latest can no-op: a draft latest is always
- * rewritten in place.
+ * Draft-save no-op short-circuit, shared by the repo's in-transaction check
+ * (authoritative) and the lifecycle's projection-skip pre-check (optimization).
+ * Only a PUBLISHED latest can no-op: a draft latest is always rewritten in place.
  */
 export function isEquivalentToPublishedLatest(
   latest: ContentRow | undefined,
@@ -109,9 +104,8 @@ export function isEquivalentToPublishedLatest(
 }
 
 /**
- * The single revision-write primitive: conflict check, then an in-place
- * rewrite of the latest DRAFT row or an appended revision at `status`.
- * Returns the conflict for the caller, or the written row.
+ * The single revision-write primitive: conflict check, then an in-place rewrite of
+ * the latest DRAFT row or an appended revision at `status`.
  */
 function writeRevisionRow(
   tx: RevisionTx,

@@ -15,34 +15,21 @@ export type SettingsFlushFn = () => boolean | Promise<boolean> | undefined
 interface SettingsFlushContextValue {
   /** Register a flush fn under a section id. Returns an unregister fn. */
   registerFlush: (sectionId: string, fn: SettingsFlushFn) => () => void
-  /**
-   * Fire-and-forget every registered flush (close / ESC / scroll-away /
-   * page-hide). Rejections are swallowed and logged — these callers cannot
-   * await.
-   */
+  /** Fire-and-forget every registered flush (close / ESC / scroll-away / page-hide); callers cannot await. */
   flushAll: () => void
   /** Fire-and-forget the flush fns registered under `sectionId`. */
   flushSection: (sectionId: string) => void
-  /**
-   * Await every registered flush; true only when EVERY card is clean (all
-   * dirty fields committed). Any validation failure, rejected commit or thrown
-   * flush reports false. Used by the locale switch, which must never reload
-   * with unsaved edits.
-   */
+  /** Await every registered flush; true only when EVERY card is clean. Any failure reports false. */
   flushAllAndWait: () => Promise<boolean>
   /**
-   * Run a cross-card transaction (the locale switch: flush every dirty card →
-   * commit the locale field → reload). While it runs the settings workspace is
-   * marked pending and `inert`, so no other control can be edited and a reload
-   * cannot drop new input. Nested calls share the outer transaction; the flag
-   * clears only when the outermost task settles (including on failure).
+   * Run a cross-card transaction (the locale switch: flush dirty cards →
+   * commit the locale field → reload) with the workspace pending and `inert`.
+   * Nested calls share the outer transaction.
    *
    * `focusAnchor` is the control to re-focus after the window: an explicit
-   * element survives a portal option unmounting (the locale trigger), and an
-   * explicit `null` means "no anchor" (cancelling any unconsumed one). Omitting
-   * it keeps the historic behavior (the active element at start) while
-   * preserving an anchor from a just-finished transaction that has not been
-   * consumed yet.
+   * element survives a portal option unmounting, and an explicit `null` means
+   * "no anchor". Omitting it keeps an unconsumed anchor from a just-finished
+   * transaction, else the active element at start.
    */
   runTransaction: <T>(task: () => T | Promise<T>, focusAnchor?: HTMLElement | null) => Promise<T>
   /** True while a cross-card transaction is in flight. The workspace is inert. */
@@ -121,9 +108,9 @@ export function SettingsFlushProvider({ children }: { children: ReactNode }) {
         // an unconsumed anchor from an earlier transaction.
         restoreFocusRef.current = focusAnchor
       } else if (restoreFocusRef.current === null) {
-        // No explicit anchor and nothing pending: keep the historic behavior
-        // (whatever had focus when the window opened). An unconsumed anchor
-        // from a back-to-back transaction is preserved instead.
+        // No explicit anchor and nothing pending: fall back to whatever had
+        // focus when the window opened. An unconsumed anchor from a
+        // back-to-back transaction is preserved instead.
         const active = document.activeElement
         restoreFocusRef.current = active instanceof HTMLElement && active !== document.body ? active : null
       }

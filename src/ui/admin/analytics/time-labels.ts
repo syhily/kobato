@@ -1,12 +1,6 @@
-// ViewsPoint.time is a bucket LABEL in clientTimezone, not an ISO instant:
-// minute '%Y-%m-%d %H:%M', hour '%Y-%m-%d %H', day '%Y-%m-%d'. These helpers
-// parse labels back to local-time timestamps (chart x values) and format
-// them for tooltips / summaries. Pure functions shared by the chart inner
-// bundle, the welcome card aggregation, and the unit tests.
-//
-// Analytics bucketing stays BROWSER-zoned (never the site zone): the chart
-// passes `getClientTimezone()` explicitly, and the locale always comes from
-// the active UI translator.
+// ViewsPoint.time is a bucket LABEL in clientTimezone, not an ISO instant
+// (minute '%Y-%m-%d %H:%M', hour '%Y-%m-%d %H', day '%Y-%m-%d'); analytics
+// bucketing stays BROWSER-zoned, never the site zone.
 
 import type { TimeUnit } from '@/shared/contracts/analytics'
 import type { AppLocale } from '@/shared/i18n/locales'
@@ -33,7 +27,6 @@ export interface TimeLabelOptions {
   timeZone: string
 }
 
-/** Human-readable label for tooltips and screen-reader summaries. */
 export function formatTimeLabel(unit: TimeUnit, label: string, options: TimeLabelOptions): string {
   const ts = parseTimeLabel(unit, label)
   if (!Number.isFinite(ts)) {

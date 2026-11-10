@@ -18,8 +18,7 @@ declare global {
   const __APP_HOMEPAGE__: string
   const __APP_REPOSITORY__: string
 
-  // Window augmentations for the inkling analytics adapter
-  // (src/inkling/utils/analytics.ts)
+  // Window augmentations for the inkling analytics adapter (src/inkling/utils/analytics.ts).
   interface Window {
     plausible?: ((...args: unknown[]) => void) & { q?: unknown[] }
     posthog?: { capture: (event: string, props?: Record<string, unknown>) => void }

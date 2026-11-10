@@ -2,26 +2,14 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Both editor canvas partials style their surface through `.inkling-lexical`
-// / `.inkling-prose` — but nested card editors (image/gallery captions, code
-// block captions, asides, toggles) render their OWN `.inkling-lexical`
-// wrapper and `.inkling-prose` contentEditable inside the canvas. A bare
-// descendant selector therefore hands each nested editor the canvas geometry:
-//
-// - `src/styles/inkling-editor.css`: `padding: 15vmin 1.5rem 60vh` renders as
-//   a 60vh void under every image caption (pushing the Alt toggle a
-//   screen-height away), `zoom: 0.666667` double-shrinks nested text, and the
-//   article max-width constrains card interiors.
-// - `src/styles/inkling-comment-editor.css`: `min-height: 96px` + the canvas
-//   padding inflate every code-block caption editor in a comment.
-//
-// The canvas geometry rules must stay pinned to the top-level canvas. The
-// page editor pins structurally (the scroll container's direct child — the
-// composer chain renders no intermediate DOM there); the comment editor pins
-// by the typeset preset class, which only the top-level contentEditable
-// carries (the RichTextPlugin mounts an unclassed wrapper between the
-// `.inkling-lexical` wrapper and the contentEditable, so a child combinator
-// cannot reach the comment canvas — verified against the live DOM).
+// Nested card editors (captions, asides, toggles) render their own
+// `.inkling-lexical` wrapper and `.inkling-prose` contentEditable inside the
+// canvas, so a bare descendant selector would hand each nested editor the
+// canvas geometry (60vh padding, zoom, min-height). The page canvas pins by
+// being the scroll container's direct child; the comment canvas pins by the
+// typeset preset class, which only the top-level contentEditable carries (the
+// RichTextPlugin mounts an unclassed wrapper in between, so a child combinator
+// cannot reach it).
 
 const css = readFileSync(resolve(process.cwd(), 'src/styles/inkling-editor.css'), 'utf8')
 const commentCss = readFileSync(resolve(process.cwd(), 'src/styles/inkling-comment-editor.css'), 'utf8')

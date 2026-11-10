@@ -10,11 +10,10 @@ import { rateLimitBounds } from '@/shared/config/defaults'
 // out-of-range value is rejected with the SAME reason on both sides.
 //
 // Messages are typed UI-catalog ids, never prose: the client's settings card
-// localizes ids through `useI18n().localizeMessage` (translating prose and
-// interpolating `{min}`/`{max}` from the Zod issue), and the server boundary
-// maps an id into a `ErrorMessageDescriptor` (typed key + params + English
-// fallback) before the issue leaves the process. A raw id must never reach a
-// client that cannot translate it — that is why the server mapping exists.
+// localizes ids through `useI18n().localizeMessage` (interpolating `{min}`/`{max}`
+// from the Zod issue), and the server boundary maps an id into an
+// `ErrorMessageDescriptor` before the issue leaves the process. A raw id must
+// never reach a client that cannot translate it.
 export const rateLimitBucketMessages = {
   windowInteger: 'admin.settings.rateLimit.error.windowInteger',
   windowMin: 'admin.settings.rateLimit.error.windowMin',
@@ -37,10 +36,9 @@ export const rateLimitBucketSchema = z.object({
     .max(rateLimitBounds.maxAttempts.max, rateLimitBucketMessages.attemptsMax),
 })
 
-// Legacy per-dimension twins → merged scenario bucket. Rows stored before
-// the merge still carry the old keys; the section schema preprocesses them
-// through this upgrade so they parse into the current shape and persist as
-// the new shape on the next save.
+// Legacy per-dimension twins → merged scenario bucket. Rows stored before the
+// merge still carry the old keys; the section schema preprocesses them through
+// this upgrade, which persists as the new shape on the next save.
 const LEGACY_BUCKET_TWINS: Record<string, readonly string[]> = {
   signIn: ['signInIp', 'signInEmail'],
   otpSend: ['otpSendIp', 'otpSendEmail'],
@@ -73,9 +71,9 @@ function stricterBucket(
   return a.windowSeconds >= b.windowSeconds ? a : b
 }
 
-/** Map legacy per-dimension keys onto the merged scenario keys (new keys
- *  win when both are present; legacy keys are left for the object schema to
- *  strip). Identity on already-current rows. */
+/** Map legacy per-dimension keys onto the merged scenario keys (new keys win when
+ *  both are present; legacy keys are left for the object schema to strip).
+ *  Identity on already-current rows. */
 export function upgradeLegacyRateLimitBuckets(raw: unknown): unknown {
   if (!isRecord(raw)) {
     return raw

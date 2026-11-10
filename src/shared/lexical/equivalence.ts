@@ -4,23 +4,16 @@ import { SERVER_FILLED_NODE_FIELDS } from '@/shared/lexical/artifacts'
 import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Semantic equality for Lexical editor states (plan
-// docs/plans/inkling-editor-replacement.md, round R9a) — the Lexical
-// successor of the retired PT bridge's `arePortableTextBodiesEquivalent`
-// (removed in R12 with `@/shared/pt/bridge`), used by the save pipeline's
-// no-op short-circuit (`content/repos/mutate`) and the editor shell's
-// dirty check.
+// Semantic equality for Lexical editor states — the save pipeline's no-op
+// short-circuit (`content/repos/mutate`) and the editor shell's dirty check.
 //
-// Semantics: serialize the normalized structure and compare. "Normalized"
-// here means the zod-validated shape (both sides MUST already be parsed
-// through `lexicalEditorStateSchema` — that pass strips unknown keys and
-// pins the required-field shape) minus the server-filled artifact slots
-// (`@/shared/lexical/artifacts`), which are recomputed deterministically
-// on every save and must not mark a body dirty. Key ORDER is normalized
-// away by the sorted-key serializer, so two parses of differently ordered
-// JSON compare equal. Unlike the PT fingerprint, empty objects/arrays are
-// NOT elided: Lexical serialization is machine-generated and canonical, so
-// `{}` vs absent is a real difference worth honoring.
+// Both sides MUST already be parsed through `lexicalEditorStateSchema`: that
+// pass strips unknown keys and pins the required-field shape. Server-filled
+// artifact slots (`@/shared/lexical/artifacts`) are excluded — they are
+// recomputed deterministically on every save and must not mark a body dirty.
+// Key order is normalized away by the sorted-key serializer; empty
+// objects/arrays are NOT elided: Lexical serialization is canonical, so `{}`
+// vs absent is a real difference worth honoring.
 
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[]
 
@@ -48,9 +41,9 @@ export function lexicalEditorStateFingerprint(state: LexicalEditorState): string
   return JSON.stringify(semanticJson(state))
 }
 
-/** Per-node variant for the body diff's LCS anchors (R11): two nodes with the
- * same fingerprint render as 'unchanged' rows. Same normalization rules as
- * the whole-state fingerprint. */
+/** Per-node variant for the body diff's LCS anchors: two nodes with the same
+ * fingerprint render as 'unchanged' rows. Same normalization rules as the
+ * whole-state fingerprint. */
 export function lexicalNodeFingerprint(node: LexicalNodeJson): string {
   return JSON.stringify(semanticJson(node))
 }

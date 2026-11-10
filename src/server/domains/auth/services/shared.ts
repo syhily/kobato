@@ -1,6 +1,4 @@
-// Shared contract of the sign-in services: the per-flow modules
-// (`credential`, `otp`, `passkey`, `password-reset`, `setup`) are the
-// single owner of the auth session-key state machine.
+// Shared contract of the sign-in services; per-flow modules own the auth session-key state machine.
 
 import type { z } from 'zod'
 
@@ -22,9 +20,8 @@ export type AuthFlowError = Extract<AuthFlowResult, { type: 'error' }>
 export type AuthFlowSuccess = Extract<AuthFlowResult, { type: 'success' }>
 
 /**
- * A flow outcome's copy. `message` is the log/technical fallback; `descriptor`
- * (when present) is the typed user-facing message translated for the request
- * locale. Flows still on raw Chinese strings omit it.
+ * A flow outcome's copy: `message` is the log/technical fallback, `descriptor`
+ * (when present) is the typed user-facing message translated for the request locale.
  */
 export type AuthFlowResult =
   | { type: 'redirect'; to: string; setCookie?: string }
@@ -32,9 +29,9 @@ export type AuthFlowResult =
   | { type: 'success'; message: string; descriptor?: ErrorMessageDescriptor; setCookie?: string }
 
 /**
- * The route-facing resolution (server translates, client displays): descriptor
- * → the locale's sentence, legacy raw message → unchanged. Lives in the auth
- * domain so `routes/auth` stays on its import whitelist.
+ * The route-facing resolution (server translates, client displays): descriptor → the
+ * locale's sentence, raw message → unchanged. Lives in the auth domain so `routes/auth`
+ * stays on its import whitelist.
  */
 export function authFlowMessage(
   message: string,
@@ -54,10 +51,9 @@ export function authFlowError(messageKey: UiMessageId, params?: ErrorMessagePara
 }
 
 /**
- * Schema-parse failure → flow error: the first issue carrying a typed catalog
- * id (the custom rule messages in `domains/auth/schema.ts`, e.g. the password
- * rules) wins so the user sees the actual condition; standard Zod prose
- * (missing/invalid plain fields) keeps the caller's generic key.
+ * Schema-parse failure → flow error: the first issue carrying a typed catalog id
+ * (the custom rule messages in `domains/auth/schema.ts`) wins so the user sees the
+ * actual condition; standard Zod prose keeps the caller's generic key.
  */
 export function authFlowValidationError(fallbackKey: UiMessageId, issues: readonly z.core.$ZodIssue[]): AuthFlowError {
   const typed = issues.find((issue) => isUiMessageId(issue.message))
@@ -75,9 +71,9 @@ export function authFlowSuccess(messageKey: UiMessageId, params?: ErrorMessagePa
 }
 
 /**
- * The slice of the canonical request context the signin flows need.
- * Same-session mutations call `markSessionDirty()`; `AuthFlowResult.setCookie`
- * is reserved for sid-rotating results — never for same-session commits.
+ * The slice of the canonical request context the signin flows need. Same-session
+ * mutations call `markSessionDirty()`; `AuthFlowResult.setCookie` is reserved for
+ * sid-rotating results, never for same-session commits.
  */
 export interface SigninFlowContext {
   db: Database

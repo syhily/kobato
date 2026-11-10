@@ -8,11 +8,9 @@ import type { DraftSummary } from '@/shared/contracts/dashboard'
 import type { AdminPostDto } from '@/shared/contracts/posts'
 import type { Role } from '@/shared/utils/roles'
 
-// The admin/me dashboard, settings, session, and analytics SSR loaders
-// reach their data through these procedures (in-process via
-// `@/server/http/ssr-caller`) — same `z.custom<T>()` bargain as
-// `contracts/content.ts`; HTTP-path coverage in
-// `tests/it/server/http/admin-api.test.ts` (see `src/shared/AGENTS.md`).
+// Admin/me dashboard, settings, session and analytics SSR loader contracts. The
+// `z.custom<T>()` outputs must match the loader-data shapes exactly; HTTP-path
+// coverage lives in `tests/it/server/http/admin-api.test.ts`.
 
 // `getAccountProfile`'s full projection (deleted-mid-session rows degrade
 // to empty fields) plus the two feature switches the profile page renders.
@@ -25,7 +23,6 @@ export type AccountProfileOutput = z.infer<typeof accountProfileOutputSchema>
 
 // Session-list wire rows. The UA label is rendered server-side
 // (`formatUaLabel`, node-device-detector) — the browser never parses a UA.
-// Sorting / `isCurrent` projection stays in the route loader.
 export interface AccountSessionDto {
   sid: string
   userId: number

@@ -1,8 +1,7 @@
 // The owned local-draft session + conflict-detection slice of the persist
-// module: the IndexedDB draft key embeds the owned revision token, so the
-// stored draft rotates with every clean save (audit P1-15), and a stored
-// draft diverging from the opening body surfaces as the `local` autosave
-// freeze leg until the dialog resolves it.
+// module: the IndexedDB draft key embeds the owned revision token, so the stored
+// draft rotates with every clean save; a stored draft diverging from the opening
+// body surfaces as the `local` autosave freeze leg until the dialog resolves it.
 
 import { useCallback, useState } from 'react'
 

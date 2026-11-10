@@ -1,10 +1,8 @@
 /**
- * Card removal — the headless splice surgeries for taking a card out of the
- * document and leaving a writable paragraph behind (CONTEXT.md's
- * write-seam genus; the bookmark card's close and paste-as-link flows are
- * the adapters). Same family as drop-surgery and external-control: plain
- * `$`-functions, a synchronous test table, never React-inline
- * `$getNodeByKey` + raw mutation (the card write seam's documented avoid).
+ * Card removal — the headless splice surgery for taking a card out of the
+ * document and leaving a writable paragraph behind. Same plain
+ * `$`-function family as drop-surgery and external-control; never a
+ * React-inline `$getNodeByKey` + raw mutation.
  */
 
 import { $createParagraphNode, $getNodeByKey, $isParagraphNode, type LexicalNode, type NodeKey } from 'lexical'

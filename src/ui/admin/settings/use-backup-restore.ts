@@ -97,8 +97,8 @@ function parseRestoreProgressDto(json: unknown): RestoreProgressDto | null {
 }
 
 /** Poll the merged staging/machine progress while a staging request runs.
- *  Tolerates a burst of transient failures (the drain closes the listener
- *  around the swap) before giving up with an `onGiveUp` notice. */
+ *  Tolerates a burst of transient failures (the drain closes the listener around
+ *  the swap) before giving up with an `onGiveUp` notice. */
 async function pollRestoreProgress(
   signal: AbortSignal,
   onDto: (dto: RestoreProgressDto) => void,

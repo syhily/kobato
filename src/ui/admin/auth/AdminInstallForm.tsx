@@ -13,7 +13,7 @@ import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Shared auth input styling — must match @/ui/admin/auth/shared.
+// Must match @/ui/admin/auth/shared.
 const inputClasses =
   'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
@@ -132,7 +132,6 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
         </DialogContent>
       </Dialog>
 
-      {/* Mode switcher */}
       <div className="flex w-full rounded-xl bg-muted/50 p-1">
         <button
           type="button"

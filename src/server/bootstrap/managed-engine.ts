@@ -2,11 +2,9 @@ import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-/**
- * Shared holder mechanics for the engine lifecycles: module-scope handle,
- * HMR-safe reuse, idempotent close, priority-0 shutdown hook (batchers
- * flush at 100). Per-engine logic lives behind the adapter.
- */
+/** Shared holder mechanics for the engine lifecycles: module-scope handle, HMR-safe
+ *  reuse, idempotent close, priority-0 shutdown hook (batchers flush at 100). Per-engine
+ *  logic lives behind the adapter. */
 export interface EngineAdapter<THandle> {
   /** Open a fresh handle (skipped when the HMR cache has one). */
   open(): THandle | Promise<THandle>

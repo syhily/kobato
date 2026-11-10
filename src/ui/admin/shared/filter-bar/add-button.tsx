@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// The 筛选 / 添加筛选 trigger — text/freetext/date kinds instant-add a default pill,
+// The filter / add-filter trigger — text/freetext/date kinds instant-add a default pill,
 // option/search open a picker step; global `f` opens it except on text-entry surfaces.
 interface FilterAddButtonProps<K extends string> {
   fields: readonly FilterFieldSpec<K>[]

@@ -33,8 +33,7 @@ import { activeBackend, allBackends, backendFor } from '@/server/infra/storage/r
 const log = getLogger('backup.service')
 
 // New ids append a 64-bit random hex suffix so backup object names stay
-// unguessable even where a bucket listing or referer leaks; the bare
-// timestamp alternative keeps pre-suffix rows downloadable.
+// unguessable; the suffix stays optional so timestamp-only ids still parse.
 const BACKUP_ID_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(?:-[0-9a-f]{16})?$/
 
 export function isValidBackupKey(key: string): boolean {
@@ -45,13 +44,13 @@ export function buildBackupS3Key(backupId: string, encrypted = false): string {
   return `backup/backup-${backupId}.db.tar.gz${encrypted ? '.enc' : ''}`
 }
 
-/** `.enc`-suffixed keys carry a password-encrypted archive (see services/crypto). */
+/** The `.enc` storage suffix — not a stream probe — is the encryption marker (format in services/crypto). */
 export function isEncryptedBackupKey(key: string): boolean {
   return key.endsWith('.enc')
 }
 
 function parseBackupIdFromKey(key: string): string | null {
-  // Both archive generations: `.db.tar.gz` and legacy content-only `.db.gz`, each optionally `.enc`.
+  // Current `.db.tar.gz` and legacy content-only `.db.gz`, each optionally `.enc`.
   const match = /^backup\/backup-(.+)\.db(?:\.tar)?\.gz(?:\.enc)?$/.exec(key)
   if (match === null) {
     return null
@@ -60,12 +59,9 @@ function parseBackupIdFromKey(key: string): string | null {
 }
 
 /**
- * Whether a row's `storage_path` is still one of OUR keys. The row rides
+ * Whether a row's `storage_path` is still one of OUR keys — the row rides
  * inside a restored database, so a crafted archive can point it at any object
- * the backend can reach (`images/…`: a local delete would unlink a live asset,
- * an S3 delete would remove an arbitrary bucket object). Every read/delete
- * path checks this before touching the object; `parseBackupIdFromKey` owns
- * the key grammar, so a new archive shape only needs updating there.
+ * the backend can reach. Every read/delete path checks this first.
  */
 export function isValidBackupStoragePath(key: string): boolean {
   return parseBackupIdFromKey(key) !== null
@@ -117,7 +113,7 @@ async function reconcileBackups(db: Database): Promise<void> {
   }
 }
 
-// Snapshot fn injected by the composition root at wire time (avoids the domain → bootstrap cycle).
+// Snapshot fn injected by the composition root (the domain must not import bootstrap).
 let snapshotAnalytics: ((stagingPath: string) => Promise<boolean>) | null = null
 
 export function wireBackupSnapshots(deps: { snapshotAnalyticsTo: (stagingPath: string) => Promise<boolean> }): void {
@@ -125,8 +121,7 @@ export function wireBackupSnapshots(deps: { snapshotAnalyticsTo: (stagingPath: s
 }
 
 // Encryption password resolver injected by the composition root (Platform
-// domains must not import the settings domain). Returns null when backup
-// encryption is disabled; unwired means "no encryption".
+// domains must not import settings); unwired means "no encryption".
 let encryptionPasswordResolver: (() => string | null) | null = null
 
 export function wireBackupEncryption(deps: { resolveEncryptionPassword: () => string | null }): void {
@@ -138,15 +133,9 @@ export function resetBackupEncryption(): void {
   encryptionPasswordResolver = null
 }
 
-/** The wired settings encryption password, or null when disabled/unwired.
- *  Shared by the create pipeline and the restore controller so the
- *  stored-password semantics live in exactly one place (the composition
- *  root's resolver). */
-/** Thrown by the composition-root resolver when `backup.encryption.enabled`
- *  is true but no password is stored — a plaintext archive must never be
- *  written while the UI claims encryption (rows saved before the settings
- *  schema rejected that state). The create path lets it propagate; the
- *  restore path declines into the password prompt instead. */
+/** Thrown when `backup.encryption.enabled` is true but no password is stored —
+ *  a plaintext archive must never be written while the UI claims encryption.
+ *  Create lets it propagate; restore declines into the password prompt. */
 export class BackupEncryptionMisconfiguredError extends Error {
   /** User-facing descriptor; `message` stays the English technical fallback. */
   readonly descriptor: ErrorMessageDescriptor
@@ -173,14 +162,12 @@ export function resolveStoredEncryptionPassword(): string | null {
 }
 
 export interface CreateBackupOptions {
-  /** Per-run password override (manual backups); empty/absent falls back to
-   *  the wired settings password. */
+  /** Per-run override (manual backups); empty/absent falls back to the wired settings password. */
   passwordOverride?: string
 }
 
 // Single-flight: two concurrent runs would race the same staging/restore
-// window and double-write job history, even though the random id suffix
-// keeps their object keys distinct.
+// window and double-write job history.
 let backupRunning = false
 
 export function tryBeginBackup(): boolean {
@@ -207,10 +194,9 @@ export async function createBackup(
 }
 
 /**
- * Admin-triggered manual backup: wraps `createBackup` with a `job_run` history
- * row. The scheduled path stays untouched (the scheduler's own instrumentation
- * records it), so no double rows. Failures — including the CONFLICT
- * single-flight rejection — finish the row as `failed`: an honest attempt.
+ * Manual backup with a `job_run` row; the scheduled path records its own, so
+ * this never double-records. Any failure — including the CONFLICT
+ * single-flight rejection — finishes the row as `failed`.
  */
 export async function createManualBackup(db: Database, options: CreateBackupOptions = {}) {
   const runId = startJobRun('backup', 'manual')
@@ -230,9 +216,7 @@ async function createBackupUnchecked(
   options: CreateBackupOptions,
 ): Promise<{ fileName: string; size: number; timestamp: string }> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  // Random suffix on the public id: backup names must not be guessable.
   const backupId = `${timestamp}-${randomBytes(8).toString('hex')}`
-  // Effective password: per-run override wins over the wired settings password.
   const override = options.passwordOverride?.trim()
   const password = override !== undefined && override !== '' ? override : (encryptionPasswordResolver?.() ?? null)
   const key = buildBackupS3Key(backupId, password !== null)
@@ -244,7 +228,7 @@ async function createBackupUnchecked(
 
   log.info('Starting backup', { key })
 
-  // `VACUUM INTO`: a consistent, fully-checkpointed copy in one step; the sidecar is copied byte-for-byte.
+  // `VACUUM INTO`: a consistent, fully-checkpointed copy in one step.
   db.run(sql.raw(`VACUUM INTO '${stagingPath.replaceAll("'", "''")}'`))
   restrictStagingFile(stagingPath)
 
@@ -271,10 +255,9 @@ async function createBackupUnchecked(
     // Streaming archive — a full database file is never held in memory.
     entries.unshift({ name: 'kobato.db', path: stagingPath, size: 0 })
 
-    // The env-converged config file rides along so a restored instance can
-    // recover its infrastructure configuration. Best-effort like the sidecar:
-    // null in the VITEST env-only mode, unreadable → warn and archive without it.
-    // Staged via copyFile so a mid-stream rewrite can never tear the tar entry.
+    // The env-converged config rides along so a restored instance keeps its
+    // infra config; best-effort (null in env-only mode). copyFile keeps a
+    // mid-stream rewrite from tearing the tar entry.
     const configPath = resolveConfigFilePath()
     if (configPath !== null) {
       try {
@@ -334,7 +317,6 @@ export async function listBackups(
   limit?: number,
   continuationToken?: string,
 ): Promise<{ files: BackupFileDto[]; nextContinuationToken?: string }> {
-  // Offset-based pagination keyed off the opaque continuation token.
   const offset = parseOffset(continuationToken)
   await reconcileBackups(db)
   const rows = await listBackupRows(db, limit, offset ?? undefined)
@@ -368,8 +350,8 @@ export async function getBackupBuffer(db: Database, timestamp: string): Promise<
   return backendFor(row.storageDriver).get(row.storagePath)
 }
 
-/** Unbuffered read: a stream, so neither the restore pipeline nor the download
- * endpoint holds the archive in memory. `byteSize` lets the route set Content-Length. */
+/** Streamed, so neither the restore pipeline nor the download endpoint holds
+ * the archive in memory; `byteSize` lets the route set Content-Length. */
 export async function getBackupStream(
   db: Database,
   timestamp: string,
@@ -378,9 +360,8 @@ export async function getBackupStream(
   if (row === null) {
     throw new ActionFailure(404, descriptorFor('backup.error.notFound'))
   }
-  // The URL parameter was validated by the route; the ROW's path rides in from
-  // a restored database and is not — never stream an object it names without
-  // checking it against the backup key grammar first.
+  // The ROW's path rides in from a restored database and is NOT route-validated —
+  // check it against the key grammar first.
   if (!isValidBackupStoragePath(row.storagePath)) {
     throw new ActionFailure(400, descriptorFor('backup.error.storagePathDownload'))
   }
@@ -389,14 +370,12 @@ export async function getBackupStream(
     stream,
     byteSize: row.byteSize,
     encrypted: isEncryptedBackupKey(row.storagePath),
-    // The download route serves THIS name — it carries the real suffix
-    // (`.db.tar.gz`, legacy `.db.gz`, `.enc`), never a hardcoded one.
+    // Carries the real suffix (`.db.tar.gz`, legacy `.db.gz`, `.enc`) — never hardcode a name.
     fileName: row.storagePath.split('/').pop()!,
   }
 }
 
-/** Row-level encrypted check (no stream opened) — the restore procedure
- *  resolves the password BEFORE claiming the restore slot. */
+/** Row-level check (no stream opened); the restore resolves the password BEFORE claiming the slot. */
 export async function isBackupEncrypted(db: Database, timestamp: string): Promise<boolean> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
@@ -412,8 +391,8 @@ export async function deleteBackup(db: Database, timestamp: string): Promise<voi
     return
   }
   if (!isValidBackupStoragePath(row.storagePath)) {
-    // The row's path came from a restored database and names something that is
-    // not a backup — drop the row only; the object it points at stays untouched.
+    // The row's path came from a restored DB and may name a live asset —
+    // drop the row only; the object it points at stays untouched.
     log.warn('Backup delete: row storage path failed validation; object untouched', {
       timestamp,
       storagePath: row.storagePath,
@@ -444,8 +423,8 @@ export async function cleanupOldBackups(db: Database, days: number): Promise<voi
   log.info('Cleaning up old backups', { count: rows.length, cutoff: cutoff.toISOString() })
   for (const row of rows) {
     if (!isValidBackupStoragePath(row.storagePath)) {
-      // Same posture as the explicit delete: never touch the named object, but
-      // drop the row so the sweep does not retry it every run.
+      // Same posture as the explicit delete: never touch the named object;
+      // drop the row so the sweep stops retrying it.
       log.warn('Old backup row has an invalid storage path; object untouched', {
         timestamp: row.timestamp,
         storagePath: row.storagePath,

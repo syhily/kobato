@@ -45,13 +45,13 @@ export async function signInWithPasskey(
     })
     return { type: 'redirect', to: redirectTo, setCookie: established.setCookie }
   } catch (err) {
-    // Domain failures from the passkey service already carry a descriptor; an
-    // upstream non-Error rejection falls back to the generic catalog copy.
+    // Domain failures from the passkey service already carry a descriptor; an upstream
+    // non-Error rejection falls back to the generic catalog copy.
     if (err instanceof DomainError && err.descriptor !== undefined) {
       return { type: 'error', message: err.message, descriptor: err.descriptor }
     }
     if (err instanceof Error) {
-      // Third-party (SimpleWebAuthn) technical message — legacy raw passthrough.
+      // Third-party (SimpleWebAuthn) technical message, surfaced raw.
       return { type: 'error', message: err.message }
     }
     return authFlowError('auth.passkey.error.verifyFailed')

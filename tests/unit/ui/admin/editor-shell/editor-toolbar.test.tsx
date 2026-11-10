@@ -11,7 +11,7 @@ import { EditorToolbar } from '@/ui/admin/editor-shell/EditorToolbar'
 
 // The toolbar weaves the entity noun into every piece of chrome through one
 // message id — this pins both entity ids and both locales, so a regression to
-// a literal label (the pre-i18n state) fails here.
+// a literal label fails here.
 
 function makeState(overrides: Partial<EditorToolbarState> = {}): EditorToolbarState {
   return {

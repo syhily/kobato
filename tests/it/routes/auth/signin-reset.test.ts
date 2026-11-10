@@ -19,8 +19,7 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// Covers RBAC-RECTIFICATION-PLAN §1.2: after a successful password
-// rotation, ALL other sessions of the target user MUST be revoked.
+// After a successful password rotation, ALL other sessions of the target user MUST be revoked.
 // Real engine; only mock: email delivery.
 
 const mockHandles = vi.hoisted(() => ({

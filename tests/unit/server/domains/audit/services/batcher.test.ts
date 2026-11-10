@@ -68,9 +68,8 @@ describe('audit batcher', () => {
   })
 
   it('falls back to per-row inserts when the batch fails (bad row dead-letters, good row commits)', async () => {
-    // One NOT NULL violation (action) inside the batch: the multi-row
-    // insert fails wholesale, the per-row fallback commits the good
-    // event and dead-letters the bad one.
+    // One NOT NULL violation (action): the multi-row insert fails wholesale, then the
+    // per-row fallback commits the good event and dead-letters the bad one.
     pushAuditEvent(makeEvent({ action: 'good.action' }))
     pushAuditEvent(makeEvent({ action: null as never }))
 

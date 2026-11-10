@@ -19,9 +19,8 @@ import { DomainError } from '@/server/infra/http/errors'
 import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Real repo layer (repo assertions read table state); the entity adapter
-// stays fake — the SUT's declared seam. image-sync runs in spy mode to
-// force one rejection no real state can produce.
+// Real repo layer (repo assertions read table state); the entity adapter stays fake —
+// the SUT's declared seam. image-sync is spied to force one rejection no real state produces.
 vi.mock('@/server/domains/content/services/image-sync', { spy: true })
 vi.mock('@/server/domains/content/revisions', { spy: true })
 vi.mock('@/server/infra/pt/lexical-projection', { spy: true })
@@ -92,8 +91,7 @@ async function seedRevision(
       ownerId,
       revisionNo: 1,
       status: 'published',
-      // Conflict results project the latest row through the admin revision
-      // DTO, which reads a Lexical body since R9a.
+      // Conflict results project the latest row through the admin revision DTO, which reads a Lexical body.
       body: emptyLexicalBody(),
       imageSources: [],
       headings: [],
@@ -154,7 +152,6 @@ describe('content/lifecycle — saveBody degraded sync', () => {
 
     expect(result.status).toBe('saved')
     expect(result.warningDescriptors?.map((d) => d.messageKey)).toEqual(['content.warning.imageSyncFailed'])
-    // The draft revision was still written despite the degraded sync.
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('draft')
@@ -225,14 +222,12 @@ describe('content/lifecycle — saveBody force overwrite', () => {
     )
 
     expect(recordForceOverwrite).not.toHaveBeenCalled()
-    // The force save still wrote a new draft revision.
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(2)
     expect(rows[1]!.status).toBe('draft')
   })
 
   it('propagates a revision-read failure on the force path instead of silently dropping audit context', async () => {
-    // Audit P1-25: a read failure on the force path must abort loudly, never be treated as "no prior revision".
     const meta = await seedPost()
     await seedRevision(meta.id, { status: 'published', clientRevisionToken: 'server-token' })
     const { adapter, recordForceOverwrite } = makeAdapter({ id: meta.id, publishedRevisionId: null })
@@ -247,7 +242,6 @@ describe('content/lifecycle — saveBody force overwrite', () => {
       ),
     ).rejects.toThrow('transient read failure')
 
-    // Aborted before the repo write: only the seeded revision remains.
     expect(await revisionsOf(meta.id)).toHaveLength(1)
     expect(recordForceOverwrite).not.toHaveBeenCalled()
   })
@@ -284,7 +278,6 @@ describe('content/lifecycle — saveBody result projection', () => {
     }
     expect(recordForceOverwrite).not.toHaveBeenCalled()
     expect(afterPublish).not.toHaveBeenCalled()
-    // The conflicted save wrote nothing: the seeded draft is untouched.
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.clientRevisionToken).toBe('11111111-2222-3333-4444-555555555555')
@@ -306,7 +299,6 @@ describe('content/lifecycle — saveBody publish side effects', () => {
 
     expect(result.status).toBe('saved')
     expect(afterPublish).toHaveBeenCalledTimes(1)
-    // Publish landed: revision published, post meta points at it.
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('published')
@@ -335,7 +327,7 @@ describe('content/lifecycle — saveBody publish side effects', () => {
   })
 })
 
-describe('content/lifecycle — body projections (R9b)', () => {
+describe('content/lifecycle — body projections', () => {
   it('fills all three projection columns on a draft save', async () => {
     const meta = await seedPost()
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
@@ -376,8 +368,7 @@ describe('content/lifecycle — body projections (R9b)', () => {
   it('writes the feed-degraded variant for math and code blocks', async () => {
     const meta = await seedPost()
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
-    // Real KaTeX/Shiki artifacts: canonicalize fills the slots before the
-    // projection runs, so the two HTML columns diverge exactly on them.
+    // Canonicalize fills the TeX/code slots before projection, so the two HTML columns diverge exactly on them.
     const body = lexicalBodyWith([
       { type: 'math', version: 1, tex: 'E=mc^2', mathml: '', svg: '' },
       { type: 'codeblock', version: 1, code: 'const a = 1', language: 'typescript', caption: '', highlightedHtml: '' },
@@ -392,7 +383,6 @@ describe('content/lifecycle — body projections (R9b)', () => {
 
     expect(result.status).toBe('saved')
     const rows = await revisionsOf(meta.id)
-    // Full fidelity: KaTeX MathML + Shiki embed.
     expect(rows[0]!.bodyHtml).toContain('<math')
     expect(rows[0]!.bodyHtml).toContain('shiki')
     // Feed: escaped TeX + plain pre/code (rssMode parity).
@@ -455,7 +445,6 @@ describe('content/lifecycle — body projections (R9b)', () => {
 
     expect(result.status).toBe('saved')
     expect(computeBodyProjections).not.toHaveBeenCalled()
-    // No write happened: one revision, columns untouched.
     expect(await revisionsOf(meta.id)).toHaveLength(1)
   })
 
@@ -471,7 +460,6 @@ describe('content/lifecycle — body projections (R9b)', () => {
       'draft',
     )
 
-    // Best-effort: the save succeeds, the warning surfaces, columns stay NULL.
     expect(result.status).toBe('saved')
     expect(result.warningDescriptors?.map((d) => d.messageKey)).toEqual(['content.warning.projectionFailed'])
     const rows = await revisionsOf(meta.id)
@@ -482,7 +470,7 @@ describe('content/lifecycle — body projections (R9b)', () => {
   })
 })
 
-describe('content/lifecycle — host card projections (R10)', () => {
+describe('content/lifecycle — host card projections', () => {
   it('renders the three host cards into all projection columns on save', async () => {
     const meta = await seedPost()
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
@@ -493,8 +481,7 @@ describe('content/lifecycle — host card projections (R10)', () => {
       lexicalMusicPlayer('p1'),
       lexicalParagraph('after'),
     ])
-    // The save-time snapshot fills the meta keys from the resolver, so the
-    // projection renders a resolved player without a request-time lookup.
+    // The save-time snapshot fills meta keys from the resolver, so the projection renders a resolved player.
     const music = stubMusicResolver({
       p1: {
         id: 'p1',
@@ -516,8 +503,7 @@ describe('content/lifecycle — host card projections (R10)', () => {
 
     expect(result.status).toBe('saved')
     const rows = await revisionsOf(meta.id)
-    // Full fidelity: real card markup (the projection registers the card
-    // classes — the R9b substitution path never fires).
+    // Real card markup: the projection registers the card classes, so the substitution fallback never fires.
     expect(rows[0]!.bodyHtml).toContain('solution-begin')
     expect(rows[0]!.bodyHtml).toContain('<p>答案 42</p>')
     expect(rows[0]!.bodyHtml).toContain('data-pt-two-column=""')
@@ -525,8 +511,7 @@ describe('content/lifecycle — host card projections (R10)', () => {
     expect(rows[0]!.bodyHtml).toContain('class="aplayer"')
     expect(rows[0]!.bodyHtml).toContain('data-name="Song"')
     expect(rows[0]!.bodyHtml).toContain('data-url="/storage/music/song.mp3"')
-    // Feed: solution unwraps, two-column flattens, music renders the PT
-    // rssMode figure.
+    // Feed: solution unwraps, two-column flattens, music renders the PT rssMode figure.
     expect(rows[0]!.bodyHtmlFeed).toContain('<p>答案 42</p>')
     expect(rows[0]!.bodyHtmlFeed).not.toContain('solution-begin')
     expect(rows[0]!.bodyHtmlFeed).toContain('<p>左栏</p><p>右栏</p>')
@@ -538,17 +523,15 @@ describe('content/lifecycle — host card projections (R10)', () => {
   })
 })
 
-describe('content/lifecycle — KobatoImage closed loop (R11)', () => {
+describe('content/lifecycle — KobatoImage closed loop', () => {
   it('persists the four host keys, host cards, and block format through save → DB reread', async () => {
     const meta = await seedPost()
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
     const body = lexicalBodyWith([
       lexicalParagraph('before'),
       { ...lexicalParagraph('Centered line'), format: 'center' },
-      // The image-library insert dataset: the four kobato-owned keys the
-      // stock inkling ImageNode declaration silently drops. imageId '42'
-      // matches no library row, so the save-time relink leaves the node
-      // untouched (the relink path is unit-tested in image-sync).
+      // The four kobato-owned keys the stock inkling ImageNode declaration silently drops;
+      // imageId '42' matches no library row, so the save-time relink leaves the node untouched.
       lexicalImage({
         src: '/storage/posts/cover.png',
         thumbhash: 'THUMB',
@@ -575,10 +558,9 @@ describe('content/lifecycle — KobatoImage closed loop (R11)', () => {
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
 
-    // Reread the stored JSON: canonicalize + the JSON column must not strip
-    // the host keys, the card datasets, or the block alignment. The row's
-    // body column is `unknown` at the type level; the zod save gate already
-    // validated the shape on the way in.
+    // Reread the stored JSON: canonicalize + the JSON column must not strip host keys,
+    // card datasets, or block alignment. The row's body column is `unknown` at the type
+    // level; the zod save gate already validated the shape on the way in.
     const savedBody = unsafeCast<{ root: { children: Record<string, unknown>[] } }>(rows[0]!.body)
     const children = savedBody.root.children
     const image = children.find((node) => node.type === 'image')
@@ -595,9 +577,7 @@ describe('content/lifecycle — KobatoImage closed loop (R11)', () => {
     const centered = children.find((node) => node.type === 'paragraph' && node.format === 'center')
     expect(centered).toBeDefined()
 
-    // Derived columns: the image's storagePath feeds imageSources; the
-    // projection columns render the host markup (data-thumbhash /
-    // data-layout ride the full-fidelity figure).
+    // Derived columns: storagePath feeds imageSources; data-thumbhash / data-layout ride the full-fidelity figure.
     expect(rows[0]!.imageSources).toEqual(['posts/cover.png'])
     expect(rows[0]!.bodyHtml).toContain('data-thumbhash="THUMB"')
     expect(rows[0]!.bodyHtml).toContain('data-layout="right"')
@@ -623,8 +603,8 @@ describe('content/lifecycle — compact storage dialect', () => {
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
 
-    // The stored row omits the serializer-default keys (the fixture roots at
-    // direction 'ltr' — a non-default value, so it stays)…
+    // The stored row omits serializer-default keys (the fixture roots at direction 'ltr', a
+    // non-default value, so it stays)…
     const stored = unsafeCast<{ root: Record<string, unknown> }>(rows[0]!.body)
     expect(stored.root).not.toHaveProperty('version')
     expect(stored.root).not.toHaveProperty('format')
@@ -633,9 +613,8 @@ describe('content/lifecycle — compact storage dialect', () => {
     expect(paragraph).not.toHaveProperty('indent')
     expect((paragraph.children as Record<string, unknown>[])[0]).not.toHaveProperty('detail')
 
-    // …and the schema's normalize preprocess heals it back to the full
-    // dialect, so the save no-op short-circuit and revision DTOs are
-    // dialect-blind.
+    // …and the schema's normalize preprocess heals it back to the full dialect, so the
+    // save no-op short-circuit and revision DTOs are dialect-blind.
     expect(lexicalEditorStateSchema.parse(rows[0]!.body)).toEqual(lexicalEditorStateSchema.parse(VALID_BODY))
   })
 })

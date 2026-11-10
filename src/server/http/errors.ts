@@ -29,14 +29,9 @@ const log = getLogger('http.error')
 
 type HttpStatus = 400 | 401 | 403 | 404 | 409 | 413 | 422 | 429 | 500
 
-/**
- * The request's locale when the perimeter already derived it. Early
- * short-circuits (trailing-slash 301/404, install gate) can throw before
- * `requestContextMiddleware`, so the site default is the honest fallback.
- */
+// Early short-circuits (trailing-slash, install gate) can throw before the
+// request context exists; the site default locale is then the honest fallback.
 function requestTranslator(c: Context<Env>): ServerTranslator {
-  // The early-error case may see no context at all; a hand-built test context
-  // may predate `localization`. Both fall back to the pre-i18n site default.
   const rc = c.var.requestContext as Partial<RequestContext> | undefined
   return createServerTranslator(rc?.localization?.locale ?? DEFAULT_LOCALE)
 }
@@ -78,11 +73,7 @@ function causeIssues(cause: unknown): DomainErrorIssue[] | undefined {
   return issues.length === 0 ? undefined : issues
 }
 
-/**
- * The JSON error body for responder-style middleware (`onError` hooks, the
- * install gate) that returns a Response instead of throwing. Same shape and
- * localization as the thrown path.
- */
+/** Responder-style JSON error body (onError hooks, install gate): same shape and localization as the thrown path. */
 export function errorJsonResponse(
   c: Context<Env>,
   status: number,
@@ -104,11 +95,7 @@ export function errorJsonResponse(
   )
 }
 
-/**
- * JSON body for a caught `ActionFailure`/`DomainError` in a resource route that
- * needs its own status decision (410 vs 400). Same localized shape as the
- * thrown path.
- */
+/** JSON body for a caught failure in a resource route choosing its own status (410 vs 400). */
 export function failureJsonResponse(c: Context<Env>, error: ActionFailure | DomainError, status?: number): Response {
   const translator = requestTranslator(c)
   const translated = translateDomainError(error, translator)
@@ -124,8 +111,7 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
   const translator = requestTranslator(c)
 
   if (err instanceof HTTPException) {
-    // Perimeter middlewares throw `LocalizedHttpException`; everything else
-    // (third-party throws, custom responses) keeps its raw message.
+    // Perimeter middlewares throw `LocalizedHttpException`; third-party throws keep their raw message.
     return respond(
       c,
       err.status,

@@ -58,7 +58,7 @@ function auspiciousTextFor(locale: AppLocale, date: Date): string | null {
   }
   const lunar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date)).getLunar()
   const auspicious = lunar.getDayYi()
-  // Defensive guard (audit P2-25): an empty list must never render "宜undefined".
+  // An empty list must never render "宜undefined".
   if (auspicious.length === 0) {
     return null
   }
@@ -68,10 +68,9 @@ function auspiciousTextFor(locale: AppLocale, date: Date): string | null {
 export type CalendarTheme = 'light' | 'dark'
 
 /**
- * `settings` is the caller's pinned snapshot (request capture / background
- * send-time resolve); omitted = the current process snapshot. The calendar
- * resource always passes it so the daily quote matches the cache key's
- * `settingsRevision`.
+ * `settings` is the caller's pinned snapshot (request capture / background send-time
+ * resolve); omitted = the current process snapshot. The calendar resource always passes
+ * it so the daily quote matches the cache key's `settingsRevision`.
  */
 export async function renderCalendar(
   date: Date,

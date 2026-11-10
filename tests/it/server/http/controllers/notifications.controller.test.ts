@@ -226,8 +226,7 @@ describe('integration / notifications controller', () => {
     const thread = await callRpc('/notifications/thread', { threadId: item.threadId }, visitorCtx)
     expect(thread.status).toBe(404)
 
-    // Idempotent: a second call succeeds with the SAME timestamp, and no
-    // second audit row is written (ADR-0007 recommended policy).
+    // Idempotent: a second call returns the same timestamp and writes no second audit row.
     const again = await callJson('/admin/notifications/recall', { id: item.id }, adminCtx)
     expect(again.status).toBe(200)
     expect((again.json.json as { recalledAt: string }).recalledAt).toBe(

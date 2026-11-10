@@ -417,7 +417,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     expect(result.to).toBe('/admin')
     expect(result.setCookie).toMatch(/^__session=/)
 
-    // Password stored as a real bcrypt hash; login method reverted.
     const row = (await userRow(userId))!
     expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
     expect(row.loginMethod).toBe('password')
@@ -426,13 +425,11 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     expect(mocks.deleteAllCredentials).toHaveBeenCalledWith(db, userId)
     expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))).toHaveLength(0)
 
-    // Reset invariant: both old sessions destroyed, one new session owned.
     const sessions = await db.select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(userId)
     expect(['old-sid-1', 'old-sid-2']).not.toContain(sessions[0]!.id)
 
-    // Single-use: the token row is gone.
     expect(await resetTokenRow(userId)).toBeUndefined()
 
     // Both the completion audit and the session-establish login audit.
@@ -509,7 +506,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     )
 
     expect(result.type).toBe('redirect')
-    // The password rotation still landed.
     const row = (await userRow(userId))!
     expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
   })

@@ -287,7 +287,7 @@ describe('integration / admin reverify procedure (audit + wire)', () => {
   })
 
   afterEach(async () => {
-    // Flush BEFORE reset — same discipline as the moderation suite.
+    // Flush BEFORE reset: buffered audit events dead-letter on the actor FK.
     await flushAuditLog()
     resetAllBatchers()
   })

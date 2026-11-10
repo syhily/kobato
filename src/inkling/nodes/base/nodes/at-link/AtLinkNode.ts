@@ -5,11 +5,11 @@ import { $applyNodeReplacement, ElementNode } from 'lexical'
 import { themeClassList } from '@/inkling/themes/inkling-theme-classes'
 const linkSVG =
   '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M13.54 10.46c2.2 2.2 2.2 5.61 0 7.81l-3.08 3.08c-2.2 2.2-5.61 2.2-7.81 0-2.2-2.2-2.2-5.61 0-7.81L5.4 10.9"/> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M10.46 13.54c-2.2-2.2-2.2-5.61 0-7.81l3.08-3.08c2.2-2.2 5.61-2.2 7.81 0 2.2 2.2 2.2 5.61 0 7.81L18.6 13.1"/> </svg>'
-// Container element for a link search query. Temporary node used only inside
-// the editor that will be replaced with a LinkNode when the search is complete.
+// Container element for a link search query: a temporary node used only inside
+// the editor, replaced with a LinkNode when the search completes.
 export class AtLinkNode extends ElementNode {
-  // We keep track of the format that was applied to the original '@' character
-  // so we can re-apply that when converting to a LinkNode
+  // Tracks the format applied to the original '@' so it can be re-applied when
+  // converting to a LinkNode
   __linkFormat: number | null = null
 
   static getType() {
@@ -25,9 +25,8 @@ export class AtLinkNode extends ElementNode {
     return new AtLinkNode(node.__linkFormat, node.__key)
   }
 
-  // This is a temporary node, it should never be serialized but we need
-  // to implement just in case and to match expected types. The AtLinkPlugin
-  // should take care of replacing this node with it's children when needed.
+  // Temporary node: it is never serialized in practice, but the serializer
+  // contract requires importJSON. The AtLinkPlugin replaces it with its children.
   static importJSON(serializedNode: ReturnType<AtLinkNode['exportJSON']>) {
     return $createAtLinkNode(serializedNode.linkFormat)
   }

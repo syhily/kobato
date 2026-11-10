@@ -4,9 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'
-// SSR-render the editor route Component wrappers (loader gate, navigate
-// wiring, layout context) — the TipTap editors themselves can't fully SSR,
-// so assert the wrapper produces output without throwing.
+// SSR-render the editor route Component wrappers (loader gate, navigate wiring, layout
+// context). The TipTap editors cannot fully SSR, so assert the wrapper renders without
+// throwing.
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { renderInRouter, stableHtml } from '#/_helpers/render'

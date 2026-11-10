@@ -7,7 +7,7 @@ import { FilterPill } from '@/ui/admin/shared/filter-bar/pill'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
 // The filter chrome shared by every admin list surface: trigger-only with no
-// active filters, pill row + 添加筛选 + 清除 otherwise; state comes from `useFilterPills`.
+// active filters, pill row + add/clear actions otherwise; state comes from `useFilterPills`.
 export function FilterPillBar<K extends string>({
   fields,
   filters,

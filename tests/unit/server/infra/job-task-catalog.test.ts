@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import { TASK_CATALOG } from '@/shared/contracts/jobs'
 
-// Catalog pin: every task registered on the scheduler chain (or written
-// manually via startJobRun) must exist in TASK_CATALOG, and every catalog
-// entry must have a registration site — adding a task without catalog
-// metadata (or vice versa) fails here.
+// Catalog pin: every task registered on the scheduler chain (or via startJobRun) exists in
+// TASK_CATALOG, and every catalog entry has a registration site — adding one without the
+// other fails here.
 
 const SRC_SERVER = new URL('../../../../src/server', import.meta.url).pathname
 

@@ -3,33 +3,16 @@ import { createEditor, type LexicalEditor } from 'lexical'
 
 import { registerCardDecorateAdapter } from '@/inkling/nodes/decorate-card'
 
-// Rendered-editor specs reconcile card nodes, and Lexical reconciliation
-// calls decorate() — which resolves through the injection port the `.`
-// barrel fills in production. Register the adapter here (the suite's shared
-// editor harness) so those specs get the production wiring without
-// importing the barrel. This lives in a per-test-file import — NOT in
-// test/setup.ts — because setup files evaluate before a spec's hoisted
-// vi.mock registrations, and pre-evaluating the component tree there
-// defeats those mocks.
+// Lexical reconciliation calls decorate(), which resolves through the
+// injection port the `.` barrel fills in production. Register the adapter here
+// so rendered-editor specs get production wiring without importing the barrel.
+// This must stay a per-test-file import, NOT move into tests/inkling/setup.ts:
+// setup files evaluate before a spec's hoisted vi.mock registrations, and
+// pre-evaluating the component tree there defeats those mocks.
 registerCardDecorateAdapter()
 
-// The unit suite's editor harness — the one home of the test-editor
-// factory and the update awaiters that used to be copied per spec:
-//
-// - createTestEditor: the two construction flavors (headless by default;
-//   headless: false for the rendered-component specs that need a real
-//   editor). Bespoke configs (html import config, themes, parentEditor)
-//   keep their own createEditor calls — this factory owns only the
-//   common nodes + onError shape.
-// - updateEditor: await one committed update.
-// - editorTest: the `it` body wrapper that runs the body inside
-//   editor.update and rejects on a body-thrown error; async bodies
-//   resolve/reject on the returned promise.
-// - tick: one macrotask hop — the flush React effect registration and
-//   listener-enqueued work need.
-// - drainEnqueuedUpdates: the double hop — await the outer commit, then
-//   one macrotask so a commit enqueued from the update listener (the
-//   footnote renumber scan, registerUpdateScan) begins and lands.
+// The suite's shared editor harness. Bespoke editor configs (html import
+// config, themes, parentEditor) keep their own createEditor calls.
 
 type HeadlessEditorArgs = NonNullable<Parameters<typeof createHeadlessEditor>[0]>
 
@@ -72,13 +55,10 @@ export function updateEditor(
 }
 
 /**
- * Vitest `it` body wrapper: runs testFn inside editor.update, resolving when
- * the body completes and rejecting on a body-thrown error (without the
- * try/catch, an assertion failure would surface only through onError). An
- * async body's returned promise is awaited — its continuations run after the
- * update callback returns, matching the per-spec copies this replaced. The
- * editor is read lazily through getEditor because `it` bodies are collected
- * before the spec's beforeEach assigns the editor.
+ * Vitest `it` body wrapper: runs testFn inside editor.update, rejecting on a
+ * body-thrown error (otherwise an assertion failure surfaces only through
+ * onError). The editor is read lazily through getEditor because `it` bodies are
+ * collected before the spec's beforeEach assigns the editor.
  */
 export function editorTest(getEditor: () => LexicalEditor, testFn: () => void | Promise<void>): () => Promise<void> {
   return function (): Promise<void> {
@@ -105,8 +85,8 @@ export function tick(): Promise<void> {
 /**
  * Awaits the outer commit, then drains the listener-enqueued commit: work
  * scheduled from an update listener begins only after the outer commit's
- * deferred callbacks (Lexical's $triggerEnqueuedUpdates tail) and commits
- * in a later microtask, so the macrotask hop flushes both.
+ * deferred callbacks (the $triggerEnqueuedUpdates tail) and commits in a later
+ * microtask, so the macrotask hop flushes both.
  */
 export async function drainEnqueuedUpdates(
   editor: LexicalEditor,

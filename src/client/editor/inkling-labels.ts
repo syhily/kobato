@@ -2,31 +2,22 @@
  * The client seam for Kobato's Inkling label overlay.
  *
  * The four per-locale tables live in `@/shared/i18n/inkling-labels/**` and stay
- * out of the browser's static graph. Two ways reach them:
+ * out of the browser's static graph. WORKSPACE documents (`/admin`, `/editor`)
+ * read the active locale's table from the root payload
+ * (`content.bootstrap.i18n.inklingLabels`) through {@link useKobatoInklingLabels};
+ * PUBLIC documents carry no table, so `LazyCommentBodyEditor` calls
+ * {@link loadInklingLabels} after activation and exactly one locale chunk is
+ * fetched, never all four.
  *
- *  - WORKSPACE documents (`/admin`, `/editor`): `content.bootstrap` ships the
- *    active locale's table as `i18n.inklingLabels`, and
- *    {@link useKobatoInklingLabels} reads it from the root payload.
- *  - PUBLIC documents: the bootstrap carries no table at all. The comment
- *    composer is interaction-gated, so `LazyCommentBodyEditor` calls
- *    {@link loadInklingLabels} AFTER activation; each locale's table is its own
- *    dynamic-import chunk, so exactly one locale is fetched (never all four).
- *
- * Both paths keep one locale (not four, ~22 KB) out of the public comment
- * composer chunk. Never STATICALLY value-import a table (pinned by
+ * Never STATICALLY value-import a table (pinned by
  * `tests/unit/arch/client-bundle.test.ts`); the dynamic loaders below are the
- * one sanctioned exception, and they are the only reason that test's owner list
- * names this file.
- *
- * The tables stay independent of the ICU catalogs: Inkling's `string.replace`
- * token contract (`{max}` / `{cardType}` / `{name}` / `{progress}`) is the
- * editor layer's own format. `<InklingComposer labels={...}>` merges the table
- * over Inkling's English defaults; `undefined` (no payload and no loaded table
- * — a root-loader failure or a router-less render) degrades to those defaults.
- *
- * The host-menu namespace (`menu.host.*`) is Inkling's documented opening — host
- * cards name their `labelKey` `host.<name>`, and the English text is the card
- * menu entry's own fallback spec copy.
+ * one sanctioned exception. Table values follow Inkling's `string.replace`
+ * token contract (`{max}` / `{cardType}` / `{name}` / `{progress}`), not ICU;
+ * `<InklingComposer labels={...}>` merges a table over Inkling's English
+ * defaults, and `undefined` (no payload, no loaded table) degrades to those.
+ * The host-menu namespace (`menu.host.*`) is Inkling's documented opening:
+ * host cards name their `labelKey` `host.<name>`, and the spec's English copy
+ * is the fallback.
  */
 
 import { useRouteLoaderData } from 'react-router'
@@ -37,11 +28,10 @@ import type { KobatoInklingLabelKey } from '@/shared/i18n/inkling-labels/en-US'
 import type { AppLocale } from '@/shared/i18n/locales'
 
 /**
- * Compile-time pin, replacing the `satisfies InklingLabelsInput` check the
- * tables got while they lived in this layer: every key of the shared English
- * baseline must be a key Inkling accepts (a built-in key or the `menu.host.*`
- * namespace). A typo or a stale key in the shared table fails `pnpm run type`.
- * A union type argument satisfies `T extends U` only when EVERY member does.
+ * Compile-time pin: every key of the shared English baseline must be a key Inkling
+ * accepts (a built-in key or the `menu.host.*` namespace), so a typo or a stale key
+ * fails `pnpm run type`. A union type argument satisfies `T extends U` only when
+ * EVERY member does.
  */
 type AssertInklingLabelKeys<T extends keyof InklingLabels | InklingHostMenuLabelKey> = T
 export type KobatoInklingLabelKeysAreLegal = AssertInklingLabelKeys<KobatoInklingLabelKey>
@@ -56,10 +46,9 @@ export function useKobatoInklingLabels(): InklingLabelsInput | undefined {
 }
 
 /**
- * One dynamic import per locale — the bundler emits four small chunks and a
- * public visitor fetches only the one for the active UI locale. Repeated
- * activations reuse the module registry's cached namespace; no application
- * cache is needed (and a rejected import may be retried on the next mount).
+ * One dynamic import per locale — the bundler emits four small chunks and a public
+ * visitor fetches only the active one. Repeated activations reuse the module
+ * registry's cached namespace; a rejected import may be retried on the next mount.
  */
 const LABEL_TABLE_LOADERS = {
   'en-US': () => import('@/shared/i18n/inkling-labels/en-US').then((table) => table.kobatoInklingLabelsEnUS),

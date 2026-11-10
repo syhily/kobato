@@ -122,7 +122,6 @@ describe('infra/email/sender — checkMailReady readiness matrix', () => {
       options: { ignoreEnabled: true },
       expected: { ready: true },
     },
-    // smtp requires smtpHost / smtpUser / smtpPass / sender
     {
       name: 'smtp missing host',
       mail: { ...fullyConfigured, transport: 'smtp', smtpHost: '' },
@@ -148,7 +147,6 @@ describe('infra/email/sender — checkMailReady readiness matrix', () => {
       mail: { ...fullyConfigured, transport: 'smtp' },
       expected: { ready: true },
     },
-    // mailgun requires mailgunDomain / mailgunApiKey / sender
     {
       name: 'mailgun missing domain',
       mail: { ...fullyConfigured, transport: 'mailgun', mailgunDomain: '' },
@@ -213,9 +211,8 @@ describe('infra/email/sender — sendEmail', () => {
     const result = await sendEmail('to@x.com', 'subj', '<p>hi</p>')
     expect(transportSendMock).toHaveBeenCalledTimes(1)
     expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
-    // A stored `false` for either TLS flag must reach the transport —
-    // dropping them here used to force the nodemailer defaults (true).
-    // The transport-level `?? true` fallback is pinned in
+    // A stored `false` for either TLS flag must reach the transport, not fall back to
+    // nodemailer's `true` defaults; the transport-level `?? true` is pinned in
     // `transports/smtp.test.ts`.
     expect(SmtpCtorMock).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -1,4 +1,4 @@
-// SEA Intl capability probe (plan 001, Step 6c). Technical server probe: it
+// SEA Intl capability probe. Technical server probe: it
 // verifies that the ICU data bundled into the executable actually renders the
 // four UI locales — not merely that the Intl constructors exist.
 //

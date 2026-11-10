@@ -379,13 +379,9 @@ function GeneralTimeZoneCard({
   // analytics — follows it. This card only publishes; it never subscribes.
   const publishLocaleChange = useLocaleSyncPublish()
 
-  // The locale switch always flushes every dirty card first, then commits the
-  // locale field itself, then reloads once. It owns the commit, so its guard
-  // returns `SETTINGS_SKIP_COMMIT` and `SettingsSelect` never double-saves.
-  // `runTransaction` makes the whole settings workspace inert for that window
-  // (see SettingsPanel) so no other card can be edited before the reload; the
-  // trigger ref is the focus anchor because the picked option lives in a
-  // portal and unmounts when the popup closes.
+  // The locale switch owns the commit, so its guard returns
+  // `SETTINGS_SKIP_COMMIT`; the trigger ref is the focus anchor because the
+  // picked option lives in a portal and unmounts when the popup closes.
   const { isSwitching, requestChange } = useLocaleSwitch<AppLocale>({
     loadedLocale: siteIdentity.locale,
     runTransaction,

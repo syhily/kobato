@@ -1,21 +1,14 @@
-// The `solution` host card (plan docs/plans/inkling-editor-replacement.md,
-// round R10): kobato's 解答块 — a styled blockquote whose body is one nested
-// Lexical editor, serialized as cleaned HTML on the `content` dataset key.
-// This module is the React-free single source shared by both consumers:
-// the server projection (`@/server/infra/pt/lexical-projection`) builds its
-// base class from these facts through the headless `generateDecoratorNode`,
-// and the client card module (`@/client/editor/cards/solution`) builds the
-// editing class through the `@/inkling` barrel's factory + `defineCard`. Two
-// class objects, one spec — deliberately: the server class stays spec-less
-// so parsing never constructs nested editors (the serializedKey HTML is an
-// opaque property server-side; the client-side assembled class owns the
-// nested-editor trilogy), and shared/ may only import the `@/inkling/headless`
-// surface while the client class assembles through `@/inkling`.
+// The `solution` host card: kobato's 解答块 — a styled blockquote whose body is
+// one nested Lexical editor, serialized as cleaned HTML on the `content` dataset
+// key. React-free single source for both consumers: the server projection
+// (`@/server/infra/pt/lexical-projection`) builds a spec-less headless class
+// (parsing never constructs nested editors — the serializedKey HTML is an
+// opaque property server-side), the client card module
+// (`@/client/editor/cards/solution`) builds the editing class through the
+// `@/inkling` barrel + `defineCard`. Two class objects, one spec.
 //
-// The exported markup mirrors the retired PT public renderer (R13 deleted
-// `src/ui/pt/`) class-for-class: R13 renders the projection's `bodyHtml`
-// directly, so exportDOM IS the public render. The feed variant unwraps to
-// the bare content HTML, matching the retired PT rssMode behavior.
+// The exportDOM markup IS the public render; the feed variant unwraps to the
+// bare content HTML.
 
 import type { DecoratorNodeProperty } from '@/inkling/headless'
 

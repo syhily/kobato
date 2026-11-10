@@ -1,11 +1,9 @@
 import { cx } from '@/inkling/utils/cx'
 
 /**
- * The shared settings-panel label chrome: one class string for the row labels
- * that used to be pasted verbatim into every setting row. This is deliberately
- * NOT a full SettingRow abstraction — the rows' layouts genuinely diverge
- * (inline vs stacked vs sr-only), so only the label/description chrome is
- * single-sourced here.
+ * The shared settings-panel label chrome. Deliberately NOT a full SettingRow
+ * abstraction — the rows' layouts genuinely diverge (inline vs stacked vs
+ * sr-only), so only the label/description chrome is single-sourced here.
  */
 export function SettingLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (

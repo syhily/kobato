@@ -1,10 +1,3 @@
-// Real-Chromium public-page journeys (plan 002 slice 5):
-//
-// * activating the public comment composer loads ONLY the active locale's
-//    Inkling label chunk (four locales = four chunks, exactly one fetched),
-// * a post with `contentLanguage: 'ar'` stamps `lang="ar"` + `dir="auto"` on
-//    the body container only — the UI chrome keeps the document locale and LTR.
-
 import { browserEnv } from './support/env'
 import { expect, test } from './support/fixtures'
 import { collectConsoleIssues, waitForHydration } from './support/journey'

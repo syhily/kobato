@@ -2,22 +2,15 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:
 import { Transform, type TransformCallback } from 'node:stream'
 
 /**
- * Streaming encryption for backup archives (password-based, chunked AEAD).
+ * Streaming password-based encryption for backup archives (chunked AES-256-GCM).
  *
- * Layout: an 8-byte magic + 16-byte scrypt salt + 4-byte scrypt cost N
- * (big-endian; r=8/p=1 fixed), then a sequence of records
- * `[u32 ciphertext length][1B flags][12B IV][ciphertext][16B GCM tag]`, each
- * record carrying up to 4 MiB of plaintext. Per-record random IVs keep
- * AES-256-GCM nonce-safe while the whole pipeline stays streaming — no
- * full-file buffer on either side. The first record's tag failure is how a
- * wrong password surfaces (mapped to a 400 by the restore perimeter).
- *
- * Record binding: the 0-based record sequence number plus the flags byte
- * ride as GCM AAD, so a ciphertext holder cannot reorder, drop, or replay
- * records without failing authentication; bit 0 of flags marks the FINAL
- * record (every stream ends with exactly one, possibly empty), so a
- * truncated tail is detected by the format itself rather than relying on
- * the inner gzip CRC.
+ * Header: 8-byte magic + 16-byte scrypt salt + 4-byte scrypt cost N (BE;
+ * r=8/p=1 fixed). Records: `[u32 ctLen][1B flags][12B IV][ct][16B tag]`, up to
+ * 4 MiB plaintext each, per-record random IVs (nonce-safe while streaming).
+ * Seq ‖ flags ride as GCM AAD, so reorder/drop/replay fails authentication;
+ * bit 0 of flags marks the FINAL record (exactly one per stream), so a
+ * truncated tail is caught by the format, not the inner gzip CRC. The first
+ * record's tag failure is how a wrong password surfaces.
  */
 
 export const BACKUP_ENCRYPTION_MAGIC = Buffer.from('KOBENC01', 'latin1')
@@ -29,9 +22,8 @@ const TAG_BYTES = 16
 const KEY_BYTES = 32
 const CHUNK_SIZE = 4 * 1024 * 1024
 const DEFAULT_SCRYPT_N = 1 << 15
-/** Header-declared N beyond this is rejected — a hostile header must not
- *  turn scryptSync into a CPU/memory bomb. Scrypt needs ~128·N·r bytes:
- *  2^17 ≈ 128 MiB, safely inside the 256 MiB maxmem budget. */
+/** Header-declared N beyond this is rejected — a hostile header must not turn
+ *  scryptSync into a memory bomb (scrypt needs ~128·N·r bytes: ≈128 MiB). */
 const MAX_SCRYPT_N = 1 << 17
 const SCRYPT_R = 8
 const SCRYPT_P = 1
@@ -54,7 +46,6 @@ export class BackupDecryptionError extends Error {
   }
 }
 
-/** Sniff the first bytes of an archive — the magic is all it takes. */
 export function isEncryptedBackup(prefix: Buffer): boolean {
   return (
     prefix.length >= BACKUP_ENCRYPTION_MAGIC.length &&
@@ -71,9 +62,8 @@ function deriveKey(password: string, salt: Buffer, n: number): Buffer {
   }
 }
 
-/** The AAD binding every record to its position: seq (4B BE) ‖ flags (1B).
- *  The flags byte is ALSO on the wire (that is how the reader learns
- *  "final"); the AAD makes both fields unforgeable. */
+/** AAD binding each record to its position: seq (4B BE) ‖ flags (1B); the
+ *  flags byte is also on the wire (how the reader learns "final"). */
 function recordAad(seq: number, flags: number): Buffer {
   const aad = Buffer.alloc(5)
   aad.writeUInt32BE(seq, 0)
@@ -119,9 +109,8 @@ function decryptRecord(key: Buffer, record: Buffer, expectedSeq: number): { plai
   }
 }
 
-/** Incremental byte accumulator: concat at most once per transform call
- *  instead of once per incoming chunk (O(n²) memcpy on 16-64 KiB gzip
- *  chunks against a 4 MiB pending buffer). */
+/** Concats at most once per transform call, not once per incoming chunk
+ *  (O(n²) memcpy of 16-64 KiB gzip chunks against a 4 MiB pending buffer). */
 class ByteAccumulator {
   private chunks: Buffer[] = []
   private buffered = 0
@@ -135,7 +124,6 @@ class ByteAccumulator {
     this.buffered += chunk.length
   }
 
-  /** Materialize the accumulated bytes into one contiguous buffer. */
   peek(): Buffer {
     if (this.chunks.length === 1) {
       return this.chunks[0]!
@@ -145,7 +133,6 @@ class ByteAccumulator {
     return whole
   }
 
-  /** Drop the first `bytes` from the accumulator. */
   consume(bytes: number): void {
     const rest = this.peek().subarray(bytes)
     this.chunks = rest.length > 0 ? [rest] : []
@@ -153,7 +140,6 @@ class ByteAccumulator {
   }
 }
 
-/** Plaintext → encrypted archive stream. */
 export function createBackupCipher(password: string): Transform {
   const salt = randomBytes(SALT_BYTES)
   const key = deriveKey(password, salt, DEFAULT_SCRYPT_N)
@@ -198,8 +184,7 @@ export function createBackupCipher(password: string): Transform {
   })
 }
 
-/** Encrypted archive stream → plaintext. The first record's GCM tag is the
- *  password check — a wrong password fails there, mid-stream. */
+/** The first record's GCM tag is the password check — a wrong password fails mid-stream. */
 export function createBackupDecipher(password: string): Transform {
   const incoming = new ByteAccumulator()
   let key: Buffer | null = null

@@ -19,14 +19,11 @@ export type { HostCardMenuEntrySpec, HostCardSpec } from '@/inkling/nodes/cards/
 
 /**
  * The handle `defineCard` returns: the assembled node class to compose into
- * `<InklingComposer nodes>`, and the fence transformer to pass to the
- * markdown round-trip's `cards` option when the spec carries `markdownFence`.
- * The `Spec` parameter carries the declaration's own type through (the
- * preserved spec type — see `HostCardSpecWithParts`): with const-asserted
- * `nestedEditors`/`transientProps` arrays, `card.node`'s instance side
- * resolves the spec-derived `__*` fields and accessors
- * (`CardSpecFieldMap`/`CardSpecAccessorMap`) — the same typing the built-in
- * declarations get, no host-side `declare` blocks.
+ * `<InklingComposer nodes>`, and the fence transformer for the markdown round-trip's
+ * `cards` option when the spec carries `markdownFence`. `Spec` carries through: with
+ * const-asserted arrays, `card.node`'s instance side resolves the spec-derived `__*`
+ * fields and accessors — the same typing the built-in declarations get, no host-side
+ * `declare` blocks.
  */
 export interface HostCard<NodeType extends string = string, Spec = unknown> {
   nodeType: NodeType
@@ -51,15 +48,12 @@ type HostCardSpecWithParts<
 }
 
 /**
- * The contextual shape of a host menu entry: every field except
- * `queryParams`, which stays `readonly unknown[]` on purpose: it is still
- * clearly an array (a non-array value is rejected here), but its `unknown`
- * element type gives the array literal no contextual element type, so the
- * `const Menu` capture keeps `['src']` literal. A contextual
- * `readonly string[]` would widen it to `string[]` and lose the key the
- * exact check needs. Trade-off, stated honestly: editor hints for
- * `queryParams` elements are absent (the element type is `unknown`); the
- * exact check below restores type safety, not autocomplete.
+ * The contextual shape of a host menu entry: every field except `queryParams`,
+ * which stays `readonly unknown[]` on purpose — `unknown` gives the array literal no
+ * contextual element type, so the `const Menu` capture keeps `['src']` literal; a
+ * contextual `readonly string[]` would widen it and lose the key the exact check
+ * needs. Cost: no autocomplete for `queryParams` elements; the exact check restores
+ * type safety, not hints.
  */
 type HostMenuEntryShape<Dataset extends Record<string, unknown>> = Omit<
   HostCardMenuEntrySpec<Dataset>,
@@ -69,52 +63,37 @@ type HostMenuEntryShape<Dataset extends Record<string, unknown>> = Omit<
 }
 
 /**
- * Declares a host card once and registers it with every derived view the
- * built-in declarations feed (CONTEXT.md: "host card"): the assembled node
- * class, the slash/plus menus, the decorate target, the insert-command
- * registrar, the toolbar label, and — with `markdownFence` — the markdown
- * round-trip. Call it at module top level, before the composer mounts
- * (mirroring Lexical `createCommand`'s global idiom); the derived views
- * intersect with each editor's registered node types, so host cards never
- * leak into surfaces that did not compose their node class in.
+ * Declares a host card once and registers it with every derived view the built-in
+ * declarations feed: the assembled node class, slash/plus menus, decorate target,
+ * insert-command registrar, toolbar label, and — with `markdownFence` — the markdown
+ * round-trip. Call at module top level, before the composer mounts (Lexical
+ * `createCommand`'s global idiom); derived views intersect with each editor's
+ * registered node types, so host cards never leak into surfaces that did not compose
+ * their node class in.
  *
- * The registry stores the raw spec; every projection (menu entries, drag
- * icon, decorate target, insert registration, upload type, toolbar label)
- * is derived by the views through the same projectors the built-in
- * declarations flow through.
+ * Type preservation: `Transient`/`Nested` capture the spec's own arrays, so
+ * const-asserted `nestedEditors`/`transientProps` land their literal `__*` field
+ * names and value types on `card.node` — a non-const inline array widens entry names
+ * to `string`, degrading the field map to the loose `__${string}` pattern (never a
+ * compile error).
  *
- * Type preservation: the `Transient`/`Nested` parameters capture the spec's
- * own arrays, so const-asserted `nestedEditors`/`transientProps` (`as const
- * satisfies …`, the base node module idiom) land their literal `__*` field
- * names and value types on the returned `card.node` — a non-const inline
- * array widens its entry names to `string` and the field map degrades to the
- * loose `__${string}` pattern, never a compile error.
- *
- * Menu checking: the menu entries' `insertParams`/`queryParams` derive their
- * vocabulary from `B`'s `getPropertyDefaults()` and the same `Transient`/
- * `Nested` arrays (`CardMenuDataset`). On a direct call, unknown
- * `insertParams` keys (object and function forms), drifted values, and
- * non-string `queryParams` keys are compile errors. The arrays are separate
- * type parameters (rather than read off `Spec`) so the check never makes spec
- * inference circular.
- *
- * The `& Menu` capture is the exactness mechanism: the `const` type parameter
- * preserves the caller's literal tuple (including function-return object
- * keys and `queryParams` literals), and `CardMenuEntryCheck` maps it against
- * the computed dataset. Without the capture, `satisfies`/contextual typing
- * would erase the keys before they could be checked.
+ * Menu checking: `insertParams`/`queryParams` derive their vocabulary from `B`'s
+ * `getPropertyDefaults()` plus `Transient`/`Nested` (`CardMenuDataset`). On a direct
+ * call, unknown `insertParams` keys (object and function forms), drifted values, and
+ * non-string `queryParams` keys are compile errors. The arrays are separate type
+ * parameters (rather than read off `Spec`) so the check never makes spec inference
+ * circular; the `& Menu` capture preserves the caller's literal tuple, which
+ * `CardMenuEntryCheck` maps against the computed dataset — without it,
+ * `satisfies`/contextual typing would erase the keys first.
  *
  * Compatibility boundary:
- * - `const spec: HostCardSpec<'x'> = { … }` intentionally erases the menu's
- *   literal information: `insertParams` becomes `Record<string, unknown>`, so
- *   insert keys, insert values, and query keys are all unchecked (accepted
- *   as-is).
- * - `const spec = { … } satisfies HostCardSpec<'x'>` keeps literal
- *   `insertParams` keys and values (checked against the dataset) but
- *   contextually widens `queryParams` elements to `string`; those widened
- *   query keys are accepted unchecked.
- * - A direct `defineCard({ … })` call keeps both literal forms and is fully
- *   checked.
+ * - `const spec: HostCardSpec<'x'> = { … }` erases the menu's literal information:
+ *   `insertParams` becomes `Record<string, unknown>`, so insert keys, insert values,
+ *   and query keys are all accepted unchecked.
+ * - `const spec = { … } satisfies HostCardSpec<'x'>` keeps literal `insertParams`
+ *   (checked) but contextually widens `queryParams` elements to `string`; those
+ *   widened query keys are accepted unchecked.
+ * - A direct `defineCard({ … })` call keeps both literal forms and is fully checked.
  */
 export function defineCard<
   NodeType extends string,
@@ -137,14 +116,12 @@ export function defineCard<
     menu?: readonly HostMenuEntryShape<CardMenuDataset<B, Transient, Nested>>[] &
       Menu &
       CardMenuEntryCheck<Menu, CardMenuDataset<B, Transient, Nested>>
-    /** the decorate render — its node is InstanceType of YOUR baseNode class (a generateDecoratorNode product carries the dataset-typed instance) */
+    /** the decorate render — its node is InstanceType of the host's own baseNode class (a generateDecoratorNode product carries the dataset-typed instance) */
     render(node: InstanceType<B>): ReactNode
   },
 ): HostCard<NodeType, HostCardSpecWithParts<Spec, Transient, Nested>> {
-  // $isInklingCard gates on `instanceof InklingDecoratorNode` and the
-  // exportDOM contract assumes the generated machinery — the honest boundary
-  // is to require the base to extend it (build bases with
-  // generateDecoratorNode).
+  // $isInklingCard gates on `instanceof InklingDecoratorNode` and the exportDOM
+  // contract assumes the generated machinery, so require the base to extend it.
   if (!(spec.baseNode.prototype instanceof InklingDecoratorNode)) {
     throw new TypeError(
       `[defineCard] '${spec.nodeType}': baseNode must extend InklingDecoratorNode (build it with generateDecoratorNode)`,
@@ -156,10 +133,9 @@ export function defineCard<
   }
 
   const node = assembleCardNodeOnce<LexicalNode, HostCardSpecWithParts<Spec, Transient, Nested>>(spec)
-  // The registry stores the raw spec for the derived views, whose vocabulary
-  // is looser than this input-side check shape (literal menu tuple,
-  // `readonly unknown[]` query slots). The VALUE is untouched — identity must stay the same so
-  // `assembleCardNodeOnce` and the registry share one class per spec object.
+  // The registry stores the raw spec: the derived views' vocabulary is looser than
+  // this input-side check shape. The VALUE is untouched — identity must stay the
+  // same so `assembleCardNodeOnce` and the registry share one class per spec object.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- storage-only widening; the checked shape is narrower than the registry's raw entry type
   registerHostCard({ nodeType: spec.nodeType, spec: spec as HostCardSpec<NodeType> })
 

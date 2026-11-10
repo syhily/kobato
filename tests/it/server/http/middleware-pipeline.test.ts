@@ -138,6 +138,8 @@ describe('RUM status mount', () => {
       configureMiddleware(app)
       const paths = app.routes.map((route) => route.path)
       expect(paths).toContain('/api/rum/status')
+      // The same-origin RUM intake relay rides the same gate.
+      expect(paths).toContain('/api/rum/intake/*')
       expect(paths).not.toContain('/api/dev/rum/status')
     }
   })

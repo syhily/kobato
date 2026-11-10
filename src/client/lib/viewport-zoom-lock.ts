@@ -1,19 +1,15 @@
 /**
  * Refcounted iOS viewport zoom lock.
  *
- * iOS Safari zooms into a focused control whose font-size is under 16px —
- * the comment composer's contenteditable canvas included. The zoom decision
- * reads the viewport meta at focus time, so the lock must be held across
- * every activation that ends in a focus (placeholder tap → chunk load →
- * mount → focus handoff), and it must be released only after the editable
- * has actually taken focus — pinch-zoom stays available the rest of the
- * time.
- *
- * Refcounting lets independent holders overlap — the document-level form
- * control tracker (`useIosNoZoomOnFocus`) and the comment composer's
- * activation handoff — without racing the same `<meta>` rewrite. Duplicate
- * installs remain banned for the same reason: one module, refcounted.
- * iOS/iPadOS WebKit only; every other platform no-ops.
+ * iOS Safari zooms into a focused control with font-size < 16px; the decision
+ * reads the viewport meta when the tap's default action focuses the target,
+ * so the lock must be held across every activation that ends in a focus
+ * (placeholder tap → chunk load → mount → focus handoff) and released only
+ * after the editable actually took focus — pinch-zoom stays available the
+ * rest of the time. Refcounting lets independent holders (the document-level
+ * tracker in `useIosNoZoomOnFocus` and the comment composer's activation
+ * handoff) overlap without racing the same `<meta>` rewrite; duplicate
+ * installs stay banned for the same reason. iOS/iPadOS WebKit only.
  */
 
 const LOCKED_VIEWPORT = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'

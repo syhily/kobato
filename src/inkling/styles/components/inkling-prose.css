@@ -5,9 +5,6 @@
 
 .inkling-lexical {
   .inkling-prose {
-    /* Aside, Blockquote Alternative
-        /* -------------------------------------------------------------------- */
-
     :where(aside p):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
       margin: 0;
     }
@@ -52,9 +49,6 @@
     :where(div + aside):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
       margin: 2.8rem 0 0;
     }
-
-    /* Cards in general
-        /* -------------------------------------------------------------------- */
 
     :where(> div):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
       line-height: 0;
@@ -208,7 +202,7 @@
 
 /* stylelint-enable at-rule-disallowed-list */
 
-/* When the header or the callout have a background color of accent, we need to show all links in white */
+/* Header and callout cards on an accent background need white links */
 .inkling-header-accent,
 .inkling-callout-accent {
   --inkling-accent-color: #fff;

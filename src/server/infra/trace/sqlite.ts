@@ -1,14 +1,14 @@
-// Trace-only `sqlite.db.query` subscriber (ADR-0012).
+// Trace-only `sqlite.db.query` subscriber.
 //
-// Deliberately independent of `infra/db/query-diagnostics.ts`: tracing must
-// not require the debug log level, and the debug subscriber's redaction rules
-// are not the trace privacy contract.
+// Deliberately independent of `infra/db/query-diagnostics.ts`: tracing must not
+// require the debug log level, and the debug subscriber's redaction rules are
+// not the trace privacy contract.
 //
 // The diagnostics channel publishes AFTER a statement completes and only for
-// successful statements: `duration` is nanoseconds. The span is therefore
-// created with an explicit start/end derived from the reported duration, and
-// only when a request/job span is already active — a boot-time migration or a
-// timer flush without an active span produces nothing.
+// successful statements, with `duration` in nanoseconds. The span therefore gets
+// an explicit start/end derived from that duration, and exists only when a
+// request/job span is already active — a boot-time migration or a timer flush
+// without an active span produces nothing.
 
 import diagnostics_channel from 'node:diagnostics_channel'
 
@@ -108,8 +108,8 @@ function onQuery(message: unknown): void {
 
 /**
  * Subscribe to `sqlite.db.query`. Idempotent. Vitest needs
- * `enabledInTests: true`; the DEV runtime subscribes automatically outside
- * tests with the boot-time `includeRedactedSql` setting.
+ * `enabledInTests: true`; the runtime subscribes automatically outside tests
+ * with the boot-time `includeRedactedSql` setting.
  */
 export function startSqliteQueryTrace(options: SqliteTraceOptions = {}): void {
   if (subscribed) {

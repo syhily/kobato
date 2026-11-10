@@ -2,10 +2,9 @@ import type { DOMConversion, LexicalNode, SerializedTextNode } from 'lexical'
 
 import { $isTextNode, TextNode } from 'lexical'
 
-// Since the TextNode is foundational to all Lexical packages, including the
-// plain text use case. Handling any rich text logic is undesirable. This creates
-// the need to override the TextNode to handle serialization and deserialization
-// of HTML/CSS styling properties to achieve full fidelity between JSON <-> HTML.
+// TextNode is foundational to all Lexical packages, including the plain text
+// use case, so rich-text logic cannot live on it. Extend it instead to
+// serialize/deserialize HTML/CSS styling for full fidelity between JSON <-> HTML.
 //
 // https://lexical.dev/docs/concepts/serialization#handling-extended-html-styling
 

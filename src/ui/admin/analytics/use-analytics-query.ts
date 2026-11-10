@@ -1,9 +1,3 @@
-// Shared React Query scaffolding for the self-fetching analytics panels
-// (Counters, ViewsChart, Heatmap, MetricList, LocationsMap): the loader
-// payload as first-paint fallback, error only when nothing has loaded yet,
-// the retry callback, and the refetch dimming flag — one derivation instead
-// of five copies feeding AnalyticsQueryState.
-
 export interface AnalyticsQuerySlice<T> {
   /** Resolved rows: the client query's data, else the loader fallback, else null. */
   data: T | null

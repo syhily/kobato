@@ -10,12 +10,11 @@ import { renderHeaderNodeV2 } from '@/inkling/nodes/base/nodes/header/renderers/
 import { normalizeCardWidth, type CardWidth } from '@/inkling/nodes/base/utils/card-widths'
 import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
 
-// The card's nested-editor spec (CONTEXT.md: "card spec") lives here, beside
-// the class it types — the declaration imports it from this module. Header's
-// dataset exposes the editors but not their initial states
-// (`exposeInitialStateInDataset: false`). The MINIMAL_NODES import runs
-// against the layer grain but closes no cycle — see the
-// captionEditorSpecBase note.
+// The card's nested-editor spec lives here, beside the class it types — the
+// declaration imports it from this module. Header's dataset exposes the
+// editors but not their initial states (`exposeInitialStateInDataset: false`).
+// The MINIMAL_NODES import runs against the layer grain but closes no cycle —
+// see the captionEditorSpecBase note.
 export const headerNestedEditors = [
   {
     name: 'headerTextEditor',
@@ -88,8 +87,8 @@ export class BaseHeaderNode extends generateDecoratorNode({
     return headerCardWidth(this)
   }
 
-  // override the default `isEmpty` check because we need to check the nested editors
-  // rather than the data properties themselves
+  // isEmpty must check the nested editors rather than the raw header/subheader
+  // data properties (the serialized HTML trails until export)
   isEmpty() {
     // Unset on spec-less base instances — guard so the field type stays
     // honest (the BaseToggleNode.isEmpty idiom). A header without editors is

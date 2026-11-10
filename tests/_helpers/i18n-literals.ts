@@ -1,34 +1,8 @@
 // AST scanner behind tests/unit/arch/ui-i18n-literals.test.ts.
-//
-// The rule set is deliberately small and precise — a cheap text/regex grep
-// would either miss copy or drown in false positives. Every rule maps to one
-// syntax position where interface copy (or a hardcoded locale) can hide:
-//
-//   jsx-text          JSX children — text nodes AND expression children
-//                     (`{'保存'}`, {`保存 ${name}`}, `{ok ? '保存' : '取消'}`)
-//   jsx-attribute     aria-label / placeholder / title / alt literals
-//   title-meta        `titleMeta('…')` arguments
-//   toast             `toast.*('…')` messages
-//   domain-error      `new DomainError('CODE', '…')` user-facing messages
-//   to-locale         `toLocale*()` with no meaningful locale (omitted,
-//                     `undefined`, `void 0`, `[]`)
-//   hardcoded-locale  exact literals naming a supported locale or one of its
-//                     aliases (interpolated templates never match)
-//   han-literal       any plain/template literal containing Han characters —
-//                     the blind spot of registries and ordinary template
-//                     strings (`label: '保存'`, `` `第 ${n} 页` ``). JSX
-//                     positions stay owned by jsx-text/jsx-attribute so copy is
-//                     never reported twice.
-//
+// AST rather than regex: a text grep would miss copy or drown in false positives.
 // Template literals are inspected with each interpolation replaced by a marker,
 // so `保存 ${name}` is still copy; a `=== 'admin'` comparison operand is not.
 // Exemptions are file/rule/snippet exact — never a blanket directory skip.
-//
-// Positions are computed from a per-file line-start index with a binary search,
-// so reporting thousands of hits stays O(hits · log lines) instead of rescanning
-// the source from offset 0 for every hit. Whole-file content libraries (the
-// vendored quote bank, the emergency fallback catalog) are excluded before the
-// file is read or parsed — their strings are data, not UI chrome.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
@@ -84,24 +58,16 @@ const COPY_TEXT =
 
 const HAN_TEXT = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 
-/**
- * Copy stores: their string values ARE the localized catalog (four shipped
- * locales or an Inkling label table per locale). Their directory prefixes stay
- * in the parse set — they also hold keys and identifiers the other rules must
- * see — but `han-literal` is off by design rather than by allowlist.
- */
+// Copy stores: string values ARE the localized catalog. The prefixes stay in the
+// parse set for keys and identifiers, but `han-literal` is off by design.
 const COPY_STORE_PREFIXES = [
   'src/shared/i18n/messages/',
   'src/shared/i18n/inkling-labels/',
   'src/client/editor/inkling-labels/',
 ]
 
-/**
- * Whole-file content libraries: every string is data (the vendored quote bank,
- * the client's emergency fallback catalog), so the scanner skips them BEFORE
- * reading or parsing — a 1.3 MB quote bank must not cost an AST walk or
- * thousands of findings an allowlist would then have to exempt.
- */
+// Whole-file content libraries: every string is data, so skip before reading or
+// parsing — a 1.3 MB quote bank must not cost an AST walk or thousands of findings.
 const COPY_STORE_FILES = new Set(['src/shared/i18n/fallback-messages.ts', 'src/server/render/calendar/local-quotes.ts'])
 
 /** Whether `file` is a whole-file content library the scanner never parses. */
@@ -190,11 +156,7 @@ function templateQuasis(node: AstNode): TemplateQuasis | null {
   }
 }
 
-/**
- * The literal copy a node carries: a string literal verbatim, a template with
- * each interpolation replaced by a marker (so `` `保存 ${name}` `` still reads
- * as copy), or a JSX expression wrapper around either.
- */
+/** The literal copy a node carries: verbatim string, markered template, or the JSX wrapper. */
 function literalText(node: unknown): string | null {
   if (!isNode(node)) {
     return null
@@ -211,10 +173,7 @@ function literalText(node: unknown): string | null {
   return null
 }
 
-/**
- * Exact text only when the node carries no interpolation — used for locale
- * literals, where `zh-${x}` must never match but `` `zh-CN` `` must.
- */
+/** Exact text only when the node carries no interpolation: `zh-${x}` must never match. */
 function exactText(node: unknown): string | null {
   if (!isNode(node)) {
     return null
@@ -230,10 +189,8 @@ function exactText(node: unknown): string | null {
 }
 
 /**
- * Copy-bearing strings inside a JSX child expression. The expression's own
- * branches are followed (`? :`, `&&`, `+` chains, `as` casts) so neither arm
- * of a conditional can hide copy; comparisons keep their operands out of
- * scope (an `=== 'admin'` test is not interface copy).
+ * Copy-bearing strings inside a JSX child expression. Branches are followed so
+ * neither arm of a conditional hides copy; comparison operands are not copy.
  */
 function expressionCopyTexts(node: unknown, out: string[] = []): string[] {
   if (!isNode(node)) {
@@ -304,7 +261,6 @@ function report(ctx: VisitContext, rule: ScanRule, node: AstNode, text: string):
 }
 
 interface VisitContext {
-  /** Per-file line-start offsets: positions are binary-searched, never rescanned. */
   lineStarts: readonly number[]
   file: string
   violations: ScanViolation[]
@@ -329,9 +285,7 @@ function visit(node: AstNode, ctx: VisitContext): void {
     }
     case 'JSXElement':
     case 'JSXFragment': {
-      // Children that are strings, not attributes: `{'保存'}` / {`保存 ${name}`}
-      // / `{ok ? '保存' : '取消'}`. Attribute values are handled by JSXAttribute,
-      // so nothing is reported twice.
+      // Children only — attributes are handled by JSXAttribute, so no double report.
       const children = node.children
       if (Array.isArray(children)) {
         for (const child of children) {
@@ -349,8 +303,7 @@ function visit(node: AstNode, ctx: VisitContext): void {
       if (name === null || !COPY_ATTRIBUTES.has(name)) {
         break
       }
-      // `alt="封面图"` / `placeholder={`请输入`}` / `title={ok ? '保存' : '取消'}`:
-      // the expression helper covers every branch and filters non-copy text.
+      // The expression helper covers every branch and filters non-copy text.
       const value = node.value
       const expression = isNode(value) && value.type === 'JSXExpressionContainer' ? value.expression : value
       for (const text of expressionCopyTexts(expression)) {
@@ -363,8 +316,7 @@ function visit(node: AstNode, ctx: VisitContext): void {
       const callee = node.callee
       const calleeName = identifierName(callee)
       if (calleeName === 'titleMeta') {
-        // Static titles are message ids: a dotted id is the correct form, any
-        // other literal is unlocalized copy.
+        // Static titles are message ids; any other literal is unlocalized copy.
         const text = literalText(args[0])
         if (text !== null && !MESSAGE_ID.test(text.trim())) {
           report(ctx, 'title-meta', node, text)
@@ -412,7 +364,7 @@ function visit(node: AstNode, ctx: VisitContext): void {
         report(ctx, 'hardcoded-locale', node, node.value)
       }
       // JSX copy is reported by the JSX rules above; this catches registries,
-      // Zod messages, error text and any other plain string literal.
+      // Zod messages and any other plain string literal.
       if (!hanCopyStore && ctx.jsxCopyCovered !== true && !ctx.hanCoveredNodes.has(node) && HAN_TEXT.test(node.value)) {
         report(ctx, 'han-literal', node, node.value)
       }
@@ -424,9 +376,8 @@ function visit(node: AstNode, ctx: VisitContext): void {
       if (text !== null && text.trim() !== '' && isKnownLocaleValue(text)) {
         report(ctx, 'hardcoded-locale', node, text)
       }
-      // Interpolated templates are the classic blind spot: `第 ${n} 页` is
-      // still interface copy, so inspect the quasi text (interpolations become
-      // one marker) rather than requiring an exact literal.
+      // Interpolated templates are still copy: inspect the quasi text rather
+      // than requiring an exact literal.
       const rendered = templateQuasis(node)?.text ?? null
       if (
         !hanCopyStore &&
@@ -441,8 +392,7 @@ function visit(node: AstNode, ctx: VisitContext): void {
     }
   }
 
-  // Everything under a JSX element/attribute is already covered by the JSX
-  // rules; marking the subtree keeps han-literal from double-reporting.
+  // Mark the JSX subtree so han-literal does not double-report.
   const childCtx: VisitContext =
     node.type === 'JSXElement' || node.type === 'JSXFragment' || node.type === 'JSXAttribute'
       ? { ...ctx, jsxCopyCovered: true }
@@ -463,11 +413,7 @@ function visit(node: AstNode, ctx: VisitContext): void {
   }
 }
 
-/**
- * Scan one source text. `file` selects the parser dialect, the reported path
- * and the content-store skip. Content stores return `[]` BEFORE the parser
- * runs — they are data libraries, and a parse would be pure cost.
- */
+/** Scan one source text; `file` selects the parser dialect, reported path and content-store skip. */
 export function scanSourceForI18nLiterals(source: string, file: string): ScanViolation[] {
   if (isContentStoreFile(file)) {
     return []
@@ -543,8 +489,6 @@ function collectFiles(root: string, cwd: string): string[] {
 export function scanI18nLiterals(options: ScanOptions): ScanResult {
   const cwd = process.cwd()
   const discovered = [...new Set(options.roots.flatMap((root) => collectFiles(root, cwd)))].sort()
-  // Content stores are split off before the read: a multi-megabyte data file
-  // costs no I/O and produces no findings the allowlist would have to excuse.
   const skippedFiles = discovered.filter((file) => isContentStoreFile(file))
   const scannedFiles = discovered.filter((file) => !isContentStoreFile(file))
   const violations: ScanViolation[] = []

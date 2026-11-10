@@ -60,7 +60,6 @@ async function newS3Client(sdk: AwsSdk, storage: S3StorageConfig): Promise<S3Cli
     responseChecksumValidation: 'WHEN_REQUIRED' as const,
     // SDK v3 defaults to request checksums, which fail on unknown-length streams —
     // WHEN_REQUIRED keeps them off; callers wanting integrity pass `ChecksumAlgorithm`.
-    //
     requestChecksumCalculation: 'WHEN_REQUIRED' as const,
   }
   const client = new sdk.S3Client(config)
@@ -87,8 +86,8 @@ function fingerprintFor(storage: S3StorageConfig): string {
 }
 
 /**
- * Resolve the live S3 client + bucket. Throws 503 when uploads are disabled
- * (unless `requireEnabled: false`) or credentials are half-configured.
+ * Resolve the live S3 client + bucket; throws 503 when uploads are disabled (unless
+ * `requireEnabled: false`) or credentials are half-configured.
  */
 async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise<S3StorageContext> {
   const settings = requireBlogSettingsSection('assets')
@@ -186,10 +185,8 @@ function isS3NotFoundError(error: unknown): boolean {
   return name === 'NoSuchKey' || name === 'NotFound' || statusCode === 404
 }
 
-/**
- * `HeadObject` existence check. Any failure — 404 or transient — counts as
- * "absent": the subsequent PUT is idempotent, so a mid-migration blip is safe.
- */
+/** `HeadObject` existence check. Any failure — 404 or transient — counts as absent:
+ *  the subsequent PUT is idempotent, so a mid-migration blip is safe. */
 async function objectExists(ctx: S3StorageContext, key: string): Promise<boolean> {
   const sdk = await getAwsSdk()
   try {
@@ -275,10 +272,8 @@ async function getObjectBuffer(ctx: S3StorageContext, key: string, maxSize = MAX
   })
 }
 
-/**
- * Stream an object without buffering (backups exceed the buffered-read cap).
- * Throws `StorageObjectNotFound` on a missing/empty object.
- */
+/** Stream an object without buffering (backups exceed the buffered-read cap); throws
+ *  `StorageObjectNotFound` on a missing/empty object. */
 async function getObjectStream(ctx: S3StorageContext, key: string): Promise<Readable> {
   const sdk = await getAwsSdk()
   const response = await sendGetObject(sdk, ctx.client, ctx.bucket, key)
@@ -331,9 +326,8 @@ function isS3ConfigComplete(storage: S3StorageConfig): boolean {
 }
 
 /**
- * Build a backend bound to one context. Shared by the settings-driven
- * singleton (`s3Backend`) and the migration's explicit-config backend
- * (`createS3BackendFromConfig`).
+ * Backend bound to one context. Shared by the settings-driven singleton (`s3Backend`)
+ * and the migration's explicit-config backend (`createS3BackendFromConfig`).
  */
 function makeS3Backend(
   resolveContext: (options?: { requireEnabled?: boolean }) => Promise<S3StorageContext>,
@@ -435,10 +429,9 @@ export const s3Backend: StorageBackend = {
 }
 
 /**
- * Build an S3 backend bound to an explicit config instead of the live
- * settings — used by the storage migration to talk to the TARGET bucket
- * while the settings still point at the source. The client is created once
- * lazily and never touches the settings-driven cache.
+ * S3 backend bound to an explicit config instead of the live settings — used by the storage
+ * migration to reach the TARGET bucket while settings still point at the source. Its client
+ * is created once, lazily, and never touches the settings-driven cache.
  */
 export function createS3BackendFromConfig(storage: S3StorageConfig): StorageBackend {
   let ctxPromise: Promise<S3StorageContext> | undefined
@@ -463,10 +456,9 @@ export function createS3BackendFromConfig(storage: S3StorageConfig): StorageBack
 export type S3ValidationResult = { ok: true } | { ok: false; descriptor: ErrorMessageDescriptor }
 
 /**
- * Connectivity probe for a candidate S3 config — HeadBucket first, with a
- * ListObjectsV2(MaxKeys=1) fallback for providers/credentials that lack
- * HeadBucket. Distinguishes unreachable / bad credentials / missing bucket
- * so the caller can show an actionable message.
+ * Connectivity probe for a candidate config: HeadBucket first, with a ListObjectsV2(MaxKeys=1)
+ * fallback for providers that deny HeadBucket. Distinguishes unreachable / bad credentials /
+ * missing bucket so the caller can show an actionable message.
  */
 export async function validateS3Config(storage: S3StorageConfig): Promise<S3ValidationResult> {
   const sdk = await getAwsSdk()
@@ -523,8 +515,7 @@ export function classifyS3ValidationError(error: unknown): ErrorMessageDescripto
   ) {
     return descriptorFor('storage.error.endpointUnreachable')
   }
-  // The raw SDK error can echo the endpoint and internal request details —
-  // keep it in the server log, answer the admin with a fixed string.
+  // The raw SDK error can echo the endpoint and request details — log it, answer with a fixed string.
   log.warn('S3 connectivity probe failed', { error })
   return descriptorFor('storage.error.connectivityFailed')
 }

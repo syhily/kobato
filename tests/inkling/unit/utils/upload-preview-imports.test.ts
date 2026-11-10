@@ -3,13 +3,11 @@ import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * Plan 045 import guard: object-URL preview leases are owned by the preview
- * lease module — src/utils/preview-lease.ts is the one file that creates and
- * releases them. Card and plugin sources must not call URL.createObjectURL /
- * URL.revokeObjectURL directly — and since round 3 (C6/C7) neither does
- * extractVideoMetadata, which leases its URL from the seam. The allowlists
- * below are the complete intentional exceptions and may only shrink: delete
- * an entry when a file stops touching object URLs.
+ * Object-URL preview leases are owned by the preview lease module:
+ * `src/inkling/utils/preview-lease.ts` is the one file that creates and
+ * releases them. Card and plugin sources must not call
+ * URL.createObjectURL / URL.revokeObjectURL directly. The allowlists below are
+ * the complete intentional exceptions and may only shrink.
  */
 
 const SCANNED_DIRS = [join('src', 'inkling', 'nodes'), join('src', 'inkling', 'plugins')]

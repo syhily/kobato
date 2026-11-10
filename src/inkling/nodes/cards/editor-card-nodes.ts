@@ -8,42 +8,31 @@ import { resolveCardMenuEntries } from '@/inkling/nodes/cards/card-menus'
 import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
 
 /**
- * One registered card as declaration-backed data: the menu entries (resolved
- * through the one menu projection in `@/inkling/nodes/cards/card-menus`, shared by
- * built-in declarations and host specs alike) and the upload-claiming key,
- * keyed by node type. Consumers take what they need — `buildCardMenu` skips
- * cards whose declaration carries no `menu`, `DragDropPastePlugin` reads
- * `uploadType`.
+ * One registered card as declaration-backed data: menu entries resolved through the
+ * shared menu projection (built-in and host alike) plus the upload-claiming key,
+ * keyed by node type.
  */
 export interface EditorCardNode extends CardMenuSource {
-  /** the declaration's menu entries resolved through `resolveCardMenuEntries` — always
+  /** the declaration's menu entries resolved through `resolveCardMenuEntries`, always
    * normalized to an array; undefined when the declaration carries no `menu` */
   cardMenu: MenuItem[] | undefined
   uploadType?: CardUploadType
 }
 
 /**
- * The editor's registered cards (CONTEXT.md: "card declaration"). The
- * declarations are the single per-card source of truth, so the only genuinely
- * editor-specific fact left is WHICH node types are registered — read as the
- * keys of the editor's registered-node map (the `lexical-internals`
- * accessor) and intersected with `CARD_DECLARATIONS`. This replaces the
- * historical recovery that walked the registered-node map and cast each
- * class's static side (`inkling-node-class`); the declaration's assembled
+ * The editor's registered cards: merged card facts filtered to the node types the
+ * editor registers, read from the keys of its registered-node map. The assembled
  * node class is deliberately not recovered here — the wrapper registry stays
- * unimported, pinned by the layering guard
- * (test/unit/nodes/card-layering-imports.test.ts).
+ * unimported, pinned by `card-layering-imports.test.ts`.
  */
 export function getEditorCardNodes(editor: LexicalEditor): [string, EditorCardNode][] {
   return getRegisteredCardNodes(new Set(getRegisteredNodeMap(editor).keys()))
 }
 
 /**
- * The pure core of `getEditorCardNodes`: the merged card facts
- * (`@/inkling/nodes/cards/card-facts` — built-in declarations in declaration order,
- * which reproduces the editor's card registration order, then host cards in
- * their registration order) filtered to a set of registered node types.
- * Testable directly with a fake registered-type set, no editor mock needed.
+ * The pure core of `getEditorCardNodes`: merged card facts (built-in declarations
+ * in declaration order, then host cards in registration order) filtered to a set of
+ * registered node types. Testable with a fake type set, no editor mock.
  */
 export function getRegisteredCardNodes(registeredNodeTypes: ReadonlySet<string>): [string, EditorCardNode][] {
   return resolveAllCardFacts().flatMap((facts): [string, EditorCardNode][] => {

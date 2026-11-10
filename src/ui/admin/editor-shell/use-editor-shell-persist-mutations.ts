@@ -1,9 +1,5 @@
-// The mutation slice of the persist module: the four wire mutations
-// (upsertMeta / saveDraft / publish / unpublish — the declaration order is a
-// test-pinned contract) plus their note* interpreters. Save-result
-// classification is NOT re-done here: body payloads route back to the
-// orchestrator's `noteBodySaved` through `handleBodySavedRef` (the ref
-// mirror that breaks the declaration cycle with the autosave engine).
+// The four wire mutations — declaration order is test-pinned — plus their
+// note* interpreters.
 
 import { useMutation } from '@tanstack/react-query'
 import { useCallback } from 'react'

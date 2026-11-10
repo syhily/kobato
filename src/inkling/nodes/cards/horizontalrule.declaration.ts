@@ -4,9 +4,6 @@ import { checkedCardDeclaration, type CardDeclaration } from '@/inkling/nodes/ca
 export const horizontalRuleDeclaration = checkedCardDeclaration({
   nodeType: 'horizontalrule',
   baseNode: BaseHorizontalRuleNode,
-  // No decorateTarget: the card renders with no wrapper props. It
-  // historically passed `className="inline-block"`, but `InklingCardWrapper`
-  // never destructured it — the prop was inert and is dropped here.
   menu: [
     {
       label: 'Divider',
@@ -19,9 +16,9 @@ export const horizontalRuleDeclaration = checkedCardDeclaration({
       shortcut: '/hr',
     },
   ],
-  // no toolbar renders for the divider today; the label matches the node type
+  // No toolbar renders for the divider; the label matches the node type.
   toolbarLabel: 'horizontalrule',
-  // Markdown-eligible with no card fence: `---` is handled by
-  // DEFAULT_TRANSFORMERS (`HR` in `@/inkling/markdown/transformers`).
+  // Markdown-eligible without a card fence: `HR` in `@/inkling/markdown/transformers`
+  // owns `---`.
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<'horizontalrule', typeof BaseHorizontalRuleNode, readonly [], readonly []>)

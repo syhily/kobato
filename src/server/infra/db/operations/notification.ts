@@ -100,10 +100,10 @@ export interface InboxFilters {
 }
 
 // Inbox listing, newest first; the cursor paginates by message id. Recalled
-// messages (ADR-0007) are invisible to every recipient. Ordering by the
-// RECIPIENT's notification id (equal to the joined message id) is what the
+// messages are invisible to every recipient. Ordering by the RECIPIENT's
+// notification id (equal to the joined message id) is what the
 // `(user_id, notification_id)` index feeds — ordering by `notification.id`
-// sorted the user's whole history in a temp B-tree.
+// sorts the user's whole history in a temp B-tree.
 export async function listNotificationsForUser(
   db: Database,
   userId: number,
@@ -135,8 +135,8 @@ export function notificationInboxQuery(db: Database, userId: number, filters: In
 }
 
 /**
- * The badge count. Recalled messages join out (ADR-0007): the recipient index
- * still narrows to the user's unread rows, and each surviving row probes the
+ * The badge count. Recalled messages join out: the recipient index still
+ * narrows to the user's unread rows, and each surviving row probes the
  * message's PRIMARY KEY — bounded by one user's unread count.
  */
 export function countUnreadNotifications(db: Database, userId: number): number {
@@ -206,8 +206,8 @@ export interface RecallNotificationResult {
 }
 
 /**
- * Idempotent soft delete (ADR-0007): `recalled_at` is written once and never
- * overwritten. A repeated call touches no row and reports the current state.
+ * Idempotent soft delete: `recalled_at` is written once and never overwritten.
+ * A repeated call touches no row and reports the current state.
  */
 export function recallNotification(db: Database, id: number): RecallNotificationResult | null {
   const updated = db
@@ -306,7 +306,7 @@ export function findUserNamesByIds(db: Database, ids: readonly number[]): Map<nu
   return new Map(rows.map((row) => [row.id, row.name]))
 }
 
-/** Recipient email lookup for notification emails (ADR-0008). Callers pass already-active recipient ids. */
+/** Recipient email lookup for notification emails. Callers pass already-active recipient ids. */
 export function findUserEmailsByIds(db: Database, ids: readonly number[]): Map<number, string> {
   if (ids.length === 0) {
     return new Map()
@@ -322,8 +322,8 @@ export function findUserEmailsByIds(db: Database, ids: readonly number[]): Map<n
 /**
  * Retention: READ recipient rows whose MESSAGE is older than this are pruned
  * by the daily maintenance. 180 days matches the analytics lifetime
- * (`ACCESS_EVENTS_RETENTION_DAYS`), the number this repo already treats as
- * "how long user data lives" (ADR-0010).
+ * (`ACCESS_EVENTS_RETENTION_DAYS`) — the repo's one notion of "how long user
+ * data lives".
  */
 export const NOTIFICATION_RETENTION_DAYS = 180
 
@@ -333,17 +333,12 @@ export interface NotificationPruneCounts {
 }
 
 /**
- * Retention prune (daily maintenance, ADR-0010): delete READ recipient rows
- * whose message is older than {@link NOTIFICATION_RETENTION_DAYS}, then
- * reclaim root messages left with no recipient row (recalled, or past the
- * same window). Age is ALWAYS the message's `created_at` — a message read
- * late is still an old message, and `notification_recipient` carries no
- * creation timestamp. Unread rows are never pruned. Runs in one sync
- * transaction; returns the deleted row counts. Throws on failure (the caller
- * logs).
- *
- * Takes the db explicitly — like `pruneJobRuns` — because the only caller
- * (`runDbMaintenance`) already holds the current handle.
+ * Retention prune (daily maintenance): delete READ recipient rows whose message
+ * is older than {@link NOTIFICATION_RETENTION_DAYS}, then reclaim root messages
+ * left with no recipient row (recalled, or past the same window). Age is ALWAYS
+ * the message's `created_at` — a message read late is still an old message, and
+ * `notification_recipient` carries no creation timestamp. Unread rows are never
+ * pruned. Runs in one sync transaction; throws on failure (the caller logs).
  */
 export function pruneNotifications(db: Database, now: Date = new Date()): NotificationPruneCounts {
   const cutoff = new Date(now.getTime() - NOTIFICATION_RETENTION_DAYS * 86_400_000)

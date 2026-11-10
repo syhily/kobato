@@ -1,9 +1,7 @@
 // Markdown special-markup unwrap — the headless body of the backspace
 // policy "undo a markdown special format when deleting at the end of a
-// formatted text node". Extracted from the keyboard handler so the grammar
-// (which formats unwrap, with which markup) is pinned by its own unit table
-// (test/unit/plugins/behaviour/markdown-unwrap.test.ts); the handler keeps
-// only its caret-position gate and event choreography.
+// formatted text node". The keyboard handler keeps only its caret-position
+// gate and event choreography.
 
 import type { RangeSelection, TextNode } from 'lexical'
 
@@ -52,7 +50,6 @@ export function $unwrapSpecialMarkupFormat(anchorNode: TextNode, selection: Rang
       }
       newText = newText.slice(0, -1) // remove the last character (the eaten one or the trailing markup)
 
-      // manually clear formatting and push offset to accommodate for the added markup
       anchorNode.setFormat(0)
       anchorNode.setTextContent(newText)
       selection.anchor.offset = selection.anchor.offset + newText.length - textContent.length

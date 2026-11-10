@@ -1,8 +1,7 @@
 import { z } from 'zod'
 
-// Storage migration wire contract — the single source for the status DTO
-// shared by the domain state machine (`server/domains/storage/s3-migration`),
-// the admin controller, and the admin UI.
+// Storage migration wire contract: the single source for the status DTO shared
+// by the domain state machine, the admin controller and the admin UI.
 
 /** Phases during which a migration run owns the storage config (persisted on the row). */
 export const STORAGE_MIGRATION_IN_FLIGHT_PHASES = ['copying', 'switching', 'catching-up'] as const

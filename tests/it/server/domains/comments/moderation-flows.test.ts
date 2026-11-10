@@ -18,9 +18,8 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// Domain-seam coverage for the moderation flows sunk out of the HTTP
-// controllers (task C4); the asserted error codes and Chinese messages
-// are the wire contract, translated byte-identically by `domainErrorGuard`.
+// Moderation domain seam: the asserted error codes and Chinese messages are the
+// wire contract, translated byte-identically by `domainErrorGuard`.
 
 const db = getTestDb()
 

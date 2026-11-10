@@ -95,7 +95,7 @@ describe('useLocalDraft — synchronous render branches', () => {
   })
 
   it('clearDraft sweeps every rotated-token draft for the entity and broadcasts the clear once a key is derived', () => {
-    // Audit P1-15: the key embeds the clientRevisionToken, so clearing only
+    // The key embeds the clientRevisionToken, so clearing only
     // the current-token key orphans every rotated predecessor. The edit
     // adapter clears by entity prefix instead.
     const result = renderHook(() =>

@@ -1,4 +1,4 @@
-// Stable React Router identity for frontend RUM (ADR-0012).
+// Stable React Router identity for frontend RUM.
 //
 // The SDK must never receive `location.pathname`, `location.search`, route
 // params, or content titles as a view name. The deepest matched route ID is

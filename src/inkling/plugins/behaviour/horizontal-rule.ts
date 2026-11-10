@@ -9,10 +9,10 @@ import { getSelectedNode } from '@/inkling/utils/getSelectedNode'
 import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
 
 // Horizontal rule behaviour — the insert surgery and the divider scan's
-// guard half, headless so both are synchronous test tables (the
-// HorizontalRulePlugin keeps only registration). The divider's declaration
-// declares no insert spec, so the command registers here beside the policy
-// rather than through CardInsertPlugin's derived view.
+// guard half, headless (the HorizontalRulePlugin keeps only registration).
+// The divider's declaration declares no insert spec, so the command
+// registers here beside the policy rather than through CardInsertPlugin's
+// derived view.
 
 /**
  * The HR insert surgery: insert the rule before the current paragraph's
@@ -30,14 +30,12 @@ export function $insertHorizontalRule(): boolean {
 
   const horizontalRuleNode = $createHorizontalRuleNode()
 
-  // insert a paragraph unless we're already on a blank paragraph
   const selectedNode = selection.focus.getNode()
   if ($isParagraphNode(selectedNode) && selectedNode.getTextContent() !== '') {
     selection.insertParagraph()
   }
 
-  // insert the horizontal rule before the current/inserted paragraph
-  // so the cursor stays on the blank paragraph
+  // the rule goes before the paragraph so the caret stays on the blank line
   selection.focus.getNode().getTopLevelElementOrThrow().insertBefore(horizontalRuleNode)
 
   return true
@@ -88,8 +86,7 @@ export function registerHorizontalRuleInsert(editor: LexicalEditor): () => void 
  * Registers the divider per-update scan: the registration policy
  * (history-tag / composing / empty-dirty skips, nested scan commit) lives
  * in the update-scan seam, the trigger regex and replace-and-select in the
- * card-shortcut seam; this module owns the guard half between them. No-ops
- * when the card is not registered.
+ * card-shortcut seam; this module owns the guard half between them.
  */
 export function registerHorizontalRuleScan(editor: LexicalEditor): () => void {
   if (!getRegisteredNodeMap(editor).has('horizontalrule')) {

@@ -21,13 +21,11 @@ import { $isGalleryNode } from '@/inkling/nodes/GalleryNode'
 import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
 
 // Drop surgery — the headless $-surgeries behind DragDropReorderPlugin. The
-// reorder rules (@/utils/draggable/reorder-rules) own the drop decisions
-// (allowance, insertIndex derivation, drop-time verification); this module
-// owns applying a resolved drop to the editor tree: relocating a dragged
-// card, merging an image dropped onto an image into a gallery, inserting a
-// gallery-dragged image, and the source-removal policy for cross-card drops.
-// The plugin keeps the DOM/selector glue, the handler lifecycle, and the
-// DropResult mapping — rules decide, surgeries apply.
+// reorder rules own the drop decisions (allowance, insertIndex derivation,
+// drop-time verification); this module owns applying a resolved drop to the
+// editor tree: relocating a dragged card, merging an image dropped onto an
+// image into a gallery, inserting a gallery-dragged image, and the
+// source-removal policy for cross-card drops. Rules decide, surgeries apply.
 //
 // The $-functions must run inside editor.update()/editor.read().
 
@@ -35,10 +33,9 @@ import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
  * Moves the dragged card to the resolved drop slot: before the droppable at
  * `insertIndex`, or after the last droppable when the index runs past the end
  * of the document. Clears the selection so no toolbar pops back up over the
- * moved card and the caret is not left stranded somewhere else in the
- * document. Returns false — leaving the tree and the selection untouched —
- * when the node key no longer resolves or the droppable scan came back empty
- * (an empty scan has no slot to resolve; a no-op must not report success).
+ * moved card and the caret is not left stranded. Returns false — leaving the
+ * tree and the selection untouched — when the node key no longer resolves or
+ * the droppable scan came back empty.
  */
 export function $relocateCard(nodeKey: NodeKey | undefined, droppables: HTMLElement[], insertIndex: number): boolean {
   const draggedNode = nodeKey ? $getNodeByKey(nodeKey) : null
@@ -51,7 +48,6 @@ export function $relocateCard(nodeKey: NodeKey | undefined, droppables: HTMLElem
   }
 
   if (insertIndex >= droppables.length) {
-    // drop at end of document
     const targetNode = $getNearestNodeFromDOMNode(droppables[droppables.length - 1])
     if (targetNode) {
       targetNode.insertAfter(draggedNode)
@@ -63,8 +59,6 @@ export function $relocateCard(nodeKey: NodeKey | undefined, droppables: HTMLElem
     }
   }
 
-  // clear selection so we don't show any toolbars immediately and the cursor
-  // isn't left stranded somewhere else in the document
   $setSelection(null)
   return true
 }
@@ -72,12 +66,10 @@ export function $relocateCard(nodeKey: NodeKey | undefined, droppables: HTMLElem
 /**
  * Inserts a new image card built from the dragged image's dataset before the
  * droppable at `insertIndex` and selects it (images can be dragged out of a
- * gallery). Returns the created node, or null when the slot does not resolve
- * to a node — the caller maps null to a failed drop (the source node stays).
- * Also null when the editor doesn't
- * register the image card (the class comes from the registered-node map, not
- * the shim, so this module stays off the decorate tree; unreachable there in
- * practice — only gallery drags reach this path, and core has no gallery).
+ * gallery). Returns null when the slot does not resolve to a node — the caller
+ * maps null to a failed drop (the source node stays) — or when the editor does
+ * not register the image card (the class comes from the registered-node map,
+ * not the shim, so this module stays off the decorate tree).
  */
 export function $insertDraggedImage(
   dataset: ImageNodeDataset,
@@ -102,7 +94,6 @@ export function $insertDraggedImage(
   }
   targetNode.insertBefore(imageNode)
 
-  // select the newly inserted image card
   const nodeSelection = $createNodeSelection()
   nodeSelection.add(imageNode.getKey())
   $setSelection(nodeSelection)
@@ -112,15 +103,10 @@ export function $insertDraggedImage(
 /**
  * Merges an image card dropped onto another image card into a two-image
  * gallery: the gallery takes the target's slot (target image first, dragged
- * image second) and the dragged card's source node is removed. Image datasets
- * carry no fileName, so a copy of the dragged payload's dataset gets the
- * src-derived one (the shared fill policy applies the same fallback for the
- * conversion itself).
- * Returns false — leaving the tree untouched — when either key no longer
- * resolves to an image card, when either dataset lacks a src, or when the
- * editor doesn't register the gallery card (the class comes from the
- * registered-node map, not the shim, so this module stays off the decorate
- * tree).
+ * image second) and the dragged card's source node is removed. Returns false —
+ * leaving the tree untouched — when either key no longer resolves to an image
+ * card, when either dataset lacks a src, or when the editor does not register
+ * the gallery card.
  */
 export function $mergeImagesIntoGallery(
   targetImageKey: NodeKey,
@@ -139,19 +125,16 @@ export function $mergeImagesIntoGallery(
     return false
   }
 
-  // a registry key could resolve to a non-gallery class (a host replaced
-  // it) — check the constructed node instead of asserting, like the image
-  // path in $insertDraggedImage
+  // a registry key could resolve to a non-gallery class (a host replaced it) —
+  // check the constructed node instead of asserting
   const galleryNode = new GalleryNodeClass({})
   if (!$isGalleryNode(galleryNode)) {
     return false
   }
 
-  // images don't contain the filename dataset property so we need to add
-  // it — on a copy of the payload, not by mutating the caller's object (the
-  // shared fill policy applies the same fallback for the conversion itself).
   // `||` over `??` is deliberate: an empty-string fileName is as useless as a
-  // missing one, and datasetToGalleryImage applies the same fallback.
+  // missing one, and datasetToGalleryImage applies the same fallback. The copy
+  // keeps the caller's object unmutated.
   const draggedFileName = typeof draggedDataset.fileName === 'string' ? draggedDataset.fileName : undefined
   const filledDraggedDataset = {
     ...draggedDataset,
@@ -177,11 +160,9 @@ export function $mergeImagesIntoGallery(
 export type ImageCardDraggableInfo = CardDraggableInfo & { cardName: 'image' }
 
 /**
- * The image-card-onto-image drop allowance (gallery creation): the payload
- * is an image CARD dragged from a different node than the target. The
- * predicate narrows to the image-card payload, so the merge below reads the
- * node key and dataset without a second check. Whether the key still
- * resolves is the surgery's concern — a card deleted mid-drag is a stale
+ * The image-card-onto-image drop allowance (gallery creation): the payload is
+ * an image CARD dragged from a different node than the target. Whether the key
+ * still resolves is the surgery's concern — a card deleted mid-drag is a stale
  * node, not a malformed payload.
  */
 export function isImageCardDropAllowed(
@@ -194,9 +175,7 @@ export function isImageCardDropAllowed(
 /**
  * Applies the image-card-onto-image drop: merges both cards into a gallery
  * ($mergeImagesIntoGallery — the gallery takes the target's slot). Returns
- * without touching the tree when the allowance fails. The drop target's
- * `onDrop` returns `undefined` regardless — the merge is its own
- * acknowledgement, matching the historical glue.
+ * without touching the tree when the allowance fails.
  */
 export function applyImageCardDrop(editor: LexicalEditor, targetNodeKey: NodeKey, draggable: DraggableInfo): void {
   if (!isImageCardDropAllowed(draggable, targetNodeKey)) {
@@ -212,9 +191,8 @@ export function applyImageCardDrop(editor: LexicalEditor, targetNodeKey: NodeKey
 /**
  * The source-removal policy for cross-card drops: the dragged card's source
  * node is removed only when the drop succeeded in another container (success
- * without sourceHandled) — a same-container reorder reports sourceHandled,
- * and a failed drop removes nothing. The payload-kind check lives at the
- * caller, where the closed drag union narrows to the card branch.
+ * without sourceHandled) — a same-container reorder reports sourceHandled, and
+ * a failed drop removes nothing.
  */
 export function shouldRemoveDropSource(success: boolean, sourceHandled: boolean): boolean {
   return !sourceHandled && success
@@ -234,19 +212,13 @@ export function $removeDropSource(nodeKey: NodeKey): boolean {
 }
 
 /**
- * The drag-marker refresh policy: should a document update refresh the
- * drag/drop markers? Refresh only when the set, order, or DOM identity of
- * top-level blocks may have changed. Text edits only mark the edited node's
- * ancestors as dirty *parents* (flag false), so per-keystroke updates skip
- * the refresh; a direct root child being intentionally dirty (cloned) means
- * a block was added, removed, reordered, or re-rendered — and the
- * reconciler recreates its DOM. Lexical marks the root itself
- * intentionally dirty on every update ($applyAllTransforms), so the root's
- * own flag is ignored. The plugin additionally forces a refresh on drag
- * start as a final safety net.
- *
- * Not a $-function: it takes the update-listener payload and runs the read
- * itself, so the plugin's listener body is a one-line adapter.
+ * The drag-marker refresh policy: refresh only when the set, order, or DOM
+ * identity of top-level blocks may have changed. Text edits only mark the
+ * edited node's ancestors as dirty *parents* (flag false), so per-keystroke
+ * updates skip the refresh; a direct root child being intentionally dirty
+ * (cloned) means a block was added, removed, reordered, or re-rendered.
+ * Lexical marks the root itself intentionally dirty on every update
+ * ($applyAllTransforms), so the root's own flag is ignored.
  */
 export function resolveDragMarkerRefresh(dirtyElements: Map<NodeKey, boolean>, editorState: EditorState): boolean {
   let hasDirtyRootChildCandidate = false

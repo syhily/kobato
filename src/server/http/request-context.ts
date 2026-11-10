@@ -12,13 +12,11 @@ import type { Role } from '@/shared/utils/roles'
 import { requireRole } from '@/server/domains/auth/rbac'
 
 /**
- * The canonical per-request fact base — the CONTRACT module: type, React
- * Router context key, route-side accessors. Derived once by
- * `requestContextMiddleware`.
+ * The canonical per-request fact base — the CONTRACT module: type, React Router
+ * context key, route-side accessors. Derived once by `requestContextMiddleware`.
  */
 export interface RequestContext {
   session: BlogSession
-  /** The session's identity projection. `null` for anonymous requests. */
   viewer: SessionUser | null
   clientAddress: string
   /** Normalized document URL (never carries `.data` / `_routes` / `index`). */
@@ -27,26 +25,22 @@ export interface RequestContext {
   db: Database
   cspNonce: string
   /**
-   * The request's PINNED settings bundle — captured together with
-   * `localization` on the first access of either getter, then frozen for the
-   * rest of the request. Renderers take their inputs from here so the bytes
-   * they produce match the `revision` in the cache key.
+   * PINNED settings bundle, captured together with `localization` on the first
+   * access of either getter then frozen: renderers take their inputs from here so
+   * the bytes they produce match the `revision` in the cache key.
    */
   readonly settings: BlogSettingsBundle | null
   /**
-   * UI locale + site time zone (+ `timeFormat` and the settings `revision`),
-   * resolved from the same pinned snapshot as `settings`.
+   * Resolved from the same pinned snapshot as `settings`.
    *
-   * Lazily memoized: this context is derived BEFORE `buildLoadContext` awaits
-   * `hydrateBlogSettings`, and only loaders/controllers read it — so first
-   * access happens after hydration and the snapshot is authoritative. The
-   * resolver (`resolveAppLocalization`) is the same one pre-install and
-   * background surfaces use.
+   * Lazily memoized because this context is derived BEFORE `buildLoadContext`
+   * awaits `hydrateBlogSettings`; only loaders/controllers read it, so first
+   * access happens after hydration and the snapshot is authoritative.
    */
   readonly localization: AppLocalization
   /**
-   * Mark the session mutated — the middleware commits it after the response
-   * (the ONLY commit point; sid-changing flows keep their own channel, ADR-0003).
+   * Mark the session mutated — the middleware commits it after the response (the ONLY
+   * commit point; sid-changing flows keep their own channel).
    */
   markSessionDirty(): void
 }
@@ -64,11 +58,8 @@ export function getRequestContext(args: AnyRouteArgs): RequestContext {
 }
 
 /**
- * Guard-only loader factory for admin/editor pages whose loader exists
- * solely to gate the route behind a minimum role (data loads client-side
- * via oRPC): resolves the canonical context, asserts the role, returns
- * `null`. Throws `ActionFailure(403)` for anonymous / under-privileged
- * viewers, same as the hand-written loaders it replaces.
+ * Guard-only loader factory for admin/editor routes whose loader exists solely to gate
+ * the route behind a minimum role (data loads client-side via oRPC).
  */
 export function guardOnlyLoader(min: Role) {
   return async (args: AnyRouteArgs): Promise<null> => {

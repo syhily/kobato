@@ -17,10 +17,10 @@ import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
- * The access_events table shape — owned here (the infra DuckDB wrapper
- * receives this DDL from the caller). Generic blob/double slots in the
- * Cloudflare Analytics Engine style: new dimensions take a free slot
- * instead of a schema migration. No secondary indexes by design.
+ * The access_events table shape — owned here, passed to the infra DuckDB
+ * wrapper. Generic blob/double slots in the Cloudflare Analytics Engine style:
+ * new dimensions take a free slot instead of a schema migration. No secondary
+ * indexes by design.
  */
 export const ACCESS_EVENTS_DDL = `
 CREATE TABLE IF NOT EXISTS access_events (
@@ -34,13 +34,13 @@ CREATE TABLE IF NOT EXISTS access_events (
 )
 `
 
-/** 180-day telemetry retention (plan §1.11) — fixed by design, not a setting. */
+/** 180-day telemetry retention; fixed by design, not a setting. */
 export const ACCESS_EVENTS_RETENTION_DAYS = 180
 
 /**
  * blob slot semantics — the single source of truth (a contract test pins
- * uniqueness and coverage). `blob5` holds the daily-salted visitor hash,
- * NEVER a raw IP. `blob16` is reserved and always written as ''.
+ * uniqueness and coverage). `blob5` holds the daily-salted visitor hash, NEVER a
+ * raw IP. `blob16` is reserved and always written as ''.
  */
 export const blobsMap = {
   blob1: 'path',
@@ -81,7 +81,7 @@ const uuidToUint128 = (uuid: string): bigint => BigInt(`0x${uuid.replaceAll('-',
 
 const BLOB_KEYS = unsafeCast<BlobsKey[]>(Object.keys(blobsMap).sort((a, b) => Number(a.slice(4)) - Number(b.slice(4))))
 
-/** Column types in DDL order — the single source the data chunks are created from. */
+/** Column types in DDL order — data chunks are created from this. */
 const ACCESS_EVENTS_CHUNK_TYPES: DuckDBType[] = [
   UUID,
   VARCHAR,
@@ -92,7 +92,6 @@ const ACCESS_EVENTS_CHUNK_TYPES: DuckDBType[] = [
   DOUBLE,
 ]
 
-/** One event → blob-slot record — the single owner of the event → slot mapping. */
 function eventBlobs(e: EnrichedAccessEvent): Record<Exclude<BlobName, 'reserved'>, string | null> {
   return {
     path: e.path,
@@ -131,10 +130,9 @@ function accessEventColumns(events: EnrichedAccessEvent[]): DuckDBValue[][] {
 }
 
 /**
- * Append a whole batch as data chunks — one `setColumns` + `appendDataChunk`
- * per ≤2048-row slice instead of a per-value appender call per cell.
- * At-least-once: a mid-batch failure leaves flushed chunks visible while the
- * batch dead-letters.
+ * Append a batch as data chunks — one `setColumns` + `appendDataChunk` per
+ * ≤2048-row slice instead of an appender call per cell. At-least-once: a
+ * mid-batch failure leaves flushed chunks visible while the batch dead-letters.
  */
 export async function appendAccessEvents(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
   const appender = await writer.createAppender('access_events')

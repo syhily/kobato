@@ -69,8 +69,8 @@ export function InputListItem<T extends InputListItemData = InputListItemData>({
     }
   }, [selected, scrollIntoView])
 
-  // We use the capture phase of the mouse down event, otherwise the list option will be removed when blurring the input
-  // before calling the click event
+  // Capture phase for mousedown: a bubble-phase handler would run after the
+  // input's blur removed the list, so the click would never land
   const handleMouseDown = (event: React.MouseEvent) => {
     // Prevent losing focus when clicking an option
     event.preventDefault()
@@ -217,7 +217,6 @@ export function InputList<T extends InputListItemData = InputListItemData>({
                 onSelect={onSelectEvent}
               />
             ) : (
-              // a flat option list is one degenerate group with no header
               <KeyboardSelectionWithGroups
                 getGroup={renderEmptyGroup}
                 getItem={getItem}

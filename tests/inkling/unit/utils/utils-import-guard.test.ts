@@ -3,18 +3,16 @@ import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * The src/utils boundary, pinned statically (CONTEXT.md: "utils layer"):
- * utils is the bottom layer — framework-free helpers the upper layers pull
- * in, never the reverse. A utils module that runtime-imports the node tree,
- * the components/hooks/plugins layers, closes the very cycles the card
- * pipeline guards against (the upload-intent / buildCardMenu /
- * getEditorCardNodes / nested-editors couplings this guard's C14 stage moved
- * to their consumers). Type-only imports erase at runtime and stay free.
+ * The src/inkling/utils boundary, pinned statically: utils is the bottom
+ * layer — framework-free helpers the upper layers pull in, never the reverse.
+ * A utils module that runtime-imports the node tree or the
+ * components/hooks/plugins layers closes the cycles the card pipeline guards
+ * against. Type-only imports erase at runtime and stay free.
  *
  * The one carve-out: `@/inkling/nodes/base/utils/` holds pure leaf helpers (URL
- * grammar, gallery fill, card widths) shared by both trees — importing those
- * pulls no node class, declaration, or registry. The public barrel's
- * CARD_WIDTHS re-export (src/utils/index.ts) rides the same carve-out.
+ * grammar, gallery fill, card widths) shared by both trees, so importing those
+ * pulls no node class, declaration, or registry; the public barrel's
+ * CARD_WIDTHS re-export rides the same carve-out.
  */
 
 const FORBIDDEN_LAYERS = ['components', 'hooks', 'plugins'] as const
@@ -50,16 +48,11 @@ function runtimeImportSpecifiers(source: string): string[] {
 }
 
 /**
- * Resolves an import specifier to its src-relative target ('nodes/...',
- * 'components/...', a bare package name, …), or null for specifiers that do
- * not reach into src (bare packages, node: builtins). Both alias and
- * relative forms are normalized: `@/inkling/nodes/foo` and `../../nodes/foo` from a
- * src/utils file land on the same target, so a relative cross-layer import
- * is caught exactly like its alias twin (the repo convention is `@/inkling/` — a
- * relative path into another layer is a drift vector, not a style choice).
- * `fromFile` is a cwd-relative src path ('src/inkling/utils/x.ts'). The resolution
- * is pure string math — no cwd, no filesystem — so tests can hand it any
- * path and the verdict never depends on where vitest runs from.
+ * Resolves a specifier to its src-relative target ('nodes/...',
+ * 'components/...'), or null for specifiers outside src. Alias and relative
+ * forms both normalize, so `@/inkling/nodes/foo` and `../../nodes/foo` from a
+ * utils file land on the same target. Pure string math (no cwd, no filesystem),
+ * so the verdict never depends on where vitest runs.
  */
 function normalizeSpecifier(fromFile: string, specifier: string): string | null {
   if (specifier.startsWith('@/inkling/')) {
@@ -121,8 +114,8 @@ describe('src/inkling/utils import guard', () => {
     // a src/utils file resolving relative imports into the forbidden layers
     const fixtureFile = 'src/inkling/utils/fixture.ts'
 
-    // bare-directory alias imports — '@/inkling/nodes' (no trailing slash) used to slip
-    // past the '/'-terminated prefixes
+    // bare-directory alias imports — no trailing slash, so '/'-terminated
+    // prefixes alone would miss them
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '@/inkling/nodes'`)).toEqual(['@/inkling/nodes'])
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '@/inkling/components'`)).toEqual([
       '@/inkling/components',
@@ -132,9 +125,8 @@ describe('src/inkling/utils import guard', () => {
     // carve-out still applies to the bare base-utils directory
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '@/inkling/nodes/base/utils'`)).toEqual([])
 
-    // relative specifiers into other layers — previously not judged at all
-    // (the fixture lives at src/inkling/utils, so one '..' reaches the layer
-    // root: '../nodes' is the cross-layer form)
+    // relative specifiers into other layers — the fixture lives at
+    // src/inkling/utils, so one '..' reaches the layer root
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '../nodes/base/toggle/ToggleNode'`)).toEqual([
       '../nodes/base/toggle/ToggleNode',
     ])

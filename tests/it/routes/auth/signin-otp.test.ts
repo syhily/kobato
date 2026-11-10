@@ -367,7 +367,6 @@ describe('integration: OTP login flow (real DB)', () => {
     const admin = await seedAdminUser()
     const oldOtp = await doLogin()
 
-    // Same-session mutation: marked dirty; the data result carries no Set-Cookie.
     const resendResult = await callAction('resendotp', withCsrf())
     expect(resendResult.data?.message).toBe('验证码已重新发送。')
     expect(markSessionDirty).toHaveBeenCalled()
@@ -469,7 +468,6 @@ describe('integration: OTP login flow (real DB)', () => {
     const result = await callAction('cancelotp', withCsrf())
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toContain('/admin/signin')
-    // Same-session mutation: marked dirty; the redirect carries no Set-Cookie.
     expect(markSessionDirty).toHaveBeenCalled()
     expect(result.headers.get('Set-Cookie')).toBeNull()
 

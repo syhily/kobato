@@ -94,8 +94,6 @@ export interface HeaderCardEditors {
   subheaderTextEditorInitialState?: InitialEditorStateType
 }
 
-// The seam, narrowed: four view-model objects instead of ~40 flat props.
-// Internally the groups flatten — the card body is unchanged.
 interface HeaderCardProps {
   view: HeaderCardViewModel
   handlers: HeaderCardHandlers
@@ -274,8 +272,8 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
   const correctedBackgroundSize = backgroundSize === 'contain' && backgroundImageSrc ? 'contain' : 'cover'
 
   // Tailwind scans source text, so no runtime interpolation — map the
-  // alignment vocabulary to full class names ('' / legacy values read as
-  // left, the element's default)
+  // alignment vocabulary to full class names ('' reads as left, the element's
+  // default)
   const buttonAlignmentClass = alignment === 'center' ? 'text-center' : 'text-left'
 
   const getButtonSize = (layoutString: string) => (layoutString === 'full' ? 'large' : 'medium')
@@ -291,7 +289,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
           className={cx(
             'flex w-full flex-col transition-colors ease-in-out sm:flex-row',
             layout === 'split' && isSwapped && 'flex-col-reverse sm:flex-row-reverse',
-            // This is needed to align the content with wide breakout width
             (layout === 'full' || (layout === 'split' && correctedBackgroundSize === 'contain')) &&
               'mx-auto w-[calc(74rem+4rem)] xs:w-[calc(74rem+8rem)] md:w-[calc(74rem+12rem)] lg:w-[calc(74rem+22rem)] xl:w-[calc(74rem+40rem)]',
             backgroundImageSrc && layout === 'split' && correctedBackgroundSize === 'contain' && 'items-center',
@@ -449,7 +446,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
           </div>
         </div>
 
-        {/* Read-only overlay */}
         {!isEditing && <ReadOnlyOverlay />}
       </div>
 

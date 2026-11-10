@@ -4,13 +4,13 @@ import type { ApiErrorData, ErrorIssueWire, ErrorMessageDescriptor } from '@/sha
 import { descriptorMessage, rawMessageDescriptor } from '@/server/infra/http/error-descriptor'
 import { ActionFailure, DomainError, domainStatus, type DomainErrorIssue } from '@/server/infra/http/errors'
 
-/** Single translation shared by the Hono and oRPC adapters so status, code,
- *  message, descriptor, issues, and headers can never diverge between transports. */
+/** Single translation shared by the Hono and oRPC adapters, so status, code, message,
+ *  descriptor, issues, and headers can never diverge between transports. */
 export interface TranslatedDomainError {
   status: number
   /** Transport code: a `DomainError` code, or the generic fallback. */
   code: string
-  /** Localized top-level message (legacy raw text when the error predates descriptors). */
+  /** Localized top-level message; raw text when the producer has no descriptor yet. */
   message: string
   descriptor: ErrorMessageDescriptor
   issues?: ErrorIssueWire[]
@@ -21,7 +21,7 @@ export interface TranslatedDomainError {
 export interface ApiErrorInput {
   status: number
   code: string
-  /** Descriptor, or legacy raw text this boundary wraps in the passthrough key. */
+  /** Descriptor, or raw text this boundary wraps in the passthrough key. */
   message: string | ErrorMessageDescriptor
   issues?: DomainErrorIssue[]
   headers?: HeadersInit
@@ -40,10 +40,9 @@ function issueToWire(issue: DomainErrorIssue, translator?: ServerTranslator): Er
 }
 
 /**
- * Resolve an error's user-facing copy for one request. A descriptor is
- * formatted against the request's server translator; a legacy raw message
- * rides its passthrough descriptor unchanged. Without a translator (unit
- * callers, diagnostics) the English fallback is the honest answer.
+ * Resolve an error's copy for one request: a descriptor is formatted against the request
+ * translator, raw text rides the passthrough descriptor, and without a translator
+ * (tests, diagnostics) the English fallback is used.
  */
 export function translateApiError(input: ApiErrorInput, translator?: ServerTranslator): TranslatedDomainError {
   const descriptor = typeof input.message === 'string' ? rawMessageDescriptor(input.message) : input.message
@@ -77,10 +76,9 @@ export function translateDomainError(
 }
 
 /**
- * Fold the localized issue list into the user-facing message, so an
- * `ORPCError.message` names the failing field without a second client-side
- * translation. Joins/separators are catalog messages, never hardcoded
- * punctuation: English `; ` and full-width `；` differ by locale.
+ * Fold the localized issue list into the message so `ORPCError.message` names the failing
+ * field without a second client-side translation. Separators are catalog messages, never
+ * hardcoded punctuation: English `; ` and full-width `；` differ by locale.
  */
 export function summarizeApiError(translated: TranslatedDomainError, translator: ServerTranslator): string {
   const { issues } = translated
@@ -99,10 +97,7 @@ export function summarizeApiError(translated: TranslatedDomainError, translator:
   return translator.format('error.api.summary', { message: translated.message, issues: parts.join(separator) })
 }
 
-/**
- * Join non-fatal descriptors into the wire `warning` string (space-separated,
- * the pre-descriptor shape the revision contract keeps).
- */
+/** Join non-fatal descriptors into the wire `warning` string, space-separated. */
 export function formatWarningDescriptors(
   descriptors: readonly ErrorMessageDescriptor[],
   translator: ServerTranslator,

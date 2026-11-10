@@ -6,17 +6,15 @@ import { useCardPickerState, useCardPickerStore } from '@/inkling/context/CardPi
 import { resolveCardPicker } from '@/inkling/nodes/cards/host-card-registry'
 
 /**
- * The pick seam's dispatch half (CONTEXT.md: "pick seam"): one generic picker
- * host on the editor surface (a CORE_PLUGINS entry, non-nested surfaces only
- * — nested composers share the top-level handle, so a nested mount would
- * render the active picker twice). It subscribes to the per-composer pick
- * request store, resolves the node type's picker through the registry's
- * single channel (`resolveCardPicker` — host spec fact or built-in-variant
- * override), and mounts `picker.render(...)` exactly once for the active
- * request. The `close` prop, a node-deleted update, and the host's own
- * unmount (e.g. the surface flipping readOnly mid-save) each drop the
- * request — a store write that outlived its host would re-open the picker
- * unprompted on the next mount.
+ * The pick seam's dispatch half (CONTEXT.md: "pick seam"): one generic
+ * picker host on the editor surface (a CORE_PLUGINS entry, non-nested
+ * surfaces only — nested composers share the top-level store, so a nested
+ * mount would render the active picker twice). Subscribes to the
+ * per-composer pick request store, resolves the node type's picker through
+ * the registry's single channel, and mounts `picker.render(...)` exactly
+ * once for the active request. Requests drop on close, node deletion, or
+ * host unmount — a store write that outlived its host would re-open the
+ * picker unprompted on the next mount.
  */
 export function CardPickerHostPlugin() {
   const [editor] = useLexicalComposerContext()

@@ -120,7 +120,7 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
     async function upload(files: FileList | File[] = [], options: { formData?: Record<string, string> } = {}) {
       void options
       setFilesNumber(files.length)
-      // added delay for demo, helps to check progress bar
+      // Demo upload: simulated progress so the bar is observable.
       setLoading(true)
 
       const validationResult = validate(files)
@@ -134,7 +134,7 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
       }
 
       let stepDelay = 200
-      // adjust when testing to speed up tests
+      // Shorten the steps in tests.
       if (isTestEnv) {
         stepDelay = 5
       }
@@ -146,8 +146,7 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
       setProgress(90)
       await delay(stepDelay)
 
-      // simulate upload errors for the sake of testing
-      // Any file that has "fail" in the filename will return errors
+      // Simulated upload errors: any file with "fail" in its name returns an error.
       const fileErrors = Array.from(files).filter((file) => file.name.includes('fail'))
       if (fileErrors.length) {
         setErrors(fileErrors.map((file) => new FileUploadError(file.name, 'Upload failed')))
@@ -156,24 +155,20 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
         return undefined
       }
 
-      // uploadResult contains an object for each upload as we want to be able to return
-      // server-provided meta data for future card uses (e.g. audio id3, image exif).
-      //
-      // returning fileName is import so upload results can be mapped back to the original
-      // file for multi-file uploads such as in gallery cards where we need to replace
-      // the correct preview image with the real uploaded file
+      // One result per upload, carrying server-provided metadata for later card use (audio id3, image exif).
+      // `fileName` maps results back to the original file in multi-file uploads (gallery previews).
       // TODO: can we use something more unique than filename?
       let uploadResult: Array<{ url: string; fileName: string }> = []
 
       if (isMultiplayer) {
-        // multiplayer needs to store the whole file data inline so it can be transferred
-        // and stored in the shared document, otherwise images etc won't appear across browsers
+        // Multiplayer stores the whole file inline so it travels with the shared document; otherwise images and
+        // other media never appear in other browsers.
         try {
           for (const file of Array.from(files)) {
             const reader = new FileReader()
             const url = await new Promise<string>((resolve, reject) => {
               reader.addEventListener('load', () => {
-                // readAsDataURL produces a string result; anything else means the read failed
+                // `readAsDataURL` produces a string result; anything else means the read failed.
                 if (typeof reader.result === 'string') {
                   resolve(reader.result)
                 } else {
@@ -195,16 +190,14 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
             })
           }
         } catch (error) {
-          // a rejected read must not leave isLoading stuck — mirror the
-          // validation-failure path above (errors set, loading reset)
+          // A rejected read must not leave `isLoading` stuck — mirror the validation-failure path above.
           setErrors([error instanceof Error ? error : new Error(String(error))])
           setLoading(false)
           setProgress(100)
           return undefined
         }
       } else {
-        // for non-multiplayer editors, use blob urls as they are much shorter meaning they
-        // are nicer to work with in things like the markdown card and in the state tree
+        // Non-multiplayer uses blob URLs: much shorter, which keeps the markdown card and state tree readable.
         uploadResult = Array.from(files).map((file) => ({
           url: URL.createObjectURL(file),
           fileName: file.name,

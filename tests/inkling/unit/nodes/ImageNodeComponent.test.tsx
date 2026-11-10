@@ -23,8 +23,7 @@ vi.mock('@/inkling/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => null,
 }))
 
-// the store equivalent of the old per-test CardContext factory: the card is
-// selected (its toolbar renders) and not editing unless a test says otherwise
+// the card is selected (its toolbar renders) and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'img-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},

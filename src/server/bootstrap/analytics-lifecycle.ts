@@ -18,11 +18,9 @@ import {
 import { getBatcher } from '@/server/infra/db/batcher-registry'
 import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
-/**
- * Boot-time owner of the DuckDB sidecar and the daily 180-day retention
- * job (same 04:30 slot as the SQLite half). The engine's priority-0
- * shutdown hook runs after the priority-100 batcher flushes.
- */
+/** Boot-time owner of the DuckDB sidecar and the daily 180-day retention job (the 04:30
+ *  slot shared with the SQLite half). The engine's priority-0 shutdown hook runs after
+ *  the priority-100 batcher flushes. */
 const engine = new ManagedEngine<AnalyticsHandle>(
   {
     open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ANALYTICS_DDL),
@@ -37,9 +35,8 @@ wireDeviceEnvBeaconBatcher({ getWriter: () => engine.get().writer })
 
 let maintenanceJob: ScheduledJob | null = null
 
-// Serialize the backup (CHECKPOINT+copy) and retention (DELETE) windows:
-// copyFile is external to the writer, so a mid-copy DELETE would archive a
-// straddled file.
+// Serialize the backup (CHECKPOINT+copy) and retention (DELETE) windows: copyFile is
+// external to the writer, so a mid-copy DELETE would archive a straddled file.
 let analyticsMutationLock: Promise<void> = Promise.resolve()
 
 async function withAnalyticsMutationLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -77,9 +74,8 @@ export function scheduleNextAnalyticsMaintenance(): void {
 
 export async function initAnalyticsDatabase(db: Database): Promise<void> {
   await engine.init()
-  // Legacy `access_log` → `access_events` conversion: once per database,
-  // before the maintenance scheduler arms and before requests can push
-  // into the batcher, serialized against the retention/snapshot lock.
+  // Legacy `access_log` → `access_events` conversion: once per database, before the
+  // maintenance scheduler arms and before requests can push into the batcher.
   await withAnalyticsMutationLock(() => runAnalyticsBlobMigrationAtBoot(db, engine.get()))
   scheduleNextAnalyticsMaintenance()
 }
@@ -103,15 +99,14 @@ export function getAnalyticsReader(): AnalyticsReader {
   return getAnalyticsHandle().reader
 }
 
-/** Checkpoint + copy the sidecar to `stagingPath` for a backup archive; false when the handle is in-memory, errors propagate. Every sidecar-writing batcher stays paused across the window. */
+/** Checkpoint + copy the sidecar to `stagingPath` for a backup archive; false when the
+ *  handle is in-memory. Every sidecar-writing batcher stays paused across the window. */
 export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean> {
   const handle = getAnalyticsHandle()
   if (handle.inMemory) {
     return false
   }
   return withAnalyticsMutationLock(async () => {
-    // Via the registry's uniform pause/resume seam, keyed by registration name.
-    // Every batcher writing to this file must be parked for the copy window.
     const batchers = [getBatcher('AccessLogBatcher'), getBatcher('DeviceEnvBeaconBatcher')]
     for (const batcher of batchers) {
       await batcher?.pause?.()

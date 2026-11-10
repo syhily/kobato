@@ -7,11 +7,10 @@ import { restartServer } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 /**
- * The restore completion chain — the recovery policy behind the machine's
- * `complete` step: rollback → reopen → reschedule → migrate → ANALYZE →
- * cache wipe → restart. Engine access is injected by the composition root; every step
- * owns its swallow-and-log rule, and a failed reopen aborts the chain
- * before the restart — never restart into a dead handle.
+ * The restore completion chain behind the machine's `complete` step: rollback
+ * → reopen → reschedule → migrate → ANALYZE → cache wipe → restart. A failed
+ * reopen aborts the chain before the restart — never restart into a dead
+ * handle.
  */
 
 export interface RestoreCompletionDeps {
@@ -29,14 +28,12 @@ export interface RestoreCompletionDeps {
 
 const log = getLogger('backup.restore-completion')
 
-/** Build the machine's `complete` step (`RestoreMachineDeps.complete`). */
 export function createRestoreCompletion(
   deps: RestoreCompletionDeps,
 ): (success: boolean, error?: Error) => Promise<void> {
   return async function completeRestore(success, error) {
     if (!success) {
       log.error('Restore failed, restarting server for recovery', { err: error?.message })
-      // Roll back the originals before the recovery reopen.
       try {
         await rollbackPreRestoreFiles()
       } catch (rollbackErr) {
@@ -78,7 +75,7 @@ export function createRestoreCompletion(
       try {
         await migrateDatabase(deps.getDb())
         log.info('Database migrations completed after restore')
-        // Bulk-loaded file — refresh planner statistics (plan §1.9).
+        // Bulk-loaded file — refresh planner statistics.
         deps.getDatabaseHandle().client.exec('ANALYZE')
       } catch (migrateErr) {
         log.error('Database migrations failed after restore', {
@@ -105,7 +102,6 @@ export function createRestoreCompletion(
 
       await restartServer()
       log.info('Restore completion finished, server back online')
-      // Success path — drop the pre-restore originals the swap kept.
       if (success) {
         try {
           await cleanupPreRestoreFiles()

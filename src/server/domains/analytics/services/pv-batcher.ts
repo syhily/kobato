@@ -14,9 +14,9 @@ interface BatcherOptions {
   flushThreshold: number
 }
 
-// In-memory counter aggregator for high-frequency page views. Shares
-// the FlushLoop skeleton with the insert batchers; on failure it merges
-// the snapshot back for a retry instead of dead-lettering rows.
+// In-memory counter aggregator for high-frequency page views. Shares the
+// FlushLoop skeleton with the insert batchers; on failure it merges the snapshot
+// back for a retry instead of dead-lettering rows.
 class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
   private buffer = new Map<string, number>()
 
@@ -87,9 +87,6 @@ class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
 
 const BATCHER_NAME = 'PageViewBatcher'
 
-// Self-register so the bootstrap lifecycle drives every batcher
-// through one vocabulary (`initAllBatchers` / `flushAllBatchers` /
-// `resetAllBatchers` / `replayAllDeadLetters`).
 registerBatcher(
   BATCHER_NAME,
   (handle) =>

@@ -1,7 +1,5 @@
-// Floating element placement — the floating toolbar's "always above the
-// target, horizontally centered, clamped into the scroller" positioning,
-// projected onto @/utils/fit-rect's 'clamp-above' policy. The DOM edge
-// (measuring the element/scroller rects, writing the styles) stays here.
+// Floating element placement: always above the target and horizontally centered, clamped
+// into the scroller. Measuring and style writes stay here.
 
 import { ANCHOR_POPUP_GAP, fitRectWithin } from '@/inkling/utils/fit-rect'
 

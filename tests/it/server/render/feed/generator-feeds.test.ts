@@ -13,9 +13,8 @@ import { category as categoryTable, tag as tagTable } from '@/server/infra/db/sc
 import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
 import { generateFeeds } from '@/server/render/feed/generator'
 
-// `generateFeeds` perimeter against the real engine: the RSS/Atom envelope
-// plus `selectFeedPosts` wiring (scope, size, miss → empty-feed policy), and
-// the end-to-end state → save-time projections → columns → feed XML path.
+// `generateFeeds` against the real engine: the RSS/Atom envelope, `selectFeedPosts` wiring
+// (scope, size, miss → empty-feed policy), and the state → projections → columns → feed XML path.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -108,7 +107,7 @@ describe('render/feed/generator — generateFeeds', () => {
   })
 
   it("lands a code block's code text in the feed XML (RN-1 regression)", async () => {
-    // Feed must keep the code text: sanitize-html used to drop CDATA-wrapped highlightedHtml.
+    // sanitize-html drops CDATA-wrapped markup, so the code text must survive the feed pass.
     await seedPost({
       slug: 'with-code',
       title: 'With Code',

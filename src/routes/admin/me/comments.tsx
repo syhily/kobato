@@ -51,8 +51,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { entities } = await caller.comments.searchMineEntities({})
   const entityOptions = [...entities]
 
-  // The URL may pin an entity outside the result set — resolve it so the
-  // trigger can render the human-readable title.
+  // The URL may pin an entity outside the result set — resolve it so the trigger can render its title.
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
     const resolved = await caller.comments.resolveEntity({ entity: entityValue! })
     if (resolved !== null) {

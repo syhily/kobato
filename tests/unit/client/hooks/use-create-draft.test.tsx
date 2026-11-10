@@ -39,7 +39,7 @@ const meta = { title: 'Hello', summary: '' }
 
 // The hook guards storage with `typeof window === 'undefined'`; the SSR
 // harness never fires `useEffect`, so only synchronous branches are
-// reachable — we install a fake `window` with a `sessionStorage` slot.
+// reachable — install a fake `window` with a `sessionStorage` slot.
 function makeSessionStorage(initial: Record<string, string> = {}) {
   const store = new Map<string, string>(Object.entries(initial))
   return {
@@ -96,7 +96,6 @@ describe('useCreateDraft — sessionId derivation (readOrCreateSessionId)', () =
     const fake = installWindow({ [config.sessionKey]: 'existing-session' })
     const result = renderHook(() => useCreateDraft(config, { body: emptyBody, meta }))
     expect(result.sessionId).toBe('existing-session')
-    // Should not overwrite an existing value.
     expect(fake.sessionStorage.setItem).not.toHaveBeenCalled()
   })
 

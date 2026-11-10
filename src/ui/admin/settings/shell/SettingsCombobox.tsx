@@ -6,10 +6,8 @@ import { Combobox } from '@/ui/components/combobox'
 
 const log = getLogger('settings.combobox')
 
-// `<Combobox>` + immediate save, generic over the item type. The upstream
-// `onValueChange` guard is AWAITED first; returning `SETTINGS_SKIP_COMMIT`
-// vetoes the change (no commit) — any other result lets the wrapper commit the
-// field.
+// `<Combobox>` + immediate save, generic over the item type: the upstream
+// `onValueChange` guard is awaited before the wrapper commits.
 
 type ComboboxProps<Value> = ComponentProps<typeof Combobox<Value>>
 

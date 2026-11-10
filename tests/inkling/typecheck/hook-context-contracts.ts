@@ -1,5 +1,4 @@
 import type { BookmarkEmbedResponse, CardConfig } from '@/inkling/context/InklingHostIntegrationContext'
-/** Compile-time contracts closed by the hooks/context conversion-repair batch. */
 import type { UseDropTargetOptions } from '@/inkling/hooks/useDropTarget'
 import type { PinturaConfig } from '@/inkling/hooks/usePinturaEditor'
 

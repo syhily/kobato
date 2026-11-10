@@ -4,12 +4,10 @@ import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from 
 import { computeBodyProjections, computeCommentContentProjection } from '@/server/infra/pt/lexical-projection'
 import { lexicalEditorStateSchema, type LexicalEditorState } from '@/shared/lexical/schema'
 
-// The projections consume the canonicalized state (artifacts already filled
-// by the prerender pass); fixtures here carry hand-filled sentinel artifacts
-// so the render forms are pinned without a KaTeX/Shiki bootstrap. jsdom runs
-// for real — the assertions pin inkling's actual exportDOM output, including
-// the R10 host cards' real HTML (they register as projection node classes, so
-// the R9b substitution path no longer fires for them).
+// The projections consume the canonicalized state (artifacts already filled by the prerender
+// pass); fixtures carry hand-filled sentinel artifacts so the render forms are pinned without
+// a KaTeX/Shiki bootstrap. jsdom runs for real, so the assertions pin inkling's actual
+// exportDOM output, including the host cards' real HTML.
 
 function parse(state: unknown): LexicalEditorState {
   return lexicalEditorStateSchema.parse(state)
@@ -85,14 +83,13 @@ describe('infra/pt/lexical-projection — full-fidelity HTML', () => {
     // Heading ids come from inkling's export (slug parity contract-tested in
     // tests/unit/shared/contracts/lexical-heading-slug.test.ts).
     expect(bodyHtml).toContain('<h2 id="%E4%BD%A0%E5%A5%BD-%E4%B8%96%E7%95%8C">你好 世界</h2>')
-    // Text is escaped.
     expect(bodyHtml).toContain('<p>Hello &lt;world&gt; &amp; 你好</p>')
     // Server-prerendered artifacts pass through (sanitized).
     expect(bodyHtml).toContain('<div class="inkling-card inkling-math-card"><math><mi>E</mi></math></div>')
     expect(bodyHtml).toContain('<span class="inkling-math-inline"><math><mi>x</mi></math></span>')
     expect(bodyHtml).toContain('<span class="line">const a = 1</span>')
-    // KobatoImageNode (R11) exports the PT figure markup: layout classes on
-    // the figure, the dim class + sizes on the img.
+    // KobatoImageNode exports the PT figure markup: layout classes on the figure, the dim
+    // class + sizes on the img.
     expect(bodyHtml).toContain('<figure class="block max-w-full mx-auto w-fit">')
     expect(bodyHtml).toContain('<img src="/storage/posts/cover.png"')
     expect(bodyHtml).toContain('sizes="100vw"')
@@ -183,10 +180,9 @@ describe('infra/pt/lexical-projection — feed variant (rssMode parity)', () => 
     // two-column flattens to left + right content without the grid.
     expect(bodyHtmlFeed).toContain('<p>左栏</p><p>右栏</p>')
     expect(bodyHtmlFeed).not.toContain('data-pt-two-column')
-    // music-player renders the PT feed figure from the meta snapshot, with
-    // cover/audioUrl absolutized against the site origin (R14 parity fix —
-    // the retired PT renderer absolutized at request time; jsdom serializes
-    // void tags without ` />` and boolean attrs as `=""`).
+    // music-player renders the PT feed figure from the meta snapshot, with cover/audioUrl
+    // absolutized against the site origin. jsdom serializes void tags without ` />` and
+    // boolean attrs as `=""`, hence the expected string.
     expect(bodyHtmlFeed).toContain(
       '<figure><img src="https://example.com/storage/music/cover.png" alt="Song"><audio controls="" preload="none" src="https://example.com/storage/music/song.mp3"></audio><figcaption>🎵 Song — Artist</figcaption></figure>',
     )
@@ -196,7 +192,7 @@ describe('infra/pt/lexical-projection — feed variant (rssMode parity)', () => 
     const state = parse(lexicalBodyWith([{ type: 'music-player', version: 1, playerId: 'p1' }]))
     const { bodyHtml, bodyHtmlFeed } = await computeBodyProjections(state)
     expect(bodyHtmlFeed).toContain('<p>🎵 此文章包含音乐播放器，请访问原文收听。</p>')
-    // Full fidelity keeps the unresolved-player mount point (today's SSR shape).
+    // Full fidelity keeps the unresolved-player mount point.
     expect(bodyHtml).toContain('<div class="aplayer" data-id="p1"></div>')
   })
 

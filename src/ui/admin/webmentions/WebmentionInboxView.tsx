@@ -83,7 +83,7 @@ export function moderateMentionInPages(
 }
 
 /** Local cache patch after re-verification: the server row is authoritative;
- *  a `hidden` row restored to `approved` leaves the 已隐藏 filter. */
+ *  a `hidden` row restored to `approved` leaves the hidden filter. */
 export function applyReverifyToPages(
   data: AdminWebmentionsData,
   row: AdminWebmentionWire,
@@ -125,7 +125,7 @@ function authorLabel(mention: AdminWebmentionWire): string {
   return tryParseUrl(mention.sourceUrl)?.hostname ?? mention.sourceUrl
 }
 
-/** Verification badge: 已验证 for a clean check; 验证失败 with the last
+/** Verification badge: verified for a clean check; failed with the last
  *  failure message (+ consecutive-day count) on hover. */
 function VerificationBadge({ mention }: { mention: AdminWebmentionWire }) {
   const { t } = useI18n()

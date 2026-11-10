@@ -5,10 +5,8 @@ import { getEventProvenance, registerNestedEnterHandoff } from '@/inkling/plugin
 import { getParentEditor } from '@/inkling/utils/lexical-internals'
 
 // Unit pins for the shared Enter hand-off both nested-editor surfaces
-// (InklingNestedEditorPlugin's default branch, CaptionPlugin) now delegate to.
-// These paths previously had e2e coverage only — including the null-event
-// (IME/mobile) guard that existed only in the caption copy until the
-// consolidation moved it into the protocol module.
+// (InklingNestedEditorPlugin's default branch, CaptionPlugin) delegate to,
+// including the null-event (IME/mobile) guard.
 
 // The nested editor is built WITHOUT a parent so Lexical's own command
 // propagation up the parent-editor chain can't leak events into the captured

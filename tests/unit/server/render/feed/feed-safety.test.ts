@@ -128,8 +128,8 @@ describe('feed-safety', () => {
   })
 
   describe('feed-variant projection → sanitizeFeedHtml pipeline', () => {
-    // RN-1 parity: the feed variant must emit escaped plain code, not CDATA —
-    // sanitize-html drops CDATA sections wholesale.
+    // The feed variant must emit escaped plain code, not CDATA — sanitize-html drops
+    // CDATA sections wholesale.
     it('keeps the code text after sanitization when highlightedHtml is present', async () => {
       const state = lexicalEditorStateSchema.parse(
         lexicalBodyWith([

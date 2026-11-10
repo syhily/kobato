@@ -3,9 +3,8 @@ import type { MiddlewareHandler } from 'hono'
 import type { Env } from '@/server/http/context'
 
 /**
- * 301-normalise trailing slashes on public GET/HEAD routes (root, `/rpc/*`
- * and probes untouched) — runs before React Router so every public page has
- * one canonical URL shape.
+ * 301-normalise trailing slashes on public GET/HEAD routes (root, `/rpc/*` and probes
+ * untouched) before React Router, so every public page has one canonical URL shape.
  */
 export const trailingSlashNormaliser: MiddlewareHandler<Env> = async (c, next) => {
   const path = c.req.path

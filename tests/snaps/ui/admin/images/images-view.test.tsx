@@ -36,9 +36,8 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// The query layer is stubbed with a hoisted mutable singleton (tags/friends/
-// musics pattern) so the data-loaded render paths run; the mock defaults to
-// the pending state for the loading test.
+// The query layer is a hoisted mutable singleton so the data-loaded render paths run;
+// the mock defaults to pending for the loading test.
 
 // Varied dimensions give the justified-rows algorithm meaningful aspect ratios.
 function makeImage(overrides: Partial<AdminImageDto> & { id: string } = { id: 'img-1' }): AdminImageDto {

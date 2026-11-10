@@ -14,11 +14,9 @@ function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata
   return { ...post, meta: { likes: 5, views: 42, comments: 3 } }
 }
 
-// Snapshot a few high-leverage UI shells. These render pure components
-// (no SSR loaders, no DB) so any DOM/markup drift surfaces as a
-// PR diff. Real route snapshots would need to mock the entire catalog +
-// session pipeline; we intentionally cover the smallest blast-radius
-// pieces here.
+// A few high-leverage UI shells. They render pure components (no SSR loaders, no DB) so
+// markup drift surfaces as a diff; real route snapshots would need the whole catalog and
+// session pipeline mocked.
 
 describe('snapshot: Pagination', () => {
   it('dense (total = 4) at page 2', () => {

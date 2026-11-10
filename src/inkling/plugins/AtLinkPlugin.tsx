@@ -57,15 +57,11 @@ export const InklingAtLinkPlugin = ({ searchLinks, siteUrl }: AtLinkPluginProps)
   // Subscribe to the headless search session (focused at-link node + query).
   React.useEffect(() => registerAtLinkSession(editor, { onSessionChange: setSession }), [editor])
 
-  // register some command handlers to avoid certain actions happening whilst
-  // an at-link-search node is focused
   React.useEffect(() => registerAtLinkGuards(editor), [editor])
 
-  // register transforms to ensure at-link node trees are valid
   React.useEffect(() => registerAtLinkNodeTransform(editor), [editor])
 
-  // when a search result is selected, replace the at-link node (headless
-  // surgery); the analytics below are the product-glue half of the commit
+  // the analytics are the product-glue half of the commit
   const onItemSelect = React.useCallback(
     (item?: ListOptionItem) => {
       editor.update(() => {
@@ -100,12 +96,10 @@ export const InklingAtLinkPlugin = ({ searchLinks, siteUrl }: AtLinkPluginProps)
     [editor, focusedNode, siteUrl],
   )
 
-  // render nothing when we don't have a focused at-link node
   if (!focusedNode) {
     return null
   }
 
-  // otherwise render search results popup
   return (
     <Portal data-testid="at-link-popup">
       <AtLinkResultsPopup
@@ -119,18 +113,16 @@ export const InklingAtLinkPlugin = ({ searchLinks, siteUrl }: AtLinkPluginProps)
   )
 }
 
-// wrapping InklingAtLinkPlugin means we can ensure all dependencies are available
-// before rendering the plugin, avoiding complex conditionals in the plugin itself
+// Wrapper ensures all dependencies exist before InklingAtLinkPlugin renders,
+// keeping conditionals out of the plugin itself.
 export const AtLinkPlugin = () => {
   const { searchLinks, siteUrl } = useInklingLinkingSettings()
   const [editor] = useLexicalComposerContext()
 
-  // do nothing if we haven't been passed a way to search internal links
   if (typeof searchLinks !== 'function') {
     return null
   }
 
-  // do nothing if the required nodes aren't loaded
   if (!editor.hasNodes([AtLinkNode, AtLinkSearchNode])) {
     return null
   }

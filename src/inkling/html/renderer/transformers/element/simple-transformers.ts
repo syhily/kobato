@@ -12,8 +12,7 @@ import { slugify } from '@/inkling/utils'
 /* c8 ignore stop */
 
 // The simple element wrappers — the whole "how a plain element exports"
-// policy on one screen: one $is guard and one template each. These were
-// one file per two lines (inherited Koenig boilerplate); list and table
+// policy on one screen: one $is guard and one template each. List and table
 // stay their own modules (a nesting state machine and a tree-direct walk).
 // The guards are type-exclusive — a node matches exactly one — so their
 // order in the registry carries no meaning.
@@ -43,10 +42,9 @@ const headingTransformer: ElementTransformer = {
     }
 
     const tag = node.getTag()
-    // Heading ids are generated on both export paths: the live
-    // HtmlOutputPlugin runs this same transformer stack (via
-    // $convertToHtmlString), and the per-render dedup tracking lives in the
-    // render context, which every render pass builds fresh.
+    // Both export paths generate heading ids: the live HtmlOutputPlugin runs
+    // this same transformer stack, and the per-render dedup tracking lives in
+    // the render context every pass builds fresh.
     const id = context.trackIdAttribute(slugify(node.getTextContent()))
 
     return `<${tag} id="${id}"${formatAttribute(node)}>${exportChildren(node)}</${tag}>`

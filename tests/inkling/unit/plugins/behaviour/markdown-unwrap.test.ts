@@ -13,13 +13,12 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { updateEditor } from '#/inkling/utils/test-editor'
 import { $unwrapSpecialMarkupFormat } from '@/inkling/plugins/behaviour/markdown-unwrap'
 
-// Synchronous test table for the markdown special-markup unwrap grammar
-// (@/plugins/behaviour/markdown-unwrap) — one row per markup
-// (code/superscript/subscript/strikethrough), the {{variable}} replacement
-// string special case, and the caret offset compensation, pinned by calling
-// the unwrap body directly on a headless editor. The keyboard plumbing
-// (at-end-of-element gate, preventDefault) stays in
-// test/unit/plugins/behaviour/registerKeyboardNavigation.test.ts.
+// Synchronous test table for the markdown special-markup unwrap grammar —
+// one row per markup (code/superscript/subscript/strikethrough), the
+// {{variable}} replacement string special case, and the caret offset
+// compensation, pinned by calling the unwrap body directly on a headless
+// editor. The keyboard plumbing (at-end-of-element gate, preventDefault)
+// stays in registerKeyboardNavigation.test.ts.
 
 function createTestEditor(): LexicalEditor {
   return createHeadlessEditor({

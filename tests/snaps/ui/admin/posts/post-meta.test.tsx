@@ -10,9 +10,9 @@ import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
 import { EditorMetaPanel } from '@/ui/admin/editor-shell/EditorMetaPanel'
 import { metaDraftFromPost, PostMetaSidebar } from '@/ui/admin/posts/PostMetaSidebar'
 
-// PostMetaSidebar is props-driven (no fetching) — SSR renders populated and
-// empty branches by swapping the draft. PostEditorShell is skipped (TipTap
-// is browser-only); MetaPanel wrappers use a stubbed editor-shell state.
+// PostMetaSidebar is props-driven (no fetching), so SSR renders the populated and empty
+// branches by swapping the draft. MetaPanel wrappers use a stubbed editor-shell state;
+// PostEditorShell is skipped (TipTap is browser-only).
 
 const noop = () => undefined
 

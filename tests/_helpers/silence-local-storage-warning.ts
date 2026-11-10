@@ -1,8 +1,7 @@
-// Node ≥ 25 ships an experimental `localStorage` global: without
-// `--localstorage-file`, reading it emits an ExperimentalWarning. lib0 (in
-// the inkling composer's module graph) probes `typeof localStorage` at
-// module load, so every node-env worker that SSRs the composer prints the
-// warning. Drop exactly this warning; all other warnings still reach stderr.
+// Node ≥ 25 ships an experimental `localStorage` global: reading it without
+// `--localstorage-file` emits an ExperimentalWarning, and lib0 (in the inkling composer's
+// module graph) probes `typeof localStorage` at load. Drop exactly this warning; all other
+// warnings still reach stderr.
 export function silenceLocalStorageWarning(): void {
   const state = globalThis as typeof globalThis & { __localStorageWarningSilenced?: boolean }
   if (state.__localStorageWarningSilenced) {

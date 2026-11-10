@@ -1,10 +1,6 @@
-// oRPC transport instrumentation (ADR-0012).
-//
-// Both existing transport seams use oRPC's official client interceptor:
-// `RPCHandler`'s `clientInterceptors` for the network `/rpc/*` bridge and
-// `createRouterClient`'s `interceptors` for `createSsrCaller`. The interceptor
-// receives the router-procedure `path`, so spans carry a stable procedure name
-// and never any procedure input.
+// Both transport seams (RPCHandler's `clientInterceptors` for `/rpc/*`,
+// createRouterClient's for `createSsrCaller`) receive the procedure `path`, so spans
+// carry a stable name and never input.
 
 import type { Span } from '@/server/infra/trace/facade'
 

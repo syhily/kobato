@@ -7,9 +7,9 @@ import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagsView } from '@/ui/admin/tags/TagsView'
 
-// Rows come from useInfiniteQuery, search from useDebouncedSearch; the list
-// query is stubbed so SSR emits the loading/empty chrome. Hook seams from
-// mock-react-query, global stubs from setup.ts, dialog from _helpers/stubs.
+// Rows come from useInfiniteQuery and search from useDebouncedSearch; the list query is
+// stubbed so SSR emits the loading/empty chrome. Other seams come from mock-react-query,
+// setup.ts and _helpers/stubs.
 
 const queryMocks = mockTanstackQuery()
 

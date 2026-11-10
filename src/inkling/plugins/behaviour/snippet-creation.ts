@@ -4,13 +4,11 @@ import { $getNodeByKey, $getSelection, type LexicalEditor, type NodeKey } from '
 import type { SnippetSettings } from '@/inkling/context/InklingHostIntegrationContext'
 
 // Snippet creation — the headless half of the snippet-creation flow
-// (CONTEXT.md "snippet creation"), mirroring snippet-insertion: the two
-// derive-value strategies (a whole card vs the current selection), the
-// empty-name/missing-host-config guard, and the create call. The toolbars
-// (SnippetCreateToolbar, SnippetActionToolbar) keep the input state and
-// the close-and-refocus choreography (focusEditorRoot) and call in, so
-// the guard/derivation matrix is a synchronous test table instead of
-// component mounts.
+// (CONTEXT.md "snippet creation"): the two derive-value strategies (a whole
+// card vs the current selection), the empty-name/missing-host-config guard,
+// and the create call. The toolbars keep input state and the close-and-refocus
+// choreography and call in, so the guard/derivation matrix stays a
+// synchronous test table instead of component mounts.
 
 export type SnippetSource = { kind: 'card'; nodeKey: NodeKey } | { kind: 'selection' }
 
@@ -40,8 +38,8 @@ export function $deriveSnippetValue(editor: LexicalEditor, source: SnippetSource
  * The creation flow: guards the empty name and the missing host port,
  * derives the value, and hands it to the host's createSnippet. Returns
  * false only when the guard fails (the caller stays open); a source that
- * no longer resolves creates nothing but still returns true — the
- * toolbars' original close-always-after-guard behavior.
+ * no longer resolves creates nothing but still returns true (callers close
+ * on true).
  */
 export function createSnippetFromSource(
   editor: LexicalEditor,

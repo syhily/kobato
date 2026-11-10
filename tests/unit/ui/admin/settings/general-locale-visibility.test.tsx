@@ -9,7 +9,7 @@ import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 import { GeneralForm } from '@/ui/admin/settings/GeneralForm'
 import { SettingsFlushProvider } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 
-// Step 6b: the released surface. The real flag is ON — this file never mocks
+// The released surface. The real flag is ON — this file never mocks
 // it — so the General card exposes the language selector and all four options
 // exactly as an admin sees it.
 

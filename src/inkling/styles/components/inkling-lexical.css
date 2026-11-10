@@ -7,14 +7,12 @@
   pointer-events: none !important;
 }
 
-/* Keep the pointer from showing the text caret over text content while
-   dragging cards — !important preserves the old imperative inline style's
-   winning behaviour over card-specific cursor rules */
+/* Keep the text caret off text content while dragging cards; !important beats
+   the card-specific cursor rules */
 [data-inkling='editor'][data-inkling-dragging] [data-lexical-editor] {
   cursor: default !important;
 }
 
-/* everything is nested here to keep it scoped to our container */
 .inkling-lexical {
   > * {
     font-size: 1.7rem;
@@ -43,19 +41,15 @@
     outline: none;
   }
 
-  /* Selection highlight color */
   ::selection {
     background: var(--grey-300);
   }
 }
 
-/* Dark mode */
 .inkling-lexical > .dark,
 .inkling-lexical.dark,
 .dark .inkling-lexical {
   &:not(.inkling-inherit-styles) {
-    /* background-color: var(--black); */
-
     > * {
       color: var(--grey-300);
     }
@@ -85,7 +79,6 @@
   }
 }
 
-/* Caption in dark mode */
 .inkling-lexical-caption p {
   color: var(--grey-800);
 }
@@ -99,11 +92,10 @@ em-emoji-picker {
     Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   --border-radius: 5px;
-  /* --background-rgb: 85, 170, 255; */
   --font-size: 13px;
   --rgb-accent: 57, 64, 71;
   --rgb-color: 174, 183, 193;
-  --em-rgb-accent: (255, 0, 0) /* --rgb-input: 255, 235, 235; */;
+  --em-rgb-accent: (255, 0, 0);
   --shadow: 0 0 1px rgba(0, 0, 0, 0.05), 0 5px 18px rgba(0, 0, 0, 0.08);
 
   height: 325px;

@@ -5,13 +5,13 @@ import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 import { CARD_DECLARATIONS, type AnyCardDeclaration } from '@/inkling/nodes/cards'
 
 /**
- * Import-spec classification invariant (CONTEXT.md: "import spec"): every
- * card's base node class either names its DOM-import knowledge (a static
- * `importSpec`, from which the generated node machinery derives `importDOM`)
- * or is pinned here in the structural set, keeping a hand-written parser.
- * The sets may only change deliberately — shrinking the derivable set is
- * acceptable (record the why-comment on the surviving parser); growing the
- * structural set needs vocabulary the flat reads can't express.
+ * Import-spec classification invariant: every card's base node class either
+ * names its DOM-import knowledge (a static `importSpec`, from which the
+ * generated node machinery derives `importDOM`) or is pinned here in the
+ * structural set, keeping a hand-written parser. The sets may only change
+ * deliberately — shrinking the derivable set is acceptable (record the
+ * why-comment on the surviving parser); growing the structural set needs
+ * vocabulary the flat reads can't express.
  */
 
 const DERIVABLE_CARDS = ['audio', 'button', 'callout', 'file', 'horizontalrule', 'image', 'toggle', 'video']

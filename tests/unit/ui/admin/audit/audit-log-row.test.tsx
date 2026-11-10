@@ -10,7 +10,7 @@ import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
 
-// P1-17: the audit detail panel must pass detailsHtml through
+// The audit detail panel must pass detailsHtml through
 // sanitizeHtml (src/ui/AGENTS.md convention) — the producer escapes
 // today, but the client keeps its own seatbelt.
 

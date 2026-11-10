@@ -18,16 +18,15 @@ const cacheBucketStatsDto = z.object({
   /**
    * On-disk bytes of every entry file in the bucket's shards, envelope
    * included. Expired and malformed entries still occupy disk, so they count
-   * here even though they are excluded from `keyCount`; `_generation`, `_tmp`,
-   * and trash directories are excluded.
+   * here even though `keyCount` excludes them; `_generation`, `_tmp` and trash
+   * directories are excluded.
    */
   byteSize: z.number().int().nonnegative(),
 })
 export type CacheBucketStats = z.infer<typeof cacheBucketStatsDto>
 
-// Reserved buckets have no key prefix — sessions live in the `session`
-// table and rate-limit counters are in-process, so only a live count is
-// reported alongside the description.
+// Reserved buckets have no key prefix — sessions live in the `session` table and
+// rate-limit counters are in-process, so only a live count is reported.
 const reservedCacheBucketStatsDto = z.object({
   id: reservedCacheBucketId,
   label: z.string(),

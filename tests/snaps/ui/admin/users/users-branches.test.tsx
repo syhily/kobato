@@ -8,9 +8,8 @@ import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UsersView } from '@/ui/admin/users/UsersView'
 
-// UsersView's list query + filters hook are bypassed via hoisted singletons
-// (users.test.tsx covers only the loading chrome): populated rows, empty,
-// skeleton, error-toast fallthrough, active search, sentinels.
+// UsersView's list query and filters hook are hoisted singletons. Covers populated rows,
+// empty, skeleton, error-toast fallthrough, active search and sentinels.
 
 const controller = vi.hoisted((): { filters: UsersFilters } => ({
   filters: {

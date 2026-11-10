@@ -1,19 +1,16 @@
 import React from 'react'
 
-// Card-menu session — the one owner of the popup-session behaviour the slash
-// and plus card menus used to re-implement each: the cursor lease (a cached
-// native Range saved while the menu is open, restored on demand), the close
-// policy (Escape closes and restores the cursor because it always blurs the
-// contenteditable; outside mousedown and other closes leave the cursor where
-// the user put it), and insert-and-close. The lease has exactly one holder —
-// this module: the slash menu's cursor arrives through saveCursor (the slash
-// trigger binding leases each verdict's range), the plus menu's button anchor
-// is handed over at open (openMenu({ anchor }) leases it and puts the caret
-// back on it) — no plugin holds a Range of its own. The native Selection
-// arrives through an injected adapter so the close policy is unit-testable
-// without a plugin mount. The slash trigger state (query, commandParams)
-// lives in the slash trigger binding (@/hooks/useSlashCardMenuTrigger); the
-// whole stack is composed by CardMenuPopup (@/plugins/CardMenuPopup).
+// Card-menu session — the one owner of popup-session behaviour shared by the
+// slash and plus card menus: the cursor lease (a cached native Range saved while
+// the menu is open, restored on demand), the close policy (Escape closes and
+// restores the cursor because it always blurs the contenteditable; outside
+// mousedown and other closes leave the cursor where the user put it), and
+// insert-and-close. The lease has exactly one holder — this module: the slash
+// menu's cursor arrives through saveCursor, the plus menu's button anchor at
+// openMenu({ anchor }), which restores the caret onto it; no plugin holds a
+// Range of its own. The native Selection arrives through an injected adapter so
+// the close policy is unit-testable without a plugin mount. Slash trigger state
+// (query, commandParams) lives in useSlashCardMenuTrigger.
 
 export interface CardMenuSessionSelection {
   removeAllRanges: () => void

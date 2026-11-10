@@ -1,22 +1,3 @@
-// The persist orchestrator of the editor shell: composes the focused slices
-// (each a sibling module) and owns the wiring between them —
-//
-// - `use-editor-shell-persist-race` — the revision-token race (expected
-//   token + latest/published) and the `server` autosave freeze leg.
-// - `use-editor-shell-persist-conflict` — the IndexedDB local-draft session
-//   and the `local` freeze leg (a diverging stored draft until the dialog
-//   resolves it).
-// - `use-editor-shell-persist-mutations` — the four wire mutations and their
-//   note* interpreters.
-// - `editor-shell-persist-plan` — the pure wire/status planners every flow
-//   applies verbatim (no decisions here).
-//
-// Owned here: the save-flow status + baselines, the action banner, the
-// autosave engine wiring (`useAutosave` is the sole baseline owner behind
-// `setBaseline`), the `handleBodySavedRef` mirror that breaks the
-// declaration cycle between the mutations and the engine's `setBaseline`,
-// the four persist handlers, and the conflict/revision adoption flows.
-
 import type { NavigateFunction } from 'react-router'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -72,12 +53,10 @@ export interface EditorShellPersistMutations<
 }
 
 /** The few writes persist must report into orchestrator-owned state. The
- *  revision race (expected token + latest/published), both freeze legs, and
- *  the local-draft conflict are owned HERE — the split that once dodged a
- *  hook-ordering cycle is gone: persist drives the local-draft session
- *  itself (via `use-editor-shell-persist-conflict`), so the token it owns
- *  feeds the draft key and the conflict it detects feeds the freeze with no
- *  render-input round-trip. */
+ *  revision race, both freeze legs, and the local-draft conflict are owned by
+ *  persist (its sibling slices), not the shell state hook: the token persist
+ *  owns feeds the draft key, and the conflict it detects feeds the freeze with
+ *  no render-input round-trip. */
 export interface EditorShellPersistNotifications<TMeta> {
   /** Adopt the server-confirmed meta draft after a meta save / unpublish. */
   applyServerMeta: (meta: TMeta) => void
@@ -215,10 +194,10 @@ export function useEditorShellPersist<
     [isEditing, detail, expectedToken, directSaveDraft, t],
   )
 
-  // Opening-body baseline seed, captured once at mount (audit P1-1): the
-  // first debounce tick with zero edits no-ops instead of firing an
-  // unconditional PATCH (which rotates the token and orphans the IndexedDB
-  // draft — P1-15). Mount-captured state makes the once-only seed structural.
+  // Opening-body baseline seed, captured once at mount: the first debounce tick
+  // with zero edits no-ops instead of firing an unconditional PATCH that
+  // rotates the token and orphans the IndexedDB draft. Mount-captured state
+  // makes the once-only seed structural.
   const [openingBaseline] = useState<LexicalEditorState | null>(() => (isEditing ? body : null))
 
   const { setBaseline } = useAutosave({
@@ -476,7 +455,6 @@ export function useEditorShellPersist<
   const isBodyDirty = !areLexicalEditorStatesEquivalent(body, lastSavedBody)
 
   return {
-    // Save-flow status and the derived flags the toolbar/sidebar render.
     status,
     displaySaveAtMs,
     isBodyDirty,
@@ -487,16 +465,13 @@ export function useEditorShellPersist<
     isPublishing,
     isUnpublishing,
     isCreating,
-    // The four persist handlers.
     persistCreate,
     persistSave,
     persistPublish,
     persistUnpublish,
-    // Owned revision race, exposed read-only for the sidebar + publish state.
     expectedToken,
     latestRevision,
     publishedRevision,
-    // Owned local-conflict state + adoption handlers for the dialog/sidebar.
     conflict,
     adoptLocalDraft,
     adoptServerVersion,

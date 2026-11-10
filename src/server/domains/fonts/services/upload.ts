@@ -11,9 +11,8 @@ import { font } from '@/server/infra/db/schema/font'
 import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
-// Upload pipeline: magic-byte validate → hash → dedupe → slice → store →
-// insert. Synchronous within the request; rows only exist once inserted,
-// so there is no `processing`/`failed` state.
+// Upload runs synchronously within the request, so a font row exists only once
+// inserted — there is no `processing`/`failed` state.
 
 /** Max accepted upload size for a source TTF/OTF. Matches the Canvas font route. */
 export const FONT_MAX_BYTES = 60 * 1024 * 1024 // 60 MiB
@@ -104,7 +103,6 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
   // Throws on wasm contract drift or core panic; the controller maps it to a 500.
   const sliced = await sliceFont(Buffer.from(buffer), { fontFamily: trimmedFamily })
 
-  // Persist css + every chunk under the content-addressed prefix.
   const files: FontPackageFile[] = [
     { name: 'result.css', body: Buffer.from(sliced.css), contentType: 'text/css; charset=utf-8' },
     ...sliced.chunks.map((c) => ({

@@ -3,9 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The rollback/cleanup helpers resolve the live engine paths through the
-// infra seams; point them at a per-test temp dir. Everything else in the
-// restore module (staging, magic checks) is untouched by these cases.
+// The rollback/cleanup helpers resolve live engine paths through the infra seams, pointed
+// at a per-test temp dir; the rest of the restore module stays real.
 const paths = vi.hoisted(() => ({ db: '', analytics: '' }))
 
 vi.mock('@/server/infra/db/database', () => ({

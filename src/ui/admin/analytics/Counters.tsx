@@ -15,10 +15,7 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Three KPI cards modeled on Slite's `analysis/Counters.vue`: NumberFlow
-// animated digits, a first-load skeleton, opacity-60 while refetching, and
-// an error alert with retry. Self-fetching — `initial` is the loader's
-// first-paint payload shown until the client query resolves.
+// Self-fetching; `initial` is the loader's first paint until the client query resolves.
 
 const CARDS: { key: keyof CountersDto; labelId: UiMessageId; icon: typeof MousePointerClickIcon }[] = [
   { key: 'visits', labelId: 'admin.analytics.metric.visits', icon: MousePointerClickIcon },

@@ -1,9 +1,8 @@
 import type { DeviceEnvBeacon } from '@/shared/contracts/analytics'
 
-// Client-side device-environment collection (ADR-0006). Every browser API is
-// read defensively: a missing / non-finite value is OMITTED from the payload
-// (the wire contract makes every dimension optional), never sent as null —
-// `null` is not a valid beacon value.
+// Every browser API is read defensively: a missing / non-finite value is
+// OMITTED from the payload (the wire contract makes every dimension optional),
+// never sent as null — `null` is not a valid beacon value.
 
 /** Session-static block: collected once per browser session. */
 export type DeviceEnvStaticFields = Pick<

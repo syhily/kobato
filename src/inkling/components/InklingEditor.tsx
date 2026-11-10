@@ -9,8 +9,8 @@ import { DefaultFeaturePlugins } from '@/inkling/plugins/DefaultFeaturePlugins'
 export type InklingEditorProps = InklingSurfaceProps
 
 // DEFAULT_TRANSFORMERS is pinned here (not left to MarkdownShortcutPlugin's
-// default): the plugin's default is the card-free MINIMAL set, and the `.`
-// surface keeps the full shortcut set (plan C5).
+// default): the plugin's default is the card-free MINIMAL set, and the article
+// surface keeps the full shortcut set.
 //
 // `alignment` defaults on for the article surface: it keeps element `format`
 // through the default transforms AND exposes the floating toolbar's alignment

@@ -1,5 +1,4 @@
-// Session orchestration: listing/revocation entry points composing the
-// raw data-access primitives from `repo.ts`. Revocation policy
+// Session orchestration over the primitives in `repo.ts`; revocation policy
 // ("who may revoke whose session") lives in `session-guard.ts`.
 
 import type { SessionMeta, SessionWithUser } from '@/server/domains/auth/repo'
@@ -11,25 +10,23 @@ import { findUsersByIds } from '@/server/infra/db/operations/user'
 const MAX_SESSIONS_LISTED = 10_000
 
 /**
- * Revoke every session of a user — after password change or role
- * downgrade, so stale cookies cannot be reused. `exceptSessionId` keeps
- * one session alive (the tab that just saved the new password).
+ * Revoke every session of a user after a password change or role downgrade so stale
+ * cookies cannot be reused; `exceptSessionId` keeps the tab that just saved alive.
  */
 export async function revokeAllSessionsOfUser(db: Database, userId: number, exceptSessionId?: string): Promise<number> {
   return deleteSessionsOfUser(db, userId, exceptSessionId)
 }
 
 /**
- * Every active session for one user; unstamped login rows are filtered
- * out — they would render as empty rows in the UI.
+ * Every active session for one user; unstamped login rows are dropped because they
+ * would render as empty rows in the UI.
  */
 export async function listSessionsByUser(db: Database, userId: number): Promise<SessionMeta[]> {
   return listLiveSessionsByUser(db, userId)
 }
 
 /**
- * Every active session site-wide, joined against `user`. Soft-capped at
- * `MAX_SESSIONS_LISTED` rows.
+ * Every active session site-wide, joined against `user`; soft-capped at `MAX_SESSIONS_LISTED`.
  */
 export async function listAllSessions(db: Database): Promise<SessionWithUser[]> {
   const metas = await listLiveSessions(db, MAX_SESSIONS_LISTED)

@@ -5,13 +5,12 @@ interface NetworkInformationLike {
 }
 
 /**
- * Idle-time prefetcher for tier-2 chunks: batched `<link rel="modulepreload">` inserts,
- * skipped on metered/slow connections, links dropped 5s after the final batch. No
- * top-level side effects — bundled by `routeWarmupPlugin` and imported for the sentinel constant.
+ * Idle-time prefetcher for tier-2 chunks, skipped on metered/slow connections.
+ * No top-level side effects: bundled by `routeWarmupPlugin` as the inline
+ * route-warmup script and imported here only for the sentinel constant.
  */
 export function startRouteWarmup(chunks: string[]): void {
   const connection = (navigator as Navigator & { connection?: NetworkInformationLike }).connection
-  // Respect data-saver and avoid prefetch on 2G networks.
   if (connection?.saveData) {
     return
   }

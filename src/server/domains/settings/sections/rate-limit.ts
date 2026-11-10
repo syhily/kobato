@@ -8,7 +8,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 // `@/server/infra/rate-limit`, and the bounds live in
 // `@/shared/config/defaults` (mirrored by the admin form).
 
-// `rateLimitDefaults` is the single source of truth for the bucket set (P1-26); the keys
+// `rateLimitDefaults` is the single source of truth for the bucket set; the keys
 // are DERIVED and narrowed back to the concrete key set (the runtime value IS the
 // defaults' keys, in declaration order).
 export const RATE_LIMIT_BUCKET_KEYS = unsafeCast<readonly (keyof typeof rateLimitDefaults)[]>(

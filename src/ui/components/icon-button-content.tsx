@@ -4,7 +4,7 @@ import { cn } from '@/ui/lib/cn'
 
 export interface IconButtonContentProps {
   children: ReactNode
-  /** Extra classes appended to the centring wrapper. Rare — most callers don't need this. */
+  /** Extra classes appended to the centring wrapper. */
   className?: string
 }
 

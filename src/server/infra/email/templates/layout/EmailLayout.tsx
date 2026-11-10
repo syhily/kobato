@@ -77,7 +77,6 @@ export function EmailLayout({ t, receiver, preview, children }: Props) {
             </div>
           )}
 
-          {/* Brand masthead */}
           <Section
             style={{
               textAlign: 'center',
@@ -108,7 +107,6 @@ export function EmailLayout({ t, receiver, preview, children }: Props) {
             </Link>
           </Section>
 
-          {/* Greeting */}
           <Section>
             <Text
               style={{
@@ -124,10 +122,8 @@ export function EmailLayout({ t, receiver, preview, children }: Props) {
             </Text>
           </Section>
 
-          {/* Main content */}
           <Section>{children}</Section>
 
-          {/* Footer */}
           <Section style={{ paddingTop: 80 }}>
             <Text
               style={{

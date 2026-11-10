@@ -12,7 +12,7 @@ import InklingErrorBoundary from '@/inkling/components/InklingErrorBoundary'
 import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
 import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
 
-// The core composer variant (plan C5): boots with the card-free MINIMAL_NODES
+// The core composer variant: boots with the card-free MINIMAL_NODES
 // set and serializes back out — the composition the `./core` entry exports.
 
 function EditorTree() {

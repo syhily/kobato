@@ -34,8 +34,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         isDragging && 'opacity-50',
       )}
     >
-      {/* Drag handle — custom chrome (sizing + disabled state) over the shared
-          dnd plumbing. */}
+      {/* Custom chrome (sizing + disabled state) over the shared dnd plumbing. */}
       <button
         type="button"
         {...dragHandleProps.attributes}
@@ -50,7 +49,6 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         <GripVerticalIcon className="size-4" />
       </button>
 
-      {/* Cover */}
       <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {category.cover ? (
           <Image
@@ -64,7 +62,6 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         ) : null}
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
         <button
           type="button"
@@ -92,7 +89,6 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         </p>
       </div>
 
-      {/* Post count */}
       <Link
         to={`/admin/posts?category=${encodeURIComponent(category.id)}`}
         className="hidden w-(--spacing-admin-col-narrow) shrink-0 justify-end text-(--text-admin-sm) text-muted-foreground tabular-nums hover:text-foreground md:flex"
@@ -100,7 +96,6 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         {t('admin.categories.postCount', { count: category.postCount })}
       </Link>
 
-      {/* Edit CTA */}
       <button
         type="button"
         onClick={onEdit}
@@ -110,7 +105,6 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         <SquarePenIcon className="size-4" />
       </button>
 
-      {/* Delete */}
       <button
         type="button"
         onClick={onDelete}

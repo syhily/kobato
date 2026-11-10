@@ -8,8 +8,7 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Backup/restore validation + the password flow: all four locales. The wrong-
-// password descriptor is the stable identity the client matches (never prose).
+// The wrong-password descriptor is the stable identity the client matches, never prose.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

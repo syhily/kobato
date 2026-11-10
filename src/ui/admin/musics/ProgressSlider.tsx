@@ -109,7 +109,6 @@ export function ProgressSlider({
         }
       }}
     >
-      {/* Filled portion */}
       <div
         className="absolute rounded-full"
         style={
@@ -119,7 +118,6 @@ export function ProgressSlider({
         }
       />
 
-      {/* Thumb */}
       <div
         className={cn(
           'absolute rounded-full bg-ink-1 opacity-0 transition-opacity',

@@ -29,17 +29,14 @@ export interface ListForAdminOptions<
   defaultLimit: number
   listRows: (db: Database, filters: Filters & { limit: number; offset: number }) => Promise<Row[]>
   countRows: (db: Database, filters: Filters) => Promise<number>
-  /**
-   * Domain-specific enrichment loaded in the same batch as the
-   * metrics/comment reads. Keyed by row id; missing rows get `undefined`.
-   */
+  /** Domain-specific enrichment loaded in the same batch; keyed by row id, missing rows get `undefined`. */
   loadExtras?: (db: Database, rows: Row[]) => Promise<Map<number, Extras>>
   toDto: (row: Row, engagement: AdminListEngagement, extras: Extras | undefined) => Dto
 }
 
 /**
- * Shared orchestration for the posts/pages admin lists: the domains keep
- * their repos and DTO mappers; the fan-out shape lives here.
+ * Shared orchestration for the posts/pages admin lists: the domains keep their
+ * repos and DTO mappers; only the fan-out shape lives here.
  */
 export async function listForAdmin<
   Filters extends { limit?: number; offset?: number },

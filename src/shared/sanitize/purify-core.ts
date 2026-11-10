@@ -2,20 +2,17 @@ import type createDOMPurify from 'dompurify'
 
 import type { SanitizeStrategyConfig } from '@/shared/sanitize/config'
 
-// Shared DOMPurify core for both sanitize engines. The engine files differ
-// only in WHERE the DOM comes from (browser global vs a process-cached
-// jsdom); every behavioral rule lives here once so the SSR bytes and the
-// hydration bytes can never drift apart (R16h/R16i: the previous
-// sanitize-html/DOMPurify pair diverged byte-wise on 859/9031 dev-DB rows).
+// Shared DOMPurify core for both sanitize engines. The engines differ only in
+// where the DOM comes from (browser global vs a process-cached jsdom); every
+// behavioral rule lives here once so SSR bytes and hydration bytes cannot drift.
 
 type Purify = ReturnType<typeof createDOMPurify>
 
-// Mirrors the old sanitize-html allowedSchemes: http/https/mailto +
-// protocol-relative and relative URLs.
+// Allows http/https/mailto plus protocol-relative and relative URLs.
 const ALLOWED_URI = /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i
 
-// Stricter variant for configs with `noProtocolRelative` (sanitize-html's
-// `allowProtocolRelative: false`): same shape plus a `(?!\/\/)` lookahead.
+// Stricter variant for configs with `noProtocolRelative`: same shape plus a
+// leading `(?!\/\/)` lookahead.
 const ALLOWED_URI_NO_PROTOCOL_RELATIVE = /^(?!\/\/)(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i
 
 function filterStyleAttribute(value: string, allowed: Readonly<Record<string, readonly RegExp[]>>): string {
@@ -43,11 +40,9 @@ function isGloballyAllowedAttribute(attrName: string, attributes: readonly (stri
 }
 
 /**
- * Bind one DOMPurify instance to the strategy config: attaches the style
- * allowlist hook once and returns the sanitize function. The `activeStyles`
- * slot is per-instance state set around each call (hooks register once per
- * DOMPurify instance, so the style allowlist for the CURRENT strategy travels
- * through the closure, not the config).
+ * Binds one DOMPurify instance to the strategy config. Hooks register once per
+ * instance, so the active strategy's allowlists travel through closure slots
+ * set around each call.
  */
 export function createPurifySanitizer(purify: Purify): (html: string, config: SanitizeStrategyConfig) => string {
   let activeStyles: Readonly<Record<string, readonly RegExp[]>> | undefined
@@ -66,9 +61,9 @@ export function createPurifySanitizer(purify: Purify): (html: string, config: Sa
       return
     }
     // Per-tag narrowing: ALLOWED_ATTR carries the global ∪ per-tag union (a
-    // per-tag attribute must be in ALLOWED_ATTR to reach this hook at all),
-    // so attributes allowed only via `tagAttributes` are dropped again here
-    // on every tag but their own.
+    // per-tag attribute must be in ALLOWED_ATTR to reach this hook at all), so
+    // attributes allowed only via `tagAttributes` are dropped here on every
+    // tag but their own.
     if (activeTagAttributes === undefined || activeAttributes === undefined) {
       return
     }
@@ -82,7 +77,7 @@ export function createPurifySanitizer(purify: Purify): (html: string, config: Sa
   })
 
   purify.addHook('afterSanitizeAttributes', (node) => {
-    // sanitize-html transformTags parity: overwrite the whole rel value.
+    // Overwrites the whole rel value rather than appending to it.
     if (activeNoopenerOnBlankTarget && node.tagName === 'A' && node.getAttribute('target') === '_blank') {
       node.setAttribute('rel', 'noopener noreferrer nofollow')
     }
@@ -94,13 +89,12 @@ export function createPurifySanitizer(purify: Purify): (html: string, config: Sa
     activeTagAttributes = config.tagAttributes
     activeNoopenerOnBlankTarget = config.noopenerOnBlankTarget === true
     try {
-      // ALLOWED_ATTR is string-only; the /^data-.*$/ RegExp maps to
-      // ALLOW_DATA_ATTR — new RegExp attributes need a real translation.
-      // The flag is passed ALWAYS: DOMPurify's own default is `true`, which
-      // would silently let every `data-*` through for a preset that never
-      // opted in (feed / comment-email). Those presets enumerate the exact
-      // data attributes they need in ALLOWED_ATTR, so `false` still keeps
-      // them while dropping undeclared ones.
+      // ALLOWED_ATTR is string-only; a RegExp entry (the `data-*` pattern) maps
+      // to ALLOW_DATA_ATTR instead. The flag is passed ALWAYS: DOMPurify's own
+      // default is `true`, which would silently let every `data-*` through for a
+      // preset that never opted in (feed / comment-email). Those presets
+      // enumerate the exact data attributes they need in ALLOWED_ATTR, so
+      // `false` keeps them while dropping undeclared ones.
       const hasDataAttr = config.attributes.some((attr) => attr instanceof RegExp)
       const allowedAttr = [
         ...config.attributes.filter((attr): attr is string => typeof attr === 'string'),

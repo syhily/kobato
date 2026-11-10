@@ -18,17 +18,11 @@ export type ToastMessageParams = Record<string, string | number | Date | null | 
 export type ToastTranslator = (id: UiMessageId, params?: ToastMessageParams) => string
 
 /**
- * Uniform error toast for API/mutation failures: the caller owns the title as a
- * UI message id, translated here through its own `t`; the server copy rides in
- * the description (`{ error: { message } }` wire bodies first, then the
- * ORPCError/Error message, then a bare string) and is never retranslated. In
- * client/lib (not ui/lib) so client hooks can use it without breaking the
- * boundaries contract.
- *
- * ORPCError messages carry the server's localized copy verbatim. The server
- * folds a descriptor error's issue summary into `error.message` (and ships the
- * structured `{ descriptor, issues }` in `data`); a legacy bare-array rejection
- * keeps its server message as-is. The client never re-composes issue text.
+ * Uniform error toast for API/mutation failures: the caller owns the title as
+ * a UI message id translated through its own `t`; the server copy rides in the
+ * description and is never retranslated (ORPCError messages carry the server's
+ * localized copy verbatim). Placed in client/lib (not ui/lib) so client hooks
+ * satisfy the boundaries contract.
  */
 export function toastApiError(
   err: unknown,

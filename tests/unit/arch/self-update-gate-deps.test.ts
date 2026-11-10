@@ -5,11 +5,10 @@ import { describe, expect, it } from 'vitest'
 import { SELF_UPDATE_GATE_REASON_KEYS } from '@/server/infra/self-update-gate'
 import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
 
-// `sea-cli` imports the gate through `kobato doctor`; its `--version/--help`
-// path must stay side-effect free. The historical regression was a transitive
-// dependency on `server/infra/http/error-descriptor` → `server/infra/i18n` →
-// `server/infra/config` (which reads NODE_ENV and can create a default config
-// file). Pin the gate's entire local import closure, not just NODE_ENV.
+// `sea-cli` imports the gate through `kobato doctor`, whose `--version/--help`
+// path must stay side-effect free. Pin the gate's whole local import closure: a
+// transitive edge reaching `server/infra/config` reads NODE_ENV and can create
+// a default config file.
 const ENTRY = 'src/server/infra/self-update-gate.ts'
 const BANNED = [
   'src/server/infra/config.ts',

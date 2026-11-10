@@ -14,11 +14,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Preset chip row for the seven canonical ranges plus a 自定义 chip that
-// opens a two-month range-calendar popover (the shared admin range-picker
-// idiom) writing ?startAt&endAt. While a custom range is active
-// (preset === null) the chip shows the formatted range.
-
 const PRESET_LABEL_IDS: Record<PresetKey, UiMessageId> = {
   'last-1h': 'admin.analytics.preset.last1h',
   today: 'admin.analytics.preset.today',
@@ -60,9 +55,7 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
   const { locale, t } = useI18n()
   const timeZone = getClientTimezone()
   const [customOpen, setCustomOpen] = useState(false)
-  // The calendar is fully controlled, so the first click's start-only
-  // selection must be fed back as `selected` — otherwise the second click
-  // would reset again instead of completing the range.
+  // Controlled calendar: feed the start-only first click back, or the second click resets.
   const [pending, setPending] = useState<DayPickerRange | undefined>(undefined)
   const customActive = preset === null
 
@@ -110,15 +103,12 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
         <PopoverContent align="start" className="w-auto p-0">
           <Calendar
             mode="range"
-            // react-day-picker v10 completes a same-day range on the FIRST
-            // click without this — resetOnSelect restores the two-click flow
-            // (first click = start only, second click = end).
+            // react-day-picker v10 otherwise completes a same-day range on the first click.
             resetOnSelect
             selected={
               pending ??
               (customActive
-                ? // `endAt` is the exclusive next-midnight — back off a
-                  // millisecond so the last included day highlights.
+                ? // `endAt` is the exclusive next-midnight — back off 1ms so the last included day highlights.
                   { from: new Date(range.startAt * 1000), to: new Date(range.endAt * 1000 - 1) }
                 : undefined)
             }
@@ -127,15 +117,12 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
                 setPending(selected)
                 return
               }
-              // Day granularity: startAt = local midnight of the first day,
-              // endAt = local midnight of the day after the last (exclusive).
+              // Day granularity: exclusive endAt = local midnight after the last day.
               setPending(undefined)
               onSelectRange({ startAt: startOfDaySec(selected.from), endAt: startOfNextDaySec(selected.to) })
               setCustomOpen(false)
             }}
-            // Days are midnight-valued, so `> now` disables tomorrow onward
-            // while keeping today selectable (evaluated by the calendar,
-            // never during this component's render).
+            // Days are midnight-valued: `> now` keeps today selectable and disables tomorrow onward.
             disabled={(date) => date.getTime() > Date.now()}
             numberOfMonths={2}
           />

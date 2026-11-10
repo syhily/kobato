@@ -87,8 +87,7 @@ export const webmentionOutbox = sqliteTable(
   ],
 )
 
-// Webmention inbox queue (receive side, async verification —
-// docs/plans/2026-08-02-webmention-async-inbox-design.md). The endpoint
+// Webmention inbox queue (receive side, async verification): the endpoint
 // enqueues and returns 202; the worker verifies and lands the mention in
 // `webmention`. No status column: success and terminal failures DELETE
 // the row, only transient fetch errors retry on `next_retry_at`.

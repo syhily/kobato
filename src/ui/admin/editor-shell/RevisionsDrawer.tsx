@@ -126,7 +126,7 @@ export function RevisionHistoryDrawer({
                 // Settle from the refetch promise, not the render-phase
                 // guard above: with `staleTime: Infinity` an unchanged
                 // refetch returns the same data reference, so the guard
-                // never re-fires and the list would stick on 加载中….
+                // never re-fires and the list would stick on the loading state.
                 void listQuery.refetch().then((result) => {
                   if (result.data) {
                     setRevisions(result.data.revisions)

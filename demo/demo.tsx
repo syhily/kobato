@@ -11,9 +11,8 @@ import DemoApp from './DemoApp'
 import HtmlOutputDemo from './HtmlOutputDemo'
 import RestrictedContentDemo from './RestrictedContentDemo'
 
-// Lazy so the public design-system stylesheet (`@/styles/public.css`,
-// imported by the demo page) only loads on this route and never disturbs the
-// editor playgrounds.
+// Lazy so the public design-system stylesheet (`@/styles/public.css`, imported by the demo page) only loads on this
+// route and never disturbs the editor playgrounds.
 const MusicPlayerDemo = React.lazy(() => import('./MusicPlayerDemo'))
 
 const rootElement = document.getElementById('root')

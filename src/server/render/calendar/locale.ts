@@ -1,13 +1,12 @@
-// Calendar copy per AppLocale (plan 001, 5c).
+// Calendar copy per AppLocale.
 //
-// Month / weekday / lunar labels and the 宜 term table are HAND-REVIEWED
-// static data — never a runtime simplified→traditional conversion. `en-US`
-// renders neither the lunar line nor the 宜 line; zh-TW / zh-HK share the
-// traditional table and leave an unknown 宜 term out (a missing entry is
-// visible in the completeness test, never silently transliterated).
+// Month / weekday / lunar labels and the 宜 term table are HAND-REVIEWED static data —
+// never a runtime simplified→traditional conversion. `en-US` renders neither the lunar
+// nor the 宜 line; zh-TW / zh-HK share the traditional table and omit an unknown 宜 term
+// (the completeness test sees a missing entry; nothing is transliterated).
 //
-// The date/URL machine format (`/images/calendar/:year/:MMdd.png`) is
-// locale-independent and lives outside this module.
+// The date/URL machine format (`/images/calendar/:year/:MMdd.png`) is locale-independent
+// and lives outside this module.
 
 import type { AppLocale } from '@/shared/i18n/locales'
 

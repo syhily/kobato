@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 
 // The wrapper's contract: the upstream `onCheckedChange` (RHF `field.onChange`
-// at the call sites) fires first with the new value, then `save()` commits the
-// card — the merge that used to be hand-copied inline at every switch.
+// at the call sites) fires first with the new value, then `save()` commits
+// the card.
 
 describe('ui/admin/settings/shell/SettingsSwitch', () => {
   it('calls the upstream handler with the new value, then save', () => {

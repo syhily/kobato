@@ -67,7 +67,6 @@ beforeEach(async () => {
 
 describe('notifications / producers', () => {
   it('notifyAdmins fans out to admins only and returns null pre-install', async () => {
-    // Pre-install: no users at all — nothing to deliver, honestly skipped.
     expect(notifyAdmins(db, SYSTEM_NOTICE)).toBeNull()
 
     const adminId = await seedUser('admin', 'admin')
@@ -132,14 +131,13 @@ describe('notifications / producers', () => {
     const earlyId = await seedUser('visitor', 'early')
     sendBroadcast(db, adminId, { title: '清缓存公告', body: '请刷新页面', replyable: false })
 
-    // The audience is snapshotted at send time: a user registered after the
-    // send has no row, no unread badge, and nothing in any tab.
+    // The audience is snapshotted at send time: a later registrant has no
+    // row, no unread badge, and nothing in any tab.
     const lateId = await seedUser('visitor', 'late')
     expect(unreadCount(db, lateId)).toBe(0)
     expect((await listInbox(db, lateId, { tab: 'all', limit: 10 })).items).toHaveLength(0)
     expect((await listInbox(db, lateId, { tab: 'announce', limit: 10 })).items).toHaveLength(0)
 
-    // The pre-existing audience keeps its copy.
     expect(unreadCount(db, earlyId)).toBe(1)
   })
 
@@ -186,14 +184,12 @@ describe('notifications / inbox', () => {
     const announce = await listInbox(db, visitorId, { tab: 'announce', limit: 10 })
     expect(announce.items).toHaveLength(3)
 
-    // Mark the direct message read → unread tab shrinks.
     markRead(db, visitorId, [Number(direct.items[0]!.id)])
     expect(unreadCount(db, visitorId)).toBe(3)
     const unread = await listInbox(db, visitorId, { tab: 'unread', limit: 10 })
     expect(unread.items).toHaveLength(3)
     expect(unread.items.every((item) => !item.read)).toBe(true)
 
-    // Mark-all empties the badge.
     markRead(db, visitorId)
     expect(unreadCount(db, visitorId)).toBe(0)
   })
@@ -256,7 +252,7 @@ describe('notifications / inbox', () => {
 
   it('pins the inbox access path: index-fed ordering, no temp B-tree', () => {
     // Every inbox page (all / unread / cursor / kind-filtered) must walk
-    // `idx_notification_recipient_user_nid` backwards. Losing the index (or
+    // `idx_notification_recipient_user_nid` backwards; losing the index (or
     // ordering by the joined table) reintroduces a temp B-tree over the
     // user's whole recipient history. The raw client is used because
     // `EXPLAIN QUERY PLAN` needs the statement's bound values, which the
@@ -310,10 +306,9 @@ describe('notifications / threads & replies', () => {
 
     await db.update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId))
 
-    // The deleted counterpart drops out of the routing base…
+    // The deleted counterpart drops out of the routing base, so the admin's
+    // reply has genuinely nobody to reach — an honest 400, not a silent send.
     expect(listThreadParticipantIds(db, root.threadId)).toEqual([adminId])
-    // …so the admin's reply has genuinely nobody to reach — an honest 400,
-    // not a silent send into the void.
     await expect(
       replyToThread(db, viewer(adminId, 'admin'), { threadId: root.threadId, body: '还在吗' }),
     ).rejects.toMatchObject({ descriptor: { messageKey: 'notifications.error.noThreadRecipients' } })
@@ -328,24 +323,20 @@ describe('notifications / threads & replies', () => {
 
     const reply = await replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: '赞' })
     expect(reply.message.mine).toBe(true)
-    // The reply reached every admin — the creator's own broadcast row is
-    // pre-read, so adminA's count is the reply alone; adminB also has the
-    // broadcast itself.
+    // The creator's own broadcast row is pre-read, so adminA's count is the
+    // reply alone; adminB also has the broadcast itself.
     expect(unreadCount(db, adminA)).toBe(1)
     expect(unreadCount(db, adminB)).toBe(2)
 
-    // …in a NEW forked thread, not the broadcast thread.
     const adminInbox = await listInbox(db, adminA, { tab: 'direct', limit: 10 })
     expect(adminInbox.items).toHaveLength(1)
     const forkThreadId = Number(adminInbox.items[0]!.threadId)
     expect(forkThreadId).not.toBe(root.threadId)
     expect(reply.threadId).toBe(forkThreadId)
 
-    // The broadcast thread itself still holds only the announcement.
     const rootThread = await getThread(db, viewer(adminA, 'admin'), root.threadId)
     expect(rootThread.messages).toHaveLength(1)
 
-    // An admin's follow-up inside the fork reaches the replier.
     await replyToThread(db, viewer(adminB, 'admin', 'adminB'), { threadId: forkThreadId, body: '谢谢反馈' })
     expect(unreadCount(db, visitorId)).toBe(2)
 
@@ -392,7 +383,6 @@ describe('notifications / threads & replies', () => {
     const fork = await getThread(db, viewer(v1, 'visitor', 'v1'), Number(inbox.items[0]!.threadId))
     expect(fork.messages[0]!.mine).toBe(true)
     expect(fork.canReply).toBe(true)
-    // Only the broadcast itself stays unread for the replier.
     expect(unreadCount(db, v1)).toBe(1)
   })
 
@@ -453,7 +443,7 @@ describe('notifications / threads & replies', () => {
   })
 })
 
-describe('notifications / recall (ADR-0007)', () => {
+describe('notifications / recall', () => {
   it('hides a recalled broadcast from every tab and drops the badge for every recipient', async () => {
     const adminId = await seedUser('admin', 'admin')
     const aId = await seedUser('visitor', 'a')
@@ -533,7 +523,6 @@ describe('notifications / recall (ADR-0007)', () => {
     await seedUser('visitor', 'visitor')
     const root = sendBroadcast(db, adminId, { title: '我已发出', body: 'b', replyable: true })
 
-    // The author's own copy: visible, pre-read, badge untouched.
     expect(unreadCount(db, adminId)).toBe(0)
     const inbox = await listInbox(db, adminId, { tab: 'announce', limit: 10 })
     expect(inbox.items).toHaveLength(1)
@@ -603,7 +592,7 @@ describe('notifications / recall (ADR-0007)', () => {
   })
 })
 
-describe('notifications / localized system messages (5b-ii)', () => {
+describe('notifications / localized system messages', () => {
   const JOB_TITLE = { taskKey: 'backup' }
   const JOB_BODY = { taskKey: 'backup', hasError: 'no', error: '' }
 

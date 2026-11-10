@@ -11,7 +11,7 @@ import {
 
 import { createHostIntegrationValue } from '../../utils/host-integration-context'
 
-// The C4 re-render domain: one feature slice's identity changing must
+// The re-render domain under test: one feature slice's identity changing must
 // re-render only that channel's consumers, not the other channels'.
 describe('InklingHostIntegrationProvider', () => {
   it('re-renders only the channel whose slice identity changed', () => {

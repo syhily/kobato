@@ -19,7 +19,7 @@ import { registerCardDecorateAdapter } from '@/inkling/nodes/decorate-card'
 
 // This suite keeps its own setRootElement editor (bespoke config), so it
 // registers the decorate adapter itself — reconciliation calls decorate(),
-// which resolves through the injection port (see test/utils/test-editor.ts).
+// which resolves through the injection port (see tests/inkling/utils/test-editor.ts).
 registerCardDecorateAdapter()
 
 const embedResponse: BookmarkEmbedResponse = {

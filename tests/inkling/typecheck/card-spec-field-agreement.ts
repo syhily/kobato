@@ -1,18 +1,14 @@
 /**
- * Compile-time pins for the card spec field vocabulary (CONTEXT.md: "card
- * spec" / "card declaration").
+ * Compile-time pins for the card spec field vocabulary.
  *
- * The spec arrays live in the base node modules, const-asserted so the
- * literal names and value types survive. Two derivations read them:
- * `CardSpecFieldMap` folds the map into the assembled class's instance type
- * (what the shims re-export), and `CardSpecFieldMapFor` self-types the base
- * class by interface merging — one source, both surfaces, so a spec rename
- * or retype is a compile error at every consumer. The pins below cover the
- * derivation itself and its arrival on a base class; there is no second
- * hand-written copy left to agree with.
+ * The spec arrays in the base node modules are const-asserted, so literal
+ * names and value types survive. Two derivations read them: `CardSpecFieldMap`
+ * folds the map into the assembled class's instance type (what the shims
+ * re-export), and `CardSpecFieldMapFor` self-types the base class by interface
+ * merging — one source, so a spec rename or retype is a compile error at every
+ * consumer. The pins cover the derivation and its arrival on a base class.
  *
- * This file is included by the root tsconfig and is only type-checked — it
- * is never executed and contains no runtime assertions.
+ * Type-checked only, never executed.
  */
 import type { EditorState, LexicalEditor } from 'lexical'
 
@@ -35,7 +31,7 @@ type _DerivationSanity = Expect<
   Equal<CardSpecFieldNames<typeof audioDeclaration>, '__triggerFileDialog' | '__initialFile'>
 >
 
-// --- derived value types: the vocabulary the shims used to hand-write -------
+// Derived value types
 
 type _AudioValues = Expect<
   Equal<CardSpecFieldMap<typeof audioDeclaration>, { __triggerFileDialog: boolean; __initialFile: File | undefined }>
@@ -58,14 +54,14 @@ type _ToggleInitialState = Expect<
   Equal<CardSpecFieldMap<typeof toggleDeclaration>['__titleEditorInitialState'], EditorState | undefined>
 >
 
-// --- the base classes self-type the same vocabulary (interface merging) -----
+// The base classes self-type the same vocabulary (interface merging)
 
 type _AudioBaseField = Expect<Equal<BaseAudioNode['__triggerFileDialog'], boolean>>
 type _AudioBaseAccessor = Expect<Equal<BaseAudioNode['triggerFileDialog'], boolean>>
 type _ImageBaseAccessor = Expect<Equal<BaseImageNode['previewSrc'], string | null>>
 type _CalloutBaseEditor = Expect<Equal<BaseCalloutNode['__calloutTextEditor'], LexicalEditor | null>>
 
-// --- the pins themselves work ------------------------------------------------
+// The pins themselves work
 
 // @ts-expect-error - a `__*` field the spec does not name fails the pin
 type _NegativeBase = Expect<Extends<'__staleField', CardSpecFieldNames<typeof audioDeclaration>>>
@@ -73,11 +69,10 @@ type _NegativeBase = Expect<Extends<'__staleField', CardSpecFieldNames<typeof au
 // @ts-expect-error - a value type that drifts from the spec fails the pin
 type _NegativeValue = Expect<Equal<CardSpecFieldMap<typeof audioDeclaration>['__triggerFileDialog'], string>>
 
-// --- host cards: the same derivation over a `defineCard` spec ----------------
+// Host cards: the same derivation over a `defineCard` spec
 
-// a host spec const-asserts its spec arrays exactly like the built-in
-// declarations, and `CardSpecFieldMap` derives its field vocabulary the same
-// way — HostCardSpec carries the same transientProps/nestedEditors shape
+// A host spec const-asserts its spec arrays like the built-in declarations, so
+// `CardSpecFieldMap` derives its field vocabulary the same way.
 const hostSpec = {
   nodeType: 'hostProbe',
   baseNode: generateDecoratorNode({ nodeType: 'hostProbe' }),

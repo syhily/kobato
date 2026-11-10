@@ -13,8 +13,8 @@ const exportList = function (node: ElementNode, exportChildren: ExportChildren):
   const tag = node.getTag()
   const start = node.getStart()
 
-  // track an open <li> outside of the child loop, we do this so we can nest lists
-  // inside <li> elements that already have their contents rendered, e.g.:
+  // track an open <li> outside the child loop so nested lists land inside
+  // <li> elements that already have their contents rendered, e.g.:
   // <li>one
   //   <ol>
   //     <li>one.two</li>
@@ -59,7 +59,6 @@ const exportList = function (node: ElementNode, exportChildren: ExportChildren):
 
   const listContent = exportListContent(node)
 
-  // CASE: list has a start value specified > 1.
   // `start` originates from serialized JSON, where a crafted string would be
   // interpolated raw into the attribute — only emit for finite numbers.
   if (typeof start === 'number' && Number.isFinite(start) && start !== 1) {

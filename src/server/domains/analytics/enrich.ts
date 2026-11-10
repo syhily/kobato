@@ -8,11 +8,8 @@ import { getDailySalt } from '@/server/domains/analytics/salt'
 import { parseUaFields } from '@/server/domains/analytics/ua-parse'
 import { isBot } from '@/shared/utils/is-bot'
 
-// Row-shaped event for the append pipeline: never touches request/response
-// objects; failures degrade to null fields rather than throwing.
-
 function hashIp(ip: string): string {
-  // SHA-256 truncated to 32 hex chars — collision-safe at personal-blog volumes.
+  // SHA-256 truncated to 32 hex chars; collision-safe at personal-blog volumes.
   return createHash('sha256')
     .update(ip + getDailySalt())
     .digest('hex')
@@ -30,8 +27,7 @@ function parseRefererHost(referer: string | null): string | null {
   }
 }
 
-// Data minimisation: the raw referer can carry tokens in its query and
-// is persisted for months — strip query/hash/userinfo before storage.
+// Raw referer is persisted for months and may carry tokens — strip query/hash/userinfo.
 function minimizeReferer(referer: string | null): string | null {
   if (!referer) {
     return null
@@ -57,7 +53,6 @@ function parsePrimaryLanguage(header: string | null): string | null {
   return first ? first : null
 }
 
-/** Raw header value trimmed to the column's cap; absent → ''. */
 function truncated(value: string | null | undefined, max: number): string {
   return (value ?? '').slice(0, max)
 }
@@ -74,10 +69,10 @@ function parseMobileHint(mobile: string | null | undefined): boolean | null {
 }
 
 /**
- * The `device_env_server` half of an access event (ADR-0006): the UA-CH
- * high-entropy values and the full Accept-Language list. First hits of a
- * session arrive without hints, so the strings degrade to '' and `mobile`
- * to NULL rather than being inferred from the UA.
+ * The `device_env_server` half of an access event: UA-CH high-entropy values
+ * and the full Accept-Language list. A session's first hits arrive without
+ * hints, so strings degrade to '' and `mobile` to NULL rather than being
+ * inferred from the UA.
  */
 export function buildDeviceEnvServerRow(raw: RawAccessEvent): DeviceEnvServerRow {
   const hints = raw.clientHints
@@ -131,8 +126,8 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
     language,
     ua: ua || null,
     ...parsed,
-    // Primary gate stays the hand-rolled matcher; node-device-detector's
-    // bot/feed-reader classification is the secondary signal.
+    // Hand-rolled matcher is the primary bot gate; the parser's
+    // crawler/fetcher classification is the secondary signal.
     isBot: isBot(ua) || ['crawler', 'fetcher'].includes(parsed.browserType ?? ''),
   }
 }

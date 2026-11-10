@@ -92,7 +92,6 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   }, [safeLoadPage])
   const isInitialLoading = backupFiles === undefined
 
-  // Abort any in-flight polling when the component unmounts.
   useEffect(() => {
     return () => {
       pollAbortRef.current?.abort()

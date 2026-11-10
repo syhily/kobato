@@ -20,9 +20,8 @@ queryMocks.mutation = {
   isPending: false,
 }
 
-// Targets the BackupView render-path branches `backup.test.tsx` does not
-// reach: `backup ?? FALLBACK_BACKUP` on the render path. Effect-gated
-// file-list branches stay with the parent file.
+// BackupView render-path branches `backup.test.tsx` does not reach, notably
+// `backup ?? FALLBACK_BACKUP`; effect-gated file-list branches stay in the parent file.
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')

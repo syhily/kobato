@@ -30,8 +30,7 @@ vi.mock('@/inkling/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => null,
 }))
 
-// the store equivalent of the old per-test CardContext factory: the card is
-// selected and not editing unless a test says otherwise
+// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey,
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -359,7 +358,7 @@ describe('GalleryNodeComponent', () => {
 
       fireEvent.click(screen.getByTestId('create-snippet'))
 
-      // the menu toolbar unmounts while the snippet input is open (plan 046)
+      // the menu toolbar unmounts while the snippet input is open
       const toolbars = getToolbars(container)
       expect(toolbars).toHaveLength(1)
       expect(toolbars[0].querySelector('ul')).toBeNull()

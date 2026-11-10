@@ -126,7 +126,6 @@ export function AddMusicView() {
       animate={{ opacity: 1, y: 0 }}
       transition={transitions.detailFade}
     >
-      {/* Close button */}
       <button
         type="button"
         onClick={() => {
@@ -141,7 +140,6 @@ export function AddMusicView() {
         <X className="size-5" />
       </button>
 
-      {/* Hero */}
       <MusicLibraryHero musics={libraryMusics} total={libraryTotal} title={t('admin.musics.add')}>
         <LazyMotionDiv
           className="mx-auto flex max-w-sm items-center gap-2"
@@ -204,7 +202,6 @@ export function AddMusicView() {
         </LazyMotionDiv>
       </MusicLibraryHero>
 
-      {/* Results */}
       <LazyMotionDiv
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

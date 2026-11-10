@@ -1,56 +1,29 @@
-// Card shortcuts — one seam owning the trigger regexes and the
-// replace-and-select bodies for the typing shortcuts that turn a paragraph
-// into a card. The call sites keep only their trigger:
+// One seam for the trigger bodies of the typing shortcuts that turn a paragraph
+// into a card. The trigger regexes live in the shared grammar table
+// (`@/inkling/markdown/grammar`) and are re-exported below for this seam's
+// import sites.
 //
-// - **Code fence** (```lang): fired by THREE triggers — the enter key and the
-//   tab key (`@/inkling/plugins/behaviour/keyboard-navigation`), and the markdown
-//   shortcut/import `CODE_BLOCK` transformer (`@/inkling/markdown/transformers`).
-//   Enter and tab share one trigger body, `$fireFenceKeyboardShortcut` below;
-//   the transformer calls `$insertCodeBlockForShortcut` directly.
-// - **Horizontal rule** (---): fired by TWO triggers — the markdown
-//   shortcut/import `HR` transformer (`@/inkling/markdown/transformers`) and the
-//   per-update scan in `@/inkling/plugins/HorizontalRulePlugin`.
+// - Code fence (```lang): three triggers — enter and tab
+//   (`@/inkling/plugins/behaviour/keyboard-navigation`) share
+//   `$fireFenceKeyboardShortcut`, and the `CODE_BLOCK` transformer calls
+//   `$insertCodeBlockForShortcut` directly.
+// - Horizontal rule (---): the `HR` transformer and the per-update scan in
+//   `@/inkling/plugins/HorizontalRulePlugin`.
 //
-// The fence trigger regexes differ ON PURPOSE and are not flattened: the
-// transformer regex ends in `\s` so it fires on the space keystroke while
-// typing (and never claims a bare fence on import), while the keyboard regex
-// lets enter/tab fire on the key regardless of trailing space. The keyboard
-// regex is also not end-anchored, so its `(\w{1,10})` group caps nothing — a
-// fence line whose language exceeds 10 word chars still transforms on
-// enter/tab (pinned in test/unit/plugins/behaviour/registerKeyboardNavigation.test.ts).
-// The regexes themselves are owned by the shared grammar table
-// (`@/inkling/markdown/grammar`: keyboard / transformer / import policies), and
-// re-exported below for this seam's historical import sites.
+// Language extraction differs per fence trigger: the keyboard body takes the
+// full rest of the line, the transformer its `match[1]` capture.
 //
-// Language extraction differs per trigger too: the keyboard trigger body
-// takes the FULL rest of the line (`textContent.replace(/^```/, '')` — 'js
-// extra' and all), the transformer takes the regex's `match[1]` capture at
-// its own call site. The replace-and-select body below is shared by all three
-// fence triggers: `replace` and `insertAfter` + `remove` were pinned
-// net-identical for this rewrite (same position, paragraph children dropped
-// either way, same NodeSelection), so one body serves every trigger.
+// The HR replace bodies stay per-trigger because their observable results
+// diverge at the document end: the markdown trigger keeps the emptied
+// paragraph after the rule, while the per-update scan creates a fresh one
+// (different node identity, pinned in
+// tests/inkling/unit/plugins/HorizontalRulePlugin.test.tsx); only the markdown
+// trigger branches on import vs typing.
 //
-// The divider regex is single-sourced — both HR triggers already tested the
-// paragraph's full text against the byte-identical expression. The HR
-// replace bodies stay TWO named per-trigger variants because the step-1 pins
-// showed observable divergence: at the document end the markdown trigger
-// KEEPS the emptied paragraph after the rule, while the per-update scan
-// creates a FRESH paragraph (different node identity, pinned in
-// test/unit/plugins/HorizontalRulePlugin.test.tsx), and only the markdown
-// trigger has a phase branch (import replaces the paragraph outright — the
-// paragraph is container text, not the writer's caret paragraph). Converging
-// them would move a pinned behavior, so each variant names its trigger. (The
-// fresh-key side is key-pinned in
-// test/unit/plugins/HorizontalRulePlugin.test.tsx; the kept-paragraph side is
-// covered by the import pin and typing e2e, not by key.)
-//
-// The card classes are resolved through the editor's registered-node map at
-// call time (`$registeredCardClass`), not imported from the card shims: this
-// module is reachable from the card-free core path (keyboard navigation is
-// mounted by every InklingComposableEditor), and the shims drag in the
-// decorate tree. An editor that doesn't register the card simply gets no
-// shortcut — `$fireFenceKeyboardShortcut` returns false, the `$insert*`
-// bodies no-op.
+// Card classes resolve through the editor's registered-node map at call time
+// (`$registeredCardClass`), never from the card shims: this module is reachable
+// from the card-free core path (keyboard navigation is mounted by every
+// InklingComposableEditor) and the shims drag in the decorate tree.
 
 import {
   $createParagraphNode,
@@ -67,25 +40,17 @@ import { $selectDecoratorNode } from '@/inkling/utils'
 import { getRegisteredNodeMap } from '@/inkling/utils/lexical-internals'
 
 /**
- * The registered class for a card node type, looked up on the active editor
- * at call time. The shims' `$create*Node` factories statically import the
- * assembled card classes, which would drag the whole decorate tree into this
- * module — and this module sits on the core path via the keyboard-navigation
- * seam. The editor's registered-node map is the cycle-free source of the
- * same class (the registered class IS the assembled one). `undefined` when
- * the editor doesn't register the card — every caller treats that as
- * "shortcut unavailable".
+ * The registered class for a card node type, looked up on the active editor.
+ * `undefined` when the editor doesn't register the card — every caller treats
+ * that as "shortcut unavailable".
  */
 function $registeredCardClass(nodeType: string): Klass<LexicalNode> | undefined {
   return getRegisteredNodeMap($getEditor()).get(nodeType)?.klass
 }
 
 /**
- * The one code-fence serialization: opening fence with language, body,
- * closing fence. The two export transformers (the typing/import `CODE_BLOCK`
- * in `@/inkling/markdown/transformers` and the round-trip dialect's `CODE_FENCE`)
- * differ only in their TEXT SOURCE — `getTextContent()` vs `node.code` — and
- * both delegate here, so the fence shape can never fork again.
+ * The one code-fence serialization: opening fence with language, body, closing
+ * fence. Both export transformers delegate here so the fence shape cannot fork.
  */
 export function codeBlockFence(language: string, text: string): string {
   return '```' + language + (text ? '\n' + text : '') + '\n```'
@@ -99,11 +64,6 @@ export function codeBlockFence(language: string, text: string): string {
 export function stripFenceLines(linesInBetween: string[] | null | undefined): string {
   return linesInBetween?.slice(1, -1).join('\n') ?? ''
 }
-
-/** enter/tab trigger: fires on the key regardless of trailing space. NOT
- * end-anchored, so the `(\w{1,10})` group does not cap the language length
- * on this trigger (see module comment). The regex itself is single-sourced
- * in the shared grammar table (`@/inkling/markdown/grammar`). */
 
 /**
  * Replace the fence paragraph with a code block card and put a NodeSelection
@@ -119,7 +79,7 @@ export function $insertCodeBlockForShortcut(topLevelElement: ElementNode, langua
 
   const replacementNode = topLevelElement.replace(new CodeBlockNodeClass({ language, _openInEditMode: true }))
 
-  // select node when replacing so it immediately renders in editing mode
+  // A NodeSelection makes the card render in editing mode immediately
   // (keyboard-triggered: the caller already owns focus — the 'never' leg)
   $selectDecoratorNode(replacementNode)
   return true
@@ -128,11 +88,10 @@ export function $insertCodeBlockForShortcut(topLevelElement: ElementNode, langua
 /**
  * enter/tab keyboard trigger body: the caret text starts with a fence
  * (FENCE_KEYBOARD_REGEXP), so swap its paragraph for a code block card. Owns
- * the keyboard trigger's language extraction — the FULL rest of the line
- * (`replace(/^```/, '')`, 'js extra' and all) — where the transformer trigger
- * keeps its `match[1]` capture. Returns true when the shortcut fired (event
- * consumed); false when the caret isn't on a fence line or the code card
- * isn't registered, so the caller falls through to its other key handling.
+ * the keyboard trigger's language extraction — the full rest of the line.
+ * Returns true when the shortcut fired (event consumed); false when the caret
+ * isn't on a fence line or the code card isn't registered, so the caller falls
+ * through to its other key handling.
  */
 export function $fireFenceKeyboardShortcut(event: KeyboardEvent): boolean {
   const selection = $getSelection()
@@ -155,17 +114,14 @@ export function $fireFenceKeyboardShortcut(event: KeyboardEvent): boolean {
   return true
 }
 
-/** divider trigger, single-sourced: both the markdown transformer and the
- * HorizontalRulePlugin per-update scan test the paragraph's full text
- * against this expression. */
+/** divider trigger, single-sourced for both HR triggers. */
 export const DIVIDER_REGEXP = /^(---|\*\*\*|___)\s?$/
 
 /**
  * The phase a markdown transformer `replace` runs in, named at the seam
  * instead of threading `@lexical/markdown`'s `isImport` boolean through:
  * 'import' during `$convertFromMarkdownString`, 'typing' on a live shortcut
- * keystroke. Only the HR markdown trigger branches on it — the code fence
- * and the card transformers behave identically in either phase.
+ * keystroke. Only the HR markdown trigger branches on it.
  */
 export type MarkdownTriggerPhase = 'import' | 'typing'
 

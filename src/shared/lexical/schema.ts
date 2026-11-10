@@ -6,28 +6,21 @@ import { normalizeLexicalDialect } from '@/shared/lexical/dialect'
 import { FULL_EDITOR_NODE_TYPES, ROOT_NODE_TYPE } from '@/shared/lexical/node-whitelist'
 import { isSafeUrl } from '@/shared/sanitize-url'
 
-// Zod validation for the Lexical storage format (plan
-// docs/plans/inkling-editor-replacement.md, round R7). The full editing
-// state for posts/pages; `comment-schema.ts` builds the restricted comment
-// variant from the same factory.
+// Zod validation for the Lexical storage format: the full editing state for
+// posts/pages; `comment-schema.ts` builds the restricted comment variant from
+// the same factory.
 //
-// Strictness mirrors the PT schema (`src/shared/pt/schema.ts`): every node
-// variant enumerates its serialized fields explicitly with plain `z.object`
-// (unknown keys are stripped, not rejected), required fields are the ones
-// the 0.53 full-dialect exporters always write, optional fields are the
-// conditional ones. Stored/POSTed payloads may also arrive in the COMPACT
-// dialect (serializer-default keys omitted — src/shared/lexical/dialect.ts);
-// the `normalizeLexicalDialect` preprocess refills the defaults before shape
-// validation, so the parse output is always the full dialect.
+// Every node variant enumerates its serialized fields with plain `z.object`
+// (unknown keys are stripped, not rejected); required fields are the ones the
+// full-dialect exporters always write. Stored/POSTed payloads may arrive in the
+// COMPACT dialect (`dialect.ts`); the `normalizeLexicalDialect` preprocess
+// refills the defaults before shape validation, so the parse output is always
+// the full dialect.
 //
-// The node union covers the FULL whitelist and validates shape only; the
-// per-surface policy (which subset is allowed, how deep lists may nest) is
-// an iterative walk in `buildLexicalEditorStateSchema` — walking with an
-// explicit stack keeps that pass recursion-free.
-//
-// The `SerializedEditorState` import is type-only (erased at build, never
-// bundled — same idiom as `src/client/editor/inkling-labels.ts`); the
-// schema itself has no lexical runtime dependency.
+// The union validates shape only; the per-surface policy (allowed subset, list
+// depth) is the iterative walk in `buildLexicalEditorStateSchema`. The
+// `SerializedEditorState` import is type-only (erased at build): no Lexical
+// runtime dependency.
 
 /** Validated node shape. Per-variant fields are enforced by the schema;
  * the recursive type only models what every node shares. */
@@ -38,27 +31,24 @@ export type LexicalNodeJson = {
 }
 
 /**
- * Recursion bound for the tree-depth pre-pass (`boundTreeDepth` below). PT
- * was a flat block array; Lexical is a tree, so a hostile body could nest
- * nodes until the recursive descent blows the stack — the iterative guard
- * rejects over-deep payloads before the schema's recursive parse runs. Real
- * documents stay shallow: table > row > cell > paragraph is 4 levels below
- * root, a maximally nested article list is 12.
+ * Depth bound for `boundTreeDepth`: a hostile body could nest nodes until the
+ * recursive descent blows the stack, so the iterative pre-pass rejects
+ * over-deep payloads first. Real documents stay shallow (table > row > cell >
+ * paragraph is 4 below root, a maximally nested article list is 12).
  */
 export const MAX_TREE_DEPTH = 24
 
-/** Article list nesting parity with the PT schema (`textBlockSchema`
- * allows `level` 1–6). Comments cap lower — see comment-schema.ts. */
+/** Article list nesting cap. Comments cap lower — see comment-schema.ts. */
 export const ARTICLE_LIST_MAX_DEPTH = 6
 
 const NODE_VERSION = z.number().int().min(1)
 
-// SerializedElementNode fields (lexical 0.53 dist LexicalElementNode.d.ts).
+// SerializedElementNode wire fields.
 const DIRECTION = z.enum(['ltr', 'rtl']).nullable()
 const ELEMENT_FORMAT = z.enum(['left', 'start', 'center', 'right', 'end', 'justify', ''])
 const INDENT = z.number().int().min(0)
 
-// SerializedTextNode fields (lexical 0.53 dist nodes/LexicalTextNode.d.ts).
+// SerializedTextNode wire fields.
 const TEXT_FIELDS = {
   detail: z.number().int(),
   format: z.number().int(),
@@ -69,17 +59,10 @@ const TEXT_FIELDS = {
 
 const SAFE_URL_MESSAGE = 'url must not use javascript:, data:, or vbscript: protocol'
 
-// The node union recurses through a single `z.lazy` self-reference — a
-// reference cycle the zod compiler (`zod/compile`) refuses by design, so
-// the global auto-compile shim permanently falls back to the runtime parser
-// for these state schemas. That is deliberate: the previous 24-tier
-// memoized DAG interacted pathologically with auto-compile — the lazy tier
-// boundaries cascade per-tier compiles mid-parse, and the non-definite
-// fallback then re-parses every node at every tier (measured on zod 4.6.2:
-// comment-schema compile 4.8ms fresh → 49.5s after the article schema had
-// compiled and parsed a list first; a rejected deep-list parse never
-// returned). Compiled parsing buys nothing for once-per-write body
-// validation, and the runtime parser handles the cycle natively.
+// The single `z.lazy` self-reference is a cycle the zod compiler refuses, so
+// these schemas permanently use the runtime parser — deliberate: compiling a
+// nested lazy schema re-parses every node at every tier, and compiled parsing
+// buys nothing for once-per-write body validation.
 const nodeSchema: z.ZodType<LexicalNodeJson> = z.lazy(() => nodeUnion)
 
 function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
@@ -94,7 +77,6 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
     textStyle: z.string().optional(),
   } as const
 
-  // PT parity: linkMarkDefSchema refines href through isSafeUrl.
   const linkFields = {
     url: z.string().refine((value) => isSafeUrl(value), { message: SAFE_URL_MESSAGE }),
     target: z.string().nullable().optional(),
@@ -139,9 +121,7 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
     }),
     z.object({ type: z.literal('extended-text'), version: NODE_VERSION, ...TEXT_FIELDS }),
     // TextNode entity whose visible text IS the 1-based citation index (the
-    // renumber engine rewrites it in place); targetKey points at the cited
-    // definition card. PT parity: footnoteRef required a non-empty
-    // targetKey.
+    // renumber engine rewrites it in place); targetKey cites the definition card.
     z.object({
       type: z.literal('footnote-ref'),
       version: NODE_VERSION,
@@ -151,8 +131,7 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
     z.object({
       type: z.literal('image'),
       version: NODE_VERSION,
-      // Stock inkling dataset (base/nodes/image/ImageNode.ts
-      // imageProperties + the hand-written exportJSON).
+      // Stock inkling image dataset.
       src: z.string(),
       caption: z.string(),
       title: z.string(),
@@ -161,9 +140,9 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
       width: z.number().int().positive().nullable(),
       height: z.number().int().positive().nullable(),
       href: z.string(),
-      // KobatoImageNode (R3 verdict, landing R10/R13): the three
-      // pass-through keys the stock declaration silently drops, plus the
-      // PT-style float layout (`cardWidth` has no left/right equivalent).
+      // KobatoImageNode: the three pass-through keys the stock declaration
+      // silently drops, plus the float layout (`cardWidth` has no left/right
+      // equivalent).
       thumbhash: z.string().optional(),
       storagePath: z.string().optional(),
       imageId: z.string().optional(),
@@ -234,13 +213,12 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
       verticalAlign: z.string().optional(),
       ...elementFields,
     }),
-    // kobato host cards: type strings pinned in node-whitelist.ts, datasets
-    // owned by the R10 spec modules in `@/shared/lexical/cards/`. solution /
-    // two-column carry nested-editor HTML strings (opaque payload — the inner
-    // surface is cleaned at save, not re-validated here). music-player's meta
-    // snapshot keys are OPTIONAL: the canonicalize strip deletes them and a
-    // failed resolve persists the meta-less shape by design
-    // (`@/server/domains/pt/lexical-music-snapshot`).
+    // Kobato host cards: datasets owned by the spec modules in
+    // `@/shared/lexical/cards/`. solution / two-column carry nested-editor HTML
+    // strings (opaque payload — the inner surface is cleaned at save, not
+    // re-validated here). music-player's meta snapshot keys are OPTIONAL: the
+    // canonicalize strip deletes them and a failed resolve persists the
+    // meta-less shape by design (`@/server/domains/pt/lexical-music-snapshot`).
     z.object({ type: z.literal('solution'), version: NODE_VERSION, content: z.string() }),
     z.object({
       type: z.literal('two-column'),
@@ -263,10 +241,8 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
 
 const nodeUnion = buildNodeUnion()
 
-/** The depth-bomb guard: an iterative pre-parse pass rejecting payloads
- * nested deeper than MAX_TREE_DEPTH along the parser's recursion path
- * (root → `children`). A preprocess issue aborts the rest of the parse, so
- * over-deep input never reaches the recursive descent. Shapes without an
+/** Iterative depth-bomb guard run before the recursive parse: rejects payloads
+ * nested deeper than MAX_TREE_DEPTH along root → `children`. Shapes without an
  * object root pass through — reporting them is the shape schema's job. */
 function boundTreeDepth(value: unknown, ctx: z.RefinementCtx): unknown {
   const root = value !== null && typeof value === 'object' && 'root' in value ? value.root : undefined
@@ -324,8 +300,7 @@ export function buildLexicalEditorStateSchema(options: LexicalEditorStateSchemaO
   return z.preprocess(
     boundTreeDepth,
     // The dialect heal runs before shape validation so both storage dialects
-    // (full and compact — src/shared/lexical/dialect.ts) parse to the same
-    // full-dialect output.
+    // (full and compact, see `dialect.ts`) parse to the same full-dialect output.
     z.preprocess(
       normalizeLexicalDialect,
       base.superRefine((state, ctx) => {

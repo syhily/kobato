@@ -31,8 +31,6 @@ async function waitForInstanceBack(): Promise<void> {
   throw new Error(`instance did not come back within ${RESTART_TIMEOUT_MS / 1000}s (last: ${lastStatus})`)
 }
 
-// Backup → download → restore round-trip: content written before the
-// snapshot survives, content written after it is gone.
 describe('admin backup/restore round-trip (HTTP e2e)', () => {
   it('archives, downloads, and restores the instance back to the snapshot', { timeout: 120_000 }, async () => {
     const admin = new E2eClient(env.baseUrl)
@@ -40,7 +38,6 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(res.status).toBe(302)
     const csrfToken = await getAdminCsrfToken(admin)
 
-    // Content present in the snapshot.
     const kept = await callE2eRpc<{ post: { id: string | number } }>(
       admin,
       '/admin/posts/upsertMeta',
@@ -49,7 +46,6 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     )
     expect(kept.status).toBe(200)
 
-    // Trigger the backup — a real gzipped tar archive in local storage.
     const backup = await callE2eRpc<{ fileName: string; timestamp: string; size: number }>(
       admin,
       '/admin/backup/create',
@@ -60,7 +56,6 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(backup.json.fileName).toMatch(/^backup-.*\.db\.tar\.gz$/)
     expect(backup.json.size).toBeGreaterThan(0)
 
-    // Download streams the archive bytes back out.
     const download = await admin.get(`/api/admin/backup/download/${backup.json.timestamp}`)
     expect(download.status).toBe(200)
     expect(download.headers.get('content-disposition')).toContain(backup.json.fileName)
@@ -89,9 +84,9 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(restore.status).toBe(200)
     expect(restore.json.accepted).toBe(true)
 
+    // The restore drains and restarts the instance; /ready gates the wait.
     await waitForInstanceBack()
 
-    // Instance is back on the snapshot — sign in fresh and verify both sides.
     const after = new E2eClient(env.baseUrl)
     const relogin = await loginAdmin(after, env)
     expect(relogin.res.status).toBe(302)

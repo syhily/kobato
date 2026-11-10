@@ -1,4 +1,4 @@
-// Same-origin RUM URL policy (ADR-0012).
+// Same-origin RUM URL policy.
 //
 // Automatic SDK URLs are inputs to this classifier, never values that leave the
 // browser unchanged. The policy keeps only app-authored/generated paths and
@@ -11,7 +11,7 @@ const SELF_TELEMETRY_PATHS: ReadonlySet<string> = new Set([
   '/api/analytics/events',
   '/api/rum/status',
 ])
-const DROPPED_PATH_PREFIXES = ['/rum/', '/health', '/ready'] as const
+const DROPPED_PATH_PREFIXES = ['/rum/', '/api/rum/intake', '/health', '/ready'] as const
 
 const STATIC_PATHS: ReadonlySet<string> = new Set([
   '/',

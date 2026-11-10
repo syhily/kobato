@@ -20,14 +20,6 @@ import { ImageNode, INSERT_IMAGE_COMMAND } from '@/inkling/nodes/ImageNode'
 import { ToggleNode, INSERT_TOGGLE_COMMAND } from '@/inkling/nodes/ToggleNode'
 import { VideoNode, INSERT_VIDEO_COMMAND } from '@/inkling/nodes/VideoNode'
 import { INSERT_MEDIA_COMMAND } from '@/inkling/plugins/behaviour/clipboard-protocol'
-/**
- * The card insert registration matrix against the Step-2 registrar (plan
- * 043) — the same scenarios and expectations as the Step-1 characterization
- * pins (`CardInsertMatrix.test.ts`), mounted on `CardInsertPlugin` instead
- * of the eleven per-card plugins. Both suites green simultaneously is the
- * zero-drift proof; the header churn case flips here: the registrar's single
- * effect registers once per mount.
- */
 import { INSERT_CARD_COMMAND } from '@/inkling/plugins/behaviour/commands'
 import { CardInsertPlugin } from '@/inkling/plugins/CardInsertPlugin'
 
@@ -42,8 +34,6 @@ async function mountRegistrar(editor: LexicalEditor) {
   await tick()
 }
 
-/** Registers an INSERT_CARD_COMMAND capture listener; returns the captured
- * payload ref and the unregister function. */
 function captureInsertCard(editor: LexicalEditor) {
   const ref: { payload: InsertCardPayload | undefined } = { payload: undefined }
   const removeListener = editor.registerCommand(
@@ -243,8 +233,6 @@ describe('CardInsertPlugin', () => {
 
     rerender()
     rerender()
-    // The deleted HeaderPlugin's effect had no dependency array and
-    // re-registered on every render; the registrar registers once per mount.
     expect(headerRegistrations()).toBe(1)
   })
 })

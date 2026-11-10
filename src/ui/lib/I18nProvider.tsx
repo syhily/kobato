@@ -1,11 +1,6 @@
-// The client-facing i18n surface: react-intl's provider fed with the CURRENT
-// locale's UI catalog from the root loader, plus a typed translator.
-//
-// This module must never value-import the catalogs: the messages arrive as
-// props (`content.bootstrap` → root loader), so one locale — not four — reaches
-// the browser. The root Layout owns the single provider; the root ErrorBoundary
-// falls back to `@/shared/i18n/fallback-messages` when no payload exists.
-// Pinned by tests/unit/arch/client-bundle.test.ts.
+// react-intl provider fed with the current locale's UI catalog from the root loader.
+// Never value-import the catalogs here: messages arrive as props, so one locale, not
+// four, reaches the browser. Pinned by tests/unit/arch/client-bundle.test.ts.
 
 import type { ReactNode } from 'react'
 
@@ -20,9 +15,8 @@ import { getLogger } from '@/client/lib/logger'
 const log = getLogger('i18n')
 
 /**
- * ICU values accepted by react-intl: plain interpolation values plus the
- * rich-text form (`<link>{title}</link>`) — a function receiving the tag's
- * chunks. Never build sentences by concatenating translated fragments.
+ * ICU values accepted by react-intl, including the rich-text form (`<link>{title}</link>` —
+ * a function receiving the tag's chunks). Never build sentences by concatenating fragments.
  */
 export type I18nMessageParams = Record<
   string,
@@ -30,17 +24,11 @@ export type I18nMessageParams = Record<
 >
 
 /**
- * Params for `localizeMessage` — the scalar set a validation issue or an
- * error descriptor carries (Zod `too_small`/`too_big` numeric bounds AND the
- * explicit `params` bag of a custom issue: `{ label }`, `{ limit }` …).
- * `boolean` is here because the wire's `ErrorMessageParams` allows it;
- * react-intl cannot format a boolean, so the seam stringifies it. `null` is an
- * explicit empty value (react-intl renders nothing); `undefined` means the
- * caller could not supply it and counts as a missing param.
+ * Scalar params for `localizeMessage`. `boolean` arrives over the wire and is stringified here
+ * (react-intl cannot format it); `null` is an explicit empty value, `undefined` counts as missing.
  */
 export type I18nPlainMessageParams = Record<string, string | number | boolean | null | undefined>
 
-/** Generic validation copy a failed `localizeMessage` degrades to. */
 const LOCALIZE_FALLBACK_ID: UiMessageId = 'error.api.badRequest'
 /** Last resort when even the generic catalog entry is absent (no English map on the client). */
 const LOCALIZE_FALLBACK_TEXT = 'Invalid input'
@@ -58,35 +46,20 @@ function toIcuValues(params?: I18nPlainMessageParams): Record<string, string | n
 
 export interface I18nValue {
   locale: AppLocale
-  /** Format one UI message id; `params` fill the ICU placeholders. Plain string result. */
   t: (id: UiMessageId, params?: I18nMessageParams) => string
-  /**
-   * Rich-text form for messages with `<tag>…</tag>` placeholders (e.g. a link
-   * inside a sentence). Returns a React node so the interpolation stays one
-   * message per locale instead of concatenated fragments.
-   */
+  /** Rich-text form: one message per locale holds the whole sentence, tag included. */
   tRich: (id: UiMessageId, params: I18nMessageParams) => ReactNode
   /**
-   * Translate a message-id STRING when it is a registered catalog key; return
-   * any other string unchanged. The seam for values whose typing is lost at
-   * runtime (Zod issue messages): raw ids never reach the UI, and Zod's own
-   * default messages pass through. `params` fill an id's placeholders — the
-   * shared validation schemas attach `{min}` / `{max}` bounds that way, and a
-   * custom issue's `params` bag (`{label}`) travels through the same channel.
-   *
-   * Formatting always goes through react-intl. A missing param or an
-   * unformattable template logs and degrades to a generic localized validation
-   * sentence — never a token name, the raw ICU template, or the message id.
+   * Translate a message-id string when it is a registered catalog key; return any other string
+   * unchanged, so Zod's own default messages pass through and raw ids never reach the UI. A
+   * missing param or unformattable template logs and degrades to a generic localized sentence.
    */
   localizeMessage: (value: string, params?: I18nPlainMessageParams) => string
 }
 
 const LocaleContext = createContext<AppLocale | null>(null)
 
-/**
- * Any message map with string values: a locale's full `UiMessages` on the
- * normal path, or the minimal `FallbackMessages` when the root loader failed.
- */
+/** A full `UiMessages` map, or the minimal `FallbackMessages` when the root loader failed. */
 export type I18nMessages = Record<string, string>
 
 export interface I18nProviderProps {
@@ -111,20 +84,13 @@ export function I18nProvider({ locale, messages, children }: I18nProviderProps) 
   )
 }
 
-/**
- * Typed translator for UI components. Requires the root `<I18nProvider>`;
- * throwing (rather than silently rendering ids) keeps a missing provider a
- * loud test failure.
- */
+/** Requires the root `<I18nProvider>`; throwing keeps a missing provider a loud test failure. */
 export function useI18n(): I18nValue {
   const locale = useContext(LocaleContext)
-  // Strict on purpose: a component rendered outside the root provider is an
-  // integration bug, not a case to paper over with a partial catalog.
   const intl = useContext(IntlContext)
   if (intl === null) {
     throw new Error('useI18n() requires the root <I18nProvider> (see src/root.tsx).')
   }
-  // Plain messages never carry rich tags, so the string narrowing is exact.
   const t = useCallback<I18nValue['t']>(
     (id, params) => {
       const formatted = intl.formatMessage({ id }, params)
@@ -139,14 +105,13 @@ export function useI18n(): I18nValue {
   }
   const localizeMessage = (value: string, params?: I18nPlainMessageParams): string => {
     // react-intl types `messages` as raw strings or pre-parsed ASTs depending on the
-    // provider; we only ever feed it string catalogs, so narrow structurally.
+    // provider; only string catalogs are fed here, so narrow structurally.
     const messages: Record<string, unknown> = intl.messages
     const candidate = Object.hasOwn(messages, value) ? messages[value] : undefined
     if (typeof candidate !== 'string') {
       return value
     }
-    // No braces at all: nothing to interpolate and nothing to leak — skip the
-    // ICU parse (most validation messages are static sentences).
+    // No braces: skip the ICU parse (most validation messages are static sentences).
     if (!candidate.includes('{')) {
       return candidate
     }

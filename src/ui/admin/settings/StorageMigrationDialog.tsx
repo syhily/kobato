@@ -16,7 +16,7 @@ import { useI18n } from '@/ui/lib/I18nProvider'
 interface StorageMigrationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Current primary backend: S3 → 换桶/回退本地；local → 配置并启用 S3。 */
+  /** Current primary backend: S3 → migrate bucket / fall back to local; local → configure and enable S3. */
   s3Primary: boolean
 }
 

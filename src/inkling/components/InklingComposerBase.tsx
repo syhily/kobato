@@ -22,9 +22,8 @@ import { requireMultiplayerConfig } from '@/inkling/utils/services/multiplayer-c
 
 export type { InklingInitialEditorState }
 
-// Catch any errors that occur during Lexical updates and log them
-// or throw them as needed. If you don't throw them, Lexical will
-// try to recover gracefully without losing user data.
+// Lexical's update error hook: throwing aborts the update; swallowing lets
+// Lexical recover gracefully without losing user data.
 function defaultOnError(error: unknown, _info?: React.ErrorInfo) {
   if (import.meta.env.DEV) {
     console.error(error)
@@ -32,15 +31,14 @@ function defaultOnError(error: unknown, _info?: React.ErrorInfo) {
 }
 
 /**
- * The core composer variant (plan C5): `nodes` is REQUIRED — the host names
- * its node set (MINIMAL_NODES, a subset over EDITOR_BASE_NODES, or its own
- * composition) instead of defaulting to the full card set. The `.` entry
- * keeps the defaulted variant; `@/inkling/components/InklingComposer` wraps this one
- * with `nodes = [...DEFAULT_NODES]`.
+ * The core composer variant: `nodes` is REQUIRED — the host names its node set
+ * (MINIMAL_NODES, a subset over EDITOR_BASE_NODES, or its own composition instead
+ * of defaulting to the full card set). `InklingComposer` wraps this one with
+ * `nodes = [...DEFAULT_NODES]`.
  *
- * Keeping `nodes` mandatory is what lets the base stay free of the
- * `DefaultNodes` import — the static chain that drags every card's decorate
- * tree into any consumer of the composer.
+ * Keeping `nodes` mandatory is what lets the base stay free of the `DefaultNodes`
+ * import — the static chain that drags every card's decorate tree into any
+ * consumer of the composer.
  */
 export interface InklingComposerProps {
   initialEditorState?: InklingInitialEditorState
@@ -107,9 +105,8 @@ const InklingComposerBase = ({
   )
 
   // Frozen at mount: LexicalExtensionComposer rebuilds the editor (losing its
-  // state) when the extension identity changes, while the legacy composer read
-  // its initialConfig exactly once — the lazy useState initializer is the
-  // mount-scoped equivalent for hosts passing inline props.
+  // state) when the extension identity changes — the lazy useState initializer is
+  // the mount-scoped equivalent for hosts passing inline props.
   const [rootExtension] = React.useState(() =>
     buildInklingRootExtension({
       nodes,
@@ -119,15 +116,12 @@ const InklingComposerBase = ({
     }),
   )
 
-  // the five per-composer handles are created and provided by
-  // ComposerHandlesProvider (src/context/ComposerHandlesProvider)
-
-  // the legacy-bag degradation policy lives in @/utils/file-uploader (a
-  // synchronous test table); the composer keeps one memo line
+  // the legacy-bag degradation policy lives in file-uploader (a synchronous
+  // test table); the composer keeps one memo line
   const normalizedFileUploader = React.useMemo<FileUploader>(() => normalizeFileUploader(fileUploader), [fileUploader])
 
-  // the lazy collaboration chunk's load choreography (the C5 tradeoff:
-  // inert factory + unmounted plugin until the chunk resolves) lives in
+  // the lazy collaboration chunk's load choreography (inert factory +
+  // unmounted plugin until the chunk resolves) lives in
   // useCollaborationProviderFactory over the headless session
   const createWebsocketProvider = useCollaborationProviderFactory({
     enabled: enableMultiplayer,
@@ -141,8 +135,8 @@ const InklingComposerBase = ({
   React.useEffect(() => setTelemetryHandler(cardConfig.telemetry), [cardConfig.telemetry])
 
   // the whole-value transport — InklingHostIntegrationProvider fans it out
-  // into the per-lifecycle channels (plan C4), each memoized on its own
-  // leaves, so a fresh `cardConfig = {}` default keeps every channel stable
+  // into the per-lifecycle channels, each memoized on its own leaves, so a
+  // fresh `cardConfig = {}` default keeps every channel stable
   const hostIntegrationValue = React.useMemo(
     () => ({
       fileUploader: normalizedFileUploader,

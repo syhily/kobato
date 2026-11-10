@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
 /**
- * Boolean coercion that handles string "true"/"false" — unlike
- * `z.coerce.boolean()` (Boolean("false") === true). Use this wherever
- * you'd reach for `z.coerce.boolean()`.
+ * Boolean coercion that handles string "true"/"false", unlike
+ * `z.coerce.boolean()` (Boolean("false") === true).
  */
 export function safeBoolean() {
   return z

@@ -8,11 +8,8 @@ import { useFocusBelowCanvas } from '../utils/useFocusBelowCanvas'
 import { useSnippets } from '../utils/useSnippets'
 import { DemoChrome, useDemoSidebar } from './DemoChrome'
 
-// The secondary demo surfaces' shared editor shell (DemoChrome owns the
-// chrome; this owns the composer config assembly and the canvas layout):
-// gif card config, snippets wiring, file uploader, focus-below-canvas,
-// registerAPI, and the three-div canvas chain. A surface passes only its
-// facts — an optional node set and its inner plugin(s).
+// Shared editor shell for the secondary demo surfaces; a surface passes only its facts — an optional node set
+// and its inner plugin(s).
 
 const cardConfig: CardConfig = {
   tenor: tenorConfig ?? undefined,
@@ -26,7 +23,6 @@ export function DemoEditorShell({ nodes, children }: { nodes?: InklingComposerNo
   const containerRef = React.useRef<HTMLDivElement>(null)
   const { snippets, createSnippet, deleteSnippet } = useSnippets()
   const sidebar = useDemoSidebar()
-  // the focus-below-canvas choreography lives in the shared demo chrome module
   const { onClick } = useFocusBelowCanvas({ editorAPI, containerRef })
 
   const handleRegisterAPI = React.useCallback((api: ExternalControlAPI | null) => {

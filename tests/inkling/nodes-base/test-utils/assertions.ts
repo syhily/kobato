@@ -4,8 +4,7 @@ import assert from 'node:assert/strict'
 
 const minifyOpts = { collapseWhitespace: true, collapseInlineTagWhitespace: true }
 
-// Replaces the old `should.prettifyTo` custom assertion: minifies and
-// prettifies both sides, then asserts string equality.
+// Minifies and prettifies both sides, then asserts string equality.
 export async function expectPrettifiedHtml(actual: string, expected: string): Promise<void> {
   const expectedFormatted = Prettier.format(await minify(expected, minifyOpts), { parser: 'html' })
 

@@ -207,7 +207,6 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
     <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4">
       {/* Convention: admin layouts stack via flex gap, never `space-*` (boundaries contract test). */}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        {/* Single metadata line: author · badge · 《post》 · time, muted sm scale with `·` separators. */}
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
           <span className="truncate font-medium text-foreground">{item.authorName}</span>
           {isDeletion ? (

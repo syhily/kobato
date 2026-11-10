@@ -30,10 +30,8 @@ export interface PostAnalyticsViewProps extends AnalyticsDashboardData {
   state: AnalyticsState
 }
 
-// The per-post dashboard reuses the site-wide composition scoped by
-// entityType/entityId — every query (counters, views, heatmap, metrics,
-// map, export) carries the entity filter. `post.id` is the wire idString;
-// the scope keeps the numeric domain id, converted once here at the boundary.
+// The per-post dashboard: the site-wide composition scoped by entityType/entityId.
+// `post.id` is the wire idString; the scope keeps the numeric domain id, converted once here.
 export function PostAnalyticsView({ post, state, counters, initialMetrics }: PostAnalyticsViewProps) {
   const scope = { entityType: 'post' as const, entityId: idFromString(post.id) }
   return (

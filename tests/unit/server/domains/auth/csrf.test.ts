@@ -119,7 +119,7 @@ describe('validateCsrfForAction (security.csrf.enabled switch)', () => {
 
   it('skips validation when protection is disabled', () => {
     seedCsrfSettings({ enabled: false, exemptPaths: [] })
-    // No token in the session and no header — would fail if validated.
+    // No session token and no header token — validation would fail if it ran.
     const session = makeSession()
     const request = new Request('https://example.com/signin', { method: 'POST' })
     expect(validateCsrfForAction(session, request, new FormData())).toBe(true)

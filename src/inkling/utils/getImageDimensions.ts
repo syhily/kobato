@@ -1,5 +1,3 @@
-// gets image dimensions from a given Url
-
 import { awaitMediaEvents } from '@/inkling/utils/awaitMediaEvents'
 
 export interface ImageDimensions {
@@ -12,7 +10,6 @@ export async function getImageDimensions(url: string): Promise<ImageDimensions> 
   await awaitMediaEvents(img, {
     events: ['load'],
     errorMessage: 'Failed to load image',
-    // Set image src after listeners to avoid the image loading before the listener is set
     start: () => {
       img.src = url
     },

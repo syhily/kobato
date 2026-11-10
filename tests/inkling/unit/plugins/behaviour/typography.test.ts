@@ -13,13 +13,12 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { updateEditor } from '#/inkling/utils/test-editor'
 import { $replaceTypography } from '@/inkling/plugins/behaviour/typography'
 
-// Synchronous test table for the smart-typography grammar
-// (@/plugins/behaviour/typography) — tiptap extension-typography
-// default-rule parity (minus the em dash rule EmEnDashPlugin owns), the
-// smart-quote direction policy, and caret offset adjustment, pinned by
-// calling the scan body directly on a headless editor. The registration
-// wiring (update-scan seam, 'history-push' tag, IME composition protection,
-// undo) stays in test/unit/plugins/TypographyPlugin.test.tsx.
+// Synchronous test table for the smart-typography grammar — tiptap
+// extension-typography default-rule parity (minus the em dash rule
+// EmEnDashPlugin owns), the smart-quote direction policy, and caret offset
+// adjustment, pinned by calling the scan body directly on a headless editor.
+// The registration wiring (update-scan seam, 'history-push' tag, IME
+// composition protection, undo) stays in TypographyPlugin.test.tsx.
 
 function createTestEditor(): LexicalEditor {
   return createHeadlessEditor({

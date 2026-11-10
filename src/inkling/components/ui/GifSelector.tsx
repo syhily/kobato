@@ -183,7 +183,7 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
       ref={selectorRef}
       className="border-grey-200 bg-grey-50 dark:bg-grey-900 flex h-[54rem] flex-col rounded border dark:border-none"
       data-testid="gif-selector"
-      // prevent click handle in the editor while selector is active
+      // stop clicks from reaching the editor while the selector is open
       onClick={(e) => e.stopPropagation()}
       onKeyDown={handleKeyDown}
     >

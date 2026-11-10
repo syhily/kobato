@@ -143,10 +143,8 @@ describe('backup crypto', () => {
   })
 
   it('rejects a header declaring N above the cap BEFORE running scrypt', async () => {
-    // A legal-looking header (magic + salt + N) with N = 2^18 > MAX_SCRYPT_N
-    // (2^17): rejected by the header check, so scryptSync never runs and this
-    // case completes in milliseconds — a hostile header must not become a
-    // CPU/memory bomb.
+    // A legal-looking header with N = 2^18 > MAX_SCRYPT_N (2^17) is rejected before
+    // scryptSync, so a hostile header cannot become a CPU/memory bomb.
     const header = Buffer.alloc(HEADER_BYTES)
     BACKUP_ENCRYPTION_MAGIC.copy(header, 0)
     randomBytes(16).copy(header, 8)
@@ -157,9 +155,8 @@ describe('backup crypto', () => {
   })
 
   it('rejects a stream whose FINAL record was stripped (format failure)', async () => {
-    // Exactly 4 MiB: one full non-final record + one EMPTY final record —
-    // slicing off the tail record leaves a stream that parses cleanly but
-    // never terminates; the flush check must call it truncated.
+    // Exactly 4 MiB: one full non-final record + one empty final record — slicing off the
+    // tail leaves a stream that parses cleanly but never terminates; must report truncated.
     const ciphertext = await encrypt(randomBytes(4 * 1024 * 1024), 'secret-password')
     const { header, records } = splitRecords(ciphertext)
     expect(records).toHaveLength(2)
@@ -174,8 +171,8 @@ describe('backup crypto', () => {
     // 5 MiB → records[0] is a full non-final record (flags byte at offset 4).
     const ciphertext = await encrypt(randomBytes(5 * 1024 * 1024), 'secret-password')
 
-    // 0 → 1: the record now CLAIMS final, but the AAD (seq‖flags) no longer
-    // matches the tag — the GCM check fails as an auth error.
+    // 0 → 1: the record claims final, but the AAD (seq‖flags) then mismatches
+    // the tag — the GCM check fails as an auth error.
     const forgedFinal = Buffer.from(ciphertext)
     forgedFinal[HEADER_BYTES + 4] = 1
     const authError = await decryptError(forgedFinal, 'secret-password')

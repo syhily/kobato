@@ -35,7 +35,6 @@ export default function useGalleryReorder({
   disabled = false,
 }: UseGalleryReorderOptions): UseGalleryReorderResult {
   const onDrop = (draggableInfo: DraggableInfo, dropResolution: DropResolution | null) => {
-    // do not allow dropping of non-images
     if (!isGalleryImageDrag(draggableInfo)) {
       return false
     }
@@ -72,7 +71,6 @@ export default function useGalleryReorder({
     return { success: true, sourceHandled: true }
   }
 
-  // if an image is dragged out of a gallery we need to remove it
   const onDropEnd = (draggableInfo: DraggableInfo, success: boolean, sourceHandled: boolean) => {
     if (sourceHandled || !success) {
       return
@@ -112,7 +110,6 @@ export default function useGalleryReorder({
     droppableElem: HTMLElement,
     position: DroppablePosition,
   ): DropResolution | false => {
-    // do not allow dropping of non-images
     if (!isGalleryImageDrag(draggableInfo)) {
       return false
     }

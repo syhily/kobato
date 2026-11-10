@@ -8,8 +8,8 @@ import { regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 
-// page.detail serves the saved `body_html` projection straight through —
-// real engine: seeded meta row + published content revision (R13).
+// page.detail serves the saved `body_html` projection straight through — real engine: seeded meta
+// row + published content revision.
 
 const db = getTestDb()
 const session = regularSession()

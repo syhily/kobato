@@ -1,32 +1,11 @@
 /**
- * The service-machine protocol — the one home of the shape every headless
- * flow behind a React adapter publishes (CONTEXT.md "request track",
- * "snapshot store"). Two pieces:
- *
- * - the `ServiceMachine` interface: snapshot out (getSnapshot/subscribe,
- *   the SnapshotStore contract), intents in (`dispatch` reduces an intent
- *   to snapshot updates plus the one-shot effects the adapter executes
- *   against the DOM), and a paired dispose (the request track AND the
- *   snapshot store stop together). The gif browser and the library browser
- *   are full service machines.
- * - `runTrackedRequest`: the emit(loading) → await → isLatest → emit
- *   skeleton every flow used to hand-copy. The race invariant lives here
- *   exactly once — nothing runs for an already-stale generation, a
- *   rejection is captured as data (never thrown), and the outcome reaches
- *   the caller only while the generation is still latest (`undefined`
- *   otherwise). Each flow keeps its own policy as data around the call:
- *   the start emit, the outcome classification, and the end emit.
- *
- * Three flows deliberately keep method-style surfaces instead of the
- * dispatch protocol — their shapes are not intents: the search coordinator
- * (src/hooks/search-coordinator.ts) has a lifecycle `start` and two request
- * tracks; the bookmark embed flow (src/hooks/bookmark-embed-flow.ts)
- * returns per-call promises (an init rejection rethrows so the caller can
- * paste-as-link); the Pintura asset loader
- * (src/utils/services/pintura-session.ts) fires its loads at construction
- * and its CSS line is callback-driven, not a promise. All three still run
- * their promise lines through `runTrackedRequest` and the shared
- * track+store dispose pairing.
+ * The service-machine protocol — the shape every headless flow behind a React adapter
+ * publishes: snapshot out (the SnapshotStore contract), intents in (`dispatch` reduces an
+ * intent to snapshot updates plus one-shot effects), and a paired dispose (request track
+ * and snapshot store stop together). The gif and library browsers are full machines; three
+ * flows keep method-style surfaces instead (their shapes are not intents — a lifecycle
+ * `start`, per-call promises, construction-time loads) but still run their promise lines
+ * through `runTrackedRequest`.
  */
 
 import type { RequestTrack } from '@/inkling/utils/services/request-track'

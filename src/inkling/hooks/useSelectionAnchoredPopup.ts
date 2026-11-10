@@ -28,10 +28,10 @@ interface UseSelectionAnchoredPopupOptions {
 }
 
 /**
- * React adapter over @/utils/selection-anchored-popup: positions popupRef
- * against its anchor, then keeps it positioned across window resize, container
- * scroll, and popup content mutations. Returns the reposition callback so a
- * consumer can request an extra pass (e.g. after loading content).
+ * React adapter over the selection-anchored popup layout seam: positions
+ * popupRef against its anchor, then keeps it positioned across window resize,
+ * container scroll, and popup content mutations. Returns the reposition callback
+ * so a consumer can request an extra pass (e.g. after loading content).
  */
 export function useSelectionAnchoredPopup({
   editor,

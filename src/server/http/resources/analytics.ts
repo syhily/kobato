@@ -136,7 +136,7 @@ export const analyticsEventsRouter = new Hono<Env>()
       'X-Accel-Buffering': 'no',
     })
   })
-  // Client device-environment beacon (ADR-0006): anonymous, fire-and-forget
+  // Client device-environment beacon: anonymous, fire-and-forget
   // (`navigator.sendBeacon`). The event id is NOT validated against the main
   // table — a bot-gated id yields an orphan sidecar row that the queries'
   // JOIN drops and retention clears.

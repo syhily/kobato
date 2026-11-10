@@ -49,7 +49,7 @@ export async function latestDistinctCommentIds(db: Database, adminIds: number[],
   return rows.map((row) => idFromString(String(row.id)))
 }
 
-/** Digest access path (audit P1-21): the plan is pinned by
+/** Digest access path: the plan is pinned by
  *  `tests/it/server/domains/comments/repos.test.ts` — no speculative partial
  *  index (only 124→75ms at 100k); revisit past ~50k rows if cache-miss costs show. */
 export function latestDistinctCommentIdsQuery(adminIds: number[], limit: number): SQL {

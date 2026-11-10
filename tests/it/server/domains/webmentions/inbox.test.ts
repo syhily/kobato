@@ -14,7 +14,7 @@ import { post } from '@/server/infra/db/schema/post'
 import { webmention, webmentionInbox } from '@/server/infra/db/schema/webmention'
 
 // Capture the notification seam: the worker drives receiveWebmention,
-// whose R11 rules decide WHEN to notify.
+// whose rules decide when to notify.
 vi.mock('@/server/domains/webmentions/email', () => ({
   sendNewWebmention: vi.fn(async () => ({ ok: true })),
 }))
@@ -205,8 +205,8 @@ describe('integration / webmention inbox worker', () => {
     await runWebmentionInboxBatch(db)
     expect((await listWebmentionInbox(db))[0]!.attempts).toBe(1)
 
-    // The sender re-POSTs — the backoff waterline is honored (a re-POST no
-    // longer resets it), so the retry runs once the row comes due.
+    // The sender re-POSTs: the backoff waterline is honored (a re-POST does not
+    // reset it), so the retry runs once the row comes due.
     await enqueue()
     const [queued] = await listWebmentionInbox(db)
     await db

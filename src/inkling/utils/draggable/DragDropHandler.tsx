@@ -32,21 +32,18 @@ export interface DraggableContainerHandle {
 
 export interface DragDropHandlerOptions {
   editorContainerElement?: HTMLElement
-  // forwarded to the ScrollHandler — e.g. to point its document scroll
-  // container override at a custom selector
+  // forwarded to the ScrollHandler (e.g. its document scroll container override)
   scrollHandlerOptions?: ScrollHandlerOptions
-  // the handler publishes its own isDragging truth — consumers (the drag-drop
-  // handle) subscribe here instead of a container adapter hand-mirroring the
-  // flag through the lifecycle callbacks
+  // the handler publishes its own isDragging truth — consumers subscribe here instead of a
+  // container adapter mirroring the flag through the lifecycle callbacks
   onDraggingChange?: (isDragging: boolean) => void
 }
 
 export class DragDropHandler {
   editorContainerElement: HTMLElement | null = null
   containers: DragDropContainer[] = []
-  // grab-phase state: set on mousedown, consumed (or discarded) when the drag
-  // start threshold is met — everything the initiated drag owns lives in
-  // _activeDrag instead
+  // grab-phase state: set on mousedown, consumed or discarded when the drag-start
+  // threshold is met — everything the initiated drag owns lives in _activeDrag instead
   grabbedElement: HTMLElement | null = null
   sourceContainer: DragDropContainer | null = null
   scrollHandler: ScrollHandler
@@ -61,13 +58,10 @@ export class DragDropHandler {
 
   isDragging: boolean = false
 
-  // the in-flight drag's info; null between drags. Kept as an accessor so the
-  // handler's external interface survives the ActiveDrag collapse
+  // the in-flight drag's info; null between drags
   get draggableInfo(): DraggableInfo | null {
     return this._activeDrag?.draggableInfo ?? null
   }
-
-  // lifecycle ---------------------------------------------------------------
 
   constructor({ editorContainerElement, scrollHandlerOptions, onDraggingChange }: DragDropHandlerOptions = {}) {
     this.editorContainerElement = editorContainerElement ?? null
@@ -76,36 +70,24 @@ export class DragDropHandler {
     this.scrollHandler = new ScrollHandler(scrollHandlerOptions)
     this.dropIndicator = new DropIndicator({ editorContainerElement: this.editorContainerElement })
 
-    // bind any raf handler functions
     this._rafUpdateDragPreviewElementPosition = this._updateDragPreviewElementPosition.bind(this)
 
-    // set up document event listeners
     this._addGrabListeners()
-
-    // append body elements
     this._appendDragPreviewContainerElement()
   }
 
   destroy() {
-    // reset any on-going drag and remove any temporary listeners
     this.cleanup()
-
-    // clean up document event listeners
     this._removeGrabListeners()
-
-    // remove body elements
     this.dropIndicator.destroy()
     this._removeDragPreviewContainerElement()
   }
-
-  // interface ---------------------------------------------------------------
 
   registerContainer(element: HTMLElement, options: ContainerDragHandlers): DraggableContainerHandle {
     const container = new DragDropContainer(element, options)
     this.containers.push(container)
 
-    // return a minimal interface to the container because this class
-    // should be used for management rather than the container class instance
+    // a minimal handle: DragDropHandler manages containers, callers never hold the instance
     return {
       enableDrag: () => {
         container.enableDrag()
@@ -116,12 +98,10 @@ export class DragDropHandler {
       },
 
       refresh: () => {
-        // re-calculate draggables/droppables
         container.refresh()
       },
 
       destroy: () => {
-        // unregister container
         container.disableDrag()
         this.containers = this.containers.filter((c) => c !== container)
       },
@@ -132,27 +112,20 @@ export class DragDropHandler {
   cleanup() {
     this.containers.forEach((container) => container.disableDrag())
     this.containers = []
-    // cancel any tasks and remove intermittent event handlers
     this._resetDrag()
   }
 
-  // test seam: runs the grab → drag-start choreography synchronously so unit
-  // tests don't re-create it with real mousemove sequences and wall-clock
-  // sleeps. Dispatches a real mousedown (the grab path runs end-to-end), then
-  // drives the pending drag-start session past its threshold — drag
-  // initiation is synchronous, so the drag has been initiated (or never
-  // started: right click, drag-disabled target, drag already in progress)
-  // when this returns
+  // test seam: runs the grab → drag-start choreography synchronously so unit tests need no
+  // real mousemove sequences or wall-clock sleeps. Dispatches a real mousedown, then drives
+  // the pending drag-start session past its threshold — the drag has been initiated (or
+  // never started) when this returns
   simulateDrag(element: HTMLElement, start: DragSessionPoint = { x: 10, y: 10 }): void {
     element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: start.x, clientY: start.y, button: 0 }))
     this._dragStartSession?.move({ x: start.x + DRAG_START_THRESHOLD + 1, y: start.y })
   }
 
-  // event handlers ----------------------------------------------------------
-
-  // we use a custom "drag" detection rather than native drag events because it
-  // allows better tracking across multiple containers and gives more flexibility
-  // for handling touch events later if required
+  // custom drag detection instead of native drag events: better tracking across multiple
+  // containers and more flexibility for touch events later
   _onMouseDown(event: MouseEvent) {
     if (!this.isDragging && event.button === 0) {
       const target = event.target instanceof Element ? event.target : null
@@ -160,8 +133,7 @@ export class DragDropHandler {
       this.grabbedElement = grabbedElement instanceof HTMLElement ? grabbedElement : null
 
       if (this.grabbedElement) {
-        // some elements may have explicitly disabled dragging such as
-        // captions where we want to allow text selection instead
+        // some elements disable dragging explicitly — captions, to allow text selection
         const dragDisabledElement = getParent(target, DRAG_DISABLED_SELECTOR)
         if (dragDisabledElement && this.grabbedElement.contains(dragDisabledElement)) {
           return
@@ -197,8 +169,6 @@ export class DragDropHandler {
       const dropTarget = drag.overContainer
 
       if (dropTarget) {
-        // the drop consumes the resolution the indicator showed; null means
-        // no droppable resolution applied (container-level drop)
         const result = dropTarget.onDrop(drag.draggableInfo, drag.dropResolution)
         if (typeof result === 'boolean') {
           success = result
@@ -215,25 +185,19 @@ export class DragDropHandler {
       })
     }
 
-    // dispose the drag and any drag preview element
     this._resetDrag()
   }
 
-  // cancel drag on escape
   _onKeyDown(event: KeyboardEvent) {
     if (this.isDragging && event.key === 'Escape') {
       this._resetDrag()
     }
   }
 
-  // private -----------------------------------------------------------------
-
-  // called when we detect a mousedown event on a draggable element: begins a
-  // drag-start session whose temporary document listeners (move/release/
-  // native drag) decide whether the press becomes a drag (movement past the
-  // start threshold) or is discarded. The threshold policy lives in
-  // @/utils/draggable/drag-session; the session's listeners and resolution
-  // are the ports declared here
+  // Begins a drag-start session: temporary document listeners (move/release/native drag)
+  // decide whether the press becomes a drag (movement past the start threshold) or is
+  // discarded. The threshold policy lives in @/inkling/utils/draggable/drag-session; the
+  // session's listeners and resolution are the ports declared here.
   _beginDragStartSession(startEvent: MouseEvent) {
     // a new grab replaces any still-pending session
     this._dragStartSession?.cancel()
@@ -254,14 +218,12 @@ export class DragDropHandler {
         onStart: () => {
           // stop the drag creating a selection
           window.getSelection()?.removeAllRanges()
-          // set up the drag details
           this._initiateDrag(startEvent)
         },
       },
     )
   }
 
-  // called once drag start conditions have been met, `startEvent` is the initial mousedown event
   _initiateDrag(startEvent: MouseEvent) {
     this._setIsDragging(true)
     applyUserSelect(document.body, 'none')
@@ -278,8 +240,8 @@ export class DragDropHandler {
       return
     }
 
-    // append this handler's drop indicator to the editor's element rather
-    // than body — the element is per-handler, attach is idempotent
+    // per-handler indicator, appended to the editor's element rather than body; attach is
+    // idempotent
     this.dropIndicator.attach()
 
     const draggableInfo: DraggableInfo = {
@@ -291,8 +253,8 @@ export class DragDropHandler {
       },
     }
 
-    // one object owns everything this drag creates — its listeners included —
-    // so reset is disposal rather than a field-nulling checklist
+    // one object owns everything this drag creates (listeners included), so reset is
+    // disposal rather than a field-nulling checklist
     const activeDrag = new ActiveDrag({
       draggableInfo,
       listeners: {
@@ -307,13 +269,12 @@ export class DragDropHandler {
       container.onDragStart(draggableInfo)
     })
 
-    // style the dragged element
     if (draggableInfo.element) {
       draggableInfo.element.style.opacity = '0.5'
     }
 
-    // create the drag preview element and cache its position to avoid costly
-    // getBoundingClientRect calls in the mousemove handler
+    // cache the preview position to avoid costly getBoundingClientRect calls in the
+    // mousemove handler
     const dragPreview = this.sourceContainer.createDragPreviewElement(draggableInfo)
     if (dragPreview) {
       this._dragPreviewContainerElement?.appendChild(dragPreview.element)
@@ -329,10 +290,8 @@ export class DragDropHandler {
       return
     }
 
-    // start drag preview element following the mouse
     requestAnimationFrame(this._rafUpdateDragPreviewElementPosition)
 
-    // let the scroll handler select the scrollable element
     this.scrollHandler.dragStart(draggableInfo)
 
     // hover + text-caret suppression ride the one data-inkling-dragging
@@ -359,10 +318,9 @@ export class DragDropHandler {
     }
   }
 
-  // called when mouse moves whilst a drag is in progress. The transition
-  // machine (hover-transitions) decides; this adapter measures the frame,
-  // applies the next state, and interprets the ordered effects — container
-  // callbacks, the indicator, and the drop resolution write
+  // The transition machine (hover-transitions) decides; this adapter measures the frame,
+  // applies the next state, and interprets the ordered effects — container callbacks, the
+  // indicator, and the drop resolution write.
   _handleDrag() {
     const drag = this._activeDrag
     if (!drag || !this._dragPreviewContainerElement) {
@@ -425,10 +383,8 @@ export class DragDropHandler {
           if (drag.overContainer) {
             drag.overContainer.onDragOverDroppable(effect.droppable, effect.position)
           }
-          // container.getIndicatorPosition returns false if the drop is not
-          // allowed; its answer is the drop's resolution — kept on the drag
-          // state and handed to onDrop at mouse-up, so what the indicator
-          // showed is exactly what the drop consumes
+          // false = drop not allowed; the answer is the drop's resolution, handed to onDrop
+          // at mouse-up so what the indicator showed is exactly what the drop consumes
           const resolution = drag.overContainer?.getIndicatorPosition(draggableInfo, effect.droppable, effect.position)
           if (resolution) {
             drag.dropResolution = resolution
@@ -443,9 +399,8 @@ export class DragDropHandler {
     }
   }
 
-  // single writer for the handler's isDragging truth: the field and the
-  // published port flip together, so subscribers can never observe a state
-  // the handler itself doesn't hold
+  // single writer for the handler's isDragging truth: the field and the published port flip
+  // together, so subscribers can never observe a state the handler itself doesn't hold
   _setIsDragging(value: boolean) {
     if (this.isDragging === value) {
       return
@@ -484,8 +439,8 @@ export class DragDropHandler {
     this.grabbedElement = null
     this.sourceContainer = null
 
-    // disposal owns the whole per-drag teardown: listeners and the drag
-    // preview (element removal + producer dispose hook)
+    // disposal owns the whole per-drag teardown: listeners plus the drag preview (element
+    // removal + producer dispose hook)
     const activeDrag = this._activeDrag
     this._activeDrag = null
     activeDrag?.dispose()
@@ -517,8 +472,8 @@ export class DragDropHandler {
     this._dragPreviewContainerElement?.remove()
   }
 
-  // the grab (mousedown) listener is the handler's only permanent listener;
-  // the per-drag move/release/escape listeners live on ActiveDrag
+  // the grab (mousedown) listener is the handler's only permanent listener; the per-drag
+  // move/release/escape listeners live on ActiveDrag
   _addGrabListeners() {
     this._addEventListener('mousedown', (event) => this._onMouseDown(event), { passive: false })
   }
@@ -535,8 +490,7 @@ export class DragDropHandler {
     if (!this._listenerDetach[e]) {
       const handler = method.bind(this)
       document.addEventListener(e, handler, options)
-      // removal matches the historical 2-arg form (no listener uses capture,
-      // so options are not needed to detach)
+      // no listener uses capture, so the 2-arg removal form is sufficient
       this._listenerDetach[e] = () => {
         document.removeEventListener(e, handler)
       }

@@ -11,12 +11,9 @@ import type { CardImportSpec } from '@/inkling/nodes/base/import-spec'
 import type { CardWidth } from '@/inkling/nodes/base/utils/card-widths'
 
 /**
- * The class every declaration's baseNode is: a generateDecoratorNode
- * product. The registry projections widen to Klass<LexicalNode> (the
- * per-card dataset type is dropped there — see CARD_WRAPPER_NODES), but the
- * generated statics are genuinely present on every built-in and host class;
- * the field types them so readers reach importSpec/getPropertyDefaults
- * without casting through unknown.
+ * A generateDecoratorNode product. Projections widen to `Klass<LexicalNode>`, but the
+ * generated statics exist on every built-in and host class, so they type without
+ * casting through `unknown`.
  */
 export type CardBaseNodeClass = Klass<LexicalNode> & {
   getPropertyDefaults(): Record<string, unknown>
@@ -25,22 +22,10 @@ export type CardBaseNodeClass = Klass<LexicalNode> & {
 }
 
 /**
- * The card's decorate-target wrapper props (CONTEXT.md: "card spec") — the
- * React-free half of what a card's `decorate()` passes to
- * `InklingCardWrapper`. The component render and the `IndicatorIcon`
- * component attach one layer up beside each card's component in the
- * `*NodeComponent` files (paired with the declaration by
- * `@/inkling/nodes/cards/card-decorate`) because they are React-bearing; the shared
- * adapter (`@/inkling/nodes/decorate-card`) merges both halves. Cards with no wrapper props (Audio, Bookmark, Callout, File,
- * HorizontalRule) omit this entry.
- *
- * `width` is either a constant or a node→width mapper for cards whose width
- * is runtime node state (Image/Video read `cardWidth`; Header maps its
- * `layout`). Per-card width defaults live here — the split of this knowledge
- * across thirteen decorate bodies is what caused the `b60bd7c` regression.
- * `hasIndicatorIcon` is the React-free record that the card renders an
- * indicator icon; the projection only attaches the icon component when this
- * flag is set (Html is the only card that does).
+ * The card's decorate-target wrapper props — the React-free half of what `decorate()`
+ * passes to `InklingCardWrapper`; renders and icons attach one layer up in the
+ * `*NodeComponent` files. `width` may be a node→width mapper for cards whose width is
+ * runtime node state (Image/Video read `cardWidth`; Header maps its `layout`).
  */
 export interface DecorateTargetSpec {
   width?: CardWidth | ((node: LexicalNode) => CardWidth | undefined)
@@ -49,35 +34,25 @@ export interface DecorateTargetSpec {
 }
 
 /**
- * The card's membership in the insert-command surface (CONTEXT.md: "card
- * declaration") — the per-card facts the eleven hand-written insert plugins
- * held: whether it dispatches `INSERT_CARD_COMMAND` with
- * `openInEditMode: true`, and whether it claims media inserts. The presence
- * of `insert` is the opt-in; an empty spec (file, gallery) is the common
- * case. HorizontalRule and the footnote definition omit the entry — they have
- * no derived insert registration. The insert command itself is NOT declared here: every
- * insert-bearing card joins exactly one insert command, derived from its
- * node type by `resolveCardInsertCommand` (`@/inkling/nodes/cards/card-commands`),
- * so the command can never drift from the card. React-free; the registrar
- * (`@/inkling/plugins/CardInsertPlugin`) is its derived view.
+ * The card's membership in the insert-command surface; the presence of `insert` is the
+ * opt-in. The command derives from the node type via `resolveCardInsertCommand`, so it
+ * cannot drift from the card. React-free; the registrar
+ * (`@/inkling/plugins/CardInsertPlugin`) is the derived view.
  */
 export interface CardInsertSpec {
   /** dispatch INSERT_CARD_COMMAND with openInEditMode: true after construction */
   openInEditMode?: boolean
   /** claim INSERT_MEDIA_COMMAND payloads whose type equals this card's nodeType */
   claimsMediaInsert?: boolean
-  /** bookmark only — historical; redundant with INSERT_CARD_COMMAND's own
-      selection handling but observable in dispatch return values */
+  /** bookmark only — redundant with INSERT_CARD_COMMAND's own selection handling, but observable in dispatch return values */
   requiresRangeSelection?: boolean
-  /** bookmark only — historical HIGH priority; every other card is LOW */
+  /** bookmark only — HIGH priority; every other card is LOW */
   insertCommandPriority?: 'high'
 }
 
 /**
- * The card menu icon ids (CONTEXT.md: "card declaration" names the card menu
- * as part of the declaration's knowledge). Naming the icon by id keeps the
- * declaration React-free; the SVGR icon components attach one layer up in
- * `@/inkling/nodes/cards/card-menus`.
+ * Card menu icon ids. Naming the icon by id keeps declarations React-free; the SVGR
+ * components attach one layer up in `@/inkling/nodes/cards/card-menus`.
  */
 export type CardIconId =
   | 'audio'
@@ -97,40 +72,20 @@ export type CardIconId =
   | 'video'
 
 /**
- * The command a menu entry dispatches, NAMED instead of referenced: the
- * direction reversal that makes `@/inkling/nodes/cards/card-commands` a derived view
- * over the declarations rather than a module they import. `'insert'` names
- * the entry's own card insert command (derived from the declaration's node
- * type by `resolveCardInsertCommand`, so menu entry order never carries
- * command semantics — Image's second entry is the GIF selector, not an
- * insert command); the two named extras are the Image card's selector
- * commands. Host menu entries may additionally carry a raw
- * `LexicalCommand` for a host-defined command (see
- * `HostCardMenuEntrySpec` in `@/inkling/nodes/cards/host-card-registry`). The menu
- * projection (`@/inkling/nodes/cards/card-menus`) resolves the name to the command
- * object through `resolveCardMenuCommand`.
+ * The command a menu entry dispatches, named rather than referenced so `card-commands`
+ * stays a derived view over the declarations. `'insert'` names the entry's own card
+ * insert command (derived from the declaration's node type); the two extras are the
+ * Image card's selector commands.
  */
 export type CardMenuCommand = 'insert' | 'openGifSelector' | 'openImageLibrary'
 
 /**
- * The construction-dataset vocabulary a card's menu entries may name — the
- * payload type of `insertParams` and the key type of `queryParams`.
- *
- * Derived, never restated: the dataset properties come from the base class's
- * `getPropertyDefaults()` return type (the generated
- * `DecoratorNodeValueMap`), and the transient-prop / nested-editor
- * construction keys come from the same spec arrays the declarations already
- * carry (`CardSpecTransientDataset` / `CardSpecNestedEditorDataset`). The
- * three sources are the exact vocabulary `CardInsertPlugin`'s `new node(dataset)`
- * consumes, so a menu entry can no longer name a key the card's constructor
- * silently ignores (Image's `triggerFileDialog` typo).
- *
- * A declaration must pass its base class and spec array types to get the
- * precise dataset; `DeclaredCardMenuDataset` turns the un-parameterized
- * defaults into `never`, so omitting them makes `insertParams`/`queryParams`
- * unusable rather than silently open (the registry's existential alias is
- * `AnyCardDeclaration`, whose menu stays loose). Host specs use
- * `HostCardMenuEntrySpec`, never this default.
+ * The construction-dataset vocabulary a menu entry may name: `insertParams`' payload
+ * and `queryParams`' keys. Derived from the base class's `getPropertyDefaults()` plus
+ * the spec arrays, so a menu entry cannot name a key the constructor silently ignores.
+ * A declaration must pass its base class and spec array types to get the precise
+ * dataset; `DeclaredCardMenuDataset` turns un-parameterized defaults into `never`
+ * (host specs use `HostCardMenuEntrySpec`, never this default).
  */
 export type CardMenuDataset<
   Base extends CardBaseNodeClass,
@@ -140,10 +95,8 @@ export type CardMenuDataset<
   CardMenuTransientDataset<Transient> &
   CardMenuNestedEditorDataset<Nested>
 
-// A broad spec array (the un-parameterized declaration's default) cannot name
-// literal dataset keys, so it degrades to the open record — exactly the
-// pre-parameterization behaviour. A const-asserted tuple (every base node
-// module's `as const satisfies` idiom) is precise, including the empty tuple.
+// A broad spec array (the un-parameterized default) cannot name literal dataset keys,
+// so it degrades to the open record; a const-asserted tuple stays precise.
 type CardMenuTransientDataset<Specs> = Specs extends readonly TransientPropSpec[]
   ? number extends Specs['length']
     ? Record<string, unknown>
@@ -157,13 +110,10 @@ type CardMenuNestedEditorDataset<Specs> = Specs extends readonly NestedEditorSpe
   : unknown
 
 /**
- * The dataset a DECLARATION's menu is checked against. The un-parameterized
- * `CardDeclaration` defaults (the broad `CardBaseNodeClass` / spec arrays)
- * resolve to `never`, so a menu-bearing declaration that forgets its type
- * arguments cannot use `insertParams` or `queryParams`; a declaration that
- * spells `readonly []` for an absent spec array (or passes its const-asserted
- * array) gets the precise `CardMenuDataset`. This closes the "silent opt-in"
- * trap: the broad projection lives only on `AnyCardDeclaration`.
+ * The dataset a DECLARATION's menu is checked against: the un-parameterized
+ * `CardDeclaration` defaults resolve to `never`, so a menu-bearing declaration that
+ * forgets its type arguments cannot use `insertParams`/`queryParams`, while
+ * `readonly []` (or a const-asserted array) gets the precise `CardMenuDataset`.
  */
 type DeclaredCardMenuDataset<
   Base extends CardBaseNodeClass,
@@ -182,13 +132,9 @@ type DeclaredCardMenuDataset<
     : never
 
 /**
- * The `queryParams` key vocabulary: typed `/card param` values are strings
- * merged into the insert dataset, so an entry may only name keys whose
- * dataset value is a string. An explicitly open dataset (`Record<string,
- * unknown>`, e.g. a wide-annotated host spec) keeps the loose `string`; a
- * precise dataset narrows to its string-valued keys (Image's `src`,
- * Bookmark's `url`), and the `never` sentinel of an un-parameterized
- * declaration accepts no key at all.
+ * The `queryParams` key vocabulary: `/card param` values merge into the insert dataset
+ * as strings, so an entry may only name string-valued dataset keys. An explicitly open
+ * dataset keeps the loose `string`; the `never` sentinel accepts no key.
  */
 export type CardMenuQueryParamKey<Dataset> = [Dataset] extends [never]
   ? never
@@ -199,24 +145,15 @@ export type CardMenuQueryParamKey<Dataset> = [Dataset] extends [never]
       }[Extract<keyof Dataset, string>]
 
 /**
- * One slash/plus menu entry, React-free: everything a `MenuItem`
- * (`@/inkling/nodes/cards/card-menu-build`) carries except the icon component and the command
- * object, which are named by id (`CardIconId` / `CardMenuCommand`) and
- * resolved one layer up instead. The derived view in
- * `@/inkling/nodes/cards/card-menus` resolves `icon` to the SVGR component and
- * `command` to the entry's `insertCommand`.
- *
- * The `Dataset` type parameter is the card's construction dataset (see
- * `CardMenuDataset`): `insertParams` is a partial dataset and `queryParams`
- * names string-valued dataset keys, so an invalid key or value is a compile
- * error at the declaration site.
+ * One slash/plus menu entry, React-free: everything a `MenuItem` carries except the
+ * icon component and command object, which are named by id (`CardIconId` /
+ * `CardMenuCommand`) and resolved in `card-menus`. `Dataset` is the card's
+ * construction dataset (see `CardMenuDataset`), so an invalid `insertParams` key/value
+ * is a compile error at the declaration site.
  */
 export interface CardMenuEntrySpec<Dataset extends Record<string, unknown> = Record<string, unknown>> {
   label: string
-  /** the labels-table stem this entry resolves through at menu-build time
-   * (`menu.${labelKey}.label` / `.desc`). The
-   * English `label`/`desc` stay the self-describing defaults — resolution is
-   * an override, never a replacement. */
+  /** labels-table stem resolved at menu-build time (`menu.${labelKey}.label` / `.desc`); English `label`/`desc` stay the defaults */
   labelKey: string
   desc?: string
   icon: CardIconId
@@ -231,12 +168,9 @@ export interface CardMenuEntrySpec<Dataset extends Record<string, unknown> = Rec
 }
 
 /**
- * The card's upload-claiming key — one of the media keys of the host
- * uploader's `fileTypes` (`FileUploader` in
- * `@/inkling/context/InklingHostIntegrationContext`). `DragDropPastePlugin` looks the
- * key up to learn which mime types claim a drag/drop or paste insert for the
- * card's node type. Only the four media cards (Audio, File, Image, Video)
- * carry one.
+ * The card's upload-claiming key — one of the media keys of the host uploader's
+ * `fileTypes`, which `DragDropPastePlugin` looks up to claim a drag/drop or paste
+ * insert. Only the four media cards carry one.
  */
 export type CardUploadType = keyof NonNullable<FileUploader['fileTypes']>
 
@@ -244,53 +178,27 @@ export type CardUploadType = keyof NonNullable<FileUploader['fileTypes']>
  * How the card joins the markdown round-trip (`MARKDOWN_NODES` in
  * `@/inkling/markdown/round-trip`):
  *
- * - `{ kind: 'fence' }` — the card speaks a ` ```inkling:<card>``` ` fence.
- *   The per-card payload vocabulary (`getData`/`createNode`) attaches one
- *   layer up in `@/inkling/nodes/cards/card-markdown-transformers`, keyed
- *   exhaustively by the fence declarations' node types: the payload's
- *   `createNode` must construct the wrapper node class the round-trip editor
- *   registers, which the React-free declaration modules must never import.
- * - `{ kind: 'exempt' }` — markdown-eligible with no card fence: CodeBlock
- *   and HorizontalRule speak the dialect's own transformers (`CODE_FENCE` /
- *   `HR`, covered by `DEFAULT_TRANSFORMERS`), and Image speaks standard
- *   `![alt](src)` syntax via its hand-written transformer.
+ * - `{ kind: 'fence' }` — the card speaks a ` ```inkling:<card>``` ` fence; the payload
+ *   vocabulary lives in `card-markdown-transformers`, and its `createNode` must
+ *   construct the wrapper node class the round-trip editor registers (which the
+ *   React-free declaration modules must never import).
+ * - `{ kind: 'exempt' }` — markdown-eligible with no card fence: CodeBlock and
+ *   HorizontalRule use the dialect's own transformers (`CODE_FENCE` / `HR`), Image uses
+ *   standard `![alt](src)`.
  *
- * Cards with no `markdown` entry (Header, Math, the footnote definition) sit
- * out the round-trip entirely.
+ * No entry (Header, Math, footnote definition): the card sits out the round-trip.
  */
 export type CardMarkdownSpec = { kind: 'fence' } | { kind: 'exempt' }
 
 /**
- * The single per-card source of truth (CONTEXT.md: "card declaration"). Every
- * card registry is a derived view over these declarations: the menus
- * (`@/inkling/nodes/cards/card-menus`), the decorate renders
- * (`@/inkling/nodes/cards/card-decorate`), the wrapper node classes
- * (`@/inkling/nodes/cards/card-wrappers`), and the insert registrations
- * (`@/inkling/nodes/cards/card-insert-commands`). Adding a card means adding its
- * declaration here plus its per-card React module — nothing is
- * hand-maintained in two places.
+ * The single per-card source of truth. Every card registry (menus, decorate renders,
+ * wrapper node classes, insert registrations) is a derived view over these
+ * declarations.
  *
  * React-free: `baseNode` is imported from its deep `@/inkling/nodes/base/nodes/...`
- * path so `@/inkling/nodes/base` can derive its node set from the declarations
- * without pulling in the wrapper/component layer. The wrapper node class and
- * the React-bearing decorate/menu pieces attach one layer up — the
- * declarations must never import wrappers, or the base barrel would close an
- * import cycle through the wrapper files. Menu icons and component renders
- * are therefore named by id (`CardIconId`) or attached beside each card's
- * component in the `*NodeComponent` files.
- *
- * Declarations are written as `checkedCardDeclaration({ … } satisfies
- * CardDeclaration<'<nodeType>', typeof BaseNode, typeof transientProps,
- * typeof nestedEditors>)`: the inner `satisfies` keeps the literal node type
- * and contextual typing, the wrapper applies the function-return exact-key
- * check. Every current declaration spells `readonly []` for an absent spec
- * array; `CardMenuDataset` then derives the menu's payload/key vocabulary from
- * those same sources, so the menu cannot drift from the constructor's dataset.
- * Omitting the arguments is NOT an open fallback: `DeclaredCardMenuDataset`
- * resolves the defaults to `never`, so a menu-bearing declaration that forgets
- * them cannot use `insertParams`/`queryParams`. The broad existential shape is
- * `AnyCardDeclaration`; the real family is pinned by
- * `tests/inkling/typecheck/card-menu-params.ts`.
+ * path so the base barrel can derive its node set from the declarations without
+ * pulling in the wrapper/component layer. Declarations must never import wrappers —
+ * the base barrel would close an import cycle through the wrapper files.
  */
 export interface CardDeclaration<
   NodeType extends string = string,
@@ -300,106 +208,49 @@ export interface CardDeclaration<
 > {
   nodeType: NodeType
   baseNode: Base
-  /**
-   * The card's nested editors (CONTEXT.md: "card spec"), for cards that keep
-   * rich-text content in nested Lexical editors. The spec array lives in the
-   * card's base node module (const-asserted there: the shim's `__*` field map
-   * derives its keys from the literal names — `CardSpecFieldMap`), imported
-   * here. The wrapper node class
-   * adopts this as its static `nestedEditors`; the generated node machinery
-   * (`@/inkling/nodes/base/generate-decorator-node`) drives constructor setup,
-   * `getDataset` appends, and `exportJSON` re-serialization from it.
-   */
+  /** The card's nested editors; spec array lives const-asserted in the base node module and is adopted as the static `nestedEditors`. */
   nestedEditors?: Nested
-  /**
-   * The card's transient props (CONTEXT.md: "card spec") — client-side-only
-   * fields (upload flow state, edit-mode flags) read from the construction
-   * dataset, initialized by the generated node machinery, and never
-   * serialized. Housed in the base node module like `nestedEditors`. The
-   * wrapper node class adopts this as its static
-   * `transientProps`; see `TransientPropSpec` in
-   * `@/inkling/nodes/base/card-specs`.
-   */
+  /** The card's transient props — client-only construction-dataset fields, never serialized; adopted as the static `transientProps`. */
   transientProps?: Transient
-  /**
-   * The card's decorate-target wrapper props; see `DecorateTargetSpec`.
-   */
+  /** The card's decorate-target wrapper props; see `DecorateTargetSpec`. */
   decorateTarget?: DecorateTargetSpec
-  /**
-   * The card's insert-command registration; see `CardInsertSpec`. Presence
-   * opts the card into the insert-command surface.
-   */
+  /** The card's insert-command registration; see `CardInsertSpec`. */
   insert?: CardInsertSpec
-  /**
-   * The card's slash/plus menu entries (CONTEXT.md: "card declaration");
-   * see `CardMenuEntrySpec`. A card with no menu entry (the footnote
-   * definition — created/ordered by the footnote behaviour module, never
-   * inserted by the user) omits this field.
-   */
+  /** The card's slash/plus menu entries; see `CardMenuEntrySpec`. */
   menu?: readonly CardMenuEntrySpec<DeclaredCardMenuDataset<Base, Transient, Nested>>[]
   /**
-   * The drag-preview icon, when the declaration overrides the default (the
-   * first menu entry's icon — see `resolveCardDragIcon`). The footnote
-   * definition names none (the doc-end-run invariant re-parks it).
-   * See `getCardDragIcon` in `@/inkling/nodes/cards/card-menus`.
+   * The drag-preview icon, when the declaration overrides the default (the first
+   * menu entry's icon — see `resolveCardDragIcon`).
    */
   dragIcon?: CardIconId
-  /**
-   * The card's upload-claiming key (CONTEXT.md: "card declaration") — see
-   * `CardUploadType`. Historically a static on the base node classes read off
-   * the registered class by `DragDropPastePlugin`; the declaration is its
-   * single home now. Only the four media cards (Audio, File, Image, Video)
-   * declare it; every other card omits the entry.
-   */
+  /** The card's upload-claiming key — see `CardUploadType`. */
   uploadType?: CardUploadType
   /**
-   * The card's toolbar label — the `data-inkling-card-toolbar` value
-   * `CardActionToolbar` renders on both of its toolbars (a live CSS/e2e
-   * selector contract). It is resolved from the declaration by the node's own
-   * type — the same path `data-inkling-card` takes — so the label cannot
-   * drift from the card it annotates (the historical "signup" header label;
-   * see `getCardToolbarLabel` in `@/inkling/nodes/cards/card-facts`). Most
-   * cards label by node type; CodeBlock ("code-block") and File
-   * ("file-upload") deliberately diverge — the divergence is data here, not a
-   * transform of `nodeType`.
+   * The `data-inkling-card-toolbar` value `CardActionToolbar` renders — a live
+   * CSS/e2e selector contract, resolved by the node's own type so it cannot drift.
+   * CodeBlock ("code-block") and File ("file-upload") diverge deliberately.
    */
   toolbarLabel: string
-  /**
-   * The card's markdown round-trip eligibility; see `CardMarkdownSpec`.
-   * Absent means the card is not part of the round-trip.
-   */
+  /** The card's markdown round-trip eligibility; see `CardMarkdownSpec`. */
   markdown?: CardMarkdownSpec
 }
 
 /**
- * The existential declaration shape for the two broad test projections
- * (`tests/inkling/unit/nodes/card-declarations.test.ts` and
- * `tests/inkling/nodes-base/import-spec-classification.test.ts`): the same
- * declaration shape with the menu's dataset re-opened to
- * `Record<string, unknown>`. `CardDeclaration` itself keeps the checked
- * default (`DeclaredCardMenuDataset` → `never`), so a precise declaration is
- * not assignable here without this explicit alias — the broad seam must name
- * it instead of relying on a loose default.
+ * The existential declaration shape for broad test projections: the menu's dataset
+ * re-opened to `Record<string, unknown>`.
  */
 export type AnyCardDeclaration = Omit<CardDeclaration, 'menu'> & {
   menu?: readonly CardMenuEntrySpec[]
 }
 
 /**
- * The exact `insertParams` key check used by the declaration wrapper and
- * `defineCard` (internal; the shared entry points are `CardMenuEntryCheck`
- * and `CardDeclarationMenuDataset`): every key written must exist in the
- * construction dataset,
- * otherwise its value type is `never`. The function form is checked through
- * its return type because TypeScript does not excess-property-check object
- * literals returned from contextually typed arrows (a function-form typo
- * would otherwise compile at a `satisfies` declaration).
- *
- * Any input whose keys are already widened — a string index signature
- * (`Record<string, unknown>`), a pre-widened `insertParams`/`baseNode`, or an
- * explicitly wide-annotated spec — is an intentional erasure boundary: the
- * keys are unrecoverable, so it is accepted as-is. Inline object and function
- * literals keep their keys and are checked.
+ * The exact `insertParams` key check shared by `checkedCardDeclaration` and
+ * `defineCard`: every written key must exist in the construction dataset, else its
+ * value type is `never`. Function forms are checked through their return type —
+ * TypeScript does not excess-property-check object literals returned from
+ * contextually typed arrows. Already-widened inputs (a string index signature, a
+ * pre-widened `insertParams`/`baseNode`) are intentional erasure boundaries and are
+ * accepted as-is.
  */
 type CardMenuExactInsertParams<InsertParams, Dataset> = InsertParams extends (...args: infer Args) => infer Result
   ? string extends keyof Result
@@ -411,10 +262,7 @@ type CardMenuExactInsertParams<InsertParams, Dataset> = InsertParams extends (..
 
 /**
  * A `queryParams` key check (internal): literal keys must name string-valued
- * dataset keys; the widened `string` element type (an explicit wide
- * annotation, or a `satisfies HostCardSpec` whose loose menu erased the
- * literal) is accepted — that erasure is the documented compatibility
- * boundary.
+ * dataset keys; a widened `string` element type is the accepted erasure boundary.
  */
 type CardMenuQueryKeyCheck<Key, Dataset> = string extends Key
   ? Key
@@ -433,10 +281,9 @@ type CheckedQueryParams<Entry, Dataset> = Entry extends { queryParams?: infer Qu
   : never
 
 /**
- * The per-entry exactness projection over a menu tuple. The `'…' extends
- * keyof …` guards matter when the helper is used independently: an entry
- * without `insertParams` must stay exactly as written, not acquire an
- * optional `{}`/`never` property.
+ * Per-entry exactness projection over a menu tuple. The `'…' extends keyof …` guards
+ * keep an entry without `insertParams`/`queryParams` exactly as written rather than
+ * acquiring an optional `never` property.
  */
 export type CardMenuEntryCheck<Menu, Dataset extends Record<string, unknown>> = {
   [I in keyof Menu]: Menu[I] extends object
@@ -469,12 +316,10 @@ type CardDeclarationMenuCheck<D> = D extends { menu?: infer Menu }
   : unknown
 
 /**
- * The declaration-site wrapper: `satisfies CardDeclaration<'…', …>` keeps the
- * contextual typing and shape check, and this identity wrapper applies the
- * exact-key check over the declaration's INFERRED menu literal — closing the
- * one hole `satisfies` cannot see (a function-valued `insertParams` with a
- * typo'd return key). Declarations are written as
- * `checkedCardDeclaration({ … } satisfies CardDeclaration<…>)`.
+ * Declaration-site wrapper: `satisfies` keeps contextual typing and shape checking;
+ * this identity wrapper adds the exact-key check over the INFERRED menu literal —
+ * closing the hole `satisfies` cannot see (a function-valued `insertParams` with a
+ * typo'd return key).
  */
 export function checkedCardDeclaration<const D extends { baseNode: CardBaseNodeClass }>(
   declaration: D & CardDeclarationMenuCheck<D>,

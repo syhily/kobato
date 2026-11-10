@@ -135,11 +135,10 @@ describe('storage redirect — site-owned /storage/* URLs', () => {
 
   it('re-encodes reserved characters of the decoded key for the Location header', async () => {
     withStorage({ urlTemplate: '' })
-    // The route decodes before the allowlist check; a raw `?` in the Location
-    // would truncate the CDN object path into a query, `#` into a fragment, and
-    // a space is not even a legal URL character. All three pass the allowlist
-    // (no empty/dot segments under an allowlisted prefix), so the Location must
-    // carry them percent-encoded.
+    // The route decodes before the allowlist check; `?`, `#`, and space all pass
+    // it (no empty/dot segments under an allowlisted prefix), but raw in the
+    // Location they would truncate or break the CDN object URL — send them
+    // percent-encoded.
     const question = await app.request('/storage/images/a%3Fb.jpg?v=1')
     expect(question.status).toBe(302)
     expect(question.headers.get('Location')).toBe('https://assets.example.com/images/a%3Fb.jpg?v=1')

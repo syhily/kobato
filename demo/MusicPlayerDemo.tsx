@@ -5,9 +5,8 @@ import { MusicPlayerCard } from '@/ui/public/music-player/music-player'
 import { useMusicPlayers } from '@/ui/public/post/use-music-players'
 import '@/styles/public.css'
 
-// Minimal article-page demo for the new MusicPlayerCard (`/#/music-player`).
-// External media fixtures (SoundHelix audio, picsum covers) require network
-// access; the LRC fixtures are inline.
+// Minimal article-page demo for MusicPlayerCard (`/#/music-player`). External media fixtures (SoundHelix audio,
+// picsum covers) require network access; the LRC fixtures are inline.
 
 const SAMPLE_LRC = `[ti:SoundHelix Song 1]
 [ar:T. Schürger]
@@ -79,8 +78,10 @@ function mountPointHtml(sample: Sample): string {
   return `<div class="${MUSIC_PLAYER_CARD_CLASSES.wrapper}"><div class="aplayer" ${attrs}>${musicPlayerFallbackHtml(meta, escapeAttr)}</div></div>`
 }
 
-/** The SSR-simulated zone: static mount-point markup (as the saved bodyHtml
- *  projection would carry) upgraded by the real hydration hook. */
+/**
+ * SSR-simulated zone: static mount-point markup (as the saved bodyHtml projection carries) upgraded by the real
+ * hydration hook.
+ */
 function HydratedMounts({ samples }: { samples: Sample[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const html = samples.map((sample) => mountPointHtml(sample)).join('')
@@ -97,9 +98,8 @@ function HydratedMounts({ samples }: { samples: Sample[] }) {
 export default function MusicPlayerDemo() {
   const [dark, setDark] = useState(false)
 
-  // demo.css pins `:root { font-size: 62.5% }` (the inkling playground's
-  // convention); production renders at 16px, so rem-based utilities would
-  // look shrunken here. Counteract it while this route is mounted.
+  // demo.css pins `:root { font-size: 62.5% }` (the inkling playground's convention) while production renders at
+  // 16px, so rem-based utilities would look shrunken here; counteract it while this route is mounted.
   useEffect(() => {
     const root = document.documentElement
     const previous = root.style.fontSize

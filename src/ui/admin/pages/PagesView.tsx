@@ -87,7 +87,6 @@ export function PagesView() {
                   ),
                 )}
               </div>
-              {/* Bottom status */}
               <AdminInfiniteListFooter
                 noun={t('admin.list.noun.pages')}
                 rowCount={rows.length}

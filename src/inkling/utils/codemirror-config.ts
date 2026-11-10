@@ -6,9 +6,8 @@ import { minimalSetup } from '@uiw/codemirror-extensions-basic-setup'
 
 const disableHistoryGroupingForTests = Boolean(import.meta.env.VITE_TEST)
 
-// Static theme and highlight objects — hoisted to module scope to avoid
-// recreating them on every render. CodeMirror tracks extensions by reference
-// identity, so new objects force expensive reconfiguration.
+// Static theme and highlight objects at module scope: CodeMirror tracks extensions by
+// reference identity, so recreating them per render forces expensive reconfiguration.
 
 /** The light/dark editor themes only ever differ by these three colors. */
 const createEditorTheme = ({

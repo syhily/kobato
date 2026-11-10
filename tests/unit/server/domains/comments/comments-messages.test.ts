@@ -8,8 +8,6 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Comments + webmentions user-facing copy: all four locales, plus the
-// parameterized cases (link cap, webmention queue).
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

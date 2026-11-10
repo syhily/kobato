@@ -246,6 +246,16 @@ const DEVICE_ENV_BEACON_BUCKET: RateLimitBucket = { windowSeconds: 60, maxAttemp
 export const tryDeviceEnvBeaconRateLimit = (ip: string): Promise<RateLimitResult> =>
   tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}analytics-env-beacon:${rateLimitIpKey(ip)}`, DEVICE_ENV_BEACON_BUCKET)
 
+// Browser RUM batches arrive every few seconds per open page from anonymous
+// clients and each one costs an upstream OpenObserve round-trip. A dedicated
+// fixed bucket (same "small perimeter" rule as the beacon) absorbs a tab
+// fleet while bounding a relay spray. 240/min per IP.
+const RUM_INTAKE_BUCKET: RateLimitBucket = { windowSeconds: 60, maxAttempts: 240 }
+
+/** Browser RUM intake relays (`POST /api/rum/intake/*`) by client IP. */
+export const tryRumIntakeRateLimit = (ip: string): Promise<RateLimitResult> =>
+  tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}rum-intake:${rateLimitIpKey(ip)}`, RUM_INTAKE_BUCKET)
+
 export const tryPasskeyAuthBeginRateLimit = byIp('passkeyAuth', 'passkey-auth-begin')
 export const tryPasskeyAuthFinishRateLimit = byIp('passkeyAuth', 'passkey-auth-finish')
 export const tryPasskeyRegisterBeginRateLimit = byIp('passkeyManage', 'passkey-register-begin')

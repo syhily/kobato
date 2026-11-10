@@ -87,11 +87,6 @@ import { formatDisplayName } from '@/shared/i18n/format'
 import { metricValueLabelId } from '@/ui/admin/analytics/metric-labels'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Brand-icon map ported from Slite's `metrics/name/Icon.vue`
-// (vue3-simple-icons → @icons-pack/react-simple-icons `Si*` names, lucide
-// fallbacks unchanged). Lookup order: exact lowercase name, then the
-// dimension's generic fallback icon.
-
 type IconComponent = ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
 
 const ICON_MAP: Record<string, IconComponent> = {
@@ -233,9 +228,7 @@ export function flagEmojiFor(code: string): string {
   return String.fromCodePoint(0x1f1e6 + upper.charCodeAt(0) - 65, 0x1f1e6 + upper.charCodeAt(1) - 65)
 }
 
-// Region / language display names run through the shared formatting facade with
-// the ACTIVE UI locale (explicit at both call sites), so SSR and hydration agree
-// and the names follow the admin language instead of a pinned zh-CN.
+// Callers pass the ACTIVE UI locale, so SSR and hydration agree.
 export function regionDisplayName(code: string, locale: AppLocale): string {
   const upper = code.toUpperCase()
   // `none` keeps the caller's original spelling when the code is unresolvable.
@@ -262,7 +255,7 @@ export function MetricName({ name, type }: MetricNameProps) {
     )
   }
 
-  // Env bucket tokens (`other`, `none`, `1-5`, …) are machine values; the row
+  // Env bucket tokens (`other`, `none`, `1-5`, …) are machine values: the row
   // renders the catalog label while the filter keeps sending the token.
   const valueLabelId = metricValueLabelId(type, name)
   if (valueLabelId !== null) {
@@ -288,9 +281,8 @@ export function MetricName({ name, type }: MetricNameProps) {
   }
 
   if (type === 'referer') {
-    // Referer rows get a deterministic local letter avatar — no third-party
-    // favicon hotlink (the CSP's img-src 'self' forbids it, and the request
-    // would leak visitors' referer hosts off-site).
+    // Deterministic local letter avatar — no third-party favicon hotlink:
+    // CSP img-src 'self' forbids it, and it would leak visitors' referer hosts off-site.
     return (
       <span className="flex min-w-0 items-start gap-1.5">
         <span
@@ -325,8 +317,7 @@ export function MetricName({ name, type }: MetricNameProps) {
   }
 
   if (type === 'os' || type === 'browser' || type === 'browserType' || type === 'device' || type === 'deviceType') {
-    // Direct member access on the module-scope map — a helper call here
-    // trips the react-compiler static-components rule.
+    // Direct member access on the module-scope map; a helper call trips the react-compiler static-components rule.
     const Icon = ICON_MAP[name.toLowerCase()] ?? ICON_MAP[type]
     return (
       <span className="flex min-w-0 items-start gap-1.5">

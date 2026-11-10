@@ -33,7 +33,7 @@ export const adminPendingDashboardDto = z.object({
 })
 export type AdminPendingDashboardDto = z.infer<typeof adminPendingDashboardDto>
 
-// comments (public wire — no PII)
+// Public comment wire — no PII.
 export const commentBaseDto = z.object({
   id: idString,
   createAt: isoDateTime,
@@ -41,7 +41,7 @@ export const commentBaseDto = z.object({
   deleteAt: isoDateTime.nullable(),
   deleteRequestedAt: isoDateTime.nullable().optional(),
   body: commentEditorStateSchema,
-  /** Saved feed-variant HTML projection (R13) — sanitized at the render boundary. */
+  /** Saved feed-variant HTML projection; sanitized at the render boundary. */
   content: z.string().nullable(),
   type: z.enum(['post', 'page']).nullable(),
   ownerId: idString.nullable(),
@@ -89,7 +89,7 @@ export type CommentItemWire = z.infer<typeof commentItemDto>
 export const ownCommentMutationDto = z.object({ comment: commentItemDto })
 export type OwnCommentMutationOutput = z.infer<typeof ownCommentMutationDto>
 
-// admin comment wire (includes the PII fields; content rides the base DTO since R13)
+// Admin comment wire, including the PII fields.
 export const adminCommentBaseDto = commentBaseDto.extend({
   ua: z.string().nullable(),
   ip: z.string().nullable(),

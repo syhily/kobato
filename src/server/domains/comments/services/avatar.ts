@@ -291,7 +291,7 @@ export async function fetchAvatarByChain(
 }
 
 /** Canonical email hash; pre-warms the source chain at DEFAULT_AVATAR_SIZE_BUCKET
- *  with a positive/negative entry, fetched only on miss (entries are final, audit V3-03).
+ *  with a positive/negative entry, fetched only on miss (entries are final).
  *  Hash-only image requests can't evaluate email-keyed sources (qq/github)
  *  themselves, so this is where they get their chance — but only when such a
  *  source can actually match this email (QQ shape, or a configured GitHub
@@ -342,8 +342,8 @@ export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' 
 const EMAIL_HASH_RE = /^([a-f0-9]{32}|[a-f0-9]{64})$/i
 
 /** Serving policy: cached entries serve directly; a miss fetches once and
- *  records the outcome — upstream negatives are written only on miss (audit
- *  P1-27), but a hash resolving to NO user row is never cached: its key
+ *  records the outcome — upstream negatives are written only on miss, but a
+ *  hash resolving to NO user row is never cached: its key
  *  space is attacker-chosen and the repeat cost is one indexed lookup. */
 export async function serveAvatar(db: Database, hash: string, size: number): Promise<ServedAvatar> {
   if (!isNumeric(hash) && !EMAIL_HASH_RE.test(hash)) {

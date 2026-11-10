@@ -7,8 +7,7 @@ describe('slugify()', function () {
     expect(slugify(null)).toEqual('')
     expect(slugify(undefined)).toEqual('')
     expect(slugify('')).toEqual('')
-    // non-string input is a compile error, not a runtime case — the old
-    // `unknown` signature only existed to tolerate it
+    // non-string input is a compile error, not a runtime case
     // @ts-expect-error the narrowed signature rejects non-strings
     expect(slugify({})).toEqual('')
   })

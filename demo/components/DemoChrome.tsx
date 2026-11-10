@@ -4,10 +4,6 @@ import FloatingButton from './FloatingButton'
 import Sidebar from './Sidebar'
 import Watermark from './Watermark'
 
-/**
- * The demo sidebar state (open/closed, json/tree view) — previously
- * hand-typed in all three demos beside identical `openSidebar` bodies.
- */
 export function useDemoSidebar() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
   const [sidebarView, setSidebarView] = React.useState<'json' | 'tree'>('json')
@@ -28,9 +24,7 @@ export function useDemoSidebar() {
 }
 
 /**
- * The shared demo chrome: the watermark plus the right-edge sidebar and its
- * floating toggle. Each demo passes its own `useDemoSidebar()` state (it may
- * read `isSidebarOpen` for layout adjustments, as DemoApp does).
+ * Each surface passes its own `useDemoSidebar()` state, since it may read `isSidebarOpen` for layout adjustments.
  */
 export function DemoChrome({
   sidebar,

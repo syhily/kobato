@@ -1,63 +1,41 @@
 /*
- * The inkling comment-editor surface styles (R12, plan
- * docs/plans/inkling-editor-replacement.md) — imported ONLY by
+ * Inkling comment-editor surface styles. Imported ONLY by
  * `@/ui/public/comments/CommentBodyEditor`, which the public comment form
- * lazy-loads, so the public first screen and the rest of admin stay
- * inkling-free.
+ * lazy-loads. The package stylesheet is forced into the `inkling` layer,
+ * pinned below `utilities` and above `base` by the `@layer` statements in
+ * both entries (`public.css`, `admin.css`); host rules below are deliberately
+ * UNLAYERED.
  *
- * Same layering contract as `inkling-editor.css`: the package stylesheet is
- * forced into the `inkling` cascade layer, pinned BELOW Tailwind's
- * `utilities` but ABOVE `base` by the bare `@layer` ordering statements at
- * the top of BOTH
- * entries (`public.css` + `admin.css` — the comment editor renders on both
- * sides). Host rules below are deliberately UNLAYERED.
+ * No CSS zoom on this surface: zoom on a contenteditable breaks
+ * Chromium/WebKit IME composition painting. Typography is owned by the
+ * `typeset-comment` preset, the same preset the rendered `.comment-content`
+ * uses, so the canvas is the render; card interiors opt out via
+ * `.not-inkling-prose`.
  *
- * NO ZOOM on this surface (CSS zoom on a contenteditable breaks
- * Chromium/WebKit IME composition painting). Typography — block metrics,
- * rhythm, lists, blockquote, inline code — is owned by the shadcn/typeset
- * layer: the contentEditable carries `typeset typeset-comment`
- * (CommentBodyEditor's `contentEditableClassName`), the SAME preset the
- * rendered `.comment-content` uses, so the canvas is the render. Card
- * interiors opt out via `.not-inkling-prose` (the vendored typeset.css
- * guard honors it) and keep the hand-sized rules below. What remains here:
- * the canvas box, the token bridge, and card interiors — sized in final px
- * (the old `zoom: 0.55` effective sizes). The comment surface mounts no
- * slash menu, so no card-menu chrome rules live here.
- *
- * The kobato `dark` variant is registered BEFORE the inkling import so the
- * package's own `dark:` utilities compile with class-or-media semantics
- * instead of Tailwind's default media-only variant (which fires under a
- * dark OS even when the site is class-locked to light) — see
- * ./dark-variant.css.
+ * The `dark` variant is registered BEFORE the inkling import so the package's
+ * `dark:` utilities compile with class-or-media semantics (see
+ * ./dark-variant.css).
  */
 @import './dark-variant.css';
 @import '@/inkling/styles/index.css' layer(inkling);
 
-/* Utility scan for the inkling layer's own sources (the card chrome's TSX).
-   Lives on THIS root, not in the package sheet: a layer()-imported `@source`
-   nests inside `@layer`, and tailwind rejects the compile. */
+/* Utility scan for the inkling layer's own sources (the card chrome TSX).
+   Lives on THIS root: a `@source` inside a `layer()`-imported sheet nests
+   inside `@layer` and Tailwind rejects the compile. */
 @source '../inkling';
 
 /* Comment canvas: a compact bordered input, not an article column. The
    min-height keeps the empty state tall; the bottom runway lets the floating
-   toolbar open without clipping against the form's edge. The shell is
-   transparent (`.bg-transparent` on the wrapper) so the canvas sits directly
-   on the surrounding surface. The min-height and padding live on the
-   contentEditable (.inkling-prose) itself, NOT the .inkling-lexical wrapper:
-   an empty editor is one paragraph tall, so a wrapper-owned box leaves the
-   rest of the visible area as dead click zones that hit the plain wrapper
-   div and never focus the editor.
+   toolbar open without clipping against the form's edge. The box lives on the
+   contentEditable, NOT the `.inkling-lexical` wrapper: an empty editor is one
+   paragraph tall, so a wrapper-owned box leaves the rest of the visible area
+   as dead click zones.
 
    The `.typeset-comment` anchor pins the canvas box to the TOP-LEVEL
-   contentEditable, same contract as the page editor's canvas rule: the one
-   card this surface keeps (the code block) renders a caption nested editor
-   whose contentEditable also carries `.inkling-prose`, and a bare descendant
-   selector would hand it the 96px min-height and the canvas padding. Only
-   the top-level canvas carries the typeset preset class
-   (CommentBodyEditor's `contentEditableClassName`); nested editors always
-   render bare `.inkling-prose`. A child combinator cannot express this pin:
-   the RichTextPlugin mounts an unclassed wrapper between the
-   `.inkling-lexical` wrapper and the contentEditable. */
+   contentEditable: nested editors also carry `.inkling-prose`, and a bare
+   descendant selector would hand them the min-height and padding. A child
+   combinator cannot express this pin because RichTextPlugin mounts an
+   unclassed wrapper between the two. */
 .kobato-comment-editor .inkling-lexical {
   width: 100%;
 }
@@ -67,36 +45,30 @@
   padding: 6.6px 8.8px 22px;
 }
 
-/* Design-token bridge — same contract as the page editor surface:
-   --inkling-accent-color ← --brand (flips to its dark value under `.dark`),
-   --font-sans ← the CJK-capable kobato body chain, punching through the
-   Inter/Georgia stacks inkling declares on `.inkling-lexical` in its layer.
-   The typeset-comment preset consumes --font-serif on the contentEditable,
-   so the inherit bridge keeps canvas text on the rendered serif chain. */
+/* Design-token bridge — same contract as the page editor surface: punch
+   through the Inter/Georgia stacks inkling declares in its layer. The
+   typeset-comment preset consumes --font-serif on the contentEditable, so
+   the inherit bridge keeps canvas text on the rendered serif chain. */
 .kobato-comment-editor .inkling-lexical {
   --inkling-accent-color: var(--brand);
   --font-sans: var(--font-body);
   --font-serif: inherit;
 }
 
-/* letter-spacing is zeroed at the wrapper (inkling sets 0.1px there and the
-   contentEditable inherits it) — the rendered comment has none, and
-   letter-spacing on a contenteditable is a known Chromium IME
-   composition-caret drift factor. Font family/size/leading come from the
-   typeset-comment preset on the contentEditable itself. */
+/* Inkling sets 0.1px on the wrapper and the contentEditable inherits it; the
+   rendered comment has none, and letter-spacing on a contenteditable is a
+   known Chromium IME composition-caret drift factor. */
 .kobato-comment-editor .inkling-lexical > * {
   letter-spacing: normal;
 }
 
-/* The dominant rendered comment leading is `leading-copy` (1.85, applied at
-   the render call sites); the preset base tracks prose-sm's 1.7143. */
+/* Match the rendered comment's `leading-copy` (1.85) so canvas = render. */
 .kobato-comment-editor .typeset-comment {
   --typeset-leading: 1.85;
 }
 
-/* Cards render as div wrappers INSIDE the contentEditable (.inkling-prose):
-   their spacing is padding-top on the FOLLOWING block, not margin on the
-   card — de-zoomed from the package's 3.2rem. */
+/* Cards render as div wrappers INSIDE the contentEditable, so their spacing
+   is padding-top on the FOLLOWING block, not margin on the card. */
 .kobato-comment-editor
   .inkling-lexical
   .inkling-prose
@@ -109,10 +81,9 @@
   padding-top: 28px;
 }
 
-/* Code card bodies (the display <pre> and CodeMirror's lines — the CM theme
-   is unlayered too, so these need one extra class of specificity to beat
-   `.cm-editor .cm-line`): inkling sizes them at 1.6rem / leading-9 (2.25rem),
-   de-zoomed that is 14px / 20px. */
+/* Code card bodies: the display <pre> and CodeMirror's lines. The CM theme is
+   unlayered too, so this needs the extra `.cm-editor` class of specificity to
+   beat `.cm-editor .cm-line`; the package sizes them at 1.6rem / leading-9. */
 .kobato-comment-editor .inkling-lexical pre,
 .kobato-comment-editor .inkling-lexical .cm-editor .cm-line {
   font-size: 14px;
@@ -122,7 +93,7 @@
   font-size: 11.5px;
 }
 
-/* Card captions (1.4rem / 24px leading in the package). */
+/* Card captions; the package sizes them at 1.4rem / 24px leading. */
 .kobato-comment-editor .inkling-lexical-caption > *,
 .kobato-comment-editor .inkling-lexical-caption p {
   font-size: 12px;

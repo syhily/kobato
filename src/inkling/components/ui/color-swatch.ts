@@ -3,13 +3,12 @@ import type { ColorSwatchData } from '@/inkling/components/ui/ColorPicker'
 import { getAccentColor } from '@/inkling/utils/getAccentColor'
 
 /**
- * The swatch keyword grammar — the one home of the color-value vocabulary
- * the color picker speaks: the `'accent'` / `'transparent'` / `'image'`
- * keywords versus a raw hex. The ColorPicker (hex input color), the
- * ColorIndicator (button paint + selected-swatch title), and the
- * ColorSwatch (select mapping) used to each re-resolve it; the per-context
- * divergence (what `'transparent'` paints as) arrives as data. The accent
- * VALUE itself stays with header-accent-color — this module owns the
+ * The swatch keyword grammar — the one home of the color-value vocabulary the
+ * color picker speaks: the `'accent'` / `'transparent'` / `'image'` keywords
+ * versus a raw hex, shared by ColorPicker (hex input color), ColorIndicator
+ * (button paint + selected-swatch title), and ColorSwatch (select mapping). The
+ * per-context divergence (what `'transparent'` paints as) arrives as data. The
+ * accent VALUE itself stays with header-accent-color — this module owns the
  * grammar, not the palette.
  */
 

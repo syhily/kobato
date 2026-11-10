@@ -40,11 +40,9 @@ export interface UploadImageInputs {
 
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'])
 
-/**
- * Pre-read check of the declared envelope; authoritative checks still
- * run in {@link uploadImage}. Messages are the wire contract — do not reword.
- */
-/** A declared-envelope rejection: the controller raises it as a localized ORPCError. */
+/** A declared-envelope rejection; the controller raises it as a localized
+ * ORPCError. Pre-read check only — authoritative checks still run in
+ * {@link uploadImage}. Messages are the wire contract — do not reword. */
 export type ImageUploadRejection = {
   code: 'BAD_REQUEST' | 'PAYLOAD_TOO_LARGE'
   descriptor: ErrorMessageDescriptor

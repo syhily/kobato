@@ -33,7 +33,6 @@ export function withCommentBadgeTextColor<T extends CommentBadgeSource>(
   if (!comment.badgeName) {
     return { ...comment, badgeTextColor: null }
   }
-  // Admin-set override wins verbatim (trim-checked); otherwise WCAG auto-pick.
   const override = comment.badgeTextColor?.trim()
   return {
     ...comment,

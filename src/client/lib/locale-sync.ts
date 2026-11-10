@@ -3,21 +3,12 @@ import type { AppLocale } from '@/shared/i18n/locales'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
 /**
- * Cross-tab settings-locale announcements.
- *
- * The General language selector is the one settings change that reloads the
- * admin page. Other open tabs keep a stale UI locale, so the tab that committed
- * the change announces it here and every peer reloads from the server after
- * flushing its own dirty cards. The channel carries an ANNOUNCEMENT, never a
- * state sync: peers never write the locale themselves and never re-publish, so
- * a message cannot bounce back and forth. The announcement is handled by the
- * root-level `LocaleSyncProvider`, so editors and analytics pages (not just
- * /admin/settings) follow it.
- *
- * `origin` is the publisher's mounted sync-provider id. A tab ignores its own
- * echo: `BroadcastChannel` delivers to every other channel object with the same
- * name, including one living in the same document. A per-mount id (rather than
- * a per-tab one) also lets a test drive two "tabs" inside one realm.
+ * Cross-tab settings-locale announcements. The channel carries an
+ * ANNOUNCEMENT, never state: peers reload from the server after flushing
+ * their own dirty cards and never re-publish, so a message cannot bounce back
+ * and forth. `origin` is per mounted provider, not per tab — BroadcastChannel
+ * delivers to every same-named channel object in the same document too, so a
+ * provider must ignore its own echo.
  */
 
 export const SETTINGS_LOCALE_CHANNEL = 'kobato.settings.locale'

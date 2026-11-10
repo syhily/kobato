@@ -1,15 +1,10 @@
 /**
- * The lazy collaboration chunk's load session (plan C5): the yjs/y-websocket
- * module loads on demand — the dynamic import runs inside an effect, never
- * during SSR, and only while multiplayer is enabled, so both published
- * entries stay free of yjs. Until the chunk resolves, the context serves
- * the inert factory and the CollaborationPlugin stays unmounted, so the
- * collab connection starts one async tick later than the eager build did
- * (the documented C5 tradeoff). This module owns the load's cancellation
- * matrix — supersede-on-restart and cancel-on-disable — behind the import
- * port, composed from the request-track guard (CONTEXT.md "request track"),
- * so the matrix is a synchronous test table. The React adapter is
- * `useCollaborationProviderFactory` (src/hooks).
+ * The lazy collaboration chunk's load session: the yjs/y-websocket module loads on demand
+ * (dynamic import inside an effect, never during SSR, only while multiplayer is enabled),
+ * so both published entries stay free of yjs; until it resolves, the context serves the
+ * inert factory. This module owns the load's cancellation matrix — supersede-on-restart and
+ * cancel-on-disable — behind the import port; the React adapter is
+ * `useCollaborationProviderFactory`.
  */
 
 import type { LexicalProviderFactory } from '@/inkling/context/InklingCollaborationContext'
@@ -54,8 +49,7 @@ export function createLazyProviderFactory(
             apply(createWebsocketProviderFactory)
           }
         })
-        // A failed chunk import (network/chunk error) leaves the factory
-        // inert — never an unhandled rejection.
+        // A failed chunk import (network/chunk error) leaves the factory inert — never an unhandled rejection.
         .catch(() => {
           // swallow: the session stays inert (see above)
         })

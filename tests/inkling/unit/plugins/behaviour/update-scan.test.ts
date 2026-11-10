@@ -17,8 +17,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { drainEnqueuedUpdates } from '#/inkling/utils/test-editor'
 import { registerUpdateScan, type UpdateScanOptions } from '@/inkling/plugins/behaviour/update-scan'
 
-// Unit pins for the update-scan registration policy (@/plugins/behaviour/update-scan)
-// that EmEnDashPlugin and HorizontalRulePlugin now delegate to: the
+// Unit pins for the update-scan registration policy that EmEnDashPlugin and
+// HorizontalRulePlugin delegate to: the
 // history-tag skip (the undo-resurrection guard), the empty-dirty skip in
 // both dirty modes, the composing skip, and the tagged-vs-untagged nested
 // scan commit. The plugins' own tests keep pinning the per-plugin scan

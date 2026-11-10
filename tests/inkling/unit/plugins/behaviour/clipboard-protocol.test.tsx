@@ -81,10 +81,9 @@ describe('protocol-owned modifier listeners', () => {
   })
 
   it('stays pressed while one of two held Shift keys is released', () => {
-    // The dual-shift corner that split the old per-plugin writers: reading
-    // `event.shiftKey` off every key event reports held-state, so releasing
-    // one of two held Shift keys (shiftKey still true) keeps the state
-    // pressed until the last Shift is released.
+    // Reading `event.shiftKey` off every key event reports held-state, so
+    // releasing one of two held Shift keys (shiftKey still true) keeps the
+    // state pressed until the last Shift is released.
     const state = getModifierState(createTestEditor())
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', code: 'ShiftLeft', shiftKey: true }))
@@ -129,9 +128,7 @@ describe('MarkdownPastePlugin modifier state', () => {
   })
 })
 
-// Input-side link acceptance: which pasted text becomes a link (moved from
-// `describe('isValidUrl')` in `test/unit/utils/isInternalUrl.test.ts` with
-// the function's move into the protocol module).
+// Input-side link acceptance: which pasted text becomes a link.
 describe('isPasteableLinkUrl', () => {
   it('accepts http and https urls', () => {
     expect(isPasteableLinkUrl('https://example.com')).toBe(true)
@@ -169,11 +166,11 @@ describe('isPasteableLinkUrl', () => {
 describe('input/export url policy divergence', () => {
   it('pins the deliberate scheme divergence across the export seam', () => {
     // Two deliberate policies that do not compose: the input side accepts
-    // ftp/mailto/tel as pasteable links (pinned since plan 001), while the
-    // export side's navigation policy (`isSafeUrl`, behind the render
-    // context's `safeUrl`; plans 001/030/040) keeps only http/https/relative.
-    // A pasted ftp/mailto/tel link is live in the editor and blanked on
-    // export — documented and pinned here, deliberately not aligned.
+    // ftp/mailto/tel as pasteable links, while the export side's navigation
+    // policy (`isSafeUrl`, behind the render context's `safeUrl`) keeps only
+    // http/https/relative. A pasted ftp/mailto/tel link is live in the editor
+    // and blanked on export — documented and pinned here, deliberately not
+    // aligned.
     expect(isPasteableLinkUrl('ftp://example.com/file')).toBe(true)
     expect(isSafeUrl('ftp://example.com/file')).toBe(false)
   })

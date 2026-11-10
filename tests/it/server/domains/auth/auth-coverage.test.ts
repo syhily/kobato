@@ -87,7 +87,6 @@ describe('auth/verification-tokens — issueResetToken', () => {
     expect(consumed).not.toBeNull()
     expect(consumed!.userId).toBe(u.id)
 
-    // Single-shot consume.
     expect(await consumeToken(db, token, 'password-reset')).toBeNull()
   })
 
@@ -141,7 +140,6 @@ describe('auth/verification-tokens — signin-link', () => {
     const u = await seedUser('admin', 'magic@example.com')
     const { token } = await issueSignInLinkToken(db, u.id)
 
-    // Peek is read-only.
     expect(await peekToken(db, token, 'signin-link')).not.toBeNull()
     expect(await peekToken(db, token, 'signin-link')).not.toBeNull()
 

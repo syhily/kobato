@@ -129,10 +129,9 @@ describe('document headers — thrown listing 304', () => {
 })
 
 describe('document headers — thrown 304 document response', () => {
-  // A loader-thrown 304 bubbles to the PUBLIC LAYOUT's ErrorBoundary: RR
-  // slices `matches` to [root, layout] and only hands the thrown headers to
-  // the LAST match's headers() as `errorHeaders`. The detail route's own
-  // headers() never runs.
+  // A loader-thrown 304 bubbles to the public layout's ErrorBoundary: RR slices `matches`
+  // to [root, layout] and only hands the thrown headers to the LAST match's headers() as
+  // `errorHeaders`, so the detail route's own headers() never runs.
   const thrown = notModifiedResponse('W/"detail-304"', {
     locale: 'zh-TW',
     timeZone: 'Asia/Taipei',

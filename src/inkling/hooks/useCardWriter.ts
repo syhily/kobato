@@ -17,11 +17,9 @@ export interface CardWriteOptions {
 }
 
 /**
- * The React binding of the card write seam (CONTEXT.md: "card write seam"):
- * one `write(node => { ... })` per card component replaces the hand-copied
- * `editor.update(() => $updateCardNode(nodeKey, guard, ...))` ceremony. The
- * guard still does the narrowing, so every field the mutator writes is checked
- * against the card's own node type.
+ * The React binding of the card write seam: one `write(node => { ... })` per card
+ * component. The guard does the narrowing, so every field the mutator writes is
+ * checked against the card's own node type.
  */
 export function useCardWriter<T extends LexicalNode>(
   nodeKey: NodeKey,

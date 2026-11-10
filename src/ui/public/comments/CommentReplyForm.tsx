@@ -171,9 +171,8 @@ export function CommentReplyForm({
               onBodyChange={setBody}
               disabled={isPending}
               className={cn(isReplying && 'pt-10')}
-              // Clicking 回复 on a comment WAS the interaction: the inline
-              // form lands with the composer mounted and focused, ready for
-              // input. The top-level form stays interaction-gated.
+              // Clicking the reply button is the interaction, so the inline form lands
+              // mounted and focused; the top-level form stays interaction-gated.
               eager={isReplying}
               focusOnMount={isReplying}
             />

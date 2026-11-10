@@ -24,9 +24,9 @@ export class AtLinkSearchNode extends TextNode {
     return new AtLinkSearchNode(node.__text, node.__placeholder, node.__key)
   }
 
-  // This is a temporary node, it should never be serialized but we need
-  // to implement just in case and to match expected types. The AtLinkPlugin
-  // should take care of replacing this node when needed.
+  // A temporary node, never serialized in practice; importJSON exists to
+  // satisfy the serializer contract and match expected types. The
+  // AtLinkPlugin replaces this node when needed.
   static importJSON(serializedNode: ReturnType<AtLinkSearchNode['exportJSON']>) {
     return $createAtLinkSearchNode(serializedNode.text, serializedNode.placeholder)
   }
@@ -86,10 +86,9 @@ export class AtLinkSearchNode extends TextNode {
     return self.__placeholder
   }
 
-  // Lexical will incorrectly pick up this node as an element node when the
-  // cursor is placed by the SVG icon element in the parent AtLinkNode. We
-  // need these methods to avoid throwing errors in that case but otherwise
-  // behaviour is unaffected.
+  // Lexical misreads this node as an element node when the cursor is placed
+  // via the SVG icon in the parent AtLinkNode; these overrides avoid the
+  // resulting errors and otherwise leave behaviour unaffected.
   getChildrenSize() {
     return 0
   }

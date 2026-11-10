@@ -11,10 +11,9 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
-// Companion to comments-data.test.tsx: extra render-path branches of the
-// public Comments orchestrator — nested recursion, load-more states, reply
-// slot, failure early-return. Mutations are stubbed with a hoisted
-// singleton so the load-more isPending flag is flippable.
+// Extra render-path branches of the public Comments orchestrator: nested recursion,
+// load-more states, reply slot, failure early-return. Mutations are a hoisted singleton
+// so the load-more isPending flag is flippable.
 
 const commentsData = (count: number, roots: number): CommentsData => ({
   comments: [],

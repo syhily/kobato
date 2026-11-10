@@ -49,8 +49,8 @@ interface PinturaEditor {
   on(event: 'process', handler: (result: PinturaHandleSaveResult) => void): void
 }
 
-// the adapter's DOM ports: the loader, the options table, and the close
-// gate live headless in @/utils/services/pintura-session
+// the adapter's DOM ports: the loader, the options table, and the close gate
+// live headless in pintura-session
 function createDomPorts(): PinturaAssetPorts {
   return {
     importModule: importPinturaModule,
@@ -125,7 +125,6 @@ export default function usePinturaEditor({
         })
 
         editor.on('process', (result) => {
-          // save edited image
           handleSave(result.dest)
           trackEvent('Image Edit Saved', { location: 'editor' })
         })

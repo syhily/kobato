@@ -9,9 +9,8 @@ import { post } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
 
-// The reservation guard runs against the real engine: the own-meta lookup
-// and the cross-entity registry read are plain SELECTs on seeded rows, so
-// the mock seams from the Postgres era are gone.
+// The reservation guard runs against the real engine: the own-meta lookup and the cross-entity
+// registry read are plain SELECTs on seeded rows.
 const db = getTestDb()
 
 beforeEach(async () => {

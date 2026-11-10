@@ -1,11 +1,9 @@
-// Writing-focus mode toggle (plan M3, 三核裁决 4): the inkling surface's
-// `focusMode` prop mounts FocusModePlugin, which marks the editor root with
-// `inkling-focus-mode` and the selected top-level block with
-// `data-inkling-focus-active`; the dimming CSS lives in
-// `styles/inkling-editor.css`.
-// The toggle state is a localStorage preference (like the retired toolbar
-// density — SSR-consistent via `useSyncExternalStore`: the server snapshot
-// is always `false`, so SSR and hydration agree).
+// Writing-focus mode toggle: the inkling surface's `focusMode` prop mounts
+// FocusModePlugin, which marks the editor root with `inkling-focus-mode` and the
+// selected top-level block with `data-inkling-focus-active`; the dimming CSS lives
+// in `styles/inkling-editor.css`. The state is a localStorage preference,
+// SSR-consistent via `useSyncExternalStore` (the server snapshot is always
+// `false`, so SSR and hydration agree).
 
 import { useCallback, useSyncExternalStore } from 'react'
 

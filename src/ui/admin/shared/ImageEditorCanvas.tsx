@@ -24,8 +24,8 @@ export interface ImageEditorCanvasProps {
   jpegQuality: number
   /** Locked aspect ratio; the encoded output is resized to exactly `width × height`. */
   locked?: LockedAspect
-  /** Free-aspect output width override (source px); when smaller than the crop
-   *  width the encoder downscales to exactly this width, preserving aspect. */
+  /** Free-aspect output width override (source px); when smaller than the crop width the
+   *  encoder downscales to exactly this width, preserving aspect. */
   outputWidth?: number
   /** Current crop rect after every mutation — lets the parent clamp a target-width input without duplicating the crop state machine. */
   onCropChange?: (cropWidth: number, cropHeight: number) => void

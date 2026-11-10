@@ -56,8 +56,7 @@ async function seedRevision(ownerId: number, revisionNo: number, status: 'draft'
       ownerId,
       revisionNo,
       status,
-      // listRevisions/get project rows through the admin revision DTO,
-      // Lexical-bodied since R9a.
+      // listRevisions/get project rows through the admin revision DTO, which expects a Lexical body.
       body: emptyLexicalBody(),
       imageSources: [],
       headings: [],

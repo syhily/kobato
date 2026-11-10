@@ -113,8 +113,6 @@ describe('securitySchema', () => {
   })
 
   it('rejects an /api/ subpath even when it looks harmless (P1-16)', () => {
-    // Pre-P1-16 this payload was accepted: any `/api` prefix exempts the
-    // whole Hono API surface, so there is no safe `/api/...` exemption.
     const result = securitySchema.safeParse({
       csrf: { enabled: true, exemptPaths: ['/api/public'] },
     })

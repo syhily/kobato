@@ -51,19 +51,10 @@ interface UseLocaleSwitchResult<Locale extends string> {
 }
 
 /**
- * The locale switch is the one settings change that must be transactional:
- * every dirty card commits first, then the locale field is committed on its
- * own, and only a successful change reloads the page — once, after all saves
- * have settled. The whole sequence runs inside `runTransaction`, which makes
- * the settings workspace inert: a control on another card cannot be edited
- * while the reload is pending, so no input is dropped. A fire-and-forget reload
- * inside a card's `onSaved` would interrupt sibling saves and persist a stale
- * locale from an earlier attempt.
- *
- * `broadcast` fans the successful change out to peer tabs (the root
- * `LocaleSyncProvider` receives it there). It runs after the commit and before this tab's reload, so
- * a peer can never observe the announcement while the server still holds the
- * old locale.
+ * The locale switch is the one transactional settings change: every dirty card
+ * commits first, then the locale field on its own, and only a successful change
+ * reloads — once, inside `runTransaction` so the workspace stays inert. Reloading
+ * from a card's `onSaved` would interrupt sibling saves and persist a stale locale.
  */
 export function useLocaleSwitch<Locale extends string>({
   loadedLocale,

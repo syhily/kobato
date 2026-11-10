@@ -48,7 +48,7 @@ const CONFIG: ServerTraceRuntimeConfig = {
 }
 
 function resolution(): TraceConfigResolution {
-  return { status: 'active', server: CONFIG, frontend: null, diagnostics: [] }
+  return { status: 'active', server: CONFIG, frontend: null, frontendRelay: null, diagnostics: [] }
 }
 
 /** Both in-memory exporters plus durable snapshots (their own shutdown clears the buffers). */

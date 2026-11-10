@@ -34,9 +34,9 @@ queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// `MyCommentsView` reads its list via a useInfiniteQuery and its entity
-// picker via the pill hook's useQueries — both stubbed through the
-// mock-react-query singleton. Covers pill derivation, sentinels, badges.
+// `MyCommentsView` reads its list via useInfiniteQuery and its entity picker via the
+// pill hook's useQueries, both stubbed through mock-react-query. Covers pills,
+// sentinels, badges.
 
 vi.stubGlobal(
   'IntersectionObserver',

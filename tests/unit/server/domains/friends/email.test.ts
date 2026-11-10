@@ -5,9 +5,8 @@ import type { FriendRow } from '@/server/infra/db/types'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
 
-// Capture the seam call instead of rendering/sending: these tests pin
-// the data mapping (application → layout props + subject suffix), while
-// the layout itself has its own render suite and the seam its own suite.
+// Capture the seam call instead of rendering/sending: these tests pin the data mapping
+// (application → layout props + subject suffix); layout and seam have their own suites.
 vi.mock('@/server/infra/email/admin-notification', () => ({
   sendAdminNotification: vi.fn(async () => ({ ok: true })),
 }))

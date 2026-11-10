@@ -1,11 +1,7 @@
-// The admin-only label registry for the Gravatar mirror presets.
-//
-// The preset URLs live in `@/shared/utils/safe-url` (the public avatar graph
-// imports that module, so it must not carry workspace catalog ids); this module
-// pairs each URL with its `admin.settings.*` label id and is imported only by
-// the settings form and its label test. `satisfies Record<GravatarMirrorUrl, …>`
-// keeps the mapping exhaustive: adding a preset URL without its label fails
-// `pnpm run type`.
+// The admin-only label registry for the Gravatar mirror presets. Preset URLs
+// live in `@/shared/utils/safe-url` (the public avatar graph imports it, so it
+// must not carry workspace catalog ids); `satisfies Record<GravatarMirrorUrl, …>`
+// keeps the mapping exhaustive — a new preset URL without its label fails `pnpm run type`.
 
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { GravatarMirrorUrl } from '@/shared/utils/safe-url'

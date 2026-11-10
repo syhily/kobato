@@ -9,7 +9,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { resolveSingleDateFilterBounds } from '@/ui/admin/shared/date-filter'
 import { parseTextFilterValue, textFilterValueLabel } from '@/ui/admin/shared/filter-bar/text-filter'
 
-// Filter-pill specs for the comments list, plus the 包含/不包含 text codec that specializes the shared codec.
+// Filter-pill specs for the comments list plus the contains/not-contains text codec over the shared one.
 export type CommentFilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'
 
 export type TextFilterOperator = 'contains' | 'does-not-contain'

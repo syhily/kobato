@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { blobsMap, doublesMap, index1Of } from '@/server/domains/analytics/services/access-log'
 
-// Contract pin for the access_events slot allocation: every blob1..16 is
-// assigned at most once, the reserved slot is documented, and privacy
-// invariants (no raw IP anywhere) hold by construction.
+// Contract pin for the access_events slot allocation: every blob1..16 is assigned at
+// most once, the reserved slot is documented, and no raw IP can reach a column.
 
 describe('blobsMap slot contract', () => {
   it('assigns all 16 blob slots exactly once', () => {

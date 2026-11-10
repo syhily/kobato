@@ -6,10 +6,8 @@ import { Select } from '@/ui/components/select'
 
 const log = getLogger('settings.select')
 
-// `<Select>` + immediate save, generic over the option value type. The
-// upstream `onValueChange` guard is AWAITED first; returning
-// `SETTINGS_SKIP_COMMIT` vetoes the change (the wrapper must not commit
-// anything) — no result lets the wrapper commit the field.
+// `<Select>` + immediate save, generic over the option value type: the upstream
+// `onValueChange` guard is awaited before the wrapper commits.
 
 type SelectProps<Value> = ComponentProps<typeof Select<Value>>
 
@@ -19,12 +17,9 @@ interface SettingsSelectProps<Value> extends Omit<SelectProps<Value>, 'onValueCh
   save: (field?: string) => unknown
   /** RHF field name — the commit is scoped to this field's change only. */
   name: string
-  /**
-   * Optional upstream guard (RHF `field.onChange`, or the locale card's
-   * transaction, which commits the field itself). Returning
-   * `SETTINGS_SKIP_COMMIT` suppresses the wrapper's commit; any other result
-   * lets it save.
-   */
+  /** Optional upstream guard (RHF `field.onChange`, or the locale card's
+   *  transaction, which commits the field itself). `SETTINGS_SKIP_COMMIT`
+   *  suppresses the wrapper's commit; any other result lets it save. */
   onValueChange?: (value: Value | null, eventDetails: unknown) => unknown
 }
 

@@ -3,7 +3,7 @@
 // import), kobato/inkling HTML, and the export → import → export round trip.
 // The targetKey policy is import-is-a-new-entity: source anchor slugs only
 // correlate refs with their definitions WITHIN one import pass; the keys
-// themselves are always recast (see src/nodes/footnote/footnote-keys.ts).
+// themselves are always recast (see src/inkling/nodes/footnote/footnote-keys.ts).
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { htmlToLexical as importWithDom } from '#/inkling/utils/html-to-lexical-with-dom'

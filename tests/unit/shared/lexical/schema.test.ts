@@ -78,7 +78,7 @@ describe('lexicalEditorStateSchema', () => {
         ]),
       ]),
       { type: 'footnotedefinition', version: 1, content: '<p>note</p>', targetKey: 'fn-1', index: 1 },
-      // R10 host cards carry their full datasets (spec modules in
+      // Host cards carry their full datasets (spec modules in
       // `@/shared/lexical/cards/`).
       { type: 'solution', version: 1, content: '<p>answer</p>' },
       { type: 'two-column', version: 1, left: '<p>L</p>', right: '<p>R</p>' },

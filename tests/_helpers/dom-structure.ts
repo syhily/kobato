@@ -1,12 +1,8 @@
-// Normalized DOM-tree comparison for markup parity pins — a rendered React
-// tree against its hand-written HTML twin (e.g. the music-player card's
-// paused render vs `musicPlayerFallbackHtml`). Both sides are parsed with
-// the ambient DOM (happy-dom / jsdom per test environment) and reduced to a
-// structural tree — tag names, class tokens, data-* attributes, optional
-// normalized text — so attribute ordering, whitespace-only text, and
-// serializer spelling (void tags, boolean attributes) cannot drift the
-// comparison. Module-level code touches no DOM global, so importing it from
-// any project is safe; only the calls need a DOM environment.
+// Normalized DOM-tree comparison for markup parity pins (a rendered React tree vs
+// its hand-written HTML twin). Both sides reduce to tag names, class tokens, data-*
+// attributes and optional normalized text, so attribute ordering, whitespace and
+// serializer spelling cannot drift the comparison. Module level touches no DOM
+// global; only the calls need a DOM environment.
 
 export interface StructureNode {
   /** Lowercased tag name. */
@@ -23,22 +19,17 @@ export interface StructureNode {
 }
 
 export interface StructureCompareOptions {
-  /** CSS selectors for subtrees to drop before comparing — e.g. interactive
-   * chrome (buttons, icons) that only the live component renders while its
-   * static fallback twin deliberately stays inert. Matching is tested on
-   * every element of BOTH sides; a matched subtree is removed wholesale. */
+  /** CSS selectors for subtrees to drop before comparing — interactive chrome only
+   * the live component renders. Matched on both sides; removed wholesale. */
   prune?: readonly string[]
-  /** Restrict the compared class tokens to this set. One side often adds
-   * behavior-only classes (hover variants, state hooks) on top of the
-   * shared skeleton tokens — those fall out of the comparison. */
+  /** Restrict compared class tokens to this set: behavior-only classes (hover
+   * variants, state hooks) then fall out of the comparison. */
   classTokens?: readonly string[]
-  /** Restrict the compared data-* attributes to these names (given WITHOUT
-   * the `data-` prefix); defaults to every data-* attribute. Pass `[]` when
-   * the compared pair carries no shared data contract. */
+  /** Restrict compared data-* attributes to these names (no `data-` prefix);
+   * defaults to every one. Pass `[]` when there is no shared data contract. */
   dataAttributes?: readonly string[]
-  /** Also capture and compare these non-data attributes (e.g. `['src',
-   * 'alt']` to pin a cover `<img>`'s payload). Names are matched verbatim;
-   * an attribute absent on one side diffs like a data-* mismatch. */
+  /** Also compare these non-data attributes (e.g. `['src', 'alt']`); an attribute
+   * absent on one side diffs like a data-* mismatch. */
   attributes?: readonly string[]
   /** Also compare whitespace-normalized direct text content. */
   compareText?: boolean
@@ -92,8 +83,7 @@ function toStructureNode(element: Element, options: StructureCompareOptions): St
   return node
 }
 
-/** Parses an HTML fragment into the normalized structural tree of its
- * top-level elements. */
+/** Parses an HTML fragment into the structural tree of its top-level elements. */
 export function structureFromHtml(html: string, options: StructureCompareOptions = {}): StructureNode[] {
   const container = document.createElement('div')
   container.innerHTML = html
@@ -158,8 +148,8 @@ function diffLevel(actual: readonly StructureNode[], expected: readonly Structur
   return diffs
 }
 
-/** Diffs two structural trees; returns human-readable differences (empty
- * when the trees match). Child order is significant. */
+/** Diffs two structural trees; returns human-readable differences (empty when
+ * they match). Child order is significant. */
 export function diffStructures(actual: readonly StructureNode[], expected: readonly StructureNode[]): string[] {
   return diffLevel(actual, expected, '')
 }

@@ -31,7 +31,7 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
   const { pathname, search } = useLocation()
   const onPostsList = pathname === '/admin/posts'
   const rawPostsStatus = new URLSearchParams(search).get('status')
-  // `hidden` is the pre-rename spelling of `unlisted` on bookmarked deep links.
+  // Bookmarked deep links may carry `hidden` — the old spelling of `unlisted`.
   const postsStatus = rawPostsStatus === 'hidden' ? 'unlisted' : rawPostsStatus
   if (!role) {
     return null

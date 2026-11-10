@@ -98,8 +98,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
-  // SSR and the first hydrated render take the server snapshot (plain span);
-  // the store flips to NumberFlow only after hydration.
+  // SSR and the first hydrated render take the server snapshot; NumberFlow only after.
   const showNumberFlow = useHydrated()
 
   const tokenRef = useRef<string | null>(null)
@@ -135,8 +134,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         try {
           writeLikeToken(permalink, data.token)
         } catch {
-          // localStorage full or unavailable — the ref still holds the token
-          // so the unlike toggle works for the lifetime of this component.
+          // localStorage full or unavailable; the ref still holds the token for this mount.
         }
       }
     },
@@ -190,9 +188,8 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         try {
           await decreaseMutateAsync({ key: commentKey, token })
         } catch {
-          // Rejected (e.g. the server found the token already consumed):
-          // React Query records the error and the optimistic toggle
-          // reverts with the transition — no base state was committed.
+          // Rejected (e.g. the token was already consumed): the optimistic toggle reverts
+          // with the transition, so no base state was committed.
         }
       })
     } else {

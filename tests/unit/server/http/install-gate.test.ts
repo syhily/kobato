@@ -26,6 +26,7 @@ const EXEMPT_CASES = [
   { path: '/api/setup/restore',      desc: 'api setup restore' },
   { path: '/ready',                  desc: 'ready endpoint' },
   { path: '/api/rum/status',         desc: 'frontend RUM status probe' },
+  { path: '/api/rum/intake/rum/v1/default/rum', desc: 'frontend RUM intake relay' },
   { path: '/admin/signin.data',      desc: 'RR data suffix' },
 ]
 

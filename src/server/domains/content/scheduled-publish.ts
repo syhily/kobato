@@ -31,10 +31,7 @@ const pageLiveColumns = {
 // is invoked at evaluate time, so a recreated handle (restore completion)
 // is picked up.
 
-/**
- * The earliest future `publishedAt` among promoted posts AND pages —
- * the next moment the public surface changes on its own.
- */
+/** Earliest future `publishedAt` among promoted posts AND pages — the next moment the public surface changes on its own. */
 // Sync (node:sqlite): the scheduleJob seam's nextDelayMs is sync.
 function findNextScheduledPublishAt(db: Database): Date | null {
   const now = new Date()
@@ -86,8 +83,8 @@ registerJob({
 })
 
 /**
- * Nudge from every content write path that can move the next scheduled
- * row. No-op until the composition root starts the job.
+ * Nudge from every content write path that can move the next scheduled row;
+ * no-op until the composition root starts the job.
  */
 export function rescheduleScheduledPublish(): void {
   nudgeRegisteredJob('content.scheduled-publish')

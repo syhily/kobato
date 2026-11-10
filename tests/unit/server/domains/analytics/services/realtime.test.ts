@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { acquireRealtimeConnection, realtimeConnectionKey } from '@/server/domains/analytics/services/realtime'
 
-// Domain-seam coverage for the SSE connection registry (task C4): cap-key
-// derivation and the per-key slot policy; HTTP-level driving is pinned in
+// Domain-seam coverage for the SSE connection registry: cap-key derivation and the
+// per-key slot policy; HTTP-level driving is pinned in
 // tests/it/server/http/resources/analytics-events.test.ts.
 
 describe('realtimeConnectionKey', () => {

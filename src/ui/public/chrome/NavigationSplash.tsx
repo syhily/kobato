@@ -5,9 +5,8 @@ import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
-// Global navigation splash — overlays the page on slow route transitions.
-// Watches `useNavigation()` only; `useMutation` flows own their own pending UI.
-// SSR-safe: `useNavigation()` is `idle` on the server, so we render `null`.
+// Global navigation splash for slow route transitions. Watches `useNavigation()` only —
+// mutation flows own their own pending UI — and renders null during SSR, where it is idle.
 
 const THRESHOLD_MS = 300
 const MIN_VISIBLE_MS = 300

@@ -11,10 +11,9 @@ import {
   decideOwnEdit,
 } from '@/server/domains/comments/services/policy'
 
-// Pure-decider coverage for the comment policy module — no mocks, no
-// DB. The services (`moderate.updateOwnComment`, `mutate.validateSubmission`)
-// load the rows and act on these verdicts; the persistence-side wiring
-// is pinned in `tests/it/server/domains/comments/update-own-comment.test.ts`.
+// Pure-decider coverage for the comment policy module — no mocks, no DB. The services
+// load the rows and act on these verdicts; persistence wiring is pinned in
+// `tests/it/server/domains/comments/update-own-comment.test.ts`.
 
 describe('decideOwnEdit — 30-minute grace window', () => {
   const createAt = new Date('2026-01-01T00:00:00.000Z')

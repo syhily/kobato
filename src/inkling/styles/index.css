@@ -5,7 +5,7 @@
    (utility generation, `@apply`) but Tailwind does not emit it onto
    `:root,:host`, so the published sheet never claims the host page's root
    scope. The runtime defaults are hand-written under `.inkling-lexical`
-   below; test/unit/theme-tokens.test.ts pins parity between the two. */
+   below; tests/inkling/unit/theme-tokens.test.ts pins parity between them. */
 @import './theme.css' reference;
 
 @import './preflight.css' layer(base);
@@ -26,15 +26,12 @@
 /* The dark custom-variant lives in ./variants.css (imported unlayered by
    standalone consumers) — see that file for why it cannot live here. */
 
-/* Global Inkling content styles
-/* -------------------------------------------------------------------- */
-
 /* Theme token defaults, scoped to the editor container. Hosts override any
    token by re-declaring it under `.inkling-lexical` (see ./theme.css — the
    theming contract's single source of truth); the declarations live in
    `@layer theme` so unlayered host styles always win. Keep this block in
    name/value parity with ./theme.css — the parity is pinned by
-   test/unit/theme-tokens.test.ts. */
+   tests/inkling/unit/theme-tokens.test.ts. */
 @layer theme {
   .inkling-lexical {
     --color-accent: var(--inkling-accent-color, #ff0095);

@@ -24,7 +24,7 @@ const BATCHER_NAME = 'AccessLogBatcher'
 /** One event plus its device-environment sidecar row — written in the same flush. */
 export interface AccessLogItem {
   event: EnrichedAccessEvent
-  /** NULL only for legacy dead-letter rows (written before the sidecar existed). */
+  /** NULL only for legacy flat dead-letter rows. */
   envServer: DeviceEnvServerRow | null
 }
 
@@ -56,9 +56,8 @@ function deserializeFromDeadLetter(line: string): AccessLogItem | null {
   })
 }
 
-// The DuckDB writer is injected by the composition root at import time —
-// a direct import would invert the dependency direction (domain →
-// composition root).
+// The DuckDB writer is injected by the composition root — importing it directly
+// would invert the dependency direction (domain → composition root).
 let resolveWriter: (() => DuckDBConnection) | null = null
 
 export function wireAccessLogBatcher(deps: { getWriter: () => DuckDBConnection }): void {
@@ -72,14 +71,13 @@ function requireWriter(): DuckDBConnection {
   return resolveWriter()
 }
 
-// The writer getter is lazy: the sidecar opens AFTER the batchers
-// register, so the connection resolves at flush time, never at construction.
+// The writer getter is lazy: the sidecar opens AFTER the batchers register, so
+// the connection resolves at flush time, never at construction.
 class AccessLogBatcher extends InsertBatcher<AccessLogItem, DuckDBConnection> {
   constructor() {
     super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.batcher', requireWriter)
   }
 
-  /** The event table first, then the sidecar rows of the same batch. */
   protected async insertBatch(writer: DuckDBConnection, items: AccessLogItem[]): Promise<void> {
     await appendAccessEvents(
       writer,
@@ -97,8 +95,6 @@ class AccessLogBatcher extends InsertBatcher<AccessLogItem, DuckDBConnection> {
   }
 }
 
-// Self-register on the infra batching seam so the bootstrap lifecycle
-// drives init/flush/reset/replay through the registry.
 registerBatcher(BATCHER_NAME, () => new AccessLogBatcher(), {
   replayDeadLetter: () => replayDeadLetterAccessLog(),
 })

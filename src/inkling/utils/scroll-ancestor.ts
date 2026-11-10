@@ -1,17 +1,9 @@
 import { getParentScrollableElement } from '@/inkling/utils/draggable/draggable-utils'
 
-// The one "nearest scrollable ancestor" front door. Two policies, NAMED
-// rather than silently divergent (the previous two implementations each had
-// their own test file pinning the difference):
-//
-// - 'floating' (popups, panels, toolbars): overflowY only, the
-//   scrollHeight-vs-clientHeight gate, falls back to document.body — the
-//   floating-position family's semantics.
-// - 'drag-scroll' (drag auto-scroll): position-aware (an absolutely
-//   positioned dragggee skips statically positioned ancestors), both axes,
-//   falls back to the document scrolling element — the drag handler's
-//   semantics, delegated to the vendor-synced implementation in
-//   draggable-utils (the inkling-card-gallery mirror keeps that copy).
+// Two named policies keep the scrollable-ancestor walks from silently diverging: 'floating'
+// checks overflowY only; 'drag-scroll' is position-aware (an absolutely positioned draggable
+// skips statically positioned ancestors). The inkling-card-gallery mirror keeps its own
+// vendored copy.
 
 export type ScrollAncestorPolicy = 'floating' | 'drag-scroll'
 

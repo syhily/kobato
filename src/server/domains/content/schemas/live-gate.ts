@@ -17,10 +17,7 @@ export interface LiveContentOptions {
   includeScheduled?: boolean
 }
 
-/**
- * In-memory projection of the shared "live" gate; keep in sync with
- * `liveContentWhere` — external SQL callers use the table bindings.
- */
+/** In-memory projection of the shared "live" gate; must stay in sync with `liveContentWhere`. */
 export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolean {
   if (meta.deletedAt !== null) {
     return false
@@ -48,10 +45,7 @@ export interface LiveContentColumns {
   publishedAt: typeof postMetaTable.publishedAt | typeof pageMetaTable.publishedAt
 }
 
-/**
- * SQL projection of the same "live" gate as `isLive` above; keep the
- * two in sync.
- */
+/** SQL projection of the same "live" gate as `isLive`; keep the two in sync. */
 export function liveContentWhere(columns: LiveContentColumns, options: LiveContentOptions = {}): SQL {
   const conditions: SQL[] = [
     isNull(columns.deletedAt),
@@ -71,10 +65,7 @@ export interface PromotedMeta {
   publishedRevisionId: number | null
 }
 
-/**
- * In-memory projection of the shared "promoted" gate; declared as a type
- * predicate so `publishedRevisionId` narrows to non-null.
- */
+/** In-memory projection of the shared "promoted" gate; a type predicate, so `publishedRevisionId` narrows. */
 export function isPromoted(meta: PromotedMeta): meta is PromotedMeta & { publishedRevisionId: number } {
   return meta.published && meta.publishedRevisionId !== null
 }
@@ -85,10 +76,7 @@ export interface PromotedContentColumns {
   publishedRevisionId: typeof postMetaTable.publishedRevisionId | typeof pageMetaTable.publishedRevisionId
 }
 
-/**
- * SQL projection of the same "promoted" gate as `isPromoted` above;
- * keep the two in sync.
- */
+/** SQL projection of the same "promoted" gate as `isPromoted`; keep the two in sync. */
 export function promotedContentWhere(columns: PromotedContentColumns): SQL {
   return and(eq(columns.published, true), isNotNull(columns.publishedRevisionId))!
 }

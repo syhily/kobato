@@ -1,6 +1,5 @@
-// Minimal `fetch` test double — captures every call and lets each test
-// queue per-URL responses. Auto-restores the original `fetch` after each
-// test so suites that forget `reset()` don't leak the mock.
+// Minimal `fetch` test double: captures every call and queues per-URL responses. Restores
+// the original `fetch` after each test so a suite that forgets `reset()` cannot leak it.
 
 import { afterEach } from 'vitest'
 

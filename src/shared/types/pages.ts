@@ -95,11 +95,9 @@ export const EMPTY_PAGE_META_DRAFT: PageMetaDraft = {
   publishedAt: '',
 }
 
-// Keys derive from `EMPTY_PAGE_META_DRAFT` so a new `PageMetaDraft` field
-// joins the equality check automatically instead of silently desyncing.
-// Safe cast: the empty draft is a complete `PageMetaDraft`, so its runtime
-// keys are exactly `keyof PageMetaDraft`. All fields are primitives, so a
-// plain `===` comparison per key preserves the old hand-listed semantics.
+// Keys derive from `EMPTY_PAGE_META_DRAFT` so a new draft field joins the
+// equality check automatically. The cast is sound: the empty draft is a
+// complete `PageMetaDraft`, so its runtime keys are exactly `keyof PageMetaDraft`.
 const PAGE_META_DRAFT_KEYS = unsafeCast<Array<keyof PageMetaDraft>>(Object.keys(EMPTY_PAGE_META_DRAFT))
 
 export function pageMetaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean {

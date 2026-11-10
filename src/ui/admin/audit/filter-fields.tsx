@@ -5,8 +5,8 @@ import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { FilterFieldSpec, FilterOptionItem } from '@/ui/admin/shared/filter-bar/types'
 import type { I18nValue } from '@/ui/lib/I18nProvider'
 
-// Audit-log filter-pill specs. ACTION_OPTIONS / RESOURCE_TYPE_OPTIONS double
-// as the row badge vocabularies (minus the synthetic 全部 entry).
+// ACTION_OPTIONS / RESOURCE_TYPE_OPTIONS double as the row badge vocabularies
+// (minus the synthetic "all" entry).
 export type AuditLogFilterFieldKey = 'action' | 'resourceType' | 'actor' | 'ip' | 'date'
 
 /** The `admin.auditLog.list` / `exportCsv` input contributed by the active pills. */

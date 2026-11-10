@@ -3,9 +3,8 @@ import { z } from 'zod'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
 /**
- * Typed catalog id for the shared http(s)-URL rule. The server maps Zod issue
- * messages through `zodIssuesToWire`, so every schema reusing this rule emits
- * the same descriptor and no raw prose — or bare key — reaches a reader.
+ * Typed catalog id for the shared http(s)-URL rule: every schema reusing the
+ * rule emits the same descriptor, never raw prose or a bare key.
  */
 export const HTTP_URL_MESSAGE = 'common.error.httpUrlRequired' satisfies UiMessageId
 
@@ -162,11 +161,8 @@ function parseIpv4(host: string): number | null {
   return ip
 }
 
-/** Every IPv4 range an outbound fetch must never target: "this network",
- *  RFC 1918 private space, CGNAT (cloud metadata lives at 100.100.100.200
- *  on Aliyun), loopback, link-local (169.254.169.254 metadata), IETF
- *  protocol assignments (192.0.0.0/24), benchmarking (198.18.0.0/15),
- *  multicast and reserved/broadcast (224.0.0.0/3). */
+/** IPv4 ranges an outbound fetch must never target. Per-entry comments name
+ *  each range; the two cloud-metadata addresses are called out there. */
 const BLOCKED_IPV4_CIDRS: ReadonlyArray<{ base: number; prefix: number }> = [
   { base: 0x00000000, prefix: 8 }, // 0.0.0.0/8 this network
   { base: 0x0a000000, prefix: 8 }, // 10.0.0.0/8
@@ -271,9 +267,8 @@ function isPrivateIpv6(hextets: number[]): boolean {
   if (hextets.slice(0, 5).every((h) => h === 0) && hextets[5] === 0xffff) {
     return isPrivateIpv4Number(hextets[6] * 0x10000 + hextets[7])
   }
-  // IPv4-compatible IPv6 (`::a.b.c.d`, RFC 4291 §2.5.5.1) is NOT
-  // special-cased: current runtimes don't route it (audit P2-26,
-  // accepted latent risk).
+  // IPv4-compatible IPv6 (`::a.b.c.d`, RFC 4291 §2.5.5.1) is not
+  // special-cased: current runtimes don't route it.
   return hextets.every((h, i) => h === (i === 7 ? 1 : 0)) || hextets.every((h) => h === 0)
 }
 
@@ -287,13 +282,11 @@ export function isBlockedFetchHost(hostname: string): boolean {
   return isPrivateIp(host)
 }
 
-/** Private/reserved IP check — domain names are NOT flagged. Literal
- *  regex first (also catches non-IP names like `127.0.0.1.nip.io`),
- *  then the parser spellings the regex cannot see; handles bracketed
- *  IPv6. */
+/** Private/reserved IP check — domain names are never flagged. Literal regex
+ *  first (also catches names like `127.0.0.1.nip.io`), then the parser
+ *  spellings the regex cannot see; handles bracketed IPv6. */
 export function isPrivateIp(hostname: string): boolean {
   const h = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname
-  // IPv4 private ranges (RFC 1918) + loopback + link-local + multicast
   if (IPV4_PRIVATE.test(h)) {
     return true
   }
@@ -363,13 +356,10 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
 ])
 
 /**
- * Preset mirror base URLs — full avatar URLs on allowlisted hosts.
- *
- * URLs ONLY: the admin dropdown's labels live in the admin settings layer
- * (`@/ui/admin/settings/gravatar-mirror-presets`), because this module is part
- * of the public avatar graph and must not carry workspace catalog ids. The
- * allowlist above stays the superset: a configured mirror outside these presets
- * remains valid and is appended to the dropdown as a custom option by the form.
+ * Preset mirror base URLs on allowlisted hosts. URLs only: labels live in the
+ * admin settings layer (this module is part of the public avatar graph and must
+ * not carry workspace catalog ids). The allowlist above stays the superset — a
+ * configured mirror outside these presets is appended as a custom option.
  */
 export const GRAVATAR_MIRROR_URLS = [
   'https://www.gravatar.com/avatar',

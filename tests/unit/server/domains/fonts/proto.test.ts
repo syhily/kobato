@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import { InputTemplateSchema } from '@/server/domains/fonts/vendor/gen/api_pb'
 
-// Pins the bufbuild-generated `InputTemplate` encoder's wire bytes: a
-// regeneration that changes the byte layout fails here before the
-// end-to-end slice test runs.
+// Pins the bufbuild-generated `InputTemplate` encoder's wire bytes: a regeneration that
+// changes the byte layout fails here before the end-to-end slice test runs.
 
 describe('InputTemplate encoder (bufbuild)', () => {
   it('encodes a minimal input (just bytes) with the field-1 length-delimited tag', () => {

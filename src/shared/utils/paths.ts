@@ -1,6 +1,5 @@
-// Canonical URL helpers shared by loaders, components, and tests. Pure
-// string builders — no Response / redirect side effects so they're safe to
-// import from both server and client modules.
+// Canonical URL helpers shared by loaders, components, and tests: pure string
+// builders with no Response/redirect side effects, safe in both bundles.
 
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
@@ -15,9 +14,8 @@ export function entityPermalink(type: 'post' | 'page', slug: string): string {
 }
 
 /**
- * Fully-qualified URL with trailing slash — the shape stored as
- * `page_key`. Used at email-send time so permalinks reflect the current
- * website + canonical slug.
+ * Fully-qualified URL with trailing slash — the shape stored as `page_key`.
+ * Built at email-send time so it reflects the current website and slug.
  */
 export function entityCommentUrl(type: 'post' | 'page', slug: string): string {
   const website = requireBlogSettingsSection('siteIdentity').website

@@ -27,7 +27,7 @@ export interface PostDetailBodyProps {
   commentKey: string
   /** Streamed in via React Router `<Await>`. */
   commentsPromise: Promise<DetailPageComments>
-  /** 引用与回应 block node (route wraps the streamed list in `<Await>`). */
+  /** Webmentions block node (route wraps the streamed list in `<Await>`). */
   webmentions?: ReactNode
   currentUser?: CommentFormUser
   draftMarker?: DraftMarker

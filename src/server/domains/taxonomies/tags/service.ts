@@ -194,7 +194,7 @@ export async function getTagsByNames(db: Database, names: readonly string[]): Pr
   return uniqueNames.map((name) => tagMap.get(name)).filter((t): t is Tag => t !== undefined)
 }
 
-// Feed-only: accept slug or legacy display name; public routes stay slug-only (plan 080, Q1).
+// Feed-only: accept slug or legacy display name; public routes stay slug-only.
 export async function resolveTagBySlugOrName(db: Database, value: string): Promise<TagRow | null> {
   return (await findTagBySlug(db, value)) ?? (await findTagByName(db, value))
 }

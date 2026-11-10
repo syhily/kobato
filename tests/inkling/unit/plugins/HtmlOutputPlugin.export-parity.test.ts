@@ -1,40 +1,28 @@
 /**
  * Cross-path identity pin for the editor's two HTML export paths:
  *
- * - LIVE: `HtmlOutputPlugin` (src/plugins/HtmlOutputPlugin.tsx) exports from
- *   the mounted editor by running the shared serializer —
- *   `$convertToHtmlString` + Inkling's element transformers — inside
- *   `editor.read()`. The helper below drives that exact call against an
- *   editor configured like `InklingComposer` (DEFAULT_NODES + defaultTheme);
- *   the plugin's remaining behaviour (empty-document guard, debounce) is
- *   covered by HtmlOutputPlugin.test.ts.
- * - HEADLESS: `lexicalStateToHtml` (src/html/headless-html.ts) renders a
- *   serialized state via the same `$convertToHtmlString` and transformers
- *   (src/html/renderer/transformers/element/).
+ * - LIVE: `HtmlOutputPlugin` runs the shared serializer (`$convertToHtmlString`
+ *   plus Inkling's element transformers) inside `editor.read()` on the mounted
+ *   editor; `renderLive` drives that exact call. The plugin's remaining
+ *   behaviour (empty-document guard, debounce) is covered by
+ *   HtmlOutputPlugin.test.ts.
+ * - HEADLESS: `lexicalStateToHtml` renders a serialized state through the same
+ *   serializer and transformers.
  *
  * Both paths run ONE serializer, so their output is byte-identical for any
- * document content. Every case pins that single output and asserts the two
- * paths agree exactly. The suite fails if either path's output changes — an
- * intentional change means updating the pinned strings deliberately.
+ * document content: each case pins the single output and asserts both paths
+ * agree. An intentional output change means updating the pinned strings.
  *
- * One input-dependent exception, by design: the headless renderer registers a
- * pre-render transform that removes temporary AtLinkNodes (mid-search link
- * placeholders) before serializing; the live adapter cannot mutate the
- * document it exports, so an in-progress at-link search serializes as its
- * inline query text instead. Those nodes never appear in persisted content,
- * so no case here covers them.
- *
- * The horizontal-rule case is the card control: cards share one exportDOM
- * implementation across both paths, so their markup must stay byte-identical.
- * If it ever diverges, a card stopped sharing its exportDOM implementation.
+ * One input-dependent exception: the headless renderer registers a pre-render
+ * transform that removes temporary AtLinkNodes (mid-search link placeholders)
+ * before serializing; the live adapter cannot mutate the document it exports,
+ * so an in-progress at-link search serializes as its inline query text.
  */
 
 import { describe, expect, it } from 'vitest'
 
-// The two render paths under comparison live in the shared harness:
-// renderLive drives the HtmlOutputPlugin route (same node set and theme
-// InklingComposer passes to LexicalComposer, same $convertToHtmlString call
-// inside editor.read()); renderHeadless goes through the public seam.
+// renderLive drives the HtmlOutputPlugin route with the node set and theme
+// InklingComposer passes; renderHeadless goes through the public seam.
 import { renderHeadless, renderLive } from '#/inkling/utils/render-live'
 
 const text = (content: string, format = 0) => ({
@@ -65,7 +53,6 @@ const doc = (children: unknown[]) =>
 interface ExportPathCase {
   name: string
   input: string
-  // The exact output both paths must produce, byte-for-byte.
   output: string
 }
 
@@ -97,16 +84,14 @@ const cases: ExportPathCase[] = [
   {
     name: 'text-transform formats',
     // lowercase/uppercase/capitalize have no semantic tag; TextContent emits
-    // them as SPANs carrying inline text-transform styles so the format
-    // survives serialization.
+    // them as SPANs carrying inline text-transform styles.
     input: doc([block('paragraph', [text('lowercase', 256), text('uppercase', 512), text('capitalize', 1024)])]),
     output:
       '<p><span style="text-transform: lowercase;">lowercase</span><span style="text-transform: uppercase;">uppercase</span><span style="text-transform: capitalize;">capitalize</span></p>',
   },
   {
     name: 'heading',
-    // Both paths add the generated id
-    // (src/html/renderer/transformers/element/simple-transformers.ts).
+    // Both paths add the generated id (simple-transformers.ts).
     input: doc([block('heading', [text('Heading one')], { tag: 'h1' })]),
     output: '<h1 id="heading-one">Heading one</h1>',
   },
@@ -122,7 +107,7 @@ const cases: ExportPathCase[] = [
   {
     name: 'extended-heading',
     // Inkling's serialized heading type; both paths resolve it to
-    // ExtendedHeadingNode and run the same heading transformer.
+    // ExtendedHeadingNode.
     input: doc([block('extended-heading', [text('Extended heading')], { tag: 'h3' })]),
     output: '<h3 id="extended-heading">Extended heading</h3>',
   },
@@ -197,15 +182,14 @@ const cases: ExportPathCase[] = [
   {
     name: 'trailing empty paragraph',
     // The serializer drops the trailing blank paragraph Inkling keeps at the
-    // end of a doc (convert-to-html-string.ts) — on both paths.
+    // end of a doc, on both paths.
     input: doc([block('paragraph', [text('content')]), block('paragraph', [])]),
     output: '<p>content</p>',
   },
   {
     name: 'card (horizontal rule)',
-    // Control case: cards share exportDOM across both paths, so their markup
-    // is byte-identical. If this starts diverging, a card stopped sharing its
-    // exportDOM implementation.
+    // Control case: a divergence here means a card stopped sharing its
+    // exportDOM implementation across both paths.
     input: doc([{ type: 'horizontalrule', version: 1 }]),
     output: '<hr>',
   },
@@ -223,8 +207,8 @@ const cases: ExportPathCase[] = [
   },
   {
     name: 'math inline spliced into text',
-    // The string layer splices inline decorators into the text flow
-    // (convert-to-html-string.ts); both paths run that one branch.
+    // The string layer splices inline decorators into the text flow; both
+    // paths run that one branch.
     input: doc([
       block('paragraph', [
         text('before '),
@@ -264,7 +248,6 @@ describe('HTML export path parity (HtmlOutputPlugin vs LexicalHTMLRenderer)', ()
     const liveOutput = renderLive(input)
     const headlessOutput = await renderHeadless(input)
 
-    // Both paths emit the same per-render-deduped heading ids.
     for (const html of [liveOutput, headlessOutput]) {
       expect(html).toContain('<h1 id="heading-one">')
       expect(html).toContain('<h2 id="heading-one-1">')

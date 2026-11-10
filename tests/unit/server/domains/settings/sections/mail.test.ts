@@ -138,7 +138,7 @@ describe('settings/sections/mail', () => {
     expect(toMailgun.success).toBe(true)
   })
 
-  describe('notificationEmails (ADR-0008)', () => {
+  describe('notificationEmails', () => {
     it('defaults to true when the key is absent, so existing rows hydrate ON', () => {
       const result = mailSchema.safeParse({
         mail: { enabled: true, sender: 'noreply@example.com' },

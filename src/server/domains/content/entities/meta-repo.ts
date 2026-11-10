@@ -18,8 +18,8 @@ export type MetaTable = typeof postMetaTable | typeof pageMetaTable
 type AnyNewMeta = NewPostMeta | NewPageMeta
 
 /**
- * The meta-table CRUD every content entity shares, over the shared
- * columns — the table comes in as a parameter so no entity fork drifts.
+ * The meta-table CRUD every content entity shares, over the shared columns; the
+ * table comes in as a parameter so no entity fork drifts.
  */
 export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>(
   table: MetaTable,
@@ -142,7 +142,10 @@ export interface MetaListQueries<TMeta extends MetaRowBase, TFilters extends Lim
   countMetas: (db: Database, filters: TFilters) => Promise<number>
 }
 
-/** The admin-list meta queries both entities share: author-joined meta columns, per-entity filters/ordering/pagination, and the count. */
+/**
+ * Admin-list meta queries both entities share: author-joined meta columns,
+ * per-entity filters/ordering/pagination, and the count.
+ */
 export function makeMetaListQueries<TMeta extends MetaRowBase, TFilters extends LimitOffset>(
   table: MetaTable,
   options: MetaListQueriesOptions<TFilters>,

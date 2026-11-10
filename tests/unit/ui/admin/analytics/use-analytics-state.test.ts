@@ -7,8 +7,8 @@ import { PRESET_KEYS, computeDateRange } from '@/shared/contracts/analytics'
 import { buildAnalyticsInput, useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 
 // Mirrors the mocking pattern in `use-session-sort.test.tsx`:
-// `useSearchParams` is stubbed so we can drive the URL the hook reads
-// from without bringing up a real router history.
+// `useSearchParams` is stubbed so the URL the hook reads can be driven
+// without bringing up a real router history.
 
 const mock = vi.hoisted(() => ({
   setSearchParams: vi.fn(),
@@ -149,7 +149,7 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
   })
 
   it('setFilter writes the per-dimension param and drops the legacy blob', () => {
-    // Seed a legacy blob so we can assert the write path deletes it.
+    // Seed a legacy blob so the write path's delete can be asserted.
     withParams({ filters: JSON.stringify({ country: 'CN' }) })
     const { setFilter } = renderHook(() => useAnalyticsState())
     setFilter('browser', 'Chrome')

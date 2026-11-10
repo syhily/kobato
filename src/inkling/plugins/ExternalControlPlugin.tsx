@@ -18,10 +18,10 @@ export interface ExternalControlAPI {
   lastNodeIsDecorator: () => boolean
 }
 
-// used to register a minimal API for controlling the editor from the consuming app
-// designed to allow typical behaviours without the consuming app needing to bundle the lexical library.
-// The tree surgeries live in `@/inkling/plugins/behaviour/external-control`; this
-// plugin is API assembly only.
+// Minimal API for controlling the editor from the host app, so typical
+// behaviours do not require the host to bundle lexical. The tree surgeries
+// live in @/inkling/plugins/behaviour/external-control; this plugin is API
+// assembly only.
 export const ExternalControlPlugin = ({ registerAPI }: { registerAPI: (api: ExternalControlAPI | null) => void }) => {
   const [editor] = useLexicalComposerContext()
 
@@ -31,9 +31,7 @@ export const ExternalControlPlugin = ({ registerAPI }: { registerAPI: (api: Exte
     }
 
     const API: ExternalControlAPI = {
-      // give access to the editor instance so the Lexical API can be used directly if needed
       editorInstance: editor,
-      // simplified API methods for typical consumer app actions
       serialize() {
         return JSON.stringify(editor.getEditorState())
       },

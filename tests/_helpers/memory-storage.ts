@@ -1,11 +1,8 @@
-// In-memory StorageBackend for integration tests — the single shared fake
-// for the S3/local-disk external. Reads of an absent key reject with
-// `StorageObjectNotFound`; deletes are idempotent; `list` honours prefix.
-// Writes resolve Cache-Control exactly like the S3 adapter (`cacheControl`
-// verbatim, else the `key-policy` visibility default); `getStreamWithMeta`
-// exists only on the `s3` driver, mirroring the real backends (local FS
-// stores no headers, so migration tests against a `local` fake exercise the
-// key-policy fallback).
+// In-memory StorageBackend fake for the S3/local-disk external. Reads of an absent key
+// reject with `StorageObjectNotFound`; deletes are idempotent; `list` honours prefix.
+// Writes resolve Cache-Control exactly like the S3 adapter (`cacheControl` verbatim,
+// else the `key-policy` visibility default). `getStreamWithMeta` exists only on the `s3`
+// driver, matching the real backends that store no headers on local FS.
 import { Readable } from 'node:stream'
 
 import type {

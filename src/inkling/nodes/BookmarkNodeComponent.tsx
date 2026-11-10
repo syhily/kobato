@@ -93,9 +93,8 @@ export function BookmarkNodeComponent({
     })
   }, [editor, nodeKey])
 
-  // if we create the node with a url
-  //  fetch the metadata
-  //  if it fails, paste as a link
+  // A node created with a url fetches the metadata; on failure it falls back
+  // to a plain link.
   React.useEffect(() => {
     // only run this once (the input state already initialises from `url`, so
     // the effect only kicks off the initial fetch)
@@ -104,7 +103,7 @@ export function BookmarkNodeComponent({
         handlePasteAsLink()
       })
     }
-    // We only do this for init
+    // init only
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

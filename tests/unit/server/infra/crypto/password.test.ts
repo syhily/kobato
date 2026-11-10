@@ -1,10 +1,9 @@
 import bcrypt from 'bcryptjs'
 import { describe, expect, it } from 'vitest'
 
-// We don't expose a `hashPassword`/`verifyPassword` wrapper — bcryptjs is
-// called inline from `infra/db/operations/user.ts`. The tests below pin the
-// bcryptjs contract we depend on so swapping the lib (or upgrading it) is
-// surfaced immediately rather than at first failed login.
+// There is no `hashPassword`/`verifyPassword` wrapper — bcryptjs is called inline from
+// `infra/db/operations/user.ts`. These tests pin the bcryptjs contract so a swap or
+// upgrade surfaces here, not at first failed login.
 
 describe('auth/password — bcryptjs contract we rely on', () => {
   const password = 'correct horse battery staple'
@@ -35,9 +34,8 @@ describe('auth/password — bcryptjs contract we rely on', () => {
   })
 
   it('silently truncates passwords longer than 72 bytes (known bcrypt limit)', async () => {
-    // Two passwords that share the first 72 bytes hash to the same digest;
-    // bcrypt drops everything beyond byte 72. We pin this so a future swap
-    // to a non-bcrypt algorithm has to make this behaviour change explicit.
+    // bcrypt drops everything beyond byte 72, so two passwords sharing the first 72 bytes
+    // hash identically; a swap to a non-bcrypt algorithm must make that explicit.
     const base = 'a'.repeat(72)
     const hash = await bcrypt.hash(base, 4)
     expect(await bcrypt.compare(`${base}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`, hash)).toBe(true)

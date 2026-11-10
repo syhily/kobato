@@ -74,7 +74,7 @@ describe('resolvePanelViewportShift', () => {
 
   it('passes the position through origin-adjusted when the panel element is missing', () => {
     // panelSize null passes through origin-adjusted in both clampOnResize
-    // passes (settle then drag boundary) — the historical clampSettled shape
+    // passes (settle then drag boundary)
     const shifted = resolvePanelViewportShift({
       position: { x: 10, y: 20 },
       initial: undefined,

@@ -7,13 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Button } from '@/ui/components/button'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// The dropdown chrome (Base UI menu, logout, notification entries) rides a
-// lazy chunk so anonymous visitors never download logged-in-only JS. The
-// trigger below is the static half: SSR renders it for every logged-in
-// visitor, byte-stable across SSR and hydration, and the first click swaps
-// it for the real UserMenu with the menu already open. Anonymous visitors
-// render neither the trigger nor the chunk (BaseLayout/Header gate on
-// `currentUser`). Parity with UserMenu's trigger subtree is pinned by
+// The dropdown chrome (Base UI menu, logout, notification entries) rides a lazy chunk so
+// anonymous visitors never download logged-in-only JS. The trigger below is the static half,
+// byte-stable across SSR and hydration; the first click swaps it for the real UserMenu with
+// the menu already open. Trigger-subtree parity with UserMenu is pinned by
 // tests/unit/ui/public/chrome/lazy-user-menu.test.tsx.
 const UserMenu = lazy(() => import('@/ui/public/chrome/UserMenu').then((module) => ({ default: module.UserMenu })))
 
@@ -29,14 +26,10 @@ interface LazyUserMenuProps {
   onOpenNotifications: () => void
 }
 
-// Interaction-gated mount, latching on the first click: the mounted menu
-// stays mounted so its open/close state survives future toggles. Activation
-// rides onClick (not pointerdown) to mirror Base UI's own open-on-click
-// trigger semantics — a pointerdown-then-mount sequence would let the
-// browser's follow-up click land on the REAL trigger and instantly toggle
-// the just-opened menu closed. Focus needs no handoff: mounting with
-// `defaultOpen` makes Base UI move DOM focus onto the popup (virtual focus)
-// exactly like a native open.
+// Interaction-gated mount, latching on the first click so open/close state survives later
+// toggles. Activation rides onClick, not pointerdown: a pointerdown-then-mount sequence lets
+// the browser's follow-up click land on the REAL trigger and toggle the just-opened menu
+// closed. No focus handoff is needed — `defaultOpen` makes Base UI move focus onto the popup.
 export function LazyUserMenu(props: LazyUserMenuProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -57,9 +50,8 @@ interface UserMenuTriggerProps {
   onClick?: (event: React.MouseEvent) => void
 }
 
-/** Static stand-in for UserMenu's trigger: the same avatar button (dot, ring,
- *  aria-label) without the dropdown wiring, so the swap on mount is visually
- *  invisible. `aria-expanded="false"` mirrors the closed menu that follows. */
+/** Static stand-in for UserMenu's trigger: the same avatar button without the dropdown
+ *  wiring, so the swap on mount is visually invisible. */
 function UserMenuTrigger({ currentUser, unreadCount, onClick }: UserMenuTriggerProps) {
   const { t } = useI18n()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()

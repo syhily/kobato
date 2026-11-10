@@ -3,12 +3,10 @@ import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * Plan 040 import guard: renderer policy — URL validation, template escaping,
- * sanitization — lives behind the render-context seam
- * (src/nodes/base/render-context.ts). Card sources must not import the policy
- * implementation modules directly; they go through the seam. The guard has
- * zero exceptions: the last allowlisted importer (the markdown renderer's
- * `sanitize-html` import) moved onto the seam's `sanitizeBasicHtml` entry.
+ * Renderer policy — URL validation, template escaping, sanitization — lives
+ * behind the render-context seam (src/inkling/nodes/base/render-context.ts).
+ * Card sources must not import the policy implementation modules directly;
+ * the guard has zero exceptions.
  */
 
 const POLICY_MODULES = new Set(['is-safe-url', 'escape-html', 'clean-dom', 'sanitize-html'])
@@ -16,7 +14,7 @@ const POLICY_MODULES = new Set(['is-safe-url', 'escape-html', 'clean-dom', 'sani
 const ALLOWED_IS_SAFE_URL_IMPORTERS = ['src/inkling/nodes/base/render-context.ts']
 
 // cleanDOM runs only behind the seam's CALLOUT_HTML_CONFIG unwrap-allowlist
-// fallback (plan 040 Step 4 STOP condition).
+// fallback.
 const ALLOWED_CLEAN_DOM_IMPORTERS = ['src/inkling/nodes/base/render-context.ts']
 
 function listSourceFiles(dir: string): string[] {

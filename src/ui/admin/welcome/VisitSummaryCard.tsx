@@ -32,10 +32,9 @@ const KPI_ENTRIES: KpiEntry[] = [
   { labelId: 'admin.welcome.visit.kpi.referers', value: 0, icon: GlobeIcon },
 ]
 
-// The loader's weeklyTrend buckets are aggregated in Etc/UTC (the request
-// URL carries no timezone), so the trend block never renders them: SSR and
-// the first client render emit the skeleton (byte-identical markup), and the
-// client query — which sends clientTimezone — is the only data source.
+// The loader's weeklyTrend buckets are aggregated in Etc/UTC (the request URL carries no
+// timezone), so the trend block never renders them: SSR and the first client render emit
+// the skeleton, and the client query — which sends clientTimezone — is the only data source.
 export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps) {
   const { locale, t } = useI18n()
   const values = [summary.visits, summary.visitors, summary.referers]

@@ -44,8 +44,6 @@ export function renderCodeBlockNode(node: CodeBlockNodeData, context: RenderCont
     figure.setAttribute('class', 'inkling-card inkling-code-card')
     figure.appendChild(pre)
 
-    // the marker class rides the seam like every other captioned card —
-    // codeblock's bare-figure export was drift, not policy
     appendCardCaption(figure, node.caption, context)
 
     return { element: figure, type: 'outer' as const }

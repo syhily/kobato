@@ -6,10 +6,9 @@ import { parseRpcJson } from '#/_helpers/rpc-call'
 import { githubRouter } from '@/server/http/controllers/github.controller'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// The avatar fetch + base64 inlining lives in the comments domain
-// (pinned in tests/it/server/domains/comments/services/avatar.test.ts);
-// the controller maps the REAL service result onto the wire shape, with
-// the upstream avatar bytes enqueued through the fetch helper.
+// The avatar fetch + base64 inlining lives in the comments domain (pinned in
+// tests/it/server/domains/comments/services/avatar.test.ts); the controller maps the real
+// service result onto the wire shape.
 
 const { RPCHandler } = await import('@orpc/server/fetch')
 const handler = new RPCHandler(githubRouter)

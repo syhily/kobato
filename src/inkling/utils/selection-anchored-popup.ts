@@ -3,30 +3,20 @@ import { $getSelection, type LexicalEditor } from 'lexical'
 import { $getSelectionRangeRect } from '@/inkling/utils/$getSelectionRangeRect'
 import { ANCHOR_POPUP_GAP, fitRectWithin } from '@/inkling/utils/fit-rect'
 
-// Anchored popup layout — the one module owning how a popup is placed against
-// its anchor. Two positioning modes share the module: 'fixed' (viewport
-// coords, spans the container's full width, flips above the anchor when the
-// below position plus the max-height budget would overflow the scroll
-// container — the at-link results popup and the link-action toolbar) and
-// 'absolute' (parent-relative offsets at natural width — the slash and plus
-// card menus, whose per-policy flip rules arrive as inputs). Both flip rules
-// project onto @/utils/fit-rect's 'flip-below-above' policy. Rects arrive as
-// plain data (the ReorderGeometry pattern from
-// @/utils/draggable/reorder-rules), so every policy is unit-testable with
-// fake rects. The anchor adapters (node-element rect, selection-range rect)
-// live here at the edge; the React adapter that owns measuring, style
-// writes, and the resize/scroll/MutationObserver subscription set is
-// @/hooks/useSelectionAnchoredPopup.
+// Two positioning modes: 'fixed' (viewport coords, spans the container's width, flips above
+// the anchor when the below position plus the max-height budget would overflow the scroll
+// container) and 'absolute' (parent-relative offsets at natural width, per-policy flip
+// rules as inputs). Both flip rules project onto fit-rect's 'flip-below-above' policy;
+// useSelectionAnchoredPopup owns measuring and style writes.
 
-/** Vertical gap between the anchor rect and the popup placed below it. Alias of @/utils/fit-rect's ANCHOR_POPUP_GAP (the single source). */
+/** Vertical gap between the anchor rect and the popup placed below it. Alias of fit-rect's ANCHOR_POPUP_GAP, the single source. */
 export const POPUP_VERTICAL_GAP = ANCHOR_POPUP_GAP
 
 /**
- * Max height of the scrollable results list inside a selection-anchored popup.
- * Single-sourced here: the CSS side reads POPUP_LIST_MAX_HEIGHT (inline style —
- * a tailwind arbitrary value cannot reference a JS constant), and the flip rule
- * reserves the same height through popupMaxHeightBudget, so the two can never
- * drift apart.
+ * Max height of the scrollable results list inside a selection-anchored popup, single
+ * sourced here: the CSS side reads POPUP_LIST_MAX_HEIGHT as an inline style (a Tailwind
+ * arbitrary value cannot reference a JS constant) and the flip rule reserves the same
+ * height through popupMaxHeightBudget, so the two cannot drift.
  */
 export const POPUP_LIST_MAX_HEIGHT_VH = 30
 export const POPUP_LIST_MAX_HEIGHT = `${POPUP_LIST_MAX_HEIGHT_VH}vh`
@@ -35,11 +25,9 @@ export const POPUP_LIST_MAX_HEIGHT = `${POPUP_LIST_MAX_HEIGHT_VH}vh`
 export const POPUP_TOOLBAR_HEIGHT_PX = 54
 
 /**
- * The popup max-height budget used by the flip rule: the results list
- * (POPUP_LIST_MAX_HEIGHT_VH) plus the toolbar row (POPUP_TOOLBAR_HEIGHT_PX).
- * The flip reserves the full budget rather than the popup's current height so
- * the popup does not jump between above/below placement as the results list
- * changes size.
+ * The max-height budget used by the flip rule: results list plus toolbar row. The flip
+ * reserves the full budget rather than the popup's current height so the popup does not
+ * jump between above/below as the results list changes size.
  */
 export function popupMaxHeightBudget(viewportHeight: number): number {
   return (viewportHeight / 100) * POPUP_LIST_MAX_HEIGHT_VH + POPUP_TOOLBAR_HEIGHT_PX
@@ -76,11 +64,10 @@ export interface AnchoredPopupLayoutInput {
    */
   positioning?: 'fixed' | 'absolute'
   /**
-   * Absolute mode only: the positioning parent's viewport-to-local scale
-   * (CSS `zoom`). Rects arrive in viewport (scaled) coordinates, but the
-   * written parent-relative offsets live in the parent's unscaled local
-   * coordinate space — under a zoomed canvas they must be un-scaled, or the
-   * zoom applies twice. Defaults to 1.
+   * Absolute mode only: the positioning parent's viewport-to-local scale (CSS `zoom`).
+   * Rects arrive in viewport (scaled) coordinates, but the written parent-relative offsets
+   * live in the parent's unscaled local space — under a zoomed canvas they must be
+   * un-scaled or the zoom applies twice. Defaults to 1.
    */
   coordinateScale?: number
   /** Absolute mode: the unflipped popup sits below the anchor (slash menu) or at the anchor's top (plus button). Defaults to 'below'. */
@@ -106,14 +93,8 @@ export interface AnchoredPopupPlacement {
 }
 
 /**
- * Resolves the popup's placement against its anchor. Fixed mode: below the
- * anchor, spanning the container horizontally, flipping above when the below
- * position plus the max-height budget would overflow the scroll container.
- * Absolute mode: the parent-relative offset named by the edge policy, with
- * the measured flip placing the popup above the anchor only when the below
- * position overflows the viewport and the popup fits above. Absolute-mode
- * offsets are un-scaled by `coordinateScale` (the positioning parent's CSS
- * zoom); the flip decision itself stays in viewport coordinates.
+ * Resolves the popup's placement against its anchor. Absolute-mode offsets are divided by
+ * `coordinateScale`; the flip decision stays in viewport coordinates.
  */
 export function resolveAnchoredPopupPlacement({
   anchorRect,
@@ -136,9 +117,8 @@ export function resolveAnchoredPopupPlacement({
       return { top: anchorTop, left: 0, flipped: false }
     }
 
-    // below the anchor; the measured flip fires only when below overflows
-    // the viewport and the popup fits above — both judged in the anchor
-    // rect's native viewport coordinates
+    // Below the anchor; the measured flip fires only when below overflows the viewport and
+    // the popup fits above, both judged in the anchor rect's viewport coordinates.
     if (absoluteFlip === 'measured') {
       const fitted = fitRectWithin({
         bounds: { top: 0, left: 0, right: 0, bottom: viewportHeight },
@@ -155,9 +135,9 @@ export function resolveAnchoredPopupPlacement({
   }
 
   const belowGap = gap ?? POPUP_VERTICAL_GAP
-  // the flip is judged against the scroll container's document extent,
-  // shifted into the anchor's viewport coordinates: the visible region's
-  // bottom edge sits at scrollHeight - scrollTop
+  // The flip is judged against the scroll container's document extent shifted into the
+  // anchor's viewport coordinates: the visible region's bottom edge sits at
+  // scrollHeight - scrollTop.
   const fitted = fitRectWithin({
     bounds: { top: 0, left: 0, right: 0, bottom: scrollHeight - scrollTop },
     rect: anchorRect,
@@ -176,10 +156,9 @@ export function resolveAnchoredPopupPlacement({
 }
 
 /**
- * Anchor-rect provider for a selection-anchored popup. Resolved inside an
- * editor update (the React adapter owns that), so it may read the selection.
- * Returns null when the popup should not (re)position — including when there
- * is no selection, matching the historical behaviour of both popup call sites.
+ * Anchor-rect provider for a selection-anchored popup. Resolved inside an editor update (the
+ * React adapter owns that), so it may read the selection. Returns null when the popup
+ * should not (re)position, including when there is no selection.
  */
 export type PopupAnchor = () => DOMRect | null
 

@@ -13,9 +13,8 @@ const MIGRATIONS_TABLE = '__drizzle_migrations'
 const log = getLogger('db:migrations')
 
 /**
- * Migrations folder: under SEA (`useVfs`) the `drizzle/` tree is a real
- * directory in the mounted VFS, so drizzle's own folder reader (plain
- * `node:fs`) works unchanged — there is no separate embedded path.
+ * Under SEA (`useVfs`) the `drizzle/` tree is a real directory in the mounted
+ * VFS, so drizzle's own folder reader (plain `node:fs`) works unchanged.
  */
 function migrationsFolder(): string {
   const root = seaVfsRoot()
@@ -23,8 +22,8 @@ function migrationsFolder(): string {
 }
 
 /**
- * Migrate the database on the caller's connection — a second connection
- * is wrong for `:memory:`. No advisory locks: runs at boot before traffic.
+ * Migrate on the caller's connection — a second connection is wrong for
+ * `:memory:`. No advisory locks: runs at boot, before traffic.
  */
 export async function migrateDatabase(db: Database): Promise<void> {
   const folder = migrationsFolder()

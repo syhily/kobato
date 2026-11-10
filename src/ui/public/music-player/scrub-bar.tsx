@@ -23,10 +23,7 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value))
 }
 
-/**
- * A minimal pointer/keyboard scrub bar (progress, volume). Pointer capture
- * keeps the drag alive outside the bar; arrows step 5%, Home/End jump.
- */
+/** Minimal pointer/keyboard scrub bar; pointer capture keeps the drag alive outside the bar. */
 export function ScrubBar({ value, onScrub, onSeek, ariaLabel, className }: ScrubBarProps) {
   const barRef = useRef<HTMLDivElement>(null)
   const [dragValue, setDragValue] = useState<number | null>(null)

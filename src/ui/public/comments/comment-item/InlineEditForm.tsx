@@ -21,9 +21,8 @@ export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormPro
   const { t } = useI18n()
   const actions = useCommentsActions('InlineEditForm')
   const identity = useCommentsIdentity('InlineEditForm')
-  // The wire shape is shared, but the policy differs: moderators hit the
-  // admin route (rewrite in place), owners hit the own-edit route (grace
-  // window + re-moderation fences).
+  // The wire shape is shared but the policy differs: moderators hit the admin route, owners
+  // the own-edit route (grace window + re-moderation fences).
   const onSuccess = (payload: { comment: CommentItemType }) => {
     actions.onEdited(payload.comment)
     onSaved(payload.comment)
@@ -58,9 +57,8 @@ export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormPro
         eager
         focusOnMount
         initialBody={seed}
-        // The wire row already carries `body`, so the seed is synchronous and a
-        // static key suffices — bumping it on the first editor update would
-        // re-run the reset effect and wipe the user's first keystrokes.
+        // The wire row already carries `body`, so a static key suffices; bumping it on the
+        // first editor update would re-run the reset effect and wipe the first keystrokes.
         bodyKey={`edit-${comment.id}`}
         onBodyChange={setBody}
         disabled={saving}

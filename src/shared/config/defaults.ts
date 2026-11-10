@@ -8,10 +8,8 @@ export const rateLimitBounds = {
   maxAttempts: { min: 1, max: 1000 },
 } as const
 
-// Conservative rate-limit defaults used by the install seed, the
-// settings backfill, and the infra rate-limit fallback path. Merged
-// per-scenario buckets adopt the former IP twin's values (the email twin's
-// stricter ceiling folded into it — see RateLimitSettings).
+// Conservative rate-limit defaults used by the install seed, the settings
+// backfill and the infra rate-limit fallback path.
 export const rateLimitDefaults = {
   signIn: { windowSeconds: 60 * 30, maxAttempts: 5 },
   otpSend: { windowSeconds: 60 * 5, maxAttempts: 3 },
@@ -26,8 +24,8 @@ export const rateLimitDefaults = {
   passkeyManage: { windowSeconds: 60 * 5, maxAttempts: 10 },
 } as const
 
-// Compile-time half of the bucket parity contract (P1-26): the key set
-// of `RateLimitSettings` is pinned to the defaults here, so adding a
-// bucket without a defaults entry fails the typecheck. The runtime half
-// lives in `tests/unit/shared/contracts/rate-limit-buckets.test.ts`.
+// Compile-time half of the bucket parity contract: the key set of
+// `RateLimitSettings` is pinned to these defaults, so adding a bucket without a
+// defaults entry fails the typecheck. The runtime half lives in
+// `tests/unit/shared/contracts/rate-limit-buckets.test.ts`.
 type _rateLimitDefaultsKeyParity = Assert<Equals<keyof typeof rateLimitDefaults, keyof RateLimitSettings>>

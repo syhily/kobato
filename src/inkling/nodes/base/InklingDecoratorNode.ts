@@ -19,9 +19,9 @@ export type InklingCard = InklingDecoratorNode & {
   isInklingCard(): true
   exportDOM(editor: LexicalEditor, options?: ExportDOMOptions): ExportDOMOutput
   hasEditMode(): boolean
-  // every card class comes from generateDecoratorNode, which defines getDataset
+  // defined by generateDecoratorNode on every card class
   getDataset(): Record<string, unknown>
-  // optional: the generated card classes do not define isEmpty
+  // optional: generated card classes do not define isEmpty
   isEmpty?(): boolean
 }
 
@@ -31,10 +31,9 @@ export function $isInklingCard(node: unknown): node is InklingCard {
   }
 
   // Structural binding, not an assertion: every probed member is optional
-  // unknown, and `decorate` is the shared member that keeps the weak-type
-  // check satisfied (Partial<InklingCard> itself does NOT work —
-  // DecoratorNode's exportDOM returns lexical's ExportDOMOutput, not
-  // inkling's, so the class is not assignable to it).
+  // unknown, and `decorate` keeps the weak-type check satisfied
+  // (Partial<InklingCard> fails — DecoratorNode's exportDOM returns lexical's
+  // ExportDOMOutput, not inkling's).
   const card: {
     decorate: InklingDecoratorNode['decorate']
     isInklingCard?: (() => unknown) | undefined

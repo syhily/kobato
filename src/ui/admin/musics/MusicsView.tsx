@@ -121,7 +121,6 @@ export function MusicsView() {
 
   return (
     <div className="min-h-full">
-      {/* Hero */}
       <MusicLibraryHero musics={allMusics} total={total}>
         <div className="flex items-center gap-2 sm:gap-4">
           <button
@@ -146,7 +145,6 @@ export function MusicsView() {
             <span className="hidden sm:inline">{t('admin.musics.add')}</span>
           </button>
 
-          {/* Sort */}
           <div className="flex shrink-0 items-center overflow-hidden rounded-full bg-surface-dim">
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -203,7 +201,6 @@ export function MusicsView() {
         </div>
       </MusicLibraryHero>
 
-      {/* Grid */}
       {isLoading ? (
         <GridSkeleton />
       ) : allMusics.length === 0 ? (
@@ -240,7 +237,6 @@ export function MusicsView() {
             })}
           </div>
 
-          {/* Infinite scroll status — the observer sentinel rides the last grid item */}
           <div className="mt-8 flex items-center justify-center">
             {isFetchingNextPage && (
               <div className="flex items-center gap-2 text-sm text-ink-4">

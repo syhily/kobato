@@ -1,11 +1,11 @@
-// Unit tests for the image insert override (R11 host glue; landing-4
-// de-hack): the two surviving HIGH-priority class-identity gates. Pins that
-// the priority comes from the inkling barrel (never a hardcoded number), that
-// INSERT_IMAGE_COMMAND inserts a KobatoImageNode with the four kobato dataset
-// keys intact, and that OPEN_IMAGE_LIBRARY_COMMAND routes through the pick
-// seam (an empty KobatoImageNode + the `openPicker` payload flag) instead of
-// inkling's stock selector overlay. The upload legs (paste/drop/file-dialog
-// via `initialFile`/`triggerFileDialog` datasets) must NOT carry the flag.
+// Unit tests for the image insert override: the two HIGH-priority
+// class-identity gates. Pins that the priority comes from the inkling barrel
+// (never a hardcoded number), that INSERT_IMAGE_COMMAND inserts a
+// KobatoImageNode with the four kobato dataset keys intact, and that
+// OPEN_IMAGE_LIBRARY_COMMAND routes through the pick seam (an empty
+// KobatoImageNode + the `openPicker` payload flag) instead of inkling's stock
+// selector overlay. The upload legs (paste/drop/file-dialog via
+// `initialFile`/`triggerFileDialog` datasets) must NOT carry the flag.
 //
 // Insert payloads are captured with a CRITICAL listener that declines (the
 // stock LOW choreography stays unmounted — these tests pin the override, not

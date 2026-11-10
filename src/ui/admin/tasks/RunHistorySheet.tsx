@@ -50,9 +50,7 @@ export function RunHistoryRow({ run }: { run: JobRunDto }) {
   )
 }
 
-// Per-task run history in a right-side sheet (RevisionsDrawer precedent — the
-// project has no standalone drawer). The list only arms while the sheet is
-// open, and polls every 10s (list-page cadence) so 「仍在运行」 rows refresh.
+// The list only arms while the sheet is open and polls every 10s so still-running rows refresh.
 export function RunHistorySheet({ taskKey, taskLabel }: { taskKey: JobHistoryInput['taskKey']; taskLabel: string }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)

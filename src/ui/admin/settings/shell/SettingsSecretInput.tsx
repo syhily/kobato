@@ -11,7 +11,7 @@ import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 type SettingsInputProps = ComponentProps<typeof SettingsInput>
 
 interface SettingsSecretInputProps extends Omit<SettingsInputProps, 'type' | 'autoComplete' | 'placeholder'> {
-  /** From `secretFieldStrings(...).placeholder` — the「保留现有…」label when configured. */
+  /** From `secretFieldStrings(...).placeholder` — the keep-current-value label when configured. */
   placeholder: string
 }
 
@@ -35,7 +35,7 @@ interface SecretFieldStringsOptions {
   t: I18nValue['t']
   /** Server-confirmed mask (`display.<x>Mask`); null when nothing is stored. */
   mask: string | null
-  /** The「保留现有…」label — reused as the configured placeholder and inside the hint. */
+  /** The keep-current-value label — reused as the configured placeholder and inside the hint. */
   keepLabel: string
   /** Hint shown while nothing is configured (site-specific guidance). */
   emptyHint: string

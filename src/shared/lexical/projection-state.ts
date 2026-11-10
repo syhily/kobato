@@ -1,53 +1,34 @@
-// Save-time projection input shaping (plan docs/plans/inkling-editor-replacement.md,
-// round R9b). The headless inkling renderer (`lexicalStateToHtml` /
-// `lexicalStateToPlainText`) parses the serialized state into a real editor —
-// this module produces the state copies that parse yields the wanted output
-// from. Two concerns:
+// Save-time projection input shaping: the headless inkling renderer
+// (`lexicalStateToHtml` / `lexicalStateToPlainText`) parses the serialized
+// state into a real editor, so this module produces the state copies that parse
+// yields the wanted output from. Two concerns:
 //
-// 1. **Feed downgrade** (`feed: true`). inkling's exportPolicy key set is
-//    closed (`inkling-version` / `footnotes-section-title` only) — there is
-//    no knob for the rssMode degradations, so the variant is expressed as a
-//    state transform instead of HTML post-processing. The fallback exporters
-//    then produce exactly the PT `rssMode` shapes (the retired PT feed
-//    renderer): stripping the server-prerendered artifacts makes
-//    `math` export `<pre><code>escaped tex</code></pre>`
-//    (`math-renderer.ts`), `math-inline` `<code>escaped tex</code>`
-//    (`MathInlineNode.exportDOM`), and `codeblock` a plain
-//    `<pre><code class="language-*">` without the Shiki embed
-//    (`codeblock-renderer.ts`). The host-card feed shapes (solution unwrap,
-//    two-column flatten, music-player figure) are NOT state transforms —
-//    the R10 card renderers produce them from the `FEED_VARIANT_META_KIND`
-//    render-meta flag the projection passes on the feed pass.
+// 1. Feed downgrade (`feed: true`) is a state transform, not HTML
+//    post-processing — inkling's exportPolicy key set is closed. Stripping the
+//    server-prerendered artifacts makes `math` / `math-inline` / `codeblock`
+//    export escaped-tex `<pre><code>` / `<code>` without the Shiki embed; the
+//    host-card feed shapes are NOT transforms — the card renderers produce them
+//    from the `FEED_VARIANT_META_KIND` render-meta flag.
 //
-// 2. **Host-card survival** (defensive — the R10 card classes exist now).
-//    `solution` / `two-column` / `music-player` parse through the real node
-//    classes registered by the projection module, so the production caller
-//    passes all three in `renderableHostCardTypes` and the substitution below
-//    never fires. It stays armed for any host-card type the projection does
-//    NOT register: an unregistered type aborts `parseEditorState` at first
-//    encounter — every block AFTER the card would vanish from the projection
-//    (Lexical error #17). Substituting unregistered cards with serialized
-//    stand-ins keeps the rest of the document projecting: `music-player`
-//    becomes a text paragraph carrying its save-time meta snapshot (or the PT
-//    feed placeholder when the snapshot is absent), `solution` / `two-column`
-//    are dropped.
+// 2. Host-card survival (defensive). `renderableHostCardTypes` normally covers
+//    every type; the substitution stays armed because an unregistered type
+//    aborts `parseEditorState` at first encounter and every block AFTER the
+//    card vanishes from the projection (Lexical error #17). Unregistered
+//    `music-player` becomes a text paragraph with its save-time meta snapshot
+//    (or the placeholder), `solution` / `two-column` are dropped.
 
 import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schema'
 
 import { KOBATO_HOST_CARD_NODE_TYPES } from '@/shared/lexical/node-whitelist'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-/** PT `rssMode` music-player fallback copy (the retired PT feed renderer). */
+/** Music-player fallback copy, used when the save-time meta snapshot is absent. */
 export const MUSIC_PLAYER_PROJECTION_PLACEHOLDER = '🎵 此文章包含音乐播放器，请访问原文收听。'
 
 export interface ProjectionStateOptions {
   /** Strip the server-prerendered artifact slots (feed variant). */
   feed: boolean
-  /**
-   * Host card types the renderer has real node classes for — those pass
-   * through untouched. The projection passes every registered type, so the
-   * substitution below only fires for cards the projection does not know.
-   */
+  /** Host card types the renderer has real node classes for; they pass through. */
   renderableHostCardTypes?: ReadonlySet<string>
 }
 
@@ -112,8 +93,8 @@ function substituteHostCard(node: MutableNode, options: ProjectionStateOptions):
       ],
     }
   }
-  // solution / two-column carry their content as nested-editor HTML strings
-  // with no PT-parity text fallback — an unregistered one is dropped.
+  // solution / two-column carry their content in nested-editor HTML strings
+  // with no text fallback — an unregistered one is dropped.
   return null
 }
 

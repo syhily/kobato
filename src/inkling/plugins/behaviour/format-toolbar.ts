@@ -66,10 +66,9 @@ export interface FormatToolbarState {
 /**
  * The selection classifier as a feed: publishes the text formats on every
  * relevant update and the block type only when it resolves (an unknown
- * element type keeps the previous block type, matching the component's
- * former setState semantics). The composing guard keeps the toolbar from
- * popping during IME input. Publishes the default snapshot at registration
- * (the component's former initial state), then per update.
+ * element type keeps the previous block type). The composing guard keeps the
+ * toolbar from popping during IME input. Publishes the default snapshot at
+ * registration, then per update.
  */
 export function registerFormatToolbarState(
   editor: LexicalEditor,
@@ -118,7 +117,6 @@ export function registerFormatToolbarState(
     })
   }
 
-  // the default snapshot stands in for the component's former initial state
   publish(state)
   update()
   return editor.registerUpdateListener(update)
@@ -211,7 +209,7 @@ export interface FormatToolbarVisibility {
  * surface opted into keeping element `format` (its `alignment` prop — the
  * same flag that keeps the default transforms from stripping it).
  */
-/** The formats a surface can hide from the toolbar — 'bold' is the only honored value today; any other string was a silent no-op. */
+/** The formats a surface can hide from the toolbar — 'bold' is the only honored value; any other string is a silent no-op. */
 export type HiddenFormat = 'bold'
 
 export function resolveFormatToolbarVisibility(

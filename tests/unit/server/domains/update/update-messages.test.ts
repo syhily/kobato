@@ -8,8 +8,7 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Self-update job/service/pipeline errors across all four locales. The status
-// boundary localizes the stored descriptor; the dialog never prints a key.
+// The status boundary localizes the stored descriptor; the dialog never prints a key.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

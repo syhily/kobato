@@ -78,8 +78,7 @@ export function OptionsValueEditor<K extends string>({
   )
 }
 
-/** Async combobox backed by the field's debounced server search (comments
- *  page / author, my-comments entity). */
+/** Async combobox backed by the field's debounced server search (comments page / author, my-comments entity). */
 export function SearchComboboxEditor<K extends string>({
   field,
   value,
@@ -170,7 +169,7 @@ function TextOperatorTrigger({
   )
 }
 
-/** Operator dropdown + free text, committed on blur / Enter (内容). */
+/** Operator dropdown + free text, committed on blur / Enter (comments text filter). */
 export function TextFilterEditor<K extends string>({
   field,
   value,
@@ -279,7 +278,7 @@ export function FreetextEditor({
   )
 }
 
-/** From/to range picker (audit 时间). */
+/** From/to range picker (audit date range). */
 export function DateRangeEditor({
   value,
   onChange,

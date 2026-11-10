@@ -59,7 +59,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
     setInitialBody(EMPTY_COMMENT_EDITOR_STATE)
     setBody(EMPTY_COMMENT_EDITOR_STATE)
   }
-  // Apply raw body once it arrives (or differs from what we last applied).
+  // Apply raw body once it arrives (or differs from the last applied value).
   if (rawData !== lastRawData) {
     setLastRawData(rawData)
     if (comment && rawData) {

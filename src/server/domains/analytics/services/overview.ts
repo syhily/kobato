@@ -11,10 +11,9 @@ export interface AnalyticsOverviewData {
 }
 
 /**
- * First-paint fan-out behind both analytics pages: counters plus the first
- * tab of every metric group in one `Promise.all`. The views series and the
- * heatmap are deliberately absent — SSR buckets would be UTC-bound, so the
- * client fetches both with its real timezone.
+ * First-paint fan-out: counters plus the first tab of every metric group. The
+ * views series and the heatmap are deliberately absent — SSR buckets would be
+ * UTC-bound, so the client fetches both in its own timezone.
  */
 export async function loadAnalyticsOverview(
   reader: AnalyticsReader,

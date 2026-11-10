@@ -10,11 +10,9 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 const log = getLogger('analytics.maintenance')
 
 /**
- * The DuckDB half of the daily DB maintenance job (plan §1.11): the
- * 180-day retention DELETE + CHECKPOINT, applied to every table in
- * `ANALYTICS_TABLES` at one cutoff — no sidecar row can outlive the event
- * it keys. The bootstrap lifecycle owns only the scheduling and the
- * handle.
+ * The DuckDB half of the daily DB maintenance job: the 180-day retention DELETE
+ * + CHECKPOINT, applied to every table in `ANALYTICS_TABLES` at one cutoff — no
+ * sidecar row can outlive the event it keys.
  */
 
 async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null> {

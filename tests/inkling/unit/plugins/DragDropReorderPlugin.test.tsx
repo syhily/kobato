@@ -18,11 +18,10 @@ import { updateEditor } from '#/inkling/utils/test-editor'
 import { $createImageNode, $isImageNode, ImageNode } from '@/inkling/nodes/ImageNode'
 import DragDropReorderPlugin from '@/inkling/plugins/DragDropReorderPlugin'
 
-// The plugin's onDrop result mapping, exercised through the real plugin
-// component with the drag container stubbed out: useDragDropContainer is
-// mocked to capture the options the plugin renders with, and reorder-rules'
-// resolveDrop is mocked to control the drop-time verification scan (the
-// surgery-level behavior lives in behaviour/drop-surgery.test.ts).
+// Exercises the plugin's onDrop result mapping with the drag container stubbed:
+// useDragDropContainer captures the rendered options and resolveDrop is mocked
+// to control the drop-time verification scan. Surgery behavior lives in
+// behaviour/drop-surgery.test.ts.
 
 interface CapturedContainerOptions {
   droppable: {
@@ -76,8 +75,8 @@ function getCapturedOnDropEnd(): CapturedContainerOptions['lifecycle']['onDropEn
   return captureContainerOptions().lifecycle.onDropEnd
 }
 
-// the plugin's editor.update is React-hosted, so it commits on a later tick —
-// await one macrotask before asserting on the resulting editor state
+// The plugin's editor.update is React-hosted and commits on a later tick, so
+// await one macrotask before asserting on editor state.
 function settleEditor(): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, 0)
@@ -149,8 +148,7 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
     captured.resolveDrop.mockReturnValue({ draggableIndex: -1, droppables: [droppable] })
 
     const result = getCapturedOnDrop()(
-      // the image branch carries ImageNodeDataset directly — the surgery
-      // consumes it without an assertion
+      // The image branch carries ImageNodeDataset directly; the surgery consumes it unasserted.
       imageDrag({ dataset: { src: '/dragged.png', width: 320, height: 180 } }),
       { insertIndex: 0 },
     )
@@ -163,14 +161,13 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
         .filter($isImageNode)
         .map((node) => node.getDataset())
         .filter((dataset) => dataset.src === '/dragged.png')
-      // the insert surgery constructs the card from exactly the dragged dataset
       expect(inserted).toEqual([expect.objectContaining({ src: '/dragged.png', width: 320, height: 180 })])
     })
   })
 
   it('reports failure and leaves the tree untouched when the image insert resolves no slot', async () => {
-    // an empty drop-time scan gives $insertDraggedImage no slot — the drop
-    // failed, and reporting failure is what keeps the source node in place
+    // An empty drop-time scan gives $insertDraggedImage no slot: the drop fails,
+    // and reporting failure is what keeps the source node in place.
     captured.resolveDrop.mockReturnValue({ draggableIndex: -1, droppables: [] })
     const before = readTopLevelKeys()
 
@@ -179,8 +176,8 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
     })
 
     expect(result).toBe(false)
-    // settle before the negative assertion too — otherwise the check would
-    // pass vacuously against an update that only commits on a later tick
+    // Settle before the negative assertion too, or it passes vacuously against
+    // an update that only commits on a later tick.
     await settleEditor()
     expect(readTopLevelKeys()).toEqual(before)
   })

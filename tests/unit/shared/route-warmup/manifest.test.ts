@@ -72,7 +72,6 @@ describe('shared/route-warmup/manifest — collectManifestChunks', () => {
   })
 
   it("resolves 'root' through the generic route path WITH client* extras", () => {
-    // The writer previously skipped extras for 'root' — the drift case.
     expect(collectManifestChunks(makeManifest(), ['root'])).toEqual([
       '/assets/root.js',
       '/assets/runtime.js',

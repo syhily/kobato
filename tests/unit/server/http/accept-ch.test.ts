@@ -6,7 +6,7 @@ import { ACCEPT_CH_HEADER } from '@/server/http/middleware-pipeline'
 // a hint the browser never sends would leave the column permanently ''.
 
 describe('Accept-CH opt-in', () => {
-  it('requests the full ADR-0006 client-hint set', () => {
+  it('requests the full client-hint set', () => {
     const requested = ACCEPT_CH_HEADER.split(',').map((hint) => hint.trim())
 
     expect(new Set(requested)).toEqual(

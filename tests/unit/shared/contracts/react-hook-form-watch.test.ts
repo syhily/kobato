@@ -6,10 +6,9 @@ import { describe, expect, it } from 'vitest'
 // The client bundle runs through the React Compiler
 // (`src/server/infra/react-compiler-plugin.ts`), which memoizes the call with
 // the stable `form` object as its only dependency — the watched value freezes
-// at its initial state and every controlled input fed by it snaps back on
-// each keystroke (the 流控设置 number cells were the live symptom). Vitest
-// never compiles, so only a source scan catches a regression. Use the
-// `useWatch({ control, name })` hook instead — hook calls re-execute on every
+// at its initial state and every controlled input fed by it snaps back on each
+// keystroke. Vitest never compiles, so only a source scan catches a regression.
+// Use `useWatch({ control, name })` instead: hook calls re-execute on every
 // render, so the compiler cannot cache the subscribed value away.
 
 const SCANNED_ROOTS = ['src/ui', 'src/client', 'src/routes']

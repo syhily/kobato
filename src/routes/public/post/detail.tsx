@@ -25,9 +25,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     localization,
   )
 
-  // Comments and webmentions chain off the critical's comment key — known
-  // only once the post read settles — and stream through <Await>. Never fire
-  // speculatively: 304/301/404 reads then cost zero comments work.
+  // Comments and webmentions chain off the critical's comment key — known only once the post read settles — and
+  // stream through <Await>. Never fire speculatively: 304/301/404 reads then cost zero comments work.
   const { comments, webmentions } = streamDetailExtras(caller, result.payload.critical.commentKey)
 
   return data(

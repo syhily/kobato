@@ -39,11 +39,8 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// The seam's fixture cards, registered at module top level mirroring the host
-// idiom (defineCard before any composer mounts):
-// - pickerWidget — the full picker spec with autoOpenOnInsert
-// - manualPickerWidget — a picker without the auto-open flag
-// - pickerlessWidget — no picker at all (the placeholder stays inert)
+// Fixture cards, registered at module top level mirroring the host idiom
+// (defineCard before any composer mounts).
 const pickerRender = vi.fn((_props: CardPickerRenderProps) => <div data-testid="picker-dialog" />)
 
 const pickerWidget = defineCard({
@@ -77,7 +74,6 @@ const pickerlessWidget = defineCard({
 
 const FIXTURE_NODES = [pickerWidget.node, manualPickerWidget.node, pickerlessWidget.node]
 
-/** Appends one fixture card to the root and resolves its key after commit. */
 async function appendCard(editor: LexicalEditor, card: (typeof FIXTURE_NODES)[number], dataset = {}): Promise<NodeKey> {
   let key: NodeKey = ''
   await updateEditor(editor, () => {
@@ -180,7 +176,6 @@ describe('CardPickerHostPlugin', () => {
     expect(view.getAllByTestId('picker-dialog')).toHaveLength(1)
     expect(pickerRender).toHaveBeenCalledWith({ editor, nodeKey, close: expect.any(Function), fromInsert: false })
 
-    // the close prop drops the request and unmounts the picker
     const close = pickerRender.mock.calls[0]?.[0].close as () => void
     act(() => close())
     expect(store.getState().request).toBeNull()
@@ -237,16 +232,15 @@ describe('CardPickerHostPlugin', () => {
 
 describe('autoOpenOnInsert', () => {
   let editor: LexicalEditor
-  // One picker store shared by the command choreography (registerCardCommands
-  // writes the openPicker flag here) and the registrar's context wrapper —
-  // the two halves of the seam must observe the same store.
+  // One picker store shared by registerCardCommands (writes the openPicker
+  // flag) and the registrar's context wrapper — both halves of the seam must
+  // observe the same store.
   let pickerStore: ReturnType<typeof createCardPickerStore>
 
   beforeEach(() => {
     vi.clearAllMocks()
     editor = createTestEditor({ nodes: FIXTURE_NODES })
     pickerStore = createCardPickerStore()
-    // the INSERT_CARD_COMMAND handler the registrar dispatches through
     registerCardCommands(editor, { store: createCardSelectionStore(), pickerStore })
     mockComposerContext(editor)
   })
@@ -276,7 +270,7 @@ describe('autoOpenOnInsert', () => {
 
     const request = store.getState().request
     expect(request?.nodeType).toBe('pickerWidget')
-    // Lexical 0.53 commits the insert on a microtask — drain before reading
+    // Lexical commits the insert on a microtask — drain before reading
     await tick()
     // the node landed under the request's key — the pick write resolves it
     editor.getEditorState().read(() => {
@@ -296,7 +290,6 @@ describe('autoOpenOnInsert', () => {
   })
 
   it('never opens the picker on an editor-state load — only the insert command triggers it', async () => {
-    // serialize a document holding the card, then seed a fresh editor from it
     const source = createTestEditor({ nodes: FIXTURE_NODES })
     await updateEditor(source, () => {
       $getRoot().append(new pickerWidget.node({ src: 'x' }))
@@ -318,10 +311,9 @@ describe('autoOpenOnInsert', () => {
 })
 
 describe('the variant picker channel (registerCardPicker)', () => {
-  // The picker-override channel: a picker fact for a card type WITHOUT a host
-  // spec — a same-type variant of a built-in card (kobato's KobatoImageNode
-  // for 'image'). Registered at module scope, mirroring the defineCard idiom;
-  // 'audio' stands in as the built-in type here.
+  // The picker-override channel: a picker for a card type without a host
+  // spec — a same-type variant of a built-in card. 'audio' stands in as the
+  // built-in type; registered at module scope, mirroring the defineCard idiom.
   const audioPickerRender = vi.fn((_props: CardPickerRenderProps) => <div data-testid="audio-picker" />)
   registerCardPicker('audio', { render: audioPickerRender })
 
@@ -416,16 +408,15 @@ describe('the variant picker channel (registerCardPicker)', () => {
       paragraph.select()
     })
 
-    // the variant trigger path: a host's own intent command inserts an empty
-    // card and flags the payload (kobato's image-library entry). The node
-    // constructs inside the update — Lexical keys need an active editor.
+    // The variant trigger path: a host's intent command inserts an empty card
+    // and flags the payload. The node constructs inside the update — Lexical
+    // keys need an active editor.
     await updateEditor(editor, () => {
       editor.dispatchCommand(INSERT_CARD_COMMAND, { cardNode: new pickerWidget.node({}), openPicker: true })
     })
     // the insert-channel marker: the pick write merges into the insert entry
     expect(pickerStore.getState().request).toMatchObject({ nodeType: 'pickerWidget', fromInsert: true })
 
-    // and the plain insert stays inert
     pickerStore.setState({ request: null })
     await updateEditor(editor, () => {
       editor.dispatchCommand(INSERT_CARD_COMMAND, { cardNode: new pickerWidget.node({}) })
@@ -487,7 +478,6 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     })
   }
 
-  /** Inserts pickerWidget through its autoOpenOnInsert registration; resolves the fresh node's key. */
   async function insertWithAutoOpen(): Promise<NodeKey> {
     await updateEditor(editor, () => {
       const paragraph = $createParagraphNode()
@@ -496,7 +486,7 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     })
     await act(async () => {
       editor.dispatchCommand(resolveCardInsertCommand('pickerWidget'), {})
-      // Lexical 0.53 commits the insert on a microtask — drain before reading
+      // Lexical commits the insert on a microtask — drain before reading
       await tick()
     })
     const request = pickerStore.getState().request
@@ -527,10 +517,10 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     await mountHistoryAndRegistrar()
     const nodeKey = await insertWithAutoOpen()
 
-    // the write seam's mergeHistory option applies Lexical's HISTORY_MERGE_TAG
-    // (the block body matters: Lexical 0.53 treats a listener's return value
-    // as a cleanup registration — an expression body returning push()'s
-    // length would break the next commit)
+    // The write seam's mergeHistory option applies Lexical's HISTORY_MERGE_TAG.
+    // The block body matters: Lexical treats a listener's return value as a
+    // cleanup registration — an expression body returning push()'s length
+    // would break the next commit.
     const seenTags: string[][] = []
     editor.registerUpdateListener(({ tags }) => {
       seenTags.push([...tags])

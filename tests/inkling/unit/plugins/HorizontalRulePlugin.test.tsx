@@ -21,13 +21,10 @@ import { tick, updateEditor } from '#/inkling/utils/test-editor'
 import { $isHorizontalRuleNode, HorizontalRuleNode } from '@/inkling/nodes/HorizontalRuleNode'
 import { HorizontalRulePlugin } from '@/inkling/plugins/HorizontalRulePlugin'
 
-// Plan 052 Step 1: characterization pins for the hand-rolled HR update
-// listener, mounted with NO markdown transformers so the listener is the only
-// `---` → HR path. They pin CURRENT behavior ahead of the card-shortcut seam
-// migration (the undo pin was updated in step 5, when the historic-tag gate
-// fixed the re-fire it had recorded). The `editor.isComposing()` IME bail is
-// not simulable in jsdom (no composition events) and has no e2e coverage
-// either; the guard is carried verbatim through the seam.
+// Pins the hand-rolled HR update listener, mounted with NO markdown
+// transformers so the listener is the only `---` → HR path. The
+// `editor.isComposing()` IME bail is not simulable in jsdom (no composition
+// events) and has no e2e coverage.
 
 function createTestEditor() {
   return createEditor({
@@ -63,10 +60,10 @@ describe('HorizontalRulePlugin shortcut listener', () => {
   })
 
   // The listener bails unless the native selection anchor is a text node
-  // inside the root element. jsdom does not track the native caret, so mirror
-  // a browser: resolve the anchor from the last committed Lexical selection.
-  // Registered BEFORE the plugin so the key is fresh when the plugin's
-  // listener runs on the same update.
+  // inside the root element; jsdom does not track the native caret, so mirror
+  // a browser by resolving the anchor from the last committed Lexical
+  // selection. Register BEFORE the plugin so the key is fresh when the
+  // plugin's listener runs on the same update.
   function trackNativeSelection() {
     let lastAnchorKey: string | null = null
     editor.registerUpdateListener(({ editorState }) => {
@@ -146,7 +143,6 @@ describe('HorizontalRulePlugin shortcut listener', () => {
     editor.getEditorState().read(() => {
       const root = $getRoot()
       expect($isHorizontalRuleNode(root.getFirstChild())).toBe(true)
-      // the paragraph is REPLACED by the rule; the next sibling survives
       const after = root.getChildAtIndex(1)
       expect($isParagraphNode(after)).toBe(true)
       expect(after?.getKey()).toBe(afterKey)
@@ -175,11 +171,9 @@ describe('HorizontalRulePlugin shortcut listener', () => {
       const trailing = root.getChildAtIndex(1)
       expect($isParagraphNode(trailing)).toBe(true)
       expect(trailing?.getTextContent()).toBe('')
-      // the hand-rolled path creates a FRESH paragraph where the markdown
-      // transformer path keeps the emptied one — pinned as data for the
-      // plan-052 seam
+      // The hand-rolled path creates a fresh paragraph, unlike the markdown
+      // transformer path which keeps the emptied one.
       expect(trailing?.getKey()).not.toBe(paragraphKey)
-      // line.selectNext(): the caret lands on the fresh trailing paragraph
       const selection = $getSelection()
       expect($isRangeSelection(selection)).toBe(true)
       if (!$isRangeSelection(selection)) {
@@ -211,11 +205,8 @@ describe('HorizontalRulePlugin shortcut listener', () => {
   })
 
   it('keeps the restored --- paragraph on undo of the HR creation (historic-tag gate)', async () => {
-    // Plan 052 step 5 (the sanctioned pin update): before the dirty-set/tag
-    // gate, the listener had no historic-tag skip and RE-FIRED on the undo
-    // update — undo of the HR creation resurrected the card (the step-1
-    // version of this pin expected ['horizontalrule', 'paragraph'] here).
-    // With the gate, the restored '---' paragraph stays.
+    // The historic-tag gate must keep the restored '---' paragraph from
+    // re-firing the transform on the undo update.
     trackNativeSelection()
     await mountPlugin()
     await setContent([''])

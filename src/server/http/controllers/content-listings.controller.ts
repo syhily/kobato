@@ -261,7 +261,7 @@ const archives = publicProc
       const db = context.db
       const listingNowIso = new Date().toISOString()
       // Archives promise completeness — explicit 10k bound (helper defaults to 200);
-      // revisit via year-grouped pagination past ~2,000 live posts (P1-22).
+      // revisit with year-grouped pagination past ~2,000 live posts.
       const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
       const posts = rawPosts.map(toListingPostCard)
       const resolvedPosts = await getClientPostsWithMetadata(db, posts, {

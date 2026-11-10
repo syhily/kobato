@@ -17,14 +17,10 @@ import { $createImageNode, ImageNode } from '@/inkling/nodes/ImageNode'
 import { createCardSelectionStore } from '@/inkling/plugins/behaviour/cardSelectionStore'
 import { registerCardSelection } from '@/inkling/plugins/behaviour/registerCardSelection'
 
-// Characterization tests for the preserveCardSelection undo-restore logic
-// (plan 038 step 1). They recorded the pre-swap update-tag/selection behavior
-// as a fixed baseline; the step 3 swap to store-based deps ({ store,
-// isNested? }) touched only createSelectionHarness, never the test bodies.
-// The setter spies stand in for the old React mirror by observing store
-// notifications. Assertions stay on shape-invariant observables (editor
-// selection, setter call arguments) and deliberately avoid pinning mirror
-// artifacts that the swap changed (noted per test).
+// Characterization pins for registerCardSelection. The setter spies stand in
+// for the React mirror by observing store notifications; assertions stay on
+// shape-invariant observables (editor selection, setter call arguments) and
+// deliberately avoid pinning mirror artifacts.
 
 function createTestEditor() {
   return createEditor({
@@ -34,10 +30,9 @@ function createTestEditor() {
   })
 }
 
-// The one place CardSelectionDeps are constructed. The setter spies stand in
-// for the old React mirror: every store notification mirrors both current
-// values into them, so assertions on setter call arguments keep their
-// pre-swap meaning.
+// The one place CardSelectionDeps are constructed. Every store notification
+// mirrors both current values into the setter spies, so assertions on setter
+// call arguments observe the store's writes.
 function createSelectionHarness(
   editor: LexicalEditor,
   initial: { selectedCardKey?: string | null; isNested?: boolean } = {},
@@ -103,7 +98,6 @@ function touchDocument(editor: LexicalEditor) {
   })
 }
 
-/** Selected card keys when a card is node-selected, null otherwise. */
 function readSelectedCardKeys(editor: LexicalEditor) {
   return editor.getEditorState().read(() => {
     const selection = $getSelection()
@@ -231,10 +225,9 @@ describe('registerCardSelection', () => {
 
       await selectCard(editor, cardKey, { tag: 'historic' })
 
-      // an untagged update within the confirm grace carries the card selected
-      // but is still part of the reconciliation — the guard must survive it,
-      // which the following clear proves: the store keeps the card, it is not
-      // allowed through the deselect path
+      // An untagged update within the confirm grace still counts as
+      // reconciliation — the guard must survive it; the following clear
+      // proves the store keeps the card and the deselect path stays closed.
       await touchDocument(editor)
       await clearSelection(editor)
 
@@ -367,12 +360,8 @@ describe('registerCardSelection', () => {
     expect(harness.setIsEditingCard).toHaveBeenCalledWith(true)
     expect(clearOpenInEditMode).toHaveBeenCalledTimes(1)
     expect(readSelectedCardKeys(editor)).toEqual([cardKey])
-    // as-is note: before the store swap, the history-merge bookkeeping pass
-    // read the stale mirror (null) and repeated setSelectedCardKey(cardKey) /
-    // setIsEditingCard(false) after the branch ran. The synchronous store read
-    // no longer produces that artifact. Exact call counts and the final
-    // isEditingCard value stay intentionally unpinned so this test pins branch
-    // behavior, not deps wiring.
+    // Exact call counts and the final isEditingCard value stay intentionally
+    // unpinned so this test pins branch behavior, not deps wiring.
 
     harness.dispose()
   })

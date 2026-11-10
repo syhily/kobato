@@ -8,8 +8,7 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { SUPPORTED_LOCALES } from '@/shared/i18n/locales'
 
-// Image upload / safe-segment / worker errors across all four locales. Machine
-// kinds (`categorySlug` / `friendHost`, `audio` / `cover`) cross the wire, never
+// Machine kinds (`categorySlug` / `friendHost`, `audio` / `cover`) cross the wire, never
 // a pre-translated label — the catalog's ICU `select` renders them.
 interface Case {
   key: UiMessageId

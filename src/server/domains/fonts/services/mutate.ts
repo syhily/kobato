@@ -14,9 +14,8 @@ import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Mutation side of the fonts domain: slot assignment and direct delete. No
-// automatic GC on slot edits — a font stays in the library until the user
-// deletes it via the trash icon.
+// Mutation side of the fonts domain: slot assignment and direct delete. Slot
+// edits never garbage-collect a font package — only an explicit delete does.
 
 /** Read the current `fonts` settings section within the caller's transaction. */
 async function readCurrentFonts(db: Database): Promise<FontsSettings> {
@@ -28,7 +27,6 @@ async function readCurrentFonts(db: Database): Promise<FontsSettings> {
       return parsed.data
     }
   }
-  // Fall back to defaults when the row is missing or stale.
   return unsafeCast<FontsSettings>(SECTION_REGISTRY.fonts.defaults)
 }
 

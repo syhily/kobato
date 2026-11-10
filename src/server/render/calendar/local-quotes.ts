@@ -1,6 +1,5 @@
-// Built-in daily-quote bank (final fallback for the calendar image),
-// complete from the source — no editorial filtering. Vendored snapshot of
-// BullshitGenerator's data.json, pinned commit 690988559f39f2e452b1bfd5904282d90c7ace32.
+// Built-in daily-quote bank (final fallback for the calendar image), complete from the
+// source with no editorial filtering. Vendored snapshot of BullshitGenerator's data.json.
 
 import type { DailyQuote } from '@/server/render/calendar/daily-quote'
 

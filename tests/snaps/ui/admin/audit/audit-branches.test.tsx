@@ -36,9 +36,9 @@ mocks.mutation = {
   isPending: false,
 }
 
-// Companion to audit-view.test.tsx: drives AuditLogView's remaining branches
-// — populated rows, skeleton, has-more sentinel, export-pending label, active
-// filter pills. useFilterPills is mocked via a hoisted slot; the real FilterPillBar renders.
+// Remaining AuditLogView branches: populated rows, skeleton, has-more sentinel,
+// export-pending label, active filter pills. useFilterPills is mocked via a hoisted
+// slot so the real FilterPillBar renders.
 
 vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   const { buildAuditFilterFields } = await vi.importActual<typeof import('@/ui/admin/audit/filter-fields')>(

@@ -236,7 +236,6 @@ export const backupRouter = new Hono<Env>()
         return errorJsonResponse(c, 400, 'backup.error.uploadMissing')
       }
 
-      // Stage + pre-validate before claiming the slot (see the helper).
       const stagedOrError = await stageUploadForRestore(c, file, { allowAnalyticsOnly: true })
       if (stagedOrError instanceof Response) {
         return stagedOrError
@@ -300,11 +299,8 @@ export const backupRouter = new Hono<Env>()
               : undefined,
           })
         } catch (error) {
-          // ONLY a genuine password failure keeps the parked upload —
-          // structural rejections (bad tar, oversize, missing entries,
-          // truncation) fail identically on every retry, so the token dies
-          // here. 410 (not 400): the token is dead, the client must return
-          // to the upload step instead of retrying the password prompt.
+          // Only a genuine password failure keeps the parked upload — structural
+          // rejections fail on every retry, so the token dies here (410, not 400).
           if (error instanceof BackupPasswordError) {
             fate = 'keep'
             return failureJsonResponse(c, error, 400)
@@ -365,7 +361,6 @@ export const backupRouter = new Hono<Env>()
       }
       const password = rawPassword !== '' ? rawPassword : undefined
 
-      // Stage + pre-validate before claiming the slot (see the helper).
       const stagedOrError = await stageUploadForRestore(c, file, {
         allowAnalyticsOnly: false,
         password,

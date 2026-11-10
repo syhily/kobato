@@ -30,7 +30,6 @@ export function AlbumCard({ music }: AlbumCardProps) {
 
   return (
     <div className="group">
-      {/* Cover */}
       <div className="relative aspect-square overflow-hidden rounded-lg shadow-md transition-shadow duration-200 group-hover:shadow-xl">
         {music.coverUrl ? (
           <Image
@@ -44,7 +43,6 @@ export function AlbumCard({ music }: AlbumCardProps) {
           <div className="h-full w-full bg-surface-dim" />
         )}
 
-        {/* Hover overlay */}
         <div className="absolute inset-0 flex items-end justify-end bg-black/0 p-3 transition-all duration-200 group-hover:bg-black/40">
           <button
             type="button"
@@ -60,18 +58,15 @@ export function AlbumCard({ music }: AlbumCardProps) {
           </button>
         </div>
 
-        {/* Playing indicator */}
         {isCurrentPlaying && (
           <div className="absolute bottom-2 left-2">
             <Equalizer />
           </div>
         )}
 
-        {/* Active ring */}
         {isCurrent && <div className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-primary" />}
       </div>
 
-      {/* Info */}
       <div className="mt-3 min-w-0">
         <p className="truncate text-sm font-semibold text-ink-1">{music.name}</p>
         <p className="truncate text-xs text-ink-3">{music.artist.join(' / ')}</p>

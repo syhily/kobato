@@ -93,7 +93,6 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
       }
     >
       <div className="min-w-0 flex-1">
-        {/* Header: action badge + actor + resource */}
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{actionLabel}</Badge>
           {row.actorName ? (
@@ -112,7 +111,6 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
           )}
         </div>
 
-        {/* Meta: date + IP + action-specific resource */}
         <p className="mt-1 text-xs text-muted-foreground">
           {formatLocalDate(new Date(row.createdAt), ADMIN_DATE_FORMAT, config)}
           {row.ipAddressMasked && (
@@ -140,7 +138,6 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
         />
       </div>
 
-      {/* Expanded details */}
       {canExpand && isExpanded && (
         <div className="w-full" onClick={(e) => e.stopPropagation()}>
           <JsonDetailPanel row={row} />
@@ -165,7 +162,7 @@ function JsonDetailPanel({ row }: { row: AuditLogItemDto }) {
       {row.detailsHtml ? (
         <div
           className="[&>pre]:m-0 [&>pre]:rounded-none [&>pre]:border-0 [&>pre]:bg-transparent [&>pre]:px-4 [&>pre]:py-3 [&>pre]:text-xs [&>pre]:leading-relaxed"
-          // Convention (src/ui/AGENTS.md): every dangerouslySetInnerHTML goes through sanitizeHtml — never rely on the producer's escaping.
+          // Every dangerouslySetInnerHTML goes through sanitizeHtml — never rely on the producer's escaping.
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(row.detailsHtml, 'shiki') }}
         />
       ) : (

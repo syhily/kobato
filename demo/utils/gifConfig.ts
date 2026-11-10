@@ -10,8 +10,7 @@ export interface KlipyConfig {
 
 export const tenorConfig: TenorConfig | null = isTestEnv ? { googleApiKey: 'xxx' } : getTenorConfig()
 
-// In tests the GIF provider defaults to Tenor; the ?gifProvider=klipy query
-// param opts a specific test into the Klipy path.
+// In tests the GIF provider defaults to Tenor; `?gifProvider=klipy` opts a specific test into the Klipy path.
 export const klipyConfig: KlipyConfig | null = isTestEnv ? getTestKlipyConfig() : getKlipyConfig()
 
 function getTenorConfig(): TenorConfig | null {

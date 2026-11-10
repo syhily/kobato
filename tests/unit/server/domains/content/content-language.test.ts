@@ -10,10 +10,9 @@ import {
   isContentLanguageInput,
 } from '@/shared/i18n/content-language'
 
-// The content language is author metadata, NOT a UI locale: any well-formed
-// BCP 47 tag is legal, the stored spelling is canonical, and the four
-// `SUPPORTED_LOCALES` are not a closed set here. Blank stays "unset" so every
-// pre-migration row keeps rendering without a `lang` attribute.
+// The content language is author metadata, not a UI locale: any well-formed BCP 47 tag
+// is legal, `SUPPORTED_LOCALES` is not a closed set, and blank stays "unset" (rendered
+// without a `lang` attribute).
 
 describe('shared/i18n/content-language — canonicalization', () => {
   it('canonicalizes case and script subtags', () => {

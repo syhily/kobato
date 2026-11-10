@@ -15,8 +15,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// the store equivalent of the old per-test CardContext factory: the card is
-// selected and not editing unless a test says otherwise
+// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'html-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},

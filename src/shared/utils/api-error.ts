@@ -1,11 +1,7 @@
-// Isomorphic API error-shape helpers shared by the upload hook and the
-// admin views (can't live in ui/lib — boundaries contract).
-//
-// Error copy is NOT translated or composed here: the server folds a domain
-// error's issue summary into `ORPCError.message` (per request locale) and ships
-// the structured `{ descriptor, issues }` in `data`. The client consumes the
-// message verbatim; legacy bare-array rejections fall back to their server
-// message unchanged.
+// Isomorphic API error-shape helpers (not in `ui/lib` — boundaries contract).
+// The server translates per request: `ORPCError.message` carries the issue
+// summary and `data` ships `{ descriptor, issues }`; bare-array rejections
+// keep their server message unchanged.
 
 export function extractApiErrorMessage(data: unknown): string | undefined {
   if (typeof data !== 'object' || data === null) {
@@ -33,9 +29,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * The stable `messageKey` of a rejection carrying the descriptor payload
- * (`error.data = { descriptor, issues? }`) — client branches compare THIS, never
- * localized prose. `undefined` for legacy/raw errors.
+ * The stable `messageKey` of a rejection carrying `error.data =
+ * { descriptor, issues? }`; client branches compare this, never localized prose.
+ * `undefined` for raw errors.
  */
 export function apiErrorDescriptorKey(error: unknown): string | undefined {
   if (!isRecord(error)) {

@@ -1,8 +1,7 @@
-// SEA worker-pool smoke: bundled into smoke-worker.mjs, embedded, and
-// dispatched by `--smoke-worker` via `new Worker(code, { eval: true,
-// execArgv: ['--input-type=module'] })` — the image pool's own mechanism.
-// This flag DOES pull the config-validated server graph (pool teardown),
-// so it needs the full server configuration — validates, never connects.
+// SEA worker-pool smoke: bundled into smoke-worker.mjs, embedded, and dispatched
+// by `--smoke-worker` through the image pool's own eval-worker mechanism.
+// The flag pulls the config-validated server graph, so it needs the full server
+// configuration — validates, never connects.
 
 import { parentPort, Worker, workerData } from 'node:worker_threads'
 import sharp from 'sharp'

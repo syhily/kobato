@@ -1,13 +1,9 @@
 import type { EditorThemeClasses, Klass, LexicalEditor, LexicalNode } from 'lexical'
 
-// Minimal structural view of Lexical editor internals. Verified against Lexical 0.53
-// (node_modules/lexical/dist/LexicalEditor.d.ts). Public alternatives checked:
-// - editor.isEditable() exists for editability, but no public parent-editor accessor.
-// - hasNode/hasNodes/getRegisteredNode exist, but require already knowing the class;
-//   there is no public way to enumerate the complete registered node map.
-// - There is no public "update in progress" flag.
-// - EditorThemeClasses is public, but the theme config object that owns it is not.
-// Keep every private access here so a Lexical upgrade touches exactly one place.
+// Minimal structural view of Lexical editor internals. Public alternatives do not cover
+// the complete registered node map, the parent-editor chain, the theme config object, or
+// an "update in progress" flag. Keep every private access here so a Lexical upgrade
+// touches exactly one place.
 type InklingLexicalEditorInternals = LexicalEditor & {
   _config: { theme: EditorThemeClasses }
   _nodes: Map<string, { klass: Klass<LexicalNode> }>

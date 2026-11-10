@@ -2,10 +2,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Cookie config drives every authenticated user's browser; even a quiet
-// regression (e.g. flipping `httpOnly` to false, dropping `sameSite`) would
-// silently widen the attack surface. We pin the source so any change is a
-// PR-visible diff.
+// Cookie config drives every authenticated user's browser: flipping `httpOnly` off or
+// dropping `sameSite` silently widens the attack surface, so the source is pinned here.
 const sessionFile = resolve(process.cwd(), 'src/server/domains/auth/session-storage.ts')
 const source = readFileSync(sessionFile, 'utf8')
 

@@ -6,23 +6,18 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('analytics.geoip-scheduler')
 
-// Daily GeoIP update check at 05:30 site time. The domain owns only the
-// policy (enable gate + next-fire computation); timer mechanics live in
-// the shared `scheduleJob` seam, and the job registry owns boot start-up.
-
 registerJob({
   name: 'analytics.geoip-scheduler',
   task: { key: 'geoip-update', recordHistory: true },
   nextDelayMs: () => {
     const bundle = getBlogSettingsBundleSync()
     if (!bundle) {
-      // Settings not hydrated yet (boot-time race) — suspend; the seam re-evaluates.
       log.warn('Settings not hydrated; GeoIP auto-update suspended')
       return null
     }
     if (!bundle.analytics?.analytics.geoipAutoUpdate) {
-      // Suspended — the seam re-evaluates periodically, so a toggle
-      // takes effect without an explicit reschedule.
+      // Returning null suspends the job; the seam re-evaluates periodically,
+      // so a settings toggle takes effect without an explicit reschedule.
       return null
     }
     const timeZone = bundle.siteIdentity?.timeZone ?? 'UTC'

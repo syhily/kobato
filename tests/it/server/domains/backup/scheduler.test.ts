@@ -71,8 +71,7 @@ describe('backup scheduler', () => {
   it('never runs the backup while settings are not hydrated', async () => {
     setBlogSettingsBundleForTests(undefined)
     scheduleRegisteredJob('backup.scheduler')
-    // Suspended: only the re-evaluation retry arms — a numeric delay here
-    // used to fire a real backup on every tick (the runaway-backup bug).
+    // Suspended: only the re-evaluation retry arms — a backup fire on this tick is a bug.
     await vi.advanceTimersByTimeAsync(10 * 60_000)
     expect(createBackup).not.toHaveBeenCalled()
   })
@@ -80,7 +79,6 @@ describe('backup scheduler', () => {
   it('never runs the backup when scheduled backup is disabled', async () => {
     setBlogSettingsBundleForTests(bundleWith({ scheduled: { enabled: false }, retention: { enabled: false } }))
     scheduleRegisteredJob('backup.scheduler')
-    // Only the re-evaluation retry arms — the backup job itself never fires.
     await vi.advanceTimersByTimeAsync(10 * 60_000)
     expect(createBackup).not.toHaveBeenCalled()
   })

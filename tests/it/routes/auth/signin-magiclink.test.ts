@@ -79,7 +79,6 @@ beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
   setBlogSettingsBundleForTests(MAGIC_LINK_TEST_BUNDLE)
   await clearAllTables(db)
-  // The real install gate needs an installed deployment: seed one admin.
   await seedGateAdmin()
   __resetRateLimitsForTests()
   testSession = makeSession({})

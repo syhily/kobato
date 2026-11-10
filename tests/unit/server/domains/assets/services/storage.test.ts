@@ -12,9 +12,8 @@ import {
 } from '@/server/domains/assets/services/storage'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// Tests substitute the registry's 's3' backend with the shared in-memory
-// one and assert observable state, never S3 internals; spies only inject
-// failures the store cannot produce.
+// The registry's 's3' backend is swapped for the shared in-memory one; spies only inject
+// failures the store cannot produce, and assertions stay on observable state.
 const mem = makeMemoryBackend()
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -135,7 +134,6 @@ describe('assets storage', () => {
     })
 
     expect(buffer).toBe(pngHeader)
-    // Migration: bytes copied to the current key, legacy object deleted.
     expect(mem.putKeys).toEqual(['branding/icon-192.png'])
     expect(mem.store.get('branding/icon-192.png')?.body).toBe(pngHeader)
     expect(mem.deletedKeys).toEqual(['branding/icon-192'])

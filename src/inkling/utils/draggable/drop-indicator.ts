@@ -2,22 +2,17 @@ import type { DroppablePosition } from '@/inkling/utils/draggable/DragDropContai
 
 import { DROP_INDICATOR_DATA_ATTR, DROP_INDICATOR_ZINDEX } from '@/inkling/utils/draggable/draggable-constants'
 
-// The drop indicator: the green line marking where a dragged element would
-// land, extracted from DragDropHandler so the handler only orchestrates
-// show/hide and no longer knows any offset math. Everything DOM-measured sits
-// behind the DropIndicatorGeometry seam (the ReorderGeometry pattern from
-// reorder-rules.ts), so the offset math is unit-testable without layout.
+// The drop indicator: the green line marking where a dragged element would land; offset
+// math sits behind the DropIndicatorGeometry seam.
 
-// how long the indicator waits for its transform transition to (almost)
-// finish before re-positioning and re-showing
+// lets the transform transition (almost) finish before re-positioning and re-showing
 const REPOSITION_DELAY_MS = 150
 // +-1px no-move tolerance: droppables sit on sub-pixel positions
 const SUBPIXEL_TOLERANCE_PX = 1
 
 /**
- * Geometry seam for the indicator: the offset reads the position math needs.
- * The default implementation (createDropIndicatorGeometry) performs the live
- * DOM reads; tests inject fakes.
+ * Geometry seam for the indicator: the offset reads the position math needs. The default
+ * implementation performs the live DOM reads; tests inject fakes.
  */
 export interface DropIndicatorGeometry {
   /** Offset box of the droppable the indicator aligns to (offsetTop/offsetLeft/offsetWidth/offsetHeight). */
@@ -60,15 +55,14 @@ export class DropIndicator {
     this._geometry = geometry ?? createDropIndicatorGeometry()
   }
 
-  // the indicator element belongs to this DropIndicator — created here, never
-  // adopted by global id, so two editors on one page each show their own. We
-  // append to the editor's element rather than body, so it is re-appended
-  // when the container's subtree was rebuilt since the last drag
+  // Owned by this DropIndicator — created here, never adopted by global id — so two editors
+  // on one page each show their own. Appended to the editor's element rather than body so
+  // it survives a rebuilt container subtree.
   attach() {
     if (!this.element) {
       const element = document.createElement('div')
       element.dataset[DROP_INDICATOR_DATA_ATTR] = 'true'
-      // "rounded-full bg-green" kept as classes so Tailwind picks up usage
+      // classes (not inline styles) so Tailwind sees the usage
       element.className = 'rounded-full bg-green'
       element.style.position = 'absolute'
       element.style.opacity = '0'
@@ -84,15 +78,14 @@ export class DropIndicator {
     }
   }
 
-  // position the indicator relative to a droppable: just above its top edge
-  // for top-* positions, just below its bottom edge for bottom-* positions
+  // Just above the droppable's top edge for top-* positions, just below its bottom edge for
+  // bottom-* positions.
   show(droppable: HTMLElement, position: DroppablePosition) {
     const element = this.element
     if (!element) {
       return
     }
 
-    // reset the display before re-showing
     this.hide()
 
     const parent = element.parentElement
@@ -111,10 +104,8 @@ export class DropIndicator {
     const newLeft = box.left - parentPosition.left
     const newTop = (position.startsWith('top') ? box.top - 2 : box.top + box.height - 2) - parentPosition.top
 
-    // if the indicator hasn't moved, keep it showing, otherwise wait for
-    // the transform transitions to almost finish before re-positioning
-    // and showing
-    // NOTE: +- 1px is due to sub-pixel positioning of droppables
+    // An unmoved indicator keeps showing; a moved one waits out the transition before
+    // re-positioning and showing.
     if (
       newTop >= lastTop - SUBPIXEL_TOLERANCE_PX &&
       newTop <= lastTop + SUBPIXEL_TOLERANCE_PX &&
@@ -135,10 +126,10 @@ export class DropIndicator {
     }
   }
 
-  // purely visual: the drop resolution this indicator's show() reflected is
-  // owned and cleared by the handler's drag state, never by this module
+  // Purely visual: drop resolution state is owned and cleared by the handler's drag state,
+  // never by this module.
   hide() {
-    // make sure the indicator isn't shown due to a pending re-position
+    // a pending re-position would re-show the indicator
     if (this._repositionTimeout) {
       clearTimeout(this._repositionTimeout)
       this._repositionTimeout = null

@@ -20,11 +20,9 @@ export const fileDeclaration = checkedCardDeclaration({
       shortcut: '/file',
     },
   ],
-  // presence is the opt-in — no flags
   insert: {},
   uploadType: 'file',
-  // diverges from the node type: the toolbar label is a live e2e selector
-  // contract ("file-upload"), not a transform of "file"
+  // Live e2e selector contract ("file-upload"), deliberately not a transform of "file"
   toolbarLabel: 'file-upload',
   markdown: { kind: 'fence' },
 } satisfies CardDeclaration<'file', typeof BaseFileNode, typeof fileTransientProps, readonly []>)

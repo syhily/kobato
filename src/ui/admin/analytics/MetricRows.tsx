@@ -5,11 +5,8 @@ import { MetricName } from '@/ui/admin/analytics/MetricName'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Pure row list shared by the group card (top 10) and the details dialog
-// (full set): name + count(percent) + a chart-1 progress bar, modeled on
-// Slite's `metrics/List.vue`. `total` is the caller-computed FULL-set visit
-// sum, so the card's sliced top-10 rows still show shares of the whole
-// result. Clicking a non-empty row pushes it as a filter.
+// `total` is the caller-computed FULL-set visit sum, so the card's sliced
+// top-10 rows still show shares of the whole result.
 
 export interface MetricRowsProps {
   rows: MetricRow[]

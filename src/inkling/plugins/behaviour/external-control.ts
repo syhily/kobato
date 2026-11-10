@@ -5,18 +5,14 @@ import { $createParagraphNode, $getRoot, $isDecoratorNode, $isElementNode } from
 import { $selectCard } from '@/inkling/plugins/behaviour/card-adjacency'
 
 // External control — the headless host-facing control surgeries behind
-// ExternalControlPlugin: focusing the editor at a document end (with the
-// decorator-node selection dance Lexical does not do itself), inserting a
-// paragraph at either document end, and the last-node-is-decorator read.
-// The plugin keeps only API assembly; hosts driving the editor headlessly
-// (tests, server-side flows) can call these without a React mount.
+// ExternalControlPlugin (which keeps only API assembly), so hosts can drive
+// the editor without a React mount.
 
 /**
  * Focuses the editor at a document end. Lexical does not automatically
  * select a decorator node, so when the end child is a card it goes through
  * $selectCard's 'always' focus repair (a node selection has no caret to
- * focus); otherwise the end child selects itself (bottom) or Lexical's
- * rootStart default applies (top).
+ * focus).
  */
 export function focusEditorAt(
   editor: LexicalEditor,
@@ -51,9 +47,6 @@ export function focusEditorAt(
   })
 }
 
-/**
- * Inserts a paragraph at a document end, optionally selecting its start.
- */
 export function insertParagraphAt(
   editor: LexicalEditor,
   position: 'top' | 'bottom',
@@ -79,9 +72,6 @@ export function insertParagraphAt(
   })
 }
 
-/**
- * Whether the document's last top-level node is a decorator (a card).
- */
 export function lastNodeIsDecorator(editor: LexicalEditor): boolean {
   return editor.getEditorState().read(() => {
     const lastNode = $getRoot().getLastChild()

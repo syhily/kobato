@@ -113,7 +113,7 @@ export async function findMusicById(db: Database, id: number): Promise<MusicRow 
   return rows[0] ?? null
 }
 
-/** Public lookup by the `playerId` stored in `musicPlayer` PortableText blocks; skips soft-deleted rows. */
+/** Public lookup by the `playerId` stored in `musicPlayer` editor blocks; skips soft-deleted rows. */
 export async function findMusicByPlayerId(db: Database, playerId: string): Promise<MusicRow | null> {
   const rows = await db
     .select()
@@ -123,7 +123,7 @@ export async function findMusicByPlayerId(db: Database, playerId: string): Promi
   return rows[0] ?? null
 }
 
-/** Idempotency helper for the historical-import path. */
+/** Idempotency lookup on `(source, sourceId)` — the add path's dedup key. */
 export async function findMusicBySourceAndId(db: Database, source: string, sourceId: string): Promise<MusicRow | null> {
   const rows = await db
     .select()

@@ -18,12 +18,11 @@ interface ActiveDragOptions {
   listeners: ActiveDragListeners
 }
 
-// Everything a single in-flight drag owns, created in
-// DragDropHandler._initiateDrag and disposed in _resetDrag. Per-drag concerns
-// live here as fields with disposal in dispose() — construction/destruction
-// instead of a field-nulling checklist, so a new per-drag concern is added in
-// one place. The drag's document listeners (move/release/escape) are
-// registered on construction and removed on dispose, guaranteed paired
+/**
+ * Everything a single in-flight drag owns, created in DragDropHandler._initiateDrag and
+ * disposed in _resetDrag. Per-drag concerns are fields with disposal in dispose(); the
+ * document listeners are registered on construction and removed on dispose, always paired.
+ */
 export class ActiveDrag {
   draggableInfo: DraggableInfo
   overContainer: DragDropContainer | null = null
@@ -31,10 +30,9 @@ export class ActiveDrag {
   overDroppableElem: HTMLElement | null = null
   overDroppablePosition: DroppablePosition | null = null
   dragPreviewInfo: (DragPreview & { positionX: number; positionY: number }) | null = null
-  // the getIndicatorPosition answer current for the hovered droppable —
-  // written and cleared only by DragDropHandler._handleDrag, passed to the
-  // drop target's onDrop at mouse-up. Null between drags by construction:
-  // it dies with the ActiveDrag it rides on
+  // The getIndicatorPosition answer current for the hovered droppable, written and cleared
+  // only by DragDropHandler._handleDrag and passed to the drop target's onDrop at mouse-up.
+  // Null between drags by construction: it dies with the ActiveDrag it rides on.
   dropResolution: DropResolution | null = null
 
   private detachListeners: (() => void)[] = []
@@ -66,8 +64,7 @@ export class ActiveDrag {
     options?: AddEventListenerOptions,
   ) {
     document.addEventListener(type, handler, options)
-    // removal matches the handler's historical 2-arg form (no listener uses
-    // capture, so options are not needed to detach)
+    // no listener uses capture, so options are not needed to detach
     this.detachListeners.push(() => {
       document.removeEventListener(type, handler)
     })

@@ -27,12 +27,11 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
   const { searchLinks } = useInklingLinkingSettings()
   const labels = useInklingLabels()
 
-  // store the href/query in state so we can update it without affecting the saved editor value
+  // href/query live in local state so typing never touches the saved editor value
   const [_href, setHref] = React.useState<string | undefined>(href)
   const searchEnabled = typeof searchLinks === 'function'
   const { isSearching, listOptions } = useSearchLinks(_href || '', searchEnabled ? searchLinks : undefined)
 
-  // add refs for input and container
   const inputRef = useRef<HTMLInputElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
@@ -47,12 +46,10 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
     setHref(href)
   }
 
-  // when link is open, focus the input
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
 
-  // close link input when clicking outside or pressing escape
   useClickOutside(true, containerRef, () => cancel())
   useLinkDropdownEscape(cancel)
 
@@ -95,15 +92,13 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
       value={_href}
       data-inkling-link-input
       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-        // update local value to allow searching
         setHref(e.target.value)
       }}
       onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-          // prevent Enter from triggering in the editor and removing text
-          // update the link value in the editor. Read the live input value so
-          // the last keystroke is always captured even if React state updates
-          // are slightly behind the native input value.
+          // prevent Enter from triggering in the editor and removing text.
+          // Read the live input value so the last keystroke is always captured
+          // even if React state updates lag the native value.
           e.preventDefault()
           update(e.currentTarget.value || '')
         }
@@ -123,10 +118,9 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
       }}
       onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-          // prevent Enter from triggering in the editor and removing text
-          // update the link value in the editor. Read the live input value so
-          // the last keystroke is always captured even if React state updates
-          // are slightly behind the native input value.
+          // prevent Enter from triggering in the editor and removing text.
+          // Read the live input value so the last keystroke is always captured
+          // even if React state updates lag the native value.
           e.preventDefault()
           update(e.currentTarget.value || '')
         }

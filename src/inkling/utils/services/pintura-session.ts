@@ -1,24 +1,11 @@
 /**
- * The Pintura session — the one headless module owning the editor's
- * third-party lifecycle (the last integration not behind a seam; emoji,
- * FastAverageColor, gif, and yjs all have one). Three pieces:
- *
- * - the asset loader (`createPinturaAssetLoader`): the dynamic import +
- *   CSS link choreography behind DOM ports, composed from the
- *   tracked-request skeleton (src/utils/services/service-machine.ts) over
- *   the request-track guard so a `jsUrl` change mid-load never lets the
- *   stale import flip the flag for the new URL (the CSS line is
- *   callback-driven, not a promise — it keeps the explicit guard);
- * - `buildPinturaOptions`: the options table (frame options, crop presets,
- *   the locale-merge precedence "labels first, host locale on top") as pure
- *   data + policy;
- * - the close gate (`createPinturaCloseGate`): the allow-close state and
- *   the Pintura-DOM knowledge (`.PinturaModal button[title="Close"]`)
- *   behind a listener port.
- *
- * `usePinturaEditor` is the thin adapter. Note `resolvePinturaImportUrl` /
- * `bustImageCache` take a base URL so RELATIVE srcs resolve instead of
- * throwing (the pre-seam code crashed on them).
+ * The Pintura session — the headless module owning the editor's third-party image-editor
+ * lifecycle: the asset loader (dynamic import + CSS link choreography behind DOM ports, on
+ * the tracked-request guard so a jsUrl change mid-load never lets the stale import flip the
+ * flag for the new URL; the CSS line is callback-driven, not a promise, and keeps the
+ * explicit guard), `buildPinturaOptions`, and the close gate. `usePinturaEditor` is the
+ * thin adapter. `resolvePinturaImportUrl` / `bustImageCache` take a base URL so RELATIVE
+ * srcs resolve instead of throwing.
  */
 
 import { createRequestTrack } from '@/inkling/utils/services/request-track'
@@ -27,8 +14,7 @@ import { createSnapshotStore } from '@/inkling/utils/services/snapshot-store'
 
 /**
  * Strips query/hash for the module import. A relative jsUrl resolves
- * against `baseUrl` (the adapter passes window.location.href) — previously
- * an uncaught throw.
+ * against `baseUrl` (the adapter passes window.location.href).
  */
 export function resolvePinturaImportUrl(jsUrl: string, baseUrl?: string): string {
   const url = baseUrl ? new URL(jsUrl, baseUrl) : new URL(jsUrl)
@@ -213,7 +199,7 @@ export function buildPinturaOptions({
       // A single line frame
       ['lineSingle', (locale: { frameLabelLineSingle: string }) => locale.frameLabelLineSingle],
 
-      // A frame with cornenr hooks
+      // A frame with corner hooks
       ['hook', (locale: { frameLabelCornerHooks: string }) => locale.frameLabelCornerHooks],
 
       // A polaroid frame
@@ -238,8 +224,6 @@ export function buildPinturaOptions({
     ],
     locale: {
       labelButtonExport: labels.exportButton,
-      // the host's pinturaConfig.locale patches any Pintura string on top of
-      // the labels table (higher priority)
       ...hostLocale,
     },
     previewPad: true,

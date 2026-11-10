@@ -9,8 +9,7 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 // The whole-card commit is a SPARSE diff against the last acknowledged
 // baseline: /admin/settings cards share their section with sibling cards and
 // with other open tabs, so re-sending an untouched owned field would write this
-// tab's stale copy over a value someone else has since changed (the General
-// timezone card used to drag the site locale along with a timezone edit).
+// tab's stale copy over a value someone else has since changed.
 
 const commit = vi.hoisted(() => vi.fn())
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))

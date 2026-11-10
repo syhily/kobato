@@ -35,9 +35,7 @@ import { DomainError } from '@/server/infra/http/errors'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales'
 
-// ---------------------------------------------------------------------------
 // DTO mapping
-// ---------------------------------------------------------------------------
 
 // The inbox row renders a two-line preview; the detail pane reads the full
 // body from the thread query. Capping keeps the list wire small.
@@ -71,9 +69,7 @@ function senderDtosByIds(db: Database, senderIds: Iterable<number>): Map<number,
   return new Map([...names].map(([id, name]) => [id, { id: String(id), name }]))
 }
 
-// ---------------------------------------------------------------------------
 // Producers (system + admin)
-// ---------------------------------------------------------------------------
 
 function createAndFanOut(
   db: Database,
@@ -139,8 +135,8 @@ export function sendDirectMessage(
 
 /**
  * Admin → all users; the ONLY replyable broadcast flavor. The author gets a
- * self-row, pre-marked read (ADR-0007): recall needs the author to see their
- * own broadcast, and it makes the inbox the single surface for "what did I
+ * self-row, pre-marked read: recall needs the author to see their own
+ * broadcast, and it makes the inbox the single surface for "what did I
  * send". The empty-audience gate still counts OTHER users — a single-admin
  * site cannot send an announcement nobody would receive.
  */
@@ -170,7 +166,7 @@ export interface RecalledMessage {
 }
 
 /**
- * Recall an announcement or a system alert (ADR-0007). `direct` messages are
+ * Recall an announcement or a system alert. `direct` messages are
  * deliberately NOT recallable — private threads between people stay honest.
  * Idempotent: a second call returns the existing state without re-stamping.
  */
@@ -194,9 +190,7 @@ export function recallMessage(db: Database, id: number): RecalledMessage {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Inbox reads
-// ---------------------------------------------------------------------------
 
 export interface InboxPage {
   items: NotificationDto[]
@@ -254,9 +248,7 @@ export function markUnread(db: Database, userId: number, ids: readonly number[])
   return markNotificationsUnread(db, userId, ids)
 }
 
-// ---------------------------------------------------------------------------
 // Threads & replies
-// ---------------------------------------------------------------------------
 
 async function loadThread(db: Database, threadId: number): Promise<NotificationRow[]> {
   const messages = await listThreadNotifications(db, threadId)
@@ -277,8 +269,8 @@ function assertParticipant(db: Database, threadId: number, userId: number): void
  * always answerable. A broadcast root can only be answered by a NON-ADMIN
  * recipient (system broadcasts ride senderId NULL and can never be
  * answered) — admins answer inside the forked per-replier threads instead.
- * A recalled root accepts no NEW replies (ADR-0007) — defense in depth
- * behind the hidden UI entry; existing forks stay answerable.
+ * A recalled root accepts no NEW replies — defense in depth behind the
+ * hidden UI entry; existing forks stay answerable.
  */
 function canReplyInThread(root: NotificationRow, viewer: SessionUser): boolean {
   if (root.recalledAt !== null) {
@@ -305,7 +297,7 @@ export async function getThread(
   const messages = await loadThread(db, threadId)
   const root = messages[0]!
   // A recalled thread answers exactly like a missing one — existence is not
-  // leaked to recipients, admins, or outsiders (ADR-0007).
+  // leaked to recipients, admins, or outsiders.
   if (root.recalledAt !== null) {
     throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
@@ -362,7 +354,7 @@ export async function replyToThread(
       { readRecipientIds: [userId] },
     )
     // The replier's own pre-read row gets no mail; the admins receiving the
-    // fork do (ADR-0008 — the fork is the admin-facing half of a reply).
+    // fork do — the fork is the admin-facing half of a reply.
     queueNotificationEmail(db, row, recipients)
     return {
       message: {

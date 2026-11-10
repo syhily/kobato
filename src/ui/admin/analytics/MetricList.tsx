@@ -14,11 +14,6 @@ import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
-// Self-fetching top-N panel for one metric dimension (Slite's
-// `metrics/Metric.vue`): top 10 rows in the card, the full 500-row set
-// behind the details dialog; percent shares are computed over the full set.
-// Row clicks push a per-dimension filter through the URL state.
-
 export interface MetricListProps {
   type: MetricType
   title: string

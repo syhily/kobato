@@ -7,8 +7,7 @@ import { isInMemoryPath, resolveDatabasePath } from '@/server/infra/db/database'
 // storage__database/storage__analyticsDatabase=:memory:).
 describe('storage path resolvers', () => {
   it('passes :memory: through instead of resolving it to a cwd file', () => {
-    // Regression: resolveAnalyticsPath used to run path.resolve on the
-    // sentinel, silently yielding `<cwd>/:memory:`.
+    // `:memory:` must stay a literal sentinel — path.resolve would yield `<cwd>/:memory:`.
     expect(resolveDatabasePath()).toBe(':memory:')
     expect(resolveAnalyticsPath()).toBe(':memory:')
   })

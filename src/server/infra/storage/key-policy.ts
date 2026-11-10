@@ -1,11 +1,9 @@
 import path from 'node:path'
 
 /**
- * Single owner of storage key policy: extension → Content-Type and
- * key-prefix → cache visibility. The serving routes (`/storage/*`,
- * `/fonts/embedded/*`), the S3 adapter's header defaults, and the
- * migration's source-without-headers fallback all read from here — before
- * this module each kept a private copy and the maps had already drifted.
+ * Single owner of storage key policy: extension → Content-Type and key-prefix →
+ * cache visibility. The serving routes (`/storage/*`, `/fonts/embedded/*`), the S3
+ * adapter's header defaults, and the migration's header-less fallback read from here.
  */
 
 /** Cache-visibility class of a stored object: `public` assets are CDN-cacheable. */
@@ -14,8 +12,8 @@ export type ObjectVisibility = 'public' | 'private'
 export const DEFAULT_PUBLIC_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 export const DEFAULT_PRIVATE_CACHE_CONTROL = 'private, max-age=31536000'
 
-// Objects under these prefixes were always private-cache uploads (DB dumps,
-// branding originals, audit-log archives); everything else is public.
+// Objects under these prefixes are private (DB dumps, branding originals,
+// audit-log archives); everything else is public.
 const PRIVATE_KEY_PREFIXES = ['backup/', 'branding/', 'audit-log/']
 
 /** Key → visibility: the prefix rule upload callers and the migration fallback share. */

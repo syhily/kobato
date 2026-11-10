@@ -10,8 +10,8 @@ import { useI18n } from '@/ui/lib/I18nProvider'
 
 export const meta = titleMeta('meta.title.admin.analytics')
 
-// Intentionally thin — the date-range picker + filters live on the child
-// routes so the realtime feed isn't forced to react to range changes.
+// Intentionally thin: the date-range picker and filters live on the child routes, so the realtime feed isn't
+// forced to react to range changes.
 export const loader = guardOnlyLoader('admin')
 
 const SUBNAV: readonly { to: string; labelId: UiMessageId; icon: typeof ChartLineIcon; end: boolean }[] = [

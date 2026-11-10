@@ -59,9 +59,8 @@ describe('requestContextMiddleware', () => {
     return { app, session, user, ensureCsrfToken, commitSessionWithMaxAge, getClientAddress }
   }
 
-  // The persisted-session contract: the request carries the signed
-  // `__session` cookie, so the middleware keeps minting/reusing the
-  // session-persisted token exactly as before.
+  // The persisted-session contract: the signed `__session` cookie makes the middleware
+  // mint/reuse the session-persisted token.
   const sessionCookie = { Cookie: '__session=test-session' }
 
   it('sets c.var.requestContext with the derived fields', async () => {
@@ -136,9 +135,9 @@ describe('requestContextMiddleware', () => {
     expect(res.headers.get('Set-Cookie')).toBe('__session=abc')
   })
 
-  // V3-09: node-server can report an undefined socket.remoteAddress (e.g.
-  // behind a TCP reverse proxy) while remotePort is still known — key the
-  // direct peer on `port:<n>` so rate limits stay per connection.
+  // node-server can report an undefined socket.remoteAddress (e.g. behind a TCP reverse
+  // proxy) while remotePort is known — key the direct peer on `port:<n>` so rate limits
+  // stay per connection.
   it('keys the direct peer on the socket port when remoteAddress is unavailable', async () => {
     const { app, getClientAddress } = await buildApp()
     app.get('/', (c) => c.json({ ok: true }))
@@ -195,9 +194,8 @@ describe('requestContextMiddleware', () => {
     expect(res.headers.getSetCookie()).toEqual(['visitor=xyz', '__session=abc'])
   })
 
-  // Anonymous (cookieless) requests — P1-4: a bot flood of anonymous GETs
-  // must not write one session row per request — the token is derived
-  // statelessly from the `__csrf` cookie; nothing touches the session table.
+  // Anonymous (cookieless) requests: a bot flood of anonymous GETs must not write one
+  // session row per request, so the token derives statelessly from the `__csrf` cookie.
 
   it('anonymous GET: no session write, no __session cookie, token derived from a minted __csrf cookie', async () => {
     const { app, session, ensureCsrfToken, commitSessionWithMaxAge } = await buildApp()
@@ -231,8 +229,7 @@ describe('requestContextMiddleware', () => {
     expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
     expect(ensureCsrfToken).not.toHaveBeenCalled()
     expect(res.headers.getSetCookie()).toEqual([])
-    // No token anywhere — the CSRF guard rejects this request downstream,
-    // same as a tokenless bot POST before the change.
+    // No token anywhere — the CSRF guard rejects this request downstream.
     expect(session.get('csrfToken')).toBeUndefined()
   })
 

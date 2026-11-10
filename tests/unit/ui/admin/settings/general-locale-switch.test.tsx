@@ -11,7 +11,7 @@ import { GeneralForm } from '@/ui/admin/settings/GeneralForm'
 import { SettingsFlushProvider } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { SettingsPanel } from '@/ui/admin/settings/shell/SettingsPanel'
 
-// Step 6a — the locale switch contract, exercised through the REAL GeneralForm
+// The locale switch contract, exercised through the REAL GeneralForm
 // cards + flush provider: dirty cards first, then the locale field, then one
 // reload — and nothing at all when any step fails.
 

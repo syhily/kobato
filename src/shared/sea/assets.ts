@@ -9,7 +9,13 @@
  */
 export const SEA_MANIFEST_KEY = 'manifest.json'
 
-/** Codec of an embedded asset, recorded in the manifest per file. zstd is the only pack codec the build emits — and only for `natives/*` payloads (`shouldPackAsset`); 'none' = raw bytes, which under `useVfs` is every VFS-read asset (client/, drizzle/, wasm/, worker/, natives-meta/) plus the manifest itself; missing codec = 'none'. */
+/**
+ * Codec of an embedded asset, recorded per file in the manifest. `zstd` is the
+ * only pack codec the build emits and only for `natives/*` payloads
+ * (`shouldPackAsset`); `none` is raw bytes, which under `useVfs` is every
+ * VFS-read asset (client/, drizzle/, wasm/, worker/, natives-meta/) plus the
+ * manifest itself. A missing codec means `none`.
+ */
 export type SeaAssetCodec = 'zstd' | 'none'
 
 /** Key of the bundled image worker, embedded as text and started via `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`. */

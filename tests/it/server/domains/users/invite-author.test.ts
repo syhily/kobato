@@ -15,8 +15,8 @@ vi.mock('@/server/infra/email/sender', () => ({
 
 // issueSetupToken is wrapped so tests can make it throw mid-transaction; defaults to the real implementation.
 // The factory is async (importOriginal): db-lifecycle's scheduler wiring pulls the real
-// verification-tokens module into this file's static import graph, so the factory can
-// fire before any top-level `await vi.importActual` in the file body would run (TDZ).
+// verification-tokens module into this file's static import graph, so a top-level
+// `await vi.importActual` in the file body would fire too late (TDZ).
 const setupTokenMocks = vi.hoisted(() => ({
   issueSetupToken: vi.fn(),
   realIssueSetupToken:
@@ -116,7 +116,7 @@ describe('integration / inviteAuthorWithRollback', () => {
     expect(existing).not.toBeNull()
     const tokensBefore = await countSetupTokensFor(existing!.id)
 
-    // Second invitation: CONFLICT — no second user row, no second token.
+    // Second invitation: CONFLICT.
     await expect(
       inviteAuthorWithRollback(db, 'Second Author', 'dup@example.com', 'https://blog.example.com', 'Admin'),
     ).rejects.toMatchObject({ descriptor: { messageKey: 'users.error.emailTaken' } })

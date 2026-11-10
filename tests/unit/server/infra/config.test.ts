@@ -169,7 +169,8 @@ describe('infra/config — loadConfig', () => {
   it('rejects a config file whose comma-joined sessionSecrets are individually under 32 chars', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    // 20+20: the joined string clears min(32), each secret does not — per-secret floor after the split (P1-17).
+    // 20+20: the joined string clears min(32) but each secret does not — the floor applies
+    // after the split.
     writeConfig(path, { security: { sessionSecret: `${'a'.repeat(20)},${'b'.repeat(20)}` } })
     withConfigArg(path)
 
@@ -234,7 +235,7 @@ describe('infra/config — loadConfig', () => {
     const path = configPathIn(dir)
     writeConfig(path, { storage: { database: '/from-file.db' } })
     withConfigArg(path)
-    // The pre-rename flat name must NOT take effect.
+    // The legacy flat name must NOT take effect.
     vi.stubEnv('DATABASE_URL', 'postgres://legacy-flat/db')
 
     expect(loadConfig()['storage.database']).toBe('/from-file.db')
@@ -243,7 +244,7 @@ describe('infra/config — loadConfig', () => {
   it('migrates legacy keys on load, rewrites the file, and keeps booting', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    // Pre-rename shape: old sections plus the redis block that era's auto-created files carried.
+    // Legacy shape: old sections plus a redis block.
     writeConfig(path, {
       database: { url: 'postgres://from-file/db' },
       auth: { sessionSecret: 'a-secret-that-is-at-least-32-characters-long' },
@@ -329,7 +330,8 @@ describe('infra/config — loadServerConfig', () => {
 
   it('rejects a sessionSecret list whose individual secrets are under 32 chars', () => {
     stubRequiredEnv()
-    // 20+20: the joined string clears min(32), each secret does not — validate after the split (P1-17).
+    // 20+20: the joined string clears min(32) but each secret does not — validate after
+    // the split.
     vi.stubEnv('security__sessionSecret', `${'a'.repeat(20)},${'b'.repeat(20)}`)
     const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
 

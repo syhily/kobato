@@ -52,9 +52,9 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// MusicsView's useState defaults (q '', createdAt desc, 24/page) are what
-// these snapshots assert; fetch hooks are stubbed via mock-react-query,
-// sonner is inert from setup.ts, orpcQuery builders run but never execute.
+// MusicsView's useState defaults (q '', createdAt desc, 24/page) are what these
+// snapshots assert; fetch hooks are stubbed via mock-react-query and sonner is inert
+// from setup.ts.
 
 // `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the machine state directly.
 const searchHookMock = vi.hoisted(() => ({

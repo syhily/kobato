@@ -1,24 +1,20 @@
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
-// Cache declaration registry — the metadata plane of the cache layer.
-// One declaration per cache bucket; every derived enumeration reads from
-// this table, so adding a cache never requires editing a second list. The
-// `id` is the stable directory name under `<storage.data>/cache`.
-//
-// Labels and key-shape descriptions are UI MESSAGE IDS, not copy: the admin
-// surface resolves them through its translator (`{prefix}` is the live bucket
-// prefix). The registry itself stays neutral so it can be imported from both
-// bundles without dragging a locale in.
+// Cache declaration registry: one declaration per bucket, and every derived
+// enumeration reads this table, so adding a cache never requires a second
+// list. `id` is the stable directory name under `<storage.data>/cache`.
+// Labels and key-shape descriptions are UI message ids, not copy — the admin
+// surface resolves them (`{prefix}` is the live bucket prefix) — so the
+// registry stays locale-free and importable from both bundles.
 export interface CacheDeclaration {
   /** Stable discriminator — also the cache directory name. */
   readonly id: string
-  /** Admin panel label message id. */
   readonly labelId: UiMessageId
-  /** Key-shape description message id, interpolated with `{ prefix }` at render time. */
+  /** Key-shape description, interpolated with `{ prefix }` at render time. */
   readonly descriptionId: UiMessageId
-  /** Prefix used until an admin renames it (tunable) or forever. */
+  /** Prefix used until an admin renames it (tunable only). */
   readonly defaultPrefix: string
-  /** TTL used until an admin tunes it (tunable) or forever. */
+  /** TTL used until an admin tunes it (tunable only). */
   readonly defaultTtlSeconds: number
   /** Whether the bucket owns a prefix + TTL settings slot. */
   readonly tunable: boolean
@@ -81,8 +77,8 @@ export const CACHE_DECLARATIONS = [
     defaultTtlSeconds: 300,
     tunable: false,
   },
-  // TTL matches feed/sitemap — a backstop only: content/taxonomy
-  // mutations clear these via `invalidateContent` (audit P1-24).
+  // TTL matches feed/sitemap — a backstop only: content/taxonomy mutations
+  // clear these via `invalidateContent`.
   {
     id: 'categories',
     labelId: 'admin.cache.categories.label',

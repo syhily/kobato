@@ -82,7 +82,6 @@ describe('TKPlugin', () => {
     editor = createTestEditor({ nodes: [TKNode, ExtendedTextNode], headless: false })
     mockComposerEditor(editor)
 
-    // Ensure getRootElement returns null
     editor.setRootElement(null)
 
     const cardValue = createCardContextValue()
@@ -162,9 +161,8 @@ describe('TKPlugin', () => {
     const cardValue = createCardContextValue()
     renderTKPlugin(handle, cardValue)
 
-    // the hook is mocked, so the honest assertion is on the plugin's call
-    // arguments; the matcher's offset behaviour itself is pinned by
-    // test/unit/plugins/behaviour/tk-matcher.test.ts
+    // The hook is mocked, so assert on the plugin's call arguments; the matcher's
+    // offset behaviour is pinned in behaviour/tk-matcher.test.ts.
     const [getMatch, targetNode, createNode, nodeType] = vi.mocked(useInklingTextEntity).mock.calls[0]
     expect(getMatch).toBe(getTKMatch)
     expect(targetNode).toBe(TKNode)
@@ -180,8 +178,8 @@ describe('TKPlugin', () => {
     const cardValue = createCardContextValue()
     renderTKPlugin(handle, cardValue)
 
-    // third call argument is the plugin's createTKNode closure — invoke it
-    // directly to pin what the plugin hands to the entity transform
+    // The third call argument is the plugin's createTKNode closure; invoke it
+    // directly to pin what the plugin hands to the entity transform.
     const [, , createTKNode] = vi.mocked(useInklingTextEntity).mock.calls[0]
 
     let isTKNode = false

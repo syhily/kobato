@@ -14,10 +14,9 @@ import {
 
 /**
  * The slash-menu table entry's command, created here in the behaviour layer
- * (the EDIT_MATH_INLINE_COMMAND precedent) rather than reusing upstream's
- * registerTablePlugin: the payload is numeric rows/columns with a
- * header-row-only default — a header row maps to first-row header cells
- * only, never a header column.
+ * rather than reusing upstream's registerTablePlugin: the payload is numeric
+ * rows/columns with a header-row-only default — a header row maps to
+ * first-row header cells only, never a header column.
  */
 export interface InsertTableDataset {
   rows?: number

@@ -50,7 +50,7 @@ export type SerializedGalleryNode = SerializedGeneratedDecoratorNode<DecoratorNo
 // here so the node shim, parser, and `@/inkling/nodes/base` importers keep working
 export { MAX_IMAGES, MAX_PER_ROW }
 
-// ensure we don't save client-side only properties such as preview blob urls to the server
+// keep client-side-only properties (e.g. preview blob urls) out of the persisted payload
 export const ALLOWED_IMAGE_PROPS = [
   'row',
   'src',
@@ -94,11 +94,11 @@ export class BaseGalleryNode extends generateDecoratorNode({
   }
 
   // Image-list mutation helpers the card spec doesn't cover live on the base
-  // node (plan 039, Batch 5): the registered card class is assembled from the
-  // declaration and inherits them; renderer surfaces never invoke them.
+  // node: the registered card class is assembled from the declaration and
+  // inherits them; renderer surfaces never invoke them.
   // TODO: move to inkling-default-nodes? — packaging decision about where
   // `setImages` lives (its view→node writes are mirrored through
-  // src/hooks/gallery-images-mirror.ts).
+  // @/inkling/hooks/gallery-images-mirror).
   setImages(images: GalleryImage[]) {
     const datasetImages = images.slice(0, MAX_IMAGES).map((image) => pick(image, ALLOWED_IMAGE_PROPS))
 

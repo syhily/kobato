@@ -36,7 +36,6 @@ export function handlePlainTextPaste(
       }
     }
 
-    // we're pasting a URL, convert it to an embed/bookmark/link
     event.preventDefault()
     editor.dispatchCommand(PASTE_LINK_COMMAND, { linkMatch })
 

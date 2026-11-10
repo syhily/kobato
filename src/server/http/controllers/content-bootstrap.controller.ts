@@ -54,12 +54,11 @@ export const contentBootstrap = publicProc
     // root layout and the editor composer must never value-import the catalog
     // module (that is what would pull all four locales into the browser). The
     // scope comes from the document pathname: public pages get the allowlisted
-    // public namespaces, workspace pages the complete catalog.
-    //
-    // The Inkling label table is EDITOR chrome: only a signed-in workspace
-    // document gets it. `/admin/signin` + `/admin/setup` need the full catalog
-    // (auth copy) but have no editor and no session yet, and public documents
-    // load the active locale's chunk on demand.
+    // public namespaces, workspace pages the complete catalog. The Inkling
+    // label table is EDITOR chrome: only a signed-in workspace document gets
+    // it. `/admin/signin` + `/admin/setup` need the full catalog (auth copy)
+    // but have no editor and no session yet, and public documents load the
+    // active locale's chunk on demand.
     const { locale, revision } = context.localization
     const scope = catalogScopeForPathname(context.requestFacts.path)
     const i18n = {

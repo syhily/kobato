@@ -1,4 +1,4 @@
-// Unit tests for the image-library pick on the pick seam (landing-4):
+// Unit tests for the image-library pick on the pick seam:
 // `registerCardPicker('image', …)` opens `ImageLibraryPicker` for the fresh
 // empty KobatoImageNode (the override inserts it with `openPicker`), and the
 // pick writes the full library dataset onto the node through the card write

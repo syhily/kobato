@@ -24,7 +24,7 @@ import trackEvent from '@/inkling/utils/analytics'
 
 // These specs attach a root element, so reconciliation calls decorate() —
 // the injection port is filled here (vi.mock hoisting keeps the mocks below
-// ahead of this import; see test/utils/test-editor.ts for the rationale).
+// ahead of this import; see tests/inkling/utils/test-editor.ts for the rationale).
 registerCardDecorateAdapter()
 
 vi.mock('@/inkling/utils/analytics', () => ({
@@ -61,8 +61,7 @@ function EditorComposerProvider({ editor, children }: { editor: LexicalEditor; c
   return <LexicalComposerContext.Provider value={value}>{children}</LexicalComposerContext.Provider>
 }
 
-// the store equivalent of the old per-test CardContext factory: the card is
-// selected and not editing unless a test says otherwise
+// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'bookmark-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},

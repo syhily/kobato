@@ -50,7 +50,7 @@ describe('rateLimitByIp middleware', () => {
     expect(__rateLimitKeysForTests()).toEqual(['rate-limit:feed:203.0.113.7'])
   })
 
-  // V3-09: bucket key must follow the `port:<n>` per-connection discriminator.
+  // Bucket key must follow the `port:<n>` per-connection discriminator.
   it('keys the bucket on the per-connection port when the peer IP is unknown', async () => {
     const res = await buildAppWithAddress('port:43210', 'feed', 'resource').request('/ping')
 

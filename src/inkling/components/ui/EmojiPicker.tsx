@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react'
 
 // the runtime instance is the picker's custom element, which also exposes an
 // update() method — emoji-mart ships dist/index.d.ts, but its types are `any`
-// throughout, so the instance shape we rely on is declared here
+// throughout, so the instance shape relied on is declared locally
 interface EmojiMartInstance extends HTMLElement {
   update: (props: EmojiMartPickerOptions) => void
 }
@@ -16,7 +16,7 @@ function isEmojiMartPickerConstructor(value: unknown): value is EmojiMartPickerC
   return typeof value === 'function'
 }
 
-// the options we pass through to emoji-mart's Picker, per
+// options passed through to emoji-mart's Picker, per
 // https://github.com/missive/emoji-mart#options--props — emoji-mart's own
 // types are `any` throughout, so these are declared here with no index
 // signature: a misspelled option fails typecheck instead of leaking silently
@@ -78,7 +78,7 @@ export default function EmojiPicker({
     return () => {
       setInstance(null)
     }
-    // We only do this for init
+    // init-only mount — mount-only deps are deliberate
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

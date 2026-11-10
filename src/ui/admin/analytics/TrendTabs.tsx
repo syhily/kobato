@@ -8,10 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// 趋势 | 每周趋势 tabs (Slite's `analysis/Index.vue`): the view switch is
-// URL-synced (?view=), and the heatmap tab exposes a visits/visitors Select
-// (?metric=) next to the tab list.
-
 const METRIC_OPTIONS: readonly HeatmapMetric[] = ['visits', 'visitors']
 
 export interface TrendTabsProps {

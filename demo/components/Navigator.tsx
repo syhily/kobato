@@ -10,7 +10,7 @@ declare global {
 const Navigator = () => {
   const navigate = useNavigate()
 
-  // Hack, used to allow Playwright to navigate without triggering a full page reload.
+  // Workaround: lets Playwright navigate without triggering a full page reload.
   useEffect(() => {
     window.navigate = navigate
   }, [navigate])

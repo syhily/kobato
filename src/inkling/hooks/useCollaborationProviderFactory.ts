@@ -5,14 +5,12 @@ import type { LexicalProviderFactory } from '@/inkling/context/InklingCollaborat
 import { createLazyProviderFactory } from '@/inkling/utils/services/lazy-collaboration'
 
 /**
- * The React adapter over the lazy-collaboration session
- * (src/utils/services/lazy-collaboration.ts): the provider factory for the
- * collaboration context — null while multiplayer is off or the chunk is
- * still loading (the caller serves the inert stub and keeps
- * CollaborationPlugin unmounted). The factory drops the moment multiplayer
- * is disabled — the adjust-state-during-render reset, not one effect tick
- * later — and a config change reloads the chunk without dropping the
- * already-loaded factory.
+ * The React adapter over the lazy-collaboration session: the provider factory for
+ * the collaboration context — null while multiplayer is off or the chunk is still
+ * loading (the caller serves the inert stub and keeps CollaborationPlugin
+ * unmounted). The factory drops the moment multiplayer is disabled (the
+ * adjust-state-during-render reset, not one effect tick later), and a config
+ * change reloads the chunk without dropping the already-loaded factory.
  */
 export function useCollaborationProviderFactory({
   enabled,

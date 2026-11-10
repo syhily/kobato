@@ -74,9 +74,8 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
 
   // rebuild the menu when the registered nodes, query, host config, or labels
   // change — buildCardMenu is pure, so the menu is computed during render (no
-  // empty first-render frame). The label resolver is the single injection
-  // point for labels (C7): declaration labelKeys resolve through the table,
-  // snippet/custom items render as declared.
+  // empty first-render frame). The label resolver is the single injection point
+  // for labels; declaration labelKeys resolve through the table.
   const cardMenu = React.useMemo<BuildCardMenuResult>(() => {
     const cardNodes = getEditorCardNodes(editor)
     // the table entry is a pseudo CardMenuSource (snippet precedent) — the
@@ -114,8 +113,7 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
         return
       }
 
-      // the trigger-paragraph swap is headless in card-menu-trigger; the
-      // hook keeps only the type-erased dispatch
+      // the trigger-paragraph swap is headless in card-menu-trigger
       editor.update(() => {
         $swapTriggerParagraph(dispatch)
       })

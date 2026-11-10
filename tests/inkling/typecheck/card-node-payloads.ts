@@ -16,7 +16,7 @@ declare const file: File
 declare const captionEditor: LexicalEditor
 declare const captionEditorInitialState: EditorState
 
-// --- positive cases ---------------------------------------------------------
+// Positive cases
 
 // file-upload card: transient `initialFile` alongside serialized fields
 const fileUploadPayload = { src: 'https://example.com/a.mp3', initialFile: file } satisfies AudioNodeDataset
@@ -37,7 +37,7 @@ editor.dispatchCommand(INSERT_HTML_COMMAND, plainDataPayload)
 // payload-less command
 editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)
 
-// --- negative cases ---------------------------------------------------------
+// Negative cases
 
 // @ts-expect-error - wrong primitive field type
 const wrongPrimitive = { src: 123 } satisfies AudioNodeDataset

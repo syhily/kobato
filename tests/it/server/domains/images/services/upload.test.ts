@@ -417,7 +417,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
   })
 })
 
-describe('checkImageUpload — declared-envelope validation (sunk from the controller)', () => {
+describe('checkImageUpload — declared-envelope validation', () => {
   // The controller raises the rejection as a localized ORPCError: 400 for a bad
   // declared type, 413 for an over-size envelope.
   it('rejects a declared MIME type outside the allowlist with BAD_REQUEST', () => {

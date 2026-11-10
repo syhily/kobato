@@ -14,13 +14,12 @@ import {
 } from '@duckdb/node-api'
 
 /**
- * `device_env_server` — the request-side half of ADR-0006's dual-track
- * environment analytics. One row per event, written by the enrich
- * pipeline in the same batch as the main row: the high-entropy UA Client
- * Hints (`Accept-CH` negotiated) plus the complete Accept-Language
- * preference list, which the main table's blob6 truncates to its first
- * token. First hits of a session arrive without hints, so the empty
- * strings are legitimate values, not missing writes.
+ * `device_env_server` — the request-side half of the environment analytics: one
+ * row per event, written by the enrich pipeline in the same batch as the main
+ * row. Holds the high-entropy UA Client Hints (`Accept-CH` negotiated) plus the
+ * complete Accept-Language list, which the main table's blob6 truncates to its
+ * first token. A session's first hits arrive without hints, so empty strings are
+ * legitimate values, not missing writes.
  */
 export const DEVICE_ENV_SERVER_DDL = `
 CREATE TABLE IF NOT EXISTS device_env_server (
@@ -40,12 +39,11 @@ CREATE TABLE IF NOT EXISTS device_env_server (
 `
 
 /**
- * `device_env_client` — the beacon-reported half: one row per received
- * beacon, keyed by the same event id. Static fields (screen / touch /
- * locale / hardware) are reported once per browser session
- * (`has_static = true`); dynamic fields ride every page view. Numeric
- * dimensions store raw values — panels bucket at query time. NULL means
- * the client did not report that field.
+ * `device_env_client` — the beacon-reported half: one row per received beacon,
+ * keyed by the same event id. Static fields (screen / touch / locale / hardware)
+ * are reported once per browser session (`has_static = true`); dynamic fields
+ * ride every page view. Numeric dimensions store raw values — panels bucket at
+ * query time. NULL means the client did not report that field.
  */
 export const DEVICE_ENV_CLIENT_DDL = `
 CREATE TABLE IF NOT EXISTS device_env_client (
@@ -134,7 +132,7 @@ const uuidToUint128 = (uuid: string): bigint => BigInt(`0x${uuid.replaceAll('-',
 const timestampMicros = (timestamp: Date): DuckDBTimestampTZValue =>
   new DuckDBTimestampTZValue(BigInt(timestamp.getTime()) * 1000n)
 
-/** Column types in DDL order — the single source the data chunks are created from. */
+/** Column types in DDL order — data chunks are created from this. */
 const DEVICE_ENV_SERVER_CHUNK_TYPES: DuckDBType[] = [
   UUID,
   TIMESTAMPTZ,
@@ -226,10 +224,9 @@ function deviceEnvClientColumns(rows: DeviceEnvClientRow[]): DuckDBValue[][] {
 }
 
 /**
- * Append a whole batch as data chunks — one `setColumns` + `appendDataChunk`
- * per ≤2048-row slice instead of a per-value appender call per cell.
- * At-least-once: a mid-batch failure leaves flushed chunks visible while the
- * batch dead-letters.
+ * Append a batch as data chunks — one `setColumns` + `appendDataChunk` per
+ * ≤2048-row slice instead of an appender call per cell. At-least-once: a
+ * mid-batch failure leaves flushed chunks visible while the batch dead-letters.
  */
 async function appendRows(
   writer: DuckDBConnection,

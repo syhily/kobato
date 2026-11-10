@@ -38,8 +38,7 @@ export function renderToHtml(element: ReactElement): string {
   )
 }
 
-// Render under a memory router (catch-all route) so router hooks resolve;
-// BlogSettingsProvider supplies the fixture bundle like production. The locale
+// Render under a memory router (catch-all route) so router hooks resolve. The locale
 // defaults to zh-CN; pass `{ locale }` to pin another catalog.
 export function renderInRouter(
   node: ReactNode,

@@ -101,7 +101,6 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
     const result = await restoreFromStagedBackup(staged, 'backup-test.db.tar.gz')
 
     expect(result.configApplied).toBe(false)
-    // The engine swaps are unaffected by the skipped config leg.
     expect(readFileSync(holder.dbPath!).equals(fakeSqliteFile())).toBe(true)
     expect(readFileSync(holder.analyticsPath!).equals(fakeDuckdbFile())).toBe(true)
   })
@@ -251,7 +250,6 @@ describe('restore — a config the next boot would reject never reaches the swap
         ),
       ).rejects.toThrow(ActionFailure)
 
-      // The live files were never swapped and nothing was parked.
       expect(readFileSync(holder.dbPath!, 'utf8')).toBe('live-db')
       expect(readFileSync(holder.configPath!, 'utf8')).toBe('{ "live": true }')
       expect(existsSync(`${holder.dbPath!}.pre-restore`)).toBe(false)

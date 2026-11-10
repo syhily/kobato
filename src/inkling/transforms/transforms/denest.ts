@@ -9,22 +9,14 @@ import { registerNodeTransformIfPresent } from '@/inkling/transforms/register-no
 
 export type CreateNodeFn<T extends LexicalNode> = (originalNode: T) => T
 
-// Through pasting content or converting from HTML in the API (ultimately the same path as pasting)
-// it's possible for the editor to end up with nested element nodes. Situations we've seen:
-// - headers inside paragraphs
-// - image decorator nodes inside paragraphs
-// - image decorator nodes inside lists/list items
-// - large swathes of content nested inside a paragraph/heading node
-// - etc.
+// Pasting or importing HTML can leave nested element nodes: headings, image
+// decorators, lists or large content runs inside paragraphs. Only "card"
+// decorators are supported at the top level, so nested element nodes confuse
+// selection and deletion, and the renderer does not expect them.
 //
-// This invalid nesting causes numerous issues inside the editor as we only support our "card"
-// decorator nodes at the top-level meaning selection, deletion, etc gets very confused when nested.
-// Our renderer is also not designed to handle nested element nodes meaning things may _look_ fine
-// in the editor but not render correctly or not render at all.
-//
-// With this transform we attempt to detect and fix invalid nesting by pulling out any non-inline
-// children from the passed-in node and inserting them after the node's top-level parent. We need
-// to move the nested nodes rather than remove them so we don't lose any pasted/imported content.
+// The transform detects invalid nesting and pulls non-inline children out,
+// inserting them after the node's top-level parent. Nodes are moved, never
+// removed, so no pasted or imported content is lost.
 
 // lists can only be top-level or nested inside list items
 function $isInvalidListNode(node: LexicalNode) {
@@ -47,7 +39,7 @@ function $isInvalidListItemNode(node: LexicalNode) {
 }
 
 // A list item hoisted to the root has to be unwrapped here, at insertion time.
-// Moving this to a follow-up transform is not possible: Lexical 0.46's built-in
+// Moving this to a follow-up transform is not possible: Lexical's built-in
 // ListItemNode $transform is seeded with the node class, so it always runs
 // ahead of any editor-registered transform and wraps a root-level orphan in a
 // fresh list before a self-validity transform could observe it.
@@ -62,7 +54,6 @@ function $unwrapListItemForRootInsertion(child: ListItemNode, parent: ElementNod
 // ignore list and list item nodes because they aren't inline but can be nested inside each other
 function $isInvalidChildNode(node: LexicalNode) {
   if ($isLineBreakNode(node) || $isTextNode(node)) {
-    // text and line break nodes are always inline, so always valid children
     return false
   }
   return (
@@ -81,18 +72,15 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
     return
   }
 
-  // we need a temporary detached node to hold any moved nodes otherwise
-  // we can trigger an infinite loop with the transform continually
-  // re-running on each child move
+  // a temporary detached node holds the moved nodes; without it each child
+  // move re-triggers the transform, looping forever
   const tempParagraph = $createParagraphNode()
 
-  // we need a new node of the current node type to collect inline
-  // children so we can maintain order when moving the non-inline children
-  // out. Will be appended to the temp paragraph and the var replaced with a
-  // new node each time we find a non-inline child
+  // a fresh node of the current type collects inline children so their order
+  // survives the move; it is appended to the temp paragraph and replaced each
+  // time a non-inline child is found
   let currentElementNode = createNode(node)
 
-  // pull any non-inline children out into the temp paragraph
   children.forEach((child: LexicalNode) => {
     if ($isInvalidChildNode(child)) {
       if (currentElementNode.getChildrenSize() > 0) {
@@ -105,7 +93,6 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
     }
   })
 
-  // append any remaining nodes from the current element node holder
   if (currentElementNode.getChildrenSize() > 0) {
     tempParagraph.append(currentElementNode)
   }
@@ -117,12 +104,12 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
     parent = parent.getParentOrThrow()
   }
 
-  // iterate in reverse because we can only insertAfter the parent node
-  // meaning first child needs to be inserted last to maintain order.
+  // iterate in reverse: insertAfter places each child directly after the
+  // parent, so the first child must be inserted last to keep its order
   const movedChildren = tempParagraph.getChildren()
   for (let index = movedChildren.length - 1; index >= 0; index -= 1) {
     const child = movedChildren[index]
-    // ensure we don't add list items directly into the root node
+    // list items must not land directly in the root node
     if ($isRootNode(parent.getParent()) && $isListItemNode(child)) {
       $unwrapListItemForRootInsertion(child, parent)
       continue
@@ -131,10 +118,8 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
     parent.insertAfter(child)
   }
 
-  // remove the original node - it's now empty
   node.remove()
 
-  // clean up the temporary detached paragraph immediately as we know it's no longer needed
   tempParagraph.remove()
 }
 

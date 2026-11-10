@@ -1,6 +1,6 @@
 /**
- * ADR-0012 source boundary: the real OpenTelemetry/OpenObserve SDKs may only
- * enter through the approved entry modules. Everything else — including the
+ * OpenTelemetry/OpenObserve SDK source boundary: the real SDKs may only enter
+ * through the approved entry modules. Everything else — including the
  * no-op facade (`infra/trace/facade.ts`), the log projection
  * (`infra/trace/log-record.ts`), the shared resource
  * (`infra/trace/resource.ts`), and the log sink slot (`infra/logger/sink.ts`) —
@@ -234,7 +234,7 @@ describe('trace SDK source boundary', () => {
     expect(policyGuard).toBeLessThan(loadCall)
     expect(ssrGuard).toBeLessThan(loadCall)
     expect(schemaGuard).toBeLessThan(loadCall)
-    // There is no build-time DEV gate left: production browsers load RUM.
+    // No build-time DEV gate: production browsers load RUM.
     expect(hookSource).not.toContain('import.meta.env.DEV')
   })
 

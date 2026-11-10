@@ -12,14 +12,8 @@ import {
   type DraftType,
 } from '@/client/lib/draft-store'
 
-/**
- * Single owner of the draft-record lifecycle: load → version/schema-check →
- * purge-or-hydrate, loadComplete-gated persist, cross-tab clear broadcast.
- *
- * The persisted-shape version constant lives in `draft-store` (the storage
- * layer owns the record schema) so the store's migration code can reference
- * it without an import cycle.
- */
+// The persisted-shape version constant lives in `draft-store` (the storage
+// layer owns the record schema) so migrations can reference it without a cycle.
 
 /** Edit-mode draft key — shared by the edit adapter and the create adapter's migration. */
 export function draftEditKey(keyPrefix: string, entityId: string, clientRevisionToken: string): string {
@@ -37,7 +31,7 @@ export interface UseDraftSessionArgs<TBody, TLoaded> {
   /**
    * When the key embeds a rotating token (`<prefix><entityId>:<token>`), the
    * stable entity prefix so `clearDraft` sweeps orphaned rotated predecessors
-   * too (audit P1-15). Omit for token-free keys.
+   * too. Omit for token-free keys.
    */
   clearPrefix?: string
   broadcastName: string

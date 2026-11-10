@@ -75,10 +75,8 @@ export interface CorePluginEntry {
 }
 
 // The core plugin set every InklingComposableEditor mounts, as data and in
-// render order — the half of the default editor surface that used to be
-// hardcoded JSX in InklingComposableEditor. The shipped default surface is
-// CORE_PLUGINS (here) + DEFAULT_FEATURE_PLUGINS (./DefaultFeaturePlugins):
-// one enumerable list, pinned by test/unit/plugins/derived-feature-plugin-sets.
+// render order. The shipped default surface is CORE_PLUGINS (here) +
+// DEFAULT_FEATURE_PLUGINS (./DefaultFeaturePlugins): one enumerable list.
 // InklingEditorEventPlugin appears twice (blur/focus) as two entries — the
 // two mounts differ only in props, not in kind.
 export const CORE_PLUGINS: readonly CorePluginEntry[] = [
@@ -194,8 +192,8 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
   },
   {
     key: 'focus-mode',
-    // writing-focus mode (tiptap extension-focus parity as a real UX): the
-    // plugin marks the selected top-level block for host CSS to dim the rest
+    // writing-focus mode: the plugin marks the selected top-level block for
+    // host CSS to dim the rest
     when: (scope) => scope.focusMode === true,
     render: () => <FocusModePlugin />,
   },

@@ -77,46 +77,20 @@ describe('buildCspHeader', () => {
     expect(csp).toContain("connect-src 'self'")
   })
 
-  it('adds the validated OpenObserve origin to connect-src whenever frontend RUM is active — in dev AND production', () => {
+  it('never widens connect-src: browser RUM relays through the same-origin intake', () => {
     for (const isDev of [true, false]) {
-      const csp = buildCspHeader({
-        bundle: null,
-        nonce: NONCE,
-        isDev,
-        rumOrigin: 'http://127.0.0.1:5080',
-      })
-      expect(csp).toContain("connect-src 'self' http://127.0.0.1:5080")
-      // script-src is unchanged: the RUM package is bundled in a lazy chunk, never a CDN script.
-      expect(csp).not.toContain('https://cdn.openobserve')
+      const csp = buildCspHeader({ bundle: null, nonce: NONCE, isDev })
+      expect(csp).toContain("connect-src 'self'")
+      // The OpenObserve origin can never appear in the policy.
       expect(csp).not.toContain('rum/v1')
+      expect(csp).not.toContain('openobserve')
     }
 
-    const devScriptSrc = /script-src[^;]*/.exec(
-      buildCspHeader({ bundle: null, nonce: NONCE, isDev: true, rumOrigin: 'http://127.0.0.1:5080' }),
-    )?.[0]
+    const devScriptSrc = /script-src[^;]*/.exec(buildCspHeader({ bundle: null, nonce: NONCE, isDev: true }))?.[0]
     expect(devScriptSrc).toBe("script-src 'self' 'unsafe-inline'")
 
-    const prodScriptSrc = /script-src[^;]*/.exec(
-      buildCspHeader({ bundle: null, nonce: NONCE, isDev: false, rumOrigin: 'http://127.0.0.1:5080' }),
-    )?.[0]
+    const prodScriptSrc = /script-src[^;]*/.exec(buildCspHeader({ bundle: null, nonce: NONCE, isDev: false }))?.[0]
     expect(prodScriptSrc).toBe(`script-src 'self' 'nonce-${NONCE}'`)
-  })
-
-  it('ignores an absent or malformed RUM origin in either build', () => {
-    for (const isDev of [true, false]) {
-      for (const rumOrigin of [
-        null,
-        undefined,
-        '',
-        'not a url',
-        'https://user:pass@obs.example.com',
-        'https://obs.example.com/path',
-      ]) {
-        const csp = buildCspHeader({ bundle: null, nonce: NONCE, isDev, rumOrigin })
-        expect(csp).toContain("connect-src 'self'")
-        expect(csp).not.toContain('obs.example.com')
-      }
-    }
   })
 
   it('handles a null bundle without throwing', () => {

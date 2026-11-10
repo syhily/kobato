@@ -21,8 +21,7 @@ export function useFormatAdminDate(): (iso: string) => string {
 
 type StatusMeta = { labelId: UiMessageId; variant: BadgeProps['variant'] }
 
-// Statuses shared by the task-card badge and the run-history badge keep ONE
-// label/variant pair.
+// Statuses shared by the task-card badge and the run-history badge keep ONE label/variant pair.
 const SHARED_STATUS_META = {
   running: { labelId: 'admin.tasks.status.running', variant: 'default' },
   failed: { labelId: 'admin.tasks.status.failed', variant: 'destructive' },
@@ -41,8 +40,7 @@ export type TaskStatus =
   | 'idle'
   | 'ok'
 
-// Status → badge lookup table (STATUS_META pattern from WebmentionOutboxView).
-// Labels are UI message ids; the task views resolve them through `useI18n()`.
+// Status → badge lookup tables; labels are UI message ids the task views resolve through `useI18n()`.
 export const STATUS_META: Record<TaskStatus, StatusMeta> = {
   ...SHARED_STATUS_META,
   attention: { labelId: 'admin.tasks.status.attention', variant: 'destructive' },
@@ -60,8 +58,8 @@ export const RUN_STATUS_META: Record<JobRunStatus, StatusMeta> = {
 }
 
 // System-generated `job_run.error` machine codes → UI labels. Any other error
-// string is a stored technical message (including pre-code Chinese rows) and
-// renders verbatim, so a known code is the ONLY thing the UI translates.
+// string is a stored technical message (legacy rows may be Chinese) and renders
+// verbatim, so a known code is the ONLY thing the UI translates.
 export const JOB_RUN_ERROR_LABEL_IDS: Record<JobRunErrorCode, UiMessageId> = {
   'process-restart': 'admin.tasks.history.error.processRestart',
 }
@@ -89,7 +87,7 @@ export const MIGRATION_PHASE_META: Record<
   interrupted: { labelId: 'admin.tasks.phase.interrupted', status: 'interrupted' },
 }
 
-// Group order follows the catalog's first appearance: 系统 → 内容 → 维护.
+// Group order follows the catalog's first appearance (system → content → maintenance).
 export const GROUP_META: Record<TaskGroup, { labelId: UiMessageId; descriptionId: UiMessageId }> = {
   system: {
     labelId: 'admin.tasks.group.system.label',

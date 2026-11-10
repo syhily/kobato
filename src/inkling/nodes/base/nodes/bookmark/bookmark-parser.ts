@@ -1,6 +1,6 @@
-// Survives hand-written (no import spec, CONTEXT.md: "import spec"): the nested
-// metadata payload and the DOM-mutating mixtapeEmbed conversion are structural,
-// not flat per-property reads.
+// Hand-written (no import spec): the nested metadata payload and the
+// DOM-mutating mixtapeEmbed conversion are structural, not flat per-property
+// reads.
 import type { LexicalNode } from 'lexical'
 
 export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, unknown>) => LexicalNode) {
@@ -43,7 +43,6 @@ export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, un
       if (nodeElem.className.includes('graf--mixtapeEmbed')) {
         return {
           conversion(domNode: HTMLElement) {
-            // Grab the relevant elements - Anchor wraps most of the data
             const anchorElement = domNode.querySelector('.markup--mixtapeEmbed-anchor')
             const titleElement = anchorElement?.querySelector('.markup--mixtapeEmbed-strong')
             const descElement = anchorElement?.querySelector('.markup--mixtapeEmbed-em')
@@ -52,7 +51,6 @@ export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, un
 
             domNode.querySelector('br')?.remove()
 
-            // Grab individual values from the elements
             const url = anchorElement?.getAttribute('href') ?? ''
             let title = ''
             let description = ''
@@ -60,21 +58,20 @@ export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, un
 
             if (titleElement?.innerHTML) {
               title = titleElement.innerHTML.trim()
-              // Cleanup anchor so we can see what's left now that we've processed title
+              // remove the title so the remaining anchor text is the publisher
               titleElement.remove()
             }
 
             if (descElement?.innerHTML) {
               description = descElement.innerHTML.trim()
-              // Cleanup anchor so we can see what's left now that we've processed description
+              // remove the description so the remaining anchor text is the publisher
               descElement.remove()
             }
 
-            // Publisher is the remaining text in the anchor, once title & desc are removed
             const publisher = anchorElement?.innerHTML.trim() ?? ''
 
-            // Image is optional,
-            // The element usually still exists with an additional has.mixtapeImage--empty class and has no background image
+            // Optional: the element usually still exists with a
+            // has.mixtapeImage--empty class and no background image
             if (imgElement?.style.backgroundImage) {
               const match = /url\(([^)]*?)\)/.exec(imgElement.style.backgroundImage)
               if (match?.[1]) {

@@ -18,13 +18,11 @@ import { $createAsideNode, $isAsideNode } from '@/inkling/nodes/AsideNode'
 import { $selectDecoratorNode } from '@/inkling/utils'
 
 /**
- * The keyboard-shortcut table (round 3, C7): each entry owns one key shape.
- * `matches` is the pure key-shape test (modifier chords and, for
- * `codeSelectionBacktick`, a plain key); `run` is the editor surgery and may
- * decline by returning false, letting the browser type the key normally. The
- * registration loop in modifier.ts stops at the first matching entry, so
- * entries must keep their `matches` mutually exclusive rather than relying on
- * a later entry to get a second chance.
+ * The keyboard-shortcut table: each entry owns one key shape. `matches` is the
+ * pure key-shape test; `run` is the editor surgery and may decline by returning
+ * false, letting the browser type the key normally. The registration loop stops
+ * at the first matching entry, so `matches` predicates must stay mutually
+ * exclusive.
  */
 export interface KeyboardShortcut {
   /** The pure key-shape test — no editor reads. */
@@ -78,7 +76,7 @@ const documentEdgeJump: KeyboardShortcut = {
 const quoteAsideCycle: KeyboardShortcut = {
   matches: ({ ctrlKey, code }) => ctrlKey && code === 'KeyQ',
   run: (_editor, event) => {
-    // avoid quit behaviour
+    // prevent the browser's quit binding
     event.preventDefault()
 
     const selection = $getSelection()
@@ -107,8 +105,8 @@ const highlightToggle: KeyboardShortcut = {
   },
 }
 
-// The one inline-code dispatch shared by ctrl+shift+K and the backtick chord,
-// so both stay on exactly the same FORMAT_TEXT_COMMAND path.
+// The one inline-code dispatch shared by ctrl+shift+K and the backtick chord, so
+// both stay on exactly the same FORMAT_TEXT_COMMAND path.
 function dispatchCodeFormat(editor: LexicalEditor): true {
   editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code')
   return true
@@ -123,11 +121,8 @@ const codeFormat: KeyboardShortcut = {
 /**
  * Typing an unmodified backtick over a non-collapsed selection toggles inline
  * code through the same FORMAT_TEXT_COMMAND path as ctrl+shift+K. A collapsed
- * selection, a modifier chord (Shift included — some layouts produce a
- * backtick with Shift), and IME composition all fall through so the browser
- * types the character normally. Registered here (not as a separate behaviour
- * plugin) because this table is the keyboard-navigation seam every surface
- * with keyboard navigation mounts — nested card/caption editors included.
+ * selection, a modifier chord (Shift included — some layouts produce a backtick
+ * with Shift), and IME composition fall through so the browser types normally.
  * CodeMirror owns its own backtick: the key-down passthrough consumes
  * card-inner events before this table sees them.
  */
@@ -184,8 +179,7 @@ const listToggle: KeyboardShortcut = {
           const pNode = $createParagraphNode()
           $setBlocksType(selection, () => pNode)
 
-          // Lexical will automatically indent the paragraph node to the
-          // list item level but we don't allow indented paragraphs
+          // Lexical auto-indents the paragraph to the list item's level; indented paragraphs are not allowed
           pNode.setIndent(0)
         })
       } else if (event.altKey) {

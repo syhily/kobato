@@ -6,9 +6,8 @@ import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 
 import type { Route } from './+types/overview'
 
-// Fan out all dashboard queries in parallel so the first paint is fully
-// populated; client-side fetchers take over once the URL state changes. The
-// `search` string carries the raw query string, parsed server-side.
+// Server-rendered first paint; client-side fetchers take over once the URL state changes. The `search` string
+// carries the raw query string, parsed server-side.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   requireRole(viewer ?? undefined, 'admin')

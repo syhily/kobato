@@ -5,7 +5,7 @@ import { createMenuNavigator } from '@/inkling/hooks/card-menu-navigation'
 // The slash menu's keyboard-selection matrix as a synchronous table — the
 // state machine behind SlashCardMenuPlugin's command registrations. The
 // plugin-level wiring (arrow keys move the rendered selection, query changes
-// reset it) is pinned in test/unit/plugins/SlashCardMenuPlugin.test.tsx.
+// reset it) is pinned in tests/inkling/unit/plugins/SlashCardMenuPlugin.test.tsx.
 
 describe('createMenuNavigator', () => {
   it('starts on the first item with no scroll request', () => {

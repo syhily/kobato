@@ -17,8 +17,8 @@ export interface NotificationMeta {
 
 const [ZEABUR_MAIL_CLEANUP_SOURCE, JOB_RUN_SOURCE] = NOTIFICATION_SOURCES
 
-// Kind drives the default chrome; `source` lets system producers override the
-// icon (the Zeabur cleanup alert reads as a mail problem, not a generic one).
+// Kind drives the default chrome; `source` lets system producers override the icon (the Zeabur
+// cleanup alert reads as a mail problem, not a generic one).
 export function notificationMeta(item: Pick<NotificationDto, 'kind' | 'source'>): NotificationMeta {
   if (item.source === ZEABUR_MAIL_CLEANUP_SOURCE) {
     return { icon: MailWarningIcon, kindLabelId: 'notifications.kind.system' }
@@ -44,12 +44,7 @@ export interface NotificationTimeOptions {
   now: number | Date
 }
 
-/**
- * "3 分钟前"-style label, localized through the shared relative-time facade.
- * `now` lets a ticking clock (see `@/client/hooks/use-now`) refresh the text
- * without remounting; pass the same value to every call in a render pass so
- * labels agree.
- */
+/** Relative "3 minutes ago"-style label through the shared relative-time facade; one `now` per render pass. */
 export function formatNotificationTime(iso: string, options: NotificationTimeOptions): string {
   const { locale, timeZone, now } = options
   return formatRelativeTime(iso, { locale, timeZone, now: new Date(now) })

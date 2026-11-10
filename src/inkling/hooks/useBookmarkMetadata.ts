@@ -26,10 +26,8 @@ export interface UseBookmarkMetadataResult {
   fetchInitialMetadata: (href: string) => Promise<void>
 }
 
-// the fetch choreography, the loading/urlError machine, and the
-// isEmbedResponse classifier live in @/hooks/bookmark-embed-flow
-// (a request-track guard, so the latest issued fetch wins the node patch);
-// this hook is the subscription adapter
+// the fetch choreography, the loading/urlError machine, and the isEmbedResponse
+// classifier live in bookmark-embed-flow; this hook is the subscription adapter
 export function useBookmarkMetadata({
   editor,
   nodeKey,

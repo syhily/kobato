@@ -43,8 +43,8 @@ import { notificationsRouter } from '@/server/http/controllers/notifications.con
 import { passkeyPublicRouter } from '@/server/http/controllers/passkey-public.controller'
 import { webmentionPublicRouter } from '@/server/http/controllers/webmention-public.controller'
 
-// The composed oRPC router — its shape is the permission-matrix audit surface
-// (grep -rn "adminProc\|authorProc" src/server/http/controllers/).
+// The composed router shape is the permission-matrix audit surface
+// (grep adminProc/authorProc under src/server/http/controllers/).
 export const apiRouter = {
   account: accountRouter,
   analytics: analyticsRouter,

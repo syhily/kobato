@@ -2,23 +2,20 @@ import type { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlu
 
 import React from 'react'
 
-// derived from the installed component so it stays in sync with Lexical's own
-// (unexported) ProviderFactory alias
+// Derived from the installed component — Lexical's own ProviderFactory alias
+// is unexported.
 export type LexicalProviderFactory = React.ComponentProps<typeof CollaborationPlugin>['providerFactory']
 
-// Collaboration lifecycle: the only value consumers read from this context.
-// InklingNestedComposer uses the factory to mount a CollaborationPlugin for
-// each nested editor; everything else about multiplayer (enable flag,
-// endpoint, doc id, username) is consumed directly from InklingComposer's
-// props and never read back out of context.
+// The only value consumers read from this context. Everything else about
+// multiplayer (enable flag, endpoint, doc id, username) comes from
+// InklingComposer's props.
 export interface InklingCollaborationContextValue {
   createWebsocketProvider: LexicalProviderFactory
 }
 
-// The inert factory provided while multiplayer is off — and, with the lazy
-// collaboration chunk (plan C5), for the first async tick after it turns on.
-// CollaborationPlugin only mounts once the real factory has loaded, so this
-// stub is never asked to connect.
+// Inert stand-in while multiplayer is off and while the lazy collaboration
+// chunk is still loading. CollaborationPlugin mounts only once the real
+// factory arrives, so this stub is never asked to connect.
 export const noopWebsocketProviderFactory: LexicalProviderFactory = () => ({
   awareness: {
     getLocalState: () => null,

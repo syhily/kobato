@@ -14,7 +14,8 @@ import InklingNestedEditorPlugin, { type FocusNextTarget } from '@/inkling/plugi
 import RestrictContentPlugin from '@/inkling/plugins/RestrictContentPlugin'
 
 const Placeholder = ({ text = 'Type here', className = '' }) => {
-  // Note: we use line-clamp-1, instead of truncate because truncate adds 'white-space: nowrap', which often breaks overflows of parents in some cards
+  // line-clamp-1, not truncate: truncate adds 'white-space: nowrap', which
+  // often breaks overflow in parent cards
   return (
     <div className={`placeholder not-inkling-prose pointer-events-none h-0 cursor-text overflow-visible`}>
       <div className={`xs:overflow-visible line-clamp-1 translate-y-[-100%] ${className}`}>{text}</div>

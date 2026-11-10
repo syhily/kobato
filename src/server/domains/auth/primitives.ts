@@ -37,9 +37,8 @@ export interface EstablishedLoginSession {
 }
 
 /**
- * Establish a login session after ANY successful credential check. Owns
- * the entire login side-effect surface; callers MUST NOT re-write
- * `last_login` or record a second login audit.
+ * Establish a login session after any successful credential check; callers MUST NOT
+ * re-write `last_login` or record a second login audit.
  */
 export async function establishLoginSession(
   db: Database,

@@ -18,15 +18,12 @@ import { notModifiedResponse } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
 
-// In-process oRPC caller for SSR loaders — every public/admin data read goes
-// through this single transport seam. Zero HTTP, zero serialization: `Date`s
-// and un-awaited `Promise`s pass through untouched (streaming stays intact).
+// In-process oRPC caller for SSR loaders: zero HTTP, zero serialization — `Date`s and
+// un-awaited `Promise`s pass through untouched, so streaming stays intact.
 export type SsrCaller = RouterClient<ApiRouter>
 
-// One interceptor instance for the process: `createRouterClient` invokes it
-// with the matched procedure `path`, so an in-process SSR call is named and
-// parented exactly like a network call — with `in_process` marking the
-// transport so it is never mistaken for an HTTP hop.
+// One interceptor instance for the process: an in-process SSR call is named and parented
+// exactly like a network call, with `in_process` marking the transport.
 const ssrTraceInterceptor = createOrpcTraceInterceptor('in_process')
 
 type SsrCallerArgs = {
@@ -37,20 +34,15 @@ type SsrCallerArgs = {
 export type SsrCallerResult = {
   caller: SsrCaller
   cspNonce: string
-  /** The request's minted analytics event id — public loaders publish it as
-   *  loader data `eid` so the client beacon can join the server-side row. */
+  /** The request's minted analytics event id — public loaders publish it as loader data `eid`. */
   analyticsEventId: string
-  /**
-   * Canonical session identity — route-level `requireRole` gates read it,
-   * so route modules never import `getRequestContext` themselves.
-   */
+  /** Canonical session identity for route-level `requireRole` gates. */
   viewer: SessionUser | null
   /** The canonical session — `isCurrent` projections read `session.id`. */
   session: BlogSession
   /**
-   * The request's localization projection — `unwrapDetail` stamps a thrown 304
-   * from THIS object (never the global snapshot), so the tag, the language
-   * header and the served body always describe one representation.
+   * The request's localization projection — `unwrapDetail` stamps a thrown 304 from THIS
+   * object (never the global snapshot), so tag, language header and body agree.
    */
   localization: AppLocalization
 }
@@ -85,15 +77,13 @@ export function isOrpcNotFound(error: unknown): boolean {
   return error instanceof ORPCError && error.code === 'NOT_FOUND'
 }
 
-// 30x/304 signals arrive as DATA — the unwrap helpers translate them back
-// into the thrown Responses (301 canonical / 302 pagination / 304 ETag).
+// 30x/304 signals arrive as DATA — the unwrap helpers translate them back into thrown Responses.
 
 type ListingResult<T> = ContentRedirectSignal | ContentNotModifiedSignal | { kind: 'ok'; etag: string; listing: T }
 
 type ListingPayloadResult<T> = ContentNotModifiedSignal | { kind: 'ok'; etag: string; payload: T }
 
-/** Listing loaders: NOT_FOUND → 404, `redirect` → the thrown 301/302,
- *  `not-modified` → a 304 rebuilt from the REQUEST's localization. */
+/** Listing loaders: NOT_FOUND → 404, `redirect` → the thrown 301/302, `not-modified` → 304. */
 export async function unwrapListing<T>(
   promise: Promise<ListingResult<T>>,
   localization: AppLocalization,
@@ -136,10 +126,8 @@ export async function unwrapListingPayload<T>(
   return { etag: result.etag, payload: result.payload }
 }
 
-/** Detail loaders: NOT_FOUND → 404, `not-modified` → 304, `redirect` → 301.
- *  The page variant's `etag` is nullable (draft previews carry none). The 304 is
- *  rebuilt from the REQUEST's localization so its headers match the body that
- *  produced the tag. */
+/** Detail loaders: NOT_FOUND → 404, `not-modified` → 304, `redirect` → 301. The page
+ *  variant's `etag` is nullable (draft previews carry none). */
 export async function unwrapDetail<T, ETag extends string | null>(
   promise: Promise<ContentSignal | { kind: 'ok'; etag: ETag; payload: T }>,
   localization: AppLocalization,

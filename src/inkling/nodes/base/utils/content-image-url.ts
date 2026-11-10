@@ -1,11 +1,9 @@
 /**
  * The content-image URL grammar — the one home of the `/content/images/`
- * shape (previously encoded twice: the recognition regexes here and the
- * decompose regex in srcset-attribute) and of safe URL parsing for image
- * sources. Safe parse everywhere: `new URL(src)` threw on relative or
- * `__INKLING_URL__` srcs, and `getImageFilenameFromSrc` was called from the
- * drop path on host-supplied data — a non-absolute src is path-shaped, not
- * an error.
+ * shape (shared by the recognition regex here and the srcset decompose path)
+ * and of safe URL parsing for image sources. Parsing never throws: a
+ * non-absolute src (relative or `__INKLING_URL__`) is path-shaped, not an
+ * error, so drop-path callers can hand it host-supplied data.
  *
  * The input-side counterpart of `isLocalContentImage` is `isInternalUrl`
  * (`@/inkling/utils/isInternalUrl`), which labels at-link results as
@@ -35,7 +33,7 @@ export function getImageFilenameFromSrc(src: string): string {
 }
 
 /**
- * Export-side half of the "own URL" pair: recognizes our own content images
+ * Export-side half of the "own URL" pair: recognizes the site's own content images
  * in exported markup (behind the render context).
  */
 export const isLocalContentImage = function (url: string, siteUrl = '', imageBaseUrl = '') {

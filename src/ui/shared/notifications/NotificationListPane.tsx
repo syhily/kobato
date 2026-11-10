@@ -32,7 +32,7 @@ const EMPTY_COPY_IDS: Record<NotificationTab, UiMessageId> = {
   announce: 'notifications.empty.announce',
 }
 
-// Inbox pane of the drawer: cursor-paginated, newest first, infinite-scroll.
+// Inbox pane: cursor-paginated, newest first, infinite scroll.
 export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled }: NotificationListPaneProps) {
   const { t } = useI18n()
   const query = useInfiniteQuery(
@@ -53,9 +53,8 @@ export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled 
   const listRef = useRef<HTMLDivElement>(null)
   const loadedCount = items.length
 
-  // Returning from a thread restores focus to the row that opened it; when the
-  // row is not on the loaded pages the list container takes the focus instead
-  // so the pane swap never strands it on the document body.
+  // Returning from a thread restores focus to the row that opened it; when that row is not
+  // on the loaded pages the list container takes focus, so the pane swap never strands it.
   useEffect(() => {
     if (focusItemId === undefined || loadedCount === 0 || listRef.current === null) {
       return
@@ -74,9 +73,8 @@ export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled 
     )
   }
 
-  // A failed NEXT page leaves the already-loaded rows in `data` with the
-  // query in `status: 'error'` — only an empty result means the whole pane
-  // has nothing to show. Loaded rows stay visible; the tail row offers retry.
+  // A failed NEXT page leaves loaded rows in `data` with the query in `status: 'error'`,
+  // so only an empty result means the pane has nothing to show.
   if (query.isError && items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-sm text-muted-foreground">

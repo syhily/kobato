@@ -1,23 +1,16 @@
-// The `music-player` host card's editing-side assembly (plan
-// docs/plans/inkling-editor-replacement.md, round R10; the pick seam replaced
-// the R11 MusicPickContext wiring) — same dual-entry contract as
-// `./solution`. The card has no nested editors: the dataset is `playerId`
-// plus the meta snapshot (server-owned keys, see `@/shared/lexical/artifacts`),
-// so the canvas renders the real playable `MusicPlayerCard` (WYSIWYG with the
-// public hydration-enhanced render; the static no-JS export fallback mirrors
-// its paused initial state).
+// The `music-player` host card's editing-side assembly, with the same dual-entry
+// contract as `./solution`. The card has no nested editors: the dataset is
+// `playerId` plus the meta snapshot (server-owned keys, see
+// `@/shared/lexical/artifacts`), so the canvas renders the real playable
+// `MusicPlayerCard` — WYSIWYG with the public hydration-enhanced render, whose
+// static no-JS fallback mirrors its paused initial state.
 //
-// The picker is declared on the spec (CONTEXT.md: "pick seam",
-// "entity-backed card"): the slash menu inserts an EMPTY card and
-// `autoOpenOnInsert` opens `MusicPickerDialog` on the fresh node; the
-// placeholder click and the resolved card's toolbar replace affordance are
-// the re-entry paths (`useCardPicker`). The pick writes `playerId` AND the
-// full meta snapshot onto the node so the card turns playable immediately;
-// the server-side save-time snapshot (`@/server/domains/pt/lexical-music-snapshot`)
-// stays the authority refresh. The tiptap block's `auto`/`center` flags
-// are deliberately out of the R10 dataset (the R7 contract pins the
-// dataset to playerId + meta snapshot); if parity demands them back, that
-// is a schema/card evolution.
+// The picker is declared on the spec's pick seam: the slash menu inserts an EMPTY
+// card and `autoOpenOnInsert` opens `MusicPickerDialog` on the fresh node; the
+// placeholder click and the resolved card's replace affordance are the re-entry
+// paths (`useCardPicker`). The pick writes `playerId` AND the full meta snapshot so
+// the card turns playable immediately; the save-time snapshot
+// (`@/server/domains/pt/lexical-music-snapshot`) stays the authority refresh.
 
 import { Music2Icon } from 'lucide-react'
 
@@ -55,21 +48,17 @@ export const BaseMusicPlayerNode = class extends generateDecoratorNode({
 
 export type MusicPlayerCardNode = InstanceType<typeof BaseMusicPlayerNode>
 
-// The card write seam's guard (useCardChrome): the assembled class subclasses
-// this base (assembleCardNodeOnce), so instanceof narrows editor-state nodes.
+// The card write seam's guard: the assembled class subclasses this base
+// (assembleCardNodeOnce), so instanceof narrows editor-state nodes.
 function isMusicPlayerCardNode(node: unknown): node is MusicPlayerCardNode {
   return node instanceof BaseMusicPlayerNode
 }
 
-/**
- * The pick → meta mapping: the admin DTO onto the node's meta snapshot.
- * `artist` joins into the library's packed ' / ' form (the save-time
- * snapshot's shape), and the DTO's `coverUrl`/`audioUrl` land on the
- * dataset's `cover`/`audioUrl` keys verbatim — the meta keys are stripped
- * from client input at save and excluded from the dirty-check, so this write
- * is display-only and the save-time snapshot re-resolves them (origin-relative)
- * regardless.
- */
+/** Maps the admin DTO onto the node's meta snapshot. `artist` joins into the
+ *  library's packed ' / ' form, and `coverUrl`/`audioUrl` land on `cover`/
+ *  `audioUrl` verbatim — the meta keys are stripped from client input at save and
+ *  excluded from the dirty-check, so this write is display-only and the save-time
+ *  snapshot re-resolves them (origin-relative) regardless. */
 export function musicPickMeta(music: AdminMusicDto): MusicPlayerCardMeta {
   return {
     playerId: music.playerId,
@@ -81,18 +70,13 @@ export function musicPickMeta(music: AdminMusicDto): MusicPlayerCardMeta {
   }
 }
 
-/**
- * The picker render the card's defineCard spec declares (CONTEXT.md: "pick
- * seam"): mounts the host-owned `MusicPickerDialog` against the requesting
- * node. The pick write goes through the card write seam — it resolves the
- * latest node instance by key inside `editor.update()`, so a card deleted
- * while the dialog was open no-ops instead of throwing (the picker host also
- * drops the request on that delete). On the insert-triggered open
- * (`fromInsert` — the slash menu's autoOpenOnInsert) the write merges into
- * the insert's history entry, so one Cmd+Z retracts insert and pick
- * together; the toolbar replace affordance opens without the marker and its
- * write stays a discrete undo entry.
- */
+/** The picker render the card's spec declares: mounts the host-owned
+ *  `MusicPickerDialog` against the requesting node. The write goes through the card
+ *  write seam, which resolves the latest node instance by key inside
+ *  `editor.update()`, so a card deleted while the dialog was open no-ops. On the
+ *  insert-triggered open the write merges into the insert's history entry, so one
+ *  Cmd+Z retracts insert and pick together; the replace affordance opens without
+ *  the marker and stays a discrete undo entry. */
 export function MusicCardPicker({ nodeKey, close, fromInsert }: CardPickerRenderProps) {
   const { write } = useCardChrome(nodeKey, isMusicPlayerCardNode)
   return (
@@ -122,12 +106,8 @@ export function MusicCardPicker({ nodeKey, close, fromInsert }: CardPickerRender
   )
 }
 
-/**
- * The resolved card's editing chrome (CONTEXT.md: "entity-backed card"): a
- * replace affordance (reopens the picker for the same node) and a remove
- * affordance (the shared DELETE_CARD_COMMAND choreography), rendered through
- * the layer's selection-driven `CardActionToolbar` idiom.
- */
+/** The resolved card's selection chrome: replace (reopens the picker for the same
+ *  node) and remove (the shared DELETE_CARD_COMMAND choreography). */
 export function musicCardToolbarItems(
   {
     onReplace,
@@ -162,23 +142,20 @@ export function musicCardToolbarItems(
   ]
 }
 
-// The component renders from a PLAIN meta snapshot — it never touches the
-// node instance. The generated property getters call getLatest(), which
-// throws when React re-renders outside Lexical's commit (or against a node
-// instance a later edit already replaced): Lexical #195. Reading the dataset
-// inside `render(node)` below is safe because decorate() runs inside the
-// reconciler's active read — the same split inkling's own cards use
-// (renderAudioCard reads the getters, AudioNodeComponent gets plain props).
-// Everything the pick seam and the chrome need crosses as the node KEY.
+// The component renders from a PLAIN meta snapshot and never touches the node
+// instance: the generated property getters call getLatest(), which throws when
+// React re-renders outside Lexical's commit or against a node instance a later edit
+// already replaced (Lexical #195). Reading the dataset inside `render(node)` below
+// is safe because decorate() runs inside the reconciler's active read. Everything
+// the pick seam and the chrome need crosses as the node KEY.
 export function MusicPlayerCardComponent({ meta, nodeKey }: { meta: MusicPlayerCardMeta; nodeKey: string }) {
   const { t } = useI18n()
   const picker = useCardPicker()
   const { editor } = useCardChrome(nodeKey, isMusicPlayerCardNode)
 
   if (!hasMusicPlayerMeta(meta)) {
-    // Unresolved card: the placeholder is the pick entry (the picker host is
-    // a core plugin on every editable top-level surface, so no per-editor
-    // wiring remains).
+    // Unresolved card: the placeholder IS the pick entry (the picker host is a core
+    // plugin on every editable top-level surface).
     const label =
       meta.playerId === ''
         ? t('admin.editor.cards.music.placeholder')
@@ -199,9 +176,8 @@ export function MusicPlayerCardComponent({ meta, nodeKey }: { meta: MusicPlayerC
       </div>
     )
   }
-  // Resolved card: the playable player, same component the public page
-  // hydrates into. Its controls stopPropagation internally so they never
-  // trigger the card chrome's selection/drag.
+  // Resolved card: the same component the public page hydrates into. Its controls
+  // stopPropagation internally so they never trigger the card chrome's selection/drag.
   return (
     <>
       <div className={MUSIC_PLAYER_CARD_CLASSES.wrapper}>
@@ -240,8 +216,7 @@ export const musicPlayerCard = defineCard({
   },
   menu: [
     {
-      // The menu labels are English fallbacks; the overlay localizes them
-      // through `labelKey` (the inkling label tables).
+      // English fallback; the overlay localizes through `labelKey`.
       label: 'Music player',
       labelKey: 'host.music-player',
       desc: 'Embed a song from the music library',
@@ -255,7 +230,7 @@ export const musicPlayerCard = defineCard({
   toolbarLabel: MUSIC_PLAYER_NODE_TYPE,
   render(node) {
     // Reads happen HERE, inside decorate()'s reconciler read — see the
-    // MusicPlayerCardComponent note for why the component gets a snapshot.
+    // MusicPlayerCardComponent note.
     const meta: MusicPlayerCardMeta = {
       playerId: node.playerId,
       name: node.name,

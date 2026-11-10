@@ -24,7 +24,6 @@ export interface RestoreMachineDeps {
   drain(): Promise<void> | void
   /** Flush batchers and close the live database handle — MUST run before the swap. */
   prepareForSwap(): Promise<void> | void
-  /** Open a fresh handle on the swapped file. */
   reopenAfterSwap(): Promise<Database>
   /** Post-chain completion: migrations, ANALYZE, restart, recovery reopen
    * on failure. Runs inside the slot. */
@@ -37,8 +36,8 @@ let deps: RestoreMachineDeps | null = null
 let current: RestoreJobStatus | null = null
 let last: RestoreJobStatus | null = null
 
-/** Composition-root wiring (db-lifecycle at boot). Re-registration is
- *  allowed for HMR, mirroring the other wire seams. */
+/** Composition-root wiring (db-lifecycle at boot); re-registration is allowed
+ *  for HMR. */
 export function wireRestoreMachine(d: RestoreMachineDeps): void {
   deps = d
 }
@@ -85,7 +84,7 @@ export interface RestoreJobInput {
   onFailureFn?: () => Promise<void> | void
 }
 
-/** The swap chain's terminal payload — older restore paths resolve with nothing. */
+/** The swap chain's terminal payload; paths without a config leg resolve with nothing. */
 export type RestoreChainResult = { configApplied?: boolean } | undefined
 
 /** Claim the slot before `prepare` runs, release it on throw/decline, then
@@ -136,8 +135,8 @@ export function consumeRestoreJobReport(): RestoreJobStatus {
   return { phase: 'idle', startedAt: '' }
 }
 
-/** Run the claimed restore chain fire-and-forget. The step order is the
- * code above; `afterReopenFn` must stay infallible by contract. */
+/** Run the claimed restore chain fire-and-forget; `afterReopenFn` must stay
+ *  infallible by contract. */
 export function startRestoreJob(
   restoreFn: () => Promise<RestoreChainResult>,
   afterReopenFn?: (db: Database) => Promise<void>,

@@ -53,10 +53,10 @@ export async function queryMetric(
   type: MetricType,
   limit = 20,
 ): Promise<MetricRow[]> {
-  // `type` arrives already validated at the wire boundary (zod enum); the
-  // SQL expressions come from the hard-coded METRIC_DIMENSIONS registry —
-  // never user input. Env dimensions need the sidecar joined in (blob
-  // dimensions must not, or beacon-less events would disappear).
+  // `type` arrives already validated at the wire boundary (zod enum); the SQL
+  // expressions come from the hard-coded METRIC_DIMENSIONS registry — never user
+  // input. Env dimensions need the sidecar joined in (blob dimensions must not,
+  // or beacon-less events would disappear).
   const dimension = METRIC_DIMENSIONS[type]
   const rows =
     dimension.source === 'env'

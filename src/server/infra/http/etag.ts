@@ -120,9 +120,8 @@ function detailParts(input: DetailEtagInput): ReadonlyArray<string | number | Da
 }
 
 /**
- * Post-detail ETag. Computed AFTER the full payload is assembled — the former
- * slim probe (id + published_at) could answer 304 while the sidebar, tags or
- * likes had changed.
+ * Post-detail ETag. Computed AFTER the full payload is assembled, so any change
+ * the response renders — sidebar, tags, likes — changes the tag.
  */
 export function postEtag(input: DetailEtagInput): string {
   return weakEtag(['post', ...detailParts(input)])

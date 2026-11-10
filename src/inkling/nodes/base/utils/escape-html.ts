@@ -1,8 +1,3 @@
-/**
- * Escape HTML special characters
- * @param {string} unsafe
- * @returns string
- */
 export function escapeHtml(unsafe: string) {
   return unsafe
     .replace(/&/g, '&amp;')

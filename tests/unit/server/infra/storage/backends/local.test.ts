@@ -135,8 +135,8 @@ describe('storage/local — private-object permissions', () => {
   it('leaves public objects on the process defaults (umask-derived, not forced owner-only)', async () => {
     await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('x'), contentType: 'image/jpeg' })
 
-    // Node's default creation mode is 0666 for files / 0777 for directories,
-    // masked by the umask — unchanged from before the private-mode rule.
+    // Node's default creation mode is 0666 for files / 0777 for directories, masked by
+    // the umask.
     expect(statSync(`${tmp.root}/images`).mode & 0o777).toBe(0o777 & ~process.umask())
     expect(statSync(`${tmp.root}/images/a.jpg`).mode & 0o777).toBe(0o666 & ~process.umask())
   })

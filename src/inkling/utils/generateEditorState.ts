@@ -18,41 +18,35 @@ export default function generateEditorState({
   editor: LexicalEditor
   initialHtml?: string
 }): EditorState {
+  // Both branches tag the update `history-merge` so undo cannot clear the seeded state.
   if (initialHtml) {
-    // convert html in `text` to Lexical nodes and populate the editor
-    // (no registerDefaultTransforms on this long-lived editor on purpose —
-    // see the transform-policy note in src/utils/initial-document.ts)
+    // No registerDefaultTransforms on this long-lived editor on purpose; see the
+    // transform-policy note in initial-document.ts.
     editor.update(
       () => {
         const nodes = _$generateNodesFromHTML(editor, initialHtml)
 
-        // Select the root
         $getRoot().select()
-        // Clear existing content (we initialize an editor with an empty p node so it is focusable if there's no content)
         $getRoot().clear()
 
-        // Insert them at a selection.
         $insertNodes(nodes)
 
-        // $insertNodes is focusing an editor (https://github.com/facebook/lexical/issues/4546)
-        // This behaviour can break the ability to autofocus the editor because
-        // initial state filling can happen after the component is already mounted.
-        // Reset selection to make it easier to manage editor focus in components instead of editor state generation
+        // $insertNodes focuses the editor (https://github.com/facebook/lexical/issues/4546),
+        // breaking autofocus when initial filling happens after mount; components manage focus instead.
         if (nodes.length) {
           $setSelection(null)
         }
       },
       { discrete: true, tag: 'history-merge' },
-    ) // use history merge to prevent undo clearing the initial state
+    )
   } else {
-    // for empty initial values, seed the minimal document's paragraph — a
-    // completely empty root won't accept focus
+    // An empty initial value still needs a paragraph: a completely empty root won't accept focus.
     editor.update(
       () => {
         $appendEmptyParagraph()
       },
       { discrete: true, tag: 'history-merge' },
-    ) // use history merge to prevent undo clearing the initial state
+    )
   }
 
   return editor.getEditorState()

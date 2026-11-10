@@ -4,7 +4,7 @@ import { useMatches } from 'react-router'
 import { buildDeviceEnvBeacon } from '@/client/lib/device-env'
 import { isRecord } from '@/shared/utils/type-guards'
 
-// ADR-0006 client collector: one beacon per loader-published event id.
+// Client collector: one beacon per loader-published event id.
 // Static fields (screen/touch/locale/hardware) go once per browser session,
 // dynamic fields on every page view. Best-effort by design — `sendBeacon`
 // only, no fetch fallback, no retry; DNT silences the client track entirely.

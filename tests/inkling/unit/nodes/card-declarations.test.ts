@@ -218,9 +218,9 @@ describe('card declarations as the single source of truth', () => {
   })
 })
 
-// Regression: with a host card registered (CONTEXT.md: "host card"), every
-// built-in derived view keeps answering from the built-in declarations — the
-// host registry is a fallback, never an override.
+// Regression: with a host card registered, every built-in derived view keeps
+// answering from the built-in declarations — the host registry is a fallback,
+// never an override.
 describe('built-in derived views with a host card present', () => {
   const REGRESSION_PROBE_COMMAND = createCommand('REGRESSION_PROBE_COMMAND')
 

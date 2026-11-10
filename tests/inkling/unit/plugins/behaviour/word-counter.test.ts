@@ -30,11 +30,10 @@ vi.mock('@/inkling/utils', async (importActual) => {
   return { ...actual, countWords: vi.fn(actual.countWords) }
 })
 
-// Deterministic harness for the headless word counter
-// (src/plugins/behaviour/word-counter.ts): the throttle port is a synchronous
-// passthrough, so flushes run inside the update that triggered them — no
-// wall-clock sleeps. The React adapter (handle publish/clear) is covered by
-// test/unit/plugins/WordCountPlugin.test.tsx.
+// Deterministic harness for the headless word counter: the throttle port is a
+// synchronous passthrough, so flushes run inside the update that triggered
+// them — no wall-clock sleeps. The React adapter is covered by
+// WordCountPlugin.test.tsx.
 
 const synchronousThrottle: WordCounterThrottle = (fn) => Object.assign(() => fn(), { cancel: () => {} })
 
@@ -357,7 +356,7 @@ describe('createWordCounter', () => {
     // A grandchild update triggers the full-recompute fallback, which emits
     // unconditionally. Lexical caches RootNode.getTextContent() across
     // nested-editor boundaries, so the grandchild text does not reach the
-    // top-level count; we assert the callback is reached with the current
+    // top-level count; the assertion pins the callback with the current
     // top-level count.
     await updateEditor(
       grandchildEditor,
@@ -403,7 +402,7 @@ describe('createWordCounter', () => {
   })
 })
 
-// Selection word count (upstream Ghost 0a04348143ab): the same engine reports
+// Selection word count: the same engine reports
 // the count owned by the focused AND editable editor, coordinated per
 // TOP-LEVEL editor across the main editor and its nested caption editors.
 // Selection-only counters must never pay for the full-document pass. The
@@ -941,7 +940,6 @@ describe('createWordCounter selection channel', () => {
     expect(callsA).toHaveLength(callsAfterSelection)
     expect(callsA.at(-1)).toBe(1)
 
-    // B is still attached and sees later changes
     await selectText(editor, firstTextKey(editor), 0, 11)
     expect(callsB.at(-1)).toBe(2)
 

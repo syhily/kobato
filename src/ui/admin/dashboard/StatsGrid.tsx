@@ -81,11 +81,6 @@ function StatCard({ label, value, href, icon: Icon, tone, emphasis }: StatCardPr
         palette.bg,
       )}
     >
-      {/* Decorative background icon. Inset on the right (`right-3`) so
-          it reads as a watermark, not a banner. Hover scales the glyph
-          ~12% as a subtle motion cue; `motion-reduce` variants honour
-          the user's reduced-motion preference.
-          `pointer-events-none` + `aria-hidden` keep it inert. */}
       <Icon
         aria-hidden="true"
         className={cn(

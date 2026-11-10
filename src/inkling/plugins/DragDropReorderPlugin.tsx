@@ -172,7 +172,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
         let result: DropResult = false
 
         editor.update(() => {
-          // change card order on card drops
           if (draggableInfo.type === 'card') {
             if ($relocateCard(draggableInfo.nodeKey, droppables, insertIndex)) {
               // the card was re-ordered in place, not moved inside another
@@ -196,7 +195,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
       onDragStart: () => {
         cardContainer.refresh()
       },
-      // a card can be dropped into another card which means we need to remove the original
       onDropEnd: (draggableInfo: DraggableInfo, success: boolean, sourceHandled: boolean): void => {
         // only card payloads own a source node key; the removal policy itself
         // is about the drop outcome (a same-container reorder reports
@@ -251,7 +249,7 @@ function useDragDropReorder(editor: LexicalEditor): void {
     })
   }, [editor, cardContainer])
 
-  // disable normal drag start events so they don't interfere with our custom drag handling
+  // disable native drag start so it does not interfere with the custom drag handling
   React.useEffect(() => {
     return editor.registerRootListener((rootElement, prevRootElement) => {
       rootElement?.addEventListener('dragstart', preventDefault)

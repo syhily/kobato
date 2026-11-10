@@ -81,13 +81,11 @@ describe('root loader', () => {
 
   it('returns only the narrow browser bootstrap when frontend RUM is active — in dev and production builds', async () => {
     const makeBootstrap = (environment: 'development' | 'production') => ({
-      site: 'http://127.0.0.1:5080',
-      organization: 'default',
       applicationId: 'kobato-dev',
-      clientToken: 'rum-token',
       service: 'kobato',
       environment,
       sessionSampleRate: 100,
+      clientIdentity: 'anonymous' as const,
     })
     const args = () =>
       makeLoaderArgs({

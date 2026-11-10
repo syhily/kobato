@@ -109,10 +109,8 @@ function getFingerprintHmacKey(purpose: string): Buffer {
  * Keyed digest for values that leave the server (e.g. the admin-visible
  * observability fingerprint). A plain sha256 over a password-bearing payload is
  * offline-guessable, so the digest is keyed with a purpose-scoped HKDF of the
- * deployment key — the same `security.encryptionKey` that encrypts stored
- * secrets. Consequence: rotating `security.encryptionKey` invalidates every
- * previously stored fingerprint; the affected configuration then reads as
- * unverified and must be re-tested. That is the intended, visible behavior.
+ * deployment key. Consequence: rotating `security.encryptionKey` invalidates
+ * every stored fingerprint, which then reads as unverified until re-tested.
  */
 export function secretHmac(purpose: string, payload: string): string {
   return createHmac('sha256', getFingerprintHmacKey(purpose)).update(payload).digest('hex')

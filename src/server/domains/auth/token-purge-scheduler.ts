@@ -5,9 +5,7 @@ import { nextDailyMaintenanceDelayMs } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('auth.token-purge')
 
-// Daily purge of verification rows expired for over a day, riding the shared
-// 04:30 maintenance slot. Domain owns policy; timer mechanics live in
-// `scheduleJob`, and the job registry owns boot start-up.
+// Purges verification rows expired for over a day, riding the shared 04:30 maintenance slot.
 
 registerJob({
   name: 'auth.token-purge',

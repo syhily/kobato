@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 // Renders every email template to a standalone HTML file under
 // `scripts/emails/<locale>/` for browser preview (`pnpm run emails:generate`).
-// All four locales are rendered so a copy change is reviewable in every
-// language; the snapshot is entirely fake (no real addresses or secrets).
+// The snapshot data is entirely fake — no real addresses or secrets.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -207,6 +206,5 @@ try {
     }
   }
 } finally {
-  // The throwaway config never outlives the run (and never contained a real secret).
   rmSync(CONFIG_PATH, { force: true })
 }

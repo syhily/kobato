@@ -1,6 +1,5 @@
-// HTTP client for tests/e2e — drives a real kobato instance (the SEA
-// binary booted by scripts/sea/e2e.ts) over plain fetch with a minimal
-// cookie jar. No in-process shortcuts: everything goes through the wire.
+// HTTP client for tests/e2e: drives a real kobato instance (the SEA binary booted by
+// scripts/sea/e2e.ts) over plain fetch with a minimal cookie jar — nothing in-process.
 
 export interface E2eEnv {
   baseUrl: string
@@ -74,8 +73,8 @@ export class E2eClient {
 }
 
 /**
- * The anonymous visitor's CSRF token — the one 64-hex value in the page.
- * Use only on pages without 64-hex avatars or branding etags.
+ * The anonymous visitor's CSRF token: the one 64-hex value in the page. Use only on pages
+ * without 64-hex avatars or branding etags.
  */
 export async function getPublicCsrfToken(client: E2eClient, path: string): Promise<string> {
   const res = await client.get(path)
@@ -91,9 +90,8 @@ export async function getPublicCsrfToken(client: E2eClient, path: string): Promi
 }
 
 /**
- * Real signin over HTTP. Returns the action response (302 + Set-Cookie on
- * success) and the PRE-login CSRF token — valid only for the login POST;
- * use `getAdminCsrfToken` for authenticated RPCs.
+ * Real signin over HTTP. Returns the action response (302 + Set-Cookie on success) and the
+ * PRE-login CSRF token, valid only for the login POST; use `getAdminCsrfToken` for RPCs.
  */
 export async function loginAdmin(client: E2eClient, env: E2eEnv): Promise<{ res: Response; csrfToken: string }> {
   const page = await client.get('/admin/signin')

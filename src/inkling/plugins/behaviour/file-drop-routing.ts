@@ -7,9 +7,8 @@ import { getEditorCardNodes } from '@/inkling/nodes/cards/editor-card-nodes'
 
 // File-drop → media-claim routing: which dropped file becomes which card's
 // `INSERT_MEDIA_COMMAND` payload (the command itself is owned by
-// `clipboard-protocol.ts`, beside this module). Extracted from
-// `DragDropPastePlugin.tsx` so the claim rules are headless and pure — the
-// plugin keeps only the DOM drag/drop glue and the dispatch loop.
+// `clipboard-protocol.ts`, beside this module); the plugin keeps only the
+// DOM drag/drop glue and the dispatch loop.
 //
 // The claim rule: a card declares an `uploadType` on its card declaration;
 // the host's `fileUploader.fileTypes` config lists the mime types each upload

@@ -1,27 +1,13 @@
-// The kobato `image` card spec (plan docs/plans/inkling-editor-replacement.md,
-// round R11): the stock inkling ImageNode is subclassed as `KobatoImageNode`
-// because the stock exportDOM cannot meet kobato's markup fidelity bar — no
-// srcset, no thumbhash, no left/right float layout — and the stock declaration
-// silently drops the three host-schema pass-through keys (thumbhash /
-// storagePath / imageId) the image-library insert dataset carries.
+// The kobato `image` card spec: the stock inkling ImageNode subclassed as
+// `KobatoImageNode`, because the stock exportDOM cannot meet kobato's markup
+// bar (no srcset, no thumbhash, no left/right float layout) and the stock
+// declaration silently drops the thumbhash / storagePath / imageId
+// pass-through keys the image-library insert dataset carries.
 //
-// Same dual-entry sharing contract as `./solution`: this React-free module is
-// the single source consumed by BOTH the client node
-// (`@/client/editor/kobato-image-node` — a subclass of the `.` entry's
-// assembled ImageNode, since the assembled class owns the caption nested
-// editor / transient upload props) AND the server projection
-// (`@/server/infra/pt/lexical-projection` — a fresh headless
-// `generateDecoratorNode` class declared from the full 12-property list
-// below). The two class objects never cross entries.
-//
-// The full-fidelity export markup mirrors the retired PT public renderer
-// (R13 deleted `src/ui/pt/`): layout-classed figure, lazy/async img with the
-// dark-mode dim class, data-thumbhash, 100vw sizes + the [256,512,768,1024]
-// srcset (when the render env supplies the assets/site facts) with a
-// data-zoom-src pointing at the untransformed original so medium-zoom does
-// not cap the zoomed view at the largest breakpoint, and the SSR-visible
-// aspect-ratio fallback for dimensionless images. The feed variant
-// reproduces the retired PT rssMode figure.
+// Same dual-entry contract as `./solution`: one React-free spec consumed by
+// BOTH the client node (`@/client/editor/kobato-image-node`) and the server
+// projection (`@/server/infra/pt/lexical-projection`). The two class objects
+// never cross entries.
 
 import type { CardImportSpec, DecoratorNodeProperty } from '@/inkling/headless'
 
@@ -36,8 +22,8 @@ import {
 import { getImageSrcset } from '@/shared/types/images'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-/** The PT image layout vocabulary (`ImageBlockLayout` parity). `cardWidth`
- * has no left/right equivalent, so layout is a kobato-owned extra key. */
+/** Float layout vocabulary. `cardWidth` has no left/right equivalent, so layout
+ * is a kobato-owned extra key. */
 export const KOBATO_IMAGE_LAYOUTS = ['left', 'center', 'right'] as const
 export type KobatoImageLayout = (typeof KOBATO_IMAGE_LAYOUTS)[number]
 
@@ -54,11 +40,9 @@ export function normalizeKobatoImageLayout(value: unknown): KobatoImageLayout {
 export const KOBATO_IMAGE_EXTRA_KEYS = ['thumbhash', 'storagePath', 'imageId', 'layout'] as const
 
 /**
- * The full 12-property spec: the stock eight VERBATIM (same names, defaults,
- * and flags as `src/inkling/nodes/base/nodes/image/ImageNode.ts`
- * imageProperties — src additionally carries the generated exportJSON's blob
- * guard the stock hand-written exportJSON applies) plus the four kobato keys.
- * Consumed by the server projection class and the client's export delegate.
+ * The full 12-property spec: the stock eight VERBATIM (names, defaults, and
+ * flags of `src/inkling/nodes/base/nodes/image/ImageNode.ts` imageProperties;
+ * src keeps the stock exportJSON's blob guard) plus the four kobato keys.
  */
 export const KOBATO_IMAGE_PROPERTIES = [
   { name: 'src', default: '', urlType: 'url', redactDataUrl: true },
@@ -76,9 +60,8 @@ export const KOBATO_IMAGE_PROPERTIES = [
 ] as const satisfies readonly DecoratorNodeProperty[]
 
 /**
- * Figure classes, verbatim from the PT renderer's `imageFigureLayoutClass`
- * (render-blocks.tsx). The layout class is emitted for EVERY layout —
- * `mx-auto w-fit` is what centers the figure, not a default stylesheet rule.
+ * Figure classes. The layout class is emitted for EVERY layout — `mx-auto w-fit`
+ * is what centers the figure, not a default stylesheet rule.
  */
 export const KOBATO_IMAGE_FIGURE_CLASSES = {
   base: 'block max-w-full',
@@ -99,11 +82,10 @@ export const KOBATO_IMAGE_IMG_CLASS =
 export const KOBATO_IMAGE_SRCSET_BREAKPOINTS = [256, 512, 768, 1024] as const
 
 /**
- * The facts the full-fidelity srcset needs, delivered through the open
- * render-meta seam (the export-policy key set is closed): the assets
- * section's transform host/template and the site origin. The server
- * projection answers this kind; the browser clipboard export leaves it
- * unanswered and the srcset is skipped (parity with a context-free copy).
+ * Facts the full-fidelity srcset needs, through the open render-meta seam
+ * (the export-policy key set is closed): the assets transform host/template
+ * and the site origin. The server projection answers it; the browser clipboard
+ * export leaves it unanswered and the srcset is skipped.
  */
 export const IMAGE_RENDER_ENV_META_KIND = 'kobato:image-render-env'
 
@@ -118,7 +100,6 @@ export function resolveKobatoImageRenderEnv(context: CardRenderContext): KobatoI
   if (typeof value !== 'object' || value === null || !('assetHost' in value)) {
     return undefined
   }
-  // The 'assetHost' in-check above is the registry's shape guarantee.
   return unsafeCast<KobatoImageRenderEnv>(value)
 }
 
@@ -144,9 +125,9 @@ export interface KobatoImageDataset {
 }
 
 /**
- * The exportDOM render (both variants). Full fidelity: the PT figure markup.
- * Feed: the bare PT rssMode figure (no classes, no thumbhash/srcset; caption
- * as escaped plain text; src absolutized against the site origin).
+ * The exportDOM render (both variants). Full fidelity: the figure markup. Feed: a
+ * bare figure (no classes, no thumbhash/srcset; caption as escaped plain text; src
+ * absolutized against the site origin).
  */
 export function renderKobatoImageNode(node: KobatoImageDataset, context: CardRenderContext): CardRenderOutput {
   const document = context.createDocument()
@@ -186,7 +167,7 @@ export function renderKobatoImageNode(node: KobatoImageDataset, context: CardRen
   if (width !== null && height !== null) {
     img += ` width="${width}" height="${height}"`
   } else {
-    // BlockImage's SSR-visible fallback for dimensionless images.
+    // SSR-visible fallback for images without intrinsic dimensions.
     img += ' style="aspect-ratio:16/9"'
   }
   if (node.thumbhash !== '') {
@@ -213,15 +194,14 @@ export function renderKobatoImageNode(node: KobatoImageDataset, context: CardRen
   }
   img += ' />'
 
-  // Stock behaviour (no PT equivalent — a small enhancement): a safe href
-  // wraps the image in a link.
+  // Stock behaviour: a safe href wraps the image in a link.
   const href = node.href === '' ? '' : context.safeUrl('navigation', node.href)
   const media = href === '' ? img : `<a href="${escape(href)}">${img}</a>`
   const caption = node.caption === '' ? '' : `<figcaption>${context.sanitizeBasicHtml(node.caption)}</figcaption>`
 
   // `data-layout` rides along for non-center layouts so a copy of the public
-  // markup pastes back with its float intact (PT had no such attribute; the
-  // layout CLASSES alone are not reliably machine-readable).
+  // markup pastes back with its float intact; the layout CLASSES alone are not
+  // reliably machine-readable.
   const layoutAttr = layout === 'center' ? '' : ` data-layout="${layout}"`
   const element = elementFromHtml(
     document,
@@ -232,10 +212,9 @@ export function renderKobatoImageNode(node: KobatoImageDataset, context: CardRen
 }
 
 /**
- * `getTextContent` override body for the server-registered class — PT plain
- * text parity (`@/shared/pt/utils` pushBlockText): an image contributes its
- * ALT text, never the caption HTML (the generated getTextContent would leak
- * the raw markup into the `body_text` corpus).
+ * `getTextContent` override body for the server-registered class: an image
+ * contributes its ALT text, never the caption HTML (the generated getTextContent
+ * would leak the raw markup into the `body_text` corpus).
  */
 export function kobatoImageTextContent(node: { __alt?: unknown }): string {
   const alt = typeof node.__alt === 'string' ? node.__alt : ''
@@ -254,7 +233,6 @@ export function readKobatoImageAttributes(element: Element): Record<string, stri
   if (element.tagName !== 'IMG') {
     return attrs
   }
-  // tagName-guarded: the imported document can come from another realm.
   const img = unsafeCast<HTMLImageElement>(element)
 
   if (img.src) {
@@ -286,17 +264,16 @@ export function readKobatoImageAttributes(element: Element): Record<string, stri
 }
 
 /**
- * The DOM-import spec — the stock `imageImportSpec` conversions (img tag,
- * figure-with-img) plus the kobato keys our own export markup carries back
- * in: `data-layout` on the figure and `data-thumbhash` on the img.
- * `storagePath`/`imageId` deliberately never enter HTML (the public page
- * must not leak storage internals), so a copy/paste round-trip drops them —
- * the library linkage is re-derived by the save-time image sync.
+ * The DOM-import spec — the stock `imageImportSpec` conversions plus the kobato
+ * keys our export markup carries back in (`data-layout` on the figure,
+ * `data-thumbhash` on the img). `storagePath`/`imageId` deliberately never
+ * enter HTML (the public page must not leak storage internals); a copy/paste
+ * round-trip drops them and the save-time image sync re-derives the linkage.
  *
- * The client subclass redeclares `static importSpec` with this object; the
- * subclass path never re-runs `validateImportSpec`, so the reads naming the
- * four extra keys are safe there. The server projection declares all twelve
- * properties, so its class-creation validation passes too.
+ * Safe despite reads naming keys beyond the stock property list: the client
+ * subclass redeclares `static importSpec` without re-running
+ * `validateImportSpec`, and the server projection declares all twelve
+ * properties.
  */
 export const kobatoImageImportSpec = {
   conversions: [
@@ -315,7 +292,7 @@ export const kobatoImageImportSpec = {
     },
     {
       tag: 'figure',
-      // generically parses figure elements, so it must run after others (like the gallery)
+      // Generically parses figure elements, so it must run after others (like the gallery).
       priority: 0,
       guardSelector: 'img',
       reads: [

@@ -2,9 +2,8 @@ import { ORPCError } from '@orpc/server'
 
 import type { ContentRedirectSignal, ContentSignal } from '@/shared/contracts/content'
 
-// The loader helpers signal 301/302/304/404 by throwing `Response`s; oRPC
-// can't throw them across the wire, so controllers translate: 30x/304 → the
-// union the loaders unwrap, 404 → ORPCError('NOT_FOUND'), else propagate.
+// Loader helpers signal 301/302/304/404 by throwing `Response`s, which oRPC cannot
+// carry: 30x/304 map onto the signal union, 404 becomes NOT_FOUND, anything else propagates.
 export function translateThrownResponse(error: unknown, allowed: 'redirect-only'): ContentRedirectSignal
 export function translateThrownResponse(error: unknown): ContentSignal
 export function translateThrownResponse(error: unknown): ContentSignal {

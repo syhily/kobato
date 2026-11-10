@@ -6,8 +6,8 @@ import type { AdminFontDto } from '@/shared/contracts/fonts'
 
 import { font } from '@/server/infra/db/schema/font'
 
-// Read side of the fonts domain — pure DB queries. The DTO mapping lives
-// here so `fonts.list` and the SSR bundle resolver share it.
+// Read side of the fonts domain: pure DB queries plus the row→DTO mapping shared
+// by `fonts.list` and the SSR bundle resolver.
 
 export function toAdminFontDto(row: FontRow): AdminFontDto {
   return {

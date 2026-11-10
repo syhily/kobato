@@ -5,31 +5,15 @@ import { $createParagraphNode, $getSelection, $isParagraphNode, $isRangeSelectio
 import { getSelectedNode } from '@/inkling/utils/getSelectedNode'
 
 // Card-menu trigger — the headless half of the slash and plus card menus:
-// the observe→extract→verdict loop both plugins used to re-implement as
-// React effects. Editor state and DOM-selection/geometry facts come in
-// through the resolvers below; typed verdicts go out — { query, close } for
-// the slash menu, { show, hide } for the plus button — and a null resolution
-// means "no verdict: leave the consumer's state as it is" (mid-composition,
-// a selection inside the open menu, a hover outside the editor or over a
-// card). The plugins keep only their DOM event wiring (slash keypress; plus
-// mousemove/selectionchange), driving the popup through its handle — the
-// session (cursor lease, close policy), the anchor chrome, and the rendering
-// are CardMenuPopup's (src/plugins/CardMenuPopup.tsx), composing the session
-// core (src/hooks/useCardMenuSession.ts), the slash trigger binding
-// (src/hooks/useSlashCardMenuTrigger.ts), and the keyboard navigator
-// (src/hooks/card-menu-navigation.ts).
-//
-// The two triggers differ on purpose (document why, don't flatten):
-// 1. Slash is keypress-triggered: a '/' matching the valid-press grammar
-//    (isSlashTriggerPress) opens the menu, which then tracks the '/query'
-//    text in the trigger paragraph and closes when the selection leaves it
-//    (resolveSlashMenuVerdict).
-// 2. Plus is hover/caret-triggered: its button appears while the caret or
-//    the mouse sits on an empty paragraph (resolvePlusCaretButtonVerdict /
-//    resolvePlusHoverButtonVerdict); the menu itself opens from the button's
-//    click, which stays plugin-side.
-// Both registrations share the one loop skeleton (registerTriggerUpdates);
-// per-trigger variance lives in the resolvers as data-shaped verdicts.
+// the observe→extract→verdict loop (registerTriggerUpdates). Editor state and
+// DOM-selection/geometry facts come in through the resolvers below; typed
+// verdicts go out — { query, close } for the slash menu, { show, hide } for
+// the plus button — and a null resolution means "no verdict: leave the
+// consumer's state as it is" (mid-composition, a selection inside the open
+// menu, a hover outside the editor or over a card). Per-trigger policy lives
+// in the resolvers as data-shaped verdicts; the plugins keep only their DOM
+// event wiring, driving the popup through its handle — the session, anchor
+// chrome, and rendering are CardMenuPopup's.
 
 // The shared observe→emit loop: resolve the trigger's verdict on each editor
 // update and emit it. A null resolution emits nothing — the consumer's state
@@ -47,8 +31,6 @@ function registerTriggerUpdates<V>(
   })
 }
 
-// --- slash trigger ----------------------------------------------------------
-
 export interface SlashPressEvent {
   key: string
   isComposing: boolean
@@ -63,18 +45,15 @@ export interface SlashPressEvent {
 export function isSlashTriggerPress(editor: LexicalEditor, event: SlashPressEvent): boolean {
   const { key, isComposing, ctrlKey, metaKey } = event
 
-  // we only care about / presses when not composing or pressed with modifiers
   if (key !== '/' || isComposing || ctrlKey || metaKey) {
     return false
   }
 
-  // ignore if editor doesn't have focus
   const rootElement = editor.getRootElement()
   if (!rootElement?.matches(':focus')) {
     return false
   }
 
-  // potentially valid / press
   return editor.getEditorState().read(() => {
     const selection = $getSelection()
     if (!$isRangeSelection(selection)) {
@@ -82,14 +61,12 @@ export function isSlashTriggerPress(editor: LexicalEditor, event: SlashPressEven
     }
     const node = getSelectedNode(selection).getTopLevelElement()
 
-    // ignore if selection is not on a top-level paragraph
     if (!node || !$isParagraphNode(node)) {
       return false
     }
 
     const paragraphSize = node.getTextContentSize()
     const isEmptyParagraph = selection.isCollapsed() && node.getTextContent() === ''
-    // if full paragraph is selected, pressing / will replace it so that's a valid press
     const isFullParagraphSelection =
       !selection.isCollapsed() &&
       ((selection.anchor.offset === 0 && selection.focus.offset === paragraphSize) ||
@@ -119,7 +96,6 @@ export interface SlashCardMenuTriggerHandlers {
 // section moves the DOM selection there; that is not a close).
 function resolveSlashMenuVerdict(editor: LexicalEditor): SlashMenuVerdict | null {
   return editor.getEditorState().read(() => {
-    // don't do anything when using IME input
     if (editor.isComposing()) {
       return null
     }
@@ -152,7 +128,6 @@ function resolveSlashMenuVerdict(editor: LexicalEditor): SlashMenuVerdict | null
       return { type: 'close' }
     }
 
-    // capture text after the / as a query for filtering cards
     const command = node.getTextContent().slice(1)
     const [query, ...commandParams] = command.split(' ')
 
@@ -160,17 +135,12 @@ function resolveSlashMenuVerdict(editor: LexicalEditor): SlashMenuVerdict | null
   })
 }
 
-// Register the slash trigger's update loop: on each editor update, resolve
-// and emit the menu verdict (query tracking or close). Returns the
-// unregister callback.
 export function registerSlashCardMenuTrigger(
   editor: LexicalEditor,
   { onVerdict }: SlashCardMenuTriggerHandlers,
 ): () => void {
   return registerTriggerUpdates(editor, () => resolveSlashMenuVerdict(editor), onVerdict)
 }
-
-// --- plus trigger -----------------------------------------------------------
 
 export type PlusButtonVerdict =
   // anchor the button to this empty paragraph
@@ -215,8 +185,6 @@ function resolvePlusCaretButtonVerdict(editor: LexicalEditor): PlusButtonVerdict
   })
 }
 
-// Register the plus trigger's update loop: on each editor update, resolve
-// and emit the caret-based button verdict. Returns the unregister callback.
 export function registerPlusCardMenuTrigger(
   editor: LexicalEditor,
   { onVerdict }: PlusCardMenuTriggerHandlers,

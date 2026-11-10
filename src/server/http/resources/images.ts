@@ -123,7 +123,7 @@ const AVATAR_IP_RATE_BUCKET = { windowSeconds: 60, maxAttempts: 3000 }
 const AVATAR_RATE_BUCKET = { windowSeconds: 1, maxAttempts: 5 }
 
 // Hono footgun: `:name.png` captures the `.png` into the param — declare
-// `{[^/]+\\.png}` regex constraints instead (a former avatar regression).
+// `{[^/]+\\.png}` regex constraints instead.
 function stripPng(filename: string | undefined): string {
   return filename?.replace(/\.png$/, '') ?? ''
 }

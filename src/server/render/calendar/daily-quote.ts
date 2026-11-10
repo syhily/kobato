@@ -8,10 +8,9 @@ import { LOCAL_QUOTES } from '@/server/render/calendar/local-quotes'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
 
-// Daily-quote sources (sidebar `dailyQuote.source`): shanbay/one/hitokoto
-// remote with built-in fallback on any failure; custom (≥10 entries, else
-// `local`); local built-in bank. ONE serves only "today"; hitokoto is
-// random per call (the PNG cache freezes whichever quote was drawn).
+// Daily-quote sources (sidebar `dailyQuote.source`): shanbay/one/hitokoto remote, with
+// the built-in bank as fallback on any failure; custom needs ≥10 entries (else `local`).
+// ONE serves only "today"; hitokoto is random per call (the PNG cache freezes the quote).
 
 const log = getLogger('calendar')
 
@@ -109,12 +108,9 @@ const REMOTE_PROVIDERS: Record<Exclude<DailyQuoteSource, 'custom' | 'local'>, (d
   hitokoto: fetchHitokoto,
 }
 
-/**
- * Resolve today's quote from the caller's pinned settings snapshot (omitted =
- * the current process snapshot — the background send-time resolve). The quote
- * bank is a rendering input: the calendar resource passes the same bundle whose
- * revision keys the cache entry.
- */
+/** Resolve today's quote from the caller's pinned settings snapshot (omitted = the current
+ *  process snapshot). The bank is a rendering input: the calendar resource passes the same
+ *  bundle whose revision keys the cache entry. */
 export async function getDailyQuote(date: Date, settings?: BlogSettingsBundle | null): Promise<DailyQuote> {
   const { dailyQuote } = requireBlogSettingsSection('sidebar', settings).sidebar
   if (dailyQuote.source === 'local') {

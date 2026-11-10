@@ -10,10 +10,9 @@ import { adminSession, authorSession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 
-// post.detail draft-preview contract: `status=draft` posts are 404 for
-// anonymous/regular users; admin and author see the draft. R13: the loader
-// serves the saved `body_html` projection — a Lexical draft row must NOT 500
-// (the pre-R13 read path force-parsed it as PortableText and threw).
+// post.detail draft-preview contract: `status=draft` posts are 404 for anonymous/regular users;
+// admin and author see the draft. The loader serves the saved `body_html` projection and never
+// parses the Lexical row.
 
 const db = getTestDb()
 
@@ -52,7 +51,6 @@ async function seedPublishedPost(slug: string, title: string): Promise<number> {
   return postId
 }
 
-/** A draft post: unpublished, hidden, no published revision pointer, one draft revision. */
 async function seedDraftPost(opts: {
   slug: string
   title?: string
@@ -82,7 +80,6 @@ async function seedDraftPost(opts: {
   return postId
 }
 
-/** `published = true` but never promoted: no published revision id, no revisions. */
 async function seedNeverPublishedPost(slug: string): Promise<number> {
   const rows = await db
     .insert(postTable)
@@ -182,7 +179,7 @@ describe('routes/post.detail draft visibility', () => {
     await expectNotFound('secret', authorSession())
   })
 
-  it('computes the projection on read when the draft row carries a NULL body_html (the R9a 500)', async () => {
+  it('computes the projection on read when the draft row carries a NULL body_html (a past 500)', async () => {
     await seedDraftPost({ slug: 'secret', title: 'Secret', bodyHtml: null, authorId: 99 })
 
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', adminSession()))

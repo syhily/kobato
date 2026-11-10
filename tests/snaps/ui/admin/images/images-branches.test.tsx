@@ -25,9 +25,8 @@ queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// Companion to images-view.test.tsx: the controller is mocked so the
-// active-filter chip branches, isFetchingNextPage spinner, error-toast
-// fallthrough and the destructive ConfirmDialog can be driven.
+// The controller is mocked so the active-filter chips, isFetchingNextPage spinner,
+// error-toast fallthrough and the destructive ConfirmDialog can be driven.
 
 interface ControllerShape {
   q: string

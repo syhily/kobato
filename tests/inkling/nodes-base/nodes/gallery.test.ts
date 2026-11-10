@@ -12,8 +12,8 @@ import { createDocument, dom, html } from '#/inkling/nodes-base/test-utils/index
 import { editorTest } from '#/inkling/utils/test-editor'
 import { BaseGalleryNode, $createBaseGalleryNode, $isGalleryNode, BaseImageNode } from '@/inkling/nodes/base/index'
 
-// include BaseImageNode so we can make sure imported sibling nodes do not get
-// processed by other lower priority nodes when skipped with dataset.hasBeenProcessed
+// include BaseImageNode so imported sibling nodes are not processed by other
+// lower-priority nodes when skipped with dataset.hasBeenProcessed
 const editorNodes = [BaseGalleryNode, BaseImageNode]
 
 describe('BaseGalleryNode', function () {

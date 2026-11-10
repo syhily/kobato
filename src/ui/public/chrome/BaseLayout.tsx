@@ -31,11 +31,10 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
   const navigationSection = useNavigationSettings()
   const showFooter = footer !== undefined ? footer : true
   const resolvedNavigation = navigation || navigationSection.navigation.sideNav
-  // Logout returns to the page the user signed out from.
   const logoutRedirectTo = `${pathname}${search}`
-  // The public shell's ONE notification owner: both UserMenus (desktop rail +
-  // mobile brand bar, always co-mounted) open this drawer and read this count.
-  // Interval refetches are per-observer and do not dedupe (ADR-0009).
+  // The public shell's one notification owner: both UserMenus (desktop rail + mobile brand
+  // bar, always co-mounted) open this drawer and read this count. Interval refetches are
+  // per-observer and do not dedupe, so a second subscription would double the polling.
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const { t } = useI18n()
   const unreadCount = useUnreadNotificationCount(currentUser !== null)
@@ -58,7 +57,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
         onOpenNotifications={openNotifications}
       />
       {currentUser && (
-        // Above the detail-page cover image (z-aside-drawer / 1020) so the avatar and dropdown stay reachable.
+        // Above the detail-page cover image (z-aside-drawer, 1020) so the avatar stays reachable.
         <div className="fixed top-4 right-4 z-modal hidden lg:block">
           <LazyUserMenu
             currentUser={currentUser}

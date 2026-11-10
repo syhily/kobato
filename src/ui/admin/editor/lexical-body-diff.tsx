@@ -8,10 +8,9 @@ import { Badge } from '@/ui/components/badge'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Lexical counterpart of the PT-era `portable-text-diff`: diffs the top-level
-// children of two editor states. Lexical's serialized nodes carry no stable
-// `_key`, so 'unchanged' anchors are semantic fingerprints and 'changed'
-// pairing falls back on same-type + text similarity.
+// Diffs the top-level children of two editor states. Lexical's serialized nodes
+// carry no stable `_key`, so 'unchanged' anchors are semantic fingerprints and
+// 'changed' pairing falls back on same-type + text similarity.
 
 export interface DiffEntry {
   key: string

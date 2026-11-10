@@ -8,23 +8,16 @@ import { visitLexicalNodes } from '@/shared/lexical/walk'
 
 const log = getLogger('pt.lexical-music-snapshot')
 
-// The Lexical music contract flips PT's "store playerId-only, enrich at
-// request time" into "resolve at save time and embed a meta snapshot"
-// (plan docs/plans/inkling-editor-replacement.md, round R9a) — the headless
-// HTML projection is synchronous and has no resolver, so the dataset must
-// carry the meta. The snapshot goes stale when the library row changes;
-// that is the accepted trade-off. Field names live in
-// `@/shared/lexical/artifacts` (`MUSIC_PLAYER_META_KEYS`) — R10's
-// `defineCard` reads exactly those keys.
+// The Lexical music contract resolves metas at SAVE time and embeds a snapshot
+// in the node dataset: the headless HTML projection is synchronous and has no
+// resolver. The snapshot goes stale when the library row changes — the accepted
+// trade-off. Field names: `MUSIC_PLAYER_META_KEYS` (`@/shared/lexical/artifacts`).
 //
-// The media URLs (`cover` / `audioUrl`) are stored ORIGIN-RELATIVE
-// (`/storage/<key>`), never the resolver's absolute form: an absolute URL
-// bakes the save-time `siteIdentity.website` into stored content, and a copy
-// of the database served from any other origin (dev server, domain move)
-// then points media at the old origin — PT's request-time enrichment never
-// had that failure mode. The render-time safe-URL seam passes relative URLs,
-// and the feed variant re-absolutizes against the CURRENT site origin
-// (`absolutizeAssetSrcForFeed`).
+// Media URLs (`cover` / `audioUrl`) are stored ORIGIN-RELATIVE
+// (`/storage/<key>`), never absolute: an absolute URL bakes the save-time
+// `siteIdentity.website` into stored content, so a database copy served from
+// another origin points media at the old one. The feed variant re-absolutizes
+// against the CURRENT site origin (`absolutizeAssetSrcForFeed`).
 
 /** Site-owned asset URL (absolute or already relative) → origin-relative form; anything else passes through. */
 function toOriginRelativeAssetUrl(url: string): string {

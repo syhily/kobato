@@ -1,10 +1,9 @@
-/* Inkling theme tokens — the single source of truth for the theming contract.
-/* This file is reference-imported by ./index.css: the tokens drive utility
-/* generation and `@apply`, but Tailwind does not emit them onto `:root`.
-/* The runtime defaults are hand-written under `.inkling-lexical` in
-/* ./index.css, and test/unit/theme-tokens.test.ts pins name/value parity
-/* between the two so they cannot drift apart.
-/* -------------------------------------------------------------------- */
+/* Inkling theme tokens, the single source of truth for the theming contract.
+   Reference-imported by ./index.css: the tokens drive utility generation and
+   `@apply`, but Tailwind does not emit them onto `:root`. The runtime
+   defaults are hand-written under `.inkling-lexical` in ./index.css, and
+   tests/inkling/unit/theme-tokens.test.ts pins name/value parity so the two
+   cannot drift apart. */
 
 @theme {
   --color-accent: var(--inkling-accent-color, #ff0095);

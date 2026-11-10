@@ -10,10 +10,8 @@ import {
 } from '@/inkling/utils/draggable/draggable-constants'
 import { isGalleryImageDrag } from '@/inkling/utils/draggable/gallery-drop'
 
-// registerContainer options (plan 047 step 4): three honest groups replacing
-// one flat bag whose index signature let `isDragEnabled` ride unnamed.
-// Absent optional callbacks are filled with no-ops by the constructor, so
-// DragDropHandler keeps calling container.onDragStart(...) etc. untouched.
+// Registration options for a container's draggable side. Absent optional callbacks are
+// filled with no-ops by the constructor, so DragDropHandler can call them unconditionally.
 export interface ContainerDraggableConfig {
   draggableSelector: string
   getDraggableInfo: (draggableElement: HTMLElement | null) => DraggableInfo | false
@@ -21,10 +19,9 @@ export interface ContainerDraggableConfig {
   isDragEnabled?: boolean
 }
 
-// the drag preview following the pointer, with an optional typed disposal
-// hook. Producers that back the preview with owned resources (e.g. the card
-// drag producer renders the icon with a React root) hand teardown to the
-// handler through dispose() — the handler never learns what the preview is
+// The drag preview following the pointer. Producers backing it with owned resources (the
+// card drag producer's React root) hand teardown to the handler through dispose(), so the
+// handler never learns what the preview is.
 export interface DragPreview {
   element: HTMLElement
   dispose?: () => void
@@ -32,18 +29,17 @@ export interface DragPreview {
 
 export interface ContainerDroppableConfig {
   droppableSelector: string
-  // answers the hover question "where would this drop land, and may it?" —
-  // the resolution drives the drop indicator AND travels to this container's
-  // own onDrop as an argument, so the drop consumes exactly what the
-  // indicator showed (false = not allowed)
+  // Answers "where would this drop land, and may it?" — the resolution drives the drop
+  // indicator AND travels to this container's own onDrop, so the drop consumes exactly
+  // what the indicator showed (false = not allowed).
   getIndicatorPosition: (
     draggableInfo: DraggableInfo,
     droppableElem: HTMLElement,
     position: DroppablePosition,
   ) => DropResolution | false
-  // resolution is the getIndicatorPosition answer current at mouse-up; null
-  // means no droppable resolution applied (e.g. a container-level drop with
-  // no droppable hovered) — each adapter decides that case deliberately
+  // resolution is the getIndicatorPosition answer current at mouse-up; null means no
+  // droppable resolution applied (e.g. a container-level drop with no droppable hovered) —
+  // each adapter decides that case deliberately
   onDrop: (draggableInfo: DraggableInfo, resolution: DropResolution | null) => DropResult
   onDragEnterContainer?: (draggableInfo: DraggableInfo) => void
   onDragEnterDroppable?: (droppable: HTMLElement, position: DroppablePosition) => void
@@ -52,11 +48,11 @@ export interface ContainerDroppableConfig {
   onDragLeaveContainer?: (draggableInfo: DraggableInfo) => void
 }
 
-// what a drop did, reported by the drop target's onDrop. A bare boolean is
-// shorthand for { success }. sourceHandled marks drops where the target
-// already moved/consumed the source itself (a reorder within one container,
-// an image added to the gallery it was dragged onto) — the DragDropHandler
-// routes it back to that container's onDropEnd so the source is not removed
+// What a drop did, reported by the drop target's onDrop. A bare boolean is shorthand for
+// { success }. sourceHandled marks drops where the target already moved or consumed the
+// source itself (a reorder within one container, an image added to the gallery it was
+// dragged onto) — the handler routes such drops back to that container's onDropEnd so the
+// source is not removed.
 export type DropResult = boolean | { success: boolean; sourceHandled?: boolean }
 
 export interface ContainerLifecycleHandlers {
@@ -81,11 +77,10 @@ export interface DraggableInfoBase {
 }
 
 /**
- * A card drag, produced by DragDropReorderPlugin's top-level block scan. The
- * dataset is the dragged card's own `getDataset()` — heterogeneous across
- * card types (a gallery carries GalleryImage[] plus the live caption
- * LexicalEditor/EditorState), so it stays an open record on purpose. The node
- * key identifies the source card for reorder and image→gallery merge.
+ * A card drag, produced by DragDropReorderPlugin's top-level block scan. `dataset` is the
+ * dragged card's own `getDataset()` — heterogeneous across card types, so it stays an open
+ * record on purpose. The node key identifies the source card for reorder and image→gallery
+ * merge.
  */
 export interface CardDraggableInfo extends DraggableInfoBase {
   type: 'card'
@@ -96,11 +91,9 @@ export interface CardDraggableInfo extends DraggableInfoBase {
 }
 
 /**
- * A loose image drag, produced by useGalleryReorder. Its dataset is the
- * gallery row picked into the image card's construction vocabulary
- * (`ImageNodeDataset`, the registry-layer insert-command payload type — a
- * type-only import, erased at runtime), so the image-insert surgery consumes
- * it without an assertion.
+ * A loose image drag, produced by useGalleryReorder. Its dataset is the gallery row picked
+ * into the image card's construction vocabulary (a type-only import, erased at runtime), so
+ * image-insert surgery consumes it without an assertion.
  */
 export interface ImageDraggableInfo extends DraggableInfoBase {
   type: 'image'
@@ -108,28 +101,22 @@ export interface ImageDraggableInfo extends DraggableInfoBase {
 }
 
 /**
- * The closed payload set for the container wiring: `getDraggableInfo` is
- * implemented exactly twice — DragDropReorderPlugin's card producer (that
- * producer lives in `src/inkling/plugins`) and useGalleryReorder — and no host
- * or custom drag adapter exists, so the container's own payload type needs no
- * open-string escape. The pure drop policies stay deliberately open:
- * gallery-drop's fact predicates accept plain `{ type, cardName }` and reject
- * unknown runtime values.
+ * The closed payload set: `getDraggableInfo` is implemented exactly twice
+ * (DragDropReorderPlugin's card producer and useGalleryReorder) and no host or custom drag
+ * adapter exists, so this union needs no open-string escape; the pure drop policies stay
+ * open.
  */
 export type DraggableInfo = CardDraggableInfo | ImageDraggableInfo
 
 export type DroppablePosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
-// the answer to "where would this drop land" — derived exactly once per hover
-// target by getIndicatorPosition (reorder-rules), ferried by the handler as
-// the onDrop argument, never re-derived and never read back off shared state
+// Derived exactly once per hover target by getIndicatorPosition, ferried by the handler as
+// the onDrop argument — never re-derived, never read back off shared state.
 export interface DropResolution {
   insertIndex: number
 }
 
-const noop = () => {
-  // default for absent optional callbacks — the handler calls them unconditionally
-}
+const noop = () => {}
 
 export class DragDropContainer {
   element: HTMLElement
@@ -158,8 +145,6 @@ export class DragDropContainer {
       this._createDragPreviewElement = draggable.createDragPreviewElement
     }
 
-    // assemble the flat members the handler calls, filling absent optional
-    // callbacks with no-ops
     this.element = element
     this.draggables = []
     this.droppables = []
@@ -183,7 +168,6 @@ export class DragDropContainer {
     this.refresh()
   }
 
-  // override these via constructor options
   enableDrag() {
     this.isDragEnabled = true
     this.element.dataset[CONTAINER_DATA_ATTR] = 'true'
@@ -196,9 +180,8 @@ export class DragDropContainer {
     this.refresh()
   }
 
-  // builds an element that is attached to the mouse pointer when dragging.
-  // A producer-supplied factory wins; otherwise the fallback grabs the first
-  // <img> of an image draggable and uses that
+  // Builds the element attached to the mouse pointer while dragging; a producer-supplied
+  // factory wins, otherwise the fallback grabs the first <img> of an image draggable.
   createDragPreviewElement(draggableInfo: DraggableInfo): DragPreview | undefined {
     if (typeof this._createDragPreviewElement === 'function') {
       const preview = this._createDragPreviewElement(draggableInfo)
@@ -214,7 +197,7 @@ export class DragDropContainer {
         let width = 0
         let height = 0
 
-        // max drag preview image size is 200px in either dimension
+        // preview capped at 200px in either dimension
         if (image.width > image.height) {
           width = 200
           height = 200 / aspectRatio
@@ -240,10 +223,9 @@ export class DragDropContainer {
     return undefined
   }
 
-  // used to add data attributes to any draggable/droppable elements. This is
-  // for more efficient lookup through DOM by the drag-drop-handler service
+  // Tags draggable/droppable elements with data attributes for efficient lookup by the
+  // drag-drop handler service.
   refresh() {
-    // remove all data attributes for currently held draggable/droppable elements
     this.draggables.forEach((draggable) => {
       delete draggable.dataset[DRAGGABLE_DATA_ATTR]
     })
@@ -251,7 +233,6 @@ export class DragDropContainer {
       delete droppable.dataset[DROPPABLE_DATA_ATTR]
     })
 
-    // re-populate draggable/droppable arrays
     this.draggables = []
     this.droppables = []
     if (this.isDragEnabled) {

@@ -28,7 +28,6 @@ export const galleryDeclaration = checkedCardDeclaration({
       shortcut: '/gallery',
     },
   ],
-  // presence is the opt-in — no flags
   insert: {},
   toolbarLabel: 'gallery',
   markdown: { kind: 'fence' },

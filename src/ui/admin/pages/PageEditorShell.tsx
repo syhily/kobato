@@ -24,8 +24,7 @@ export interface PageEditorShellProps {
 // Module-level accessor — stable identity so the memoized detail only recomputes when the loader DTO changes.
 const getEntity = (d: AdminPageDetailDto) => d.page
 
-// Static page binding for the shared editor adapter: nouns, paths, draft
-// configs, meta helpers, oRPC namespace; per-render inputs arrive as runtime.
+// Static page binding for the shared editor adapter: nouns, paths, draft configs, meta helpers, oRPC namespace.
 const PAGE_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
   PageMetaDraft,
   AdminPageDto,
@@ -67,7 +66,6 @@ const PAGE_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
   listQueryKey: () => orpcQuery.admin.pages.list.key(),
 }
 
-// Thin page binding over `EditorScreen` — adapter shape and wire wrappers are owned by `make-editor-adapter`.
 export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps) {
   const queryClient = useQueryClient()
 

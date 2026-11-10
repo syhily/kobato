@@ -11,7 +11,7 @@ function revisionRow(overrides: Partial<ContentRow>): ContentRow {
   return { body: [], bodyHtml: null, bodyHtmlFeed: null, imageSources: [], headings: [], ...overrides } as ContentRow
 }
 
-describe('content/projection-helpers — readRevisionProjection (R14 body routing)', () => {
+describe('content/projection-helpers — readRevisionProjection (body routing)', () => {
   it('returns every field empty for a null revision', () => {
     expect(readRevisionProjection(null)).toEqual({
       bodyHtml: null,
@@ -33,8 +33,7 @@ describe('content/projection-helpers — readRevisionProjection (R14 body routin
       },
     ]
     const result = readRevisionProjection(revisionRow({ body }))
-    // PT-era rows predate the projection columns and are never rendered
-    // anymore (R13/R14 ruling; the R15 backfill converts them).
+    // Legacy rows carry no projection columns, so every read returns null.
     expect(result.bodyHtml).toBeNull()
     expect(result.bodyHtmlFeed).toBeNull()
     expect(result.bodyState).toBeNull()

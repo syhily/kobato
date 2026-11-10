@@ -53,7 +53,6 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
         </Avatar>
 
         <div className="min-w-0 flex-1">
-          {/* Header: name + badges */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -96,7 +95,6 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
             )}
           </div>
 
-          {/* Meta: date + page */}
           <p className="mt-0.5 truncate text-admin-sm text-muted-foreground">
             {comment.createAt ? formatLocalDate(comment.createAt, ADMIN_DATE_FORMAT, config) : ''}
             {comment.pageTitle && (
@@ -132,7 +130,6 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
             className="comment-content typeset typeset-comment mt-2 leading-copy wrap-break-word whitespace-normal"
           />
 
-          {/* Action row — flat, no overflow menu. Text label hides on narrow screens. */}
           <div className="mt-4 flex flex-row flex-wrap items-center gap-2">
             {comment.isPending && (
               <Button
@@ -243,7 +240,6 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
         </div>
       </div>
 
-      {/* Cover thumbnail */}
       {comment.pageCover ? (
         <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 self-start overflow-hidden rounded-xl bg-muted md:block">
           <Image

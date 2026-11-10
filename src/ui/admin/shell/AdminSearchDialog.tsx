@@ -111,7 +111,6 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
       >
         <DialogTitle className="sr-only">{t('admin.shell.search.title')}</DialogTitle>
 
-        {/* Search input */}
         <div className="flex items-center gap-3 px-5 py-4">
           <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
           <input
@@ -132,10 +131,8 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
           )}
         </div>
 
-        {/* Divider */}
         {hasQuery && <div className="h-px bg-border" />}
 
-        {/* Results */}
         <div className="max-h-empty-state overflow-y-auto overscroll-contain">
           {!hasQuery && (
             <div className="px-5 pt-2 pb-5 text-center text-sm text-muted-foreground" role="status">

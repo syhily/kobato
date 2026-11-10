@@ -6,8 +6,7 @@ const DB_NAME = 'kobato-drafts'
 const DB_VERSION = 1
 const STORE_NAME = 'drafts'
 
-/** Bump when the persisted draft shape changes; stale records are purged on load.
- *  v2: the body is a Lexical editor state (was a PortableText block array). */
+/** Bump when the persisted draft shape changes; stale records are purged on load. */
 export const DRAFT_STORAGE_VERSION = 2
 
 export type DraftType = 'post-edit' | 'page-edit' | 'post-create' | 'page-create'
@@ -175,7 +174,7 @@ export async function removeDraft(key: string): Promise<void> {
 /**
  * Remove every draft whose key starts with `prefix`. Edit keys embed the
  * rotating token (`<prefix><entityId>:<token>`), so a per-key clear would
- * orphan rotated predecessors (audit P1-15).
+ * orphan rotated predecessors.
  */
 export async function removeDraftsByPrefix(prefix: string): Promise<void> {
   try {

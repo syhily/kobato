@@ -18,9 +18,9 @@ import { LikeButton } from '@/ui/public/LikeActions'
 import { postMetaClass, postMetaDateClass, postTitleClass } from '@/ui/public/post/postChrome'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
-// No lazy boundary around the TOC: its closed-drawer DOM must be in the SSR output —
-// a `fallback={null}` boundary would drop it and mismatch on re-render (#418).
-// The streamed Comments boundary is safe: its SSR fallback is a real placeholder.
+// No lazy boundary around the TOC: its closed-drawer DOM must be in the SSR output, and a
+// `fallback={null}` boundary would drop it and mismatch on re-render (#418). The streamed
+// Comments boundary is safe because its SSR fallback is a real placeholder.
 
 const DRAFT_MARKER_LABEL_IDS = {
   draft: { sr: 'public.posts.draftPrefix', visible: 'public.posts.draftBadge' },
@@ -48,8 +48,8 @@ export interface DetailBodyChromeProps {
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
   comments?: boolean
-  /** 引用与回应 block — streamed in by the route via `<Await>`; renders
-   *  between the post body and the comment section (IndieWeb convention). */
+  /** Webmentions block, streamed by the route via `<Await>`; renders between the body
+   *  and the comment section (IndieWeb convention). */
   webmentions?: ReactNode
   mode?: 'admin' | 'public'
   editHref?: string
@@ -59,12 +59,9 @@ export interface DetailBodyChromeProps {
   /** Saved `body_html` projection — sanitized with the 'body' preset at this render boundary. */
   bodyHtml: string
   /**
-   * Author-declared language of the prose (canonical BCP 47). Stamped as the
-   * body container's `lang`; absent/null leaves the container inheriting the
-   * document's UI locale. Never selects a catalog or changes any copy. A set
-   * value also stamps `dir="auto"` on the body only — the browser picks the
-   * paragraph direction from the content (Arabic/Hebrew/Persian render RTL)
-   * without flipping the UI chrome.
+   * Author-declared prose language (BCP 47), stamped as the body container's `lang`; absent
+   * leaves it inheriting the UI locale. Never selects a catalog or changes copy. A set value
+   * also stamps `dir="auto"` on the body only, so RTL prose does not flip the UI chrome.
    */
   contentLanguage?: string | null
   /** Trailing slot rendered after the body container (page friends grid). */
@@ -109,9 +106,8 @@ export function DetailBodyChrome({
   const publishedIso = date.toISOString()
   const updatedAt = updated ?? date
   const updatedIso = updatedAt.toISOString()
-  // Render boundary: storage keeps raw exportDOM HTML, the wire is trusted
-  // only after the 'body' preset strips everything outside the inkling export
-  // contract. SSR runs the node engine; hydration never re-sets innerHTML.
+  // Render boundary: storage keeps raw exportDOM HTML, so it is trusted only after the
+  // 'body' preset strips everything outside the inkling export contract.
   const cleanBodyHtml = useMemo(() => sanitizeHtml(bodyHtml, 'body'), [bodyHtml])
 
   return (

@@ -10,11 +10,11 @@ import {
   type GifScheduler,
 } from '@/inkling/utils/services/gif-browser'
 
-// React adapter over @/utils/services/gif-browser (the deep module — fetch
-// tracks, column balancing, and the navigation machine live there). The
-// browser is recreated when the provider config fields or the injected ports
-// change; callers re-resolve the config object per render, so the memo keys
-// on its fields rather than its identity.
+// React adapter over gif-browser (the deep module — fetch tracks, column
+// balancing, and the navigation machine live there). The browser is recreated
+// when the provider config fields or the injected ports change; callers
+// re-resolve the config object per render, so the memo keys on its fields rather
+// than its identity.
 
 interface UseGifBrowserOptions {
   config: GifProviderConfig

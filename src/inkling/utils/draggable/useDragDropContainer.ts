@@ -6,28 +6,20 @@ import type { DraggableContainerHandle } from '@/inkling/utils/draggable/DragDro
 import { useDragDropHandleState } from '@/inkling/context/DragDropHandleContext'
 
 export interface UseDragDropContainerOptions extends ContainerDragHandlers {
-  // the element registered as the drag-drop container. Registration waits for
-  // both the element and the DragDropHandler (published to the drag-drop
-  // handle by DragDropReorderPlugin) to exist
+  // Registered once both the element and the DragDropHandler (published to the drag-drop
+  // handle by DragDropReorderPlugin) exist.
   element: HTMLElement | null
-  // enable/disable toggles after registration flow through the enable/disable
-  // pair on the live container — never a re-registration. The container's
-  // initial enabled state comes from draggable.isDragEnabled (default true)
   enabled?: boolean
-  // re-register when this value changes. Callbacks are ref-forwarded, so a
-  // re-registration is only needed to re-scan the DOM (DragDropContainer
-  // refreshes its draggable/droppable markers on construction) — e.g. the
-  // gallery passes its images array
+  // Changed value re-registers to re-scan the DOM (e.g. the gallery's images array);
+  // callbacks are ref-forwarded and need no re-registration.
   reRegisterKey?: unknown
 }
 
-// The one drag-drop registration adapter (plan 047 follow-up): owns the
-// registerContainer effect against the drag-drop handle's handler, the
-// enable/disable effect pair, and callback stability. Callers pass plain
-// closures — they are ref-forwarded, so fresh render closures always reach
-// the registered container without re-registering. Returns a stable handle
-// whose methods forward to the live registration (a no-op before
-// registration), replacing per-call-site `.current?.` bookkeeping.
+// The one drag-drop registration adapter: owns the registerContainer effect against the
+// drag-drop handle's handler, the enable/disable effect pair, and callback stability.
+// Callers pass plain closures — ref-forwarded, so fresh render closures reach the
+// registered container without re-registering. Returns a stable handle forwarding to the
+// live registration (a no-op before registration).
 export function useDragDropContainer({
   element,
   enabled = true,
@@ -51,11 +43,9 @@ export function useDragDropContainer({
     destroy: () => containerRef.current?.destroy(),
   }))
 
-  // enable/disable toggles flow through the pair on the live container. This
-  // effect is declared before the registration effect on purpose: on the
-  // render where registration happens the proxy is still empty, so the
-  // container's initial enabled state is the registered
-  // draggable.isDragEnabled — toggles only apply once `enabled` changes
+  // Declared before the registration effect on purpose: on the render where registration
+  // happens the proxy is still empty, so the initial enabled state is the registered
+  // draggable.isDragEnabled and toggles apply only once `enabled` changes.
   React.useEffect(() => {
     if (enabled) {
       container.enableDrag()
@@ -69,11 +59,9 @@ export function useDragDropContainer({
       return
     }
 
-    // stable wrappers read the latest callbacks through the ref, so the
-    // registered container never holds stale render closures and callback
-    // identity never forces a re-registration. The selectors are the one
-    // exception: they are registration-time config, so they are read from
-    // the render scope and join the dependency array — a changed selector
+    // Wrappers read the latest callbacks through the ref, so the registered container never
+    // holds stale render closures. Selectors are the exception: registration-time config,
+    // read from the render scope and part of the dependency array — a changed selector
     // re-registers.
     const current = () => callbacksRef.current
     const registered = handler.registerContainer(element, {
@@ -105,8 +93,8 @@ export function useDragDropContainer({
     })
     containerRef.current = registered
 
-    // unregister on handler swap/unmount; calling destroy() after the handler
-    // itself was destroyed is harmless (DragDropHandler disables and filters)
+    // destroy() after the handler itself was destroyed is harmless (DragDropHandler
+    // disables and filters)
     return () => {
       registered.destroy()
       containerRef.current = null

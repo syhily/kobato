@@ -7,11 +7,10 @@ import { EMPTY_STATE_LINE_IDS, pickEmptyStateLineId } from '@/shared/contracts/d
 import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
 
-// PendingModerationPanel seeds a react-query cache with `initialData`. The
-// shared render-helper QueryClient is a module singleton, so a second test
-// would observe the first test's cached rows. Mock `useQuery` to always
-// return the `initialData` passed in the options, keeping each render
-// deterministic and isolated. `useMutation` is stubbed to no-op handlers.
+// PendingModerationPanel seeds a react-query cache with `initialData`. The shared render
+// helper's QueryClient is a module singleton, so a second test would see the first
+// test's rows; `useQuery` is mocked to return the `initialData` from the options instead,
+// and `useMutation` is stubbed to no-op handlers.
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {

@@ -2,9 +2,8 @@ import type { ExportDOMOutput } from '@/inkling/nodes/base/export-dom'
 import type { RenderContext, SafeUrlKind } from '@/inkling/nodes/base/render-context'
 
 /*
- * Renders an empty container element
- * In the returned object, `type: 'inner'` is picked up by the editor's HTML renderer
- * to render the inner content of the container element (in this case, nothing)
+ * `type: 'inner'` renders the container's inner content (nothing) in the
+ * editor's HTML renderer.
  *
  * @see the original upstream lexical HTML renderer package
  */

@@ -125,17 +125,15 @@ export interface OpenGraphProps {
   cover: string
 }
 
-// Font registration lives in `render/canvas-fonts.ts` (`ensureCanvasFont`) —
-// one single-flight per slot, shared with the calendar renderer.
+// Font registration lives in `canvas-fonts.ts` (`ensureCanvasFont`): one single-flight
+// per slot, shared with the calendar renderer.
 function ensureFonts(settings?: BlogSettingsBundle | null): Promise<FontSlot | null> {
   return ensureCanvasFont('og', settings)
 }
 
-/**
- * `settings` is the caller's PINNED snapshot (the OG resource passes the same
- * request capture whose revision keys the cache entry); omitted = the current
- * process snapshot for background/test callers.
- */
+/** `settings` is the caller's PINNED snapshot (the OG resource passes the same request
+ *  capture whose revision keys the cache entry); omitted = the current process snapshot
+ *  for background/test callers. */
 export async function drawOpenGraph(
   { title, summary, cover }: OpenGraphProps,
   settings?: BlogSettingsBundle | null,

@@ -1,10 +1,8 @@
-// Writing-focus mode — the mechanism half of the focus feature (tiptap
-// extension-focus parity, delivered as a real UX: tiptap's `tiptap-focus-node`
-// class had no CSS consumer and was dead config). While registered, the
-// editor root carries FOCUS_MODE_CLASS and the top-level block element holding
-// the native selection carries FOCUS_ACTIVE_ATTRIBUTE; host CSS dims every
-// other top-level block. This module owns only the DOM bookkeeping — the
-// visual rules live in the host stylesheet.
+// Writing-focus mode — the mechanism half of the focus feature. While
+// registered, the editor root carries FOCUS_MODE_CLASS and the top-level
+// block element holding the native selection carries FOCUS_ACTIVE_ATTRIBUTE;
+// host CSS dims every other top-level block. This module owns only the DOM
+// bookkeeping — the visual rules live in the host stylesheet.
 //
 // The walk is DOM-based (not editor-state-based) on purpose: card nested
 // editors (captions, footnote content, cell text) are separate LexicalEditor

@@ -20,8 +20,7 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// routes/auth/signin against the real engine; only mocks: the
-// request-context seam and email DELIVERY (OTP / magic-link extraction).
+// Real engine; only the request-context seam and email delivery are mocked.
 
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
@@ -52,7 +51,6 @@ const db = getTestDb()
 
 const CSRF_TOKEN = 'signin-route-csrf-token'
 
-// Mail transport ready + roomy rate buckets.
 const MAIL_READY_BUNDLE = {
   ...TEST_BLOG_SETTINGS_BUNDLE,
   mail: {
@@ -94,14 +92,11 @@ let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
 beforeEach(async () => {
-  // Flush before teardown so no pending event references a row the next
-  // clearAllTables wipes (FK).
+  // Init batchers first: a pending event must not reference a row clearAllTables wipes (FK).
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
-  // The real install gate needs an installed deployment: seed one admin.
   await seedGateAdmin()
-  // The rate limiter is a process-level Map — reset it or earlier tests
-  // (same email/IP) exhaust the budgets for later ones.
+  // The rate limiter is a process-level Map; earlier tests (same email/IP) exhaust the budgets.
   __resetRateLimitsForTests()
   testSession = makeSession({})
   testSession.set('csrfToken', CSRF_TOKEN)
@@ -129,8 +124,7 @@ afterEach(async () => {
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
 
-/** Satisfies the real install gate (hasAdmin) without colliding with the
- * per-test `admin@example.com` seeds. */
+/** Satisfies the real install gate (hasAdmin) without colliding with the per-test `admin@example.com` seeds. */
 async function seedGateAdmin() {
   await db.insert(user).values({
     name: 'Gatekeeper',
@@ -242,8 +236,7 @@ function emailFormData(email: string) {
   return withCsrf(fd)
 }
 
-// `redirect()` results are real Responses; `data()` results keep their
-// headers under `.init` (React Router's DataWithResponseInit).
+// `redirect()` returns a real Response; `data()` keeps headers under `.init` (DataWithResponseInit).
 function getSetCookie(result: Response & { data?: any }): string | null {
   if (result.headers instanceof Headers) {
     return result.headers.get('Set-Cookie')
@@ -301,9 +294,8 @@ describe('routes/signin', () => {
     testSession.set('user', adminUser())
     const response = await callLoader('?action=logout')
 
-    // The already-logged-in branch still redirects…
     expect(response.status).toBe(302)
-    // …but no session-destroying cookie goes out and the user stays put.
+    // No session-destroying cookie goes out; the user stays signed in.
     expect(getSetCookie(response)).toBeNull()
     expect(testSession.get('user')).toBeDefined()
     expect(await auditRowsFor('logout')).toHaveLength(0)
@@ -445,7 +437,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSend', 1))
     await seedUser()
 
-    // First login consumes the single-slot budget and sends.
     await callAction(null, loginFormData())
     expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
     testSession.unset('pendingOtpUser')
@@ -456,7 +447,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     expect(extractData(result).error).toBe('发送过于频繁，请稍后再试。')
     expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
-    // Rate-limit error carries no mutation: not dirty, no Set-Cookie.
     expect(markSessionDirty).not.toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
   })
@@ -480,7 +470,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(testSession.get('pendingOtpUser')).toBeUndefined()
     // Cleanup marks dirty; the sid rotation still carries its own cookie.
     expect(markSessionDirty).toHaveBeenCalled()
-    // Single-use: the OTP row is gone.
     expect(await getOtpRow(admin.id)).toBeNull()
   })
 
@@ -492,10 +481,8 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const result = await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
 
     expect(testSession.get('otpFailCount')).toBe(1)
-    // Fail-counter mutation marks dirty; the error carries no Set-Cookie.
     expect(markSessionDirty).toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
-    // The OTP row survives a failed attempt.
     expect(await getOtpRow(admin.id)).not.toBeNull()
   })
 
@@ -510,7 +497,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(testSession.get('pendingOtpUser')).toBeUndefined()
     expect(markSessionDirty).toHaveBeenCalled()
 
-    // The lockout audit event really landed.
     const failures = await auditRowsFor('otp_failed')
     const lockout = failures.find((row) => (row.details as Record<string, unknown> | null)?.lockedOut === true)
     expect(lockout).toBeDefined()
@@ -529,7 +515,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const newCode = mockHandles.sendSignInOtp.mock.calls[1]![1] as string
     expect(newCode).not.toBe(oldCode)
     expect(testSession.get('otpFailCount')).toBe(0)
-    // Resend re-stages the pending entry: dirty-marked, no Set-Cookie.
     expect(markSessionDirty).toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
   })
@@ -559,7 +544,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     // The third attempt is throttled before the token check — even with the correct code.
     await callAction('verifyotp', otpFormData(otpCode))
 
-    // Throttled before establish.
     expect(await sessionRowsFor(admin.id)).toHaveLength(0)
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
@@ -575,7 +559,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'signIn', 1))
     await seedUser()
 
-    // First attempt consumes the single-slot budget (dirty mark cleared first).
     await callAction(null, loginFormData())
     markSessionDirty.mockClear()
 
@@ -592,7 +575,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toContain('error=invalid_credentials')
-    // Invalid-credentials redirect carries no mutation: no Set-Cookie.
     expect(getSetCookie(result)).toBeNull()
     expect(markSessionDirty).not.toHaveBeenCalled()
     expect(mockHandles.sendSignInOtp).not.toHaveBeenCalled()
@@ -694,7 +676,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
   it('blocks resend when rate limit exceeded', async () => {
     setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSend', 1))
     await seedUser()
-    // The initial login already consumed the single-slot send budget.
     await doLogin()
     markSessionDirty.mockClear()
 
@@ -724,10 +705,9 @@ describe('routes/signin — identify (real db)', () => {
 
   it('answers unknown email exactly like a magic-link send (no existence oracle)', async () => {
     const result = await callAction('identify', emailFormData('ghost@example.com'))
-    // Same response shape + generic copy as a real send…
+    // Same shape and copy as a real send, but nothing is sent or persisted.
     expect(extractData(result).message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
 
-    // …but nothing was actually sent or persisted.
     expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
     expect(await db.select().from(verification)).toHaveLength(0)
   })
@@ -765,7 +745,6 @@ describe('routes/signin — identify (real db)', () => {
     const [recipient, link] = mockHandles.sendSignInLink.mock.calls[0]! as [{ email: string }, string]
     expect(recipient.email).toBe('admin@example.com')
     expect(link).toContain('action=magiclink')
-    // A real signin-link token row backs the emailed link.
     const rows = await db
       .select()
       .from(verification)
@@ -786,7 +765,6 @@ describe('routes/signin — identify (real db)', () => {
   it('blocks identify when rate limit is exceeded', async () => {
     setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signIn', 1))
 
-    // First identify consumes the single-slot budget.
     await callAction('identify', emailFormData('admin@example.com'))
 
     const result = await callAction('identify', emailFormData('admin@example.com'))

@@ -17,7 +17,7 @@ async function pngDeclaringPixels(size: number): Promise<Buffer> {
   return forged
 }
 
-const OVER_CAP_PIXELS = 10_000 // 100 M px — under sharp's ~268 M default, over our 50 M cap
+const OVER_CAP_PIXELS = 10_000 // 100 M px — under sharp's ~268 M default, over the 50 M cap
 
 describe('infra/image/compress — decoded-pixel cap', () => {
   it("rejects a header sharp's default would accept but our 50 M px cap does not", async () => {

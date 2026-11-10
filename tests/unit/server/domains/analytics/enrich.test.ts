@@ -4,8 +4,7 @@ import type { RawAccessEvent } from '@/server/domains/analytics/types'
 
 import { buildDeviceEnvServerRow } from '@/server/domains/analytics/enrich'
 
-// `device_env_server` row construction is pure: it maps the request's
-// client hints + Accept-Language onto the sidecar columns (ADR-0006).
+// Row construction is pure: request client hints + Accept-Language map onto sidecar columns.
 
 function makeRaw(overrides: Partial<RawAccessEvent> = {}): RawAccessEvent {
   return {

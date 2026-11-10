@@ -5,10 +5,9 @@ import { routeWarmupPlugin } from '@/server/infra/route-warmup'
 const VIRTUAL = 'virtual:route-warmup-script'
 const RESOLVED = `\0${VIRTUAL}`
 
-// The new virtual-module hooks (resolveId/config/load) added alongside the
-// bundled inline script. The build-mode `load` (which runs a real nested
-// `vite.build`) is covered by `npm run build`; here we cover only the cheap,
-// deterministic paths.
+// The virtual-module hooks (resolveId/config/load) around the bundled inline script. The
+// build-mode `load` (a real nested `vite.build`) is covered by `pnpm run build`; only the
+// cheap, deterministic paths are covered here.
 
 describe('routeWarmupPlugin — virtual module hooks', () => {
   // Cast to a minimal call-signature view; the Plugin type declares these as

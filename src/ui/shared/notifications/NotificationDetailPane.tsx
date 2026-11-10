@@ -32,7 +32,7 @@ interface NotificationDetailPaneProps {
   /** Admins can recall announcements / system alerts (never direct messages). */
   isAdmin: boolean
   onBack: () => void
-  /** Closes the host drawer; the 去处理 link navigates underneath it. */
+  /** Closes the host drawer; the action link navigates underneath it. */
   onClose: () => void
 }
 
@@ -41,8 +41,8 @@ export function isForkReply(currentThreadId: string, resultThreadId: string): bo
   return resultThreadId !== currentThreadId
 }
 
-// Thread pane: the root message plus its replies as a chat-like transcript,
-// with the reply composer gated by the server's canReply verdict.
+// Thread pane: the root message and its replies as a transcript; the composer is gated by
+// the server's canReply verdict.
 export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: NotificationDetailPaneProps) {
   const { locale, t } = useI18n()
   const { timeZone } = useSiteIdentity()
@@ -68,8 +68,8 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   const [recallConfirmOpen, setRecallConfirmOpen] = useState(false)
   const backRef = useRef<HTMLButtonElement>(null)
 
-  // The pane swap replaces the list in place, so focus must be placed here
-  // explicitly — otherwise it falls to the document body on open.
+  // The pane swap replaces the list in place, so focus is placed here explicitly; otherwise
+  // it falls to the document body on open.
   useEffect(() => {
     backRef.current?.focus()
   }, [])
@@ -196,9 +196,8 @@ function ReplyComposer({ threadId }: { threadId: string }) {
     orpcQuery.notifications.reply.mutationOptions({
       onSuccess: (data) => {
         setBody('')
-        // A broadcast reply lands in a freshly forked private thread, so the
-        // user stays on an announcement thread that never shows the reply —
-        // explain the move instead of letting them retype it.
+        // A broadcast reply lands in a freshly forked private thread, so this announcement
+        // thread never shows it — explain the move instead of letting the user retype it.
         if (isForkReply(threadId, data.threadId)) {
           toast.success(t('notifications.detail.replyForked'))
         }

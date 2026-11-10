@@ -216,12 +216,12 @@ describe('Markdown round-trip for decorator cards', function () {
 })
 
 describe('Markdown round-trip for host cards', function () {
-  // A host card (CONTEXT.md: "host card") joins the round-trip through
-  // registration alone (registry-default wiring): its assembled node class
-  // registers on the conversion editor and its fence transformer is derived
-  // from the stored spec. The `cards` option augments the default for
-  // handles built without defineCard (and overrides a registered type on
-  // collision) — passing the registered handle back is an idempotent no-op.
+  // A host card joins the round-trip through registration alone
+  // (registry-default wiring): its assembled node class registers on the
+  // conversion editor and its fence transformer is derived from the stored
+  // spec. The `cards` option augments the default for handles built without
+  // defineCard (and overrides a registered type on collision); passing the
+  // registered handle back is an idempotent no-op.
   const musicPlayer: HostCard<'musicPlayer'> = defineCard({
     nodeType: 'musicPlayer',
     baseNode: generateDecoratorNode({

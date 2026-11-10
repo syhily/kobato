@@ -2,10 +2,10 @@
 
 // The client resolver for the ACTIVE locale's Inkling label overlay. The tables
 // are server data: the root loader's `i18n.inklingLabels` carries exactly one
-// of them, so the composer never imports a table module (the four-table import
-// that used to sit here put ~22 KB of every language into the public comment
-// composer chunk). Pinned by `tests/unit/arch/client-bundle.test.ts`; this
-// suite pins the payload read + the degraded no-payload path.
+// of them, so the composer never imports a table module (a four-table import
+// would put ~22 KB of every language into the public comment composer chunk).
+// Pinned by `tests/unit/arch/client-bundle.test.ts`; this suite pins the
+// payload read + the degraded no-payload path.
 
 import { render } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'

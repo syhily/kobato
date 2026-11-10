@@ -24,8 +24,7 @@ const FORMAT_TAG_MAP: Record<TextFormatType, TextFormatAbbreviation> = {
 }
 
 // The case-transform formats have no semantic tag; their SPAN carries the
-// format as an inline text-transform style so it survives serialization
-// (previously they were emitted as a bare SPAN and the format was lost).
+// format as an inline text-transform style so it survives serialization.
 const TEXT_TRANSFORM_FORMATS: ReadonlySet<TextFormatType> = new Set(['lowercase', 'uppercase', 'capitalize'])
 
 // Object.keys widens the key union to string; this guard is the narrow
@@ -47,8 +46,8 @@ function isDomElement(node: Node | null): node is HTMLElement {
 export default class TextContent {
   nodes: LexicalNode[]
   exportChildren: ExportChildren
-  // The render-context seam (plan 040; plan 042 made it the constructor's
-  // second argument): link-href URL policy goes through `context.safeUrl`.
+  // The render-context seam: link-href URL policy goes through
+  // `context.safeUrl`.
   context: RenderContext
 
   constructor(exportChildren: ExportChildren, context: RenderContext) {
@@ -91,25 +90,23 @@ export default class TextContent {
           continue
         }
 
-        // open format tags in correct order
         const formatsToOpen: TextFormatType[] = []
 
-        // get base list of formats that need to open
         for (const format of Object.keys(FORMAT_TAG_MAP)) {
           if (isTextFormatType(format) && node.hasFormat(format) && !openFormats.includes(format)) {
             formatsToOpen.push(format)
           }
         }
 
-        // re-order formats to open based on next nodes - we want to make
-        // sure tags that will be kept open for later nodes are opened first
+        // re-order formats to open based on the next nodes: tags that stay
+        // open across later nodes open first
         const remainingNodes = this.nodes.slice(i + 1)
         // avoid checking any nodes after a link node because those cause all formats to close
         const nextLinkNodeIndex = remainingNodes.findIndex((n) => $isLinkNode(n))
         const remainingSortNodes =
           nextLinkNodeIndex === -1 ? remainingNodes : remainingNodes.slice(0, nextLinkNodeIndex)
 
-        // ensure we're only working with text nodes as they're the only ones that can open/close formats
+        // text nodes only — the only nodes that can open/close formats
         const remainingSortedTextNodes = remainingSortNodes.filter((n) => $isTextNode(n))
 
         formatsToOpen.sort((a, b) => {
@@ -126,7 +123,6 @@ export default class TextContent {
           return aIndex - bIndex
         })
 
-        // open new tags
         for (const format of formatsToOpen) {
           const formatTag = document.createElement(FORMAT_TAG_MAP[format])
           if (TEXT_TRANSFORM_FORMATS.has(format)) {
@@ -137,7 +133,6 @@ export default class TextContent {
           openFormats.push(format)
         }
 
-        // insert text
         currentNode.append(node.getTextContent())
 
         // close the outermost format the next node lacks and every format nested inside it
@@ -175,11 +170,9 @@ export default class TextContent {
     this.nodes = []
   }
 
-  // PRIVATE -----------------------------------------------------------------
-
   _buildAnchorElement(anchor: HTMLElement, node: LinkNode) {
-    // Only set the href if we have a URL, otherwise we get a link to the current page;
-    // unsafe URLs (e.g. javascript:) are dropped the same way
+    // Set the href only for a non-empty safe URL — an empty href links to the
+    // current page; unsafe URLs (e.g. javascript:) are dropped the same way
     const safeHref = this.context.safeUrl('navigation', node.getURL())
     if (safeHref) {
       anchor.setAttribute('href', safeHref)

@@ -5,18 +5,17 @@
 // `MarkdownPastePlugin`) and the markdown card's HTML export
 // (`@/inkling/nodes/base/nodes/markdown/markdown-renderer`).
 //
-// What the dialect speaks: footnotes, ==mark==, ~sub~, ^sup^ — and no
-// card-fence grammar. The inline delimiters are declared once in the shared
-// grammar table (`@/inkling/markdown/grammar`); the engine — markdown-it with its
-// plugin stack, the cached per-slug-policy instances, and the legacy
-// `inklingVersion` slug branching — is the module's hidden implementation
-// below.
+// It speaks footnotes, ==mark==, ~sub~, ^sup^ — and no card-fence grammar. The
+// inline delimiters are declared once in the shared grammar table
+// (`@/inkling/markdown/grammar`); the engine is markdown-it with its plugin
+// stack, the cached per-slug-policy instances, and `inklingVersion` slug
+// branching.
 //
-// Where the dialects meet: the round-trip dialect's own export does not
-// survive this dialect — a pasted ```inkling:*``` fence renders as
+// The dialects do not compose: a pasted ```inkling:*``` fence renders as
 // `<pre><code class="language-inkling:*">` and imports as a code block card
 // whose language is the fence tag (pinned in
-// test/unit/plugins/MarkdownPastePlugin.test.tsx, "paste dialect coverage").
+// tests/inkling/unit/plugins/MarkdownPastePlugin.test.tsx, "paste dialect
+// coverage").
 import MarkdownIt, {
   type Env,
   type MarkdownIt as MarkdownItInstance,
@@ -51,8 +50,7 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
   return function (md: MarkdownItInstance) {
     const originalHeadingOpen = md.renderer.rules.heading_open
 
-    // originally from https://github.com/leff/markdown-it-named-headers
-    // moved here to avoid pulling in http://stringjs.com dependency
+    // Adapted from markdown-it-named-headers to avoid its string.js dependency.
     md.renderer.rules.heading_open = function (
       tokens: Token[],
       idx: number,
@@ -94,10 +92,8 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
   }
 }
 
-// Pasted images export `loading="lazy"` (the only feature the former
-// markdown-it-image-lazy-loading dependency provided — its image-size /
-// node:path legs pulled Node built-ins into the browser bundle and were
-// never used: the plugin was mounted with no options).
+// Hand-rolled: the image-loading plugin that did this pulled Node built-ins
+// into the browser bundle.
 function lazyLoadingImages(md: MarkdownItInstance): void {
   const defaultImageRenderer = md.renderer.rules.image
   md.renderer.rules.image = function (tokens, idx, options, env, self) {
@@ -118,7 +114,7 @@ const selectRenderer = function (options: RenderOptions): MarkdownItInstance {
   // markdown-it-mark/sub/sup are this engine's projection of the shared
   // grammar table's inline delimiters (`@/inkling/markdown/grammar`'s
   // INLINE_DELIMITERS) — the plugins hardcode ==/~/^, and
-  // test/markdown/grammar.test.ts pins the engines agreeing.
+  // tests/inkling/markdown/grammar.test.ts pins the engines agreeing.
   const markdownIt = new MarkdownIt({ html: true, breaks: true, linkify: true })
     .use(markdownItFootnote)
     .use(markdownItLazyHeaders)
@@ -137,5 +133,5 @@ function render(markdown: string, options: RenderOptions = {}): string {
   return selectRenderer(options).render(markdown)
 }
 
-/** The paste dialect's single handle (CONTEXT.md: "markdown dialect"). */
+/** The paste dialect's single handle. */
 export const pasteDialect = { render }

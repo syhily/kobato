@@ -1,8 +1,8 @@
 /**
- * The snippet menu's headless navigator (round 3, C7): one slot ring
- * replacing the paired `isCreateButtonActive`/`activeMenuItem` state. Slot 0
- * is the create button, slots 1..itemCount are the filtered snippets, and
- * the arrow keys walk the ring in both directions.
+ * The snippet menu's headless navigator: one slot ring replacing the paired
+ * `isCreateButtonActive`/`activeMenuItem` state. Slot 0 is the create button,
+ * slots 1..itemCount are the filtered snippets, and the arrow keys walk the ring
+ * in both directions.
  */
 
 /** Where the highlight starts for a fresh query: the first item, or the create button when nothing matches. */

@@ -63,7 +63,6 @@ export function cleanBasicHtml(html: string = '', options: CleanBasicHtmlOptions
       // Treat Zero Width Non-Joiner characters as spaces
       if (!element.textContent?.trim().replace(/\u200c+/g, '')) {
         if (resolvedOptions.allowBr && element.tagName === 'BR') {
-          // keep it
           return
         }
         if (resolvedOptions.allowBr && element.querySelector('br')) {

@@ -8,11 +8,9 @@ import { SERVER_FILLED_NODE_FIELDS } from '@/shared/lexical/artifacts'
 import { lexicalEditorStateSchema } from '@/shared/lexical/schema'
 import { visitLexicalNodes } from '@/shared/lexical/walk'
 
-// Lexical counterpart of `canonicalizePortableTextBody` (plan
-// docs/plans/inkling-editor-replacement.md, round R9a): validate the
-// incoming editor state, strip every server-owned artifact slot the client
-// may have forged (stored-XSS / stale-snapshot guard — the editor never
-// writes these back), then recompute the KaTeX/Shiki slots.
+// Validate the incoming editor state, strip every server-owned artifact slot
+// the client may have forged (stored-XSS / stale-snapshot guard — the editor
+// never writes these back), then recompute the KaTeX/Shiki slots.
 
 export async function canonicalizeLexicalEditorState(input: unknown): Promise<LexicalEditorState> {
   try {

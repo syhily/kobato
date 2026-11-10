@@ -60,14 +60,12 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
     expect(result.to).toBe('/admin')
     expect(result.setCookie).toMatch(/^__session=/)
 
-    // The admin row landed, with a real bcrypt hash of the password.
     const users = await db.select().from(userTable)
     expect(users).toHaveLength(1)
     const admin = users[0]!
     expect(admin).toMatchObject({ name: 'Admin', email: 'admin@example.com', role: 'admin' })
     expect(await bcrypt.compare('CorrectHorse1', admin.password)).toBe(true)
 
-    // All settings sections are seeded in one pass.
     const rows = await settingRows()
     const byScope = new Map(rows.map((row) => [row.scope, row]))
 
@@ -102,12 +100,10 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
     // refreshBlogSettings ran: the in-process snapshot now reflects the seed.
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
 
-    // The session primitive minted a real session row owned by the admin.
     const sessions = await db.select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(admin.id)
 
-    // Exactly one login audit, attributed to the new session.
     await flushAuditLog()
     const logins = await db.select().from(auditLog).where(eq(auditLog.action, 'login'))
     expect(logins).toHaveLength(1)

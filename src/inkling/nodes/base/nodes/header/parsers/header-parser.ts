@@ -1,9 +1,9 @@
-// Survives hand-written (no import spec, CONTEXT.md: "import spec"): the
-// payload is derived, not read — buttonEnabled from element presence,
-// two-source backgroundColor, and the version: 2 constant. layout/swapped/
-// backgroundSize are read back from the classes the renderer emits
-// (header-renderer.ts getCardClasses); hand-written markup has no layout
-// classes, so it keeps the backgroundImageSrc-presence fallback for layout.
+// Hand-written (no import spec): the payload is derived, not read —
+// buttonEnabled from element presence, two-source backgroundColor, and the
+// version: 2 constant. layout/swapped/backgroundSize are read back from the
+// classes the renderer emits (header-renderer.ts getCardClasses); hand-written
+// markup has no layout classes, so it keeps the backgroundImageSrc-presence
+// fallback for layout.
 import type { LexicalNode } from 'lexical'
 
 export function parseHeaderNode(BaseHeaderNode: new (data: Record<string, unknown>) => LexicalNode) {

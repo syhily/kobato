@@ -1,10 +1,8 @@
-// Statement timing via the 'sqlite.db.query' diagnostics channel (Node 26.8,
-// experimental). The channel publishes { sql, database, duration } per
-// completed statement — `sql` is the EXPANDED SQL with bound values inlined,
-// so it is redacted back to placeholders before logging; bound parameter
-// values never reach the log. Subscription is gated on the debug log level
-// (zero overhead at info+ in production) and is a no-op under vitest unless
-// a test opts in explicitly.
+// Statement timing via the 'sqlite.db.query' diagnostics channel. The channel
+// publishes the EXPANDED SQL with bound values inlined, so it is redacted back
+// to placeholders before logging — bound parameter values never reach the log.
+// Subscription is gated on the debug log level (zero overhead at info+ in
+// production) and is a no-op under vitest unless a test opts in explicitly.
 
 import diagnostics_channel from 'node:diagnostics_channel'
 
@@ -80,7 +78,6 @@ export function redactBoundValues(expanded: string): string {
 }
 
 function onQuery(message: unknown): void {
-  // A throwing subscriber would break statement completion — never throw.
   try {
     if (!isRecord(message) || typeof message.sql !== 'string' || typeof message.duration !== 'number') {
       return
@@ -90,17 +87,16 @@ function onQuery(message: unknown): void {
       durationMs: Math.round(message.duration / 1e3) / 1e3,
     })
   } catch {
-    // diagnostics must never break statement execution
+    // A throwing subscriber would break statement completion — never propagate.
   }
 }
 
 let subscribed = false
 
 /**
- * Subscribe to 'sqlite.db.query' and forward timings to the logger at debug
- * level. Idempotent. No-op under vitest or above the debug log level unless
- * `enabledInTests` opts in (the test seam — the suite runs the logger at
- * 'silent').
+ * Subscribe and forward timings to the logger at debug level. Idempotent.
+ * No-op under vitest or above the debug log level unless `enabledInTests`
+ * opts in (the test seam — the suite runs the logger at 'silent').
  */
 export function startQueryDiagnostics(options?: { enabledInTests?: boolean }): void {
   if (subscribed) {

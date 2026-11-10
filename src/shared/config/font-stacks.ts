@@ -1,14 +1,13 @@
-// Default font chains per UI locale (plan 001, 5c).
+// Default font chains per UI locale.
 //
 // `src/styles/tailwind.css` applies the zh-CN chain on `:root` and overrides
 // `--font-body` / `--font-serif` through `:lang()` branches for the other
-// locales. The SAME map feeds `src/root.tsx`, where a configured custom family
-// is prepended to the locale's fallback tail — so a custom font keeps a
+// locales. The SAME map feeds `src/root.tsx`, where a configured custom family is
+// prepended to the locale's fallback tail, so a custom font keeps a
 // locale-appropriate fallback chain instead of a hardcoded CJK one.
 //
 // The CSS copy and this map are contract-pinned
 // (`tests/unit/contract/font-stacks.test.ts`): change both or neither.
-// Custom font selections themselves are untouched — only the fallback tail.
 
 import type { AppLocale } from '@/shared/i18n/locales'
 

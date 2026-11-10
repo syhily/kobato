@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 
-// The cover fallback matters: a blank `cover` column must project to
-// `/images/open-graph.png` — otherwise listings render `<Image src="" />`
-// and OG generation fails.
+// A blank `cover` column must project to `/images/open-graph.png`, or listings render
+// `<Image src="" />` and OG generation fails.
 
 const { toCmsPost } = await import('@/server/domains/posts/projection')
 const { toClientPostFromMeta } = await import('@/server/domains/posts/repos/shared')

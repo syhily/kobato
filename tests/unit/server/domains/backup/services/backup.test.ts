@@ -76,8 +76,7 @@ describe('services/backup — encryption resolver (fail closed on misconfigurati
       fallbackMessage: 'Backup encryption is enabled but no password is stored.',
     })
 
-    // Legacy string construction (tests/other callers) stays a raw technical
-    // message wrapped in the passthrough descriptor.
+    // String-message construction wraps the raw text in the passthrough descriptor.
     const legacy = new BackupEncryptionMisconfiguredError('enabled but passwordless')
     expect(legacy.message).toBe('enabled but passwordless')
     expect(legacy.descriptor).toEqual({

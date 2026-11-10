@@ -1,7 +1,3 @@
-// Analytics metric labels — NEUTRAL registry: every value is a UI message id,
-// resolved by the consumer's `useI18n()`. Kept out of the components so the
-// filter chips, group tabs and tooltip labels can never drift apart.
-
 import type { MetricType } from '@/shared/contracts/analytics'
 import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 
@@ -33,11 +29,8 @@ export const HEATMAP_METRIC_LABEL_IDS: Record<HeatmapMetricKey, UiMessageId> = {
   visitors: 'admin.analytics.metric.visitors',
 }
 
-/**
- * Locale-neutral bucket tokens emitted by the env dimension expressions
- * (`server/domains/analytics/services/metric-dimensions.ts`) → display ids.
- * The token itself stays the wire/filter value, so a clicked row round-trips.
- */
+/** Locale-neutral bucket tokens from the server dimension expressions; the token stays
+ *  the wire/filter value so a clicked row round-trips. */
 export const METRIC_VALUE_LABEL_IDS: Partial<Record<MetricType, Record<string, UiMessageId>>> = {
   dpr: { other: 'admin.analytics.metrics.value.other' },
   touch: {

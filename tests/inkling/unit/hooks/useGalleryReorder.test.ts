@@ -165,7 +165,7 @@ describe('useGalleryReorder', () => {
   })
 
   it('rejects an internal drop when the dragged image no longer exists', async () => {
-    // positional lookup (§3-25): the source is located by the dragged
+    // positional lookup: the source is located by the dragged
     // element's slot among the container's droppables — so the "removed
     // remotely" divergence is built directly: the DOM still renders two
     // slots while the hook's images data only holds one, and slot 1

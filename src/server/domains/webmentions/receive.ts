@@ -22,7 +22,7 @@ const log = getLogger('webmentions.receive')
 
 export interface ReceiveWebmentionResult {
   row: WebmentionRow
-  /** Upsert outcome driving the notification decision (R11/R13). */
+  /** Upsert outcome driving the notification decision. */
   outcome: WebmentionUpsertOutcome
 }
 
@@ -44,9 +44,9 @@ export async function verifyWebmentionSource(sourceUrl: string, targetCanonicalU
 }
 
 /**
- * Verify + store one mention as `pending` and notify (async-inbox design,
- * docs/plans/2026-08-02-webmention-async-inbox-design.md): source key is
- * `requireSourceKey` (R12), notify only on `inserted`/`demoted` (R11).
+ * Verify + store one mention as `pending` and notify: the dedupe key is the
+ * normalized source from `requireSourceKey`; notification fires only on
+ * `inserted`/`demoted`.
  */
 export async function receiveWebmention(db: Database, input: WebmentionReceiveInput): Promise<ReceiveWebmentionResult> {
   const target = await resolveWebmentionTargetOrThrow(db, input.target)

@@ -256,7 +256,7 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
       author: typeof row.author === 'string' ? row.author.trim().slice(0, 30) : '',
     }))
     form.setValue('customQuotes', quotes, { shouldDirty: true })
-    // 离散动作（非逐行列表编辑），立即保存才能给出服务端校验的即时反馈。
+    // A discrete action (not per-row list editing) — saving immediately surfaces the server validation.
     void save('customQuotes')
   }
 

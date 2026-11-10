@@ -57,8 +57,7 @@ describe('derived read/redact accessors', () => {
     bundle.assets!.storage.secretAccessKey = ''
     expect(secretBy('mailSmtpPassMask').read(bundle)).toBeUndefined()
     expect(secretBy('mailMailgunApiKeyMask').read(bundle)).toBeUndefined()
-    // A blank slot reads back as '' (the mask story is "unset", not
-    // "absent") — matching the previous hand-written accessors.
+    // A blank slot reads back as '' (the mask story is "unset", not "absent").
     expect(secretBy('assetsSecretAccessKeyMask').read(bundle)).toBe('')
   })
 

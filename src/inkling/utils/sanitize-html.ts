@@ -8,11 +8,10 @@ export interface SanitizeHtmlOptions {
 
 type SanitizeWindow = ExportDOMDom['window']
 
-// The render-context window is only declared as `{ document: Document }`,
-// while the call sites below also rely on its DOMParser (and DOMPurify on
-// the full window surface). The provided window always carries a real DOM
-// (browser or jsdom), so the guard validates that surface at runtime — the
-// structural window-to-WindowLike bridge stays inside this policy module.
+// The render-context window is declared as `{ document: Document }`, while the call sites
+// also rely on its DOMParser (and DOMPurify on the full window surface). The provided
+// window always carries a real DOM (browser or jsdom), so the guard validates that
+// surface at runtime.
 function isWindowLike(window: SanitizeWindow): window is SanitizeWindow & WindowLike {
   return 'DOMParser' in window && typeof window.DOMParser === 'function'
 }
@@ -26,10 +25,9 @@ function requireWindowLike(window: SanitizeWindow): SanitizeWindow & WindowLike 
 
 function parseHtml(html: string, window?: SanitizeWindow): Document {
   if (window) {
-    // The provided window's own DOMParser — same full-document parse entry
-    // as the browser default, so the pinned parsing behavior (a standalone
-    // leading <script> lands in <head>) is preserved while no global is
-    // touched.
+    // The provided window's own DOMParser: same parse entry as the browser default, so
+    // the pinned parsing behavior (a standalone leading <script> lands in <head>) holds
+    // while no global is touched.
     const windowLike = requireWindowLike(window)
     return new windowLike.DOMParser().parseFromString(html, 'text/html')
   }
@@ -61,10 +59,9 @@ function replaceScriptAndIframePlaceholders(html: string, window?: SanitizeWindo
 }
 
 /**
- * The optional `window` port binds parsing and DOMPurify to a specific
- * window so the function never touches browser globals — headless renders
- * pass their resolved window through the render context. Omitted, the
- * browser-global defaults apply (the live-editor call sites).
+ * The optional `window` port binds parsing and DOMPurify to a specific window so the
+ * function never touches browser globals; headless renders pass their resolved window
+ * through the render context.
  */
 export function sanitizeHtml(html = '', options: SanitizeHtmlOptions = {}, window?: SanitizeWindow): string {
   const resolvedOptions = {
@@ -83,9 +80,8 @@ export function sanitizeHtml(html = '', options: SanitizeHtmlOptions = {}, windo
   return purify.sanitize(result, {
     ALLOWED_URI_REGEXP: /^(?:https?:|\/|blob:)/,
     ADD_ATTR: ['id'],
-    // `style` kills style-tag CSS injection; the form family kills
-    // overlay/phishing markup pasted into the live editor (DOMPurify's
-    // default allowlist would keep them).
+    // `style` blocks style-tag CSS injection; the form family blocks overlay/phishing
+    // markup pasted into the live editor (DOMPurify's default allowlist keeps them).
     FORBID_TAGS: ['style', 'form', 'input', 'button', 'textarea', 'select'],
   })
 }

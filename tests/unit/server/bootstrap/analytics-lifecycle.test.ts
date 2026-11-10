@@ -20,9 +20,9 @@ import { ANALYTICS_DDL } from '@/server/domains/analytics/services/schema'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 
-// snapshotAnalyticsTo against a REAL temp-file DuckDB sidecar and the
-// REAL AccessLogBatcher: the pause → CHECKPOINT → copyFile → resume
-// window runs for real; only the staging directory is test-owned.
+// snapshotAnalyticsTo against a real temp-file DuckDB sidecar and the real
+// AccessLogBatcher: the pause → CHECKPOINT → copyFile → resume window runs for real;
+// only the staging directory is test-owned.
 
 let analyticsHandle: AnalyticsHandle
 let stagingDir: string

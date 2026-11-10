@@ -116,7 +116,7 @@ describe('lifecycle', () => {
   })
 
   it('detaches the server on close so a second close is a no-op', async () => {
-    // Close must be idempotent after the self-update restart's own close (audit P0-7).
+    // Close must be idempotent after the self-update restart's own close.
     const closeFn = vi.fn((cb: (err?: Error) => void) => cb())
     const fakeServer = Object.create(NodeHttpServer.prototype)
     fakeServer.close = closeFn
@@ -192,8 +192,8 @@ describe('lifecycle', () => {
   })
 
   it('logs unhandled rejections loudly instead of crashing', () => {
-    // Prevents a streamed loader rejection from taking the process down (ADR-0005);
-    // the `process.on` registration is not touched to avoid polluting the global.
+    // A streamed loader rejection must not take the process down; the `process.on`
+    // registration is not touched here to avoid polluting the global.
     clearLogCapture()
     handleUnhandledRejection(new Error('comments query failed'))
 

@@ -4,13 +4,8 @@ import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
-// Shared query-state chrome for the self-fetching analytics panels
-// (Counters, ViewsChart, Heatmap, MetricList, LocationsMap): the error
-// alert with retry, the per-panel skeleton slot, and the empty-range
-// state, in one fixed precedence — error → loading → empty → content.
-// `className` sizes/positions the error and empty containers per panel;
-// `skeleton` stays panel-owned because each placeholder mimics its own
-// content geometry.
+// Query-state chrome for the self-fetching analytics panels; fixed precedence:
+// error → loading → empty → content. `skeleton` stays panel-owned to match its geometry.
 
 export interface AnalyticsQueryStateProps {
   isError: boolean

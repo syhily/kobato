@@ -23,7 +23,7 @@ export interface PageDetailBodyProps {
   likes: number
   commentKey: string
   commentsPromise: Promise<DetailPageComments>
-  /** 引用与回应 block node (route wraps the streamed list in `<Await>`). */
+  /** Webmentions block node (route wraps the streamed list in `<Await>`). */
   webmentions?: ReactNode
   currentUser?: CommentFormUser
   mode?: 'admin' | 'public'

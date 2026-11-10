@@ -34,13 +34,13 @@ import { localStorageRouter } from '@/server/http/resources/local-storage'
 import { maxmindRouter } from '@/server/http/resources/maxmind'
 import { musicProxyRouter } from '@/server/http/resources/music-proxy'
 import { redirectsRouter } from '@/server/http/resources/redirects'
+import { rumIntakeRouter } from '@/server/http/resources/rum-intake'
 import { rumStatusRouter } from '@/server/http/resources/rum-status'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { webmentionRouter } from '@/server/http/resources/webmention'
 import { webmentionLinkHeader } from '@/server/http/webmention-link-header'
 import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
-import { activeFrontendRum } from '@/server/infra/trace/config'
 import { devTraceRequestMiddleware } from '@/server/infra/trace/middleware'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
@@ -48,42 +48,23 @@ export interface CspInput {
   bundle: BlogSettingsBundle | null
   nonce: string
   isDev: boolean
-  /** Validated OpenObserve origin; any active (verified) frontend RUM adds it. */
-  rumOrigin?: string | null
 }
 
 /**
- * Opt the origin into User-Agent Client Hints (ADR-0006): Chromium sends the
- * requested `Sec-CH-UA-*` headers on subsequent requests. The analytics
- * enrich pipeline persists them in `device_env_server`.
+ * Opt the origin into User-Agent Client Hints: Chromium then sends the
+ * `Sec-CH-UA-*` headers, which the analytics enrich pipeline persists.
  */
 export const ACCEPT_CH_HEADER =
   'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Model, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Form-Factors'
 
 /**
- * Dynamic CSP: per-request nonce (prod), dev-only `unsafe-inline` + blob workers.
- * Trusted origins: the asset CDN host on style/font/img/media, plus the
- * configured site origin on img/media only — content references absolute
- * asset URLs built against `siteIdentity.website` (`resolveAssetUrl`), so a
- * page served from any other origin (dev server, alternate domain) would
- * otherwise block its own first-party images/media.
+ * Dynamic CSP: per-request nonce in prod, `unsafe-inline` + blob workers in dev.
+ * The asset CDN host is trusted for style/font/img/media, and the configured site
+ * origin for img/media only (saved content carries absolute asset URLs built
+ * against `siteIdentity.website`). `connect-src` never widens: browser RUM posts
+ * to the same-origin relay.
  */
-function safeRumOrigin(value: string | null | undefined): string | null {
-  if (value === null || value === undefined) {
-    return null
-  }
-  try {
-    const url = new URL(value)
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return null
-    }
-    return url.username === '' && url.password === '' && url.pathname === '/' ? url.origin : null
-  } catch {
-    return null
-  }
-}
-
-export function buildCspHeader({ bundle, nonce, isDev, rumOrigin }: CspInput): string {
+export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   const origins = new Set<string>()
   if (bundle?.assets?.asset?.host) {
     origins.add(`https://${bundle.assets.asset.host}`)
@@ -96,16 +77,10 @@ export function buildCspHeader({ bundle, nonce, isDev, rumOrigin }: CspInput): s
   const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline'" : `script-src 'self' 'nonce-${nonce}'`
   // Dev: Vite's client may create blob workers — `worker-src` needs blob:.
   const workerSrc = isDev ? "worker-src 'self' blob:" : "worker-src 'self'"
-  // Dev: a dev server routinely renders a prod-shaped database copy whose
-  // saved content carries asset URLs baked under ANOTHER environment's site
-  // origin (e.g. pre-R16d music meta snapshots) — allow any https image/media
-  // source in dev. Production stays on the explicit origin list above.
+  // Dev: a dev server routinely renders a prod-shaped database whose saved content
+  // carries asset URLs baked under another environment's site origin, so allow any
+  // https image/media source; production stays on the explicit origin list above.
   const devMediaExtra = isDev ? `${mediaExtra} https:` : mediaExtra
-  // ADR-0012: an active (verified) frontend bootstrap widens connect-src in
-  // every build — the browser SDK posts to `<origin>/rum/v1/<org>/rum`. The
-  // RUM package is bundled, so script-src/worker-src stay untouched.
-  const validatedRumOrigin = safeRumOrigin(rumOrigin)
-  const connectSrc = validatedRumOrigin === null ? "connect-src 'self'" : `connect-src 'self' ${validatedRumOrigin}`
   return [
     "default-src 'self'",
     scriptSrc,
@@ -114,7 +89,7 @@ export function buildCspHeader({ bundle, nonce, isDev, rumOrigin }: CspInput): s
     `font-src 'self' ${extra}`,
     `img-src 'self' data: blob: ${devMediaExtra}`,
     `media-src 'self' ${devMediaExtra}`,
-    connectSrc,
+    "connect-src 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
@@ -125,13 +100,12 @@ export function buildCspHeader({ bundle, nonce, isDev, rumOrigin }: CspInput): s
 
 export function configureMiddleware(app: Hono<Env>): void {
   app.onError(onErrorHandler)
-  // First: the trust-proxy scheme fix must land before anything reads the
-  // request URL (request-context derivation, RR's `.data` action origin check).
+  // Trust-proxy must land before anything reads the request URL (request-context
+  // derivation, RR's `.data` action origin check).
   app.use(trustProxy)
   app.use(requestId())
-  // ADR-0012: the root server span starts after trust-proxy/request-ID (so the
-  // W3C parent and normalized request are available) and BEFORE compression
-  // (so it covers the complete application pipeline).
+  // The root server span starts after trust-proxy/request-ID (so the W3C parent and
+  // normalized request exist) and BEFORE compression (so it covers the whole pipeline).
   app.use(devTraceRequestMiddleware())
   app.use(compress())
   // Overwrite `secureHeaders`' static CSP with the nonce value — must stay registered before it.
@@ -142,26 +116,20 @@ export function configureMiddleware(app: Hono<Env>): void {
     if (!rc) {
       return
     }
-    // A 304 revalidates a CACHED document whose inline scripts carry the
-    // ORIGINAL request's nonce. Revalidating caches fold the 304's headers
-    // into the stored entry (RFC 9111 §4.3.4), so a fresh per-request CSP here
-    // would leave every cached inline script blocked. Strip CSP from the 304
-    // (the static secureHeaders one included) so the cache keeps the policy
-    // that matches the stored body.
+    // A 304 revalidates a CACHED document whose inline scripts carry the ORIGINAL
+    // request's nonce. Revalidating caches fold the 304's headers into the stored
+    // entry (RFC 9111 §4.3.4), so strip CSP (the static one included) to keep the
+    // policy that matches the stored body.
     if (c.res.status === 304) {
       c.res.headers.delete('Content-Security-Policy')
       return
     }
     const bundle = getBlogSettingsBundleSync()
     const isDev = import.meta.env.DEV
-    const rumOrigin = activeFrontendRum()?.site ?? null
-    const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev, rumOrigin })
+    const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev })
     c.res.headers.set('Content-Security-Policy', csp)
-    // Opt the origin into User-Agent Client Hints: Chromium sends the
-    // requested Sec-CH-UA-* headers on subsequent requests, letting
-    // analytics recover the device model / OS version that Chrome's UA
-    // reduction erased from the UA string (first-party, so no
-    // Permissions-Policy delegation is needed).
+    // UA-CH recovers device model / OS detail erased by Chrome's UA reduction
+    // (first-party, so no Permissions-Policy delegation is needed).
     c.res.headers.set('Accept-CH', ACCEPT_CH_HEADER)
     const webmentionLink = webmentionLinkHeader(bundle)
     if (webmentionLink !== null) {
@@ -173,11 +141,9 @@ export function configureMiddleware(app: Hono<Env>): void {
     secureHeaders({
       contentSecurityPolicy: {
         defaultSrc: ["'self'"],
-        // Dev: Vite / React Router tooling injects un-nonced inline scripts.
-        // Production HTML always carries the request nonce through the dynamic
-        // policy below; this static policy only survives responses that never
-        // reach `requestContextMiddleware` (301/404 short-circuits) and those
-        // are not HTML, so no inline script is legitimate there.
+        // Dev: Vite / React Router tooling injects un-nonced inline scripts. This
+        // static policy only survives non-HTML short-circuits (301/404) that never
+        // reach `requestContextMiddleware`, so no inline script is legitimate there.
         scriptSrc: import.meta.env.DEV ? ["'self'", "'unsafe-inline'"] : ["'self'"],
         workerSrc: ["'self'", 'blob:'],
         styleSrc: ["'self'", "'unsafe-inline'"],
@@ -224,10 +190,11 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.get('/health', (c) => c.json({ status: 'ok' }))
   app.get('/ready', readyHandler)
 
-  // Frontend RUM drift signal, mounted in every build: settings changes never
-  // re-mount this router, so the gate is evaluated per request inside the
-  // handler. The path stays out of HTTP spans and RUM activity/tracing.
+  // RUM drift signal + same-origin intake relay, mounted in every build: settings
+  // changes never re-mount these routers, so the gate is evaluated per request
+  // inside the handlers. Both paths stay out of HTTP spans and RUM activity.
   app.route('/', rumStatusRouter)
+  app.route('/', rumIntakeRouter)
 
   // Mounted BEFORE createApiApp so their bodyLimit is not overridden by the 10 MB global limit.
   app.route('/', backupRouter)
@@ -256,15 +223,13 @@ export function configureMiddleware(app: Hono<Env>): void {
   // W3C Webmention receive endpoint — unauthenticated, rate-limited.
   app.route('/', webmentionRouter)
 
-  // Admin branding resource routes
   app.route('/', brandingRouter)
 }
 
 export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {
   const rc = c.var.requestContext
-  // CRITICAL: hydrate first — loaders read the in-process settings snapshot synchronously.
+  // Hydrate first: loaders read the in-process settings snapshot synchronously.
   await hydrateBlogSettings(rc.db)
-  // Canonical key — every loader/action reads it via `getRequestContext`.
   const context = new RouterContextProvider()
   context.set(requestContext, rc)
   return context

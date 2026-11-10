@@ -1,10 +1,9 @@
-// Bundled OpenObserve provisioning assets: the four versioned v8 dashboards
-// and the fail-closed RUM privacy VRL. These are RAW (unpacked) SEA assets, so
-// they are read through `readAssetTextOrDisk` — the VFS mount under SEA, the
-// source tree otherwise — NEVER the packed `natives/*` blob channel. Main
-// thread only: the readers are the oRPC handlers and the boot upgrade; the
-// VFS mount is invisible to worker threads. The content fingerprint is the
-// HMAC stored as `provisionedFingerprint`; touching any file makes every
+// Bundled OpenObserve provisioning assets: the four versioned v8 dashboards and
+// the fail-closed RUM privacy VRL. These are RAW (unpacked) SEA assets, so they
+// are read through `readAssetTextOrDisk` — the VFS mount under SEA, the source
+// tree otherwise — NEVER the packed `natives/*` blob channel. Main thread only:
+// the VFS mount is invisible to worker threads. The content fingerprint is the
+// HMAC stored as `provisionedFingerprint`; touching any asset makes every
 // installation re-provision at boot.
 
 import { createHash } from 'node:crypto'
@@ -26,9 +25,9 @@ const log = getLogger('observability.assets')
 const ASSET_DIR = join(import.meta.dirname, 'assets')
 
 /**
- * Asset-set fingerprint scope. Independent from the connection/runtime
- * purposes: rotating `security.encryptionKey` invalidates it too, which
- * simply triggers one re-provision.
+ * Asset-set fingerprint purpose, independent of the connection/runtime
+ * purposes: rotating `security.encryptionKey` invalidates it, which simply
+ * triggers one re-provision.
  */
 const ASSET_FINGERPRINT_PURPOSE = 'observability-assets'
 const ASSET_FINGERPRINT_VERSION = 1
@@ -79,8 +78,8 @@ function readDashboards(): ObservabilityDashboardAsset[] {
 }
 
 /**
- * Fingerprint of an asset payload. Pure (exported for tests): `contents` is
- * the VRL text followed by each dashboard's JSON in `OBSERVABILITY_DASHBOARD_FILES`
+ * Fingerprint of an asset payload. Pure (exported for tests): `contents` is the
+ * VRL text followed by each dashboard's JSON in `OBSERVABILITY_DASHBOARD_FILES`
  * order. Keyed with the deployment key so the value is safe to expose to the
  * admin UI.
  */

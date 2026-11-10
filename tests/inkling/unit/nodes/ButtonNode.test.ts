@@ -46,8 +46,8 @@ describe('ButtonNode', () => {
         buttonText: 'Click me',
         buttonUrl: 'https://example.com',
         alignment: 'center',
-        // legacy field written by an earlier version of this node; no consumer
-        // remains but existing documents must still import cleanly
+        // written by earlier versions of this node; no consumer remains, but
+        // existing documents must still import cleanly
         text: '<p>Click me</p>',
       })
 

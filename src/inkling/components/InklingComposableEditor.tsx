@@ -84,17 +84,15 @@ const InklingComposableEditor = ({
   const _onChange = React.useCallback(
     (editorState: EditorState) => {
       if (sharedOnChange) {
-        // sharedOnChange is called for the main editor and nested editors, we want to
-        // make sure we don't accidentally serialize only the contents of the nested
-        // editor so we need to use the parent editor when it exists
+        // sharedOnChange fires for nested editors too: serialize the top-level
+        // (parent) editor's state so the payload is never just a nested editor
         const primaryEditorState = (parentEditor || editor).getEditorState()
         const json = primaryEditorState.toJSON()
         sharedOnChange(json)
       }
 
       if (onChange) {
-        // onChange is only called for this current editor instance, allowing for
-        // per-editor onChange handlers
+        // onChange stays per-editor: only this instance's state is serialized
         const json = editorState.toJSON()
         onChange(json)
       }
@@ -117,8 +115,7 @@ const InklingComposableEditor = ({
     [isNested, dragDropHandle],
   )
 
-  // we need an element reference for the container element that
-  // any floating elements in plugins will be rendered inside
+  // anchor element for floating plugins rendered inside the editable container
   const [floatingAnchorElem, setFloatingAnchorElem] = React.useState<HTMLDivElement | null>(null)
   const onContentEditableRef = (_floatingAnchorElem: HTMLDivElement | null) => {
     // the null branch matters: without it a stale anchor survives between
@@ -126,9 +123,9 @@ const InklingComposableEditor = ({
     setFloatingAnchorElem(_floatingAnchorElem)
   }
 
-  // The core plugin set is data (src/plugins/CorePlugins.tsx): every mount
-  // below — conditions included — is one entry in CORE_PLUGINS, so the
-  // default surface is enumerable as CORE_PLUGINS + DEFAULT_FEATURE_PLUGINS.
+  // The core plugin set is data (CORE_PLUGINS): every mount below — conditions
+  // included — is one entry, so the default surface is enumerable as
+  // CORE_PLUGINS + DEFAULT_FEATURE_PLUGINS.
   const corePluginScope: CorePluginScope = {
     contentEditableRef: onContentEditableRef,
     contentEditableClassName: useDefaultClasses

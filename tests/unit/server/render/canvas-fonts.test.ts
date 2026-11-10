@@ -4,9 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { ensureCanvasFont, resetCanvasFont, resetFontCache } from '@/server/render/canvas-fonts'
 
-// Unit tests for the canvas font single-flight (`ensureCanvasFont`). The
-// slot loader runs for real — only its leaf dependencies (settings, fs,
-// the native font registry) are mocked.
+// The canvas font single-flight (`ensureCanvasFont`) slot loader runs for real — only its
+// leaf dependencies (settings, fs, the native font registry) are mocked.
 
 const mocks = vi.hoisted(() => ({
   access: vi.fn<(path: string) => Promise<void>>(),

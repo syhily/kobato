@@ -16,42 +16,19 @@ import {
 import { countWords, throttle } from '@/inkling/utils'
 import { getTopLevelEditor, isNestedEditor } from '@/inkling/utils/lexical-internals'
 
-// Headless word counter — the counting engine behind WordCountPlugin. Keeps a
-// per-top-level-editor incremental word count: dirty keys from update
-// listeners are accumulated and remapped to their root children so a small
-// edit in a long document recomputes one block, with a throttled flush and a
-// full-recompute fallback for nested editors (which don't receive top-level
-// dirty maps).
+// Headless word counter — the counting engine behind WordCountPlugin.
 //
-// The same instance optionally reports the word count of the current
-// selection (`onSelectionChange`). Selection-only surfaces never touch the
-// document pass — the full-document machinery is only built when `onChange`
-// is supplied, and a counter with neither callback attaches no listeners at
-// all.
+// Document channel: dirty keys accumulate and remap to their root children, so
+// a small edit recomputes one block — throttled flush, with a full-recompute
+// fallback for nested editors (which don't receive top-level dirty maps).
+// Selection-only surfaces never build the document machinery; a counter with
+// neither callback attaches no listeners.
 //
-// Selection state is coordinated per TOP-LEVEL editor. Every counter instance
-// (main editor + nested caption editors, or two counters on one editor) owns
-// its own entry in a Map keyed by counter identity, so detaching one counter
-// can never delete another's count. Each entry is evaluated independently:
-// only entries whose editor is focused AND editable are eligible, and the
-// newest eligible entry wins. A focused editor whose selection is collapsed
-// therefore emits null instead of falling back to another editor's stale
-// count, a non-editable editor contributes nothing, and a programmatically
-// focused editor wins even when the previous editor's BLUR was missed. A
-// rendered editor's DOM root is the focus authority; the `focusedEditor`
-// ledger is only consulted for rootless headless editors, which keeps tests
-// deterministic. `registerEditableListener` recomputes on read-only flips.
-// Dedup is per CALLBACK (`lastSelectionWordCounts`): every broadcast reaches
-// each registered callback once, the same callback shared by main and nested
-// counters does not re-emit, and a callback whose identity changed has no
-// prior emission entry, so it receives the current value.
-//
-// The React adapter is WordCountPlugin: it runs independent document and
-// selection counters (so a selection callback change never touches the
-// document pass), publishes all channels through one effect, and swaps the
-// language via `setLanguage` on both live counters. The throttle is an
-// injected port so tests drive the engine synchronously instead of sleeping
-// on wall-clock timers.
+// Selection channel (`onSelectionChange`) is coordinated per TOP-LEVEL editor:
+// one entry per counter identity, only focused+editable entries count, the
+// newest eligible entry wins, and dedup is per CALLBACK
+// (`lastSelectionWordCounts`). The throttle is an injected port so tests drive
+// the engine synchronously.
 
 export const WORD_COUNT_THROTTLE_MS = 200
 
@@ -137,9 +114,8 @@ function findRootChild(node: LexicalNode): LexicalNode | null {
 
 // A Lexical editor keeps its selection when focus moves elsewhere, so the
 // rendered editor's own root (when it has one) is the authority. A rootless
-// editor has no DOM focus to read: its focus comes from the per-composer
-// ledger set by FOCUS_COMMAND/BLUR_COMMAND, which keeps headless tests
-// deterministic instead of "everyone is focused".
+// editor has no DOM focus to read: its focus comes from the per-composer ledger
+// set by FOCUS_COMMAND/BLUR_COMMAND.
 function hasEditorFocus(editor: LexicalEditor, state: WordCountState): boolean {
   const rootElement = editor.getRootElement()
   if (rootElement) {
@@ -196,19 +172,16 @@ export function createWordCounter({
   throttleFn = defaultThrottle,
 }: CreateWordCounterOptions) {
   // A counter with neither channel has no work to do: no update listener, no
-  // command listener, no throttle. (The no-op lifecycle keeps the public
-  // shape; `setLanguage` stays callable from the React adapter.)
+  // command listener, no throttle. `setLanguage` stays callable from the React
+  // adapter.
   if (onChange === undefined && onSelectionChange === undefined) {
     return {
-      // no callbacks — nothing to attach
       attach() {
         /* noop */
       },
-      // no callbacks — nothing to cancel
       detach() {
         /* noop */
       },
-      // no callbacks — nothing to recount
       setLanguage() {
         /* noop */
       },
@@ -223,18 +196,17 @@ export function createWordCounter({
   let cleanupRegister: (() => void) | null = null
 
   // One full-document recount path. `forceEmission` drives the initial attach
-  // (always deliver) and the nested-editor full-recompute fallback (preserving
-  // its historical unconditional emission); language swaps and ordinary
-  // recounts dedup against `lastWordCount`.
+  // (always deliver) and the nested-editor full-recompute fallback; language
+  // swaps and ordinary recounts dedup against `lastWordCount`.
   const countDocumentWords = countCallback
     ? (forceEmission: boolean) => {
         const topLevelEditor = getTopLevelEditor(editor)
         const state = getWordCountState(topLevelEditor)
 
         topLevelEditor.getEditorState().read(() => {
-          // NOTE: we can't use RootNode.getTextContent() here because it will
-          // return cached text content when there are no dirty nodes which is
-          // the case for changes in nested editors
+          // NOTE: RootNode.getTextContent() cannot be used here — it returns
+          // cached text when there are no dirty nodes, which is the case for
+          // changes in nested editors
           const wordCount = collectDocumentWordCount(state, currentLanguage)
           if (forceEmission || wordCount !== state.lastWordCount) {
             state.lastWordCount = wordCount
@@ -300,7 +272,7 @@ export function createWordCounter({
 
   // Broadcast the count of the newest focused + editable entry to every
   // registered callback, deduping per callback. Evaluating each entry (rather
-  // than a composer-wide focused editor) means a programmatically focused
+  // than one composer-wide focused editor) means a programmatically focused
   // editor wins even when the previous editor's BLUR was missed, while a
   // focused editor with a collapsed selection still emits null.
   const broadcastSelectionCount = (callbacks: Iterable<SelectionCountCallback>) => {
@@ -431,8 +403,8 @@ export function createWordCounter({
                 return false
               }
 
-              // a blurred editor keeps its old selection in editor state even
-              // though the page no longer shows it — drop its count at once
+              // a blurred editor keeps its selection in state even though the
+              // page no longer shows it — drop its count at once
               throttledSelectionCount?.cancel()
               const state = getWordCountState(getTopLevelEditor(editor))
 

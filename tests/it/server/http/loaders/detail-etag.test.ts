@@ -20,11 +20,10 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 
-// Detail representation ETags through the real oRPC read path: the tag is a
-// fingerprint of the COMPLETE returned payload (post/page shell, body html,
-// tags, sidebar, interaction critical) plus the published revision and the
-// request's localization/settings revision. Only an identical representation
-// may answer not-modified.
+// Detail representation ETags through the real oRPC read path: the tag fingerprints the COMPLETE
+// payload (post/page shell, body html, tags, sidebar, interaction critical) plus the published
+// revision and the request's localization/settings revision. Only an identical representation may
+// answer not-modified.
 
 const db = getTestDb()
 
@@ -40,7 +39,6 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-/** A bundle whose sidebar widgets use the given counts (rotation tests). */
 function sidebarBundle(counts: { recentPosts: number; randomTags: number }): BlogSettingsBundle {
   const sidebar = TEST_BLOG_SETTINGS_BUNDLE.sidebar!
   return {

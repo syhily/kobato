@@ -9,17 +9,16 @@ const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLa
 const FOCUS_SAFETY_MS = 500
 
 // iOS Safari zooms into focused controls with `font-size < 16px`. The zoom
-// is decided when the TAP'S DEFAULT ACTION focuses the target — rewriting the
-// viewport meta from `focusin` is already too late (the original hook's
-// failure mode on real devices). The lock is therefore taken at `pointerdown`
-// in the capture phase, before any default action can run. Form controls keep
-// the lock for their whole focused session (the keyboard's "next" hop focuses
-// the next control with no pointerdown to relock it); a contenteditable
-// canvas releases on the task after its focus lands, so pinch-zoom returns
-// while typing. The lock itself is the shared refcounted one
-// (`@/client/lib/viewport-zoom-lock`), also held by the comment composer's
-// activation handoff. Mount ONCE at the document root — duplicate installs
-// race the same `<meta>` rewrite. iOS/iPadOS only.
+// is decided when the TAP'S DEFAULT ACTION focuses the target — rewriting
+// the viewport meta from `focusin` is already too late. The lock is
+// therefore taken at `pointerdown` in the capture phase, before any default
+// action can run. Form controls keep the lock for their whole focused
+// session (the keyboard's "next" hop focuses the next control with no
+// pointerdown to relock it); a contenteditable canvas releases on the task
+// after its focus lands, so pinch-zoom returns while typing. The lock is
+// the shared refcounted one (`@/client/lib/viewport-zoom-lock`), also held
+// by the comment composer's activation handoff. Mount ONCE at the document
+// root — duplicate installs race the same `<meta>` rewrite. iOS/iPadOS only.
 export function useIosNoZoomOnFocus(): void {
   const holdsLockRef = useRef(false)
 

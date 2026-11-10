@@ -5,7 +5,7 @@ import type { Env } from '@/server/http/context'
 import { activeFrontendRum } from '@/server/infra/trace/config'
 
 /**
- * Frontend RUM drift signal (ADR-0012). Boolean only: no client token, no
+ * Frontend RUM drift signal. Boolean only: no client token, no
  * endpoint/status detail, no credentials. `no-store` keeps a stale gate from
  * being cached.
  *

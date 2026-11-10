@@ -39,7 +39,7 @@ interface HonoNodeServerOptions<E extends Env = BlankEnv> extends HonoServerOpti
   customNodeServer?: CreateNodeServerOptions
   onServe?: (server: ServerType) => void
   /**
-   * Override the global Request/Response with lightweight versions; 🚨 can
+   * Override the global Request/Response with lightweight versions; can
    * break `request.clone()` `instanceof` checks. @default false
    */
   overrideGlobalObjects?: boolean

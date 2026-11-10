@@ -1,35 +1,24 @@
-// The smart-typography replacement grammar — the scan body TypographyPlugin
-// wires into the update-scan seam (@/plugins/behaviour/update-scan), next to
-// EmEnDashPlugin's dash grammar. Pure text policy over dirty leaves, with
-// zero DOM, kept headless so the rule set is pinned as a synchronous test
-// table (test/unit/plugins/behaviour/typography.test.ts).
+// Smart-typography replacement grammar — the scan body TypographyPlugin wires
+// into the update-scan seam, next to EmEnDashPlugin's dash grammar. Pure text
+// policy over dirty leaves, zero DOM, headless so the rule set is pinned as a
+// synchronous test table.
 //
-// The rule set aligns with tiptap's extension-typography DEFAULTS (v3.31:
-// ellipsis, open/close double/single quotes, left/right arrows, copyright,
-// trademark, servicemark, registeredTrademark, oneHalf, plusMinus, notEqual,
-// laquo, raquo, multiplication, superscriptTwo/Three, oneQuarter,
-// threeQuarters) with one deliberate exception: tiptap's emDash rule
-// ('--' → '—' on the keystroke) is NOT re-implemented here — inkling's dash
-// policy already lives in @/plugins/behaviour/em-en-dash ('---' → em dash,
-// '--' + whitespace → en dash) and the two grammars would fight over '--'.
+// Rule set aligns with tiptap's extension-typography defaults, minus tiptap's
+// emDash rule ('--' → '—'): inkling's dash policy lives in
+// @/inkling/plugins/behaviour/em-en-dash ('---' → em dash, '--' + whitespace →
+// en dash) and the two grammars would fight over '--'.
 //
 // Two structural differences from tiptap's input rules fall out of the scan
 // model, both pinned in the test table:
+// - The scan sees the whole dirty text node, so each rule replaces EVERY match
+//   in the node, not just the caret-end one; per-keystroke typing still
+//   converges to tiptap's result because the scan re-runs after every commit.
+// - Smart-quote direction reads the preceding character of the REPLACED text,
+//   reproducing tiptap's open-quote context class incrementally.
 //
-// - The scan sees the whole dirty text node, not one trailing keystroke, so
-//   each rule replaces EVERY match in the node, not just the caret-end one.
-//   Per-keystroke typing still converges to tiptap's result because the scan
-//   re-runs after every commit.
-// - Smart-quote direction reads the preceding character of the REPLACED text
-//   (built left to right), which reproduces tiptap's open-quote context class
-//   incrementally: start-of-text or one of [\s{[(<'"‘“] opens, anything else
-//   closes.
-//
-// No code-block guard: the package's node sets register no CodeNode (code is
-// a CodeMirror card — its text never becomes Lexical text nodes), so dirty
-// leaves are never code content. IME composition protection is not here
-// either — it lives in the update-scan seam's composing skip, shared with
-// EmEnDash and HorizontalRule.
+// No code-block guard: no CodeNode is registered (code is a CodeMirror card),
+// so dirty leaves are never code content. IME composition protection lives in
+// the update-scan seam's composing skip.
 
 import { $getNodeByKey, $getSelection, $isRangeSelection, $isTextNode } from 'lexical'
 

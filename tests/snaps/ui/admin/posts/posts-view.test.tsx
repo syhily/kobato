@@ -26,9 +26,9 @@ queryMocks.query = {
   refetch: vi.fn(),
 }
 
-// PostsView's option-list queries (categories/tags/users) and the
-// infinite list are stubbed so SSR renders without the network; the view
-// reads useLocation for the URL seed, so mount under a memory router at /admin/posts.
+// PostsView's option-list queries (categories/tags/users) and the infinite list are
+// stubbed so SSR renders without the network; the view seeds from useLocation, so mount
+// under a memory router at /admin/posts.
 
 describe('snapshot: PostsView', () => {
   it('renders list chrome and skeleton while the initial query is pending', () => {

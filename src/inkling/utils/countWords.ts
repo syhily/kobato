@@ -1,22 +1,15 @@
 /**
- * Word count Utility
- * @param text - text to count words in
- * @returns word count
- * @description Takes a string and returns the number of words after sanitizing any html.
- * This code is taken from https://github.com/sparksuite/simplemde-markdown-editor/blob/6abda7ab68cc20f4aca870eb243747951b90ab04/src/js/simplemde.js#L1054-L1067
- * with extra diacritics character matching.
- **/
+ * Word count after stripping HTML tags. Regex path derived from
+ * https://github.com/sparksuite/simplemde-markdown-editor with extra diacritics matching.
+ */
 export interface SafeStringLike {
   string: string
 }
 
-// Segmenter path: when the caller names a
-// language and the runtime provides Intl.Segmenter, word-granularity segments
-// counted by `isWordLike` give dictionary-aware counts for CJK text (the
-// regex fallback below counts every CJK character as one word). One segmenter
-// per language is cached at module level — construction reads locale data and
-// is not cheap. The availability check runs per call, before the cache read,
-// so a runtime without Segmenter always falls through to the regex path.
+// With a language and Intl.Segmenter available, word-like segments give dictionary-aware
+// counts for CJK text (the regex fallback counts every CJK character as one word).
+// Segmenters are cached per language because construction reads locale data; the
+// availability check runs per call before the cache read.
 const segmenters = new Map<string, Intl.Segmenter>()
 
 function getSegmenter(language: string): Intl.Segmenter | undefined {
@@ -38,7 +31,7 @@ export default function countWords(text: string | SafeStringLike | null | undefi
 
   let normalizedText = typeof text === 'string' ? text : text.string
 
-  normalizedText = normalizedText.replace(/<("[^"]*"|'[^']*'|[^'">])+\/?>/g, ' ') // strip any HTML tags
+  normalizedText = normalizedText.replace(/<("[^"]*"|'[^']*'|[^'">])+\/?>/g, ' ')
 
   const segmenter = language ? getSegmenter(language) : undefined
   if (segmenter) {
@@ -56,8 +49,8 @@ export default function countWords(text: string | SafeStringLike | null | undefi
 
   const RTLPattern = /([\u0600-\u06ff]+|[\u0591-\u05F4]+)/g
 
-  // Both patterns must run: a text mixing e.g. Latin and Arabic matches both,
-  // and picking only the first hit would drop every RTL word.
+  // Both patterns must run: Latin+Arabic text matches both, and picking only the first
+  // hit would drop every RTL word.
   const match = [...(normalizedText.match(pattern) ?? []), ...(normalizedText.match(RTLPattern) ?? [])]
 
   let count = 0

@@ -13,18 +13,14 @@ import {
   pickTimeUnit,
 } from '@/shared/contracts/analytics'
 
-// URL-synced dashboard state modeled on Slite's `dashboard-query.ts`:
-// preset/startAt/endAt plus per-dimension filter params, the trend|heatmap
-// view switch, and the heatmap metric. Writes still delete the legacy
-// `filters` JSON param so old links get cleaned up on the first change.
+// URL-synced dashboard state; writes delete the legacy `filters` JSON param so old links clean themselves up.
 
 export type AnalyticsViewMode = 'trend' | 'heatmap'
 export type HeatmapMetric = 'visits' | 'visitors'
 
 export interface AnalyticsScope {
   entityType?: 'post' | 'page'
-  /** Numeric domain id — the wire schema's coerced representation; string
-   *  route/DTO ids convert once at the boundary (`idFromString`). */
+  /** Numeric domain id — the wire schema's coerced form; string route/DTO ids convert once at the boundary (`idFromString`). */
   entityId?: number
 }
 
@@ -61,8 +57,7 @@ export function useAnalyticsState(): AnalyticsState {
     return false
   }, [startAt, endAt])
 
-  // `null` marks a custom (explicit startAt/endAt) range; absent params
-  // default to the last-7d preset rather than a null/custom presentation.
+  // `null` marks a custom (explicit startAt/endAt) range; absent params fall back to the last-7d preset.
   const preset = useMemo<PresetKey | null>(() => {
     if (hasExplicitRange) {
       return null
@@ -262,15 +257,10 @@ export function getClientTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC'
 }
 
-/** Wire input shape of every analytics procedure (zod input side — coerced
- *  numeric fields accept numbers or numeric strings). */
+/** Wire input shape of every analytics procedure (coerced numeric fields accept numbers or numeric strings). */
 export type AnalyticsQueryInput = z.input<typeof analyticsQuerySchema>
 
-/**
- * Flat oRPC input for the analytics procedures: the URL state expanded into
- * the per-dimension wire fields plus client-side derivations the server
- * cannot know (`unit` from the resolved range, `clientTimezone` from Intl).
- */
+/** Flat oRPC input for analytics: URL state expanded into wire fields plus client-side derivations the server cannot know. */
 export function buildAnalyticsInput(
   state: Pick<AnalyticsState, 'preset' | 'range' | 'filters' | 'includeUnknown'>,
   options: { scope?: AnalyticsScope; unit?: TimeUnit; limit?: number } = {},

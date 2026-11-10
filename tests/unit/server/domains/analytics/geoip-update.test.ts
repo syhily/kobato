@@ -191,13 +191,11 @@ describe('analytics/geoip-update', () => {
         name: 'DomainError',
         descriptor: { messageKey: 'analytics.error.geoipDownloadTimeout' },
       })
-      // The staged file is still cleaned up.
       expect(fsPromiseMocks.rm).toHaveBeenCalledWith(`${DB_PATH}.download`, { force: true })
     })
 
     it('propagates the size-guard DomainError from the stream and cleans the staged file', async () => {
       knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
-      // The size-guard DomainError must propagate unmodified and the staged file be dropped.
       const { descriptorFor } = await import('@/server/infra/http/error-descriptor')
       const sizeError = new DomainError('INTERNAL', descriptorFor('analytics.error.geoipTooLarge', { max: '100 MB' }))
       pipelineMock.mockRejectedValueOnce(sizeError)
@@ -238,7 +236,6 @@ describe('analytics/geoip-update', () => {
       const [a, b] = await Promise.all([runRemoteGeoipUpdate(), runRemoteGeoipUpdate()])
       expect(a).toBe(b)
       expect(a.status).toBe('updated')
-      // One version check + one download, not two of each.
       expect(fetch).toHaveBeenCalledTimes(2)
       expect(fsPromiseMocks.rename).toHaveBeenCalledTimes(1)
     })

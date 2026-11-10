@@ -2,31 +2,14 @@ import type { InitialEditorStateType, SerializedEditorState, SerializedParagraph
 
 import { $createParagraphNode, $getRoot } from 'lexical'
 
-/**
- * The initial document — the one module owning the minimal valid Inkling
- * document (a root holding a single empty paragraph) and the bootstrap flow
- * that lands initial content in an editor. The document exists in two
- * payload dialects:
- *
- * - `MINIMAL_DOCUMENT` — the full dialect: exactly what a live editor's
- *   `editorState.toJSON()` produces for an empty document, with the
- *   paragraph's `textFormat: 0` and `textStyle: ''` present. The public HTML
- *   import returns this shape so an empty import is indistinguishable from a
- *   real empty-editor export.
- * - `MINIMAL_DOCUMENT_LEGACY_PAYLOAD` — the historical payload dialect,
- *   without the paragraph's `textFormat`/`textStyle`. This is an in-memory
- *   bootstrap/repair compatibility dialect, not a stored output: the
- *   bootstrap/repair paths feed it straight into an editor and nothing relies
- *   on it preserving a persisted shape, while `MINIMAL_DOCUMENT` remains the
- *   public empty-import output. `SerializedParagraphNode` declares those
- *   fields required, but `ParagraphNode.importJSON` treats them as optional,
- *   so both dialects parse.
- *
- * The two dialects parse to equivalent editor states (importJSON supplies the
- * defaults); they differ in payload shape only. Call sites (HTML import,
- * composer bootstrap, nested editors) adapt over these constants instead of
- * restating the literal.
- */
+// The minimal valid Inkling document exists in two payload dialects:
+// - `MINIMAL_DOCUMENT` — the full dialect, exactly what a live editor's `editorState.toJSON()`
+//   produces for an empty document (`textFormat: 0` and `textStyle: ''` present), so an empty
+//   HTML import is indistinguishable from a real empty-editor export.
+// - `MINIMAL_DOCUMENT_LEGACY_PAYLOAD` — the legacy dialect, without `textFormat`/`textStyle`;
+//   bootstrap/repair feeds it straight into an editor.
+// `SerializedParagraphNode` declares those fields required, but `ParagraphNode.importJSON`
+// treats them as optional, so both dialects parse to equivalent editor states.
 
 const FULL_EMPTY_PARAGRAPH: SerializedParagraphNode = {
   children: [],
@@ -40,8 +23,7 @@ const FULL_EMPTY_PARAGRAPH: SerializedParagraphNode = {
   version: 1,
 }
 
-// not SerializedParagraphNode: the historical dialect omits the required
-// textFormat/textStyle on purpose (see the dialect note above)
+// not SerializedParagraphNode: this dialect omits textFormat/textStyle on purpose (see above)
 const LEGACY_EMPTY_PARAGRAPH = {
   children: [],
   direction: null,
@@ -64,7 +46,7 @@ export const MINIMAL_DOCUMENT: SerializedEditorState = {
   },
 }
 
-/** The minimal valid document in the historical payload dialect (see the dialect note above). */
+/** The minimal valid document in the legacy payload dialect (see the dialect note above). */
 export const MINIMAL_DOCUMENT_LEGACY_PAYLOAD = {
   root: {
     children: [LEGACY_EMPTY_PARAGRAPH],
@@ -77,21 +59,10 @@ export const MINIMAL_DOCUMENT_LEGACY_PAYLOAD = {
 }
 
 /*
- * **Transform-policy note** — two paths turn an HTML string into editor
- * content, and they normalize differently on purpose:
- *
- * - the public `htmlToLexical` import (src/html/html-to-lexical) runs on a
- *   one-shot headless editor and registers `registerDefaultTransforms`
- *   (denest / merge-lists / remove-alignment), so imported markup is
- *   structurally repaired during the import;
- * - nested-editor population (`generateEditorState`) registers no transforms,
- *   because its editors are long-lived: a node transform registered on a live
- *   editor persists for the editor's whole lifetime and would re-run on every
- *   later edit (stripping paragraph alignment, denesting on each update), not
- *   just normalize the initial fill.
- *
- * Whether nested population should adopt the import-time policy is an open
- * question — until it is decided, keep the divergence.
+ * The two HTML-string → editor-content paths normalize differently on purpose: the public
+ * `htmlToLexical` import runs on a one-shot headless editor with `registerDefaultTransforms`,
+ * while nested editors (`generateEditorState`) register none — a node transform on a
+ * long-lived editor persists and would re-run on every later edit, not just the initial fill.
  */
 
 function hasRootChildren(value: unknown): value is { root: { children: unknown[] } } {
@@ -103,12 +74,8 @@ function hasRootChildren(value: unknown): value is { root: { children: unknown[]
   return typeof root === 'object' && root !== null && 'children' in root && Array.isArray(root.children)
 }
 
-/**
- * Empty-root repair, serialized side: a root with no children won't accept
- * focus, so seed it with the minimal document's paragraph. The repair emits
- * the historical payload dialect (see the dialect note above). Returns
- * whether a repair happened so the caller knows to re-serialize.
- */
+// Empty-root repair, serialized side: a root with no children won't accept focus, so seed
+// the legacy dialect's paragraph.
 function repairSerializedEmptyRoot(value: unknown): boolean {
   if (!hasRootChildren(value) || value.root.children.length > 0) {
     return false
@@ -118,35 +85,20 @@ function repairSerializedEmptyRoot(value: unknown): boolean {
   return true
 }
 
-/**
- * Empty-root repair, live-editor side: append the minimal document's
- * paragraph — a completely empty root won't accept focus. Must run inside
- * `editor.update()`.
- */
+/** Empty-root repair, live-editor side: an empty root won't accept focus. Must run inside `editor.update()`. */
 export function $appendEmptyParagraph(): void {
   $getRoot().append($createParagraphNode())
 }
 
 /**
- * The initial editor state accepted by `<InklingComposer>`. In addition to the
- * shapes Lexical itself supports, a plain serialized editor-state object may be
- * passed for convenience — it is normalized to a JSON string before reaching
- * Lexical.
+ * The initial editor state accepted by `<InklingComposer>`: the shapes Lexical supports,
+ * plus a plain serialized editor-state object (normalized to JSON before reaching Lexical).
  */
 export type InklingInitialEditorState = InitialEditorStateType | SerializedEditorState
 
 /**
- * Normalize the public `initialEditorState` prop into the `InitialEditorStateType`
- * Lexical accepts, so the single-editor and collaboration paths share one value:
- *
- * - `null`/`undefined`, `EditorState` instances, and initializer functions pass
- *   through unchanged;
- * - JSON strings are parsed only to detect and repair an empty root (the editor
- *   needs at least one paragraph node), then returned as strings;
- * - serialized objects are cloned — never mutated — repaired the same way, and
- *   returned as JSON strings.
- *
- * Malformed JSON strings throw from `JSON.parse`, as they did before.
+ * Normalizes the public `initialEditorState` prop into `InitialEditorStateType`. The
+ * caller's serialized object is never mutated.
  */
 export function normalizeInitialEditorState(
   initialEditorState: InklingInitialEditorState | undefined,

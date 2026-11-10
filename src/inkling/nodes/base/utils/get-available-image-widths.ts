@@ -11,9 +11,8 @@ export const getAvailableImageWidths = function (
   const availableImageWidths = imageWidths.filter((width) => width <= image.width)
 
   // add the original image size to the responsive list if it's not captured by largest responsive size
-  // - we can't know the width/height of the original `src` image because we don't know if it was resized
-  //   or not. Adding the original image to the responsive list ensures we're not showing smaller sized
-  //   images than we need to be
+  // - the original `src` may not have been resized to a standard width, and omitting it
+  //   would serve smaller images than necessary
   if (
     image.width > availableImageWidths[availableImageWidths.length - 1] &&
     image.width < imageWidths[imageWidths.length - 1]

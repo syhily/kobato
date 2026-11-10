@@ -263,7 +263,6 @@ describe('registerKeyboardNavigation', () => {
       cardKey = image.getKey()
     })
 
-    // remove the card while the store still points at its key
     await updateEditor(editor, () => {
       $getNodeByKey(cardKey)?.remove()
     })
@@ -420,9 +419,8 @@ describe('registerKeyboardNavigation', () => {
     mounted = mountEditor(editor)
     const cleanup = registerWithCardKey(null)
 
-    // the conversion itself is upstream rich-text's INSERT_PARAGRAPH handler
-    // (the real editor mounts it via RichTextPlugin) — this test pins the
-    // policy: the key is claimed and the command dispatched
+    // The conversion itself is upstream rich-text's INSERT_PARAGRAPH handler;
+    // this test only pins that the key is claimed and the command dispatched.
     let dispatched = false
     const unregisterSpy = editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
@@ -582,10 +580,8 @@ describe('registerKeyboardNavigation', () => {
     cleanup()
   })
 
-  // Plan 052 Step 1: characterization pins for the enter/tab code-fence
-  // shortcut, which had zero unit coverage. They pin CURRENT behavior per
-  // trigger ahead of the card-shortcut seam migration; enter/tab trigger
-  // semantics differ from the markdown transformer trigger on purpose.
+  // Enter/tab trigger semantics deliberately differ from the markdown
+  // transformer trigger; these tests pin that behavior per trigger.
   describe('code fence shortcut', () => {
     async function setupFenceParagraph(text: string) {
       await updateEditor(editor, () => {
@@ -660,12 +656,9 @@ describe('registerKeyboardNavigation', () => {
     })
 
     it('still transforms a fence whose language exceeds 10 word chars on enter', async () => {
-      // Records CURRENT enter/tab behavior for an over-long language: the
-      // enter/tab regex /^```(\w{1,10})?/ is not end-anchored, so the 10-char
-      // cap is NOT enforced on this trigger — the transform fires and the
-      // FULL rest of the line becomes the language. The markdown transformer
-      // trigger (regex terminated by \s) would not fire here; pinned as data
-      // for the plan-052 seam, not flattened.
+      // The enter/tab regex /^```(\w{1,10})?/ is not end-anchored, so the
+      // 10-char cap is not enforced on this trigger: the full rest of the
+      // line becomes the language.
       await setupFenceParagraph('```abcdefghijkl')
       mounted = mountEditor(editor)
       const cleanup = registerWithCardKey(null)
@@ -683,9 +676,8 @@ describe('registerKeyboardNavigation', () => {
     })
 
     it('takes the full rest of the line as the language on enter (```js extra)', async () => {
-      // enter/tab extract the language via textContent.replace(/^```/, ''),
-      // diverging from the transformer trigger's match[1] capture — pinned
-      // as data for the plan-052 seam.
+      // Enter/tab extract the language via textContent.replace(/^```/, ''),
+      // unlike the transformer trigger's match[1] capture.
       await setupFenceParagraph('```js extra')
       mounted = mountEditor(editor)
       const cleanup = registerWithCardKey(null)
@@ -722,14 +714,9 @@ describe('registerKeyboardNavigation', () => {
     })
   })
 
-  // The shift+arrow selection extension had zero coverage at any level (no
-  // shiftKey in the unit suite, no Shift+Arrow in e2e) while living as two
-  // ~50-line mirror blocks. The direction-parameterized helper
-  // ($extendSelectionAcrossCardBoundary) is pure Lexical selection arithmetic
-  // — no geometry — so the boundary matrix is pinned here for both
-  // directions, plus the caption-provenance return the arrow handlers share.
+  // The shift+arrow helper is pure Lexical selection arithmetic (no
+  // geometry), so the boundary matrix is pinned here for both directions.
   describe('shift+arrow selection extension', () => {
-    /** Build a flat document of cards and text paragraphs, in order. */
     async function setupBlocks(blocks: string[]) {
       const keys: { cardKeys: string[]; textNodeKeys: string[] } = { cardKeys: [], textNodeKeys: [] }
       await updateEditor(editor, () => {
@@ -896,7 +883,6 @@ describe('registerKeyboardNavigation', () => {
 
       expect(result).toBe(true)
       expect(event.defaultPrevented).toBe(true)
-      // the paragraph is treated as not selected: the extension covers the card only
       expect(readSelectionPoints()).toEqual({ anchorKey: 'root', anchorOffset: 1, focusKey: 'root', focusOffset: 2 })
 
       cleanup()

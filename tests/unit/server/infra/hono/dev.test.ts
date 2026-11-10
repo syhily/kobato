@@ -312,11 +312,11 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       honoDevServerMock.mockReturnValueOnce(honoPlugin)
       const configureServer = plugin.configureServer as (server: unknown) => Promise<void>
       const built = fakeServer()
-      // attach the socket to the *request* object the middleware sees.
+      // Attach the socket to the *request* object the middleware sees.
       const req = { socket: built.socket, rawHeaders: [] as string[] }
       await configureServer(built.server)
 
-      // The first middleware pushed is our remote-address injector.
+      // The first middleware pushed is the remote-address injector.
       const injected = built.middlewares[0]!.fn as (req: unknown, _res: unknown, next: () => void) => void
       const next = vi.fn()
       injected(req, undefined, next)

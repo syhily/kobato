@@ -5,8 +5,8 @@ import type { Env } from '@/server/http/context'
 import { localizedHttpException } from '@/server/http/localized-http-exception'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
-// RBAC for native Hono resource routes outside the oRPC surface — the oRPC
-// procedures gate through `orpc-base.ts`'s requireAuth/requireRole instead.
+// RBAC for native Hono resource routes outside the oRPC surface; oRPC gates through
+// `orpc-base.ts`'s requireAuth/requireRole instead.
 
 export const requireRoleMw = (role: Role) =>
   createMiddleware<Env>(async (c, next) => {

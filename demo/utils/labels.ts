@@ -1,7 +1,7 @@
 import type { InklingLabelsInput } from '@/inkling'
 
-// Partial Simplified Chinese overrides for the `?labels=zh` demo toggle.
-// Every key not listed here falls back to DEFAULT_LABELS (English).
+// Partial Simplified Chinese overrides for the `?labels=zh` demo toggle; unlisted keys fall back to
+// DEFAULT_LABELS (English).
 export const ZH_LABELS: InklingLabelsInput = {
   'placeholder.editor': '开始创作你的文章……',
   'menu.section.primary': '主要',

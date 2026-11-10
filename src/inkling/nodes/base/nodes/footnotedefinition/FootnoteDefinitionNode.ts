@@ -9,11 +9,11 @@ import { renderFootnoteDefinitionNode } from '@/inkling/nodes/base/nodes/footnot
 import { createRenderContext } from '@/inkling/nodes/base/render-context'
 import BASIC_NODES from '@/inkling/nodes/BasicNodes'
 
-// The card's nested-editor spec (CONTEXT.md: "card spec") lives here, beside
-// the class it types — the declaration imports it from this module. The
-// editor is `nullable`: the headless round-trip invariant detaches it (same
-// shape as toggle's). The BASIC_NODES import runs against the layer grain but
-// closes no cycle — see the captionEditorSpecBase note.
+// The card's nested-editor spec lives here, beside the class it types — the
+// declaration imports it from this module. The editor is `nullable`: the
+// headless round-trip invariant detaches it (same shape as toggle's). The
+// BASIC_NODES import runs against the layer grain but closes no cycle — see
+// the captionEditorSpecBase note.
 export const footnoteDefinitionNestedEditors = [
   {
     name: 'contentEditor',
@@ -32,13 +32,9 @@ const footnoteDefinitionProperties = [
 export type FootnoteDefinitionData = DecoratorNodeData<typeof footnoteDefinitionProperties>
 
 /**
- * The footnote definition (CONTEXT.md: footnote definition) — a menu-less
- * card living in the doc-end definition run. Unlike kobato (which keeps
- * definitions in editor-external parallel state and merge/strips them on
- * every update), the definition is a real node here: `onChange` carries the
- * whole footnote state and the export layout falls out of the tree. The
- * `content` property is the nested editor's serialized HTML; `targetKey`
- * cross-references the citing refs (kobato's definition `_key`).
+ * The footnote definition — a menu-less card living in the doc-end definition
+ * run. The `content` property is the nested editor's serialized HTML;
+ * `targetKey` cross-references the citing refs.
  */
 // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseFootnoteDefinitionNode extends NestedEditorFieldMap<typeof footnoteDefinitionNestedEditors> {}

@@ -47,8 +47,7 @@ export function useMediumZoom(containerRef: RefObject<HTMLElement | null>, bodyH
       const attached = new Set<HTMLImageElement>()
 
       const attachAll = () => {
-        // medium-zoom only supports IMG nodes (`.svg` files ride plain
-        // `<img>` tags), so filter to them like the library itself does.
+        // IMG nodes only — inline `<svg>` cannot attach (see the import gate).
         const targets: HTMLImageElement[] = []
         for (const el of container.querySelectorAll('img, svg')) {
           if (el instanceof HTMLImageElement && !attached.has(el)) {

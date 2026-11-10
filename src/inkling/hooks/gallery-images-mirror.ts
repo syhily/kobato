@@ -3,28 +3,27 @@ import type { GalleryImage } from '@/inkling/types/gallery'
 import { ALLOWED_IMAGE_PROPS } from '@/inkling/nodes/base'
 import { createSnapshotStore } from '@/inkling/utils/services/snapshot-store'
 
-// Gallery images mirror — the headless module owning BOTH directions of the
-// gallery card's image list:
+// Gallery images mirror — headless owner of BOTH directions of the gallery
+// card's image list:
 //
 //   node → view: the node is the persistent truth. Every external change
 //     (within-card undo, collab) resyncs the snapshot wholesale, so a mounted
-//     card never renders a stale list — and the next interaction can't write
-//     one back through the card write seam.
+//     card never renders a stale list and can't write one back through the seam.
 //   view → node: local mutations (reorder, delete, upload results) publish to
 //     the snapshot FIRST and write the node through the injected seam port.
-//     In-flight upload previews publish as a local-only overlay, preserving
-//     the upload-intent adapter's preview-first ordering (the preview shows
-//     before the upload resolves; the node is written only after).
+//     In-flight upload previews publish as a local-only overlay, preserving the
+//     upload-intent adapter's preview-first ordering (preview before the upload
+//     resolves; the node is written only after).
 //
-// The node persists only ALLOWED_IMAGE_PROPS (its setImages picks them), so
-// the write's echo arrives with a fresh array reference carrying stripped
-// clones: echo detection compares persisted props only, and an echo adopts
-// the node's copy as the new baseline while KEEPING the overlay — a reorder
-// during an in-flight upload must not drop the previews' blob srcs. Anything
-// that is not an echo is external and replaces the overlay wholesale.
+// The node persists only ALLOWED_IMAGE_PROPS (its setImages picks them), so the
+// write's echo arrives with a fresh array of stripped clones: echo detection
+// compares persisted props only, and an echo adopts the node's copy as the new
+// baseline while KEEPING the overlay — a reorder during an in-flight upload must
+// not drop the previews' blob srcs. Anything that is not an echo is external and
+// replaces the overlay wholesale.
 //
-// The editor plumbing lives behind injected ports so the resync/echo policy
-// is a synchronous test table; useGalleryImages is the React adapter.
+// Editor plumbing lives behind injected ports so the resync/echo policy is a
+// synchronous test table; useGalleryImages is the React adapter.
 
 export interface GalleryImagesMirrorPorts {
   /** Reads the node's current images; undefined when the node is gone. */
@@ -64,7 +63,7 @@ export function createGalleryImagesMirror({
       return
     }
     if (overlay !== null && samePersistedImages(fresh, overlay)) {
-      // the echo of our own write: adopt the node's copy as the baseline but
+      // echo of the mirror's own write: adopt the node's copy as the baseline but
       // keep the overlay — it still carries the in-flight preview props the
       // node deliberately strips, and the rendered list is unchanged
       store.emit({ nodeImages: fresh })

@@ -10,7 +10,7 @@ import { $isGalleryNode, $isVideoNode, $updateCardNode } from '@/inkling/nodes/b
 
 declare const nodeKey: NodeKey
 
-// --- positive cases ---------------------------------------------------------
+// Positive cases
 
 // dataset fields take their declared value types
 $updateCardNode(nodeKey, $isVideoNode, (node) => {
@@ -26,7 +26,7 @@ $updateCardNode(nodeKey, $isGalleryNode, (node) => {
   node.setImages([])
 })
 
-// --- negative cases ---------------------------------------------------------
+// Negative cases
 
 $updateCardNode(nodeKey, $isVideoNode, (node) => {
   // @ts-expect-error - wrong value type for a known dataset field

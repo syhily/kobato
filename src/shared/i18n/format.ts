@@ -1,14 +1,14 @@
 // The semantic display-formatting facade: the ONE surface UI code uses for
 // user-visible dates, numbers, byte sizes, durations and region/language names.
 //
-// Every function takes an EXPLICIT locale, and every date function an explicit
-// site time zone — no runtime-default locale anywhere, so SSR and hydration
-// always agree. Formatter instances are cached by immutable keys (locale +
-// options, FIFO-evicted) because construction reads locale data.
+// Every function takes an EXPLICIT locale, and every date function an explicit site
+// time zone — no runtime-default locale anywhere, so SSR and hydration always agree.
+// Formatter instances are cached by immutable keys (locale + options, FIFO-evicted)
+// because construction reads locale data.
 //
 // What must NOT go through here: ISO timestamps, `<input type="datetime-local">`
-// values, calendar URL parts, feed/sitemap/API wire formats, analytics bucket
-// labels — machine formats stay machine formats.
+// values, calendar URL parts, feed/sitemap/API wire formats, analytics bucket labels
+// — machine formats stay machine formats.
 
 import type { Locale as DateFnsLocale } from 'date-fns'
 

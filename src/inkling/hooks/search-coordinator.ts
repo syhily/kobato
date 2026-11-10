@@ -5,19 +5,14 @@ import { createRequestTrack, type RequestScheduler } from '@/inkling/utils/servi
 import { runTrackedRequest } from '@/inkling/utils/services/service-machine'
 import { createSnapshotStore } from '@/inkling/utils/services/snapshot-store'
 
-// Search coordinator — the headless module owning the link-search flow behind
-// useSearchLinks: two request tracks (the debounced query search and the
-// default-options prefetch, both composed from the request-track primitives
-// in src/utils/services/request-track.ts), the URL short-circuit, and the
-// cross-track waiting. The churn (stale responses, superseded queries,
-// rejections, cancellation) lives here behind injected ports — the scheduler
-// and the searchLinks promise factory — so the race matrix is a synchronous
-// test table instead of renderHook + wall-clock sleeps. The query track's
-// async core is the shared tracked-request skeleton
-// (src/utils/services/service-machine.ts); the surface stays method-style
-// (setQuery/start) rather than the dispatch protocol — a lifecycle `start`
-// is not an intent. The React adapter is useSearchLinks (~40 lines):
-// position and constraints in, a snapshot out.
+// Headless owner of the link-search flow behind useSearchLinks: two request
+// tracks (debounced query search, default-options prefetch) built on the
+// request-track primitives, the URL short-circuit, and the cross-track waiting.
+// The churn (stale responses, superseded queries, rejections, cancellation) sits
+// here behind injected ports — the scheduler and the searchLinks factory — so the
+// race matrix is a synchronous test table. The query track's async core is
+// runTrackedRequest. The surface stays method-style (setQuery/start), not the
+// dispatch protocol: a lifecycle start is not an intent.
 
 export const SEARCH_DEBOUNCE_MS = 100
 
@@ -183,11 +178,10 @@ export function createSearchCoordinator({
       searchLinks ? searchLinks(term) : Promise.resolve(undefined),
     )
 
-    // undefined means the search was cancelled (or a newer query superseded
-    // this one): keep the current options instead of flashing "no results"
-    // while a later search is in flight. A rejection is best-effort too —
-    // preserve the last options. Either way the latest request always
-    // leaves the searching state.
+    // undefined means cancelled or superseded: keep the current options instead
+    // of flashing "no results" while a later search is in flight. A rejection is
+    // best-effort too — preserve the last options. Either way the latest request
+    // always leaves the searching state.
     if (outcome?.ok && outcome.value !== undefined) {
       store.emit({
         listOptions: convertSearchResultsToListOptions(outcome.value, term, {

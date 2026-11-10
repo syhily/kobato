@@ -11,11 +11,10 @@ import {
 import { renderCalloutNode } from '@/inkling/nodes/base/nodes/callout/callout-renderer'
 import MINIMAL_NODES from '@/inkling/nodes/MinimalNodes'
 
-// The card's nested-editor spec (CONTEXT.md: "card spec") lives here, beside
-// the class it types — the declaration imports it from this module. The
-// editor is `nullable`: the markdown round-trip detaches it. The
-// MINIMAL_NODES import runs against the layer grain but closes no cycle —
-// see the captionEditorSpecBase note.
+// The card's nested-editor spec lives here, beside the class it types — the
+// declaration imports it from this module. The editor is `nullable`: the
+// markdown round-trip detaches it. The MINIMAL_NODES import runs against the
+// layer grain but closes no cycle — see the captionEditorSpecBase note.
 export const calloutNestedEditors = [
   {
     name: 'calloutTextEditor',

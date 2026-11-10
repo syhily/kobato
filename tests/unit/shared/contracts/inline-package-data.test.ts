@@ -9,23 +9,18 @@ import {
   inlinePackageData,
 } from '../../../../scripts/sea/inline-package-data.ts'
 
-// Contract test: the server bundle inlines jsdom (the sanitize engine),
-// which resolves its sync-XHR worker path at module scope — a code path
-// the server never takes, but the resolve must not throw inside the
-// single-file ESM SEA binary. (jsdom 31 pre-generates its default
-// stylesheet into a JS module and dropped css-tree, so neither the old
-// stylesheet read nor the css-tree JSON loads need inlining anymore.)
-// The inline-package-data plugin rewrites the exact call site; this test
-// pins its shape in the INSTALLED package so an upstream release that
-// changes it fails here instead of in the smoke.
+// Contract test: the server bundle inlines jsdom (the sanitize engine), which
+// resolves its sync-XHR worker path at module scope — a code path the server
+// never takes, but the resolve must not throw inside the single-file ESM SEA
+// binary. The plugin rewrites the exact call site; this test pins its shape in
+// the INSTALLED package so an upstream release that changes it fails here
+// instead of in the smoke.
 
-/** Real path of an installed package root. */
 function packageRoot(name: string): string {
   const requireFromRepo = createRequire(join(process.cwd(), 'package.json'))
   return dirname(realpathSync(requireFromRepo.resolve(`${name}/package.json`)))
 }
 
-/** One installed representative file per plugin case. */
 const CASE_FILES: [caseName: string, file: string][] = [
   ['jsdom xhr sync worker path', join(packageRoot('jsdom'), 'lib', 'jsdom', 'living', 'xhr', 'XMLHttpRequest-impl.js')],
 ]

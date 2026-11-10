@@ -4,8 +4,8 @@ import { formatDateTime, formatNumber } from '@/shared/i18n/format'
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@/ui/admin/settings/cache/cache-constants'
 
 // Render the stored TTL in the most readable unit — sub-hour values keep their
-// own units. The unit label comes from Intl (`30分钟` / `30 minutes`), never
-// from concatenated copy.
+// own units. The unit label comes from Intl's locale-aware unit formatting,
+// never from concatenated copy.
 export function formatTtl(seconds: number, options: { locale: AppLocale }): string {
   const { locale } = options
   if (seconds < SECONDS_PER_HOUR) {

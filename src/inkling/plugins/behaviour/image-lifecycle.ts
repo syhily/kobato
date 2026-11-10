@@ -10,9 +10,8 @@ import { dataSrcToFile } from '@/inkling/utils/dataSrcToFile'
 import { getImageDimensions } from '@/inkling/utils/getImageDimensions'
 
 // Image lifecycle — the image card's mount-time document-migration
-// policies, headless so they are jsdom-testable through real editors
-// (previously e2e-only, inline in ImageNodeComponent): the Google-Docs
-// data:-URL upload migration, the dimension backfill for older
+// policies, headless so they are jsdom-testable through real editors: the
+// Google-Docs data:-URL upload migration, the dimension backfill for older
 // serialized/external images, and the allowed-widths clamp. The component
 // invokes them from one mount effect each and keeps only the ports.
 
@@ -57,8 +56,7 @@ export async function migrateImageDataUrl(
  * through the seam. Skips when the node already has dimensions, when the
  * card is mid-insert (initial file / dialog trigger), or when there is no
  * src. A broken/unloadable src reports through onError and leaves the
- * dimensions unset (the historical policy). Returns true when the write
- * landed.
+ * dimensions unset. Returns true when the write landed.
  */
 export async function backfillImageDimensions(
   editor: LexicalEditor,

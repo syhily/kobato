@@ -75,7 +75,7 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
   })
 
   // The dirty→commit path is exercised end-to-end by the snapshot form
-  // tests that render the full card tree; here we cover the no-op guards.
+  // tests that render the full card tree; this file covers the no-op guards.
 
   it('flushOnBlur is a no-op when the form is clean', () => {
     const source: Source = { title: 'Hello', description: 'World' }

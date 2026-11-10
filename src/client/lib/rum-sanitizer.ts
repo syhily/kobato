@@ -1,19 +1,13 @@
-// Frontend RUM event privacy boundary (ADR-0012).
+// Frontend RUM event privacy boundary: every SDK event passes through this
+// synchronous allowlist; unknown shapes/types/URLs and any thrown error fail
+// closed. The projection builds a NEW object; the caller replaces the event
+// in place.
 //
-// Every SDK event passes through this synchronous allowlist before it can
-// leave the browser. The projection builds a NEW object from validated fields;
-// the caller then replaces the SDK event in place. Unknown shapes, unknown
-// event types, unrecognized dynamic URLs, and any thrown error fail closed.
-//
-// SDK 0.4.3 limitation: `limitModification` deep-clones the event, calls
-// `beforeSend` on the clone, and copies back ONLY the SDK's declared
-// modifiable fields. It also ignores `false` for `view` events. Therefore:
-//   - view/view_update free fields (name/url/referrer/context/service/version
-//     and LCP resource_url) are overwritten with trusted values BEFORE any
-//     risky work; a failed projection still sends a safe minimal view.
-//   - every other event type is dropped on failure (`false`).
-//   - non-modifiable SDK fields cannot be removed here; the OpenObserve ingest
-//     allowlist is the second boundary.
+// SDK 0.4.3: `limitModification` copies back ONLY its declared modifiable
+// fields and ignores `false` for `view` events. So view free fields are
+// overwritten with trusted values before any risky work, every other event
+// type is dropped on failure, and non-modifiable fields can only be removed
+// by the OpenObserve ingest allowlist (the second boundary).
 
 import type { RumBeforeSend, RumEvent, RumEventDomainContext } from '@openobserve/browser-rum-slim'
 
@@ -603,10 +597,8 @@ function projectErrorDetails(raw: unknown, scope: RumEventScope, codeHint: strin
   }
 
   const stack = sanitizeStack(error.stack)
-  // Always overwrite the raw stack: the SDK's `limitModification` copies only
-  // declared field paths, so leaving it undefined would keep the original
-  // string (whose first line is the free-form error message). An empty string
-  // is copied and removes the message from the wire.
+  // Always overwrite the stack: leaving it undefined would keep the original
+  // string, whose first line is the free-form error message.
   projected.stack = stack ?? ''
   projected.handling_stack = ''
   projected.fingerprint = ''

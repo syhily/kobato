@@ -11,17 +11,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { drainEnqueuedUpdates } from '#/inkling/utils/test-editor'
 import DEFAULT_NODES from '@/inkling/nodes/DefaultNodes'
-// Characterization pins for the card-menu trigger module
-// (src/plugins/behaviour/card-menu-trigger.ts): the slash valid-press
-// grammar, the slash query/close verdicts, and the plus caret/hover/
-// selectionchange policy, driven headlessly through the registrations and
-// resolvers. The mounted-plugin wiring (keypress → open, verdict → render)
-// stays pinned in test/unit/plugins/SlashCardMenuPlugin.test.tsx and
+// Characterization pins for the card-menu trigger module: the slash
+// valid-press grammar, the slash query/close verdicts, and the plus caret/
+// hover/selectionchange policy, driven headlessly through the registrations
+// and resolvers. The mounted-plugin wiring (keypress → open, verdict →
+// render) stays pinned in SlashCardMenuPlugin.test.tsx and
 // PlusCardMenuPlugin.test.tsx.
 //
 // Harness notes:
-// - The editor is set non-editable so Lexical never reconciles the DOM
-//   selection (mirroring test/unit/plugins/behaviour/at-link.test.ts).
+// - The editor is non-editable so Lexical never reconciles the DOM selection
+//   (mirroring at-link.test.ts).
 // - The native-selection facts the module reads come from a window.getSelection
 //   mock (the same seam both plugin suites use): a real setBaseAndExtent
 //   makes jsdom fire an async 'selectionchange' that Lexical answers with a
@@ -47,13 +46,10 @@ function createTestEditor(): LexicalEditor {
   })
 }
 
-// Lexical 0.53 commits updates on a microtask, and listener-triggered
+// Lexical commits updates on a microtask, and listener-triggered
 // cascade updates defer again — the harness's drainEnqueuedUpdates drains
 // the whole queue so assertions see the settled state.
 
-// Build a single top-level paragraph carrying `text` ('' → no text child),
-// with an optional selection: text-point offsets on the text node when the
-// paragraph is non-empty, an element point on the paragraph when it is empty.
 async function buildParagraph(
   editor: LexicalEditor,
   text: string,
@@ -79,9 +75,7 @@ async function buildParagraph(
   })
 }
 
-// Build a bullet list with a single item carrying `text` and a collapsed
-// caret inside it — the selected node's top-level element is the list, not a
-// paragraph.
+// The selected node's top-level element is the list, not a paragraph.
 async function buildListItem(editor: LexicalEditor, text: string, caretOffset = 0) {
   await drainEnqueuedUpdates(editor, () => {
     const root = $getRoot()
@@ -108,8 +102,8 @@ function getEditorTextNode(rootElement: HTMLElement): Text {
 // null models "no native selection" (rangeCount 0). The mocked facts must
 // mirror the editor-state selection: Lexical re-derives the pending editor
 // selection from the DOM selection at the start of every editor.update
-// ($internalCreateSelection), so a mock that disagrees with the editor state
-// silently rewrites the selection the next update sees.
+// ($internalCreateSelection), so a disagreeing mock silently rewrites the
+// selection the next update sees.
 function mockNativeSelection(
   anchorNode: Node | null,
   { anchorOffset = 0, focusNode, focusOffset }: { anchorOffset?: number; focusNode?: Node; focusOffset?: number } = {},
@@ -160,8 +154,6 @@ describe('card-menu-trigger', () => {
     rootElement = document.createElement('div')
     document.body.appendChild(rootElement)
     editor.setRootElement(rootElement)
-    // the module only reads editor/DOM state; non-editable keeps Lexical
-    // from reconciling the DOM selection over the getSelection mock
     editor.setEditable(false)
 
     return () => {

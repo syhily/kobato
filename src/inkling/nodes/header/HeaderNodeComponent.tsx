@@ -79,7 +79,7 @@ function HeaderNodeComponent({
     openFileDialog: () => fileInputRef.current?.click(),
   })
 
-  // field-name-as-data write handlers (src/nodes/header/header-field-writer.ts)
+  // field-name-as-data write handlers (header-field-writer)
   const field = headerFieldWriter(write)
 
   const handleAlignment = field.set('alignment')

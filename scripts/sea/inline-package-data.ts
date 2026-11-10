@@ -1,24 +1,9 @@
 // Bundler plugin: inline static package data files into the server bundle.
-// Bundled packages occasionally reach for files at runtime in ways the
-// single-file ESM SEA binary cannot survive; every payload is static, so
-// the transform swaps each read for a literal carrying the real content
-// (JSON payloads embed verbatim — a JSON text IS a JS expression — so
-// consumers still bind objects, not strings).
-//
-// Currently covered:
-//
-//   - jsdom's `lib/jsdom/living/xhr/XMLHttpRequest-impl.js` does a
-//     module-scope `require.resolve("./xhr-sync-worker.js")` — the Worker
-//     is constructed only for SYNC XHR, which the sanitize engine never
-//     performs, so a placeholder path is inlined instead (see `path-stub`).
-//     jsdom 31 pre-generates its default stylesheet into a plain JS module
-//     and dropped css-tree entirely, so neither needs data inlining anymore.
-//
-// Registered in vite.config.ts (the SEA bundle wraps build/server, where
-// these packages are already inlined) and in vite.sea.config.ts (in case a
-// package is ever externalized into the SEA graph). Every call-site shape
-// is pinned by the `inline-package-data` contract test so an upstream
-// release changing one fails at upgrade time.
+// Bundled packages reach for files at runtime in ways a single-file ESM SEA
+// binary cannot survive; every payload is static. JSON embeds verbatim (a JSON
+// text IS a JS expression) so consumers still bind objects, not strings.
+// Call-site shapes are pinned by the `inline-package-data` contract test so an
+// upstream release changing one fails at upgrade time.
 
 import type { Plugin } from 'vite'
 
@@ -36,11 +21,10 @@ interface InlineDataRead {
    */
   dataFile?: string
   /**
-   * text: embed as a string literal; json: embed the payload verbatim;
-   * path-stub: replace a `require.resolve(...)` with a placeholder absolute
-   * path (the resolved file is only consumed on a code path the server
-   * never takes — e.g. jsdom's sync-XHR worker, unreachable from the
-   * sanitize engine — so the module-scope resolve must merely not throw).
+   * text: embed as a string literal; json: embed the payload verbatim; path-stub:
+   * replace a `require.resolve(...)` with a placeholder absolute path — the
+   * module-scope resolve must merely not throw, the file is never opened (see
+   * the jsdom case below).
    */
   kind: 'text' | 'json' | 'path-stub'
 }
@@ -76,7 +60,6 @@ function resolveDataFile(id: string, dataFile: string): string {
   return resolve(dirname(id), dataFile)
 }
 
-/** Exported for the contract test. */
 export function expectedInlineLiteral(id: string, read: InlineDataRead): string {
   if (read.kind === 'path-stub') {
     return JSON.stringify('/__sea_unavailable__/xhr-sync-worker.js')

@@ -2,12 +2,9 @@ import type { LexicalEditorState, LexicalNodeJson } from '@/shared/lexical/schem
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Tree traversal for the Lexical storage format (plan
-// docs/plans/inkling-editor-replacement.md, round R9a). PT was a flat block
-// array with one container level; Lexical is a tree, so the walk is
-// depth-first pre-order with an explicit stack (recursion-free, same style
-// as the schema's policy walk). Validated states are depth-capped by
-// MAX_TREE_DEPTH, so `lexicalNodeTextContent`'s bounded recursion is safe.
+// Depth-first pre-order traversal with an explicit stack (recursion-free, like
+// the schema's policy walk). Validated states are depth-capped by
+// MAX_TREE_DEPTH, so `lexicalNodeTextContent`'s recursion is safe.
 
 /**
  * Depth-first pre-order visit over every descendant of `root` (the root
@@ -36,12 +33,10 @@ export function visitLexicalNodes(state: LexicalEditorState, visit: (node: Lexic
 
 /**
  * Serialized-state equivalent of Lexical's `node.getTextContent()`: text
- * nodes contribute their `text`, `linebreak` contributes `'\n'`, element
- * nodes concatenate their children, and decorator nodes (image, codeblock,
- * math, math-inline, the host cards) contribute nothing — MathInlineNode
- * explicitly returns `''` and no whitelisted decorator overrides it. This
- * is the text inkling's heading transformer feeds to `slugify`, so heading
- * slug parity depends on matching it byte-for-byte.
+ * nodes contribute `text`, `linebreak` `'\n'`, elements their children,
+ * decorators nothing (MathInlineNode returns `''` and no whitelisted decorator
+ * overrides it). Heading slug parity depends on matching inkling's heading
+ * transformer byte-for-byte.
  */
 export function lexicalNodeTextContent(node: LexicalNodeJson): string {
   // `text` is a per-variant field the shared node type does not model; the

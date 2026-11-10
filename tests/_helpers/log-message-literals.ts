@@ -1,38 +1,14 @@
 // AST scanner behind tests/unit/arch/log-message-literals.test.ts.
-//
-// The outbound log projection (src/server/infra/trace/log-record.ts) only
-// accepts a static message: a non-HTTP body is read from `msg` verbatim,
-// marker-bearing messages are dropped, and everything else in the line is
-// ignored. Interpolated or concatenated server messages therefore silently
-// lose their detail (and any value baked into the text) the moment the line
-// leaves the process — so a message must be a string literal or an
-// interpolation-free template.
-//
-// Rules:
-//   dynamic-message          the message argument of a logger call is not a
-//                            static string (identifier, concatenation, call,
-//                            and interpolated templates are all reported)
-//   marker-message           a static message carries a privacy marker
-//                            (`{E}`, `{/E}`, `[REDACTED]`) and would be dropped
-//   dynamic-option-message   an object property named `logMessage` /
-//                            `rowThrewMessage` is not a static string
-//
-// Logger calls are recognized by the method name: any member call named
-// debug/info/warn/error/fatal whose receiver is not a known non-logger
-// (`console`, a Web Streams `controller`, a bare plugin/handler `this`). That
-// receiver-agnostic rule is what makes `getLogger(scope).info(…)`,
-// `logger.child(…).warn(…)`, aliases such as `const log = getLogger(…)`, and
-// Logger-typed properties (`options.log`) or parameters all covered without
-// tracking names.
-//
-// Two signatures exist. The Logger facade is `(message, context?)`. The raw
-// Pino `root` export (imported from the logger module) is `(mergeObject,
-// message)`, so a first-argument object is context, never a message: the
-// message is the second argument, and a missing or non-static second argument
-// is a violation (fail closed). A non-object first argument on the raw root is
-// treated like the facade — it is the message.
-//
-// Positions are computed from a per-file line-start index with a binary search.
+// The outbound log projection (src/server/infra/trace/log-record.ts) only accepts a
+// static message: non-HTTP bodies are read from `msg` verbatim and marker-bearing
+// messages are dropped, so an interpolated or concatenated message silently loses
+// its detail — and any value baked into it.
+// Logger calls are matched by method name, receiver-agnostic: any
+// debug/info/warn/error/fatal member call counts unless the receiver is `console`,
+// a Web Streams controller, or a bare plugin/handler `this`.
+// Two signatures: the facade is `(message, context?)`; the raw Pino `root` export
+// is `(mergeObject, message)`, so a first-argument object is context and a missing
+// or non-static second argument fails closed.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
@@ -195,10 +171,8 @@ function hasMarker(text: string): boolean {
 }
 
 /**
- * `console.*` (and `globalThis.console.*`), a Web Streams `controller.error(…)`,
- * and a bare `this.error(…)` (a plugin/handler context, not the logger facade)
- * are never logger calls. `this.log.error(…)` has a member receiver and still
- * matches.
+ * `console.*`, `globalThis.console.*`, a Web Streams `controller.error(…)` and a
+ * bare `this.error(…)` are never logger calls; `this.log.error(…)` still matches.
  */
 function isNonLoggerReceiver(node: unknown): boolean {
   if (!isNode(node)) {
@@ -251,10 +225,8 @@ function checkMessage(ctx: VisitContext, node: AstNode): void {
 }
 
 /**
- * Raw Pino root signature: a first-argument object is the merge object, so the
- * message is the second argument. A missing or non-static message fails closed.
- * Any other first argument is the message, exactly like the facade — this never
- * lets a `(dynamic, 'static')` pair slip through.
+ * Raw Pino root: a first-argument object is the merge object, so the message is the
+ * second argument. Any other first argument is the message, as with the facade.
  */
 function checkPinoMessage(ctx: VisitContext, args: readonly unknown[]): void {
   const first = args[0]

@@ -1,8 +1,8 @@
-// Fixed, detector-free OTel resource for every server signal (ADR-0012).
+// Fixed, detector-free OTel resource for every server signal.
 //
-// Both DEV runtime entries (traces/metrics and logs) build their resource from
-// this function, so the three keys exist exactly once and the shipped signals
-// share one identity. No host/OS/process/env detector is involved.
+// Both runtime entries (traces/metrics and logs) build their resource from this
+// function, so the three keys exist exactly once and the shipped signals share
+// one identity. No host/OS/process/env detector is involved.
 
 import { APP_VERSION } from '@/shared/config/version'
 

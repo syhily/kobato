@@ -35,9 +35,8 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// Same mock pattern as `musics-view.test.tsx` (mock-react-query seams,
-// inert sonner, orpcQuery runs but never executes); dialog primitives are
-// stubbed because the real Base UI portal never mounts under SSR.
+// Same mock pattern as `musics-view.test.tsx`; dialog primitives are stubbed because
+// the Base UI portal never mounts under SSR.
 
 // `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the
 // machine's state directly.
