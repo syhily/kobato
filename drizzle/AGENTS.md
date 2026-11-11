@@ -9,6 +9,11 @@ input only and is never read at runtime (the SEA build even excludes it — `scr
 ## Rules
 
 - Generate with `pnpm run db:gen`; never hand-write a new migration folder from scratch.
+- Rename the newly generated folder to a semantic name that matches the business change before
+  committing (e.g. `20261112030405_snapshot` → `20261112030405_add_oauth_accounts`). Keep the
+  `<timestamp>_` prefix — folder-name order is the apply order — and only replace the auto-generated
+  suffix. Rename before any database has applied the migration: the migrator records the folder
+  name in `__drizzle_migrations`, so renaming an already-applied folder would re-run its SQL.
 - New migrations must be defensive: every `CREATE TABLE` / `CREATE INDEX` / `CREATE UNIQUE INDEX`
   statement carries `IF NOT EXISTS`, so a database that already has the final schema (migrations
   table wiped, backup restored) can apply the folder no-op. Rewrite the generated SQL before
