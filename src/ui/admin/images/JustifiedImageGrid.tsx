@@ -1,4 +1,4 @@
-import type { FragmentInstance, RefObject } from 'react'
+import type { FragmentInstance, Ref } from 'react'
 
 import { Fragment, useMemo } from 'react'
 
@@ -24,7 +24,7 @@ export interface JustifiedImageGridProps {
   onSelect: (image: AdminImageDto) => void
   className?: string
   /** Fragment ref mounted on the last row — the infinite-scroll sentinel observes it. */
-  sentinelRef?: RefObject<FragmentInstance | null>
+  sentinelRef?: Ref<FragmentInstance>
 }
 
 interface RowItem {

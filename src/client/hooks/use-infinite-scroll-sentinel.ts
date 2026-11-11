@@ -1,15 +1,19 @@
-import type { FragmentInstance, RefObject } from 'react'
+import type { FragmentInstance, RefCallback, RefObject } from 'react'
 
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 // Shared IntersectionObserver driver for infinite-scroll lists: consumers
 // wrap the list's LAST item in `<Fragment ref={sentinelRef}>` and the
 // observer watches that fragment's first-level DOM children; intersection
 // fires `fetchNextPage`. The observer only arms while a next page exists
 // and no fetch is in flight, so a single intersection can't double-fire.
-// `tailKey` identifies the currently observed tail item — when a page
-// fetch lands and the tail moves to a new item, the effect re-arms against
-// the new fragment instance.
+// Arming follows the fragment's ACTUAL mount through a callback ref (not
+// just the effect deps): a tail that mounts a commit after the gating deps
+// settle — the justified image grid renders a skeleton until its container
+// width measures — must still arm once the fragment appears. `tailKey`
+// identifies the currently observed tail item — when a page fetch lands
+// and the tail moves to a new item, the effect re-arms against the new
+// fragment instance.
 export function useInfiniteScrollSentinel({
   hasNextPage,
   isFetchingNextPage,
@@ -26,11 +30,13 @@ export function useInfiniteScrollSentinel({
   rootMargin?: string
   /** Identity of the currently observed tail item — changing it re-arms the observer against the new tail (e.g. last item id or items.length). */
   tailKey: unknown
-}): RefObject<FragmentInstance | null> {
-  const sentinelRef = useRef<FragmentInstance>(null)
+}): RefCallback<FragmentInstance> {
+  const [instance, setInstance] = useState<FragmentInstance | null>(null)
+  const sentinelRef = useCallback((next: FragmentInstance | null) => {
+    setInstance(next)
+  }, [])
 
   useEffect(() => {
-    const instance = sentinelRef.current
     if (!instance || !hasNextPage || isFetchingNextPage) {
       return
     }
@@ -48,7 +54,7 @@ export function useInfiniteScrollSentinel({
       observer.disconnect()
     }
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- tailKey is the deliberate re-arm trigger: a new tail item mounts a new fragment instance the observer must re-observe
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, root, rootMargin, tailKey])
+  }, [instance, hasNextPage, isFetchingNextPage, fetchNextPage, root, rootMargin, tailKey])
 
   return sentinelRef
 }

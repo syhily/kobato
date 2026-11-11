@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { render, screen } from '@testing-library/react'
-import { Fragment, useRef } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
@@ -78,6 +78,29 @@ function RootedHarness({ tailKey = 1, ...props }: HarnessProps) {
   )
 }
 
+// Mirrors JustifiedImageGrid: a skeleton renders until a layout effect
+// reports the container width, so the ref-carrying fragment mounts one
+// commit AFTER hasNextPage/tailKey settle. Regression guard for the images
+// grid never arming its observer (infinite scroll dead on arrival).
+function GatedHarness({ tailKey = 1, ...props }: HarnessProps) {
+  const [width, setWidth] = useState(0)
+  useLayoutEffect(() => {
+    setWidth(1200)
+  }, [])
+  const sentinelRef = useInfiniteScrollSentinel({ ...props, tailKey })
+  return (
+    <div>
+      {width <= 0 ? (
+        <div data-testid="skeleton" />
+      ) : (
+        <Fragment ref={sentinelRef}>
+          <div data-testid="sentinel" />
+        </Fragment>
+      )}
+    </div>
+  )
+}
+
 describe('useInfiniteScrollSentinel', () => {
   beforeEach(() => {
     FakeIntersectionObserver.instances = []
@@ -135,6 +158,13 @@ describe('useInfiniteScrollSentinel', () => {
     const observer = FakeIntersectionObserver.instances[0]!
     expect(observer.options.root).toBeNull()
     expect(observer.options.rootMargin).toBe('200px')
+  })
+
+  it('arms once a late-mounting fragment appears after the gating deps settled', () => {
+    render(<GatedHarness hasNextPage={true} isFetchingNextPage={false} fetchNextPage={vi.fn()} />)
+    expect(FakeIntersectionObserver.instances).toHaveLength(1)
+    const observer = FakeIntersectionObserver.instances[0]!
+    expect(observer.observed.has(screen.getByTestId('sentinel'))).toBe(true)
   })
 
   it('passes the root ref element and rootMargin through to the observer init', () => {

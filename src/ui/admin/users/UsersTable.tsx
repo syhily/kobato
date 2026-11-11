@@ -1,4 +1,4 @@
-import type { FragmentInstance, RefObject } from 'react'
+import type { FragmentInstance, Ref } from 'react'
 
 import { SearchIcon } from 'lucide-react'
 import { Fragment, memo } from 'react'
@@ -26,7 +26,7 @@ interface UsersTableProps {
   config: SiteIdentitySettings
   isLoading: boolean
   /** Fragment ref mounted on the last row — the infinite-scroll sentinel observes it. */
-  sentinelRef?: RefObject<FragmentInstance | null>
+  sentinelRef?: Ref<FragmentInstance>
 }
 
 export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableProps) {
