@@ -13,13 +13,7 @@ export async function loadDetailCritical(
   context: HandlerContext,
   target: EntityTarget,
 ): Promise<DetailCriticalPayload> {
-  return loadDetailPageCritical(
-    context.db,
-    context.session,
-    target,
-    context.settings,
-    context.localization.revisions.comments,
-  )
+  return loadDetailPageCritical(context.db, context.session, target, context.settings)
 }
 
 // Both analytics signals from the single domain entry point — the view gate

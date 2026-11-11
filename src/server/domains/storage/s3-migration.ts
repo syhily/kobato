@@ -151,8 +151,6 @@ export interface S3MigrationHooks {
   readonly persistFlippedStorage: (db: Database, storage: AssetsSettings['storage']) => Promise<void>
   /** Re-point the assets settings row's branding-slot refs after a driver flip. */
   readonly flipBrandingDrivers: (db: Database, from: StorageDriver, to: StorageDriver) => Promise<void>
-  /** Invalidate flipped image rows' imageMeta cache entries (the cache carries the driver). */
-  readonly invalidateImageMeta: (db: Database, storagePaths: string[]) => Promise<void>
   /**
    * Completed-run content rewrite (asset-url backfill). ALWAYS runs on
    * completion — idempotent, so a failed earlier attempt is retried at every
@@ -791,16 +789,10 @@ async function flipDriverColumns(
   from: StorageDriver,
   to: StorageDriver,
 ): Promise<void> {
-  const flippedImages = await db.select({ path: image.storagePath }).from(image).where(eq(image.storageDriver, from))
-  const imagePaths = flippedImages.map((row) => row.path)
   await db.update(image).set({ storageDriver: to }).where(eq(image.storageDriver, from))
   await db.update(music).set({ storageDriver: to }).where(eq(music.storageDriver, from))
   await db.update(fontTable).set({ storageDriver: to }).where(eq(fontTable.storageDriver, from))
   await db.update(backupTable).set({ storageDriver: to }).where(eq(backupTable.storageDriver, from))
-  // The imageMeta cache carries the driver — invalidate every flipped row.
-  if (imagePaths.length > 0) {
-    await requireHooks().invalidateImageMeta(db, imagePaths)
-  }
 }
 
 function throwIfCancelled(handle: RunningHandle): void {

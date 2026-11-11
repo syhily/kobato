@@ -351,12 +351,6 @@ export const uiMessagesZhHK = {
   'admin.cache.calendar.description':
     "/images/calendar/:date.png 的渲染結果，鍵形如 {prefix}'<yyyy-MM-dd>'。一天後會自動失效。",
   'admin.cache.calendar.label': '側邊欄日曆快取',
-  'admin.cache.categories.description':
-    '公開側全部分類（含文章計數）的查詢結果，鍵形如 {prefix}all。分類或文章變更後自動清空。',
-  'admin.cache.categories.label': '分類清單快取',
-  'admin.cache.comments.description':
-    '側邊欄「最新留言」清單的查詢結果，鍵形如 {prefix}latest。留言增刪或審核後自動清空。',
-  'admin.cache.comments.label': '最新留言快取',
   'admin.cache.feed.description':
     "/feed 系列端點的 RSS / Atom XML，鍵形如 {prefix}all、{prefix}cat:'<slug>'、{prefix}tag:'<slug>'。發佈或刪除文章後自動清空。",
   'admin.cache.feed.label': 'Feed 快取',
@@ -366,9 +360,6 @@ export const uiMessagesZhHK = {
   'admin.cache.githubRelease.description':
     "GitHub Releases API 的查詢結果，鍵形如 {prefix}'<owner>'/'<repo>'/'<endpoint>'。短 TTL 僅用於削減重複外呼，到期後自動重新請求。",
   'admin.cache.githubRelease.label': 'GitHub 版本快取',
-  'admin.cache.imageMeta.description':
-    "SSR 渲染時 storagePath → image 資料列的查詢結果（寬 / 高 / thumbhash），鍵形如 {prefix}'<storagePath>'。在圖片庫批次上傳或匯入舊站資料後清理一次即可。",
-  'admin.cache.imageMeta.label': '圖片中繼資料快取',
   'admin.cache.og.description':
     "/images/og/:slug.png 的渲染結果，鍵形如 {prefix}'<slug>'-'<hash>'。修改 OG 尺寸或文章封面 / 摘要後清理。",
   'admin.cache.og.label': 'OG 圖快取',
@@ -383,9 +374,6 @@ export const uiMessagesZhHK = {
   'admin.cache.searchResult.label': '搜尋結果快取',
   'admin.cache.sitemap.description': '/sitemap.xml 的產生結果，快取鍵為 {prefix}。發佈或刪除文章 / 頁面後自動清空。',
   'admin.cache.sitemap.label': '網站地圖快取',
-  'admin.cache.tags.description':
-    '公開側全部標籤（含文章計數）的查詢結果，鍵形如 {prefix}all。標籤或文章變更後自動清空。',
-  'admin.cache.tags.label': '標籤清單快取',
   'admin.tasks.group.content.description': '定時發佈與 Webmention 佇列。',
   'admin.tasks.group.content.label': '內容',
   'admin.tasks.group.maintenance.description': '週期性的清理與資料更新。',
@@ -1187,7 +1175,7 @@ export const uiMessagesZhHK = {
   'admin.settings.cache.view.clearAllTitle': '一鍵清空',
   'admin.settings.cache.view.loadingStats': '正在讀取快取統計…',
   'admin.settings.cache.view.statsFailed': '讀取快取統計失敗',
-  'admin.settings.cache.view.clearAllDescription': '刪除資料庫快取表中所有已註冊群組的記錄。目前共 {count} 條快取。',
+  'admin.settings.cache.view.clearAllDescription': '刪除所有已註冊快取群組的記錄。目前共 {count} 條快取。',
   'admin.settings.cache.view.clearAllNote':
     '清空後下一次存取會觸發對應資源（OG 圖、頭像、日曆）的重新產生 / 拉取。Session 與限流計數不會受影響。',
   'admin.settings.cache.view.clearing': '清空中…',
@@ -1202,9 +1190,9 @@ export const uiMessagesZhHK = {
   'admin.settings.cache.view.confirmAllTitle': '清空全部快取？',
   'admin.settings.cache.view.confirmBucketTitle': '清空「{label}」快取？',
   'admin.settings.cache.view.confirmAllDescription':
-    '本次操作會刪除資料庫快取表中全部 {count} 條記錄。下一次存取 OG 圖 / 頭像 / 日曆會重新產生或拉取，可能短時間內增加伺服器負載。該操作不可復原。',
+    '本次操作會刪除全部 {count} 條快取記錄。下一次存取 OG 圖 / 頭像 / 日曆會重新產生或拉取，可能短時間內增加伺服器負載。該操作不可復原。',
   'admin.settings.cache.view.confirmBucketDescription':
-    '本次操作會刪除快取表中 {count} 條鍵符合 {pattern} 的記錄。該操作不可復原。',
+    '本次操作會刪除 {count} 條鍵符合 {pattern} 的快取記錄。該操作不可復原。',
   'admin.settings.cache.view.confirmAll': '確認清空全部',
   'admin.settings.cache.view.confirm': '確認清空',
   'admin.settings.cache.bucket.keyCount': '快取條數',
@@ -1216,7 +1204,7 @@ export const uiMessagesZhHK = {
   'admin.settings.cache.bucket.editPrefixHint':
     '必須以 `:` 結尾，作為前綴和後續欄位的分隔符。修改後寫入端立即用新前綴產生鍵。',
   'admin.settings.cache.bucket.ttlHours': 'TTL（小時）',
-  'admin.settings.cache.bucket.ttlHint': '將以 {seconds} 秒為有效期寫入資料庫快取表（1 小時 ~ 30 天）。',
+  'admin.settings.cache.bucket.ttlHint': '將以 {seconds} 秒為有效期寫入磁碟快取（1 小時 ~ 30 天）。',
   'admin.settings.cache.bucket.saving': '儲存中…',
   'admin.settings.cache.bucket.save': '儲存設定',
   'admin.settings.cache.bucket.clear': '清空該群組',

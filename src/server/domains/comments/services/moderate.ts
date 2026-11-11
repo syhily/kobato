@@ -19,7 +19,6 @@ import { sendApprovedComment, sendNewComment } from '@/server/domains/comments/s
 import { countApprovedRepliesOfComment, findCommentWithUserById } from '@/server/domains/comments/services/lookup'
 import { decideOwnEdit } from '@/server/domains/comments/services/policy'
 import { asCommentTarget } from '@/server/domains/comments/services/shared'
-import { invalidateContent } from '@/server/domains/content/invalidate'
 import { comment } from '@/server/infra/db/schema/comment'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { descriptorFor } from '@/server/infra/http/error-descriptor'
@@ -29,23 +28,16 @@ import { idFromString } from '@/shared/utils/id'
 
 const adminLog = getLogger('comments.admin')
 
-// Cache-invalidation invariant: mutations changing the latest-comments list
-// emit `{ entity: 'comment' }` here. The delete-request trio never emits —
-// they only touch `deleteRequestedAt`, which the query does not filter on.
-
 export async function approveCommentById(db: Database, id: number): Promise<void> {
   await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))
-  invalidateContent({ entity: 'comment' })
 }
 
 export async function deleteCommentById(db: Database, id: number): Promise<void> {
   await db.delete(comment).where(eq(comment.id, id))
-  invalidateContent({ entity: 'comment' })
 }
 
 export async function softDeleteCommentById(db: Database, id: number): Promise<void> {
   await db.update(comment).set({ deletedAt: new Date() }).where(eq(comment.id, id))
-  invalidateContent({ entity: 'comment' })
 }
 
 export async function bulkApprovePendingByUser(db: Database, userId: number): Promise<number> {
@@ -54,7 +46,6 @@ export async function bulkApprovePendingByUser(db: Database, userId: number): Pr
     .set({ isPending: false })
     .where(and(eq(comment.userId, userId), eq(comment.isPending, true), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  invalidateContent({ entity: 'comment' })
   return updated.length
 }
 
@@ -65,7 +56,6 @@ export async function bulkSoftDeleteCommentsByUser(db: Database, userId: number)
     .set({ deletedAt: new Date() })
     .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  invalidateContent({ entity: 'comment' })
   return updated.length
 }
 

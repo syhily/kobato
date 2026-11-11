@@ -3,7 +3,7 @@ import { eq, ne } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 import type { LexicalEditorState } from '@/shared/lexical/schema'
 
-import { resolveSrcToStoragePath } from '@/server/domains/images/services/cache'
+import { resolveSrcToStoragePath } from '@/server/domains/images/services/resolve'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { content } from '@/server/infra/db/schema/content'

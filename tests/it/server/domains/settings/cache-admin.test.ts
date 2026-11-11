@@ -71,13 +71,9 @@ describe('service: cache admin', () => {
       og: 2,
       avatar: 1,
       calendar: 1,
-      imageMeta: 0,
       searchResult: 0,
       feed: 1,
       sitemap: 0,
-      categories: 0,
-      tags: 0,
-      comments: 0,
       githubAvatar: 0,
       githubRelease: 0,
     })
@@ -118,16 +114,16 @@ describe('service: cache admin', () => {
 
   it('drops the L1 memory tier as part of the admin clear', async () => {
     // `set` writes the file and mirrors L1, so this read never touches disk.
-    await set('tags', {}, ['seeded'])
-    expect(await get('tags', {})).toEqual(['seeded'])
-    expect(await countEntryFiles('tags')).toBe(1)
+    await set('sitemap', { settingsRevision: 'rev' }, '<urlset/>')
+    expect(await get('sitemap', { settingsRevision: 'rev' })).toBe('<urlset/>')
+    expect(await countEntryFiles('sitemap')).toBe(1)
 
-    const result = await clearAdminCache(db, 'tags')
+    const result = await clearAdminCache(db, 'sitemap')
 
     expect(result.total).toBe(1)
-    expect(await countEntryFiles('tags')).toBe(0)
+    expect(await countEntryFiles('sitemap')).toBe(0)
     // L1 went cold with the clear — the value cannot be resurrected from memory.
-    expect(await get('tags', {})).toBeNull()
+    expect(await get('sitemap', { settingsRevision: 'rev' })).toBeNull()
   })
 
   it('aggregates counts when clearing all buckets', async () => {
@@ -149,13 +145,9 @@ describe('service: cache admin', () => {
       og: 1,
       avatar: 2,
       calendar: 1,
-      imageMeta: 0,
       searchResult: 0,
       feed: 0,
       sitemap: 0,
-      categories: 0,
-      tags: 0,
-      comments: 0,
       githubAvatar: 0,
       githubRelease: 0,
     })
@@ -276,20 +268,5 @@ describe('service: cache admin', () => {
     expect(og?.prefix).toBe(cacheFixture.og.prefix)
     expect(og?.ttlSeconds).toBe(cacheFixture.og.ttlSeconds)
     expect(og?.pattern).toBe(`${cacheFixture.og.prefix}*`)
-  })
-
-  it('counts and clears the imageMeta bucket the same way as og/avatar/calendar', async () => {
-    await seedEntry('imageMeta', 'image-meta:images/2024/06/cover.jpg')
-    await seedEntry('imageMeta', 'image-meta:images/2024/06/banner.jpg')
-    await seedEntry('og', 'og:foo')
-
-    const stats = await getAdminCacheStats(db)
-    const counts = Object.fromEntries(stats.buckets.map((b) => [b.id, b.keyCount]))
-    expect(counts.imageMeta).toBe(2)
-
-    const result = await clearAdminCache(db, 'imageMeta')
-    expect(result.total).toBe(2)
-    expect(result.cleared[0]?.bucketId).toBe('imageMeta')
-    expect(await countEntryFiles('og')).toBe(1)
   })
 })

@@ -70,8 +70,6 @@ describe('shared/config/representation-scopes — dependency table', () => {
     for (const scope of ['detail', 'listing', 'feed', 'calendar', 'og', 'manifest', 'sitemap'] as const) {
       expect(general[scope]).not.toBe(base[scope])
     }
-    // …but not the comments digest.
-    expect(general.comments).toBe(base.comments)
 
     // Calendar-only inputs do not touch the feed/OG.
     const sidebar = representationRevisionsFor(
@@ -88,7 +86,8 @@ describe('shared/config/representation-scopes — dependency table', () => {
     expect(sidebar.feed).toBe(base.feed)
     expect(sidebar.og).toBe(base.og)
 
-    // Comments-only inputs move the comments scope.
+    // Comments-only inputs move the detail/listing shells (comment UI copy) but
+    // not the feed.
     const comments = representationRevisionsFor(
       clone({
         comments: {
@@ -96,7 +95,7 @@ describe('shared/config/representation-scopes — dependency table', () => {
         },
       }),
     )
-    expect(comments.comments).not.toBe(base.comments)
+    expect(comments.detail).not.toBe(base.detail)
     expect(comments.feed).toBe(base.feed)
   })
 

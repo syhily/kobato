@@ -24,18 +24,11 @@ interface MemoryBudget {
 // Count caps track each bucket's key cardinality; byte caps bound the heap a
 // bucket can pin when its values are large. The sum stays under ~12 MiB.
 const BUCKET_BUDGETS: Record<CacheBucketId, MemoryBudget> = {
-  // One entry per image path (~250B): wide and flat.
-  imageMeta: { maxEntries: 2048, maxBytes: 2 * 1024 * 1024 },
   // Slug lists, one per (generation, query); a result can run to tens of KB.
   searchResult: { maxEntries: 64, maxBytes: 2 * 1024 * 1024 },
   // Full RSS/Atom bodies (~24KB); the scope × locale ceiling is small.
   feed: { maxEntries: 16, maxBytes: 1024 * 1024 },
   sitemap: { maxEntries: 8, maxBytes: 512 * 1024 },
-  // Fixed-key buckets: the count cap only absorbs a settings-revision churn.
-  tags: { maxEntries: 8, maxBytes: 256 * 1024 },
-  categories: { maxEntries: 8, maxBytes: 256 * 1024 },
-  // One sidebar digest per (revision, widget count).
-  comments: { maxEntries: 16, maxBytes: 1024 * 1024 },
   // One object per owner/repo/endpoint.
   githubRelease: { maxEntries: 8, maxBytes: 512 * 1024 },
   // One base64 URL (or '' while the upstream is failing).
@@ -153,13 +146,6 @@ export function setMemoryItem(id: CacheBucketId, key: string, value: unknown, me
   }
   store.entries.set(key, { value, expiresAtMs, bytes: size })
   store.bytes += size
-}
-
-export function removeMemoryItem(id: CacheBucketId, key: string): void {
-  const store = stores.get(id)
-  if (store !== undefined) {
-    evict(store, key)
-  }
 }
 
 /** Drop a whole bucket's memory entries (synchronous invalidation contract). */

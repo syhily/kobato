@@ -22,7 +22,6 @@ import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,
 } from '@/server/domains/content/services/asset-url-backfill'
-import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { notifyAdmins } from '@/server/domains/notifications/service'
 import { syncObservabilityRetention } from '@/server/domains/observability/retention'
 import { syncObservabilityRuntime } from '@/server/domains/observability/runtime-manager'
@@ -141,11 +140,6 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
       })
     },
     flipBrandingDrivers,
-    invalidateImageMeta: async (db, storagePaths) => {
-      for (const storagePath of storagePaths) {
-        await invalidateImageEnhanceCacheFor(storagePath)
-      }
-    },
     postSwitchBackfill: async (db) => backfillStorageAssetUrls(db),
   })
   initAllBatchers(handle)
@@ -226,7 +220,6 @@ registerSectionChangeHandler('content', reclaimLocalizedOutputs)
 registerSectionChangeHandler('assets', reclaimLocalizedOutputs)
 registerSectionChangeHandler('sidebar', reclaimLocalizedOutputs)
 registerSectionChangeHandler('fonts', reclaimLocalizedOutputs)
-registerSectionChangeHandler('comments', reclaimLocalizedOutputs)
 registerSectionChangeHandler('backup', rescheduleBackup)
 registerSectionChangeHandler('limits', rescheduleArchive)
 registerSectionChangeHandler('mail', invalidateMailTransportCache)

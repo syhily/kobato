@@ -3,9 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Database } from '@/server/infra/db/database'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { representationRevisionsFor } from '@/shared/config/representation-scopes'
-
-const COMMENTS_REVISION = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE).comments
 import { seedMetric } from '#/_helpers/db'
 import { regularSession } from '#/_helpers/session'
 
@@ -67,7 +64,7 @@ describe('services/comments/page-data — comments/critical split', () => {
     const start = Date.now()
     await Promise.all([
       loadCommentsAndItems(mockDb, regularSession(), POST_TIMING),
-      loadDetailPageCritical(mockDb, regularSession(), POST_TIMING, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION),
+      loadDetailPageCritical(mockDb, regularSession(), POST_TIMING, TEST_BLOG_SETTINGS_BUNDLE),
     ])
     const elapsed = Date.now() - start
 
@@ -103,7 +100,7 @@ describe('services/comments/page-data — comments/critical split', () => {
     } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
     const session = regularSession()
 
-    await loadDetailPageCritical(mockDb, session, POST_ONE_UPSERT, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
+    await loadDetailPageCritical(mockDb, session, POST_ONE_UPSERT, TEST_BLOG_SETTINGS_BUNDLE)
     await loadCommentsAndItems(mockDb, session, POST_ONE_UPSERT)
 
     expect(commentShared.ensureCommentPage).toHaveBeenCalledOnce()

@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { representationRevisionsFor } from '@/shared/config/representation-scopes'
-
-const COMMENTS_REVISION = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE).comments
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, regularSession } from '#/_helpers/session'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
@@ -12,7 +9,7 @@ import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
-// Real latestComments digest incl. the kv cache bucket — cleared with
+// Real latestComments digest — read straight from SQLite, cleared with
 // every other table in `beforeEach`.
 const db = getTestDb()
 
@@ -41,7 +38,7 @@ beforeEach(async () => {
 
 describe('services/sidebar/load — loadSidebarData', () => {
   it('non-admin session reports admin=false and returns latest comments', async () => {
-    const data = await loadSidebarData(db, regularSession(), TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
+    const data = await loadSidebarData(db, regularSession(), TEST_BLOG_SETTINGS_BUNDLE)
 
     expect(data.admin).toBe(false)
     expect(data.recentComments).toHaveLength(1)
@@ -50,7 +47,7 @@ describe('services/sidebar/load — loadSidebarData', () => {
   })
 
   it('admin session reports admin=true and returns latest comments', async () => {
-    const data = await loadSidebarData(db, adminSession(), TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
+    const data = await loadSidebarData(db, adminSession(), TEST_BLOG_SETTINGS_BUNDLE)
 
     expect(data.admin).toBe(true)
     expect(data.recentComments).toHaveLength(1)

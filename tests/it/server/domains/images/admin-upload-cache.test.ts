@@ -7,7 +7,7 @@ import { image } from '@/server/infra/db/schema/media'
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-const cache = await import('@/server/domains/images/services/cache')
+const cache = await import('@/server/domains/images/services/resolve')
 const adminRead = await import('@/server/domains/images/services/admin-read')
 const adminMutate = await import('@/server/domains/images/services/admin-mutate')
 const upload = await import('@/server/domains/images/services/upload')
@@ -36,7 +36,7 @@ async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
   return rows[0]
 }
 
-describe('images/services/cache — readManyMeta', () => {
+describe('images/services/resolve — readManyMeta', () => {
   it('returns empty map for empty input', async () => {
     expect(await cache.readManyMeta(db, [])).toEqual(new Map())
   })
@@ -51,13 +51,10 @@ describe('images/services/cache — readManyMeta', () => {
     expect(map.get('images/b.jpg')!.found).toBe(true)
     expect(map.get('images/none.jpg')!.found).toBe(false)
   })
-})
 
-describe('images/services/cache — invalidateImageEnhanceCacheFor', () => {
-  it('clears the cached entry', async () => {
+  it('reflects a row delete immediately (no cache tier to invalidate)', async () => {
     await seedImage({ storagePath: 'images/to-clear.jpg' })
-    await cache.readManyMeta(db, ['images/to-clear.jpg'])
-    await cache.invalidateImageEnhanceCacheFor('images/to-clear.jpg')
+    expect((await cache.readManyMeta(db, ['images/to-clear.jpg'])).get('images/to-clear.jpg')?.found).toBe(true)
 
     await db.delete(image).where(eq(image.storagePath, 'images/to-clear.jpg'))
     const meta = (await cache.readManyMeta(db, ['images/to-clear.jpg'])).get('images/to-clear.jpg')
@@ -65,7 +62,7 @@ describe('images/services/cache — invalidateImageEnhanceCacheFor', () => {
   })
 })
 
-describe('images/services/cache — resolveSrcToStoragePath', () => {
+describe('images/services/resolve — resolveSrcToStoragePath', () => {
   it('returns null for unrelated http url', () => {
     expect(cache.resolveSrcToStoragePath('https://example.com/foo.jpg', null)).toBeNull()
   })

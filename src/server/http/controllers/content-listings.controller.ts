@@ -159,7 +159,6 @@ const home = publicProc
         locale: context.localization.locale,
         settings: context.settings,
         revision: context.localization.revisions.listing,
-        commentsRevision: context.localization.revisions.comments,
       }),
     )
   })

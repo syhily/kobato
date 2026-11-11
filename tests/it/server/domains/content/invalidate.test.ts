@@ -11,7 +11,7 @@ import { __resetCacheCountersForTests, getCounter } from '@/server/infra/cache/r
 // invalidation event touches.
 const db = getTestDb()
 
-const SEEDED_BUCKETS = ['feed', 'tags', 'categories', 'sitemap', 'comments', 'og'] as const
+const SEEDED_BUCKETS = ['feed', 'sitemap', 'og'] as const
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -36,10 +36,10 @@ function generationFile(): string {
 }
 
 describe('invalidateContent', () => {
-  it('post deletes the feed, taxonomy and sitemap buckets and bumps the search generation', async () => {
+  it('post deletes the feed and sitemap buckets and bumps the search generation', async () => {
     invalidateContent({ entity: 'post' })
 
-    expect(await remainingBuckets()).toEqual(['comments', 'og'])
+    expect(await remainingBuckets()).toEqual(['og'])
     expect(await getCounter('searchResult')).toBe(1)
     expect(readFileSync(generationFile(), 'utf8')).toBe('1')
 
@@ -51,28 +51,21 @@ describe('invalidateContent', () => {
   it('page deletes only the sitemap bucket', async () => {
     invalidateContent({ entity: 'page' })
 
-    expect(await remainingBuckets()).toEqual(['categories', 'comments', 'feed', 'og', 'tags'])
+    expect(await remainingBuckets()).toEqual(['feed', 'og'])
     expect(await getCounter('searchResult')).toBe(0)
   })
 
-  it('category deletes the category list and the whole feed bucket', async () => {
+  it('category deletes only the feed bucket', async () => {
     invalidateContent({ entity: 'category' })
 
-    expect(await remainingBuckets()).toEqual(['comments', 'og', 'sitemap', 'tags'])
+    expect(await remainingBuckets()).toEqual(['og', 'sitemap'])
     expect(await getCounter('searchResult')).toBe(0)
   })
 
-  it('tag deletes the tag list and the whole feed bucket', async () => {
+  it('tag deletes only the feed bucket', async () => {
     invalidateContent({ entity: 'tag' })
 
-    expect(await remainingBuckets()).toEqual(['categories', 'comments', 'og', 'sitemap'])
-    expect(await getCounter('searchResult')).toBe(0)
-  })
-
-  it('comment deletes only the comments bucket', async () => {
-    invalidateContent({ entity: 'comment' })
-
-    expect(await remainingBuckets()).toEqual(['categories', 'feed', 'og', 'sitemap', 'tags'])
+    expect(await remainingBuckets()).toEqual(['og', 'sitemap'])
     expect(await getCounter('searchResult')).toBe(0)
   })
 })

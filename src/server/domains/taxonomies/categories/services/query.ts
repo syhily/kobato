@@ -8,7 +8,6 @@ import type { Category } from '@/shared/types/catalog'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { countPostsByTaxonomy } from '@/server/domains/posts/services/taxonomy'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
-import { through } from '@/server/infra/cache/registry'
 import {
   type AdminCategoriesListFilters,
   findCategoryByName,
@@ -45,10 +44,6 @@ async function hydrateCategoryImages(db: Database, categories: Category[]): Prom
 }
 
 export async function listAllCategories(db: Database): Promise<Category[]> {
-  return through('categories', {}, () => queryAllCategories(db))
-}
-
-async function queryAllCategories(db: Database): Promise<Category[]> {
   const rows = await db
     .select({
       name: categoryTable.name,

@@ -36,7 +36,6 @@ describe('services/settings — write isolation', () => {
             og: { prefix: 'og-bucket:', ttlSeconds: 60 * 60 * 24 },
             calendar: { prefix: 'cal-bucket:', ttlSeconds: 60 * 60 * 24 },
             avatar: { prefix: 'av-bucket:', ttlSeconds: 60 * 60 * 24 },
-            imageMeta: { prefix: 'image-meta-bucket:', ttlSeconds: 60 * 60 * 24 },
             searchResult: { prefix: 'search-result-bucket:', ttlSeconds: 60 * 60 * 24 },
           },
         },

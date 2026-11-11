@@ -11,9 +11,7 @@ import {
   clearLocalizedOutputs,
   get,
   getCounter,
-  remove,
   through,
-  throughMany,
 } from '@/server/infra/cache/registry'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
@@ -78,47 +76,16 @@ describe('cache registry (integration)', () => {
     expect(loader).toHaveBeenCalledTimes(1)
   })
 
-  it('throughMany serves hits, loads misses, and caches negatives', async () => {
-    const loader = vi.fn().mockResolvedValue([
-      {
-        params: { storagePath: 'a.png' },
-        value: {
-          found: true,
-          storagePath: 'a.png',
-          driver: 'local',
-          width: 10,
-          height: 20,
-          thumbhash: null,
-          updatedAtMs: 1,
-        },
-      },
-      { params: { storagePath: 'b.png' }, value: { found: false } },
-    ])
-
-    const first = await throughMany('imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
-    expect(first[0]?.value).toMatchObject({ found: true, width: 10 })
-    expect(first[1]?.value).toEqual({ found: false })
-
-    // The writes are fire-and-forget: wait until both entries are observable.
-    await waitForEntry(() => get('imageMeta', { storagePath: 'a.png' }), first[0]!.value)
-    await waitForEntry(() => get('imageMeta', { storagePath: 'b.png' }), { found: false })
-
-    // Second pass: both entries are cached, the negative included.
-    const second = await throughMany('imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
-    expect(second[1]?.value).toEqual({ found: false })
-    expect(loader).toHaveBeenCalledTimes(1)
-  })
-
   it('clear deletes only the targeted bucket', async () => {
     await through('feed', feedParams(), async () => 'feed-xml')
-    await through('tags', {}, async () => ['tag'])
+    await through('sitemap', { settingsRevision: 'sitemap-rev' }, async () => '<urlset/>')
     await waitForEntry(() => get('feed', feedParams()), 'feed-xml')
-    await waitForEntry(() => get('tags', {}), ['tag'])
+    await waitForEntry(() => get('sitemap', { settingsRevision: 'sitemap-rev' }), '<urlset/>')
 
     clear('feed')
 
     expect(await get('feed', feedParams())).toBeNull()
-    expect(await get('tags', {})).toEqual(['tag'])
+    expect(await get('sitemap', { settingsRevision: 'sitemap-rev' })).toEqual('<urlset/>')
   })
 
   it('a feed-relevant settings write moves the key — the previous generation is unreachable', async () => {
@@ -215,14 +182,6 @@ describe('cache registry (integration)', () => {
     release()
     await pending
     expect(settled).toBe(true)
-  })
-
-  it('remove deletes a single computed key', async () => {
-    await through('categories', {}, async () => ['cat'])
-    await waitForEntry(() => get('categories', {}), ['cat'])
-    await remove('categories', {})
-
-    expect(await get('categories', {})).toBeNull()
   })
 
   it('counter starts at 0, bumps monotonically, and memoizes', async () => {

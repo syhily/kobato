@@ -3,7 +3,6 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { canEditImage, type ViewerIdentity } from '@/server/domains/auth/rbac'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
-import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import {
   findAdminImageRowById,
   findImageById,
@@ -46,7 +45,6 @@ export async function deleteImage(db: Database, id: number, viewer?: ImageViewer
   if (deleted === null) {
     throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
-  await invalidateImageEnhanceCacheFor(deleted.storagePath)
 }
 
 export async function updateImageNote(
@@ -112,8 +110,6 @@ export async function recalculateImageThumbhash(
   if (updated === null) {
     throw new DomainError('NOT_FOUND', descriptorFor('images.error.notFound'))
   }
-
-  await invalidateImageEnhanceCacheFor(existing.storagePath)
 
   return toAdminImageDto(updated, updated.uploaderName)
 }

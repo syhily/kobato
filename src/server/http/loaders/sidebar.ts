@@ -8,21 +8,13 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isSidebarWidgetEnabled } from '@/shared/config/utils'
 
 /**
- * `settings` is the request-pinned snapshot (HandlerContext.settings) and
- * `commentsRevision` its comments-scope generation (from the same
- * `localization.revisions` capture) — required, never the global snapshot.
+ * `settings` is the request-pinned snapshot (HandlerContext.settings) —
+ * required, never the global snapshot.
  */
-export async function loadSidebarData(
-  db: Database,
-  session: BlogSession,
-  settings: BlogSettingsBundle | null,
-  commentsRevision: string,
-) {
+export async function loadSidebarData(db: Database, session: BlogSession, settings: BlogSettingsBundle | null) {
   const admin = userSession(session)?.role === 'admin'
   const sidebar = requireBlogSettingsSection('sidebar', settings)
-  const recentComments = isSidebarWidgetEnabled(sidebar, 'recentComments')
-    ? await latestComments(db, settings, commentsRevision)
-    : []
+  const recentComments = isSidebarWidgetEnabled(sidebar, 'recentComments') ? await latestComments(db, settings) : []
 
   return { admin, recentComments }
 }

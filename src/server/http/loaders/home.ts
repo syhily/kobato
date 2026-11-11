@@ -49,7 +49,6 @@ export async function loadHomeData({
   locale,
   settings,
   revision,
-  commentsRevision,
 }: {
   db: Database
   session: BlogSession
@@ -60,8 +59,6 @@ export async function loadHomeData({
   settings: BlogSettingsBundle | null
   /** Listing-scope generation — the sidebar rotation bucket's generation. */
   revision: string
-  /** Comments-scope generation — the latest-comments cache key. */
-  commentsRevision: string
 }): Promise<ListingPageLoaderData<HomeExtra>> {
   const homePageSize = requireBlogSettingsSection('content', settings).pagination.posts
 
@@ -76,7 +73,7 @@ export async function loadHomeData({
 
   const [totalPosts, sidebar, calendarDay] = await Promise.all([
     countPublicPosts(db, filters),
-    loadSidebarData(db, session, settings, commentsRevision),
+    loadSidebarData(db, session, settings),
     Promise.resolve(formatLocalDate(new Date(), 'yyyy-MM-dd', requireBlogSettingsSection('siteIdentity', settings))),
   ])
 

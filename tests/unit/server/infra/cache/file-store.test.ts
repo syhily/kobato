@@ -10,7 +10,6 @@ import {
   clearBucketEntries,
   countEntryFiles,
   getItemRawWithExpiry,
-  getItemsWithExpiry,
   getItemWithExpiry,
   readGeneration,
   removeItem,
@@ -169,33 +168,21 @@ describe('envelope validation', () => {
   })
 
   it('propagates real payload errors to the caller', async () => {
-    await setItemRaw('imageMeta', 'image-meta:not-json', Buffer.from('not json'))
-    await expect(getItemWithExpiry('imageMeta', 'image-meta:not-json')).rejects.toThrow(SyntaxError)
-  })
-})
-
-describe('getItemsWithExpiry', () => {
-  it('preserves input order and reports missing keys as null entries', async () => {
-    await setItem('searchResult', 'search:b', { id: 'b' })
-    await setItem('searchResult', 'search:a', { id: 'a' })
-
-    const entries = await getItemsWithExpiry('searchResult', ['search:b', 'search:missing', 'search:a', 'search:b'])
-    expect(entries.map((entry) => entry.key)).toEqual(['search:b', 'search:missing', 'search:a', 'search:b'])
-    expect(entries.map((entry) => entry.entry?.value ?? null)).toEqual([{ id: 'b' }, null, { id: 'a' }, { id: 'b' }])
-    await expect(getItemsWithExpiry('searchResult', [])).resolves.toEqual([])
+    await setItemRaw('sitemap', 'sitemap:not-json', Buffer.from('not json'))
+    await expect(getItemWithExpiry('sitemap', 'sitemap:not-json')).rejects.toThrow(SyntaxError)
   })
 })
 
 describe('removeItem', () => {
   it('treats a missing entry as a successful no-op', async () => {
-    await expect(removeItem('tags', 'tags:never-written')).resolves.toBeUndefined()
+    await expect(removeItem('sitemap', 'sitemap:never-written')).resolves.toBeUndefined()
   })
 
   it('removes an existing entry and is idempotent', async () => {
-    await setItem('tags', 'tags:all', { tags: [] })
-    await removeItem('tags', 'tags:all')
-    await expect(getItemWithExpiry('tags', 'tags:all')).resolves.toBeNull()
-    await expect(removeItem('tags', 'tags:all')).resolves.toBeUndefined()
+    await setItem('sitemap', 'sitemap:rev', { urls: [] })
+    await removeItem('sitemap', 'sitemap:rev')
+    await expect(getItemWithExpiry('sitemap', 'sitemap:rev')).resolves.toBeNull()
+    await expect(removeItem('sitemap', 'sitemap:rev')).resolves.toBeUndefined()
   })
 })
 
@@ -287,26 +274,26 @@ describe('statBucket', () => {
 
 describe('bucket clear races', () => {
   it('survives a bucket dir vanishing between operations', async () => {
-    const key = 'comments:all'
+    const key = 'sitemap:all'
     const unhandled: unknown[] = []
     const onUnhandled = (reason: unknown) => unhandled.push(reason)
     process.on('unhandledRejection', onUnhandled)
     try {
-      await setItem('comments', key, { limit: 5 })
-      await rm(bucketPath('comments'), { recursive: true, force: true })
+      await setItem('sitemap', key, { limit: 5 })
+      await rm(bucketPath('sitemap'), { recursive: true, force: true })
 
-      await expect(getItemWithExpiry('comments', key)).resolves.toBeNull()
+      await expect(getItemWithExpiry('sitemap', key)).resolves.toBeNull()
       // The write recreates the bucket tree instead of assuming it survived.
-      await expect(setItem('comments', key, { limit: 5 })).resolves.toBe('{"limit":5}')
-      await expect(getItemWithExpiry('comments', key)).resolves.toMatchObject({ value: { limit: 5 } })
-      await expect(removeItem('comments', 'comments:never-written')).resolves.toBeUndefined()
+      await expect(setItem('sitemap', key, { limit: 5 })).resolves.toBe('{"limit":5}')
+      await expect(getItemWithExpiry('sitemap', key)).resolves.toMatchObject({ value: { limit: 5 } })
+      await expect(removeItem('sitemap', 'comments:never-written')).resolves.toBeUndefined()
 
       await new Promise((resolve) => setImmediate(resolve))
     } finally {
       process.off('unhandledRejection', onUnhandled)
     }
     expect(unhandled).toEqual([])
-    expect(await listFiles(bucketPath('comments'))).toHaveLength(1)
+    expect(await listFiles(bucketPath('sitemap'))).toHaveLength(1)
   })
 })
 
@@ -334,11 +321,8 @@ afterAll(async () => {
     'githubRelease',
     'avatar',
     'githubAvatar',
-    'imageMeta',
     'searchResult',
-    'tags',
     'sitemap',
-    'comments',
   ]) {
     await rm(bucketPath(bucket), { recursive: true, force: true })
   }

@@ -225,14 +225,6 @@ export async function setItemRaw(
   await writePayload(bucket, fullKey, value, opts)
 }
 
-/** MGET with the envelope deadline, for callers that mirror the hit into L1. */
-export async function getItemsWithExpiry(
-  bucket: string,
-  keys: readonly string[],
-): Promise<{ key: string; entry: StoredEntry<unknown> | null }[]> {
-  return Promise.all(keys.map(async (key) => ({ key, entry: await getItemWithExpiry<unknown>(bucket, key) })))
-}
-
 export async function removeItem(bucket: string, fullKey: string): Promise<void> {
   try {
     await unlink(entryPath(bucket, fullKey))

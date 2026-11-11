@@ -17,20 +17,11 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
  * never used for representation keys.
  *
  * The section lists are the single source of truth shared by every consumer: the
- * feed/calendar/OG resources, the manifest, the comments digest and the
- * detail/listing page shell. Add a section here when a render surface starts
- * reading it; a contract test pins the public render reads to this table.
+ * feed/calendar/OG resources, the manifest and the detail/listing page shell.
+ * Add a section here when a render surface starts reading it; a contract test
+ * pins the public render reads to this table.
  */
-export const REPRESENTATION_SCOPES = [
-  'detail',
-  'listing',
-  'feed',
-  'calendar',
-  'og',
-  'manifest',
-  'sitemap',
-  'comments',
-] as const
+export const REPRESENTATION_SCOPES = ['detail', 'listing', 'feed', 'calendar', 'og', 'manifest', 'sitemap'] as const
 
 export type RepresentationScope = (typeof REPRESENTATION_SCOPES)[number]
 
@@ -68,8 +59,6 @@ export const REPRESENTATION_SECTION_DEPS: Record<RepresentationScope, readonly S
   manifest: ['general', 'assets'],
   // sitemap.xml: every <loc> is built from the site origin.
   sitemap: ['general'],
-  // latest-comments digest: comment settings; the widget COUNT is a key input.
-  comments: ['comments'],
 }
 
 const HASH_VERSION = 'v1'
@@ -148,7 +137,6 @@ function computeRevisions(bundle: BlogSettingsBundle | null): RepresentationRevi
     og: '',
     manifest: '',
     sitemap: '',
-    comments: '',
   }
   // Scopes that share a dependency list (detail/listing) share one hash.
   const byDependencyList = new Map<string, string>()

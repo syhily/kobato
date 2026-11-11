@@ -92,7 +92,6 @@ const baseCache = {
   og: { prefix: 'og:', ttlSeconds: 604800 },
   calendar: { prefix: 'calendar:', ttlSeconds: 86400 },
   avatar: { prefix: 'avatar:', ttlSeconds: 604800 },
-  imageMeta: { prefix: 'image-meta:', ttlSeconds: 3600 },
   searchResult: { prefix: 'search:', ttlSeconds: 3600 },
 }
 

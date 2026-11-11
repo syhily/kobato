@@ -46,7 +46,6 @@ export async function loadDetailPageCritical(
   session: BlogSession,
   target: EntityTarget,
   settings: BlogSettingsBundle | null,
-  commentsRevision: string,
 ) {
   const user = userSession(session)
   const currentUser = toCommentFormUser(user)
@@ -54,7 +53,7 @@ export async function loadDetailPageCritical(
   const [metricRow, likes, sidebar] = await Promise.all([
     ensureCommentPage(db, target),
     queryLikes(db, target),
-    loadSidebarData(db, session, settings, commentsRevision),
+    loadSidebarData(db, session, settings),
   ])
 
   return {

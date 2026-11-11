@@ -3,23 +3,13 @@ import { and, eq } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 import type { Comment, NewComment } from '@/server/infra/db/types'
 
-import { invalidateContent } from '@/server/domains/content/invalidate'
 import { comment } from '@/server/infra/db/schema/comment'
 
-// Cache-invalidation invariant: every comment mutation emits
-// `{ entity: 'comment' }` here, inside the repo, so no caller can forget it.
-// Sync (node:sqlite): called inside the comment persist transaction.
 export function insertComment(db: Database, values: NewComment): Comment | null {
   const res = db.insert(comment).values(values).returning().all()
-  const row = res[0] ?? null
-  if (row !== null) {
-    invalidateContent({ entity: 'comment' })
-  }
-  return row
+  return res[0] ?? null
 }
 
-// The optimistic-lock pair below emits invalidation only when a row was
-// actually updated — a 0-row conflict leaves caches alone.
 export async function updateCommentBodyAndContent(
   db: Database,
   id: number,
@@ -27,7 +17,6 @@ export async function updateCommentBodyAndContent(
   content: string,
 ): Promise<void> {
   await db.update(comment).set({ body, content }).where(eq(comment.id, id))
-  invalidateContent({ entity: 'comment' })
 }
 
 // Fresh-edit variant of `comment.updateOwn`: an in-grace-window owner edit
@@ -43,11 +32,7 @@ export async function updateOwnCommentBody(
     .update(comment)
     .set({ body, content, updatedAt: new Date() })
     .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
-  const affected = Number(result.changes)
-  if (affected > 0) {
-    invalidateContent({ entity: 'comment' })
-  }
-  return affected
+  return Number(result.changes)
 }
 
 // Re-pend variant of `comment.updateOwn`: an out-of-grace-window owner edit
@@ -64,9 +49,5 @@ export async function updateOwnCommentBodyAndPending(
     .update(comment)
     .set({ body, content, isPending: true, updatedAt: new Date() })
     .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
-  const affected = Number(result.changes)
-  if (affected > 0) {
-    invalidateContent({ entity: 'comment' })
-  }
-  return affected
+  return Number(result.changes)
 }

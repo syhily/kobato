@@ -103,7 +103,6 @@ const fixtureBundle: BlogSettingsBundle = {
       og: { prefix: 'og:', ttlSeconds: 3600 },
       calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
-      imageMeta: { prefix: 'image-meta:', ttlSeconds: 3600 },
       searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
     },
   },
@@ -663,7 +662,6 @@ describe('services/settings — cache section', () => {
           og: { prefix: 'opengraph:', ttlSeconds: 60 * 60 * 24 * 14 },
           calendar: { prefix: 'cal:', ttlSeconds: 60 * 60 * 12 },
           avatar: { prefix: 'gravatar:', ttlSeconds: 60 * 60 * 24 * 3 },
-          imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
           searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
         },
       },
@@ -687,7 +685,6 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'shared:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'shared:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
           },
         },
         null,
@@ -707,7 +704,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             // `og` is a strict prefix of `og:` and lacks the required `:` suffix.
             avatar: { prefix: 'og', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
           },
         },
@@ -727,7 +723,6 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'session:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
           },
         },
         null,
@@ -746,7 +741,6 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'rate-limit:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
           },
         },
@@ -766,7 +760,6 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'ogkey', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
           },
         },
         null,
@@ -785,7 +778,6 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'og:', ttlSeconds: 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
           },
         },
         null,
@@ -801,7 +793,6 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'og:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 * 365 },
-            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
           },
         },
         null,
@@ -1028,7 +1019,7 @@ describe('services/settings — snapshot reader', () => {
   })
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
-    // Legacy pre-imageMeta rows must backfill, not crash the cache card.
+    // Legacy pre-searchResult rows must backfill, not crash the cache card.
     await seedSections(fixtureBundle, { except: ['blog.cache'] })
     await db.insert(setting).values({
       scope: 'blog.cache',
@@ -1044,9 +1035,9 @@ describe('services/settings — snapshot reader', () => {
     const bundle = await hydrateBlogSettings(db)
 
     expect(bundle).not.toBeNull()
-    expect(bundle!.cache!.cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
+    expect(bundle!.cache!.cache.searchResult).toEqual({ prefix: 'search-result:', ttlSeconds: 60 * 60 })
     // The backfill rewrote the legacy row in the database itself.
     const cache = readBucket('blog.cache', 'cache')
-    expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
+    expect(cache.searchResult).toEqual({ prefix: 'search-result:', ttlSeconds: 60 * 60 })
   })
 })

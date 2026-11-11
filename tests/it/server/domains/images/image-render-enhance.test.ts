@@ -1,7 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { get } from '@/server/infra/cache/registry'
 import { image } from '@/server/infra/db/schema/media'
 
 const { resolveImageRef } = await import('@/server/domains/images/services/resolve')
@@ -53,16 +52,11 @@ describe('server/images/render-enhance — resolveImageRef', () => {
     expect(await resolveImageRef(db, 'https://assets.example.com/images/no-such.jpg')).toBeNull()
   })
 
-  it('serves a second hit from the kv cache', async () => {
+  it('reads SQLite directly on every call', async () => {
     await seedImage()
 
     const result1 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result1).not.toBeNull()
-
-    // The throughMany write is fire-and-forget: wait for the cached metadata.
-    await vi.waitFor(async () => {
-      expect(await get('imageMeta', { storagePath: 'images/categories/coding.jpg' })).not.toBeNull()
-    })
 
     const result2 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result2).toEqual(result1)

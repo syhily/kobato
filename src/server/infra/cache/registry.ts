@@ -11,7 +11,6 @@ import {
   bumpGeneration,
   getItemRawWithExpiry,
   getItemWithExpiry,
-  getItemsWithExpiry,
   readGeneration,
   removeItem,
   setItem,
@@ -21,13 +20,7 @@ import {
   wipeCache as wipeFileCache,
 } from '@/server/infra/cache/file-store'
 import { createInflight } from '@/server/infra/cache/inflight'
-import {
-  clearMemoryBucket,
-  getMemoryItem,
-  removeMemoryItem,
-  setMemoryItem,
-  wipeMemoryCache,
-} from '@/server/infra/cache/memory-store'
+import { clearMemoryBucket, getMemoryItem, setMemoryItem, wipeMemoryCache } from '@/server/infra/cache/memory-store'
 import { getLogger } from '@/server/infra/logger'
 import { withSpanAsync } from '@/server/infra/trace/facade'
 import { recordCacheLookup } from '@/server/infra/trace/metrics'
@@ -58,13 +51,9 @@ interface CacheParamsMap {
     settingsRevision: string
   }
   avatar: { size: number; email: string }
-  imageMeta: { storagePath: string }
   searchResult: { generation: number; parts: readonly string[] }
   feed: { scope: string; locale: AppLocale; version: string; settingsRevision: string }
   sitemap: { settingsRevision: string }
-  categories: Record<string, never>
-  tags: Record<string, never>
-  comments: { settingsRevision: string; limit: number }
   githubRelease: { owner: string; repo: string; endpoint: string }
   githubAvatar: Record<string, never>
 }
@@ -155,10 +144,6 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
     encode: encodeAvatar,
     decode: decodeAvatar,
   },
-  imageMeta: {
-    kind: 'json',
-    key: ({ storagePath }) => storagePath,
-  },
   searchResult: {
     kind: 'json',
     counter: true,
@@ -179,20 +164,6 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
     // Every <loc> embeds the site origin: a general-settings save lands on a
     // fresh key instead of serving the previous domain until max-age expires.
     key: ({ settingsRevision }) => settingsRevision,
-  },
-  categories: {
-    kind: 'json',
-    key: () => 'all',
-  },
-  tags: {
-    kind: 'json',
-    key: () => 'all',
-  },
-  comments: {
-    kind: 'json',
-    // Comments-scope generation + the sidebar's configured count: either moves
-    // the key, so a settings save can never serve the previous digest.
-    key: ({ settingsRevision, limit }) => `${settingsRevision}:${limit}`,
   },
   // Key carries the full request target — a repo or endpoint change can't serve a stale hit.
   githubRelease: {
@@ -428,21 +399,9 @@ export async function set<K extends CacheBucketId>(id: K, params: CacheParamsMap
   await writeEntry(id, key, slot, value)
 }
 
-/** Per-key delete (best-effort). */
-export async function remove<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): Promise<void> {
-  const { key } = keyFor(id, params)
-  // Memory first: a failed unlink must not leave the value reachable through L1.
-  removeMemoryItem(id, key)
-  try {
-    await removeItem(id, key)
-  } catch (error) {
-    log.warn('cache remove failed', { bucket: id, error })
-  }
-}
-
 /**
  * Best-effort whole-bucket clear for ordinary content invalidation. Small
- * buckets only (feed/tags/categories/sitemap/comments): L1 drops synchronously
+ * buckets only (feed/sitemap): L1 drops synchronously
  * (the invalidation contract holds even if the unlink then fails), then the
  * entry files are unlinked in place.
  */
@@ -465,7 +424,7 @@ export function evictBucketMemory(id: CacheBucketId): void {
 
 /**
  * Reclaim the storage behind the settings-derived render buckets (`feed`,
- * `calendar`, `og`, `comments`, `sitemap`) after a settings save. Strict (a
+ * `calendar`, `og`, `sitemap`) after a settings save. Strict (a
  * failure reaches the section-change warning channel); each bucket renames to
  * trash in O(1) and is deleted async. Correctness NEVER depends on this
  * delete: the snapshot-revision advance has already orphaned the old keys, and
@@ -473,7 +432,7 @@ export function evictBucketMemory(id: CacheBucketId): void {
  */
 export function clearLocalizedOutputs(): void {
   let failure: unknown
-  for (const id of ['feed', 'calendar', 'og', 'comments', 'sitemap'] as const) {
+  for (const id of ['feed', 'calendar', 'og', 'sitemap'] as const) {
     // L1 goes cold first — a trash failure must not keep a stale render servable.
     clearMemoryBucket(id)
     try {
@@ -486,88 +445,6 @@ export function clearLocalizedOutputs(): void {
   if (failure !== undefined) {
     throw failure
   }
-}
-
-/**
- * Batch cache-aside: L1 first, then one file read per remaining key, fanned
- * out; the loader runs once for the misses. Returns one entry per input in
- * input order (uncovered misses are null); missing values are written back
- * fire-and-forget. Disk hits backfill L1 under the envelope's own deadline.
- */
-export async function throughMany<K extends CacheBucketId, V>(
-  id: K,
-  paramsList: CacheParamsMap[K][],
-  loader: (missing: CacheParamsMap[K][]) => Promise<{ params: CacheParamsMap[K]; value: V }[]>,
-): Promise<{ params: CacheParamsMap[K]; value: V | null }[]> {
-  if (paramsList.length === 0) {
-    return []
-  }
-  const behavior = BEHAVIORS[id]
-  const slot = resolveCacheSlot(id)
-  const keys = paramsList.map((params) => `${slot.prefix}${behavior.key(params)}`)
-
-  let result: 'hit' | 'miss' = 'hit'
-  return withSpanAsync('cache.lookup', { attributes: { 'cache.bucket': id } }, async (span) => {
-    try {
-      const values: (V | null)[] = paramsList.map(() => null)
-      const missingIndexes: number[] = []
-      keys.forEach((key, index) => {
-        const memoryHit = getMemoryItem(id, key)
-        if (memoryHit === undefined) {
-          missingIndexes.push(index)
-        } else {
-          values[index] = unsafeCast<V | null>(memoryHit)
-        }
-      })
-
-      if (missingIndexes.length > 0) {
-        const diskKeys = missingIndexes.map((index) => keys[index] as string)
-        let cached: Awaited<ReturnType<typeof getItemsWithExpiry>>
-        try {
-          cached = await getItemsWithExpiry(id, diskKeys)
-        } catch (error) {
-          log.warn('cache batch read failed; treating every key as a miss', { bucket: id, error })
-          cached = diskKeys.map((key) => ({ key, entry: null }))
-        }
-
-        const stillMissing: number[] = []
-        cached.forEach((entry, position) => {
-          const index = missingIndexes[position] as number
-          // `entry === null` is the file-store miss; `entry.value === null` is a
-          // literal `null` payload, which `readEntry` also treats as a miss.
-          if (entry.entry === null || entry.entry.value === null) {
-            stillMissing.push(index)
-            return
-          }
-          values[index] = unsafeCast<V | null>(entry.entry.value)
-          setMemoryItem(id, entry.key, entry.entry.value, { expiresAtMs: entry.entry.expiresAtMs })
-        })
-
-        if (stillMissing.length > 0) {
-          result = 'miss'
-          const missing = stillMissing.map((index) => paramsList[index] as CacheParamsMap[K])
-          const loaded = await loader(missing)
-          // Match loaded values by computed key — the loader may rebuild its params.
-          const loadedByKey = new Map(loaded.map((entry) => [behavior.key(entry.params), entry.value]))
-          for (const index of stillMissing) {
-            const params = paramsList[index] as CacheParamsMap[K]
-            const value = loadedByKey.get(behavior.key(params))
-            if (value === undefined) {
-              continue
-            }
-            values[index] = value
-            void writeEntry(id, keys[index] as string, slot, value)
-          }
-        }
-      }
-
-      return paramsList.map((params, index) => ({ params, value: values[index] ?? null }))
-    } finally {
-      span.setAttributes({ 'cache.result': result, 'cache.coalesced': false })
-      span.setStatus('ok')
-      recordCacheLookup(id, result, false)
-    }
-  })
 }
 
 // Generation is read once per process and cached; failed reads fall back to 0 and

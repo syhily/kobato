@@ -5,7 +5,6 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { type ImageKindSpec, buildObjectKey } from '@/server/domains/images/key'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
-import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { findImagesByStoragePaths, insertImage, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
 import { descriptorFor } from '@/server/infra/http/error-descriptor'
 import { DomainError } from '@/server/infra/http/errors'
@@ -200,8 +199,6 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
       throw new DomainError('INTERNAL', descriptorFor('images.error.metadataWriteFailed'))
     }
   }
-
-  await invalidateImageEnhanceCacheFor(row.storagePath)
 
   return toAdminImageDto(row, input.uploader?.name ?? null)
 }

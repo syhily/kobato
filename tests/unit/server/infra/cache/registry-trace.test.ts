@@ -9,13 +9,6 @@ const fileStoreMock = vi.hoisted(() => ({
   getItemWithExpiry: vi.fn<(bucket: string, key: string) => Promise<{ value: unknown; expiresAtMs: number } | null>>(),
   getItemRawWithExpiry:
     vi.fn<(bucket: string, key: string) => Promise<{ value: Buffer; expiresAtMs: number } | null>>(),
-  getItemsWithExpiry:
-    vi.fn<
-      (
-        bucket: string,
-        keys: string[],
-      ) => Promise<{ key: string; entry: { value: unknown; expiresAtMs: number } | null }[]>
-    >(),
   removeItem: vi.fn<(bucket: string, key: string) => Promise<void>>(),
   setItem: vi.fn<(bucket: string, key: string, value: unknown, opts: unknown) => Promise<string>>(),
   setItemRaw: vi.fn<(bucket: string, key: string, value: Buffer, opts: unknown) => Promise<void>>(),
@@ -29,7 +22,7 @@ vi.mock('@/server/infra/cache/file-store', () => fileStoreMock)
 
 import { TestMetricReader, dataPointsOf, pointValue } from '#/_helpers/in-memory-metric-reader'
 import { __resetMemoryCacheForTests } from '@/server/infra/cache/memory-store'
-import { get, through, throughMany } from '@/server/infra/cache/registry'
+import { get, through } from '@/server/infra/cache/registry'
 import { __resetTraceFacadeForTests } from '@/server/infra/trace/facade'
 import { METRIC } from '@/server/infra/trace/metrics'
 import { startTraceRuntime, stopTraceRuntime } from '@/server/infra/trace/runtime'
@@ -60,9 +53,6 @@ beforeEach(async () => {
   __resetMemoryCacheForTests()
   fileStoreMock.getItemWithExpiry.mockResolvedValue(null)
   fileStoreMock.getItemRawWithExpiry.mockResolvedValue(null)
-  fileStoreMock.getItemsWithExpiry.mockImplementation(async (_bucket, keys) =>
-    keys.map((key) => ({ key, entry: null })),
-  )
   fileStoreMock.removeItem.mockResolvedValue(undefined)
   fileStoreMock.setItem.mockImplementation(async (_bucket, _key, value) => JSON.stringify(value))
   fileStoreMock.setItemRaw.mockResolvedValue(undefined)
@@ -99,20 +89,20 @@ describe('cache registry trace — lookup boundary', () => {
   it('records a hit with bucket/result/coalesced and never the key or params', async () => {
     fileStoreMock.getItemWithExpiry.mockResolvedValue({ value: { secret: 'cached-payload' }, expiresAtMs: 0 })
 
-    const value = await through('comments', { settingsRevision: 'secret-revision', limit: 7 }, async () => 'loaded')
+    const value = await through('sitemap', { settingsRevision: 'secret-revision' }, async () => 'loaded')
     await handle.forceFlush()
 
     expect(value).toEqual({ secret: 'cached-payload' })
     const [span] = lookupSpans()
     expect(span).toBeDefined()
     expect(span!.attributes).toEqual({
-      'cache.bucket': 'comments',
+      'cache.bucket': 'sitemap',
       'cache.result': 'hit',
       'cache.coalesced': false,
     })
     const serialized = JSON.stringify(span!.attributes)
     expect(serialized).not.toContain('secret-revision')
-    expect(serialized).not.toContain('comments:')
+    expect(serialized).not.toContain('sitemap:xml')
     expect(serialized).not.toContain('cached-payload')
   })
 
@@ -127,8 +117,8 @@ describe('cache registry trace — lookup boundary', () => {
     })
     const loader = vi.fn(async () => 'loaded')
 
-    const first = get('tags', {})
-    const second = get('tags', {})
+    const first = get('sitemap', { settingsRevision: 'rev' })
+    const second = get('sitemap', { settingsRevision: 'rev' })
     release()
     await Promise.all([first, second])
     await handle.forceFlush()
@@ -142,23 +132,6 @@ describe('cache registry trace — lookup boundary', () => {
     expect(loader).not.toHaveBeenCalled()
   })
 
-  it('records a batch lookup once per call with a hit/miss result', async () => {
-    fileStoreMock.getItemsWithExpiry.mockImplementation(async (_bucket, keys) =>
-      keys.map((key) => ({ key, entry: { value: 'cached-batch', expiresAtMs: 0 } })),
-    )
-
-    const result = await throughMany('tags', [{}, {}], async () => [])
-    await handle.forceFlush()
-
-    expect(result.map((entry) => entry.value)).toEqual(['cached-batch', 'cached-batch'])
-    const [span] = lookupSpans()
-    expect(span!.attributes).toEqual({
-      'cache.bucket': 'tags',
-      'cache.result': 'hit',
-      'cache.coalesced': false,
-    })
-  })
-
   it('keeps exactly one cache.lookup when the fire-and-forget write rejects', async () => {
     const unhandled: unknown[] = []
     const onUnhandled = (reason: unknown) => unhandled.push(reason)
@@ -166,11 +139,7 @@ describe('cache registry trace — lookup boundary', () => {
     try {
       fileStoreMock.setItem.mockRejectedValue(new Error('disk down'))
 
-      const value = await through(
-        'comments',
-        { settingsRevision: 'secret-revision', limit: 7 },
-        async () => 'secret-payload',
-      )
+      const value = await through('sitemap', { settingsRevision: 'secret-revision' }, async () => 'secret-payload')
       expect(value).toBe('secret-payload')
 
       // Let the rejected write settle inside writeEntry's catch.
@@ -185,13 +154,13 @@ describe('cache registry trace — lookup boundary', () => {
     expect(cacheSpans.map((span) => span.name)).toEqual(['cache.lookup'])
     const [span] = lookupSpans()
     expect(span!.attributes).toEqual({
-      'cache.bucket': 'comments',
+      'cache.bucket': 'sitemap',
       'cache.result': 'miss',
       'cache.coalesced': false,
     })
     const serialized = JSON.stringify(span!.attributes)
     expect(serialized).not.toContain('secret-revision')
-    expect(serialized).not.toContain('comments:')
+    expect(serialized).not.toContain('sitemap:xml')
     expect(serialized).not.toContain('secret-payload')
 
     // The write path adds no second metric sample.
@@ -202,14 +171,14 @@ describe('cache registry trace — lookup boundary', () => {
   it('records the cache lookup count metric with the same closed attributes', async () => {
     fileStoreMock.getItemWithExpiry.mockResolvedValue(null)
 
-    await through('tags', {}, async () => 'loaded')
+    await through('sitemap', { settingsRevision: 'rev' }, async () => 'loaded')
     await handle.forceFlush()
 
     const metrics = await reader.collectResourceMetrics()
     const points = dataPointsOf(metrics, METRIC.cacheLookupCount)
     expect(points).toHaveLength(1)
     expect(points[0]!.attributes).toEqual({
-      'cache.bucket': 'tags',
+      'cache.bucket': 'sitemap',
       'cache.result': 'miss',
       'cache.coalesced': false,
     })
@@ -219,8 +188,8 @@ describe('cache registry trace — lookup boundary', () => {
     fileStoreMock.getItemWithExpiry.mockResolvedValue({ value: { cached: true }, expiresAtMs: 0 })
     const loader = vi.fn(async () => 'loaded')
 
-    await through('comments', { settingsRevision: 'rev', limit: 5 }, loader)
-    const second = await through('comments', { settingsRevision: 'rev', limit: 5 }, loader)
+    await through('sitemap', { settingsRevision: 'rev' }, loader)
+    const second = await through('sitemap', { settingsRevision: 'rev' }, loader)
     await handle.forceFlush()
 
     expect(second).toEqual({ cached: true })
@@ -231,7 +200,7 @@ describe('cache registry trace — lookup boundary', () => {
     const points = dataPointsOf(await reader.collectResourceMetrics(), METRIC.cacheLookupCount)
     expect(points).toHaveLength(1)
     expect(points[0]!.attributes).toEqual({
-      'cache.bucket': 'comments',
+      'cache.bucket': 'sitemap',
       'cache.result': 'hit',
       'cache.coalesced': false,
     })

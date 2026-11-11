@@ -10,7 +10,6 @@ import { lexicalBodyWith, lexicalImage } from '#/_helpers/lexical'
 import { makeMemoryBackend } from '#/_helpers/memory-storage'
 import { flipBrandingDrivers } from '@/server/domains/assets/services/storage'
 import { backfillStorageAssetUrls } from '@/server/domains/content/services/asset-url-backfill'
-import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { setting } from '@/server/infra/db/schema/config'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -104,11 +103,6 @@ function wireTestHooks(postSwitchBackfill: (hookDb: Database) => Promise<unknown
       )
     },
     flipBrandingDrivers,
-    invalidateImageMeta: async (hookDb, storagePaths) => {
-      for (const storagePath of storagePaths) {
-        await invalidateImageEnhanceCacheFor(storagePath)
-      }
-    },
     postSwitchBackfill: async (hookDb) => postSwitchBackfill(hookDb),
   })
 }

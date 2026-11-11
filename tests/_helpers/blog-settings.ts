@@ -107,7 +107,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       og: { ...CACHE_BUCKET_FALLBACKS.og, ttlSeconds: 60 * 60 * 24 * 7 },
       calendar: { ...CACHE_BUCKET_FALLBACKS.calendar, ttlSeconds: 60 * 60 * 24 },
       avatar: { ...CACHE_BUCKET_FALLBACKS.avatar, ttlSeconds: 60 * 60 * 24 * 7 },
-      imageMeta: { ...CACHE_BUCKET_FALLBACKS.imageMeta },
 
       searchResult: { ...CACHE_BUCKET_FALLBACKS.searchResult },
     },

@@ -46,14 +46,6 @@ export const CACHE_DECLARATIONS = [
     tunable: true,
   },
   {
-    id: 'imageMeta',
-    labelId: 'admin.cache.imageMeta.label',
-    descriptionId: 'admin.cache.imageMeta.description',
-    defaultPrefix: 'image-meta:',
-    defaultTtlSeconds: 60 * 60,
-    tunable: true,
-  },
-  {
     id: 'searchResult',
     labelId: 'admin.cache.searchResult.label',
     descriptionId: 'admin.cache.searchResult.description',
@@ -75,32 +67,6 @@ export const CACHE_DECLARATIONS = [
     descriptionId: 'admin.cache.sitemap.description',
     defaultPrefix: 'sitemap:xml',
     defaultTtlSeconds: 300,
-    tunable: false,
-  },
-  // TTL matches feed/sitemap — a backstop only: content/taxonomy mutations
-  // clear these via `invalidateContent`.
-  {
-    id: 'categories',
-    labelId: 'admin.cache.categories.label',
-    descriptionId: 'admin.cache.categories.description',
-    defaultPrefix: 'categories:',
-    defaultTtlSeconds: 300,
-    tunable: false,
-  },
-  {
-    id: 'tags',
-    labelId: 'admin.cache.tags.label',
-    descriptionId: 'admin.cache.tags.description',
-    defaultPrefix: 'tags:',
-    defaultTtlSeconds: 300,
-    tunable: false,
-  },
-  {
-    id: 'comments',
-    labelId: 'admin.cache.comments.label',
-    descriptionId: 'admin.cache.comments.description',
-    defaultPrefix: 'comments:',
-    defaultTtlSeconds: 30,
     tunable: false,
   },
   {

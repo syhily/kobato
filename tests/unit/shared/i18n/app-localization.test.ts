@@ -90,8 +90,8 @@ describe('shared/i18n/app-localization', () => {
     expect(fresh.localization.revision).not.toBe(pinnedRevision)
     expect(fresh.localization.revision > pinnedRevision).toBe(true)
     // Scoped generations follow the same capture: the locale change moves feed
-    // (siteIdentity is a feed dependency) without touching comments.
+    // AND calendar (siteIdentity is a dependency of both).
     expect(fresh.localization.revisions.feed).not.toBe(pinnedRevisions.feed)
-    expect(fresh.localization.revisions.comments).toBe(pinnedRevisions.comments)
+    expect(fresh.localization.revisions.calendar).not.toBe(pinnedRevisions.calendar)
   })
 })

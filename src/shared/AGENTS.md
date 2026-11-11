@@ -12,7 +12,7 @@ Every module is importable from any layer (`server/`, `client/`, `ui/`, `routes/
 
 - `config/` — settings sections, defaults, projection, socials (`BlogSettingsBundle`), the `observability` origin/site-name grammar shared by the settings write schema and the runtime resolver, and `snapshot`, the process-wide settings snapshot slot.
   - `snapshot.revision` (`<bootId>:<counter>`, `bootId` from `crypto.randomUUID` per process; +1 per successful hydrate/refresh, pre-install included) is request identity / locale sync only — never a cache generation.
-  - `representation-scopes` owns the single section→scope dependency table (`detail`, `listing`, `feed`, `calendar`, `og`, `manifest`, `sitemap`, `comments`) plus the pure stable-serialization + FNV-1a hash deriving one content-addressed generation per scope, memoized by bundle identity in a `WeakMap`; same settings → same keys across restarts, unrelated admin saves move nothing.
+  - `representation-scopes` owns the single section→scope dependency table (`detail`, `listing`, `feed`, `calendar`, `og`, `manifest`, `sitemap`) plus the pure stable-serialization + FNV-1a hash deriving one content-addressed generation per scope, memoized by bundle identity in a `WeakMap`; same settings → same keys across restarts, unrelated admin saves move nothing.
 - `contracts/` — Zod schemas (the wire format) plus the DTO types derived from them.
 - `types/` — shared types and isomorphic helpers with no contract twin (catalog projections, domain inputs, image URL helpers, the site-owned asset-URL path grammar in `asset-url`).
 - `lexical/` — Lexical storage-format validation; pure zod, no Lexical runtime; `SerializedEditorState` is an erased `import type` from `@/inkling/headless`.

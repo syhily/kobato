@@ -349,12 +349,6 @@ export const uiMessagesZhCN = {
   'admin.cache.calendar.description':
     "/images/calendar/:date.png 的渲染结果，键形如 {prefix}'<yyyy-MM-dd>'。一天后会自动失效。",
   'admin.cache.calendar.label': '侧边栏日历缓存',
-  'admin.cache.categories.description':
-    '公开侧全部分类（含文章计数）的查询结果，键形如 {prefix}all。分类或文章变更后自动清空。',
-  'admin.cache.categories.label': '分类列表缓存',
-  'admin.cache.comments.description':
-    '侧边栏「最新评论」列表的查询结果，键形如 {prefix}latest。评论增删或审核后自动清空。',
-  'admin.cache.comments.label': '最新评论缓存',
   'admin.cache.feed.description':
     "/feed 系列端点的 RSS / Atom XML，键形如 {prefix}all、{prefix}cat:'<slug>'、{prefix}tag:'<slug>'。发布或删除文章后自动清空。",
   'admin.cache.feed.label': 'Feed 缓存',
@@ -364,9 +358,6 @@ export const uiMessagesZhCN = {
   'admin.cache.githubRelease.description':
     "GitHub Releases API 的查询结果，键形如 {prefix}'<owner>'/'<repo>'/'<endpoint>'。短 TTL 仅用于削减重复外呼，到期后自动重新请求。",
   'admin.cache.githubRelease.label': 'GitHub 版本缓存',
-  'admin.cache.imageMeta.description':
-    "SSR 渲染时 storagePath → image 行的查询结果（宽 / 高 / thumbhash），键形如 {prefix}'<storagePath>'。在图片库批量上传或导入旧站数据后清理一次即可。",
-  'admin.cache.imageMeta.label': '图片元数据缓存',
   'admin.cache.og.description':
     "/images/og/:slug.png 的渲染结果，键形如 {prefix}'<slug>'-'<hash>'。修改 OG 尺寸或文章封面 / 摘要后清理。",
   'admin.cache.og.label': 'OG 图缓存',
@@ -381,9 +372,6 @@ export const uiMessagesZhCN = {
   'admin.cache.searchResult.label': '搜索结果缓存',
   'admin.cache.sitemap.description': '/sitemap.xml 的生成结果，缓存键为 {prefix}。发布或删除文章 / 页面后自动清空。',
   'admin.cache.sitemap.label': '站点地图缓存',
-  'admin.cache.tags.description':
-    '公开侧全部标签（含文章计数）的查询结果，键形如 {prefix}all。标签或文章变更后自动清空。',
-  'admin.cache.tags.label': '标签列表缓存',
   'admin.tasks.group.content.description': '定时发布与 Webmention 队列。',
   'admin.tasks.group.content.label': '内容',
   'admin.tasks.group.maintenance.description': '周期性的清理与数据更新。',
@@ -1185,7 +1173,7 @@ export const uiMessagesZhCN = {
   'admin.settings.cache.view.clearAllTitle': '一键清空',
   'admin.settings.cache.view.loadingStats': '正在读取缓存统计…',
   'admin.settings.cache.view.statsFailed': '读取缓存统计失败',
-  'admin.settings.cache.view.clearAllDescription': '删除数据库缓存表中所有已注册分组的记录。当前共 {count} 条缓存。',
+  'admin.settings.cache.view.clearAllDescription': '删除所有已注册缓存分组的记录。当前共 {count} 条缓存。',
   'admin.settings.cache.view.clearAllNote':
     '清空后下一次访问会触发对应资源（OG 图、头像、日历）的重新生成 / 拉取。Session 与限流计数不会受影响。',
   'admin.settings.cache.view.clearing': '清空中…',
@@ -1200,9 +1188,9 @@ export const uiMessagesZhCN = {
   'admin.settings.cache.view.confirmAllTitle': '清空全部缓存？',
   'admin.settings.cache.view.confirmBucketTitle': '清空「{label}」缓存？',
   'admin.settings.cache.view.confirmAllDescription':
-    '本次操作会删除数据库缓存表中全部 {count} 条记录。下一次访问 OG 图 / 头像 / 日历会重新生成或拉取，可能短时间内增加服务器负载。该操作不可撤销。',
+    '本次操作会删除全部 {count} 条缓存记录。下一次访问 OG 图 / 头像 / 日历会重新生成或拉取，可能短时间内增加服务器负载。该操作不可撤销。',
   'admin.settings.cache.view.confirmBucketDescription':
-    '本次操作会删除缓存表中 {count} 条键匹配 {pattern} 的记录。该操作不可撤销。',
+    '本次操作会删除 {count} 条键匹配 {pattern} 的缓存记录。该操作不可撤销。',
   'admin.settings.cache.view.confirmAll': '确认清空全部',
   'admin.settings.cache.view.confirm': '确认清空',
   'admin.settings.cache.bucket.keyCount': '缓存条数',
@@ -1214,7 +1202,7 @@ export const uiMessagesZhCN = {
   'admin.settings.cache.bucket.editPrefixHint':
     '必须以 `:` 结尾，作为前缀和后续字段的分隔符。修改后写入端立即用新前缀生成键。',
   'admin.settings.cache.bucket.ttlHours': 'TTL（小时）',
-  'admin.settings.cache.bucket.ttlHint': '将以 {seconds} 秒为有效期写入数据库缓存表（1 小时 ~ 30 天）。',
+  'admin.settings.cache.bucket.ttlHint': '将以 {seconds} 秒为有效期写入磁盘缓存（1 小时 ~ 30 天）。',
   'admin.settings.cache.bucket.saving': '保存中…',
   'admin.settings.cache.bucket.save': '保存配置',
   'admin.settings.cache.bucket.clear': '清空该分组',

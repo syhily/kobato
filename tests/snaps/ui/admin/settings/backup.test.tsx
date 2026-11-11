@@ -243,7 +243,6 @@ describe('snapshot: BucketCard', () => {
     og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
     calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
     avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
-    imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
     searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
   }
 

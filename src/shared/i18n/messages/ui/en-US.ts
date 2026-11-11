@@ -363,12 +363,6 @@ export const uiMessagesEnUS = {
   'admin.cache.calendar.description':
     "Rendered output of `/images/calendar/:date.png`, keyed like {prefix}'<yyyy-MM-dd>'. Expires automatically after one day.",
   'admin.cache.calendar.label': 'Sidebar calendar cache',
-  'admin.cache.categories.description':
-    'Public category list (with post counts), keyed like {prefix}all. Cleared automatically when categories or posts change.',
-  'admin.cache.categories.label': 'Category list cache',
-  'admin.cache.comments.description':
-    'Sidebar “Latest comments” list, keyed like {prefix}latest. Cleared automatically when comments are added, removed or moderated.',
-  'admin.cache.comments.label': 'Latest comments cache',
   'admin.cache.feed.description':
     "RSS / Atom XML for the `/feed` endpoints, keyed like {prefix}all, {prefix}cat:'<slug>', {prefix}tag:'<slug>'. Cleared automatically when posts are published or deleted.",
   'admin.cache.feed.label': 'Feed cache',
@@ -378,9 +372,6 @@ export const uiMessagesEnUS = {
   'admin.cache.githubRelease.description':
     "GitHub Releases API responses, keyed like {prefix}'<owner>'/'<repo>'/'<endpoint>'. The short TTL only trims repeated outbound calls; expired entries refetch automatically.",
   'admin.cache.githubRelease.label': 'GitHub release cache',
-  'admin.cache.imageMeta.description':
-    "storagePath → image row lookups during SSR (width / height / thumbhash), keyed like {prefix}'<storagePath>'. Clear once after bulk-uploading images or importing legacy site data.",
-  'admin.cache.imageMeta.label': 'Image metadata cache',
   'admin.cache.og.description':
     "Rendered output of `/images/og/:slug.png`, keyed like {prefix}'<slug>'-'<hash>'. Clear after changing the OG size, cover or excerpt.",
   'admin.cache.og.label': 'OG image cache',
@@ -396,9 +387,6 @@ export const uiMessagesEnUS = {
   'admin.cache.sitemap.description':
     'Generated `/sitemap.xml`, keyed as {prefix}. Cleared automatically when posts or pages are published or deleted.',
   'admin.cache.sitemap.label': 'Sitemap cache',
-  'admin.cache.tags.description':
-    'Public tag list (with post counts), keyed like {prefix}all. Cleared automatically when tags or posts change.',
-  'admin.cache.tags.label': 'Tag list cache',
   'admin.tasks.group.content.description': 'Scheduled publishing and the Webmention queue.',
   'admin.tasks.group.content.label': 'Content',
   'admin.tasks.group.maintenance.description': 'Periodic cleanup and data refresh.',
@@ -1244,7 +1232,7 @@ export const uiMessagesEnUS = {
   'admin.settings.cache.view.loadingStats': 'Reading cache statistics…',
   'admin.settings.cache.view.statsFailed': 'Failed to read the cache statistics',
   'admin.settings.cache.view.clearAllDescription':
-    'Deletes every record of the registered groups from the database cache table. Currently {count} cached entries.',
+    'Deletes every record of the registered cache groups. Currently {count} cached entries.',
   'admin.settings.cache.view.clearAllNote':
     'After clearing, the next visit regenerates or refetches the affected resources (OG images, avatars, calendar). Sessions and rate-limit counters are unaffected.',
   'admin.settings.cache.view.clearing': 'Clearing…',
@@ -1259,9 +1247,9 @@ export const uiMessagesEnUS = {
   'admin.settings.cache.view.confirmAllTitle': 'Clear all caches?',
   'admin.settings.cache.view.confirmBucketTitle': 'Clear the "{label}" cache?',
   'admin.settings.cache.view.confirmAllDescription':
-    'This deletes all {count} records from the database cache table. The next visit to an OG image / avatar / calendar will regenerate or refetch them, which may briefly increase server load. This cannot be undone.',
+    'This deletes all {count} cached records. The next visit to an OG image / avatar / calendar will regenerate or refetch them, which may briefly increase server load. This cannot be undone.',
   'admin.settings.cache.view.confirmBucketDescription':
-    'This deletes the {count} records in the cache table whose keys match {pattern}. This cannot be undone.',
+    'This deletes the {count} cached records whose keys match {pattern}. This cannot be undone.',
   'admin.settings.cache.view.confirmAll': 'Clear everything',
   'admin.settings.cache.view.confirm': 'Clear',
   'admin.settings.cache.bucket.keyCount': 'Cached entries',
@@ -1274,7 +1262,7 @@ export const uiMessagesEnUS = {
     'Must end with `:`, which separates the prefix from the following fields. Once changed, writers immediately generate keys with the new prefix.',
   'admin.settings.cache.bucket.ttlHours': 'TTL (hours)',
   'admin.settings.cache.bucket.ttlHint':
-    'Stored in the database cache table with a {seconds}-second lifetime (1 hour to 30 days).',
+    'Stored in the on-disk cache with a {seconds}-second lifetime (1 hour to 30 days).',
   'admin.settings.cache.bucket.saving': 'Saving…',
   'admin.settings.cache.bucket.save': 'Save configuration',
   'admin.settings.cache.bucket.clear': 'Clear this group',

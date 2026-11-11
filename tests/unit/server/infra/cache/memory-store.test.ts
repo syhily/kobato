@@ -5,7 +5,6 @@ import {
   __resetMemoryCacheForTests,
   clearMemoryBucket,
   getMemoryItem,
-  removeMemoryItem,
   setMemoryItem,
   wipeMemoryCache,
 } from '@/server/infra/cache/memory-store'
@@ -45,11 +44,11 @@ describe('memory store — LRU', () => {
       setMemoryItem(BUCKET, `k${index}`, index, { expiresAtMs: 0 })
     }
     for (let index = 0; index < 8; index += 1) {
-      setMemoryItem('tags', `k${index}`, index, { expiresAtMs: 0 })
+      setMemoryItem('sitemap', `k${index}`, index, { expiresAtMs: 0 })
     }
 
-    // The tags budget is 8 entries, so the githubAvatar fill cannot evict it.
-    expect(getMemoryItem('tags', 'k0')).toBe(0)
+    // The sitemap budget is 8 entries, so the githubAvatar fill cannot evict it.
+    expect(getMemoryItem('sitemap', 'k0')).toBe(0)
     expect(getMemoryItem(BUCKET, 'k0')).toBe(0)
   })
 })
@@ -152,34 +151,24 @@ describe('memory store — expiry', () => {
 })
 
 describe('memory store — invalidation', () => {
-  it('removes a single key', () => {
-    setMemoryItem(BUCKET, 'a', 'a', { expiresAtMs: 0 })
-    setMemoryItem(BUCKET, 'b', 'b', { expiresAtMs: 0 })
-
-    removeMemoryItem(BUCKET, 'a')
-
-    expect(getMemoryItem(BUCKET, 'a')).toBeUndefined()
-    expect(getMemoryItem(BUCKET, 'b')).toBe('b')
-  })
-
   it('clears one bucket without touching its neighbours', () => {
     setMemoryItem(BUCKET, 'a', 'a', { expiresAtMs: 0 })
-    setMemoryItem('tags', 'a', 'a', { expiresAtMs: 0 })
+    setMemoryItem('sitemap', 'a', 'a', { expiresAtMs: 0 })
 
     clearMemoryBucket(BUCKET)
 
     expect(getMemoryItem(BUCKET, 'a')).toBeUndefined()
-    expect(getMemoryItem('tags', 'a')).toBe('a')
+    expect(getMemoryItem('sitemap', 'a')).toBe('a')
   })
 
   it('wipes every bucket', () => {
     setMemoryItem(BUCKET, 'a', 'a', { expiresAtMs: 0 })
-    setMemoryItem('tags', 'a', 'a', { expiresAtMs: 0 })
+    setMemoryItem('sitemap', 'a', 'a', { expiresAtMs: 0 })
 
     wipeMemoryCache()
 
     expect(getMemoryItem(BUCKET, 'a')).toBeUndefined()
-    expect(getMemoryItem('tags', 'a')).toBeUndefined()
+    expect(getMemoryItem('sitemap', 'a')).toBeUndefined()
   })
 
   it('never stores null or undefined', () => {

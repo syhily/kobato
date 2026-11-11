@@ -36,11 +36,7 @@ function calendarParams(settingsRevision = revisions().calendar) {
   }
 }
 
-function commentsParams(settingsRevision = revisions().comments) {
-  return { settingsRevision, limit: 5 }
-}
-
-const ALL_SCOPES = ['detail', 'listing', 'feed', 'calendar', 'og', 'manifest', 'sitemap', 'comments'] as const
+const ALL_SCOPES = ['detail', 'listing', 'feed', 'calendar', 'og', 'manifest', 'sitemap'] as const
 const PAGE_SCOPES = ['detail', 'listing'] as const
 
 const INSTALL_INPUT = { title: 'Test Blog', name: 'Admin', email: 'admin@example.com', hostname: 'localhost' }
@@ -66,7 +62,7 @@ beforeEach(async () => {
 
 describe('settings sections — section-scoped representation generations', () => {
   it('installs the reclaim handlers for every section whose values feed the renders', () => {
-    for (const section of ['general', 'content', 'assets', 'sidebar', 'fonts', 'comments'] as const) {
+    for (const section of ['general', 'content', 'assets', 'sidebar', 'fonts'] as const) {
       expect(typeof sectionChangeHandler(section)).toBe('function')
     }
   })
@@ -89,7 +85,7 @@ describe('settings sections — section-scoped representation generations', () =
     expect(Object.keys(revisions()).sort()).toEqual([...ALL_SCOPES].sort())
   })
 
-  it('general moves every public representation and the page shell, never comments', async () => {
+  it('general moves every public representation and the page shell', async () => {
     const before = revisions()
     await updateBlogSettingsSection(db, 'general', { locale: 'zh-TW' }, null)
     const after = revisions()
@@ -97,7 +93,6 @@ describe('settings sections — section-scoped representation generations', () =
     for (const scope of [...PAGE_SCOPES, 'feed', 'calendar', 'og', 'manifest', 'sitemap'] as const) {
       expect(after[scope]).not.toBe(before[scope])
     }
-    expect(after.comments).toBe(before.comments)
   })
 
   it('content moves feed + page shell only', async () => {
@@ -109,7 +104,7 @@ describe('settings sections — section-scoped representation generations', () =
     for (const scope of PAGE_SCOPES) {
       expect(after[scope]).not.toBe(before[scope])
     }
-    for (const scope of ['calendar', 'og', 'manifest', 'sitemap', 'comments'] as const) {
+    for (const scope of ['calendar', 'og', 'manifest', 'sitemap'] as const) {
       expect(after[scope]).toBe(before[scope])
     }
   })
@@ -122,12 +117,12 @@ describe('settings sections — section-scoped representation generations', () =
     for (const scope of [...PAGE_SCOPES, 'feed', 'manifest'] as const) {
       expect(after[scope]).not.toBe(before[scope])
     }
-    for (const scope of ['calendar', 'og', 'sitemap', 'comments'] as const) {
+    for (const scope of ['calendar', 'og', 'sitemap'] as const) {
       expect(after[scope]).toBe(before[scope])
     }
   })
 
-  it('sidebar moves calendar + page shell, not feed/og/manifest/comments', async () => {
+  it('sidebar moves calendar + page shell, not feed/og/manifest', async () => {
     const before = revisions()
     await updateBlogSettingsSection(db, 'sidebar', { sidebar: { dailyQuote: { source: 'local' } } }, null)
     const after = revisions()
@@ -136,7 +131,7 @@ describe('settings sections — section-scoped representation generations', () =
     for (const scope of PAGE_SCOPES) {
       expect(after[scope]).not.toBe(before[scope])
     }
-    for (const scope of ['feed', 'og', 'manifest', 'sitemap', 'comments'] as const) {
+    for (const scope of ['feed', 'og', 'manifest', 'sitemap'] as const) {
       expect(after[scope]).toBe(before[scope])
     }
   })
@@ -150,7 +145,7 @@ describe('settings sections — section-scoped representation generations', () =
     for (const scope of PAGE_SCOPES) {
       expect(after[scope]).not.toBe(before[scope])
     }
-    for (const scope of ['feed', 'calendar', 'manifest', 'sitemap', 'comments'] as const) {
+    for (const scope of ['feed', 'calendar', 'manifest', 'sitemap'] as const) {
       expect(after[scope]).toBe(before[scope])
     }
   })
@@ -163,17 +158,16 @@ describe('settings sections — section-scoped representation generations', () =
     for (const scope of [...PAGE_SCOPES, 'calendar', 'og'] as const) {
       expect(after[scope]).not.toBe(before[scope])
     }
-    for (const scope of ['feed', 'manifest', 'sitemap', 'comments'] as const) {
+    for (const scope of ['feed', 'manifest', 'sitemap'] as const) {
       expect(after[scope]).toBe(before[scope])
     }
   })
 
-  it('comments moves comments + page shell only', async () => {
+  it('comments moves the page shell only', async () => {
     const before = revisions()
     await updateBlogSettingsSection(db, 'comments', { comments: { size: 20 } }, null)
     const after = revisions()
 
-    expect(after.comments).not.toBe(before.comments)
     for (const scope of PAGE_SCOPES) {
       expect(after[scope]).not.toBe(before[scope])
     }
@@ -194,14 +188,12 @@ describe('settings sections — section-scoped representation generations', () =
     expect(await get('feed', before)).toBeNull()
   })
 
-  it('an unrelated save keeps feed/calendar/comments rows addressable', async () => {
+  it('an unrelated save keeps feed/calendar rows addressable', async () => {
     const feed = feedParams()
     const calendar = calendarParams()
-    const comments = commentsParams()
     const sitemap = { settingsRevision: revisions().sitemap }
     await set('feed', feed, { rss: '<rss/>', atom: '<feed/>' })
     await set('calendar', calendar, Buffer.from('png'))
-    await set('comments', comments, ['comment:1'])
     await set('sitemap', sitemap, '<urlset/>')
 
     await updateBlogSettingsSection(db, 'security', { csrf: { enabled: false } }, null)
@@ -209,29 +201,12 @@ describe('settings sections — section-scoped representation generations', () =
 
     expect(await get('feed', feed)).toEqual({ rss: '<rss/>', atom: '<feed/>' })
     expect(await get('calendar', calendar)).toEqual(Buffer.from('png'))
-    expect(await get('comments', comments)).toEqual(['comment:1'])
     expect(await get('sitemap', sitemap)).toBe('<urlset/>')
-  })
-
-  it('comments scope moves the comments key (the count is a key input too)', async () => {
-    const before = commentsParams()
-    await set('comments', before, ['comment:1'])
-
-    await updateBlogSettingsSection(db, 'comments', { comments: { size: 20 } }, null)
-    const after = commentsParams()
-    expect(after.settingsRevision).not.toBe(before.settingsRevision)
-    expect(await get('comments', after)).toBeNull()
-    // The reclaim handler deletes the whole comments bucket.
-    expect(await get('comments', before)).toBeNull()
-
-    // Same generation, different count: another key.
-    expect(await get('comments', { ...after, limit: 6 })).toBeNull()
   })
 
   it('drops every settings-derived bucket variant on a real section update', async () => {
     const feed = feedParams()
     const calendar = calendarParams()
-    const comments = commentsParams()
     await set('feed', feed, { rss: '<rss/>', atom: '<feed/>' })
     await set('feed', { ...feed, locale: 'en-US' }, { rss: '<rss/>', atom: '<feed/>' })
     await set('calendar', calendar, Buffer.from('png'))
@@ -241,10 +216,9 @@ describe('settings sections — section-scoped representation generations', () =
       { slug: 'post-x', title: 'T', summary: 'S', cover: 'C', settingsRevision: revisions().og },
       Buffer.from('png'),
     )
-    await set('comments', comments, ['comment:1'])
     await set('sitemap', { settingsRevision: revisions().sitemap }, '<urlset/>')
     // An unrelated bucket must survive the save.
-    await set('tags', {}, ['tag:1'])
+    await set('searchResult', { generation: 1, parts: ['hit'] }, ['tag:1'])
 
     const result = await updateBlogSettingsSection(db, 'general', { locale: 'zh-TW' }, null)
     expect(result.warnings).toEqual([])
@@ -253,10 +227,9 @@ describe('settings sections — section-scoped representation generations', () =
     expect(await get('feed', { ...feed, locale: 'en-US' })).toBeNull()
     expect(await get('calendar', calendar)).toBeNull()
     expect(await get('calendar', { ...calendar, theme: 'dark', locale: 'zh-TW' })).toBeNull()
-    expect(await get('comments', comments)).toBeNull()
-    expect(await get('tags', {})).toEqual(['tag:1'])
+    expect(await get('searchResult', { generation: 1, parts: ['hit'] })).toEqual(['tag:1'])
 
-    for (const bucket of ['feed', 'calendar', 'og', 'comments', 'sitemap'] as const) {
+    for (const bucket of ['feed', 'calendar', 'og', 'sitemap'] as const) {
       expect(await countEntryFiles(bucket)).toBe(0)
     }
   })
@@ -310,7 +283,7 @@ describe('settings sections — section-scoped representation generations', () =
     await set('feed', feedParams(), { rss: '<rss/>', atom: '<feed/>' })
     await updateBlogSettingsSection(db, 'general', { locale: 'zh-CN' }, null)
 
-    for (const bucket of ['feed', 'calendar', 'og', 'comments', 'sitemap'] as const) {
+    for (const bucket of ['feed', 'calendar', 'og', 'sitemap'] as const) {
       expect(existsSync(path.join(resolveCacheRoot(), bucket, '_generation'))).toBe(false)
     }
   })

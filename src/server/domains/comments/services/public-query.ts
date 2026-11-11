@@ -18,7 +18,6 @@ import {
   findRootComments,
 } from '@/server/domains/comments/repos/public-query/threads'
 import { ensureCommentPage } from '@/server/domains/comments/services/shared'
-import { through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
@@ -35,24 +34,15 @@ export async function hasApprovedComments(db: Database, userId: number): Promise
 
 /**
  * The latest-comments digest for the sidebar. `settings` is the request-pinned
- * snapshot (the caller's `context.settings`), and `commentsRevision` is the
- * comments-scope generation from the SAME pinned localization capture — this
- * function never reads the process snapshot, so the key's widget count and
- * generation belong together. The comments bucket is keyed by that revision
- * plus the count, so a comments/sidebar save lands on a fresh key.
+ * snapshot (the caller's `context.settings`) — this function never reads the
+ * process snapshot. A straight SQLite read: three small indexed queries.
  */
-export async function latestComments(
-  db: Database,
-  settings: BlogSettingsBundle | null,
-  commentsRevision: string,
-): Promise<LatestComment[]> {
+export async function latestComments(db: Database, settings: BlogSettingsBundle | null): Promise<LatestComment[]> {
   const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar', settings), 'recentComments')
-  return through('comments', { settingsRevision: commentsRevision, limit }, async () => {
-    const ids = await adminUserIds(db)
-    const distinctIds = await latestDistinctCommentIds(db, ids, limit)
-    const rows = await commentsByIds(db, distinctIds, limit)
-    return rows.map(toLatestComment)
-  })
+  const ids = await adminUserIds(db)
+  const distinctIds = await latestDistinctCommentIds(db, ids, limit)
+  const rows = await commentsByIds(db, distinctIds, limit)
+  return rows.map(toLatestComment)
 }
 
 export async function loadComments(

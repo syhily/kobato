@@ -14,7 +14,6 @@ import {
   ensureUniqueOnUpdateTaxonomy,
   taxonomyNotFound,
 } from '@/server/domains/taxonomies/shared'
-import { through } from '@/server/infra/cache/registry'
 import {
   type AdminTagsListFilters,
   countAdminTags,
@@ -140,25 +139,23 @@ export async function findTagBySlug(db: Database, slug: string): Promise<TagRow 
 }
 
 export async function listAllTags(db: Database): Promise<Tag[]> {
-  return through('tags', {}, async () => {
-    const tagRows = await db
-      .select({ name: tagTable.name, slug: tagTable.slug })
-      .from(tagTable)
-      .orderBy(asc(tagTable.name))
+  const tagRows = await db
+    .select({ name: tagTable.name, slug: tagTable.slug })
+    .from(tagTable)
+    .orderBy(asc(tagTable.name))
 
-    if (tagRows.length === 0) {
-      return []
-    }
+  if (tagRows.length === 0) {
+    return []
+  }
 
-    const countsMap = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public' })
+  const countsMap = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public' })
 
-    return tagRows.map((row) => ({
-      name: row.name,
-      slug: row.slug,
-      counts: countsMap.get(row.name) ?? 0,
-      permalink: `/tags/${row.slug}`,
-    }))
-  })
+  return tagRows.map((row) => ({
+    name: row.name,
+    slug: row.slug,
+    counts: countsMap.get(row.name) ?? 0,
+    permalink: `/tags/${row.slug}`,
+  }))
 }
 
 export async function getTagsByNames(db: Database, names: readonly string[]): Promise<Tag[]> {

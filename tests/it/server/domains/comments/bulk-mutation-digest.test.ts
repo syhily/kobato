@@ -2,11 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { latestComments } from '@/server/domains/comments/services/public-query'
-import { get } from '@/server/infra/cache/registry'
 import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
-import { representationRevisionsFor } from '@/shared/config/representation-scopes'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 // Stub the email boundary so the module graph never reaches the network.
@@ -16,12 +14,8 @@ vi.mock('@/server/infra/email/sender', () => ({
   invalidateMailTransportCache: vi.fn(),
 }))
 
-const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-const COMMENTS_REVISION = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE).comments
-
-// Import AFTER the mocks register; cache invalidation lives inside the mutations.
 const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
   await import('@/server/domains/comments/services/moderate')
 const { softDeleteCommentById } = await import('@/server/domains/comments/services/moderate')
@@ -29,20 +23,8 @@ const { softDeleteCommentById } = await import('@/server/domains/comments/servic
 const db = getTestDb()
 
 beforeEach(async () => {
-  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
 })
-
-function latestCommentsEntry() {
-  return get('comments', { settingsRevision: COMMENTS_REVISION, limit: 5 })
-}
-
-/** The through() write is fire-and-forget; wait for the warmed entry. */
-async function waitForWarmEntry(): Promise<void> {
-  await vi.waitFor(async () => {
-    expect(await latestCommentsEntry()).not.toBeNull()
-  })
-}
 
 async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Promise<number> {
   const rows = await db
@@ -89,58 +71,49 @@ async function seedComment(userId: number, ownerId: number, isPending: boolean):
   return rows[0]!.id
 }
 
-describe('comments/repos/moderation — bulk mutations clear the sidebar cache', () => {
-  it('bulk approve-by-user invalidates the warmed latest-comments cache', async () => {
+// The sidebar digest reads SQLite directly — a mutation is visible on the
+// very next call, with no cache invalidation in between.
+describe('comments/repos/moderation — bulk mutations reach the sidebar digest', () => {
+  it('bulk approve-by-user makes the comment visible immediately', async () => {
     const userId = await seedUser()
     const postId = await seedPost('bulk-approve-target')
     const commentId = await seedComment(userId, postId, true)
 
     // Pending comments are not listed yet.
-    const warmed = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
-    expect(warmed).toHaveLength(0)
-    await waitForWarmEntry()
+    expect(await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE)).toHaveLength(0)
 
     const { approved } = await bulkApproveCommentsByUser(db, userId)
     expect(approved).toBe(1)
 
-    expect(await latestCommentsEntry()).toBeNull()
-    const fresh = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
+    const fresh = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE)
     expect(fresh).toHaveLength(1)
     expect(fresh[0]!.permalink).toBe(`/posts/bulk-approve-target/#user-comment-${commentId}`)
   })
 
-  it('bulk soft-delete-by-user invalidates the warmed latest-comments cache', async () => {
+  it('bulk soft-delete-by-user hides the comment immediately', async () => {
     const userId = await seedUser()
     const postId = await seedPost('bulk-delete-target')
     await seedComment(userId, postId, false)
 
-    const warmed = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
-    expect(warmed).toHaveLength(1)
-    await waitForWarmEntry()
+    expect(await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE)).toHaveLength(1)
 
     const { deleted } = await bulkDeleteCommentsByUser(db, userId)
     expect(deleted).toBe(1)
 
-    expect(await latestCommentsEntry()).toBeNull()
-    const fresh = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
-    expect(fresh).toHaveLength(0)
+    expect(await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE)).toHaveLength(0)
   })
 })
 
-describe('comments/repos/moderation — approve-delete-request clears the sidebar cache', () => {
-  it('softDeleteCommentById invalidates the warmed latest-comments cache', async () => {
+describe('comments/repos/moderation — soft delete reaches the sidebar digest', () => {
+  it('softDeleteCommentById hides the comment immediately', async () => {
     const userId = await seedUser()
     const postId = await seedPost('approve-delete-target')
     const commentId = await seedComment(userId, postId, false)
 
-    const warmed = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
-    expect(warmed).toHaveLength(1)
-    await waitForWarmEntry()
+    expect(await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE)).toHaveLength(1)
 
     await softDeleteCommentById(db, commentId)
 
-    expect(await latestCommentsEntry()).toBeNull()
-    const fresh = await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE, COMMENTS_REVISION)
-    expect(fresh).toHaveLength(0)
+    expect(await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE)).toHaveLength(0)
   })
 })

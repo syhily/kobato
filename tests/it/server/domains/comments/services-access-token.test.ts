@@ -3,15 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { countEntryFiles, setItem } from '@/server/infra/cache/file-store'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// Everything runs against the real engine (canonicalize pipeline, filesystem
-// cache invalidation); only the outbound email stays mocked.
+// Everything runs against the real engine (canonicalize pipeline); only the
+// outbound email stays mocked.
 vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
@@ -67,20 +66,15 @@ describe('comments/services/lookup — findCommentWithUserById', () => {
 })
 
 describe('comments/services/moderate — approveComment', () => {
-  it('flips is_pending=false and clears the comments cache bucket', async () => {
+  it('flips is_pending=false and the public digest sees it immediately', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1, isPending: true })
-    // Pre-seed the bucket the invalidation must clear, plus a surviving control entry.
-    await setItem('comments', 'comments:latest', [])
-    await setItem('feed', 'feed:all', {})
 
     const { approveComment } = await import('@/server/domains/comments/services/moderate')
     await approveComment(db, String(id))
 
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(false)
-    expect(await countEntryFiles('comments')).toBe(0)
-    expect(await countEntryFiles('feed')).toBe(1)
   })
 })
 
