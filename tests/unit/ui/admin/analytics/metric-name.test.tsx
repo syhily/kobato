@@ -1,12 +1,12 @@
 import type { ReactElement } from 'react'
 
-import { SiGooglechrome, SiMacos } from '@icons-pack/react-simple-icons'
 import { Globe, MonitorCheck } from 'lucide-react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { wrapWithI18n } from '#/_helpers/i18n-render'
 import { MetricName, flagEmojiFor, regionDisplayName } from '@/ui/admin/analytics/MetricName'
+import { SiGooglechrome, SiMacos } from '@/ui/icons/metric-brands'
 
 /** MetricName reads the UI translator; every render mounts the root provider. */
 function renderMetric(node: ReactElement): string {

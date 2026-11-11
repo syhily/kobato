@@ -87,7 +87,6 @@
     "@formatjs/icu-messageformat-parser": "catalog:",
     "@hono/node-server": "catalog:",
     "@hono/vite-dev-server": "catalog:",
-    "@icons-pack/react-simple-icons": "catalog:",
     "@lexical/clipboard": "catalog:",
     "@lexical/headless": "catalog:",
     "@lexical/html": "catalog:",

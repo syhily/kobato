@@ -1,5 +1,12 @@
 import type { ComponentType } from 'react'
 
+import { Bot, Globe, Laptop, MonitorCheck, Mouse, Smartphone, Tablet, Terminal } from 'lucide-react'
+
+import type { MetricType } from '@/shared/contracts/analytics'
+import type { AppLocale } from '@/shared/i18n/locales'
+
+import { formatDisplayName } from '@/shared/i18n/format'
+import { metricValueLabelId } from '@/ui/admin/analytics/metric-labels'
 import {
   SiAcer,
   SiAndroid,
@@ -77,14 +84,7 @@ import {
   SiX,
   SiXiaomi,
   SiYandexcloud,
-} from '@icons-pack/react-simple-icons'
-import { Bot, Globe, Laptop, MonitorCheck, Mouse, Smartphone, Tablet, Terminal } from 'lucide-react'
-
-import type { MetricType } from '@/shared/contracts/analytics'
-import type { AppLocale } from '@/shared/i18n/locales'
-
-import { formatDisplayName } from '@/shared/i18n/format'
-import { metricValueLabelId } from '@/ui/admin/analytics/metric-labels'
+} from '@/ui/icons/metric-brands'
 import { useI18n } from '@/ui/lib/I18nProvider'
 
 type IconComponent = ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
