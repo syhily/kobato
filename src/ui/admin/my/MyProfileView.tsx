@@ -1,8 +1,11 @@
+import type { InferRouterInputs } from '@orpc/server'
+
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
+import type { ApiRouter } from '@/server/http/api-router'
 import type { LoginMethod } from '@/shared/contracts/users'
 
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -168,9 +171,9 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                 onSubmit={(e) => {
                   e.preventDefault()
                   setProfileMessage(null)
-                  // Empty link → null — z.url() rejects empty strings; clearing must send the "no link" sentinel.
+                  // Empty link → null — the http-URL schema rejects empty strings; clearing must send the "no link" sentinel.
                   const trimmedLink = link.trim()
-                  const payload: Record<string, string | null> = {
+                  const payload: InferRouterInputs<ApiRouter>['account']['updateProfile'] = {
                     name,
                     link: trimmedLink === '' ? null : trimmedLink,
                   }

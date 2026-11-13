@@ -5,7 +5,7 @@ import { useState } from 'react'
 import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { orpc } from '@/client/api/client'
-import { buildUserUpdatePayload } from '@/ui/admin/users/user-update-payload'
+import { buildUserUpdatePayload, type AdminUserUpdateInput } from '@/ui/admin/users/user-update-payload'
 import { invalidateUsersCache } from '@/ui/admin/users/users-cache'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
@@ -46,10 +46,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation({
-    mutationFn: (vars: Record<string, string | null> & { userId: string }) => {
-      const { userId, ...body } = vars
-      return orpc.admin.users.update({ id: userId, ...body })
-    },
+    mutationFn: (input: AdminUserUpdateInput) => orpc.admin.users.update(input),
     onSuccess: () => {
       invalidateUsersCache(queryClient)
     },
@@ -76,7 +73,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
               useTextOverride,
               badgeTextColor,
             })
-            updateMutation.mutate({ ...payload, userId: user.id })
+            updateMutation.mutate({ ...payload, id: user.id })
           }}
           className="grid gap-4 sm:grid-cols-2"
         >

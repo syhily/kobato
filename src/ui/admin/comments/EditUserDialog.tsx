@@ -7,7 +7,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import { orpc } from '@/client/api/client'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { idStr } from '@/shared/utils/tools'
-import { buildUserUpdatePayload } from '@/ui/admin/users/user-update-payload'
+import { buildUserUpdatePayload, type AdminUserUpdateInput } from '@/ui/admin/users/user-update-payload'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import {
@@ -33,10 +33,7 @@ export interface EditUserDialogProps {
 export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProps) {
   const { t } = useI18n()
   const mutation = useMutation({
-    mutationFn: (payload: Record<string, string | null>) => {
-      const { id, ...body } = payload
-      return orpc.admin.users.update({ id: id!, ...body })
-    },
+    mutationFn: (input: AdminUserUpdateInput) => orpc.admin.users.update(input),
     onSuccess: () => onSaved(),
     onError: onMutationError('admin.toast.userSaveFailed', t),
   })
