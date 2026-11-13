@@ -27,7 +27,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 26.13.0
+          node-version: 26.13.1
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run type
@@ -53,7 +53,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 26.13.0
+          node-version: 26.13.1
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       # Pushes only need the production build. PRs build the SEA binary for the

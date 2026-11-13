@@ -39,7 +39,7 @@ async function ensureSentinelFuse() {
         `The Node.js executable at ${process.execPath} contains ${occurrences} SEA sentinel fuses.`,
         'node --build-sea accepts exactly one — a universal/multi-architecture binary carries one',
         'per slice. Run the build with a single-architecture official Node.js distribution',
-        '(for example node-v26.13.0-darwin-x64/bin/node on an Intel Mac).',
+        '(for example node-v26.13.1-darwin-x64/bin/node on an Intel Mac).',
       ].join('\n'),
     )
   }

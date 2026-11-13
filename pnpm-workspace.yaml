@@ -2,7 +2,7 @@
 # entries as "catalog:" — taze updates this table (catalogs are first-class
 # taze targets), so version bumps happen in exactly one place.
 catalog:
-  '@aws-sdk/client-s3': ^3.1166.0
+  '@aws-sdk/client-s3': ^3.1168.0
   '@base-ui/react': ^1.9.0
   '@bufbuild/protobuf': ^2.17.0
   '@chenglou/pretext': ^1.0.0
@@ -21,7 +21,7 @@ catalog:
   '@duckdb/node-api': ^2.0.0-r.1
   '@emoji-mart/data': ^1.2.1
   '@formatjs/icu-messageformat-parser': ^3.5.23
-  '@hono/node-server': ^2.1.7
+  '@hono/node-server': ^2.1.8
   '@hono/vite-dev-server': ^0.26.1
   '@lexical/clipboard': ^0.53.0
   '@lexical/headless': ^0.53.0
@@ -38,15 +38,15 @@ catalog:
   '@lezer/highlight': ^1.2.5
   '@maxmind/geoip2-node': ^7.1.0
   '@mdx-js/rollup': ^3.1.1
-  '@napi-rs/canvas': ^1.1.0
+  '@napi-rs/canvas': ^1.1.1
   '@number-flow/react': ^0.6.2
   '@openobserve/browser-rum-slim': ^0.4.3
   '@opentelemetry/api': ^1.10.0
   '@opentelemetry/context-async-hooks': ^3.1.1
   '@opentelemetry/core': ^3.1.1
-  '@opentelemetry/exporter-logs-otlp-http': ^0.301.1
-  '@opentelemetry/exporter-metrics-otlp-http': ^0.301.1
-  '@opentelemetry/exporter-trace-otlp-http': ^0.301.1
+  '@opentelemetry/exporter-logs-otlp-http': ^0.301.2
+  '@opentelemetry/exporter-metrics-otlp-http': ^0.301.2
+  '@opentelemetry/exporter-trace-otlp-http': ^0.301.2
   '@opentelemetry/resources': ^3.1.1
   '@opentelemetry/sdk-logs': ^3.1.1
   '@opentelemetry/sdk-metrics': ^3.1.1
@@ -67,7 +67,7 @@ catalog:
   '@testing-library/dom': ^10.4.2
   '@testing-library/jest-dom': ^7.0.1
   '@testing-library/react': ^16.3.3
-  '@testing-library/user-event': ^14.6.9
+  '@testing-library/user-event': ^14.6.10
   '@types/diff-match-patch': ^1.0.36
   '@types/html-minifier-terser': ^7.0.2
   '@types/jsdom': ^30.0.0
@@ -101,7 +101,7 @@ catalog:
   idb: ^8.0.4
   jsdom: ^31.0.0
   katex: ^0.19.1
-  kysely: ^0.29.8
+  kysely: ^0.29.9
   lexical: ^0.53.0
   lint-staged: ^17.6.0
   lucide-react: ^1.72.0
@@ -113,16 +113,16 @@ catalog:
   markdown-it-sub: ^2.0.0
   markdown-it-sup: ^2.0.0
   medium-zoom: ^1.1.2
-  motion: ^14.12.0
-  node-device-detector: ^2.2.8
+  motion: ^14.13.0
+  node-device-detector: ^2.2.9
   nodemailer: ^10.5.0
   oxc-transform-react: ^0.158.0
   oxfmt: ^0.78.0
   oxlint: ^1.93.0
-  oxlint-tsgolint: ^7.0.2006
+  oxlint-tsgolint: ^7.0.2007
   pino: ^10.4.0
   pinyin-pro: ^3.29.5
-  prettier: ^3.10.0
+  prettier: ^3.10.1
   prettier-plugin-organize-attributes: ^1.0.0
   qrcode.react: ^4.2.0
   react: ^19.3.1
@@ -133,7 +133,7 @@ catalog:
   react-intl: ^12.1.7
   react-router: ^8.5.1
   rolldown: ^1.3.2
-  rolldown-plugin-dts: ^0.30.1
+  rolldown-plugin-dts: ^0.30.2
   sharp: ^0.35.5
   shiki: ^4.6.0
   sonner: ^2.0.8

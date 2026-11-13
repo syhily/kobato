@@ -48,7 +48,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 26.13.0
+          node-version: 26.13.1
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       # patchelf rewrites the sharp addon's rpath during sea:build (see
@@ -128,7 +128,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 26.13.0
+          node-version: 26.13.1
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run sea:build
@@ -182,7 +182,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 26.13.0
+          node-version: 26.13.1
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run sea:build
@@ -231,7 +231,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 26.13.0
+          node-version: 26.13.1
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       # patchelf rewrites the sharp addon's rpath during sea:build (see
