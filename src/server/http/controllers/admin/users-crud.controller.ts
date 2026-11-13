@@ -12,6 +12,7 @@ import {
 import { adminProc, localizedOrpcError } from '@/server/http/orpc-base'
 import { restoreUserById, updateUserById } from '@/server/infra/db/operations/user'
 import { adminUsersCountOutputSchema, adminUsersPasskeyFlagOutputSchema } from '@/shared/contracts/admin'
+import { clearable, mergePatchInput, splitMergePatch } from '@/shared/contracts/merge-patch'
 import { adminUserDto } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 import { optionalHttpUrlSchema } from '@/shared/utils/safe-url'
@@ -79,28 +80,18 @@ const get = adminProc
 const update = adminProc
   .route({ method: 'POST', path: '/admin/users/update' })
   .input(
-    z.object({
-      id: z.string().min(1),
+    mergePatchInput({
       name: z.string().min(1).optional(),
       email: z.email().optional(),
-      // `null` clears the stored value; an absent key leaves it untouched.
-      link: z.union([optionalHttpUrlSchema, z.null()]),
-      badgeName: z.union([z.string(), z.null()]).optional(),
+      link: clearable(optionalHttpUrlSchema),
+      badgeName: clearable(z.string()),
       badgeColor: z.string().optional(),
-      badgeTextColor: z.union([z.string(), z.null()]).optional(),
+      badgeTextColor: clearable(z.string()),
     }),
   )
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const { id, name, email, link, badgeName, badgeColor, badgeTextColor } = input
-    const patch = {
-      ...(name !== undefined && { name }),
-      ...(email !== undefined && { email }),
-      ...(link !== undefined && { link }),
-      ...(badgeName !== undefined && { badgeName }),
-      ...(badgeColor !== undefined && { badgeColor }),
-      ...(badgeTextColor !== undefined && { badgeTextColor }),
-    }
+    const { id, patch } = splitMergePatch(input)
     const updated = await updateUserById(context.db, idFromString(id), patch)
     if (updated === null) {
       throw localizedOrpcError(context, 'NOT_FOUND', 'users.error.notFound')

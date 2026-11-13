@@ -14,6 +14,11 @@ Every module is importable from any layer (`server/`, `client/`, `ui/`, `routes/
   - `snapshot.revision` (`<bootId>:<counter>`, `bootId` from `crypto.randomUUID` per process; +1 per successful hydrate/refresh, pre-install included) is request identity / locale sync only — never a cache generation.
   - `representation-scopes` owns the single section→scope dependency table (`detail`, `listing`, `feed`, `calendar`, `og`, `manifest`, `sitemap`) plus the pure stable-serialization + FNV-1a hash deriving one content-addressed generation per scope, memoized by bundle identity in a `WeakMap`; same settings → same keys across restarts, unrelated admin saves move nothing.
 - `contracts/` — Zod schemas (the wire format) plus the DTO types derived from them.
+  - `merge-patch` — the ONE input contract for field-update procedures (RFC 7396 semantics): `mergePatchInput(patchShape)`
+    enforces a required numeric `id` identity key that the patch shape can never declare (the id names the row; it is not
+    updatable), `clearable(schema)` marks a nullable column (absent = untouched, `null` = clear, value = set), and
+    `splitMergePatch(input)` hands the handler `{ id, patch }` with only the caller-sent keys. Pinned by
+    `tests/unit/shared/contracts/merge-patch.test.ts`.
 - `types/` — shared types and isomorphic helpers with no contract twin (catalog projections, domain inputs, image URL helpers, the site-owned asset-URL path grammar in `asset-url`).
 - `lexical/` — Lexical storage-format validation; pure zod, no Lexical runtime; `SerializedEditorState` is an erased `import type` from `@/inkling/headless`.
   - `node-whitelist` — the node-type whitelist single source. `schema` is the full article/page state schema and owns `EMPTY_LEXICAL_EDITOR_STATE`; `comment-schema` is the restricted comment schema and owns `EMPTY_COMMENT_EDITOR_STATE` and the shared `isCommentEditorStateBlank` submit gate.
