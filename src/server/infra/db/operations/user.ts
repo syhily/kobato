@@ -201,7 +201,7 @@ export interface UserUpdate {
   password?: string
   role?: 'admin' | 'author' | 'visitor' | null
   badgeName?: string | null
-  badgeColor?: string
+  badgeColor?: string | null
   // `null` clears the manual override (back to auto-derived); `undefined` leaves the column untouched.
   badgeTextColor?: string | null
   receiveEmail?: boolean

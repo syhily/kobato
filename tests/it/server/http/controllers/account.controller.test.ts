@@ -216,6 +216,29 @@ describe('account controller', () => {
       ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
       expect((await userRow(id)).link).not.toBe('javascript:alert(1)')
     })
+
+    it('clears the stored link and badge fields when null is sent', async () => {
+      const id = await seedUser({
+        name: 'Before',
+        link: 'https://keep.example.com',
+        badgeName: 'VIP',
+        badgeColor: '#ff0000',
+        badgeTextColor: '#00ff00',
+      })
+
+      const res = await call(
+        accountRouter.updateProfile,
+        { link: null, badgeName: null, badgeColor: null, badgeTextColor: null },
+        { context: ctxFor(id, { role: 'admin' }) },
+      )
+
+      expect(res.user.link).toBeNull()
+      const row = await userRow(id)
+      expect(row.link).toBeNull()
+      expect(row.badgeName).toBeNull()
+      expect(row.badgeColor).toBeNull()
+      expect(row.badgeTextColor).toBeNull()
+    })
   })
 
   describe('updatePassword', () => {

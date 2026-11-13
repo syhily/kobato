@@ -68,20 +68,20 @@ export async function updateAccountProfile(
     patch.name = input.name
   }
   if (input.link !== undefined) {
-    patch.link = input.link ?? undefined
+    patch.link = input.link
   }
   if (input.receiveEmail !== undefined) {
     patch.receiveEmail = input.receiveEmail
   }
   if (canSetBadge) {
     if (input.badgeName !== undefined) {
-      patch.badgeName = input.badgeName ?? undefined
+      patch.badgeName = input.badgeName
     }
     if (input.badgeColor !== undefined) {
-      patch.badgeColor = input.badgeColor ?? undefined
+      patch.badgeColor = input.badgeColor
     }
     if (input.badgeTextColor !== undefined) {
-      patch.badgeTextColor = input.badgeTextColor ?? undefined
+      patch.badgeTextColor = input.badgeTextColor
     }
   }
 

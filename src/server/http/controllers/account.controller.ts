@@ -28,6 +28,7 @@ import {
   tryRateLimit,
 } from '@/server/infra/rate-limit'
 import { accountProfileOutputSchema, accountSessionsOutputSchema } from '@/shared/contracts/admin'
+import { clearable } from '@/shared/contracts/merge-patch'
 import { loginMethodSchema } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 import { optionalHttpUrlSchema } from '@/shared/utils/safe-url'
@@ -53,10 +54,10 @@ const updateProfileInput = z.object({
   name: z.string().min(1).max(50).optional(),
   // http(s)-only like the admin user-edit schema — a bare z.url() would
   // accept javascript:/data: hrefs into the profile link.
-  link: optionalHttpUrlSchema.nullable(),
-  badgeName: z.string().max(20).optional().nullable(),
-  badgeColor: z.string().max(7).optional().nullable(),
-  badgeTextColor: z.string().max(7).optional().nullable(),
+  link: clearable(optionalHttpUrlSchema),
+  badgeName: clearable(z.string().max(20)),
+  badgeColor: clearable(z.string().max(7)),
+  badgeTextColor: clearable(z.string().max(7)),
   receiveEmail: z.boolean().optional(),
 })
 

@@ -85,7 +85,7 @@ const update = adminProc
       email: z.email().optional(),
       link: clearable(optionalHttpUrlSchema),
       badgeName: clearable(z.string()),
-      badgeColor: z.string().optional(),
+      badgeColor: clearable(z.string()),
       badgeTextColor: clearable(z.string()),
     }),
   )
