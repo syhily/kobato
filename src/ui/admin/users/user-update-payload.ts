@@ -1,6 +1,7 @@
-// Payload assembly for the admin user-edit form: optional profile fields are
-// sent only when non-empty (server keeps the stored value); `badgeTextColor`
-// is `null` unless the text-color override is on, falling back to auto contrast.
+// Payload assembly for the admin user-edit form: the form is the full editor,
+// so an emptied optional field is sent as a literal `null` to clear the stored
+// value (an absent key would leave it untouched); `badgeTextColor` is `null`
+// unless the text-color override is on, falling back to auto contrast.
 export interface UserEditFields {
   name: string
   email: string
@@ -12,16 +13,12 @@ export interface UserEditFields {
 }
 
 export function buildUserUpdatePayload(fields: UserEditFields): Record<string, string | null> {
-  const payload: Record<string, string | null> = { name: fields.name, email: fields.email }
-  if (fields.link) {
-    payload.link = fields.link
+  return {
+    name: fields.name,
+    email: fields.email,
+    link: fields.link || null,
+    badgeName: fields.badgeName || null,
+    ...(fields.badgeColor ? { badgeColor: fields.badgeColor } : {}),
+    badgeTextColor: fields.useTextOverride ? fields.badgeTextColor : null,
   }
-  if (fields.badgeName) {
-    payload.badgeName = fields.badgeName
-  }
-  if (fields.badgeColor) {
-    payload.badgeColor = fields.badgeColor
-  }
-  payload.badgeTextColor = fields.useTextOverride ? fields.badgeTextColor : null
-  return payload
 }

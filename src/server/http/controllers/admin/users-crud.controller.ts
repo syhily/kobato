@@ -83,8 +83,9 @@ const update = adminProc
       id: z.string().min(1),
       name: z.string().min(1).optional(),
       email: z.email().optional(),
-      link: optionalHttpUrlSchema,
-      badgeName: z.string().optional(),
+      // `null` clears the stored value; an absent key leaves it untouched.
+      link: z.union([optionalHttpUrlSchema, z.null()]),
+      badgeName: z.union([z.string(), z.null()]).optional(),
       badgeColor: z.string().optional(),
       badgeTextColor: z.union([z.string(), z.null()]).optional(),
     }),

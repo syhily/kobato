@@ -82,6 +82,21 @@ describe('admin users-crud controller', () => {
       expect((await userRow(id)).link).toBeNull()
     })
 
+    it('clears the stored link and badge name when null is sent', async () => {
+      const id = await seedUser({ link: 'https://keep.example.com', badgeName: 'VIP' })
+
+      const res = await call(
+        adminUsersCrudRouter.update,
+        { id: String(id), link: null, badgeName: null },
+        { context: makeAuthedCtx({ role: 'admin', db }) },
+      )
+
+      expect(res).toEqual({ success: true })
+      const row = await userRow(id)
+      expect(row.link).toBeNull()
+      expect(row.badgeName).toBeNull()
+    })
+
     it('patches only the fields present in the input', async () => {
       const id = await seedUser({ email: 'keep@example.com', link: 'https://keep.example.com' })
 

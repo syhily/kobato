@@ -21,15 +21,15 @@ describe('buildUserUpdatePayload', () => {
     expect(payload.email).toBe('')
   })
 
-  it('omits optional link and badge fields when they are empty', () => {
+  it('sends link and badgeName as null when emptied so the server clears them', () => {
     const payload = buildUserUpdatePayload(makeFields())
     expect(payload).toEqual({
       name: 'Alice',
       email: 'alice@example.com',
+      link: null,
+      badgeName: null,
       badgeTextColor: null,
     })
-    expect('link' in payload).toBe(false)
-    expect('badgeName' in payload).toBe(false)
     expect('badgeColor' in payload).toBe(false)
   })
 
@@ -45,7 +45,7 @@ describe('buildUserUpdatePayload', () => {
   it('sends badgeColor independently of badgeName', () => {
     const payload = buildUserUpdatePayload(makeFields({ badgeColor: '#007a82' }))
     expect(payload.badgeColor).toBe('#007a82')
-    expect('badgeName' in payload).toBe(false)
+    expect(payload.badgeName).toBeNull()
   })
 
   it('sends badgeTextColor as null when the text-color override is off', () => {

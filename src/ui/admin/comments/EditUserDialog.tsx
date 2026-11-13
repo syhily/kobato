@@ -7,6 +7,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import { orpc } from '@/client/api/client'
 import { onMutationError } from '@/client/lib/toast-api-error'
 import { idStr } from '@/shared/utils/tools'
+import { buildUserUpdatePayload } from '@/ui/admin/users/user-update-payload'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import {
@@ -76,24 +77,16 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             if (!comment) {
               return
             }
-            // `string | null` lets clearing the override send a literal JSON `null`.
-            const payload: Record<string, string | null> = {
+            const payload = buildUserUpdatePayload({
               name,
               email,
-              id: idStr(comment.userId),
-            }
-            if (link) {
-              payload.link = link
-            }
-            if (badgeName) {
-              payload.badgeName = badgeName
-            }
-            if (badgeColor) {
-              payload.badgeColor = badgeColor
-            }
-            // Always include `badgeTextColor` so admins can clear a previous override by unticking.
-            payload.badgeTextColor = useTextOverride ? badgeTextColor : null
-            mutation.mutate(payload)
+              link,
+              badgeName,
+              badgeColor,
+              useTextOverride,
+              badgeTextColor,
+            })
+            mutation.mutate({ ...payload, id: idStr(comment.userId) })
           }}
           className="grid gap-4 sm:grid-cols-2"
         >

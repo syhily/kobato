@@ -196,10 +196,11 @@ export async function updateLastLogin(db: Database, id: number, ip: string, user
 export interface UserUpdate {
   name?: string
   email?: string
-  link?: string
+  // `null` clears the stored value; `undefined` leaves the column untouched.
+  link?: string | null
   password?: string
   role?: 'admin' | 'author' | 'visitor' | null
-  badgeName?: string
+  badgeName?: string | null
   badgeColor?: string
   // `null` clears the manual override (back to auto-derived); `undefined` leaves the column untouched.
   badgeTextColor?: string | null
