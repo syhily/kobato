@@ -2,7 +2,7 @@
 # entries as "catalog:" — taze updates this table (catalogs are first-class
 # taze targets), so version bumps happen in exactly one place.
 catalog:
-  '@aws-sdk/client-s3': ^3.1168.0
+  '@aws-sdk/client-s3': ^3.1169.0
   '@base-ui/react': ^1.9.0
   '@bufbuild/protobuf': ^2.17.0
   '@chenglou/pretext': ^1.0.0
@@ -54,7 +54,7 @@ catalog:
   '@orpc/client': ^1.16.2
   '@orpc/react-query': ^1.16.2
   '@orpc/server': ^1.16.2
-  '@playwright/test': ^1.65.0
+  '@playwright/test': ^1.65.1
   '@prettier/sync': ^0.6.1
   '@react-router/dev': ^8.5.1
   '@react-router/node': ^8.5.1
@@ -99,12 +99,12 @@ catalog:
   html-minifier-terser: ^7.2.0
   husky: ^9.1.7
   idb: ^8.0.4
-  jsdom: ^31.0.0
+  jsdom: ^31.0.1
   katex: ^0.19.1
   kysely: ^0.29.9
   lexical: ^0.53.0
   lint-staged: ^17.6.0
-  lucide-react: ^1.72.0
+  lucide-react: ^1.73.0
   lunar-typescript: ^1.8.7
   markdown-it: ^15.0.3
   markdown-it-footnote: ^4.0.0
@@ -113,7 +113,7 @@ catalog:
   markdown-it-sub: ^2.0.0
   markdown-it-sup: ^2.0.0
   medium-zoom: ^1.1.2
-  motion: ^14.13.0
+  motion: ^14.14.0
   node-device-detector: ^2.2.9
   nodemailer: ^10.5.0
   oxc-transform-react: ^0.158.0
