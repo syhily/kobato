@@ -11,13 +11,17 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
+import { updateCommentBodyAndContent } from '@/server/domains/comments/repos/mutate'
+import { comment as commentTable } from '@/server/infra/db/schema/comment'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { metric as metricTable } from '@/server/infra/db/schema/metric'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
+import { user as userTable } from '@/server/infra/db/schema/user'
 import { representationRevisionsFor } from '@/shared/config/representation-scopes'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@/shared/lexical/comment-schema'
 
 // Detail representation ETags through the real oRPC read path: the tag fingerprints the COMPLETE
 // payload (post/page shell, body html, tags, sidebar, interaction critical) plus the published
@@ -38,18 +42,26 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-function sidebarBundle(counts: { recentPosts: number; randomTags: number }): BlogSettingsBundle {
+function sidebarBundle(counts: {
+  recentPosts: number
+  randomTags: number
+  recentComments?: number
+}): BlogSettingsBundle {
   const sidebar = TEST_BLOG_SETTINGS_BUNDLE.sidebar!
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,
     sidebar: {
       sidebar: {
         ...sidebar.sidebar,
-        widgets: sidebar.sidebar.widgets.map((widget) =>
-          widget.type === 'recentPosts' || widget.type === 'randomTags'
-            ? Object.assign({}, widget, { count: counts[widget.type] })
-            : widget,
-        ),
+        widgets: sidebar.sidebar.widgets.map((widget) => {
+          if (widget.type === 'recentPosts' || widget.type === 'randomTags') {
+            return Object.assign({}, widget, { count: counts[widget.type] })
+          }
+          if (widget.type === 'recentComments' && counts.recentComments !== undefined) {
+            return Object.assign({}, widget, { count: counts.recentComments })
+          }
+          return widget
+        }),
       },
     },
   }
@@ -85,6 +97,27 @@ async function seedPost(slug: string): Promise<number> {
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
+}
+
+async function seedComment(postId: number, content = 'first comment'): Promise<number> {
+  const userRows = await db
+    .insert(userTable)
+    .values({ name: 'Commenter', email: `commenter-${randomUUID()}@example.com`, password: 'hashed' })
+    .returning({ id: userTable.id })
+  const rows = await db
+    .insert(commentTable)
+    .values({
+      type: 'post',
+      ownerId: postId,
+      userId: userRows[0]!.id,
+      content,
+      body: EMPTY_COMMENT_EDITOR_STATE,
+      rid: 0,
+      rootId: 0,
+      isPending: false,
+    })
+    .returning({ id: commentTable.id })
+  return rows[0]!.id
 }
 
 async function seedPage(slug: string, draftBody?: LexicalEditorState): Promise<number> {
@@ -312,6 +345,47 @@ describe('detail representation ETags', () => {
     const withNewKey = await readPost('etag-post', { ifNoneMatch: withLikes.etag! })
     expect(withNewKey.kind).toBe('ok')
     expect(withNewKey.etag).not.toBe(withLikes.etag)
+  })
+
+  it('post: a new comment invalidates the old ETag even when the recent-comments widget is off', async () => {
+    const bundle = sidebarBundle({ recentPosts: 5, randomTags: 10, recentComments: 0 })
+    const localization: AppLocalization = {
+      ...LOCALIZATION,
+      revisions: representationRevisionsFor(bundle),
+    }
+    const postId = await seedPost('etag-post-comments')
+    const base = await readPost('etag-post-comments', { settings: bundle, localization })
+
+    await seedComment(postId)
+    const afterReply = await readPost('etag-post-comments', {
+      ifNoneMatch: base.etag!,
+      settings: bundle,
+      localization,
+    })
+
+    expect(afterReply.kind).toBe('ok')
+    expect(afterReply.etag).not.toBe(base.etag)
+  })
+
+  it('post: a moderator comment edit invalidates the old ETag even when the sidebar is unchanged', async () => {
+    const bundle = sidebarBundle({ recentPosts: 5, randomTags: 10, recentComments: 0 })
+    const localization: AppLocalization = {
+      ...LOCALIZATION,
+      revisions: representationRevisionsFor(bundle),
+    }
+    const postId = await seedPost('etag-post-comment-edit')
+    const commentId = await seedComment(postId, 'before moderation')
+    const base = await readPost('etag-post-comment-edit', { settings: bundle, localization })
+
+    await updateCommentBodyAndContent(db, commentId, EMPTY_COMMENT_EDITOR_STATE, 'after moderation')
+    const afterEdit = await readPost('etag-post-comment-edit', {
+      ifNoneMatch: base.etag!,
+      settings: bundle,
+      localization,
+    })
+
+    expect(afterEdit.kind).toBe('ok')
+    expect(afterEdit.etag).not.toBe(base.etag)
   })
 
   it('post: a real settings save (new snapshot revision) invalidates the old ETag', async () => {

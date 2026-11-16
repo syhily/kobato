@@ -4,10 +4,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { makeCommentBody } from '#/_helpers/catalog'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { adminCommentsRouter } from '@/server/http/controllers/admin/comments.controller'
+import { contentCommentsByKey } from '@/server/http/controllers/content-comments.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { comment } from '@/server/infra/db/schema/comment'
 import { auditLog } from '@/server/infra/db/schema/config'
@@ -146,6 +147,7 @@ describe('adminCommentsRouter.edit', () => {
     const admin = await seedAdmin()
     const uid = await seedUser()
     const pid = await seedPost('Moderator Edit Post', 'moderator-edit-post')
+    await seedMetricRow(pid, 'pk-moderator-edit')
     const cid = await seedComment({
       userId: uid,
       ownerId: pid,
@@ -166,6 +168,14 @@ describe('adminCommentsRouter.edit', () => {
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
     expect(row!.isPending).toBe(false)
     expect(row!.content).toContain('moderated')
+
+    const publicComments = await call(
+      contentCommentsByKey,
+      { pageKey: 'pk-moderator-edit' },
+      { context: makePublicCtx({ db }) },
+    )
+    expect(publicComments.commentItems).toHaveLength(1)
+    expect(publicComments.commentItems[0]?.content).toContain('moderated')
 
     const rows = await auditRowsFor('comment_updated')
     expect(rows).toHaveLength(1)

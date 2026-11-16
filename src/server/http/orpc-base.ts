@@ -1,3 +1,5 @@
+import type { z } from 'zod'
+
 import { ORPCError, os } from '@orpc/server'
 
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
@@ -10,9 +12,14 @@ import type { UiMessageId } from '@/shared/i18n/messages/ui/en-US'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
-import { apiErrorData, summarizeApiError, translateDomainError } from '@/server/http/translate-domain-error'
-import { descriptorFor } from '@/server/infra/http/error-descriptor'
-import { ActionFailure, DomainError } from '@/server/infra/http/errors'
+import {
+  apiErrorData,
+  summarizeApiError,
+  translateApiError,
+  translateDomainError,
+} from '@/server/http/translate-domain-error'
+import { descriptorFor, zodIssuesToWire } from '@/server/infra/http/error-descriptor'
+import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { createServerTranslator } from '@/server/infra/i18n'
 import { tryCommentPostRateLimit, tryNotificationReplyRateLimit, tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
@@ -103,6 +110,44 @@ const domainErrorGuard = root.middleware(async ({ context, next }) => {
     throw error
   }
 })
+
+export async function orpcInputValidationInterceptor<TOutput>(options: {
+  context: HandlerContext
+  next(): Promise<TOutput>
+}): Promise<TOutput> {
+  try {
+    return await options.next()
+  } catch (error) {
+    if (!(error instanceof ORPCError) || error.code !== 'BAD_REQUEST') {
+      throw error
+    }
+    const data: unknown = error.data
+    const rawIssues: unknown = Array.isArray(data)
+      ? data
+      : typeof data === 'object' && data !== null && 'issues' in data && !('descriptor' in data)
+        ? data.issues
+        : undefined
+    if (!Array.isArray(rawIssues)) {
+      throw error
+    }
+    const issues = rawIssues as readonly z.core.$ZodIssue[]
+    const translator = createServerTranslator(options.context.localization.locale)
+    const translated = translateApiError(
+      {
+        status: 400,
+        code: 'BAD_REQUEST',
+        message: ErrorMessages.INVALID_INPUT,
+        issues: zodIssuesToWire(issues, translator),
+      },
+      translator,
+    )
+    throw new ORPCError('BAD_REQUEST', {
+      status: translated.status,
+      message: summarizeApiError(translated, translator),
+      data: apiErrorData(translated),
+    })
+  }
+}
 
 function ensureViewer(context: HandlerContext): SessionUser {
   if (!context.viewer) {

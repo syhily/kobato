@@ -6,15 +6,16 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { seedMetric } from '#/_helpers/db'
 import { regularSession } from '#/_helpers/session'
 
-// The comments/critical split must keep `loadComments`, `queryLikes`, and
-// `loadSidebarData` parallel: 50ms injected into each still finishes
-// under ~100ms wall clock.
+// The comments/critical split must keep `loadComments`, `queryLikes`,
+// `loadSidebarData`, and the ETag fingerprint parallel: 50ms injected into each
+// still finishes under ~100ms wall clock.
 
 vi.mock('@/server/domains/comments/services/shared', () => ({
   ensureCommentPage: vi.fn(async () => seedMetric()),
 }))
 
 vi.mock('@/server/domains/comments/services/public-query', () => ({
+  commentThreadFingerprint: vi.fn(async () => 'comments-fingerprint'),
   loadComments: vi.fn(),
   parseComments: vi.fn(async () => []),
 }))
@@ -43,11 +44,12 @@ beforeEach(() => {
 })
 
 describe('services/comments/page-data — comments/critical split', () => {
-  it('loadComments + queryLikes + loadSidebarData run in parallel (≤100ms wall clock for 50ms each)', async () => {
+  it('loadComments + queryLikes + loadSidebarData + fingerprint run in parallel (≤100ms wall clock for 50ms each)', async () => {
     vi.mocked(commentPublicQuery.loadComments).mockImplementation(() =>
       delay({ count: 0, roots_count: 0, comments: [] }, 50),
     )
     vi.mocked(likes.queryLikes).mockImplementation(() => delay(0, 50))
+    vi.mocked(commentPublicQuery.commentThreadFingerprint).mockImplementation(() => delay('comments-fingerprint', 50))
     vi.mocked(sidebar.loadSidebarData).mockImplementation(() =>
       delay(
         {

@@ -51,7 +51,8 @@ introduce a new pattern.
   `if-none-match` and return `data(payload, { headers: { ETag } })`; the 304 is rebuilt from the request
   localization with the listing `private, no-cache` profile.
 - Detail loaders fire `content.comments.byKey` and `webmention.list` only on the ok branch, un-awaited off
-  `commentKey` so they stream via `<Await>`; never speculatively, so a 304/301/404 read does no comments work.
+  `commentKey` so they stream via `<Await>`; never speculatively. A 304/301/404 does no full comments load, but the
+  detail procedure does fingerprint the comment rows before answering 304 so a stale stored response cannot hide edits.
 - The root loader calls `content.bootstrap()` with no args (theme cookie and message scope resolved inside the
   procedure: public pathname vs `/admin` + `/editor`); `shouldRevalidate` refreshes it on public ↔ workspace
   navigation and every form action. Root middleware `[traceRouteMiddleware]` adds one no-op-in-production

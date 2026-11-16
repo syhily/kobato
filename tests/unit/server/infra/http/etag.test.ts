@@ -89,7 +89,7 @@ const BASE_PAYLOAD = {
   sidebarPosts: [{ title: 'Recent', permalink: '/posts/recent' }],
   tags: [{ name: 'tag', slug: 'tag', counts: 1 }],
   draftMarker: null,
-  critical: { commentKey: 'key-1', likes: 2, recentComments: [] },
+  critical: { commentKey: 'key-1', likes: 2, recentComments: [], commentsFingerprint: 'comments-1' },
 }
 
 const BASE_INPUT: DetailEtagInput = {
@@ -151,6 +151,7 @@ describe('server/infra/http/etag — detail payload fingerprint', () => {
       { ...BASE_PAYLOAD, sidebarPosts: [] },
       { ...BASE_PAYLOAD, critical: { ...BASE_PAYLOAD.critical, likes: 3 } },
       { ...BASE_PAYLOAD, critical: { ...BASE_PAYLOAD.critical, commentKey: 'key-2' } },
+      { ...BASE_PAYLOAD, critical: { ...BASE_PAYLOAD.critical, commentsFingerprint: 'comments-2' } },
       {
         ...BASE_PAYLOAD,
         critical: {

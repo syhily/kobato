@@ -122,14 +122,17 @@ export const contentPostsListOutputSchema = z.union([
 export type ContentPostsListOutput = z.infer<typeof contentPostsListOutputSchema>
 
 // Detail critical (shared by post + page): everything the detail page needs
-// above the fold besides the body. Comments and webmentions are deliberately
-// EXCLUDED — they stream through `content.comments.byKey` / `webmention.list`.
+// above the fold besides the body. Comment rows and webmentions stream through
+// `content.comments.byKey` / `webmention.list`; the comment fingerprint stays
+// here so the whole response (including its stream) participates in the ETag.
 export interface DetailCriticalPayload {
   commentKey: string
   likes: number
   currentUser: CommentFormUser | undefined
   admin: boolean
   recentComments: LatestComment[]
+  /** Digest of the streamed comment thread; part of the detail ETag. */
+  commentsFingerprint: string
 }
 
 // `ifNoneMatch` carries the raw If-None-Match header value. Revalidation

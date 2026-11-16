@@ -35,6 +35,7 @@ const publicQuery = await import('@/server/domains/comments/services/public-quer
 const { avatarRouter } = await import('@/server/http/controllers/avatar.controller')
 const { commentsPublicRouter } = await import('@/server/http/controllers/comments-public.controller')
 const commentsRouter = commentsPublicRouter
+const { commentsTokenRouter } = await import('@/server/http/controllers/comments-token.controller')
 const { likesRouter } = await import('@/server/http/controllers/likes.controller')
 
 const db = getTestDb()
@@ -297,6 +298,37 @@ describe('commentsRouter.replyComment', () => {
     const emails = await import('@/server/domains/comments/services/email')
     expect(emails.sendNewComment).toHaveBeenCalledTimes(1)
     expect(ctx.responseHeaders.get('Set-Cookie')).toContain('__comment_tokens=')
+  })
+
+  it('restores a pending reply with the ownership cookie issued at submission', async () => {
+    const rootUserId = await seedUser({ name: 'Root', email: 'root@example.com' })
+    const pid = await seedPost('reply-refresh')
+    await seedMetricRow('post', pid, 'pub-reply')
+    const rootId = await seedComment({ userId: rootUserId, ownerId: pid, content: 'root', isPending: false })
+    const ctx = makePublicCtx({ db })
+
+    const created = await call(
+      commentsRouter.replyComment,
+      { ...makeValidReplyInput(), name: 'Guest', email: 'guest@example.com', rid: rootId },
+      { context: ctx },
+    )
+    expect(created.comment.isPending).toBe(true)
+    const cookie = ctx.responseHeaders.get('Set-Cookie')?.split(';', 1)[0]
+    expect(cookie).toContain('__comment_tokens=')
+
+    const restored = await call(
+      commentsTokenRouter.myComments,
+      { page_key: 'pub-reply' },
+      { context: makePublicCtxWithCookie(cookie!) },
+    )
+    expect(restored.comments.map((item) => item.id)).toContain(created.comment.id)
+
+    const anonymous = await call(
+      commentsRouter.loadComments,
+      { page_key: 'pub-reply', offset: 0 },
+      { context: makePublicCtx({ db }) },
+    )
+    expect(anonymous.comments.map((item) => item.id)).not.toContain(created.comment.id)
   })
 })
 

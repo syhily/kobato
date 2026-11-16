@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
@@ -13,6 +15,7 @@ import {
   latestDistinctCommentIds,
 } from '@/server/domains/comments/repos/public-query/digest'
 import {
+  commentFingerprintRows,
   countCommentsAndRoots,
   findChildComments,
   findRootComments,
@@ -43,6 +46,18 @@ export async function latestComments(db: Database, settings: BlogSettingsBundle 
   const distinctIds = await latestDistinctCommentIds(db, ids, limit)
   const rows = await commentsByIds(db, distinctIds, limit)
   return rows.map(toLatestComment)
+}
+
+/** Stable digest of the target's public comment representation. Detail pages
+ *  fold it into their ETag so comment edits cannot be hidden behind a 304. */
+export async function commentThreadFingerprint(db: Database, target: EntityTarget): Promise<string> {
+  const rows = await commentFingerprintRows(db, target)
+  const hash = createHash('sha256')
+  for (const row of rows) {
+    hash.update(JSON.stringify(row))
+    hash.update('\0')
+  }
+  return hash.digest('hex')
 }
 
 export async function loadComments(

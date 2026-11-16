@@ -9,7 +9,14 @@ import {
   TEST_BLOG_SETTINGS_BUNDLE,
 } from '#/_helpers/blog-settings'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
-import { authedProc, commentTokenCookie, passkeyGuard, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import {
+  authedProc,
+  commentTokenCookie,
+  orpcInputValidationInterceptor,
+  passkeyGuard,
+  publicProc,
+  resourceRateLimit,
+} from '@/server/http/orpc-base'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie } from '@/shared/utils/comment-token'
@@ -37,7 +44,7 @@ const router = {
     .handler(({ input }) => ({ echoed: input.msg })),
 }
 
-const handler = new RPCHandler(router)
+const handler = new RPCHandler(router, { clientInterceptors: [orpcInputValidationInterceptor] })
 
 async function callPing(input: unknown) {
   const result = await handler.handle(
@@ -200,6 +207,18 @@ const failingRouter = {
 }
 
 describe('domainErrorGuard translation', () => {
+  it('summarizes oRPC input validation issues with their field paths', async () => {
+    const res = await callPing({ msg: '' })
+
+    expect(res.status).toBe(400)
+    const body = (await res.json()) as {
+      json: { message: string; data: { issues: Array<{ path: string[]; message: string }> } }
+    }
+    expect(body.json.message).toContain('msg')
+    expect(body.json.message).not.toBe('Invalid Input')
+    expect(body.json.data.issues[0]).toMatchObject({ path: ['msg'] })
+  })
+
   it('forwards ActionFailure status, summarized message, and the descriptor data', async () => {
     const ctx = makePublicCtx()
     await expect(call(failingRouter.actionFailure, {}, { context: ctx })).rejects.toMatchObject({

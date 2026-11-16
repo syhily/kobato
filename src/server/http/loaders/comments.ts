@@ -8,7 +8,7 @@ import type { DetailPageComments } from '@/shared/types/comments'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemsWire } from '@/server/domains/comments/projection'
 import { queryLikes } from '@/server/domains/comments/services/likes'
-import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
+import { commentThreadFingerprint, loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { ensureCommentPage } from '@/server/domains/comments/services/shared'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
 
@@ -39,8 +39,8 @@ export async function loadCommentsAndItems(
   return { commentData, commentItems: asCommentItemsWire(commentItems) }
 }
 
-// Above-the-fold detail data (likes, sidebar, current user); comments are
-// excluded so the route streams them alongside the SSR HTML.
+// Above-the-fold detail data (likes, sidebar, current user, comment digest);
+// comment rows are excluded so the route streams them alongside the SSR HTML.
 export async function loadDetailPageCritical(
   db: Database,
   session: BlogSession,
@@ -50,16 +50,18 @@ export async function loadDetailPageCritical(
   const user = userSession(session)
   const currentUser = toCommentFormUser(user)
 
-  const [metricRow, likes, sidebar] = await Promise.all([
+  const [metricRow, likes, sidebar, commentsFingerprint] = await Promise.all([
     ensureCommentPage(db, target),
     queryLikes(db, target),
     loadSidebarData(db, session, settings),
+    commentThreadFingerprint(db, target),
   ])
 
   return {
     commentKey: metricRow.publicId,
     likes,
     currentUser,
+    commentsFingerprint,
     ...sidebar,
   }
 }

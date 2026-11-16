@@ -98,6 +98,18 @@ describe('server/domains/friends/schema — upsertFriendSchema', () => {
     expect(result.data?.id).toBe('5')
   })
 
+  it('accepts a site-owned storage path for the poster', () => {
+    const result = upsertFriendSchema.safeParse({
+      id: '10',
+      website: '羽忆江南',
+      homepage: 'https://lizihao.com',
+      poster: '/storage/images/links/yyjn.org.jpg',
+      visible: true,
+      description: '喜于情，爱于心，言于表',
+    })
+    expect(result.success).toBe(true)
+  })
+
   it('rejects website longer than 80 chars', () => {
     expect(upsertFriendSchema.safeParse({ ...valid, website: 'x'.repeat(81) }).success).toBe(false)
   })

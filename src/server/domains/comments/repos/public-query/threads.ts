@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
@@ -76,6 +76,40 @@ export async function findChildComments(
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .where(and(...baseConditions))
+}
+
+/** Public-DTO fields only: the detail ETag hashes this row list before it can
+ *  answer 304. Server-only PII (`ua`, `ip`, `email`) stays out of the digest. */
+export async function commentFingerprintRows(db: Database, target: EntityTarget) {
+  return db
+    .select({
+      id: comment.id,
+      createAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      deleteAt: comment.deletedAt,
+      deleteRequestedAt: comment.deleteRequestedAt,
+      body: comment.body,
+      content: comment.content,
+      userId: comment.userId,
+      isVerified: comment.isVerified,
+      rid: comment.rid,
+      isCollapsed: comment.isCollapsed,
+      isPending: comment.isPending,
+      isPinned: comment.isPinned,
+      voteUp: comment.voteUp,
+      voteDown: comment.voteDown,
+      rootId: comment.rootId,
+      name: user.name,
+      emailVerified: user.emailVerified,
+      link: user.link,
+      badgeName: user.badgeName,
+      badgeColor: user.badgeColor,
+      badgeTextColor: user.badgeTextColor,
+    })
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(whereTarget(target))
+    .orderBy(asc(comment.id))
 }
 
 export async function findCommentRootId(db: Database, id: number): Promise<number | null> {

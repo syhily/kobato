@@ -9,12 +9,13 @@ import { apiRouter } from '@/server/http/api-router'
 import { errorJsonResponse } from '@/server/http/errors'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
+import { orpcInputValidationInterceptor } from '@/server/http/orpc-base'
 import { createOrpcTraceInterceptor } from '@/server/http/orpc-trace'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // The client-interceptor slot is the seam for the span owning the real procedure invocation.
 const handler = new RPCHandler(apiRouter, {
-  clientInterceptors: [createOrpcTraceInterceptor('http')],
+  clientInterceptors: [createOrpcTraceInterceptor('http'), orpcInputValidationInterceptor],
 })
 
 const DEFAULT_MAX_BODY_SIZE = 10 * 1024 * 1024

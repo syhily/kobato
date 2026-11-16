@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@/shared/types/asset-url'
 import { HTTP_URL_MESSAGE, isHttpUrl } from '@/shared/utils/safe-url'
 import { honeypotField } from '@/shared/utils/schema'
 
@@ -36,7 +37,13 @@ export const upsertFriendSchema = z.object({
   website: z.string().trim().min(1).max(80),
   description: optionalText(999),
   homepage: z.url().max(500),
-  poster: z.url().max(500),
+  poster: z.union([
+    z.url().max(500),
+    z
+      .string()
+      .max(500)
+      .refine((value) => parseAssetUrlPath(value)?.route === STORAGE_ROUTE_PREFIX),
+  ]),
   rssUrl: z
     .union([z.url().max(500), z.literal(''), z.null()])
     .optional()

@@ -5,13 +5,13 @@ import { redirect } from 'react-router'
 
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { ApiRouter } from '@/server/http/api-router'
-import type { HandlerContext } from '@/server/http/orpc-base'
 import type { ContentNotModifiedSignal, ContentRedirectSignal, ContentSignal } from '@/shared/contracts/content'
 import type { PublicWebmentionWire } from '@/shared/contracts/webmentions'
 import type { AppLocalization } from '@/shared/i18n/app-localization'
 import type { DetailPageComments } from '@/shared/types/comments'
 
 import { apiRouter } from '@/server/http/api-router'
+import { orpcInputValidationInterceptor, type HandlerContext } from '@/server/http/orpc-base'
 import { createOrpcTraceInterceptor } from '@/server/http/orpc-trace'
 import { getRequestContext } from '@/server/http/request-context'
 import { notModifiedResponse } from '@/server/infra/http/etag'
@@ -63,7 +63,10 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
   }
   // Nonce derives once here so route modules never call `getRequestContext` themselves.
   return {
-    caller: createRouterClient(apiRouter, { context, interceptors: [ssrTraceInterceptor] }),
+    caller: createRouterClient(apiRouter, {
+      context,
+      interceptors: [ssrTraceInterceptor, orpcInputValidationInterceptor],
+    }),
     cspNonce: rc.cspNonce,
     analyticsEventId: rc.requestFacts.analyticsEventId,
     viewer: rc.viewer,

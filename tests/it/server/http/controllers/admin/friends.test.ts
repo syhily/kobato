@@ -1,12 +1,19 @@
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
+import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+import type { Env } from '@/server/http/context'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { makeRequestContext } from '#/_helpers/request-context'
+import { adminUser, makeSession } from '#/_helpers/session'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { createApiApp } from '@/server/http/app'
 import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
+import { onErrorHandler } from '@/server/http/errors'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { friend } from '@/server/infra/db/schema/friend'
 import { user } from '@/server/infra/db/schema/user'
@@ -28,6 +35,34 @@ async function seedAdmin(): Promise<number> {
 
 function adminCtx() {
   return makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+}
+
+const CSRF = 'friends-test-csrf-token'
+
+function adminApiApp() {
+  const rc = makeRequestContext({
+    db,
+    session: makeSession({ csrfToken: CSRF, user: adminUser({ id: String(adminId) }) }),
+  })
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set('requestContext', rc)
+    await next()
+  })
+  app.route('/', createApiApp())
+  app.onError(onErrorHandler)
+  return app
+}
+
+function upsertOverHttp(app: ReturnType<typeof adminApiApp>, input: unknown, csrfToken: string | null = CSRF) {
+  return app.request('/rpc/admin/friends/upsert', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(csrfToken === null ? {} : { 'x-csrf-token': csrfToken }),
+    },
+    body: JSON.stringify({ json: input }),
+  })
 }
 
 async function seedFriend(website: string, visible: boolean): Promise<number> {
@@ -93,6 +128,47 @@ describe('adminFriendsRouter.upsert', () => {
     expect(res.friend).toMatchObject({ website: 'Example', homepage: 'https://example.com', visible: true })
     const rows = await db.select().from(friend).where(eq(friend.homepage, 'https://example.com'))
     expect(rows).toHaveLength(1)
+  })
+
+  it('updates the reported payload with a site-owned poster over real HTTP', async () => {
+    const id = await seedFriend('Example', true)
+    const app = adminApiApp()
+
+    const res = await upsertOverHttp(app, {
+      id: String(id),
+      website: '羽忆江南',
+      homepage: 'https://lizihao.com',
+      poster: '/storage/images/links/yyjn.org.jpg',
+      visible: true,
+      description: '喜于情，爱于心，言于表',
+    })
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { json: { friend: { poster: string; website: string } } }
+    expect(body.json.friend).toMatchObject({
+      website: '羽忆江南',
+      poster: '/storage/images/links/yyjn.org.jpg',
+    })
+  })
+
+  it('still rejects the same mutation without a CSRF token', async () => {
+    const id = await seedFriend('Example', true)
+    const app = adminApiApp()
+
+    const res = await upsertOverHttp(
+      app,
+      {
+        id: String(id),
+        website: 'Example',
+        homepage: 'https://example.example.com',
+        poster: '/storage/images/links/example.jpg',
+      },
+      null,
+    )
+
+    expect(res.status).toBe(403)
+    const body = (await res.json()) as { error: { message: string } }
+    expect(body.error.message).toBe('安全校验失败，请刷新页面后重试。')
   })
 })
 
