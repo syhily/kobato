@@ -49,7 +49,9 @@ export async function latestComments(db: Database, settings: BlogSettingsBundle 
 }
 
 /** Stable digest of the target's public comment representation. Detail pages
- *  fold it into their ETag so comment edits cannot be hidden behind a 304. */
+ *  fold it into their ETag so comment edits cannot be hidden behind a 304.
+ *  Truncated to 32 hex chars: the value ships inside public documents, which
+ *  must stay free of 64-hex strings (the anonymous CSRF token's shape). */
 export async function commentThreadFingerprint(db: Database, target: EntityTarget): Promise<string> {
   const rows = await commentFingerprintRows(db, target)
   const hash = createHash('sha256')
@@ -57,7 +59,7 @@ export async function commentThreadFingerprint(db: Database, target: EntityTarge
     hash.update(JSON.stringify(row))
     hash.update('\0')
   }
-  return hash.digest('hex')
+  return hash.digest('hex').slice(0, 32)
 }
 
 export async function loadComments(

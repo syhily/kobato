@@ -388,6 +388,17 @@ describe('detail representation ETags', () => {
     expect(afterEdit.etag).not.toBe(base.etag)
   })
 
+  it('post: the shipped comment fingerprint never takes the 64-hex anonymous CSRF token shape', async () => {
+    const postId = await seedPost('etag-post-fingerprint-shape')
+    await seedComment(postId)
+    const result = await readPost('etag-post-fingerprint-shape')
+
+    expect(result.kind).toBe('ok')
+    const critical = (result.payload as { critical?: { commentsFingerprint?: string } } | undefined)?.critical
+    expect(critical?.commentsFingerprint).toBeTruthy()
+    expect(critical?.commentsFingerprint).not.toMatch(/[0-9a-f]{64}/)
+  })
+
   it('post: a real settings save (new snapshot revision) invalidates the old ETag', async () => {
     await seedPost('etag-post')
     // Both reads use the real lazy request capture, not an explicit projection.
