@@ -1,6 +1,6 @@
 # Trace: local OpenObserve for development
 
-`packages/helpers/trace/src/` runs a single-container OpenObserve instance for local development.
+`packages/tools/trace/src/` runs a single-container OpenObserve instance for local development.
 It is optional: normal `pnpm dev`, `pnpm test`, and `pnpm build` never import these
 scripts and never need Docker. Everything runs on the developer machine,
 loopback-only, with no Collector and no SaaS endpoint.

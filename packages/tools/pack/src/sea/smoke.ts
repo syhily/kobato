@@ -616,7 +616,7 @@ async function main() {
 
   if (args[0] === '--external') {
     if (!args[1]) {
-      fail('Usage: node packages/helpers/pack/src/sea/smoke.ts --external <baseUrl>')
+      fail('Usage: node packages/tools/pack/src/sea/smoke.ts --external <baseUrl>')
     }
     const baseUrl = normalizeBaseUrl(args[1])
     console.log(`==> SEA smoke (external: ${baseUrl})`)
@@ -630,7 +630,7 @@ async function main() {
   } else {
     if (args[0]?.startsWith('--')) {
       fail(
-        'Usage: node packages/helpers/pack/src/sea/smoke.ts [--external <baseUrl> | --binary-only [path-to-binary] | path-to-binary]',
+        'Usage: node packages/tools/pack/src/sea/smoke.ts [--external <baseUrl> | --binary-only [path-to-binary] | path-to-binary]',
       )
     }
     const binaryPath = args[0] ? resolvePath(args[0]) : seaBinaryPath()

@@ -57,7 +57,7 @@ function relaxRateLimitsForE2e(databasePath: string) {
 async function main() {
   const binaryPath = process.argv[2] ? resolvePath(process.argv[2]) : seaBinaryPath()
   if (process.argv[2]?.startsWith('--')) {
-    fail('Usage: node packages/helpers/pack/src/sea/e2e.ts [path-to-binary]')
+    fail('Usage: node packages/tools/pack/src/sea/e2e.ts [path-to-binary]')
   }
   await ensureBinaryExists(binaryPath)
 

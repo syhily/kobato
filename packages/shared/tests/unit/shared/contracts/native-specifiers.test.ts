@@ -7,7 +7,7 @@ import {
   isNativePackageModule,
   isPlatformSpecifierArg,
   redirectNativeRequires,
-} from '../../../../../../packages/helpers/pack/src/sea/redirect-native-requires.ts'
+} from '../../../../../../packages/tools/pack/src/sea/redirect-native-requires.ts'
 
 // Contract test: the platform require call sites inside the INSTALLED
 // sharp / @napi-rs/canvas / @duckdb/node-bindings packages must stay

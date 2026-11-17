@@ -1,5 +1,5 @@
 // HTTP client for tests/e2e: drives a real kobato instance (the SEA binary booted by
-// packages/helpers/pack/src/sea/e2e.ts) over plain fetch with a minimal cookie jar — nothing in-process.
+// packages/tools/pack/src/sea/e2e.ts) over plain fetch with a minimal cookie jar — nothing in-process.
 
 export interface E2eEnv {
   baseUrl: string
@@ -7,7 +7,7 @@ export interface E2eEnv {
   adminPassword: string
 }
 
-/** Read and validate the env contract injected by packages/helpers/pack/src/sea/e2e.ts. */
+/** Read and validate the env contract injected by packages/tools/pack/src/sea/e2e.ts. */
 export function e2eEnv(): E2eEnv {
   const { KOBATO_E2E_BASE_URL, KOBATO_E2E_ADMIN_EMAIL, KOBATO_E2E_ADMIN_PASSWORD } = process.env
   if (!KOBATO_E2E_BASE_URL || !KOBATO_E2E_ADMIN_EMAIL || !KOBATO_E2E_ADMIN_PASSWORD) {

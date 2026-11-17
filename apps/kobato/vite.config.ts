@@ -13,7 +13,7 @@ import { defineConfig } from 'vite'
 import svgr from 'vite-plugin-svgr'
 import { z } from 'zod'
 
-import { inlinePackageDataPlugin } from '../../packages/helpers/pack/src/sea/inline-package-data.ts'
+import { inlinePackageDataPlugin } from '../../packages/tools/pack/src/sea/inline-package-data.ts'
 
 const pkgSchema = z.object({
   name: z.string(),

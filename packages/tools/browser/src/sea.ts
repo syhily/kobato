@@ -10,7 +10,7 @@ import { runBrowserSuite } from './run.ts'
 
 const arg = process.argv[2]
 if (arg?.startsWith('--')) {
-  fail('Usage: node packages/helpers/browser/src/sea.ts [path-to-binary]')
+  fail('Usage: node packages/tools/browser/src/sea.ts [path-to-binary]')
 }
 const binaryPath = arg === undefined ? seaBinaryPath() : resolvePath(arg)
 

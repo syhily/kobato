@@ -5,7 +5,7 @@
 // Pure module on purpose: it imports only the locale contract and the shared
 // display formatter (no config, no database, no server graph), so
 // `kobato --smoke-intl` can run with zero side effects and
-// `packages/helpers/pack/src/sea/smoke.ts` can spawn it on a bare binary. The probe never reads
+// `packages/tools/pack/src/sea/smoke.ts` can spawn it on a bare binary. The probe never reads
 // ICU data files: every assertion goes through the public Intl APIs, so the
 // same module works against a full-ICU or a small-ICU SEA target and fails
 // loudly (rather than degrading to English) when the data is missing.

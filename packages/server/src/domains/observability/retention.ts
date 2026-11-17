@@ -29,7 +29,7 @@ const log = getLogger('observability.retention')
 
 const STREAM_TYPES: readonly O2StreamType[] = ['logs', 'traces', 'metrics']
 
-/** OTLP traces land in the organization-wide default traces stream (packages/helpers/trace's TRACE_STREAM). */
+/** OTLP traces land in the organization-wide default traces stream (packages/tools/trace's TRACE_STREAM). */
 const TRACES_STREAM = 'default'
 
 /** Streams Kobato owns: RUM, traces, server logs, and the closed metric set. */

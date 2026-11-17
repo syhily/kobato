@@ -8,7 +8,7 @@ import sharp from 'sharp'
 import type { DomainErrorWire } from '../http/errors'
 
 // sharp must stay a static import: the bundler redirects its platform loads
-// to `nativeRequire` (`packages/helpers/pack/src/sea/redirect-native-requires.ts`).
+// to `nativeRequire` (`packages/tools/pack/src/sea/redirect-native-requires.ts`).
 
 const THUMBHASH_MAX_DIMENSION = 100
 // Decoded-pixel ceiling (~200 MB RGBA) — caller caps bound encoded bytes

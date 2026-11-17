@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 // during a release.
 
 const sea = readFileSync('.github/workflows/sea.yml', 'utf-8')
-const releaseTs = readFileSync('packages/helpers/pack/src/release.ts', 'utf-8')
+const releaseTs = readFileSync('packages/tools/pack/src/release.ts', 'utf-8')
 
 describe('release chain: the draft-release flow stays triggerable', () => {
   it('release.ts pushes the tag BEFORE creating the release (the event the chain rides on)', () => {

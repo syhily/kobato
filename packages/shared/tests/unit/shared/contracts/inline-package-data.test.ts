@@ -7,7 +7,7 @@ import {
   INLINE_DATA_CASES,
   expectedInlineLiteral,
   inlinePackageData,
-} from '../../../../../../packages/helpers/pack/src/sea/inline-package-data.ts'
+} from '../../../../../../packages/tools/pack/src/sea/inline-package-data.ts'
 
 // Contract test: the server bundle inlines jsdom (the sanitize engine), which
 // resolves its sync-XHR worker path at module scope — a code path the server
@@ -36,7 +36,7 @@ describe('contract: inline package data', () => {
     const rewritten = inlinePackageData(source, file)
     expect(
       rewritten,
-      `${name}: ${file} no longer matches — update packages/helpers/pack/src/sea/inline-package-data.ts`,
+      `${name}: ${file} no longer matches — update packages/tools/pack/src/sea/inline-package-data.ts`,
     ).not.toBeNull()
     const kase = INLINE_DATA_CASES.find((entry) => entry.name === name)!
     for (const read of kase.reads) {

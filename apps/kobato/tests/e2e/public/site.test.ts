@@ -15,7 +15,7 @@ describe('public site (HTTP e2e)', () => {
     const res = await client.get('/')
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toContain('text/html')
-    // 'Kobato Smoke' — the title seeded by packages/helpers/pack/src/sea/instance.ts.
+    // 'Kobato Smoke' — the title seeded by packages/tools/pack/src/sea/instance.ts.
     expect(await res.text()).toContain('Kobato Smoke')
   })
 

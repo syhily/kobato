@@ -4,7 +4,7 @@ import { runBrowserSuite } from './run.ts'
 
 const arg = process.argv[2]
 if (arg?.startsWith('--')) {
-  fail('Usage: node packages/helpers/browser/src/cli.ts [path-to-binary]')
+  fail('Usage: node packages/tools/browser/src/cli.ts [path-to-binary]')
 }
 
 try {

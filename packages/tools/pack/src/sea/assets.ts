@@ -429,7 +429,7 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { assets, manifest, stats } = await collectSeaAssets({
-    wasmPath: process.argv[2] ?? fail('Usage: node packages/helpers/pack/src/sea/assets.ts <path-to-cnfs-wasm>'),
+    wasmPath: process.argv[2] ?? fail('Usage: node packages/tools/pack/src/sea/assets.ts <path-to-cnfs-wasm>'),
   })
   const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
   console.log(

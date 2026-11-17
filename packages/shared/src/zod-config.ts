@@ -3,7 +3,7 @@
 // `securitypolicyviolation` under a strict CSP even though the throw is
 // swallowed. The server has no CSP, so it keeps JIT enabled and auto-compiles
 // schemas via `import 'zod/compile'` in the server entries
-// (`src/entry.server.tsx`, `packages/helpers/pack/src/sea/server-entry.ts`); global compile mode
+// (`src/entry.server.tsx`, `packages/tools/pack/src/sea/server-entry.ts`); global compile mode
 // stands down wherever `jitless` is set.
 if (typeof window !== 'undefined') {
   ;(globalThis as Record<string, unknown>).__zod_globalConfig = { jitless: true }

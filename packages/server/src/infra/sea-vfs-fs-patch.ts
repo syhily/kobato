@@ -30,7 +30,7 @@
 // addon loader from forwarding a missing flags argument as an explicit
 // `undefined` (coerced to dlopen mode 0, which glibc rejects). Node 26.10.0
 // fixed the forwarding upstream (nodejs/node#65909), so the guard is
-// removed; SEA builds gate on Node >= 26.10 (packages/helpers/pack/src/sea/build.ts).
+// removed; SEA builds gate on Node >= 26.10 (packages/tools/pack/src/sea/build.ts).
 
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import fs from 'node:fs'

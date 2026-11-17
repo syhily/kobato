@@ -373,13 +373,13 @@ export default defineConfig({
       // family and friends fire constantly without finding real bugs.
       // oxlint overrides cannot disable whole categories — only named
       // rules — so the noisy offenders are listed explicitly. The
-      // packages/helpers/test sources are the former tests/_helpers tree
+      // packages/tools/test sources are the former tests/_helpers tree
       // and share the exemption.
       files: [
         '**/tests/**/*.ts',
         '**/tests/**/*.tsx',
-        'packages/helpers/test/src/**/*.ts',
-        'packages/helpers/test/src/**/*.tsx',
+        'packages/tools/test/src/**/*.ts',
+        'packages/tools/test/src/**/*.tsx',
       ],
       rules: {
         // Test code gets a deliberately lighter rule set: mocks, fixtures,
@@ -437,15 +437,15 @@ export default defineConfig({
     },
     {
       files: [
-        'packages/helpers/pack/**/*.ts',
-        'packages/helpers/trace/**/*.ts',
-        'packages/helpers/browser/**/*.ts',
-        'packages/helpers/email/**/*.ts',
-        'packages/helpers/i18n/**/*.ts',
+        'packages/tools/pack/**/*.ts',
+        'packages/tools/trace/**/*.ts',
+        'packages/tools/browser/**/*.ts',
+        'packages/tools/email/**/*.ts',
+        'packages/tools/i18n/**/*.ts',
       ],
       rules: {
         // Plain-node build scripts (executed directly with `node
-        // packages/helpers/<pkg>/...`, type-stripped at
+        // packages/tools/<pkg>/...`, type-stripped at
         // runtime). Console output is the scripts' UI, and the
         // JSON/subprocess boundaries (JSON.parse, pg rows) keep the
         // unsafe-* family off. Non-type-aware rules still apply.

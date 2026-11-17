@@ -172,7 +172,7 @@ const commands: Record<string, (args: string[]) => void> = {
 }
 
 if (!command || !commands[command]) {
-  process.stderr.write('Usage: node packages/helpers/pack/src/release.ts <command> [args]\n')
+  process.stderr.write('Usage: node packages/tools/pack/src/release.ts <command> [args]\n')
   process.stderr.write(`Commands: ${Object.keys(commands).join(', ')}\n`)
   process.exit(1)
 }

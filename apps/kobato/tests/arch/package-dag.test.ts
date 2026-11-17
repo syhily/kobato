@@ -48,12 +48,12 @@ const REPO_PACKAGES = [
   { name: '@kobato/shared', dir: 'packages/shared' },
   { name: '@kobato/server', dir: 'packages/server' },
   { name: '@kobato/web', dir: 'packages/web' },
-  { name: '@kobato/test', dir: 'packages/helpers/test' },
-  { name: '@kobato/trace', dir: 'packages/helpers/trace' },
-  { name: '@kobato/email', dir: 'packages/helpers/email' },
-  { name: '@kobato/i18n', dir: 'packages/helpers/i18n' },
-  { name: '@kobato/pack', dir: 'packages/helpers/pack' },
-  { name: '@kobato/browser', dir: 'packages/helpers/browser' },
+  { name: '@kobato/test', dir: 'packages/tools/test' },
+  { name: '@kobato/trace', dir: 'packages/tools/trace' },
+  { name: '@kobato/email', dir: 'packages/tools/email' },
+  { name: '@kobato/i18n', dir: 'packages/tools/i18n' },
+  { name: '@kobato/pack', dir: 'packages/tools/pack' },
+  { name: '@kobato/browser', dir: 'packages/tools/browser' },
   { name: '@kobato/inkling-demo', dir: 'apps/inkling-demo' },
 ] as const
 
@@ -129,7 +129,7 @@ const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = [
 /**
  * Relative imports that cross a package boundary. Every entry is a TEST
  * reaching into a sibling tree without going through its package surface —
- * `packages/helpers/pack/**` (SEA tooling: no exports map, not a declared dependency
+ * `packages/tools/pack/**` (SEA tooling: no exports map, not a declared dependency
  * of any package) or `apps/inkling-demo/**` (inkling's playground host) —
  * plus the one web→inkling case: the host-card parity test reaches two
  * internals the inkling exports map deliberately does not expose (inkling's
@@ -142,13 +142,13 @@ const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
   'packages/web/tests/unit/client/editor/cards/host-cards.test.tsx:../../../../../../inkling/src/labels/inkling-labels.ts',
   'packages/web/tests/unit/client/editor/cards/host-cards.test.tsx:../../../../../../inkling/src/nodes/cards/host-card-registry.ts',
   // Contract tests pinning the SEA tooling sources textually.
-  'packages/shared/tests/unit/shared/contracts/inline-package-data.test.ts:../../../../../../packages/helpers/pack/src/sea/inline-package-data.ts',
-  'packages/shared/tests/unit/shared/contracts/native-specifiers.test.ts:../../../../../../packages/helpers/pack/src/sea/redirect-native-requires.ts',
-  'packages/shared/tests/unit/shared/contracts/sea-bundle-globals.test.ts:../../../../../../packages/helpers/pack/src/sea/check-bundle.ts',
-  'packages/server/tests/unit/server/infra/sea-compression.test.ts:../../../../../../packages/helpers/pack/src/sea/assets.ts',
+  'packages/shared/tests/unit/shared/contracts/inline-package-data.test.ts:../../../../../../packages/tools/pack/src/sea/inline-package-data.ts',
+  'packages/shared/tests/unit/shared/contracts/native-specifiers.test.ts:../../../../../../packages/tools/pack/src/sea/redirect-native-requires.ts',
+  'packages/shared/tests/unit/shared/contracts/sea-bundle-globals.test.ts:../../../../../../packages/tools/pack/src/sea/check-bundle.ts',
+  'packages/server/tests/unit/server/infra/sea-compression.test.ts:../../../../../../packages/tools/pack/src/sea/assets.ts',
   // The SEA server entry pulls the app's built bundle into the single-file
   // vite build; a build output has no package specifier to import by.
-  'packages/helpers/pack/src/sea/server-entry.ts:../../../../../apps/kobato/build/server/index.js',
+  'packages/tools/pack/src/sea/server-entry.ts:../../../../../apps/kobato/build/server/index.js',
   // The demo playground is inkling's host app; its glue implements the
   // host contract inkling's suite type-checks and tests against.
   'packages/inkling/tests/typecheck/demo-host-contracts.ts:../../../../apps/inkling-demo/utils/fetchEmbed',

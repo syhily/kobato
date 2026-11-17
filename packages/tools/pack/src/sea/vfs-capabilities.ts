@@ -1,7 +1,7 @@
 // Capability-verification suite for the Node.js 26.9 VFS features:
 //   Group A — userland `node:vfs` probes (cheap child processes).
 //   Group B — a mini SEA built with `"useVfs": true` (one --build-sea round).
-// Standalone CLI: `node packages/helpers/pack/src/sea/vfs-capabilities.ts [nodeBinary]`
+// Standalone CLI: `node packages/tools/pack/src/sea/vfs-capabilities.ts [nodeBinary]`
 // (default process.execPath). Exits non-zero on any failed assertion.
 
 import { spawnSync } from 'node:child_process'
@@ -583,7 +583,7 @@ function runSeaGroup() {
         `The Node.js executable at ${nodeBinary} does not contain the SEA sentinel fuse.`,
         'Single-executable builds require an official Node.js distribution (nodejs.org);',
         'Homebrew and other shared-library builds lack the fuse.',
-        'Pass an official dist path: node packages/helpers/pack/src/sea/vfs-capabilities.ts /path/to/official/node',
+        'Pass an official dist path: node packages/tools/pack/src/sea/vfs-capabilities.ts /path/to/official/node',
       ].join('\n'),
     )
   }

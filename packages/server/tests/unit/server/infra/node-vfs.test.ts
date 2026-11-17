@@ -1,7 +1,7 @@
 // Userland `node:vfs` behavior on the current Node runtime (Node 26.9+).
 // Each test spawns `process.execPath --experimental-vfs` child processes; the
 // whole suite skips when the runtime lacks node:vfs support. The SEA-side
-// useVfs assertions live in packages/helpers/pack/src/sea/vfs-capabilities.ts (`pnpm sea:probe`),
+// useVfs assertions live in packages/tools/pack/src/sea/vfs-capabilities.ts (`pnpm sea:probe`),
 // not here — building a SEA is too heavy for the unit project.
 
 import { spawnSync } from 'node:child_process'

@@ -1,5 +1,5 @@
 // Single owner of the SEA embedded-asset key contract: writer
-// `packages/helpers/pack/src/sea/assets.ts`, readers `packages/server/src/infra/sea`. Never
+// `packages/tools/pack/src/sea/assets.ts`, readers `packages/server/src/infra/sea`. Never
 // hardcode an asset key outside this module. server.mjs is NOT an
 // asset — it is the injected binary `main`. Isomorphic: constants only.
 

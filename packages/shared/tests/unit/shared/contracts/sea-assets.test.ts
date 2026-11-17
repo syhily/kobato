@@ -28,7 +28,7 @@ const SHARED_MODULE = 'packages/shared/src/sea/assets.ts'
 
 const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] = [
   {
-    file: 'packages/helpers/pack/src/sea/assets.ts',
+    file: 'packages/tools/pack/src/sea/assets.ts',
     names: [
       'SEA_MANIFEST_KEY',
       'SEA_PROCESS_WORKER_BUNDLE_KEY',
@@ -208,7 +208,7 @@ describe('contract: SEA embedded-asset keys', () => {
 
   it('writer and readers source the asset codec from the shared module', () => {
     for (const file of [
-      'packages/helpers/pack/src/sea/assets.ts',
+      'packages/tools/pack/src/sea/assets.ts',
       'packages/server/src/infra/sea.ts',
       'packages/server/src/infra/sea-natives.ts',
     ]) {

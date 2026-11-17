@@ -1,5 +1,5 @@
-// OpenObserve RUM privacy pipeline identity shared by `packages/helpers/trace`
-// provisioning and the DEV startup verifier. Pure constants: `packages/helpers/trace`
+// OpenObserve RUM privacy pipeline identity shared by `packages/tools/trace`
+// provisioning and the DEV startup verifier. Pure constants: `packages/tools/trace`
 // imports this file directly and must never pull serverConfig/logger in.
 
 export const RUM_PRIVACY_PIPELINE_NAME = 'kobato_rum_privacy'

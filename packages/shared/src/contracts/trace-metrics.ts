@@ -1,6 +1,6 @@
 // Pure metric names and OpenObserve-derived stream prefixes shared by the
 // server catalog and the local trace tooling. This module must stay free of
-// serverConfig/logger imports so `packages/helpers/trace/src/*` can load it directly.
+// serverConfig/logger imports so `packages/tools/trace/src/*` can load it directly.
 
 export const TRACE_METRIC_NAMES = {
   httpServerDuration: 'http.server.duration',
