@@ -50,7 +50,8 @@ const REPO_PACKAGES = [
   { name: '@kobato/web', dir: 'packages/web' },
   { name: '@kobato/test', dir: 'packages/helpers/test' },
   { name: '@kobato/trace', dir: 'packages/helpers/trace' },
-  { name: '@kobato/scripts', dir: 'scripts' },
+  { name: '@kobato/emails', dir: 'packages/helpers/emails' },
+  { name: '@kobato/i18n', dir: 'packages/helpers/i18n' },
   { name: '@kobato/pack', dir: 'packages/helpers/pack' },
   { name: '@kobato/browser', dir: 'packages/helpers/browser' },
   { name: '@kobato/inkling-demo', dir: 'apps/inkling-demo' },
@@ -77,7 +78,8 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/test': ['@kobato/test', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/web'],
   // Orchestration and tooling layers may depend on anything internal.
   kobato: INTERNAL_SCOPES,
-  '@kobato/scripts': INTERNAL_SCOPES,
+  '@kobato/emails': INTERNAL_SCOPES,
+  '@kobato/i18n': INTERNAL_SCOPES,
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/browser': INTERNAL_SCOPES,
@@ -96,11 +98,14 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/web': ['@kobato/web', '@kobato/inkling', '@kobato/shared', '@kobato/server'],
   '@kobato/test': ['@kobato/test', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/web'],
   kobato: INTERNAL_SCOPES,
-  // Tooling packages (SEA pipeline, OpenObserve DEV container) may reach any
-  // internal package from their src trees.
+  // Tooling packages (SEA pipeline, OpenObserve DEV container, journey
+  // runner, preview/report generators) may reach any internal package from
+  // their src trees.
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/browser': INTERNAL_SCOPES,
+  '@kobato/emails': INTERNAL_SCOPES,
+  '@kobato/i18n': INTERNAL_SCOPES,
 }
 
 /**

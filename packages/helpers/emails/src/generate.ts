@@ -4,7 +4,7 @@ import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 // Renders every email template to a standalone HTML file under
-// `scripts/emails/<locale>/` for browser preview (`pnpm run emails:generate`).
+// `packages/helpers/emails/emails/<locale>/` for browser preview (`pnpm run emails:generate`).
 // The snapshot data is entirely fake — no real addresses or secrets.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -35,7 +35,7 @@ const { SUPPORTED_LOCALES } = await import('@kobato/shared/i18n/locales.ts')
 const { unsafeCast } = await import('@kobato/shared/utils/unsafe-cast.ts')
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const OUT_DIR = join(__dirname, 'emails')
+const OUT_DIR = join(__dirname, '..', 'emails')
 
 const SITE = {
   title: 'Kobato',

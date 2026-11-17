@@ -3,9 +3,9 @@
 // never fails on a difference — the count is a review aid, not a quality gate.
 // Representative decisions live in `docs/i18n/glossary.md`.
 // Usage:
-//   pnpm exec vite-node scripts/i18n/regional-diff.ts
-//   pnpm exec vite-node scripts/i18n/regional-diff.ts --keys
-//   pnpm exec vite-node scripts/i18n/regional-diff.ts --keys --prefix=public.comments.
+//   pnpm run i18n:regional-diff
+//   pnpm run i18n:regional-diff --keys
+//   pnpm run i18n:regional-diff --keys --prefix=public.comments.
 import { kobatoInklingLabelsEnUS } from '@kobato/shared/i18n/inkling-labels/en-US.ts'
 import { kobatoInklingLabelsZhCN } from '@kobato/shared/i18n/inkling-labels/zh-CN.ts'
 import { kobatoInklingLabelsZhHK } from '@kobato/shared/i18n/inkling-labels/zh-HK.ts'
@@ -68,7 +68,7 @@ const prefixArg = args.find((arg) => arg.startsWith('--prefix='))
 const prefix = prefixArg?.slice('--prefix='.length) ?? ''
 
 if (args.includes('--help')) {
-  console.log('Usage: pnpm exec vite-node scripts/i18n/regional-diff.ts [--keys] [--prefix=<key prefix>]')
+  console.log('Usage: pnpm run i18n:regional-diff [--keys] [--prefix=<key prefix>]')
   process.exit(0)
 }
 

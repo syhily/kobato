@@ -1,0 +1,11 @@
+{
+  "name": "@kobato/emails",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@kobato/server": "workspace:*",
+    "@kobato/shared": "workspace:*",
+    "@types/node": "catalog:"
+  }
+}

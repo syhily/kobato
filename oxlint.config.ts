@@ -437,14 +437,15 @@ export default defineConfig({
     },
     {
       files: [
-        'scripts/**/*.ts',
         'packages/helpers/pack/**/*.ts',
         'packages/helpers/trace/**/*.ts',
         'packages/helpers/browser/**/*.ts',
+        'packages/helpers/emails/**/*.ts',
+        'packages/helpers/i18n/**/*.ts',
       ],
       rules: {
         // Plain-node build scripts (executed directly with `node
-        // packages/helpers/pack/...` or `node scripts/...`, type-stripped at
+        // packages/helpers/<pkg>/...`, type-stripped at
         // runtime). Console output is the scripts' UI, and the
         // JSON/subprocess boundaries (JSON.parse, pg rows) keep the
         // unsafe-* family off. Non-type-aware rules still apply.

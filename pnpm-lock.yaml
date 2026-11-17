@@ -824,6 +824,27 @@ importers:
         specifier: 'catalog:'
         version: 3.0.3
 
+  packages/helpers/emails:
+    devDependencies:
+      '@kobato/server':
+        specifier: workspace:*
+        version: link:../../server
+      '@kobato/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+
+  packages/helpers/i18n:
+    devDependencies:
+      '@kobato/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+
   packages/helpers/pack:
     devDependencies:
       '@duckdb/node-api':
@@ -1495,18 +1516,6 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.6.7
-
-  scripts:
-    devDependencies:
-      '@kobato/server':
-        specifier: workspace:*
-        version: link:../packages/server
-      '@kobato/shared':
-        specifier: workspace:*
-        version: link:../packages/shared
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.6
 
 packages:
 

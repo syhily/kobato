@@ -84,7 +84,7 @@ pnpm run sea:browser
 pnpm run test:browser   # managed SEA boot, or KOBATO_BROWSER_BASE_URL pointing at an external instance
 
 # Read-only difference report (does not modify the catalog)
-pnpm exec vite-node scripts/i18n/regional-diff.ts --keys
+pnpm run i18n:regional-diff --keys
 ```
 
 **What automation can prove:** the four catalogs have identical key sets, ICU parameters and branches
@@ -132,7 +132,7 @@ The planned baseline is **2793 UI keys × 4 locales = 11,172 UI strings**; the 2
 re-check counted **2800 × 4 = 11,200**, plus 99 server keys × 4 and 157 Inkling labels × 4. The current
 worktree is still appending keys in parallel (UI was 2796 at drafting time and later grew to 2800), so:
 
-- The counts change; `pnpm exec vite-node scripts/i18n/regional-diff.ts` prints the current values.
+- The counts change; `pnpm run i18n:regional-diff` prints the current values.
 - Whether the count is 2793, 2800, or higher, **a passing catalog validation only proves structural
   completeness**; it says nothing about whether any single string has been human-reviewed.
 - This document refuses to substitute "all tests green" for review sign-off, and refuses to treat
